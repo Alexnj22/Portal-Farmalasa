@@ -35,7 +35,7 @@ describe('leer el documento', () => {
         // los barridos desde Postgres.
         await fetchPropuesta(7);
         expect(invoke).toHaveBeenCalledWith('leer-dte-json', {
-            body: { document_ids: [7], modo: 'propuesta', max_items: 30 },
+            body: { document_ids: [7], modo: 'propuesta', max_items: 300 },
         });
     });
 
@@ -57,7 +57,7 @@ describe('leer el documento', () => {
 
     it('los documentos sin cargar se piden por ventana de días', async () => {
         await fetchDocumentosSinCargar(30);
-        expect(espia.rpc[0]).toEqual({ nombre: 'get_documentos_sin_cargar', args: { p_dias: 30 } });
+        expect(espia.rpc[0]).toEqual({ nombre: 'get_documentos_sin_cargar_json', args: { p_dias: 30 } });
         espia.limpiar();
         await fetchDocumentosSinCargar();
         expect(espia.rpc[0].args.p_dias).toBe(60);

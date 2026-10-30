@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1401.0 — Compras: auditoría del proceso de carga
+
+Auditoría completa de Cargar compra (proceso, base y pantallas). Lo que se
+corrigió, por gravedad:
+
+**Que nada se escriba dos veces en el sistema.** Las escrituras de la carga
+(alta de producto, traslados a salas y a vencidos, recepciones, descartes) se
+reintentaban solas hasta tres veces tras un corte: ahora van UNA vez, y lo que
+no contestó queda «sin verificar» para comprobarlo, nunca para reenviarlo.
+Recibir en la sala no avanza si no se sabe en qué está el traslado, y comprueba
+que el traslado del sistema traiga lo mismo que el envío. La nota de crédito
+electrónica mira el libro antes de registrarse (como la de papel) y dos personas
+a la vez no la registran dos veces. Un erróneo sólo se descarga de vencidos si
+se comprobó que llegó ahí, y con el lote con que entró.
+
+**Que no se cargue lo ya cargado.** Las compras que Bodega registró con el
+número de control (65 de 1,013 desde agosto) ahora se reconocen, en la revisión
+y en el freno en vivo (número de control + proveedor + total).
+
+**Lo que quedaba trabado.** Cron `compra-soltar-trabados` (cada 10 min, sólo
+base): lo que quedó a medio camino más de 15 min pasa a «sin verificar».
+«Comprobar» en los envíos a la sala y en los erróneos le pregunta al sistema.
+
+**Pantallas.** Jefe/a de Compras veía Cargar compra en solo lectura (el permiso
+miraba otro módulo). Un renglón sin código del proveedor se puede elegir. Las
+facturas de más de 30 renglones se pueden cargar. Una revisión que llega después
+de un cambio ya no habilita «Cargar en Bodega», y se manda exactamente lo
+revisado (reparto y erróneos incluidos). El borrador no se aplica a otra
+factura. La cola de 6 meses ya no se corta en 1,000. Avisos que se borraban
+solos, nota propuesta sólo si es de esta factura, confirmación al sacar a un
+proveedor entero.
+
+**Base.** Contestar fechas exige poder editar traslados de esa sala; un pedido
+por factura Y sala; la nota en papel se reconoce por serie y número y no pisa
+otra; la sala no ve el costo de lo que le llega; FKs y CHECKs que faltaban.
+
 ## v2.1400.0 — El nombre que cada persona elige para el portal
 
 Al entrar al portal, quien tiene más de un nombre o más de un apellido elige cuál de cada uno quiere usar, y el portal lo muestra así en todos lados. Se elige entre los propios nombres de la ficha (no es un apodo). La primera vez es obligatoria, y ya viene marcado el de siempre. Después se cambia desde Mi perfil, con el botón «Mi nombre». El nombre legal no cambia: planilla, CSV, contratos y PDF lo siguen usando completo.

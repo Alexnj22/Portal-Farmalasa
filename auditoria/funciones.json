@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-30T17:41:47.831Z",
+ "generado": "2026-10-30T18:10:39.739Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1232,6 +1232,14 @@
    "area": "compras",
    "por": "código"
   },
+  "compra_cerrar_pedidos_al_resolver": {
+   "area": "compras",
+   "por": "trigger"
+  },
+  "compra_cerrar_pedidos_de_vence": {
+   "area": "compras",
+   "por": "trigger"
+  },
   "compra_deshacer_resolucion": {
    "area": "compras",
    "por": "tablas"
@@ -1255,6 +1263,10 @@
   "compra_responder_vence": {
    "area": "compras",
    "por": "código"
+  },
+  "compra_soltar_trabados": {
+   "area": "compras",
+   "por": "cron"
   },
   "compras_cargadas_desde_portal": {
    "area": "compras",
@@ -2440,7 +2452,7 @@
   },
   "es_parte_del_nombre": {
    "area": "personal",
-   "por": "quien la llama"
+   "por": "código"
   },
   "es_solicitud_operativa": {
    "area": "permisos",
@@ -2842,6 +2854,10 @@
    "por": "código"
   },
   "get_documentos_sin_cargar": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "get_documentos_sin_cargar_json": {
    "area": "compras",
    "por": "código"
   },

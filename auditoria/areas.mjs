@@ -1129,7 +1129,7 @@ export const AREAS = [
         edge: ['sync-erp-purchases', 'sync-purchase-emails', 'check-purchases-reconciliation',
                'scrape-erp-proveedores', 'backfill-proveedores-dte', 'export-purchase-dte-manifest',
                'export-purchase-dte-zip', 'analyze-document', 'leer-boleta', 'erp-csv-probe'],
-        crons: ['sync-purchases-10min', 'sync-purchase-emails-daily', 'check-purchases-reconciliation-daily',
+        crons: ['sync-purchases-10min', 'compra-soltar-trabados', 'sync-purchase-emails-daily', 'check-purchases-reconciliation-daily',
                 'purchases-fastbackfill-semanal', 'verificar-facturas-reclamadas-2h',
                 'avisar-facturas-de-sala-0830-sv'],
         docs: ['docs/CONTABILIDAD.md',

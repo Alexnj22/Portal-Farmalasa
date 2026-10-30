@@ -16,9 +16,11 @@ import { anotar } from './audit';
 
 /** Los documentos recibidos que todavía no tienen compra registrada. */
 export async function fetchDocumentosSinCargar(dias = 60) {
-    const { data, error } = await supabase.rpc('get_documentos_sin_cargar', { p_dias: dias });
+    // La versión json: la de filas se corta en 1000 sin avisar, y con seis
+    // meses ya pasa (medido el 30-oct: ~1,015) — se perdían las más viejas.
+    const { data, error } = await supabase.rpc('get_documentos_sin_cargar_json', { p_dias: dias });
     if (error) return { filas: [], error };
-    return { filas: data ?? [], error: null };
+    return { filas: Array.isArray(data) ? data : [], error: null };
 }
 
 /**
@@ -86,8 +88,8 @@ export async function resolverDocumento(documentId, motivo, receiptId = null) {
 export async function fetchPropuesta(documentId, manualId = null) {
     const { data, error } = await supabase.functions.invoke('leer-dte-json', {
         body: manualId
-            ? { manual_id: manualId, modo: 'propuesta', max_items: 30 }
-            : { document_ids: [documentId], modo: 'propuesta', max_items: 30 },
+            ? { manual_id: manualId, modo: 'propuesta', max_items: 300 }
+            : { document_ids: [documentId], modo: 'propuesta', max_items: 300 },
     });
     if (error) return { propuesta: null, error: error.message ?? 'No se pudo leer el documento.' };
     const doc = data?.documentos?.[0];
@@ -339,6 +341,25 @@ export async function recibirRepartoDeCompra(id, vences) {
     anotar('COMPRA_REPARTO_RECIBIDO', id, { ok: !msg, comprobado: data?.comprobado ?? null, error: msg });
     return { resultado: msg ? null : data, error: msg };
 }
+
+/** Una acción de la carga que sólo LEE el sistema para comprobar algo. */
+async function comprobar(accion, id, auditoria) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion, id } });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar(auditoria, id, { ok: !msg, estado: data?.estado ?? null, error: msg });
+    return { resultado: msg ? null : data, error: msg };
+}
+
+/** Un envío a la sala que quedó sin saber si entró: se le pregunta al sistema. */
+export const comprobarRepartoDeCompra = (id) => comprobar('reparto_comprobar', id, 'COMPRA_REPARTO_COMPROBADO');
+/** Un erróneo cuya salida se cortó: ¿bajó vencidos? */
+export const comprobarSalidaErroneo = (id) => comprobar('erroneo_comprobar', id, 'COMPRA_ERRONEO_COMPROBADO');
+/** Un erróneo que se recibió a mano en vencidos: ¿ya entró su traslado? */
+export const erroneoYaEnVencidos = (id) => comprobar('erroneo_ya_en_vencidos', id, 'COMPRA_ERRONEO_EN_VENCIDOS');
 
 /* ── Pedir fechas de vencimiento a una sala (2026-10-30) ─────────────────────
  * Facturas que no traen vencimiento (Sarita): la mercadería está en la sala,

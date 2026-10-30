@@ -128,6 +128,13 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'compra-soltar-trabados', slug: null, cadencia: '*/10 * * * *',
+    corridasDia: 144, sistema: 0,
+    motivo: 'Cargar compra (auditoría 2026-10-30): pasa a «sin verificar» lo que quedó más de 15 min a '
+          + 'medio camino (envío, reparto, recepción, salida, nota en el libro) porque la función se '
+          + 'cortó. Cinco UPDATE sobre tablas de decenas de filas, por índice de estado. Sólo la base propia.',
+  },
+  {
     job: 'seguridad-vigilancia-diaria', slug: null, cadencia: '0 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'La vigilancia de seguridad (2026-10-28, PENDIENTES 13): cuentas sin uso en 60 días, cuentas '

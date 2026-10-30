@@ -137,12 +137,15 @@ interface OpcionesPedido {
   cuerpoJson?: unknown;
   extra?: Record<string, string>;
   timeoutMs?: number;
+  /** Una ESCRITURA va con 1: reintentar tras un corte puede escribir dos veces
+   *  (el sistema guarda aunque la respuesta no llegue). Default 3, para leer. */
+  reintentos?: number;
 }
 
 export async function pedir(
   cookie: string, url: string, datos?: URLSearchParams, opts: OpcionesPedido = {},
 ): Promise<string> {
-  const { cuerpoJson, extra, timeoutMs = 45_000 } = opts;
+  const { cuerpoJson, extra, timeoutMs = 45_000, reintentos = 3 } = opts;
   const hayCuerpo = datos !== undefined || cuerpoJson !== undefined;
   return await conReintento(async () => {
     const res = await fetch(url, {
@@ -164,7 +167,7 @@ export async function pedir(
     if (/name\s*=\s*["']password/i.test(texto.slice(0, 4000)))
       throw new Error("La sesión del ERP caducó (devolvió el login).");
     return texto;
-  });
+  }, reintentos);
 }
 
 /** Lee el `{typeinfo,msg}` del ERP. Un rechazo llega con HTTP 200. */

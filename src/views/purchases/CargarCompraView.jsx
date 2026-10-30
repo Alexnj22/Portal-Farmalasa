@@ -26,7 +26,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
     fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
-    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo,
+    fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
 } from '@nucleo/data/cargarCompra';
@@ -338,8 +338,8 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
                 )}
             </LiquidModal.Body>
             <LiquidModal.Footer>
-                <div className="flex items-center gap-2 w-full">
-                    <p className="text-micro text-content-3 flex-1">
+                <div className="flex items-center gap-2 w-full flex-wrap">
+                    <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
                         {res?.listo ? 'Se crea en el sistema y queda elegido en este renglón.' : 'Revisa los datos antes de crearlo.'}
                     </p>
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
@@ -357,6 +357,12 @@ function NuevoProducto({ renglon, factor, documentId, manualId = null, onCerrar,
         </LiquidModal>
     );
 }
+
+/** Qué renglones trae el documento, para no aplicar un borrador a otros. */
+const huellaDe = (renglones) => (renglones ?? []).map(r => [r.codigo_proveedor, r.descripcion, r.cantidad].join('|')).join('\n');
+
+/** La llave de un renglón: su código del proveedor, o su posición si no trae. */
+const claveDe = (r, i) => r.codigo_proveedor || `#${i}`;
 
 function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null }) {
     const [p, setP]           = useState(null);
@@ -380,6 +386,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     // no es mercadería. `saliendo` = qué se está por decidir en el pie.
     const [saliendo, setSaliendo] = useState(false);
     const [resolviendo, setResolv] = useState(false);
+    const [confProv, setConfProv] = useState(false);
     const sacarDeLaLista = async (motivo, receiptId = null) => {
         setResolv(true);
         const { error: e } = await resolverDocumento(doc.document_id, motivo, receiptId);
@@ -402,14 +409,17 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // Lo que la persona ya había ajustado sobre ESTE documento vuelve: la
         // sesión se cierra sola a los pocos minutos y una factura de 30
         // renglones no se vuelve a teclear.
-        const b = loadDraft(claveBorrador);
-        setAjustes(b?.ajustes ?? Object.fromEntries(propuesta.renglones.map((r, i) => [i, ajusteInicial(r)])));
+        // Sólo si los renglones son LOS MISMOS: el borrador va por posición, y
+        // una factura en papel corregida puede haber cambiado el orden.
+        const guardado = loadDraft(claveBorrador);
+        const b = guardado?.huella === huellaDe(propuesta.renglones) ? guardado : null;
+        setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, b?.ajustes?.[i] ?? ajusteInicial(r)])));
         setUso(b?.uso ?? 'venta');
         setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
     }, [doc.document_id, doc.manual_id, claveBorrador]);
 
     useEffect(() => {
-        if (p) saveDraft(claveBorrador, { ajustes, uso, dias });
+        if (p) saveDraft(claveBorrador, { ajustes, uso, dias, huella: huellaDe(p.renglones) });
     }, [p, ajustes, uso, dias, claveBorrador]);
 
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
@@ -452,15 +462,20 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         setRes(null);
     };
 
+    // Sin código del proveedor (un papel, algunos DTE) no hay qué aprender:
+    // la elección vale para ESTE renglón y nada más.
     const confirmar = async (renglon, i, producto) => {
-        setG(renglon.codigo_proveedor);
-        const { error: e } = await confirmarProducto(
-            p.documento.emisor_nit, renglon.codigo_proveedor, producto.id,
-            { proveedor: p.documento.emisor, producto: producto.nombre },
-            ajustes[i]?.factor);
-        setG(null);
-        if (e) { setError(e); return; }
-        setEleg(x => ({ ...x, [renglon.codigo_proveedor]: { product_id: producto.id, nombre: producto.nombre, factor: ajustes[i]?.factor } }));
+        const k = claveDe(renglon, i);
+        if (renglon.codigo_proveedor) {
+            setG(k);
+            const { error: e } = await confirmarProducto(
+                p.documento.emisor_nit, renglon.codigo_proveedor, producto.id,
+                { proveedor: p.documento.emisor, producto: producto.nombre },
+                ajustes[i]?.factor);
+            setG(null);
+            if (e) { setError(e); return; }
+        }
+        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor: ajustes[i]?.factor } }));
         setBusc(null);
         setRes(null);
     };
@@ -469,11 +484,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     // de barras o por el diccionario. Un parecido NUNCA viaja sin confirmar,
     // por alto que sea: acierta 91.5 % y un inventario mal cargado no avisa.
     // La revisión lo devuelve como «sin producto elegido», que es lo que es.
-    const productoDe = (r) => elegidos[r.codigo_proveedor]?.product_id
+    const productoDe = (r, i) => elegidos[claveDe(r, i)]?.product_id
         ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) ? r.producto_id : null);
 
     const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, {
-        product_id: productoDe(r),
+        product_id: productoDe(r, i),
         factor: Number(ajustes[i]?.factor) || 1,
         lote: ajustes[i]?.lote || null,
         vence: ajustes[i]?.vence || null,
@@ -481,13 +496,16 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         reparto: aRepartir(ajustes[i]?.reparto),
     }]));
 
+    // Lo que se revisa y lo que se manda es esta MISMA firma.
+    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias) });
+
     // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
     // algo cambió, así que acá se le pasan las mismas decisiones.
     const enviar = async () => {
         setEnv(true); setError('');
+        const rev = JSON.parse(resultado.firma);
         const { resultado: r, error: e } = await enviarCarga({
-            documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, cargaId: resultado.carga_id, uso, renglones: decisiones(),
-            diasCredito: dias === '' ? null : Number(dias),
+            documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, cargaId: resultado.carga_id, ...rev,
         });
         setEnv(false); setConf(false);
         setEnvio({ ...(r ?? {}), error: e });
@@ -496,14 +514,15 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
 
     const revisar = async () => {
         setRev(true); setError(''); setRes(null); setEnvio(null);
-        const renglones = decisiones();
+        const firma = firmaActual();
         const { resultado: res, error: e } = await simularCarga({
-            documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, uso, renglones,
-            diasCredito: dias === '' ? null : Number(dias),
+            documentId: doc.document_id ?? null, manualId: doc.manual_id ?? null, ...JSON.parse(firma),
         });
         setRev(false);
         if (e) { setError(e); return; }
-        setRes(res);
+        // La firma viaja con el resultado: si mientras se revisaba la persona
+        // cambió algo, la revisión que llega ya no es la de la pantalla.
+        setRes({ ...res, firma });
     };
 
     // El aviso se cuenta ACÁ, con lo que la persona ya resolvió en pantalla
@@ -511,7 +530,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     // servidor es la foto de cuando se abrió: con él, dos renglones recién
     // confirmados seguían saliendo «por confirmar» junto a su sello verde.
     const estado = (p?.renglones ?? []).map((r, i) => {
-        const confirmado = !!elegidos[r.codigo_proveedor];
+        const confirmado = !!elegidos[claveDe(r, i)];
         return {
             sin_producto: !r.producto_id && !confirmado,
             a_confirmar: !!r.producto_id && !r.seguro && !confirmado,
@@ -527,6 +546,10 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     };
     const faltan = estado.filter(e => e.sin_producto || e.a_confirmar || e.sin_lote || e.sin_vencimiento).length;
     const revision = resultado?.revision;
+    const revisionVigente = !!(p && resultado?.firma && resultado.firma === firmaActual());
+    // Ya se mandó (o no se sabe): no se revisa ni se manda de nuevo desde acá.
+    const yaMandada = envio?.enviada === true || envio?.enviada === null
+        || ['enviando', 'sin_verificar', 'verificada'].includes(estadoCarga?.estado);
     const pendientesDeVence = (revision?.renglones ?? []).filter(x => x.vence_pendiente).length;
     const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);
     // El costo que trae ESTA factura contra el que tiene Bodega, y el margen
@@ -548,9 +571,9 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const conMargenMalo = [...costos.values()].filter(c => c.alerta).length;
 
     return (
-        <LiquidModal open onClose={onCerrar} maxWidth="max-w-5xl"
+        <LiquidModal open onClose={() => !enviando && onCerrar()} maxWidth="max-w-5xl"
             ariaLabel={`Compra propuesta de ${doc.emisor_nombre}`}>
-            <LiquidModal.Header icono={PackagePlus} tono="brand" titulo={doc.emisor_nombre} onClose={onCerrar}
+            <LiquidModal.Header icono={PackagePlus} tono="brand" titulo={doc.emisor_nombre} onClose={() => !enviando && onCerrar()}
                 subtitulo={<>
                     {fmtFecha(doc.fecha_emision)} · {formatMoney(doc.monto_total)}
                     {resumen && ` · ${resumen.renglones} renglones`}
@@ -647,9 +670,9 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                             {envio.reparto && (envio.reparto.enviando
                                 ? <> Se está enviando a {envio.reparto.salas === 1 ? '1 sala' : `${envio.reparto.salas} salas`}: lo reciben en Traslados → En camino.</>
                                 : <> <b>No se envió a las salas</b> porque la carga no se pudo comprobar: hay que enviarlo a mano.</>)}
-                            {envio.vencidos && (envio.vencidos.movidos > 0
-                                ? <> Lo marcado como error ya está en Bodega de vencidos (traslado {envio.vencidos.traslado}).</>
-                                : <> <b>Lo marcado como error NO se pasó a vencidos:</b> {envio.vencidos.error}</>)}
+                            {envio.vencidos && (envio.vencidos.en_curso
+                                ? <> Lo marcado como error se está pasando a Bodega de vencidos: se ve en la pestaña «Por error».</>
+                                : <> <b>Lo marcado como error NO se pasó a vencidos</b> porque la carga no se pudo comprobar: hay que pasarlo a mano.</>)}
                         </Notice>
                     ) : envio.enviada === false ? (
                         <Notice variant="danger" icon={AlertTriangle}>
@@ -734,11 +757,12 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
 
                     <div className="flex flex-col gap-2 mt-3">
                         {p.renglones.map((r, i) => {
-                            const elegido = elegidos[r.codigo_proveedor];
+                            const k = claveDe(r, i);
+                            const elegido = elegidos[k];
                             const o = ORIGEN[elegido ? 'aprendido' : r.match_origen] ?? null;
                             const Icono = o?.icon ?? HelpCircle;
                             const aj = ajustes[i] ?? ajusteInicial(r);
-                            const conProducto = !!productoDe(r);
+                            const conProducto = !!productoDe(r, i);
                             const factorCambio = conProducto && r.codigo_proveedor
                                 && Number(aj.factor) !== Number(elegido?.factor ?? r.factor_proveedor ?? 1);
                             const sim = entraComo.get(i);
@@ -789,16 +813,16 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                         {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
                                                     </Button>
                                                 )}
-                                                {puedeEditar && r.codigo_proveedor && !elegido && !r.listo && (
+                                                {puedeEditar && !elegido && !r.listo && (
                                                     <Button size="xs" variant="ghost"
-                                                        loading={guardando === r.codigo_proveedor}
-                                                        onClick={() => setBusc(buscando === r.codigo_proveedor ? null : r.codigo_proveedor)}>
+                                                        loading={guardando === k}
+                                                        onClick={() => setBusc(buscando === k ? null : k)}>
                                                         {r.producto_id ? 'Es otro' : 'Elegir'}
                                                     </Button>
                                                 )}
                                                 {puedeEditar && r.producto_id && !elegido && r.match_origen === 'parecido' && (
                                                     <Button size="xs"
-                                                        loading={guardando === r.codigo_proveedor}
+                                                        loading={guardando === k}
                                                         onClick={() => confirmar(r, i, { id: r.producto_id, nombre: r.producto })}>
                                                         Es correcto
                                                     </Button>
@@ -813,8 +837,8 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 value={aj.cargar ?? cargarDe(r, aj.factor)}
                                                 onChange={e => ajustarCarga(i, r, e.target.value)}
                                                 labelAction={factorCambio && puedeEditar ? (
-                                                    <Button size="xs" variant="ghost" loading={guardando === r.codigo_proveedor}
-                                                        onClick={() => confirmar(r, i, { id: productoDe(r), nombre: elegido?.nombre ?? r.producto })}>
+                                                    <Button size="xs" variant="ghost" loading={guardando === k}
+                                                        onClick={() => confirmar(r, i, { id: productoDe(r, i), nombre: elegido?.nombre ?? r.producto })}>
                                                         Recordar
                                                     </Button>
                                                 ) : null} />
@@ -830,7 +854,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
                                     )}
                                     {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
-                                    {buscando === r.codigo_proveedor && (
+                                    {buscando === k && (
                                         <BuscadorProducto
                                             onElegir={(prod) => confirmar(r, i, prod)}
                                             onCancelar={() => setBusc(null)} />
@@ -865,30 +889,36 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                     <Button size="sm" variant="secondary" loading={resolviendo}
                         onClick={() => sacarDeLaLista('no_va_a_bodega')}>Sólo esta factura</Button>
                     <Button size="sm" variant="secondary" loading={resolviendo} disabled={!doc.emisor_nit}
-                        onClick={() => sacarDeLaLista('proveedor_no_va')}>Nada de este proveedor</Button>
+                        onClick={() => setConfProv(true)}>Nada de este proveedor</Button>
                 </div>
                 ) : (
-                <div className="flex items-center gap-2 w-full">
-                    <p className="text-micro text-content-3 flex-1">
+                <div className="flex items-center gap-2 w-full flex-wrap">
+                    <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
                         «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
                     </p>
                     {puedeEditar && !papel && !envio?.enviada && !estadoCarga && (
                         <Button size="sm" variant="ghost" onClick={() => setSaliendo(true)}>No va a Bodega</Button>
                     )}
                     {puedeEditar && papel && !envio?.enviada && onCorregirPapel && (
-                        <Button size="sm" variant="ghost" onClick={onCorregirPapel}>Corregir factura</Button>
+                        <Button size="sm" variant="ghost" onClick={() => { clearDraft(claveBorrador); onCorregirPapel(); }}>Corregir factura</Button>
                     )}
-                    <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
-                    {puedeEditar && p && !envio?.enviada && (
-                        <Button size="sm" variant={revision?.listo ? 'ghost' : 'primary'} loading={revisando}
+                    <Button size="sm" variant="ghost" disabled={enviando} onClick={onCerrar}>Cerrar</Button>
+                    {puedeEditar && p && !yaMandada && (
+                        <Button size="sm" variant={revision?.listo && revisionVigente ? 'ghost' : 'primary'} loading={revisando}
                             disabled={enviando} onClick={revisar}>Revisar carga</Button>
                     )}
-                    {puedeEditar && revision?.listo && resultado?.carga_id && (
+                    {puedeEditar && !yaMandada && revision?.listo && revisionVigente && resultado?.carga_id && (
                         <Button size="sm" onClick={() => setConf(true)} disabled={revisando}>Cargar en Bodega</Button>
                     )}
                 </div>
                 )}
             </LiquidModal.Footer>
+            <ConfirmModal isOpen={confProv} onClose={() => !resolviendo && setConfProv(false)}
+                onConfirm={async () => { await sacarDeLaLista('proveedor_no_va'); setConfProv(false); }}
+                isProcessing={resolviendo} isDestructive={false}
+                title="¿Nada de este proveedor va a Bodega?"
+                message={`Las facturas de ${doc.emisor_nombre} salen de esta lista: las de hoy y todas las que lleguen después.`}
+                confirmText="Sí, sacarlas" />
             <ConfirmModal isOpen={confirmando} onClose={() => !enviando && setConf(false)} onConfirm={enviar}
                 isProcessing={enviando} isDestructive={false}
                 title="¿Cargar esta compra en Bodega?"
@@ -1191,6 +1221,7 @@ const ESTADO_ERRONEO = {
     con_nota:    { label: 'Con nota de crédito', variant: 'success' },
     saliendo:    { label: 'Saliendo…', variant: 'warning' },
     salio:       { label: 'Ya salió', variant: 'neutral' },
+    sin_verificar: { label: 'Comprobar si salió', variant: 'danger' },
 };
 
 /**
@@ -1228,7 +1259,10 @@ function NotaEnPapel({ fila, onListo, onCancelar }) {
             </div>
             {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
             <div className="flex items-center gap-2">
-                <Button size="xs" loading={guardando} onClick={guardar}>Adjuntar nota en papel</Button>
+                <Button size="xs" loading={guardando} onClick={guardar}
+                    disabled={!n.serie.trim() || !n.numero.trim() || !n.fecha || !(Number(n.subtotal) > 0) || !(Number(n.iva) > 0)}>
+                    Adjuntar nota en papel
+                </Button>
                 <Button size="xs" variant="ghost" onClick={onCancelar}>Cancelar</Button>
             </div>
         </div>
@@ -1250,9 +1284,12 @@ function TabErroneos({ puedeEditar }) {
     const [guardando, setG]   = useState(null);
     const [enPapel, setEnPapel] = useState(null);   // id del renglón con el formulario abierto
 
+    // El error de la LISTA no borra el de una acción: «Dar salida» avisaba y
+    // la recarga que venía detrás lo dejaba en blanco.
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchErroneos();
-        setError(e ?? ''); setFilas(f);
+        if (e) setError(e);
+        setFilas(f);
     }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
@@ -1268,6 +1305,13 @@ function TabErroneos({ puedeEditar }) {
         cargar();
     };
     const [confirmaSalida, setConfSal] = useState(null);
+    const conSistema = async (fila, fn) => {
+        setG(fila.id); setError('');
+        const { error: e } = await fn(fila.id);
+        setG(null);
+        if (e) setError(e);
+        cargar();
+    };
     const darSalida = async (fila) => {
         setG(fila.id); setError('');
         const { resultado, error: e } = await darSalidaErroneo(fila.id);
@@ -1297,16 +1341,19 @@ function TabErroneos({ puedeEditar }) {
                 const est = ESTADO_ERRONEO[f.estado] ?? ESTADO_ERRONEO.por_mover;
                 const opciones = (f.notas_candidatas ?? []).map(n => ({
                     value: String(n.id),
-                    label: `${n.numero ?? n.id} · ${n.fecha} · ${formatMoney(n.total)}${n.relacionada ? ' · de esta factura' : ''}`,
+                    label: `${n.numero ?? n.id} · ${fechaNumerica(n.fecha)} · ${formatMoney(n.total)}${n.relacionada ? ' · de esta factura' : ''}`,
                 }));
-                const nota = elegida[f.id] ?? (opciones[0]?.value ?? '');
+                // Se propone sólo la nota que dice corregir ESTA factura; otra
+                // del mismo proveedor se elige a mano.
+                const relacionada = (f.notas_candidatas ?? []).find(n => n.relacionada);
+                const nota = elegida[f.id] ?? (relacionada ? String(relacionada.id) : '');
                 return (
                     <div key={f.id} data-surface="card" className="px-3 py-2.5">
                         <div className="flex items-start gap-3 flex-wrap">
                             <div className="flex-1 min-w-[14rem]">
                                 <p className="text-label font-black text-content">{f.descripcion}</p>
                                 <p className="text-micro text-content-3">
-                                    {f.emisor_nombre} · factura {f.factura} ({f.factura_fecha})
+                                    {f.emisor_nombre} · factura {f.factura} ({fechaNumerica(f.factura_fecha)})
                                     {f.erp_compra_id ? ` · compra ${f.erp_compra_id}` : ''}
                                     {f.es_generico ? ' · en Bodega como PRODUCTO ERRONEO DE PROVEEDOR' : ''}
                                 </p>
@@ -1316,6 +1363,14 @@ function TabErroneos({ puedeEditar }) {
                                     {f.erp_traslado_id ? ` · traslado ${f.erp_traslado_id}` : ''}
                                 </p>
                                 {f.nota && <p className="text-micro text-warning font-bold mt-0.5">{f.nota}</p>}
+                                {/* El traslado a vencidos salió pero no se comprobó (o se recibió a
+                                    mano): se le pregunta al sistema antes de poder darle salida. */}
+                                {puedeEditar && !f.en_vencidos_at && f.erp_traslado_id && !['salio', 'saliendo', 'sin_verificar'].includes(f.estado) && (
+                                    <Button size="xs" variant="ghost" className="mt-1" loading={guardando === f.id}
+                                        onClick={() => conSistema(f, erroneoYaEnVencidos)}>
+                                        Ya se recibió en vencidos
+                                    </Button>
+                                )}
                             </div>
                             <div className="text-right shrink-0">
                                 <p className="text-label font-black text-content tabular-nums">
@@ -1340,9 +1395,14 @@ function TabErroneos({ puedeEditar }) {
                                         Quitar
                                     </Button>
                                 )}
-                                {puedeEditar && f.estado === 'con_nota' && f.erp_traslado_id && (
+                                {puedeEditar && f.estado === 'con_nota' && f.en_vencidos_at && (
                                     <Button size="xs" disabled={guardando === f.id} onClick={() => setConfSal(f)}>
                                         {guardando === f.id ? 'Dando salida…' : 'Dar salida'}
+                                    </Button>
+                                )}
+                                {puedeEditar && f.estado === 'sin_verificar' && (
+                                    <Button size="xs" loading={guardando === f.id} onClick={() => conSistema(f, comprobarSalidaErroneo)}>
+                                        Comprobar
                                     </Button>
                                 )}
                             </div>
@@ -1797,8 +1857,8 @@ function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
                 {error && <Notice variant="danger" icon={AlertTriangle} className="mt-3">{error}</Notice>}
             </LiquidModal.Body>
             <LiquidModal.Footer>
-                <div className="flex items-center gap-2 w-full">
-                    <p className="text-micro text-content-3 flex-1">
+                <div className="flex items-center gap-2 w-full flex-wrap">
+                    <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
                         Al guardar se abre la carga: ahí se eligen los productos, el lote y el vencimiento, igual que con una factura electrónica.
                     </p>
                     <Button size="sm" variant="ghost" onClick={onCerrar}>Cerrar</Button>
@@ -1812,10 +1872,14 @@ function FacturaEnPapel({ inicial, onCerrar, onGuardada }) {
 /** Las facturas en papel escritas y todavía sin cargar. */
 function FacturasEnPapel({ facturas, puedeEditar, onAbrir, onDescartada }) {
     const [descartando, setDesc] = useState(null);
+    const [procesando, setProc] = useState(false);
     const [error, setError] = useState('');
     if (!facturas?.length) return null;
     const descartar = async () => {
+        if (procesando) return;
+        setProc(true);
         const { error: e } = await descartarFacturaEnPapel(descartando.id);
+        setProc(false);
         setDesc(null);
         if (e) { setError(e); return; }
         onDescartada();
@@ -1843,7 +1907,8 @@ function FacturasEnPapel({ facturas, puedeEditar, onAbrir, onDescartada }) {
                     </div>
                 ))}
             </div>
-            <ConfirmModal isOpen={!!descartando} onClose={() => setDesc(null)} onConfirm={descartar}
+            <ConfirmModal isOpen={!!descartando} onClose={() => !procesando && setDesc(null)} onConfirm={descartar}
+                isProcessing={procesando}
                 title="Descartar factura en papel"
                 message={descartando ? `La factura ${descartando.numero} de ${descartando.proveedor_nombre} sale de la lista sin cargarse.` : ''}
                 confirmText="Descartar" />
@@ -1854,8 +1919,11 @@ function FacturasEnPapel({ facturas, puedeEditar, onAbrir, onDescartada }) {
 /* ─── La vista ────────────────────────────────────────────────────────────── */
 export default function CargarCompraView() {
     const { hasPermission } = useAuth();
-    const puedeEditar = hasPermission('compras', 'can_edit')
-        || hasPermission('facturas_compra', 'can_edit');
+    // El módulo de esta pantalla es `cargar_compra`: es el que mira la ruta y
+    // el servidor. Con sólo `compras`, quien carga (Jefe/a de Compras) la veía
+    // en solo lectura.
+    const puedeEditar = hasPermission('cargar_compra', 'can_edit')
+        || hasPermission('compras', 'can_edit');
 
     const [tab, setTab]     = usePestanaEnUrl(TABS, 'facturas');
     const [filas, setFilas] = useState(null);
@@ -1956,7 +2024,7 @@ export default function CargarCompraView() {
                         <FilterBar onClear={() => setDias('30')} activeCount={dias !== '30' ? 1 : 0}>
                             <FilterBar.Section active={dias !== '30'} onClear={() => setDias('30')} label="período">
                                 <div style={{ width: '175px' }}>
-                                    <LiquidSelect value={dias} onChange={v => setDias(v || '60')}
+                                    <LiquidSelect value={dias} onChange={v => setDias(v || '30')}
                                         options={PERIODOS} icon={CalendarRange} compact bare clearable={false} />
                                 </div>
                             </FilterBar.Section>

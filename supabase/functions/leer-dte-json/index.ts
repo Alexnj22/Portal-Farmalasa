@@ -493,7 +493,7 @@ Deno.serve(async (req: Request) => {
             sin_lote: renglones.filter((r) => !r.lote).length,
             sin_vencimiento: renglones.filter((r) => !r.vence).length,
           },
-          renglones: renglones.slice(0, Math.min(Number(max_items) || MAX_ITEMS, 30)),
+          renglones: renglones.slice(0, Math.min(Number(max_items) || MAX_ITEMS, 300)),
         });
         continue;
       }

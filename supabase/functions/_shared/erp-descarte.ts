@@ -47,6 +47,9 @@ export interface LineaDescarte {
   factor: number;
   cantidad: number;
   descripcion?: string;
+  /** Si viene, se descarta ESE lote y no el que vence primero (un producto
+   *  devuelto sale con el lote con que entró). */
+  lote?: string | null;
 }
 
 export type ResultadoDescarte =
@@ -143,8 +146,11 @@ export async function descartarUnaLinea(opc: {
   let idLote = "0";
   let loteUsado: { numero: string; vence: string } | null = null;
   if (regulado) {
-    const lote = lotes.filter((x) => x.stock >= enUnidades).sort((a, b) => a.vence.localeCompare(b.vence))[0];
+    const lote = l.lote
+      ? lotes.find((x) => x.numero === String(l.lote) && x.stock >= enUnidades)
+      : lotes.filter((x) => x.stock >= enUnidades).sort((a, b) => a.vence.localeCompare(b.vence))[0];
     if (!lote) {
+      if (l.lote) return { ok: false, codigo: "SIN_LOTE", error: `${nombre}: el lote ${l.lote} no alcanza en esta ubicación.` };
       return { ok: false, codigo: "SIN_LOTE",
                error: `${nombre} lleva control de lote y ningún lote de esta sucursal alcanza para el premio.` };
     }
@@ -154,11 +160,16 @@ export async function descartarUnaLinea(opc: {
 
   const datos = [l.erp_product_id, costo, precio, l.cantidad, unidad, "", elegida.id, idLote].join("|") + "#";
   const total = Number(costo || 0) * Number(l.cantidad);
-  const resp = leerRespuesta(await pedir(cookie, DESCARGO, new URLSearchParams({
+  // Una sola vez: un descarte reenviado tras un corte descarta dos veces.
+  const crudo = await pedir(cookie, DESCARGO, new URLSearchParams({
     process: "insert", datos, cuantos: "1", total: total.toFixed(4), fecha: hoySV(),
     concepto, origen: String(erpUbicacion), iden,
-  }), { extra: { Referer: DESCARGO } }));
+  }), { extra: { Referer: DESCARGO }, reintentos: 1 });
+  const resp = leerRespuesta(crudo);
   if (!resp.ok) {
+    let legible = true;
+    try { JSON.parse(crudo); } catch { legible = false; }
+    if (!legible) return { ok: false, codigo: "INCIERTO", error: "El sistema contestó algo que no se entiende: puede haber entrado." };
     return { ok: false, codigo: "RECHAZADO", error: `El sistema de la caja no aceptó el descarte: ${resp.msg || "sin detalle"}` };
   }
 

@@ -129,15 +129,24 @@ function canonico(v: unknown): string {
  *    `fallida`: `fallida` deja volver a mandar, y eso sólo vale si el sistema
  *    DIJO que no.
  */
+/** Lo de una revisión que mueve inventario fuera del sobre: reparto y erróneos. */
+function loQueSeMueve(rev: any) {
+  return {
+    reparto: (rev?.reparto ?? []).map((l: any) => [l.renglon, l.branch_id, l.erp_product_id, l.paquetes, l.unidad]),
+    erroneos: (rev?.erroneos ?? []).map((e: any) => [e.renglon, e.product_id, e.unidades]),
+  };
+}
+
 async function enviarCompra(admin: any, x: {
   cookie: string; documentId: number | null; manualId: number | null; cargaId: number; sobre: Record<string, unknown>;
   revision: any; lineas: LineaSobre[]; erpProveedor: number;
   quien: string; emisor: { nit: string | null; nombre: string | null };
+  numeroControl: string | null; totalDoc: number | null;
 }) {
   if (!x.revision.listo) return { enviada: false, revision: x.revision, error: "La revisión tiene problemas: no se mandó." };
   if (!Number.isFinite(x.cargaId)) return { enviada: false, error: "Falta la revisión que se aprobó." };
 
-  const { data: rev, error: eR } = await admin.from("compra_carga").select("id, document_id, manual_id, estado, sobre, created_at")
+  const { data: rev, error: eR } = await admin.from("compra_carga").select("id, document_id, manual_id, estado, sobre, revision, created_at")
     .eq("id", x.cargaId).maybeSingle();
   if (eR) throw eR;
   if (!rev || (rev.document_id ?? null) !== x.documentId || (rev.manual_id ?? null) !== x.manualId || rev.estado !== "simulada") {
@@ -151,6 +160,11 @@ async function enviarCompra(admin: any, x: {
   // cual daba «algo cambió» siempre — pasó en la primera prueba, 29-oct.
   if (canonico(rev.sobre) !== canonico(x.sobre)) {
     return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisa la carga de nuevo." };
+  }
+  // El reparto a salas y lo marcado como error NO van dentro del sobre, y
+  // también mueven inventario: tienen que ser los mismos que se revisaron.
+  if (canonico(loQueSeMueve(rev.revision)) !== canonico(loQueSeMueve(x.revision))) {
+    return { enviada: false, error: "Cambió lo que va a las salas o lo marcado como error: revisa la carga de nuevo." };
   }
   // Freno de la ubicación: una revisión guardada antes del arreglo trae
   // `destino` "3" (Salud 1). Se compara contra la ubicación VIVA de Bodega.
@@ -166,7 +180,8 @@ async function enviarCompra(admin: any, x: {
   // emisión a hoy, en la lista liviana. Si no se puede mirar, no se manda.
   const yaEsta = await (x.manualId
     ? papelYaRegistrado(x.cookie, String(x.sobre.numero_doc), String(x.sobre.tipo_doc), x.erpProveedor)
-    : yaEnBodega(x.cookie, String(x.sobre.fecha), String(x.sobre.numero_doc)))
+    : yaEnBodega(x.cookie, String(x.sobre.fecha), String(x.sobre.numero_doc),
+        { control: x.numeroControl, totales: [x.totalDoc, Number(x.sobre.total)] }))
     .catch((e) => ({ error: String(e?.message ?? e) }));
   if ("error" in yaEsta) return { enviada: false, error: `No se pudo comprobar si Bodega ya la tiene: ${yaEsta.error}` };
   if (yaEsta.compra) return { enviada: false, error: `Bodega ya la tiene cargada (compra ${yaEsta.compra}): no se mandó.` };
@@ -176,7 +191,15 @@ async function enviarCompra(admin: any, x: {
   // vuelta no lo dicen: la 6472 pasó las dos verificaciones con sus 150
   // unidades en una ubicación que no era la de Bodega. Sin esta lectura no se
   // manda — no habría cómo saber dónde quedó.
-  const estanteAntes = await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante);
+  // Lo que entra al estante: sólo productos (una compra para consumo no mueve
+  // inventario, y su `id_producto` no es un número).
+  const esperado = new Map<number, number>();
+  for (const l of JSON.parse(String(x.sobre.json_arr)) as { id_producto: string; cant: string; unidad: string }[]) {
+    const id = Number(l.id_producto);
+    if (!(id > 0)) continue;
+    esperado.set(id, (esperado.get(id) ?? 0) + Number(l.cant) * (Number(l.unidad) || 1));
+  }
+  const estanteAntes = esperado.size ? await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante) : new Map<number, number>();
   if (!estanteAntes) return { enviada: false, error: "No se pudo leer la existencia de Bodega para comprobar la carga: no se mandó." };
 
   const { data: tomada, error: eT } = await admin.from("compra_carga")
@@ -188,8 +211,12 @@ async function enviarCompra(admin: any, x: {
   }
   if (!tomada?.length) return { enviada: false, error: "Esa revisión ya se usó." };
 
-  const marcar = (estado: string, extra: Record<string, unknown> = {}) =>
-    admin.from("compra_carga").update({ estado, updated_at: new Date().toISOString(), ...extra }).eq("id", x.cargaId);
+  // Si anotar falla, al menos queda en el registro con lo que pasó: la fila se
+  // queda en `enviando` y el barrido de trabados la pasa a revisar.
+  const marcar = async (estado: string, extra: Record<string, unknown> = {}) => {
+    const { error } = await admin.from("compra_carga").update({ estado, updated_at: new Date().toISOString(), ...extra }).eq("id", x.cargaId);
+    if (error) console.error("[cargar-compra-erp] anotar la carga", x.cargaId, estado, JSON.stringify(extra).slice(0, 300), error.message);
+  };
 
   const form = new URLSearchParams();
   for (const [k, v] of Object.entries(x.sobre)) {
@@ -232,15 +259,10 @@ async function enviarCompra(admin: any, x: {
   // ¿Entró al estante? Cada producto tiene que haber subido al menos lo que se
   // cargó (en unidades). Una venta o un traslado en el medio puede dar un
   // falso aviso; preferible a no enterarse de que la mercadería no está.
-  const estanteDespues = await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante);
+  const estanteDespues = esperado.size ? await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante) : new Map<number, number>();
   if (!estanteDespues) {
     verif.ok = false; verif.notas.push("No se pudo leer la existencia de Bodega después de cargar: comprobar que entró al estante.");
   } else {
-    const esperado = new Map<number, number>();
-    for (const l of JSON.parse(String(x.sobre.json_arr)) as { id_producto: string; cant: string; unidad: string }[]) {
-      const id = Number(l.id_producto);
-      esperado.set(id, (esperado.get(id) ?? 0) + Number(l.cant) * (Number(l.unidad) || 1));
-    }
     const faltan = [...esperado].filter(([id, u]) => (estanteDespues.get(id) ?? 0) - (estanteAntes.get(id) ?? 0) < u);
     if (faltan.length) {
       verif.ok = false;
@@ -273,16 +295,17 @@ async function enviarCompra(admin: any, x: {
 
   // Lo marcado como error del proveedor: se anota y, si la compra se
   // comprobó en el estante, se pasa a Bodega de vencidos.
+  // En segundo plano, como el reparto: son ~10 viajes al sistema y la
+  // respuesta ya va cerca del límite de la función. El resultado queda en
+  // `compra_renglon_erroneo` (pestaña «Por error»).
   let vencidos: unknown = null;
   const errs: Erroneo[] = x.revision.erroneos ?? [];
   if (errs.length) {
-    vencidos = await apartarErroneos(admin, x.cookie, errs, {
+    vencidos = { en_curso: verif.ok, cuantos: errs.length };
+    EdgeRuntime.waitUntil(apartarErroneos(admin, x.cookie, errs, {
       cargaId: x.cargaId, documentId: x.documentId, manualId: x.manualId, quien: x.quien, emisor: x.emisor,
       erpCompra: verif.compra, lineas: x.lineas, mover: verif.ok, estante,
-    }).catch(async (e) => {
-      console.error("[cargar-compra-erp] erróneos:", e?.message ?? e);
-      return { movidos: 0, error: `No se pudieron pasar a vencidos: ${e?.message ?? e}` };
-    });
+    }).catch((e) => console.error("[cargar-compra-erp] erróneos:", e?.message ?? e)));
   }
   // El reparto a salas, en background: son varios viajes al sistema por sala y
   // la respuesta no los espera. El rastro queda en `compra_reparto`.
@@ -305,16 +328,27 @@ async function enviarCompra(admin: any, x: {
  * El número guardado son 20 caracteres del código de generación: con eso se
  * compara. Una anulada también frena — en la duda, no se manda.
  */
-async function yaEnBodega(cookie: string, desde: string, numero: string): Promise<{ compra: number | null }> {
+async function yaEnBodega(cookie: string, desde: string, numero: string,
+  alt: { control: string | null; totales: (number | null)[] } = { control: null, totales: [] },
+): Promise<{ compra: number | null }> {
   const hoy = new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 10);
   const qs = `fechai=${desde}&fechaf=${hoy < desde ? desde : hoy}&draw=1&start=0&length=5000`;
   const t = await pedir(cookie, `${BASE}/admin_compras_fecha_dt.php?${qs}`, undefined, { timeoutMs: 60_000 });
-  const filas: any[][] = JSON.parse(t)?.data;
+  const lista = JSON.parse(t);
+  const filas: any[][] = lista?.data;
   if (!Array.isArray(filas)) throw new Error("la lista de compras no vino");
+  // Una lista recortada diría «no está» de una que sí está: mejor no mandar.
+  if (Number(lista?.recordsFiltered ?? 0) > filas.length) throw new Error("la lista de compras vino incompleta");
   const buscado = numero.toUpperCase();
+  // Bodega a veces la carga con el NÚMERO DE CONTROL (65 de 1,013 desde
+  // agosto). Sus 20 caracteres se repiten entre facturas del mismo emisor
+  // («DTE-03-M001P001-0000»), así que ahí manda además el total.
+  const control = String(alt.control ?? "").toUpperCase();
+  const totales = alt.totales.filter((t): t is number => t != null && Number.isFinite(t));
   const f = filas.find((r) => {
     const n = String(r[2] ?? "").replace(/<[^>]*>/g, "").trim().toUpperCase();
-    return n.length >= 8 && buscado.startsWith(n);
+    if (n.length >= 8 && buscado.startsWith(n)) return true;
+    return n.length >= 15 && control.startsWith(n) && totales.some((t) => Math.abs(Number(r[5]) - t) <= 0.05);
   });
   return { compra: f ? Number(f[0]) || -1 : null };
 }
@@ -460,7 +494,7 @@ async function crearProducto(
   let texto: string;
   try {
     texto = await pedir(cookie, `${BASE}/agregar_producto.php`, new URLSearchParams(sobre),
-      { extra: { Referer: `${BASE}/agregar_producto.php` } });
+      { extra: { Referer: `${BASE}/agregar_producto.php` }, reintentos: 1 });
   } catch (e) {
     // No se sabe si llegó: la fila queda tomada para que no se mande a ciegas.
     await marcar("sin_verificar", { error: `Sin respuesta: ${(e as Error)?.message ?? e}` });
@@ -482,8 +516,17 @@ async function crearProducto(
     return { error: "Se creó pero el sistema no dijo con qué número. Búscalo por nombre antes de volver a crearlo." };
   }
 
-  // Leerlo de vuelta: que exista con ese nombre y tenga su presentación.
-  const html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${id}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
+  // Leerlo de vuelta: que exista con ese nombre y tenga su presentación. Si
+  // la lectura falla, el producto YA existe: se anota su número igual.
+  let html: string;
+  try {
+    html = await pedir(cookie, `${BASE}/editar_producto.php?id_producto=${id}`, undefined, { extra: { Referer: `${BASE}/admin_producto.php` } });
+  } catch (e) {
+    await marcar("sin_verificar", { erp_product_id: id, error: `Creado, sin poder leerlo: ${(e as Error)?.message ?? e}` });
+    const { error: eP0 } = await admin.rpc("upsert_products_minimal", { p_rows: [{ id, nombre: x.nombre }] });
+    if (eP0) throw eP0;
+    return { creado: true, verificado: false, producto: { id, nombre: x.nombre }, notas: ["no se pudo leer la ficha recién creada"] };
+  }
   const leido = leerModelo(id, html);
   const notas: string[] = [];
   if (leido.nombre.toUpperCase() !== x.nombre) notas.push(`la ficha dice «${leido.nombre}»`);
@@ -579,7 +622,7 @@ async function avisarMargenBajo(admin: any, revision: any, proveedor: string | n
  */
 type Sala = { branch_id: number; erp: number; nombre: string; ubic: number };
 type LineaReparto = {
-  renglon: number; descripcion: string; branch_id: number; erp_product_id: number;
+  linea_idx?: number; renglon: number; descripcion: string; branch_id: number; erp_product_id: number;
   id_presentacion: string; unidad: number; paquetes: number; compra: string; venta: string;
   vence: string; vence_pendiente: boolean; numero_lote: string | null;
 };
@@ -647,18 +690,24 @@ async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[]
   if (eI) throw eI;
   if (!x.mover) return;
 
+  // La fila de un producto en el estante es la misma para todas las salas.
+  const filas = new Map<number, Awaited<ReturnType<typeof traerFila>>>();
   for (const [branchId, ls] of porSala) {
     const sala = salas.get(branchId);
-    const fila = (cambios: Record<string, unknown>) => admin.from("compra_reparto")
-      .update({ ...cambios, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId).eq("branch_id", branchId);
+    const fila = async (cambios: Record<string, unknown>) => {
+      const { error } = await admin.from("compra_reparto")
+        .update({ ...cambios, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId).eq("branch_id", branchId);
+      if (error) console.error("[cargar-compra-erp] anotar el reparto", x.cargaId, branchId, JSON.stringify(cambios).slice(0, 300), error.message);
+    };
+    if (!sala) continue;   // antes de tomarla: si no, quedaba «saliendo» sin haber mandado nada
     const { data: tomada, error: eT } = await admin.from("compra_reparto").update({ estado: "enviando", updated_at: new Date().toISOString() })
       .eq("compra_carga_id", x.cargaId).eq("branch_id", branchId).eq("estado", "por_enviar").select("id");
     if (eT) throw eT;
-    if (!tomada?.length || !sala) continue;
+    if (!tomada?.length) continue;
+    let mandado = false;
     try {
       const partes: string[] = [];
       let total = 0;
-      const filas = new Map<number, Awaited<ReturnType<typeof traerFila>>>();
       for (const l of ls) {
         if (!filas.has(l.erp_product_id)) filas.set(l.erp_product_id, await traerFila(cookie, l.erp_product_id, x.estante));
         const f = filas.get(l.erp_product_id)!;
@@ -676,19 +725,30 @@ async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[]
       const vale = pagina.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
       if (!vale) throw new Error("El sistema no entregó el número de vale.");
       const antes = await pendientesDeOrigen(cookie, x.estante);
+      mandado = true;
       const r = await pedir(cookie, TRASLADO, new URLSearchParams({
         process: "insert", datos: partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(partes.length),
         total: total.toFixed(4), fecha: hoySV(),
         concepto: armarConcepto(`PORTAL COMPRA ${x.erpCompra ?? ""} ${x.emisor ?? ""} A ${sala.nombre}`).concepto,
         origen: String(x.estante), id_suc_destino: String(sala.erp), id_ubicacion_destino: "0", numero_vale: vale,
-      }), { extra: { Referer: TRASLADO } });
+      }), { extra: { Referer: TRASLADO }, reintentos: 1 });
       let ok = false;
       try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
       const despues = await pendientesDeOrigen(cookie, x.estante);
-      const { id: idT } = await identificarTrasladoNuevo(cookie, antes, despues, pagina, sala.erp, []);
-      if (!ok && !idT) throw new Error(`El sistema no aceptó el traslado: ${r.slice(0, 300)}`);
+      // Sin la foto de ANTES («vacía» es también lo que devuelve cuando el
+      // listado falla) cualquier traslado viejo a esa sala parecería nuevo: el
+      // número no se confía.
+      const { id: idT0 } = await identificarTrasladoNuevo(cookie, antes, despues, pagina, sala.erp, []);
+      const idT = antes.size > 0 ? idT0 : null;
+      if (!ok && !idT) {
+        let legible = true;
+        try { JSON.parse(r); } catch { legible = false; }
+        if (legible) { await fila({ estado: "fallido", nota: `El sistema no aceptó el traslado: ${r.slice(0, 300)}` }); continue; }
+        await fila({ estado: "sin_verificar", nota: "El sistema contestó algo que no se entiende: buscar el traslado en el sistema antes de volver a enviar." });
+        continue;
+      }
       if (!idT) {
-        await fila({ estado: "fallido", nota: "El traslado salió pero no se pudo identificar su número: buscarlo en el sistema antes de volver a enviar." });
+        await fila({ estado: "sin_verificar", nota: "El traslado salió pero no se pudo identificar su número: buscarlo en el sistema antes de volver a enviar." });
         continue;
       }
       await fila({ estado: "enviado", erp_traslado_id: idT, enviado_at: new Date().toISOString(), nota: null });
@@ -699,7 +759,8 @@ async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[]
         { compra: x.erpCompra, traslado: idT },
       ).catch((e) => console.error("[cargar-compra-erp] aviso a la sala:", e?.message ?? e));
     } catch (e: any) {
-      await fila({ estado: "fallido", nota: String(e?.message ?? e).slice(0, 500) });
+      // Después de mandar, un error no dice que no salió.
+      await fila({ estado: mandado ? "sin_verificar" : "fallido", nota: (mandado ? "Se cortó después de mandar el traslado: buscarlo en el sistema. " : "") + String(e?.message ?? e).slice(0, 450) });
     }
   }
 }
@@ -712,7 +773,7 @@ async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[]
  */
 async function recibirReparto(admin: any, id: number, vences: Record<string, string>, quien: { id: string; name: string }) {
   if (!Number.isFinite(id)) return { error: "Falta el envío." };
-  const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_view");
+  const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_edit");
   if (permiso.roto) return { error: permiso.roto };
   const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
   if (eR) throw eR;
@@ -740,11 +801,19 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
     .eq("id", id).eq("estado", "enviado").select("id");
   if (eT) throw eT;
   if (!tomada?.length) return { error: "Otra persona lo está recibiendo." };
-  const volver = (nota: string) => admin.from("compra_reparto").update({ estado: "enviado", nota, updated_at: new Date().toISOString() }).eq("id", id);
+  const anotar = async (estado: string, nota: string) => {
+    const { error } = await admin.from("compra_reparto").update({ estado, nota, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) console.error("[cargar-compra-erp] anotar la recepción", id, estado, error.message);
+  };
+  const volver = (nota: string) => anotar("enviado", nota);
+  let mandado = false;
 
   try {
     const cookie = await sesionEn(sala.erp, login);
     const estado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
+    // La pantalla de recepción sigue pintando un traslado ya recibido: sin
+    // saber en qué está, no se recibe (sería recibirlo dos veces).
+    if (estado === "desconocido") { await volver("No se pudo comprobar si ya se recibió."); return { error: "No se pudo comprobar en el sistema si ya se recibió: intenta en un momento." }; }
     if (estado === "anulado") { await volver("El traslado está anulado en el sistema."); return { error: "El traslado está anulado en el sistema: avisa a Bodega." }; }
     if (estado === "recibido") {
       const { error: eY } = await admin.from("compra_reparto").update({ estado: "recibido", recibido_por: quien.id, recibido_at: new Date().toISOString(), vences: fechas, nota: "Ya estaba recibido en el sistema.", updated_at: new Date().toISOString() }).eq("id", id);
@@ -763,17 +832,39 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
       return [f.idProd, f.compra, f.venta, f.esp, f.unidad, vence, f.idPres, f.esp].join("|");
     });
     if (filas.some((f) => !(fechas[f.idProd] ?? f.vence))) { await volver("Un renglón no tiene vencimiento."); return { error: "Un producto no tiene fecha de vencimiento." }; }
+    // Que el traslado del sistema sea ESTE envío: mismos productos y unidades.
+    // Por producto, en unidades. La cantidad de la página va en paquetes de su
+    // presentación; si alguna vez viniera ya en unidades, también se acepta.
+    const sumar = (porUnidad: boolean) => {
+      const m = new Map<number, number>();
+      for (const f of filas) m.set(Number(f.idProd), (m.get(Number(f.idProd)) ?? 0) + Number(f.esp) * (porUnidad ? (Number(f.unidad) || 1) : 1));
+      return m;
+    };
+    const igual = (m: Map<number, number>) => m.size === esperado.size && [...esperado].every(([pid, u]) => Math.abs((m.get(pid) ?? -1) - u) < 1e-6);
+    const coincide = igual(sumar(true)) || igual(sumar(false));
+    if (!coincide) {
+      await anotar("sin_verificar", `El traslado ${r.erp_traslado_id} del sistema no trae lo mismo que este envío: revisarlo antes de recibir.`);
+      return { error: "El traslado del sistema no coincide con lo enviado: avisa a Bodega." };
+    }
     const antes = await existenciasDeUbicacion(cookie, sala.erp, sala.ubic);
+    mandado = true;
     const resp = await pedir(cookie, RECIBIR, new URLSearchParams({
       process: "insert", datos: partes.join("#") + "#", cuantos: String(partes.length), total: total.toFixed(4), fecha: hoySV(),
       concepto: armarConcepto(`PORTAL REC ${quien.name} COMPRA ${r.erp_compra_id ?? ""} ${r.emisor_nombre ?? ""}`).concepto,
       destino: String(sala.ubic), id_traslado: String(r.erp_traslado_id),
-    }), { extra: { Referer: RECIBIR } });
+    }), { extra: { Referer: RECIBIR }, reintentos: 1 });
     let ok = false;
     try { ok = String(JSON.parse(resp)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
-    if (!ok && await estadoDeRecepcion(cookie, String(r.erp_traslado_id)) !== "recibido") {
-      await volver(`El sistema no aceptó la recepción: ${resp.slice(0, 200)}`);
-      return { error: "El sistema no aceptó la recepción: intenta de nuevo." };
+    if (!ok) {
+      const despuesEstado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
+      if (despuesEstado === "pendiente") {
+        await volver(`El sistema no aceptó la recepción: ${resp.slice(0, 200)}`);
+        return { error: "El sistema no aceptó la recepción: intenta de nuevo." };
+      }
+      if (despuesEstado !== "recibido") {
+        await anotar("sin_verificar", `No se sabe si la recepción entró: ${resp.slice(0, 200)}`);
+        return { error: "No se sabe si entró: NO lo recibas de nuevo, toca «Comprobar» en un momento." };
+      }
     }
     const despues = await existenciasDeUbicacion(cookie, sala.erp, sala.ubic);
     const comprobado = Boolean(antes && despues && [...esperado].every(([pid, u]) => (despues.get(pid) ?? 0) - (antes.get(pid) ?? 0) >= u - 1e-6));
@@ -784,14 +875,45 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
     if (eU) throw eU;
     return { recibido: true, comprobado };
   } catch (e: any) {
-    await volver(String(e?.message ?? e).slice(0, 300));
+    if (mandado) await anotar("sin_verificar", `Se cortó después de mandar la recepción: ${String(e?.message ?? e).slice(0, 250)}`);
+    else await volver(String(e?.message ?? e).slice(0, 300));
     throw e;
   }
+}
+
+/**
+ * Un envío que quedó «sin verificar» se comprueba preguntándole al sistema si
+ * el traslado ya entró a la sala. Sólo lectura.
+ */
+async function comprobarReparto(admin: any, id: number, quien: { id: string }) {
+  const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_edit");
+  if (permiso.roto) return { error: permiso.roto };
+  const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
+  if (eR) throw eR;
+  if (!r) return { error: "Ese envío no existe." };
+  if (!permiso.puede || (!permiso.alcanceTodo && permiso.emp?.branch_id !== r.branch_id)) return { error: "Sólo lo puede comprobar alguien de esa sala." };
+  if (r.estado !== "sin_verificar") return { error: "Ese envío no está por comprobar." };
+  if (!r.erp_traslado_id) return { error: "No se sabe con qué número salió de Bodega: que Bodega lo busque en el sistema." };
+  const sala = (await salasDeReparto(admin)).get(Number(r.branch_id));
+  if (!sala) return { error: "No se conoce la ubicación de esa sala." };
+  const cookie = await sesionEn(sala.erp, login);
+  const estado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
+  if (estado === "desconocido") return { error: "No se pudo consultar el sistema: intenta en un momento." };
+  const ahora = new Date().toISOString();
+  const cambios = estado === "recibido"
+    ? { estado: "recibido", recibido_por: r.recibido_por ?? quien.id, recibido_at: r.recibido_at ?? ahora, nota: "Comprobado: ya estaba recibido." }
+    : estado === "anulado" ? { estado: "fallido", nota: "El traslado está anulado en el sistema." }
+    : { estado: "enviado", nota: null };
+  const { error: eU } = await admin.from("compra_reparto").update({ ...cambios, updated_at: ahora }).eq("id", id).eq("estado", "sin_verificar");
+  if (eU) throw eU;
+  return { ok: true, estado: cambios.estado };
 }
 
 type Erroneo = {
   renglon: number; descripcion: string; codigo_proveedor: string | null;
   product_id: number; es_generico: boolean; unidades: number; costo_unitario: number;
+  /** Posición de su línea en el sobre: el renglón exacto, no «el primero con ese producto». */
+  linea_idx?: number; numero_lote?: string | null;
 };
 
 /**
@@ -812,15 +934,18 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     compra_carga_id: x.cargaId, document_id: x.documentId, manual_id: x.manualId, renglon: e.renglon,
     emisor_nit: x.emisor.nit, emisor_nombre: x.emisor.nombre, descripcion: e.descripcion,
     codigo_proveedor: e.codigo_proveedor, product_id: e.product_id, es_generico: e.es_generico,
-    unidades: e.unidades, costo_unitario: e.costo_unitario, erp_compra_id: x.erpCompra,
+    unidades: e.unidades, costo_unitario: e.costo_unitario, erp_compra_id: x.erpCompra, numero_lote: e.numero_lote ?? null,
     marcado_por: x.quien, estado: "por_mover",
     nota: x.mover ? null : "La compra no se pudo comprobar en el estante: pasarlo a vencidos a mano.",
   })), { onConflict: "compra_carga_id,renglon" });
   if (eI) throw eI;
   if (!x.mover) return { movidos: 0, error: "La compra no se comprobó: los erróneos quedan por mover." };
 
-  const nota = (texto: string) => admin.from("compra_renglon_erroneo")
-    .update({ nota: texto, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId).eq("estado", "por_mover");
+  const nota = async (texto: string) => {
+    const { error } = await admin.from("compra_renglon_erroneo")
+      .update({ nota: texto, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId).eq("estado", "por_mover");
+    if (error) console.error("[cargar-compra-erp] anotar erróneos", x.cargaId, texto, error.message);
+  };
   const vencidosUbic = await ubicacionDeBodega(admin, true);
   if (!vencidosUbic) { await nota("No se conoce el área de vencidos de Bodega."); return { movidos: 0, error: "No se conoce el área de vencidos." }; }
 
@@ -829,7 +954,8 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
   let total = 0;
   const esperado = new Map<number, number>();
   for (const e of errs) {
-    const l = x.lineas.find((y) => Number(y.id_producto) === e.product_id && Math.abs(Number(y.cant) * (Number(y.unidad) || 1) - e.unidades) < 1e-6);
+    const l = e.linea_idx != null ? x.lineas[e.linea_idx]
+      : x.lineas.find((y) => Number(y.id_producto) === e.product_id && Math.abs(Number(y.cant) * (Number(y.unidad) || 1) - e.unidades) < 1e-6);
     if (!l) { await nota("No se encontró su renglón en la compra."); return { movidos: 0, error: "No se encontró el renglón en la compra." }; }
     const f = await traerFila(cookie, e.product_id, x.estante);
     if (!f.presentaciones.some((p) => p.id === String(l.id_presentacion))) {
@@ -856,12 +982,13 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     total: total.toFixed(4), fecha: hoySV(),
     concepto: armarConcepto(`PORTAL ERROR DEL PROVEEDOR COMPRA ${x.erpCompra ?? ""} ${x.emisor.nombre ?? ""} A VENCIDOS`).concepto,
     origen: String(x.estante), id_suc_destino: String(ERP_BODEGA), id_ubicacion_destino: "0", numero_vale: vale,
-  }), { extra: { Referer: TRASLADO } });
+  }), { extra: { Referer: TRASLADO }, reintentos: 1 });
   let ok = false;
   try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
   if (!ok) { await nota(`El sistema no aceptó el traslado: ${r.slice(0, 300)}`); return { movidos: 0, error: "El traslado a vencidos no entró." }; }
   const despues = await pendientesDeOrigen(cookie, x.estante);
-  const { id: idT } = await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, []);
+  // Sin la foto de antes, cualquier traslado viejo a Bodega parecería el nuevo.
+  const idT = antes.size > 0 ? (await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, [])).id : null;
   if (!idT) {
     await nota("Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
     return { movidos: 0, error: "Traslado sin identificar: recibirlo a mano." };
@@ -892,7 +1019,7 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
   const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
     process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
     fecha: hoySV(), concepto: `PORTAL ERROR DEL PROVEEDOR (TRASLADO ${idT})`, destino: String(vencidosUbic), id_traslado: idT,
-  }), { extra: { Referer: RECIBIR } });
+  }), { extra: { Referer: RECIBIR }, reintentos: 1 });
   let ok2 = false;
   try { ok2 = String(JSON.parse(r2)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
 
@@ -904,9 +1031,15 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     await nota(`El traslado ${idT} no se pudo comprobar en vencidos: revisarlo.`);
     return { movidos: 0, traslado: idT, error: "No se comprobó en vencidos." };
   }
+  // Comprobado en vencidos: recién ahora se puede dar salida. Un renglón al
+  // que ya le adjuntaron la nota conserva `con_nota`.
+  const ahora = new Date().toISOString();
   const { error: eU } = await admin.from("compra_renglon_erroneo")
-    .update({ estado: "en_vencidos", nota: null, updated_at: new Date().toISOString() }).eq("compra_carga_id", x.cargaId);
+    .update({ en_vencidos_at: ahora, nota: null, updated_at: ahora }).eq("compra_carga_id", x.cargaId);
   if (eU) throw eU;
+  const { error: eU2 } = await admin.from("compra_renglon_erroneo")
+    .update({ estado: "en_vencidos" }).eq("compra_carga_id", x.cargaId).eq("estado", "por_mover");
+  if (eU2) throw eU2;
   return { movidos: errs.length, traslado: idT };
 }
 
@@ -942,14 +1075,38 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
   if (eB || !blob) throw new Error(`No se pudo leer el archivo de la nota: ${eB?.message}`);
   const dte = desenvolver(JSON.parse(await blob.text()));
 
+  // ¿Ya está en el libro? (el contador la pudo registrar a mano). Si no se
+  // puede mirar, no se manda: un crédito fiscal doble no se nota solo.
+  const mes = String(n.fecha_emision).slice(0, 7);
+  const fin = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).toISOString().slice(0, 10);
+  const clave = String(n.codigo_generacion ?? "").replace(/-/g, "").toUpperCase().slice(0, 16);
+  const enElLibro = async () => {
+    const csv = await pedir(cookie, `${BASE}/libro_compras_iva_csv.php?fechaInicio=${mes}-01&fechaFin=${fin}`, undefined, { timeoutMs: 90_000 });
+    return { csv, esta: (num: string) => csv.split(/\r?\n/).some((l) => l.replace(/-/g, "").toUpperCase().includes(num)) };
+  };
+  if (clave.length >= 16) {
+    let previo: Awaited<ReturnType<typeof enElLibro>>;
+    try { previo = await enElLibro(); } catch (err) {
+      return { ok: false, error: `No se pudo mirar el libro antes de registrar: ${(err as Error)?.message ?? err}` };
+    }
+    if (previo.esta(clave)) {
+      const { error: eY } = await admin.from("compra_nota_credito_libro").upsert({
+        document_id: notaId, erp_sucursal_id: ERP_BODEGA, estado: "registrada", registrada_por: quien, error: null, datos: { ya_estaba: true },
+      }, { onConflict: "document_id" });
+      if (eY) throw eY;
+      return { ok: true, ya: true };
+    }
+  }
+
   const fila = { document_id: notaId, erp_sucursal_id: ERP_BODEGA, estado: "enviando", registrada_por: quien, error: null, datos: null };
-  const { error: eT } = previa
-    ? await admin.from("compra_nota_credito_libro").update({ ...fila, updated_at: new Date().toISOString() }).eq("document_id", notaId).eq("estado", "fallida")
-    : await admin.from("compra_nota_credito_libro").insert(fila);
+  const { data: tomada, error: eT } = previa
+    ? await admin.from("compra_nota_credito_libro").update({ ...fila, updated_at: new Date().toISOString() }).eq("document_id", notaId).eq("estado", "fallida").select("document_id")
+    : await admin.from("compra_nota_credito_libro").insert(fila).select("document_id");
   if (eT) {
     if (eT.code === "23505") return { ok: false, error: "Otra persona está registrando esta nota." };
     throw eT;
   }
+  if (!tomada?.length) return { ok: false, error: "Otra persona está registrando esta nota." };
   const marcar = (estado: string, extra: Record<string, unknown> = {}) =>
     admin.from("compra_nota_credito_libro").update({ estado, updated_at: new Date().toISOString(), ...extra }).eq("document_id", notaId);
 
@@ -1013,13 +1170,10 @@ async function registrarNotaEnLibro(admin: any, cookie: string, notaId: number, 
   }
 
   // 3. Comprobarla en el libro del mes.
-  const mes = String(n.fecha_emision).slice(0, 7);
-  const fin = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).toISOString().slice(0, 10);
   let enLibro = false;
   try {
-    const csv = await pedir(cookie, `${BASE}/libro_compras_iva_csv.php?fechaInicio=${mes}-01&fechaFin=${fin}`, undefined, { timeoutMs: 90_000 });
     const numero = String(leido.numero_documento).replace(/-/g, "").toUpperCase().slice(0, 16);
-    enLibro = csv.split(/\r?\n/).some((l) => l.replace(/-/g, "").toUpperCase().includes(numero));
+    enLibro = (await enElLibro()).esta(numero);
   } catch { /* abajo */ }
   await marcar(enLibro ? "registrada" : "sin_verificar", { datos: leido, error: enLibro ? null : `No apareció en el libro de ${mes}: ${resp.slice(0, 300)}` });
   return enLibro ? { ok: true } : { ok: false, error: "Se mandó la nota pero no aparece en el libro: revisarla antes de reintentar." };
@@ -1079,11 +1233,13 @@ async function registrarNotaPapelEnLibro(admin: any, cookie: string, e: any, qui
     const mes = String(n.fecha).slice(0, 7);
     const fin = new Date(Date.UTC(Number(mes.slice(0, 4)), Number(mes.slice(5, 7)), 0)).toISOString().slice(0, 10);
     const csv = await pedir(cookie, `${BASE}/libro_compras_iva_csv.php?fechaInicio=${mes}-01&fechaFin=${fin}`, undefined, { timeoutMs: 90_000 });
-    const num = String(n.numero).replace(/-/g, "");
+    // Sin guiones ni ceros a la izquierda: «005342» y «5342» son la misma.
+    const limpio = (x: unknown) => String(x ?? "").replace(/-/g, "").toUpperCase().replace(/^0+/, "");
+    const num = limpio(n.numero);
     const nit = String(n.proveedor_nit).replace(/\D/g, "");
     return csv.split(/\r?\n/).some((l) => {
       const c = l.split(";");
-      return String(c[3] ?? "").replace(/-/g, "").toUpperCase() === num && String(c[4] ?? "").replace(/\D/g, "") === nit;
+      return limpio(c[3]) === num && String(c[4] ?? "").replace(/\D/g, "") === nit;
     });
   };
 
@@ -1153,12 +1309,16 @@ async function darSalidaErroneo(admin: any, id: number, quien: string) {
   if (!Number.isFinite(id)) return { error: "Falta el renglón." };
   const { data: tomadas, error: eT } = await admin.from("compra_renglon_erroneo")
     .update({ estado: "saliendo", updated_at: new Date().toISOString() })
-    .eq("id", id).eq("estado", "con_nota").not("erp_traslado_id", "is", null).select("*");
+    .eq("id", id).eq("estado", "con_nota").not("en_vencidos_at", "is", null).select("*");
   if (eT) throw eT;
   const e = tomadas?.[0];
-  if (!e) return { error: "Ese producto no está listo para salir (tiene que estar en vencidos y con su nota de crédito)." };
-  const volver = (nota: string) => admin.from("compra_renglon_erroneo")
-    .update({ estado: "con_nota", nota, updated_at: new Date().toISOString() }).eq("id", id);
+  if (!e) return { error: "Ese producto no está listo para salir (tiene que estar comprobado en vencidos y con su nota de crédito)." };
+  const anotar = async (estado: string, cambios: Record<string, unknown>) => {
+    const { error } = await admin.from("compra_renglon_erroneo").update({ estado, ...cambios, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) console.error("[cargar-compra-erp] anotar la salida", id, estado, error.message);
+  };
+  const volver = (nota: string) => anotar("con_nota", { nota });
+  let mandado = false;
 
   try {
     const cookie = await sesionEn(ERP_BODEGA, login);
@@ -1170,6 +1330,10 @@ async function darSalidaErroneo(admin: any, id: number, quien: string) {
     const vencidos = await ubicacionDeBodega(admin, true);
     if (!vencidos) { await volver("No se conoce el área de vencidos."); return { error: "No se conoce el área de vencidos." }; }
     const antes = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
+    if (!antes) { await volver("No se pudo leer la existencia de vencidos."); return { error: "No se pudo leer la existencia de vencidos: intenta de nuevo." }; }
+    // Lo que había ANTES, guardado: si la salida se corta, se compara contra esto.
+    const stockAntes = antes.get(Number(e.product_id)) ?? 0;
+    await anotar("saliendo", { salida: { antes: stockAntes } });
     const { data: nc, error: eNc } = e.nota_papel_id
       ? await admin.from("compra_nota_credito_papel").select("numero_control:numero").eq("id", e.nota_papel_id).maybeSingle()
       : await admin.from("purchase_dte_documents").select("numero_control").eq("id", e.nota_credito_document_id).maybeSingle();
@@ -1177,25 +1341,89 @@ async function darSalidaErroneo(admin: any, id: number, quien: string) {
     const concepto = armarConcepto(
       `DEVOLUCION A ${e.emisor_nombre ?? "PROVEEDOR"} - NOTA DE CREDITO ${nc?.numero_control ?? ""} - COMPRA ${e.erp_compra_id ?? ""} - ${e.descripcion}`,
     ).concepto;
+    mandado = true;
     const r = await descartarUnaLinea({
       erpSucursal: ERP_BODEGA, erpUbicacion: vencidos, concepto, iden: "DESCARTE",
-      linea: { erp_product_id: Number(e.product_id), presentacion_tipo: "", factor: 1, cantidad: Number(e.unidades), descripcion: e.descripcion },
+      linea: { erp_product_id: Number(e.product_id), presentacion_tipo: "", factor: 1, cantidad: Number(e.unidades), descripcion: e.descripcion, lote: e.numero_lote ?? null },
     });
-    if (!r.ok) { await volver(r.error); return { error: r.error }; }
+    if (!r.ok) {
+      if (r.codigo === "INCIERTO") {
+        const c = await comprobarSalida(admin, cookie, e, vencidos, stockAntes);
+        return c.salio ? { ok: true, comprobado: true } : { error: "No se sabe si salió: NO le des salida de nuevo; toca «Comprobar» en un momento." };
+      }
+      await anotar("con_nota", { nota: r.error, salida: null }); return { error: r.error };
+    }
     const despues = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
-    const bajo = antes && despues ? (antes.get(Number(e.product_id)) ?? 0) - (despues.get(Number(e.product_id)) ?? 0) : null;
+    const bajo = despues ? stockAntes - (despues.get(Number(e.product_id)) ?? 0) : null;
     const comprobado = bajo != null && bajo >= Number(e.unidades) - 1e-6;
     const { error: eU } = await admin.from("compra_renglon_erroneo").update({
-      estado: "salio", salida: { ...r.aplicado, comprobado, bajo },
+      estado: "salio", salida: { ...r.aplicado, antes: stockAntes, comprobado, bajo },
       nota: comprobado ? null : "Se descargó, pero la existencia de vencidos no bajó lo esperado: revisarlo.",
       updated_at: new Date().toISOString(),
     }).eq("id", id);
     if (eU) throw eU;
     return { ok: true, comprobado };
   } catch (err) {
-    await volver(`Falló: ${(err as Error)?.message ?? err}`);
+    // Un descarte mandado y sin respuesta puede haber entrado: no vuelve a
+    // «con nota» (eso invitaría a descargarlo dos veces).
+    if (mandado) await anotar("sin_verificar", { nota: `Se cortó al descargarlo: ${(err as Error)?.message ?? err}. Comprobar antes de seguir.` });
+    else await volver(`Falló: ${(err as Error)?.message ?? err}`);
     throw err;
   }
+}
+
+/**
+ * ¿Salió de vencidos? Compara la existencia de ahora con la que se guardó
+ * ANTES de mandar el descarte. Bajó lo que salía → «salió»; no bajó nada →
+ * vuelve a «con nota»; otra cosa → sigue por comprobar. Sólo lectura.
+ */
+async function comprobarSalida(admin: any, cookie: string, e: any, vencidos: number, antes: number) {
+  const ahora = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidos);
+  const bajo = ahora ? antes - (ahora.get(Number(e.product_id)) ?? 0) : null;
+  const t = new Date().toISOString();
+  const salio = bajo != null && bajo >= Number(e.unidades) - 1e-6;
+  const nada = bajo != null && Math.abs(bajo) < 1e-6;
+  const cambios = salio ? { estado: "salio", nota: null, salida: { ...(e.salida ?? {}), antes, bajo, comprobado: true } }
+    : nada ? { estado: "con_nota", nota: "No había salido: se puede dar salida de nuevo." }
+    : { estado: "sin_verificar", nota: bajo == null ? "No se pudo leer vencidos para comprobar." : `Vencidos bajó ${bajo} y salían ${Number(e.unidades)}: revisarlo en el sistema.` };
+  const { error } = await admin.from("compra_renglon_erroneo").update({ ...cambios, updated_at: t }).eq("id", e.id);
+  if (error) throw error;
+  return { salio, estado: cambios.estado };
+}
+
+/** «Comprobar» de un erróneo que quedó sin verificar (la salida se cortó). */
+async function comprobarErroneo(admin: any, id: number) {
+  const { data: e, error: eE } = await admin.from("compra_renglon_erroneo").select("*").eq("id", id).maybeSingle();
+  if (eE) throw eE;
+  if (!e) return { error: "Ese renglón no existe." };
+  if (e.estado !== "sin_verificar") return { error: "Ese producto no está por comprobar." };
+  const antes = Number(e.salida?.antes);
+  if (!Number.isFinite(antes)) return { error: "No quedó la existencia de antes: revisarlo en el sistema." };
+  const vencidos = await ubicacionDeBodega(admin, true);
+  if (!vencidos) return { error: "No se conoce el área de vencidos." };
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  return await comprobarSalida(admin, cookie, e, vencidos, antes);
+}
+
+/**
+ * Un erróneo cuyo traslado a vencidos se recibió A MANO: se pregunta al
+ * sistema si ese traslado ya entró y, si sí, queda comprobado en vencidos.
+ */
+async function erroneoYaEnVencidos(admin: any, id: number) {
+  const { data: e, error: eE } = await admin.from("compra_renglon_erroneo").select("id, erp_traslado_id, en_vencidos_at, estado").eq("id", id).maybeSingle();
+  if (eE) throw eE;
+  if (!e) return { error: "Ese renglón no existe." };
+  if (e.en_vencidos_at) return { ok: true, ya: true };
+  if (!e.erp_traslado_id) return { error: "No se sabe con qué traslado salió a vencidos: hay que pasarlo de nuevo." };
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const estado = await estadoDeRecepcion(cookie, String(e.erp_traslado_id));
+  if (estado === "desconocido") return { error: "No se pudo consultar el sistema: intenta en un momento." };
+  if (estado !== "recibido") return { error: `El traslado ${e.erp_traslado_id} todavía no se recibió en vencidos.` };
+  const t = new Date().toISOString();
+  const { error: eU } = await admin.from("compra_renglon_erroneo")
+    .update({ en_vencidos_at: t, nota: null, estado: e.estado === "por_mover" ? "en_vencidos" : e.estado, updated_at: t }).eq("id", id);
+  if (eU) throw eU;
+  return { ok: true };
 }
 
 async function productoNuevo(admin: any, body: any, creaQuien: string | null = null) {
@@ -1316,9 +1544,11 @@ Deno.serve(async (req: Request) => {
   // La sala recibe lo que Bodega le repartió: su permiso es el de Traslados,
   // no el de cargar compras, así que va antes de ese freno.
   const cuerpo = await req.clone().json().catch(() => ({}));
-  if (cuerpo?.accion === "reparto_recibir") {
+  if (cuerpo?.accion === "reparto_recibir" || cuerpo?.accion === "reparto_comprobar") {
     try {
-      const r = await recibirReparto(admin, Number(cuerpo?.id), cuerpo?.vences ?? {}, quien);
+      const r = cuerpo.accion === "reparto_comprobar"
+        ? await comprobarReparto(admin, Number(cuerpo?.id), quien)
+        : await recibirReparto(admin, Number(cuerpo?.id), cuerpo?.vences ?? {}, quien);
       return responder(r, r && "error" in r ? 409 : 200);
     } catch (e: any) {
       console.error("[cargar-compra-erp] recibir reparto:", e?.message ?? e);
@@ -1342,10 +1572,18 @@ Deno.serve(async (req: Request) => {
       return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
     }
     if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
+    if (body?.accion === "erroneo_comprobar") return responder(await comprobarErroneo(admin, Number(body?.id)));
+    if (body?.accion === "erroneo_ya_en_vencidos") return responder(await erroneoYaEnVencidos(admin, Number(body?.id)));
     if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body, body?.crear === true ? quien.id : null));
     if (body?.accion === "manual_proveedores") return responder(await proveedoresParaPapel(admin));
     if (body?.accion === "manual_guardar") return responder(await guardarPapel(admin, body?.manual ?? {}, quien.id));
     if (body?.accion === "manual_descartar") {
+      // Un papel con un envío en curso o sin comprobar no se descarta: si
+      // entró, descartarlo permitiría escribirlo y cargarlo otra vez.
+      const { data: viva, error: eVv } = await admin.from("compra_carga").select("id")
+        .eq("manual_id", Number(body?.id)).in("estado", ["enviando", "verificada", "sin_verificar"]).limit(1);
+      if (eVv) throw eVv;
+      if (viva?.length) return responder({ error: "Esa factura ya se mandó a Bodega: no se puede descartar." });
       const { data: q, error: eQ } = await admin.from("compra_documento_manual")
         .update({ estado: "descartada", updated_at: new Date().toISOString() })
         .eq("id", Number(body?.id)).eq("estado", "borrador").select("id");
@@ -1487,7 +1725,8 @@ Deno.serve(async (req: Request) => {
         erroneos.push({
           renglon: i, descripcion: r.descripcion, codigo_proveedor: String(it?.codigo ?? "") || null,
           product_id: Number(res.linea.id_producto), es_generico: Number(res.linea.id_producto) === PRODUCTO_ERRONEO,
-          unidades: Number(res.linea.cant) * u, costo_unitario: Math.round((Number(res.linea.compra) / u) * 1e4) / 1e4,
+          unidades: Number(res.linea.cant) * u, costo_unitario: 0,   // después de prorratear los regalos
+          linea_idx: lineas.length, numero_lote: res.linea.numero_lote || null,
         });
       }
       // Lo que va a cada sala: en paquetes de la presentación con que entra, y
@@ -1515,7 +1754,7 @@ Deno.serve(async (req: Request) => {
             }
             suma += u;
             reparto.push({
-              renglon: i, descripcion: r.descripcion, branch_id: sala.branch_id, erp_product_id: Number(res.linea.id_producto),
+              linea_idx: lineas.length, renglon: i, descripcion: r.descripcion, branch_id: sala.branch_id, erp_product_id: Number(res.linea.id_producto),
               id_presentacion: String(res.linea.id_presentacion), unidad, paquetes: Math.round(n),
               compra: String(res.linea.compra), venta: String(res.linea.venta), vence: res.linea.vence === "NULL" ? "" : String(res.linea.vence ?? ""),
               vence_pendiente: Boolean((res.detalle as any)?.vence_pendiente), numero_lote: res.linea.numero_lote || null,
@@ -1529,6 +1768,13 @@ Deno.serve(async (req: Request) => {
     }
 
     const regalos = repartirRegalos(lineas, cobrado);
+    // El costo que viaja a la sala y el del erróneo, ya con los regalos
+    // prorrateados: capturado antes, un promocional iba a $0 y los pagados caros.
+    for (const e of erroneos) {
+      const l = lineas[e.linea_idx!];
+      e.costo_unitario = Math.round((Number(l.compra) / (Number(l.unidad) || 1)) * 1e4) / 1e4;
+    }
+    for (const rp of reparto) rp.compra = String(lineas[rp.linea_idx!].compra);
     const tot = totalesDelSobre(lineas, tipoDoc, tasa);
     const totalDoc = totalDelDocumento(dte?.resumen);
     const diferencia = totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100;
@@ -1537,6 +1783,20 @@ Deno.serve(async (req: Request) => {
     // sale corto por construcción, y decirlo repite el problema de arriba.
     else if (lineas.length === items.length && Math.abs(diferencia) > TOLERANCIA) {
       problemas.push({ renglon: null, texto: `El total armado ($${tot.total}) no cuadra con el del documento ($${totalDoc.toFixed(2)}).` });
+    }
+
+    // Cargada a mano con el NÚMERO DE CONTROL (65 de 1,013 desde agosto): sus
+    // 20 caracteres se repiten entre facturas del emisor, así que además mismo
+    // proveedor y mismo total.
+    if (!manual && d.numero_control && erpProveedor && totalDoc != null) {
+      const control = normNum(String(d.numero_control));
+      const { data: pc, error: ePc } = await admin.from("purchase_receipts")
+        .select("erp_purchase_id, documento_numero, total, estado")
+        .eq("erp_supplier_id", erpProveedor).gte("total", totalDoc - 0.05).lte("total", totalDoc + 0.05);
+      if (ePc) throw ePc;
+      const ya = (pc ?? []).filter((r: any) => (r.estado ?? "") !== "anulada"
+        && normNum(r.documento_numero ?? "").length >= 15 && control.startsWith(normNum(r.documento_numero ?? "")));
+      if (ya.length) problemas.push({ renglon: null, texto: `Ya está registrada con su número de control (compra ${ya.map((r: any) => r.erp_purchase_id).join(", ")}).` });
     }
 
     const estanteBodega = await ubicacionDeBodega(admin, false);
@@ -1605,6 +1865,7 @@ Deno.serve(async (req: Request) => {
     if (enviar) return responder(await enviarCompra(admin, {
       cookie, documentId, manualId, cargaId: Number(body?.carga_id), sobre, revision, lineas, erpProveedor: erpProveedor!,
       quien: quien.id, emisor: { nit: d.emisor_nit, nombre: d.emisor_nombre },
+      numeroControl: d.numero_control ?? null, totalDoc,
     }));
 
     const { data: fila, error: eI } = await admin.from("compra_carga").insert({

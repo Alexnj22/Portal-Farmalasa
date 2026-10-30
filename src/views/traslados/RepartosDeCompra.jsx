@@ -7,7 +7,7 @@ import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { fetchRepartosDeCompra, recibirRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
+import { fetchRepartosDeCompra, recibirRepartoDeCompra, comprobarRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
 
 /* Lo que Bodega le repartió a la sala al cargar una compra (2026-10-30).
  *
@@ -27,12 +27,16 @@ const ESTADO = {
     enviado:    { label: 'En camino',           variant: 'info' },
     recibiendo: { label: 'Recibiendo…',         variant: 'warning' },
     fallido:    { label: 'No salió de Bodega',  variant: 'danger' },
+    sin_verificar: { label: 'Por comprobar',    variant: 'danger' },
 };
 
 export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta }) {
     const [filas, setFilas] = useState(null);
     const [pedidos, setPedidos] = useState([]);
     const [error, setError] = useState('');
+    // Lo que dejó una recepción («entró pero no cuadró»): vive acá arriba
+    // porque la tarjeta desaparece al recibir y se llevaba el aviso con ella.
+    const [aviso, setAviso] = useState('');
 
     const cargar = useCallback(async () => {
         const [{ filas: f, error: e }, { pedidos: p, error: e2 }] = await Promise.all([fetchRepartosDeCompra(), fetchPedidosDeVence()]);
@@ -49,12 +53,20 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
         || tokenMatch(q, f.emisor_nombre, f.sala, ...(f.lineas ?? []).map(l => l.descripcion)));
     const pedidosVistos = pedidos.filter(f => !q
         || tokenMatch(q, f.emisor_nombre, f.sala, ...(f.renglones ?? []).map(l => l.descripcion)));
-    const cuenta = vistas.length + pedidosVistos.length;
+    // Con error, la cuenta no es «nada en camino»: se informa 1 para que la
+    // vista no diga eso y este bloque (con su error) se vea.
+    const cuenta = vistas.length + pedidosVistos.length + (error || aviso ? 1 : 0);
     useEffect(() => { onCuenta?.(cuenta); }, [cuenta, onCuenta]);
 
-    if (!filas || (!cuenta && !error)) return null;
+    if (!filas || !cuenta) return null;
     return (
         <div className="flex flex-col gap-4">
+        {error && <p className="text-label text-danger-text font-medium px-1">No se pudo cargar lo que viene de Bodega: {error}</p>}
+        {aviso && (
+            <p className="text-label text-warning-text font-bold px-1 flex items-start gap-1">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {aviso}
+            </p>
+        )}
         {pedidosVistos.length > 0 && (
             <div className="flex flex-col gap-2">
                 <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
@@ -69,9 +81,8 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
                 De las compras de Bodega · {vistas.length}
             </p>
-            {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
             <div className="grid grid-cols-1 gap-3 xl:grid-cols-2">
-                {vistas.map(f => <Envio key={f.id} fila={f} puedeRecibir={puedeRecibir} onHecho={cargar} />)}
+                {vistas.map(f => <Envio key={f.id} fila={f} puedeRecibir={puedeRecibir} onHecho={cargar} onAviso={setAviso} />)}
             </div>
         </div>}
         </div>
@@ -141,7 +152,7 @@ function PedidoDeVence({ pedido, puedeResponder, onHecho }) {
     );
 }
 
-function Envio({ fila, puedeRecibir, onHecho }) {
+function Envio({ fila, puedeRecibir, onHecho, onAviso }) {
     const [vences, setVences] = useState({});
     const [recibiendo, setRec] = useState(false);
     const [error, setError] = useState('');
@@ -153,8 +164,17 @@ function Envio({ fila, puedeRecibir, onHecho }) {
         setRec(true); setError('');
         const { resultado, error: e } = await recibirRepartoDeCompra(fila.id, vences);
         setRec(false);
-        if (e) { setError(e); return; }
-        if (resultado && resultado.comprobado === false) setError('Se recibió, pero la existencia de la sala no subió lo esperado: avisa a Bodega.');
+        if (e) { setError(e); onHecho(); return; }
+        if (resultado && resultado.comprobado === false) {
+            onAviso(`${fila.emisor_nombre ?? 'Un envío de Bodega'}: se recibió, pero la existencia de la sala no subió lo esperado. Avisa a Bodega.`);
+        }
+        onHecho();
+    };
+    const comprobar = async () => {
+        setRec(true); setError('');
+        const { error: e } = await comprobarRepartoDeCompra(fila.id);
+        setRec(false);
+        if (e) setError(e);
         onHecho();
     };
 
@@ -191,7 +211,7 @@ function Envio({ fila, puedeRecibir, onHecho }) {
                 ))}
             </div>
 
-            {fila.estado === 'fallido' && fila.nota && (
+            {['fallido', 'sin_verificar'].includes(fila.estado) && fila.nota && (
                 <p className="text-micro text-danger-text font-medium flex items-start gap-1">
                     <AlertTriangle size={12} className="mt-0.5 shrink-0" /> {fila.nota}
                 </p>
@@ -205,6 +225,11 @@ function Envio({ fila, puedeRecibir, onHecho }) {
                         <span className="truncate">{shortEmployeeName(fila.enviado_nombre)}</span>
                     </span>
                 ) : <span />}
+                {fila.estado === 'sin_verificar' && puedeRecibir && fila.erp_traslado_id && (
+                    <Button size="sm" variant="secondary" className="min-h-[var(--tap-min)]" loading={recibiendo} onClick={comprobar}>
+                        Comprobar
+                    </Button>
+                )}
                 {fila.estado === 'enviado' && puedeRecibir && (
                     <Button size="sm" className="min-h-[var(--tap-min)]" disabled={recibiendo || faltaVence} loading={recibiendo}
                         title={faltaVence ? 'Pon la fecha de vencimiento' : undefined}

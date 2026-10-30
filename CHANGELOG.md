@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1397.4 — La ficha de empleado sólo se cierra con sus botones
+
+Al crear o editar un empleado, el modal ya no se cierra con un clic afuera, ni
+con Escape, ni arrastrando el asa en el teléfono: sólo con **Cerrar** o
+**Guardar**. Un clic de más tiraba todo lo escrito. `LiquidModal` ganó la prop
+`soloConBoton` para eso. Un documento abierto desde la ficha se sigue cerrando
+como siempre, y la ficha queda abierta detrás.
+
 ## v2.1397.3 — Compras: fecha de Productos erróneos con el canónico
 
 La fecha de cada producto erróneo en Cargar compra se formateaba con `toLocaleDateString`; ahora usa `fechaNumerica` (`gate:hora` frenaba el pre-commit de todo el repo).

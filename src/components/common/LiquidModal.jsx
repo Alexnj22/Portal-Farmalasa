@@ -28,6 +28,10 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
  *   ariaLabel – accessible name announced by screen readers (pass the
  *               modal's actual title — without it every LiquidModal in the
  *               app announces as the generic ModalShell default)
+ *   soloConBoton – default false. En true sólo cierran los botones del modal:
+ *               ni el clic afuera, ni Escape, ni arrastrar el asa. Es para
+ *               formularios largos (la ficha de empleado) donde un clic de
+ *               más tira todo lo escrito.
  *
  * ── En táctil es una HOJA (2026-07-30) ────────────────────────────────────
  * `ModalShell` ya la hace entrar desde abajo. Acá se le da la anatomía que le
@@ -73,6 +77,7 @@ export default function LiquidModal({
     zClass,
     className = '',
     ariaLabel,
+    soloConBoton = false,
     children,
 }) {
     const enTactil = useMediaQuery('(hover: none)');
@@ -94,7 +99,7 @@ export default function LiquidModal({
     const gesto = useArrastreHoja({
         refPanel: hojaRef,
         alCerrar: onClose,
-        activo: enTactil && !sinMovimiento && !!onClose,
+        activo: enTactil && !sinMovimiento && !!onClose && !soloConBoton,
     });
     // El tope es UNO y lo pone el canónico — no se compone con el del llamador.
     // Se intentó respetar el que pasara cada uno y no se puede: dos `max-h-*`
@@ -110,6 +115,8 @@ export default function LiquidModal({
             maxWidthClass={maxWidth}
             zClass={zClass}
             ariaLabel={ariaLabel}
+            closeOnBackdrop={!soloConBoton}
+            closeOnEsc={!soloConBoton}
             // ── `surface={null}`: DOS vidrios apilados (2026-08-07) ───────────
             // `ModalShell` declara `data-surface="modal"` por defecto y la hoja
             // de acá abajo lo declara otra vez. Dos capas del mismo material no
@@ -157,7 +164,7 @@ export default function LiquidModal({
                         ? 'pl-6 pr-[var(--sa-right)]'
                         : className}`}
             >
-                {enTactil && (
+                {enTactil && !soloConBoton && (
                     // El asa acompaña al borde por el que entró: acostada se para
                     // y se corre a la izquierda, igual que en `HojaMovil`.
                     <AsaHoja vertical={lateral} {...gesto}

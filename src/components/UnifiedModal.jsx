@@ -981,7 +981,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     ) : undefined;
 
     return (
-        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-modal" className={getModalHeightClass()} ariaLabel={getModalTitle()}>
+        <LiquidModal open={isOpen} onClose={onClose} maxWidth={getModalSize()} zClass="z-modal" className={getModalHeightClass()} ariaLabel={getModalTitle()}
+            soloConBoton={esFichaDeEmpleado}>
 
                 {!hidesHeader && (
                     /* El encabezado es el del canónico (2026-10-29). El ícono de

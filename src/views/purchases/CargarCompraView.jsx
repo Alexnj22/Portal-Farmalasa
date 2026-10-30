@@ -381,6 +381,10 @@ const huellaDe = (renglones) => (renglones ?? []).map(r => [r.codigo_proveedor, 
  *  si no trae), o su posición si ni eso hay. */
 const claveDe = (r, i) => r.llave || r.codigo_proveedor || `@${i}`;
 
+// Una nota de crédito del proveedor por el mismo total que la factura.
+const pareceAnulada = (f, pista) => !!pista?.nota_credito
+    && Math.abs(Number(pista.nota_credito.total) - Number(f.monto_total)) <= 0.02;
+
 function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirPapel = null, onSacada = null }) {
     const [p, setP]           = useState(null);
     const [error, setError]   = useState('');
@@ -624,6 +628,28 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                 </Button>
                             )}
                         </div>
+                    </Notice>
+                )}
+                {pista?.nota_credito && !envio?.enviada && !estadoCarga && (
+                    <Notice variant="warning" icon={HelpCircle}>
+                        {Math.abs(Number(pista.nota_credito.total) - Number(doc.monto_total)) <= 0.02 ? (
+                        <div className="flex items-center gap-3 flex-wrap">
+                            <span className="flex-1 min-w-[16rem]">
+                                <b>Parece anulada</b>: el proveedor emitió una nota de crédito del{' '}
+                                {fmtFecha(pista.nota_credito.fecha)} por el mismo total ({formatMoney(pista.nota_credito.total)}).
+                                Si la anuló, no se carga.
+                            </span>
+                            {puedeEditar && (
+                                <Button size="sm" loading={resolviendo}
+                                    onClick={() => sacarDeLaLista('anulada_nc')}>
+                                    Sí, está anulada
+                                </Button>
+                            )}
+                        </div>
+                        ) : (
+                            <>Esta factura tiene una <b>nota de crédito</b> del {fmtFecha(pista.nota_credito.fecha)} por{' '}
+                            {formatMoney(pista.nota_credito.total)}: el proveedor devolvió o descontó una parte.</>
+                        )}
                     </Notice>
                 )}
                 {!pista?.compra && pista?.gasto && !envio?.enviada && !estadoCarga && (
@@ -2097,12 +2123,14 @@ export default function CargarCompraView() {
                 {(() => {
                     const ya = (filas ?? []).filter(f => !estados[f.document_id] && pistas[f.document_id]?.compra).length;
                     const gasto = (filas ?? []).filter(f => !estados[f.document_id] && !pistas[f.document_id]?.compra && pistas[f.document_id]?.gasto).length;
-                    if (!ya && !gasto) return null;
+                    const anulada = (filas ?? []).filter(f => !estados[f.document_id] && pareceAnulada(f, pistas[f.document_id])).length;
+                    if (!ya && !gasto && !anulada) return null;
                     return (
                         <Notice variant="warning" icon={HelpCircle} compact>
                             {ya > 0 && <><b>{ya}</b> parece{ya === 1 ? '' : 'n'} ya cargada{ya === 1 ? '' : 's'} a mano con otro número
                                 («¿Ya cargada?»). </>}
                             {gasto > 0 && <><b>{gasto}</b> parece{gasto === 1 ? '' : 'n'} gasto y no mercadería («¿Es gasto?»). </>}
+                            {anulada > 0 && <><b>{anulada}</b> tiene{anulada === 1 ? '' : 'n'} una nota de crédito por el total («¿Anulada?»). </>}
                             Ábrelas para confirmarlo y sacarlas de la lista.
                         </Notice>
                     );
@@ -2140,6 +2168,8 @@ export default function CargarCompraView() {
                                 {(() => {
                                     const e = estadoDeCarga(estados[f.document_id]);
                                     const pista = pistas[f.document_id];
+                                    if (!estados[f.document_id] && pareceAnulada(f, pista))
+                                        return <Badge variant="warning" size="sm">¿Anulada?</Badge>;
                                     if (!estados[f.document_id] && pista?.compra)
                                         return <Badge variant="warning" size="sm">¿Ya cargada?</Badge>;
                                     if (!estados[f.document_id] && pista?.gasto)

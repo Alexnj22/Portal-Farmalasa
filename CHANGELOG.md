@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1405.1 — Compras: facturas anuladas con nota de crédito
+
+- **Facturas anuladas con nota de crédito**: si las notas de crédito ligadas a una factura suman su total, sale sola de «Facturas por cargar» (9 de la cola de 90 días, entre ellas RONASA 226C02B8). Si la nota no viene ligada pero es del mismo proveedor y del mismo total (RONASA escribe «CCF 22094» en vez del código), la fila dice «¿Anulada?» y la factura ofrece «Sí, está anulada» (motivo `anulada_nc`, se puede deshacer). Una nota parcial sólo avisa.
+
 ## v2.1405.0 — Compras: descuento al pie, deshacer «No va a Bodega» y abrir más rápido
 
 - **Descuento al pie de la factura**: un DTE con `resumen.descuGravada` (RONASA, 35 %) ya no carga el precio de lista. `factorDescuentoDeFactura` lo reparte en el subtotal de cada renglón —sólo si el documento mismo lo resta— y el costo sale 182.98 ÷ 50 = $3.6596, que cuadra con el total y con lo que Bodega había cargado a mano.

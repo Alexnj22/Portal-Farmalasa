@@ -1386,6 +1386,10 @@
    "area": "productos",
    "por": "código"
   },
+  "correcciones_de_factor_aplicadas": {
+   "area": "productos",
+   "por": "código"
+  },
   "corregir_lectura_bitacora": {
    "area": "bitacoras",
    "por": "código"

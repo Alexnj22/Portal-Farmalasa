@@ -6921,6 +6921,109 @@ export type Database = {
           },
         ]
       }
+      compra_reparto: {
+        Row: {
+          branch_id: number
+          compra_carga_id: number
+          created_at: string
+          emisor_nombre: string | null
+          enviado_at: string | null
+          enviado_por: string | null
+          erp_compra_id: number | null
+          erp_sucursal_id: number
+          erp_traslado_id: string | null
+          estado: string
+          id: number
+          lineas: Json
+          nota: string | null
+          recibido_at: string | null
+          recibido_por: string | null
+          updated_at: string
+          vences: Json | null
+        }
+        Insert: {
+          branch_id: number
+          compra_carga_id: number
+          created_at?: string
+          emisor_nombre?: string | null
+          enviado_at?: string | null
+          enviado_por?: string | null
+          erp_compra_id?: number | null
+          erp_sucursal_id: number
+          erp_traslado_id?: string | null
+          estado?: string
+          id?: never
+          lineas: Json
+          nota?: string | null
+          recibido_at?: string | null
+          recibido_por?: string | null
+          updated_at?: string
+          vences?: Json | null
+        }
+        Update: {
+          branch_id?: number
+          compra_carga_id?: number
+          created_at?: string
+          emisor_nombre?: string | null
+          enviado_at?: string | null
+          enviado_por?: string | null
+          erp_compra_id?: number | null
+          erp_sucursal_id?: number
+          erp_traslado_id?: string | null
+          estado?: string
+          id?: never
+          lineas?: Json
+          nota?: string | null
+          recibido_at?: string | null
+          recibido_por?: string | null
+          updated_at?: string
+          vences?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_reparto_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_reparto_compra_carga_id_fkey"
+            columns: ["compra_carga_id"]
+            isOneToOne: false
+            referencedRelation: "compra_carga"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_reparto_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_reparto_enviado_por_fkey"
+            columns: ["enviado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_reparto_recibido_por_fkey"
+            columns: ["recibido_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_reparto_recibido_por_fkey"
+            columns: ["recibido_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       consentimientos_cliente: {
         Row: {
           created_at: string
@@ -30988,6 +31091,7 @@ export type Database = {
         Args: { p_id: string; p_vence: string }
         Returns: undefined
       }
+      correcciones_de_factor_aplicadas: { Args: never; Returns: Json }
       corregir_lectura_bitacora: {
         Args: {
           p_accion: string
@@ -32532,6 +32636,7 @@ export type Database = {
         Returns: Json
       }
       get_compra_erroneos: { Args: never; Returns: Json }
+      get_compra_repartos: { Args: never; Returns: Json }
       get_consecutive_mh_alerts: {
         Args: never
         Returns: {

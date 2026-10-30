@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1395.2 — Revisión de factor: la sala ya corregida no sale como descuadre
+
+En «Las demás salas», Salud 3 y La Popular seguían en rojo («contó 1 caja, el
+sistema 1 blister») después de corregirlas: el conteo era de antes de la
+corrección. Ahora, si la corrección se aplicó después de que la sala contara,
+la pastilla dice **corregida** (verde). Si quedó algo que la corrección no
+cubrió (Salud 2: 4 unidades de más), sale en amarillo: «corregida; 4 unidades
+de más por pedir».
+
+Nueva función `correcciones_de_factor_aplicadas()` (migraciones
+`20261030164608` y `20261030164707`).
+
 ## v2.1395.1 — El aviso de una corrección con algo sin ajustar le llega a toda la sala
 
 Cuando una corrección de factor deja algo sin ajustar (la sala contó de más o

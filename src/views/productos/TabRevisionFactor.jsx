@@ -5,7 +5,7 @@ import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, restoDelConteo, restoEnPresentaciones, notaDeCorreccion, unidadesDeLaCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, corregidaDespuesDelConteo, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, restoDelConteo, restoEnPresentaciones, notaDeCorreccion, unidadesDeLaCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { fetchConsultasExistencia, agruparPorProducto, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
@@ -101,7 +101,7 @@ export default function TabRevisionFactor() {
                         <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
                             {porProducto.map(g => (
                                 <TarjetaProducto key={g.erp_product_id} grupo={g}
-                                    consulta={consultaAbierta.get(g.erp_product_id)} onHecho={cargar} />
+                                    consulta={consultaAbierta.get(g.erp_product_id)} corregidas={datos.corregidas} onHecho={cargar} />
                             ))}
                         </ul>
                     )}
@@ -152,7 +152,7 @@ function Seccion({ icono: Icono, titulo, cuenta, bajada, children }) {
 }
 
 // ─── Un producto con su existencia en la unidad vieja, sala por sala ────────
-function TarjetaProducto({ grupo: g, consulta, onHecho }) {
+function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
     const { hasPermission } = useAuth();
     const [preguntar, setPreguntar] = useState(false);
     const puedePreguntar = hasPermission('conteo_inventario', 'can_edit');
@@ -196,7 +196,8 @@ function TarjetaProducto({ grupo: g, consulta, onHecho }) {
                 <div className="border-t border-divider pt-2 space-y-1">
                     <p className="text-label font-black uppercase tracking-widest text-content-3">Las demás salas</p>
                     <ul className="flex flex-wrap gap-1.5">
-                        {otras.map(s => <ConteoDeOtraSala key={s.id} s={s} />)}
+                        {otras.map(s => <ConteoDeOtraSala key={s.id} s={s}
+                            corregida={corregidaDespuesDelConteo(corregidas, s, g.erp_product_id)} />)}
                     </ul>
                 </div>
             )}
@@ -233,17 +234,24 @@ function CambioDeFactor({ f }) {
 
 const POR_CONTAR = ['PENDIENTE', 'RECONTAR'];
 
-function ConteoDeOtraSala({ s }) {
+// `corregida`: la sala se corrigió después de contar. La diferencia del cambio
+// de tamaño ya entró: no se pinta como descuadre. Lo que la corrección no cubrió
+// (`resto`) sigue en amarillo, porque la sala tiene que pedirlo.
+function ConteoDeOtraSala({ s, corregida }) {
     const contada = !POR_CONTAR.includes(s.estado);
-    const descuadre = contada && s.diferencia;
-    const variant = !contada ? 'neutral' : descuadre ? 'danger' : 'success';
+    const descuadre = contada && s.diferencia && !corregida;
+    const resto = corregida?.resto ?? 0;
+    const variant = !contada ? 'neutral' : descuadre ? 'danger' : resto ? 'warning' : 'success';
     return (
         <li>
             <Badge size="sm" uppercase={false} variant={variant}
-                icon={!contada ? Clock : descuadre ? AlertTriangle : CheckCircle2}>
+                icon={!contada ? Clock : (descuadre || resto) ? AlertTriangle : CheckCircle2}>
                 {s.sala}
                 {!contada ? ' · por contar'
                     : descuadre ? ` · contó ${enPresentaciones(s.contado_texto, s.final?.contado)}, el sistema ${enPresentaciones(s.sistema_texto, s.final?.sistema)}`
+                    : corregida ? (resto
+                        ? ` · corregida; ${formatQty(Math.abs(resto))} ${Math.abs(resto) === 1 ? 'unidad' : 'unidades'} de ${resto > 0 ? 'más' : 'menos'} por pedir`
+                        : ' · corregida')
                     : ' · cuadra'}
             </Badge>
         </li>

@@ -15,7 +15,10 @@ import { insertMovimientoInventario } from './inventoryMovements';
  *                sus ventas recientes.
  */
 export async function fetchRevisionDePresentaciones() {
-    const { data, error } = await supabase.rpc('revision_de_presentaciones');
+    const [{ data, error }, corr] = await Promise.all([
+        supabase.rpc('revision_de_presentaciones'),
+        supabase.rpc('correcciones_de_factor_aplicadas'),
+    ]);
     if (error) return { data: null, error };
     // La función devuelve `json`: para los tipos es un `Json` sin forma.
     /** @type {{ cambios: any[], existencias: any[], sospechosos: any[] }} */
@@ -26,7 +29,23 @@ export async function fetchRevisionDePresentaciones() {
     datos.existencias = (datos.existencias ?? []).map(f => ({
         ...f, tipo_cambio: tipoDelCambio.get(f.cambio_id) ?? f.presentacion,
     }));
+    // Las correcciones ya aplicadas: un conteo de la sala anterior a la suya ya
+    // no describe la existencia. Si no se pueden leer, la pantalla sigue igual.
+    if (corr.error) console.warn('[revisionFactor] correcciones aplicadas:', corr.error.message);
+    datos.corregidas = Array.isArray(corr.data) ? corr.data : [];
     return { data: datos, error: null };
+}
+
+/**
+ * La corrección aplicada a la sala DESPUÉS de que contara (su conteo ya quedó
+ * viejo), o null. Trae `resto`: lo que contó y la corrección no cubrió.
+ */
+export function corregidaDespuesDelConteo(corregidas, s, erpProductId) {
+    const contado = s?.contado_at ? new Date(s.contado_at).getTime() : null;
+    if (!contado) return null;
+    return (corregidas ?? []).find(c => c.erp_product_id === erpProductId
+        && c.erp_sucursal_id === s.erp_sucursal_id
+        && new Date(c.at).getTime() > contado) ?? null;
 }
 
 /**

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1410.1 — Fotos de productos: clic derecho › Pegar y fondo al instante
+
+- **Clic derecho › Pegar** sobre el cuadro de la foto: una capa invisible editable encima hace que el navegador ofrezca su propio «Pegar» (que no pide permiso). El botón «Pegar imagen» usaba la API del portapapeles, que Safari/Chrome pueden negar — ahora su aviso manda al clic derecho.
+- **Quitar fondo, mucho más rápido**: un fondo de un solo color (blanco, negro, gris) o ya transparente se vuelve transparente al instante rellenando desde los bordes, sin modelo — es el caso de casi todas las fotos de catálogo. El modelo sólo corre con fondos reales, y volvió al chico (`isnet_quint8`; el mediano tardaba el doble), con WebGPU si existe y CPU de respaldo. Se baja en segundo plano a los 3 s de abrir la pantalla en computadora, para que la primera foto no espere la descarga.
+
 ## v2.1410.0 — Compras: registro de compras
 
 - **Registro de compras** (pestaña «Registro» en Cargar compra): una fila por renglón de cada compra que el portal cargó y el sistema confirmó — documento, proveedor, producto, presentación, unidades, precio de lista, descuento del renglón y del pie, costo por unidad y el anterior, viñeta y la anterior, lote, vence, envíos a salas, quién y cuándo. Filtro por fechas, búsqueda y CSV.

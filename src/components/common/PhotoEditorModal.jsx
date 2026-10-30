@@ -3,7 +3,7 @@ import Button from './Button';
 import Cropper from 'react-easy-crop';
 import ModalShell from './ModalShell';
 import useMediaQuery from '../../plataforma/useMediaQuery';
-import { encuadrarProducto, medirFoto } from '../../plataforma/fotoDeProducto';
+import { encuadrarProducto, medirFoto, quitarFondo } from '../../plataforma/fotoDeProducto';
 import { revisarCalidad } from '@nucleo/utils/calidadDeFoto';
 import Notice from './Notice';
 import {
@@ -151,7 +151,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
     const [roto, setRoto]             = useState(false);    // el navegador no la pudo abrir
     const [encuadrando, setEncuadrando] = useState(false);
     const [sinProducto, setSinProducto] = useState(false);
-    const [autoPaso, setAutoPaso]     = useState(null);     // 'encuadrar' | 'fondo' | null
+    const [autoPaso, setAutoPaso]     = useState(null);     // 'limpiar' | 'fondo' | null
     const autoRef = useRef(null);
 
     // Brush mode state
@@ -179,12 +179,13 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                 setMedidas(m);
                 const problemas = revisarCalidad(m);
                 setCalidad(problemas);
-                // Automático en el catálogo: con fondo ya blanco basta encuadrar
-                // (instantáneo, sin modelo); con cualquier otro fondo se quita
-                // solo y después se encuadra. Una imagen que no se va a poder
+                // Automático en el catálogo: con fondo de UN color (blanco,
+                // negro) o ya transparente, se limpia y encuadra al instante sin
+                // modelo; con un fondo real (una mesa, una mano) corre el modelo
+                // y después se encuadra. Una imagen que no se va a poder
                 // guardar no gasta el modelo.
                 if (producto && !problemas.some((p) => p.bloquea)) {
-                    autoRef.current = m.fondoBlanco ? 'encuadrar' : 'fondo';
+                    autoRef.current = m.fondoPlano ? 'limpiar' : 'fondo';
                     setAutoPaso(autoRef.current);
                 }
             })
@@ -230,11 +231,11 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
     const rotateRight = () => { setRotation(r => (r + 90) % 360);       setCrop({ x: 0, y: 0 }); setZoom(1); };
 
     // ── Encuadrar: el producto centrado con margen parejo ──────────────────────
-    const encuadrar = async (src = imageSrc) => {
+    const encuadrar = async (src = imageSrc, limpiarFondo = false) => {
         setEncuadrando(true);
         setSinProducto(false);
         try {
-            const url = await encuadrarProducto(src);
+            const url = await encuadrarProducto(src, { limpiarFondo });
             if (!url) { setSinProducto(true); return; }
             setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return url; });
             setCrop({ x: 0, y: 0 });
@@ -253,13 +254,9 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
         setBgRemoving(true);
         setBgError(null);
         try {
-            const { removeBackground } = await import('@imgly/background-removal');
-            const resultBlob = await removeBackground(src, {
-                // En el catálogo, el modelo mediano (isnet_fp16): bordes de cajas y
-                // blísteres más limpios; pesa el doble, pero se baja una vez y queda en caché.
-                model: producto ? 'medium' : 'small',
-                output: { format: 'image/png', quality: 1 },
-            });
+            const resultBlob = producto
+                ? await quitarFondo(src)
+                : await (await import('@imgly/background-removal')).removeBackground(src, { model: 'small', output: { format: 'image/png', quality: 1 } });
             const newUrl = URL.createObjectURL(resultBlob);
             setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return newUrl; });
             setBgRemoved(true);
@@ -280,7 +277,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
     useEffect(() => {
         if (!autoPaso) return;
         setAutoPaso(null);
-        if (autoPaso === 'encuadrar') encuadrar(originalUrl.current);
+        if (autoPaso === 'limpiar') encuadrar(originalUrl.current, true);
         else handleRemoveBg(originalUrl.current);
     }, [autoPaso]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -689,7 +686,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
 
                             {producto && (
                                 <Button variant="secondary" icon={encuadrando ? Loader2 : Focus} disabled={encuadrando || bgRemoving}
-                                    title="Recorta el producto y lo centra con el mismo margen que las demás fotos" onClick={() => encuadrar()}>
+                                    title="Recorta el producto y lo centra con el mismo margen que las demás fotos" onClick={() => encuadrar(imageSrc, !bgRemoved && !!medidas?.fondoPlano)}>
                                     {encuadrando ? 'Encuadrando…' : 'Encuadrar producto'}
                                 </Button>
                             )}
@@ -701,7 +698,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
 
                             {bgRemoving && (
                                 <p className="text-caption text-content-3 text-center -mt-1">
-                                    La primera vez descarga el modelo — puede tardar unos segundos.
+                                    Quitando el fondo… la primera vez en esta computadora tarda más.
                                 </p>
                             )}
                         </>

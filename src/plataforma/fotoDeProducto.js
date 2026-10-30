@@ -61,10 +61,21 @@ export async function medirFoto(src) {
     for (let y = 0; y < h; y++) borde.push(gris[y * w], gris[y * w + w - 1]);
     const mb = borde.reduce((a, b) => a + b, 0) / borde.length;
     const db = Math.sqrt(borde.reduce((a, b) => a + (b - mb) ** 2, 0) / borde.length);
+    // ¿Transparente en los bordes? Se mira aparte, sin el blanco de abajo.
+    const ca = document.createElement('canvas');
+    ca.width = w; ca.height = h;
+    const actx = ca.getContext('2d', { willReadFrequently: true });
+    actx.drawImage(img, 0, 0, w, h);
+    const a = actx.getImageData(0, 0, w, h).data;
+    let transparentes = 0;
+    for (let x = 0; x < w; x++) { if (a[x * 4 + 3] < 250) transparentes++; if (a[((h - 1) * w + x) * 4 + 3] < 250) transparentes++; }
     return {
         ancho: img.naturalWidth, alto: img.naturalHeight, nitidez,
         contraste: Math.sqrt(var0 / (w * h)),
         fondoBlanco: mb > 235 && db < 10,
+        // Fondo de UN color (blanco, negro, gris…) o ya transparente: se limpia
+        // al instante con `encuadrarProducto`, sin el modelo.
+        fondoPlano: db < 10 || transparentes > w * 0.5,
     };
 }
 
@@ -78,7 +89,7 @@ export async function medirFoto(src) {
  * `blob:` PNG (conserva la transparencia para poder seguir retocando), o
  * `null` si no encontró un producto que recortar.
  */
-export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600 } = {}) {
+export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600, limpiarFondo = false } = {}) {
     const img = await cargar(src);
     const escala = Math.min(1, ladoMaximo / Math.max(img.naturalWidth, img.naturalHeight));
     const w = Math.round(img.naturalWidth * escala);
@@ -91,6 +102,7 @@ export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600 
 
     let conAlfa = false;
     for (let i = 3; i < d.length; i += 4 * 7) { if (d[i] < 250) { conAlfa = true; break; } }
+    const datos = conAlfa ? null : ctx.getImageData(0, 0, w, h);
 
     // Color de fondo: la mediana de los píxeles del borde.
     const borde = [];
@@ -98,6 +110,32 @@ export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600 
     for (let y = 0; y < h; y += 2) { borde.push(y * w * 4, (y * w + w - 1) * 4); }
     const mediana = (k) => { const v = borde.map((i) => d[i + k]).sort((a, b) => a - b); return v[v.length >> 1]; };
     const fondo = [mediana(0), mediana(1), mediana(2)];
+
+    // Fondo de un solo color → transparente, rellenando DESDE LOS BORDES: lo
+    // que es del color del fondo pero queda adentro del producto (el blanco de
+    // una caja) no se toca, porque el relleno no llega.
+    if (!conAlfa && limpiarFondo) {
+        const dd = datos.data;
+        const cerca = (i) => Math.abs(dd[i] - fondo[0]) + Math.abs(dd[i + 1] - fondo[1]) + Math.abs(dd[i + 2] - fondo[2]) <= 60;
+        const visto = new Uint8Array(w * h);
+        const pila = new Int32Array(w * h);
+        let tope = 0;
+        const empujar = (p) => { if (!visto[p] && cerca(p * 4)) { visto[p] = 1; pila[tope++] = p; } };
+        for (let x = 0; x < w; x++) { empujar(x); empujar((h - 1) * w + x); }
+        for (let y = 0; y < h; y++) { empujar(y * w); empujar(y * w + w - 1); }
+        while (tope) {
+            const p = pila[--tope];
+            dd[p * 4 + 3] = 0;
+            const x = p % w;
+            if (x > 0) empujar(p - 1);
+            if (x < w - 1) empujar(p + 1);
+            if (p >= w) empujar(p - w);
+            if (p < w * (h - 1)) empujar(p + w);
+        }
+        ctx.putImageData(datos, 0, 0);
+        conAlfa = true;
+        d.set(dd);
+    }
 
     const esProducto = (i) => (conAlfa
         ? d[i + 3] > 24
@@ -129,4 +167,43 @@ export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600 
     octx.drawImage(c, x0, y0, bw, bh, Math.round((lado - bw) / 2), Math.round((lado - bh) / 2), bw, bh);
     const blob = await new Promise((resolve) => out.toBlob(resolve, 'image/png'));
     return blob ? URL.createObjectURL(blob) : null;
+}
+
+// ── Quitar el fondo con el modelo (@imgly) ───────────────────────────────────
+// El modelo CHICO (isnet_quint8): el mediano daba bordes apenas mejores y
+// tardaba el doble, medido por el usuario como «super lento». Con WebGPU corre
+// en la tarjeta gráfica; si falla, se repite en CPU. `precargarQuitarFondo`
+// baja el modelo antes del primer uso, para que el primer clic no espere la
+// descarga.
+let libPromise = null;
+function getLib() {
+    if (!libPromise) {
+        libPromise = import('@imgly/background-removal')
+            .catch((err) => { libPromise = null; throw err; });
+    }
+    return libPromise;
+}
+const configFondo = (device) => ({ model: 'small', device, output: { format: 'image/png', quality: 1 } });
+const conGpu = () => (typeof navigator !== 'undefined' && navigator.gpu ? 'gpu' : 'cpu');
+
+export async function quitarFondo(src) {
+    const { removeBackground } = await getLib();
+    const device = conGpu();
+    try {
+        return await removeBackground(src, configFondo(device));
+    } catch (err) {
+        if (device === 'cpu') throw err;
+        console.warn('quitarFondo: la GPU falló, se repite en CPU', err);
+        return removeBackground(src, configFondo('cpu'));
+    }
+}
+
+let precargado = null;
+export function precargarQuitarFondo() {
+    if (!precargado) {
+        precargado = getLib()
+            .then(({ preload }) => preload(configFondo(conGpu())))
+            .catch((err) => { precargado = null; console.warn('precargarQuitarFondo', err); });
+    }
+    return precargado;
 }

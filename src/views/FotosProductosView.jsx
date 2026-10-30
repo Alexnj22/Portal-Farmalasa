@@ -16,6 +16,7 @@ import useFotoDelTelefono from '../components/common/useFotoDelTelefono';
 import useCoarsePointer from '../plataforma/useCoarsePointer';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { fotoDeCatalogo } from '../plataforma/imagenes';
+import { precargarQuitarFondo } from '../plataforma/fotoDeProducto';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
@@ -100,6 +101,15 @@ export default function FotosProductosView() {
 
     useEffect(() => { cargarCola(); }, [cargarCola]);
     useEffect(() => { cargarResumen(); }, [cargarResumen]);
+
+    // En computadora, el modelo de quitar fondo se baja mientras nadie usa la
+    // pantalla: así la primera foto no espera la descarga.
+    const tactilVista = useCoarsePointer();
+    useEffect(() => {
+        if (tactilVista || !puedeEditar) return undefined;
+        const id = setTimeout(() => { precargarQuitarFondo(); }, 3000);
+        return () => clearTimeout(id);
+    }, [tactilVista, puedeEditar]);
 
     // Los principios del catálogo, para elegir en vez de escribir (una vez por visita).
     const [nombres, setNombres] = useState([]);
@@ -352,9 +362,9 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
         else avisar('Foto', 'Suelta una imagen (JPG, PNG o WebP).', 'warning');
     };
 
-    // El clic derecho sobre un botón no ofrece «Pegar» (el navegador sólo lo
-    // pone en los campos de texto): por eso el botón, y el clic derecho sobre
-    // el cuadro pega directo. Safari pide confirmar con su burbuja «Pegar».
+    // El botón lee el portapapeles por la API, que pide permiso y algunos
+    // navegadores niegan. El camino que siempre anda es el clic derecho › Pegar
+    // sobre el cuadro (ver `zonaDePegado`), o ⌘V / Ctrl+V.
     const pegarImagen = async () => {
         try {
             if (!navigator.clipboard?.read) throw new Error('sin-lectura');
@@ -363,8 +373,9 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                 if (tipo) { const b = await item.getType(tipo); setPendiente(new File([b], 'pegada.png', { type: tipo })); return; }
             }
             avisar('Pegar imagen', 'No hay una imagen copiada. En la búsqueda: clic derecho sobre la imagen › Copiar imagen.', 'warning');
-        } catch {
-            avisar('Pegar imagen', 'El navegador no dejó leer lo copiado. Prueba con ⌘V / Ctrl+V.', 'warning');
+        } catch (err) {
+            console.error('FotosProductos: leer el portapapeles', err);
+            avisar('Pegar imagen', 'El navegador no deja leer lo copiado desde el botón. Haz clic derecho sobre el cuadro de la foto › Pegar, o ⌘V / Ctrl+V.', 'warning');
         }
     };
 
@@ -459,23 +470,44 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                     <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><Camera size={14} /> Foto</p>
                     <input ref={archivoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={elegirArchivo} />
                     <input ref={camaraRef} type="file" {...PROPS_CAMARA} className="hidden" aria-hidden="true" tabIndex={-1} onChange={elegirArchivo} />
-                    <button type="button" disabled={!puedeEditar}
-                        onClick={() => (esTactil ? camaraRef : archivoRef).current?.click()}
-                        onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
-                        onDragLeave={() => setEncima(false)}
-                        onDrop={puedeEditar ? soltar : undefined}
-                        onContextMenu={puedeEditar && !esTactil ? (e) => { e.preventDefault(); pegarImagen(); } : undefined}
-                        className={`relative w-full aspect-square max-w-[240px] rounded-2xl border-2 border-dashed overflow-hidden bg-surface-card active:scale-[0.97] transition-[transform,border-color] ${encima ? 'border-brand' : 'border-divider'}`}>
-                        {fotoVisible ? (
-                            <img src={fotoVisible} alt="" className="w-full h-full object-contain p-2" />
-                        ) : (
-                            <span className="w-full h-full flex flex-col items-center justify-center gap-2 px-4 text-center text-content-3">
-                                <ImagePlus size={32} />
-                                <span className="text-caption font-semibold">{esTactil ? 'Tomar foto' : 'Subir, arrastrar o pegar (Ctrl+V)'}</span>
-                            </span>
+                    <div className="relative w-full max-w-[240px]">
+                        <button type="button" disabled={!puedeEditar}
+                            onClick={() => (esTactil ? camaraRef : archivoRef).current?.click()}
+                            onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
+                            onDragLeave={() => setEncima(false)}
+                            onDrop={puedeEditar ? soltar : undefined}
+                            className={`relative w-full aspect-square max-w-[240px] rounded-2xl border-2 border-dashed overflow-hidden bg-surface-card active:scale-[0.97] transition-[transform,border-color] ${encima ? 'border-brand' : 'border-divider'}`}>
+                            {fotoVisible ? (
+                                <img src={fotoVisible} alt="" className="w-full h-full object-contain p-2" />
+                            ) : (
+                                <span className="w-full h-full flex flex-col items-center justify-center gap-2 px-4 text-center text-content-3">
+                                    <ImagePlus size={32} />
+                                    <span className="text-caption font-semibold">{esTactil ? 'Tomar foto' : 'Subir, arrastrar o clic derecho › Pegar'}</span>
+                                </span>
+                            )}
+                            {vistaNueva && <Badge variant="success" className="absolute top-2 left-2">Nueva</Badge>}
+                        </button>
+                        {/* Zona de pegado: el navegador sólo ofrece «Pegar» en el clic
+                            derecho sobre algo editable. Esta capa invisible lo es; lo
+                            pegado sube como evento `paste` al oyente de la pantalla, y
+                            cualquier texto que se cuele se borra. El clic sigue abriendo
+                            el selector de archivos. */}
+                        {puedeEditar && !esTactil && (
+                            <span contentEditable suppressContentEditableWarning role="textbox" aria-label="Pegar imagen aquí"
+                                className="absolute inset-0 rounded-2xl text-transparent caret-transparent outline-none cursor-pointer"
+                                onClick={(e) => { e.preventDefault(); archivoRef.current?.click(); }}
+                                onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
+                                onDragLeave={() => setEncima(false)}
+                                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); soltar(e); }}
+                                onPaste={(e) => {
+                                    if (![...(e.clipboardData?.items || [])].some((i) => i.type.startsWith('image/'))) {
+                                        e.preventDefault();
+                                        avisar('Pegar imagen', 'Lo copiado no es una imagen. En la búsqueda: clic derecho sobre la imagen › Copiar imagen.', 'warning');
+                                    }
+                                }}
+                                onInput={(e) => { e.currentTarget.textContent = ''; }} />
                         )}
-                        {vistaNueva && <Badge variant="success" className="absolute top-2 left-2">Nueva</Badge>}
-                    </button>
+                    </div>
                     {puedeEditar && (
                         <div className="flex flex-wrap gap-1.5">
                             {esTactil && <Button variant="secondary" size="sm" icon={Camera} onClick={() => camaraRef.current?.click()}>Tomar foto</Button>}

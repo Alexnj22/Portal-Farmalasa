@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1387.1 — Compras: la carga entra al estante de Bodega
+
+**Defecto grave corregido.** La carga mandaba `destino: "3"`, que es la
+ubicación de **Salud 1** (copiado de una página guardada con la sesión en esa
+sala). En Bodega el formulario ofrece «1 BODEGA» y «2 BODEGA DE VENCIDOS». La
+primera compra real (6472, C. Imberton) dejó sus 150 unidades de Ensure en
+«sucursal 6 · ubicación 3»: ni en el estante de Bodega ni en Salud 1, o sea
+invisibles para los dos inventarios. Medido con el reporte de inventario por
+ubicación.
+
+Ahora la ubicación sale de `erp_sucursal_map` (la misma que usan los
+traslados); si no se encuentra la revisión lo marca y no se manda, y el envío
+rechaza una revisión guardada que apunte a otra ubicación.
+
 ## v2.1387.0 — Compras: lo ya cargado a mano y los gastos salen de la cola
 
 La cola «Por cargar en Bodega» tenía 97 facturas de más de 15 días y la mayoría

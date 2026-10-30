@@ -32,6 +32,29 @@ const ERP_BODEGA = 6;
 const BODEGA_BRANCH_ID = 30; // la de `sync-erp-purchases`
 const TOLERANCIA = 0.05;
 
+/**
+ * La UBICACIÓN de Bodega donde entra la compra: el campo `destino` del
+ * formulario. En la sesión de Bodega el formulario ofrece «1 BODEGA» y
+ * «2 BODEGA DE VENCIDOS».
+ *
+ * Estuvo escrito a mano como "3", que es la ubicación de SALUD 1 (copiado de
+ * una página guardada con la sesión en esa sala). El sistema lo aceptó sin
+ * quejarse: la primera compra real (6472, C. Imberton, 29-oct) dejó 150
+ * unidades en «sucursal 6 · ubicación 3», un lugar que no es ni el estante de
+ * Bodega ni Salud 1 — no se ven en ninguno de los dos inventarios.
+ *
+ * Por eso sale de `erp_sucursal_map`, la misma tabla que usan los traslados, y
+ * si no se encuentra NO se manda.
+ */
+async function ubicacionDeBodega(admin: any, vencidos = false): Promise<number | null> {
+  const { data, error } = await admin.from("erp_sucursal_map")
+    .select("inv_ubicaciones").eq("erp_sucursal_id", ERP_BODEGA).maybeSingle();
+  if (error) throw error;
+  const lista = Array.isArray(data?.inv_ubicaciones) ? data.inv_ubicaciones as { id: number; isVencidos: boolean }[] : [];
+  const id = Number(lista.find((u) => Boolean(u.isVencidos) === vencidos)?.id ?? 0);
+  return id > 0 ? id : null;
+}
+
 // Las dos, iguales a las de `leer-dte-json`.
 function desenvolver(j: any): any {
   return j?.dteJson ?? j?.documento ?? j;
@@ -118,6 +141,13 @@ async function enviarCompra(admin: any, x: {
   // cual daba «algo cambió» siempre — pasó en la primera prueba, 29-oct.
   if (canonico(rev.sobre) !== canonico(x.sobre)) {
     return { enviada: false, error: "Algo cambió desde la revisión (un precio, una presentación): revisa la carga de nuevo." };
+  }
+  // Freno de la ubicación: una revisión guardada antes del arreglo trae
+  // `destino` "3" (Salud 1). Se compara contra la ubicación VIVA de Bodega.
+  const estante = await ubicacionDeBodega(admin, false);
+  if (!estante) return { enviada: false, error: "No se conoce la ubicación de Bodega: no se mandó." };
+  if (String(x.sobre.destino) !== String(estante)) {
+    return { enviada: false, error: "La revisión apunta a otra ubicación: revisa la carga de nuevo." };
   }
 
   // Freno 2b: que Bodega no la tenga YA. `purchase_receipts` (freno de la
@@ -454,6 +484,8 @@ Deno.serve(async (req: Request) => {
       problemas.push({ renglon: null, texto: `El total armado ($${tot.total}) no cuadra con el del documento ($${totalDoc.toFixed(2)}).` });
     }
 
+    const estanteBodega = await ubicacionDeBodega(admin, false);
+    if (!estanteBodega) problemas.push({ renglon: null, texto: "No se conoce la ubicación de Bodega donde entra la compra." });
     const sobre = {
       process: "insert", datos: "", json_arr: JSON.stringify(lineas), cuantos: 0,
       // La fecha de EMISIÓN del documento (usuario, 2026-10-29). El sistema
@@ -463,7 +495,7 @@ Deno.serve(async (req: Request) => {
       // que corre la factura de mes cuando llega a fin de mes.
       total: tot.total, fecha: String(d.fecha_emision).slice(0, 10),
       concepto: uso === "consumo" ? "COMPRA PARA CONSUMO" : "COMPRA DE PRODUCTO",
-      destino: "3", proveedor: String(erpProveedor ?? ""),
+      destino: String(estanteBodega ?? ""), proveedor: String(erpProveedor ?? ""),
       // El código COMPLETO (usuario, 2026-10-29). Ojo: el sistema hoy guarda
       // 20 caracteres —616 de 710 compras desde septiembre miden exactamente
       // 20, ninguna más—, o sea que probablemente lo recorte; por eso la

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.2 — Fotos de productos: la toma se renueva
+
+- **Fotos de productos**: mientras el producto sigue abierto, la toma se renueva cada 5 minutos (vencía a los 15 y armar una foto de varias capas puede tardar más). Si al renovar ya lo abrió otra persona, se avisa.
+
 ## v2.1413.1 — Fotos: pegar, esquina para el tamaño y dos personas
 
 - **Varias fotos**: se puede **pegar** una imagen (⌘V / Ctrl+V, o el botón «Pegar») como capa nueva; el pegado ya no lo toma también la pantalla de atrás (que reabría el editor y tiraba la composición). La foto elegida tiene una **esquina azul** para agrandarla o achicarla arrastrando, además de la barra.

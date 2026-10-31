@@ -169,7 +169,15 @@ export default function FotosProductosView() {
             if (elegido?.id === actual.id) setElegido(null);
             else pasar(actual.id);
         }).catch((err) => console.error('FotosProductos: no se pudo tomar el producto', err));
-        return () => { vivo = false; };
+        // Mientras siga abierto se renueva: la toma vence a los 15 minutos y
+        // armar una foto con varias capas puede tardar más. Si al renovar ya
+        // lo tiene otra persona, se avisa (guardar igual no la pisaría).
+        const renovar = setInterval(() => {
+            tomarProducto(actual.id).then((r) => {
+                if (vivo && r && !r.ok) avisar('Ya lo están trabajando', `${shortEmployeeName(r.tomado_por) || 'Otra persona'} abrió este producto: si guardas, no se guardará para no pisar lo suyo.`, 'warning');
+            }).catch((err) => console.error('FotosProductos: no se pudo renovar la toma', err));
+        }, 5 * 60 * 1000);
+        return () => { vivo = false; clearInterval(renovar); };
     }, [actual?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
     const alGuardar = (producto) => {

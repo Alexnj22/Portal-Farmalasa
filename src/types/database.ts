@@ -15356,6 +15356,7 @@ export type Database = {
           estado: string
           id: string
           lote_id: number | null
+          mes: string
           motivo: string | null
           puntos: number | null
           respuesta_id: string
@@ -15371,6 +15372,7 @@ export type Database = {
           estado: string
           id?: string
           lote_id?: number | null
+          mes?: string
           motivo?: string | null
           puntos?: number | null
           respuesta_id: string
@@ -15386,6 +15388,7 @@ export type Database = {
           estado?: string
           id?: string
           lote_id?: number | null
+          mes?: string
           motivo?: string | null
           puntos?: number | null
           respuesta_id?: string
@@ -15458,6 +15461,7 @@ export type Database = {
           encuesta_id: string
           entrevistador_id: string | null
           id: string
+          mes: string
           nps: number | null
           ref: string | null
           respuestas: Json
@@ -15476,6 +15480,7 @@ export type Database = {
           encuesta_id: string
           entrevistador_id?: string | null
           id?: string
+          mes?: string
           nps?: number | null
           ref?: string | null
           respuestas: Json
@@ -15494,6 +15499,7 @@ export type Database = {
           encuesta_id?: string
           entrevistador_id?: string | null
           id?: string
+          mes?: string
           nps?: number | null
           ref?: string | null
           respuestas?: Json

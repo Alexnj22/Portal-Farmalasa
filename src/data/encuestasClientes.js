@@ -230,7 +230,7 @@ export async function fetchPersonas(ids) {
 //
 // Las respuestas sólo entran por funciones de la base, que validan contra el
 // cuestionario aprobado. El error que lanzan ya viene en palabras del cliente
-// («Ese teléfono ya respondió esta encuesta»), así que se pasa tal cual.
+// («Ese teléfono ya respondió esta encuesta este mes»), así que se pasa tal cual.
 
 const SIN_RED = /failed to fetch|load failed|networkerror|network request failed/i;
 

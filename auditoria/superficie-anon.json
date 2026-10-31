@@ -134,7 +134,7 @@
       "area": "encuestas-clientes",
       "guarda": "token del QR",
       "estado": "abierta-a-proposito",
-      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Única escritura: pasa por encuesta_cliente_registrar, que valida contra el cuestionario aprobado, exige encuesta publicada y vigente, toma el canal del token que entró (QR o tablet, nunca del navegador), frena el envío repetido por dispositivo (20 s y 3 por día en QR; 5 s en la tablet), devuelve la misma respuesta ante un reintento con la misma referencia y sólo guarda el teléfono con consentimiento, uno por encuesta."
+      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Única escritura: pasa por encuesta_cliente_registrar, que valida contra el cuestionario aprobado, exige encuesta publicada y vigente, toma el canal del token que entró (QR o tablet, nunca del navegador), frena el envío repetido por dispositivo (20 s y 3 por día en QR; 5 s en la tablet), acepta una respuesta por cliente, encuesta y mes, devuelve la misma respuesta ante un reintento con la misma referencia y sólo guarda el teléfono con consentimiento."
     }
   ],
   "tablas": [

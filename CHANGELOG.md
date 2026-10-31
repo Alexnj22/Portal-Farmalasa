@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.8 — Encuestas a clientes: una respuesta por cliente al mes
+
+Cada cliente puede responder la misma encuesta una vez al mes (antes, una sola vez para siempre). El tope vale por teléfono y, cuando el teléfono corresponde a una ficha, por cliente en todos los canales: entrevista, tablet, QR y app. Los puntos se siguen dando sólo si el teléfono corresponde a una sola ficha, y una vez al mes por encuesta. En la app, la encuesta vuelve a aparecer el mes siguiente.
+
 ## v2.1413.7 — Encuestas a clientes: correcciones de la auditoría
 
 - La encuesta de la app ya se puede enviar a revisión: existe el tema «Experiencia en la app» y la pregunta de cierre dejó de medir un tema que no existía.

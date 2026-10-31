@@ -186,7 +186,7 @@ export default function AjustesEncuesta() {
                 {editable ? <Opciones valor={encuesta.incentivo_tipo} onCambiar={set('incentivo_tipo')} opciones={INCENTIVOS.map((i) => ({ id: i.value, label: i.label }))} />
                   : <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{INCENTIVOS.find((i) => i.value === encuesta.incentivo_tipo)?.label}</Text>}
                 {encuesta.incentivo_tipo !== 'ninguno' ? (
-                  <Aviso texto={`Sólo lo recibe quien deja su teléfono y acepta el consentimiento, y una sola vez por encuesta.${encuesta.incentivo_tipo === 'puntos' ? ' Los puntos se acreditan solos en su cuenta.' : ''}${encuesta.incentivo_tipo === 'muestra' ? ' La entrega quien entrevista, y la marca como entregada.' : ''}`} />
+                  <Aviso texto={`Sólo lo recibe quien deja su teléfono y acepta el consentimiento, una vez al mes por encuesta.${encuesta.incentivo_tipo === 'puntos' ? ' Los puntos se acreditan solos en su cuenta.' : ''}${encuesta.incentivo_tipo === 'muestra' ? ' La entrega quien entrevista, y la marca como entregada.' : ''}`} />
                 ) : null}
                 {encuesta.incentivo_tipo === 'muestra' && !conEntrevista ? <Aviso tono="cuidado" texto="La muestra médica sólo se entrega en entrevista. Marca ese canal." /> : null}
                 {encuesta.incentivo_tipo === 'puntos' ? (

@@ -141,7 +141,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                             onChange={set('incentivo_tipo')} />
                         {encuesta.incentivo_tipo !== 'ninguno' && (
                             <Notice variant="info" compact>
-                                Sólo lo recibe quien deja su teléfono y acepta el consentimiento, y una sola vez por encuesta.
+                                Sólo lo recibe quien deja su teléfono y acepta el consentimiento, una vez al mes por encuesta.
                                 {encuesta.incentivo_tipo === 'puntos' && ' Los puntos se acreditan solos en su cuenta.'}
                                 {encuesta.incentivo_tipo === 'muestra' && ' La entrega quien entrevista, y la marca como entregada en el portal.'}
                             </Notice>

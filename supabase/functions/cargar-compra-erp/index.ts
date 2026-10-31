@@ -1598,6 +1598,17 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
   };
 }
 
+// El interruptor de Cargar compra (`compra_pausa`, lo cambian Gerencia y
+// Administración desde la pantalla). Frena TODA escritura al sistema; las
+// lecturas y los «Comprobar» siguen. Si no se puede leer, frena: escribir sin
+// saber si alguien pausó es justo lo que el interruptor existe para impedir.
+async function pausa(admin: any): Promise<string | null> {
+  const { data, error } = await admin.from("compra_pausa").select("pausada, motivo").order("id", { ascending: false }).limit(1);
+  if (error) return "No se pudo comprobar si las escrituras están pausadas. Intenta de nuevo.";
+  const u = data?.[0];
+  return u?.pausada ? `Las escrituras al sistema están pausadas${u.motivo ? `: ${u.motivo}` : "."}` : null;
+}
+
 Deno.serve(async (req: Request) => {
   const cors = { ...getCorsHeaders(req), "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -1609,6 +1620,12 @@ Deno.serve(async (req: Request) => {
   // La sala recibe lo que Bodega le repartió: su permiso es el de Traslados,
   // no el de cargar compras, así que va antes de ese freno.
   const cuerpo = await req.clone().json().catch(() => ({}));
+  const escribe = cuerpo?.enviar === true || cuerpo?.accion === "reparto_recibir" || cuerpo?.accion === "reparto_reintentar"
+    || cuerpo?.accion === "erroneo_salida" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
+  if (escribe) {
+    const p = await pausa(admin);
+    if (p) return responder({ error: p, pausada: true }, 409);
+  }
   if (cuerpo?.accion === "reparto_recibir" || cuerpo?.accion === "reparto_comprobar") {
     try {
       const r = cuerpo.accion === "reparto_comprobar"

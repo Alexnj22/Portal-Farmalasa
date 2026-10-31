@@ -94,7 +94,33 @@ export async function devolverDocumento(documentId, proveedor = false) {
  * producto propuesto, 93.5% con lote, 92.1% con vencimiento.
  */
 // `manualId`: una factura en papel (`compra_documento_manual`) en vez de un DTE.
+// Lectura adelantada: la lista pide la propuesta de una factura cuando el
+// puntero pasa por encima (y de las primeras de la página), así al abrirla ya
+// está. Se usa UNA vez y vence a los 2 minutos — lo que la persona confirma
+// después cambia la propuesta, y una vieja mostraría emparejados viejos.
+const adelantadas = new Map();
+export function adelantarPropuesta(documentId) {
+    if (!documentId) return;
+    const ya = adelantadas.get(documentId);
+    if (ya && Date.now() - ya.t < 120000) return;
+    const promesa = leerPropuesta(documentId, null);
+    promesa.catch(() => adelantadas.delete(documentId));
+    adelantadas.set(documentId, { t: Date.now(), promesa });
+}
+
 export async function fetchPropuesta(documentId, manualId = null) {
+    const ya = !manualId && adelantadas.get(documentId);
+    if (ya) {
+        adelantadas.delete(documentId);
+        if (Date.now() - ya.t < 120000) {
+            const r = await ya.promesa;
+            if (!r.error) return r;
+        }
+    }
+    return leerPropuesta(documentId, manualId);
+}
+
+async function leerPropuesta(documentId, manualId) {
     const { data, error } = await supabase.functions.invoke('leer-dte-json', {
         body: manualId
             ? { manual_id: manualId, modo: 'propuesta', max_items: 300 }
@@ -471,4 +497,21 @@ export async function fetchRegistroDeCompras(desde, hasta) {
     const { data, error } = await supabase.rpc('get_compra_registro_json', { p_desde: desde, p_hasta: hasta });
     if (error) return { filas: [], error: error.message };
     return { filas: Array.isArray(data) ? data : [], error: null };
+}
+
+/**
+ * El interruptor de Cargar compra: `{ pausada, motivo, desde, por, por_nombre,
+ * puede_cambiar }`. Mientras está pausado el servidor rechaza toda escritura
+ * al sistema (registrar la compra, crear producto, envíos a salas, recibirlos,
+ * dar salida a erróneos); las lecturas siguen.
+ */
+export async function fetchPausaDeCompras() {
+    const { data, error } = await supabase.rpc('compra_pausa_estado');
+    return { estado: data ?? null, error: error?.message ?? null };
+}
+
+export async function cambiarPausaDeCompras(pausar, motivo = null) {
+    const { data, error } = await supabase.rpc('compra_pausar', { p_pausar: !!pausar, p_motivo: motivo });
+    if (!error) anotar(pausar ? 'COMPRA_ESCRITURAS_PAUSADAS' : 'COMPRA_ESCRITURAS_REANUDADAS', 'compra_pausa', { motivo });
+    return { estado: data ?? null, error: error ? (error.message === 'FORBIDDEN' ? 'Sólo Gerencia General y Administración pueden cambiarlo.' : error.message) : null };
 }

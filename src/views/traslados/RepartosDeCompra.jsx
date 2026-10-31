@@ -9,7 +9,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchRepartosDeCompra, recibirRepartoDeCompra, comprobarRepartoDeCompra, reintentarRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
+import { fetchPausaDeCompras, fetchRepartosDeCompra, recibirRepartoDeCompra, comprobarRepartoDeCompra, reintentarRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
 
 /* Lo que Bodega le repartió a la sala al cargar una compra (2026-10-30).
  *
@@ -42,6 +42,8 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
     // Lo que dejó una recepción («entró pero no cuadró»): vive acá arriba
     // porque la tarjeta desaparece al recibir y se llevaba el aviso con ella.
     const [aviso, setAviso] = useState('');
+    const [pausada, setPausada] = useState(false);
+    useEffect(() => { fetchPausaDeCompras().then(({ estado }) => setPausada(!!estado?.pausada)); }, []);
 
     const cargar = useCallback(async () => {
         const [{ filas: f, error: e }, { pedidos: p, error: e2 }] = await Promise.all([fetchRepartosDeCompra(), fetchPedidosDeVence()]);
@@ -66,6 +68,11 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
     if (!filas || !cuenta) return null;
     return (
         <div className="flex flex-col gap-4">
+        {pausada && vistas.length > 0 && (
+            <p className="text-label text-danger-text font-bold px-1 flex items-start gap-1">
+                <AlertTriangle size={14} className="mt-0.5 shrink-0" /> Gerencia pausó las escrituras al sistema: por ahora no se puede recibir lo que manda Bodega.
+            </p>
+        )}
         {error && <p className="text-label text-danger-text font-medium px-1">No se pudo cargar lo que viene de Bodega: {error}</p>}
         {aviso && (
             <p className="text-label text-warning-text font-bold px-1 flex items-start gap-1">

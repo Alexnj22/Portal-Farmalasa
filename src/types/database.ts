@@ -6814,6 +6814,45 @@ export type Database = {
           },
         ]
       }
+      compra_pausa: {
+        Row: {
+          created_at: string
+          id: number
+          motivo: string | null
+          pausada: boolean
+          por: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: number
+          motivo?: string | null
+          pausada: boolean
+          por?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: number
+          motivo?: string | null
+          pausada?: boolean
+          por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_pausa_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_pausa_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_pedido_vence: {
         Row: {
           branch_id: number
@@ -31465,6 +31504,11 @@ export type Database = {
       compra_llave_de_renglon: {
         Args: { p_codigo: string; p_texto: string }
         Returns: string
+      }
+      compra_pausa_estado: { Args: never; Returns: Json }
+      compra_pausar: {
+        Args: { p_motivo?: string; p_pausar: boolean }
+        Returns: Json
       }
       compra_pedir_vence: {
         Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }

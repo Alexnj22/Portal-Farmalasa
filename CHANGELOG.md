@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1411.0 — Compras: «Lista» y pausar escrituras
+
+- **«Lista»**: si al abrir una compra no falta nada (todo emparejado con seguridad, lote y vencimiento), se revisa sola y queda a un clic de «Cargar en Bodega», con el aviso «Lista». Revisar sólo lee.
+- **Abre más rápido**: la lista lee por adelantado las tres primeras facturas de la página y la que está bajo el puntero (se usa una vez y vence a los 2 minutos).
+- **Pausar escrituras**: botón en Cargar compra, sólo para Gerencia General y Administración, con motivo obligatorio. Pausado, el servidor rechaza registrar compras, crear productos, enviar y recibir repartos y dar salida a erróneos; revisar y comprobar siguen. Aviso en Cargar compra y en Traslados → En camino. Historial en `compra_pausa` (sólo se agrega) y en la bitácora.
+
 ## v2.1410.3 — Quitar fondo en un worker, Retocar siempre y búsqueda del registro más tolerante
 
 - **Quitar fondo funciona de verdad.** Reproducido con Playwright (Chromium y WebKit) contra la CSP de producción: además de lo abierto en v2.1409.1, `@imgly` necesita `blob:` en `connect-src` (baja su motor así) y **`unsafe-eval`** (ndarray arma código con `new Function`). En vez de abrir eso a todo el portal, el modelo corre en `plataforma/fondoWorker.js` y `vercel.json` le da a ESE archivo su propia CSP; la del portal **vuelve a como estaba antes del 2026-10-30** (sin `wasm-unsafe-eval`, sin `blob:` en scripts, sin staticimgly). Medido con el worker compilado y las dos CSP: anda en los dos motores, ~26 s la primera vez (incluye bajar el modelo). Tope 90 s. `worker.format: 'es'` en `vite.config.js` (onnxruntime se parte en chunks).

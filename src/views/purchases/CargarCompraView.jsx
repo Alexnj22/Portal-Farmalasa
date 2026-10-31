@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo, Suspense, lazy } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
 import {
     PackagePlus, AlertTriangle, CheckCircle2, ScanBarcode, BookMarked,
     Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers, Truck,
@@ -29,8 +29,9 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
-    fetchRegistroDeCompras,
+    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta,
 } from '@nucleo/data/cargarCompra';
+import PausaDeEscrituras from './PausaDeEscrituras';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -627,6 +628,19 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const yaMandada = envio?.enviada === true || envio?.enviada === null
         || ['enviando', 'sin_verificar', 'verificada'].includes(estadoCarga?.estado);
     const pendientesDeVence = (revision?.renglones ?? []).filter(x => x.vence_pendiente).length;
+    // «Lista»: si al abrir no falta nada (todo emparejado con seguridad, lote y
+    // vencimiento), se revisa sola — revisar sólo lee — y queda a un clic de
+    // «Cargar en Bodega». Una vez por apertura: si la persona cambia algo,
+    // vuelve a revisar ella.
+    const autoRevisada = useRef(false);
+    useEffect(() => {
+        if (autoRevisada.current || !p || !puedeEditar || yaMandada || resultado || revisando) return;
+        if (faltan > 0 || Object.keys(ajustes).length !== p.renglones.length) return;
+        autoRevisada.current = true;
+        revisar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara una vez, cuando la propuesta está completa
+    }, [p, faltan, ajustes, puedeEditar, yaMandada]);
+    const lista = !!(p && faltan === 0);
     const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);
     // El costo que trae ESTA factura contra el que tiene Bodega, y el margen
     // con el precio de venta actual (la misma regla del catálogo). Sale de la
@@ -1051,9 +1065,15 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                 </div>
                 ) : (
                 <div className="flex items-center gap-2 w-full flex-wrap">
-                    <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
-                        «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
-                    </p>
+                    {lista && revision?.listo && revisionVigente && !yaMandada ? (
+                        <p className="text-label font-bold text-success-text flex-1 min-w-[12rem] flex items-center gap-1">
+                            <CheckCircle2 size={14} className="shrink-0" /> Lista: todo emparejado y revisado. Sólo falta «Cargar en Bodega».
+                        </p>
+                    ) : (
+                        <p className="text-micro text-content-3 flex-1 min-w-[12rem]">
+                            «Revisar carga» arma la compra como la recibiría Bodega y la compara con el documento. Se registra sólo con «Cargar en Bodega».
+                        </p>
+                    )}
                     {puedeEditar && !papel && !envio?.enviada && !estadoCarga && (
                         <Button size="sm" variant="ghost" onClick={() => setSaliendo(true)}>No va a Bodega</Button>
                     )}
@@ -2233,6 +2253,13 @@ export default function CargarCompraView() {
     const [escribiendo, setEscr] = useState(null);   // null · 'nueva' · la fila a corregir
     // La última que se sacó con «No va a Bodega», para poder deshacerlo.
     const [sacada, setSacada] = useState(null);
+    const [pausa, setPausa] = useState(null);
+    useEffect(() => {
+        fetchPausaDeCompras().then(({ estado, error: e }) => {
+            if (e) console.warn('[cargar-compra] interruptor:', e);
+            setPausa(estado);
+        });
+    }, [tab]);
     const cargarPapeles = useCallback(async () => {
         const { facturas, error: e } = await fetchFacturasEnPapel();
         if (e) console.warn('[cargar-compra] facturas en papel:', e);
@@ -2294,6 +2321,12 @@ export default function CargarCompraView() {
         () => visibles.slice((pagina - 1) * porPagina, pagina * porPagina),
         [visibles, pagina, porPagina]);
 
+    // Las tres primeras de la página se leen por adelantado: son las que se abren.
+    useEffect(() => {
+        if (!puedeEditar || tab !== 'facturas') return;
+        enPantalla.slice(0, 3).forEach(f => f.document_id && adelantarPropuesta(f.document_id));
+    }, [enPantalla, puedeEditar, tab]);
+
     const filtersContent = (
         <ViewTabBar tabs={TABS} activeTab={tab} onTabChange={setTab}
             searchValue={tab === 'confirmar' ? buscaConfirmar : busca}
@@ -2305,6 +2338,7 @@ export default function CargarCompraView() {
     return (
         <GlassViewLayout icon={PackagePlus} title="Cargar compra" filtersContent={filtersContent}>
             <div className="p-5 md:p-6 space-y-5">
+            <PausaDeEscrituras estado={pausa} onCambio={setPausa} />
 
             {tab === 'registro' ? <TabRegistro busca={busca} />
             : tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
@@ -2382,7 +2416,8 @@ export default function CargarCompraView() {
                     empty={{ icon: CheckCircle2, message: 'Sin facturas esperando carga en este período' }}
                     movil={{ identidad: 'proveedor', ancla: 'total', usarAccionDeFila: true }}>
                     {enPantalla.map((f, i) => (
-                        <DataRow key={f.document_id} index={i} onClick={() => setSel(f)}>
+                        <DataRow key={f.document_id} index={i} onClick={() => setSel(f)}
+                            onPointerEnter={puedeEditar ? () => adelantarPropuesta(f.document_id) : undefined}>
                             <DataCell><span className="tabular-nums text-content-2 text-label">{fmtFecha(f.fecha_emision)}</span></DataCell>
                             <DataCell>
                                 <span className="font-bold text-content text-label">

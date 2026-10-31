@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1411.2 — La app del personal carga principios como el portal
+
+- **Fotos de productos en la app (iOS y Android) al nivel del portal**: el principio se elige del catálogo (sugerencias al escribir) y se escribe en mayúsculas; la cantidad y la unidad van separadas (lista fija `UNIDADES`), con «Quedará: …» debajo. Lo viejo que no se entiende se muestra para corregirlo.
+- **Registro sanitario en la app**: hasta tres coincidencias con «Usar», las mismas búsquedas y el mismo orden del portal (`decidirSrs`); si el producto no tenía principio y la mejor pasa el 70%, queda escrita (nunca se guarda sola). La concentración se contrasta con el nombre (`corregirConElNombre`) y se avisa.
+- El contador «hoy» cuenta productos, no cambios.
+
 ## v2.1411.1 — Principios estandarizados en la base y sugerencias del registro ordenadas por forma
 
 - **Datos viejos estandarizados (2026-10-31, pedido del usuario).** Con la misma regla de `utils/concentracion.js`, corrida contra producción con ensayo en `ROLLBACK` primero: **1,062 filas de `product_active_principles` en 563 productos**, y su `products.principio_activo` reescrito desde las filas (antes se comprobó que los 614 textos salían de sus filas; las diferencias eran sólo mayúsculas/tildes). Sólo se escribió la fila que seguía igual a como se leyó: 2 de 1,064 habían cambiado y se saltaron. Las unidades pasaron de 15 formas a las canónicas (mg 916, g 146, mcg 39, UI 23…); quedan 2 «n/a» sin interpretar. Seis nombres se unificaron con su variante más usada (CANDESARTAN → CANDESARTÁN…).

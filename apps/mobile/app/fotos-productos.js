@@ -22,7 +22,13 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { revisarCalidad } from '@nucleo/utils/calidadDeFoto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { buscarParaCarga, fetchColaDeCarga, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
+import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
+import { buscarEnSrsParaProducto } from '@nucleo/data/srs';
+import { resultadoDeSrs } from '@nucleo/utils/srs';
+import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enriquecerSrs';
+import {
+  UNIDADES, claveDePrincipio, corregirConElNombre, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio,
+} from '@nucleo/utils/concentracion';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -79,7 +85,10 @@ export default function FotosProductos() {
   const saltados = useRef(new Set());
   const espera = useRef(null);
 
+  const [nombres, setNombres] = useState([]);
   const cargarResumen = useCallback(() => { fetchResumenDeCarga().then(setResumen).catch(() => {}); }, []);
+  // Los principios del catálogo, para elegir en vez de escribir (una vez por visita).
+  useEffect(() => { fetchNombresDePrincipios().then(setNombres).catch(() => {}); }, []);
   const cargarCola = useCallback(async () => {
     try {
       const filas = await fetchColaDeCarga({ falta, limite: 60 + saltados.current.size });
@@ -122,7 +131,8 @@ export default function FotosProductos() {
     return () => { vivo = false; };
   }, [actual?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const hoy = (resumen?.personas ?? []).reduce((s, p) => s + p.fotos_hoy + p.principios_hoy, 0);
+  // Productos, no cambios: un producto con foto y principio cuenta UNO.
+  const hoy = (resumen?.personas ?? []).reduce((s, p) => s + (p.productos_hoy ?? p.fotos_hoy + p.principios_hoy), 0);
 
   return (
     <>
@@ -146,7 +156,7 @@ export default function FotosProductos() {
         ) : null}
         {!puedeEditar ? <Aviso tono="freno" texto="Puedes ver la lista, pero no tienes permiso para guardar fotos ni principios." /> : null}
         {cola == null && !elegido ? <ActivityIndicator style={{ marginTop: 24 }} /> : actual ? (
-          <Ficha key={actual.id} producto={actual} puedeEditar={puedeEditar} quedan={elegido ? null : cola.length}
+          <Ficha key={actual.id} producto={actual} puedeEditar={puedeEditar} nombres={nombres} quedan={elegido ? null : cola.length}
             onGuardado={() => { cargarResumen(); pasar(actual.id); }} onSaltar={() => pasar(actual.id, true)} />
         ) : (
           <Aviso texto={saltados.current.size ? 'Sin productos pendientes; los que saltaste vuelven al recargar.' : 'Sin productos pendientes en esta lista.'} />
@@ -159,15 +169,30 @@ export default function FotosProductos() {
   );
 }
 
-function Ficha({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
+function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar }) {
   const [foto, setFoto] = useState(null);           // uri local, todavía sin subir
-  const [ed, setEd] = useState(() => editorDePrincipios(producto.principios || []));
+  // Cada principio: nombre, cantidad y unidad por separado (como el portal).
+  const [ed, setEd] = useState(() => { const e = editorDePrincipios(producto.principios || []); return { ...e, items: e.items.map(aRenglon) }; });
   const [toco, setToco] = useState(false);
   const [guardando, setGuardando] = useState(false);
+  const [deSrs, setDeSrs] = useState(null);
+  const [enfocado, setEnfocado] = useState(null);   // renglón cuyo nombre se está escribiendo
   const cambiar = (fn) => { setToco(true); setEd(fn); };
   const set = (i, campo, v) => cambiar((e) => ({ ...e, items: e.items.map((p, j) => (j === i ? { ...p, [campo]: v } : p)) }));
 
-  const principios = toco ? principiosParaGuardar(producto.id, ed) : null;
+  const usarSrs = useCallback((crudo) => {
+    const lista = principiosDeSrs(crudo);
+    if (!lista.length) { Alert.alert('Registro sanitario', 'Ese registro no trae principio activo.'); return; }
+    // El registro a veces trae otro número que el empaque (F064815112006: «…20MG» con «21 mg.»).
+    const corregido = lista.length === 1 ? corregirConElNombre(lista[0].concentracion, producto.nombre) : null;
+    setToco(true);
+    setEd({ preset: null, items: (corregido ? [{ ...lista[0], concentracion: corregido }] : lista).map(aRenglon) });
+    setDeSrs({ ...resultadoDeSrs(crudo), corregido: corregido && { srs: normalizarConcentracion(lista[0].concentracion), nombre: corregido } });
+  }, [producto.nombre]);
+
+  const principios = toco
+    ? principiosParaGuardar(producto.id, { preset: ed.preset, items: ed.items.map((it) => ({ nombre: it.nombre, concentracion: escribirConcentracion(it.cantidad, it.unidad) ?? it.crudo })) })
+    : null;
   const validos = principios && principios.rows.length ? principios : null;
   const hayCambios = !!foto || !!validos;
 
@@ -223,7 +248,7 @@ function Ficha({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
       <Seccion titulo="No es un medicamento">
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {PRINCIPIO_PRESETS.map((p) => (
-            <Pressable key={p} disabled={!puedeEditar} onPress={() => cambiar((e) => (e.preset === p ? editorDePrincipios([]) : { preset: p, items: [] }))}
+            <Pressable key={p} disabled={!puedeEditar} onPress={() => { setDeSrs(null); cambiar((e) => (e.preset === p ? { preset: null, items: [renglonVacio()] } : { preset: p, items: [] })); }}
               style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: ed.preset === p ? MARCA.violetaClaro : 'rgba(127,127,127,0.16)' }}>
               <Text style={{ color: ed.preset === p ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{p}</Text>
             </Pressable>
@@ -231,27 +256,60 @@ function Ficha({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
         </View>
       </Seccion>
       {!ed.preset ? (
-        <Seccion titulo="Principio activo" pie="Como dice el empaque: el principio y su concentración.">
-          {ed.items.map((p, i) => (
-            <View key={p._key} style={{ gap: 6, paddingVertical: 4, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-              <Campo multiline={false} editable={puedeEditar} value={p.nombre} onChangeText={(t) => set(i, 'nombre', t)} placeholder="Nombre (ej. Amoxicilina)" />
-              <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
-                <View style={{ flex: 1 }}><Campo multiline={false} editable={puedeEditar} value={p.concentracion ?? ''} onChangeText={(t) => set(i, 'concentracion', t)} placeholder="Concentración (ej. 500mg)" /></View>
+        <Seccion titulo="Principio activo" pie={principios?.text ? `Quedará: ${principios.text}` : 'Elige el principio del catálogo; la cantidad y la unidad, como dice el empaque.'}>
+          {ed.items.map((p, i) => {
+            const sugeridos = enfocado === i && p.nombre.trim().length >= 2
+              ? nombres.filter((n) => claveDePrincipio(n).includes(claveDePrincipio(p.nombre)) && n !== p.nombre).slice(0, 5) : [];
+            return (
+              <View key={p._key} style={{ gap: 8, paddingVertical: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
+                <Campo multiline={false} editable={puedeEditar} value={p.nombre} autoCapitalize="characters" autoCorrect={false}
+                  onFocus={() => setEnfocado(i)} onBlur={() => { setEnfocado(null); if (p.nombre) set(i, 'nombre', normalizarPrincipio(p.nombre)); }}
+                  onChangeText={(t) => set(i, 'nombre', t)} placeholder="Principio (ej. AMOXICILINA)" />
+                {sugeridos.length ? (
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+                    {sugeridos.map((n) => (
+                      <Pressable key={n} onPress={() => { set(i, 'nombre', n); setEnfocado(null); }}
+                        style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.6 : 1 })}>
+                        <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{n}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                  <View style={{ width: 96 }}>
+                    <Campo multiline={false} editable={puedeEditar} value={p.cantidad} keyboardType="decimal-pad" textAlign="center"
+                      onChangeText={(t) => set(i, 'cantidad', t.replace(/[^\d.,]/g, ''))} placeholder="500" />
+                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center' }} style={{ flex: 1 }}>
+                    {UNIDADES.map((u) => (
+                      <Pressable key={u} disabled={!puedeEditar} onPress={() => set(i, 'unidad', u)}
+                        style={{ minHeight: 40, paddingHorizontal: 12, borderRadius: 20, justifyContent: 'center', backgroundColor: p.unidad === u ? MARCA.azulClaro : 'rgba(127,127,127,0.16)' }}>
+                        <Text style={{ color: p.unidad === u ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{u}</Text>
+                      </Pressable>
+                    ))}
+                  </ScrollView>
+                </View>
+                {p.crudo && !p.cantidad ? <Aviso tono="cuidado" texto={`Estaba escrito «${p.crudo}»: pon la cantidad y la unidad para corregirlo.`} /> : null}
                 {ed.items.length > 1 ? (
                   <Pressable hitSlop={8} onPress={() => cambiar((e) => ({ ...e, items: e.items.filter((_, j) => j !== i) }))} style={{ minHeight: 44, justifyContent: 'center' }}>
-                    <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar</Text>
+                    <Text style={{ color: MARCA.rojo, fontSize: 14, fontWeight: '600' }}>Quitar este principio</Text>
                   </Pressable>
                 ) : null}
               </View>
-            </View>
-          ))}
+            );
+          })}
           {puedeEditar ? (
-            <Pressable onPress={() => cambiar((e) => ({ ...e, items: [...e.items, { nombre: '', concentracion: '', orden: e.items.length, _key: Date.now() }] }))} style={{ minHeight: 44, justifyContent: 'center' }}>
+            <Pressable onPress={() => cambiar((e) => ({ ...e, items: [...e.items, renglonVacio()] }))} style={{ minHeight: 44, justifyContent: 'center' }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Agregar otro principio</Text>
             </Pressable>
           ) : null}
         </Seccion>
       ) : null}
+      {deSrs && !ed.preset ? <Aviso texto={`Tomado del registro ${deSrs.noregistro || 'sanitario'} (${deSrs.nombre}). Revísalo contra el empaque antes de guardar.`} /> : null}
+      {deSrs?.corregido && !ed.preset ? (
+        <Aviso tono="cuidado" texto={`El registro dice ${deSrs.corregido.srs}, pero el nombre del producto dice ${deSrs.corregido.nombre}: se dejó ${deSrs.corregido.nombre}. Confírmalo en el empaque.`} />
+      ) : null}
+      <SugerenciasSrs producto={producto} onUsar={usarSrs} autoAplicar={puedeEditar && producto.falta_principio && !toco} />
 
       {puedeEditar ? (
         <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar y siguiente'} color={MARCA.verde} deshabilitado={!hayCambios || guardando} onPress={guardar} />
@@ -260,5 +318,58 @@ function Ficha({ producto, puedeEditar, quedan, onGuardado, onSaltar }) {
         <Text style={{ color: MARCA.azulClaro, fontSize: 16, fontWeight: '600' }}>Saltar</Text>
       </Pressable>
     </View>
+  );
+}
+
+// ── Un renglón del principio (la misma forma que el portal) ─────────────────
+const renglonVacio = () => ({ nombre: '', cantidad: '', unidad: 'mg', crudo: null, _key: `n-${Date.now()}-${Math.random()}` });
+function aRenglon(p, i = 0) {
+  const l = leerConcentracion(p.concentracion);
+  return {
+    nombre: p.nombre ? normalizarPrincipio(p.nombre) : '',
+    cantidad: l.cantidad, unidad: l.unidad || (l.cantidad ? '' : 'mg'), crudo: l.crudo,
+    _key: p._key ?? `r-${Date.now()}-${i}`,
+  };
+}
+
+// ── Lo que dice el registro sanitario de este producto ──────────────────────
+// Las mismas búsquedas y el mismo parecido que el portal (`decidirSrs`): hasta
+// tres coincidencias con «Usar». Si el producto no tenía principio y la mejor
+// pasa el 70%, queda escrita — nunca se guarda sola.
+function SugerenciasSrs({ producto, onUsar, autoAplicar }) {
+  const [estado, setEstado] = useState({ cargando: true, lista: [] });
+  const aplicada = useRef(false);
+  useEffect(() => {
+    let vivo = true;
+    buscarEnSrsParaProducto({ nombre: producto.nombre, laboratorios: { nombre: producto.laboratorio } })
+      .then((json) => {
+        if (!vivo) return;
+        const d = decidirSrs({ nombre: producto.nombre }, json.data || []);
+        const lista = (d.entrada?.candidates || []).filter((c) => principiosDeSrs(c.srs).length);
+        setEstado({ cargando: false, lista });
+        if (d.tipo === 'auto' && autoAplicar && !aplicada.current && lista[0]) { aplicada.current = true; onUsar(lista[0].srs); }
+      })
+      .catch(() => { if (vivo) setEstado({ cargando: false, lista: [], error: true }); });
+    return () => { vivo = false; };
+  }, [producto.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  return (
+    <Seccion titulo="Registro sanitario" pie={estado.error ? 'No se pudo consultar el registro.' : !estado.cargando && !estado.lista.length ? 'Sin coincidencias con principio activo: escríbelo del empaque.' : null}>
+      {estado.cargando ? <ActivityIndicator style={{ marginVertical: 8 }} /> : estado.lista.map(({ srs, score }, i) => {
+        const r = resultadoDeSrs(srs);
+        const titulo = principiosDeSrs(srs).map((p) => [normalizarPrincipio(p.nombre), normalizarConcentracion(p.concentracion)].filter(Boolean).join(' ')).join(' + ');
+        return (
+          <Pressable key={`${r.noregistro}-${i}`} onPress={() => onUsar(srs)}
+            style={({ pressed }) => ({ minHeight: 52, paddingVertical: 6, gap: 2, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{titulo}</Text>
+              <Pildora texto={`${Math.round(score * 100)}%`} color={score >= SRS_AUTO_MIN ? MARCA.verde : colorSistema.texto2} />
+            </View>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={2}>{[r.nombre, r.titular, r.noregistro].filter(Boolean).join(' · ')}</Text>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Usar</Text>
+          </Pressable>
+        );
+      })}
+    </Seccion>
   );
 }

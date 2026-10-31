@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1412.1 — Fotos de productos: pestaña Completados, volver al anterior y quitar Insumo/No aplica
+
+Pedido del usuario (2026-10-31): «si guardo uno, no hay forma de volver por si me equivoqué, ni ver el listado para ver cuáles ya están y corregir», y que Insumo/No aplica se entienda que se puede quitar.
+
+- **Pestaña «Completados»** (en la dirección, `?falta=hechos`): los últimos 60 productos distintos que se guardaron, el más reciente primero, con quién y cuándo. Tocar uno lo abre en la ficha para corregirlo; «Saltar» ahí vuelve a la lista. `fetchRecientesDeCarga` lee 500 filas de `producto_carga_log` (tope deliberado bajo el techo de 1000) y trae los productos por la misma `cola_carga_productos`.
+- **«Volver al anterior»** arriba de la ficha después de guardar: reabre el producto releído de la base, no la copia de antes de guardar.
+- Con «Insumo» o «No aplica» elegido aparece **«✕ Quitar «…»»** al lado.
+
 ## v2.1412.0 — Compras «Por llegar» y Productos «Rentabilidad»
 
 - **«Llegaron» en cada renglón de la carga**: si el proveedor mandó menos de lo facturado, se escribe cuántas llegaron. La factura entra completa (la cobraron entera) y lo que falta queda en la pestaña nueva **«Por llegar»** con proveedor, factura, unidades y monto. Botones «Llegó», «Pedir nota de crédito» y «Llegó la nota»; a los 15 días sin llegar se marca para reclamar. El envío a salas no deja mandar más de lo que llegó. Cada paso queda en `compra_por_llegar_log`; el registro de compras guarda `llegaron`.

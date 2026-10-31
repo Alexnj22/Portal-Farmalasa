@@ -68,6 +68,31 @@ export async function guardarCarga(productId, { fotoUrl = null, principios = nul
     return data;
 }
 
+/**
+ * Lo último que se completó, el más reciente primero: para volver a abrir uno
+ * y corregirlo. Un producto sale una vez (su cambio más reciente), con quién y
+ * cuándo. Lee 500 filas del registro —tope deliberado, bajo el techo de 1000—:
+ * alcanza de sobra para los 60 productos distintos que se muestran.
+ */
+export async function fetchRecientesDeCarga({ limite = 60 } = {}) {
+    const { data, error } = await supabase.from('producto_carga_log')
+        .select('product_id, employee_id, created_at')
+        .order('created_at', { ascending: false })
+        .limit(500);
+    if (error) throw error;
+    const ultimo = new Map();
+    for (const r of data || []) {
+        if (!ultimo.has(r.product_id)) ultimo.set(r.product_id, r);
+        if (ultimo.size >= limite) break;
+    }
+    if (!ultimo.size) return [];
+    const filas = await fetchColaDeCarga({ ids: [...ultimo.keys()], limite: ultimo.size });
+    const porId = new Map(filas.map((f) => [f.id, f]));
+    return [...ultimo.values()]
+        .filter((r) => porId.has(r.product_id))
+        .map((r) => ({ ...porId.get(r.product_id), hecho_por: r.employee_id, hecho_el: r.created_at }));
+}
+
 /** Cuánto falta y cuánto hizo cada persona hoy y en los últimos 7 días. */
 export async function fetchResumenDeCarga() {
     const { data, error } = await supabase.rpc('resumen_carga_productos');

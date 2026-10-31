@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Camera, CheckCircle2, ClipboardPaste, FlaskConical, Globe, ImagePlus, Loader2, Package, Plus, Search, SkipForward, Smartphone, Users, X } from 'lucide-react';
+import { Camera, CheckCircle2, ClipboardPaste, History, Undo2, FlaskConical, Globe, ImagePlus, Loader2, Package, Plus, Search, SkipForward, Smartphone, Users, X } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import CarrilCards from '../components/common/CarrilCards';
@@ -25,11 +25,13 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { formatQty } from '@nucleo/utils/formatNumber';
+import { diaDe, fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
 import SrsBuscadorWidget from '../components/srs/SrsBuscadorWidget';
 import { buscarEnSrsParaProducto } from '@nucleo/data/srs';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enriquecerSrs';
-import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
+import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchRecientesDeCarga, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
 import { UNIDADES, corregirConElNombre, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio } from '@nucleo/utils/concentracion';
 import LiquidSelect from '../components/common/LiquidSelect';
 
@@ -66,6 +68,8 @@ const PESTANAS = [
     { key: 'cualquiera', label: 'Todo lo que falta', icon: Package },
     { key: 'foto', label: 'Sin foto', icon: Camera },
     { key: 'principio', label: 'Sin principio activo', icon: FlaskConical },
+    // Lo ya guardado, para volver a abrirlo y corregir (pedido del usuario, 2026-10-31).
+    { key: 'hechos', label: 'Completados', icon: History },
 ];
 
 const avisar = (titulo, texto, tipo = 'error') => useToastStore.getState().showToast(titulo, texto, tipo);
@@ -89,7 +93,18 @@ export default function FotosProductosView() {
             .catch((err) => console.error('FotosProductos: no se pudo leer el avance', err));
     }, []);
 
+    const enHechos = falta === 'hechos';
+    const [recientes, setRecientes] = useState(null);
+    const [ultimoGuardado, setUltimoGuardado] = useState(null);   // { id, nombre }
+
+    const cargarRecientes = useCallback(() => {
+        fetchRecientesDeCarga().then(setRecientes)
+            .catch((err) => { setRecientes([]); avisar('Completados', mensajeAmigable(err)); });
+    }, []);
+    useEffect(() => { if (enHechos) cargarRecientes(); }, [enHechos, cargarRecientes]);
+
     const cargarCola = useCallback(async () => {
+        if (falta === 'hechos') return;   // esa pestaña no tiene cola: lista lo hecho
         try {
             const filas = await fetchColaDeCarga({ falta, limite: 60 + saltados.current.size });
             setCola(filas.filter((f) => !saltados.current.has(f.id)));
@@ -132,7 +147,7 @@ export default function FotosProductosView() {
 
     // Con menos de dos letras no hay búsqueda: lo que quedó de la anterior no se muestra.
     const enBusqueda = busqueda.trim().length >= 2 ? resultados : null;
-    const actual = elegido ?? cola?.[0] ?? null;
+    const actual = elegido ?? (enHechos ? null : cola?.[0]) ?? null;
 
     const pasar = (id, { saltar = false } = {}) => {
         if (saltar) { saltados.current.add(id); setCuantosSaltados(saltados.current.size); }
@@ -157,10 +172,23 @@ export default function FotosProductosView() {
         return () => { vivo = false; };
     }, [actual?.id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    const alGuardar = (id) => {
+    const alGuardar = (producto) => {
+        setUltimoGuardado({ id: producto.id, nombre: producto.nombre });
+        if (enHechos) cargarRecientes();
+        const id = producto.id;
         cargarResumen();
         setBusqueda('');
         pasar(id);
+    };
+
+    // Volver a abrir lo que se acaba de guardar, releído: lo que muestra la ficha
+    // tiene que ser lo que quedó en la base, no lo que había antes de guardar.
+    const abrirDeNuevo = async (id) => {
+        try {
+            const [fila] = await fetchColaDeCarga({ ids: [id], limite: 1 });
+            if (fila) setElegido(fila);
+            else avisar('Volver al anterior', 'Ese producto ya no está activo.', 'warning');
+        } catch (err) { avisar('Volver al anterior', mensajeAmigable(err)); }
     };
 
     const volverAEmpezar = () => { saltados.current = new Set(); setCuantosSaltados(0); setCola(null); cargarCola(); };
@@ -208,13 +236,39 @@ export default function FotosProductosView() {
                             <Notice variant="warning">Puedes ver la cola, pero no tienes permiso para guardar fotos ni principios activos.</Notice>
                         )}
 
-                        {cola == null && !elegido ? (
+                        {ultimoGuardado && actual?.id !== ultimoGuardado.id && (
+                            <div className="flex items-center gap-2 flex-wrap">
+                                <Button variant="ghost" size="sm" icon={Undo2} onClick={() => abrirDeNuevo(ultimoGuardado.id)}>
+                                    Volver al anterior
+                                </Button>
+                                <span className="text-caption text-content-3 truncate min-w-0">{ultimoGuardado.nombre}</span>
+                            </div>
+                        )}
+
+                        {enHechos && !elegido ? (
+                            <section data-surface="card" className="p-3 md:p-4 space-y-1">
+                                <p className="text-label font-semibold text-content-2 px-1 pb-1">Lo último que se completó — ábrelo para corregirlo</p>
+                                {recientes == null ? <SkeletonText lines={6} /> : recientes.length === 0 ? (
+                                    <p className="text-caption text-content-3 px-1">Todavía no se ha completado ningún producto.</p>
+                                ) : recientes.map((r) => {
+                                    const quien = mias.find((p) => p.employee_id === r.hecho_por);
+                                    return (
+                                        <ListRow key={r.id} density="sm"
+                                            leading={<Miniatura src={r.foto_url} />}
+                                            title={r.nombre}
+                                            subtitle={[r.principio_activo || 'Sin principio activo', quien && shortEmployeeName(quien), cuandoFue(r.hecho_el)].filter(Boolean).join(' · ')}
+                                            trailing={<Faltas p={r} />}
+                                            onClick={() => setElegido(r)} />
+                                    );
+                                })}
+                            </section>
+                        ) : cola == null && !elegido ? (
                             <section data-surface="card" className="p-5"><SkeletonText lines={6} /></section>
                         ) : actual ? (
                             <FichaDeCarga key={actual.id} producto={actual} puedeEditar={puedeEditar} nombres={nombres}
                                 quedan={elegido ? null : cola.length}
-                                onGuardado={() => alGuardar(actual.id)}
-                                onSaltar={() => pasar(actual.id, { saltar: true })} />
+                                onGuardado={() => alGuardar(actual)}
+                                onSaltar={() => (enHechos ? setElegido(null) : pasar(actual.id, { saltar: true }))} />
                         ) : (
                             <section data-surface="card" className="p-5">
                                 <EmptyState icon={CheckCircle2} title="Sin productos pendientes en esta lista"
@@ -256,6 +310,13 @@ export default function FotosProductosView() {
             )}
         </GlassViewLayout>
     );
+}
+
+// «hoy 3:41 p. m.» o «29 oct 3:41 p. m.»: lo justo para ubicar qué se hizo.
+function cuandoFue(fecha) {
+    if (!fecha) return null;
+    const dia = diaDe(fecha) === hoySV() ? 'hoy' : fechaTexto(fecha, { day: 'numeric', month: 'short' });
+    return `${dia} ${hora12(fecha)}`;
 }
 
 function Miniatura({ src, size = 40 }) {
@@ -545,8 +606,16 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                 <div className="space-y-3 min-w-0">
                     <div className="space-y-2">
                         <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><FlaskConical size={14} /> Principio activo</p>
-                        <SegmentedControl size="sm" label="No es un medicamento" value={preset} onChange={elegirPreset}
-                            options={PRINCIPIO_PRESETS.map((p) => ({ value: p, label: p }))} />
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <SegmentedControl size="sm" label="No es un medicamento" value={preset} onChange={elegirPreset}
+                                options={PRINCIPIO_PRESETS.map((p) => ({ value: p, label: p }))} />
+                            {/* Elegido, se lee como un interruptor encendido: la X dice que se puede quitar. */}
+                            {preset && puedeEditar && (
+                                <Button variant="ghost" size="sm" icon={X} onClick={() => elegirPreset(preset)}>
+                                    Quitar «{preset}»
+                                </Button>
+                            )}
+                        </div>
                         {!preset && (
                             <div className="space-y-1.5">
                                 <div className="hidden sm:grid grid-cols-[1rem_1fr_6rem_8rem_2.75rem] gap-1.5 text-micro font-semibold uppercase tracking-wide text-content-3">

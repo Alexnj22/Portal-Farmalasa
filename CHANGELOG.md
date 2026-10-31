@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1411.1 — Principios estandarizados en la base y sugerencias del registro ordenadas por forma
+
+- **Datos viejos estandarizados (2026-10-31, pedido del usuario).** Con la misma regla de `utils/concentracion.js`, corrida contra producción con ensayo en `ROLLBACK` primero: **1,062 filas de `product_active_principles` en 563 productos**, y su `products.principio_activo` reescrito desde las filas (antes se comprobó que los 614 textos salían de sus filas; las diferencias eran sólo mayúsculas/tildes). Sólo se escribió la fila que seguía igual a como se leyó: 2 de 1,064 habían cambiado y se saltaron. Las unidades pasaron de 15 formas a las canónicas (mg 916, g 146, mcg 39, UI 23…); quedan 2 «n/a» sin interpretar. Seis nombres se unificaron con su variante más usada (CANDESARTAN → CANDESARTÁN…).
+- `escribirConcentracion` quita los ceros de relleno: «1.00gr» → «1 g», «0.50» → «0.5».
+- **Sugerencias del registro ordenadas por forma farmacéutica** (`afinidadDeForma`, `afinidadDeLetras`): «ORFENAFLEX -D DISPENSADOR» ponía primero el inyectable; ahora la cápsula «ORFENAFLEX- D». La forma y las letras sueltas sólo cambian el ORDEN: el % mostrado y el umbral de aplicar solo siguen siendo el parecido.
+
 ## v2.1411.0 — Compras: «Lista» y pausar escrituras
 
 - **«Lista»**: si al abrir una compra no falta nada (todo emparejado con seguridad, lote y vencimiento), se revisa sola y queda a un clic de «Cargar en Bodega», con el aviso «Lista». Revisar sólo lee.

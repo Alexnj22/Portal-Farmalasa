@@ -11,6 +11,7 @@ describe('normalizarConcentracion', () => {
         ['250 mcg.', '250 mcg'], ['400 ui', '400 UI'], ['250 mg/5 ml', '250 mg/5 mL'],
         ['40 mg/2ml', '40 mg/2 mL'], ['1 %', '1 %'], ['0,5 mg', '0.5 mg'], ['10 ml.', '10 mL'],
         ['5 mg/ml', '5 mg/mL'], ['2 g/100g', '2 g/100 g'], ['500', '500'],
+        ['1.00gr', '1 g'], ['0.50 mg.', '0.5 mg'], ['100 mg', '100 mg'], ['2.5 mg', '2.5 mg'],
     ])('%s → %s', (entrada, salida) => expect(normalizarConcentracion(entrada)).toBe(salida));
 
     it('lo que no entiende lo deja como vino', () => {

@@ -54,7 +54,8 @@ export function leerConcentracion(texto) {
 
 /** `{ cantidad, unidad }` → «500 mg». Sin cantidad no hay concentración. */
 export function escribirConcentracion(cantidad, unidad) {
-    const c = String(cantidad ?? '').trim().replace(',', '.');
+    // «1.00» → «1», «0.50» → «0.5»: el cero de relleno no es un dato.
+    const c = String(cantidad ?? '').trim().replace(',', '.').replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
     if (!c) return null;
     const u = String(unidad ?? '').trim();
     return u ? `${c} ${u}` : c;

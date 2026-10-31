@@ -124,11 +124,47 @@ export function textoDePrincipios(principios) {
  * hacer. `{ tipo: 'auto' | 'revisar' | 'sin', entrada }` — `entrada` =
  * `{ product, srs, score, principios, candidates }`.
  */
+// ── La forma farmacéutica como desempate (2026-10-31) ──────────────────────
+// Con un nombre corto («ORFENAFLEX -D DISPENSADOR») el parecido de palabras
+// ponía primero el INYECTABLE (0.50) sobre las cápsulas (0.33), porque las
+// cápsulas traen más palabras de dosis. La forma decide el ORDEN; el puntaje
+// que se muestra y el umbral de «auto» siguen siendo el parecido sin tocar.
+const FORMAS = [
+    ['iny', /\b(INY|INYECTABLE|INYECCION|AMP|AMPOLLA|AMPOLLAS|VIAL|VIALES|LIOFILIZADO)\b/],
+    ['liquido', /\b(JARABE|JAR|SUSP|SUSPENSION|SOL|SOLUCION|GOTAS|GTS|ELIXIR|EMULSION)\b/],
+    ['topico', /\b(CREMA|UNGUENTO|POMADA|GEL|LOCION|SPRAY|OVULO|OVULOS|SUPOSITORIO|SUPOSITORIOS)\b/],
+    ['solido', /\b(TAB|TABS|TABLETA|TABLETAS|CAP|CAPS|CAPSULA|CAPSULAS|COMP|COMPRIMIDO|COMPRIMIDOS|GRAGEA|GRAGEAS|SOBRE|SOBRES|GRANULADO)\b/],
+];
+const formaDe = (texto) => FORMAS.find(([, re]) => re.test(normalizar(texto)))?.[0] ?? null;
+
+/** Multiplicador de orden: misma forma premia, distinta castiga; sin forma, el oral sólido va antes. */
+export function afinidadDeForma(nombreCatalogo, srs) {
+    const deSrs = formaDe(`${srs?.NOMBRE_FORMA_FARMACEUTICA || srs?.forma_farmaceutica || ''} ${srs?.nombre_comercial || srs?.nombreComercial || ''}`);
+    const delCatalogo = formaDe(nombreCatalogo);
+    if (!deSrs) return 1;
+    if (delCatalogo) return delCatalogo === deSrs ? 1.2 : 0.8;
+    // Sin forma en el nombre: en el mostrador lo común es el oral sólido, y un
+    // inyectable que el nombre no menciona es la confusión más cara.
+    return deSrs === 'solido' ? 1.1 : deSrs === 'iny' ? 0.6 : 1;
+}
+
+/** Las letras sueltas del nombre («-D», «C») que el parecido descarta: si el registro también las tiene, suman. */
+function afinidadDeLetras(nombreCatalogo, nombreSrs) {
+    const sueltas = (t) => new Set(normalizar(t).split(' ').filter((x) => /^[A-Z]$/.test(x) && x !== 'X' && x !== 'Y'));
+    const a = sueltas(nombreCatalogo);
+    if (!a.size) return 1;
+    const b = sueltas(nombreSrs);
+    return [...a].every((l) => b.has(l)) ? 1.2 : 0.9;
+}
+
+const ordenDe = (nombre, r) => r.score * afinidadDeForma(nombre, r.srs)
+    * afinidadDeLetras(nombre, r.srs?.nombre_comercial || r.srs?.nombreComercial || '');
+
 export function decidirSrs(producto, resultados) {
     const candidatos = (resultados || [])
         .map((r) => ({ srs: r, score: parecidoSrs(producto.nombre, r.nombre_comercial || r.nombreComercial || '') }))
         .filter((r) => r.score >= SRS_REVISION_MIN)
-        .sort((a, b) => b.score - a.score)
+        .sort((a, b) => ordenDe(producto.nombre, b) - ordenDe(producto.nombre, a))
         .slice(0, SRS_CANDIDATOS);
     const mejor = candidatos[0];
     if (!mejor) return { tipo: 'sin', entrada: null };

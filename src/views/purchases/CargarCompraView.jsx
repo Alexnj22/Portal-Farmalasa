@@ -32,6 +32,7 @@ import {
     fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta, fetchPorLlegar, marcarPorLlegar,
 } from '@nucleo/data/cargarCompra';
 import PausaDeEscrituras from './PausaDeEscrituras';
+import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -566,7 +567,8 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         product_id: productoDe(r, i),
         factor: Number(ajustes[i]?.factor) || 1,
         lote: ajustes[i]?.lote || null,
-        vence: ajustes[i]?.vence || null,
+        // El campo de mes emite el texto mientras no está completo: eso no viaja.
+        vence: /^\d{4}-\d{2}$/.test(ajustes[i]?.vence ?? '') ? ajustes[i].vence : null,
         venta: Number(ajustes[i]?.venta) > 0 ? Number(ajustes[i].venta) : null,
         llegaron: ajustes[i]?.llegaron !== '' && ajustes[i]?.llegaron != null ? Number(ajustes[i].llegaron) : null,
         erroneo: ajustes[i]?.erroneo === true,
@@ -624,7 +626,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             sin_producto: !r.producto_id && !confirmado,
             a_confirmar: !!r.producto_id && !r.seguro && !confirmado,
             sin_lote: !ajustes[i]?.lote,
-            sin_vencimiento: !ajustes[i]?.vence,
+            sin_vencimiento: !/^\d{4}-\d{2}$/.test(ajustes[i]?.vence ?? ''),
         };
     });
     const contar = (k) => estado.filter(e => e[k]).length;
@@ -965,7 +967,26 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                         )}
                                     </div>
                                     {uso === 'venta' && (
-                                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2 max-w-4xl">
+                                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+                                            {(() => {
+                                                // En qué presentación entra: la de su tamaño. Elegirla pone la
+                                                // cantidad (factura × tamaño); sólo con el producto propuesto,
+                                                // que es del que se conocen las presentaciones.
+                                                const pres = [...new Map((r.vinetas ?? []).map(x => [x.factor, x])).values()]
+                                                    .sort((a, b) => a.factor - b.factor);
+                                                if (pres.length < 2 || productoDe(r, i) !== r.producto_id) return null;
+                                                const f = Number(aj.factor) || 1;
+                                                return (
+                                                    <div className="min-w-0">
+                                                        <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
+                                                        <LiquidSelect compact clearable={false} disabled={!puedeEditar} ariaLabel="Se carga como"
+                                                            value={pres.some(x => x.factor === f) ? String(f) : ''}
+                                                            placeholder={`${f} por cada una`}
+                                                            options={pres.map(x => ({ value: String(x.factor), label: `${x.nombre ?? 'Presentación'} (${x.factor})` }))}
+                                                            onChange={v => v && ajustarCarga(i, r, String(Number(r.cantidad) * Number(v)))} />
+                                                    </div>
+                                                );
+                                            })()}
                                             <PortalInput compact labelDenso label="Cantidad a cargar" inputMode="numeric"
                                                 helperText={cargarAyuda(r, aj)}
                                                 value={aj.cargar ?? cargarDe(r, aj.factor)}
@@ -978,8 +999,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 ) : null} />
                                             <PortalInput compact labelDenso label="Lote" value={aj.lote}
                                                 onChange={e => ajustar(i, 'lote', e.target.value)} />
-                                            <PortalInput compact labelDenso label="Vence" type="month" value={aj.vence}
-                                                onChange={e => ajustar(i, 'vence', e.target.value)} />
+                                            <CampoMesAnio label="Vence" value={aj.vence} onChange={v => ajustar(i, 'vence', v)} />
                                             {(() => {
                                                 const actual = vinetaActual(r, aj, sim);
                                                 const nueva = Number(aj.venta);

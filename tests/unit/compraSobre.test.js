@@ -239,3 +239,12 @@ describe('viñeta', () => {
         expect(res.problemas[0].texto).toMatch(/muy lejos/);
     });
 });
+
+describe('factor en la descripción: empaque nombrado', () => {
+    it('FARDO … DE 25 UNIDADES', () => {
+        expect(factorEnLaDescripcion('FARDO AGUA $ 0.9166 DE 25 UNIDADES 500 ml')).toBe(25);
+    });
+    it('sin palabra de empaque no cuenta', () => {
+        expect(factorEnLaDescripcion('AMOXICILINA X 30 UNIDADES')).toBe(null);
+    });
+});

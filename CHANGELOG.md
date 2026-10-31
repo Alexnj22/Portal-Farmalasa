@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1412.2 — Compras: presentación, mes de vence y fardos
+
+- **«Se carga como»** en cada renglón: lista las presentaciones del producto (UNIDAD, FARDO X 24, FARDO X 25…); elegir una pone la cantidad a cargar (factura × tamaño) y entra en esa presentación.
+- **Vence** con el campo de mes y año del portal (el de Safari era texto suelto); un mes a medio escribir cuenta como faltante y no viaja.
+- **El tamaño del empaque se lee de la descripción** también en «FARDO … DE 25 UNIDADES» (Agua Fría): antes sólo «| N | caja» y «CJA X N U». Hace falta la palabra del empaque — «X 30 UNIDADES» sola no cuenta.
+
 ## v2.1412.1 — Fotos de productos: pestaña Completados, volver al anterior y quitar Insumo/No aplica
 
 Pedido del usuario (2026-10-31): «si guardo uno, no hay forma de volver por si me equivoqué, ni ver el listado para ver cuáles ya están y corregir», y que Insumo/No aplica se entienda que se puede quitar.

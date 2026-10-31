@@ -462,15 +462,15 @@ Deno.serve(async (req: Request) => {
         // La viñeta (precio de venta) de cada presentación: la pantalla la
         // muestra para que Bodega la compare con la caja. De a 200 productos:
         // con varias presentaciones cada uno, la lista entera pasaría de 1000.
-        const vinetas = new Map<number, { factor: number; vineta: number }[]>();
+        const vinetas = new Map<number, { factor: number; vineta: number; nombre: string | null }[]>();
         for (let k = 0; k < ids.length; k += 200) {
           const { data: pp, error: errPP } = await admin.from("product_precios")
-            .select("product_id, factor, costo, vineta").in("product_id", ids.slice(k, k + 200)).eq("activo", true);
+            .select("product_id, factor, costo, vineta, presentaciones(tipo)").in("product_id", ids.slice(k, k + 200)).eq("activo", true);
           if (errPP) throw errPP;
           for (const x of pp ?? []) {
             if (Number(x.factor) === 1 && Number(x.costo) > 0) costoUnidad.set(x.product_id, Number(x.costo));
             const l = vinetas.get(x.product_id) ?? [];
-            l.push({ factor: Number(x.factor), vineta: Number(x.vineta) });
+            l.push({ factor: Number(x.factor), vineta: Number(x.vineta), nombre: (x as any).presentaciones?.tipo ?? null });
             vinetas.set(x.product_id, l);
           }
         }

@@ -276,7 +276,12 @@ export function totalesDelSobre(
  * suelto en el nombre suele ser gramos o mililitros.
  */
 export function factorEnLaDescripcion(t: string): number | null {
-  const m = /\|\s*(\d+)(?:\.0+)?\s*\|\s*caja\b/i.exec(t) ?? /\bCJA\.?\s*(?:X\s*)?(\d+)\s*(?:U|UND|UNDS|UNIDADES)\b/i.exec(t);
+  // «FARDO AGUA $0.9166 DE 25 UNIDADES 500 ml» (Agua Fría): un empaque
+  // nombrado y «de/x/con N unidades». Sin la palabra del empaque no cuenta:
+  // «X 30 TABLETAS» es lo que trae el producto, no cuántos vienen.
+  const empaque = /\b(FARDO|CAJA|CJA|PAQUETE|PAQ|DISPLAY|BULTO|SIXPACK)\b/i.test(t)
+    ? /\b(?:DE|X|CON)\s*(\d+)\s*(?:UNIDADES|UNIDAD|UNDS|UND|U)\b/i.exec(t) : null;
+  const m = /\|\s*(\d+)(?:\.0+)?\s*\|\s*caja\b/i.exec(t) ?? /\bCJA\.?\s*(?:X\s*)?(\d+)\s*(?:U|UND|UNDS|UNIDADES)\b/i.exec(t) ?? empaque;
   const n = m ? Number(m[1]) : NaN;
   return Number.isInteger(n) && n >= 2 && n <= 500 ? n : null;
 }

@@ -141,7 +141,8 @@ export function historialDePreciosSinRepetir(history) {
     const lastByPres = {};
     for (const r of (history || [])) {
         const key = r.id_presentacion;
-        const snap = JSON.stringify(ORDEN_DE_NIVELES.map((k) => r[k]));
+        // El costo cuenta como cambio sólo si vino (quien no ve costos no lo pide).
+        const snap = JSON.stringify([...ORDEN_DE_NIVELES.map((k) => r[k]), r.costo]);
         if (lastByPres[key] !== snap) { out.push(r); lastByPres[key] = snap; }
     }
     return out.sort((a, b) => new Date(b.valid_from).getTime() - new Date(a.valid_from).getTime());

@@ -6951,6 +6951,120 @@ export type Database = {
           },
         ]
       }
+      compra_por_llegar: {
+        Row: {
+          cambiado_at: string | null
+          cambiado_por: string | null
+          carga_id: number
+          created_at: string
+          estado: string
+          faltan: number
+          id: number
+          nota: string | null
+          registro_id: number
+        }
+        Insert: {
+          cambiado_at?: string | null
+          cambiado_por?: string | null
+          carga_id: number
+          created_at?: string
+          estado?: string
+          faltan: number
+          id?: number
+          nota?: string | null
+          registro_id: number
+        }
+        Update: {
+          cambiado_at?: string | null
+          cambiado_por?: string | null
+          carga_id?: number
+          created_at?: string
+          estado?: string
+          faltan?: number
+          id?: number
+          nota?: string | null
+          registro_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_por_llegar_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_cambiado_por_fkey"
+            columns: ["cambiado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_carga_id_fkey"
+            columns: ["carga_id"]
+            isOneToOne: false
+            referencedRelation: "compra_carga"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_registro_id_fkey"
+            columns: ["registro_id"]
+            isOneToOne: true
+            referencedRelation: "compra_registro"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      compra_por_llegar_log: {
+        Row: {
+          created_at: string
+          estado: string
+          id: number
+          nota: string | null
+          por: string | null
+          por_llegar_id: number
+        }
+        Insert: {
+          created_at?: string
+          estado: string
+          id?: number
+          nota?: string | null
+          por?: string | null
+          por_llegar_id: number
+        }
+        Update: {
+          created_at?: string
+          estado?: string
+          id?: number
+          nota?: string | null
+          por?: string | null
+          por_llegar_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_por_llegar_log_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_log_por_fkey"
+            columns: ["por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_log_por_llegar_id_fkey"
+            columns: ["por_llegar_id"]
+            isOneToOne: false
+            referencedRelation: "compra_por_llegar"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_producto_alias: {
         Row: {
           codigo_proveedor: string
@@ -7060,6 +7174,7 @@ export type Database = {
           fecha_documento: string | null
           id: number
           id_presentacion: string | null
+          llegaron: number | null
           lote: string | null
           manual_id: number | null
           numero_control: string | null
@@ -7100,6 +7215,7 @@ export type Database = {
           fecha_documento?: string | null
           id?: number
           id_presentacion?: string | null
+          llegaron?: number | null
           lote?: string | null
           manual_id?: number | null
           numero_control?: string | null
@@ -7140,6 +7256,7 @@ export type Database = {
           fecha_documento?: string | null
           id?: number
           id_presentacion?: string | null
+          llegaron?: number | null
           lote?: string | null
           manual_id?: number | null
           numero_control?: string | null
@@ -31514,6 +31631,10 @@ export type Database = {
         Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }
         Returns: number
       }
+      compra_por_llegar_marcar: {
+        Args: { p_estado: string; p_id: number; p_nota?: string }
+        Returns: Json
+      }
       compra_registro_anotar_carga: {
         Args: { p_carga_id: number }
         Returns: number
@@ -33264,6 +33385,7 @@ export type Database = {
       }
       get_compra_erroneos: { Args: never; Returns: Json }
       get_compra_pedidos_vence: { Args: never; Returns: Json }
+      get_compra_por_llegar_json: { Args: never; Returns: Json }
       get_compra_registro_json: {
         Args: { p_desde: string; p_hasta: string }
         Returns: Json
@@ -34483,6 +34605,7 @@ export type Database = {
         Args: { p_account_id?: number }
         Returns: Json
       }
+      get_rentabilidad_json: { Args: { p_dias?: number }; Returns: Json }
       get_resumen_fiscal: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
         Returns: Json

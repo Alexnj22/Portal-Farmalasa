@@ -29,7 +29,7 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
-    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta,
+    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta, fetchPorLlegar, marcarPorLlegar,
 } from '@nucleo/data/cargarCompra';
 import PausaDeEscrituras from './PausaDeEscrituras';
 import { exportCsv } from '@nucleo/utils/csvExport';
@@ -84,8 +84,18 @@ const TABS = [
     { key: 'facturas',  label: 'Facturas'      },
     { key: 'confirmar', label: 'Por confirmar' },
     { key: 'erroneos',  label: 'Productos erróneos' },
+    { key: 'por_llegar', label: 'Por llegar' },
     { key: 'registro',  label: 'Registro' },
 ];
+
+const ESTADO_POR_LLEGAR = {
+    por_llegar:   { label: 'Por llegar',        variant: 'warning' },
+    reclamar:     { label: 'Pedir nota',        variant: 'danger' },
+    llego:        { label: 'Llegó',             variant: 'success' },
+    nota_credito: { label: 'Con nota de crédito', variant: 'neutral' },
+};
+// Pasado este plazo sin llegar, la fila sugiere pedir la nota de crédito.
+const DIAS_PARA_RECLAMAR = 15;
 
 const COLS_REGISTRO = [
     { key: 'fecha',    label: 'Fecha',      align: 'left'   },
@@ -203,6 +213,7 @@ const ajusteInicial = (r) => ({
     lote: r.lote ?? '',
     vence: r.vence ? r.vence.slice(0, 7) : '',
     venta: '',   // viñeta nueva leída en la caja; vacío = la que ya tiene Bodega
+    llegaron: '', // «Llegaron menos»: vacío = llegó todo
 });
 
 // La viñeta que tiene hoy Bodega para la presentación con que entraría: la de
@@ -557,6 +568,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         lote: ajustes[i]?.lote || null,
         vence: ajustes[i]?.vence || null,
         venta: Number(ajustes[i]?.venta) > 0 ? Number(ajustes[i].venta) : null,
+        llegaron: ajustes[i]?.llegaron !== '' && ajustes[i]?.llegaron != null ? Number(ajustes[i].llegaron) : null,
         erroneo: ajustes[i]?.erroneo === true,
         reparto: aRepartir(ajustes[i]?.reparto),
     }]));
@@ -953,7 +965,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                         )}
                                     </div>
                                     {uso === 'venta' && (
-                                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 max-w-3xl">
+                                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-5 gap-2 max-w-4xl">
                                             <PortalInput compact labelDenso label="Cantidad a cargar" inputMode="numeric"
                                                 helperText={cargarAyuda(r, aj)}
                                                 value={aj.cargar ?? cargarDe(r, aj.factor)}
@@ -983,11 +995,24 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                             : null} />
                                                 );
                                             })()}
+                                            {!aj.erroneo && (() => {
+                                                const total = Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0;
+                                                const n = aj.llegaron === '' || aj.llegaron == null ? null : Number(aj.llegaron);
+                                                return (
+                                                    <PortalInput compact labelDenso label="Llegaron" inputMode="numeric"
+                                                        readOnly={!puedeEditar} placeholder={total ? `todas (${total})` : 'todas'}
+                                                        value={aj.llegaron ?? ''}
+                                                        onChange={e => ajustar(i, 'llegaron', e.target.value.replace(/[^\d]/g, ''))}
+                                                        helperText={n != null && n < total ? `Faltan ${total - n}: quedan «por llegar»` : null} />
+                                                );
+                                            })()}
                                         </div>
                                     )}
                                     {uso === 'venta' && conProducto && !aj.erroneo && (
                                         <RepartoASalas salas={salasReparto} puedeEditar={puedeEditar}
-                                            total={Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
+                                            total={aj.llegaron !== '' && aj.llegaron != null
+                                                ? Math.min(Number(aj.llegaron), Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0)
+                                                : Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
                                             valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
                                     )}
                                     {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
@@ -1585,6 +1610,80 @@ function TabRegistro({ busca }) {
                     );
                 })}
             </DataTable>
+        </div>
+    );
+}
+
+// Lo que el proveedor facturó y no mandó («Llegaron menos» al cargar). La
+// factura entró completa; esto es la cuenta de lo que todavía se le espera.
+function TabPorLlegar({ puedeEditar, busca }) {
+    const [filas, setFilas] = useState(null);
+    const [error, setError] = useState('');
+    const [guardando, setG] = useState(null);
+    const cargar = useCallback(async () => {
+        const { filas: f, error: e } = await fetchPorLlegar();
+        if (e) setError(e);
+        setFilas(f);
+    }, []);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
+    useEffect(() => { cargar(); }, [cargar]);
+    const marcar = async (f, estado) => {
+        setG(f.id); setError('');
+        const { error: e } = await marcarPorLlegar(f.id, estado);
+        setG(null);
+        if (e) setError(e);
+        cargar();
+    };
+    const vista = (filas ?? []).filter(f => !busca
+        || tokenMatch(`${f.producto ?? ''} ${f.descripcion_proveedor ?? ''} ${f.proveedor_nombre ?? ''} ${f.numero_documento ?? ''}`, busca));
+    const abiertos = vista.filter(f => f.abierto);
+    const monto = abiertos.reduce((t, f) => t + Number(f.monto || 0), 0);
+
+    if (!filas) return <p className="text-label text-content-3">Cargando…</p>;
+    return (
+        <div className="space-y-3">
+            {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
+            <Notice variant="info" icon={HelpCircle}>
+                Lo que el proveedor cobró y no mandó. La factura se cargó completa; esto se queda aquí hasta que llegue o se pida
+                la nota de crédito. A las {DIAS_PARA_RECLAMAR} días sin llegar se marca para reclamar.
+                {abiertos.length > 0 && <> Pendiente: <b>{abiertos.length}</b> {abiertos.length === 1 ? 'producto' : 'productos'} · <b>{formatMoney(monto)}</b>.</>}
+            </Notice>
+            {!vista.length && <p className="text-label text-content-3">No hay nada por llegar.</p>}
+            {vista.map(f => {
+                const est = ESTADO_POR_LLEGAR[f.estado] ?? ESTADO_POR_LLEGAR.por_llegar;
+                const viejo = f.estado === 'por_llegar' && f.dias >= DIAS_PARA_RECLAMAR;
+                return (
+                    <div key={f.id} data-surface="card" className="px-3 py-2.5 flex flex-wrap items-center gap-2">
+                        <div className="flex-1 min-w-[14rem]">
+                            <p className="font-bold text-content">{f.producto ?? f.descripcion_proveedor}</p>
+                            <p className="text-micro text-content-3">
+                                {f.proveedor_nombre} · {f.tipo_documento} {f.numero_documento?.slice(0, 8)} · {fechaNumerica(f.fecha_documento)} · hace {f.dias} días
+                            </p>
+                            <p className="text-label tabular-nums">
+                                Faltan <b>{Number(f.faltan)}</b> de {Number(f.unidades)} · {formatMoney(f.monto)}
+                            </p>
+                            {f.cambiado_por && !f.abierto && (
+                                <p className="text-micro text-content-3 inline-flex items-center gap-1">
+                                    <AvatarConEstado emp={{ id: f.cambiado_por, name: f.cambiado_por_nombre }} px={14} radio="rounded-full" marco="" />
+                                    {shortEmployeeName(f.cambiado_por_nombre ?? '')} · {fechaNumerica(String(f.cambiado_at).slice(0, 10))}
+                                </p>
+                            )}
+                        </div>
+                        <Badge size="sm" variant={viejo ? 'danger' : est.variant}>{viejo ? `${f.dias} días: reclamar` : est.label}</Badge>
+                        {puedeEditar && f.abierto && (
+                            <div className="flex gap-1 flex-wrap">
+                                <Button size="xs" loading={guardando === f.id} onClick={() => marcar(f, 'llego')}>Llegó</Button>
+                                {f.estado === 'por_llegar'
+                                    ? <Button size="xs" variant="secondary" disabled={guardando === f.id} onClick={() => marcar(f, 'reclamar')}>Pedir nota de crédito</Button>
+                                    : <Button size="xs" variant="secondary" disabled={guardando === f.id} onClick={() => marcar(f, 'nota_credito')}>Llegó la nota</Button>}
+                            </div>
+                        )}
+                        {puedeEditar && !f.abierto && (
+                            <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => marcar(f, 'por_llegar')}>Deshacer</Button>
+                        )}
+                    </div>
+                );
+            })}
         </div>
     );
 }
@@ -2331,7 +2430,7 @@ export default function CargarCompraView() {
         <ViewTabBar tabs={TABS} activeTab={tab} onTabChange={setTab}
             searchValue={tab === 'confirmar' ? buscaConfirmar : busca}
             onSearchChange={tab === 'confirmar' ? setBuscaConfirmar : setBusca}
-            showSearch={tab === 'facturas' || tab === 'confirmar' || tab === 'registro'}
+            showSearch={tab === 'facturas' || tab === 'confirmar' || tab === 'registro' || tab === 'por_llegar'}
             placeholder={tab === 'confirmar' ? 'Buscar proveedor, producto o código…' : 'Buscar proveedor o número de documento…'} />
     );
 
@@ -2341,6 +2440,7 @@ export default function CargarCompraView() {
             <PausaDeEscrituras estado={pausa} onCambio={setPausa} />
 
             {tab === 'registro' ? <TabRegistro busca={busca} />
+            : tab === 'por_llegar' ? <TabPorLlegar puedeEditar={puedeEditar} busca={busca} />
             : tab === 'erroneos' ? <TabErroneos puedeEditar={puedeEditar} />
             : tab === 'confirmar' ? <TabPorConfirmar puedeEditar={puedeEditar} busca={buscaConfirmar} /> : (<>
 

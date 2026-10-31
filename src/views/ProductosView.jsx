@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
-import { Package, LayoutList, Boxes, Scale } from 'lucide-react';
+import { Package, LayoutList, Boxes, Scale, TrendingDown } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import TabCatalogo     from './productos/TabCatalogo';
 import TabPresentaciones from './productos/TabPresentaciones';
 import TabRevisionFactor from './productos/TabRevisionFactor';
+import TabRentabilidad from './productos/TabRentabilidad';
 import { useAuth }     from '@nucleo/context/AuthContext';
 import { fetchLaboratoriosBasic } from '@nucleo/data/laboratorios';
 import { fetchProductCategories } from '@nucleo/data/inventarioTab';
@@ -22,6 +23,8 @@ const TABS = [
     // Comparte el permiso de Presentaciones: es la misma pregunta —en qué se
     // vende cada producto— vista desde lo que no cuadra.
     { key: 'revision',       label: 'Revisión de factor', icon: Scale, permiso: 'presentaciones' },
+    // Margen de la viñeta sobre el costo (2026-10-31): exige ver costos.
+    { key: 'rentabilidad',   label: 'Rentabilidad', icon: TrendingDown, permiso: 'catalogo', costos: true },
 ];
 
 export default function ProductosView() {
@@ -29,7 +32,8 @@ export default function ProductosView() {
     const { hasPermission } = useAuth();
     const [searchParams, setSearchParams] = useSearchParams();
     const VALID        = new Set(TABS.map(t => t.key));
-    const allowedTabs  = TABS.filter(t => hasPermission(`productos_tab_${t.permiso ?? t.key}`));
+    const allowedTabs  = TABS.filter(t => hasPermission(`productos_tab_${t.permiso ?? t.key}`)
+        && (!t.costos || hasPermission('productos_ver_costos')));
     const defaultTab   = allowedTabs[0]?.key ?? 'catalogo';
     const rawTab       = searchParams.get('tab');
     const activeTab    = VALID.has(rawTab) && allowedTabs.some(t => t.key === rawTab) ? rawTab : defaultTab;
@@ -119,6 +123,11 @@ export default function ProductosView() {
             {visitadas.has('presentaciones') && (
                 <div className={activeTab === 'presentaciones' ? '' : 'hidden'}>
                     <TabPresentaciones searchTerm={debouncedSearch} />
+                </div>
+            )}
+            {visitadas.has('rentabilidad') && (
+                <div className={activeTab === 'rentabilidad' ? '' : 'hidden'}>
+                    <TabRentabilidad searchTerm={debouncedSearch} />
                 </div>
             )}
             {visitadas.has('revision') && (

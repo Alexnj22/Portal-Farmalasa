@@ -1814,6 +1814,20 @@ Deno.serve(async (req: Request) => {
       }
       const res = lineaDelSobre(i, r, dec);
       problemas.push(...res.problemas);
+      // «Llegaron menos»: la factura entra COMPLETA (la cobraron entera y el
+      // libro la lleva así) y lo que falta queda «por llegar». Sólo se anota:
+      // lo único que cambia acá es que a las salas no se manda lo que no está.
+      const pideLlegaron = (decisiones[String(i)] as any)?.llegaron;
+      let llegaron: number | null = null;
+      if (res.linea && dec.tipo === "producto" && pideLlegaron != null && pideLlegaron !== "") {
+        const entranTodas = Number(res.linea.cant) * (Number(res.linea.unidad) || 1);
+        const n = Number(pideLlegaron);
+        if ((decisiones[String(i)] as any)?.erroneo === true) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}» es un producto erróneo: no lleva «llegaron menos».` });
+        } else if (!Number.isInteger(n) || n < 0 || n >= entranTodas) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: llegaron ${pideLlegaron}, y tiene que ser un número entero menor que las ${entranTodas} facturadas.` });
+        } else llegaron = n;
+      }
       if (res.linea && dec.tipo === "producto" && (decisiones[String(i)] as any)?.erroneo === true) {
         const u = Number(res.linea.unidad) || 1;
         erroneos.push({
@@ -1855,6 +1869,9 @@ Deno.serve(async (req: Request) => {
             });
           }
           if (suma > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas y entran ${entran}.` });
+          else if (llegaron != null && suma > llegaron + 1e-9) {
+            problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas y sólo llegaron ${llegaron}.` });
+          }
         }
       }
       if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); }
@@ -1868,6 +1885,7 @@ Deno.serve(async (req: Request) => {
         descuento_renglon: r.descuento || 0,
         descuento_pie_pct: Math.round((1 - (r.exento ? dsc.exenta : dsc.gravada)) * 1e4) / 100,
         regalo: !!res.linea && res.linea.bandera === "PRODUCTO" && Number(res.linea.compra) === 0,
+        llegaron,
         // El sistema sólo recibe el lote de un regulado; el registro lo guarda siempre.
         lote_leido: dec.tipo === "producto" ? (String(dec.lote ?? "").trim() || null) : null,
       });

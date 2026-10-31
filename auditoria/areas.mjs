@@ -939,7 +939,7 @@ export const AREAS = [
         archivos: [
             'src/views/ProductosView.jsx', 'src/views/productos/TabCatalogo.jsx',
             'src/views/productos/TabLaboratorios.jsx', 'src/views/productos/TabPresentaciones.jsx',
-            'src/views/productos/TabPoliticaVencimiento.jsx',
+            'src/views/productos/TabPoliticaVencimiento.jsx', 'src/views/productos/TabRentabilidad.jsx',
             // Revisión de factor (2026-10-15): lo que no cuadra en el tamaño de
             // una presentación y la existencia que dejó un cambio.
             'src/views/productos/TabRevisionFactor.jsx', 'src/data/revisionFactor.js',
@@ -1127,7 +1127,7 @@ export const AREAS = [
                  'purchase_dte_documents', 'purchase_dte_claims', 'purchase_dte_processed_messages',
                  'purchase_dte_review_queue', 'purchase_claim_avisos', 'purchase_claim_lines',
                  'purchase_claim_rules', 'compra_documento_leido', 'compra_pago_aplicado',
-                 'compra_pagos', 'compra_producto_alias', 'compra_renglon_pendiente', 'compra_carga', 'compra_registro', 'compra_pausa',
+                 'compra_pagos', 'compra_producto_alias', 'compra_renglon_pendiente', 'compra_carga', 'compra_registro', 'compra_pausa', 'compra_por_llegar', 'compra_por_llegar_log',
                  'compra_documento_resuelto', 'compra_proveedor_no_va_a_bodega', 'producto_alta_portal', 'compra_renglon_erroneo', 'compra_reparto', 'compra_pedido_vence', 'compra_documento_manual', 'compra_nota_credito_papel', 'compra_nota_credito_libro',
                  'proveedores', 'proveedores_categorias', 'proveedores_maestro', 'suppliers',
                  'email_sync_accounts', 'email_sync_log'],

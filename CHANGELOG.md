@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1412.0 — Compras «Por llegar» y Productos «Rentabilidad»
+
+- **«Llegaron» en cada renglón de la carga**: si el proveedor mandó menos de lo facturado, se escribe cuántas llegaron. La factura entra completa (la cobraron entera) y lo que falta queda en la pestaña nueva **«Por llegar»** con proveedor, factura, unidades y monto. Botones «Llegó», «Pedir nota de crédito» y «Llegó la nota»; a los 15 días sin llegar se marca para reclamar. El envío a salas no deja mandar más de lo que llegó. Cada paso queda en `compra_por_llegar_log`; el registro de compras guarda `llegaron`.
+- **Productos → Rentabilidad** (con permiso de ver costos): los productos cuya viñeta deja menos de 15 % sobre el costo o cuyo margen bajó 5 puntos o más en 30/60/90 días, con el antes, cuánto subió el costo y la viñeta sugerida para recuperar el margen (al múltiplo de 5 centavos). Hoy: 118 productos (4 en pérdida).
+- **Ficha del producto**: el historial de precios muestra costo y margen en cada cambio (quien ve costos), y un cambio sólo de costo ya cuenta como cambio.
+
 ## v2.1411.2 — La app del personal carga principios como el portal
 
 - **Fotos de productos en la app (iOS y Android) al nivel del portal**: el principio se elige del catálogo (sugerencias al escribir) y se escribe en mayúsculas; la cantidad y la unidad van separadas (lista fija `UNIDADES`), con «Quedará: …» debajo. Lo viejo que no se entiende se muestra para corregirlo.

@@ -405,7 +405,7 @@ export function fetchProductDetail(productId, priceSelect, canSeeCosts) {
         // (write-churn preexistente, fuera de alcance tocar el sync acá) —
         // el dedupe de snapshots idénticos se hace en la UI, no en la query.
         supabase.from('product_precios_history')
-            .select('id_presentacion, valid_from, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7, presentaciones(tipo)')
+            .select(`id_presentacion, valid_from, vineta, descuento_1, vip, clinica, mayoreo, premium, precio_7${canSeeCosts ? ', costo' : ''}, presentaciones(tipo)`)
             .eq('product_id', productId)
             .order('id_presentacion', { ascending: true })
             .order('valid_from', { ascending: true }),
@@ -491,4 +491,16 @@ export async function fetchIdsModificadosDesde(inicioIso, ocultos = new Set(['la
     };
     await Promise.all([recorrer('products_changelog'), recorrer('product_precios_changelog')]);
     return ids;
+}
+
+/**
+ * Rentabilidad: los productos (unidad) cuya viñeta deja menos de 15 % sobre el
+ * costo, o cuyo margen bajó 5 puntos o más en `dias`. Cada fila trae el antes
+ * (del historial de precios, que guarda el costo desde el 2026-08-13) y la
+ * viñeta sugerida para recuperarlo. Sólo con `productos_ver_costos`.
+ */
+export async function fetchRentabilidad(dias = 60) {
+    const { data, error } = await supabase.rpc('get_rentabilidad_json', { p_dias: dias });
+    if (error) return { filas: [], error: error.message === 'FORBIDDEN' ? 'No tienes permiso para ver costos.' : error.message };
+    return { filas: Array.isArray(data) ? data : [], error: null };
 }

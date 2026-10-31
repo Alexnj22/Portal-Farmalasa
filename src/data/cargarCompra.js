@@ -515,3 +515,17 @@ export async function cambiarPausaDeCompras(pausar, motivo = null) {
     if (!error) anotar(pausar ? 'COMPRA_ESCRITURAS_PAUSADAS' : 'COMPRA_ESCRITURAS_REANUDADAS', 'compra_pausa', { motivo });
     return { estado: data ?? null, error: error ? (error.message === 'FORBIDDEN' ? 'Sólo Gerencia General y Administración pueden cambiarlo.' : error.message) : null };
 }
+
+/** Lo que el proveedor quedó debiendo («Llegaron menos»): abiertos y cerrados de 60 días. */
+export async function fetchPorLlegar() {
+    const { data, error } = await supabase.rpc('get_compra_por_llegar_json');
+    if (error) return { filas: [], error: error.message };
+    return { filas: Array.isArray(data) ? data : [], error: null };
+}
+
+/** `estado`: 'llego' · 'reclamar' · 'nota_credito' · 'por_llegar' (deshacer). */
+export async function marcarPorLlegar(id, estado, nota = null) {
+    const { error } = await supabase.rpc('compra_por_llegar_marcar', { p_id: id, p_estado: estado, p_nota: nota });
+    if (!error) anotar('COMPRA_POR_LLEGAR_' + estado.toUpperCase(), String(id), { nota });
+    return { error: error ? (error.message === 'FORBIDDEN' ? 'No tienes permiso.' : error.message) : null };
+}

@@ -659,7 +659,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
 // corrida del sync aunque el precio no cambie (write-churn preexistente,
 // fuera de alcance del changelog) — se colapsan acá los snapshots
 // consecutivos idénticos por presentación, solo se muestran cambios reales.
-function PriceHistorySection({ history, allowedPriceFields, comoPanel = false }) {
+function PriceHistorySection({ history, allowedPriceFields, comoPanel = false, canSeeCosts = false }) {
     const [showAll, setShowAll] = useState(false);
 
     const deduped = useMemo(() => historialDePreciosSinRepetir(history), [history]);
@@ -669,6 +669,17 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false })
 
     const fmtDate = d => d ? fechaTexto(d, { year: 'numeric', month: 'short', day: 'numeric' }) : '—';
     const visible = showAll ? deduped : deduped.slice(0, 8);
+    // Costo y margen de la viñeta en cada momento: así se ve si la
+    // rentabilidad subió o bajó con cada compra (el costo lo mueve la compra).
+    const conCosto = canSeeCosts && deduped.some(r => r.costo != null);
+    const margenDe = (row) => calcMargin(row.vineta, row.costo);
+    const celdaMargen = (row) => {
+        const m = margenDe(row);
+        const alerta = marginLabel(m);
+        return m == null ? '—' : (
+            <span className={alerta ? (alerta.variante === 'danger' ? 'text-danger-text' : 'text-warning-text') : ''}>{m.toFixed(1)} %</span>
+        );
+    };
     // Fecha y presentación son el encabezado del bloque; los siete niveles, la
     // misma escalera que la sección de precios. Como tabla son nueve columnas y
     // ~900px: el único historial del expediente que obligaba a deslizar.
@@ -688,6 +699,12 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false })
                     <span className="text-body-sm font-black tabular-nums text-content">{fmtP(row[f.key])}</span>
                 </div>
             ))}
+            {conCosto && (
+                <div className="flex items-baseline gap-3 px-3 py-1.5">
+                    <span className="flex-1 text-caption font-black uppercase tracking-wider text-content-2">Costo · margen</span>
+                    <span className="text-body-sm font-black tabular-nums text-content">{fmtP(row.costo)} · {celdaMargen(row)}</span>
+                </div>
+            )}
         </div>
     );
 
@@ -707,6 +724,7 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false })
                         { key: 'fecha', label: 'Fecha' },
                         { key: 'pres',  label: 'Presentación' },
                         ...allowedPriceFields.map(f => ({ key: f.key, label: f.label, align: 'right' })),
+                        ...(conCosto ? [{ key: 'costo', label: 'Costo', align: 'right' }, { key: 'margen', label: 'Margen', align: 'right' }] : []),
                     ]}
                 >
                     {visible.map((row, i) => (
@@ -716,6 +734,8 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false })
                             {allowedPriceFields.map(f => (
                                 <DataCell key={f.key} align="right" className="text-body-sm font-semibold text-content-2 tabular-nums">{fmtP(row[f.key])}</DataCell>
                             ))}
+                            {conCosto && <DataCell align="right" className="text-body-sm font-semibold text-content-2 tabular-nums">{fmtP(row.costo)}</DataCell>}
+                            {conCosto && <DataCell align="right" className="text-body-sm font-bold tabular-nums">{celdaMargen(row)}</DataCell>}
                         </DataRow>
                     ))}
                 </DataTable>
@@ -1359,7 +1379,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                             <History size={9} /> Historial de precios
                         </p>
-                        <PriceHistorySection history={data?.precioHistory || []} allowedPriceFields={allowedPriceFields} comoPanel={comoPanel} />
+                        <PriceHistorySection history={data?.precioHistory || []} allowedPriceFields={allowedPriceFields} comoPanel={comoPanel} canSeeCosts={canSeeCosts} />
                     </div>
 
                     {/* ── Cerrar (todo autoguarda: foto, devolutivo, categoría y principios) ── */}

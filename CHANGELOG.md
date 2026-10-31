@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.1 — Fotos: pegar, esquina para el tamaño y dos personas
+
+- **Varias fotos**: se puede **pegar** una imagen (⌘V / Ctrl+V, o el botón «Pegar») como capa nueva; el pegado ya no lo toma también la pantalla de atrás (que reabría el editor y tiraba la composición). La foto elegida tiene una **esquina azul** para agrandarla o achicarla arrastrando, además de la barra.
+- **Dos personas en el mismo producto** (Fotos de productos): abrir un producto lo toma 15 minutos; si se venció y otra persona lo abrió, guardar ya no pisa lo suyo — avisa y no guarda (`guardar_carga_producto`, `TOMADO_POR_OTRO`).
+
 ## v2.1413.0 — Fotos: varias fotos en una y pincel sin saltos
 
 - **«Agregar otra foto»** en el editor de fotos: la foto actual queda como primera capa y se agregan otras encima (la caja y el blíster), con el fondo quitado si se marca. Cada una se mueve arrastrando, se cambia de tamaño con la barra y se manda al frente o atrás. «Listo» las junta en un cuadro de 1200 px (blanco en el catálogo) y se sigue editando como cualquier foto.

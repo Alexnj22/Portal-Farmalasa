@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ImagePlus, Trash2, BringToFront, SendToBack, Loader2, Check } from 'lucide-react';
+import { ImagePlus, Trash2, BringToFront, SendToBack, Loader2, Check, ClipboardPaste } from 'lucide-react';
 import Button from './Button';
 import Notice from './Notice';
 import Checkbox from './Checkbox';
@@ -74,10 +74,44 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
         agregar(base, { escala: 0.9, desplazar: false }).catch(() => setError('No se pudo abrir la foto.'));
     }, [base, agregar]);
 
-    const elegirArchivo = async (e) => {
+    const elegirArchivo = (e) => {
         const archivo = e.target.files?.[0];
         e.target.value = '';
-        if (!archivo) return;
+        if (archivo) agregarArchivo(archivo);
+    };
+
+    // Pegar (⌘V / Ctrl+V): una imagen copiada de internet o de otra foto entra
+    // como capa nueva, igual que elegida del disco.
+    useEffect(() => {
+        const alPegar = (e) => {
+            const item = [...(e.clipboardData?.items ?? [])].find(it => it.type.startsWith('image/'));
+            const archivo = item?.getAsFile();
+            if (!archivo) return;
+            // En captura y sin seguir: la pantalla de atrás (catálogo, Fotos
+            // de productos) también escucha el pegado y abriría el editor de
+            // nuevo con esa imagen, tirando la composición.
+            e.preventDefault(); e.stopPropagation();
+            agregarArchivo(archivo);
+        };
+        window.addEventListener('paste', alPegar, true);
+        return () => window.removeEventListener('paste', alPegar, true);
+    });
+    // El botón «Pegar»: lee el portapapeles (el navegador puede pedir permiso).
+    const pegar = async () => {
+        setError('');
+        try {
+            const items = await navigator.clipboard.read();
+            for (const it of items) {
+                const tipo = it.types.find(t => t.startsWith('image/'));
+                if (tipo) { agregarArchivo(await it.getType(tipo)); return; }
+            }
+            setError('No hay una imagen copiada. Copia la imagen (clic derecho › Copiar imagen) y vuelve a pegar.');
+        } catch {
+            setError('Este navegador no deja leer lo copiado desde el botón: pega con ⌘V (o Ctrl+V).');
+        }
+    };
+
+    async function agregarArchivo(archivo) {
         setAgregando(true); setError('');
         const url = URL.createObjectURL(archivo);
         try {
@@ -111,13 +145,29 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
     };
     const mover = (e) => {
         const a = arrastre.current;
-        if (!a) return;
+        if (!a || a.tamano) return;
         cambiar(a.id, {
             cx: Math.min(1, Math.max(0, a.cx + (e.clientX - a.x) / VISTA)),
             cy: Math.min(1, Math.max(0, a.cy + (e.clientY - a.y) / VISTA)),
         });
     };
     const soltar = () => { arrastre.current = null; };
+
+    // La esquina de la foto elegida: arrastrarla agranda o achica desde el
+    // centro, guardando la proporción.
+    const empezarTamano = (e, c) => {
+        e.preventDefault(); e.stopPropagation();
+        e.currentTarget.setPointerCapture?.(e.pointerId);
+        const caja = e.currentTarget.parentElement.getBoundingClientRect();
+        arrastre.current = { id: c.id, tamano: true, caja, cx: c.cx, cy: c.cy, escala: c.escala,
+            d0: Math.hypot(e.clientX - (caja.left + c.cx * VISTA), e.clientY - (caja.top + c.cy * VISTA)) };
+    };
+    const moverTamano = (e) => {
+        const a = arrastre.current;
+        if (!a?.tamano) return;
+        const d = Math.hypot(e.clientX - (a.caja.left + a.cx * VISTA), e.clientY - (a.caja.top + a.cy * VISTA));
+        if (a.d0 > 0) cambiar(a.id, { escala: Math.min(1.2, Math.max(0.08, a.escala * d / a.d0)) });
+    };
 
     const alFrente = () => setCapas(cs => [...cs.filter(c => c.id !== elegida), cs.find(c => c.id === elegida)]);
     const atras = () => setCapas(cs => [cs.find(c => c.id === elegida), ...cs.filter(c => c.id !== elegida)]);
@@ -160,6 +210,16 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                                 style={{ left: c.cx * VISTA - w / 2, top: c.cy * VISTA - h / 2, width: w, height: h, maxWidth: 'none' }} />
                         );
                     })}
+                    {capa && (() => {
+                        const { w, h } = medida(capa);
+                        return (
+                            <span role="presentation" aria-hidden="true"
+                                onPointerDown={(e) => empezarTamano(e, capa)} onPointerMove={moverTamano}
+                                onPointerUp={soltar} onPointerCancel={soltar}
+                                className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow cursor-nwse-resize"
+                                style={{ left: capa.cx * VISTA + w / 2, top: capa.cy * VISTA + h / 2, touchAction: 'none' }} />
+                        );
+                    })()}
                 </div>
             </div>
 
@@ -169,6 +229,7 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                     <Button variant="secondary" icon={agregando ? Loader2 : ImagePlus} disabled={agregando} onClick={() => inputRef.current?.click()}>
                         {agregando ? 'Agregando…' : 'Agregar foto'}
                     </Button>
+                    <Button variant="secondary" icon={ClipboardPaste} disabled={agregando} onClick={pegar}>Pegar</Button>
                     <Checkbox checked={sinFondo} onChange={setSinFondo} label="Quitarle el fondo" />
                 </div>
                 {capa ? (
@@ -186,7 +247,7 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                         </div>
                     </>
                 ) : (
-                    <p className="text-caption text-content-3">Toca una foto para moverla o cambiarle el tamaño.</p>
+                    <p className="text-caption text-content-3">Toca una foto para moverla; su esquina azul le cambia el tamaño. También puedes pegar una imagen con ⌘V.</p>
                 )}
                 {error && <Notice variant="warning" compact>{error}</Notice>}
             </div>

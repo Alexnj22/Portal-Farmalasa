@@ -155,6 +155,9 @@ const REGLAS = [
     // sola palabra en mayúsculas, sin `:` detrás): lo lanzan, entre otras,
     // `identificar_por_carne` y `get_kiosk_auth_code`.
     [/PERMISSION_DENIED|FORBIDDEN/i, 'No tienes permiso para hacer esto. Consulta con tu jefatura.'],
+    // `guardar_carga_producto` (2026-10-31): la toma del producto venció y otra
+    // persona lo abrió; guardar encima pisaría lo suyo.
+    [/TOMADO_POR_OTRO/, 'Otra persona abrió este producto mientras lo tenías y lo está trabajando: no se guardó para no pisar lo suyo. Ábrelo de nuevo cuando lo suelte.'],
     // La ficha de quien pidió anonimizar sus datos no se edita: se reactiva
     // primero (Solicitudes sobre datos → Anonimizados). Lo lanza
     // `update_customer_fiscal` desde el 2026-10-26.

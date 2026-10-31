@@ -15,7 +15,7 @@ import { fetchDimensiones, fetchEncuesta, guardarDiseno } from '@nucleo/data/enc
 import {
   TIPOS_PREGUNTA, agregarPregunta, agregarSeccion, cambiarPregunta, cambiarSeccion, cambiarTipo, condicionSobre,
   duplicarPregunta, mover, moverPregunta, nuevaOpcion, operadoresPara, preguntasEnOrden, puedeSerCondicion,
-  quitarPregunta, quitarSeccion, sinCondicion, textoDeCondicion, tipoDe,
+  quitarPregunta, quitarSeccion, sinCondicion, textoDeCondicion, tipoDe, limpiarCondiciones,
 } from '@nucleo/utils/encuestasClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -180,27 +180,35 @@ export default function DisenarEncuesta() {
 
   const editable = !!encuesta && encuesta.estado === 'borrador' && hasPermission('encuestas_clientes', 'can_edit');
 
-  const guardarYa = useCallback(async () => {
+  // En fila: un guardado no sale hasta que terminó el anterior. Si no, uno
+  // viejo que tarda puede llegar DESPUÉS del nuevo y pisarlo.
+  const enVuelo = useRef(Promise.resolve());
+  const guardarYa = useCallback(() => {
     clearTimeout(temporizador.current);
-    const c = pendiente.current;
-    if (!c) return;
-    pendiente.current = null;
-    setEstado('guardando');
-    try {
-      await guardarDiseno(id, { cuestionario: c });
-      setEstado(pendiente.current ? 'pendiente' : 'listo');
-    } catch (err) {
-      if (!pendiente.current) pendiente.current = c;
-      setEstado('error');
-      fallo('No se guardó el último cambio', mensajeAmigable(err, 'Se reintenta con el próximo cambio.'));
-    }
+    enVuelo.current = enVuelo.current.then(async () => {
+      const c = pendiente.current;
+      if (!c) return;
+      pendiente.current = null;
+      setEstado('guardando');
+      try {
+        await guardarDiseno(id, { cuestionario: c });
+        setEstado(pendiente.current ? 'pendiente' : 'listo');
+      } catch (err) {
+        if (!pendiente.current) pendiente.current = c;
+        setEstado('error');
+        fallo('No se guardó el último cambio', mensajeAmigable(err, 'Se reintenta con el próximo cambio.'));
+      }
+    });
+    return enVuelo.current;
   }, [id]);
   // Al salir, lo pendiente se escribe igual.
   const alSalir = useRef(guardarYa);
   useEffect(() => { alSalir.current = guardarYa; }, [guardarYa]);
   useEffect(() => () => { alSalir.current(); }, []);
 
-  const cambiar = (c) => {
+  const cambiar = (nuevo) => {
+    // Una condición que ya no se puede cumplir esconde su pregunta para siempre.
+    const c = limpiarCondiciones(nuevo);
     setEncuesta((e) => ({ ...e, cuestionario: c }));
     pendiente.current = c;
     setEstado('pendiente');

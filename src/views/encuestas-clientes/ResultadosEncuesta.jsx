@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     Gauge, Users, Smile, Frown, Download, Sparkles, MessageSquareText, History, AlertTriangle, Store, Phone,
 } from 'lucide-react';
@@ -15,7 +15,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { lecturaNps, categoriasDe, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen } from '@nucleo/utils/encuestasClientes';
+import { lecturaNps, categoriasDe, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
 import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
 } from '@nucleo/data/encuestasClientes';
@@ -41,32 +41,44 @@ export default function ResultadosEncuesta({ encuesta }) {
     const [resumiendo, setResumiendo] = useState(false);
 
     const branchId = sala ? Number(sala) : null;
+    // Sólo pinta la ÚLTIMA carga pedida: al cambiar rápido de sucursal, una
+    // respuesta lenta de la anterior no puede quedar bajo el filtro nuevo.
+    const vigente = useRef(0);
     const cargar = useCallback(async () => {
+        const n = (vigente.current += 1);
         try {
             const [d, c, r, res] = await Promise.all([
                 fetchResultados(encuesta.id, branchId), fetchComentarios(encuesta.id, branchId), fetchRondas(encuesta.id),
                 fetchResumen(encuesta.id, branchId),
             ]);
+            if (n !== vigente.current) return;
             setDatos(d);
             setComentarios(c);
             setRondas(r);
             setResumen(res);
             setError(null);
         } catch (err) {
-            setError(err);
+            if (n === vigente.current) setError(err);
         }
     }, [encuesta.id, branchId]);
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga de los resultados
 
+    // El número de cada pregunta es el del cuestionario (el mismo del CSV, del
+    // constructor y de los avisos de la base), no su posición en esta lista.
+    const numeroDe = useMemo(() => Object.fromEntries(preguntasEnOrden(encuesta.cuestionario).map((p) => [p.id, p.numero])),
+        [encuesta.cuestionario]);
     const salas = useMemo(() => (datos?.por_sucursal || []).map((s) => ({ value: String(s.branch_id), label: s.nombre })), [datos?.por_sucursal]);
 
     const exportar = async () => {
         setExportando(true);
         try {
-            const filas = await fetchRespuestasParaExportar(encuesta.id);
+            const todas = await fetchRespuestasParaExportar(encuesta.id);
+            // Con una sucursal elegida se exporta esa, igual que lo que se ve.
+            const filas = branchId ? todas.filter((f) => Number(f.branch_id) === branchId) : todas;
             const { headers, rows } = tablaDeRespuestas(encuesta.cuestionario, filas,
                 { fechaHora: (f) => `${fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${hora12(f)}` });
-            exportCsv(headers, rows, `${archivoDeEncuesta(encuesta.nombre)}.csv`, 'encuestas_clientes');
+            const nombreSala = branchId ? salas.find((x) => Number(x.value) === branchId)?.label : null;
+            exportCsv(headers, rows, `${archivoDeEncuesta(nombreSala ? `${encuesta.nombre}-${nombreSala}` : encuesta.nombre)}.csv`, 'encuestas_clientes');
         } catch (err) {
             showToast('No se pudo exportar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
         } finally {
@@ -118,7 +130,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                 </div>
                 <div className="flex-1" />
                 <Button variant="secondary" icon={Download} loading={exportando} disabled={!datos.total} onClick={exportar}>
-                    Exportar CSV
+                    {sala ? 'Exportar CSV de la sucursal' : 'Exportar CSV'}
                 </Button>
             </div>
 
@@ -187,7 +199,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                     <section data-surface="card" className="p-4 space-y-5">
                         <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Pregunta por pregunta</h3>
                         {datos.por_pregunta.filter((p) => p.tipo !== 'texto').map((p, i) => (
-                            <Distribucion key={p.id} p={p} numero={i + 1} />
+                            <Distribucion key={p.id} p={p} numero={numeroDe[p.id] ?? i + 1} />
                         ))}
                     </section>
 

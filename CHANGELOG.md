@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.7 — Encuestas a clientes: correcciones de la auditoría
+
+- La encuesta de la app ya se puede enviar a revisión: existe el tema «Experiencia en la app» y la pregunta de cierre dejó de medir un tema que no existía.
+- La tablet de sala tiene su propio enlace. Antes bastaba agregar `?modo=tablet` al enlace del QR para saltarse el tope de tres respuestas por teléfono.
+- Reintentar un envío después de un corte de red ya no guarda la respuesta dos veces. Sin conexión, el aviso sale en español y con botón para reintentar.
+- «Enviar a revisión» y las demás acciones no siguen si el último cambio no se guardó. Los guardados salen de a uno, y la meta de cada sucursal se guarda al terminar de escribirla.
+- Las condiciones entre preguntas se evalúan igual que en la base y se quitan solas si la pregunta que miran cambia de tipo o pierde la opción. La revisión previa además avisa de opciones sin texto, condiciones imposibles y encuestas de la app sin puntos.
+- En el CSV, un comentario que empieza con `=`, `+`, `-` o `@` sale como texto y no como fórmula. Con una sucursal elegida se exporta sólo esa.
+- Resultados numera las preguntas igual que el cuestionario; «Ordenar» sin tocar cuenta como contestada; topes de 2000 caracteres y 9 cifras; la tablet vuelve a consultar la encuesta con cada cliente; crear desde plantilla ya no deja copias de más.
+
 ## v2.1413.6 — Varias fotos: igualar colores y sombra
 
 En «Varias fotos», las fotos que se agregan encima ya no se ven pegadas. «Igualar colores» (encendido por defecto) les lleva la luz a la de la foto de base: les quita el tinte amarillo o azul y les iguala el contraste, sin cambiarles los colores (el blíster no se vuelve azul como la caja). «Sombra» les pone una sombra suave debajo, como si estuvieran apoyadas. Las dos se pueden apagar y se conservan en la foto final.

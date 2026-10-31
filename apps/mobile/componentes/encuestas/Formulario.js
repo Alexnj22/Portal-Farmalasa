@@ -7,11 +7,12 @@
 // (`encuestasClientes`): lo mismo que recorre el cliente en el QR o la tablet.
 // No sabe guardar: `onEnviar(respuestas, contacto, segundos)` lo hace quien lo
 // monta; si lanza, el error se muestra y nada se pierde.
-import { useMemo, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
-import { ACUERDO, CARITAS, motivoParaNoGuardarContacto, primeraSinContestar, recorrido } from '@nucleo/utils/encuestasClientes';
+import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido } from '@nucleo/utils/encuestasClientes';
+import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
@@ -48,16 +49,16 @@ function Respuesta({ p, valor, onChange }) {
     case 'si_no':
       return <View style={fila}>{[[true, 'Sí'], [false, 'No']].map(([v, l]) => <Opcion key={l} activa={valor === v} onPress={() => onChange(v)} ancho={100}>{l}</Opcion>)}</View>;
     case 'unica':
-      return <View style={{ gap: 6 }}>{(p.opciones || []).filter((o) => o.texto).map((o) => <Opcion key={o.id} activa={valor === o.id} onPress={() => onChange(o.id)}>{o.texto}</Opcion>)}</View>;
+      return <View style={{ gap: 6 }}>{opcionesConTexto(p).map((o) => <Opcion key={o.id} activa={valor === o.id} onPress={() => onChange(o.id)}>{o.texto}</Opcion>)}</View>;
     case 'multiple': {
       const m = Array.isArray(valor) ? valor : [];
-      return <View style={{ gap: 6 }}>{(p.opciones || []).filter((o) => o.texto).map((o) => {
+      return <View style={{ gap: 6 }}>{opcionesConTexto(p).map((o) => {
         const on = m.includes(o.id);
         return <Opcion key={o.id} activa={on} onPress={() => onChange(on ? m.filter((x) => x !== o.id) : [...m, o.id])}>{`${on ? '✓ ' : ''}${o.texto}`}</Opcion>;
       })}</View>;
     }
     case 'ranking': {
-      const ops = (p.opciones || []).filter((o) => o.texto);
+      const ops = opcionesConTexto(p);
       const orden = Array.isArray(valor) && valor.length === ops.length ? valor : ops.map((o) => o.id);
       const mover = (i, d) => { const j = i + d; if (j < 0 || j >= orden.length) return; const n = [...orden]; [n[i], n[j]] = [n[j], n[i]]; onChange(n); };
       return (
@@ -73,13 +74,13 @@ function Respuesta({ p, valor, onChange }) {
       );
     }
     case 'numero':
-      return <Campo multiline={false} keyboardType="number-pad" value={valor == null ? '' : String(valor)} onChangeText={(t) => onChange(t === '' ? '' : Number(t.replace(/\D/g, '')))} placeholder="0" />;
+      return <Campo multiline={false} keyboardType="number-pad" value={valor == null ? '' : String(valor)} onChangeText={(t) => { const d = t.replace(/\D/g, ''); if (d === '') onChange(''); else if (Number(d) <= MAX_NUMERO) onChange(Number(d)); }} placeholder="0" />;
     default:
-      return <Campo value={valor || ''} onChangeText={onChange} placeholder="Lo que respondió, con sus palabras" />;
+      return <Campo value={valor || ''} maxLength={MAX_TEXTO} onChangeText={(t) => onChange(t.slice(0, MAX_TEXTO))} placeholder="Lo que respondió, con sus palabras" />;
   }
 }
 
-export default function Formulario({ encuesta, onEnviar, onEntregarMuestra }) {
+export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onReiniciar }) {
   const secciones = useMemo(() => (encuesta?.cuestionario?.secciones || []).filter((s) => (s.preguntas || []).length), [encuesta?.cuestionario]);
   const [paso, setPaso] = useState(0);
   const [respuestas, setRespuestas] = useState({});
@@ -89,7 +90,10 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra }) {
   const [error, setError] = useState(null);
   const [enviando, setEnviando] = useState(false);
   const [resultado, setResultado] = useState(undefined);
-  const [inicio, setInicio] = useState(() => Date.now());
+  // Desde la primera respuesta; y una referencia por respuesta para que un
+  // reintento tras un corte de red no la guarde dos veces.
+  const inicio = useRef(null);
+  const referencia = useRef(nuevaReferencia());
 
   const { visibles, limpias } = useMemo(() => recorrido(encuesta?.cuestionario, respuestas), [encuesta?.cuestionario, respuestas]);
   const de = (s) => visibles.filter((p) => p.seccionId === s.id);
@@ -102,10 +106,22 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra }) {
 
   const reiniciar = () => {
     setPaso(0); setRespuestas({}); setFaltante(null); setEnContacto(false); setContacto({ consiente: false, telefono: '', nombre: '' });
-    setError(null); setResultado(undefined); setInicio(Date.now());
+    setError(null); setResultado(undefined); inicio.current = null; referencia.current = nuevaReferencia();
+    onReiniciar?.();
   };
   const siguiente = () => {
-    if (actual) { const f = primeraSinContestar(de(actual), respuestas); if (f) { setFaltante(f.id); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); return; } }
+    // Un «ordenar» que no se tocó ya muestra un orden completo: ese orden es la respuesta.
+    let conOrden = respuestas;
+    if (actual) {
+      for (const p of de(actual)) {
+        if (p.tipo !== 'ranking') continue;
+        const ops = opcionesConTexto(p);
+        const r = conOrden[p.id];
+        if (!(Array.isArray(r) && r.length === ops.length)) conOrden = { ...conOrden, [p.id]: ops.map((o) => o.id) };
+      }
+      if (conOrden !== respuestas) setRespuestas(conOrden);
+    }
+    if (actual) { const f = primeraSinContestar(de(actual), conOrden); if (f) { setFaltante(f.id); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); return; } }
     setFaltante(null);
     if (paso + 1 >= pasos.length) setEnContacto(true); else setPaso(paso + 1);
   };
@@ -113,7 +129,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra }) {
     if (conDatos) { const m = motivoParaNoGuardarContacto(contacto); if (m) { setError(m); return; } }
     setError(null); setEnviando(true);
     try {
-      const r = await onEnviar(limpias, conDatos ? { consiente: true, telefono: contacto.telefono.trim(), nombre: contacto.nombre.trim() } : null, Math.round((Date.now() - inicio) / 1000));
+      const r = await onEnviar(limpias, conDatos ? { consiente: true, telefono: contacto.telefono.trim(), nombre: contacto.nombre.trim() } : null, Math.round((Date.now() - (inicio.current ?? Date.now())) / 1000), referencia.current);
       setResultado(r || null);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (e) { setError(e?.message || 'No se pudo enviar. Intenta de nuevo.'); }
@@ -175,7 +191,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra }) {
                 {`${p.numero}. ${p.texto || 'Pregunta sin texto'}`}{p.obligatoria ? <Text style={{ color: MARCA.rojo }}> *</Text> : null}
               </Text>
               {p.ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.ayuda}</Text> : null}
-              <Respuesta p={p} valor={respuestas[p.id]} onChange={(v) => { setRespuestas((r) => ({ ...r, [p.id]: v })); if (faltante === p.id) setFaltante(null); }} />
+              <Respuesta p={p} valor={respuestas[p.id]} onChange={(v) => { if (inicio.current == null) inicio.current = Date.now(); setRespuestas((r) => ({ ...r, [p.id]: v })); if (faltante === p.id) setFaltante(null); }} />
               {faltante === p.id ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>Esta pregunta es obligatoria.</Text> : null}
             </Seccion>
           ))}

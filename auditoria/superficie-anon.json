@@ -127,14 +127,14 @@
       "area": "encuestas-clientes",
       "guarda": "token del QR",
       "estado": "abierta-a-proposito",
-      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Devuelve el cuestionario de UNA encuesta publicada a quien tiene el token (uno por encuesta y sucursal, 32 hex). No devuelve respuestas, contactos ni avance; sin encuesta abierta sólo dice el motivo."
+      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Devuelve el cuestionario de UNA encuesta publicada a quien tiene el token (dos por encuesta y sucursal, 32 hex: el del QR y el de la tablet, que sólo abre si la encuesta se aplica en tablet). No devuelve respuestas, contactos ni avance; sin encuesta abierta sólo dice el motivo."
     },
     {
       "nombre": "encuesta_publica_responder",
       "area": "encuestas-clientes",
       "guarda": "token del QR",
       "estado": "abierta-a-proposito",
-      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Única escritura: pasa por encuesta_cliente_registrar, que valida contra el cuestionario aprobado, exige encuesta publicada y vigente, frena el envío repetido por dispositivo (20 s; 3 por día en QR) y sólo guarda el teléfono con consentimiento, uno por encuesta."
+      "motivo": "Encuestas a clientes: el cliente responde desde el QR de la sucursal (o la tablet de sala) SIN iniciar sesión. Única escritura: pasa por encuesta_cliente_registrar, que valida contra el cuestionario aprobado, exige encuesta publicada y vigente, toma el canal del token que entró (QR o tablet, nunca del navegador), frena el envío repetido por dispositivo (20 s y 3 por día en QR; 5 s en la tablet), devuelve la misma respuesta ante un reintento con la misma referencia y sólo guarda el teléfono con consentimiento, uno por encuesta."
     }
   ],
   "tablas": [

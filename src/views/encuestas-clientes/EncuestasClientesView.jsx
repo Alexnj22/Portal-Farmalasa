@@ -184,7 +184,8 @@ export default function EncuestasClientesView() {
             {nueva && (
                 <NuevaEncuestaModal plantillas={encuestas.filter((e) => e.es_plantilla)} onClose={() => setNueva(false)}
                     onCreada={(id) => { setNueva(false); cargar(); abrir(id); }}
-                    onError={(err) => showToast('No se pudo crear', mensajeAmigable(err, 'Intenta de nuevo.'), 'error')} />
+                    onError={(err) => showToast('No se pudo crear', mensajeAmigable(err, 'Intenta de nuevo.'), 'error')}
+                    onAviso={(texto) => showToast('Encuesta creada', texto, 'warning')} />
             )}
         </GlassViewLayout>
     );
@@ -244,7 +245,7 @@ function TablaEncuestas({ filas, plantillas, onAbrir }) {
 
 // ── Nueva encuesta ─────────────────────────────────────────────────────────
 
-function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError }) {
+function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError, onAviso }) {
     const [nombre, setNombre] = useState('');
     const [base, setBase] = useState('');
     const [tipo, setTipo] = useState('encuesta');
@@ -256,7 +257,13 @@ function NuevaEncuestaModal({ plantillas, onClose, onCreada, onError }) {
             let id;
             if (base) {
                 id = await duplicarEncuesta(base, tipo === 'plantilla');
-                if (nombre.trim()) await guardarDiseno(id, { nombre: nombre.trim() });
+                // La copia YA existe: si el nombre no se pudo poner, se abre
+                // igual (se cambia ahí mismo). Avisar con el modal abierto
+                // invitaba a reintentar y dejaba copias huérfanas.
+                if (nombre.trim()) {
+                    try { await guardarDiseno(id, { nombre: nombre.trim() }); }
+                    catch { onAviso?.('La copia se creó con el nombre de la plantilla. Cámbialo en Ajustes.'); }
+                }
             } else {
                 id = await crearEncuesta({ nombre: nombre.trim(), es_plantilla: tipo === 'plantilla' });
             }

@@ -167,3 +167,80 @@ describe('resultados y CSV', () => {
         expect(rows[0]).toEqual(['F', 'Salud 1', 'QR o enlace', '', 9, 'Sí', '', 'Poco', '9', '', 'Confianza; Precio', 'Ana', '77771234', 40]);
     });
 });
+
+// ── Auditoría 2026-10-31 ───────────────────────────────────────────────────
+import {
+    condicionValida, limpiarCondiciones, opcionesConTexto, textoSeguroParaHoja,
+} from '@nucleo/utils/encuestasClientes';
+
+describe('cumpleCondicion — una comparación numérica exige un número (como la base)', () => {
+    it('un Sí/No mirado con «≤ 6» no se cumple: Number(true) daba 1', () => {
+        expect(cumpleCondicion({ pregunta: 'x', operador: '<=', valor: 6 }, { x: true })).toBe(false);
+        expect(cumpleCondicion({ pregunta: 'x', operador: '=', valor: 1 }, { x: true })).toBe(false);
+    });
+    it('un texto numérico tampoco cuenta como número', () => {
+        expect(cumpleCondicion({ pregunta: 'x', operador: '>=', valor: 3 }, { x: '5' })).toBe(false);
+    });
+});
+
+describe('primeraSinContestar — sólo espacios es vacío', () => {
+    it('la base hace btrim y rechazaría la respuesta', () => {
+        const p = [{ id: 't', tipo: 'texto', obligatoria: true }];
+        expect(primeraSinContestar(p, { t: '   ' })?.id).toBe('t');
+        expect(primeraSinContestar(p, { t: ' hola ' })).toBe(null);
+    });
+});
+
+describe('opcionesConTexto', () => {
+    it('descarta las opciones en blanco igual que `btrim` en la base', () => {
+        expect(opcionesConTexto({ opciones: [{ id: 'a', texto: 'x' }, { id: 'b', texto: '  ' }, { id: 'c' }] }).map((o) => o.id)).toEqual(['a']);
+    });
+});
+
+describe('condicionValida / limpiarCondiciones', () => {
+    const base = (mira, condicion) => ({ secciones: [{ id: 's', preguntas: [mira, { id: 'q', tipo: 'texto', texto: 'q', condicion }] }] });
+    const condDe = (c) => c.secciones[0].preguntas[1].condicion;
+
+    it('conserva una condición que se puede cumplir', () => {
+        const c = base({ id: 'n', tipo: 'nps' }, { pregunta: 'n', operador: '<=', valor: 6 });
+        expect(limpiarCondiciones(c)).toBe(c);
+    });
+    it('quita la condición numérica cuando la pregunta mirada pasa a Sí/No', () => {
+        const c = base({ id: 'n', tipo: 'si_no' }, { pregunta: 'n', operador: '<=', valor: 6 });
+        expect(condDe(limpiarCondiciones(c))).toBeUndefined();
+    });
+    it('quita la condición que mira una opción que ya no existe', () => {
+        const c = base({ id: 'u', tipo: 'unica', opciones: [{ id: 'a', texto: 'x' }] }, { pregunta: 'u', operador: 'incluye', valor: 'b' });
+        expect(condDe(limpiarCondiciones(c))).toBeUndefined();
+    });
+    it('NO la quita si la opción existe pero se está reescribiendo (texto vacío)', () => {
+        const c = base({ id: 'u', tipo: 'unica', opciones: [{ id: 'a', texto: '' }] }, { pregunta: 'u', operador: 'incluye', valor: 'a' });
+        expect(condDe(limpiarCondiciones(c))).toEqual({ pregunta: 'u', operador: 'incluye', valor: 'a' });
+        // …pero para enviarla a revisión no vale (lo marca la base).
+        expect(condicionValida(condDe(c), c.secciones[0].preguntas[0])).toBe(false);
+    });
+    it('quita la que mira una pregunta posterior', () => {
+        const c = { secciones: [{ id: 's', preguntas: [
+            { id: 'q', tipo: 'texto', texto: 'q', condicion: { pregunta: 'n', operador: '<=', valor: 6 } },
+            { id: 'n', tipo: 'nps' },
+        ] }] };
+        expect(limpiarCondiciones(c).secciones[0].preguntas[0].condicion).toBeUndefined();
+    });
+});
+
+describe('textoSeguroParaHoja — lo que escribe un anónimo no se ejecuta en Excel', () => {
+    it.each(['=HYPERLINK("http://x","clic")', '+1+1', '@SUM(A1)', '-2+3', '\t=1'])('neutraliza %s', (v) => {
+        expect(textoSeguroParaHoja(v)).toBe(`'${v}`);
+    });
+    it('deja tal cual un texto normal y un número negativo', () => {
+        expect(textoSeguroParaHoja('Muy buena atención')).toBe('Muy buena atención');
+        expect(textoSeguroParaHoja('-5')).toBe('-5');
+        expect(textoSeguroParaHoja('')).toBe('');
+    });
+    it('tablaDeRespuestas lo aplica a las respuestas abiertas y al nombre', () => {
+        const cuest = { secciones: [{ id: 's', preguntas: [{ id: 't', tipo: 'texto', texto: 'T' }] }] };
+        const { rows } = tablaDeRespuestas(cuest, [{ fecha: 'x', sucursal: 'S', canal: 'qr', respuestas: { t: '=1+1' }, contacto_nombre: '@x' }], { fechaHora: () => 'f' });
+        expect(rows[0]).toContain("'=1+1");
+        expect(rows[0]).toContain("'@x");
+    });
+});

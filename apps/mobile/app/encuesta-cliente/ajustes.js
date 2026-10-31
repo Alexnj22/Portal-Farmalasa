@@ -14,7 +14,7 @@ import Conmutador from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchEncuesta, fetchPoblacion, fetchSalas, guardarDiseno, guardarSucursales } from '@nucleo/data/encuestasClientes';
+import { fetchEncuesta, fetchPoblacion, fetchSalas, filaDeSucursales, guardarDiseno } from '@nucleo/data/encuestasClientes';
 import {
   CANALES, INCENTIVOS, canalesCon, conMetaDeSucursal, conMetasSugeridas, metaTotal, muestraSugerida, numeroDeMetaEscrito,
   sucursalesCon, sugeridaDeLaEncuesta,
@@ -55,13 +55,21 @@ export default function AjustesEncuesta() {
   const [estado, setEstado] = useState('listo');
   const pendientes = useRef({});
   const temporizador = useRef(null);
-  const guardadas = useRef([]);
+  // Las sucursales se guardan en fila y con un respiro (la meta se escribe
+  // tecla por tecla): `filaDeSucursales`, la misma del portal.
+  const [fila] = useState(() => filaDeSucursales(id, {
+    alEstado: (e) => setEstado(e),
+    alFallar: (err) => {
+      setSucursales(fila.guardadas());
+      fallo('No se guardaron las sucursales', mensajeAmigable(err, 'Intenta de nuevo.'));
+    },
+  }));
 
   useEffect(() => {
     Promise.all([fetchEncuesta(id), fetchSalas(), fetchPoblacion().catch(() => ({}))])
-      .then(([e, s, p]) => { setEncuesta(e); setSucursales(e?.sucursales || []); guardadas.current = e?.sucursales || []; setSalas(s || []); setPoblacion(p || {}); })
+      .then(([e, s, p]) => { setEncuesta(e); setSucursales(e?.sucursales || []); fila.reiniciar(e?.sucursales || []); setSalas(s || []); setPoblacion(p || {}); })
       .catch((err) => setError(mensajeAmigable(err, 'No se pudo cargar la encuesta.')));
-  }, [id]);
+  }, [id, fila]);
 
   const editable = !!encuesta && encuesta.estado === 'borrador' && hasPermission('encuestas_clientes', 'can_edit');
 
@@ -83,7 +91,7 @@ export default function AjustesEncuesta() {
   }, [id]);
   const alSalir = useRef(guardarYa);
   useEffect(() => { alSalir.current = guardarYa; }, [guardarYa]);
-  useEffect(() => () => { alSalir.current(); }, []);
+  useEffect(() => () => { alSalir.current(); fila.vaciar(); }, [fila]);
 
   const cambiar = (c) => {
     setEncuesta((e) => ({ ...e, ...c }));
@@ -93,18 +101,9 @@ export default function AjustesEncuesta() {
     temporizador.current = setTimeout(guardarYa, RETARDO);
   };
   const set = (k) => (v) => cambiar({ [k]: v });
-  const cambiarSucursales = async (lista) => {
+  const cambiarSucursales = (lista) => {
     setSucursales(lista);
-    setEstado('guardando');
-    try {
-      await guardarSucursales(id, lista, guardadas.current);
-      guardadas.current = lista;
-      setEstado('listo');
-    } catch (err) {
-      setEstado('error');
-      setSucursales(guardadas.current);
-      fallo('No se guardaron las sucursales', mensajeAmigable(err, 'Intenta de nuevo.'));
-    }
+    fila.cambiar(lista);
   };
 
   const elegidas = useMemo(() => new Map(sucursales.map((s) => [s.branch_id, s])), [sucursales]);

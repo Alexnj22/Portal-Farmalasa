@@ -9,7 +9,7 @@ import { LoadingState, EmptyState } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
+import { preguntasEnOrden, enlaceDeEncuesta } from '@nucleo/utils/encuestasClientes';
 import { fetchParaAplicar, guardarEntrevista, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
 import { salaDeHoy } from '@nucleo/data/puntos';
 import FormularioEncuesta from './FormularioEncuesta';
@@ -30,6 +30,9 @@ export default function AplicarEncuestaView() {
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
     const [entrevistando, setEntrevistando] = useState(null); // { encuesta, branchId }
+    // La encuesta se cerró con la última entrevista: «Otra entrevista» vuelve a
+    // la lista en vez de dejar contestar una entera que la base va a rechazar.
+    const [seCerro, setSeCerro] = useState(false);
 
     const cargar = useCallback(async () => {
         try {
@@ -62,7 +65,7 @@ export default function AplicarEncuestaView() {
             <GlassViewLayout icon={Mic} title="Aplicar encuesta" transparentBody>
                 <div className="p-4 md:p-6 flex justify-center">
                     <div className="w-full max-w-lg space-y-3">
-                        <Button variant="ghost" icon={ArrowLeft} onClick={() => { setEntrevistando(null); cargar(); }}>
+                        <Button variant="ghost" icon={ArrowLeft} onClick={() => { setEntrevistando(null); setSeCerro(false); cargar(); }}>
                             Volver a las encuestas
                         </Button>
                         <div data-surface="card" className="p-5 space-y-4">
@@ -75,9 +78,13 @@ export default function AplicarEncuestaView() {
                             </Notice>
                             <FormularioEncuesta encuesta={encuesta} entrevista
                                 onEntregarMuestra={marcarMuestraEntregada}
-                                onEnviar={async (respuestas, contacto, segundos) => {
-                                    const r = await guardarEntrevista(encuesta.id, branchId, { respuestas, contacto, segundos });
-                                    if (r?.cerrada) showToast('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!', 'success');
+                                onReiniciar={() => { if (seCerro) { setEntrevistando(null); setSeCerro(false); cargar(); } }}
+                                onEnviar={async (respuestas, contacto, segundos, referencia) => {
+                                    const r = await guardarEntrevista(encuesta.id, branchId, { respuestas, contacto, segundos, referencia });
+                                    if (r?.cerrada) {
+                                        setSeCerro(true);
+                                        showToast('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!', 'success');
+                                    }
                                     return r;
                                 }} />
                         </div>
@@ -128,10 +135,10 @@ export default function AplicarEncuestaView() {
                                 {e.canales.includes('entrevista') && (
                                     <Button icon={Mic} disabled={!b} onClick={() => setEntrevistando({ encuesta: e, branchId: b })}>Entrevistar</Button>
                                 )}
-                                {e.canales.includes('kiosco') && s && (
+                                {e.canales.includes('kiosco') && s?.token_tablet && (
                                     <Button variant="secondary" icon={Tablet}
                                         title="Abre la encuesta en esta pantalla para que los clientes respondan solos"
-                                        onClick={() => window.open(`/e/${s.token}?modo=tablet`, '_blank', 'noopener')}>
+                                        onClick={() => window.open(enlaceDeEncuesta(s.token_tablet, true, window.location.origin), '_blank', 'noopener')}>
                                         Modo tablet
                                     </Button>
                                 )}

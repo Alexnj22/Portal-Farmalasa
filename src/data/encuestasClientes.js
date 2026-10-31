@@ -66,7 +66,7 @@ export async function fetchEncuestas() {
 
 export async function fetchEncuesta(id) {
     return sinError(await supabase.from('encuestas_cliente')
-        .select('*, sucursales:encuesta_cliente_sucursales(branch_id, meta, token)').eq('id', id).maybeSingle());
+        .select('*, sucursales:encuesta_cliente_sucursales(branch_id, meta, token, token_tablet)').eq('id', id).maybeSingle());
 }
 
 export async function fetchEventos(id) {
@@ -129,6 +129,60 @@ export async function guardarSucursales(id, lista, actuales) {
     }
 }
 
+/**
+ * La fila de guardado de las sucursales de una encuesta, para el portal y la
+ * app. Cada cambio espera `retardo` ms (la meta se escribe tecla por tecla) y
+ * los guardados salen DE A UNO, cada uno comparando contra lo que dejó el
+ * anterior. Antes salían en paralelo contra la misma foto: escribir «120»
+ * podía dejar 12 en la base —la meta que cierra sola la encuesta— y marcar dos
+ * sucursales rápido insertaba la misma fila dos veces.
+ *
+ * `vaciar()` guarda ya lo pendiente y resuelve `true` si quedó guardado.
+ *
+ * @param {string} id
+ * @param {{ retardo?: number, alEstado?: (e: string) => void, alGuardar?: () => void, alFallar?: (err: unknown) => void }} [opciones]
+ */
+export function filaDeSucursales(id, { retardo = 600, alEstado, alGuardar, alFallar } = {}) {
+    let guardadas = [];
+    let ultima = null;
+    let temporizador = null;
+    let cadena = Promise.resolve(true);
+    const vaciar = () => {
+        clearTimeout(temporizador);
+        temporizador = null;
+        cadena = cadena.then(async () => {
+            if (!ultima) return true;
+            const lista = ultima;
+            ultima = null;
+            alEstado?.('guardando');
+            try {
+                await guardarSucursales(id, lista, guardadas);
+                guardadas = lista;
+                alEstado?.(ultima ? 'pendiente' : 'listo');
+                alGuardar?.();
+                return true;
+            } catch (err) {
+                alEstado?.('error');
+                alFallar?.(err);
+                return false;
+            }
+        });
+        return cadena;
+    };
+    return {
+        /** Lo que hay en la base (al cargar o recargar la encuesta). */
+        reiniciar(lista) { guardadas = lista || []; ultima = null; clearTimeout(temporizador); },
+        cambiar(lista) {
+            ultima = lista;
+            alEstado?.('pendiente');
+            clearTimeout(temporizador);
+            temporizador = setTimeout(vaciar, retardo);
+        },
+        vaciar,
+        guardadas: () => guardadas,
+    };
+}
+
 export async function borrarEncuesta(id, nombre) {
     const data = sinError(await supabase.from('encuestas_cliente').delete().eq('id', id).select('id'));
     // Sin policy que lo permita (no es borrador) el delete devuelve cero filas
@@ -178,20 +232,46 @@ export async function fetchPersonas(ids) {
 // cuestionario aprobado. El error que lanzan ya viene en palabras del cliente
 // («Ese teléfono ya respondió esta encuesta»), así que se pasa tal cual.
 
-const mensajeDe = (error) => new Error(String(error?.message || 'No se pudo enviar').replace(/^.*?:\s(?=[A-ZÁÉÍÓÚ¡¿])/, ''));
+const SIN_RED = /failed to fetch|load failed|networkerror|network request failed/i;
+
+/**
+ * El error en palabras de quien lo lee. Sin red, postgrest-js arma
+ * «TypeError: Failed to fetch» (o «Load failed» en Safari): eso no se le
+ * muestra a un cliente.
+ */
+export const mensajeDe = (error) => {
+    const crudo = String(error?.message || error || '');
+    if (SIN_RED.test(crudo)) return new Error('Sin conexión. Revisa el internet e intenta de nuevo.');
+    return new Error((crudo || 'No se pudo enviar').replace(/^.*?:\s(?=[A-ZÁÉÍÓÚ¡¿])/, ''));
+};
+
+/**
+ * Una referencia por respuesta, que viaja con cada intento de enviarla: si la
+ * red se corta DESPUÉS de que entró, reintentar devuelve la misma en vez de
+ * guardar otra.
+ */
+export const nuevaReferencia = () => (globalThis.crypto?.randomUUID
+    ? globalThis.crypto.randomUUID()
+    : 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+        const r = Math.floor(Math.random() * 16);
+        return (c === 'x' ? r : ((r % 4) + 8)).toString(16);
+    }));
 
 /** La encuesta de un QR, sin sesión. `{ estado: 'abierta' | 'cerrada' | 'aun_no' | 'no_disponible' | 'no_existe', … }` */
 export async function fetchEncuestaPublica(token) {
     const { data, error } = await supabase.rpc('encuesta_publica', { p_token: token });
-    if (error) throw error;
+    if (error) throw mensajeDe(error);
     return data;
 }
 
-/** Responder desde el QR o la tablet (`modo: 'tablet'`), sin sesión. */
-export async function responderEncuestaPublica(token, { respuestas, contacto, dispositivo, segundos, modo }) {
+/**
+ * Responder desde el QR o la tablet, sin sesión. Si es tablet o QR lo decide
+ * la base por el token (la tablet tiene el suyo): el navegador no lo elige.
+ */
+export async function responderEncuestaPublica(token, { respuestas, contacto, dispositivo, segundos, referencia }) {
     const { data, error } = await supabase.rpc('encuesta_publica_responder', {
         p_token: token, p_respuestas: respuestas, p_contacto: contacto || null,
-        p_dispositivo: dispositivo, p_duracion: segundos ?? null, p_modo: modo === 'tablet' ? 'tablet' : 'qr',
+        p_dispositivo: dispositivo, p_duracion: segundos ?? null, p_ref: referencia || null,
     });
     if (error) throw mensajeDe(error);
     return data;
@@ -203,14 +283,14 @@ export async function fetchParaAplicar() {
 }
 
 /** Guardar una entrevista. Quien entrevista lo firma la base. */
-export async function guardarEntrevista(encuestaId, branchId, { respuestas, contacto, segundos }) {
+export async function guardarEntrevista(encuestaId, branchId, { respuestas, contacto, segundos, referencia }) {
     const { data, error } = await supabase.rpc('encuesta_cliente_entrevistar', {
         p_id: encuestaId, p_branch: branchId, p_respuestas: respuestas,
-        p_contacto: contacto || null, p_duracion: segundos ?? null,
+        p_contacto: contacto || null, p_duracion: segundos ?? null, p_ref: referencia || null,
     });
     if (error) throw mensajeDe(error);
-    const r = /** @type {{ id?: string } | null} */ (data);
-    anotar('ENCUESTA_CLIENTE_ENTREVISTA', r?.id, { encuesta: encuestaId, sucursal: branchId });
+    const r = /** @type {{ id?: string, repetida?: boolean } | null} */ (data);
+    if (!r?.repetida) anotar('ENCUESTA_CLIENTE_ENTREVISTA', r?.id, { encuesta: encuestaId, sucursal: branchId });
     return data;
 }
 

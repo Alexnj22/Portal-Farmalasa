@@ -15459,6 +15459,7 @@ export type Database = {
           entrevistador_id: string | null
           id: string
           nps: number | null
+          ref: string | null
           respuestas: Json
           telefono: string | null
           telefono_hash: string | null
@@ -15476,6 +15477,7 @@ export type Database = {
           entrevistador_id?: string | null
           id?: string
           nps?: number | null
+          ref?: string | null
           respuestas: Json
           telefono?: string | null
           telefono_hash?: string | null
@@ -15493,6 +15495,7 @@ export type Database = {
           entrevistador_id?: string | null
           id?: string
           nps?: number | null
+          ref?: string | null
           respuestas?: Json
           telefono?: string | null
           telefono_hash?: string | null
@@ -15601,6 +15604,7 @@ export type Database = {
           encuesta_id: string
           meta: number | null
           token: string
+          token_tablet: string
         }
         Insert: {
           branch_id: number
@@ -15608,6 +15612,7 @@ export type Database = {
           encuesta_id: string
           meta?: number | null
           token?: string
+          token_tablet?: string
         }
         Update: {
           branch_id?: number
@@ -15615,6 +15620,7 @@ export type Database = {
           encuesta_id?: string
           meta?: number | null
           token?: string
+          token_tablet?: string
         }
         Relationships: [
           {
@@ -32915,6 +32921,7 @@ export type Database = {
           p_contacto?: Json
           p_duracion?: number
           p_id: string
+          p_ref?: string
           p_respuestas: Json
         }
         Returns: Json
@@ -32963,6 +32970,7 @@ export type Database = {
           p_duracion: number
           p_enc: Database["public"]["Tables"]["encuestas_cliente"]["Row"]
           p_entrevistador: string
+          p_ref?: string
           p_respuestas: Json
         }
         Returns: Json
@@ -32991,6 +32999,7 @@ export type Database = {
           p_dispositivo?: string
           p_duracion?: number
           p_modo?: string
+          p_ref?: string
           p_respuestas: Json
           p_token: string
         }

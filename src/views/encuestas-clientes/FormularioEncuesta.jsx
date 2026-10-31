@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowLeft, ArrowRight, ArrowUp, ArrowDown, Check, CheckCircle2, Gift, AlertTriangle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
@@ -6,8 +6,9 @@ import Checkbox from '../../components/common/Checkbox';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
-    CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto,
+    CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto, opcionesConTexto, MAX_TEXTO, MAX_NUMERO,
 } from '@nucleo/utils/encuestasClientes';
+import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 
 /**
  * El cuestionario tal como lo contesta el cliente: una sección por pantalla,
@@ -22,8 +23,16 @@ import {
  *
  * `reinicioAuto` (segundos): la tablet de sala vuelve sola al principio para
  * el cliente siguiente. `entrevista`: los textos le hablan a quien pregunta.
+ * `onReiniciar`: avisa que empieza otra respuesta (la tablet vuelve a mirar
+ * si la encuesta sigue abierta).
+ *
+ * `onEnviar(respuestas, contacto, segundos, referencia)`: la referencia es la
+ * misma en cada reintento de ESTA respuesta, para que la base no la guarde
+ * dos veces si la red se cortó después de que entró.
  */
-export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuestra, reinicioAuto = null, entrevista = false }) {
+export default function FormularioEncuesta({
+    encuesta, onEnviar, onEntregarMuestra, onReiniciar, reinicioAuto = null, entrevista = false,
+}) {
     const secciones = useMemo(() => (encuesta?.cuestionario?.secciones || [])
         .filter((s) => (s.preguntas || []).length > 0), [encuesta?.cuestionario]);
     const conBienvenida = !!encuesta?.mensaje_bienvenida && !entrevista;
@@ -36,7 +45,10 @@ export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuest
     const [enviando, setEnviando] = useState(false);
     const [errorEnvio, setErrorEnvio] = useState(null);
     const [terminado, setTerminado] = useState(false);
-    const [inicio, setInicio] = useState(() => Date.now());
+    // La duración cuenta desde la primera respuesta, no desde que la tablet
+    // quedó esperando al cliente siguiente.
+    const inicio = useRef(null);
+    const referencia = useRef(nuevaReferencia());
     const [cuenta, setCuenta] = useState(null);
     const [resultado, setResultado] = useState(null);
     const [entregando, setEntregando] = useState(false);
@@ -64,8 +76,10 @@ export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuest
         setTerminado(false);
         setCuenta(null);
         setResultado(null);
-        setInicio(Date.now());
+        inicio.current = null;
+        referencia.current = nuevaReferencia();
         setPaso(conBienvenida ? -1 : 0);
+        onReiniciar?.();
     };
 
     // La tablet vuelve sola al principio: el cliente siguiente no tiene que
@@ -81,13 +95,28 @@ export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuest
     }, [cuenta]); // eslint-disable-line react-hooks/exhaustive-deps -- `reiniciar` sólo reinicia estado
 
     const contestar = (id, valor) => {
+        if (inicio.current == null) inicio.current = Date.now();
         setRespuestas((r) => ({ ...r, [id]: valor }));
         if (faltante === id) setFaltante(null);
     };
 
     const siguiente = () => {
         if (actual) {
-            const falta = primeraSinContestar(visiblesDe(actual), respuestas);
+            // Un «ordenar» que no se tocó se muestra con un orden completo: ese
+            // orden ES la respuesta. Sin esto contaba como no contestado.
+            const porDefecto = {};
+            for (const p of visiblesDe(actual)) {
+                if (p.tipo !== 'ranking') continue;
+                const ops = opcionesConTexto(p);
+                const r = respuestas[p.id];
+                if (!(Array.isArray(r) && r.length === ops.length)) porDefecto[p.id] = ops.map((o) => o.id);
+            }
+            const conOrden = Object.keys(porDefecto).length ? { ...respuestas, ...porDefecto } : respuestas;
+            if (conOrden !== respuestas) {
+                if (inicio.current == null) inicio.current = Date.now();
+                setRespuestas(conOrden);
+            }
+            const falta = primeraSinContestar(visiblesDe(actual), conOrden);
             if (falta) { setFaltante(falta.id); return; }
         }
         setFaltante(null);
@@ -108,7 +137,7 @@ export default function FormularioEncuesta({ encuesta, onEnviar, onEntregarMuest
         setEnviando(true);
         try {
             const r = await onEnviar(limpias, conDatos ? { consiente: true, telefono: c.telefono.trim(), nombre: c.nombre.trim() } : null,
-                Math.round((Date.now() - inicio) / 1000));
+                Math.round((Date.now() - (inicio.current ?? Date.now())) / 1000), referencia.current);
             setResultado(r || null);
             setTerminado(true);
         } catch (err) {
@@ -322,7 +351,7 @@ function Respuesta({ p, valor, onChange }) {
         case 'unica':
             return (
                 <div className="flex flex-col gap-1.5">
-                    {(p.opciones || []).filter((o) => o.texto).map((o) => (
+                    {opcionesConTexto(p).map((o) => (
                         <button key={o.id} type="button" className={`${opcionCls(valor === o.id)} text-left`} aria-pressed={valor === o.id}
                             onClick={() => onChange(o.id)}>{o.texto}</button>
                     ))}
@@ -332,7 +361,7 @@ function Respuesta({ p, valor, onChange }) {
             const marcadas = Array.isArray(valor) ? valor : [];
             return (
                 <div className="flex flex-col gap-1.5">
-                    {(p.opciones || []).filter((o) => o.texto).map((o) => {
+                    {opcionesConTexto(p).map((o) => {
                         const on = marcadas.includes(o.id);
                         return (
                             <button key={o.id} type="button" aria-pressed={on}
@@ -348,7 +377,7 @@ function Respuesta({ p, valor, onChange }) {
             );
         }
         case 'ranking': {
-            const ops = (p.opciones || []).filter((o) => o.texto);
+            const ops = opcionesConTexto(p);
             const orden = Array.isArray(valor) && valor.length === ops.length ? valor : ops.map((o) => o.id);
             const moverA = (i, d) => {
                 const j = i + d;
@@ -373,11 +402,17 @@ function Respuesta({ p, valor, onChange }) {
         case 'numero':
             return (
                 <PortalInput name={p.id} inputMode="numeric" maskType="INTEGER" value={valor ?? ''}
-                    onChange={(e) => onChange(e.target.value === '' ? '' : Number(e.target.value))} placeholder="0" />
+                    onChange={(e) => {
+                        if (e.target.value === '') { onChange(''); return; }
+                        const n = Number(e.target.value);
+                        // La base no acepta más de nueve cifras: se frena al teclear.
+                        if (Number.isFinite(n) && Math.abs(n) <= MAX_NUMERO) onChange(n);
+                    }} placeholder="0" />
             );
         default:
             return (
-                <PortalTextarea name={p.id} rows={3} value={valor || ''} onChange={(e) => onChange(e.target.value)}
+                <PortalTextarea name={p.id} rows={3} value={valor || ''} maxLength={MAX_TEXTO}
+                    onChange={(e) => onChange(e.target.value.slice(0, MAX_TEXTO))}
                     placeholder="Escribe tu respuesta…" />
             );
     }

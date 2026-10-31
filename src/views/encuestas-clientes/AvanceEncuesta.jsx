@@ -123,9 +123,9 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
                                                     Imprimir afiche
                                                 </Button>
                                             )}
-                                            {conTablet && (
+                                            {conTablet && s.token_tablet && (
                                                 <LineaEnlace etiqueta="Tablet de la sala (vuelve a empezar sola)" icono={Tablet}
-                                                    url={enlace(s.token, true)} onCopiar={copiar} />
+                                                    url={enlace(s.token_tablet, true)} onCopiar={copiar} />
                                             )}
                                         </div>
                                     </div>

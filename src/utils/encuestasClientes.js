@@ -196,13 +196,68 @@ export function cumpleCondicion(condicion, respuestas = {}) {
     const r = respuestas[condicion.pregunta];
     if (r === undefined || r === null || r === '') return false;
     const v = condicion.valor;
+    // Con la verdad de `encuesta_cliente_cumple`, no con la de JavaScript: una
+    // comparación numérica exige que la respuesta SEA un número. `Number(true)`
+    // da 1, así que un Sí/No mirado con «≤ 6» se mostraba acá y la base lo
+    // descartaba en silencio.
+    const esNum = typeof r === 'number';
     switch (condicion.operador) {
-        case '<=': return Number(r) <= Number(v);
-        case '>=': return Number(r) >= Number(v);
-        case '=':  return typeof v === 'boolean' ? r === v : Number(r) === Number(v);
+        case '<=': return esNum && r <= Number(v);
+        case '>=': return esNum && r >= Number(v);
+        case '=':  return typeof v === 'boolean' ? r === v : esNum && r === Number(v);
         case 'incluye': return Array.isArray(r) ? r.includes(v) : r === v;
         default: return true;
     }
+}
+
+/** Las opciones que se muestran: las que tienen texto (la base hace `btrim`). */
+export const opcionesConTexto = (p) => (p?.opciones || []).filter((o) => String(o?.texto ?? '').trim() !== '');
+
+/**
+ * ¿Esta condición se puede cumplir mirando a esa pregunta? La misma regla que
+ * `encuesta_cliente_problemas_de`: el operador del tipo, un valor del tipo y,
+ * si mira opciones, una que exista y tenga texto.
+ */
+export function condicionValida(condicion, mirada, { exigeTexto = true } = {}) {
+    if (!condicion?.pregunta || !mirada) return false;
+    const { operador, valor } = condicion;
+    if (tipoDe(mirada.tipo).numerica && mirada.tipo !== 'si_no') {
+        return ['<=', '>=', '='].includes(operador) && typeof valor === 'number' && Number.isFinite(valor);
+    }
+    if (mirada.tipo === 'si_no') return operador === '=' && typeof valor === 'boolean';
+    if (mirada.tipo === 'unica' || mirada.tipo === 'multiple') {
+        const ops = exigeTexto ? opcionesConTexto(mirada) : (mirada.opciones || []);
+        return operador === 'incluye' && ops.some((o) => o.id === valor);
+    }
+    return false;
+}
+
+/**
+ * Quita las condiciones que ya no se pueden cumplir: la pregunta que miraban
+ * cambió de tipo, perdió la opción elegida o quedó después. Sin esto, la
+ * pregunta condicionada se esconde para siempre (o se muestra y la base la
+ * descarta), y nada lo avisa. Se corre sobre todo el cuestionario después de
+ * cada cambio del constructor.
+ *
+ * Una opción que existe pero está en blanco NO quita la condición: puede ser
+ * que la estén reescribiendo. Ese caso lo marca la revisión previa de la base.
+ */
+export function limpiarCondiciones(cuestionario) {
+    const anteriores = new Map();
+    let cambio = false;
+    const secciones = (cuestionario?.secciones || []).map((s) => {
+        const preguntas = (s.preguntas || []).map((p) => {
+            let q = p;
+            if (p.condicion && !condicionValida(p.condicion, anteriores.get(p.condicion.pregunta), { exigeTexto: false })) {
+                q = sinCondicion(p);
+                cambio = true;
+            }
+            anteriores.set(q.id, q);
+            return q;
+        });
+        return { ...s, preguntas };
+    });
+    return cambio ? { ...cuestionario, secciones } : cuestionario;
 }
 
 /**
@@ -256,7 +311,9 @@ export function primeraSinContestar(preguntas, respuestas = {}) {
         if (!p.obligatoria) return false;
         const r = respuestas[p.id];
         if (Array.isArray(r)) return r.length === 0;
-        return r === undefined || r === null || r === '';
+        // Sólo espacios es vacío: la base hace `btrim` y la rechazaría.
+        if (typeof r === 'string') return r.trim() === '';
+        return r === undefined || r === null;
     }) || null;
 }
 
@@ -304,6 +361,24 @@ export function resumenDeCierre(encuesta, sucursales, fechaTexto) {
     return partes.join(' · ') || 'Sin cierre definido';
 }
 
+/** Lo más largo que acepta la base en una respuesta abierta. */
+export const MAX_TEXTO = 2000;
+/** El número más grande que acepta la base (`abs(n) < 1e9`). */
+export const MAX_NUMERO = 999999999;
+
+/**
+ * Un texto escrito por alguien de afuera, listo para una hoja de cálculo: si
+ * empieza con `=`, `+`, `-`, `@` (o tabulador / retorno), Excel lo ejecuta
+ * como fórmula. Un apóstrofo delante lo deja como texto. No va en
+ * `exportCsv` para todos: los libros de IVA se comparan byte a byte contra su
+ * archivo de referencia.
+ */
+export function textoSeguroParaHoja(v) {
+    const s = String(v ?? '');
+    if (/^-?\d+(\.\d+)?$/.test(s)) return s; // un número negativo no es fórmula
+    return /^[=+\-@\t\r]/.test(s) ? `'${s}` : s;
+}
+
 // ── Resultados ─────────────────────────────────────────────────────────────
 
 /**
@@ -341,7 +416,7 @@ export function categoriasDe(pregunta) {
         case 'likert': return ACUERDO.map((l, i) => ({ clave: String(i + 1), label: l }));
         case 'si_no': return [{ clave: 'true', label: 'Sí' }, { clave: 'false', label: 'No' }];
         case 'unica':
-        case 'multiple': return (pregunta.opciones || []).filter((o) => o.texto).map((o) => ({ clave: o.id, label: o.texto }));
+        case 'multiple': return opcionesConTexto(pregunta).map((o) => ({ clave: o.id, label: o.texto }));
         default: return [];
     }
 }
@@ -353,8 +428,10 @@ export function tablaDeRespuestas(cuestionario, filas, { fechaHora }) {
         ...preguntas.map((p) => `${p.numero}. ${p.texto}`), 'Nombre', 'Teléfono', 'Duración (s)'];
     const rows = filas.map((f) => [
         fechaHora(f.fecha), f.sucursal, canalDe(f.canal).label, f.entrevistador || '', f.nps ?? '',
-        ...preguntas.map((p) => textoDeValor(p, f.respuestas?.[p.id])),
-        f.contacto_nombre || '', f.telefono || '', f.duracion_seg ?? '',
+        // Lo que escribió el cliente va neutralizado: el texto de `/e/:token`
+        // lo escribe cualquiera, y `=HYPERLINK(…)` se ejecuta al abrir el CSV.
+        ...preguntas.map((p) => textoSeguroParaHoja(textoDeValor(p, f.respuestas?.[p.id]))),
+        textoSeguroParaHoja(f.contacto_nombre || ''), f.telefono || '', f.duracion_seg ?? '',
     ]);
     return { headers, rows };
 }
@@ -495,6 +572,11 @@ export const archivoDeEncuesta = (nombre) => `encuesta-${String(nombre || '').no
 /** Una encuesta se puede borrar mientras es borrador (también una plantilla). */
 export const encuestaBorrable = (e, puedeEditar) => !!puedeEditar && e?.estado === 'borrador';
 
-/** El enlace público de una encuesta en una sucursal (QR, ticket, mensaje); `tablet` la deja en modo de mostrador. */
+/**
+ * El enlace público de una encuesta en una sucursal. Para el QR, el ticket o
+ * un mensaje va `token`; para la tablet, `token_tablet` con `tablet = true`.
+ * El modo lo decide la base POR EL TOKEN: el `?modo=tablet` sólo ayuda a
+ * reconocer el enlace a simple vista y no cambia nada.
+ */
 export const ORIGEN_DEL_PORTAL = 'https://portal.farmasalud.lat';
 export const enlaceDeEncuesta = (token, tablet = false, origen = ORIGEN_DEL_PORTAL) => `${origen}/e/${token}${tablet ? '?modo=tablet' : ''}`;

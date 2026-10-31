@@ -170,7 +170,7 @@ export default function AvanceEncuesta() {
                             </Tocable>
                           ) : null}
                           {conTablet ? (
-                            <Tocable onPress={() => compartir(enlaceDeEncuesta(s.token, true), `Tablet · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
+                            <Tocable onPress={() => compartir(enlaceDeEncuesta(s.token_tablet || s.token, true), `Tablet · ${s.nombre}`)} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>Enlace de la tablet</Text>
                             </Tocable>
                           ) : null}

@@ -15,9 +15,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
-import { estadoDe, preguntasEnOrden, canalDe, resumenDeCierre } from '@nucleo/utils/encuestasClientes';
+import { estadoDe, preguntasEnOrden, canalDe, resumenDeCierre, limpiarCondiciones } from '@nucleo/utils/encuestasClientes';
 import {
-    fetchEncuesta, fetchEventos, fetchProblemas, fetchPersonas, guardarDiseno, guardarSucursales,
+    fetchEncuesta, fetchEventos, fetchProblemas, fetchPersonas, guardarDiseno, filaDeSucursales,
     enviarARevision, revisarEncuesta, publicarEncuesta, cerrarEncuesta, archivarEncuesta, duplicarEncuesta, borrarEncuesta,
 } from '@nucleo/data/encuestasClientes';
 import Constructor from './Constructor';
@@ -59,7 +59,18 @@ export default function EncuestaDetalle({
 
     const pendientes = useRef({});
     const temporizador = useRef(null);
-    const sucursalesGuardadas = useRef([]);
+    // Los guardados del diseño salen en fila: uno viejo que tarda no puede
+    // llegar después de uno nuevo y pisarlo, y una acción del ciclo espera a
+    // que termine el que esté en vuelo.
+    const enVuelo = useRef(Promise.resolve(true));
+    // Si se guardó algo, la lista se refresca al salir — no en cada tecla.
+    const huboCambios = useRef(false);
+    const avisos = useRef({});
+    const [sucursalesFila] = useState(() => filaDeSucursales(id, {
+        alEstado: (e) => setGuardado(e),
+        alGuardar: () => { huboCambios.current = true; avisos.current.revisar?.(); },
+        alFallar: (err) => avisos.current.fallo?.(err),
+    }));
 
     const cargar = useCallback(async () => {
         try {
@@ -68,7 +79,7 @@ export default function EncuestaDetalle({
             const gente = await fetchPersonas([...ev.map((x) => x.autor_id), e.created_by, e.aprobada_por]);
             setEncuesta(e);
             setSucursales(e.sucursales || []);
-            sucursalesGuardadas.current = e.sucursales || [];
+            sucursalesFila.reiniciar(e.sucursales || []);
             setEventos(ev);
             setProblemas(pr);
             setPersonas(gente);
@@ -78,7 +89,7 @@ export default function EncuestaDetalle({
         } finally {
             setCargando(false);
         }
-    }, [id]);
+    }, [id, sucursalesFila]);
 
     useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- la carga de la encuesta abierta
 
@@ -88,31 +99,54 @@ export default function EncuestaDetalle({
         try { setProblemas(await fetchProblemas(id)); } catch { /* el aviso se refresca en la próxima */ }
     }, [id]);
 
-    const guardarYa = useCallback(async () => {
+    /** Guarda ya lo pendiente; resuelve `true` si quedó todo guardado. */
+    const guardarYa = useCallback(() => {
         clearTimeout(temporizador.current);
-        const cambios = pendientes.current;
-        if (!Object.keys(cambios).length) return;
-        pendientes.current = {};
-        setGuardado('guardando');
-        try {
-            await guardarDiseno(id, cambios);
-            setGuardado(Object.keys(pendientes.current).length ? 'pendiente' : 'listo');
-            revisarProblemas();
-            onCambio?.();
-        } catch (err) {
-            // Lo que no entró vuelve a la cola, debajo de lo que se escribió después.
-            pendientes.current = { ...cambios, ...pendientes.current };
-            setGuardado('error');
-            showToast('No se guardó el último cambio', mensajeAmigable(err, 'Revisa la conexión; se reintenta con el próximo cambio.'), 'error');
-        }
-    }, [id, revisarProblemas, onCambio, showToast]);
+        enVuelo.current = enVuelo.current.then(async () => {
+            const cambios = pendientes.current;
+            if (!Object.keys(cambios).length) return true;
+            pendientes.current = {};
+            setGuardado('guardando');
+            try {
+                await guardarDiseno(id, cambios);
+                huboCambios.current = true;
+                setGuardado(Object.keys(pendientes.current).length ? 'pendiente' : 'listo');
+                revisarProblemas();
+                return true;
+            } catch (err) {
+                // Lo que no entró vuelve a la cola, debajo de lo que se escribió después.
+                pendientes.current = { ...cambios, ...pendientes.current };
+                setGuardado('error');
+                showToast('No se guardó el último cambio', mensajeAmigable(err, 'Revisa la conexión; se reintenta con el próximo cambio.'), 'error');
+                return false;
+            }
+        });
+        return enVuelo.current;
+    }, [id, revisarProblemas, showToast]);
 
-    // Al salir de la encuesta, lo pendiente se escribe igual. Por una
-    // referencia: con `guardarYa` de dependencia, la limpieza correría (y
-    // guardaría antes de tiempo) cada vez que cambia su identidad.
-    const guardarAlSalir = useRef(guardarYa);
-    useEffect(() => { guardarAlSalir.current = guardarYa; }, [guardarYa]);
-    useEffect(() => () => { guardarAlSalir.current(); }, []);
+    // Lo que la fila de sucursales necesita de este render, por referencia.
+    useEffect(() => {
+        avisos.current = {
+            revisar: revisarProblemas,
+            fallo: (err) => {
+                showToast('No se guardaron las sucursales', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+                cargar();
+            },
+        };
+    }, [revisarProblemas, showToast, cargar]);
+
+    // Al salir de la encuesta, lo pendiente se escribe igual y la lista se
+    // refresca si algo cambió. Por una referencia: con `guardarYa` de
+    // dependencia, la limpieza correría (y guardaría antes de tiempo) cada vez
+    // que cambia su identidad.
+    const alSalir = useRef(null);
+    useEffect(() => {
+        alSalir.current = async () => {
+            await Promise.all([guardarYa(), sucursalesFila.vaciar()]);
+            if (huboCambios.current) onCambio?.();
+        };
+    }, [guardarYa, sucursalesFila, onCambio]);
+    useEffect(() => () => { alSalir.current?.(); }, []);
 
     const cambiar = useCallback((cambios) => {
         setEncuesta((e) => ({ ...e, ...cambios }));
@@ -122,20 +156,10 @@ export default function EncuestaDetalle({
         temporizador.current = setTimeout(guardarYa, RETARDO_GUARDADO);
     }, [guardarYa]);
 
-    const cambiarSucursales = useCallback(async (lista) => {
+    const cambiarSucursales = useCallback((lista) => {
         setSucursales(lista);
-        setGuardado('guardando');
-        try {
-            await guardarSucursales(id, lista, sucursalesGuardadas.current);
-            sucursalesGuardadas.current = lista;
-            setGuardado('listo');
-            revisarProblemas();
-        } catch (err) {
-            setGuardado('error');
-            showToast('No se guardaron las sucursales', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
-            cargar();
-        }
-    }, [id, revisarProblemas, showToast, cargar]);
+        sucursalesFila.cambiar(lista);
+    }, [sucursalesFila]);
 
     // ── Acciones del ciclo ────────────────────────────────────────────────
     // Una función común y no un `useCallback`: sólo la llaman los botones y
@@ -143,7 +167,14 @@ export default function EncuestaDetalle({
     async function accion(fn, exito, { volver = false, abrir = false } = {}) {
         setProcesando(true);
         try {
-            await guardarYa();
+            // Lo que se ve en pantalla es lo que se envía: si el último cambio
+            // no entró, la acción NO sigue. Antes `guardarYa` se tragaba el
+            // error y la encuesta iba a revisión con la versión vieja — y
+            // después ya no se podía editar.
+            const [disenoOk, sucursalesOk] = await Promise.all([guardarYa(), sucursalesFila.vaciar()]);
+            if (!disenoOk || !sucursalesOk) {
+                throw new Error('El último cambio no se guardó. Revisa la conexión y vuelve a intentarlo.');
+            }
             const r = await fn();
             showToast(exito, encuesta?.nombre, 'success');
             setDialogo(null);
@@ -285,7 +316,7 @@ export default function EncuestaDetalle({
                 <Historial eventos={eventos} personas={personas} />
             ) : (
                 <Constructor cuestionario={encuesta.cuestionario} dimensiones={dimensiones}
-                    soloLectura={!editable} onChange={(c) => cambiar({ cuestionario: c })} />
+                    soloLectura={!editable} onChange={(c) => cambiar({ cuestionario: limpiarCondiciones(c) })} />
             )}
 
             <PromptModal isOpen={dialogo === 'enviar'} onClose={() => setDialogo(null)} isProcessing={procesando}

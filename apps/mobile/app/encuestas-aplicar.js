@@ -8,7 +8,7 @@
 // «Modo tablet» abre la encuesta pública de esa sucursal (`enlaceDeEncuesta`,
 // núcleo) a pantalla completa para que el cliente conteste solo. Y cada
 // tarjeta dice su incentivo (muestra médica o N puntos).
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -30,6 +30,7 @@ export default function EncuestasAplicar() {
   const [encuestas, setEncuestas] = useState(null);
   const [miSala, setMiSala] = useState(null);
   const [elegida, setElegida] = useState({});
+  const seCerro = useRef(false);
   const [error, setError] = useState(null);
   const [entrevista, setEntrevista] = useState(null);
   const [recargando, setRecargando] = useState(false);
@@ -60,9 +61,11 @@ export default function EncuestasAplicar() {
             <Aviso texto="Lee cada pregunta tal como está escrita y marca lo que responde el cliente, sin sugerirle la respuesta." />
           </View>
           <Formulario encuesta={encuesta} onEntregarMuestra={marcarMuestraEntregada}
-            onEnviar={async (respuestas, contacto, segundos) => {
-              const r = await guardarEntrevista(encuesta.id, branchId, { respuestas, contacto, segundos });
-              if (r?.cerrada) listo('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!');
+            onReiniciar={() => { if (seCerro.current) { seCerro.current = false; setEntrevista(null); cargar(); } }}
+            onEnviar={async (respuestas, contacto, segundos, referencia) => {
+              const r = await guardarEntrevista(encuesta.id, branchId, { respuestas, contacto, segundos, referencia });
+              // Se cerró con esta: «Otra entrevista» vuelve a la lista.
+              if (r?.cerrada) { seCerro.current = true; listo('La encuesta llegó a su meta', 'Se cerró sola. ¡Gracias!'); }
               return r;
             }} />
           <View style={{ marginHorizontal: 16 }}>
@@ -104,7 +107,7 @@ export default function EncuestasAplicar() {
                   ) : null}
                   {e.canales.includes('kiosco') && s ? (
                     <BotonGrande texto="Modo tablet: que el cliente conteste solo" borde color={MARCA.azulClaro}
-                      onPress={() => WebBrowser.openBrowserAsync(enlaceDeEncuesta(s.token, true, PORTAL_URL), { presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN })
+                      onPress={() => WebBrowser.openBrowserAsync(enlaceDeEncuesta(s.token_tablet || s.token, true, PORTAL_URL), { presentationStyle: WebBrowser.WebBrowserPresentationStyle.FULL_SCREEN })
                         .catch((err) => fallo('No se pudo abrir', err?.message || ''))} />
                   ) : null}
                 </View>

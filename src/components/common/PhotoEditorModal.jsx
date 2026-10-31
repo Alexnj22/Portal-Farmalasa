@@ -6,9 +6,10 @@ import useMediaQuery from '../../plataforma/useMediaQuery';
 import { encuadrarProducto, medirFoto, quitarFondo } from '../../plataforma/fotoDeProducto';
 import { revisarCalidad } from '@nucleo/utils/calidadDeFoto';
 import Notice from './Notice';
+import ComponerFotos from './ComponerFotos';
 import {
     X, ZoomIn, ZoomOut, Scissors, Loader2, Check, Focus, ImageOff,
-    RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus,
+    RotateCcw, RotateCw, Eraser, Paintbrush, ChevronLeft, Plus, Minus, Layers,
 } from 'lucide-react';
 
 // ── Canvas helpers ─────────────────────────────────────────────────────────────
@@ -165,6 +166,8 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
     const [cursorPos, setCursorPos]   = useState(null);     // {x,y} relative to canvas el, display px
 
     const [confirming, setConfirming] = useState(false);
+    // Varias fotos en una (la caja y el blíster): `ComponerFotos` arranca con la actual.
+    const [componiendo, setComponiendo] = useState(false);
 
     // ── File load + EXIF ───────────────────────────────────────────────────────
     useEffect(() => {
@@ -196,6 +199,15 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
     // La foto CON fondo, alineada con la actual: de ahí copia «Restaurar».
     // Empieza siendo la original; `encuadrar` la corta igual que a la imagen.
     const baseRef = useRef(null);
+    const terminarComposicion = (url) => {
+        setImageSrc(prev => { if (prev !== originalUrl.current) URL.revokeObjectURL(prev); return url; });
+        // «Restaurar» copia de la base alineada con la imagen: después de
+        // componer, la base es la composición misma.
+        if (baseRef.current && baseRef.current !== originalUrl.current) URL.revokeObjectURL(baseRef.current);
+        baseRef.current = url;
+        setRotation(0); setCrop({ x: 0, y: 0 }); setZoom(1);
+        setComponiendo(false);
+    };
     useEffect(() => {
         const src = baseRef.current || originalUrl.current;
         if (!src) return;
@@ -463,17 +475,23 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                     ${enTactil ? 'pt-[max(16px,var(--sa-top))] pb-4' : 'py-4'}`}>
                     <div>
                         <p className="text-body-lg font-black text-content">
-                            {brushMode ? 'Retocar fondo' : 'Editar foto'}
+                            {componiendo ? 'Varias fotos' : brushMode ? 'Retocar fondo' : 'Editar foto'}
                         </p>
                         <p className="text-label text-content-3 mt-0.5">
-                            {brushMode
+                            {componiendo
+                                ? 'Agrega fotos encima, muévelas y cambia su tamaño'
+                                : brushMode
                                 ? 'Pinta para borrar o restaurar áreas · usa zoom para precisión'
                                 : medidas ? `Original ${medidas.ancho}×${medidas.alto} px · ajusta el encuadre` : 'Ajusta el encuadre y aplica ediciones'}
                         </p>
                     </div>
-                    <Button variant="secondary" size="sm" onClick={brushMode ? exitBrushMode : onCancel}>{brushMode ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}</Button>
+                    <Button variant="secondary" size="sm" onClick={componiendo ? () => setComponiendo(false) : brushMode ? exitBrushMode : onCancel}>{brushMode || componiendo ? <ChevronLeft size={16} strokeWidth={2.5} /> : <X size={16} strokeWidth={2.5} />}</Button>
                 </div>
 
+                {componiendo ? (
+                    <ComponerFotos base={imageSrc} producto={producto}
+                        onListo={terminarComposicion} onCancelar={() => setComponiendo(false)} />
+                ) : (<>
                 {/* ── Canvas / Crop area ── */}
                 <div
                     className="relative shrink-0"
@@ -495,7 +513,10 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                             height: 'max-content',
                         }}>
                             {/* Canvas wrapper — position:relative anchors the cursor preview */}
-                            <div style={{ position: 'relative', lineHeight: 0 }}>
+                            {/* `overflow: hidden`: la vista previa del pincel (hasta 4× su
+                                tamaño) se salía del lienzo y agrandaba el área con scroll —
+                                al bajar el pincel aparecía la barra y la imagen saltaba. */}
+                            <div style={{ position: 'relative', lineHeight: 0, overflow: 'hidden' }}>
                                 <canvas
                                     ref={brushCanvasRef}
                                     style={{
@@ -700,6 +721,12 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                                 )}
                             </div>
 
+                            {/* La caja y el blíster en una sola foto. */}
+                            <Button variant="secondary" icon={Layers} disabled={bgRemoving || encuadrando}
+                                title="Agregar otra foto encima: moverla y cambiarle el tamaño" onClick={() => setComponiendo(true)}>
+                                Agregar otra foto
+                            </Button>
+
                             {producto && (
                                 <Button variant="secondary" icon={encuadrando ? Loader2 : Focus} disabled={encuadrando || bgRemoving}
                                     title="Recorta el producto y lo centra con el mismo margen que las demás fotos" onClick={() => encuadrar(imageSrc, !bgRemoved && !!medidas?.fondoPlano)}>
@@ -730,6 +757,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                                 : 'Guardar foto'}</Button>
                     </div>
                 )}
+                </>)}
             </>
         </ModalShell>
     );

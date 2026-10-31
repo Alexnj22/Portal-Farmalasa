@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.0 — Fotos: varias fotos en una y pincel sin saltos
+
+- **«Agregar otra foto»** en el editor de fotos: la foto actual queda como primera capa y se agregan otras encima (la caja y el blíster), con el fondo quitado si se marca. Cada una se mueve arrastrando, se cambia de tamaño con la barra y se manda al frente o atrás. «Listo» las junta en un cuadro de 1200 px (blanco en el catálogo) y se sigue editando como cualquier foto.
+- **Retocar**: la vista previa del pincel ya no se sale del lienzo — al bajar el pincel aparecía la barra de scroll y la imagen saltaba.
+
 ## v2.1412.2 — Compras: presentación, mes de vence y fardos
 
 - **«Se carga como»** en cada renglón: lista las presentaciones del producto (UNIDAD, FARDO X 24, FARDO X 25…); elegir una pone la cantidad a cargar (factura × tamaño) y entra en esa presentación.

@@ -549,6 +549,10 @@ const EXCEPTIONS = {
   'src/components/common/LiquidTooltip.jsx': ['capa-flotante'],
   'src/components/common/LiquidWeekPicker.jsx': ['z-index'],
   'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],
+  // Parte del mismo editor: el cuadro donde se juntan varias fotos se pinta en
+  // BLANCO (es el fondo con que la foto se guarda y sale en la app) o con el
+  // damero de transparencia, igual que PhotoEditorModal. No son colores de tema.
+  'src/components/common/ComponerFotos.jsx': ['hex'],
   'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
   'src/views/pedidos/RecepcionModal.jsx': ['z-index'],
   'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],

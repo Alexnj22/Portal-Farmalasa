@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ImagePlus, Trash2, BringToFront, SendToBack, Loader2, Check, ClipboardPaste } from 'lucide-react';
+import { ImagePlus, Trash2, BringToFront, SendToBack, Loader2, Check, ClipboardPaste, RotateCcw } from 'lucide-react';
 import Button from './Button';
 import Notice from './Notice';
 import Checkbox from './Checkbox';
@@ -7,11 +7,24 @@ import { quitarFondo } from '../../plataforma/fotoDeProducto';
 
 // Varias fotos en una (2026-10-31): la caja y el blíster juntos. La foto que
 // se venía editando es la primera capa; se agregan otras encima, se mueven
-// arrastrando y se cambian de tamaño con la barra. «Listo» las aplana en un
+// arrastrando y sus esquinas les cambian el tamaño y las giran. «Listo» las aplana en un
 // cuadro de LADO px — con fondo blanco en el catálogo, transparente si no — y
 // el editor sigue con ese resultado (encuadre, guardar) como con cualquier foto.
 const LADO = 1200;
 const VISTA = 340;
+// Cerca de derecho, queda derecho: girar con el dedo nunca cae justo en 0°.
+const IMAN = (4 * Math.PI) / 180;
+const RECTO = Math.PI / 2;
+
+function enderezar(giro) {
+    const recto = Math.round(giro / RECTO) * RECTO;
+    return Math.abs(giro - recto) < IMAN ? recto : giro;
+}
+// En (-π, π]: así la barra de giro y el número que muestra no dan vueltas de más.
+function normalizar(giro) {
+    const g = giro % (2 * Math.PI);
+    return g > Math.PI ? g - 2 * Math.PI : g <= -Math.PI ? g + 2 * Math.PI : g;
+}
 
 function cargar(src) {
     return new Promise((resolve, reject) => {
@@ -51,7 +64,7 @@ async function ajustarAlContenido(src) {
 let siguienteId = 1;
 
 export default function ComponerFotos({ base, producto = false, onListo, onCancelar }) {
-    const [capas, setCapas] = useState([]);       // [{id, img, w, h, cx, cy, escala}] — la última va arriba
+    const [capas, setCapas] = useState([]);       // [{id, img, w, h, cx, cy, escala, giro}] — la última va arriba
     const [elegida, setElegida] = useState(null);
     const [sinFondo, setSinFondo] = useState(true);
     const [agregando, setAgregando] = useState(false);
@@ -64,7 +77,7 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
         const { img, w, h } = await ajustarAlContenido(src);
         const id = siguienteId++;
         setCapas(cs => [...cs, {
-            id, img, w, h, escala,
+            id, img, w, h, escala, giro: 0,
             cx: desplazar ? 0.62 : 0.5, cy: desplazar ? 0.62 : 0.5,
         }]);
         setElegida(id);
@@ -153,20 +166,26 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
     };
     const soltar = () => { arrastre.current = null; };
 
-    // La esquina de la foto elegida: arrastrarla agranda o achica desde el
-    // centro, guardando la proporción.
+    // Las esquinas de la foto elegida: arrastrar una agranda o achica desde el
+    // centro (guardando la proporción) y a la vez la gira, como con dos dedos.
+    // Cerca de derecho se endereza sola.
     const empezarTamano = (e, c) => {
         e.preventDefault(); e.stopPropagation();
         e.currentTarget.setPointerCapture?.(e.pointerId);
         const caja = e.currentTarget.parentElement.getBoundingClientRect();
-        arrastre.current = { id: c.id, tamano: true, caja, cx: c.cx, cy: c.cy, escala: c.escala,
-            d0: Math.hypot(e.clientX - (caja.left + c.cx * VISTA), e.clientY - (caja.top + c.cy * VISTA)) };
+        const ox = caja.left + c.cx * VISTA, oy = caja.top + c.cy * VISTA;
+        arrastre.current = { id: c.id, tamano: true, ox, oy, escala: c.escala, giro: c.giro,
+            d0: Math.hypot(e.clientX - ox, e.clientY - oy),
+            a0: Math.atan2(e.clientY - oy, e.clientX - ox) };
     };
     const moverTamano = (e) => {
         const a = arrastre.current;
-        if (!a?.tamano) return;
-        const d = Math.hypot(e.clientX - (a.caja.left + a.cx * VISTA), e.clientY - (a.caja.top + a.cy * VISTA));
-        if (a.d0 > 0) cambiar(a.id, { escala: Math.min(1.2, Math.max(0.08, a.escala * d / a.d0)) });
+        if (!a?.tamano || !(a.d0 > 0)) return;
+        const dx = e.clientX - a.ox, dy = e.clientY - a.oy;
+        cambiar(a.id, {
+            escala: Math.min(1.2, Math.max(0.08, a.escala * Math.hypot(dx, dy) / a.d0)),
+            giro: normalizar(enderezar(a.giro + Math.atan2(dy, dx) - a.a0)),
+        });
     };
 
     const alFrente = () => setCapas(cs => [...cs.filter(c => c.id !== elegida), cs.find(c => c.id === elegida)]);
@@ -182,7 +201,11 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
         for (const c of capas) {
             const k = (c.escala * LADO) / Math.max(c.w, c.h);
             const w = c.w * k, h = c.h * k;
-            ctx.drawImage(c.img, c.cx * LADO - w / 2, c.cy * LADO - h / 2, w, h);
+            ctx.save();
+            ctx.translate(c.cx * LADO, c.cy * LADO);
+            ctx.rotate(c.giro);
+            ctx.drawImage(c.img, -w / 2, -h / 2, w, h);
+            ctx.restore();
         }
         lienzo.toBlob(b => {
             setListo(false);
@@ -207,18 +230,22 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                             <img key={c.id} src={c.img.src} alt="" draggable={false}
                                 onPointerDown={(e) => empezar(e, c)}
                                 className={`absolute select-none cursor-move ${elegida === c.id ? 'outline outline-2 outline-dashed outline-brand' : ''}`}
-                                style={{ left: c.cx * VISTA - w / 2, top: c.cy * VISTA - h / 2, width: w, height: h, maxWidth: 'none' }} />
+                                style={{ left: c.cx * VISTA - w / 2, top: c.cy * VISTA - h / 2, width: w, height: h, maxWidth: 'none', transform: `rotate(${c.giro}rad)` }} />
                         );
                     })}
                     {capa && (() => {
                         const { w, h } = medida(capa);
-                        return (
-                            <span role="presentation" aria-hidden="true"
-                                onPointerDown={(e) => empezarTamano(e, capa)} onPointerMove={moverTamano}
-                                onPointerUp={soltar} onPointerCancel={soltar}
-                                className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand shadow cursor-nwse-resize"
-                                style={{ left: capa.cx * VISTA + w / 2, top: capa.cy * VISTA + h / 2, touchAction: 'none' }} />
-                        );
+                        const cos = Math.cos(capa.giro), sin = Math.sin(capa.giro);
+                        return [[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([sx, sy]) => {
+                            const x = (sx * w) / 2, y = (sy * h) / 2;
+                            return (
+                                <span key={`${sx}${sy}`} role="presentation" aria-hidden="true"
+                                    onPointerDown={(e) => empezarTamano(e, capa)} onPointerMove={moverTamano}
+                                    onPointerUp={soltar} onPointerCancel={soltar}
+                                    className="absolute w-5 h-5 -translate-x-1/2 -translate-y-1/2 rounded-full bg-brand border-2 border-[#fff] shadow cursor-grab active:cursor-grabbing"
+                                    style={{ left: capa.cx * VISTA + x * cos - y * sin, top: capa.cy * VISTA + x * sin + y * cos, touchAction: 'none' }} />
+                            );
+                        });
                     })()}
                 </div>
             </div>
@@ -240,14 +267,22 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                                 onChange={e => cambiar(capa.id, { escala: Number(e.target.value) / 100 })}
                                 className="flex-1 accent-brand cursor-pointer" aria-label="Tamaño de la foto elegida" />
                         </div>
+                        <div className="flex items-center gap-3">
+                            <span className="text-caption font-bold text-content-3 shrink-0">Giro</span>
+                            <input type="range" min={-180} max={180} step={1} value={Math.round((capa.giro * 180) / Math.PI)}
+                                onChange={e => cambiar(capa.id, { giro: enderezar((Number(e.target.value) * Math.PI) / 180) })}
+                                className="flex-1 accent-brand cursor-pointer" aria-label="Giro de la foto elegida" />
+                            <span className="text-caption tabular-nums text-content-3 w-10 text-right">{Math.round((capa.giro * 180) / Math.PI)}°</span>
+                        </div>
                         <div className="flex flex-wrap gap-2">
                             <Button variant="secondary" size="sm" icon={BringToFront} onClick={alFrente}>Al frente</Button>
                             <Button variant="secondary" size="sm" icon={SendToBack} onClick={atras}>Atrás</Button>
+                            {capa.giro !== 0 && <Button variant="secondary" size="sm" icon={RotateCcw} onClick={() => cambiar(capa.id, { giro: 0 })}>Enderezar</Button>}
                             {capas.length > 1 && <Button variant="secondary" size="sm" icon={Trash2} onClick={quitar}>Quitar</Button>}
                         </div>
                     </>
                 ) : (
-                    <p className="text-caption text-content-3">Toca una foto para moverla; su esquina azul le cambia el tamaño. También puedes pegar una imagen con ⌘V.</p>
+                    <p className="text-caption text-content-3">Toca una foto para moverla; arrastra sus esquinas azules para cambiarle el tamaño y girarla. También puedes pegar una imagen con ⌘V.</p>
                 )}
                 {error && <Notice variant="warning" compact>{error}</Notice>}
             </div>

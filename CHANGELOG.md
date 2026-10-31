@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.3 — Varias fotos: girar desde las esquinas
+
+En «Varias fotos» la foto elegida tiene ahora una manija azul en cada esquina: arrastrarla cambia el tamaño y gira la foto a la vez, como con dos dedos. Cerca de derecho (0°, 90°, 180°) se endereza sola. Hay también una barra «Giro» con los grados y un botón «Enderezar». El giro se conserva en la foto final.
+
 ## v2.1413.2 — Fotos de productos: la toma se renueva
 
 - **Fotos de productos**: mientras el producto sigue abierto, la toma se renueva cada 5 minutos (vencía a los 15 y armar una foto de varias capas puede tardar más). Si al renovar ya lo abrió otra persona, se avisa.

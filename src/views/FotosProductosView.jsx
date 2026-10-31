@@ -480,6 +480,17 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
         setDeSrs({ ...resultadoDeSrs(crudo), corregido: corregido && { srs: normalizarConcentracion(lista[0].concentracion), nombre: corregido } });
     }, [producto.nombre]);
 
+    // Lo YA guardado también puede contradecir al nombre: buena parte se cargó
+    // del registro sanitario antes de que existiera esta comparación
+    // («AMOXICILINA 575 mg» en «AMOXICILINA 500MG…», la sal contra la base).
+    const guardadoContradice = !preset && items.length === 1 && !items[0].crudo
+        ? corregirConElNombre(escribirConcentracion(items[0].cantidad, items[0].unidad), producto.nombre)
+        : null;
+    const usarDelNombre = () => {
+        const l = leerConcentracion(guardadoContradice);
+        cambiar(() => setItems((prev) => prev.map((p) => ({ ...p, cantidad: l.cantidad, unidad: l.unidad }))));
+    };
+
     const principios = tocoPrincipios
         ? principiosParaGuardar(producto.id, { preset, items: items.map((it) => ({ nombre: it.nombre, concentracion: escribirConcentracion(it.cantidad, it.unidad) ?? it.crudo })) })
         : null;
@@ -664,6 +675,12 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                         {deSrs && !preset && (
                             <Notice variant="chart-3" compact>
                                 {`Tomado del registro ${deSrs.noregistro || 'sanitario'} (${deSrs.nombre}). Revísalo contra el empaque antes de guardar.`}
+                            </Notice>
+                        )}
+                        {guardadoContradice && !deSrs?.corregido && (
+                            <Notice variant="warning" compact
+                                action={puedeEditar && <Button variant="secondary" size="sm" onClick={usarDelNombre}>{`Usar ${guardadoContradice}`}</Button>}>
+                                {`Dice ${escribirConcentracion(items[0].cantidad, items[0].unidad)}, pero el nombre del producto dice ${guardadoContradice}. Confírmalo en el empaque.`}
                             </Notice>
                         )}
                         {deSrs?.corregido && !preset && (

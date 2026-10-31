@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.4 — Concentración contra el nombre, sin falsos positivos
+
+La ficha de Fotos de productos ahora avisa cuando lo YA guardado contradice al nombre del producto («Dice 575 mg, pero el nombre dice 500 mg») y ofrece «Usar 500 mg». Antes sólo se comparaba al tocar una sugerencia del registro, así que lo cargado hace meses se mostraba tal cual.
+
+La comparación dejó de equivocarse en tres casos: el tamaño del envase («X 15 GR», «X 100 ML») ya no se lee como dosis, «200/5MG» no toma el 5, y en frascos el total («600MG X 15 ML») no reemplaza a la dosis por 5 mL. «2,500 UI» se lee como dos mil quinientas, no 2.5.
+
 ## v2.1413.3 — Varias fotos: girar desde las esquinas
 
 En «Varias fotos» la foto elegida tiene ahora una manija azul en cada esquina: arrastrarla cambia el tamaño y gira la foto a la vez, como con dos dedos. Cerca de derecho (0°, 90°, 180°) se endereza sola. Hay también una barra «Giro» con los grados y un botón «Enderezar». El giro se conserva en la foto final.

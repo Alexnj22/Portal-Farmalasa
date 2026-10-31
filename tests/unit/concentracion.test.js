@@ -58,4 +58,20 @@ describe('el nombre contra el registro sanitario', async () => {
         expect(corregirConElNombre('20 mg', 'X 40 MG Y 80 MG')).toBeNull();
         expect(corregirConElNombre('5 mL', 'JARABE 120 MG')).toBeNull();
     });
+    it('el tamaño del envase, el volumen de la dosis y el total del frasco no corrigen', () => {
+        expect(corregirConElNombre('1 g', 'CANESTEN TRIPLE ACCION X 15 GR')).toBeNull();
+        expect(corregirConElNombre('0.1 g', 'ADAFERIN GEL 0.1 % X 30 GR')).toBeNull();
+        expect(corregirConElNombre('200 mg', 'ACIVIREX SUSPENSION 200/5MG X 100 ML')).toBeNull();
+        expect(corregirConElNombre('209.603 mg', 'AZITROMICINA 600MG X15 ML MK')).toBeNull();
+    });
+    it('la sal contra la base sí corrige (575 mg de trihidrato = 500 mg)', () => {
+        expect(corregirConElNombre('575 mg', 'AMOXICILINA 500MG X 100 CAPS. SAIMED')).toBe('500 mg');
+        expect(corregirConElNombre('154.5 mg', 'AMOXICILINA 125 MG X 60 ML MK')).toBe('125 mg');
+    });
+    it('«2,500 UI» son dos mil quinientas', () => {
+        expect(concentracionesDelNombre('BADYKET 2,500 UI X 2 JERINGAS')).toEqual(['2500 UI']);
+        expect(normalizarConcentracion('5,000 UI')).toBe('5000 UI');
+        expect(normalizarConcentracion('0,5 mg')).toBe('0.5 mg');
+        expect(normalizarConcentracion('118.822 mg')).toBe('118.822 mg');
+    });
 });

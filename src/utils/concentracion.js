@@ -17,13 +17,20 @@ export const UNIDADES = ['mg', 'g', 'mcg', 'UI', '%', 'mL', 'mg/mL', 'mg/5 mL', 
 // Cómo se escribe cada pedazo de unidad, en minúsculas → canónico.
 const PIEZA = { mg: 'mg', g: 'g', gr: 'g', grs: 'g', mcg: 'mcg', ug: 'mcg', 'µg': 'mcg', 'μg': 'mcg', ml: 'mL', ui: 'UI', iu: 'UI', 'u.i': 'UI', '%': '%' };
 
+// La coma de «2,500 UI» separa miles, no decimales: con un entero de 1 a 3
+// cifras y EXACTAMENTE tres después, es un millar. «0,5» y «118.822» siguen
+// siendo decimales (el registro escribe los decimales con punto).
+function numero(t) {
+    return /^[1-9]\d{0,2},\d{3}$/.test(t) ? t.replace(',', '') : t.replace(',', '.');
+}
+
 function unaPieza(p) {
     // «5 ml», «5ml» o «ml» → «5 mL» / «mL»
     const m = /^(\d+(?:[.,]\d+)?)?\s*([^\d\s]+)$/.exec(p.trim());
     if (!m) return null;
     const u = PIEZA[m[2].toLowerCase().replace(/\.+$/, '')];
     if (!u) return null;
-    return m[1] ? `${m[1].replace(',', '.')} ${u}` : u;
+    return m[1] ? `${numero(m[1])} ${u}` : u;
 }
 
 /** La unidad en su forma canónica, o `null` si no se reconoce. */
@@ -46,7 +53,7 @@ export function leerConcentracion(texto) {
     if (!t) return { cantidad: '', unidad: '', crudo: null };
     const m = /^(\d+(?:[.,]\d+)?)\s*(.*)$/.exec(t);
     if (!m) return { cantidad: '', unidad: '', crudo: t };
-    const cantidad = m[1].replace(',', '.');
+    const cantidad = numero(m[1]);
     if (!m[2].trim()) return { cantidad, unidad: '', crudo: null };
     const unidad = normalizarUnidad(m[2]);
     return unidad ? { cantidad, unidad, crudo: null } : { cantidad: '', unidad: '', crudo: t };
@@ -55,7 +62,7 @@ export function leerConcentracion(texto) {
 /** `{ cantidad, unidad }` → «500 mg». Sin cantidad no hay concentración. */
 export function escribirConcentracion(cantidad, unidad) {
     // «1.00» → «1», «0.50» → «0.5»: el cero de relleno no es un dato.
-    const c = String(cantidad ?? '').trim().replace(',', '.').replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
+    const c = numero(String(cantidad ?? '').trim()).replace(/(\.\d*?)0+$/, '$1').replace(/\.$/, '');
     if (!c) return null;
     const u = String(unidad ?? '').trim();
     return u ? `${c} ${u}` : c;
@@ -86,8 +93,14 @@ export const claveDePrincipio = (nombre) =>
  */
 export function concentracionesDelNombre(nombre) {
     const vistas = new Set();
-    const re = /(\d+(?:[.,]\d+)?)\s*(mcg|mg|g|gr|ui|ml|%)(?![a-z])/gi;
-    for (const m of String(nombre ?? '').matchAll(re)) {
+    const texto = String(nombre ?? '');
+    const re = /(\d{1,3}(?:,\d{3})+(?![.,]?\d)|\d+(?:[.,]\d+)?)\s*(mcg|mg|g|gr|ui|ml|%)(?![a-z])/gi;
+    for (const m of texto.matchAll(re)) {
+        const antes = texto.slice(0, m.index);
+        // «200/5MG»: el 5 es el volumen de la dosis, no una concentración.
+        if (/\/\s*$/.test(antes)) continue;
+        // «X 15 GR», «X 100 ML»: lo que trae el envase, no la dosis.
+        if (/\bx\s*$/i.test(antes) && /^(g|gr|ml)$/i.test(m[2])) continue;
         const c = normalizarConcentracion(`${m[1]} ${m[2]}`);
         if (c) vistas.add(c);
     }
@@ -105,5 +118,9 @@ export function corregirConElNombre(concentracionSrs, nombre) {
     const delNombre = concentracionesDelNombre(nombre)
         .map(leerConcentracion).filter((c) => c.unidad === srs.unidad);
     if (delNombre.length !== 1 || delNombre[0].cantidad === srs.cantidad) return null;
+    // En un frasco el nombre a veces dice lo que trae ENTERO («AZITROMICINA
+    // 600MG X 15 ML» son 200 mg por 5 mL): muy por encima del registro no es
+    // la dosis, es el total.
+    if (/\bx\s*\d+(?:[.,]\d+)?\s*ml\b/i.test(nombre) && Number(delNombre[0].cantidad) > 2 * Number(srs.cantidad)) return null;
     return escribirConcentracion(delNombre[0].cantidad, delNombre[0].unidad);
 }

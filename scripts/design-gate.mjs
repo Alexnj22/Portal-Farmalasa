@@ -552,7 +552,9 @@ const EXCEPTIONS = {
   // Parte del mismo editor: el cuadro donde se juntan varias fotos se pinta en
   // BLANCO (es el fondo con que la foto se guarda y sale en la app) o con el
   // damero de transparencia, igual que PhotoEditorModal. No son colores de tema.
-  'src/components/common/ComponerFotos.jsx': ['hex'],
+  // La sombra de las fotos de encima se PINTA en la imagen que se guarda
+  // (canvas): es un píxel de la foto, no un color de tema.
+  'src/components/common/ComponerFotos.jsx': ['hex', 'inline-color'],
   'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
   'src/views/pedidos/RecepcionModal.jsx': ['z-index'],
   'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],

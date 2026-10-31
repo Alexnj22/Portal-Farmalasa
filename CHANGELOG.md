@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.6 — Varias fotos: igualar colores y sombra
+
+En «Varias fotos», las fotos que se agregan encima ya no se ven pegadas. «Igualar colores» (encendido por defecto) les lleva la luz a la de la foto de base: les quita el tinte amarillo o azul y les iguala el contraste, sin cambiarles los colores (el blíster no se vuelve azul como la caja). «Sombra» les pone una sombra suave debajo, como si estuvieran apoyadas. Las dos se pueden apagar y se conservan en la foto final.
+
 ## v2.1413.5 — Foto desde el teléfono: cámara o galería
 
 - La página que abre el teléfono al escanear el código («Con el teléfono») ofrece

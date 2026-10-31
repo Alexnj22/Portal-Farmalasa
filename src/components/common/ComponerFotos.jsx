@@ -61,6 +61,69 @@ async function ajustarAlContenido(src) {
     return { img: await cargar(r.toDataURL('image/png')), w, h };
 }
 
+// Igualar colores (2026-10-31): cada foto sale de una cámara, una luz y un
+// sitio distintos, y juntas se notan pegadas. A las que se agregan se les
+// llevan los tonos a los de la foto de base: el blanco de cada canal (eso
+// quita el tinte amarillo o azul) y el negro de la luz (eso iguala el
+// contraste). No se copian los COLORES —el blíster no se vuelve azul como la
+// caja—, sólo la luz con que se tomaron. Sólo cuenta lo opaco: lo
+// transparente es el fondo quitado.
+function tonos(img) {
+    const k = Math.min(1, 256 / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k));
+    c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    const d = ctx.getImageData(0, 0, c.width, c.height).data;
+    const canal = [new Uint32Array(256), new Uint32Array(256), new Uint32Array(256)];
+    const luz = new Uint32Array(256);
+    let n = 0;
+    for (let i = 0; i < d.length; i += 4) {
+        if (d[i + 3] < 200) continue;
+        canal[0][d[i]]++; canal[1][d[i + 1]]++; canal[2][d[i + 2]]++;
+        luz[Math.round(0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2])]++;
+        n++;
+    }
+    if (n < 50) return null;
+    const pct = (h, p) => {
+        let acc = 0;
+        for (let v = 0; v < 256; v++) { acc += h[v]; if (acc >= n * p) return v; }
+        return 255;
+    };
+    return { blanco: canal.map(h => pct(h, 0.98)), negro: pct(luz, 0.02) };
+}
+
+async function igualarA(img, ref, fuerza = 0.75) {
+    const t = tonos(img);
+    if (!t || !ref) return null;
+    const luts = [0, 1, 2].map((ch) => {
+        const lut = new Uint8ClampedArray(256);
+        const factor = Math.min(1.6, Math.max(0.6,
+            Math.max(1, ref.blanco[ch] - ref.negro) / Math.max(1, t.blanco[ch] - t.negro)));
+        for (let v = 0; v < 256; v++) {
+            const m = (v - t.negro) * factor + ref.negro;
+            lut[v] = v + (m - v) * fuerza;
+        }
+        return lut;
+    });
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth; c.height = img.naturalHeight;
+    const ctx = c.getContext('2d');
+    ctx.drawImage(img, 0, 0);
+    const datos = ctx.getImageData(0, 0, c.width, c.height);
+    const d = datos.data;
+    for (let i = 0; i < d.length; i += 4) {
+        d[i] = luts[0][d[i]]; d[i + 1] = luts[1][d[i + 1]]; d[i + 2] = luts[2][d[i + 2]];
+    }
+    ctx.putImageData(datos, 0, 0);
+    return cargar(c.toDataURL('image/png'));
+}
+
+// La sombra de las fotos de encima, en px de la vista; en el cuadro final se
+// escala a LADO para que se vea igual que en pantalla.
+const SOMBRA = { color: 'rgba(0, 0, 0, 0.28)', blur: 6, y: 3 };
+
 let siguienteId = 1;
 
 export default function ComponerFotos({ base, producto = false, onListo, onCancelar }) {
@@ -70,14 +133,20 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
     const [agregando, setAgregando] = useState(false);
     const [error, setError] = useState('');
     const [listo, setListo] = useState(false);
+    const [igualar, setIgualar] = useState(true);
+    const [sombra, setSombra] = useState(true);
+    const tonosBase = useRef(null);
     const arrastre = useRef(null);
     const inputRef = useRef(null);
 
     const agregar = useCallback(async (src, { escala = 0.6, desplazar = true } = {}) => {
         const { img, w, h } = await ajustarAlContenido(src);
+        const base = !desplazar;
+        if (base) tonosBase.current = tonos(img);
+        const igual = base ? null : await igualarA(img, tonosBase.current).catch(() => null);
         const id = siguienteId++;
         setCapas(cs => [...cs, {
-            id, img, w, h, escala, giro: 0,
+            id, img, igual, base, w, h, escala, giro: 0,
             cx: desplazar ? 0.62 : 0.5, cy: desplazar ? 0.62 : 0.5,
         }]);
         setElegida(id);
@@ -204,7 +273,11 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
             ctx.save();
             ctx.translate(c.cx * LADO, c.cy * LADO);
             ctx.rotate(c.giro);
-            ctx.drawImage(c.img, -w / 2, -h / 2, w, h);
+            if (sombra && !c.base) {
+                const k = LADO / VISTA;
+                ctx.shadowColor = SOMBRA.color; ctx.shadowBlur = SOMBRA.blur * k * 2; ctx.shadowOffsetY = SOMBRA.y * k;
+            }
+            ctx.drawImage((igualar && c.igual) || c.img, -w / 2, -h / 2, w, h);
             ctx.restore();
         }
         lienzo.toBlob(b => {
@@ -227,10 +300,11 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                     {capas.map(c => {
                         const { w, h } = medida(c);
                         return (
-                            <img key={c.id} src={c.img.src} alt="" draggable={false}
+                            <img key={c.id} src={((igualar && c.igual) || c.img).src} alt="" draggable={false}
                                 onPointerDown={(e) => empezar(e, c)}
                                 className={`absolute select-none cursor-move ${elegida === c.id ? 'outline outline-2 outline-dashed outline-brand' : ''}`}
-                                style={{ left: c.cx * VISTA - w / 2, top: c.cy * VISTA - h / 2, width: w, height: h, maxWidth: 'none', transform: `rotate(${c.giro}rad)` }} />
+                                style={{ left: c.cx * VISTA - w / 2, top: c.cy * VISTA - h / 2, width: w, height: h, maxWidth: 'none', transform: `rotate(${c.giro}rad)`,
+                                    filter: sombra && !c.base ? `drop-shadow(0 ${SOMBRA.y}px ${SOMBRA.blur}px ${SOMBRA.color})` : undefined }} />
                         );
                     })}
                     {capa && (() => {
@@ -258,6 +332,8 @@ export default function ComponerFotos({ base, producto = false, onListo, onCance
                     </Button>
                     <Button variant="secondary" icon={ClipboardPaste} disabled={agregando} onClick={pegar}>Pegar</Button>
                     <Checkbox checked={sinFondo} onChange={setSinFondo} label="Quitarle el fondo" />
+                    <Checkbox checked={igualar} onChange={setIgualar} label="Igualar colores" />
+                    <Checkbox checked={sombra} onChange={setSombra} label="Sombra" />
                 </div>
                 {capa ? (
                     <>

@@ -34,10 +34,16 @@
  */
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Loader2, Plus, QrCode, Send, X } from 'lucide-react';
+import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Plus, QrCode, Send, X } from 'lucide-react';
 import { capturaVigente, mandarFoto, mandarTexto } from '@nucleo/data/capturaDesdeElTelefono';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import Button from '../components/common/Button';
+
+// Elegir una foto ya tomada. Sin `capture` y sin el comodín `image/*`: así la
+// WebView de la app abre la galería y no la cámara (ver `capturaDeFoto.js`).
+// Sin HEIC a propósito: al no aceptarlo, iOS convierte la foto a JPEG, que es
+// lo que el editor sabe abrir.
+const ACCEPT_GALERIA = 'image/jpeg,image/png,image/webp';
 import Badge from '../components/common/Badge';
 
 /* ── El teléfono también AJUSTA, no sólo dispara ────────────────────────────
@@ -346,6 +352,24 @@ export default function CapturaDeFotoView() {
                             }} />
                         </label>
                     ))}
+                    {/* Las dos caras también desde la galería: va fuera de las
+                        tarjetas porque un `label` no puede llevar otro adentro. */}
+                    <div className="flex gap-2">
+                        {['frente', 'reverso'].map((cara) => (
+                            <label key={cara}
+                                className="flex-1 flex items-center justify-center gap-1.5 min-h-[var(--tap-min)] rounded-2xl cursor-pointer
+                                           border border-border-card bg-surface-card-hover text-content text-caption font-bold
+                                           active:scale-[0.97] transition-transform">
+                                <ImageIcon size={14} strokeWidth={2.5} />
+                                {cara === 'frente' ? 'Frente' : 'Reverso'} de la galería
+                                <input type="file" accept={ACCEPT_GALERIA} className="sr-only" onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    e.target.value = '';
+                                    if (file) setCaraPorAjustar({ cara, file });
+                                }} />
+                            </label>
+                        ))}
+                    </div>
                     <Button icon={Send} disabled={!caras.frente || !caras.reverso} onClick={async () => {
                         setEstado('mandando');
                         try {
@@ -472,6 +496,20 @@ export default function CapturaDeFotoView() {
                             : <><Plus size={18} strokeWidth={3} />Agregar otra foto</>}
                     </label>
                     <input id="captura-foto" type="file" {...PROPS_CAMARA} className="hidden" onChange={tomar} />
+                    {/* La galería, al lado de la cámara (2026-10-31): la foto
+                        puede estar ya tomada. Este input va SIN `capture` y con
+                        la lista fina a propósito — con `capture` + `image/*` la
+                        WebView abre directo la cámara (ver `capturaDeFoto.js`),
+                        y la lista fina además hace que iOS convierta el HEIC. */}
+                    <label htmlFor="captura-galeria"
+                        className="flex items-center justify-center gap-2 w-full max-w-xs
+                                   min-h-[var(--tap-min)] py-3 rounded-2xl cursor-pointer
+                                   border border-border-card bg-surface-card-hover
+                                   text-content font-black text-body
+                                   active:scale-[0.97] transition-transform">
+                        <ImageIcon size={18} strokeWidth={2.5} />Elegir de la galería
+                    </label>
+                    <input id="captura-galeria" type="file" accept={ACCEPT_GALERIA} className="hidden" onChange={tomar} />
 
                     {hojas.length > 0 && (
                         <button type="button" onClick={enviar}

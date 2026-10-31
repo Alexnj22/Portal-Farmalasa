@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.5 — Foto desde el teléfono: cámara o galería
+
+- La página que abre el teléfono al escanear el código («Con el teléfono») ofrece
+  ahora **Tomar la foto** y **Elegir de la galería**; en DUI/dos caras, frente y
+  reverso también se pueden elegir de la galería.
+- En la ficha del catálogo, con el dedo, junto a «Tomar foto» aparece «Galería».
+- El input de la galería va sin `capture` y con la lista fina de tipos: con
+  `capture` + `image/*` la WebView abre directo la cámara, y sin HEIC iOS
+  entrega JPEG.
+
 ## v2.1413.4 — Concentración contra el nombre, sin falsos positivos
 
 La ficha de Fotos de productos ahora avisa cuando lo YA guardado contradice al nombre del producto («Dice 575 mg, pero el nombre dice 500 mg») y ofrece «Usar 500 mg». Antes sólo se comparaba al tocar una sugerencia del registro, así que lo cargado hace meses se mostraba tal cual.

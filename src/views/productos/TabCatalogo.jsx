@@ -11,7 +11,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban, EyeOff, Smartphone, PackageSearch,
+    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban, EyeOff, Smartphone, PackageSearch, ImagePlus,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -1117,6 +1117,12 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                     <Button variant="secondary" size="xs" icon={Camera}
                                         onClick={() => camaraRef.current?.click()}>Tomar foto</Button>
                                 )}
+                                {/* La galería junto a la cámara: `fileRef` va sin
+                                    `capture`, así que abre las fotos ya tomadas. */}
+                                {esTactil && (
+                                    <Button variant="ghost" size="xs" icon={ImagePlus}
+                                        onClick={() => fileRef.current?.click()}>Galería</Button>
+                                )}
                                 {!esTactil && (
                                     <Button variant="secondary" size="xs" icon={Smartphone}
                                         loading={fotoDelTelefono.pidiendo} disabled={fotoDelTelefono.esperando}
@@ -1124,7 +1130,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                         {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
                                     </Button>
                                 )}
-                                {localFoto && (
+                                {localFoto && !esTactil && (
                                     <Button variant="ghost" size="xs" onClick={() => fileRef.current?.click()}>Cambiar foto</Button>
                                 )}
                             </div>

@@ -54,6 +54,7 @@ import { homedir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { esperarTurno } from './lib/turno-de-compilacion.mjs';
 import { anotarVersionPublicada } from './lib/version-publicada.mjs';
+import { exigirHuellaEstable } from './lib/huella-estable.mjs';
 
 const args = process.argv.slice(2);
 const banderas = new Set(args.filter((a) => a.startsWith('--')).map((a) => a.split('=')[0]));
@@ -70,6 +71,7 @@ const COMPARTIR = banderas.has('--compartir');
 // --aab no se compila: sólo se sube, y eso no carga la máquina.
 if (!aabHecho) await esperarTurno(carpeta, 'android');
 const app = resolve(carpeta);
+exigirHuellaEstable(app);
 const CLAVES = join(homedir(), '.claves-farmalasa');
 const REGISTRO = join(CLAVES, 'compilaciones-subidas.json');
 const CUENTA_PLAY = join(CLAVES, 'play-publicar.json');

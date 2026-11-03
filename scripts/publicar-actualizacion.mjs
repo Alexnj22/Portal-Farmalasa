@@ -28,6 +28,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
+import { exigirHuellaEstable } from './lib/huella-estable.mjs';
 
 const PROYECTO = 'sacecdkdmsdvgqnrsett';
 const URL_BASE = `https://${PROYECTO}.supabase.co`;
@@ -44,6 +45,7 @@ const plataformas = plataformaArg ? [plataformaArg] : ['ios', 'android'];
 if (plataformas.some((p) => !['ios', 'android'].includes(p))) { console.error('--plataforma=ios|android'); process.exit(1); }
 if (!ver && !mensaje) { console.error('Uso: npm run app:actualizar -- "Qué cambia" [--plataforma=ios|android] [--ver]'); process.exit(1); }
 if (!existsSync(join(CARPETA, 'app.json'))) { console.error('Correr desde la raíz del repo.'); process.exit(1); }
+exigirHuellaEstable(CARPETA);
 
 // ── Código commiteado ───────────────────────────────────────────────────────
 const sucio = execSync('git status --porcelain -- apps/clientes', { encoding: 'utf8' }).trim();

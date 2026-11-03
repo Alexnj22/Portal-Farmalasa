@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1419.2 — La huella de la app ya no depende de la carpeta
+
+La actualización por aire de la app de clientes salió hoy con una huella que
+no tenía ningún teléfono: `@expo/fingerprint` arma el id de cada fuente con su
+ruta, y en un worktree los `node_modules` son un enlace al árbol principal
+(`../../../Portal-Farmalasa/apps/clientes/node_modules/…`). Mismo código
+nativo, otra huella.
+
+- `scripts/lib/huella-estable.mjs`: `publicar-actualizacion`, `subir-ios` y
+  `subir-android` se niegan a correr si los `node_modules` de la app son un
+  enlace o viven fuera de ella. Publicar y compilar, desde el árbol principal.
+- Las dos publicaciones huérfanas quedaron `activa = false`; la actualización
+  se copió a las huellas de los binarios instalados (el código nativo no cambió
+  desde el 29-oct).
+
 ## v2.1419.1 — Frases del día: tabla en producción y app-clientes desplegada
 
 Migración `20261103180542_app_frases_del_dia` aplicada en producción, `app-clientes`

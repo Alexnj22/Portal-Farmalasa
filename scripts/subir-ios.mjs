@@ -27,6 +27,7 @@ import { homedir, tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { esperarTurno } from './lib/turno-de-compilacion.mjs';
 import { anotarVersionPublicada } from './lib/version-publicada.mjs';
+import { exigirHuellaEstable } from './lib/huella-estable.mjs';
 
 const [carpeta, perfil] = process.argv.slice(2);
 if (!carpeta || !perfil) {
@@ -34,6 +35,7 @@ if (!carpeta || !perfil) {
   process.exit(1);
 }
 const app = resolve(carpeta);
+exigirHuellaEstable(app);
 // iOS y Android de la misma app no compilan a la vez (ver el módulo).
 await esperarTurno(carpeta, 'ios');
 const EQUIPO = 'ZZWA3Q7Q35';

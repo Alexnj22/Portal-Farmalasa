@@ -240,11 +240,13 @@ SELECT b.name AS sala, z.fecha::text AS fecha, z.hora::text AS hora,
  *   · **Boleta repetida.** El número de una boleta de POS es el ID de la
  *     transacción: el aparato no lo repite nunca. Así que el mismo número, en
  *     la misma sala, con el MISMO sentido y de la MISMA familia de numeración
- *     (`caja_familia_de_boleta`: el POS Promerica basta con el número; otro
- *     emisor exige además el mismo monto; un voucher no se juzga), es la misma
+ *     (`caja_familia_de_boleta`) y con el MISMO monto (un voucher no se juzga), es la misma
  *     operación anotada dos veces. La familia faltaba hasta el 2026-10-28: la
  *     000956 del POS Promerica y la 000956 de la terminal de tarjeta de Salud 2
- *     salían como duplicado siendo dos operaciones reales. Es el mismo juez que
+ *     salían como duplicado siendo dos operaciones reales. Y desde el 2026-11-03
+ *     el POS también pide el monto: cada sala tiene su terminal y cada una
+ *     numera por su lado (la 001074 de Salud 1 y la de Salud 2 son dos pagos
+ *     distintos). Es el mismo juez que
  *     usa el freno de `operar-caja` (`caja_misma_operacion_de_boleta`). El sentido CONTRARIO no cuenta: ésa es la corrección de un
  *     movimiento anotado al revés —una remesa entra al cajón cuando en realidad
  *     sale— y es legítima; las tres reales lo dicen en el concepto.
@@ -288,7 +290,7 @@ por_boleta AS (
          array_agg(id ORDER BY id) AS ids
     FROM vivos WHERE num <> '' AND familia NOT LIKE 'VOUCHER:%'
    GROUP BY branch_id, num, tipo, familia,
-            CASE WHEN familia = 'POS_PROMERICA' THEN NULL ELSE round(monto, 2) END
+            round(monto, 2)
   HAVING count(*) > 1
 ),
 por_rafaga AS (

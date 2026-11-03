@@ -725,8 +725,8 @@ registrar**, y `gate:cortes` la acusaba de duplicado.
 
 Quién es la MISMA operación lo decide **la base, una sola vez**:
 `caja_misma_operacion_de_boleta` sobre `caja_familia_de_boleta`. POS Promerica
-(entrada o salida) → basta el número; cualquier otro tipo (proveedor, compra,
-otro) → además el mismo monto; voucher (tarjeta/transferencia) → no se juzga,
+y cualquier otro tipo (proveedor, compra, otro) → mismo número **y** mismo
+monto; voucher (tarjeta/transferencia) → no se juzga,
 ya tiene su tope de partes en `operar-caja`. `boleta_ya_en_caja` devuelve
 `misma_operacion` por coincidencia, y lo leen el freno de `operar-caja`,
 `choqueDeBoleta` en la pantalla y la sección E de `gate:cortes`. Sin decir qué
@@ -734,6 +734,15 @@ se anota devuelve `null` y frena como antes. Las correcciones de sentido
 contrario cruzan tipos (una entrada del POS contra-anotada como «Otro»), así que
 ese AVISO no mira la familia. Bolsas ya lo hacía bien: su índice único lleva la
 entidad.
+
+**El POS tampoco es uno solo** (2026-11-03): cada sala tiene su terminal
+Promerica (Salud 1 60344001, Salud 2 60346001…) y cada una numera por su lado.
+El 26-oct Salud 1 anotó tres papeles de la terminal de Salud 2; el 3-nov la
+suya llegó a la 001074 y el freno la confundió con aquélla. Se decide por el
+**monto, no por la terminal**: la terminal sale de la foto y la lectura confunde
+0↔8 y 1↔4 —un duplicado real de Salud 2 salió con dos terminales distintas—, y
+en los 27 pares repetidos de la historia todos los duplicados verdaderos tenían
+el mismo monto.
 
 ## Cuentas por cobrar: la lista se mira acá, el cobro se decide allá (2026-09-02)
 

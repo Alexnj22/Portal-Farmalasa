@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1422.2 — Caja: la boleta del POS de otra sala ya no frena la propia
+
+Salud 1 no podía anotar la boleta 001074 (Claro, $22.75): «ya se anotó el
+2026-10-26 por $29.47». Aquélla era un papel de la terminal de **Salud 2**
+anotado en Salud 1. Cada sala tiene su terminal Promerica y cada una numera
+por su lado, pero el juez `caja_misma_operacion_de_boleta` decía «POS → basta
+el número».
+
+Ahora el POS pide número **y** monto, como las demás familias. Se eligió el
+monto y no la terminal porque la lectura de la foto confunde los dígitos de la
+terminal (un duplicado real de Salud 2 salió con dos terminales distintas), y
+en los 27 pares repetidos de la historia todos los duplicados verdaderos tenían
+el mismo monto. Migración `20261103202904`; `gate:cortes` agrupa igual.
+
 ## v2.1422.1 — La vuelta del pago en línea ya no muestra el código de la página
 
 Primera prueba real de Wompi (P-NW77NH, $0.45, de prueba): el pago se confirmó

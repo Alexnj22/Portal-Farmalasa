@@ -63,6 +63,10 @@ export const DESTINOS_DE_LA_APP = [
     { valor: '/sucursales', rotulo: 'Sucursales', boton: 'Ver sucursales' },
     { valor: '/puntos', rotulo: 'Mis puntos', boton: 'Ver mis puntos' },
     { valor: '/invitar', rotulo: 'Invitar amigos', boton: 'Invitar' },
+    // Bienestar (2026-11-03): sólo lo abre la app desde v2.1418.0; en una
+    // versión anterior el botón cae en «pantalla no encontrada».
+    { valor: '/bienestar', rotulo: 'Bienestar', boton: 'Ir a Bienestar' },
+    { valor: '/respira', rotulo: 'Bienestar · Respira', boton: 'Respirar un minuto' },
 ];
 
 /** Una historia se puede guardar con título de 3 letras y una imagen (nueva o la que ya tenía). */

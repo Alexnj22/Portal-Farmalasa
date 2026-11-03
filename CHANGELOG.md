@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1418.1 — Historias y banners: destinos Bienestar y Respira
+
+En Ofertas para clientes, el botón de una historia o un banner ahora puede
+llevar a **Bienestar** («Ir a Bienestar») o directo a **Respira** («Respirar un
+minuto»). La lista sigue siendo cerrada (`DESTINOS_DE_LA_APP`). Esas pantallas
+sólo existen desde la app v2.1418.0: en un teléfono con la versión anterior el
+botón abre «pantalla no encontrada».
+
 ## v2.1418.0 — App de clientes: Bienestar (frase del día y zona anti estrés), menú del Inicio y Ofertas en la Tienda
 
 Pedido del usuario: una frase diaria lista a las 8:00, una zona anti estrés y

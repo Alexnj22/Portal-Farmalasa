@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.5 — Las flechas de subir/bajar ya no quedan debajo de la burbuja del chat
+
+Las flechas «Ir al inicio / Ir al final» de `GlassViewLayout` y la burbuja del chat con clientes se paraban en el mismo rincón: la burbuja tapaba «Ir al final» y media «Ir al inicio», y la vista quedaba sin poder usarse por ese rincón. Ahora la burbuja se marca con `data-burbuja-chat` y, mientras está en pantalla, las flechas se corren a su izquierda (`body:has(...)`, porque la burbuja la monta `AppLayout`).
+
 ## v2.1417.4 — La app de clientes pide confirmar el reglamento v2 el día que rige
 
 - El reglamento v2 de Puntos Salud rige el 15-nov-2026, pero `app-clientes`

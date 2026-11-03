@@ -461,7 +461,11 @@ const GlassViewLayout = ({
                         // 2rem de siempre; en teléfono suben por encima del
                         // clúster de filtros en vez de esconderse detrás.
                         style={{ bottom: 'calc(var(--alto-barra-flotante, 0px) + var(--sa-bottom, 0px) + 1rem)' }}
-                        className="fixed right-4 md:right-8 z-sidebar flex flex-col gap-2 pointer-events-auto"
+                        // Con la burbuja del chat en pantalla (mismo rincón, 56px)
+                        // las flechas se corren a su izquierda: encimadas, la
+                        // burbuja tapaba «Ir al final» y la mitad de «Ir al inicio».
+                        // Lo decide CSS porque la burbuja la monta `AppLayout`.
+                        className="fixed right-4 md:right-8 [body:has([data-burbuja-chat])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)] z-sidebar flex flex-col gap-2 pointer-events-auto"
                     >
                         <motion.button
                             onClick={() => scrollTo(0)}

@@ -104,6 +104,9 @@ export default function BurbujaChat({ oculta = false }) {
                 // ya no espera la descarga con la pantalla quieta.
                 <button type="button" onClick={() => setAbierto(true)} onPointerEnter={cargarPanel} onFocus={cargarPanel}
                     aria-label={etiqueta} title={etiqueta} aria-haspopup="dialog" aria-expanded={abierto}
+                    // Lo lee `GlassViewLayout`: sus flechas de subir/bajar viven en
+                    // este mismo rincón y, sin correrse, quedaban DEBAJO de la burbuja.
+                    data-burbuja-chat=""
                     className={`fixed z-tabs right-[max(16px,var(--sa-right))]
                         bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom)))]
                         [body:has([data-barra-flotante])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+5rem)]

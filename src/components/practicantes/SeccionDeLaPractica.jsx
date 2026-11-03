@@ -54,7 +54,7 @@ const fmtH = (n) => (Math.round(n * 10) / 10).toLocaleString('es-SV');
  * convierte en sus semanas de Horarios y turnos, publicadas, hasta la fecha de
  * fin. Y con las horas requeridas dice CUÁNDO termina: es la otra mitad del
  * pedido, «así dice cuándo finalizan». */
-function HorarioDeLaPractica({ pasantia, horasCumplidas, esMenor, onChange }) {
+function HorarioDeLaPractica({ pasantia, horasCumplidas, edad, onChange }) {
     const horario = pasantia.horario;
     const setH = (k, v) => onChange({ ...HORARIO_VACIO, ...(horario || {}), [k]: v });
     const alternarDia = (d) => {
@@ -66,7 +66,7 @@ function HorarioDeLaPractica({ pasantia, horasCumplidas, esMenor, onChange }) {
         horario, fechaInicio: pasantia.fecha_inicio, fechaFin: pasantia.fecha_fin,
         horasRequeridas: pasantia.horas_requeridas, horasCumplidas,
     }) : null;
-    const avisos = horario ? avisosDelHorarioDePractica(horario, { esMenor }) : [];
+    const avisos = horario ? avisosDelHorarioDePractica(horario, { edad }) : [];
     const porDia = horario ? horasDelDiaDePractica(horario) : 0;
 
     if (!horario) {
@@ -273,7 +273,7 @@ export default function SeccionDeLaPractica({ formData, setFormData }) {
             </div>
 
             <HorarioDeLaPractica pasantia={pasantia} horasCumplidas={horasCumplidas}
-                esMenor={(() => { const e = calcAge(formData.birth_date); return e !== null && e < 18; })()}
+                edad={calcAge(formData.birth_date)}
                 onChange={(h) => set('horario', h)} />
 
             <div className={islandClass}>

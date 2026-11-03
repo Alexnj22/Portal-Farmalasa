@@ -97,7 +97,10 @@ describe('horario de la práctica', () => {
     it('avisa los topes del Código de Trabajo, más estrictos para el menor', () => {
         const largo = { dias: [1, 2, 3, 4, 5, 6], entrada: '07:00', salida: '14:00', pausa_inicio: '', pausa_minutos: 0 };
         expect(PF.avisosDelHorarioDePractica(largo)).toHaveLength(0);
-        expect(PF.avisosDelHorarioDePractica(largo, { esMenor: true }).join(' ')).toMatch(/Art\. 116/);
+        expect(PF.avisosDelHorarioDePractica(largo, { edad: 15 }).join(' ')).toMatch(/Art\. 116/);
+        // 16 o 17: sin tope de 6 h, pero sin horas nocturnas.
+        expect(PF.avisosDelHorarioDePractica(largo, { edad: 17 })).toEqual([]);
+        expect(PF.avisosDelHorarioDePractica({ ...largo, salida: '20:00' }, { edad: 17 }).join(' ')).toMatch(/19:00/);
         expect(PF.avisosDelHorarioDePractica(h)).toEqual([]);
         expect(PF.horarioParaGuardar({ ...h, dias: [] })).toBe(null);
     });

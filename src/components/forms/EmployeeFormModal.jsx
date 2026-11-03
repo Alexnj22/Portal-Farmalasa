@@ -2603,7 +2603,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             segunda ficha, escribe sobre la elegida. Es la única forma
                             de conservar el historial sin moverlo, y mover el historial
                             sería mover 129 columnas repartidas en ~70 tablas. */}
-                        {!isEditMode && (
+                        {!isEditMode && !esPracticante && (
                             <div className={`${islandClass} ${islandHoverClass}`}>
                                 <div className="flex items-center gap-3 mb-3">
                                     <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
@@ -3180,10 +3180,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div data-campo="gender" className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Género</span>
-                                        {!formData.gender && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
+                                        {!formData.gender && !esPracticante && <Badge size="sm" variant="danger" uppercase={false}>Requerido</Badge>}
                                     </label>
-                                    <LiquidSelect invalid={!formData.gender} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
+                                    <LiquidSelect invalid={!formData.gender && !esPracticante} value={formData.gender} onChange={(val) => handleSelectChange('gender', val)} options={GENDER_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
+                                {!esPracticante && (
                                 <div data-campo="marital_status" className="relative z-content">
                                     <label className={rotuloCampo('text-content-3')}>
                                         <span>Estado Civil</span>
@@ -3191,6 +3192,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     </label>
                                     <LiquidSelect invalid={!formData.marital_status} value={formData.marital_status} onChange={(val) => handleSelectChange('marital_status', val)} options={MARITAL_STATUS_OPTIONS} placeholder="Seleccionar..." clearable={false} {...portalSelectProps} />
                                 </div>
+                                )}
                             </div>
                         </div>
 
@@ -3271,6 +3273,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
 
                         </div>
 
+                        {/* Practicante: su institución y carrera van en la pestaña Práctica. */}
+                        {!esPracticante && (
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-chart-3/10 text-chart-3-text rounded-xl border border-chart-3/30 shadow-[var(--shadow-shine)]">
@@ -3544,7 +3548,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <Button variant="ghost" icon={Plus} onClick={addSkill}>Agregar Curso / Habilidad</Button>
                             </div>
                         </div>
+                        )}
 
+                        {/* Practicante: no maneja vehículos de la empresa. */}
+                        {!esPracticante && (
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-shine)]">
@@ -3579,6 +3586,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <p className="text-micro text-content-3 font-bold mt-2 ml-1">La licencia se sube en la pestaña Documentos.</p>
                             )}
                         </div>
+                        )}
 
                         {/* ── ACREDITACIONES ────────────────────────────────────────
                             Pedido de Talento Humano: sacarlas de «Vehículos» y darles su
@@ -3594,6 +3602,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             Se DETECTAN por cargo y profesión, que ya están escritos: volver
                             a preguntar «¿es enfermero?» es pedir que alguien acierte algo
                             que el portal sabe. Lo que sí se pregunta es si la TIENE. */}
+                        {/* Practicante: ni acreditaciones de junta (no ejerce) ni ISSS/AFP (no es trabajador; Art. 66 sólo los da al aprendiz con contrato). */}
+                        {!esPracticante && (
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-brand/10 text-brand-text rounded-xl border border-brand/20">
@@ -3893,7 +3903,10 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 )}
                             </div>
                         </div>
+                        )}
 
+                        {/* Practicante: sin dependientes económicos — no hay planilla ni renta. */}
+                        {!esPracticante && (
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-chart-9/10 text-chart-9-text rounded-xl border border-chart-9/20 shadow-[var(--shadow-shine)]">
@@ -3995,6 +4008,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
                             <Button variant="ghost" icon={Plus} onClick={addDependent}>Agregar Persona</Button>
                         </div>
+                        )}
 
                         <div className={`${islandClass}`}>
                             {/* Una sección como las demás (2026-10-15): entera en rojo se leía
@@ -4004,9 +4018,11 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 <div className="p-2 bg-danger/10 text-danger-text rounded-xl border border-danger/20 shadow-[var(--shadow-shine)]">
                                     <HeartPulse size={16} strokeWidth={2.5} />
                                 </div>
-                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">Salud y a quién avisar</h4>
+                                <h4 className="text-body-sm font-black uppercase tracking-widest text-content">{esPracticante ? 'A quién avisar' : 'Salud y a quién avisar'}</h4>
                             </div>
 
+                            {/* Practicante (2026-11-03): de esta sección sólo le toca a quién avisar. */}
+                            {!esPracticante && (<>
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div className="relative z-base">
                                     <label className={rotuloCampo('text-content-3')}>Tipo de Sangre</label>
@@ -4128,6 +4144,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     );
                                 })()}
                             </div>
+                            </>)}
 
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 mt-4 mb-3 pt-4 border-t border-divider flex items-center gap-1.5">
                                 <Phone size={12} strokeWidth={2.5} /> Contacto de Emergencia

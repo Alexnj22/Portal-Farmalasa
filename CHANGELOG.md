@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1425.2 — Practicantes: la ficha sólo pide lo que el Código de Trabajo le aplica
+
+Revisado contra el texto del Código de Trabajo (`docs/legal/normativa/laboral/codigo_de_trabajo_2025-08.txt`). El practicante no tiene contrato de trabajo: el Art. 23 es el contenido del contrato escrito, y el Art. 66 da ISSS solo al aprendiz con contrato de aprendizaje aprobado por el MTPS (Art. 61), que no es esta figura. Por eso:
+- **La pestaña Personal ya no le muestra**: ¿ya trabajaba aquí?, estado civil, nivel académico (su institución va en Práctica), vehículos y licencias, acreditaciones, ISSS y AFP, dependientes económicos, ni tipo de sangre, condiciones médicas o discapacidad. De «Salud y a quién avisar» le queda **a quién avisar**.
+- **El expediente ya no le exige** género, estado civil, nacionalidad, profesión, ni lugar y fecha de expedición del documento.
+- **Se corrigió el aviso del horario**: el Art. 116 pone 6 h al día y 34 a la semana para menores de **16** años, y a los menores de 18 les prohíbe las horas nocturnas (de 19:00 a 6:00, Art. 161). Antes aplicaba el tope de 6 h a todos los menores de 18.
 ## v2.1425.1 — Migración de Saly guardada en el repo
 
 `20261103184923_resumen_sala_venta_buena` se aplicó en producción y no tenía su
@@ -44,7 +50,7 @@ explícalo, o mejóralo.»*
 ## v2.1424.0 — Practicantes: horario fácil, Horarios y turnos, fin estimado y sus documentos
 
 - **Horario de la práctica, fácil**: en la pestaña Práctica se eligen los días, la hora de entrada y de salida y la pausa. Al guardar, la base escribe sus semanas en Horarios y turnos, publicadas, desde la semana en curso hasta la fecha de fin (`aplicar_horario_de_practica`). Así el kiosco conoce su turno y la asistencia mide sus tardanzas y faltas.
-- **Cuándo termina**: con las horas requeridas y las que ya lleva, el formulario y la tarjeta dicen la fecha en que completa si cumple su horario. Avisan si no alcanza antes de la fecha del convenio y si el horario pasa los topes del Código de Trabajo: Art. 116 para el menor (6 h al día, 34 a la semana) y Art. 161 para el adulto.
+- **Cuándo termina**: con las horas requeridas y las que ya lleva, el formulario y la tarjeta dicen la fecha en que completa si cumple su horario. Avisan si no alcanza antes de la fecha del convenio y si el horario pasa los topes del Código de Trabajo: Art. 116 para el menor y Art. 161 para el adulto.
 - **Horarios y turnos los muestra** al final de cada sala. A cada uno se le mide contra su patrón, no contra las 44 h ni contra un descanso por semana. No cuentan para la cobertura de la sala, y publicar la semana los incluye.
 - **Sus documentos son los de una práctica**, no los de un contrato de trabajo: carta de la institución, constancia de estudios, declaración ética, constancia de inducción, certificado médico anual y constancia de horas al terminar. Ya no se le piden la solicitud ni la oferta de empleo, el CV, el contrato, el acuse del MTPS, el NIT, el ISSS, la AFP ni el seguro.
 - El botón para volver de Documentos decía «Nómina»: ahora dice «Acceso».

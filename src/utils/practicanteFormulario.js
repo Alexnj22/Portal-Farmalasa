@@ -268,14 +268,17 @@ export function finDeLaPractica({ horario, fechaInicio, fechaFin, horasRequerida
 }
 
 /**
- * Lo que el horario no debería tener, con su artículo. El practicante no es un
- * trabajador, pero la jornada del menor la limita el Código de Trabajo
- * (Art. 116: 6 horas diarias y 34 semanales para menores de 18) y la del
- * adulto se mide contra la jornada ordinaria (Art. 161: 8 diarias, 44
- * semanales). Los primeros tres avisos impiden guardar un horario; los de
- * tope sólo avisan.
+ * Lo que el horario no debería tener, con su artículo, verificado contra el
+ * texto del Código (`docs/legal/normativa/laboral/codigo_de_trabajo_2025-08.txt`).
+ * El practicante no es un trabajador, pero se toma la jornada del Código como
+ * el límite razonable:
+ *   · Art. 116: menores de 16, no más de 6 h diarias ni 34 semanales; y los
+ *     menores de 18 no pueden estar en horas nocturnas.
+ *   · Art. 161: diurnas de 6:00 a 19:00; la jornada diurna no pasa de 8 h ni
+ *     la semana de 44.
+ * Avisan, no impiden guardar.
  */
-export function avisosDelHorarioDePractica(horario, { esMenor = false } = {}) {
+export function avisosDelHorarioDePractica(horario, { edad = null } = {}) {
     const avisos = [];
     if (!horario) return avisos;
     const e = aMin(horario.entrada), s = aMin(horario.salida);
@@ -288,9 +291,14 @@ export function avisosDelHorarioDePractica(horario, { esMenor = false } = {}) {
         }
     }
     const dia = horasDelDiaDePractica(horario), semana = horasPorSemanaDePractica(horario);
-    const [topeDia, topeSemana, art] = esMenor ? [6, 34, '116'] : [8, 44, '161'];
-    const quien = esMenor ? ' para un menor de edad' : '';
+    const menorDe16 = edad !== null && edad < 16, menorDe18 = edad !== null && edad < 18;
+    const [topeDia, topeSemana, art] = menorDe16 ? [6, 34, '116'] : [8, 44, '161'];
+    const quien = menorDe16 ? ' para un menor de 16 años' : '';
     if (dia > topeDia) avisos.push(`${redondea(dia)} h al día pasan de ${topeDia} h${quien} (Código de Trabajo, Art. ${art}).`);
     if (semana > topeSemana) avisos.push(`${redondea(semana)} h a la semana pasan de ${topeSemana} h${quien} (Código de Trabajo, Art. ${art}).`);
+    // Las nocturnas van de 19:00 a 6:00 (Art. 161).
+    if (menorDe18 && e != null && s != null && (e < 6 * 60 || s > 19 * 60)) {
+        avisos.push('Un menor de 18 años no puede estar antes de las 6:00 ni después de las 19:00 (Código de Trabajo, Art. 116).');
+    }
     return avisos;
 }

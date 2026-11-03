@@ -60,9 +60,18 @@ const EXIGIDOS = [
     { campo: 'code',              label: 'Código de carné' },
 ];
 
+/* El practicante no tiene contrato de trabajo, así que el Art. 23 —que es el
+ * contenido del CONTRATO ESCRITO— no le aplica: ni el contrato, ni el salario,
+ * ni el ISSS/AFP (el Art. 66 da seguro social sólo al aprendiz con contrato de
+ * aprendizaje aprobado por el MTPS, que no es esta figura), ni los datos
+ * personales que el Art. 23 nº1 pide para firmarlo. Lo que sí se le pide es
+ * identificarlo y ubicarlo: nombre, nacimiento, documento, dirección, sala,
+ * fecha de inicio y código. (2026-11-03, «verifica el Código de Trabajo».) */
 const NO_APLICAN_AL_PRACTICANTE = new Set([
     'contract_type', 'base_salary', 'periodo_pago', 'contrato_lugar_celebracion',
     'contrato_fecha_celebracion', 'contract_end_date', 'isss_estado', 'afp_estado',
+    'gender', 'marital_status', 'nationality', 'profession',
+    'dui_lugar_expedicion', 'dui_fecha_expedicion',
 ]);
 
 const vacio = (v) => v === null || v === undefined || v === '' ||

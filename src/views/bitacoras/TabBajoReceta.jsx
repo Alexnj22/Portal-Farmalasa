@@ -14,7 +14,7 @@ import {
     CLASE_ANTIBIOTICO, ESTADO_RENGLON, faltantesDelRenglon, rotularLibro,
 } from '@nucleo/data/bitacoras';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { csvDelLibroBajoReceta, loteDelRenglon } from '@nucleo/utils/libroBajoReceta';
+import { csvDelLibroBajoReceta, loteDelRenglon, vencidoAlVender as venceAntesDeLaVenta } from '@nucleo/utils/libroBajoReceta';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 // Se abre al tocar un folio: no tiene por qué viajar con la pestaña.
@@ -202,7 +202,7 @@ export default function TabBajoReceta({
                     // de la guía (6.1). Se marca en la FILA y no sólo adentro:
                     // si hay que abrir el renglón para enterarse, no se entera
                     // nadie.
-                    const vencidoAlVender = r.vence && r.fecha && r.vence < r.fecha;
+                    const vencidoAlVender = venceAntesDeLaVenta(r.vence, r.fecha);
 
                     const pendiente = r.estado === 'pendiente';
 

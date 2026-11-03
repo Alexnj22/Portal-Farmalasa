@@ -589,6 +589,14 @@ const CRONS = [
           + 'puede descubrir es el que más falta hace declarar.',
   },
   {
+    job: 'resumen-diario-salas-0530-sv', slug: 'resumen-diario-salas', cadencia: '30 11 * * *',
+    corridasDia: 1, sistema: 0,
+    motivo: 'CERO peticiones al sistema de origen: los números salen de la base '
+          + '(`resumen_sala_preparar`) y la única salida es UNA llamada a la IA para todas las '
+          + 'salas, y ninguna si ningún día tuvo novedades. A las 5:30 SV, después del refresco '
+          + 'completo de ventas (00:20) y dentro de la ventana sin sincronizaciones.',
+  },
+  {
     job: 'avisar-bitacora-por-vencer-30min', slug: 'avisar-bitacora-por-vencer', cadencia: '*/30 13-23,0-1 * * *',
     corridasDia: 26, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: una consulta a la base y, cuando hay algo por '

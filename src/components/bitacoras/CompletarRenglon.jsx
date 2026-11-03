@@ -21,6 +21,7 @@ import {
     buscarMedicosLocalPorNombre, completarRenglon, consultarConsejo, fetchRecetasRecientes,
     guardarMedicoDelConsejo, subirFotoDeReceta,
 } from '@nucleo/data/bitacoras';
+import { vencidoAlVender } from '@nucleo/utils/libroBajoReceta';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { recetaDeLaAppParaDispensacion } from '@nucleo/data/reservas';
@@ -359,7 +360,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
     // Un lote vencido al momento de dispensar es un ítem CRÍTICO de la guía
     // (6.1). Acá se marca en rojo el vencimiento: quien completa el renglón
     // tiene el frasco en la mano y es el último que puede notarlo.
-    const venceAntes = Boolean(renglon.vence && renglon.fecha && renglon.vence < renglon.fecha);
+    const venceAntes = vencidoAlVender(renglon.vence, renglon.fecha);
 
     const guardar = useCallback(async () => {
         setGuardando(true);

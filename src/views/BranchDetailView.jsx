@@ -3,7 +3,7 @@ import Button from '../components/common/Button';
 import { useNavigate } from 'react-router-dom'; // 🚨 1. IMPORTAMOS EL ROUTER
 import {
     MapPin, Users, Monitor, Clock, Phone, CalendarClock, Building2, ShieldCheck, Briefcase, Pencil,
-    Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen, ArrowLeft
+    Scale, Zap, ChevronRight, X, SlidersHorizontal, CircleUserRound, FolderOpen, ArrowLeft, Sparkles
 } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { formatTime12h } from '@nucleo/utils/helpers';
@@ -14,6 +14,7 @@ import TabHistory from './branch-tabs/TabHistory';
 import TabExpediente from './branch-tabs/TabExpediente';
 import TabExpenses from './branch-tabs/TabExpenses';
 import TabStaff from './branch-tabs/TabStaff';
+import TabResumen from './branch-tabs/TabResumen';
 
 import GlassViewLayout from '../components/GlassViewLayout';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -189,6 +190,9 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     }, [groupedSchedule]);
 
     const TABS = [
+        // El resumen diario (PENDIENTES 32) es de las salas de venta: es donde
+        // hay ventas, cortes y estantes que mirar.
+        { id: 'resumen',  label: 'Resumen',     icon: Sparkles,   show: isFarmacia },
         { id: 'history',  label: 'Historial',   icon: Clock,      show: true },
         { id: 'staff',    label: 'Personal',     icon: Users,      show: true },
         { id: 'dossier',  label: 'Expediente',   icon: FolderOpen, show: hasLegal && !liveBranch?.expedienteOculto },
@@ -199,7 +203,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
     // `usePestanaEnUrl` valida el `?tab=` contra las que esta sucursal
     // realmente muestra —Expediente y Gastos dependen del tipo de sala—, así
     // que necesita la lista ya armada.
-    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, 'history');
+    const [activeTab, setActiveTab] = usePestanaEnUrl(TABS, isFarmacia ? 'resumen' : 'history');
 
     const tabsRef = useRef(null);
     const tabBtnRefs = useRef(new Map());
@@ -390,6 +394,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
 
                     <div data-surface="card" className="p-6 md:p-8 min-h-[700px] relative overflow-hidden flex flex-col w-full mt-2">
                         <div key={activeTab} className="animate-view-enter flex-1 flex flex-col">
+                        {activeTab === 'resumen' && <TabResumen liveBranch={liveBranch} />}
+
                         {activeTab === 'history' && (
                             <TabHistory liveBranch={liveBranch} history={history} isLoadingHistory={isLoadingHistory} historyError={historyError} employees={employees} openModal={openModal} />
                         )}

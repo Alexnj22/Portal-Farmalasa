@@ -26746,6 +26746,50 @@ export type Database = {
           },
         ]
       }
+      resumen_sala_diario: {
+        Row: {
+          branch_id: number
+          created_at: string
+          fecha: string
+          id: number
+          indicadores: Json
+          novedades: Json
+          redactado: string | null
+          redactado_at: string | null
+          texto: string | null
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          fecha: string
+          id?: never
+          indicadores: Json
+          novedades?: Json
+          redactado?: string | null
+          redactado_at?: string | null
+          texto?: string | null
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          fecha?: string
+          id?: never
+          indicadores?: Json
+          novedades?: Json
+          redactado?: string | null
+          redactado_at?: string | null
+          texto?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resumen_sala_diario_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       retiro_bultos: {
         Row: {
           cargado_at: string
@@ -34887,6 +34931,10 @@ export type Database = {
         Returns: Json
       }
       get_rentabilidad_json: { Args: { p_dias?: number }; Returns: Json }
+      get_resumen_de_salas: {
+        Args: { p_branch_id?: number; p_dias?: number }
+        Returns: Json
+      }
       get_resumen_fiscal: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
         Returns: Json
@@ -37714,6 +37762,23 @@ export type Database = {
           sin_ingresar: number
         }[]
       }
+      resumen_sala_feriado: {
+        Args: { p_fecha: string; p_municipio: string }
+        Returns: string
+      }
+      resumen_sala_guardar_texto: {
+        Args: { p_id: number; p_redactado: string; p_texto: string }
+        Returns: undefined
+      }
+      resumen_sala_indicadores: {
+        Args: { p_branch_id: number; p_fecha: string }
+        Returns: Json
+      }
+      resumen_sala_novedades: {
+        Args: { p_branch_id: number; p_ind: Json }
+        Returns: Json
+      }
+      resumen_sala_preparar: { Args: { p_fecha?: string }; Returns: Json }
       resumen_traslado_pedido: {
         Args: { p_pedido_id: string; p_sucursal_id: number }
         Returns: Json
@@ -38214,6 +38279,7 @@ export type Database = {
         Args: { p_branch_id: number; p_role_id: number }
         Returns: boolean
       }
+      vence_efectivo: { Args: { p_vence: string }; Returns: string }
       vencer_impresiones_atrasadas: {
         Args: { p_branch_id?: number }
         Returns: number

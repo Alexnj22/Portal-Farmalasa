@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1420.0 — Resumen diario de cada sucursal (Sally)
+
+Puntos 31 y 32 de PENDIENTES. Cada mañana a las 5:30, Sally —la IA del portal— le cuenta a la gerencia en 2-3 frases qué se salió de lo normal ayer en cada sala de venta.
+
+- **La base hace el juicio, la IA sólo redacta.** `resumen_sala_preparar` calcula por sala: ventas contra el promedio de sus mismos días de la semana (8 semanas, sin feriados) y la proyección de la meta; faltantes de clase A sin una unidad; cortes C confirmados con faltante; productos vencidos aún a la venta y los que entran a 30 días de vencer. Cada novedad sale escrita en una frase; si la IA falla, el resumen son esas frases.
+- **Comparado con la misma sala, no con un umbral.** Un feriado no se compara ni entra al promedio (el 2-nov Salud 2 vendió $566 contra $1,281 de sus lunes). Los faltantes se comparan con sus últimos 14 días desde el 5.º día guardado. Lo vencido sólo se dice el día que aparece; después queda en el detalle.
+- **El vencimiento del inventario es de mes.** 6,735 de 6,760 lotes traen el día 1 (`11/2026`). `vence_efectivo` lo lleva al último día del mes; antes, el 2 de noviembre ya figuraba vencido. La misma regla corrige el «vencido al vender» del libro bajo receta (v2.1418.3), en la base y en pantalla (`venceEfectivo`, con prueba).
+- **Lote «GENERICO» no cuenta para vencimientos**: su fecha es de relleno (de 20-57 «vencidos» por sala quedaban 3-14 reales).
+- Pantalla: una línea en cada tarjeta de Sucursales y la pestaña **Resumen** en la ficha, con los números de donde sale cada frase y los últimos 14 días.
+- Piezas: tabla `resumen_sala_diario`, funciones `resumen_sala_*` y `get_resumen_de_salas`, edge function `resumen-diario-salas` (`--no-verify-jwt`, una sola llamada a la IA para todas las salas), cron `resumen-diario-salas-0530-sv`.
+
 ## v2.1419.2 — La huella de la app ya no depende de la carpeta
 
 La actualización por aire de la app de clientes salió hoy con una huella que

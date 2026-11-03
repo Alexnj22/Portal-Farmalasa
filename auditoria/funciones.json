@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-03T18:06:37.590Z",
+ "generado": "2026-11-03T18:22:54.620Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -3350,6 +3350,10 @@
    "area": "productos",
    "por": "código"
   },
+  "get_resumen_de_salas": {
+   "area": "sucursales",
+   "por": "código"
+  },
   "get_resumen_fiscal": {
    "area": "fiscal",
    "por": "código"
@@ -5376,6 +5380,26 @@
    "area": "pedidos",
    "por": "código"
   },
+  "resumen_sala_feriado": {
+   "area": "horarios",
+   "por": "tablas"
+  },
+  "resumen_sala_guardar_texto": {
+   "area": "sucursales",
+   "por": "código"
+  },
+  "resumen_sala_indicadores": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "resumen_sala_novedades": {
+   "area": "sucursales",
+   "por": "tablas"
+  },
+  "resumen_sala_preparar": {
+   "area": "sucursales",
+   "por": "código"
+  },
   "resumen_traslado_pedido": {
    "area": "pedidos",
    "por": "código"
@@ -5874,6 +5898,10 @@
   "validate_role_headcount": {
    "area": "permisos",
    "por": "tablas"
+  },
+  "vence_efectivo": {
+   "area": "bitacoras",
+   "por": "llamada"
   },
   "vencer_impresiones_atrasadas": {
    "area": "impresion",

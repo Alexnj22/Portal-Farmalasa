@@ -14,6 +14,23 @@ export const CABECERA_LIBRO_BAJO_RECETA = ['FOLIO', 'FECHA', 'HORA', 'MEDICAMENT
     'ESTADO', 'MOTIVO DE ANULACION'];
 
 /**
+ * El vencimiento del inventario es de MES: 6,735 de 6,760 lotes traen el día 1,
+ * que es la forma de guardar el «11/2026» impreso en la caja. Un día 1 vale como
+ * el último día de su mes; cualquier otro día, tal cual. Gemelo de
+ * `public.vence_efectivo` — cambiar uno exige cambiar el otro.
+ */
+export function venceEfectivo(fecha) {
+    if (!fecha || typeof fecha !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(fecha)) return fecha || null;
+    const [y, m, d] = fecha.slice(0, 10).split('-').map(Number);
+    if (d !== 1) return fecha.slice(0, 10);
+    const ultimo = new Date(Date.UTC(y, m, 0)).getUTCDate();
+    return `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(ultimo).padStart(2, '0')}`;
+}
+
+/** ¿Se entregó vencido? Con la regla del mes. */
+export const vencidoAlVender = (vence, fecha) => Boolean(vence && fecha && venceEfectivo(vence) < String(fecha).slice(0, 10));
+
+/**
  * El lote que el libro DICE de un renglón: el corregido por la sala si lo hay
  * (`lote_revision`, PENDIENTES 22), y si no el que trajo la venta. Una venta
  * que salió de dos lotes se escribe con la cantidad de cada uno al lado.

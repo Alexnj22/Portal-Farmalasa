@@ -428,7 +428,7 @@ export const AREAS = [
         rutas: ['/sucursales', '/sucursales/:id'],
         archivos: [
             'src/views/BranchesView.jsx', 'src/views/BranchDetailView.jsx', 'src/views/branch-tabs/',
-            'src/data/branches.js',
+            'src/data/branches.js', 'src/data/resumenSala.js',
             'src/store/slices/branchSlice.js',
             // Los formularios de `components/forms/` los abre UnifiedModal por
             // un `type`, así que ninguna vista los importa y un grep por nombre
@@ -451,9 +451,10 @@ export const AREAS = [
             'src/components/forms/SelectorDeUbicacion.jsx',
             'src/data/ubicar.js', 'src/utils/ubicacionDeSucursal.js',
         ],
-        tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map', 'sucursal_horario_especial', 'sucursal_expediente'],
-        edge: ['analyze-branch', 'check-doc-expiry'],
-        crons: ['check-doc-expiry-daily'],
+        tablas: ['branches', 'branch_documents', 'branch_expenses', 'erp_sucursal_map', 'sucursal_horario_especial', 'sucursal_expediente',
+                 'resumen_sala_diario'],
+        edge: ['analyze-branch', 'check-doc-expiry', 'resumen-diario-salas'],
+        crons: ['check-doc-expiry-daily', 'resumen-diario-salas-0530-sv'],
         docs: ['docs/SUCURSALES-EL-EXPEDIENTE-DE-CADA-SALA-2026-08-24.md'],
     },
 

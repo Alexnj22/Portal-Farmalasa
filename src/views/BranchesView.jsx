@@ -27,6 +27,8 @@ import { useAuth } from '@nucleo/context/AuthContext';
 
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
+import { fetchResumenDeSalas, tonoDelResumen } from '@nucleo/data/resumenSala';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -124,7 +126,7 @@ const Avance = ({ etiqueta, pct, titulo, disabled, onClick }) => {
 const textoDelHorario = (horario) => String(horario || '').replace(' - ', ' – ');
 
 const BranchCard = memo(({
-    branch, branchEmployees, count, asignados = count, activeKiosks, currentTime,
+    branch, branchEmployees, count, asignados = count, activeKiosks, currentTime, resumen = null,
     handleViewProfile, openModal, handleDeleteClick, handlePhoneAction, handleWhatsAppAction,
     canEdit = false, staggerIndex = 0
 }) => {
@@ -212,6 +214,23 @@ const BranchCard = memo(({
                     <OjoDeTarjeta className="mt-0.5" />
                 </div>
             </header>
+
+            {/* ── El resumen de ayer (Sally) ──
+                Una línea: lo más urgente. El detalle, con cada número, vive en
+                la pestaña «Resumen» de la ficha. */}
+            {resumen?.texto && (() => {
+                const tono = tonoDelResumen(resumen);
+                return (
+                    <div className="mt-3 flex items-start gap-2">
+                        <Sparkles size={14} strokeWidth={2} aria-hidden="true"
+                            className={`mt-0.5 shrink-0 ${tono === 'alta' ? 'text-danger' : tono === 'media' ? 'text-warning' : 'text-success'}`} />
+                        <p className="min-w-0 text-body-sm text-content-2 leading-snug line-clamp-2">
+                            <span className="sr-only">Resumen del {fechaTexto(resumen.fecha, { day: 'numeric', month: 'long' })}: </span>
+                            {resumen.texto}
+                        </p>
+                    </div>
+                );
+            })()}
 
             {/* ── Datos ── */}
             <div className="mt-3 divide-y divide-divider border-y border-divider">
@@ -307,6 +326,19 @@ const BranchesView = ({ openModal }) => {
     // pinta «Inactiva» y entra en el filtro de inactivas. Se avisa y se
     // conserva el último conteo bueno de esa sala.
     const [kioskError, setKioskError] = useState(null);
+
+    // El último resumen de cada sala. Si no se puede leer, la tarjeta sale
+    // igual sin la línea: es un extra, no un dato del que dependa nada.
+    const [resumenes, setResumenes] = useState(() => new Map());
+    useEffect(() => {
+        let vivo = true;
+        fetchResumenDeSalas().then(({ resumenes: lista, error }) => {
+            if (!vivo) return;
+            if (error) { console.warn('Resumen de salas:', error.message); return; }
+            setResumenes(new Map(lista.map(r => [String(r.branch_id), r])));
+        });
+        return () => { vivo = false; };
+    }, []);
     
     const [confirmDialog, setConfirmDialog] = useState({ isOpen: false, branch: null });
     const [alertDialog, setAlertDialog] = useState({ isOpen: false, title: '', message: '', type: 'error' });
@@ -606,6 +638,7 @@ const BranchesView = ({ openModal }) => {
                                                     count={employeesMap.get(String(branch.id))?.length || 0}
                                                     asignados={asignadosPorSala.get(String(branch.id)) || 0}
                                                     activeKiosks={kiosksCount[branch.id] || 0}
+                                                    resumen={resumenes.get(String(branch.id)) || null}
                                                     currentTime={currentTime}
                                                     isMobile={isMobile}
                                                     handleViewProfile={handleViewProfile}

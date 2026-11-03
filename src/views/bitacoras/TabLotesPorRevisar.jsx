@@ -17,6 +17,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { confirmarLoteDelLibro, corregirLoteDelLibro, fetchLotesPorRevisar } from '@nucleo/data/bitacoras';
+import { vencidoAlVender } from '@nucleo/utils/libroBajoReceta';
 
 // Lotes del libro bajo receta que no sirven para rastrear (PENDIENTES 22).
 //
@@ -250,7 +251,7 @@ function CorregirLote({ revision, onCerrar }) {
     const suma = partes.reduce((s, p) => s + (Number(p.cantidad) || 0), 0);
     // Mismo juez que la base (`libro_lote_motivo`): un lote por fila.
     const fundido = (l) => /_/.test(l) || /\d{5,}\s*[-/, ]\s*\d{5,}/.test(l) || l.trim().toUpperCase() === 'GENERICO';
-    const algunaVencida = partes.some(p => p.vence && p.vence < revision.fecha);
+    const algunaVencida = partes.some(p => vencidoAlVender(p.vence, revision.fecha));
     const completas = partes.every(p => p.lote.trim() && p.vence && Number(p.cantidad) > 0 && !fundido(p.lote));
     const cuadra = Math.abs(suma - cantidad) < 1e-9;
     const puedeGuardar = !guardando && completas && cuadra && (algunaVencida === vendidoVencido);

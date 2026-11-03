@@ -14,7 +14,7 @@ import {
     CLASE_ANTIBIOTICO, ESTADO_RENGLON, faltantesDelRenglon, rotularLibro,
 } from '@nucleo/data/bitacoras';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
+import { csvDelLibroBajoReceta, loteDelRenglon } from '@nucleo/utils/libroBajoReceta';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 // Se abre al tocar un folio: no tiene por qué viajar con la pestaña.
@@ -236,9 +236,24 @@ export default function TabBajoReceta({
                                 <span className="text-body-sm font-bold tabular-nums text-content-2">{num(r.cantidad)}</span>
                             </DataCell>
                             <DataCell hideBelow="lg">
-                                {r.lote
-                                    ? <Badge variant="chart-3" size="sm" uppercase={false}>{r.lote}</Badge>
-                                    : <span className="text-content-3">—</span>}
+                                {/* El lote que el libro DICE: el corregido por la sala
+                                    si lo hay (PENDIENTES 22). El de la venta queda en
+                                    la revisión, no se pierde. */}
+                                {(() => {
+                                    const l = loteDelRenglon(r);
+                                    if (!l.lote) return <span className="text-content-3">—</span>;
+                                    return (
+                                        <span className="inline-flex flex-wrap items-center gap-1">
+                                            <Badge variant={l.porRevisar ? 'danger' : 'chart-3'} size="sm" uppercase={false}
+                                                title={l.porRevisar ? 'Lote por revisar' : l.corregido ? `Corregido · antes ${r.lote || 'sin lote'}` : undefined}>
+                                                {l.lote}
+                                            </Badge>
+                                            {l.corregido && !l.confirmado && (
+                                                <Badge variant="info" size="sm" uppercase={false}>Por confirmar</Badge>
+                                            )}
+                                        </span>
+                                    );
+                                })()}
                             </DataCell>
                             {/* Paciente y médico en una sola columna: son las dos
                                 caras del mismo dato —quién se lo llevó y quién lo

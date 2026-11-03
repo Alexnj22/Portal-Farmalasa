@@ -13,12 +13,35 @@ export const CABECERA_LIBRO_BAJO_RECETA = ['FOLIO', 'FECHA', 'HORA', 'MEDICAMENT
     'N JUNTA', 'RECETA', 'COPIA DE RECETA', 'DOCUMENTO', 'DESPACHO',
     'ESTADO', 'MOTIVO DE ANULACION'];
 
+/**
+ * El lote que el libro DICE de un renglón: el corregido por la sala si lo hay
+ * (`lote_revision`, PENDIENTES 22), y si no el que trajo la venta. Una venta
+ * que salió de dos lotes se escribe con la cantidad de cada uno al lado.
+ * El original no se pierde: vive en `r.lote` y en la revisión.
+ */
+export function loteDelRenglon(r) {
+    const rv = r?.lote_revision;
+    const partes = Array.isArray(rv?.partes) ? rv.partes : [];
+    if (rv && (rv.estado === 'corregida' || rv.estado === 'confirmada') && partes.length) {
+        const varias = partes.length > 1;
+        return {
+            lote: partes.map(p => (varias ? `${p.lote} (${Number(p.cantidad)})` : p.lote)).join(' / '),
+            vence: partes.map(p => p.vence).join(' / '),
+            corregido: true,
+            confirmado: rv.estado === 'confirmada',
+            porRevisar: false,
+        };
+    }
+    return { lote: r?.lote || '', vence: r?.vence || '', corregido: false, confirmado: false, porRevisar: Boolean(rv) };
+}
+
 export function csvDelLibroBajoReceta(renglones, { clase = null, sucursalNombre = '', periodo = '' } = {}) {
     const rows = [...(renglones || [])]
         .sort((a, b) => a.folio - b.folio)
-        .map((r) => [
+        .map((r) => [r, loteDelRenglon(r)])
+        .map(([r, l]) => [
             r.folio_txt, r.fecha, hora12(r.hora),
-            r.producto_nombre, r.laboratorio || '', r.lote || '', r.vence || '',
+            r.producto_nombre, r.laboratorio || '', l.lote, l.vence,
             r.cantidad, r.prescrito ?? '', r.paciente || '', r.medico || '',
             r.numero_junta || '', r.receta_correlativo || '',
             r.tiene_foto ? 'SI' : 'NO', r.correlativo_doc || '',

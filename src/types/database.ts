@@ -17595,6 +17595,112 @@ export type Database = {
         }
         Relationships: []
       }
+      libro_lote_revisiones: {
+        Row: {
+          branch_id: number
+          confirmada_at: string | null
+          confirmada_por: string | null
+          corregida_at: string | null
+          corregida_por: string | null
+          created_at: string
+          devuelta_motivo: string | null
+          dispensacion_id: number
+          escalada_at: string | null
+          estado: string
+          historial: Json
+          id: number
+          lote_original: string | null
+          motivo: string
+          nota: string | null
+          partes: Json | null
+          vence_original: string | null
+          vendido_vencido: boolean
+        }
+        Insert: {
+          branch_id: number
+          confirmada_at?: string | null
+          confirmada_por?: string | null
+          corregida_at?: string | null
+          corregida_por?: string | null
+          created_at?: string
+          devuelta_motivo?: string | null
+          dispensacion_id: number
+          escalada_at?: string | null
+          estado?: string
+          historial?: Json
+          id?: never
+          lote_original?: string | null
+          motivo: string
+          nota?: string | null
+          partes?: Json | null
+          vence_original?: string | null
+          vendido_vencido?: boolean
+        }
+        Update: {
+          branch_id?: number
+          confirmada_at?: string | null
+          confirmada_por?: string | null
+          corregida_at?: string | null
+          corregida_por?: string | null
+          created_at?: string
+          devuelta_motivo?: string | null
+          dispensacion_id?: number
+          escalada_at?: string | null
+          estado?: string
+          historial?: Json
+          id?: never
+          lote_original?: string | null
+          motivo?: string
+          nota?: string | null
+          partes?: Json | null
+          vence_original?: string | null
+          vendido_vencido?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "libro_lote_revisiones_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "libro_lote_revisiones_confirmada_por_fkey"
+            columns: ["confirmada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "libro_lote_revisiones_confirmada_por_fkey"
+            columns: ["confirmada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "libro_lote_revisiones_corregida_por_fkey"
+            columns: ["corregida_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "libro_lote_revisiones_corregida_por_fkey"
+            columns: ["corregida_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "libro_lote_revisiones_dispensacion_id_fkey"
+            columns: ["dispensacion_id"]
+            isOneToOne: true
+            referencedRelation: "bitacora_dispensaciones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       login_rate_limit: {
         Row: {
           client_ip: string
@@ -31055,6 +31161,7 @@ export type Database = {
         Returns: number
       }
       avisar_incidentes_datos: { Args: never; Returns: number }
+      avisar_lotes_del_libro_atrasados: { Args: never; Returns: number }
       avisar_pago_seguro_vida: { Args: never; Returns: Json }
       avisar_pedidos_sin_recibir: { Args: never; Returns: number }
       avisar_productos_sin_venta: {
@@ -34146,6 +34253,10 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string }
         Returns: Json
       }
+      get_libro_lotes_por_revisar: {
+        Args: { p_branch_id?: number }
+        Returns: Json
+      }
       get_libro_percepcion: {
         Args: { p_branch_id?: number; p_desde: string; p_hasta: string }
         Returns: {
@@ -35478,6 +35589,32 @@ export type Database = {
         Args: { p_product_id: number }
         Returns: undefined
       }
+      libro_lote_confirmar: {
+        Args: { p_aceptar: boolean; p_motivo?: string; p_revision_id: number }
+        Returns: Json
+      }
+      libro_lote_corregir: {
+        Args: {
+          p_nota?: string
+          p_partes: Json
+          p_revision_id: number
+          p_vendido_vencido?: boolean
+        }
+        Returns: Json
+      }
+      libro_lote_detectar_uno: {
+        Args: { p_dispensacion_id: number }
+        Returns: undefined
+      }
+      libro_lote_encargados: {
+        Args: { p_branch_id: number }
+        Returns: string[]
+      }
+      libro_lote_motivo: {
+        Args: { p_fecha: string; p_lote: string; p_vence: string }
+        Returns: string
+      }
+      libro_lote_regentes: { Args: never; Returns: string[] }
       libro_sacar_producto: {
         Args: { p_motivo: string; p_product_id: number }
         Returns: undefined
@@ -35999,6 +36136,10 @@ export type Database = {
       planilla_incapacidades_de_quincena: {
         Args: { p_desde: string; p_hasta: string }
         Returns: Json
+      }
+      precio_de_apartado_valido: {
+        Args: { p_factor: number; p_precio: number; p_producto: number }
+        Returns: boolean
       }
       precio_de_lista: {
         Args: {

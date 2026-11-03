@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1418.3 — Lotes por revisar en el libro bajo receta
+
+Punto 22 de PENDIENTES. Un renglón del libro bajo receta hereda el lote de la venta, y a veces ese lote no sirve para rastrear la caja: **dos lotes en uno** (`2603216_2603525`), **«GENERICO»**, **sin lote** o **vencido el día de la venta**. No nace en la caja: el inventario ya lo tiene así desde que se cargó la compra (34 de 3,034 lotes, todos dos lotes pegados).
+
+- Tabla `libro_lote_revisiones` + trigger sobre `bitacora_dispensaciones`: cada renglón desde el **1-nov-2026** con un lote así entra a la cola y avisa a Jefe/a y Subjefe/a de la sala. Los de agosto a octubre no cuentan (decisión del usuario).
+- **Corrige el encargado de la sala** (`bitacoras_corregir_lote`) escribiendo el lote y el vencimiento que trae la caja; si salió de dos lotes, reparte la cantidad. **Confirma el Regente** (`bitacoras_confirmar_lote`), y quien corrigió no puede confirmar lo suyo. Sin regente nombrado, el aviso va al Administrador.
+- Lo que lleva más de 3 días sin corregir le llega al regente (cron `avisar-lotes-del-libro-0815-sv`), una sola vez por revisión.
+- El libro y su CSV muestran el lote corregido; el original queda en la revisión con su historial.
+- Arrancó con 2 casos reales: Salud 1 (`2603216_2603525`) y Salud 3 (`GENERICO`).
+
+Pendiente aparte: la causa de raíz está en la carga de la compra, que funde los lotes.
+
 ## v2.1418.2 — Apartar en sala con la lista de precio que corresponde
 
 La R-000151 (Salud 2) quedó a viñeta —3 × $13.25— cuando al cliente le tocaba

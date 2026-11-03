@@ -458,6 +458,10 @@
     "cerrar_mes_bitacora": {
       "guarda": "alcance"
     },
+    "get_libro_lotes_por_revisar": {
+      "guarda": "alcance",
+      "motivo": "Con sala, bitacora_exigir_acceso; sin sala exige alcance ALL de bitácoras."
+    },
     "confirm_pedido": {
       "guarda": "alcance"
     },

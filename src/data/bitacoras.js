@@ -473,6 +473,38 @@ export async function fetchLibro(branchId, { desde, hasta, estado = null, clase 
 }
 
 /**
+ * Lotes del libro por revisar (PENDIENTES 22): fundidos, «GENERICO», sin lote
+ * o vencidos al vender, desde el 1-nov-2026. La sala corrige leyendo la caja
+ * física y el regente confirma. Sin sala, toda la red (alcance ALL).
+ */
+export async function fetchLotesPorRevisar(branchId = null) {
+    const { data, error } = await supabase.rpc('get_libro_lotes_por_revisar', {
+        p_branch_id: branchId ? Number(branchId) : null,
+    });
+    if (error) return { revisiones: [], error };
+    return { revisiones: data ?? [], error: null };
+}
+
+/** `partes`: [{ lote, vence, cantidad }] — la suma tiene que dar la cantidad vendida. */
+export async function corregirLoteDelLibro({ revisionId, partes, vendidoVencido = false, nota = null }) {
+    const { error } = await supabase.rpc('libro_lote_corregir', {
+        p_revision_id: Number(revisionId),
+        p_partes: partes.map(p => ({ lote: String(p.lote).trim(), vence: p.vence, cantidad: Number(p.cantidad) })),
+        p_vendido_vencido: Boolean(vendidoVencido),
+        p_nota: nota || null,
+    });
+    return { error: error ? (error.message ?? 'No se pudo guardar el lote.') : null };
+}
+
+/** El regente confirma (`aceptar`) o devuelve a la sala con el motivo. */
+export async function confirmarLoteDelLibro({ revisionId, aceptar, motivo = null }) {
+    const { error } = await supabase.rpc('libro_lote_confirmar', {
+        p_revision_id: Number(revisionId), p_aceptar: Boolean(aceptar), p_motivo: motivo || null,
+    });
+    return { error: error ? (error.message ?? 'No se pudo guardar.') : null };
+}
+
+/**
  * Cuántos renglones del mes esperan su receta.
  *
  * Se le pregunta a la MISMA función que consulta el cierre

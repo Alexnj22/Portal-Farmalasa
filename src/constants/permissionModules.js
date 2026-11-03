@@ -421,6 +421,12 @@ const GRUPOS_CRUDOS = [
                 { key: 'bitacoras_tab_antibioticos', label: 'Antibióticos', tipo: 'tab' },
                 { key: 'bitacoras_tab_cierre',    label: 'Cierre de mes', tipo: 'tab' },
                 { key: 'bitacoras_confirmar_aware', label: 'Confirmar el grupo AWaRe del listado (regente)', tipo: 'cap' },
+                // Un lote del libro que no sirve para rastrear (dos en uno,
+                // «GENERICO», vencido al vender) lo corrige quien tiene la caja
+                // en la mano y lo firma el regente: dos permisos, por el mismo
+                // motivo que el cierre de mes.
+                { key: 'bitacoras_corregir_lote',  label: 'Corregir el lote de un renglón del libro (encargado de sala)', tipo: 'cap' },
+                { key: 'bitacoras_confirmar_lote', label: 'Confirmar la corrección de un lote del libro (regente)', tipo: 'cap' },
                 { key: 'bitacoras_editar_antibioticos', label: 'Editar el listado de antibióticos: qué producto es de qué molécula, su vía, o sacarlo', tipo: 'cap' },
                 // Firmar el mes es del regente, no de quien anota. Con un solo
                 // permiso, darle a la sala lo suyo le daría además el poder de

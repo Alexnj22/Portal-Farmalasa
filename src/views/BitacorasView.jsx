@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { AlertTriangle, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, Pill, Search, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, PackageSearch, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -15,6 +15,7 @@ import TabCierre from './bitacoras/TabCierre';
 import TabConfiguracion from './bitacoras/TabConfiguracion';
 import TabAntibioticos from './bitacoras/TabAntibioticos';
 import TabRegistroLote from './bitacoras/TabRegistroLote';
+import TabLotesPorRevisar from './bitacoras/TabLotesPorRevisar';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
@@ -86,6 +87,10 @@ export default function BitacorasView() {
     const puedeConfirmarAware = hasPermission('bitacoras_confirmar_aware', 'can_edit');
     const puedeEditarAntibioticos = hasPermission('bitacoras_editar_antibioticos', 'can_edit');
     const puedeConfigurar = hasPermission('bitacoras_configurar', 'can_edit');
+    // Lotes del libro por revisar (PENDIENTES 22): corrige la sala, confirma el regente.
+    const puedeCorregirLote  = hasPermission('bitacoras_corregir_lote', 'can_edit');
+    const puedeConfirmarLote = hasPermission('bitacoras_confirmar_lote', 'can_edit');
+    const verRevisionLotes   = puedeCorregirLote || puedeConfirmarLote;
     // Quien ve una sola sala no elige sala: la guarda del servidor ya se lo
     // resolvió, y ofrecer el selector prometería un alcance que no existe.
     const alcanceTodas  = getScope('bitacoras') === 'ALL';
@@ -98,9 +103,10 @@ export default function BitacorasView() {
         ...(verLibro ? [{ key: 'libro', label: 'Bajo receta', icon: BookOpen }] : []),
         ...(verAntibioticos ? [{ key: 'antibioticos', label: 'Antibióticos', icon: Pill }] : []),
         ...(verAntibioticos ? [{ key: 'lotes', label: 'Registro por lote', icon: Layers }] : []),
+        ...(verRevisionLotes ? [{ key: 'revision', label: 'Lotes por revisar', icon: PackageSearch }] : []),
         ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
         ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
-    ]), [verLibro, verAntibioticos, verCierre, puedeConfigurar]);
+    ]), [verLibro, verAntibioticos, verRevisionLotes, verCierre, puedeConfigurar]);
 
     const [tab, setTab] = usePestanaEnUrl(tabs, 'hoy');
     const [busqueda, setBusqueda] = useState('');
@@ -113,6 +119,8 @@ export default function BitacorasView() {
     const enAntibioticos = tab === 'antibioticos';
     // El registro por lote es de un MES: su paso de mes vive en la pestaña.
     const enLotes = tab === 'lotes';
+    // La revisión de lotes es una COLA: sin fecha, y sin sala mira toda la red.
+    const enRevision = tab === 'revision';
 
     const [dia, setDia] = useState(null);
     const [cargandoDia, setCargandoDia] = useState(true);
@@ -135,7 +143,7 @@ export default function BitacorasView() {
     //   · El libro BAJO RECETA es de donde se DISPENSA: sólo las farmacias.
     //     Bodega no vende, y su libro siempre estaría vacío — un vacío que se
     //     lee como «no hubo ventas bajo receta» en vez de «acá no se vende».
-    const salaOptions = useMemo(() => salasDeBitacora(branches, { libro: enLibro }), [branches, enLibro]);
+    const salaOptions = useMemo(() => salasDeBitacora(branches, { libro: enLibro || enRevision }), [branches, enLibro, enRevision]);
     const nombreSala = useMemo(
         () => salaOptions.find(o => o.value === String(sala))?.label || '',
         [salaOptions, sala],
@@ -301,7 +309,7 @@ export default function BitacorasView() {
                                 if (alcanceTodas) setSala(miSala ?? '');
                             }}
                             activeCount={[
-                                enLotes ? periodoLotes !== mesDeHoy : !esHoy,
+                                enRevision ? false : enLotes ? periodoLotes !== mesDeHoy : !esHoy,
                                 enLotes && filtroLotes !== 'todos',
                                 alcanceTodas && String(sala) !== String(miSala ?? ''),
                             ].filter(Boolean).length}
@@ -364,7 +372,7 @@ export default function BitacorasView() {
                                 </FilterBar.Section>
                             )}
 
-                            {!enLotes && <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
+                            {!enLotes && !enRevision && <FilterBar.Section active={!esHoy} onClear={() => setFecha(hoySV())} label="fecha">
                                 <PeriodStepper
                                     unit="día"
                                     onPrev={() => setFecha(f => sumarDias(f, -1))}
@@ -382,6 +390,9 @@ export default function BitacorasView() {
 
                 {enAntibioticos ? (
                     <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} puedeEditar={puedeEditarAntibioticos} />
+                ) : enRevision ? (
+                    <TabLotesPorRevisar branchId={salaValida ? sala : (alcanceTodas ? null : sala)}
+                        puedeCorregir={puedeCorregirLote} puedeConfirmar={puedeConfirmarLote} />
                 ) : !salaValida ? (
                     <Notice variant="info" icon={Search}>
                         {!sala

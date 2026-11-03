@@ -103,7 +103,7 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
     expediente; la ventana de 60 días es sólo para los volcados de tablas).
     Volumen: 157 ventas con receta en sep-2026 → ~1.1 GB/año con respaldo,
     comprimidas. Hoy el bucket está vacío (0 fotos). — BITACORAS:306
-22. Dueño del lote fundido o vencido en el libro (con datos de noviembre). — BITACORAS:177
+22. ~~Dueño del lote fundido o vencido en el libro~~ — **hecho v2.1418.3** (3-nov): pestaña «Lotes por revisar» en Bitácoras; corrige Jefe/a o Subjefe/a de sala leyendo la caja, confirma el Regente (sin regente nombrado, avisa al Administrador). Desde el 1-nov-2026. — BITACORAS:177
 
 ### Operación
 23. ⏸ **«Quién responde» en las diferencias de conteo de inventario** (como

@@ -116,7 +116,7 @@ export default function NotificacionesBorradas() {
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, borderRadius: snack.radio, minHeight: 48, maxWidth: 520,
           backgroundColor: snack.fondo, shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 4 }, elevation: 6 }}>
         <Icono sf="arrow.uturn.backward" respaldo="↺" tam={15} color={snack.texto} />
-        <Text style={{ fontSize: 15, fontWeight: '600', color: snack.texto }}>{aviso}</Text>
+        <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: snack.texto }}>{aviso}</Text>
       </View>
     </View>
   ) : null;

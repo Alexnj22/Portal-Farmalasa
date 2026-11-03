@@ -306,10 +306,10 @@ export function MenuMensaje({ menu, alReaccionar, alResponder, alCopiar, alCopia
   const sombra = { shadowColor: '#000', shadowOpacity: 0.22, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 10 };
   const Fila = ({ sf, respaldo, texto, alTocar, borde, peligro }) => (
     <Presionable onPress={alTocar} accessibilityRole="menuitem"
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', height: 52, paddingHorizontal: 16,
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, minHeight: 52, paddingVertical: 10, paddingHorizontal: 16,
         backgroundColor: pressed ? (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') : 'transparent',
         ...(borde ? { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador } : {}) })}>
-      <Text style={{ fontSize: 17, color: peligro ? colorSistema.rojo : colorSistema.texto }}>{texto}</Text>
+      <Text style={{ flex: 1, fontSize: 17, color: peligro ? colorSistema.rojo : colorSistema.texto }}>{texto}</Text>
       <Icono sf={sf} respaldo={respaldo} tam={18} color={peligro ? colorSistema.rojo : colorSistema.texto} />
     </Presionable>
   );

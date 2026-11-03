@@ -200,7 +200,7 @@ export default function BurbujaChat() {
 }
 
 const estilos = StyleSheet.create({
-  numero: { position: 'absolute', top: -4, right: -4, minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6,
+  numero: { position: 'absolute', top: -4, right: -4, minWidth: 22, minHeight: 22, borderRadius: 11, paddingHorizontal: 6,
     alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
   punto: { position: 'absolute', top: 1, right: 1, width: 14, height: 14, borderRadius: 7, borderWidth: 2 },
   luna: { width: 18, height: 18, borderRadius: 9, top: -1, right: -1, alignItems: 'center', justifyContent: 'center' },

@@ -80,7 +80,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
           <Presionable onPress={alCerrar} accessibilityRole="button" hitSlop={8} style={{ minWidth: 88, minHeight: 44, justifyContent: 'center', paddingHorizontal: 8 }}>
             <Text style={{ fontSize: 17, color: t.color.magentaTexto }}>Cancelar</Text>
           </Presionable>
-          <Text accessibilityRole="header" numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{titulo}</Text>
+          <Text accessibilityRole="header" numberOfLines={2} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{titulo}</Text>
           <View style={{ minWidth: 88 }} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginHorizontal: 16, marginBottom: 8, minHeight: 40, borderRadius: IOS ? 10 : 28,
@@ -124,7 +124,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
               <View style={{ width: 48 }}><FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={48} radio={10} /></View>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontSize: 16, color: colorSistema.texto }} numberOfLines={2}>{nombreProducto(p.nombre)}</Text>
-                <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, alignItems: 'center' }}>
                   {p.precio != null ? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{dolares(precioFinal(p))}</Text> : null}
                   {p.bajo_receta ? <Text style={{ fontSize: 12, fontWeight: '700', color: t.color.magentaTexto }}>Bajo Receta</Text> : null}
                   {p.disponible === false ? <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>Sin existencia</Text> : null}
@@ -149,7 +149,7 @@ export function ProductoPendiente({ p, alQuitar }) {
       <View style={{ width: 40 }}><FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={40} radio={8} /></View>
       <View style={{ flex: 1, gap: 1 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Consultar por este producto</Text>
-        <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={1}>
+        <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={2}>
           {nombreProducto(p.nombre)}{p.precio != null ? ` · ${dolares(p.precio)}` : ''}
         </Text>
       </View>

@@ -123,7 +123,7 @@ export default function Memoria() {
   const alTocar = useCallback((id) => {
     if (espera.current || abiertas.length >= 2) return;
     setEmpezo(true);
-    sonar('voltear', { tono: 0.95 + Math.random() * 0.1 });
+    sonar('voltear');
     tacto.roce();
     const dos = [...abiertas, id];
     setAbiertas(dos);
@@ -187,8 +187,8 @@ export default function Memoria() {
       {empezo && !gano ? null : <OpcionesJuego valor={nivel} alCambiar={cambiarNivel}
         opciones={Object.entries(NIVELES).map(([valor, x]) => ({ valor, texto: x.texto, detalle: x.detalle }))} />}
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 2 }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: BLANCO_2 }}>Parejas {parejas} de {conf.parejas}</Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 2 }}>
+        <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: BLANCO_2 }}>Parejas {parejas} de {conf.parejas}</Text>
         {racha > 1 ? (
           <Animated.Text key={racha} entering={quieta ? undefined : ZoomIn.springify()} style={{ fontSize: 15, fontWeight: '900', color: '#FFE08A' }}>
             ¡Racha ×{racha}!

@@ -435,7 +435,7 @@ function NotaDeVozViva({ a, mio }) {
         </Text>
       </View>
       <Presionable onPress={cambiarVelocidad} hitSlop={8} accessibilityRole="button" accessibilityLabel={`Velocidad ${velocidad}×, tocar para cambiar`}
-        style={{ minWidth: 40, height: 26, paddingHorizontal: 6, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+        style={{ minWidth: 40, minHeight: 26, paddingHorizontal: 6, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
           backgroundColor: mio ? 'rgba(255,255,255,0.22)' : suave(t.color.magenta, 0.14) }}>
         <Text style={{ fontSize: 12, fontWeight: '800', color, fontVariant: ['tabular-nums'] }}>{`${velocidad}×`}</Text>
       </Presionable>

@@ -125,7 +125,7 @@ export default function Mayorista({ rango, pie = null }) {
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
-            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
           </View>
         ))}
       </View>
@@ -177,7 +177,7 @@ export function BeneficiosEquipo({ mayoreo = null }) {
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
-            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
           </View>
         ))}
       </View>

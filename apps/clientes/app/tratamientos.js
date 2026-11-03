@@ -216,11 +216,11 @@ function Boton({ texto, alTocar, principal, sf, deshabilitado }) {
   return (
     <Presionable onPress={() => { if (deshabilitado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
       disabled={!!deshabilitado} accessibilityState={{ disabled: !!deshabilitado }}
-      style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6,
+      style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, paddingHorizontal: 8, paddingVertical: 6,
         opacity: deshabilitado ? 0.7 : 1,
         backgroundColor: principal ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       {sf ? <Icono sf={sf} respaldo="" tam={13} color={principal ? '#FFFFFF' : colorSistema.texto} /> : null}
-      <Text style={{ fontSize: 14, fontWeight: '700', color: principal ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
+      <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 14, fontWeight: '700', color: principal ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
     </Presionable>
   );
 }

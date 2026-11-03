@@ -117,7 +117,7 @@ export default function Nivel({ nivel, pie = null }) {
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
             <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
-            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
+            <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
           </View>
         ))}
       </View>
@@ -129,12 +129,12 @@ export default function Nivel({ nivel, pie = null }) {
               style={{ width: 22, height: 22, borderRadius: 7, alignItems: 'center', justifyContent: 'center' }}>
               <Icono sf="arrow.up" respaldo="↑" tam={11} color="#FFFFFF" />
             </LinearGradient>
-            <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>En {sig.nombre}</Text>
+            <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>En {sig.nombre}</Text>
           </View>
           {beneficiosSig.map((b) => (
             <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4 }}>
               <Icono sf="sparkles" respaldo="✦" tam={11} color={t.color.magentaTexto} />
-              <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{b}</Text>
+              <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto2 }}>{b}</Text>
             </View>
           ))}
         </View>

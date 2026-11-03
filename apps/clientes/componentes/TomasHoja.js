@@ -145,8 +145,8 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Recordarme tomarlo</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
+          <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Recordarme tomarlo</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
             style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
@@ -190,8 +190,8 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
                 : `Repartidas cada ${cada} horas desde la primera. Si cambias una hora, las demás se mueven para mantener ${cada} horas entre tomas.`}
           </Text>
           {libre ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Tomas al día</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
+              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Tomas al día</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <Paso sf="minus" etiqueta="Una toma menos" alTocar={() => cambiarCuantas(-1)} />
                 <Text accessibilityLabel={`${horas.length} ${horas.length === 1 ? 'toma' : 'tomas'} al día`}
@@ -204,8 +204,8 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             {horas.map((h, i) => (
               <View key={i}>
                 {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{horas.length === 1 ? 'Hora' : !libre && i === 0 ? 'Primera toma' : `Toma ${i + 1}`}</Text>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', padding: 14 }}>
+                  <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{horas.length === 1 ? 'Hora' : !libre && i === 0 ? 'Primera toma' : `Toma ${i + 1}`}</Text>
                   {HORA_NATIVA ? (
                     <SelectorHora valor={h} titulo={horas.length === 1 ? 'Hora' : `Toma ${i + 1}`} alCambiar={(nueva) => fijarHora(i, nueva)} />
                   ) : (
@@ -270,15 +270,15 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
                   {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 44 }}>
                     <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
-                    <Text style={{ fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{d.texto}</Text>
+                    <Text style={{ flex: 1, fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{d.texto}</Text>
                   </View>
                 </Presionable>
               );
             })}
           </View>
           {duracion === 'fecha' ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Hasta el</Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
+              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Hasta el</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                 <Paso texto="−7" etiqueta="Una semana antes" alTocar={() => moverFecha(-7)} />
                 <Paso sf="minus" etiqueta="Un día antes" alTocar={() => moverFecha(-1)} />
@@ -317,7 +317,7 @@ function Paso({ sf, texto, etiqueta, alTocar }) {
     <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
       accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
       // 32 de lado + 6 de `hitSlop` por lado = 44 pt de dedo (2026-10-13).
-      style={({ pressed }) => ({ width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
+      style={({ pressed }) => ({ minWidth: 32, minHeight: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' })}>
       {texto ? <Text style={{ fontSize: 12, fontWeight: '800', color: colorSistema.texto }}>{texto}</Text>
         : <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />}

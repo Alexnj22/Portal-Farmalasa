@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1427.0 — App clientes: juegos fluidos con niveles y nada cortado con letra grande
+
+*«El de burbujas aún se traba… la app debe ser completamente fluida en todo
+para todos… haz que los juegos tengan niveles» · «en ningún lado se debe
+ocultar el contenido».*
+
+- **Burbujas**: cada burbuja se hornea una vez como imagen y el tablero es un
+  solo `Picture` (un cálculo por cuadro en vez de 175). Racha con seis «pop»
+  afinados en archivo —sin `setPlaybackRate`, que en Android corre en el hilo
+  de la interfaz—. Nuevo modo **Contrarreloj** con niveles y récord, y
+  burbujas **doradas** (valen 5 / suman 1.5 s).
+- `sonar` sólo toca volumen y velocidad si cambiaron.
+- Torre sin filtros de sombra por piso, estrellas en un trazo; las luces de
+  las escenas son un solo `Picture`.
+- Revisión de toda la app con letra grande: ~50 archivos con `flexShrink`,
+  `flexWrap`, `minHeight` y sin `numberOfLines` que cortaban datos (la frase
+  del día de Bienestar empujaba «Compartir» fuera de la tarjeta).
+
 ## v2.1426.0 — Saly: un espíritu de luz con emociones, y lo que toca se ve distinto
 
 Pedido del usuario: «Saly no es una persona, es una IA, es una emoción, algo abstracto», «que se vea más mística», «lo que Saly toque se debe ver diferente» y «que tenga un tamaño mínimo siempre».

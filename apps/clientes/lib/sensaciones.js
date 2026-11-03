@@ -20,6 +20,9 @@ const ARCHIVOS = {
   'pop-1': require('../assets/sonidos/pop-1.wav'),
   'pop-2': require('../assets/sonidos/pop-2.wav'),
   'pop-3': require('../assets/sonidos/pop-3.wav'),
+  'pop-4': require('../assets/sonidos/pop-4.wav'),
+  'pop-5': require('../assets/sonidos/pop-5.wav'),
+  'pop-6': require('../assets/sonidos/pop-6.wav'),
   voltear: require('../assets/sonidos/voltear.wav'),
   par: require('../assets/sonidos/par.wav'),
   fallo: require('../assets/sonidos/fallo.wav'),
@@ -39,7 +42,7 @@ const ARCHIVOS = {
 };
 // Los que pueden sonar encima de sí mismos (reventar rápido) llevan varios
 // reproductores y se turnan; con uno solo, el segundo «pop» cortaría al primero.
-const VOCES = { 'pop-1': 3, 'pop-2': 3, 'pop-3': 3, voltear: 2, 'toque-1': 2, 'toque-2': 2, 'toque-3': 2, 'toque-4': 2, 'toque-5': 2, 'toque-6': 2, bloque: 3 };
+const VOCES = { 'pop-1': 2, 'pop-2': 2, 'pop-3': 2, 'pop-4': 2, 'pop-5': 2, 'pop-6': 2, voltear: 2, 'toque-1': 2, 'toque-2': 2, 'toque-3': 2, 'toque-4': 2, 'toque-5': 2, 'toque-6': 2, bloque: 3 };
 
 const CLAVE_SONIDO = 'puntos_salud_bienestar_sonido';
 const CLAVE_VIBRA = 'puntos_salud_bienestar_vibra';
@@ -116,9 +119,12 @@ export function sonar(nombre, { volumen = 1, tono = 1 } = {}) {
   if (!lista.length) return;
   const p = lista[turno[nombre] % lista.length];
   turno[nombre] += 1;
+  // Cada propiedad que se toca es una llamada nativa —en Android, en el hilo
+  // de la interfaz—: sólo se toca lo que cambió desde la vez anterior.
   try {
-    p.volume = volumen;
-    if (tono !== 1) { p.shouldCorrectPitch = false; p.setPlaybackRate(tono); } else if (p.playbackRate !== 1) p.setPlaybackRate(1);
+    if (p._vol !== volumen) { p.volume = volumen; p._vol = volumen; }
+    const rate = p._rate ?? 1;
+    if (rate !== tono) { p.shouldCorrectPitch = false; p.setPlaybackRate(tono); p._rate = tono; }
     p.seekTo(0).catch(() => {});
     p.play();
   } catch { /* un sonido que no sale no puede romper el juego */ }

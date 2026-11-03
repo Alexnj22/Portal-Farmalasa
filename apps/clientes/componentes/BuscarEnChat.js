@@ -67,7 +67,7 @@ export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {
     <Modal visible={visible} animationType="slide" presentationStyle={IOS ? 'pageSheet' : 'fullScreen'} onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingTop: IOS ? 14 : 18, paddingBottom: 8 }}>
-          <Text accessibilityRole="header" style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Buscar en el chat</Text>
+          <Text accessibilityRole="header" style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Buscar en el chat</Text>
           <Presionable onPress={alCerrar} hitSlop={10} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: t.color.magentaTexto }}>Listo</Text>
           </Presionable>
@@ -97,7 +97,7 @@ export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {
               <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alIr(m); }} accessibilityRole="button"
                 style={{ padding: 12, borderRadius: 14, backgroundColor: tarjeta, gap: 4 }}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8 }}>
-                  <Text style={{ fontSize: 13, fontWeight: '700', color: m.autor === 'cliente' ? t.color.magentaTexto : colorSistema.texto2 }}>
+                  <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: '700', color: m.autor === 'cliente' ? t.color.magentaTexto : colorSistema.texto2 }}>
                     {m.autor === 'cliente' ? 'Tú' : m.equipo?.nombre ?? 'Farmacia Salud'}
                   </Text>
                   <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{fecha(m.created_at)}</Text>

@@ -126,7 +126,7 @@ export default function DondeLoHay({ existencias, salas, factor, cantidad, tipo,
             paddingHorizontal: 16, borderRadius: 22, opacity: ubicacion.buscando ? 0.6 : 1,
             backgroundColor: suave(t.color.magenta, pressed ? (t.oscuro ? 0.4 : 0.24) : (t.oscuro ? 0.26 : 0.13)) })}>
           <Icono sf="location.fill" respaldo="📍" tam={15} color={t.color.magentaTexto} />
-          <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{ubicacion.buscando ? 'Buscando dónde estás…' : 'Ordenar por cercanía'}</Text>
+          <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{ubicacion.buscando ? 'Buscando dónde estás…' : 'Ordenar por cercanía'}</Text>
         </Presionable>
       ) : null}
       <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
@@ -139,11 +139,11 @@ export default function DondeLoHay({ existencias, salas, factor, cantidad, tipo,
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, minHeight: 56,
                 opacity: e.clave === 'agotado' ? 0.7 : 1 }}>
                 <View style={{ flex: 1, gap: 2 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={1}>{s.sala}</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }}>{s.sala}</Text>
                   {horarioTxt || s.km != null ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                       {s.h ? <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: s.h.abierta ? '#34C759' : '#FF453A' }} /> : null}
-                      <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto2 }} numberOfLines={1}>
+                      <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto2 }}>
                         {[horarioTxt, s.km != null ? textoDistancia(s.km) : null].filter(Boolean).join(' · ')}
                       </Text>
                     </View>

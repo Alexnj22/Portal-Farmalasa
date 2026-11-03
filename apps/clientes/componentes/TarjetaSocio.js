@@ -608,7 +608,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
               <View style={{ flex: 1, gap: 6, alignItems: 'flex-start' }}>
                 {favor ? <PildoraFavor monto={favor} barrido={frenteBarrido} /> : null}
-                <Text maxFontSizeMultiplier={1.3} style={estilos.nombre} numberOfLines={1}>{nombreTarjeta.toUpperCase()}</Text>
+                <Text maxFontSizeMultiplier={1.3} style={estilos.nombre} numberOfLines={2}>{nombreTarjeta.toUpperCase()}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <NumeroAnimado key={`s${cambio?.id ?? 0}`} valor={equivale} desde={previo?.equivale ?? equivale} duracion={1200} estilo={[estilos.saldo, { textAlign: 'right' }]} />

@@ -131,7 +131,7 @@ export default function Producto() {
               style={({ pressed }) => ({ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, marginTop: 4, paddingHorizontal: 16,
                 borderRadius: 22, backgroundColor: suave(t.color.magenta, pressed ? (t.oscuro ? 0.4 : 0.24) : (t.oscuro ? 0.26 : 0.13)) })}>
               <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={16} color={t.color.magentaTexto} />
-              <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Preguntar a la farmacia</Text>
+              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Preguntar a la farmacia</Text>
             </Presionable>
           ) : null}
         </View>
@@ -216,11 +216,11 @@ export default function Producto() {
         {!p.bajo_receta && !(p.existencias ?? []).length ? (
           // No hay en ninguna sucursal: se pide por encargo (2026-10-07).
           <Presionable onPress={() => setEncargando(true)} accessibilityRole="button" accessibilityLabel="Pedir por encargo"
-            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
+            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
               backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
               shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
             <Icono sf="shippingbox.fill" respaldo="📦" tam={17} color="#FFFFFF" />
-            <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>Pedir por encargo</Text>
+            <Text style={{ flexShrink: 1, textAlign: 'center', color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>Pedir por encargo</Text>
           </Presionable>
         ) : p.bajo_receta && !(p.existencias ?? []).length ? (
           // Bajo receta y sin existencia: no se encarga desde la app (se pide con la receta en la sucursal).
@@ -244,11 +244,11 @@ export default function Producto() {
             </View>
             <Presionable onPress={() => agregar(elegidaP, cant)} disabled={!elegidaP} accessibilityRole="button"
               accessibilityLabel={`Agregar ${cant} al carrito por ${elegidaP ? dolares(precioFinal(elegidaP) * cant) : ''}`}
-              style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999,
+              style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 54, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8,
                 backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }],
                 shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 12, shadowOffset: { width: 0, height: 4 } })}>
               <Icono sf="cart.badge.plus" respaldo="+" tam={17} color="#FFFFFF" />
-              <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+              <Text style={{ flexShrink: 1, textAlign: 'center', color: '#FFFFFF', fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 Agregar{elegidaP ? ` · ${dolares(precioFinal(elegidaP) * cant)}` : ''}
               </Text>
             </Presionable>

@@ -7,12 +7,11 @@
 // Las luces son Skia en el hilo de la interfaz, a 30 cuadros: suben despacio y
 // no le cuestan nada a JavaScript. Con «reducir movimiento» o en un teléfono
 // liviano quedan quietas.
-import { useMemo } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import { Canvas, Circle, Group, RadialGradient, vec } from '@shopify/react-native-skia';
+import { Canvas, Picture, Skia, TileMode } from '@shopify/react-native-skia';
 import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { useSinMovimiento, Tocable } from '../animacion';
 import Icono from '../Icono';
@@ -33,21 +32,11 @@ export const ESCENAS = {
   torre: ['#0A1240', '#26308A', '#7A3B9A'],
 };
 
-function Luz({ i, ancho, alto, reloj }) {
-  // Cada luz tiene su carril: arranca abajo, sube y vuelve a empezar.
-  const x0 = ((i * 97) % 100) / 100;
-  const vel = 0.012 + ((i * 31) % 10) / 900;
-  const r = 30 + ((i * 53) % 60);
-  const cx = useDerivedValue(() => x0 * ancho + Math.sin(reloj.value * 0.3 + i) * 24);
-  const cy = useDerivedValue(() => alto + r - (((reloj.value * vel + i / 9) % 1) * (alto + 2 * r)));
-  const centro = useDerivedValue(() => vec(cx.value, cy.value));
-  return (
-    <Circle cx={cx} cy={cy} r={r}>
-      <RadialGradient c={centro} r={r} colors={['rgba(255,255,255,0.16)', 'rgba(255,255,255,0)']} />
-    </Circle>
-  );
-}
-
+// Todas las luces son UN dibujo (un `Picture`) que se rehace a 30 cuadros: un
+// solo cálculo por cuadro. Antes eran nueve círculos con tres valores animados
+// cada uno, y esa pantalla completa repintándose competía con el juego.
+const LUZ_CENTRO = Skia.Color('rgba(255,255,255,0.16)');
+const LUZ_BORDE = Skia.Color('rgba(255,255,255,0)');
 function Luces({ cuantas = 9 }) {
   const { width, height } = useWindowDimensions();
   const quieta = useSinMovimiento();
@@ -57,12 +46,25 @@ function Luces({ cuantas = 9 }) {
     acum.value += Math.min(0.1, (f.timeSincePreviousFrame ?? 16) / 1000);
     if (acum.value >= 0.033) { reloj.value += acum.value; acum.value = 0; }
   }, !quieta);
-  const lista = useMemo(() => Array.from({ length: cuantas }, (_, i) => i), [cuantas]);
+  const cuadro = useDerivedValue(() => {
+    const rec = Skia.PictureRecorder();
+    const c = rec.beginRecording(Skia.XYWHRect(0, 0, width, height));
+    const p = Skia.Paint();
+    for (let i = 0; i < cuantas; i++) {
+      // Cada luz tiene su carril: arranca abajo, sube y vuelve a empezar.
+      const x0 = ((i * 97) % 100) / 100;
+      const vel = 0.012 + ((i * 31) % 10) / 900;
+      const r = 30 + ((i * 53) % 60);
+      const cx = x0 * width + Math.sin(reloj.value * 0.3 + i) * 24;
+      const cy = height + r - (((reloj.value * vel + i / 9) % 1) * (height + 2 * r));
+      p.setShader(Skia.Shader.MakeRadialGradient(Skia.Point(cx, cy), r, [LUZ_CENTRO, LUZ_BORDE], null, TileMode.Clamp));
+      c.drawCircle(cx, cy, r, p);
+    }
+    return rec.finishRecordingAsPicture();
+  });
   return (
     <Canvas pointerEvents="none" style={StyleSheet.absoluteFill}>
-      <Group>
-        {lista.map((i) => <Luz key={i} i={i} ancho={width} alto={height} reloj={reloj} />)}
-      </Group>
+      <Picture picture={cuadro} />
     </Canvas>
   );
 }
@@ -132,7 +134,7 @@ export function BotonJuego({ children, alTocar, sf, secundario = false, color = 
     <Tocable etiqueta={String(children)} alTocar={() => { tacto.roce(); alTocar(); }}>
       <View style={[estilos.boton, secundario && { backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE }]}>
         {sf ? <Icono sf={sf} respaldo="" tam={18} color={secundario ? BLANCO : color} /> : null}
-        <Text style={{ fontSize: 17, fontWeight: '800', color: secundario ? BLANCO : color }}>{children}</Text>
+        <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: secundario ? BLANCO : color }}>{children}</Text>
       </View>
     </Tocable>
   );
@@ -176,12 +178,12 @@ export const BARRA_DE_JUEGO = {
 };
 
 const estilos = StyleSheet.create({
-  pildora: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, height: 34, borderRadius: 17,
+  pildora: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 6, minHeight: 34, borderRadius: 17,
     backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
   pildoraTexto: { fontSize: 14, fontWeight: '700', color: BLANCO, fontVariant: ['tabular-nums'] },
   redondo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
     backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
-  boton: { minHeight: 54, borderRadius: 27, backgroundColor: BLANCO, flexDirection: 'row', alignItems: 'center',
+  boton: { minHeight: 54, paddingVertical: 10, borderRadius: 27, backgroundColor: BLANCO, flexDirection: 'row', alignItems: 'center',
     justifyContent: 'center', gap: 8, paddingHorizontal: 22,
     shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   opcion: { minHeight: 44, minWidth: 64, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 22, alignItems: 'center', justifyContent: 'center',

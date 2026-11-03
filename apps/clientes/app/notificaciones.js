@@ -301,13 +301,13 @@ export default function Notificaciones() {
         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: ins.bottom + 24 + (Platform.OS === 'web' ? 0 : ESPACIO_BURBUJA), width: '100%', maxWidth: 560, alignSelf: 'center' }}
         ListHeaderComponent={sinLeer.length ? (
           <Entrada>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12, paddingLeft: 4, marginBottom: 4 }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', columnGap: 12, paddingLeft: 4, marginBottom: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: velo(t, t.color.magenta) }}>
                 <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: t.color.magenta }} />
                 <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>{sinLeer.length === 1 ? '1 sin leer' : `${sinLeer.length} sin leer`}</Text>
               </View>
               <Presionable onPress={marcarTodo} hitSlop={8} accessibilityRole="button"
-                style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, opacity: pressed ? 0.5 : 1 })}>
+                style={({ pressed }) => ({ flexShrink: 1, minHeight: 44, justifyContent: 'center', paddingHorizontal: 4, opacity: pressed ? 0.5 : 1 })}>
                 <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Marcar todo como leído</Text>
               </Presionable>
             </View>
@@ -318,7 +318,7 @@ export default function Notificaciones() {
             <Presionable onPress={verBorradas} accessibilityRole="button" hitSlop={6}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, opacity: pressed ? 0.5 : 1 })}>
               <Icono sf="trash" respaldo="↺" tam={15} color={t.color.magentaTexto} />
-              <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Borradas recientemente</Text>
+              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Borradas recientemente</Text>
             </Presionable>
             <Text style={{ textAlign: 'center', fontSize: 13, lineHeight: 18, color: colorSistema.texto3, marginHorizontal: 12 }}>
               Desliza un aviso a la derecha para marcarlo como leído, o a la izquierda para borrarlo.

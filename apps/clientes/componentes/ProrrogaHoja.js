@@ -52,8 +52,8 @@ export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPed
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Pedir más tiempo</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
+          <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Pedir más tiempo</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cancelar</Text>
           </Presionable>
@@ -76,7 +76,7 @@ export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPed
                   accessibilityRole="radio" accessibilityState={{ selected: activo }}
                   style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 14, alignItems: 'center', justifyContent: 'center',
                     backgroundColor: activo ? t.color.magenta : superficie, opacity: pressed ? 0.7 : 1 })}>
-                  <Text style={{ fontSize: 15, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto }}>{o} días</Text>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: activo ? '#FFFFFF' : colorSistema.texto, textAlign: 'center', paddingHorizontal: 4 }}>{o} días</Text>
                 </Presionable>
               );
             })}

@@ -215,7 +215,7 @@ export default function Oferta() {
                         <View accessible accessibilityRole="button" accessibilityState={{ disabled: true }}
                           accessibilityLabel={EXCLUSIVAS[o.nivel_minimo]?.boton ?? 'No disponible'}
                           style={{ backgroundColor: colorSistema.separador, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 7, maxWidth: 130 }}>
-                          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textAlign: 'center' }} numberOfLines={2}>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textAlign: 'center' }}>
                             {EXCLUSIVAS[o.nivel_minimo]?.boton ?? 'No disponible'}
                           </Text>
                         </View>
@@ -278,7 +278,7 @@ function Dato({ titulo, texto, children }) {
   return (
     <View style={{ flex: 1, alignItems: 'center', gap: 4, paddingHorizontal: 6 }}>
       <Text style={{ fontSize: 12, fontWeight: '700', letterSpacing: 0.3, textTransform: 'uppercase', color: colorSistema.texto3 }}>{titulo}</Text>
-      {children ?? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, textAlign: 'center' }} numberOfLines={2}>{texto}</Text>}
+      {children ?? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, textAlign: 'center' }}>{texto}</Text>}
     </View>
   );
 }

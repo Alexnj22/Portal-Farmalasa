@@ -206,7 +206,7 @@ export function FilaAviso({ a, primero, ultimo, leido = true, alAbrir, alAlterna
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-            <Text numberOfLines={1} maxFontSizeMultiplier={1.6}
+            <Text maxFontSizeMultiplier={1.6}
               style={{ flex: 1, fontSize: ANDROID ? 16 : 17, fontWeight: nueva ? '700' : (ANDROID ? '500' : '600'), color: colorSistema.texto, letterSpacing: ANDROID ? 0.15 : -0.2 }}>
               {a.titulo}
             </Text>
@@ -214,7 +214,7 @@ export function FilaAviso({ a, primero, ultimo, leido = true, alAbrir, alAlterna
               {detalleHora ?? horaRelativa(a.created_at)}
             </Text>
           </View>
-          <Text numberOfLines={2} maxFontSizeMultiplier={1.6}
+          <Text maxFontSizeMultiplier={1.6}
             style={{ fontSize: ANDROID ? 14 : 15, lineHeight: 20, letterSpacing: ANDROID ? 0.25 : 0, color: colorSistema.texto2 }}>
             {a.cuerpo}
           </Text>

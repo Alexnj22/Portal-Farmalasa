@@ -135,7 +135,7 @@ export default function Catalogo() {
         return (
           <Presionable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
             accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
-            style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+            style={({ pressed }) => ({ width: 86, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
             <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
               <View style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
                 backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.07)' }}>
@@ -154,7 +154,7 @@ export default function Catalogo() {
         return (
           <Presionable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
             accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
-            style={({ pressed }) => ({ width: 78, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+            style={({ pressed }) => ({ width: 86, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
             <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
               <LinearGradient colors={[c1, c2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
                 style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center' }}>
@@ -268,14 +268,14 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
       <View style={{ gap: 2, paddingHorizontal: 2 }}>
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, lineHeight: 18 }} numberOfLines={2}>{nombreProducto(p.nombre)}</Text>
         {/* El precio es el de la presentación MAYOR (la caja); si hay más, se dice. */}
-        <Text style={{ fontSize: 12, color: colorSistema.texto3 }} numberOfLines={1}>
+        <Text style={{ fontSize: 12, color: colorSistema.texto3 }} numberOfLines={2}>
           {p.disponible ? nombreProducto(p.presentacion || 'Unidad') : 'Sin existencia'}
         </Text>
         {p.presentaciones > 1 ? (
           <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2, borderRadius: 999,
             paddingHorizontal: 8, paddingVertical: 3, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
             <Icono sf="square.stack.3d.up.fill" respaldo="" tam={10} color={t.color.magentaTexto} />
-            <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ flexShrink: 1, fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>
               +{p.presentaciones - 1} {p.presentaciones - 1 === 1 ? 'presentación' : 'presentaciones'}
             </Text>
           </View>
@@ -289,7 +289,7 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
             </Text>
             <Text style={{ fontSize: 19, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.precio_tuyo)}</Text>
             <View style={{ alignSelf: 'flex-start', borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
-              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 10, fontWeight: '800', color: t.color.magentaTexto }} numberOfLines={1}>{suyo}</Text>
+              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 10, fontWeight: '800', color: t.color.magentaTexto }}>{suyo}</Text>
             </View>
           </>
         ) : p.precio_vip != null ? (
@@ -335,7 +335,7 @@ const AccesoOfertas = memo(function AccesoOfertas() {
         </View>
         <View style={{ flex: 1, gap: 1 }}>
           <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Todas las ofertas</Text>
-          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)' }} numberOfLines={1}>{detalle}</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)' }}>{detalle}</Text>
         </View>
         <Icono sf="chevron.right" respaldo="›" tam={15} color="#FFFFFF" />
       </LinearGradient>

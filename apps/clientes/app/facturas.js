@@ -355,7 +355,7 @@ export default function Facturas() {
         <GrupoDeBotones opciones={ESTADOS} valor={filtro} alCambiar={setFiltro} />
         {seleccion ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 4 }}>
-            <Texto nivel={2} estilo={{ fontSize: 14 }}>
+            <Texto nivel={2} estilo={{ flexShrink: 1, fontSize: 14 }}>
               {marcados.length ? `${marcados.length} ${marcados.length === 1 ? 'elegida' : 'elegidas'}` : 'Toca las facturas que quieras'}
             </Texto>
             {elegibles.length ? (
@@ -393,17 +393,17 @@ function BarraSeleccion({ cantidad, progreso, alEnviar, alDescargar }) {
         <View style={{ flexDirection: 'row', gap: 10, padding: 10 }}>
           <Presionable onPress={alEnviar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
             accessibilityLabel={`Enviar por correo ${cantidad} facturas`}
-            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16,
+            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 8,
               backgroundColor: t.color.magenta, opacity: apagada ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Icono sf="envelope.fill" respaldo="" tam={15} color="#FFFFFF" />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Enviar por correo</Text>
+            <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Enviar por correo</Text>
           </Presionable>
           <Presionable onPress={alDescargar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
             accessibilityLabel={`Descargar ${cantidad} facturas`}
-            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16,
+            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 8,
               backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', opacity: apagada && progreso == null ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             {progreso != null ? <ActivityIndicator /> : <Icono sf="square.and.arrow.down" respaldo="" tam={15} color={colorSistema.texto} />}
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
+            <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
               {progreso != null ? `${Math.round(progreso * 100)} %` : enAndroid ? 'Guardar' : 'Descargar'}
             </Text>
           </Presionable>
@@ -433,7 +433,7 @@ function VisorPdf({ visor, alCerrar, alCompartir, alRenovar }) {
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
           </Presionable>
-          <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
+          <Text numberOfLines={2} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
             {rotulo(visor.f)}
           </Text>
           <Presionable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel={enAndroid ? 'Guardar PDF' : 'Compartir PDF'}
@@ -593,7 +593,7 @@ function Documento({ f, ocupada, acciones, seleccion, alternar, anidada = false 
         </View>
         <View style={{ flex: 1, gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-            <Text style={{ fontSize: anidada ? 14 : 15, fontWeight: '700', color: colorSistema.texto }}>
+            <Text style={{ flexShrink: 1, fontSize: anidada ? 14 : 15, fontWeight: '700', color: colorSistema.texto }}>
               {tipo.texto}{f.numero ? ` N.º ${f.numero}` : ''}
             </Text>
             {f.anulada ? <Etiqueta texto="Anulada" /> : null}
@@ -651,7 +651,7 @@ function Accion({ sf, respaldo = '', texto, etiqueta, alTocar, cargando }) {
       style={({ pressed }) => ({ flex: texto ? 1 : 0, width: texto ? undefined : 44, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', minHeight: 44, borderRadius: RADIO.chico,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: cargando ? 0.5 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       {cargando && !texto ? <ActivityIndicator /> : <Icono sf={sf} respaldo={respaldo} tam={14} color={colorSistema.texto} />}
-      {texto ? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>{cargando ? '…' : texto}</Text> : null}
+      {texto ? <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>{cargando ? '…' : texto}</Text> : null}
     </Presionable>
   );
 }

@@ -113,7 +113,7 @@ export default function Invitar() {
 function Paso({ n, texto, color }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-      <View style={{ width: 28, height: 28, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
+      <View style={{ minWidth: 28, minHeight: 28, borderRadius: 14, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
         <Text style={{ color: '#FFFFFF', fontWeight: '800' }}>{n}</Text>
       </View>
       <Text style={{ flex: 1, fontSize: 15, lineHeight: 21, color: colorSistema.texto }}>{texto}</Text>

@@ -46,7 +46,7 @@ function BotonContar({ paso, alTocar, quieta }) {
           style={{ flex: 1, borderRadius: 90, alignItems: 'center', justifyContent: 'center', gap: 4,
             shadowColor: paso.colores[1], shadowOpacity: 0.6, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } }}>
           <Icono sf={paso.sf} respaldo="" tam={58} color={BLANCO} />
-          <Text style={{ fontSize: 14, fontWeight: '800', color: BLANCO }}>Toca al notar una</Text>
+          <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 14, fontWeight: '800', color: BLANCO, textAlign: 'center', paddingHorizontal: 12 }}>Toca al notar una</Text>
         </LinearGradient>
       </Animated.View>
     </Tocable>
@@ -57,7 +57,7 @@ function Portada({ alEmpezar, quieta }) {
   return (
     <Animated.View entering={quieta ? undefined : FadeIn.duration(380)} exiting={quieta ? undefined : FadeOut.duration(160)} style={{ gap: 16 }}>
       <View style={{ alignItems: 'center', gap: 8, paddingTop: 8 }}>
-        <Text style={{ fontSize: 44, fontWeight: '900', color: BLANCO, letterSpacing: 2 }}>5·4·3·2·1</Text>
+        <Text maxFontSizeMultiplier={1.15} adjustsFontSizeToFit numberOfLines={1} style={{ fontSize: 44, fontWeight: '900', color: BLANCO, letterSpacing: 2 }}>5·4·3·2·1</Text>
         <Text accessibilityRole="header" style={{ fontSize: 22, fontWeight: '800', color: BLANCO, textAlign: 'center' }}>Calma la mente con tus sentidos</Text>
         <Text style={{ fontSize: 15, lineHeight: 22, color: BLANCO_2, textAlign: 'center', paddingHorizontal: 8 }}>
           Cuando la ansiedad o los nervios suben, la cabeza se va al futuro. Este ejercicio la trae de vuelta al presente:
@@ -140,12 +140,12 @@ export default function Anclaje() {
       ) : (
         <Animated.View key={paso} {...animar} style={{ gap: 18 }}>
           <View style={{ alignItems: 'center', gap: 6 }}>
-            <Text style={{ fontSize: 96, lineHeight: 104, fontWeight: '900', color: BLANCO }}>{p.n}</Text>
+            <Text maxFontSizeMultiplier={1.15} style={{ fontSize: 96, lineHeight: 104, fontWeight: '900', color: BLANCO }}>{p.n}</Text>
             <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '800', color: BLANCO, textAlign: 'center' }}>{p.titulo.toLowerCase()}</Text>
             <Text style={{ fontSize: 15, lineHeight: 21, color: BLANCO_2, textAlign: 'center', paddingHorizontal: 16 }}>{p.ayuda}</Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 6, marginTop: 4 }} accessibilityLabel={`Por ejemplo: ${p.ejemplos.join(', ')}`}>
               {p.ejemplos.map((x) => (
-                <View key={x} style={{ paddingHorizontal: 10, height: 28, borderRadius: 14, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' }}>
+                <View key={x} style={{ paddingHorizontal: 10, paddingVertical: 4, minHeight: 28, borderRadius: 14, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.22)' }}>
                   <Text style={{ fontSize: 13, fontWeight: '600', color: BLANCO }}>{x}</Text>
                 </View>
               ))}

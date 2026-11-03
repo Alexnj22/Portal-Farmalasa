@@ -73,7 +73,7 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
             accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={etiqueta(o)}
             style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
               backgroundColor: elegida ? t.color.magenta : superficie, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{o.texto}</Text>
+            <Text style={{ fontSize: 17, fontWeight: '800', color: elegida ? '#FFFFFF' : colorSistema.texto, textAlign: 'center', paddingHorizontal: 4 }}>{o.texto}</Text>
           </Presionable>
         );
       })}
@@ -83,14 +83,14 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => alCerrar(false)}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: 18 }}>
           {elegido ? (
             <Presionable onPress={() => { setElegido(null); setError(null); }} hitSlop={12} accessibilityRole="button"
               style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}>
               <Text style={{ fontSize: 17, fontWeight: '600', color: t.color.magentaTexto }}>Atrás</Text>
             </Presionable>
           ) : <View style={{ minWidth: 44 }} />}
-          <Text style={{ fontSize: 18, fontWeight: '800', color: colorSistema.texto }}>Agregar medicamento</Text>
+          <Text style={{ flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: colorSistema.texto }}>Agregar medicamento</Text>
           <Presionable onPress={() => alCerrar(false)} hitSlop={12} accessibilityRole="button"
             style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>

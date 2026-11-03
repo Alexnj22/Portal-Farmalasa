@@ -154,10 +154,10 @@ export default function Creditos() {
               <View style={{ flex: 1, paddingVertical: 16, paddingRight: 16, gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>
+                    <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>
                       {ROTULO_DOC[c.tipo] ?? 'Factura'}{c.numero ? ` N.° ${c.numero}` : ''}
                     </Text>
-                    <Text style={{ fontSize: 13, color: colorSistema.texto2 }} numberOfLines={1}>
+                    <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
                       {fecha(c.fecha)}{c.sala ? ` · ${c.sala}` : ''}
                     </Text>
                   </View>
@@ -182,7 +182,7 @@ export default function Creditos() {
                     style={({ pressed }) => ({ marginTop: 6, minHeight: 46, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
                       backgroundColor: t.color.magenta, opacity: pagando != null && pagando !== c.id ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
                     {pagando === c.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Icono sf="creditcard.fill" respaldo="$" tam={16} color="#FFFFFF" />}
-                    <Text style={{ fontSize: 16, fontWeight: '800', color: '#FFFFFF' }}>{pagando === c.id ? 'Abriendo el pago…' : `Pagar ${dolares(c.saldo)}`}</Text>
+                    <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 16, fontWeight: '800', color: '#FFFFFF' }}>{pagando === c.id ? 'Abriendo el pago…' : `Pagar ${dolares(c.saldo)}`}</Text>
                   </Presionable>
                 ) : null}
               </View>
@@ -280,7 +280,7 @@ function PagosEnLaApp({ pagos, t }) {
 function Dato({ rotulo, valor, fuerte = false, color = null }) {
   return (
     <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline', gap: 12 }}>
-      <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>{rotulo}</Text>
+      <Text style={{ flexShrink: 1, fontSize: 14, color: colorSistema.texto2 }}>{rotulo}</Text>
       <Text style={{ fontSize: fuerte ? 17 : 15, fontWeight: fuerte ? '800' : '600', color: color ?? colorSistema.texto, fontVariant: ['tabular-nums'] }}>{valor}</Text>
     </View>
   );

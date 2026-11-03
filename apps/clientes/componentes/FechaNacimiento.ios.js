@@ -19,8 +19,8 @@ export default function FechaNacimiento({ valor, alCambiar }) {
   if (!fecha) {
     return (
       <Pressable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); alCambiar(aTexto(new Date(1990, 0, 1, 12))); }}
-        style={{ minHeight: 52, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 17, color: colorSistema.placeholder }}>Fecha de nacimiento</Text>
+        style={{ minHeight: 52, paddingHorizontal: 16, paddingVertical: 8, gap: 12, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Text style={{ flexShrink: 1, fontSize: 17, color: colorSistema.placeholder }}>Fecha de nacimiento</Text>
         <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto2 }}>Agregar</Text>
       </Pressable>
     );

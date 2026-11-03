@@ -151,9 +151,11 @@ function voltear() {
 const PENTA = [72, 74, 76, 79, 81, 84]; // do pentatónica: nada suena «mal» con nada
 
 const SONIDOS = {
-  'pop-1': () => pop(1100, 380, 0.11),
-  'pop-2': () => pop(950, 330, 0.11),
-  'pop-3': () => pop(1250, 430, 0.1),
+  // Seis «pop» que suben de tono: la racha de burbujas los recorre en orden.
+  // Afinados acá y no con la velocidad del reproductor: cambiar la velocidad
+  // es una llamada nativa más por reventón, y en Android corre en el hilo de
+  // la interfaz (era parte de lo que trababa el tablero).
+  ...Object.fromEntries([0, 1, 2, 3, 4, 5].map((k) => [`pop-${k + 1}`, () => pop(900 * 1.09 ** k, 320 * 1.09 ** k, 0.11)])),
   voltear,
   par: () => mezclar(marimba(nota(81), 0.5), retrasar(marimba(nota(88), 0.6), 0.09)),
   fallo: () => mezclar(marimba(nota(67), 0.3).map((v) => v * 0.7), retrasar(marimba(nota(62), 0.35).map((v) => v * 0.6), 0.1)),

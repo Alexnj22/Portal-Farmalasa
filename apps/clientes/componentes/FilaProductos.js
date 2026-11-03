@@ -49,7 +49,7 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
               </View>
               <Text numberOfLines={2} style={{ fontSize: 13, fontWeight: '700', lineHeight: 17, color: colorSistema.texto, minHeight: 34 }}>{nombreProducto(p.nombre)}</Text>
               {p.precio != null ? (
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 5 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 5 }}>
                   <Text style={{ fontSize: 16, fontWeight: '900', color: colorSistema.texto }}>{dolares(final)}</Text>
                   {final < p.precio ? <Text style={{ fontSize: 11, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(p.precio)}</Text> : null}
                 </View>

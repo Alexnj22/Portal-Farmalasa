@@ -65,8 +65,8 @@ export default function Vencimientos({ vencimientos }) {
 
   return (
     <Tarjeta estilo={{ gap: 14 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Titulo>Puntos por vencer</Titulo>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
+        <Titulo estilo={{ flexShrink: 1 }}>Puntos por vencer</Titulo>
         {pronto.puntos > 0 && diasProximo != null && diasProximo <= 30 ? (
           <Latido>
             <View style={{ backgroundColor: NARANJA, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
@@ -82,7 +82,7 @@ export default function Vencimientos({ vencimientos }) {
         <View style={{ gap: 2 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
             <NumeroAnimado valor={pronto.puntos} formato="entero" estilo={{ fontSize: 34, fontWeight: '900', color: t.oscuro ? NARANJA : '#B35C00', letterSpacing: -0.5 }} />
-            <Texto nivel={2}>pts · {dolares(pronto.puntos / 100)}</Texto>
+            <Texto nivel={2} estilo={{ flexShrink: 1 }}>pts · {dolares(pronto.puntos / 100)}</Texto>
           </View>
           <Texto nivel={2} estilo={{ fontSize: 14 }}>
             vencen en los próximos 3 meses. Úsalos en tu próxima compra.

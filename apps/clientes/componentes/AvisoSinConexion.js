@@ -24,7 +24,7 @@ export default function AvisoSinConexion() {
       <View accessibilityRole="alert" style={{ flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: 'rgba(28,28,30,0.92)',
         borderRadius: 999, paddingHorizontal: 14, paddingVertical: 8, maxWidth: '92%' }}>
         <Icono sf="wifi.slash" respaldo="⚠︎" tam={14} color="#FFD60A" />
-        <Text style={{ color: '#FFFFFF', fontSize: 13, fontWeight: '700' }} numberOfLines={2}>
+        <Text style={{ flexShrink: 1, color: '#FFFFFF', fontSize: 13, fontWeight: '700' }}>
           Sin conexión{desde ? ` · lo que ves es de ${haceCuanto(desde)}` : ''}
         </Text>
       </View>

@@ -90,8 +90,8 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Enviado!' : 'Enviar por correo'}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
+          <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Enviado!' : 'Enviar por correo'}</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
             <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{hecho ? 'Listo' : 'Cancelar'}</Text>
           </Presionable>
@@ -131,7 +131,7 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
                             style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 52, opacity: pressed ? 0.6 : 1 })}>
                             <Icono sf={activo ? 'checkmark.circle.fill' : 'circle'} respaldo={activo ? '●' : '○'} tam={22} color={activo ? t.color.magenta : colorSistema.texto3} />
                             <View style={{ flex: 1, gap: 2 }}>
-                              <Text style={{ fontSize: 15, fontWeight: activo ? '700' : '500', color: colorSistema.texto }} numberOfLines={1}>{c.correo}</Text>
+                              <Text style={{ fontSize: 15, fontWeight: activo ? '700' : '500', color: colorSistema.texto }}>{c.correo}</Text>
                               {c.de_ficha ? <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>El de tu ficha</Text> : null}
                             </View>
                           </Presionable>

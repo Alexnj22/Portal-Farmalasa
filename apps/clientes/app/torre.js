@@ -14,7 +14,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { BlurMask, Canvas, Circle, Group, LinearGradient, RadialGradient, Rect, RoundedRect, Shadow, vec } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group, LinearGradient, Path, RadialGradient, Rect, RoundedRect, Skia, vec } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { Easing, FadeIn, FadeOut, ZoomIn, runOnJS, useDerivedValue, useFrameCallback, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Confeti } from '../componentes/animacion';
@@ -41,9 +41,11 @@ const Bloque = memo(function Bloque({ x, y, w, h, i }) {
   const [c1, c2, c3] = tono(i);
   return (
     <Group>
+      {/* Sombra corrida, no un filtro: con 24 pisos, 24 filtros de sombra
+          rehechos en cada cuadro del bloque que se mueve trababan Android. */}
+      <RoundedRect x={x + 1} y={y + 4} width={w} height={h} r={7} color="rgba(0,0,20,0.28)" />
       <RoundedRect x={x} y={y} width={w} height={h} r={7}>
         <LinearGradient start={vec(0, y)} end={vec(0, y + h)} colors={[c1, c2, c3]} />
-        <Shadow dx={0} dy={3} blur={6} color="rgba(0,0,0,0.35)" />
       </RoundedRect>
       <RoundedRect x={x + 5} y={y + 3} width={Math.max(0, w - 10)} height={Math.max(2, h * 0.16)} r={3} color="rgba(255,255,255,0.5)" />
     </Group>
@@ -55,11 +57,14 @@ function Movil({ posX, ancho, y, h, i, visible }) {
   const [c1, c2, c3] = tono(i);
   const x2 = useDerivedValue(() => posX.value + 5);
   const w2 = useDerivedValue(() => Math.max(0, ancho.value - 10));
+  const xHalo = useDerivedValue(() => posX.value - 6);
+  const wHalo = useDerivedValue(() => ancho.value + 12);
   return (
     <Group opacity={visible}>
+      {/* El halo es un rectángulo translúcido, no un desenfoque animado. */}
+      <RoundedRect x={xHalo} y={y - 5} width={wHalo} height={h + 10} r={11} color={`${c1}38`} />
       <RoundedRect x={posX} y={y} width={ancho} height={h} r={7}>
         <LinearGradient start={vec(0, y)} end={vec(0, y + h)} colors={[c1, c2, c3]} />
-        <Shadow dx={0} dy={0} blur={14} color={`${c1}AA`} />
       </RoundedRect>
       <RoundedRect x={x2} y={y + 3} width={w2} height={Math.max(2, h * 0.16)} r={3} color="rgba(255,255,255,0.55)" />
     </Group>
@@ -89,9 +94,7 @@ function Destello({ x, y, w, h }) {
   const ih = useDerivedValue(() => h + t.value * 24);
   const op = useDerivedValue(() => (1 - t.value) * 0.95);
   return (
-    <RoundedRect x={ix} y={iy} width={iw} height={ih} r={12} style="stroke" strokeWidth={3} color="#FFFFFF" opacity={op}>
-      <BlurMask blur={4} style="solid" />
-    </RoundedRect>
+    <RoundedRect x={ix} y={iy} width={iw} height={ih} r={12} style="stroke" strokeWidth={3} color="#FFFFFF" opacity={op} />
   );
 }
 
@@ -99,7 +102,13 @@ function Cielo({ ancho, alto, camara, pisoAlto }) {
   // Estrellas que aparecen a medida que se sube, con un poco de paralaje.
   const estrellas = useMemo(() => {
     let s = 7; const azar = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-    return Array.from({ length: 110 }, () => ({ x: azar() * ancho, y: alto - azar() * alto * 6, r: 0.6 + azar() * 1.6, a: 0.35 + azar() * 0.65 }));
+    // Todas en UN trazo: 110 círculos sueltos eran 110 figuras por cuadro.
+    const tenues = Skia.Path.Make(); const vivas = Skia.Path.Make();
+    for (let k = 0; k < 110; k++) {
+      const x = azar() * ancho; const y = alto - azar() * alto * 6; const r = 0.6 + azar() * 1.6;
+      (azar() > 0.5 ? vivas : tenues).addCircle(x, y, r);
+    }
+    return { tenues, vivas };
   }, [ancho, alto]);
   const paralaje = useDerivedValue(() => [{ translateY: camara.value * 0.3 }]);
   const brillo = useDerivedValue(() => Math.min(1, 0.15 + camara.value / (pisoAlto * 18)));
@@ -108,7 +117,8 @@ function Cielo({ ancho, alto, camara, pisoAlto }) {
     <Group>
       <Rect x={0} y={0} width={ancho} height={alto} color="#03041A" opacity={noche} />
       <Group transform={paralaje} opacity={brillo}>
-        {estrellas.map((e, k) => <Circle key={k} cx={e.x} cy={e.y} r={e.r} color={`rgba(255,255,255,${e.a})`} />)}
+        <Path path={estrellas.tenues} color="rgba(255,255,255,0.45)" />
+        <Path path={estrellas.vivas} color="rgba(255,255,255,0.9)" />
       </Group>
     </Group>
   );
@@ -251,7 +261,7 @@ export default function Torre() {
       const corte = xx < previo.x ? { x: xx, w: previo.x - xx } : { x: derecha, w: xx + w - derecha };
       setPiezas((p) => [...p, { id, ...corte, y, h: g.H, i: n, giro: xx < previo.x ? -1.1 : 1.1 }]);
       luego(quitar, 1200);
-      sonar('bloque', { tono: 0.92 + Math.random() * 0.16 });
+      sonar('bloque');
       tacto.toque();
     }
 
@@ -334,11 +344,11 @@ export default function Torre() {
 
               {/* El marcador grande y la racha, encima del cielo. */}
               <View pointerEvents="none" style={{ position: 'absolute', top: 6, left: 0, right: 0, alignItems: 'center' }}>
-                <Text style={{ fontSize: 68, fontWeight: '900', color: BLANCO, fontVariant: ['tabular-nums'],
+                <Text maxFontSizeMultiplier={1.15} style={{ fontSize: 68, fontWeight: '900', color: BLANCO, fontVariant: ['tabular-nums'],
                   textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12, textShadowOffset: { width: 0, height: 4 } }}>{puntos}</Text>
                 {combo >= 1 && fase !== 'fin' ? (
                   <Animated.View key={combo} entering={ZoomIn.springify().damping(9)} exiting={FadeOut}
-                    style={{ paddingHorizontal: 14, height: 32, borderRadius: 16, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
+                    style={{ paddingHorizontal: 14, paddingVertical: 4, minHeight: 32, borderRadius: 16, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
                     <Text style={{ fontSize: 15, fontWeight: '900', color: BLANCO }}>{combo > 1 ? `¡Perfecto ×${combo}!` : '¡Perfecto!'}</Text>
                   </Animated.View>
                 ) : null}
@@ -359,7 +369,7 @@ export default function Torre() {
           <Animated.View entering={FadeIn.delay(900).duration(400)} style={{ position: 'absolute', left: 16, right: 16, bottom: 8 }}>
             <PanelVidrio estilo={{ gap: 12, alignItems: 'center', backgroundColor: 'rgba(10,12,40,0.55)' }}>
               {nuevoRecord ? (
-                <View style={{ paddingHorizontal: 12, height: 26, borderRadius: 13, justifyContent: 'center', backgroundColor: '#FFD86B' }}>
+                <View style={{ paddingHorizontal: 12, paddingVertical: 4, minHeight: 26, borderRadius: 13, justifyContent: 'center', backgroundColor: '#FFD86B' }}>
                   <Text style={{ fontSize: 13, fontWeight: '900', color: '#3A2A00' }}>¡NUEVO RÉCORD!</Text>
                 </View>
               ) : null}

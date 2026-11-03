@@ -120,7 +120,7 @@ export default function CodigoReserva({ codigo, tam = 150, ayuda = 'Muéstralo e
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 18, borderRadius: 999,
               backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)', opacity: compartiendo ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Icono sf="square.and.arrow.up" respaldo="↗" tam={15} color={t.color.magentaTexto} />
-            <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{compartiendo ? 'Preparando…' : 'Compartir con quien lo retira'}</Text>
+            <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{compartiendo ? 'Preparando…' : 'Compartir con quien lo retira'}</Text>
           </Presionable>
           <Text style={{ fontSize: 12, lineHeight: 17, textAlign: 'center', color: colorSistema.texto3, maxWidth: 290 }}>{TEXTO_COMPARTIR}</Text>
           {/* La tarjeta que se fotografía: fuera de la pantalla, sólo mientras se comparte. */}

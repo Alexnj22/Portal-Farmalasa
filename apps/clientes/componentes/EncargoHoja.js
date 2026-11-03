@@ -44,8 +44,8 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Solicitud enviada!' : 'Pedir por encargo'}</Text>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
+          <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Solicitud enviada!' : 'Pedir por encargo'}</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"><Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text></Presionable>
         </View>
         {!token ? (
@@ -69,8 +69,8 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
               <Text style={{ fontSize: 13, color: colorSistema.texto3, marginTop: 4 }}>Hoy no hay en ninguna sucursal. Pídelo y te lo conseguimos.</Text>
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: 18, padding: 14 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Cantidad</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, backgroundColor: superficie, borderRadius: 18, padding: 14 }}>
+              <Text style={{ flexShrink: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Cantidad</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                 <Paso sf="minus" etiqueta="Menos" habilitado={cant > 1} alTocar={() => setCant((c) => c - 1)} />
                 <Text style={{ fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 22, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cant}</Text>
@@ -87,7 +87,7 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
                     {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
                       <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
-                      <Text style={{ fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{s.sala}</Text>
+                      <Text style={{ flex: 1, fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{s.sala}</Text>
                     </View>
                   </Presionable>
                 );

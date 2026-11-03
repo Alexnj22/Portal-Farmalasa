@@ -139,7 +139,7 @@ function VistaPreviaFoto({ estado, alCambiar, alUsar, alCancelar }) {
             style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 10, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
             <Text style={{ fontSize: 17, color: '#FFFFFF' }}>Cancelar</Text>
           </Presionable>
-          <Text numberOfLines={1} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>
+          <Text numberOfLines={2} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: '#FFFFFF' }}>
             {opciones.circular ? 'Tu foto de perfil' : 'Revisa la foto'}
           </Text>
           {/* El mismo ancho que «Cancelar», para que el título quede centrado. */}
@@ -177,22 +177,22 @@ function VistaPreviaFoto({ estado, alCambiar, alUsar, alCancelar }) {
             style={({ pressed }) => ({ minHeight: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
               backgroundColor: t.color.magenta, opacity: ocupado ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             {girando ? <ActivityIndicator color="#FFFFFF" /> : <Icono sf="checkmark" respaldo="✓" tam={17} color="#FFFFFF" />}
-            <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Usar esta foto</Text>
+            <Text style={{ flexShrink: 1, fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Usar esta foto</Text>
           </Presionable>
           <View style={{ flexDirection: 'row', gap: 10 }}>
             <Presionable onPress={() => otra(origen)} disabled={eligiendo} accessibilityRole="button"
               accessibilityLabel={origen === 'camara' ? 'Tomar otra foto' : 'Elegir otra foto de la galería'}
-              style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
+              style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, paddingHorizontal: 10, paddingVertical: 6,
                 backgroundColor: 'rgba(255,255,255,0.16)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               {eligiendo ? <ActivityIndicator color="#FFFFFF" /> : <Icono sf={origen === 'camara' ? 'camera.fill' : 'photo.on.rectangle'} respaldo="↺" tam={16} color="#FFFFFF" />}
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{origen === 'camara' ? 'Tomar otra' : 'Elegir otra'}</Text>
+              <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{origen === 'camara' ? 'Tomar otra' : 'Elegir otra'}</Text>
             </Presionable>
             <Presionable onPress={() => otra(otro)} disabled={eligiendo} accessibilityRole="button"
               accessibilityLabel={otro === 'camara' ? 'Tomar la foto con la cámara' : 'Elegir de la galería'}
-              style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8,
+              style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 8, paddingHorizontal: 10, paddingVertical: 6,
                 borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
               <Icono sf={otro === 'camara' ? 'camera.fill' : 'photo.on.rectangle'} respaldo={otro === 'camara' ? '📷' : '🖼'} tam={16} color="#FFFFFF" />
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{otro === 'camara' ? 'Cámara' : 'Galería'}</Text>
+              <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 16, fontWeight: '700', color: '#FFFFFF' }}>{otro === 'camara' ? 'Cámara' : 'Galería'}</Text>
             </Presionable>
           </View>
         </View>

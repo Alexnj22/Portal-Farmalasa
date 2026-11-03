@@ -105,7 +105,7 @@ function Compra({ compra: c, abierta, ocupado, alVolver }) {
           <Icono sf="bag.fill" respaldo="" tam={18} color={t.color.verdeTexto} />
         </View>
         <View style={{ flex: 1, gap: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>{c.sala}</Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>{c.sala}</Text>
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{fecha(c.fecha)} · {hora12(c.hora)}</Text>
         </View>
         <Text style={{ fontSize: 21, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(c.total)}</Text>
@@ -160,7 +160,7 @@ function Chip({ sf, texto, color, fondo }) {
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4,
       backgroundColor: fondo ?? (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)') }}>
       <Icono sf={sf} respaldo="" tam={11} color={color} />
-      <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '700', color }}>{texto}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontSize: 12, fontWeight: '700', color }}>{texto}</Text>
     </View>
   );
 }

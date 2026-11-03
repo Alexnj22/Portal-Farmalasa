@@ -72,7 +72,9 @@ export default memo(function BannerPromos() {
           return (
             <Presionable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
               accessibilityRole="button" accessibilityLabel={`Oferta: ${o.titulo}`}
-              style={({ pressed }) => ({ width: ancho, height: Math.round(ancho / 2.4), borderRadius: 24, overflow: 'hidden', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+              // minHeight y no height: con letra grande la etiqueta, el título y «Ver
+              // más» no caben en la proporción del banner y quedaban cortados.
+              style={({ pressed }) => ({ width: ancho, minHeight: Math.round(ancho / 2.4), borderRadius: 24, overflow: 'hidden', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
               {o.imagen ? (
                 <ImagenCache source={{ uri: o.imagen, cacheKey: o.imagen_clave ?? undefined }} cachePolicy="memory-disk"
                   contentFit="cover" transition={150} style={StyleSheet.absoluteFill} />

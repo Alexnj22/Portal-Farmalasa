@@ -227,8 +227,8 @@ function Visor({ historias, inicio, alVer, alTocarBoton, alCerrar }) {
                   </View>
                 ))}
               </View>
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+                <View style={{ flexShrink: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                   <Image source={require('../assets/icono.png')} style={{ width: 28, height: 28, borderRadius: 8 }} />
                   <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 14 }}>Farmacia Salud</Text>
                   {/* Duran 24 horas: cuándo se publicó, como en un estado. */}
@@ -306,7 +306,7 @@ function BotonHistoria({ principal, sf, icono, texto, alTocar }) {
         borderWidth: principal ? 0 : 1, borderColor: 'rgba(255,255,255,0.45)', transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       {icono ?? <Icono sf={sf} respaldo="" tam={17} color={principal ? '#2B0B3A' : '#FFFFFF'} />}
-      <Text maxFontSizeMultiplier={1.3} style={{ color: principal ? '#2B0B3A' : '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
+      <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, textAlign: 'center', color: principal ? '#2B0B3A' : '#FFFFFF', fontSize: 17, fontWeight: '800' }}>{texto}</Text>
     </Presionable>
   );
 }

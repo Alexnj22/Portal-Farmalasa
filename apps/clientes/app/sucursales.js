@@ -106,13 +106,15 @@ function TarjetaSucursal({ s, indice }) {
     <Animated.View layout={LinearTransition.duration(220).easing(Easing.out(Easing.cubic))}>
     <Vidrio radio={26}>
       {/* La foto: la real de la sucursal cuando se suba; mientras, una de stock. */}
-      <View style={{ height: 150, overflow: 'hidden' }}>
+      {/* minHeight y el pie en el flujo (no absoluto): con letra grande el nombre
+          y el horario crecen hacia arriba sin cortarse ni pisar el «Abierta». */}
+      <View style={{ minHeight: 150, overflow: 'hidden', justifyContent: 'flex-end' }}>
         <ImagenCache source={s.foto ? { uri: s.foto, cacheKey: s.foto_clave ?? undefined } : STOCK[indice % STOCK.length]}
           cachePolicy="memory-disk" contentFit="cover" transition={200} style={StyleSheet.absoluteFill} />
         <LinearGradient colors={['rgba(0,0,0,0.05)', 'rgba(0,0,0,0.15)', 'rgba(0,0,0,0.72)']} locations={[0, 0.45, 1]} style={StyleSheet.absoluteFill} />
         <View style={{ position: 'absolute', top: 12, right: 12 }}><Estado abierta={s.abierta} /></View>
-        <View style={{ position: 'absolute', left: 16, right: 16, bottom: 12, gap: 2 }}>
-          <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }} numberOfLines={1}>{s.nombre}</Text>
+        <View style={{ paddingHorizontal: 16, paddingBottom: 12, paddingTop: 52, gap: 2 }}>
+          <Text style={{ fontSize: 22, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }}>{s.nombre}</Text>
           <Text style={{ fontSize: 14, fontWeight: '600', color: 'rgba(255,255,255,0.9)' }}>
             {s.abierta ? `Cierra a las ${hora(s.cierra_hoy)}` : s.abre_hoy ? `Abre a las ${hora(s.abre_hoy)}` : 'Cerrada hoy'}
             {s.km != null ? ` · ${textoDistancia(s.km)}` : ''}
@@ -133,7 +135,7 @@ function TarjetaSucursal({ s, indice }) {
 
       <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((x) => !x); }} accessibilityRole="button"
         style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Horario de la semana</Text>
+        <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Horario de la semana</Text>
         <Animated.View style={giro}>
           <Icono sf="chevron.down" respaldo="▼" tam={14} color={colorSistema.texto2} />
         </Animated.View>
@@ -144,8 +146,8 @@ function TarjetaSucursal({ s, indice }) {
             const h = s.horario.find((x) => x.dia === d);
             const esHoy = d === hoy;
             return (
-              <View key={d} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 2 }}>
-                <Text style={{ fontSize: 15, fontWeight: esHoy ? '800' : '500', color: colorSistema.texto }}>{esHoy ? `${DIAS[d]} · hoy` : DIAS[d]}</Text>
+              <View key={d} style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, paddingVertical: 2 }}>
+                <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: esHoy ? '800' : '500', color: colorSistema.texto }}>{esHoy ? `${DIAS[d]} · hoy` : DIAS[d]}</Text>
                 <Text style={{ fontSize: 15, fontWeight: esHoy ? '800' : '500', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>
                   {h?.abre ? `${hora(h.abre)} – ${hora(h.cierra)}` : 'Cerrado'}
                 </Text>
@@ -169,7 +171,7 @@ function BotonCercanas({ buscando, alTocar }) {
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', opacity: buscando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       <Icono sf="location.fill" respaldo="📍" tam={18} color={t.color.magentaTexto} />
-      <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{buscando ? 'Buscando dónde estás…' : 'Ver las más cercanas'}</Text>
+      <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{buscando ? 'Buscando dónde estás…' : 'Ver las más cercanas'}</Text>
     </Presionable>
   );
 }
@@ -192,7 +194,7 @@ function Accion({ sf, respaldo, icono, texto, alTocar }) {
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)', transform: [{ scale: pressed ? 0.96 : 1 }],
       })}>
       {icono ?? <Icono sf={sf} respaldo={respaldo} tam={20} color={colorSistema.texto} />}
-      <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto }}>{texto}</Text>
+      <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto, textAlign: 'center', paddingHorizontal: 4 }}>{texto}</Text>
     </Presionable>
   );
 }

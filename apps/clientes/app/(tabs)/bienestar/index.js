@@ -20,7 +20,7 @@ import { navegar } from '../../../lib/navegar';
 const DESTACADO = { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre', nuevo: true };
 const EJERCICIOS = [
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
-  { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Revienta el plástico arrastrando el dedo.', escena: 'burbujas' },
+  { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Relax, o contrarreloj con niveles.', escena: 'burbujas' },
   { ruta: '/memoria', sf: 'square.grid.2x2.fill', titulo: 'Memoria', detalle: 'Encuentra las parejas en tres niveles.', escena: 'memoria' },
   { ruta: '/anclaje', sf: 'hand.raised.fill', titulo: '5 · 4 · 3 · 2 · 1', detalle: 'Calma los nervios buscando cosas con tus sentidos.', escena: 'anclaje' },
 ];
@@ -40,7 +40,7 @@ function TarjetaJuego({ e, grande = false }) {
             <Icono sf={e.sf} respaldo="" tam={22} color="#FFFFFF" />
           </View>
           {e.nuevo ? (
-            <View style={{ paddingHorizontal: 10, height: 24, borderRadius: 12, justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+            <View style={{ paddingHorizontal: 10, paddingVertical: 4, minHeight: 24, borderRadius: 12, justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
               <Text style={{ fontSize: 12, fontWeight: '900', color: colores[0] }}>NUEVO</Text>
             </View>
           ) : null}

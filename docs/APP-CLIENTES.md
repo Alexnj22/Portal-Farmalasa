@@ -68,6 +68,19 @@ modernos… agreguemos algún otro más trabajado.»*
   una vez por segundo: se hace con los ojos cerrados. Burbujas se revienta
   también **arrastrando**. Memoria tiene tres niveles, rachas, estrellas,
   tiempo y récord por nivel. El 5-4-3-2-1 se cuenta tocando.
+- **Burbujas, cuarta versión** («aún se traba»): cada burbuja se hornea UNA vez
+  como imagen y el tablero es un solo `Picture` que las estampa —un cálculo por
+  cuadro en vez de 175, y sólo mientras algo se anima—. El tono de la racha va
+  en el archivo (`pop-1`…`pop-6`), no en `setPlaybackRate`, que en Android
+  corre en el hilo de la interfaz; `sonar` ya no repite llamadas nativas que no
+  cambian. Modos **Relax** y **Contrarreloj** (niveles: 12 s el primero, uno
+  menos cada nivel, mínimo 5; récord de nivel) y burbujas **doradas**.
+- Torre y fondo de las escenas sin filtros de sombra ni desenfoques animados;
+  las luces de la escena son un solo `Picture`.
+- **Nada se corta con letra grande** (revisión de toda la app el mismo día):
+  textos al lado de botones con `flexShrink`, filas que bajan de línea con
+  `flexWrap`, `minHeight` en vez de `height` donde hay texto, y fuera los
+  `numberOfLines` que cortaban fechas, montos o rótulos de botón.
 - **Burbujas sin trabarse** (tercera versión, mismo día): todo el tablero vive
   en el hilo de la interfaz —qué burbuja hay bajo el dedo, cuáles están
   reventadas, la animación—; JavaScript sólo suena y vibra. Antes había un

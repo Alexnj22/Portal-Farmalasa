@@ -42,7 +42,7 @@ export default function RecetaFoto({ foto, alCambiar, superficie }) {
           <View style={{ flex: 1, gap: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Icono sf="checkmark.circle.fill" respaldo="✓" tam={15} color={t.color.exitoTexto} />
-              <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>Lista para enviar</Text>
+              <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '700', color: t.color.exitoTexto }}>Lista para enviar</Text>
             </View>
             <Presionable onPress={elegir} accessibilityRole="button" hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start' }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Cambiar foto</Text>
@@ -54,7 +54,7 @@ export default function RecetaFoto({ foto, alCambiar, superficie }) {
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 50, borderRadius: 14,
             borderWidth: 1.5, borderStyle: 'dashed', borderColor: t.color.magenta, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
           <Icono sf="camera.fill" respaldo="📷" tam={17} color={t.color.magentaTexto} />
-          <Text style={{ fontSize: 16, fontWeight: '800', color: t.color.magentaTexto }}>Tomar o elegir la foto</Text>
+          <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 16, fontWeight: '800', color: t.color.magentaTexto }}>Tomar o elegir la foto</Text>
         </Presionable>
       )}
       {vistaPrevia.vista}

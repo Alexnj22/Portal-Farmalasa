@@ -151,8 +151,8 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 18 }}>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
+          <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>
             {paso === 'terminos' ? 'Antes de reservar' : paso === 'hecha' ? (hecha?.receta ? 'Receta enviada' : '¡Reservado!') : 'Reservar'}
           </Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" accessibilityLabel="Cerrar">
@@ -176,7 +176,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
             <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 12 }}>
               {terminos.puntos.map((p, i) => (
                 <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.color.magenta, alignItems: 'center', justifyContent: 'center' }}>
+                  <View style={{ minWidth: 24, minHeight: 24, borderRadius: 12, backgroundColor: t.color.magenta, alignItems: 'center', justifyContent: 'center' }}>
                     <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
                   </View>
                   <Text style={{ flex: 1, fontSize: 15, lineHeight: 21, color: colorSistema.texto }}>{p}</Text>
@@ -193,7 +193,7 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
               <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 1, color: colorSistema.texto3 }}>{oferta.titulo?.toUpperCase()}</Text>
               <Text style={{ fontSize: 18, fontWeight: '800', color: colorSistema.texto }}>{producto.nombre}</Text>
               {producto.precio_descuento != null ? (
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+                <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 8 }}>
                   <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto }}>{dolares(producto.precio_descuento)}</Text>
                   {producto.precio != null ? <Text style={{ fontSize: 14, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(producto.precio)}</Text> : null}
                   <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>c/u</Text>
@@ -224,8 +224,8 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
               })}
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: 18, padding: 14 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Cantidad</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, backgroundColor: superficie, borderRadius: 18, padding: 14 }}>
+              <Text style={{ flexShrink: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Cantidad</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16 }}>
                 <Paso texto="−" deshabilitado={cantidad <= 1} alTocar={() => setCantidad((c) => Math.max(1, c - 1))} />
                 <Text style={{ fontSize: 20, fontWeight: '800', minWidth: 24, textAlign: 'center', color: colorSistema.texto }}>{cantidad}</Text>

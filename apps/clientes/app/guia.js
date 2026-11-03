@@ -370,7 +370,7 @@ function PaginaReglas({ ancho, leidos, marcas, aceptado, error, alLeer, alMarcar
                   <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>
                     {`Paso ${i + 1} de ${DOCUMENTOS.length}${listo ? ' · leído' : ''}`}
                   </Text>
-                  <Text numberOfLines={2} style={{ fontSize: 15, lineHeight: 19, fontWeight: elegido ? '700' : '600', color: elegido ? t.color.magentaTexto : colorSistema.texto }}>{d.rotulo}</Text>
+                  <Text style={{ fontSize: 15, lineHeight: 19, fontWeight: elegido ? '700' : '600', color: elegido ? t.color.magentaTexto : colorSistema.texto }}>{d.rotulo}</Text>
                 </View>
               </Presionable>
             );
@@ -604,7 +604,7 @@ function Hecho({ texto }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, minHeight: 48 }}>
       <Icono sf="checkmark.circle.fill" respaldo="✓" tam={20} color={t.color.verdeTexto} />
-      <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{texto}</Text>
+      <Text style={{ flexShrink: 1, fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{texto}</Text>
     </View>
   );
 }

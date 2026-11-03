@@ -151,7 +151,7 @@ export default function Puntos() {
           accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FF9F0A', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6, minHeight: 28 }}>
           <Icono sf="testtube.2" respaldo="" tam={12} color="#1A1000" />
-          <Text style={{ fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
+          <Text style={{ flexShrink: 1, fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Presionable>
       ) : null}
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel || false} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
@@ -168,7 +168,7 @@ export default function Puntos() {
           </View>
         ) : null}
         {/* El saludo ES el título del Inicio (2026-10-20): sin la barra de «Inicio» encima. */}
-        <Text accessibilityRole="header" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3}
+        <Text accessibilityRole="header" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3}
           style={{ flex: 1, fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>
           {resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}
         </Text>
@@ -232,7 +232,7 @@ export default function Puntos() {
             <>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
                 <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 28, fontWeight: '800', color: t.color.magentaTexto }} />
-                <Texto nivel={2}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
+                <Texto nivel={2} estilo={{ flexShrink: 1 }}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
               </View>
               <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, 0.18)} />
               <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos.</Texto>
@@ -405,7 +405,7 @@ function BotonWallet({ serial, nivelPrueba }) {
         opacity: cargando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       <Icono sf="wallet.pass.fill" respaldo="💳" tam={20} color="#FFFFFF" />
-      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
+      <Text style={{ flexShrink: 1, color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : 'Agregar a Apple Wallet'}
       </Text>
     </Presionable>
@@ -435,7 +435,7 @@ function BotonGoogleWallet({ nivelPrueba }) {
         opacity: cargando ? 0.6 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       <Icono sf="wallet.pass.fill" respaldo="💳" tam={20} color="#FFFFFF" />
-      <Text style={{ color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
+      <Text style={{ flexShrink: 1, color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : 'Agregar a Google Wallet'}
       </Text>
     </Presionable>
@@ -550,7 +550,9 @@ function TratamientosInicio({ lista }) {
 function Menu({ resumen, urgentes }) {
   const t = useTema();
   const { fontScale } = useWindowDimensions();
-  const dos = fontScale > 1.3;
+  // Desde 1.15: con tres columnas de ~78 pt, «Tratamientos» o «3 por
+  // acabarse» ya no caben en letra grande y se cortaban.
+  const dos = fontScale > 1.15;
   const r = resumen;
   const tratamientos = Array.isArray(r.tratamientos) ? r.tratamientos.length : 0;
   const creditos = r.creditos?.pendientes > 0;
@@ -592,8 +594,8 @@ function Casilla({ sf, titulo, detalle, color, resaltar, ruta, ancho }) {
           {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colorSistema.rojo }} /> : null}
         </View>
         <View style={{ gap: 1 }}>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
-          <Text numberOfLines={1} style={{ fontSize: 12, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }}>{detalle}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
+          <Text style={{ fontSize: 12, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }}>{detalle}</Text>
         </View>
       </Tarjeta>
     </Presionable>

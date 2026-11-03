@@ -19,10 +19,12 @@ const RELLENO = 34;
 
 export default function Segmentos({ opciones, valor, alCambiar }) {
   const t = useTema();
-  const { width } = useWindowDimensions();
+  const { width, fontScale } = useWindowDimensions();
   const parte = (width - 32) / Math.max(1, opciones.length);
   const masLargo = Math.max(0, ...opciones.map((o) => String(o.rotulo ?? '').length));
-  if (opciones.length > 5 || masLargo * DP_POR_LETRA + RELLENO > parte) {
+  // Con la letra del sistema agrandada cada letra ocupa más: sin `fontScale`
+  // el rótulo se daba por cabido y el botón de Material lo cortaba.
+  if (opciones.length > 5 || masLargo * DP_POR_LETRA * Math.max(1, fontScale) + RELLENO > parte) {
     return <SegmentosPildoras opciones={opciones} valor={valor} alCambiar={alCambiar} />;
   }
   return (

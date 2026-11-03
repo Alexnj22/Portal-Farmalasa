@@ -918,7 +918,7 @@ export default function Chat() {
         <Presionable onPress={pedirAnteriores} disabled={cargandoViejos} accessibilityRole="button"
           style={{ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 14 }}>
           {cargandoViejos ? <Icono sf="clock" respaldo="…" tam={14} color={colorSistema.texto3} /> : null}
-          <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Cargar mensajes anteriores'}</Text>
+          <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>{cargandoViejos ? 'Cargando…' : 'Cargar mensajes anteriores'}</Text>
         </Presionable>
       ) : null}
       {hayMas && masViejo ? (
@@ -1254,7 +1254,7 @@ function Bienvenida({ preferente = null }) {
       ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
         <Icono sf="plus.circle.fill" respaldo="+" tam={14} color={t.color.magentaTexto} />
-        <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Con «+» puedes enviar un producto o una foto de tu receta.</Text>
+        <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto3 }}>Con «+» puedes enviar un producto o una foto de tu receta.</Text>
       </View>
     </View>
   );
@@ -1441,10 +1441,10 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
   if (m.borrado) {
     return (
       <View style={{ flexDirection: 'row', justifyContent: mio ? 'flex-end' : 'flex-start', marginTop: primero ? 10 : 2, paddingLeft: mio ? 0 : 36 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 13, paddingVertical: 8, borderRadius: R,
+        <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 13, paddingVertical: 8, borderRadius: R,
           borderWidth: StyleSheet.hairlineWidth, borderColor: colorSistema.separador, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.6)' }}>
           <Icono sf="nosign" respaldo="⊘" tam={13} color={colorSistema.texto3} />
-          <Text style={{ fontSize: 15, fontStyle: 'italic', color: colorSistema.texto3 }}>{mio ? 'Eliminaste este mensaje' : 'Se eliminó este mensaje'}</Text>
+          <Text style={{ flexShrink: 1, fontSize: 15, fontStyle: 'italic', color: colorSistema.texto3 }}>{mio ? 'Eliminaste este mensaje' : 'Se eliminó este mensaje'}</Text>
         </View>
       </View>
     );
@@ -1524,7 +1524,7 @@ const Burbuja = memo(function Burbuja({ m, primero, ultimo, entra, estado, rotul
         ) : m.enviando ? (
           ultimo ? <Text style={{ fontSize: 11, color: colorSistema.texto3, marginHorizontal: 6 }}>Enviando…</Text> : null
         ) : ultimo || verHora ? (
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginHorizontal: 6 }}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 4, marginHorizontal: 6 }}>
             {m.editado ? <Text style={{ fontSize: 11, color: colorSistema.texto3 }}>Editado ·</Text> : null}
             <Text style={{ fontSize: 11, color: colorSistema.texto3 }}>{hora}</Text>
             {mio && estado ? <Palomitas visto={estado === 'visto'} /> : null}

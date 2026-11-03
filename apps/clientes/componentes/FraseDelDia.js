@@ -49,9 +49,9 @@ export default function FraseDelDia({ grande = false }) {
       <View pointerEvents="none" style={{ position: 'absolute', left: -60, bottom: -80, width: 200, height: 200, borderRadius: 100, backgroundColor: 'rgba(255,255,255,0.08)' }} />
 
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+        <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(255,255,255,0.2)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
           <Icono sf={cat.sf} respaldo="" tam={11} color="#FFFFFF" />
-          <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: '#FFFFFF' }}>
+          <Text maxFontSizeMultiplier={1.2} style={{ flexShrink: 1, fontSize: 11, fontWeight: '800', letterSpacing: 0.6, color: '#FFFFFF' }}>
             FRASE DEL DÍA · {cat.nombre.toUpperCase()}
           </Text>
         </View>
@@ -63,12 +63,15 @@ export default function FraseDelDia({ grande = false }) {
       </Text>
 
       {grande ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.85)' }}>
+        // Con letra grande (Android con el tamaño de fuente subido) la fecha y
+        // «Compartir» no caben en una línea: la fecha se encoge y, si hace falta,
+        // el botón baja a la siguiente. Nunca se sale de la tarjeta.
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
+          <Text style={{ flexGrow: 1, flexShrink: 1, flexBasis: 160, fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.85)' }}>
             {fechaDeFrase(frase.dia).replace(/^./, (c) => c.toUpperCase())} · mañana a las 8:00, otra
           </Text>
           <Presionable onPress={compartir} accessibilityRole="button" accessibilityLabel="Compartir la frase" hitSlop={8}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 12, borderRadius: 999,
+            style={({ pressed }) => ({ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 999,
               backgroundColor: 'rgba(255,255,255,0.22)', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
             <Icono sf="square.and.arrow.up" respaldo="↗" tam={14} color="#FFFFFF" />
             <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFFFFF' }}>Compartir</Text>

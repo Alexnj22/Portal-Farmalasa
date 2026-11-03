@@ -84,7 +84,7 @@ export default function AvatarNivel({ nombre, material, equipo = false, uri, cla
   const equipoPaleta = COLORES_NIVEL.empleado;
   const placa = (colores, borde, icono, respaldo, texto) => (
     <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, height: 24, borderRadius: 12, borderWidth: 1.5, borderColor: borde }}>
+      style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, minHeight: 24, borderRadius: 12, borderWidth: 1.5, borderColor: borde }}>
       <Icono sf={icono} respaldo={respaldo} tam={10} color="#FFFFFF" />
       <Text maxFontSizeMultiplier={1.2} numberOfLines={1} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 1.4,
         textShadowColor: 'rgba(0,0,0,0.45)', textShadowRadius: 3, textShadowOffset: { width: 0, height: 1 } }}>{texto}</Text>

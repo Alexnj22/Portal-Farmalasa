@@ -30,7 +30,7 @@ export default function Segmentos({ opciones, valor, alCambiar }) {
               transform: [{ scale: pressed ? 0.97 : 1 }],
             })}
           >
-            <Text style={{ fontSize: 14, fontWeight: activo ? '700' : '500', color: activo ? t.color.texto : t.color.texto2 }}>{o.rotulo}</Text>
+            <Text style={{ fontSize: 14, fontWeight: activo ? '700' : '500', color: activo ? t.color.texto : t.color.texto2, textAlign: 'center', paddingHorizontal: 6, paddingVertical: 6 }}>{o.rotulo}</Text>
           </Presionable>
         );
       })}

@@ -708,7 +708,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
       {resaltada ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Icono sf="arrow.down.circle.fill" respaldo="↓" tam={14} color={t.color.magentaTexto} />
-          <Text style={{ fontSize: 13, fontWeight: '800', color: t.color.magentaTexto }}>Esta es la reserva de ese producto</Text>
+          <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: '800', color: t.color.magentaTexto }}>Esta es la reserva de ese producto</Text>
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -722,7 +722,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
       <View style={{ gap: 4 }}>
         <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{r.producto_nombre}</Text>
         {r.tipo === 'promocion' && r.oferta_titulo ? (
-          <Text style={{ fontSize: 14, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={1}>{r.oferta_titulo}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={2}>{r.oferta_titulo}</Text>
         ) : null}
         {r.pedido && productosDelPedido > 1 ? (
           <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>
@@ -756,9 +756,9 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
         <Dato sf="calendar" rotulo="Reservada" valor={fechaHora(r.created_at)} />
       </View>
 
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end',
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end', gap: 8,
         paddingTop: 12, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-        <View style={{ gap: 2 }}>
+        <View style={{ flexShrink: 1, gap: 2 }}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>
             {r.cantidad} {r.cantidad === 1 ? 'UNIDAD' : 'UNIDADES'}{r.precio_unitario != null ? ` × ${dolares(r.precio_unitario)}` : ''}
           </Text>
@@ -789,9 +789,9 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
       {/* El código para retirar: se muestra solo cuando está lista. */}
       <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Icono sf="qrcode" respaldo="" tam={16} color={colorSistema.texto} />
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{r.pedido ? `Pedido ${r.pedido}` : `Código ${r.codigo}`}</Text>
+          <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{r.pedido ? `Pedido ${r.pedido}` : `Código ${r.codigo}`}</Text>
         </View>
         <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
       </Presionable>
@@ -900,7 +900,7 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
       {resaltada ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
           <Icono sf="arrow.down.circle.fill" respaldo="↓" tam={14} color={t.color.magentaTexto} />
-          <Text style={{ fontSize: 13, fontWeight: '800', color: t.color.magentaTexto }}>Ese producto va en este pedido</Text>
+          <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: '800', color: t.color.magentaTexto }}>Ese producto va en este pedido</Text>
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
@@ -933,7 +933,7 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
             <View style={{ flex: 1, gap: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{f.producto_nombre}</Text>
               {f.tipo === 'promocion' && f.oferta_titulo ? (
-                <Text style={{ fontSize: 12, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={1}>{f.oferta_titulo}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={2}>{f.oferta_titulo}</Text>
               ) : null}
               {f.precio_unitario != null ? (
                 <Text style={{ fontSize: 12, color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{dolares(f.precio_unitario)} c/u</Text>
@@ -986,7 +986,7 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
           </>
         ) : null}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          {ahorro > 0 ? <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ahorras {dolares(ahorro)}</Text> : <View />}
+          {ahorro > 0 ? <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ahorras {dolares(ahorro)}</Text> : <View />}
           <View style={{ alignItems: 'flex-end' }}>
             <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>{pagoClave === 'pagado' ? 'PAGASTE' : 'TOTAL'}</Text>
             <Text style={{ fontSize: 24, fontWeight: '900', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(total)}</Text>
@@ -1007,9 +1007,9 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
       {/* Un solo código para todo el pedido. */}
       <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setVerCodigo((x) => !x); }} accessibilityRole="button"
         style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+        <View style={{ flexShrink: 1, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Icono sf="qrcode" respaldo="" tam={16} color={colorSistema.texto} />
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Pedido {g.pedido}</Text>
+          <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Pedido {g.pedido}</Text>
         </View>
         <Icono sf={verCodigo ? 'chevron.up' : 'chevron.down'} respaldo="" tam={12} color={colorSistema.texto3} />
       </Presionable>
@@ -1056,8 +1056,8 @@ function PedidoCerrado({ g }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Icono sf={retirada ? 'checkmark.circle.fill' : 'xmark.circle'} respaldo="•" tam={24} color={e.color} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>Pedido de {g.filas.length} productos</Text>
-          <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Pedido de {g.filas.length} productos</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>
             {mismoEstado ? `${e.texto} · ` : ''}{r.entrega === 'domicilio' ? 'A domicilio' : r.sala} · {fechaHora(cerrada)}
           </Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>Pedido {g.pedido}</Text>
@@ -1067,7 +1067,7 @@ function PedidoCerrado({ g }) {
       <View style={{ marginLeft: 36, gap: 4 }}>
         {g.filas.map((f) => (
           <View key={f.id} style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }} numberOfLines={1}>
+            <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }} numberOfLines={2}>
               {f.cantidad} × {f.producto_nombre}{mismoEstado ? '' : ` · ${estadoDe(t, f.estado).texto}`}
             </Text>
             {f.precio_unitario != null ? (
@@ -1102,8 +1102,8 @@ function ReservaCerrada({ r }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Icono sf={retirada ? 'checkmark.circle.fill' : 'xmark.circle'} respaldo="•" tam={24} color={e.color} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={1}>{r.cantidad} × {r.producto_nombre}</Text>
-          <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{r.cantidad} × {r.producto_nombre}</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>
             {e.texto} · {r.entrega === 'domicilio' ? 'A domicilio' : r.sala} · {fechaHora(r.cerrada_at ?? r.created_at)}
           </Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{r.pedido ? `Pedido ${r.pedido}` : `Código ${r.codigo}`}</Text>
@@ -1168,7 +1168,7 @@ function EnRevision({ g, resaltada, alSubir, subiendo, alCancelar, alQuitarRecet
       : `Tienes ${quedan ?? 'un plazo corto'} para subirla; si no, la reserva vence.`;
   return (
     <Tarjeta tono={resaltada ? t.color.magenta : undefined} estilo={{ gap: 14 }}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         {pide ? <Latido><Pildora e={pildora} /></Latido> : <Pildora e={pildora} />}
         <Text style={{ fontSize: 13, fontWeight: '800', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{g.pedido ?? r.codigo}</Text>
       </View>

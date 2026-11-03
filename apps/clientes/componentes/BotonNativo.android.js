@@ -32,13 +32,14 @@ export default function BotonNativo({ etiqueta, alTocar, variante = 'filled', de
       onPress={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); alTocar?.(); }}
       android_ripple={{ color: lleno ? 'rgba(255,255,255,0.28)' : 'rgba(127,127,127,0.22)', foreground: true }}
       style={{
-        width: '100%', minHeight: 52, borderRadius: 26, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24,
+        width: '100%', minHeight: 52, borderRadius: 26, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24, paddingVertical: 12,
         backgroundColor: lleno ? base : 'transparent',
         borderWidth: variante === 'outlined' ? 1 : 0,
         borderColor: colorSistema.contorno,
         opacity: deshabilitado ? 0.38 : 1,
       }}>
-      <Text style={{ color: texto, fontSize: 16, fontWeight: '500', letterSpacing: 0.1 }} numberOfLines={1}>{etiqueta}</Text>
+      {/* Sin tope de líneas: con letra grande el rótulo baja a otra línea en vez de cortarse. */}
+      <Text style={{ color: texto, fontSize: 16, fontWeight: '500', letterSpacing: 0.1, textAlign: 'center' }}>{etiqueta}</Text>
     </Pressable>
   );
 }

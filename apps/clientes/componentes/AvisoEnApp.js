@@ -130,7 +130,7 @@ function Banner({ aviso, gesto, animado }) {
                 </View>
                 <View style={{ flex: 1, gap: 2 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                    <Text numberOfLines={1} style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{aviso.titulo}</Text>
+                    <Text numberOfLines={2} style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{aviso.titulo}</Text>
                     <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>ahora</Text>
                   </View>
                   {aviso.cuerpo ? <Text numberOfLines={2} style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>{aviso.cuerpo}</Text> : null}

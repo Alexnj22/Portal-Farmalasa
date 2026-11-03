@@ -86,7 +86,7 @@ export default function BotonVolverAPedir({ alTocar, ocupado, principal = false,
         backgroundColor: principal ? t.color.magenta : suave(t.color.magenta, pressed ? (t.oscuro ? 0.4 : 0.24) : (t.oscuro ? 0.24 : 0.12)),
         transform: [{ scale: pressed ? 0.97 : 1 }], ...estilo })}>
       {ocupado ? <ActivityIndicator size="small" color={color} /> : <Icono sf="arrow.clockwise" respaldo="↻" tam={15} color={color} />}
-      <Text style={{ fontSize: 14, fontWeight: '700', color }}>{etiqueta}</Text>
+      <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 14, fontWeight: '700', color }}>{etiqueta}</Text>
     </Presionable>
   );
 }

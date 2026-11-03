@@ -41,7 +41,7 @@ export function BadgeNivel({ nivel, tam = 12 }) {
       style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6,
         borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
       <Icono sf="crown.fill" respaldo="👑" tam={tam - 1} color={paleta.acento} />
-      <Text style={{ fontSize: tam, fontWeight: '800', color: '#FFFFFF' }}>{ex.rotulo}</Text>
+      <Text style={{ flexShrink: 1, fontSize: tam, fontWeight: '800', color: '#FFFFFF' }}>{ex.rotulo}</Text>
     </LinearGradient>
   );
 }
@@ -57,7 +57,7 @@ export function BadgeAnticipado({ tam = 12 }) {
       style={{ flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: 'rgba(8,9,12,0.85)', borderRadius: 999, borderWidth: 1,
         borderColor: 'rgba(233,237,245,0.45)', paddingHorizontal: 11, paddingVertical: 6 }}>
       <Icono sf="crown.fill" respaldo="👑" tam={tam - 1} color="#E9EDF5" />
-      <Text style={{ fontSize: tam, fontWeight: '800', color: '#E9EDF5' }}>Acceso anticipado</Text>
+      <Text style={{ flexShrink: 1, fontSize: tam, fontWeight: '800', color: '#E9EDF5' }}>Acceso anticipado</Text>
     </View>
   );
 }
@@ -199,9 +199,9 @@ export function CuerpoOferta({ oferta: o, completa = false }) {
       ) : (
         <Texto nivel={2}>Únete al programa de puntos para ver y usar esta oferta.</Texto>
       )}
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
         <Plazo fin={o.fin} color={a.fuerte} />
-        <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+        <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto3 }}>
           {o.salas ? `Sólo en ${o.salas.join(', ')}` : 'En todas las salas'}
         </Text>
       </View>

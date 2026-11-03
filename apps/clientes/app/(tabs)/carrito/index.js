@@ -318,12 +318,12 @@ function Carrito() {
               <Presionable onPress={() => navegar(`/reservas?resaltar=${yaReservado.id}`)} accessibilityRole="link" hitSlop={6}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>
                 <Icono sf="exclamationmark.circle.fill" respaldo="!" tam={12} color={t.color.avisoTexto} />
-                <Text style={{ fontSize: 12, fontWeight: '700', color: t.color.avisoTexto }}>
+                <Text style={{ flexShrink: 1, fontSize: 12, fontWeight: '700', color: t.color.avisoTexto }}>
                   Ya lo tienes reservado ({yaReservado.codigo})
                 </Text>
               </Presionable>
             ) : null}
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between' }}>
               <Contador valor={x.cantidad} alCambiar={(n) => cantidad(x, n)} />
               <View style={{ alignItems: 'flex-end' }}>
                 {precioFinal(x) < x.precio ? <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through' }}>{dolares(x.precio * x.cantidad)}</Text> : null}
@@ -577,7 +577,7 @@ function Terminos({ terminos, alAceptar, alCerrar }) {
         </View>
         {terminos.puntos.map((p, i) => (
           <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: t.color.magenta, alignItems: 'center', justifyContent: 'center' }}>
+            <View style={{ minWidth: 24, minHeight: 24, borderRadius: 12, backgroundColor: t.color.magenta, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
             </View>
             <Text style={{ flex: 1, fontSize: 15, lineHeight: 21, color: colorSistema.texto }}>{p}</Text>

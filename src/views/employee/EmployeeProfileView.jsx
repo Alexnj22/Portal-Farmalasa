@@ -3,13 +3,11 @@ import { useNavigate } from 'react-router-dom';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import StatCard from '../../components/common/StatCard';
-import CarrilCards from '../../components/common/CarrilCards';
 import { EmptyState } from '../../components/common/StateViews';
 import {
     User, Phone, HeartPulse, Briefcase, Droplet,
     Clock, Pencil, Calendar, ArrowRightLeft, Cake, Palmtree,
-    MapPin, CreditCard, Award, ClipboardList, SlidersHorizontal, ChevronDown, ChevronUp, X, Stethoscope, FileText,
+    MapPin, CreditCard, Award, ClipboardList, SlidersHorizontal, ChevronDown, ChevronUp, ChevronRight, X, Stethoscope, FileText,
     FolderOpen, UserRound, CalendarDays,
 } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -21,6 +19,7 @@ import {
 import GlassViewLayout from '../../components/GlassViewLayout';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
 import { formatTime12h } from '@nucleo/utils/helpers';
+import { aMinutos } from '@nucleo/utils/turnoDelDia';
 import SearchInput from '../../components/common/SearchInput';
 import EmployeeDocumentsList from '../../components/common/EmployeeDocumentsList';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -51,13 +50,27 @@ const DEFAULT_THEME = { dot: 'border-brand', glow: 'hover:shadow-[var(--shadow-g
 
 // Las ausencias que pueden cubrir un día de la semana.
 const AUSENCIA = {
-    VACATION:   { label: 'Vacaciones',  Icon: Palmtree,    cls: 'bg-success/10 border-success/30', text: 'text-success-text' },
-    DISABILITY: { label: 'Incapacidad', Icon: Stethoscope, cls: 'bg-danger/10 border-danger/30',   text: 'text-danger-text'  },
-    PERMIT:     { label: 'Permiso',     Icon: FileText,    cls: 'bg-success/10 border-success/30', text: 'text-success-text' },
+    VACATION:   { label: 'Vacaciones',  Icon: Palmtree,    barra: 'bg-success', text: 'text-success-text' },
+    DISABILITY: { label: 'Incapacidad', Icon: Stethoscope, barra: 'bg-danger',  text: 'text-danger-text'  },
+    PERMIT:     { label: 'Permiso',     Icon: FileText,    barra: 'bg-success', text: 'text-success-text' },
+};
+
+// La franja que dibuja cada día: de 6:00 a 22:00. Un turno fuera de ella se
+// recorta al borde — la hora exacta va escrita al lado, la barra sólo ubica.
+const FRANJA_INICIO = 6 * 60;
+const FRANJA_FIN    = 22 * 60;
+const tramoEnFranja = (inicio, fin) => {
+    const i = aMinutos(inicio);
+    let f = aMinutos(fin);
+    if (f <= i) f += 1440;
+    const total = FRANJA_FIN - FRANJA_INICIO;
+    const desde = Math.max(0, Math.min(total, i - FRANJA_INICIO));
+    const hasta = Math.max(0, Math.min(total, f - FRANJA_INICIO));
+    return { desde: (desde / total) * 100, largo: Math.max(4, ((hasta - desde) / total) * 100) };
 };
 
 const SectionCard = ({ children, className = '' }) => (
-    <section data-surface="card" className={`p-5 ${className}`}>
+    <section data-surface="card" className={`p-5 md:p-6 ${className}`}>
         {children}
     </section>
 );
@@ -72,21 +85,41 @@ const SectionHeader = ({ icon: Icon, label, children }) => (
     </div>
 );
 
-/** Un renglón de dato: ícono, rótulo y valor. Lo que falta se dice, no se oculta. */
-const Dato = ({ icon: Icon, label, value, sub }) => (
-    <div className="flex items-center gap-3 py-2.5">
-        <div className="w-9 h-9 rounded-xl bg-surface-card-hover flex items-center justify-center shrink-0">
-            <Icon size={15} className="text-content-3" strokeWidth={2} />
+/** Un renglón de dato: ícono con su color, rótulo y valor. Lo que falta se dice. */
+const Dato = ({ icon: Icon, tinte, label, value, sub }) => (
+    <div className="flex items-center gap-3.5 py-3">
+        <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm shrink-0">
+            <Icon size={15} className={tinte} strokeWidth={2.5} />
         </div>
         <div className="min-w-0 flex-1">
-            <p className="text-micro font-black text-content-3 uppercase tracking-widest">{label}</p>
+            <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">{label}</p>
             <p className={`text-body-sm truncate ${value ? 'font-bold text-content' : 'font-medium text-content-3 italic'}`}>
                 {value || 'No registrado'}
             </p>
         </div>
-        {sub && <span className="text-caption font-bold text-content-3 shrink-0">{sub}</span>}
+        {sub && <Badge uppercase={false} size="sm" className="shrink-0">{sub}</Badge>}
     </div>
 );
+
+/** Un signo vital dentro de la tarjeta de la persona. Si lleva a algún lado, es botón. */
+const Signo = ({ icon: Icon, tinte, fondo, label, value, sub, onClick }) => {
+    const Tag = onClick ? 'button' : 'div';
+    return (
+        <Tag type={onClick ? 'button' : undefined} onClick={onClick}
+            data-interactive={onClick ? '' : undefined}
+            className={`group flex items-center gap-3 px-4 py-4 text-left min-w-0 ${onClick ? 'rounded-2xl hover:bg-surface-card-hover active:scale-[0.97] transition-all duration-[var(--dur-base)]' : ''}`}>
+            <div className={`size-10 grid place-items-center rounded-xl shrink-0 ${fondo}`}>
+                <Icon size={18} className={tinte} strokeWidth={2} />
+            </div>
+            <div className="min-w-0 flex-1">
+                <p className="text-micro font-black text-content-3 uppercase tracking-widest truncate">{label}</p>
+                <p className="text-body-lg font-black text-content leading-tight truncate">{value}</p>
+                {sub && <p className="text-caption font-bold text-content-3 truncate">{sub}</p>}
+            </div>
+            {onClick && <ChevronRight size={14} className="text-content-3 shrink-0 group-hover:translate-x-0.5 transition-transform duration-[var(--dur-base)]" />}
+        </Tag>
+    );
+};
 
 const edadDe = (nacimiento, hoy) => {
     if (!nacimiento) return null;
@@ -164,6 +197,9 @@ const EmployeeProfileView = ({ openModal }) => {
     const semana = useMemo(() => semanaDelPerfil(emp?.weeklySchedule || {}, shifts), [emp?.weeklySchedule, shifts]);
     const minutosDeLaSemana = useMemo(() => semana.reduce((t, d) => t + (d.minutos || 0), 0), [semana]);
     const diasQueTrabaja = semana.filter(d => d.turno).length;
+    const diaDeHoy = semana.find(d => d.fecha === hoy) || null;
+    const ausHoy = diaDeHoy ? ausenciaDelDia(events, hoy) : null;
+    const AUSENCIA_HOY = ausHoy ? AUSENCIA[ausHoy.type] : null;
 
     const availableTypes = useMemo(() =>
         [...new Set(timeline.map(ev => ev.type))].filter(Boolean)
@@ -182,16 +218,14 @@ const EmployeeProfileView = ({ openModal }) => {
 
     if (!emp) return (
         <GlassViewLayout icon={User} title="Mi perfil" transparentBody={true}>
-            <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 space-y-5 animate-in fade-in duration-[var(--dur-slow)]">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                    {Array.from({ length: 4 }).map((_, i) => <div key={i} className="skeleton rounded-card h-24" />)}
-                </div>
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5">
-                    <div className="space-y-5">
-                        <div className="skeleton rounded-modal h-40" />
+            <div className="max-w-7xl mx-auto w-full pb-12 space-y-5 animate-in fade-in duration-[var(--dur-slow)]">
+                <div className="skeleton rounded-modal h-56" />
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    <div className="lg:col-span-8 space-y-5">
+                        <div className="skeleton rounded-modal h-48" />
                         <div className="skeleton rounded-modal h-72" />
                     </div>
-                    <div className="space-y-5">
+                    <div className="lg:col-span-4 space-y-5">
                         <div className="skeleton rounded-modal h-80" />
                         <div className="skeleton rounded-modal h-44" />
                     </div>
@@ -200,26 +234,11 @@ const EmployeeProfileView = ({ openModal }) => {
         </GlassViewLayout>
     );
 
-    const headerLeft = (
-        <div className="flex items-center gap-3.5 min-w-0">
-            <div className="w-11 h-11 md:w-12 md:h-12 rounded-full overflow-hidden border-2 border-border-card shadow-md shrink-0">
-                <AvatarConEstado emp={emp} px={96} radio="rounded-full" marco="" />
-            </div>
-            <div className="min-w-0">
-                <p className="text-caption font-black text-content-3 uppercase tracking-widest">Mi perfil</p>
-                <h2 className="font-black text-title md:text-display text-content tracking-tight leading-tight truncate">{emp.name}</h2>
-                <p className="text-caption font-bold text-content-3 truncate">
-                    {emp.role || 'Empleado'}{branch ? ` · ${branch.name}` : ''}
-                </p>
-            </div>
-        </div>
-    );
-
-    const acciones = tieneNombreQueElegir(emp) || puedeEditarSuFicha;
-    const filtersContent = acciones ? (
+    const eligeNombre = tieneNombreQueElegir(emp);
+    const filtersContent = (eligeNombre || puedeEditarSuFicha) ? (
         <div data-surface="card" className="flex items-center h-[4rem] md:h-[4.5rem] p-2 md:p-3 gap-2">
             {/* Cuál de sus nombres y apellidos usa en el portal (2026-10-30). */}
-            {tieneNombreQueElegir(emp) && (
+            {eligeNombre && (
                 <Button variant="secondary" icon={UserRound} onClick={() => setEligiendoNombre(true)}
                     title={`En el portal apareces como ${shortEmployeeName(emp)}`}>
                     <span className="hidden sm:inline">Mi nombre</span>
@@ -240,99 +259,154 @@ const EmployeeProfileView = ({ openModal }) => {
     const hayEmergencia = emp.emergency_contact_name || emp.emergency_contact_phone || emp.blood_type;
 
     return (
-        <GlassViewLayout headerLeft={headerLeft} filtersContent={filtersContent} transparentBody={true}>
+        <GlassViewLayout icon={User} title="Mi perfil" filtersContent={filtersContent} transparentBody={true}>
             <ElegirNombreDialog empleado={emp} open={eligiendoNombre} onClose={() => setEligiendoNombre(false)} />
-            <div className="pt-4 md:pt-6 px-4 md:px-6 pb-10 space-y-5">
+            <div className="max-w-7xl mx-auto w-full pb-12 space-y-5 md:space-y-6 animate-in fade-in duration-[var(--dur-lento)]">
 
-                {/* ── Resumen: lo que una persona viene a mirar a su perfil ── */}
-                <CarrilCards ariaLabel="Resumen de mi perfil">
-                    <StatCard icon={Award} iconBg="bg-chart-1/10" iconCls="text-chart-1-text"
-                        label="Antigüedad" value={tenure}
-                        sub={hireDate ? `Desde ${formatDate(hireDate)}` : 'Sin fecha de ingreso'} />
-                    <StatCard icon={ClipboardList} iconBg="bg-warning/10" iconCls="text-warning-text"
-                        label="Solicitudes pendientes" value={activeCount ?? '—'} loading={activeCount === null}
-                        sub={puedeVerSolicitudes ? 'Ver mis solicitudes' : (activeCount ? 'En revisión' : 'Nada en espera')}
-                        onClick={puedeVerSolicitudes ? () => navigate('/solicitudes-personales') : undefined} />
-                    <StatCard icon={Palmtree} iconBg="bg-success/10" iconCls="text-success-text"
-                        label="Próximas vacaciones"
-                        value={nextVacation ? diaCorto(nextVacation.start_date) : '—'}
-                        sub={nextVacation
-                            ? `${nextVacation.days} días · ${nextVacation.status === 'CONFIRMED' ? 'confirmadas' : 'planificadas'}`
-                            : 'Sin planificar'} />
-                    <StatCard icon={Cake} iconBg="bg-chart-6/10" iconCls="text-chart-6-text"
-                        label="Cumpleaños"
-                        value={birthDate ? diaCorto(birthDate) : '—'}
-                        valueCls={cumple ? 'text-chart-6-text' : 'text-content'}
-                        sub={cumple || (edad != null ? `${edad} años` : 'Sin fecha')} />
-                </CarrilCards>
+                {/* ── LA PERSONA — misma anatomía que la ficha de Personal:
+                    degradé de marca arriba, foto con aro, nombre y cargo. Los
+                    signos vitales van DENTRO de la tarjeta y no como fila de
+                    StatCard: topadas en 200px dejaban media fila vacía. ── */}
+                <section data-surface="card" className="relative overflow-hidden">
+                    <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-brand/15 to-transparent pointer-events-none" />
+                    <div className="relative z-base p-5 md:p-7 flex flex-col md:flex-row md:items-center gap-5 md:gap-7">
+                        <div className="rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl shrink-0 self-center md:self-auto">
+                            <AvatarConEstado emp={emp} px={104} radio="rounded-full" marco="" />
+                        </div>
+                        <div className="min-w-0 flex-1 text-center md:text-left">
+                            <h2 className="text-title md:text-display font-black text-content leading-tight tracking-tight">{emp.name}</h2>
+                            <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 mt-2">
+                                <Badge variant="info">{emp.role || 'Sin cargo asignado'}</Badge>
+                                {branch && (
+                                    <span className="inline-flex items-center gap-1 text-caption font-bold text-content-2">
+                                        <MapPin size={12} className="text-content-3" /> {branch.name}
+                                    </span>
+                                )}
+                            </div>
+                            {eligeNombre && (
+                                <p className="text-caption font-medium text-content-3 mt-2">
+                                    En el portal apareces como <span className="font-black text-content-2">{shortEmployeeName(emp)}</span>
+                                </p>
+                            )}
+                        </div>
+                        {/* Lo que más se viene a mirar: qué toca hoy. */}
+                        {diaDeHoy && (
+                            <div className={`shrink-0 self-center md:self-auto rounded-2xl border px-4 py-3 flex items-center gap-3 ${
+                                ausHoy ? 'bg-success/10 border-success/30' : diaDeHoy.turno ? 'bg-brand/10 border-brand/30' : 'bg-surface-card-hover/60 border-divider'}`}>
+                                <div className={`size-10 grid place-items-center rounded-xl ${ausHoy ? 'bg-success/15' : diaDeHoy.turno ? 'bg-brand/15' : 'bg-surface-card'}`}>
+                                    {ausHoy
+                                        ? <AUSENCIA_HOY.Icon size={18} className={AUSENCIA_HOY.text} strokeWidth={2} />
+                                        : <Clock size={18} className={diaDeHoy.turno ? 'text-brand-text' : 'text-content-3'} strokeWidth={2} />}
+                                </div>
+                                <div className="min-w-0">
+                                    <p className="text-micro font-black text-content-3 uppercase tracking-widest">Hoy</p>
+                                    <p className="text-body font-black text-content leading-tight whitespace-nowrap">
+                                        {ausHoy ? AUSENCIA_HOY.label
+                                            : diaDeHoy.turno ? `${formatTime12h(diaDeHoy.turno.start)} – ${formatTime12h(diaDeHoy.turno.end)}`
+                                            : hayHorario ? 'Día libre' : 'Sin horario publicado'}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+                    </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_380px] gap-5 items-start">
+                    <div className="relative z-base border-t border-divider grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 xl:divide-x divide-divider px-1 md:px-2 py-1">
+                        <Signo icon={Award} fondo="bg-chart-1/10" tinte="text-chart-1-text"
+                            label="Antigüedad" value={tenure}
+                            sub={hireDate ? `Desde ${formatDate(hireDate)}` : 'Sin fecha de ingreso'} />
+                        <Signo icon={ClipboardList} fondo="bg-warning/10" tinte="text-warning-text"
+                            label="Solicitudes"
+                            value={activeCount === null ? '…' : activeCount === 0 ? 'Nada pendiente' : `${activeCount} pendiente${activeCount === 1 ? '' : 's'}`}
+                            sub={puedeVerSolicitudes ? 'Ver mis solicitudes' : (activeCount ? 'En revisión' : 'Nada en espera')}
+                            onClick={puedeVerSolicitudes ? () => navigate('/solicitudes-personales') : undefined} />
+                        <Signo icon={Palmtree} fondo="bg-success/10" tinte="text-success-text"
+                            label="Próximas vacaciones"
+                            value={nextVacation ? diaCorto(nextVacation.start_date) : 'Sin planificar'}
+                            sub={nextVacation
+                                ? `${nextVacation.days} días · ${nextVacation.status === 'CONFIRMED' ? 'confirmadas' : 'planificadas'}`
+                                : 'Nada en el calendario'} />
+                        <Signo icon={Cake} fondo="bg-chart-6/10" tinte="text-chart-6-text"
+                            label="Cumpleaños"
+                            value={birthDate ? diaCorto(birthDate) : 'Sin fecha'}
+                            sub={cumple || (edad != null ? `${edad} años` : null)} />
+                    </div>
+                </section>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 md:gap-6 items-start">
 
                     {/* ── COLUMNA PRINCIPAL — la semana y el historial ── */}
-                    <div className="space-y-5 min-w-0">
+                    <div className="lg:col-span-8 space-y-5 md:space-y-6 min-w-0">
 
                         <SectionCard>
                             <SectionHeader icon={CalendarDays} label="Mi semana">
+                                <span className="text-caption font-bold text-content-3 hidden sm:inline">
+                                    {diaCorto(semana[0]?.fecha)} – {diaCorto(semana[6]?.fecha)}
+                                </span>
                                 {hayHorario && (
-                                    <>
-                                        <span className="text-caption font-bold text-content-3 hidden sm:inline">
-                                            {diaCorto(semana[0]?.fecha)} – {diaCorto(semana[6]?.fecha)}
-                                        </span>
-                                        <Badge variant="info" uppercase={false}>
-                                            {horasTexto(minutosDeLaSemana)} · {diasQueTrabaja} {diasQueTrabaja === 1 ? 'día' : 'días'}
-                                        </Badge>
-                                    </>
+                                    <Badge variant="info" uppercase={false}>
+                                        {horasTexto(minutosDeLaSemana)} · {diasQueTrabaja} {diasQueTrabaja === 1 ? 'día' : 'días'}
+                                    </Badge>
                                 )}
                             </SectionHeader>
 
-                            {!hayHorario ? (
-                                <EmptyState compact icon={CalendarDays} title="Tu horario de esta semana aún no está publicado"
-                                    subtitle="Cuando tu jefe de sala lo publique, aquí verás tus turnos día por día." />
-                            ) : (
-                                <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
-                                    {semana.map(d => {
-                                        const esHoy = d.fecha === hoy;
-                                        const pasado = d.fecha < hoy;
-                                        const aus = ausenciaDelDia(events, d.fecha);
-                                        const cfg = aus ? AUSENCIA[aus.type] : null;
-                                        const fondo = cfg ? `${cfg.cls} border`
-                                            : esHoy ? 'bg-brand/10 border-2 border-brand'
-                                            : d.turno ? 'bg-surface-card border border-border-card'
-                                            : 'border border-dashed border-divider';
-                                        return (
-                                            <div key={d.id} aria-current={esHoy ? 'date' : undefined}
-                                                className={`rounded-2xl p-3 flex sm:flex-col items-center sm:items-stretch gap-3 sm:gap-1.5 sm:text-center ${fondo} ${pasado && !esHoy ? 'opacity-60' : ''}`}>
-                                                <div className="flex sm:flex-col items-baseline sm:items-center gap-1.5 sm:gap-0 w-16 sm:w-auto shrink-0">
-                                                    <span className={`text-micro font-black uppercase tracking-widest ${esHoy ? 'text-brand-text' : 'text-content-3'}`}>
-                                                        {esHoy ? 'Hoy' : d.short}
-                                                    </span>
-                                                    <span className={`text-subtitle font-black leading-none ${esHoy ? 'text-brand-text' : 'text-content'}`}>
-                                                        {Number(d.fecha.slice(8))}
-                                                    </span>
-                                                </div>
-                                                <div className="flex-1 min-w-0 sm:pt-1.5 sm:border-t sm:border-divider">
-                                                    {cfg ? (
-                                                        <p className={`text-caption font-black flex sm:justify-center items-center gap-1 ${cfg.text}`}>
-                                                            <cfg.Icon size={12} strokeWidth={2} /> {cfg.label}
-                                                        </p>
-                                                    ) : d.turno ? (
-                                                        <>
-                                                            <p className="text-caption font-black text-content leading-tight">
-                                                                {formatTime12h(d.turno.start)}
-                                                                <span className="text-content-3 font-bold"> – </span>
-                                                                <span className="sm:block">{formatTime12h(d.turno.end)}</span>
-                                                            </p>
-                                                            <p className="text-micro font-bold text-content-3 truncate mt-0.5">{d.turno.name}</p>
-                                                        </>
-                                                    ) : (
-                                                        <p className="text-caption font-bold text-content-3">Libre</p>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
+                            {!hayHorario && (
+                                <EmptyState linea icon={CalendarDays} className="mb-3 !py-3"
+                                    title="Tu horario de esta semana aún no está publicado"
+                                    subtitle="Cuando lo publiquen, aquí verás tus turnos día por día." />
                             )}
+
+                            <div className="grid grid-cols-1 sm:grid-cols-7 gap-2">
+                                {semana.map(d => {
+                                    const esHoy = d.fecha === hoy;
+                                    const pasado = d.fecha < hoy;
+                                    const aus = ausenciaDelDia(events, d.fecha);
+                                    const cfg = aus ? AUSENCIA[aus.type] : null;
+                                    const tramo = !cfg && d.turno ? tramoEnFranja(d.turno.start, d.turno.end) : null;
+                                    return (
+                                        <div key={d.id} aria-current={esHoy ? 'date' : undefined}
+                                            className={`rounded-2xl p-3 flex sm:flex-col items-center sm:items-stretch gap-3 sm:gap-2 sm:text-center border transition-colors duration-[var(--dur-base)]
+                                                ${esHoy ? 'bg-brand/10 border-brand' : 'bg-surface-card-hover/50 border-divider'}
+                                                ${pasado ? 'opacity-55' : ''}`}>
+                                            <div className="flex sm:flex-col items-baseline sm:items-center gap-1.5 sm:gap-0.5 w-14 sm:w-auto shrink-0">
+                                                <span className={`text-micro font-black uppercase tracking-widest ${esHoy ? 'text-brand-text' : 'text-content-3'}`}>
+                                                    {esHoy ? 'Hoy' : d.short}
+                                                </span>
+                                                <span className={`text-subtitle font-black leading-none ${esHoy ? 'text-brand-text' : 'text-content'}`}>
+                                                    {Number(d.fecha.slice(8))}
+                                                </span>
+                                            </div>
+
+                                            {/* La franja: 6:00 arriba, 22:00 abajo (a lo ancho en el teléfono). */}
+                                            <div aria-hidden="true" className="relative flex-1 sm:flex-none h-2 sm:h-20 sm:w-2.5 sm:mx-auto rounded-full bg-divider overflow-hidden">
+                                                {cfg && <div className={`absolute inset-0 ${cfg.barra} opacity-60`} />}
+                                                {tramo && (
+                                                    <>
+                                                        <div className={`absolute inset-y-0 sm:hidden rounded-full ${esHoy ? 'bg-brand' : 'bg-chart-1'}`}
+                                                            style={{ left: `${tramo.desde}%`, width: `${tramo.largo}%` }} />
+                                                        <div className={`absolute inset-x-0 hidden sm:block rounded-full ${esHoy ? 'bg-brand' : 'bg-chart-1'}`}
+                                                            style={{ top: `${tramo.desde}%`, height: `${tramo.largo}%` }} />
+                                                    </>
+                                                )}
+                                            </div>
+
+                                            <div className="w-28 sm:w-auto shrink-0 min-w-0">
+                                                {cfg ? (
+                                                    <p className={`text-caption font-black flex sm:justify-center items-center gap-1 ${cfg.text}`}>
+                                                        <cfg.Icon size={12} strokeWidth={2} /> {cfg.label}
+                                                    </p>
+                                                ) : d.turno ? (
+                                                    <>
+                                                        <p className="text-caption font-black text-content leading-tight">{formatTime12h(d.turno.start)}</p>
+                                                        <p className="text-caption font-bold text-content-3 leading-tight">{formatTime12h(d.turno.end)}</p>
+                                                    </>
+                                                ) : (
+                                                    <p className="text-caption font-bold text-content-3">{hayHorario ? 'Libre' : '—'}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </SectionCard>
 
                         {/* Historial de eventos */}
@@ -395,7 +469,7 @@ const EmployeeProfileView = ({ openModal }) => {
                             ) : timeline.length === 0 ? (
                                 <EmptyState compact icon={Clock} title="Sin eventos" />
                             ) : visibleTimeline.length === 0 ? (
-                                <EmptyState compact icon={Clock} title="Sin resultados" />
+                                <EmptyState linea icon={Clock} title="Sin resultados" />
                             ) : (
                                 <>
                                 <ol className="relative border-l-[2px] border-divider ml-3 space-y-3 pb-1">
@@ -456,33 +530,33 @@ const EmployeeProfileView = ({ openModal }) => {
                     </div>
 
                     {/* ── COLUMNA LATERAL — mis datos, emergencia, expediente ── */}
-                    <div className="space-y-5 min-w-0">
+                    <div className="lg:col-span-4 space-y-5 md:space-y-6 min-w-0">
 
                         <SectionCard>
                             <SectionHeader icon={User} label="Mis datos" />
-                            <div className="divide-y divide-divider -my-2.5">
-                                <Dato icon={Phone}      label="Celular"          value={emp.phone} />
-                                <Dato icon={CreditCard} label="DUI"              value={emp.dui} />
-                                <Dato icon={MapPin}     label="Sucursal"         value={branch?.name} />
-                                <Dato icon={Briefcase}  label="Contrato"         value={emp.contract_type}
+                            <div className="divide-y divide-divider -my-3">
+                                <Dato icon={Phone}      tinte="text-success-text"   label="Celular"          value={emp.phone} />
+                                <Dato icon={CreditCard} tinte="text-chart-3-text"   label="DUI"              value={emp.dui} />
+                                <Dato icon={MapPin}     tinte="text-chart-4-text"   label="Sucursal"         value={branch?.name} />
+                                <Dato icon={Briefcase}  tinte="text-brand-text"     label="Contrato"         value={emp.contract_type}
                                     sub={emp.weekly_hours ? `${emp.weekly_hours} h/sem` : null} />
-                                <Dato icon={Calendar}   label="Fecha de ingreso" value={hireDate ? formatDate(hireDate) : null} />
-                                <Dato icon={Cake}       label="Nacimiento"       value={birthDate ? formatDate(birthDate) : null} />
+                                <Dato icon={Calendar}   tinte="text-chart-1-text"   label="Fecha de ingreso" value={hireDate ? formatDate(hireDate) : null} />
+                                <Dato icon={Cake}       tinte="text-chart-6-text"   label="Nacimiento"       value={birthDate ? formatDate(birthDate) : null} />
                             </div>
                         </SectionCard>
 
                         <SectionCard>
                             <SectionHeader icon={HeartPulse} label="En caso de emergencia" />
                             {hayEmergencia ? (
-                                <div className="divide-y divide-divider -my-2.5">
-                                    <Dato icon={User}    label="Avisar a"       value={emp.emergency_contact_name} />
-                                    <Dato icon={Phone}   label="Teléfono"       value={emp.emergency_contact_phone} />
-                                    <Dato icon={Droplet} label="Tipo de sangre" value={emp.blood_type} />
+                                <div className="divide-y divide-divider -my-3">
+                                    <Dato icon={User}    tinte="text-danger-text" label="Avisar a"       value={emp.emergency_contact_name} />
+                                    <Dato icon={Phone}   tinte="text-danger-text" label="Teléfono"       value={emp.emergency_contact_phone} />
+                                    <Dato icon={Droplet} tinte="text-danger-text" label="Tipo de sangre" value={emp.blood_type} />
                                 </div>
                             ) : (
-                                <p className="text-body-sm font-medium text-content-3 leading-relaxed">
-                                    No hay a quién avisar registrado. Pídele a Talento Humano que agregue un contacto y tu tipo de sangre.
-                                </p>
+                                <EmptyState linea icon={HeartPulse} iconClass="text-danger-text" className="!py-2"
+                                    title="Sin contacto registrado"
+                                    subtitle="Pídele a Talento Humano que agregue a quién avisar y tu tipo de sangre." />
                             )}
                         </SectionCard>
 

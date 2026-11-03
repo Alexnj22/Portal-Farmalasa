@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.1 — Mi perfil: encabezado canónico y tarjeta de la persona
+
+- Reporte del usuario: «no se ve canónico». El encabezado vuelve al canon de
+  toda vista (ícono + «Mi perfil») y la persona pasa a una tarjeta en el
+  cuerpo con la anatomía de la ficha de Personal: degradé de marca, foto con
+  aro, nombre, cargo y sala.
+- Los cuatro datos de resumen van DENTRO de esa tarjeta y no como fila de
+  `StatCard`: topadas en 200px dejaban media fila vacía.
+- Nuevo: el turno de **hoy** a la vista en la tarjeta de la persona.
+- Mi semana dibuja cada turno como una franja de 6:00 a 22:00 (vertical en
+  pantalla ancha, horizontal en el teléfono); sin horario publicado se avisa
+  en una línea y los siete días quedan visibles.
+- Columnas 8/4 con ancho máximo; datos con ícono de color por tipo; el
+  contacto de emergencia vacío usa el vacío de una línea.
+
 ## v2.1417.0 — Mi perfil: rediseño y la semana con el horario real
 
 - **La semana mostraba «Libre» en días que sí se trabajan.** `semanaDelPerfil`

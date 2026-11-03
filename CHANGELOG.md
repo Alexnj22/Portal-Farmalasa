@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1415.0 — Corte Z: vista de sala para Jefe/a de Sala
+
+- **Jefe/a de Sala ve el Corte Z de su sala** (montos y PDF, alcance de sucursal).
+- **Dos lecturas del mismo reporte**, decididas en la base (`get_cortes_z`,
+  `get_corte_z_dias`) por la capacidad nueva `corte_z_ver_envio_mh`:
+  - con ella (administración, Contador Externo, QA) el Corte Z queda idéntico
+    — misma huella md5 de junio a octubre antes y después;
+  - sin ella, el consumidor final de la noche (`cof_no_se_envia_mh`) cuenta
+    como venta del libro: el cotejo cuadra y el sello no lo menciona.
+  El default es la vista de sala: un cargo al que se le olvide la capacidad no
+  ve lo reservado. Migración `20261103150830_corte_z_vista_de_sala`.
+- `en_libro` va con `coalesce(…, false)`: `venta_fiscal` da NULL con el sello en
+  NULL, y sin eso el conteo de «sin sello» se saltaba esas ventas (lo cazó la
+  comparación de huellas antes de aplicar).
+
 ## v2.1414.1 — Prueba de reservas al día con la regla de prórrogas
 
 Sólo pruebas: la reserva de ejemplo de `reservaVistaNucleo.test.js` no tenía fecha de vencimiento, y desde v2.1389.0 sin plazo no hay prórroga. En producción toda reserva lista tiene su plazo, así que el portal no cambia.

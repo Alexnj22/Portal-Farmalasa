@@ -501,6 +501,10 @@ const GRUPOS_CRUDOS = [
             { key: 'corte_z', label: 'Corte Z', desc: 'El Corte Z mensual de cada sucursal, tal como lo declaró: las ventas con tiquete, con factura y con crédito fiscal, y el total general. Al lado va el mismo número calculado desde las facturas selladas por Hacienda, para cotejarlo. Se descarga en PDF, por sucursal o todas juntas', icono: 'Receipt', hasApprove: false, hasScope: true, sub: [
                 { key: 'corte_z_descargar',  label: 'Descargar el PDF', tipo: 'cap' },
                 { key: 'corte_z_ver_montos', label: 'Ver montos',       tipo: 'cap' },
+                // Sin esta capacidad el cotejo cuenta el consumidor final de la
+                // noche como venta del libro (vista de sala). Ver la migración
+                // 20261103150830_corte_z_vista_de_sala.
+                { key: 'corte_z_ver_envio_mh', label: 'Ver el cotejo completo', tipo: 'cap' },
             ]},
             { key: 'libro_compras_completo', label: 'Libro de compras completo', desc: 'El libro de compras con lo que la farmacia compró de verdad: las compras registradas más los documentos del proveedor que llegaron por correo y nunca se registraron como compra. No reemplaza al libro de Libros IVA, que sirve para cotejarse contra el archivo original. Exporta el número de documento completo, no el cortado a 20 caracteres', icono: 'BookOpen', hasApprove: false, hasScope: true, sub: [
                 { key: 'libro_compras_completo_descargar',  label: 'Exportar el libro (CSV)', tipo: 'cap' },

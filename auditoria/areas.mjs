@@ -1148,7 +1148,7 @@ export const AREAS = [
                   'libros_iva_tab_compras', 'libros_iva_tab_anulados', 'libros_iva_tab_percepcion',
                   'libros_iva_tab_retencion', 'libros_iva_tab_renta', 'libros_iva_descargar',
                   'libros_iva_ver_montos', 'libro_compras_completo', 'libro_compras_completo_descargar',
-                  'libro_compras_completo_ver_montos', 'corte_z', 'corte_z_descargar', 'corte_z_ver_montos',
+                  'libro_compras_completo_ver_montos', 'corte_z', 'corte_z_descargar', 'corte_z_ver_montos', 'corte_z_ver_envio_mh',
                   'cierre_periodo', 'resumen_fiscal'],
         rutas: ['/libros-iva', '/libro-compras-completo', '/corte-z', '/cierre-periodo', '/resumen-fiscal'],
         archivos: [

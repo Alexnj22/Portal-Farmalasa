@@ -280,6 +280,7 @@ const SQL_DUPLICADOS = `
 WITH vivos AS (
   SELECT m.id, m.branch_id, m.fecha, m.tipo, m.tipo_codigo, m.monto, m.concepto,
          m.registrado_at, public.caja_familia_de_boleta(m.tipo_codigo, m.forma_pago) AS familia,
+         public.caja_sala_de_terminal(m.foto_lectura) AS terminal,
          ltrim(regexp_replace(coalesce(m.numero_boleta, ''), '\\D', '', 'g'), '0') AS num
     FROM public.caja_movimientos_portal m
    WHERE m.anulado_at IS NULL
@@ -292,6 +293,8 @@ por_boleta AS (
    GROUP BY branch_id, num, tipo, familia,
             round(monto, 2)
   HAVING count(*) > 1
+     -- Dos terminales POS reconocidas y distintas: dos operaciones (2026-11-03).
+     AND count(DISTINCT terminal) <= 1
 ),
 por_rafaga AS (
   SELECT branch_id, fecha, 'ráfaga'::text AS regla,

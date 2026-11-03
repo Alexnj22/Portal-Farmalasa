@@ -85,6 +85,9 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
         origen: 'De la caja',
         detalle: [
             m.numero_boleta ? `${otraVia ? 'comprobante' : 'boleta'} ${m.numero_boleta}` : null,
+            // El papel salió de la terminal POS de otra sala (la propia no
+            // funcionaba): se dice para que nadie lo lea como un error.
+            m.pos_de_otra_sala ? `POS de ${m.pos_de_otra_sala}` : null,
             otraVia,
             otraVia ? ESTADO_DE_AUTORIZACION[m.autorizacion] || null
                 : (m.erp_movimiento_id ? null : 'sin llegar a la caja'),
@@ -112,6 +115,7 @@ export function lineasDelDia({ movimientos, deBolsas, cobros, etiquetaDe = conMa
                 : null, m.autorizacion === 'PENDIENTE' || m.autorizacion === 'RECHAZADA'],
         ] : [
             ['Boleta', m.numero_boleta || null],
+            ['Terminal', m.pos_de_otra_sala ? `POS de ${m.pos_de_otra_sala}` : null],
             ['En la caja', m.erp_movimiento_id
                 ? `registrado · n.º ${m.erp_movimiento_id}`
                 : 'todavía no llega a la caja', !m.erp_movimiento_id],

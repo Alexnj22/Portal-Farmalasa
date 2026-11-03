@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1429.0 — Caja: cada boleta POS sabe de qué sala es la terminal
+
+Cuando la terminal POS de una sala no funciona, se usa la de otra: el papel
+sale con la terminal ajena y el efectivo queda en la sala que atendió. Ahora el
+portal lo sabe:
+
+- **`caja_terminales_pos`**: qué terminal es de qué sala (Salud 1 60344001,
+  Salud 2 60346001…). Se reconoce en la foto por huella, porque la lectura
+  confunde 0↔8 y 1↔4. Medido sobre 3,360 boletas: 3,165 su sala, 3 de otra
+  (las tres del 26-oct en Salud 1), 1 ambigua.
+- **El freno de boleta repetida** recibe la terminal: el mismo número de dos
+  terminales distintas es otra operación, aunque coincida el monto. Con la
+  misma terminal, o sin saberla, sigue pidiendo número y monto.
+- **En pantalla**: al anotar, «Este comprobante es del POS de Salud 2»; en la
+  lista del día y en el detalle, «POS de Salud 2».
+
+Migración `20261103230746`.
+
 ## v2.1428.2 — Recordatorios: la duración es un desplegable
 
 *«La parte de por cuánto tiempo de la toma no me gusta, mejor un select…

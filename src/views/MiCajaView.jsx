@@ -36,7 +36,7 @@ import {
     anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja, preventasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion, mandarALaCaja,
-    subirComprobanteOEncolar, boletaYaEnCaja, fetchFacturasMapfre,
+    subirComprobanteOEncolar, boletaYaEnCaja, posDeLaLectura, fetchFacturasMapfre,
 } from '@nucleo/data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import MetaDelDia from '../components/cortes/MetaDelDia';
@@ -2573,6 +2573,11 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * rastro no se puede medir cuántas veces falla, o sea que tampoco se puede
      * saber si algo lo mejoró. */
     const [lectura, setLectura] = useState(null);
+    /* De qué sala es la terminal POS del papel, cuando NO es la de esta sala
+     * (2026-11-03). Cuando la terminal propia falla se usa la de otra: es
+     * legítimo, y se dice para que quien anota y quien revisa sepan por qué el
+     * papel trae el nombre de otra sala. Avisa, no frena. */
+    const [posDeOtra, setPosDeOtra] = useState(null);
     // La escotilla, cuando el papel no se deja leer o leyó mal.
     const [aMano, setAMano] = useState(false);
     /* Cómo pagó, si es un ingreso (2026-10-17). Sólo el efectivo va a la caja;
@@ -2671,12 +2676,12 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         if (!num || !sala) return undefined;
         let vivo = true;
         const id = setTimeout(() => {
-            boletaYaEnCaja(sala, num, { tipoCodigo, formaPago: formaDeBoleta, monto: montoDeBoleta }).then((filas) => {
+            boletaYaEnCaja(sala, num, { tipoCodigo, formaPago: formaDeBoleta, monto: montoDeBoleta, lectura }).then((filas) => {
                 if (vivo) setRepetidaPara({ clave: `${sala}|${num}|${tipoCodigo}|${formaDeBoleta}|${montoDeBoleta}`, filas });
             });
         }, 400);
         return () => { vivo = false; clearTimeout(id); };
-    }, [boleta, sala, tipoCodigo, formaDeBoleta, montoDeBoleta]);
+    }, [boleta, sala, tipoCodigo, formaDeBoleta, montoDeBoleta, lectura]);
 
     /**
      * Qué pasa si ese número ya está anotado. Dos desenlaces, y no son el mismo.
@@ -2706,6 +2711,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         setFoto(f);
         setAviso(null);
         setChoqueDeSentido(null);
+        setPosDeOtra(null);
         setDeLaFoto({});
         setCotejado(false);
         if (!f) return;
@@ -2727,6 +2733,9 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         if (l.aMano) setAMano(true);
         // ¿El papel va para el otro lado? Avisa, no frena.
         setChoqueDeSentido(sentidoQueChoca(r, entra));
+        // ¿Salió de la terminal POS de otra sala? También avisa, no frena.
+        const pos = await posDeLaLectura(l.lectura);
+        setPosDeOtra(pos && Number(pos.branch_id) !== Number(sala) ? pos.sala : null);
     };
 
     const guardar = async () => {
@@ -2939,6 +2948,12 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
                     {choqueDeSentido && (
                         <Notice variant="warning" compact icon={AlertTriangle}>
                             {choqueDeSentido}
+                        </Notice>
+                    )}
+                    {posDeOtra && !leyendo && (
+                        <Notice variant="info" compact>
+                            Este comprobante es del POS de {posDeOtra}. Se anota en esta caja, y su número
+                            de boleta no se confunde con los del POS de esta sala.
                         </Notice>
                     )}
                     {problemaDeLaBoleta && (

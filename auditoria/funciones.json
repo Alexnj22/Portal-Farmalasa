@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-03T18:22:54.620Z",
+ "generado": "2026-11-03T23:08:29.187Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -220,6 +220,10 @@
   },
   "aplicar_espejo_erp": {
    "area": "facturacion-dte",
+   "por": "código"
+  },
+  "aplicar_horario_de_practica": {
+   "area": "personal",
    "por": "código"
   },
   "aplicar_horarios_bitacora": {
@@ -991,6 +995,10 @@
    "area": "plataforma",
    "por": "llamada"
   },
+  "caja_huella_de_terminal": {
+   "area": "cortes-efectivo",
+   "por": "llamada"
+  },
   "caja_ingreso_pedir_autorizacion": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -1022,6 +1030,14 @@
   "caja_movimiento_valida_bono": {
    "area": "cortes-efectivo",
    "por": "trigger"
+  },
+  "caja_pos_de_la_lectura": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "caja_sala_de_terminal": {
+   "area": "cortes-efectivo",
+   "por": "tablas"
   },
   "caja_vales_pendientes": {
    "area": "cortes-efectivo",
@@ -2989,6 +3005,10 @@
    "area": "traslados",
    "por": "código"
   },
+  "get_horas_de_practicantes": {
+   "area": "personal",
+   "por": "código"
+  },
   "get_inventory_cost_summary": {
    "area": "minmax",
    "por": "código"
@@ -4314,6 +4334,11 @@
   },
   "planilla_incapacidades_de_quincena": {
    "area": "nomina",
+   "por": "código",
+   "manual": true
+  },
+  "pos_de_otra_sala": {
+   "area": "cortes-efectivo",
    "por": "código",
    "manual": true
   },

@@ -2074,6 +2074,9 @@ Deno.serve(async (req) => {
             p_branch_id: sala, p_numero_boleta: String(body.boleta),
             p_tipo_codigo: body.tipo ? String(body.tipo).slice(0, 40) : null,
             p_forma_pago: formaPago, p_monto: monto,
+            // De qué terminal POS salió el papel (2026-11-03): la misma boleta
+            // del POS de otra sala no es la misma operación.
+            p_lectura: lecturaParaGuardar(body.lectura),
           });
         // Un fallo de lectura no frena el movimiento: es una comprobación, no
         // un permiso, y la sala tiene el papel en la mano.

@@ -736,13 +736,16 @@ ese AVISO no mira la familia. Bolsas ya lo hacía bien: su índice único lleva 
 entidad.
 
 **El POS tampoco es uno solo** (2026-11-03): cada sala tiene su terminal
-Promerica (Salud 1 60344001, Salud 2 60346001…) y cada una numera por su lado.
-El 26-oct Salud 1 anotó tres papeles de la terminal de Salud 2; el 3-nov la
-suya llegó a la 001074 y el freno la confundió con aquélla. Se decide por el
-**monto, no por la terminal**: la terminal sale de la foto y la lectura confunde
-0↔8 y 1↔4 —un duplicado real de Salud 2 salió con dos terminales distintas—, y
-en los 27 pares repetidos de la historia todos los duplicados verdaderos tenían
-el mismo monto.
+Promerica y cada una numera por su lado. Cuando la de una sala falla se usa la
+de otra —legítimo: el efectivo queda en la sala que atendió—, y el papel trae la
+terminal ajena. Qué terminal es de qué sala vive en `caja_terminales_pos`, y
+`caja_sala_de_terminal(lectura)` la reconoce en la foto comparando por
+**huella** (`caja_huella_de_terminal`: la lectura confunde 0↔8 y 1↔4). El juez
+recibe la terminal de cada lado: **distintas → otra operación**; misma o alguna
+desconocida → número y monto. «Misma terminal» NO basta sin el monto: en Salud
+4 la boleta «5» mal leída son dos operaciones reales. La pantalla dice «POS de
+Salud 2» (campo calculado `pos_de_otra_sala`, no columna: rellenarla dispararía
+la bitácora de dinero por fila). Una terminal nueva = una fila en esa tabla.
 
 ## Cuentas por cobrar: la lista se mira acá, el cobro se decide allá (2026-09-02)
 

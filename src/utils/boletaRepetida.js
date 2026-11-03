@@ -7,9 +7,9 @@
  * repite nunca. Pero sólo DENTRO de ese aparato (2026-10-28): cada banco
  * numera por su lado y una factura trae el número de su emisor. Salud 2 tiene
  * la 000956 del POS Promerica y la 000956 de la terminal de tarjeta, dos
- * operaciones reales. Y tampoco es único entre SALAS (2026-11-03): cada una
- * tiene su terminal POS, y la 001074 de Salud 1 y la de Salud 2 son dos pagos
- * distintos. Por eso la base marca cada coincidencia con
+ * operaciones reales. Y tampoco es único entre TERMINALES (2026-11-03): cada
+ * sala tiene la suya, y la 001074 del POS de Salud 1 y la del POS de Salud 2
+ * son dos pagos distintos — la base lee la terminal en la foto. Por eso la base marca cada coincidencia con
  * `misma_operacion`, y sólo ésa cuenta como duplicado.
  *
  * ── Pero hay DOS desenlaces, y no son el mismo ──────────────────────────────
@@ -36,7 +36,7 @@
  * probar sin dibujar la pantalla entera. El texto que se muestra sí se arma
  * allá: eso es redacción, no decisión.
  *
- * @param {Array<{tipo: string}>} repetidas  lo que devolvió `boleta_ya_en_caja`
+ * @param {Array<{tipo: string, misma_operacion?: boolean|null}>} repetidas  lo que devolvió `boleta_ya_en_caja`
  * @param {boolean} entra  si lo que se está anotando es un ingreso
  * @returns {{bloquea: boolean, movimiento: object}|null} `null` = no hay choque
  */

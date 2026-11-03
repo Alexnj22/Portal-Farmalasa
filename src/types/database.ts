@@ -5493,6 +5493,38 @@ export type Database = {
           },
         ]
       }
+      caja_terminales_pos: {
+        Row: {
+          branch_id: number
+          created_at: string
+          entidad: string
+          id: number
+          terminal: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          entidad?: string
+          id?: never
+          terminal: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          entidad?: string
+          id?: never
+          terminal?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "caja_terminales_pos_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       caja_tipos_movimiento: {
         Row: {
           activo: boolean
@@ -31357,6 +31389,7 @@ export type Database = {
         Args: {
           p_branch_id: number
           p_forma_pago?: string
+          p_lectura?: Json
           p_monto?: number
           p_numero_boleta: string
           p_tipo_codigo?: string
@@ -31610,6 +31643,7 @@ export type Database = {
         Args: { p_forma_pago: string; p_tipo_codigo: string }
         Returns: string
       }
+      caja_huella_de_terminal: { Args: { p: string }; Returns: string }
       caja_ingreso_pedir_autorizacion: {
         Args: { p_movimiento: number; p_nota?: string; p_pide: string }
         Returns: string
@@ -31626,9 +31660,11 @@ export type Database = {
         Args: {
           a_forma_pago: string
           a_monto: number
+          a_terminal: number
           a_tipo_codigo: string
           b_forma_pago: string
           b_monto: number
+          b_terminal: number
           b_tipo_codigo: string
         }
         Returns: boolean
@@ -31645,6 +31681,8 @@ export type Database = {
         }
         Returns: Json
       }
+      caja_pos_de_la_lectura: { Args: { p_lectura: Json }; Returns: Json }
+      caja_sala_de_terminal: { Args: { p_lectura: Json }; Returns: number }
       caja_vales_pendientes: {
         Args: never
         Returns: {
@@ -36251,6 +36289,12 @@ export type Database = {
       planilla_incapacidades_de_quincena: {
         Args: { p_desde: string; p_hasta: string }
         Returns: Json
+      }
+      pos_de_otra_sala: {
+        Args: {
+          m: Database["public"]["Tables"]["caja_movimientos_portal"]["Row"]
+        }
+        Returns: string
       }
       precio_de_apartado_valido: {
         Args: { p_factor: number; p_precio: number; p_producto: number }

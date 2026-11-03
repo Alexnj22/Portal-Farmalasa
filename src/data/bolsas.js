@@ -829,7 +829,7 @@ export async function boletaYaRegistrada(branchId, numeroBoleta) {
  * puede impedir registrar un movimiento que ya ocurrió. El freno de verdad lo
  * pone el servidor.
  */
-export async function boletaYaEnCaja(branchId, numeroBoleta, { tipoCodigo = null, formaPago = null, monto = null } = {}) {
+export async function boletaYaEnCaja(branchId, numeroBoleta, { tipoCodigo = null, formaPago = null, monto = null, lectura = null } = {}) {
     if (!branchId || !String(numeroBoleta || '').trim()) return [];
     // Con qué se anota: la base marca cada coincidencia con `misma_operacion`
     // (el mismo número de otro banco u otro emisor NO es la misma operación).
@@ -839,6 +839,10 @@ export async function boletaYaEnCaja(branchId, numeroBoleta, { tipoCodigo = null
         p_tipo_codigo: tipoCodigo,
         p_forma_pago: formaPago,
         p_monto: monto,
+        // La lectura de la foto dice de qué terminal POS salió el papel: la
+        // misma boleta de la terminal de OTRA sala no es la misma operación
+        // (2026-11-03, la 001074 de Salud 1 y la de Salud 2).
+        p_lectura: lectura?.leido ? { leido: { numeros_del_papel: lectura.leido.numeros_del_papel ?? [] } } : null,
     });
     if (error) {
         console.error('caja: no se pudo comprobar la boleta:', error.message);
@@ -1536,6 +1540,22 @@ export function fetchAnotadosDelPortal({ desde, hasta, branchId = null }) {
     });
 }
 
+/**
+ * De qué sala es la terminal POS que imprimió el papel recién leído, o `null`
+ * si no se reconoce. Cuando la terminal de una sala falla se usa la de otra
+ * (2026-11-03): el papel sale con la terminal ajena y el efectivo queda acá.
+ * Sólo avisa, así que un fallo devuelve `null` y no frena nada.
+ */
+export async function posDeLaLectura(lectura) {
+    const numeros = lectura?.leido?.numeros_del_papel;
+    if (!Array.isArray(numeros) || !numeros.length) return null;
+    const { data, error } = await supabase.rpc('caja_pos_de_la_lectura', {
+        p_lectura: { leido: { numeros_del_papel: numeros } },
+    });
+    if (error) { console.error('caja: terminal de la boleta:', error.message); return null; }
+    return data || null;
+}
+
 /** Los movimientos del cajón que escribió el portal hoy en esta sala. */
 export async function fetchMovimientosDelPortal(sala, dia = null) {
     // El día de la CAJA, no el del reloj. A las once de la noche con la caja sin
@@ -1553,7 +1573,10 @@ export async function fetchMovimientosDelPortal(sala, dia = null) {
               // Cómo se pagó y si espera autorización (2026-10-17): lo que no
               // es efectivo no llega a la caja A PROPÓSITO, y la lista tiene
               // que poder distinguirlo de lo que no llegó por un error.
-              + ' forma_pago, comprobante_total, autorizacion, autorizacion_nota')
+              + ' forma_pago, comprobante_total, autorizacion, autorizacion_nota,'
+              // Campo calculado en la base: la sala de la terminal POS cuando
+              // el papel salió de la de OTRA sala (2026-11-03).
+              + ' pos_de_otra_sala')
         .eq('branch_id', sala).eq('fecha', cual)
         .order('registrado_at', { ascending: false });
     if (error) { console.error('caja: movimientos del portal:', error.message); return []; }

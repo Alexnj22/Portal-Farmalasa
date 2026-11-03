@@ -1,4 +1,4 @@
-import { supabase } from '../supabaseClient';
+import { subirArchivo } from '../utils/storageFiles';
 
 // La foto que acompaña a un movimiento de inventario: subirla y devolver su URL.
 //
@@ -38,11 +38,13 @@ export async function subirEvidencia(fotos, { carpeta = 'inventario', salaId, us
     for (const [i, f] of [...(fotos ?? [])].entries()) {
         const ext = (f.name.split('.').pop() || 'jpg').toLowerCase();
         const path = `${base}/${Date.now()}-${i}.${ext}`;
-        const { error } = await supabase.storage
-            .from(BUCKET_EVIDENCIA).upload(path, f, { contentType: f.type });
-        if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
-        const { data } = supabase.storage.from(BUCKET_EVIDENCIA).getPublicUrl(path);
-        if (data?.publicUrl) urls.push(data.publicUrl);
+        let url;
+        try {
+            url = await subirArchivo(BUCKET_EVIDENCIA, path, f, { contentType: f.type });
+        } catch (err) {
+            throw new Error(`No se pudo subir la foto: ${err.message}`);
+        }
+        if (url) urls.push(url);
     }
     return urls;
 }

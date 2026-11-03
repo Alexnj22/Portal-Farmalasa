@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1413.9 — Subir una foto ya no se traba cuando el servicio de archivos guarda y no contesta
+
+El 2-nov entre las 14:57 y las 15:38 Salud 1 no pudo anotar ingresos del POS: cada foto de boleta se guardaba, pero el servicio de archivos tardaba 60 s en contestar y lo hacía con un error, así que el portal no registraba el ingreso. Ahora, mientras la foto sube, el portal comprueba si ya quedó guardada y sigue en cuanto la encuentra; ante un error temporal vuelve a preguntar si el archivo está y reintenta hasta dos veces. Vale para la foto de boleta de caja y bolsas, los comprobantes de abonos a crédito y de distribución, la evidencia de cortes y de inventario, y todo lo que ya usaba la subida común del portal.
+
 ## v2.1413.8 — Encuestas a clientes: una respuesta por cliente al mes
 
 Cada cliente puede responder la misma encuesta una vez al mes (antes, una sola vez para siempre). El tope vale por teléfono y, cuando el teléfono corresponde a una ficha, por cliente en todos los canales: entrevista, tablet, QR y app. Los puntos se siguen dando sólo si el teléfono corresponde a una sola ficha, y una vez al mes por encuesta. En la app, la encuesta vuelve a aparecer el mes siguiente.

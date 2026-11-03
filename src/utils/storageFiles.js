@@ -15,6 +15,96 @@ const PRIVATE_BUCKETS = ['documents', 'payment-proofs', 'empleados', 'purchase-d
 const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/([^/]+)\/(.+?)(?:\?.*)?$/;
 
 /**
+ * Cómo se defiende la subida de un almacén que guarda y no contesta.
+ *
+ * Incidente 2026-11-02, Salud 1, 14:57–15:38: cada foto de boleta del POS se
+ * GUARDABA en el bucket en menos de un segundo, pero la respuesta se colgaba
+ * 60 s y llegaba como 504 — el servicio de archivos de Supabase se trababa en
+ * un paso posterior suyo (`canceling statement due to statement timeout` al
+ * encolar el evento «archivo creado»). El portal leía el 504 como «no se
+ * subió», no registraba el ingreso, y la sala no pudo anotar ingresos del POS
+ * durante 40 minutos con 16 fotos perfectamente guardadas.
+ *
+ * Por eso «falló» no se le cree a la respuesta: se le pregunta al bucket. Y
+ * no se espera la respuesta entera: mientras la subida está en vuelo se mira
+ * cada pocos segundos si el archivo ya está. Todos los paths de este portal son
+ * únicos por construcción (`Date.now()`, el usuario, un id), así que si el
+ * objeto existe, es el nuestro.
+ */
+const SUBIDA = {
+    intentos: 3,
+    primerVistazo: 6_000,        // una foto de 600 kB en datos móviles tarda 2-4 s; antes de esto, mirar es ruido
+    entreVistazos: 4_000,
+    tope: 75_000,                // más que el 504 del gateway (60 s): si ni así contestó, se da por perdido este intento
+    pausaAntesDeReintentar: 1_500,
+};
+
+const esperar = (ms) => new Promise((r) => setTimeout(r, ms));
+
+/** Estado HTTP de un error de storage-js, venga de donde venga. */
+function estadoDe(error) {
+    const n = Number(error?.status ?? error?.originalError?.status ?? error?.statusCode);
+    return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** ¿Vale la pena reintentar? Red caída, timeout o 5xx sí; un 4xx es una decisión del servidor. */
+export function esPasajero(error) {
+    const s = estadoDe(error);
+    if (s == null) return true;                    // sin estado = no hubo respuesta (red, CORS de un 504, timeout propio)
+    return s === 408 || s === 429 || s >= 500;
+}
+
+/** El objeto ya existe: en un REINTENTO significa que el intento anterior sí llegó. */
+export function esDuplicado(error) {
+    const s = estadoDe(error);
+    return s === 409 || /already exists|duplicate/i.test(String(error?.message ?? ''));
+}
+
+async function existe(almacen, path) {
+    try {
+        const { data } = await almacen.exists(path);
+        return data === true;
+    } catch {
+        return false;                              // si ni preguntar se puede, no se afirma nada
+    }
+}
+
+async function subirUnaVez(almacen, path, archivo, opciones, { esReintento }) {
+    let enVuelo = true;
+    const subida = almacen.upload(path, archivo, opciones).then(
+        ({ error }) => {
+            if (!error) return { ok: true };
+            // En el primer intento un duplicado es un choque de verdad; en un
+            // reintento es el intento anterior que llegó sin avisar.
+            return { ok: esReintento && esDuplicado(error), error };
+        },
+        (error) => ({ ok: false, error }),
+    ).finally(() => { enVuelo = false; });
+
+    const vigilancia = (async () => {
+        await esperar(SUBIDA.primerVistazo);
+        while (enVuelo) {
+            if (await existe(almacen, path)) return { ok: true };
+            await esperar(SUBIDA.entreVistazos);
+        }
+        return new Promise(() => {});              // terminó la subida: que gane su respuesta
+    })();
+
+    const tope = esperar(SUBIDA.tope).then(() => ({ ok: false, error: { message: 'El servicio de archivos no respondió a tiempo.' } }));
+
+    const r = await Promise.race([subida, vigilancia, tope]);
+    if (r.ok) return r;
+    // La respuesta dice que falló. El 504 del 2-nov llegaba con el archivo ya guardado.
+    if (esPasajero(r.error) && await existe(almacen, path)) return { ok: true };
+    return r;
+}
+
+function mensajeDeSubida(error) {
+    if (esPasajero(error)) return 'El servicio de archivos no está respondiendo. Espera un momento y vuelve a intentarlo.';
+    return error?.message || 'No se pudo subir el archivo.';
+}
+
+/**
  * Sube un archivo y devuelve su URL formato-public: el IDENTIFICADOR que se
  * guarda en la base (nunca una firmada, que expira). Lanza si la subida falla.
  *
@@ -28,10 +118,19 @@ const STORAGE_PATH_RE = /\/storage\/v1\/object\/(?:public|sign|authenticated)\/(
  * @param {{ upsert?: boolean, contentType?: string }} [opciones]
  */
 export async function subirArchivo(bucket, path, archivo, { upsert = false, contentType } = {}) {
-    const { error } = await supabase.storage.from(bucket)
-        .upload(path, archivo, { upsert, ...(contentType ? { contentType } : {}) });
-    if (error) throw new Error(error.message || 'No se pudo subir el archivo.');
-    return supabase.storage.from(bucket).getPublicUrl(path).data?.publicUrl ?? null;
+    const almacen = supabase.storage.from(bucket);
+    const opciones = { upsert, ...(contentType ? { contentType } : {}) };
+    const url = () => almacen.getPublicUrl(path).data?.publicUrl ?? null;
+
+    let ultimo = null;
+    for (let intento = 1; intento <= SUBIDA.intentos; intento++) {
+        const r = await subirUnaVez(almacen, path, archivo, opciones, { esReintento: intento > 1 });
+        if (r.ok) return url();
+        ultimo = r.error;
+        if (!esPasajero(ultimo)) break;          // 403, 413, tipo no permitido: reintentar no cambia nada
+        if (intento < SUBIDA.intentos) await esperar(SUBIDA.pausaAntesDeReintentar);
+    }
+    throw new Error(mensajeDeSubida(ultimo));
 }
 
 // Extrae {bucket, path} de una URL formato-public de Supabase Storage — para

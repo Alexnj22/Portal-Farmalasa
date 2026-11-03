@@ -1,6 +1,6 @@
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { signPhotosDeep } from '../utils/storageFiles';
+import { signPhotosDeep, subirArchivo } from '../utils/storageFiles';
 import { conBitacora } from './audit';
 import { sumarDias } from '../utils/fecha';
 
@@ -561,11 +561,11 @@ export function marcarAbonosImpresos(ids) {
 export async function subirEvidenciaDeDiferencia(archivo, { salaId, userId }) {
     const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
     const path = `cortes/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage
-        .from('payment-proofs').upload(path, archivo, { contentType: archivo.type });
-    if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
-    const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
-    return data?.publicUrl || null;
+    try {
+        return await subirArchivo('payment-proofs', path, archivo, { contentType: archivo.type });
+    } catch (err) {
+        throw new Error(`No se pudo subir la foto: ${err.message}`);
+    }
 }
 
 /**

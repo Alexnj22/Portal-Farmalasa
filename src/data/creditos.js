@@ -1,4 +1,5 @@
 import { supabase } from '../supabaseClient';
+import { subirArchivo } from '../utils/storageFiles';
 import { fetchAllRows } from '../utils/supabaseUtils';
 /* `aBase64Reducido` es la MISMA reducción que usa la boleta de una bolsa —una
  * foto de teléfono son 4 MB y el lector no necesita más resolución que la del
@@ -349,11 +350,11 @@ export async function leerPagoDeCredito(archivo, { forma, saldo }) {
 export async function subirComprobanteDeAbono(archivo, sala) {
     const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
     const path = `abonos-credito/${sala}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-    const { error } = await supabase.storage
-        .from('payment-proofs').upload(path, archivo, { contentType: archivo.type });
-    if (error) throw new Error(`No se pudo subir el comprobante: ${error.message}`);
-    const { data } = supabase.storage.from('payment-proofs').getPublicUrl(path);
-    return data?.publicUrl || null;
+    try {
+        return await subirArchivo('payment-proofs', path, archivo, { contentType: archivo.type });
+    } catch (err) {
+        throw new Error(`No se pudo subir el comprobante: ${err.message}`);
+    }
 }
 
 /**

@@ -1,7 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { signPhotosDeep } from '../utils/storageFiles';
+import { signPhotosDeep, subirArchivo } from '../utils/storageFiles';
 import { repartoDeUnaSalida } from '../utils/repartoDeSalida';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
@@ -752,11 +752,11 @@ export async function guardarLecturaDeBoleta(operacionId, lectura) {
 export async function subirComprobante(archivo, { salaId, userId }) {
     const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
     const path = `bolsas/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage
-        .from(BUCKET_COMPROBANTES).upload(path, archivo, { contentType: archivo.type });
-    if (error) throw new Error(`No se pudo subir la foto: ${error.message}`);
-    const { data } = supabase.storage.from(BUCKET_COMPROBANTES).getPublicUrl(path);
-    return data?.publicUrl || null;
+    try {
+        return await subirArchivo(BUCKET_COMPROBANTES, path, archivo, { contentType: archivo.type });
+    } catch (err) {
+        throw new Error(`No se pudo subir la foto: ${err.message}`);
+    }
 }
 
 /**

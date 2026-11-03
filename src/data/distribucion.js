@@ -11,6 +11,7 @@
 // `docs/DISTRIBUCION-COMO-FUNCIONA-2026-10-24.md`.
 import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { subirArchivo } from '../utils/storageFiles';
 import { shortEmployeeName } from '../utils/nameUtils';
 import { anotar } from './audit';
 
@@ -840,9 +841,11 @@ export async function leerComprobanteBase64(imagenBase64, mimeType, montoEsperad
 export async function subirComprobante(archivo, pedidoId) {
     const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
     const path = `distribucion/${pedidoId}/${Date.now()}.${ext}`;
-    const { error } = await supabase.storage.from('dist-comprobantes').upload(path, archivo, { contentType: archivo.type });
-    if (error) throw new Error(`No se pudo subir el comprobante: ${error.message}`);
-    return supabase.storage.from('dist-comprobantes').getPublicUrl(path).data?.publicUrl ?? null;
+    try {
+        return await subirArchivo('dist-comprobantes', path, archivo, { contentType: archivo.type });
+    } catch (err) {
+        throw new Error(`No se pudo subir el comprobante: ${err.message}`);
+    }
 }
 
 /** Deja el comprobante y lo que se decidió sobre él en el pago. */

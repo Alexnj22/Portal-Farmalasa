@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1425.1 — Migración de Saly guardada en el repo
+
+`20261103184923_resumen_sala_venta_buena` se aplicó en producción y no tenía su
+archivo local. Se rescató del registro de producción, tal cual se aplicó.
+
 ## v2.1425.0 — Bienestar: burbujas fluidas y el 5·4·3·2·1 explicado
 
 *«El juego de las burbujas se me traba, mejóralo, que sea fluido… el 54321

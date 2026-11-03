@@ -388,7 +388,7 @@ function Raiz() {
             <Stack.Screen name="burbujas" options={{ title: 'Burbujas', ...BARRA_DE_JUEGO }} />
             <Stack.Screen name="memoria" options={{ title: 'Memoria', ...BARRA_DE_JUEGO }} />
             <Stack.Screen name="anclaje" options={{ title: '5 · 4 · 3 · 2 · 1', ...BARRA_DE_JUEGO }} />
-            <Stack.Screen name="jardin" options={{ title: 'Jardín zen', ...BARRA_DE_JUEGO, gestureEnabled: false }} />
+            <Stack.Screen name="torre" options={{ title: 'Torre', ...BARRA_DE_JUEGO }} />
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
             <Stack.Screen name="legal" options={{ title: '' }} />
             <Stack.Screen name="inyecciones" options={{ title: 'Mis inyecciones' }} />

@@ -33,13 +33,13 @@ const ARCHIVOS = {
   'toque-4': require('../assets/sonidos/toque-4.wav'),
   'toque-5': require('../assets/sonidos/toque-5.wav'),
   'toque-6': require('../assets/sonidos/toque-6.wav'),
-  arena: require('../assets/sonidos/arena.wav'),
-  piedra: require('../assets/sonidos/piedra.wav'),
+  bloque: require('../assets/sonidos/bloque.wav'),
+  derrumbe: require('../assets/sonidos/derrumbe.wav'),
   gota: require('../assets/sonidos/gota.wav'),
 };
 // Los que pueden sonar encima de sí mismos (reventar rápido) llevan varios
 // reproductores y se turnan; con uno solo, el segundo «pop» cortaría al primero.
-const VOCES = { 'pop-1': 3, 'pop-2': 3, 'pop-3': 3, voltear: 2, 'toque-1': 2, 'toque-2': 2, 'toque-3': 2, 'toque-4': 2, 'toque-5': 2, 'toque-6': 2, piedra: 2 };
+const VOCES = { 'pop-1': 3, 'pop-2': 3, 'pop-3': 3, voltear: 2, 'toque-1': 2, 'toque-2': 2, 'toque-3': 2, 'toque-4': 2, 'toque-5': 2, 'toque-6': 2, bloque: 3 };
 
 const CLAVE_SONIDO = 'puntos_salud_bienestar_sonido';
 const CLAVE_VIBRA = 'puntos_salud_bienestar_vibra';
@@ -124,25 +124,6 @@ export function sonar(nombre, { volumen = 1, tono = 1 } = {}) {
   } catch { /* un sonido que no sale no puede romper el juego */ }
 }
 
-/** Un sonido en bucle (la arena del jardín). Devuelve con qué subirlo, bajarlo y pararlo. */
-export function bucle(nombre) {
-  modo();
-  const [p] = preparar(nombre);
-  let sonando = false;
-  if (p) p.loop = true;
-  return {
-    volumen(v) {
-      if (!p) return;
-      const quiere = ajustes.sonido && v > 0.01;
-      try {
-        p.volume = Math.min(1, v);
-        if (quiere && !sonando) { p.play(); sonando = true; } else if (!quiere && sonando) { p.pause(); sonando = false; }
-      } catch { /* nada */ }
-    },
-    parar() { try { p?.pause(); } catch { /* nada */ } sonando = false; },
-  };
-}
-
 function callarTodo() {
   Object.values(reproductores).flat().forEach((p) => { try { p.pause(); } catch { /* nada */ } });
 }
@@ -157,11 +138,11 @@ export function callar(nombres) {
 const ANDROID = Platform.OS === 'android';
 const golpe = (estilo) => { if (ajustes.vibra) Haptics.impactAsync(estilo).catch(() => {}); };
 export const tacto = {
-  /** Un roce: voltear una carta, un paso del jardín. */
+  /** Un roce: voltear una carta, cambiar una opción. */
   roce: () => golpe(ANDROID ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light),
   /** Un toque claro: reventar, contar. */
   toque: () => golpe(ANDROID ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Rigid),
-  /** Un golpe firme: una piedra que cae. */
+  /** Un golpe firme: un bloque perfecto, la torre que se cae. */
   golpe: () => golpe(Haptics.ImpactFeedbackStyle.Heavy),
   /** Algo salió bien. */
   exito: () => { if (ajustes.vibra) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); },

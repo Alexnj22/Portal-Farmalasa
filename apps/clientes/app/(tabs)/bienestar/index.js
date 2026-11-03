@@ -4,8 +4,8 @@
 //
 // Cada juego es una tarjeta del color de su escena (las mismas de
 // componentes/juegos/Escena), con el ícono grande de fondo: al entrar, el
-// juego continúa el color de la tarjeta que se tocó. El jardín zen va arriba
-// y a lo ancho: es el más trabajado y el que más invita a quedarse.
+// juego continúa el color de la tarjeta que se tocó. La torre va arriba y
+// a lo ancho: es el más trabajado y el que más invita a volver.
 import { Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pantalla, Seccion, Tarjeta } from '../../../componentes/ui';
@@ -17,7 +17,7 @@ import { colorSistema } from '../../../componentes/sistema';
 import { useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 
-const DESTACADO = { ruta: '/jardin', sf: 'mountain.2.fill', titulo: 'Jardín zen', detalle: 'Rastrilla la arena, mueve las piedras y escucha cómo suena.', escena: 'jardin', nuevo: true };
+const DESTACADO = { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre', nuevo: true };
 const EJERCICIOS = [
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
   { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Revienta el plástico, una o en fila.', escena: 'burbujas' },

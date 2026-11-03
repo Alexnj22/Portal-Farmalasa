@@ -30,7 +30,7 @@ export const ESCENAS = {
   burbujas: ['#2A0F45', '#5A1A6E', '#8A1E6F'],
   memoria: ['#062B3A', '#0E4D5C', '#1D6B5E'],
   anclaje: ['#3A1206', '#7A2E14', '#8A1E55'],
-  jardin: ['#2B2116', '#4A3826', '#5E4630'],
+  torre: ['#0A1240', '#26308A', '#7A3B9A'],
 };
 
 function Luz({ i, ancho, alto, reloj }) {
@@ -69,7 +69,7 @@ function Luces({ cuantas = 9 }) {
 
 /**
  * La pantalla de un juego. `fijo`: sin desplazamiento (el tablero de burbujas
- * o el jardín, que usan el dedo para jugar y no pueden pelearse con el scroll).
+ * o la torre, que usan el dedo para jugar y no pueden pelearse con el scroll).
  */
 export function Escena({ colores, children, fijo = false, luces = true, estilo }) {
   const ins = useSafeAreaInsets();

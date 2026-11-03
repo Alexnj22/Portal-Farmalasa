@@ -43,7 +43,7 @@ import { useTema } from '../tema/tema';
 // las que tienen su propia barra de botones abajo (Facturas, la Encuesta).
 const OCULTA = new Set(['chat', 'guia', 'bienvenida', 'entrar', 'registro', 'index', 'oferta', 'producto', 'o', 'mis-puntos', 'legal', 'encuesta', 'facturas',
   // Los ejercicios de Bienestar (2026-11-03): la pantalla entera es el juego.
-  'respira', 'burbujas', 'memoria', 'anclaje', 'jardin']);
+  'respira', 'burbujas', 'memoria', 'anclaje', 'torre']);
 // Pestañas donde tampoco: el carrito tiene abajo la barra de «Reservar».
 const PESTANA_OCULTA = new Set(['carrito']);
 

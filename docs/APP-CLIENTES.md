@@ -58,7 +58,7 @@ modernos… agreguemos algún otro más trabajado.»*
   interruptores en cada juego (sonido, vibración), guardados en el llavero. El
   audio se MEZCLA con la música del cliente (`mixWithOthers`), no la corta.
 - **Los sonidos son nuestros**: sintetizados por
-  `scripts/app-clientes-sonidos.mjs` (19 WAV, ~1 MB, sin licencia de terceros).
+  `scripts/app-clientes-sonidos.mjs` (19 WAV, ~0.9 MB, sin licencia de terceros).
   Para afinar uno se cambia un número ahí y se regenera.
 - **La escena** (`componentes/juegos/Escena.js`): degradado propio por juego,
   luces que suben despacio (Skia), barra de arriba transparente
@@ -68,10 +68,13 @@ modernos… agreguemos algún otro más trabajado.»*
   una vez por segundo: se hace con los ojos cerrados. Burbujas se revienta
   también **arrastrando**. Memoria tiene tres niveles, rachas, estrellas,
   tiempo y récord por nivel. El 5-4-3-2-1 se cuenta tocando.
-- **Jardín zen** (`app/jardin.js`, el nuevo): arena para rastrillar, piedras
-  que se mueven con anillos alrededor, huella al tocar, «Alisar». El trazo en
-  curso se arma en el hilo de la interfaz y sólo al soltar se suma a los surcos
-  hechos. Tiene el gesto de volver apagado: el borde izquierdo es arena.
+- **Torre** (`app/torre.js`, el nuevo; reemplazó al jardín zen el mismo día
+  —«el zen no me gusta»—): un bloque va y viene y se toca para soltarlo; lo que
+  sobresale cae girando. Perfecto = destello + nota que sube con la racha, y
+  desde el tercero seguido el bloque recupera ancho. Cada piso es más rápido,
+  el cielo se oscurece hacia las estrellas, confeti cada 10 pisos y, al perder,
+  la cámara se aleja para mostrar la torre entera. El bloque que se mueve y el
+  toque se leen en el hilo de la interfaz: se corta donde se ve.
 
 ## La sesión
 

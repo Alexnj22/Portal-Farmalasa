@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1423.0 — Bienestar: la torre reemplaza al jardín zen
+
+*«El zen no me gusta, pon otro juego entretenido… que sea muy visual,
+moderno, entretenido.»*
+
+- **Torre** (`app/torre.js`) reemplaza al jardín zen: se suelta cada bloque
+  sobre el anterior y lo que sobresale cae girando. Perfecto = destello y una
+  nota que sube con la racha; desde el tercero seguido el bloque recupera
+  ancho. Más rápido en cada piso, cielo que se vuelve estrellas, confeti cada
+  10 pisos, récord en el teléfono y, al perder, la cámara se aleja para
+  mostrar la torre entera.
+- Dos sonidos nuevos sintetizados (`bloque`, `derrumbe`); se quitan `arena` y
+  `piedra`, que eran sólo del jardín.
+- El portal ofrece la torre como destino del botón de una historia (ninguna
+  historia apuntaba al jardín).
+
 ## v2.1422.2 — Caja: la boleta del POS de otra sala ya no frena la propia
 
 Salud 1 no podía anotar la boleta 001074 (Claro, $22.75): «ya se anotó el

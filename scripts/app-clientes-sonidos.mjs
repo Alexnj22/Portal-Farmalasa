@@ -101,30 +101,34 @@ function colchon(notas, dur, sube) {
   return suavizar(pasaBajos(x, 1800), 0.05, 0.25);
 }
 
-// Arena: ruido marrón filtrado, en bucle sin costura (los extremos se cruzan).
-function arena(dur) {
-  const n = Math.round(dur * SR); const solape = Math.round(0.25 * SR);
-  const larga = new Float32Array(n + solape);
-  let b = 0;
-  for (let i = 0; i < larga.length; i++) {
-    b = (b + 0.02 * ruido()) / 1.02;
-    larga[i] = b * 3 + ruido() * 0.12 * (0.6 + 0.4 * Math.sin(i / SR * 2 * Math.PI * 7.3));
+// Un bloque de madera que se apoya: golpe corto que baja de tono, con chasquido.
+function bloque() {
+  const x = muestras(0.2); let fase = 0;
+  for (let i = 0; i < x.length; i++) {
+    const t = i / SR; const f = 210 + 260 * Math.exp(-t * 55);
+    fase += (2 * Math.PI * f) / SR;
+    x[i] = Math.sin(fase) * Math.exp(-t * 26) + ruido() * Math.exp(-t * 240) * 0.55;
   }
-  pasaBajos(larga, 2600);
-  const x = new Float32Array(n);
-  for (let i = 0; i < n; i++) x[i] = larga[i + solape];
-  for (let i = 0; i < solape; i++) { const k = i / solape; x[i] = x[i] * k + larga[i] * (1 - k); }
-  return x;
+  return mezclar(suavizar(pasaBajos(x, 4200), 0.001, 0.02), marimba(nota(64), 0.25).map((v) => v * 0.3));
 }
 
-function piedra() {
-  const x = muestras(0.18);
-  for (let i = 0; i < x.length; i++) {
-    const t = i / SR;
-    x[i] = Math.sin(2 * Math.PI * 180 * t) * Math.exp(-t * 40) * 0.8 + ruido() * Math.exp(-t * 90) * 0.6
-      + Math.sin(2 * Math.PI * 1250 * t) * Math.exp(-t * 120) * 0.3;
-  }
-  return suavizar(pasaBajos(x, 3500), 0.001, 0.02);
+// La torre que se cae: golpes que bajan y un retumbo.
+function derrumbe() {
+  const golpe = (f0, dur) => {
+    const x = muestras(dur); let fase = 0;
+    for (let i = 0; i < x.length; i++) {
+      const t = i / SR; const f = f0 * (0.6 + 0.4 * Math.exp(-t * 18));
+      fase += (2 * Math.PI * f) / SR;
+      x[i] = Math.sin(fase) * Math.exp(-t * 14) + ruido() * Math.exp(-t * 60) * 0.5;
+    }
+    return suavizar(pasaBajos(x, 1800), 0.001, 0.05);
+  };
+  const retumbo = muestras(0.9);
+  let b = 0;
+  for (let i = 0; i < retumbo.length; i++) { b = (b + 0.03 * ruido()) / 1.03; retumbo[i] = b * 4 * Math.exp(-(i / SR) * 4); }
+  return mezclar(golpe(180, 0.4), retrasar(golpe(140, 0.4).map((v) => v * 0.8), 0.11),
+    retrasar(golpe(110, 0.45).map((v) => v * 0.7), 0.24), retrasar(golpe(85, 0.5).map((v) => v * 0.6), 0.4),
+    suavizar(pasaBajos(retumbo, 500), 0.01, 0.2));
 }
 
 function gota() {
@@ -159,8 +163,8 @@ const SONIDOS = {
   inhalar: () => colchon([57, 64, 69, 76], 4, true),
   exhalar: () => colchon([57, 64, 69, 72], 6, false),
   ...Object.fromEntries(PENTA.map((n, i) => [`toque-${i + 1}`, () => marimba(nota(n), 0.6)])),
-  arena: () => arena(2.4),
-  piedra,
+  bloque,
+  derrumbe,
   gota,
 };
 
@@ -178,7 +182,7 @@ function escribirWav(nombre, x, pico) {
 }
 
 // Los fondos más bajos que los efectos: acompañan, no tapan.
-const PICOS = { arena: 0.5, inhalar: 0.45, exhalar: 0.45, campana: 0.6 };
+const PICOS = { inhalar: 0.45, exhalar: 0.45, campana: 0.6 };
 let total = 0;
 for (const [nombre, hacer] of Object.entries(SONIDOS)) total += escribirWav(nombre, hacer(), PICOS[nombre] ?? 0.8);
 console.log(`✓ ${Object.keys(SONIDOS).length} sonidos en ${DESTINO} (${Math.round(total / 1024)} KB)`);

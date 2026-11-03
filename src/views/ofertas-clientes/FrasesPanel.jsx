@@ -78,7 +78,7 @@ export default function FrasesPanel({ busqueda, puedeEditar, showToast }) {
         <>
             <Notice variant="info" title={deHoy ? `Hoy en la app: «${deHoy.texto}»` : 'Hoy sale una frase de las que trae la app'}>
                 {deManana ? `Mañana a las 8:00: «${deManana.texto}».` : 'Mañana sale una de las que trae la app.'}
-                {' '}{enCola ? `La cola alcanza para ${enCola} día${enCola === 1 ? '' : 's'} más.` : 'La cola está vacía: cuando no hay frases acá, la app usa las suyas (cerca de 300).'}
+                {' '}{enCola ? `La cola alcanza para ${enCola} día${enCola === 1 ? '' : 's'} más.` : 'La cola está vacía: cuando no hay frases aquí, la app usa las suyas (cerca de 300).'}
             </Notice>
             <div className="flex justify-end">
                 <FilterBar acciones={acciones} activeCount={fEstado ? 1 : 0} onClear={fEstado ? () => setFEstado('') : undefined}>

@@ -1860,6 +1860,42 @@ export type Database = {
           },
         ]
       }
+      app_frases: {
+        Row: {
+          activa: boolean
+          categoria: string
+          creada_por: string | null
+          created_at: string
+          fecha: string | null
+          id: number
+          mostrada_el: string | null
+          texto: string
+          updated_at: string
+        }
+        Insert: {
+          activa?: boolean
+          categoria?: string
+          creada_por?: string | null
+          created_at?: string
+          fecha?: string | null
+          id?: never
+          mostrada_el?: string | null
+          texto: string
+          updated_at?: string
+        }
+        Update: {
+          activa?: boolean
+          categoria?: string
+          creada_por?: string | null
+          created_at?: string
+          fecha?: string | null
+          id?: never
+          mostrada_el?: string | null
+          texto?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_historias: {
         Row: {
           boton: string | null
@@ -30914,6 +30950,8 @@ export type Database = {
       app_cliente_preregistros_purgar: { Args: never; Returns: number }
       app_cliente_sesiones_purgar: { Args: never; Returns: number }
       app_existencias_netas: { Args: { p_ids: number[] }; Returns: Json }
+      app_frase_del_dia: { Args: never; Returns: Json }
+      app_frase_dia: { Args: never; Returns: string }
       app_historia_quienes_vieron: {
         Args: { p_historia: string }
         Returns: Json
@@ -35650,7 +35688,10 @@ export type Database = {
       ligar_notas_a_compras: { Args: never; Returns: Json }
       linea_telefonica_de: { Args: { p_texto: string }; Returns: string }
       list_sessions: { Args: never; Returns: Json }
-      lista_de_precio_del_cliente: { Args: { p_customer: number }; Returns: string }
+      lista_de_precio_del_cliente: {
+        Args: { p_customer: number }
+        Returns: string
+      }
       lock_module: {
         Args: { p_hours?: number; p_module_key: string; p_reason?: string }
         Returns: Json

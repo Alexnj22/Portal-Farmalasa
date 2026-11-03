@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1419.1 — Frases del día: tabla en producción y app-clientes desplegada
+
+Migración `20261103180542_app_frases_del_dia` aplicada en producción, `app-clientes`
+desplegada con la acción `frase_del_dia`, tipos regenerados y funciones mapeadas en
+la auditoría. Copy: «aquí» en el aviso de cola vacía.
+
 ## v2.1419.0 — Frases del día desde el portal (pendiente: migración y despliegue)
 
 Opción A del pedido «que siempre haya frases»: el equipo carga frases en
@@ -32,10 +38,8 @@ alcanza la cola, con vista previa en los colores de la app.
 
 - Tabla `app_frases` + `app_frase_del_dia()` (DEFINER, sólo `service_role`, con
   candado para que no salgan dos de la cola el mismo día). Probada en el entorno
-  de pruebas. **Borrador en `docs/borradores/app_frases.sql`: falta aplicarla a
-  producción y renombrarla a migración con su versión.**
-- `app-clientes`: acción pública `frase_del_dia`. **Falta desplegarla**
-  (`--no-verify-jwt`, como está hoy).
+  de pruebas.
+- `app-clientes`: acción pública `frase_del_dia`.
 - La app pide la frase una vez por día y la guarda; sin red o sin frase,
   la del diccionario.
 - El botón de una historia se elige de una lista (ya son siete destinos).

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-03T15:22:57.611Z",
+ "generado": "2026-11-03T18:06:37.590Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -318,6 +318,18 @@
   "app_existencias_netas": {
    "area": "app-clientes",
    "por": "código"
+  },
+  "app_frase_del_dia": {
+   "area": "app-clientes",
+   "por": "código"
+  },
+  "app_frase_dia": {
+   "area": "app-clientes",
+   "por": "llamada"
+  },
+  "app_frases_tocar": {
+   "area": "app-clientes",
+   "por": "trigger"
   },
   "app_historia_quienes_vieron": {
    "area": "app-clientes",
@@ -658,6 +670,10 @@
   "avisar_llegada_del_conductor": {
    "area": "pedidos",
    "por": "trigger"
+  },
+  "avisar_lotes_del_libro_atrasados": {
+   "area": "bitacoras",
+   "por": "cron"
   },
   "avisar_pago_seguro_vida": {
    "area": "personal",
@@ -3033,6 +3049,10 @@
    "area": "fiscal",
    "por": "código"
   },
+  "get_libro_lotes_por_revisar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "get_libro_percepcion": {
    "area": "fiscal",
    "por": "código"
@@ -3717,6 +3737,34 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "libro_lote_confirmar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "libro_lote_corregir": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "libro_lote_detectar_trg": {
+   "area": "bitacoras",
+   "por": "trigger"
+  },
+  "libro_lote_detectar_uno": {
+   "area": "bitacoras",
+   "por": "tablas"
+  },
+  "libro_lote_encargados": {
+   "area": "personal",
+   "por": "tablas"
+  },
+  "libro_lote_motivo": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "libro_lote_regentes": {
+   "area": "personal",
+   "por": "tablas"
+  },
   "libro_sacar_producto": {
    "area": "bitacoras",
    "por": "código"
@@ -3735,6 +3783,10 @@
   },
   "list_sessions": {
    "area": "acceso",
+   "por": "código"
+  },
+  "lista_de_precio_del_cliente": {
+   "area": "app-clientes",
    "por": "código"
   },
   "lock_module": {
@@ -4260,6 +4312,10 @@
    "area": "nomina",
    "por": "código",
    "manual": true
+  },
+  "precio_de_apartado_valido": {
+   "area": "app-clientes",
+   "por": "código"
   },
   "precio_de_lista": {
    "area": "app-clientes",
@@ -5084,8 +5140,8 @@
    "por": "tablas"
   },
   "reglas_v2_desde": {
-   "area": "ventas",
-   "por": "tablas"
+   "area": "app-clientes",
+   "por": "código"
   },
   "regrant_al_cambiar_employees_safe": {
    "area": "permisos",

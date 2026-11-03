@@ -2765,6 +2765,36 @@ export type Database = {
           },
         ]
       }
+      avisos_de_servicio: {
+        Row: {
+          abierto_at: string
+          cerrado_at: string | null
+          created_at: string
+          destinatarios: number | null
+          fallas: number
+          id: number
+          servicio: string
+        }
+        Insert: {
+          abierto_at?: string
+          cerrado_at?: string | null
+          created_at?: string
+          destinatarios?: number | null
+          fallas?: number
+          id?: never
+          servicio: string
+        }
+        Update: {
+          abierto_at?: string
+          cerrado_at?: string | null
+          created_at?: string
+          destinatarios?: number | null
+          fallas?: number
+          id?: never
+          servicio?: string
+        }
+        Relationships: []
+      }
       avisos_diferidos: {
         Row: {
           con_push: boolean
@@ -5247,6 +5277,8 @@ export type Database = {
           fecha: string
           forma_pago: string
           foto_lectura: Json | null
+          foto_pendiente_avisada_at: string | null
+          foto_pendiente_desde: string | null
           foto_url: string | null
           id: number
           invoice_id: number | null
@@ -5287,6 +5319,8 @@ export type Database = {
           fecha: string
           forma_pago?: string
           foto_lectura?: Json | null
+          foto_pendiente_avisada_at?: string | null
+          foto_pendiente_desde?: string | null
           foto_url?: string | null
           id?: never
           invoice_id?: number | null
@@ -5327,6 +5361,8 @@ export type Database = {
           fecha?: string
           forma_pago?: string
           foto_lectura?: Json | null
+          foto_pendiente_avisada_at?: string | null
+          foto_pendiente_desde?: string | null
           foto_url?: string | null
           id?: never
           invoice_id?: number | null
@@ -16086,6 +16122,67 @@ export type Database = {
           created_at?: string
         }
         Relationships: []
+      }
+      fallas_de_servicio: {
+        Row: {
+          branch_id: number | null
+          created_at: string
+          detalle: string | null
+          employee_id: string | null
+          estado: number | null
+          id: number
+          operacion: string | null
+          origen: string
+          rescatada: boolean
+          servicio: string
+        }
+        Insert: {
+          branch_id?: number | null
+          created_at?: string
+          detalle?: string | null
+          employee_id?: string | null
+          estado?: number | null
+          id?: never
+          operacion?: string | null
+          origen?: string
+          rescatada?: boolean
+          servicio: string
+        }
+        Update: {
+          branch_id?: number | null
+          created_at?: string
+          detalle?: string | null
+          employee_id?: string | null
+          estado?: number | null
+          id?: never
+          operacion?: string | null
+          origen?: string
+          rescatada?: boolean
+          servicio?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fallas_de_servicio_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fallas_de_servicio_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fallas_de_servicio_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       faltas_disciplinarias: {
         Row: {
@@ -31703,6 +31800,7 @@ export type Database = {
         Args: { p_ajustes?: Json; p_pedido_id: string; p_sucursal_id: number }
         Returns: Json
       }
+      confirmar_foto_pendiente: { Args: { p_url: string }; Returns: number }
       confirmar_impresion: {
         Args: {
           p_definitivo?: boolean
@@ -33200,6 +33298,7 @@ export type Database = {
       }
       formas_de_abono_en_efectivo: { Args: never; Returns: string[] }
       foto_de_empleado: { Args: { p_id: string }; Returns: string }
+      foto_esta_guardada: { Args: { p_url: string }; Returns: boolean }
       fotografiar_bono_meta_mes: {
         Args: { p_origen?: string; p_year_month: string }
         Returns: number
@@ -37043,6 +37142,16 @@ export type Database = {
         Args: { p_cajas_especiales: Json; p_labels: string[] }
         Returns: number[]
       }
+      reportar_falla_de_servicio: {
+        Args: {
+          p_detalle: string
+          p_estado: number
+          p_operacion: string
+          p_rescatada: boolean
+          p_servicio: string
+        }
+        Returns: undefined
+      }
       reserva_ajustar: {
         Args: {
           p_alternativa?: Json
@@ -37977,6 +38086,7 @@ export type Database = {
       }
       vigilar_reinicio_de_la_base: { Args: never; Returns: undefined }
       vigilar_seguridad: { Args: never; Returns: Json }
+      vigilar_servicios: { Args: never; Returns: undefined }
       wallet_registros_por_avisar: {
         Args: never
         Returns: {

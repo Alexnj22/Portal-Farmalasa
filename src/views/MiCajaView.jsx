@@ -36,7 +36,7 @@ import {
     anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja, preventasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion, mandarALaCaja,
-    subirComprobante, boletaYaEnCaja, fetchFacturasMapfre,
+    subirComprobante, subirComprobanteOEncolar, boletaYaEnCaja, fetchFacturasMapfre,
 } from '@nucleo/data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import MetaDelDia from '../components/cortes/MetaDelDia';
@@ -2493,6 +2493,7 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
      * inyección» es lo que se suma; «Neurobion 25000» es lo que la sala quería
      * anotar. */
     const [codigo, setCodigo] = useState('');
+    const avisar = useToastStore((s) => s.showToast);
     /* Quién se lleva el efectivo, COMPROBADO. `persona` y `vale` salen juntos
      * del servidor: el navegador no elige a quién se le atribuye el dinero, y
      * el secreto del carné nunca pasa por acá. */
@@ -2738,8 +2739,18 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
         // Con tarjeta o transferencia la foto que vale es la del comprobante
         // del pago, no la de una boleta.
         const fotoQueVa = noEfectivo ? pago.foto : foto;
+        /* Si el servicio de archivos no responde, la foto se guarda en este
+         * equipo y se sube sola después: el movimiento entra igual, con la URL
+         * definitiva, y la base lo marca pendiente hasta que la foto llegue.
+         * Nació del 2026-11-02 — Salud 1 pasó 40 minutos sin poder anotar
+         * ingresos del POS porque la foto no subía. Ver `data/fotosEnEspera`. */
+        let fotoPendiente = false;
         if (fotoQueVa) {
-            try { fotoUrl = await subirComprobante(fotoQueVa, { salaId: sala, userId }); } catch { fotoUrl = null; }
+            try {
+                const r = await subirComprobanteOEncolar(fotoQueVa, { salaId: sala, userId });
+                fotoUrl = r.url;
+                fotoPendiente = r.pendiente;
+            } catch { fotoUrl = null; }
         }
         /* Sin la foto del comprobante el servidor pediría una autorización
          * que nadie pidió: la sala SÍ tenía el papel. Se frena y se dice. */
@@ -2805,6 +2816,14 @@ function DialogoMovimiento({ abierto, entra, ocupado, sala, userId, tipos = [], 
             ...(conFormaDePago ? datosDeFormaDePago(pago, fotoUrl) : {}),
             ...(efectivoSinComprobante ? { motivoSinComprobante: motivoSinFoto.trim() } : {}),
         }, tipo, identifica ? persona : null))
+            .then((r) => {
+                if (fotoPendiente && r && !r.error) {
+                    avisar('La foto se sube sola',
+                        'El servicio de archivos está lento: la foto quedó guardada en este equipo y se sube en cuanto responda. No hace falta repetir nada.',
+                        'warning');
+                }
+                return r;
+            })
             /* Se suelta PASE LO QUE PASE. Si sólo se soltara al salir bien, un
              * fallo de red dejaría el botón muerto con el diálogo todavía
              * abierto —`correr` no lo cierra cuando hay error— y la única

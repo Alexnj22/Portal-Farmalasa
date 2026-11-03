@@ -84,7 +84,7 @@ async function subirUnaVez(almacen, path, archivo, opciones, { esReintento }) {
     const vigilancia = (async () => {
         await esperar(SUBIDA.primerVistazo);
         while (enVuelo) {
-            if (await existe(almacen, path)) return { ok: true };
+            if (await existe(almacen, path)) return { ok: true, rescate: true };
             await esperar(SUBIDA.entreVistazos);
         }
         return new Promise(() => {});              // terminó la subida: que gane su respuesta
@@ -95,7 +95,7 @@ async function subirUnaVez(almacen, path, archivo, opciones, { esReintento }) {
     const r = await Promise.race([subida, vigilancia, tope]);
     if (r.ok) return r;
     // La respuesta dice que falló. El 504 del 2-nov llegaba con el archivo ya guardado.
-    if (esPasajero(r.error) && await existe(almacen, path)) return { ok: true };
+    if (esPasajero(r.error) && await existe(almacen, path)) return { ok: true, rescate: true, error: r.error };
     return r;
 }
 
@@ -123,14 +123,50 @@ export async function subirArchivo(bucket, path, archivo, { upsert = false, cont
     const url = () => almacen.getPublicUrl(path).data?.publicUrl ?? null;
 
     let ultimo = null;
+    let tropiezos = 0;
     for (let intento = 1; intento <= SUBIDA.intentos; intento++) {
         const r = await subirUnaVez(almacen, path, archivo, opciones, { esReintento: intento > 1 });
-        if (r.ok) return url();
+        if (r.ok) {
+            if (r.rescate || tropiezos > 0) {
+                reportarFallaDeServicio({ operacion: `subir:${bucket}`, error: r.error ?? ultimo, rescatada: true });
+            }
+            return url();
+        }
         ultimo = r.error;
         if (!esPasajero(ultimo)) break;          // 403, 413, tipo no permitido: reintentar no cambia nada
+        tropiezos++;
         if (intento < SUBIDA.intentos) await esperar(SUBIDA.pausaAntesDeReintentar);
     }
-    throw new Error(mensajeDeSubida(ultimo));
+    if (esPasajero(ultimo)) reportarFallaDeServicio({ operacion: `subir:${bucket}`, error: ultimo, rescatada: false });
+    const e = new Error(mensajeDeSubida(ultimo), { cause: ultimo });
+    e.pasajero = esPasajero(ultimo);            // quien llama puede guardar el archivo para después
+    throw e;
+}
+
+/** La URL formato-público de un path: el identificador que se guarda en la base. */
+export function urlPublicaDe(bucket, path) {
+    return supabase.storage.from(bucket).getPublicUrl(path).data?.publicUrl ?? null;
+}
+
+/**
+ * Le avisa a la base que un servicio está fallando, para que alguien se entere
+ * sin que la sala tenga que llamar (2026-11-02: la sala se enteró primero).
+ * `rescatada` = el usuario no lo sufrió (se verificó o se reintentó con éxito),
+ * pero el servicio está degradado y conviene saberlo.
+ *
+ * Nunca lanza ni se espera: un aviso que falla no puede frenar lo que avisa. Si
+ * la base tampoco contesta, se pierde — y para eso está la sonda del servidor.
+ */
+export function reportarFallaDeServicio({ servicio = 'archivos', operacion, error, rescatada = false }) {
+    try {
+        Promise.resolve(supabase.rpc('reportar_falla_de_servicio', {
+            p_servicio: servicio,
+            p_operacion: String(operacion ?? '').slice(0, 80),
+            p_estado: estadoDe(error),
+            p_detalle: String(error?.message ?? '').slice(0, 300) || null,
+            p_rescatada: !!rescatada,
+        })).catch(() => {});
+    } catch { /* sin cliente (pruebas) o sin red: nada que hacer */ }
 }
 
 // Extrae {bucket, path} de una URL formato-public de Supabase Storage — para

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1414.0 — La foto que no sube ya no frena el ingreso, y un servicio que falla avisa solo
+
+Sigue al incidente del 2-nov en Salud 1 (40 minutos sin poder anotar ingresos del POS).
+
+- **La foto ya no frena el registro.** En Mi caja, si el servicio de archivos no responde, el ingreso o la salida se anota igual y la foto queda guardada en el equipo: se sube sola en cuanto el servicio vuelve (al entrar al portal, al volver la red y cada minuto). La sala ve un aviso «La foto se sube sola» y no tiene que repetir nada. Si el problema no es del servicio (permiso, archivo no válido) o el equipo no puede guardar la foto, se frena como antes.
+- **Lo marca la base, no el equipo.** Un movimiento cuya foto todavía no está en el almacenamiento queda marcado como pendiente, y la marca se quita sola cuando la foto llega. Si en 2 horas no llegó, Alertas Técnicas recibe un aviso con la sala, el monto y la boleta.
+- **Un servicio que falla avisa solo.** Cada falla que el portal ve al subir un archivo, también las que esquivó, queda anotada. Con 3 en 10 minutos, Alertas Técnicas recibe un aviso «El servicio de archivos está fallando», y otro cuando se normaliza. El 2-nov ese aviso habría salido a los ~5 minutos.
+
 ## v2.1413.9 — Subir una foto ya no se traba cuando el servicio de archivos guarda y no contesta
 
 El 2-nov entre las 14:57 y las 15:38 Salud 1 no pudo anotar ingresos del POS: cada foto de boleta se guardaba, pero el servicio de archivos tardaba 60 s en contestar y lo hacía con un error, así que el portal no registraba el ingreso. Ahora, mientras la foto sube, el portal comprueba si ya quedó guardada y sigue en cuanto la encuentra; ante un error temporal vuelve a preguntar si el archivo está y reintenta hasta dos veces. Vale para la foto de boleta de caja y bolsas, los comprobantes de abonos a crédito y de distribución, la evidencia de cortes y de inventario, y todo lo que ya usaba la subida común del portal.

@@ -470,6 +470,16 @@ const CRONS = [
           + 'evitarlo, y la consulta es una inserción que casi siempre no inserta nada.',
   },
   {
+    job: 'vigilar-servicios', slug: null, cadencia: '*/5 * * * *',
+    corridasDia: 288, sistema: 0,
+    motivo: 'CERO peticiones al sistema de origen: SQL puro. Desmarca las fotos de caja que ya '
+          + 'llegaron a storage, abre y cierra un aviso a Alertas Técnicas cuando el portal anota '
+          + '3+ fallas de un servicio en 10 min, avisa de una foto que no llegó en 2 h y purga '
+          + '`fallas_de_servicio` a 90 días. Nació del 2-nov: el servicio de archivos se trabó 40 '
+          + 'min en Salud 1 y nadie se enteró hasta el día siguiente. Todo el día: una falla de '
+          + 'madrugada también hay que verla, y casi siempre no encuentra nada que hacer.',
+  },
+  {
     job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '*/30 12-23,0-4 * * *',
     corridasDia: 34, sistema: 19,
     motivo: 'Quién tiene la caja abierta en cada sala, a qué hora la abrió y cuánto espera el '

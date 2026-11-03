@@ -37,6 +37,7 @@ import { LoadingState } from './components/common/StateViews';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { quincenaPorDefecto } from '@nucleo/utils/quincena';
+import { useFotosEnEspera } from '@nucleo/hooks/useFotosEnEspera';
 
 // Vistas — code-split por ruta (React.lazy). Antes 51 imports estáticos
 // empaquetaban las 40+ vistas en un solo chunk eager de 5.24MB/1.74MB gzip.
@@ -378,6 +379,10 @@ function MainApp() {
 
     const navigate = useNavigate();
     const location = useLocation();
+
+    // Las fotos que no subieron porque el servicio de archivos no respondía
+    // se suben solas desde acá (ver `data/fotosEnEspera`).
+    useFotosEnEspera(isAuthenticated);
 
     useEffect(() => {
         const loadData = async () => {

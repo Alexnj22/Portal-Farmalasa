@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-10-31T15:48:40.972Z",
+ "generado": "2026-11-03T14:44:35.255Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -991,6 +991,10 @@
    "area": "plataforma",
    "por": "código"
   },
+  "caja_mov_marcar_foto_pendiente": {
+   "area": "cortes-efectivo",
+   "por": "trigger"
+  },
   "caja_movimiento_regla": {
    "area": "cortes-efectivo",
    "por": "código"
@@ -1338,6 +1342,10 @@
   },
   "confirmar_envio_pedido": {
    "area": "pedidos",
+   "por": "código"
+  },
+  "confirmar_foto_pendiente": {
+   "area": "sistema",
    "por": "código"
   },
   "confirmar_impresion": {
@@ -2339,7 +2347,7 @@
   },
   "encuesta_cliente_cumple": {
    "area": "encuestas-clientes",
-   "por": "llamada"
+   "por": "código"
   },
   "encuesta_cliente_destinatarios": {
    "area": "personal",
@@ -2624,6 +2632,10 @@
   "foto_de_empleado": {
    "area": "personal",
    "por": "código"
+  },
+  "foto_esta_guardada": {
+   "area": "sistema",
+   "por": "llamada"
   },
   "fotografiar_bono_meta_mes": {
    "area": "metas",
@@ -5100,6 +5112,10 @@
    "area": "pedidos",
    "por": "llamada"
   },
+  "reportar_falla_de_servicio": {
+   "area": "plataforma",
+   "por": "código"
+  },
   "reserva_ajustar": {
    "area": "app-clientes",
    "por": "código"
@@ -5860,6 +5876,10 @@
    "por": "cron"
   },
   "vigilar_seguridad": {
+   "area": "sistema",
+   "por": "cron"
+  },
+  "vigilar_servicios": {
    "area": "sistema",
    "por": "cron"
   },

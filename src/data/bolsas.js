@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep, subirArchivo } from '../utils/storageFiles';
+import { encolarFoto } from './fotosEnEspera';
 import { repartoDeUnaSalida } from '../utils/repartoDeSalida';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
@@ -749,9 +750,32 @@ export async function guardarLecturaDeBoleta(operacionId, lectura) {
  * La foto del comprobante del POS. Bucket privado; se guarda la URL en formato
  * público como identificador porque la firmada expira (regla 10 de CLAUDE.md).
  */
+const rutaDeComprobante = (archivo, { salaId, userId }) => {
+    const ext = (archivo.name?.split('.').pop() || 'jpg').toLowerCase();
+    return `bolsas/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;
+};
+
+/**
+ * Como `subirComprobante`, pero si el servicio de archivos no responde la foto
+ * se guarda en el aparato y se sube sola después (ver `data/fotosEnEspera`).
+ * Devuelve `{ url, pendiente }`: la URL es la definitiva en los dos casos.
+ *
+ * Lanza —y quien llama frena como antes— si el error no es del servicio
+ * (permiso, tamaño, tipo) o si el aparato no pudo guardar la foto.
+ */
+export async function subirComprobanteOEncolar(archivo, { salaId, userId }) {
+    const path = rutaDeComprobante(archivo, { salaId, userId });
+    try {
+        return { url: await subirArchivo(BUCKET_COMPROBANTES, path, archivo, { contentType: archivo.type }), pendiente: false };
+    } catch (err) {
+        if (!err?.pasajero) throw new Error(`No se pudo subir la foto: ${err.message}`);
+        const url = await encolarFoto({ bucket: BUCKET_COMPROBANTES, path, archivo, contentType: archivo.type });
+        return { url, pendiente: true };
+    }
+}
+
 export async function subirComprobante(archivo, { salaId, userId }) {
-    const ext = (archivo.name.split('.').pop() || 'jpg').toLowerCase();
-    const path = `bolsas/${salaId ?? 'sin-sala'}/${userId ?? 'anon'}/${Date.now()}.${ext}`;
+    const path = rutaDeComprobante(archivo, { salaId, userId });
     try {
         return await subirArchivo(BUCKET_COMPROBANTES, path, archivo, { contentType: archivo.type });
     } catch (err) {

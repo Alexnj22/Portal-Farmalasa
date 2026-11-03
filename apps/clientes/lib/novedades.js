@@ -36,6 +36,19 @@ const WEB = Platform.OS === 'web';
  */
 export const NOVEDADES = [
   {
+    id: '2026-11-03',
+    desde: { ios: null, android: null },
+    titulo: 'Qué hay de nuevo',
+    cosas: [
+      { sf: 'leaf.fill', titulo: 'Bienestar',
+        detalle: 'Una frase nueva cada mañana a las 8:00 y una zona anti estrés: respira, revienta burbujas o juega memoria.' },
+      { sf: 'square.grid.2x2.fill', titulo: 'Un Inicio más ordenado',
+        detalle: 'Tus reservas, inyecciones, compras y puntos, juntos en un menú.' },
+      { sf: 'tag.fill', titulo: 'Las ofertas, en la Tienda',
+        detalle: 'Las encuentras arriba de los productos, en «Todas las ofertas».' },
+    ],
+  },
+  {
     id: '2026-10-14',
     desde: { ios: null, android: null },
     titulo: 'Qué hay de nuevo',

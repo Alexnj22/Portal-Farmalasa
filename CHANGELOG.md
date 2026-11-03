@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1418.0 — App de clientes: Bienestar (frase del día y zona anti estrés), menú del Inicio y Ofertas en la Tienda
+
+Pedido del usuario: una frase diaria lista a las 8:00, una zona anti estrés y
+un Inicio menos cargado con las ofertas en la Tienda.
+
+- **Pestaña Bienestar** (ocupa el lugar de Ofertas). La frase del día sale de
+  `lib/fraseDelDia.js`: 299 frases cortas, sin autor, en tres canastas que se
+  turnan (ánimo, salud, calma). Cambia a las 8:00 de El Salvador, en la app, sin
+  servidor; con la app abierta cambia sola a esa hora. Se puede compartir.
+- **Zona anti estrés**: Respira (círculo guiado 4·4·6 s, 1/3/5 min, con toques
+  del teléfono), Burbujas (plástico para reventar), Memoria (8 parejas, récord
+  en el teléfono) y el anclaje 5-4-3-2-1.
+- **Inicio**: la frase del día en tarjeta compacta, y lo que eran siete
+  tarjetas sueltas pasa a un menú de 3 × 3. Movimientos y acumulado/canjeado
+  pasan a «Mis puntos» (`/movimientos`); de los tratamientos arriba sólo queda
+  lo que se acaba en 3 días o menos.
+- **Ofertas en la Tienda**: «Todas las ofertas» bajo el banner. La ruta
+  `/ofertas` sigue viva (destino de historias y banners del portal).
+
+Verificado: los bundles de iOS y Android compilan (`expo export`); el corte de
+la frase a las 08:00 SV, probado a las 07:59 y 08:00. Falta verlo en un teléfono.
+
 ## v2.1417.10 — Pedidos: Reintentar desde Bodega reenvía lo que no salió
 
 El «Reintentar» de la tarjeta («No entró al inventario de la sala») sólo

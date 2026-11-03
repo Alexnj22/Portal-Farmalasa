@@ -22,6 +22,7 @@ import { ESPACIO_BURBUJA, RADIO, Seccion, Vacio } from '../../../componentes/ui'
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
+import { useOfertas } from '../../../lib/ofertas';
 import FilaProductos from '../../../componentes/FilaProductos';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
@@ -173,6 +174,8 @@ export default function Catalogo() {
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos /> : null}
+      {/* Ofertas vive acá desde el 2026-11-03 (antes, una pestaña). */}
+      {!q ? <AccesoOfertas /> : null}
       {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
           tocarlo otra vez lo quita. */}
       {categorias}
@@ -305,6 +308,37 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
           </Text>
         )}
       </View>
+    </Presionable>
+  );
+});
+
+// La entrada a todas las ofertas (2026-11-03): cuántas hay vigentes y, si
+// alguna es exclusiva para socios, cuántas. Los datos son los mismos que ya
+// pidió el banner de arriba (lib/ofertas), así que no cuesta otra consulta.
+const AccesoOfertas = memo(function AccesoOfertas() {
+  const t = useTema();
+  const datos = useOfertas((s) => s.datos);
+  const lista = datos?.ok ? (datos.ofertas ?? []) : [];
+  const exclusivas = lista.filter((o) => o.exclusiva).length;
+  const detalle = !datos ? 'Las promociones de la semana'
+    : !lista.length ? 'Pronto habrá nuevas'
+      : `${lista.length} vigente${lista.length === 1 ? '' : 's'}${exclusivas ? ` · ${exclusivas} solo para socios` : ''}`;
+  return (
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/ofertas'); }}
+      accessibilityRole="button" accessibilityLabel={`Todas las ofertas. ${detalle}`}
+      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <LinearGradient colors={[t.acentos.violeta.fuerte, t.color.magenta]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+        style={{ borderRadius: RADIO.tarjeta, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
+        <Text style={{ position: 'absolute', right: 34, top: -26, fontSize: 96, fontWeight: '900', color: 'rgba(255,255,255,0.1)' }}>%</Text>
+        <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
+          <Icono sf="tag.fill" respaldo="%" tam={20} color="#FFFFFF" />
+        </View>
+        <View style={{ flex: 1, gap: 1 }}>
+          <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Todas las ofertas</Text>
+          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)' }} numberOfLines={1}>{detalle}</Text>
+        </View>
+        <Icono sf="chevron.right" respaldo="›" tam={15} color="#FFFFFF" />
+      </LinearGradient>
     </Presionable>
   );
 });

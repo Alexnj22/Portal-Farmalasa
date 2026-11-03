@@ -1,17 +1,20 @@
 // Ofertas vigentes. Cada tarjeta abre su detalle en una hoja del sistema que
 // se cierra deslizando hacia abajo. Las EXCLUSIVAS se anuncian a todos —es la invitación a unirse—
 // pero su detalle sólo lo ve quien es socio del programa.
+//
+// Hasta el 2026-11-03 era una pestaña; hoy se abre desde la Tienda (app/ofertas.js)
+// y, sin cuenta, desde la bienvenida (app/vitrina.js).
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { Text, View } from 'react-native';
-import { Cargando, Pantalla, PantallaLista, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
-import { colorSistema } from '../../../componentes/sistema';
-import { useTema } from '../../../tema/tema';
-import { Entrada, Tocable } from '../../../componentes/animacion';
-import TarjetaOferta from '../../../componentes/TarjetaOferta';
-import { useOfertas } from '../../../lib/ofertas';
-import Icono from '../../../componentes/Icono';
-import { navegar } from '../../../lib/navegar';
+import { Cargando, Pantalla, PantallaLista, Tarjeta, Texto, Titulo, Vacio } from './ui';
+import { colorSistema } from './sistema';
+import { useTema } from '../tema/tema';
+import { Entrada, Tocable } from './animacion';
+import TarjetaOferta from './TarjetaOferta';
+import { useOfertas } from '../lib/ofertas';
+import Icono from './Icono';
+import { navegar } from '../lib/navegar';
 
 export default function Ofertas({ invitacion = false }) {
   const t = useTema();

@@ -151,6 +151,15 @@ const MATERIAL = {
   'ellipsis.circle': 'more_vert',
   'tray': 'inbox',
   'trash.slash.fill': 'restore_from_trash',
+  // Bienestar y el menú del Inicio (2026-11-03).
+  'circle.grid.3x3.fill': 'bubble_chart',
+  'eye.fill': 'visibility',
+  'ear.fill': 'hearing',
+  'nose.fill': 'local_florist',
+  'mouth.fill': 'restaurant',
+  'trophy.fill': 'emoji_events',
+  'leaf': 'spa',
+  'list.bullet.rectangle.fill': 'receipt_long',
 };
 
 export default function Icono({ sf, respaldo = '•', tam = 22, color }) {

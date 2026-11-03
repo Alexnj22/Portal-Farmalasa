@@ -43,13 +43,15 @@ export default function Pestanas() {
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={contenido} name="ofertas">
-        <NativeTabs.Trigger.Icon sf={{ default: 'tag', selected: 'tag.fill' }} md="sell" />
-        <NativeTabs.Trigger.Label>Ofertas</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
+      {/* Ofertas dejó de ser pestaña (2026-11-03): se abre desde la Tienda.
+          Su lugar es para Bienestar: la frase del día y la zona anti estrés. */}
       <NativeTabs.Trigger contentStyle={contenido} name="catalogo">
         <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="medication" />
         <NativeTabs.Trigger.Label>Tienda</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      <NativeTabs.Trigger contentStyle={contenido} name="bienestar">
+        <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="spa" />
+        <NativeTabs.Trigger.Label>Bienestar</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {/* El carrito, con cuántos productos lleva. Inyecciones pasó al Inicio. */}
       <NativeTabs.Trigger contentStyle={contenido} name="carrito">

@@ -2,25 +2,25 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Platform, Text, View } from 'react-native';
+import { Alert, AppState, Platform, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import { Aviso, Cargando, Pantalla, RADIO, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
+import { Aviso, Cargando, Pantalla, Seccion, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
 import { useCuenta } from '../../../lib/cuenta';
-import { diasHasta, dolares, entero, fecha, fechaLarga, finDeMes, nombrePropio } from '../../../lib/formato';
+import { diasHasta, dolares, entero, fechaLarga, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import AvatarInicio from '../../../componentes/AvatarInicio';
 import Nivel from '../../../componentes/Nivel';
 import Mayorista, { BeneficiosEquipo, Equipo, rangoDePrueba, rangoReal } from '../../../componentes/Mayorista';
 import Cupon from '../../../componentes/Cupon';
 import SubisteDeNivel from '../../../componentes/SubisteDeNivel';
-import { LinearGradient } from 'expo-linear-gradient';
 import Vencimientos from '../../../componentes/Vencimientos';
 import Cumpleanos from '../../../componentes/Cumpleanos';
 import Historias from '../../../componentes/Historias';
 import Icono from '../../../componentes/Icono';
+import FraseDelDia from '../../../componentes/FraseDelDia';
 import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useConCodigo, useSesion } from '../../../lib/sesion';
@@ -38,15 +38,6 @@ import { useShallow } from 'zustand/react/shallow';
 const MINIMO_DE_CANJE = 100;
 let confetiMostrado = false;
 const marcarConfeti = () => { confetiMostrado = true; };
-// El signo sale del NÚMERO, no del tipo: un ajuste puede sumar o restar.
-const ROTULOS = {
-  compra: 'Compra', canje: 'Canje', vencimiento: 'Vencieron', anulacion: 'Compra anulada', ajuste: 'Ajuste',
-  cumpleanos: 'Regalo de cumpleaños', canje_devuelto: 'Canje devuelto', referido: 'Por invitar a un amigo',
-  // El cupón del mes (2026-10-14): el servidor lo distingue de una compra porque vence a fin de mes.
-  cupon: 'Cupón del mes',
-  // Saldo a favor de una reserva que pasó a puntos para descontarlo en caja (2026-10-21).
-  saldo_favor: 'Saldo a favor de una reserva',
-};
 
 export default function Puntos() {
   const t = useTema();
@@ -107,15 +98,9 @@ export default function Puntos() {
   const visible = useVisible();
   const [refrescando, setRefrescando] = useState(false);
   const pedir = useSesion((s) => s.pedir);
-  const [mas, setMas] = useState([]);
-  const [cargandoMas, setCargandoMas] = useState(false);
-  const pidiendo = useRef(false);
 
   // Al volver a la pestaña sólo se pide si el resumen tiene más de un minuto.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
-  // Lo cargado de más se descarta sólo con un resumen NUEVO (otra generación),
-  // no cada vez que se vuelve a la pestaña.
-  useEffect(() => { setMas([]); }, [generacion]);
   // Los avisos de este teléfono: si ya los había aceptado, la sesión nueva los
   // retoma sola (ver lib/avisos.js).
   const acepta = resumen?.acepta_avisos;
@@ -151,21 +136,9 @@ export default function Puntos() {
   const saldo = Number(resumen.saldo ?? 0);
   const falta = Math.max(0, MINIMO_DE_CANJE - saldo);
   const congelado = resumen.consentimiento?.programa === false;
-  const movimientos = [...resumen.movimientos, ...mas];
-  const total = resumen.movimientos_total ?? movimientos.length;
-  // Una página a la vez (la ref frena el doble toque), y si mientras tanto
-  // llegó un resumen nuevo, la respuesta vieja se descarta.
-  const verMas = async () => {
-    if (pidiendo.current) return;
-    pidiendo.current = true;
-    setCargandoMas(true);
-    const gen = generacion;
-    const r = await pedir('movimientos', { desde: movimientos.length });
-    if (r?.ok && useCuenta.getState().generacion === gen) setMas((x) => [...x, ...r.movimientos]);
-    setCargandoMas(false);
-    pidiendo.current = false;
-  };
   const conCodigo = sesionDeCodigo || resumen.alcance === 'codigo';
+  const urgentes = (Array.isArray(resumen.tratamientos) ? resumen.tratamientos : [])
+    .filter((x) => { const d = diasHasta(x.se_acaba); return d != null && d <= 3; });
   const primerNombre = nombrePropio(String(resumen.nombre ?? '').split(' ')[0]);
 
   return (
@@ -306,43 +279,18 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* Accesos: inyecciones (antes era una pestaña) y reservas. */}
-      <Entrada indice={2} estilo={{ flexDirection: 'row', gap: 10 }}>
-        <Acceso sf="syringe.fill" titulo="Inyecciones" color={t.color.verde}
-          detalle={resumen.inyecciones_pendientes ? `${resumen.inyecciones_pendientes} por aplicar` : 'Al día'}
-          resaltar={resumen.inyecciones_pendientes > 0} alTocar={() => navegar('/inyecciones')} />
-        <Acceso sf="bag.fill" titulo="Mis reservas" color={t.color.magenta}
-          detalle={resumen.reservas_listas ? `${resumen.reservas_listas} lista${resumen.reservas_listas === 1 ? '' : 's'} para retirar` : resumen.reservas_abiertas ? `${resumen.reservas_abiertas} en curso` : 'Ninguna activa'}
-          resaltar={resumen.reservas_listas > 0} alTocar={() => navegar('/reservas')} />
+      {/* La frase del día (2026-11-03): lista a las 8:00; tocarla abre Bienestar. */}
+      <Entrada indice={2}>
+        <FraseDelDia />
       </Entrada>
 
-      {/* Mis tratamientos (2026-10-08): lo que compra con regularidad y cuándo se le acaba. */}
-      {Array.isArray(resumen.tratamientos) ? (
+      {/* Mis tratamientos: arriba SÓLO lo que se acaba en 3 días o menos; la
+          lista completa está en el menú. */}
+      {urgentes.length ? (
         <Entrada indice={2}>
-          <TratamientosInicio lista={resumen.tratamientos} />
+          <TratamientosInicio lista={urgentes} />
         </Entrada>
       ) : null}
-
-      {/* Mis créditos al día (2026-10-15): una entrada tranquila, sin alerta. */}
-      {resumen.creditos?.pendientes > 0 && !(resumen.creditos.vencidos > 0) ? (
-        <Entrada indice={2}>
-          <Tocable alTocar={() => navegar('/creditos')} etiqueta="Mis créditos">
-            <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
-                <Icono sf="doc.text.fill" respaldo="🧾" tam={20} color={t.color.verdeTexto} />
-              </View>
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>Mis créditos</Text>
-                <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
-                  {resumen.creditos.pendientes === 1 ? '1 pendiente' : `${resumen.creditos.pendientes} pendientes`} · al día
-                </Text>
-              </View>
-              <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
-            </Tarjeta>
-          </Tocable>
-        </Entrada>
-      ) : null}
-
 
       {congelado ? (
         <Aviso tipo="aviso">Tu saldo está en pausa porque no aceptaste el programa. Puedes volver a aceptarlo en Cuenta.</Aviso>
@@ -354,23 +302,8 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      <Entrada indice={3} estilo={{ flexDirection: 'row', gap: 12 }}>
-        <View style={{ flex: 1 }}>
-          <Tarjeta>
-            <Texto nivel={3}>Acumulados</Texto>
-            <NumeroAnimado valor={resumen.acumulados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.verdeTexto }} />
-          </Tarjeta>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Tarjeta>
-            <Texto nivel={3}>Canjeados</Texto>
-            <NumeroAnimado valor={resumen.canjeados} formato="entero" estilo={{ fontSize: 24, fontWeight: '700', color: t.color.magentaTexto }} />
-          </Tarjeta>
-        </View>
-      </Entrada>
-
       {/* Lo que queda del cupón del mes vence con el mes (2026-10-14): se dice
-          junto al resumen, con la fecha exacta. Sólo ya raspado. */}
+          con la fecha exacta. Sólo ya raspado. */}
       {resumen.cupon?.raspado && !resumen.cupon.descuento && Number(resumen.cupon.restantes) > 0 && (diasHasta(resumen.cupon.vence) ?? -1) >= 0 ? (
         <Entrada indice={3}>
           <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
@@ -383,77 +316,16 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* Invitar: 50 puntos para cada uno (ver app/invitar.js). */}
+      {/* El menú (2026-11-03, «hay muchas cosas en inicio, creemos un menú
+          mejor»): todo lo que antes eran tarjetas sueltas una debajo de otra
+          —reservas, inyecciones, tratamientos, compras, movimientos,
+          sucursales, invitar— en una cuadrícula de 3 × 3. El punto rojo es lo
+          que pide atención. */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => navegar('/invitar')} etiqueta="Invita y ganen 50 puntos">
-          <Tarjeta tono={t.color.verde} estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Icono sf="person.2.fill" respaldo="🤝" tam={26} color={t.color.verdeTexto} />
-            <View style={{ flex: 1, gap: 2 }}>
-              <Titulo>Invita y ganen 50 puntos</Titulo>
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>Cada uno, con la primera compra de tu amigo.</Texto>
-            </View>
-            <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
-          </Tarjeta>
-        </Tocable>
+        <Seccion>Lo tuyo</Seccion>
       </Entrada>
-
-      {/* Sucursales: entrada llamativa (pedido del usuario, 2026-10-06). */}
       <Entrada indice={4}>
-        <Tocable alTocar={() => navegar('/sucursales')} etiqueta="Nuestras sucursales">
-          <LinearGradient colors={['#4B1E8C', t.color.magenta]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-            style={{ borderRadius: RADIO.tarjeta, padding: 18, flexDirection: 'row', alignItems: 'center', gap: 14, overflow: 'hidden' }}>
-            <Text style={{ position: 'absolute', right: 40, top: -30, fontSize: 130, fontWeight: '900', color: 'rgba(255,255,255,0.08)' }}>+</Text>
-            <View style={{ width: 52, height: 52, borderRadius: 16, backgroundColor: 'rgba(255,255,255,0.18)', alignItems: 'center', justifyContent: 'center' }}>
-              <Icono sf="mappin.and.ellipse" respaldo="📍" tam={24} color="#FFFFFF" />
-            </View>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ fontSize: 19, fontWeight: '800', color: '#FFFFFF' }}>Nuestras sucursales</Text>
-              <Text style={{ fontSize: 14, color: 'rgba(255,255,255,0.88)' }}>Horarios, cómo llegar y WhatsApp</Text>
-            </View>
-            <Icono sf="chevron.right" respaldo="›" tam={16} color="#FFFFFF" />
-          </LinearGradient>
-        </Tocable>
-      </Entrada>
-
-      {/* Las compras, con sus productos: de ahí salen los puntos y las inyecciones. */}
-      <Entrada indice={4}>
-        <Tocable alTocar={() => navegar('/compras')} etiqueta="Mis compras">
-          <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Titulo>Mis compras</Titulo>
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>Qué compraste, dónde y cuántos puntos te dio.</Texto>
-            </View>
-            <Icono sf="chevron.right" respaldo="›" tam={15} color={colorSistema.texto3} />
-          </Tarjeta>
-        </Tocable>
-      </Entrada>
-
-      <Entrada indice={5}>
-        <Tarjeta>
-          <Titulo>Movimientos</Titulo>
-          {movimientos.length === 0 ? <Texto nivel={2}>Todavía no hay movimientos.</Texto> : null}
-          {movimientos.map((m, i) => {
-            const gana = Number(m.puntos) > 0;
-            return (
-              <View key={`${m.fecha}-${i}`} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 12 }}>
-                <View style={{ flex: 1 }}>
-                  <Texto>{ROTULOS[m.tipo] ?? 'Movimiento'}</Texto>
-                  <Texto nivel={3}>{fecha(m.fecha)}{m.sala ? ` · ${m.sala}` : ''}</Texto>
-                  {m.tipo === 'cupon' ? <VenceCupon fecha={m.fecha} /> : null}
-                </View>
-                <Text style={{ fontSize: 17, fontWeight: '700', color: gana ? t.color.verdeTexto : t.color.magentaTexto, fontVariant: ['tabular-nums'] }}>
-                  {gana ? '+' : '−'}{entero(Math.abs(m.puntos))}
-                </Text>
-              </View>
-            );
-          })}
-          {movimientos.length < total ? (
-            <Text onPress={cargandoMas ? undefined : verMas} accessibilityRole="button"
-              style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 12, minHeight: 44 }}>
-              {cargandoMas ? 'Cargando…' : `Ver más · ${movimientos.length} de ${total}`}
-            </Text>
-          ) : null}
-        </Tarjeta>
+        <Menu resumen={resumen} urgentes={urgentes.length} />
       </Entrada>
     </Pantalla>
   );
@@ -606,19 +478,6 @@ function Campana({ generacion }) {
   );
 }
 
-// Los puntos de un cupón vencen el último día de SU mes (2026-10-14).
-function VenceCupon({ fecha: f }) {
-  const t = useTema();
-  const vence = finDeMes(f);
-  const dias = diasHasta(vence);
-  if (vence == null || dias == null) return null;
-  return (
-    <Text style={{ fontSize: 13, fontWeight: dias >= 0 ? '700' : '400', color: dias >= 0 ? t.color.magentaTexto : colorSistema.texto3 }}>
-      {dias >= 0 ? `Vencen el ${fechaLarga(vence)} — úsalos este mes` : `Vencieron el ${fechaLarga(vence)}`}
-    </Text>
-  );
-}
-
 // La alerta de créditos vencidos (2026-10-15): como el aviso del cupón que
 // vence (reloj naranja), pero tocable y con el rojo del sistema. Sin montos y
 // sin tono de cobro: dice qué pasa y a dónde ir.
@@ -642,6 +501,7 @@ function AlertaCreditos({ vencidos }) {
 // Un acceso del Inicio: ícono, nombre y una línea de cómo va.
 // `diasHasta` (días desde hoy en El Salvador) viene de lib/formato.
 
+// Desde el 2026-11-03 sólo recibe los que se acaban en 3 días o menos.
 function TratamientosInicio({ lista }) {
   const t = useTema();
   return (
@@ -651,15 +511,11 @@ function TratamientosInicio({ lista }) {
         <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
           <Icono sf="pills.fill" respaldo="💊" tam={17} color={t.color.verdeTexto} />
         </View>
-        <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Mis tratamientos</Text>
+        <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Se te acaba pronto</Text>
         <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>Ver todos</Text>
         <Icono sf="chevron.right" respaldo="›" tam={12} color={colorSistema.texto3} />
       </Presionable>
-      {!lista.length ? (
-        <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
-          Cuando compres un medicamento con regularidad, te avisamos aquí antes de que se te acabe.
-        </Text>
-      ) : lista.map((x) => {
+      {lista.map((x) => {
         // Sin fecha estimada (`se_acaba` nulo) no hay plazo que contar: sin la
         // línea y sin marcarlo urgente (antes decía «Se te acaba en null días»).
         const d = diasHasta(x.se_acaba);
@@ -687,21 +543,57 @@ function TratamientosInicio({ lista }) {
   );
 }
 
-function Acceso({ sf, titulo, detalle, color, resaltar, alTocar }) {
+// El menú del Inicio (2026-11-03): nueve casillas, siempre nueve —la de
+// créditos aparece cuando hay alguno pendiente y, si no, su lugar es para el
+// chat—, así la cuadrícula nunca queda con un hueco. Con letra grande pasa a
+// dos columnas.
+function Menu({ resumen, urgentes }) {
+  const t = useTema();
+  const { fontScale } = useWindowDimensions();
+  const dos = fontScale > 1.3;
+  const r = resumen;
+  const tratamientos = Array.isArray(r.tratamientos) ? r.tratamientos.length : 0;
+  const creditos = r.creditos?.pendientes > 0;
+  const casillas = [
+    { sf: 'bag.fill', titulo: 'Reservas', color: t.color.magenta, ruta: '/reservas', resaltar: r.reservas_listas > 0,
+      detalle: r.reservas_listas ? `${r.reservas_listas} lista${r.reservas_listas === 1 ? '' : 's'}` : r.reservas_abiertas ? `${r.reservas_abiertas} en curso` : 'Ninguna' },
+    { sf: 'syringe.fill', titulo: 'Inyecciones', color: t.acentos.verde.fuerte, ruta: '/inyecciones', resaltar: r.inyecciones_pendientes > 0,
+      detalle: r.inyecciones_pendientes ? `${r.inyecciones_pendientes} por aplicar` : 'Al día' },
+    { sf: 'pills.fill', titulo: 'Tratamientos', color: t.acentos.azul.fuerte, ruta: '/tratamientos', resaltar: urgentes > 0,
+      detalle: urgentes ? `${urgentes} por acabarse` : tratamientos ? `${tratamientos} activo${tratamientos === 1 ? '' : 's'}` : 'Ver' },
+    { sf: 'list.bullet.rectangle.fill', titulo: 'Compras', color: t.acentos.violeta.fuerte, ruta: '/compras', detalle: 'Qué compraste' },
+    { sf: 'star.fill', titulo: 'Mis puntos', color: t.acentos.naranja.fuerte, ruta: '/movimientos', detalle: 'Movimientos' },
+    { sf: 'doc.richtext.fill', titulo: 'Facturas', color: t.acentos.azul.fuerte, ruta: '/facturas', detalle: 'Electrónicas' },
+    creditos
+      ? { sf: 'doc.text.fill', titulo: 'Créditos', color: colorSistema.rojo, ruta: '/creditos', resaltar: r.creditos.vencidos > 0,
+          detalle: r.creditos.vencidos > 0 ? `${r.creditos.vencidos} vencido${r.creditos.vencidos === 1 ? '' : 's'}` : `${r.creditos.pendientes} al día` }
+      : { sf: 'bubble.left.and.bubble.right.fill', titulo: 'Pregúntanos', color: t.color.magenta, ruta: '/chat', detalle: 'Chat' },
+    { sf: 'mappin.and.ellipse', titulo: 'Sucursales', color: t.acentos.violeta.fuerte, ruta: '/sucursales', detalle: 'Horarios' },
+    { sf: 'person.2.fill', titulo: 'Invitar', color: t.acentos.verde.fuerte, ruta: '/invitar', detalle: '+50 puntos' },
+  ];
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
+      {casillas.map((c) => <Casilla key={c.ruta} {...c} ancho={dos ? '48%' : '31%'} />)}
+    </View>
+  );
+}
+
+function Casilla({ sf, titulo, detalle, color, resaltar, ruta, ancho }) {
   const t = useTema();
   return (
-    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityLabel={`${titulo}: ${detalle}`}
-      style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Tarjeta estilo={{ gap: 10, paddingVertical: 14 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, t.oscuro ? 0.28 : 0.16) }}>
-            <Icono sf={sf} respaldo="" tam={17} color={color} />
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(ruta); }} accessibilityRole="button"
+      accessibilityLabel={`${titulo}: ${detalle}`}
+      style={({ pressed }) => ({ width: ancho, flexGrow: 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      <Tarjeta estilo={{ padding: 12, gap: 8, minHeight: 104 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
+          <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, t.oscuro ? 0.3 : 0.15) }}>
+            <Icono sf={sf} respaldo="" tam={18} color={color} />
           </View>
           {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colorSistema.rojo }} /> : null}
         </View>
         <View style={{ gap: 1 }}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>{titulo}</Text>
-          <Text style={{ fontSize: 13, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '600' : '400' }} numberOfLines={2}>{detalle}</Text>
+          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.85} style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
+          <Text numberOfLines={1} style={{ fontSize: 12, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }}>{detalle}</Text>
         </View>
       </Tarjeta>
     </Presionable>

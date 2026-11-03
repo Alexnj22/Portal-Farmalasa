@@ -13,10 +13,37 @@ personal va por distribución no listada.
 
 | Pestaña | Qué muestra | De dónde sale |
 |---|---|---|
-| Puntos | saldo en dólares y en puntos, avance al primer canje, por vencer, movimientos | `puntos_estado_cuenta` (lo mismo que `/mis-puntos`) |
-| Ofertas | lo publicado y vigente hoy; las exclusivas, sólo el título para quien no es socio | `ofertas_clientes` |
-| Inyecciones | aplicaciones pagadas y sin aplicar; las aplicadas del último año | `app_cliente_inyecciones(customer_id)` |
+| Inicio | tarjeta de socio, nivel, avance al canje, cupón, la frase del día y el **menú** de 3 × 3 (reservas, inyecciones, tratamientos, compras, mis puntos, facturas, créditos o chat, sucursales, invitar) | `puntos_estado_cuenta` vía `app-clientes` |
+| Tienda | catálogo, banners y la entrada «Todas las ofertas» (`/ofertas`) | `catalogo`, `banners`, `ofertas_clientes` |
+| Bienestar | la frase del día en grande y la zona anti estrés | **la app** (nada del servidor) |
+| Carrito | lo que se va a reservar | la app |
 | Cuenta | permisos del programa y promociones, avisos al teléfono, reglamento, cerrar sesión, **borrar cuenta** | `app-clientes` |
+
+### Rediseño del 2026-11-03
+
+Pedido del usuario: *«hay muchas cosas en inicio, creemos un menú mejor… ofertas
+las pasamos a la tienda»*. Tres cambios:
+
+- **Ofertas dejó de ser pestaña.** La lista vive en `componentes/ListaOfertas.js`
+  y se abre como pantalla de la pila en `/ofertas` (`app/ofertas.js`). **La ruta
+  no se puede mover**: es destino de historias y banners del portal
+  (`DESTINOS_DE_LA_APP` en `src/utils/ofertasClientes.js`) y de «Ver ofertas» en
+  Mis reservas. La vitrina sin cuenta usa la misma lista.
+- **El Inicio se quedó con lo que es estado** (tarjeta, nivel, canje, cupón,
+  alertas) y lo que eran tarjetas sueltas pasó al menú. El menú tiene SIEMPRE
+  nueve casillas: créditos si hay alguno pendiente, y si no el chat — una
+  cuadrícula con hueco se ve rota. Los movimientos y lo acumulado/canjeado
+  pasaron a `/movimientos`; de los tratamientos, arriba sólo queda lo que se
+  acaba en 3 días o menos.
+- **Bienestar** (pestaña nueva). La frase del día sale de un diccionario EN LA
+  APP (`lib/fraseDelDia.js`, ~300 frases en tres canastas que se turnan: ánimo,
+  salud, calma) y cambia a las **8:00 de El Salvador**: sin cron, sin red, igual
+  en todos los teléfonos. Reglas para agregar frases en el encabezado del
+  archivo — sobre todo: sin autor (una cita mal atribuida es un dato falso con la
+  marca encima) y consejos de salud generales, nunca dosis. La zona anti estrés
+  son cuatro ejercicios sin servidor: Respira (4·4·6 s, 1/3/5 min, la pantalla
+  no se apaga mientras corre), Burbujas, Memoria (récord en el llavero) y el
+  anclaje 5-4-3-2-1. La burbuja del chat no sale en ellos.
 
 ## La sesión
 

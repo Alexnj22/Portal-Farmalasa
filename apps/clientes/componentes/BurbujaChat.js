@@ -41,7 +41,9 @@ import { useTema } from '../tema/tema';
 // Pantallas (primer segmento de la ruta) donde la burbuja NO va: el chat
 // mismo, la entrada y el registro, los modales a pantalla completa, lo legal y
 // las que tienen su propia barra de botones abajo (Facturas, la Encuesta).
-const OCULTA = new Set(['chat', 'guia', 'bienvenida', 'entrar', 'registro', 'index', 'oferta', 'producto', 'o', 'mis-puntos', 'legal', 'encuesta', 'facturas']);
+const OCULTA = new Set(['chat', 'guia', 'bienvenida', 'entrar', 'registro', 'index', 'oferta', 'producto', 'o', 'mis-puntos', 'legal', 'encuesta', 'facturas',
+  // Los ejercicios de Bienestar (2026-11-03): la pantalla entera es el juego.
+  'respira', 'burbujas', 'memoria', 'anclaje']);
 // Pestañas donde tampoco: el carrito tiene abajo la barra de «Reservar».
 const PESTANA_OCULTA = new Set(['carrito']);
 

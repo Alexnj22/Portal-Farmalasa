@@ -379,6 +379,13 @@ function Raiz() {
             <Stack.Screen name="notificaciones-borradas" options={{ title: 'Borradas recientemente' }} />
             <Stack.Screen name="reservas" options={{ title: 'Mis reservas' }} />
             <Stack.Screen name="vitrina" options={{ title: 'Ofertas' }} />
+            <Stack.Screen name="ofertas" options={{ title: 'Ofertas' }} />
+            <Stack.Screen name="movimientos" options={{ title: 'Mis puntos' }} />
+            {/* Bienestar (2026-11-03): los ejercicios de la zona anti estrés. */}
+            <Stack.Screen name="respira" options={{ title: 'Respira' }} />
+            <Stack.Screen name="burbujas" options={{ title: 'Burbujas' }} />
+            <Stack.Screen name="memoria" options={{ title: 'Memoria' }} />
+            <Stack.Screen name="anclaje" options={{ title: '5 · 4 · 3 · 2 · 1' }} />
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
             <Stack.Screen name="legal" options={{ title: '' }} />
             <Stack.Screen name="inyecciones" options={{ title: 'Mis inyecciones' }} />

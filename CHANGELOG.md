@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1428.2 — Recordatorios: la duración es un desplegable
+
+*«La parte de por cuánto tiempo de la toma no me gusta, mejor un select…
+hay muchas opciones y no se ve bien.»*
+
+- «¿Por cuánto tiempo?» deja de ser una pared de 12 píldoras: es una fila
+  «Duración · 7 días ⌄» que despliega la lista (3 días… 90 días con su
+  equivalente en semanas o meses, otro número, sin fecha de fin, hasta una
+  fecha). Va dentro de la misma hoja, no otra encima, para que funcione igual
+  en iPhone y Android.
+
 ## v2.1428.1 — Compras: la revisión no acusa a una compra por los renglones repetidos de la lista
 
 Primeras cargas reales de Cargar compra (3-nov, COFARSAL): las dos entraron

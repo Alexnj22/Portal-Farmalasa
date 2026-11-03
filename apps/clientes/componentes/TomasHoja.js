@@ -35,6 +35,7 @@ import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
+import { FlechaDesplegable } from './animacion';
 import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
 import SelectorHora, { HORA_NATIVA } from './SelectorHora';
@@ -333,10 +334,16 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
           </Text>
 
           <Seccion>¿Por cuánto tiempo?</Seccion>
-          <Pildoras superficie={superficie} alElegir={elegirDuracion}
-            opciones={[...DIAS_DURACION.map((x) => ({ id: String(x), texto: `${x} días` })), { id: 'otro', texto: 'Otro', etiqueta: 'Otro número de días' },
-              { id: 'continuo', texto: 'Sin fecha de fin' }, { id: 'fecha', texto: 'Hasta una fecha' }]}
-            valor={duracion === 'dias' ? (otrosDias ? 'otro' : String(dias)) : duracion} />
+          {/* Un desplegable y no una pared de píldoras (2026-11-03, «hay muchas
+              opciones y no se ve bien»): una fila con lo elegido y, al tocarla,
+              la lista. Va dentro de la misma hoja —no otra hoja encima— para
+              que funcione igual en iPhone y en Android. */}
+          <Desplegable superficie={superficie} etiqueta="Duración"
+            valor={duracion === 'dias' ? (otrosDias ? 'otro' : String(dias)) : duracion}
+            texto={duracion === 'dias' ? `${dias} ${dias === 1 ? 'día' : 'días'}` : duracion === 'continuo' ? 'Sin fecha de fin' : duracion === 'fecha' ? 'Hasta una fecha' : 'Elegir'}
+            alElegir={elegirDuracion}
+            opciones={[...DIAS_DURACION.map((x) => ({ id: String(x), texto: x % 7 === 0 && x <= 28 ? `${x} días (${x / 7} ${x === 7 ? 'semana' : 'semanas'})` : x === 30 ? '30 días (un mes)' : x === 60 ? '60 días (dos meses)' : x === 90 ? '90 días (tres meses)' : `${x} días` })),
+              { id: 'otro', texto: 'Otro número de días' }, { id: 'continuo', texto: 'Sin fecha de fin' }, { id: 'fecha', texto: 'Hasta una fecha' }]} />
           {duracion === 'dias' && otrosDias ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
               <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Días</Text>
@@ -381,6 +388,37 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
         </ScrollView>
       </View>
     </Modal>
+  );
+}
+
+function Desplegable({ etiqueta, texto, valor, opciones, alElegir, superficie }) {
+  const t = useTema();
+  const [abierto, setAbierto] = useState(!valor);
+  const linea = t.oscuro ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)';
+  return (
+    <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto((x) => !x); }}
+        accessibilityRole="button" accessibilityLabel={`${etiqueta}: ${texto}`} accessibilityState={{ expanded: abierto }}
+        style={({ pressed }) => ({ minHeight: 52, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8, opacity: pressed ? 0.7 : 1 })}>
+        <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{etiqueta}</Text>
+        <View style={{ flexGrow: 1, flexShrink: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 6 }}>
+          <Text style={{ flexShrink: 1, textAlign: 'right', fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>{texto}</Text>
+          <FlechaDesplegable abierto={abierto} color={colorSistema.texto2} />
+        </View>
+      </Presionable>
+      {abierto ? opciones.map((o) => {
+        const elegida = o.id === valor;
+        return (
+          <Presionable key={o.id} onPress={() => { alElegir(o.id); setAbierto(false); }}
+            accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={o.texto}
+            style={({ pressed }) => ({ minHeight: 48, paddingHorizontal: 14, paddingVertical: 10, flexDirection: 'row', alignItems: 'center', gap: 10,
+              borderTopWidth: 1, borderTopColor: linea, backgroundColor: pressed ? linea : 'transparent' })}>
+            <Text style={{ flex: 1, fontSize: 16, fontWeight: elegida ? '800' : '500', color: elegida ? t.color.magentaTexto : colorSistema.texto }}>{o.texto}</Text>
+            {elegida ? <Icono sf="checkmark" respaldo="✓" tam={15} color={t.color.magentaTexto} /> : null}
+          </Presionable>
+        );
+      }) : null}
+    </View>
   );
 }
 

@@ -308,8 +308,8 @@ const FilaDeSala = React.memo(function FilaDeSala({
                                     <Button
                                         variant="secondary" size="xs" icon={RefreshCw}
                                         disabled={busyAction === 'ingreso'}
-                                        title="Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"
-                                        onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id)}
+                                        title={canActuar ? "Manda desde Bodega lo que no salió y vuelve a ingresar lo que ya se contó" : "Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"}
+                                        onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id, { reenviar: canActuar })}
                                     >Reintentar</Button>
                                 )}
                             </>
@@ -519,8 +519,8 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         action={canEdit ? (
                             <Button variant="secondary" size="xs" icon={RefreshCw}
                                 disabled={busyAction === 'ingreso'}
-                                title="Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"
-                                onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id)}
+                                title={canActuar ? "Manda desde Bodega lo que no salió y vuelve a ingresar lo que ya se contó" : "Vuelve a ingresar al inventario sólo lo que ya se contó y no entró"}
+                                onClick={() => acc.handleReintentarIngreso(row.pedido_id, row.erp_sucursal_id, { reenviar: canActuar })}
                             >Reintentar</Button>
                         ) : null}>
                         <strong>No entró al inventario de la sala.</strong>{' '}

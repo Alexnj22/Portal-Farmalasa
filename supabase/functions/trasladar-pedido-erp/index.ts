@@ -892,6 +892,40 @@ Deno.serve(async (req) => {
           "la corrida que ya estaba abierta",
         );
         if (rotoViva) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoViva }, 503);
+
+        // ── Reenviar lo que no salió (2026-11-03, decisión del usuario) ─────
+        // Un pedido despachado puede tener renglones en 'error' que NUNCA
+        // salieron de Bodega —el pedido 11-311026-3-S2 tuvo uno, y el
+        // «Reintentar» de la tarjeta sólo recibe, así que no había forma de
+        // mandarlo sin tocar la base a mano—. Con `reenviar`, Bodega (ya
+        // exigido arriba: `alcanceTodo`) vuelve esos renglones a 'planificada'
+        // y la misma corrida los despacha.
+        //
+        // Sólo los que es SEGURO repetir: sin traslado ni vale anotados, y
+        // fuera de los dos errores que dicen que quizá sí entró al sistema —la
+        // corrida cortada a mitad de un producto y el «no» con traslados nuevos
+        // sin identificar—. Repetir uno de ésos movería el inventario dos veces.
+        if (cuerpo.reenviar === true && !simulacro && viva?.estado === "despachado") {
+          const { data: vueltas, error: vueltaErr } = await admin.from("pedido_traslado_linea")
+            .update({ estado: "planificada", error_msg: null, updated_at: new Date().toISOString() })
+            .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+            .eq("estado", "error").is("id_traslado", null).is("numero_vale", null)
+            .not("error_msg", "ilike", "La corrida anterior se cortó%")
+            .not("error_msg", "ilike", "%comprobar antes de reintentar%")
+            .select("id");
+          if (vueltaErr) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: vueltaErr.message }, 503);
+          if (!vueltas?.length)
+            return json({
+              ok: false, codigo: "NADA_QUE_REENVIAR",
+              error: "No hay productos sin salir que se puedan reenviar.",
+            }, 409);
+          const { error: reabrirErr } = await admin.from("pedido_traslado_erp")
+            .update({ estado: "en_curso", updated_at: new Date().toISOString() })
+            .eq("id", viva.id).eq("estado", "despachado");
+          if (reabrirErr) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: reabrirErr.message }, 503);
+          viva.estado = "en_curso";
+        }
+
         if (!viva || viva.estado !== "en_curso")
           return json({
             ok: false,

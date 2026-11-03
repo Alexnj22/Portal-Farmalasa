@@ -9,7 +9,7 @@
 // y la bitácora; estas funciones lanzan si la parte principal falla y
 // devuelven lo que pasó con la parte que puede fallar sola.
 import {
-    avanzarEtapaDePedidoEnSala, crearRuta, despacharTrasladoPedido, fetchItemsSinIngresar,
+    avanzarEtapaDePedidoEnSala, crearRuta, despacharTrasladoPedido, fetchItemsSinIngresar, reenviarNoSalidos,
     recibirTrasladoPedido, updateRutaStatus,
 } from './pedidos';
 import { finalizarSalaConCajas, pedirReenvioSala } from './pasosDelPedido';
@@ -78,15 +78,29 @@ export async function registrarReenvio({ pedidoId, sucId, cajas = [], electrolit
  * Volver a ingresar al inventario lo que la sala ya contó y no entró. La lista
  * sale del SERVIDOR; sin ella entraría lo que nadie contó.
  *
- * @returns {Promise<{ nada: true } | { pedidos, entraron, completo }>}
+ * `reenviar` (sólo Bodega): antes de recibir, vuelve a MANDAR lo que nunca
+ * salió de Bodega — un renglón cuyo traslado falló no tiene nada que recibir,
+ * y sin esto el botón no podía arreglarlo (pedido 11-311026-3-S2, 2026-11-03).
+ * Lo que no se pudo reenviar viaja en `reenvio` para decirlo.
+ *
+ * @returns {Promise<{ nada: true, reenvio? } | { pedidos, entraron, completo, reenvio? }>}
  */
-export async function reintentarIngreso({ pedidoId, sucId }) {
+export async function reintentarIngreso({ pedidoId, sucId, reenviar = false }) {
+    let reenvio = null;
+    if (reenviar) {
+        const r = await reenviarNoSalidos(pedidoId, sucId);
+        if (r.codigo !== 'NADA_QUE_REENVIAR') {
+            reenvio = r.ok
+                ? { ok: true, salieron: r.en_esta_corrida ?? 0, fallidas: r.fallidas ?? 0 }
+                : { ok: false, error: mensajeAmigable(r.error, 'No se pudo reenviar.') };
+        }
+    }
     const { itemIds, error } = await fetchItemsSinIngresar(pedidoId, sucId);
     if (error) throw error;
-    if (!itemIds.length) return { nada: true };
+    if (!itemIds.length) return { nada: true, reenvio };
     const erp = await recibirTrasladoPedido(pedidoId, sucId, { itemIds });
     if (!erp.ok && erp.codigo !== 'NADA_QUE_RECIBIR') throw new Error(mensajeAmigable(erp.error, 'No se pudo ingresar.'));
-    return { pedidos: itemIds.length, entraron: erp.recibidas ?? 0, completo: erp.completo ?? null };
+    return { pedidos: itemIds.length, entraron: erp.recibidas ?? 0, completo: erp.completo ?? null, reenvio };
 }
 
 /** Un paso del cierre de las diferencias de una sala. */

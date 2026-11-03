@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.10 — Pedidos: Reintentar desde Bodega reenvía lo que no salió
+
+El «Reintentar» de la tarjeta («No entró al inventario de la sala») sólo
+recibía, y un renglón cuyo traslado falló al salir de Bodega no tiene nada que
+recibir: el pedido 11-311026-3-S2 hubo que arreglarlo tocando la base a mano.
+
+Ahora, apretado por Bodega (Gestionar + alcance Todos), primero vuelve a mandar
+lo que nunca salió (`trasladar-pedido-erp` con `reenviar: true`) y después
+recibe. Sólo repite renglones en error SIN traslado ni vale, y nunca los dos
+errores que dicen que quizá sí entró al sistema (corrida cortada a mitad de un
+producto, «no» con traslados nuevos sin identificar). En la sala el botón hace
+lo mismo de siempre.
+
 ## v2.1417.9 — El personal acumula 1 punto por dólar en cualquier compra
 
 Decisión del usuario (2026-11-03): el personal (Team Farmacia Salud) acumula

@@ -477,6 +477,34 @@ export async function noReenviarEspeciales(pedidoId, sucId, labels) {
 }
 
 /**
+ * Vuelve a mandar desde Bodega los productos del pedido que NUNCA salieron
+ * —su renglón quedó en error sin traslado—. Sólo Bodega: la función lo exige.
+ * Espera el resultado (son pocos renglones) para que la recepción que sigue
+ * encuentre los traslados ya creados.
+ *
+ * Nunca lanza: `{ ok, codigo?, error?, en_esta_corrida?, fallidas? }`.
+ * `NADA_QUE_REENVIAR` no es un fallo: no había nada sin salir.
+ */
+export async function reenviarNoSalidos(pedidoId, sucId) {
+    try {
+        const { data, error } = await supabase.functions.invoke('trasladar-pedido-erp', {
+            body: {
+                pedido_id: pedidoId, erp_sucursal_id: sucId,
+                accion: 'enviar', simulacro: false, background: false, reenviar: true,
+            },
+        });
+        if (!error) return { ok: true, ...data };
+        try {
+            const cuerpo = await error.context?.json?.();
+            if (cuerpo) return { ok: false, error: cuerpo.error ?? 'No se pudo reenviar.', codigo: cuerpo.codigo };
+        } catch { /* el cuerpo no era JSON */ }
+        return { ok: false, error: error.message ?? 'No se pudo reenviar.' };
+    } catch (e) {
+        return { ok: false, error: e?.message ?? String(e) };
+    }
+}
+
+/**
  * Ingresa en la sucursal lo que ya salió de bodega.
  *
  * `hoja` recibe una hoja entera; `itemIds` recibe productos sueltos —el que la

@@ -1262,11 +1262,24 @@ export function usePedidosData({ searchTerm = '' }) {
     //
     // Repetirlo es inofensivo: la recepción sólo mira las líneas que siguen
     // 'enviada', así que reintentar sobre algo ya ingresado no hace nada.
-    const handleReintentarIngreso = useCallback(async (pedidoId, sucId) => {
+    const handleReintentarIngreso = useCallback(async (pedidoId, sucId, { reenviar = false } = {}) => {
         if (busyAction) { useToastStore.getState().showToast('Espera', 'Hay una operación en curso, intenta de nuevo.', 'info'); return; }
         setBusyAction('ingreso');
         try {
-            const r = await reintentarIngreso({ pedidoId, sucId });
+            const r = await reintentarIngreso({ pedidoId, sucId, reenviar });
+            // Lo que Bodega volvió a mandar se dice aparte: es otro paso, y
+            // si falló hay que saberlo aunque lo demás haya entrado.
+            if (r.reenvio && !r.reenvio.ok) {
+                useToastStore.getState().showToast('No se pudo reenviar desde Bodega', r.reenvio.error, 'error', 8000);
+            } else if (r.reenvio?.fallidas > 0) {
+                useToastStore.getState().showToast('Bodega no pudo mandar todo',
+                    `${r.reenvio.fallidas} producto${r.reenvio.fallidas !== 1 ? 's' : ''} sigue${r.reenvio.fallidas !== 1 ? 'n' : ''} sin salir; el motivo está en la tarjeta.`, 'error', 8000);
+            }
+            if (r.reenvio?.ok && r.reenvio.salieron > 0) {
+                useStaff.getState().appendAuditLog('REENVIAR_DESDE_BODEGA', pedidoId, {
+                    sucursal_id: sucId, salieron: r.reenvio.salieron, fallidas: r.reenvio.fallidas,
+                });
+            }
             if (r.nada) {
                 useToastStore.getState().showToast('Nada que ingresar', 'Todo lo confirmado ya está en el inventario.', 'info');
                 await loadActive();

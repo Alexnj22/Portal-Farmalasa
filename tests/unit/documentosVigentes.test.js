@@ -41,4 +41,10 @@ describe('versiones de los documentos que acepta el cliente', () => {
     expect(documentosVigentes(new Date('2026-11-15T06:00:00Z')).reglamento).toBe('reglamento-2026-11-15');
     expect(documentosVigentes(new Date('2026-11-03T12:00:00Z')).aviso).toBe(TEXTOS_CONSENTIMIENTO.aviso);
   });
+
+  it('si la base mueve la fecha del v2, el pedido de aceptación se mueve con ella', () => {
+    const el20 = new Date('2026-11-16T12:00:00Z');
+    expect(documentosVigentes(el20, '2026-11-20').reglamento).toBe('reglamento-2026-10-01');
+    expect(documentosVigentes(new Date('2026-11-20T12:00:00Z'), '2026-11-20').reglamento).toBe('reglamento-2026-11-15');
+  });
 });

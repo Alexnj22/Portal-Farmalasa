@@ -24,7 +24,10 @@ export const TEXTOS_CONSENTIMIENTO = {
 // Las versiones del reglamento del programa, cada una con la fecha de su
 // «vigente a partir del…» (docs/legal/reglamento-programa-de-puntos*.html).
 // La vigente es la última cuya fecha ya llegó, así que el día que rige una
-// nueva la app se la pide a todo el mundo SIN redesplegar nada.
+// nueva la app se la pide a todo el mundo SIN redesplegar nada. La del v2 es
+// la MISMA fecha única del reglamento v2 en la base (`reglas_v2_desde()`):
+// quien llama la pasa, y si se mueve ahí (la emergencia prevista), el pedido de
+// aceptación se mueve con ella. La escrita acá es el respaldo si no se pudo leer.
 // `tests/unit/documentosVigentes.test.js` compara estas fechas y la del aviso
 // contra el texto de los documentos: cambiar un documento sin subir su versión
 // falla la prueba — es lo que garantiza que el cliente lo vuelva a confirmar.
@@ -34,8 +37,9 @@ export const REGLAMENTOS = [
 ];
 
 /** Las versiones que el cliente tiene que haber aceptado HOY (hora de El Salvador). */
-export function documentosVigentes(ahora: Date = new Date()) {
+export function documentosVigentes(ahora: Date = new Date(), v2Desde: string | null = null) {
   const hoy = new Date(ahora.getTime() - 6 * 3600_000).toISOString().slice(0, 10);
-  const vigente = [...REGLAMENTOS].reverse().find((r) => r.desde <= hoy) ?? REGLAMENTOS[0];
+  const lista = REGLAMENTOS.map((r, i) => (i === 1 && v2Desde ? { ...r, desde: v2Desde } : r));
+  const vigente = [...lista].reverse().find((r) => r.desde <= hoy) ?? lista[0];
   return { reglamento: vigente.version, aviso: TEXTOS_CONSENTIMIENTO.aviso };
 }

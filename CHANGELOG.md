@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.6 — El pedido del reglamento v2 sigue a la fecha única de la base
+
+- `app-clientes` lee `reglas_v2_desde()` para decidir desde cuándo pide el
+  reglamento v2: es la misma fecha que enciende niveles, reservas y mayorista,
+  así que moverla en la base mueve también el pedido de aceptación. Si no se
+  puede leer, rige la escrita en `REGLAMENTOS` (15-nov-2026).
+- El primer cambio (v2.1417.4) quedó dentro del commit `fc5da1969` de otra
+  sesión por el índice compartido.
+
 ## v2.1417.5 — Las flechas de subir/bajar ya no quedan debajo de la burbuja del chat
 
 Las flechas «Ir al inicio / Ir al final» de `GlassViewLayout` y la burbuja del chat con clientes se paraban en el mismo rincón: la burbuja tapaba «Ir al final» y media «Ir al inicio», y la vista quedaba sin poder usarse por ese rincón. Ahora la burbuja se marca con `data-burbuja-chat` y, mientras está en pantalla, las flechas se corren a su izquierda (`body:has(...)`, porque la burbuja la monta `AppLayout`).

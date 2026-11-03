@@ -510,6 +510,14 @@ const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 // víspera seguiría pidiendo el viejo. Subir una = la app le vuelve a pedir la
 // aceptación (sólo esa página) a todo el mundo.
 
+async function vigentesHoy(admin: any) {
+  // La fecha del v2 sale de la base, la misma que enciende el resto del
+  // reglamento. Si no se puede leer, rige la escrita en `REGLAMENTOS`.
+  const { data, error } = await admin.rpc("reglas_v2_desde");
+  if (error) console.error("reglas_v2_desde:", error.message);
+  return documentosVigentes(new Date(), typeof data === "string" ? data.slice(0, 10) : null);
+}
+
 // Para el alta que no se puede hacer desde la app (el documento ya tiene un
 // registro pendiente con otro teléfono). No dice por qué: confirmar que ese
 // documento está registrado sería regalar el dato.
@@ -967,7 +975,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     if (accion === "textos") {
-      return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones }, documentos: documentosVigentes() });
+      return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones }, documentos: await vigentesHoy(admin) });
     }
 
     // ── Ofertas exclusivas por nivel (2026-10-14) ─────────────────────────
@@ -1481,7 +1489,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // versión de la app. Valen también para el pre-registro (sin ficha): lo
     // aceptado como pre-registro sigue valiendo cuando se vincula la ficha.
     if (accion === "documentos_estado" || accion === "aceptar_documentos") {
-      const DOCUMENTOS_VIGENTES = documentosVigentes();
+      const DOCUMENTOS_VIGENTES = await vigentesHoy(admin);
       const filtro = [
         customerId ? `customer_id.eq.${Number(customerId)}` : null,
         ses.preregistro_id ? `preregistro_id.eq.${ses.preregistro_id}` : null,

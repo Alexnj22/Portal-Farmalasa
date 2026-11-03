@@ -39,6 +39,7 @@ import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/c
 import { getErpBranchMap } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
 import { reconocer } from "../_shared/autoRespuesta.ts";
+import { bloqueoPorVencidas, fechaCorta } from "../_shared/reservasBloqueo.ts";
 
 const cors = {
   "Access-Control-Allow-Origin": "*",
@@ -2601,7 +2602,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
       // Tope de activas y bloqueo por vencidas.
       const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado, anticipo")
-        .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
+        .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 60 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       // Un pedido del carrito cuenta como UNA reserva (2026-10-07).
       // Sólo las SIN PAGAR cuentan para el tope de 3 (2026-10-19, decisión del
@@ -2611,12 +2612,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const v2 = terminos === TERMINOS_RESERVA_V2;
       const conPago = (r: any) => r.pago_estado === "pagado" || (v2 && (r.pago_estado === "anticipo" || Number(r.anticipo ?? 0) > 0.004));
       const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && !conPago(r)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
-      const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      const hasta = bloqueoPorVencidas((suyas ?? []).filter(vencidaDelCliente), v2);
       // v2 (3.7): el bloqueo es sólo para reservar SIN pago. Toda reserva de
       // la app nace sin pago (el cobro en línea llega después: H5), así que
       // acá sigue frenando, y el mensaje dice cómo reservar igual.
-      if (vencidas >= 3) return json({ ok: false, mensaje: v2
-        ? "Tienes 3 reservas que no se retiraron en los últimos 30 días: por 30 días no puedes reservar sin pago. Puedes reservar en la sucursal dejando un anticipo."
+      if (hasta) return json({ ok: false, mensaje: v2
+        ? `Dejaste vencer 3 reservas sin retirarlas: hasta el ${fechaCorta(hasta)} no puedes reservar sin pago. Puedes reservar en la sucursal dejando un anticipo.`
         : "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       if (activas >= 3) return json({ ok: false, mensaje: "Ya tienes 3 reservas sin pagar. Págalas, retíralas o cancela una para reservar otra." });
       const { data: nueva, error: eI } = await admin.from("app_reservas").insert({
@@ -3641,7 +3642,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         });
       }
       const { data: suyas, error: eR } = await admin.from("app_reservas").select("id, estado, cerrada_at, pedido, vencida_motivo, pago_estado, anticipo")
-        .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 30 * 86400_000).toISOString()})`);
+        .eq("customer_id", customerId).or(`estado.in.(en_revision,pendiente,lista),and(estado.eq.vencida,cerrada_at.gte.${new Date(Date.now() - 60 * 86400_000).toISOString()})`);
       if (eR) throw eR;
       // Sólo las SIN PAGAR cuentan para el tope de 3 (2026-10-19, decisión del
       // usuario): una pagada no aparta nada que el cliente no haya pagado.
@@ -3650,12 +3651,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const v2 = terminos === TERMINOS_RESERVA_V2;
       const conPago = (r: any) => r.pago_estado === "pagado" || (v2 && (r.pago_estado === "anticipo" || Number(r.anticipo ?? 0) > 0.004));
       const activas = new Set((suyas ?? []).filter((r: any) => ["en_revision", "pendiente", "lista"].includes(r.estado) && !conPago(r)).map((r: any) => r.pedido ?? `r${r.id}`)).size;
-      const vencidas = new Set((suyas ?? []).filter(vencidaDelCliente).map((r: any) => r.pedido ?? `r${r.id}`)).size;
+      const hasta = bloqueoPorVencidas((suyas ?? []).filter(vencidaDelCliente), v2);
       // v2 (3.7): el bloqueo es sólo para reservar SIN pago. Toda reserva de
       // la app nace sin pago (el cobro en línea llega después: H5), así que
       // acá sigue frenando, y el mensaje dice cómo reservar igual.
-      if (vencidas >= 3) return json({ ok: false, mensaje: v2
-        ? "Tienes 3 reservas que no se retiraron en los últimos 30 días: por 30 días no puedes reservar sin pago. Puedes reservar en la sucursal dejando un anticipo."
+      if (hasta) return json({ ok: false, mensaje: v2
+        ? `Dejaste vencer 3 reservas sin retirarlas: hasta el ${fechaCorta(hasta)} no puedes reservar sin pago. Puedes reservar en la sucursal dejando un anticipo.`
         : "Tienes 3 reservas que no se retiraron este mes. Podrás reservar de nuevo en 30 días." });
       // H5 (auditoría 2026-10-21): el tope cuenta igual cuando el cliente PIDE
       // pagar en línea. Las filas se insertan antes del cobro y apartan

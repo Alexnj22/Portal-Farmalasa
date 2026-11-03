@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.7 — Reservas: el bloqueo dura 30 días desde la tercera vencida; raspable mayorista con compra del mes anterior
+
+Auditoría de los reglamentos firmados contra el sistema (2026-11-03), con las
+decisiones del usuario:
+
+- **Bloqueo por no retirar (reservas 3.7).** «Si en 30 días deja vencer 3
+  reservas, no podrá reservar sin pago durante los 30 días siguientes». La app
+  contaba las vencidas de una ventana móvil, así que el bloqueo podía durar dos
+  días. Hoy `bloqueoPorVencidas` (`_shared/reservasBloqueo.ts`) lo cuenta desde
+  la TERCERA y el mensaje dice hasta qué día. Antes del 15-nov sigue la regla
+  vieja. Pruebas en `tests/unit/bloqueoPorVencidas.test.js`.
+- **Raspable de Rubí y Diamante** exige compra en el mes anterior, como el de
+  Oro y Platino (`puntos_dar_cupones`, migración `20261103164424`). Hoy no hay
+  mayoristas aprobados: no cambia a nadie todavía.
+- El tope del raspable queda en el portal (Puntos → Niveles). Simulado para el
+  15-nov con $150: 34 clientes reciben y 135 quedan fuera del presupuesto.
+
 ## v2.1417.6 — El pedido del reglamento v2 sigue a la fecha única de la base
 
 - `app-clientes` lee `reglas_v2_desde()` para decidir desde cuándo pide el

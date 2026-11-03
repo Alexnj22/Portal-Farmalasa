@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1420.1 — Una reserva lista que la sala ya no tiene entera dice cuántas faltan
+
+La R-000151 de Salud 2 apartó 3 cajas el 31-oct y la tarjeta siguió diciendo
+«Lista para retirar» tres días con 1 caja en el sistema: apartar no descuenta
+el inventario y la caja no conoce las reservas, así que lo apartado se puede
+vender en mostrador. El aviso «Falta existencia para una reserva» salía cada
+mañana a la campana y casi nadie lo abría.
+
+- `reservas_de_sucursal` trae `faltan_en_sala` y `hay_en_sala` en cada renglón
+  listo: la existencia de la sala (`app_existencias_netas`, la misma cuenta del
+  aviso) se reparte entre las listas del producto por orden de llegada. Las que
+  tienen faltante salen antes que las demás listas.
+- La tarjeta y el detalle (portal y app) dicen «Faltan 2 en la sala», el
+  renglón «En la sala hay 1 de 3» y qué hacer: carga de inventario si están en
+  el estante, o pedirlas a otra sala.
+- Sin «Avisar por WhatsApp» mientras falte, y «Retirar» advierte que es sólo si
+  el producto está completo en el estante.
+
 ## v2.1420.0 — Resumen diario de cada sucursal (Sally)
 
 Puntos 31 y 32 de PENDIENTES. Cada mañana a las 5:30, Sally —la IA del portal— le cuenta a la gerencia en 2-3 frases qué se salió de lo normal ayer en cada sala de venta.

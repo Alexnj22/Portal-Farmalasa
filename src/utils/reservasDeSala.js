@@ -122,6 +122,22 @@ export const TRASLADO = Object.fromEntries(Object.entries(TRASLADO_DE_RESERVA)
 export const renglonesDe = (r) => r?.renglones ?? [r];
 
 /**
+ * Cuántas faltan en la sala para entregar un renglón LISTO, en su
+ * presentación (2026-11-03). Lo calcula la base (`faltan_en_sala` de
+ * `reservas_de_sucursal`): apartar no descuenta el inventario y la caja no
+ * conoce las reservas, así que lo apartado se puede vender en mostrador. La
+ * R-000151 de Salud 2 dijo «Lista para retirar» tres días con 1 de 3 cajas.
+ */
+export const faltanEnSala = (x) => (x?.estado === 'lista' ? Math.max(0, Number(x.faltan_en_sala) || 0) : 0);
+
+/** Qué hacer con un renglón listo al que le falta producto; vacío si está completo. */
+export function textoDeFaltante(x) {
+    if (!faltanEnSala(x)) return '';
+    const hay = Math.max(0, Number(x.hay_en_sala) || 0);
+    return `El inventario de la sala tiene ${hay} de ${x.cantidad}. Antes de que llegue el cliente: si están en el estante, pide una carga de inventario; si no, pídelas a otra sala desde Inventario.`;
+}
+
+/**
  * Un estado por tarjeta: lo que pide la próxima acción de la sala.
  * `{ label, variant, tono? }` — `tono` sólo cuando la tarjeta entera se tiñe.
  */
@@ -131,6 +147,13 @@ export function estadoDeReserva(r) {
         return r.receta_estado === 'otra_foto'
             ? { label: 'Esperando otra foto', variant: 'info' }
             : { label: 'Receta por revisar', variant: 'warning', tono: 'warning' };
+    }
+    // Lista, pero la sala ya no la tiene entera (2026-11-03): va primero porque
+    // es lo único que puede dejar al cliente en el mostrador sin su producto.
+    const conFalta = filas.filter((x) => faltanEnSala(x) > 0);
+    if (conFalta.length) {
+        const n = conFalta.length === 1 ? faltanEnSala(conFalta[0]) : 0;
+        return { label: n ? `${n === 1 ? 'Falta' : 'Faltan'} ${n} en la sala` : 'Falta producto en la sala', variant: 'danger', tono: 'danger' };
     }
     const pendientes = filas.filter((x) => x.estado === 'pendiente');
     if (pendientes.length && pendientes.length < filas.length) return { label: 'Una parte en camino', variant: 'info' };
@@ -180,6 +203,7 @@ export function detalleDelRenglonDeReserva(x) {
         return `${x.traslado_nota || `En camino${de}`}${llegaron > 0 ? ` · llegaron ${llegaron} de ${x.cantidad}` : ''}`;
     }
     if (x.estado === 'pendiente') return 'Por apartar en la sala';
+    if (faltanEnSala(x)) return `En la sala hay ${Math.max(0, Number(x.hay_en_sala) || 0)} de ${x.cantidad}`;
     if (x.estado === 'lista' && x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Lista · precio Mayoreo Plus' : 'Lista · precio Mayoreo';
     if (x.estado === 'lista') return 'Lista';
     if (x.lista_precio) return x.lista_precio === 'mayoreo_plus' ? 'Precio Mayoreo Plus' : 'Precio Mayoreo';
@@ -273,12 +297,16 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
         title: 'La otra sala no la manda, llega una parte o Bodega cambió el precio: decide qué hacer' });
     if (hayPendiente) lista.push({ k: 'apartar', label: enCamino ? 'Ya llegó: apartar' : 'Apartar y avisar',
         title: enCamino ? 'Si el traslado ya llegó y no quedó lista sola: déjala lista y avisa al cliente' : 'Déjala lista para retirar y avisa al cliente' });
-    if (hayLista) lista.push({ k: 'retirar', label: 'Retirar', title: 'El cliente vino: cobra lo que falta y entrégala' });
+    const conFalta = filas.some((x) => faltanEnSala(x) > 0);
+    if (hayLista) lista.push({ k: 'retirar', label: 'Retirar', title: conFalta
+        ? 'Sólo si el producto está completo en el estante: el inventario de la sala no alcanza'
+        : 'El cliente vino: cobra lo que falta y entrégala' });
     if (puedePreventa && filas.some(puedeEnviarPreventa)) lista.push({ k: 'caja', label: 'Enviar a caja',
         title: 'Deja la venta armada en caja: producto, cliente y tú como vendedor' });
     if (!porResolverDe && porTraerDe) lista.push({ k: 'traer', label: 'Traer de otra sala', renglon: porTraerDe,
         title: `Si esta sala no tiene ${porTraerDe.producto}: pedirlo a otra sala o a Bodega` });
-    if (hayLista && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp' });
+    // Avisarle que está lista cuando no lo está es mandarlo a la sala por nada.
+    if (hayLista && !conFalta && !r.tiene_app) lista.push({ k: 'whatsapp', label: 'Avisar por WhatsApp' });
     // La prórroga (`modoDeProrroga`): la directa de 7 días de las condiciones
     // anteriores, o la que se PIDE desde el reglamento v2 (cláusula 6.4).
     const modos = filas.map((x) => modoDeProrroga(x));

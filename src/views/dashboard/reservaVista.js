@@ -2,5 +2,5 @@
 // lógica vive en el núcleo (`@nucleo/utils/reservasDeSala`) porque la app la
 // usa también; este archivo sólo la re-exporta para sus importadores del portal.
 export {
-    TRASLADO, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, renglonesDe, telefonoLegible,
+    TRASLADO, cuentasDeReserva, estadoDeReserva, faltanEnSala, formaDePagoLegible, renglonesDe, telefonoLegible, textoDeFaltante,
 } from '@nucleo/utils/reservasDeSala';

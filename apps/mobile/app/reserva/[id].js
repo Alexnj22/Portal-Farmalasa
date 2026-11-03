@@ -21,7 +21,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { codigoDeReserva, fetchReservasDeSucursal, whatsappDe } from '@nucleo/data/reservas';
 import {
-  accionesDeReservaNucleo, agruparPorPedido, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, recetaLegible, renglonesDe, reservasAbiertas, telefonoLegible, textoDeProrroga, TRASLADO_DE_RESERVA,
+  accionesDeReservaNucleo, agruparPorPedido, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, recetaLegible, renglonesDe, reservasAbiertas, telefonoLegible, textoDeFaltante, textoDeProrroga, TRASLADO_DE_RESERVA,
 } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -143,7 +143,7 @@ export default function DetalleDeReserva() {
             const t = x.estado === 'pendiente' ? TRASLADO_DE_RESERVA[x.traslado_estado] : null;
             const nota = x.estado === 'pendiente'
               ? `${x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sala.')}${Number(x.traslado_llegaron) > 0 ? ` Llegaron ${x.traslado_llegaron} de ${x.cantidad}.` : ''}`.trim()
-              : '';
+              : textoDeFaltante(x);
             return (
               <View key={x.id} style={{ gap: 4, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                 <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>

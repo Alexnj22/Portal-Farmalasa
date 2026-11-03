@@ -8,7 +8,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { codigoDeReserva, whatsappDe } from '@nucleo/data/reservas';
 import { textoDeProrroga } from '@nucleo/utils/reservasDeSala';
-import { TRASLADO, cuentasDeReserva, estadoDeReserva, formaDePagoLegible, renglonesDe, telefonoLegible } from './reservaVista';
+import { TRASLADO, cuentasDeReserva, estadoDeReserva, faltanEnSala, formaDePagoLegible, renglonesDe, telefonoLegible, textoDeFaltante } from './reservaVista';
 import { HistorialDeAvisos, InsigniaDeNivel } from './AvisosDeReserva';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -109,6 +109,12 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
                                                 {x.traslado_nota || (x.traslado_estado ? '' : 'Hay que apartarla en la sala.')}
                                                 {Number(x.traslado_llegaron) > 0 && ` Llegaron ${x.traslado_llegaron} de ${x.cantidad}.`}
                                             </span>
+                                        </div>
+                                    )}
+                                    {textoDeFaltante(x) && (
+                                        <div className="flex flex-wrap items-center gap-1.5">
+                                            <Badge variant="danger" uppercase={false}>{faltanEnSala(x) === 1 ? 'Falta 1' : `Faltan ${faltanEnSala(x)}`}</Badge>
+                                            <span className="text-caption text-content-2 break-words">{textoDeFaltante(x)}</span>
                                         </div>
                                     )}
                                     {x.encargo && (

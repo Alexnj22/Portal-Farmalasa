@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1414.1 — Prueba de reservas al día con la regla de prórrogas
+
+Sólo pruebas: la reserva de ejemplo de `reservaVistaNucleo.test.js` no tenía fecha de vencimiento, y desde v2.1389.0 sin plazo no hay prórroga. En producción toda reserva lista tiene su plazo, así que el portal no cambia.
+
 ## v2.1414.0 — La foto que no sube ya no frena el ingreso, y un servicio que falla avisa solo
 
 Sigue al incidente del 2-nov en Salud 1 (40 minutos sin poder anotar ingresos del POS).

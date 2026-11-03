@@ -50,7 +50,10 @@ describe('accionesDeReservaNucleo', () => {
     const ks = (r, o) => accionesDeReservaNucleo(r, o).map((a) => a.k);
 
     it('una reserva lista sin app: retirar, caja, whatsapp, prorrogar, cancelar', () => {
-        const r = { id: 1, estado: 'lista', origen: 'sucursal', tiene_app: false, renglones: [{ id: 1, estado: 'lista' }] };
+        // Con `vence_at`: desde v2.1389.0 una reserva sólo es prorrogable si tiene
+        // plazo (`modoDeProrroga`), y en la base toda reserva lista lo tiene.
+        const r = { id: 1, estado: 'lista', origen: 'sucursal', tiene_app: false, vence_at: '2026-11-10T23:59:00Z',
+            renglones: [{ id: 1, estado: 'lista', vence_at: '2026-11-10T23:59:00Z' }] };
         expect(ks(r, { puedePreventa: true })).toEqual(['retirar', 'caja', 'whatsapp', 'prorrogar', 'cancelar']);
         expect(ks(r, {})).toEqual(['retirar', 'whatsapp', 'prorrogar', 'cancelar']);
         const a = accionesDeReservaNucleo(r, {});

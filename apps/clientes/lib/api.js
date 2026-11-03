@@ -16,6 +16,7 @@ const EN_VIVO = new Set(['chat_mensajes', 'chat_escribiendo', 'chat_leido']);
 const CONSULTAS = new Set([
   'factura_documento', 'carrito_existencias', 'reserva_existencias', 'documentos_estado',
   'correos_lista', 'mis_datos_fiscales', 'perfil', 'version_publicada',
+  'frase_del_dia', // la app guarda su propia copia por día (lib/fraseDelDia.js)
 ]);
 
 // Las ESCRITURAS también llevan tope (2026-10-15): sin él, enviar un mensaje,

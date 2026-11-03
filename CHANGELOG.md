@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1419.0 — Frases del día desde el portal (pendiente: migración y despliegue)
+
+Opción A del pedido «que siempre haya frases»: el equipo carga frases en
+**Ofertas para clientes → Frases del día**, y le ganan a las ~300 que trae la
+app. Dos formas: programada para un día (una por día) o en la cola (cada día
+sin programada toma la siguiente, una vez). Cuando no hay, la app usa las
+suyas. El panel dice cuál está hoy, cuál sale mañana y para cuántos días
+alcanza la cola, con vista previa en los colores de la app.
+
+- Tabla `app_frases` + `app_frase_del_dia()` (DEFINER, sólo `service_role`, con
+  candado para que no salgan dos de la cola el mismo día). Probada en el entorno
+  de pruebas. **Borrador en `docs/borradores/app_frases.sql`: falta aplicarla a
+  producción y renombrarla a migración con su versión.**
+- `app-clientes`: acción pública `frase_del_dia`. **Falta desplegarla**
+  (`--no-verify-jwt`, como está hoy).
+- La app pide la frase una vez por día y la guarda; sin red o sin frase,
+  la del diccionario.
+- El botón de una historia se elige de una lista (ya son siete destinos).
+
 ## v2.1418.5 — Apartar viene con el precio que le toca al cliente
 
 Al apartar, el campo **Precio** ya no viene en Regular (el reglamento dice que

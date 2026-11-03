@@ -1176,6 +1176,16 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       });
     }
 
+    // ── La frase del día (2026-11-03): la que el equipo cargó en el portal
+    // para hoy, o `frase: null` y la app usa las suyas. Pública como los
+    // banners (es la misma para todos). La función anota qué frase de la cola
+    // salió hoy, con un candado para que no salgan dos el mismo día.
+    if (accion === "frase_del_dia") {
+      const { data, error } = await admin.rpc("app_frase_del_dia");
+      if (error) throw error;
+      return json({ ok: true, frase: data ?? null });
+    }
+
     // ── Catálogo (2026-10-07): precio de viñeta y precio VIP, y dónde hay.
     // Público como la vitrina: no hace falta cuenta para mirar precios.
     //

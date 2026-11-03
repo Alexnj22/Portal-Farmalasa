@@ -141,3 +141,74 @@ export function revisarMedidaDeImagen(tipo, medida) {
     const chica = medida.ancho < f.ancho * 0.6;
     return { formaMal, chica, bien: !formaMal && !chica };
 }
+
+// ── Frases del día (2026-11-03) ─────────────────────────────────────────────
+// Tabla `app_frases`. La app trae ~300 frases propias; las del portal le ganan
+// el día que hay una: programada para esa fecha o, si no, la siguiente de la
+// cola (la base anota `mostrada_el` cuando sale). Ver `app_frase_del_dia()`.
+
+export const CATEGORIAS_DE_FRASE = [
+    { value: 'animo', label: 'Ánimo' },
+    { value: 'salud', label: 'Salud' },
+    { value: 'calma', label: 'Calma' },
+];
+export const FRASE_MAX = 120;
+
+/** El día de la frase: la fecha de El Salvador (UTC−6) corrida 8 horas — el día cambia a las 8:00. */
+export function diaDeFrase(ahora = Date.now()) {
+    return new Date(ahora - (6 + 8) * 3_600_000).toISOString().slice(0, 10);
+}
+
+export const fraseValida = (f) => {
+    const n = String(f?.texto ?? '').trim().length;
+    return n >= 5 && n <= FRASE_MAX && CATEGORIAS_DE_FRASE.some((c) => c.value === f.categoria)
+        && (!f.programada || /^\d{4}-\d{2}-\d{2}$/.test(String(f.fecha ?? '')));
+};
+
+/** Lo que se guarda: sin fecha entra a la cola. */
+export const filaDeFrase = (f) => ({
+    texto: String(f.texto).trim(), categoria: f.categoria, fecha: f.programada ? f.fecha : null, activa: f.activa ?? true,
+});
+
+/**
+ * El estado de cada frase, con su lugar en la cola. `frases` en cualquier
+ * orden; la cola sale por `id` (el orden de carga), igual que en la base.
+ */
+export function estadosDeFrases(frases, hoy = diaDeFrase()) {
+    const cola = (frases ?? []).filter((f) => f.activa && !f.fecha && !f.mostrada_el).sort((a, b) => a.id - b.id);
+    const lugar = new Map(cola.map((f, i) => [f.id, i + 1]));
+    const estado = (f) => {
+        if (!f.activa) return { key: 'pausada', label: 'Pausada', variant: 'neutral' };
+        const dia = f.fecha ?? f.mostrada_el;
+        if (dia === hoy) return { key: 'hoy', label: 'En la app hoy', variant: 'success' };
+        if (dia && dia < hoy) return { key: 'salio', label: 'Ya salió', variant: 'neutral' };
+        if (f.fecha) return { key: 'programada', label: 'Programada', variant: 'info' };
+        return { key: 'cola', label: `En la cola · ${lugar.get(f.id)}`, variant: 'warning', lugar: lugar.get(f.id) };
+    };
+    return new Map((frases ?? []).map((f) => [f.id, estado(f)]));
+}
+
+/**
+ * Qué sale un día que todavía no llegó: la programada para esa fecha o la que
+ * le toque de la cola. Los días programados no gastan cola. `null` = la de la app.
+ */
+export function fraseDeUnDia(frases, dia, hoy = diaDeFrase()) {
+    const activas = (frases ?? []).filter((f) => f.activa);
+    const programada = activas.find((f) => f.fecha === dia);
+    if (programada) return programada;
+    const cola = activas.filter((f) => !f.fecha && !f.mostrada_el).sort((a, b) => a.id - b.id);
+    // Hoy sin programada: la que ya salió o, si nadie abrió la app todavía, la primera de la cola.
+    if (dia === hoy) return activas.find((f) => f.mostrada_el === hoy) ?? cola[0] ?? null;
+    // Hoy gasta una de la cola si todavía no salió ninguna y no hay programada.
+    const hoyGasta = !activas.some((f) => f.fecha === hoy || f.mostrada_el === hoy) ? 1 : 0;
+    let n = hoyGasta;
+    for (let d = sumarDiasISO(hoy, 1); d < dia; d = sumarDiasISO(d, 1)) {
+        if (!activas.some((f) => f.fecha === d)) n += 1;
+    }
+    return cola[n] ?? null;
+}
+
+function sumarDiasISO(dia, n) {
+    const [y, m, d] = dia.split('-').map(Number);
+    return new Date(Date.UTC(y, m - 1, d + n)).toISOString().slice(0, 10);
+}

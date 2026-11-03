@@ -281,3 +281,37 @@ export async function borrarBanner(b) {
     }
     anotar('BANNER_APP_BORRAR', b.id, { titulo: b.titulo });
 }
+
+// ── Frases del día (2026-11-03) ──────────────────────────────────────────────
+// Tabla `app_frases`. Son decenas al año: muy lejos del techo de 1000 filas,
+// pero se acota igual (500, deliberado) — una cola de más de un año no se usa.
+const CAMPOS_FRASE = ['texto', 'categoria', 'fecha', 'activa'];
+
+export async function fetchFrases() {
+    return sinError(await supabase.from('app_frases')
+        .select('id, texto, categoria, fecha, activa, mostrada_el, created_at')
+        .order('id', { ascending: false })
+        .limit(500));
+}
+
+export async function guardarFrase(id, datos) {
+    const fila = Object.fromEntries(CAMPOS_FRASE.filter((k) => k in datos).map((k) => [k, datos[k]]));
+    if (id) {
+        sinError(await supabase.from('app_frases').update(fila).eq('id', id).select('id').single());
+        anotar('FRASE_APP_EDITAR', id, fila);
+        return id;
+    }
+    const nueva = sinError(await supabase.from('app_frases').insert(/** @type {any} */ (fila)).select('id').single());
+    anotar('FRASE_APP_CREAR', nueva.id, fila);
+    return nueva.id;
+}
+
+export async function pausarFrase(id, activa) {
+    sinError(await supabase.from('app_frases').update({ activa }).eq('id', id).select('id').single());
+    anotar(activa ? 'FRASE_APP_REANUDAR' : 'FRASE_APP_PAUSAR', id, { activa });
+}
+
+export async function borrarFrase(f) {
+    sinError(await supabase.from('app_frases').delete().eq('id', f.id).select('id').single());
+    anotar('FRASE_APP_BORRAR', f.id, { texto: f.texto });
+}

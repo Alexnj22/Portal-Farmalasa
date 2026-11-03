@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Navigate, useSearchParams } from 'react-router-dom';
-import { Tag, Plus, Crown, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, Truck, GalleryHorizontal } from 'lucide-react';
+import { Tag, Plus, Crown, Image as ImageIcon, Eye, EyeOff, Trash2, Pencil, UserPlus, Link2, XCircle, Smartphone, CircleDashed, Truck, GalleryHorizontal, Quote } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -18,6 +18,7 @@ import { DataTable, DataRow, DataCell } from '../../components/common/DataTable'
 import OfertaModal from './OfertaModal';
 import HistoriasPanel from './HistoriasPanel';
 import BannersPanel from './BannersPanel';
+import FrasesPanel from './FrasesPanel';
 import EnvioPanel from './EnvioPanel';
 import { estadoDeOferta, etiquetaDeDescuento, nivelDeOferta } from '@nucleo/utils/ofertasClientes';
 import { LoadingState, EmptyState } from '../../components/common/StateViews';
@@ -58,6 +59,8 @@ export default function OfertasClientesView() {
         { key: 'ofertas', label: 'Ofertas', icon: Tag },
         { key: 'historias', label: 'Historias', icon: CircleDashed },
         { key: 'banners', label: 'Banners', icon: GalleryHorizontal },
+        // La frase del día de la app (2026-11-03): le gana a las que trae la app.
+        { key: 'frases', label: 'Frases del día', icon: Quote },
         // Las reservas salieron de acá a su propia pantalla (`/reservas`,
         // 2026-10-21). Lo que se queda es el ajuste de la entrega a domicilio:
         // es parte de lo que la app le ofrece al cliente, como la vitrina.
@@ -74,13 +77,15 @@ export default function OfertasClientesView() {
         <GlassViewLayout icon={Smartphone} title="Ofertas para clientes" filtersContent={(
             <ViewTabBar tabs={tabs} activeTab={tab} onTabChange={setTab}
                 searchValue={busqueda} onSearchChange={setBusqueda}
-                placeholder={tab === 'ofertas' ? 'Buscar oferta…' : tab === 'historias' ? 'Buscar historia…' : tab === 'banners' ? 'Buscar banner…' : 'Buscar por nombre o documento…'} />
+                placeholder={tab === 'ofertas' ? 'Buscar oferta…' : tab === 'historias' ? 'Buscar historia…' : tab === 'banners' ? 'Buscar banner…' : tab === 'frases' ? 'Buscar frase…' : 'Buscar por nombre o documento…'} />
         )} transparentBody>
             <div className="p-4 md:p-6 space-y-6">
                 {tab === 'preregistros'
                     ? <Preregistros busqueda={busqueda} puedeEditar={hasPermission('clientes', 'can_edit')} showToast={showToast} />
                     : tab === 'envio'
                         ? <EnvioPanel puedeEditar={puedeEditar} showToast={showToast} />
+                    : tab === 'frases'
+                        ? <FrasesPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                     : tab === 'banners'
                         ? <BannersPanel busqueda={busqueda} puedeEditar={puedeEditar} showToast={showToast} />
                     : tab === 'historias'

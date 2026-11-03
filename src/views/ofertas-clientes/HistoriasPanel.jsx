@@ -9,7 +9,6 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import FileField from '../../components/common/FileField';
 import Switch from '../../components/common/Switch';
-import SegmentedControl from '../../components/common/SegmentedControl';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { LoadingState } from '../../components/common/StateViews';
@@ -223,7 +222,8 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
                     <div>
                         <span className="block text-label font-semibold text-content-2 mb-1">Botón</span>
                         <p className="text-micro text-content-3 mb-2">A dónde lleva el botón de la historia en la app.</p>
-                        <SegmentedControl label="Botón" value={f.enlace} onChange={cambiar('enlace')}
+                        {/* Una lista y no botones (2026-11-03): con Bienestar y Respira ya son siete. */}
+                        <LiquidSelect value={f.enlace} onChange={cambiar('enlace')} placeholder="Elige a dónde lleva"
                             options={DESTINOS.map((d) => ({ value: d.valor, label: d.rotulo }))} />
                     </div>
                     <div>

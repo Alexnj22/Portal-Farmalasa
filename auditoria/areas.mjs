@@ -898,6 +898,8 @@ export const AREAS = [
                  'producto_cantidad_habitual',
                  // La preventa de una reserva enviada a caja (2026-10-21).
                  'preventas',
+                 // Frases del día cargadas en el portal (2026-11-03).
+                 'app_frases',
                  // El libro del saldo a favor: usos (pasados a puntos), devoluciones y vencimientos (2026-10-21).
                  'saldo_favor_movimientos',
                  // Reglamento de reservas v2 (2026-11-15): cada aviso hecho a mano

@@ -11,12 +11,21 @@
 // canasta `n % 3` y, dentro de ella, la frase `⌊n/3⌋ % largo`. Cada canasta da
 // la vuelta sola, así que agregar frases a una no desordena las otras.
 //
+// DESDE EL PORTAL (2026-11-03, opción A): el equipo carga frases en Ofertas
+// para clientes → Frases del día (tabla `app_frases`). Si hay una para hoy
+// —programada para la fecha, o la siguiente de la cola— la manda
+// `app-clientes` (acción `frase_del_dia`) y le gana a la de acá. Si no hay, o
+// no hay red, sale la de este diccionario: nunca falta frase. Se pide UNA vez
+// por día y se guarda en el llavero, así el resto del día abre sin esperar.
+//
 // Reglas para agregar: corta (≤ 90 letras, que entre en tres renglones), sin
 // autor —una cita mal atribuida es un dato falso con nuestra marca encima— y
 // los consejos de salud, generales y prudentes: nada de dosis ni de «deja tu
 // medicamento». Ante la duda, «consulta a tu médico».
 import { useEffect, useState } from 'react';
 import { AppState } from 'react-native';
+import * as SecureStore from 'expo-secure-store';
+import { llamar } from './api';
 
 export const CATEGORIAS = {
   animo: { nombre: 'Ánimo', sf: 'sparkles' },
@@ -359,24 +368,67 @@ export function fraseDelDia(ahora = Date.now()) {
 
 export const TOTAL_FRASES = ANIMO.length + SALUD.length + CALMA.length;
 
+// La fecha (AAAA-MM-DD) de un día de frase: la misma que calcula la base con
+// `app_frase_dia()`. Si el reloj del teléfono está corrido no coinciden, y
+// entonces se usa la del diccionario: mejor que mostrar la de otro día.
+export function fechaDeDia(dia) {
+  return new Date(dia * DIA).toISOString().slice(0, 10);
+}
+
+const CLAVE = 'puntos_salud_frase_portal';
+// Lo que el portal mandó, por día: `{ dia, frase }` (frase null = no había).
+let delPortal = null;
+let pidiendo = null;
+
+async function fraseDelPortal(dia) {
+  if (delPortal?.dia === dia) return delPortal.frase;
+  if (!delPortal) {
+    try {
+      const v = JSON.parse((await SecureStore.getItemAsync(CLAVE)) ?? 'null');
+      if (v?.dia === dia) { delPortal = v; return v.frase; }
+    } catch { /* sin copia guardada */ }
+  }
+  if (!pidiendo) {
+    pidiendo = llamar('frase_del_dia').then((r) => {
+      if (!r?.ok) return undefined; // sin red: se vuelve a preguntar la próxima vez
+      const f = r.frase && r.frase.fecha === fechaDeDia(dia) && CATEGORIAS[r.frase.categoria]
+        ? { texto: String(r.frase.texto), categoria: r.frase.categoria, dia, portal: true } : null;
+      delPortal = { dia, frase: f };
+      SecureStore.setItemAsync(CLAVE, JSON.stringify(delPortal)).catch(() => {});
+      return f;
+    }).finally(() => { pidiendo = null; });
+  }
+  return pidiendo;
+}
+
 /**
  * La frase de hoy, y que cambie sola: a las 8:00 si la app está abierta, y al
  * volver a la app (el reloj de JavaScript no corre con la app dormida).
  */
 export function useFraseDelDia() {
-  const [frase, setFrase] = useState(() => fraseDelDia());
+  // Con la del portal ya en memoria (otra pantalla la pidió), se arranca con
+  // ella: sin el parpadeo de la del diccionario.
+  const [frase, setFrase] = useState(() => {
+    const f = fraseDelDia();
+    return (delPortal?.dia === f.dia && delPortal.frase) || f;
+  });
   useEffect(() => {
     let reloj = null;
+    let vivo = true;
     const poner = () => {
       clearTimeout(reloj);
       const f = fraseDelDia();
       setFrase((x) => (x.dia === f.dia ? x : f));
+      // La del portal, si hay, reemplaza a la del diccionario.
+      fraseDelPortal(f.dia).then((p) => {
+        if (vivo && p && p.dia === fraseDelDia().dia) setFrase((x) => (x.texto === p.texto ? x : p));
+      }).catch(() => {});
       // Un segundo de margen: que al despertar ya sea el día nuevo.
       reloj = setTimeout(poner, msHastaLaSiguiente() + 1_000);
     };
     poner();
     const sub = AppState.addEventListener('change', (e) => { if (e === 'active') poner(); });
-    return () => { clearTimeout(reloj); sub.remove(); };
+    return () => { vivo = false; clearTimeout(reloj); sub.remove(); };
   }, []);
   return frase;
 }

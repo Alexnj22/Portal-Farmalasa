@@ -142,9 +142,19 @@ describe('lo que va a la base', () => {
             { vineta: '14', factor: 10, presentaciones: { tipo: 'Caja' } },
             { vineta: '2', factor: null, presentaciones: null },
         ], error: null };
-        expect(await r.preciosDeProducto('5')).toEqual([
+        expect((await r.preciosDeProducto('5')).map(({ listas, ...p }) => p)).toEqual([
             { precio: 1.5, factor: 1, tipo: 'Unidad' }, { precio: 14, factor: 10, tipo: 'Caja' }, { precio: 2, factor: 1, tipo: 'Unidad' },
         ]);
+    });
+
+    it('cada presentación trae las listas de la venta hasta Mayoreo Plus, sin Premium ni Precio 7', async () => {
+        respuesta = { data: [
+            { vineta: '13.25', descuento_1: '8.5', vip: '8', clinica: '7.5', mayoreo: '7.4', premium: '6.7', precio_7: '0.01', factor: 1, presentaciones: { tipo: 'Caja' } },
+            { vineta: '2', descuento_1: '0', vip: null, clinica: '1.8', mayoreo: '0', factor: 1, presentaciones: { tipo: 'Unidad' } },
+        ], error: null };
+        const [caja, unidad] = await r.preciosDeProducto('5');
+        expect(caja.listas.map((l) => [l.key, l.precio])).toEqual([['vineta', 13.25], ['descuento_1', 8.5], ['vip', 8], ['clinica', 7.5], ['mayoreo', 7.4]]);
+        expect(unidad.listas.map((l) => l.key)).toEqual(['vineta', 'clinica']);
         expect(pedidas[0].ops).toContainEqual(['eq', 'product_id', 5]);
     });
 

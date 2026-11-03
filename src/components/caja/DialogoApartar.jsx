@@ -107,6 +107,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const [producto, setProducto] = useState(guardado?.producto ?? null);
     const [presentaciones, setPresentaciones] = useState(null);
     const [pres, setPres] = useState(guardado?.pres ?? '');
+    // La lista de la venta con que se aparta (2026-11-03): viñeta por defecto;
+    // se aplica la que le toca al cliente según el reglamento.
+    const [lista, setLista] = useState(guardado?.lista ?? 'vineta');
     const [cantidad, setCantidad] = useState(guardado?.cantidad ?? '1');
     const [opciones, setOpciones] = useState(null);
     const [anticipo, setAnticipo] = useState('');
@@ -142,8 +145,8 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     if (claveDeEnvio.current === null) claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `apartar-${Date.now()}`;
 
     useEffect(() => {
-        saveDraft(llave(sala), { cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados });
-    }, [sala, cliente, producto, pres, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados]);
+        saveDraft(llave(sala), { cliente, producto, pres, lista, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados });
+    }, [sala, cliente, producto, pres, lista, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados]);
 
     useEffect(() => {
         if (!producto) { setPresentaciones(null); return undefined; }
@@ -160,7 +163,15 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         setPres(clavePresentacion(p));
     }, [presentaciones, pres]);
 
-    const elegida = useMemo(() => (presentaciones ?? []).find((p) => clavePresentacion(p) === pres) ?? null, [presentaciones, pres]);
+    const presElegida = useMemo(() => (presentaciones ?? []).find((p) => clavePresentacion(p) === pres) ?? null, [presentaciones, pres]);
+    // La presentación con el precio de la lista elegida: todo lo de abajo —total,
+    // anticipo, renglón del pedido, lo que va a la base— cuenta con ése. Si la
+    // presentación no tiene esa lista, vale la viñeta.
+    const elegida = useMemo(() => {
+        if (!presElegida) return null;
+        const l = presElegida.listas?.find((x) => x.key === lista);
+        return l ? { ...presElegida, precio: l.precio, lista: l.key } : { ...presElegida, lista: 'vineta' };
+    }, [presElegida, lista]);
     const cant = Math.trunc(Number(cantidad)) || 0;
 
     useEffect(() => {
@@ -198,11 +209,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 
     const agregarOtro = () => {
         setLineas((ls) => [...ls, lineaActual]);
-        setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
+        setProducto(null); setPres(''); setLista('vineta'); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
     const apartarOtro = () => {
         setApartados((as) => [...as, renglonActual]);
-        setProducto(null); setPres(''); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
+        setProducto(null); setPres(''); setLista('vineta'); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
 
     const cuerpo = useRef(null);
@@ -332,12 +343,12 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                         cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} onErrorFoto={setErrorFoto}
                         nota={nota} onNota={setNota}
                         onUsarCatalogo={(p) => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]);
-                            setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
+                            setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista('vineta'); }} />
                 ) : producto ? (
                     <div data-surface="card" className="rounded-xl p-3 space-y-3">
                         <div className="flex items-center justify-between gap-3">
                             <p className="text-body font-semibold text-content min-w-0 break-words">{producto.nombre}</p>
-                            <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setTraslado(null); setVienenElegidos(null); }}>
+                            <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setLista('vineta'); setTraslado(null); setVienenElegidos(null); }}>
                                 {soloEncargo || enPedido ? 'Quitar' : 'Cambiar'}
                             </Button>
                         </div>
@@ -345,10 +356,18 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                             <div className="flex flex-col gap-1.5 min-w-0">
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Presentación</span>
                                 <LiquidSelect clearable={false} placeholder={presentaciones == null ? 'Cargando…' : '¿Cuál?'} value={pres} onChange={setPres}
-                                options={(presentaciones ?? []).map((p) => ({ value: clavePresentacion(p), label: `${p.tipo} · ${formatMoney(p.precio)}` }))} />
+                                options={(presentaciones ?? []).map((p) => ({ value: clavePresentacion(p), label: p.tipo }))} />
                             </div>
                             <PortalInput label="Cantidad" type="number" value={cantidad} onChange={(e) => setCantidad(e.target.value)} />
                         </div>
+                        {presElegida && (
+                            <div className="flex flex-col gap-1.5 min-w-0">
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Precio</span>
+                                <LiquidSelect clearable={false} placeholder="¿Con qué precio?" value={elegida?.lista ?? 'vineta'} onChange={setLista}
+                                    options={(presElegida.listas?.length ? presElegida.listas : [{ key: 'vineta', label: 'Víneta', precio: presElegida.precio }])
+                                        .map((l) => ({ value: l.key, label: `${l.label} · ${formatMoney(l.precio)}` }))} />
+                            </div>
+                        )}
                         {elegida && cant > 0 && (
                             <p className="text-caption text-content-3">
                                 {cant} × {formatMoney(elegida.precio)} = <b className="text-content tabular-nums">{formatMoney(total)}</b> con el precio de hoy
@@ -359,7 +378,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     <>
                         <BuscadorDeProducto placeholder="Producto a apartar o encargar…"
                             invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
-                            onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); }} />
+                            onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista('vineta'); }} />
                         {!soloEncargo && !enPedido && (
                             <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
                                 ¿No lo tenemos? Consultar un producto nuevo a Bodega

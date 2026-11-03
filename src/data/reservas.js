@@ -1,6 +1,7 @@
 import { supabase } from '../supabaseClient';
 import { fechaTexto } from '../utils/fecha';
 import { formatMoney } from '../utils/formatNumber';
+import { nivelesVisibles } from '../utils/preciosDeProducto';
 import { subirArchivo } from '../utils/storageFiles';
 
 /**
@@ -136,14 +137,23 @@ export async function responderEncargo(id, accion, { precio = null, fecha = null
 }
 
 // ── Reserva hecha en la sucursal, con anticipo (2026-10-07) ────────────────
+
+/** Las listas de la venta con que se aparta en sala: del canónico, hasta
+ *  Mayoreo (el «Mayoreo Plus» de la app); Premium y Precio 7 no. */
+export const LISTAS_DE_APARTADO = nivelesVisibles('mayoreo');
 // Política: anticipo de al menos el 50 % y 7 días para retirarla. Desde el
 // 2026-10-20 el alta va por `DialogoApartar` + `apartado_aplicar`; la función
 // vieja de la base (`reserva_en_sucursal_crear`) se quitó el 2026-10-21.
 
-/** Las presentaciones con precio de un producto, de la menor a la mayor. */
+/**
+ * Las presentaciones con precio de un producto, de la menor a la mayor.
+ * `precio` es la viñeta; `listas`, las de la venta con que se puede apartar
+ * (viñeta a Mayoreo Plus, 2026-11-03) — la base acepta las mismas en
+ * `precio_de_apartado_valido`.
+ */
 export async function preciosDeProducto(productId) {
     const filas = sinError(await supabase.from('product_precios')
-        .select('vineta, factor, presentaciones(tipo)')
+        .select('vineta, descuento_1, vip, clinica, mayoreo, factor, presentaciones(tipo)')
         .eq('product_id', Number(productId)).eq('activo', true).gt('vineta', 0)
         .order('factor', { ascending: true }));
     // El catálogo puede traer la MISMA presentación dos veces (mismo tipo,
@@ -151,6 +161,7 @@ export async function preciosDeProducto(productId) {
     const vistas = new Set();
     return (filas ?? []).map((f) => ({
         precio: Number(f.vineta), factor: Number(f.factor) || 1, tipo: f.presentaciones?.tipo ?? 'Unidad',
+        listas: LISTAS_DE_APARTADO.map((l) => ({ ...l, precio: Number(f[l.key]) || 0 })).filter((l) => l.precio > 0),
     })).filter((p) => {
         const k = `${p.tipo}|${p.factor}|${p.precio}`;
         if (vistas.has(k)) return false;

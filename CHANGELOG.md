@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1418.2 — Apartar en sala con la lista de precio que corresponde
+
+La R-000151 (Salud 2) quedó a viñeta —3 × $13.25— cuando al cliente le tocaba
+VIP: el diálogo de apartar sólo ofrecía la viñeta de cada presentación y
+`apartado_cotizar` rechazaba cualquier otro precio. Se corrigió a mano a VIP
+(3 × $8.00 = $24.00; anticipo $12.00, faltan $12.00).
+
+- **Apartar** tiene ahora un campo **Precio** debajo de la presentación, con
+  las listas de la venta hasta Mayoreo Plus (Víneta, Desc. 1, VIP, Clínica,
+  Mayoreo); Premium y Precio 7 no. Viñeta viene elegida. El total, el anticipo
+  y el renglón del pedido cuentan con el precio elegido, y la caja factura con
+  la lista que da ese precio (`elegirPrecio`).
+- La base acepta esas mismas listas: `precio_de_apartado_valido`, que ahora
+  usa `apartado_cotizar` (migración `20261103171816`).
+
 ## v2.1418.1 — Historias y banners: destinos Bienestar y Respira
 
 En Ofertas para clientes, el botón de una historia o un banner ahora puede

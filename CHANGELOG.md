@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1422.1 — La vuelta del pago en línea ya no muestra el código de la página
+
+Primera prueba real de Wompi (P-NW77NH, $0.45, de prueba): el pago se confirmó
+bien, pero al «Finalizar» el cliente veía el HTML crudo, con «Â¡» en vez de
+«¡». Supabase sirve toda respuesta de una Edge Function como `text/plain` con
+`nosniff`, así que una página no se puede servir desde `wompi-pagos`.
+
+- La página vive en el portal (`public/pago.html`) y `wompi-pagos` confirma y
+  redirige con `estado` (recibido / prueba / pendiente) y `para` (reserva /
+  crédito / sala). Mismos textos que antes.
+- Decía «¡Pago recibido!» sobre un cobro de prueba: cuando el aviso de Wompi
+  llega primero, la base contesta «ya estaba» con `prueba: false`. Hoy si es de
+  prueba lo decide la transacción (`!tx.esReal`). El abono a un crédito ya
+  estaba protegido por `abono_estado = 'prueba'` en la base.
+
 ## v2.1422.0 — Practicantes con ficha, kiosco, horas y hoja de carnés
 
 - **El practicante es una ficha de personal** (`tipo_ficha = 'practicante'`, cargo «Practicante»). El alta usa el formulario de empleado: foto del DUI leída, dirección, código y usuario con contraseña de primer uso. En vez del contrato y la nómina lleva su pasantía: institución, tutor, fechas, horas y convenio. Sigue fuera de planilla, horarios y avisos de sala.

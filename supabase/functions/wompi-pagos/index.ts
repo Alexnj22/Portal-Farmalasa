@@ -17,8 +17,6 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { aceptaPruebas, avisoAutentico, consultarTransaccion } from "../_shared/wompi.ts";
 import { aplicarPagoDeCredito } from "../_shared/creditoEnLinea.ts";
 
-const VOLVER_A_LA_APP = "puntossalud://reservas";
-const VOLVER_A_CREDITOS = "puntossalud://creditos";
 
 // El pago de un crédito (2026-10-20): confirmado el cobro, el abono en la caja
 // sigue DESPUÉS de contestar — la caja tarda hasta 45 s y Wompi quiere su 200
@@ -99,19 +97,20 @@ async function confirmar(admin: any, identificador: string, idTransaccion: strin
   });
   if (error) throw error;
   if (!data?.ok) console.error("[wompi] no se confirmó:", identificador, idTransaccion, JSON.stringify(data));
-  return data;
+  // Si es de PRUEBA lo dice la transacción, no la respuesta de la base: cuando
+  // el aviso de Wompi llegó primero, la base contesta «ya estaba» con
+  // `prueba: false`, y la vuelta anunciaba «¡Pago recibido!» sobre un cobro de
+  // mentira (P-NW77NH, 2026-11-03).
+  return data && typeof data === "object" ? { ...data, prueba: !!data.prueba || !tx.esReal } : data;
 }
 
-// `volver` vacío (2026-10-22): quien pagó un enlace que le mandó la sala puede
-// no tener la app; la página se queda y no intenta abrirla.
-const pagina = (titulo: string, texto: string, volver: string | null = VOLVER_A_LA_APP) => `<!doctype html>
-<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-${volver ? `<meta http-equiv="refresh" content="1;url=${volver}">` : ""}<title>${titulo}</title>
-<style>body{font-family:-apple-system,system-ui,sans-serif;text-align:center;padding:48px 24px;color:#1c1c1e;background:#fff}
-@media(prefers-color-scheme:dark){body{color:#f2f2f7;background:#000}}h1{font-size:22px}p{font-size:16px;opacity:.75}
-a{display:inline-block;margin-top:20px;padding:14px 24px;border-radius:14px;background:#C2185B;color:#fff;text-decoration:none;font-weight:700}</style>
-</head><body><h1>${titulo}</h1><p>${texto}</p>${volver ? `<a href="${volver}">Volver a la app</a>
-<script>setTimeout(function(){location.href=${JSON.stringify(volver)}},300)</script>` : ""}</body></html>`;
+// La página de la vuelta vive en el PORTAL (`public/pago.html`), no acá
+// (2026-11-03): Supabase sirve toda respuesta de una Edge Function como
+// `text/plain` con `nosniff`, así que el cliente veía el código de la página
+// con «Â¡» en vez de «¡». Acá se confirma y se redirige con qué pasó y para qué.
+const PAGINA = "https://portal.farmasalud.lat/pago.html";
+const irA = (estado: "recibido" | "prueba" | "pendiente", para: "reserva" | "credito" | "sala") =>
+  new Response(null, { status: 302, headers: { Location: `${PAGINA}?estado=${estado}&para=${para}`, "Cache-Control": "no-store" } });
 
 Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
@@ -128,31 +127,12 @@ Deno.serve(async (req) => {
     } catch (e) {
       console.error("[wompi] vuelta:", (e as Error)?.message ?? e);
     }
-    // El identificador de un crédito empieza con «CR-» (ver `pagar_credito`).
-    if (r?.credito || identificador.startsWith("CR-")) {
-      const html = r?.ok && r?.prueba
-        ? pagina("Pago de prueba", "Este cobro fue de prueba: no se cargó dinero y tu crédito sigue igual.", VOLVER_A_CREDITOS)
-        : r?.ok
-        ? pagina("¡Pago recibido!", "Tu crédito se actualiza en unos segundos.", VOLVER_A_CREDITOS)
-        : pagina("Volviendo a la app", "Si completaste el pago, tu crédito se actualiza en unos segundos.", VOLVER_A_CREDITOS);
-      return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
-    }
-    // El enlace que mandó la sala (identificador «AP-», 2026-10-22).
-    if (identificador.startsWith("AP-")) {
-      const html = r?.ok && r?.prueba
-        ? pagina("Pago de prueba", "Este cobro fue de prueba: no se cargó dinero. Paga en la sucursal.", null)
-        : r?.ok
-        ? pagina("¡Pago recibido!", "La sucursal ya lo tiene registrado. Puedes cerrar esta ventana.", null)
-        : pagina("Gracias", "Si completaste el pago, la sucursal lo recibe en unos segundos. Puedes cerrar esta ventana.", null);
-      return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
-    }
-    // Un cobro de PRUEBA (2026-10-19) no es dinero: se dice, y la sala lo cobra en caja.
-    const html = r?.ok && r?.prueba
-      ? pagina("Pago de prueba", "Este cobro fue de prueba: no se cargó dinero. Pagas al retirar en la sucursal.")
-      : r?.ok
-      ? pagina("¡Pago recibido!", "Tu reserva ya figura como pagada.")
-      : pagina("Volviendo a la app", "Si completaste el pago, tu reserva se actualiza en unos segundos.");
-    return new Response(html, { headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
+    // El identificador de un crédito empieza con «CR-» (ver `pagar_credito`);
+    // el enlace que mandó la sala, con «AP-» (2026-10-22). Un cobro de PRUEBA
+    // (2026-10-19) no es dinero: se dice, y la sala lo cobra en caja.
+    const para = r?.credito || identificador.startsWith("CR-") ? "credito"
+      : identificador.startsWith("AP-") ? "sala" : "reserva";
+    return irA(r?.ok && r?.prueba ? "prueba" : r?.ok ? "recibido" : "pendiente", para);
   }
 
   if (req.method !== "POST") return new Response("solo POST o GET", { status: 405 });

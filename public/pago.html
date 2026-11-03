@@ -1,0 +1,72 @@
+<!doctype html>
+<!--
+  La vuelta de un pago en línea (Wompi), 2026-11-03.
+
+  Vivía como HTML dentro de la función `wompi-pagos`, pero Supabase sirve TODA
+  respuesta de una Edge Function como `text/plain` (con `nosniff`): el cliente
+  veía el código fuente de la página, con «Â¡» en vez de «¡». Hoy la función
+  confirma el pago y redirige acá con dos datos:
+    estado = recibido | prueba | pendiente
+    para   = reserva | credito | sala
+  Los textos son los mismos que tenía la función. «sala» es el enlace que manda
+  la sucursal por WhatsApp: quien paga puede no tener la app, así que no se
+  intenta abrirla.
+-->
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Pago · Farmacia Salud</title>
+<style>
+  :root { --fondo: #fff; --texto: #1c1c1e; --marca: #C2185B; }
+  @media (prefers-color-scheme: dark) { :root { --fondo: #000; --texto: #f2f2f7; } }
+  body { font-family: -apple-system, system-ui, sans-serif; text-align: center; padding: 48px 16px;
+         color: var(--texto); background: var(--fondo); margin: 0; }
+  h1 { font-size: 22px; }
+  p { font-size: 16px; opacity: .75; max-width: 28rem; margin: 0 auto; }
+  a { display: inline-block; margin-top: 20px; padding: 14px 24px; border-radius: 14px; min-height: 44px;
+      box-sizing: border-box; background: var(--marca); color: #fff; text-decoration: none; font-weight: 700; }
+</style>
+</head>
+<body>
+<h1 id="titulo">Volviendo a la app</h1>
+<p id="texto"></p>
+<a id="volver" href="puntossalud://reservas" hidden>Volver a la app</a>
+<script>
+(function () {
+  var q = new URLSearchParams(location.search);
+  var estado = q.get('estado');
+  var para = q.get('para');
+  var TEXTOS = {
+    reserva: {
+      recibido: ['¡Pago recibido!', 'Tu reserva ya figura como pagada.'],
+      prueba: ['Pago de prueba', 'Este cobro fue de prueba: no se cargó dinero. Pagas al retirar en la sucursal.'],
+      pendiente: ['Volviendo a la app', 'Si completaste el pago, tu reserva se actualiza en unos segundos.']
+    },
+    credito: {
+      recibido: ['¡Pago recibido!', 'Tu crédito se actualiza en unos segundos.'],
+      prueba: ['Pago de prueba', 'Este cobro fue de prueba: no se cargó dinero y tu crédito sigue igual.'],
+      pendiente: ['Volviendo a la app', 'Si completaste el pago, tu crédito se actualiza en unos segundos.']
+    },
+    sala: {
+      recibido: ['¡Pago recibido!', 'La sucursal ya lo tiene registrado. Puedes cerrar esta ventana.'],
+      prueba: ['Pago de prueba', 'Este cobro fue de prueba: no se cargó dinero. Paga en la sucursal.'],
+      pendiente: ['Gracias', 'Si completaste el pago, la sucursal lo recibe en unos segundos. Puedes cerrar esta ventana.']
+    }
+  };
+  var grupo = TEXTOS[para] || TEXTOS.reserva;
+  var t = grupo[estado] || grupo.pendiente;
+  document.getElementById('titulo').textContent = t[0];
+  document.getElementById('texto').textContent = t[1];
+  document.title = t[0] + ' · Farmacia Salud';
+  if (para === 'sala') return;
+  var destino = para === 'credito' ? 'puntossalud://creditos' : 'puntossalud://reservas';
+  var a = document.getElementById('volver');
+  a.href = destino;
+  a.hidden = false;
+  setTimeout(function () { location.href = destino; }, 300);
+})();
+</script>
+</body>
+</html>

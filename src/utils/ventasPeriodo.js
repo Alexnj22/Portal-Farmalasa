@@ -273,13 +273,14 @@ export const montoPrivado = (texto, privado) => (privado ? '••••••' 
 
 /** Los niveles de precio, con el número con que los nombra la sala. */
 export const DRILL_TIERS = [
-    { key: 'vip',         label: 'VIP',     variante: 'chart-3', num: 3 },
-    { key: 'clinica',     label: 'Clínica', variante: 'warning', num: 4 },
-    { key: 'mayoreo',     label: 'Mayoreo', variante: 'chart-4', num: 5 },
+    // Rótulos del reglamento (los mismos de `NIVELES_DE_PRECIO`).
+    { key: 'vip',         label: 'Preferente', variante: 'chart-3', num: 3 },
+    { key: 'clinica',     label: 'Mayoreo',    variante: 'warning', num: 4 },
+    { key: 'mayoreo',     label: 'Mayoreo Plus', variante: 'chart-4', num: 5 },
     { key: 'premium',     label: 'Premium', variante: 'warning', num: 6 },
-    { key: 'descuento_1', label: 'Desc.',   variante: 'success', num: 2 },
+    { key: 'descuento_1', label: 'Público', variante: 'success', num: 2 },
     { key: 'precio_7',    label: 'P7',      variante: 'chart-9', num: 7 },
-    { key: 'vineta',      label: 'Viñeta',  variante: 'neutral', num: 1 },
+    { key: 'vineta',      label: 'Regular', variante: 'neutral', num: 1 },
 ];
 /** Del más bajo al más alto: hasta dónde llega cada cargo (`maxPriceLevel`). */
 export const DRILL_TIER_ORDER = ['vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo', 'premium', 'precio_7'];

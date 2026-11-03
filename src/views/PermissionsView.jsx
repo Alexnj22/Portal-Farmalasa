@@ -1304,11 +1304,11 @@ const PermissionsView = () => {
                                 const currentLevel = rolePriceLevels[selectedRoleId] ?? null;
                                 const PRICE_OPTS = [
                                     { value: null,          label: 'Sin límite',  sub: 'todos los precios', icon: Unlock,     grad: 'from-success to-chart-9'  },
-                                    { value: 'vineta',      label: 'Viñeta',      sub: 'precio viñeta',     icon: DollarSign, grad: 'from-chart-1 to-chart-3'   },
-                                    { value: 'descuento_1', label: 'Desc. 1',     sub: 'descuento 1',       icon: DollarSign, grad: 'from-chart-3 to-chart-6' },
-                                    { value: 'vip',         label: 'VIP',         sub: 'precio VIP',        icon: DollarSign, grad: 'from-warning to-chart-4'  },
-                                    { value: 'clinica',     label: 'Clínica',     sub: 'precio clínica',    icon: DollarSign, grad: 'from-danger to-chart-6'     },
-                                    { value: 'mayoreo',     label: 'Mayoreo',     sub: 'precio mayoreo',    icon: DollarSign, grad: 'from-chart-9 to-chart-1'      },
+                                    { value: 'vineta',      label: 'Regular',     sub: 'antes viñeta',     icon: DollarSign, grad: 'from-chart-1 to-chart-3'   },
+                                    { value: 'descuento_1', label: 'Público',     sub: 'antes descuento 1',       icon: DollarSign, grad: 'from-chart-3 to-chart-6' },
+                                    { value: 'vip',         label: 'Preferente',  sub: 'antes VIP',        icon: DollarSign, grad: 'from-warning to-chart-4'  },
+                                    { value: 'clinica',     label: 'Mayoreo',     sub: 'antes clínica',    icon: DollarSign, grad: 'from-danger to-chart-6'     },
+                                    { value: 'mayoreo',     label: 'Mayoreo Plus', sub: 'antes mayoreo',    icon: DollarSign, grad: 'from-chart-9 to-chart-1'      },
                                     { value: 'premium',     label: 'Premium',     sub: 'precio premium',    icon: DollarSign, grad: 'from-chart-8 to-chart-8-text'   },
                                     { value: 'precio_7',    label: 'Precio 7',    sub: 'precio 7',          icon: DollarSign, grad: 'from-chart-4 to-danger'    },
                                 ];

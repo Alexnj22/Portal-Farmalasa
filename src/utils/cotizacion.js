@@ -36,11 +36,12 @@ export function totalesDeCotizacion(items, aplicaRetencion) {
 
 /** Los niveles de precio, en su orden canónico (el del control de acceso). */
 export const COLUMNAS_DE_PRECIO = [
-    { key: 'vineta', label: 'Viñeta' },
-    { key: 'descuento_1', label: 'Descuento 1' },
-    { key: 'vip', label: 'VIP' },
-    { key: 'clinica', label: 'Clínica' },
-    { key: 'mayoreo', label: 'Mayoreo' },
+    // Rótulos del reglamento: los mismos de `NIVELES_DE_PRECIO`.
+    { key: 'vineta', label: 'Regular' },
+    { key: 'descuento_1', label: 'Público' },
+    { key: 'vip', label: 'Preferente' },
+    { key: 'clinica', label: 'Mayoreo' },
+    { key: 'mayoreo', label: 'Mayoreo Plus' },
     { key: 'premium', label: 'Premium' },
     { key: 'precio_7', label: 'Precio 7' },
 ];

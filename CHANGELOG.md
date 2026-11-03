@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1418.4 — Los precios con los nombres del reglamento
+
+El portal nombra los precios como el procedimiento de clientes (§1, «Los
+nombres de los precios»): Viñeta → **Regular**, Descuento 1 → **Público**,
+VIP → **Preferente**, Clínica → **Mayoreo**, Mayoreo → **Mayoreo Plus**.
+Premium y Precio 7 no cambian. Son sólo rótulos: las claves (`vineta`,
+`descuento_1`, `vip`, `clinica`, `mayoreo`) y lo que va a la base y a la caja
+siguen iguales.
+
+Cambia en el catálogo, Apartar, cotizaciones, el tipo de precio de Ventas,
+el tope de precio de Permisos (con el nombre viejo debajo, porque la caja
+todavía lo muestra así), Cargar compra (pantalla y CSV), Rentabilidad,
+Política de vencimiento y su pantalla en la app.
+
 ## v2.1418.3 — Lotes por revisar en el libro bajo receta
 
 Punto 22 de PENDIENTES. Un renglón del libro bajo receta hereda el lote de la venta, y a veces ese lote no sirve para rastrear la caja: **dos lotes en uno** (`2603216_2603525`), **«GENERICO»**, **sin lote** o **vencido el día de la venta**. No nace en la caja: el inventario ya lo tiene así desde que se cargó la compra (34 de 3,034 lotes, todos dos lotes pegados).

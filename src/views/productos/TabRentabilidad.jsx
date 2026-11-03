@@ -17,7 +17,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 const COLS = [
     { key: 'producto', label: 'Producto',  align: 'left'  },
     { key: 'costo',    label: 'Costo',     align: 'right' },
-    { key: 'vineta',   label: 'Viñeta',    align: 'right' },
+    { key: 'vineta',   label: 'Regular',   align: 'right' },
     { key: 'margen',   label: 'Margen',    align: 'right' },
     { key: 'antes',    label: 'Antes',     align: 'right', hideBelow: 'md' },
     { key: 'sugerida', label: 'Sugerida',  align: 'right' },

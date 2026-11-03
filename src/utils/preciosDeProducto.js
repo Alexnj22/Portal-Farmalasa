@@ -5,13 +5,18 @@
  * los mismos niveles al mismo cargo.
  */
 
-/** Los siete niveles, en orden de menor a mayor descuento. */
+/**
+ * Los siete niveles, en orden de menor a mayor descuento. Los rótulos son los
+ * del reglamento (procedimiento de clientes §1, «Los nombres de los precios»):
+ * la clave es la columna del sistema de ventas y NO cambia; el rótulo sí.
+ * `antes` es el nombre viejo, el que todavía muestra la caja.
+ */
 export const NIVELES_DE_PRECIO = [
-    { key: 'vineta', label: 'Víneta' },
-    { key: 'descuento_1', label: 'Desc. 1' },
-    { key: 'vip', label: 'VIP' },
-    { key: 'clinica', label: 'Clínica' },
-    { key: 'mayoreo', label: 'Mayoreo' },
+    { key: 'vineta', label: 'Regular', antes: 'Viñeta' },
+    { key: 'descuento_1', label: 'Público', antes: 'Descuento 1' },
+    { key: 'vip', label: 'Preferente', antes: 'VIP' },
+    { key: 'clinica', label: 'Mayoreo', antes: 'Clínica' },
+    { key: 'mayoreo', label: 'Mayoreo Plus', antes: 'Mayoreo' },
     { key: 'premium', label: 'Premium' },
     { key: 'precio_7', label: 'Precio 7' },
 ];

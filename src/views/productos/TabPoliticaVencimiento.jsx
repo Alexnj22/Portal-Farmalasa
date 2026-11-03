@@ -412,7 +412,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
                 {proveedor.notas && <p className="text-caption text-content-3 truncate mt-0.5">{proveedor.notas}</p>}
             </div>
             {proveedor.vineta != null && (
-                <Badge title="Viñeta" variant="chart-3" size="sm" uppercase={false}>v{proveedor.vineta}</Badge>
+                <Badge title="Precio regular" variant="chart-3" size="sm" uppercase={false}>v{proveedor.vineta}</Badge>
             )}
             {proveedor.devolutivo ? (
                 <Badge variant="success" size="sm">Devolutivo{proveedor.meses_devolucion != null ? ` · ${proveedor.meses_devolucion}m` : ''}</Badge>
@@ -506,14 +506,14 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
 
                 <div className="flex items-center gap-1 shrink-0">
                     <PortalInput
-                        aria-label="Viñeta del proveedor"
+                        aria-label="Precio regular del proveedor"
                         type="number"
                         value={draft.vineta}
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
                         min="0"
                         step="0.01"
-                        title="Viñeta: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio-viñeta vigente del producto para resolver la política automáticamente"
+                        title="Precio regular: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio regular vigente del producto para resolver la política automáticamente"
                         tono="chart-9"
                         compact
                         inputClassName="text-body-xl font-semibold text-content-2 text-center"

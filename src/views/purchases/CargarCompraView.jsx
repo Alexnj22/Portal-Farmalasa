@@ -103,7 +103,7 @@ const COLS_REGISTRO = [
     { key: 'producto', label: 'Producto',   align: 'left'   },
     { key: 'cant',     label: 'Unidades',   align: 'right'  },
     { key: 'costo',    label: 'Costo c/u',  align: 'right'  },
-    { key: 'vineta',   label: 'Viñeta',     align: 'right'  },
+    { key: 'vineta',   label: 'Regular',    align: 'right'  },
     { key: 'lote',     label: 'Lote · vence', align: 'left', hideBelow: 'lg' },
     { key: 'sistema',  label: 'Comprobado', align: 'center', hideBelow: 'md' },
     { key: 'por',      label: 'Cargó',      align: 'left',   hideBelow: 'lg' },
@@ -1005,7 +1005,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 const nueva = Number(aj.venta);
                                                 const cambia = nueva > 0 && actual != null && Math.abs(nueva - actual) >= 0.005;
                                                 return (
-                                                    <PortalInput compact labelDenso label="Viñeta" inputMode="decimal"
+                                                    <PortalInput compact labelDenso label="Regular" inputMode="decimal"
                                                         readOnly={!puedeEditar || aj.erroneo}
                                                         placeholder={actual != null ? actual.toFixed(2) : 'la de Bodega'}
                                                         value={aj.venta ?? ''}
@@ -1390,7 +1390,7 @@ function ComoEntra({ sim, costo }) {
             )}
             {costo && (
                 <div className="min-w-0">
-                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Viñeta</p>
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Regular</p>
                     <p className="text-label font-bold text-content tabular-nums">
                         {formatMoney(costo.venta)}
                         {costo.ventaAntes > 0 && Math.abs(costo.venta - costo.ventaAntes) >= 0.005 && (
@@ -1549,7 +1549,7 @@ function TabRegistro({ busca }) {
             ['Fecha', 'Tipo doc', 'Documento', 'Numero de control', 'NIT proveedor', 'Proveedor', 'Uso', 'Tipo',
              'ID producto', 'Producto', 'Codigo proveedor', 'Descripcion proveedor', 'Presentacion', 'Unidades por presentacion',
              'Cantidad', 'Unidades', 'Precio lista', 'Descuento renglon', 'Descuento pie %', 'Costo presentacion',
-             'Costo unidad', 'Costo anterior', 'Variacion costo %', 'Vineta', 'Vineta anterior', 'Lote', 'Vence',
+             'Costo unidad', 'Costo anterior', 'Variacion costo %', 'Regular', 'Regular anterior', 'Lote', 'Vence',
              'Enviado a salas', 'Comprobado', 'Cargado por', 'Cargado el', 'Carga', 'Compra en el sistema'],
             vista.map(f => [
                 f.fecha_documento, n(f.tipo_documento), n(f.numero_documento), n(f.numero_control), n(f.proveedor_nit), n(f.proveedor_nombre),

@@ -364,7 +364,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                             <div className="flex flex-col gap-1.5 min-w-0">
                                 <span className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">Precio</span>
                                 <LiquidSelect clearable={false} placeholder="¿Con qué precio?" value={elegida?.lista ?? 'vineta'} onChange={setLista}
-                                    options={(presElegida.listas?.length ? presElegida.listas : [{ key: 'vineta', label: 'Víneta', precio: presElegida.precio }])
+                                    options={(presElegida.listas?.length ? presElegida.listas : [{ key: 'vineta', label: 'Regular', precio: presElegida.precio }])
                                         .map((l) => ({ value: l.key, label: `${l.label} · ${formatMoney(l.precio)}` }))} />
                             </div>
                         )}

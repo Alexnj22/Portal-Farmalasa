@@ -44,7 +44,7 @@ function Editor({ inicial, onGuardar, onCancelar }) {
         <Interruptor value={d.devolutivo} onValueChange={(v) => setD({ ...d, devolutivo: v })} />
       </View>
       {d.devolutivo ? <Campo multiline={false} keyboardType="number-pad" value={String(d.meses_devolucion ?? '')} onChangeText={(v) => setD({ ...d, meses_devolucion: v })} placeholder="Meses antes del vencimiento" /> : null}
-      <Campo multiline={false} keyboardType="decimal-pad" value={String(d.vineta ?? '')} onChangeText={(v) => setD({ ...d, vineta: v.replace(',', '.') })} placeholder="Viñeta (opcional)" />
+      <Campo multiline={false} keyboardType="decimal-pad" value={String(d.vineta ?? '')} onChangeText={(v) => setD({ ...d, vineta: v.replace(',', '.') })} placeholder="Precio regular (opcional)" />
       <Campo value={d.notas} onChangeText={(v) => setD({ ...d, notas: v })} placeholder="Notas (opcional)" />
       <View style={{ flexDirection: 'row', gap: 8 }}>
         <View style={{ flex: 1 }}><BotonGrande texto="Cancelar" borde color={colorSistema.texto2} onPress={onCancelar} /></View>
@@ -142,7 +142,7 @@ export default function PoliticaVencimiento({ texto, canEdit }) {
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{p.nombre}</Text>
                         <Pildora texto={p.devolutivo ? `Devolutivo · ${p.meses_devolucion ?? '?'} meses` : 'No devolutivo'} color={p.devolutivo ? MARCA.verde : colorSistema.texto2} />
                       </View>
-                      {p.vineta != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Viñeta ${formatMoney(p.vineta)}`}</Text> : null}
+                      {p.vineta != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Regular ${formatMoney(p.vineta)}`}</Text> : null}
                       {p.notas ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{p.notas}</Text> : null}
                       {canEdit ? (
                         <View style={{ flexDirection: 'row', gap: 16 }}>

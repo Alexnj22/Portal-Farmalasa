@@ -1040,7 +1040,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                         onClick={toggleEnApp}
                         title={enApp === false
                             ? 'Oculto en el catálogo de la app de clientes. Clic para mostrarlo.'
-                            : 'Se muestra en el catálogo de la app de clientes (con precio y precio VIP). Clic para ocultarlo.'}
+                            : 'Se muestra en el catálogo de la app de clientes (con precio y precio Preferente). Clic para ocultarlo.'}
                     >
                         {enApp === false ? 'Oculto en la app' : 'Se ve en la app'}
                     </Button>

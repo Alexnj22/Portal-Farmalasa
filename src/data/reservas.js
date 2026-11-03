@@ -145,6 +145,11 @@ export const LISTAS_DE_APARTADO = nivelesVisibles('mayoreo');
 // 2026-10-20 el alta va por `DialogoApartar` + `apartado_aplicar`; la función
 // vieja de la base (`reserva_en_sucursal_crear`) se quitó el 2026-10-21.
 
+/** La lista de precio que le toca al cliente (la decide la base, ver `listaQueLeToca`). */
+export async function listaDelCliente(customerId) {
+    return sinError(await supabase.rpc('lista_de_precio_del_cliente', { p_customer: Number(customerId) }));
+}
+
 /**
  * Las presentaciones con precio de un producto, de la menor a la mayor.
  * `precio` es la viñeta; `listas`, las de la venta con que se puede apartar

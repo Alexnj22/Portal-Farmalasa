@@ -15,7 +15,7 @@ import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
     crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
-    mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
+    listaDelCliente, mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
 import { buscarEnSrs } from '@nucleo/data/srs';
@@ -31,7 +31,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
-import { apartadoDelPedido, clavePresentacion, origenesDelPedido, planDeApartar, redondear, telefonoDeFicha, tomaDeCadaTraslado } from '@nucleo/utils/apartar';
+import { apartadoDelPedido, clavePresentacion, listaQueLeToca, origenesDelPedido, planDeApartar, redondear, telefonoDeFicha, tomaDeCadaTraslado } from '@nucleo/utils/apartar';
 import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala, SI_EL_TRASLADO_NO_SALIO } from '@nucleo/utils/reservasDeSala';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
@@ -107,9 +107,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const [producto, setProducto] = useState(guardado?.producto ?? null);
     const [presentaciones, setPresentaciones] = useState(null);
     const [pres, setPres] = useState(guardado?.pres ?? '');
-    // La lista de la venta con que se aparta (2026-11-03): viñeta por defecto;
-    // se aplica la que le toca al cliente según el reglamento.
-    const [lista, setLista] = useState(guardado?.lista ?? 'vineta');
+    // La lista de la venta con que se aparta (2026-11-03). null = la que le
+    // toca al cliente según el reglamento (`listaQueLeToca`); si alguien la
+    // cambia a mano, queda la elegida.
+    const [lista, setLista] = useState(guardado?.lista ?? null);
+    const [listaBase, setListaBase] = useState(null);
     const [cantidad, setCantidad] = useState(guardado?.cantidad ?? '1');
     const [opciones, setOpciones] = useState(null);
     const [anticipo, setAnticipo] = useState('');
@@ -163,15 +165,25 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
         setPres(clavePresentacion(p));
     }, [presentaciones, pres]);
 
+    useEffect(() => {
+        if (!cliente?.id) { setListaBase(null); return undefined; }
+        let vivo = true;
+        // Sin respuesta se queda en Público: el que le toca a quien no tiene cuenta.
+        listaDelCliente(cliente.id).then((l) => { if (vivo) setListaBase(l ?? 'descuento_1'); })
+            .catch(() => { if (vivo) setListaBase('descuento_1'); });
+        return () => { vivo = false; };
+    }, [cliente?.id]);
+
     const presElegida = useMemo(() => (presentaciones ?? []).find((p) => clavePresentacion(p) === pres) ?? null, [presentaciones, pres]);
+    const listaSugerida = useMemo(() => listaQueLeToca(listaBase, presElegida, presentaciones ?? []), [listaBase, presElegida, presentaciones]);
     // La presentación con el precio de la lista elegida: todo lo de abajo —total,
     // anticipo, renglón del pedido, lo que va a la base— cuenta con ése. Si la
     // presentación no tiene esa lista, vale la viñeta.
     const elegida = useMemo(() => {
         if (!presElegida) return null;
-        const l = presElegida.listas?.find((x) => x.key === lista);
+        const l = presElegida.listas?.find((x) => x.key === (lista ?? listaSugerida));
         return l ? { ...presElegida, precio: l.precio, lista: l.key } : { ...presElegida, lista: 'vineta' };
-    }, [presElegida, lista]);
+    }, [presElegida, lista, listaSugerida]);
     const cant = Math.trunc(Number(cantidad)) || 0;
 
     useEffect(() => {
@@ -209,11 +221,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
 
     const agregarOtro = () => {
         setLineas((ls) => [...ls, lineaActual]);
-        setProducto(null); setPres(''); setLista('vineta'); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
+        setProducto(null); setPres(''); setLista(null); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
     const apartarOtro = () => {
         setApartados((as) => [...as, renglonActual]);
-        setProducto(null); setPres(''); setLista('vineta'); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
+        setProducto(null); setPres(''); setLista(null); setCantidad('1'); setTraslado(null); setVienenElegidos(null);
     };
 
     const cuerpo = useRef(null);
@@ -343,12 +355,12 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                         cantidad={cantidad} onCantidad={setCantidad} fotos={fotos} onFotos={setFotos} onErrorFoto={setErrorFoto}
                         nota={nota} onNota={setNota}
                         onUsarCatalogo={(p) => { setSinCatalogo(false); setSrs(null); setSrsNoAparece(false); setFotos([]);
-                            setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista('vineta'); }} />
+                            setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista(null); }} />
                 ) : producto ? (
                     <div data-surface="card" className="rounded-xl p-3 space-y-3">
                         <div className="flex items-center justify-between gap-3">
                             <p className="text-body font-semibold text-content min-w-0 break-words">{producto.nombre}</p>
-                            <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setLista('vineta'); setTraslado(null); setVienenElegidos(null); }}>
+                            <Button variant="ghost" size="sm" onClick={() => { setProducto(null); setPres(''); setLista(null); setTraslado(null); setVienenElegidos(null); }}>
                                 {soloEncargo || enPedido ? 'Quitar' : 'Cambiar'}
                             </Button>
                         </div>
@@ -366,6 +378,17 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                                 <LiquidSelect clearable={false} placeholder="¿Con qué precio?" value={elegida?.lista ?? 'vineta'} onChange={setLista}
                                     options={(presElegida.listas?.length ? presElegida.listas : [{ key: 'vineta', label: 'Regular', precio: presElegida.precio }])
                                         .map((l) => ({ value: l.key, label: `${l.label} · ${formatMoney(l.precio)}` }))} />
+                                {listaSugerida && (() => {
+                                    const toca = presElegida.listas?.find((l) => l.key === listaSugerida);
+                                    if (!toca) return null;
+                                    return (
+                                        <p className={`text-caption ml-1 ${elegida?.lista === listaSugerida ? 'text-content-3' : 'text-warning-text'}`}>
+                                            {elegida?.lista === listaSugerida
+                                                ? 'Es el que le toca a este cliente según el reglamento.'
+                                                : `Según el reglamento le toca ${toca.label} (${formatMoney(toca.precio)}).`}
+                                        </p>
+                                    );
+                                })()}
                             </div>
                         )}
                         {elegida && cant > 0 && (
@@ -378,7 +401,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                     <>
                         <BuscadorDeProducto placeholder="Producto a apartar o encargar…"
                             invitacion={{ icono: Search, texto: 'Escribe el nombre del producto' }}
-                            onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista('vineta'); }} />
+                            onElegir={(p) => { setProducto({ id: Number(p.id), nombre: p.nombre }); setPres(''); setLista(null); }} />
                         {!soloEncargo && !enPedido && (
                             <Button variant="ghost" size="sm" icon={PackagePlus} onClick={() => setSinCatalogo(true)}>
                                 ¿No lo tenemos? Consultar un producto nuevo a Bodega

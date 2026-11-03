@@ -24,6 +24,31 @@ export const TOPE_APARTADO = 999;
 /** Productos que caben en un mismo pedido o encargo, además del de la pantalla. */
 export const TOPE_RENGLONES = 9;
 
+/**
+ * Qué lista de precio viene elegida al apartar (reglamento, procedimiento de
+ * clientes §1, 2026-11-03). `base` es lo que contesta la base para el cliente
+ * (`lista_de_precio_del_cliente`: 'mayoreo' = Mayoreo Plus, 'clinica' =
+ * Mayoreo, 'vip' = Preferente, 'descuento_1' = Público).
+ *
+ * - El mayoreo aplica sólo a la presentación COMPLETA: si el producto tiene
+ *   una presentación más grande que la elegida, son unidades sueltas y va a
+ *   Preferente.
+ * - Si la presentación no tiene la lista que le toca, se cobra la anterior que
+ *   sí tenga (Mayoreo Plus → Mayoreo → Preferente → Público → Regular).
+ *
+ * Devuelve la clave de la lista, o null si no hay con qué decidir.
+ */
+const CADENA_DE_LISTAS = ['mayoreo', 'clinica', 'vip', 'descuento_1', 'vineta'];
+export function listaQueLeToca(base, presentacion, presentaciones = []) {
+    if (!presentacion) return null;
+    let desde = CADENA_DE_LISTAS.indexOf(base);
+    if (desde === -1) desde = CADENA_DE_LISTAS.indexOf('descuento_1');
+    const mayor = Math.max(0, ...presentaciones.map((p) => Number(p.factor) || 1));
+    if (desde < 2 && (Number(presentacion.factor) || 1) < mayor) desde = 2;
+    const tiene = new Set((presentacion.listas ?? []).map((l) => l.key));
+    return CADENA_DE_LISTAS.slice(desde).find((k) => tiene.has(k)) ?? (tiene.size ? null : 'vineta');
+}
+
 /** La clave estable de una presentación (`tipo|factor|precio`). */
 export const clavePresentacion = (p) => (p ? `${p.tipo}|${p.factor}|${p.precio}` : '');
 

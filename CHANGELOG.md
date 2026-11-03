@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1418.5 — Apartar viene con el precio que le toca al cliente
+
+Al apartar, el campo **Precio** ya no viene en Regular (el reglamento dice que
+casi nunca se cobra): viene en el que le toca al cliente elegido.
+
+| cliente | precio |
+|---|---|
+| Cliente Mayorista aprobado | su Mayoreo o Mayoreo Plus |
+| personal | Mayoreo Plus |
+| con cuenta activa en Puntos Salud | Preferente |
+| los demás | Público |
+
+El mayoreo aplica sólo a la presentación completa: si el producto tiene una
+presentación más grande que la elegida, va a Preferente. Si la presentación no
+tiene esa lista, se usa la anterior que sí tenga. Se puede cambiar a mano, y
+el diálogo avisa cuando el elegido no es el que le toca.
+
+La decisión del cliente vive en la base (`lista_de_precio_del_cliente`,
+migración `20261103173234`); la de la presentación, en `listaQueLeToca`.
+
 ## v2.1418.4 — Los precios con los nombres del reglamento
 
 El portal nombra los precios como el procedimiento de clientes (§1, «Los

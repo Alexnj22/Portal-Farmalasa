@@ -35650,6 +35650,7 @@ export type Database = {
       ligar_notas_a_compras: { Args: never; Returns: Json }
       linea_telefonica_de: { Args: { p_texto: string }; Returns: string }
       list_sessions: { Args: never; Returns: Json }
+      lista_de_precio_del_cliente: { Args: { p_customer: number }; Returns: string }
       lock_module: {
         Args: { p_hours?: number; p_module_key: string; p_reason?: string }
         Returns: Json

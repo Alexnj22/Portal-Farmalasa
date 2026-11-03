@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { planDeApartar, telefonoDeFicha, tomaDeCadaTraslado, trasladosQueCubren } from '@nucleo/utils/apartar';
+import { listaQueLeToca, planDeApartar, telefonoDeFicha, tomaDeCadaTraslado, trasladosQueCubren } from '@nucleo/utils/apartar';
 import { agruparPorPedido, conteoDeReservas, porCobrarDeSala, seccionesDeReservas } from '@nucleo/utils/reservasDeSala';
 
 const cliente = { id: 1, name: 'ANA PEREZ', phone: '7777-7777' };
@@ -91,5 +91,32 @@ describe('la lista de la sala', () => {
             [{ id: 6, origen: 'sucursal', estado: 'lista', precio: 4, cantidad: 2, anticipo: 3 }],
         );
         expect(r.map((x) => [x.codigo, x.saldo])).toEqual([['E-000005', 9], ['R-000006', 5]]);
+    });
+});
+
+describe('listaQueLeToca — el precio que viene elegido al apartar (reglamento)', () => {
+    const listas = (...keys) => keys.map((key) => ({ key, label: key, precio: 1 }));
+    const todas = listas('vineta', 'descuento_1', 'vip', 'clinica', 'mayoreo');
+    const caja = { tipo: 'Caja', factor: 1, listas: todas };
+    it('cuenta de Puntos Salud → Preferente; sin cuenta → Público', () => {
+        expect(listaQueLeToca('vip', caja, [caja])).toBe('vip');
+        expect(listaQueLeToca('descuento_1', caja, [caja])).toBe('descuento_1');
+        expect(listaQueLeToca(null, caja, [caja])).toBe('descuento_1');
+    });
+    it('mayorista en presentación completa → su lista', () => {
+        expect(listaQueLeToca('mayoreo', caja, [caja])).toBe('mayoreo');
+        expect(listaQueLeToca('clinica', caja, [caja])).toBe('clinica');
+    });
+    it('mayorista en unidades sueltas → Preferente', () => {
+        const unidad = { tipo: 'Unidad', factor: 1, listas: todas };
+        const caja100 = { tipo: 'Caja', factor: 100, listas: todas };
+        expect(listaQueLeToca('mayoreo', unidad, [unidad, caja100])).toBe('vip');
+        expect(listaQueLeToca('mayoreo', caja100, [unidad, caja100])).toBe('mayoreo');
+    });
+    it('sin la lista que le toca, la anterior que sí tenga', () => {
+        const sinPlus = { tipo: 'Caja', factor: 1, listas: listas('vineta', 'vip', 'clinica') };
+        expect(listaQueLeToca('mayoreo', sinPlus, [sinPlus])).toBe('clinica');
+        expect(listaQueLeToca('descuento_1', sinPlus, [sinPlus])).toBe('vineta');
+        expect(listaQueLeToca('vip', null, [])).toBe(null);
     });
 });

@@ -13,7 +13,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import {
     anularSalida, boletaYaRegistrada, fetchConceptosDeOtroLado, fetchEntidadesDeSalida,
     fetchTiposDeMovimiento, fetchTiposDeSalida,
-    guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobante,
+    guardarLecturaDeBoleta, leerBoleta, registrarSalida, subirComprobanteOEncolar,
 } from '@nucleo/data/bolsas';
 import { TIPOS_OTRO, detalleSuficiente, vaEnOtroLado } from '@nucleo/utils/conceptoDeOtroLado';
 import { disponibles, elegirOrigen, totalDisponible } from '@nucleo/utils/bolsasReparto';
@@ -1001,15 +1001,21 @@ export default function SalidaDeBolsa({
         setError(null);
         try {
             let fotoUrl = null;
+            // La foto que no sube no frena la salida (2026-11-03): queda en
+            // este equipo y se sube sola — ver `data/fotosEnEspera`.
+            let fotoPendiente = false;
+            const avisarFotoPendiente = () => {
+                if (fotoPendiente) showToast?.('La foto se sube sola', 'Se anotó igual: la foto quedó en este equipo y se sube sola cuando el servicio responda. No hace falta repetir nada.', 'warning');
+            };
             if (foto) {
-                fotoUrl = await subirComprobante(foto, {
+                ({ url: fotoUrl, pendiente: fotoPendiente } = await subirComprobanteOEncolar(foto, {
                     // `salaId` primero: con el cajón como origen no hay ninguna
                     // bolsa de la que deducir la sucursal.
                     salaId: salaId
                         ?? (eleccion.repartos[0]
                             && bolsas.find((b) => b.id === eleccion.repartos[0].bolsa_id)?.branch_id),
                     userId: user?.id,
-                });
+                }));
             }
 
             /* ── Sale del CAJÓN: es un movimiento de la caja, no de una bolsa ──
@@ -1085,6 +1091,7 @@ export default function SalidaDeBolsa({
                 }
                 descartar();
                 showToast?.('Salida registrada', `De la caja · ${formatMoney(n)}`, 'success');
+                avisarFotoPendiente();
                 onClose?.();
                 return;
             }
@@ -1154,6 +1161,7 @@ export default function SalidaDeBolsa({
             showToast?.('Salida registrada', mixta
                 ? `${data.folio} · ${formatMoney(eleccion.deBolsas)} de la bolsa y ${formatMoney(eleccion.delCajon)} de la caja`
                 : `${data.folio} · ${formatMoney(n)}`, 'success');
+            avisarFotoPendiente();
             onHecho?.(data, eleccion.repartos);
             onClose?.();
         } catch (e) {

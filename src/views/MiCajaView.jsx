@@ -36,7 +36,7 @@ import {
     anotarAbono, fetchConceptosDeOtroLado, fetchTiposDeMovimiento, fetchUsoDeTipos, fetchTiposDeSalida, fetchValesPendientes, hacerCorte,
     fetchMotivosCierreConDiferencia, revisarVentasDeLaCaja, preventasDeLaCaja,
     fetchCorreccionesDeCaja, leerBoleta, pedirCorreccion, mandarALaCaja,
-    subirComprobante, subirComprobanteOEncolar, boletaYaEnCaja, fetchFacturasMapfre,
+    subirComprobanteOEncolar, boletaYaEnCaja, fetchFacturasMapfre,
 } from '@nucleo/data/bolsas';
 import EntregaDelTurno from '../components/cortes/EntregaDelTurno';
 import MetaDelDia from '../components/cortes/MetaDelDia';
@@ -716,7 +716,15 @@ export default function MiCajaView({ comoPestana = false }) {
     const subirFotoDelPago = useCallback(async (pago) => {
         if (!pago || pago.forma === 'EFECTIVO' || !pago.foto) return { url: null };
         try {
-            return { url: await subirComprobante(pago.foto, { salaId: sala, userId: idDeUsuario }) };
+            // Si el servicio de archivos no responde, el cobro sigue y la foto
+            // se sube sola desde este equipo (2026-11-03): el cliente está
+            // enfrente. Sólo frena un error que no es del servicio.
+            const r = await subirComprobanteOEncolar(pago.foto, { salaId: sala, userId: idDeUsuario });
+            if (r.pendiente) {
+                showToast('La foto se sube sola',
+                    'El servicio de archivos no respondió: la foto del comprobante quedó en este equipo y se sube sola. No hace falta repetir nada.', 'warning');
+            }
+            return { url: r.url };
         } catch (e) {
             showToast('No se subió la foto del comprobante', mensajeAmigable(e), 'error');
             return { error: true };

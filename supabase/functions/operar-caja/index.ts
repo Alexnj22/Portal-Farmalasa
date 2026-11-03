@@ -306,6 +306,39 @@ async function hayZdelDia(cookie: string, dia: string): Promise<boolean | null> 
 const dosDecimales = (n: number) => (Math.round(n * 100) / 100).toFixed(2);
 const exito = (t: string) => /"typeinfo"\s*:\s*"Success"/i.test(t);
 
+/* ── Lo que puede quedar «en espera» si la caja no contesta (2026-11-03) ──
+ *
+ * El ingreso común: se anota en el portal y se manda después. NO el anticipo
+ * de un apartado (reserva lo apartado según la respuesta), ni la aplicación
+ * de una inyección (se confirma cuando la caja acepta), ni el pago de un bono
+ * (tiene su propio circuito de «sin confirmar»). Un ingreso con tarjeta o
+ * transferencia no viaja a la caja: para él, esperar es no frenar. */
+function puedeEsperarALaCaja(accion: string, body: Record<string, unknown>): boolean {
+  return accion === "ingreso"
+    && !["APARTADO", "APLICA_ANTICIPO", "APLICACION"].includes(String(body.tipo ?? ""))
+    && !String(body.clave_envio ?? "").startsWith("bono-");
+}
+
+const AVISO_EN_ESPERA = "La caja no respondió. El ingreso quedó anotado y se manda solo en cuanto la caja responda: no lo repitas.";
+
+/** Una falla del sistema de la caja, para `vigilar_servicios()`. Nunca lanza. */
+async function anotarFallaDeLaCaja(
+  // deno-lint-ignore no-explicit-any
+  supabase: any, empleado: string | null, sala: number,
+  accion: string, e: unknown, rescatada: boolean,
+): Promise<void> {
+  try {
+    const { error } = await supabase.from("fallas_de_servicio").insert({
+      servicio: "caja", operacion: `operar-caja:${accion}`.slice(0, 80),
+      detalle: String((e as Error)?.message ?? e).slice(0, 300),
+      rescatada, employee_id: empleado, branch_id: sala,
+    });
+    if (error) console.error(`[operar-caja] anotando la falla de la caja: ${error.message}`);
+  } catch (err) {
+    console.error("[operar-caja] anotando la falla de la caja:", err);
+  }
+}
+
 const MOV_URL = `${BASE}admin_movimiento_caja_dt.php`;
 
 /**
@@ -670,6 +703,8 @@ Deno.serve(async (req) => {
     }
 
     let cookie = "";
+    // La caja no contestó y el ingreso se anota «en espera» (ver abajo).
+    let cajaEnEspera = false;
     let estado: Awaited<ReturnType<typeof estadoDeLaCaja>>;
     let entrada = { branchId: sala, erpId: 0, username: "", password: "" } as ReturnType<typeof getErpBranchMap>[number];
     if (cajaSimulada) {
@@ -683,9 +718,41 @@ Deno.serve(async (req) => {
       if (!deLaSala) return json({ ok: false, error: "Esa sala no está configurada." }, 400);
       entrada = deLaSala;
       const { username, password } = getCortesCreds();
-      cookie = await getSessionCookie(username, password);
-      await abrirSala(cookie, entrada.erpId);
-      estado = await estadoDeLaCaja(cookie);
+      try {
+        cookie = await getSessionCookie(username, password);
+        await abrirSala(cookie, entrada.erpId);
+        estado = await estadoDeLaCaja(cookie);
+      } catch (e) {
+        /* ── LA CAJA NO CONTESTA: el ingreso entra igual (2026-11-03) ────────
+         *
+         * Antes, cualquier acción moría acá con un 500 — también un cobro con
+         * tarjeta, que ni siquiera viaja a la caja. Un ingreso común se anota
+         * en el portal sin número de la caja («en espera») y el equipo que lo
+         * anotó lo manda solo en cuanto la caja responde (`reenviar_a_caja`,
+         * que mira la caja por `P{id}` antes de mandarlo). Si a los 20 minutos
+         * no llegó, `vigilar_servicios()` avisa a Alertas Técnicas.
+         *
+         * Sólo el ingreso común (`puedeEsperarALaCaja`): el anticipo de un
+         * apartado, la aplicación de una inyección y el pago de un bono
+         * dependen de la respuesta de la caja para lo que hacen después. La
+         * apertura sale del espejo (`cortes_caja_aperturas`): sin una abierta
+         * no hay a qué día anotarlo, y se falla como antes. */
+        const puede = puedeEsperarALaCaja(accion, body);
+        // «Rescatada»: nadie quedó frenado — el ingreso entra en espera, o es
+        // el reenvío automático de uno que ya está anotado.
+        await anotarFallaDeLaCaja(supabase, quien.id, sala, accion, e, puede || accion === "reenviar_a_caja");
+        if (!puede) throw e;
+        const { data: ap, error: errAp } = await supabase.from("cortes_caja_aperturas")
+          .select("erp_apertura_id").eq("branch_id", sala).is("cerrada_at", null)
+          .order("abierta_el", { ascending: false }).limit(1);
+        if (errAp || !ap?.[0]?.erp_apertura_id) throw e;
+        cajaEnEspera = true;
+        estado = {
+          abierta: true, turnoCorriendo: true, idCaja: "EN_ESPERA", idDetalle: null,
+          aper: String(ap[0].erp_apertura_id), emp: "", turno: "", idEmple: "",
+          registrado: null, apertura: null, desde: null,
+        };
+      }
     }
 
     // El día que la caja tiene abierto. Sale de la captura y no del reloj: a las
@@ -741,6 +808,25 @@ Deno.serve(async (req) => {
       }
       if (String(mov.erp_apertura_id ?? "") !== String(estado.aper ?? "")) {
         return { ok: false, status: 409, error: "Ese ingreso no llegó a la caja y su día ya se cerró: no se puede meter en la caja de hoy." };
+      }
+      /* Se RECLAMA antes de mirar (2026-11-03): ahora un ingreso en espera lo
+       * reenvía solo el equipo que lo anotó, y con dos pestañas —o el botón
+       * «Mandar a la caja» al mismo tiempo— las dos mirarían la caja, las dos
+       * verían «no está» y las dos lo mandarían. El reclamo dura 90 s: más que
+       * un envío completo (login + 45 s), y si quien lo reclamó se cayó, el
+       * siguiente intento lo retoma. */
+      const hace90 = new Date(Date.now() - 90_000).toISOString();
+      const { data: reclamo, error: errReclamo } = await supabase.from("caja_movimientos_portal")
+        .update({ envio_intentado_at: new Date().toISOString() })
+        .eq("id", mov.id as number).is("erp_movimiento_id", null)
+        .or(`envio_intentado_at.is.null,envio_intentado_at.lt.${hace90}`)
+        .select("id");
+      if (errReclamo) {
+        console.error(`[operar-caja] sin número mov=${mov.id}: reclamar: ${errReclamo.message}`);
+        return { ok: false, status: 503, error: "No se pudo revisar el ingreso. Vuelve a intentarlo en un momento." };
+      }
+      if (!reclamo?.length) {
+        return { ok: false, status: 409, error: "Ese ingreso se está mandando a la caja en este momento. Espera un minuto." };
       }
       const visto = await buscarEnLaCaja(cookie, String(mov.fecha), Number(mov.id));
       if (!visto) return { ok: false, status: 503, error: "No se pudo revisar la caja. Vuelve a intentarlo en un momento." };
@@ -1861,6 +1947,11 @@ Deno.serve(async (req) => {
            * Se resuelve acá mismo: se mira la caja y, si no lo tiene, se manda. */
           if (!ya.anulado_at && !ya.erp_movimiento_id && !cajaSimulada
               && String(ya.forma_pago ?? "EFECTIVO") === "EFECTIVO") {
+            // La caja sigue sin contestar: ya está anotado y en espera.
+            if (cajaEnEspera) {
+              return json({ ok: true, en_espera: true, repetido: true, movimiento_del_portal: ya.id,
+                movimiento_en_caja: null, movimiento: ya, aviso: AVISO_EN_ESPERA });
+            }
             const r = await resolverSinNumero(ya);
             if (!r.ok) {
               return json({ ok: false, sin_confirmar: true, movimiento_del_portal: ya.id, error: r.error }, r.status);
@@ -2350,6 +2441,9 @@ Deno.serve(async (req) => {
           tipo_codigo: body.tipo ? String(body.tipo).slice(0, 40) : null,
           numero_boleta: body.boleta ? String(body.boleta).slice(0, 40) : null,
           foto_url: body.foto_url ? String(body.foto_url) : null,
+          // Se manda ahora mismo: un reenvío no lo toma en los próximos 90 s
+          // (ver `resolverSinNumero`). En espera, queda libre para el primero.
+          envio_intentado_at: (!noEfectivo && !cajaSimulada && !cajaEnEspera) ? new Date().toISOString() : null,
           /* QUÉ LEYÓ la máquina de esa foto, tal cual lo contestó.
            *
            * `bolsas_operaciones` ya lo guardaba y el cajón no. La boleta 018540
@@ -2614,7 +2708,7 @@ Deno.serve(async (req) => {
       };
       let resp = "";
       try {
-      resp = cajaSimulada ? "" : await (await fetch(esEntrada ? INGRESO : SALIDA, {
+      resp = (cajaSimulada || cajaEnEspera) ? "" : await (await fetch(esEntrada ? INGRESO : SALIDA, {
         method: "POST",
         headers: {
           Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
@@ -2664,29 +2758,40 @@ Deno.serve(async (req) => {
           return json({ ok: false, movimiento_del_portal: fila.id,
             error: "La caja no contestó. Revisa en la caja si el vale salió antes de repetirlo." }, 504);
         }
-        /* El pago de un bono (H20) NO se anula acá: la caja pudo haberlo
-         * anotado. La fila queda viva y sin número, el bono queda «enviado» y
-         * `reservar_pago_bono` no deja pagarlo de nuevo (SIN_CONFIRMAR) hasta
-         * que alguien mire la caja y lo resuelva. Lo que cambia es la
-         * respuesta: antes era el `throw` crudo, que la pantalla leía como
-         * «No se pudo pagar» e invitaba a repetirlo. */
-        if (claveEnvio?.startsWith("bono-")) {
-          console.error(`[operar-caja] bono sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
-          return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
-            error: "La caja no contestó y no se sabe si el bono salió. No lo repitas: revisa en la caja y resuélvelo desde «Sin confirmar»." }, 504);
+        /* Un ingreso común queda EN ESPERA (2026-11-03): la fila ya está, y el
+         * reenvío mira la caja por `P{id}` antes de mandarlo, así que si la
+         * caja sí lo anotó no se duplica. Sigue por el camino de siempre —la
+         * autorización sin comprobante se pide igual— sin número de la caja. */
+        if (puedeEsperarALaCaja(accion, body) && !apartadoRes && !aplicaciones) {
+          console.error(`[operar-caja] ${accion} sin respuesta fila=${fila.id}, queda en espera: ${(e as Error)?.message ?? e}`);
+          await anotarFallaDeLaCaja(supabase, quien.id, sala, accion, e, true);
+          cajaEnEspera = true;
+          resp = "";
+        } else {
+          /* El pago de un bono (H20) NO se anula acá: la caja pudo haberlo
+           * anotado. La fila queda viva y sin número, el bono queda «enviado» y
+           * `reservar_pago_bono` no deja pagarlo de nuevo (SIN_CONFIRMAR) hasta
+           * que alguien mire la caja y lo resuelva. Lo que cambia es la
+           * respuesta: antes era el `throw` crudo, que la pantalla leía como
+           * «No se pudo pagar» e invitaba a repetirlo. */
+          if (claveEnvio?.startsWith("bono-")) {
+            console.error(`[operar-caja] bono sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
+            return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
+              error: "La caja no contestó y no se sabe si el bono salió. No lo repitas: revisa en la caja y resuélvelo desde «Sin confirmar»." }, 504);
+          }
+          /* Un ingreso: volver a apretar es SEGURO (2026-10-24). El reintento
+           * viaja con la misma clave, cae en `resolverSinNumero` y mira la caja
+           * antes de mandarlo. Antes era el `throw` crudo — un 500 sin explicación. */
+          if (esEntrada) {
+            console.error(`[operar-caja] ${accion} sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
+            return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
+              error: "La caja no contestó. Vuelve a apretar «Guardar»: el portal revisa si entró antes de mandarlo otra vez." }, 504);
+          }
+          throw e;
         }
-        /* Un ingreso: volver a apretar es SEGURO (2026-10-24). El reintento
-         * viaja con la misma clave, cae en `resolverSinNumero` y mira la caja
-         * antes de mandarlo. Antes era el `throw` crudo — un 500 sin explicación. */
-        if (esEntrada) {
-          console.error(`[operar-caja] ${accion} sin respuesta fila=${fila.id}: ${(e as Error)?.message ?? e}`);
-          return json({ ok: false, sin_confirmar: true, movimiento_del_portal: fila.id,
-            error: "La caja no contestó. Vuelve a apretar «Guardar»: el portal revisa si entró antes de mandarlo otra vez." }, 504);
-        }
-        throw e;
       }
 
-      if (!cajaSimulada && !exito(resp)) {
+      if (!cajaSimulada && !cajaEnEspera && !exito(resp)) {
         console.error(`[operar-caja] ${accion} sala=${sala} fila=${fila.id}: ${resp.slice(0, 1000)}`);
         await anularValeDeRetiro("La caja no aceptó el vale");
         /* La caja CONTESTÓ que no: el bono no salió. Se anula la fila —sin
@@ -2772,7 +2877,9 @@ Deno.serve(async (req) => {
       // número, su fecha, su boleta—, no con lo que el formulario creía estar
       // mandando. Mismo criterio que el papel del abono.
       return json({ ok: true, movimiento_del_portal: fila.id, movimiento_en_caja: idMov, abono,
-        aplicaciones, apartado: apartadoRes, movimiento: fila, ...(avisoAplicaciones ? { aviso: avisoAplicaciones } : {}),
+        aplicaciones, apartado: apartadoRes, movimiento: fila,
+        ...((avisoAplicaciones ?? (cajaEnEspera ? AVISO_EN_ESPERA : null)) ? { aviso: avisoAplicaciones ?? AVISO_EN_ESPERA } : {}),
+        ...(cajaEnEspera ? { en_espera: true } : {}),
         ...(cajaSimulada ? { simulado: true } : {}) });
     }
 

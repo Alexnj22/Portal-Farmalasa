@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1416.0 — Si la caja no contesta el ingreso entra igual; la foto tampoco frena bolsas ni cobros
+
+Segunda tanda después del incidente del 2-nov en Salud 1: los otros lugares donde un servicio que no responde frenaba a la sala.
+
+- **Ingresos con la caja caída.** Antes, si el sistema de la caja no contestaba, no se podía anotar ningún ingreso, ni siquiera uno con tarjeta, que no viaja a la caja. Ahora el ingreso común se anota igual en el portal y la sala ve «La caja no respondió. El ingreso quedó anotado y se manda solo en cuanto la caja responda: no lo repitas». El equipo que lo anotó lo manda solo cada dos minutos. Antes de mandarlo revisa si la caja ya lo tiene, así que no se duplica. Si a los 20 minutos no llegó, Alertas Técnicas recibe un aviso para mandarlo desde Mi caja con «Mandar a la caja». Esto no aplica al anticipo de un apartado, la aplicación de una inyección ni el pago de un bono: esos dependen de la respuesta de la caja y siguen frenando como antes.
+- **Dos equipos no lo mandan a la vez.** «Mandar a la caja», sea automático o con el botón, aparta el ingreso por 90 segundos antes de mirar la caja.
+- **La foto tampoco frena las salidas de bolsa, los cobros con tarjeta o transferencia ni los anticipos.** Funciona igual que en Mi caja: la foto queda en el equipo, se sube sola y la base marca el registro como «foto pendiente» hasta que llega. Si no llega en 2 horas, hay aviso.
+- **El sistema de la caja también avisa.** Las fallas al entrar a la caja quedan anotadas, y con 3 en 10 minutos llega «El sistema de la caja está fallando», igual que con el servicio de archivos.
+
 ## v2.1415.0 — Corte Z: vista de sala para Jefe/a de Sala
 
 - **Jefe/a de Sala ve el Corte Z de su sala** (montos y PDF, alcance de sucursal).

@@ -3,7 +3,7 @@
 // (que valida el monto y liga la reserva o el encargo) y la constancia impresa.
 // Lo usan Mi caja y la tarjeta de Reservas del Inicio: escrito dos veces, uno
 // terminaría cobrando sin la foto o sin el papel.
-import { anotarIngreso, subirComprobante } from '@nucleo/data/bolsas';
+import { anotarIngreso, subirComprobanteOEncolar } from '@nucleo/data/bolsas';
 import { datosDeFormaDePago, FORMAS_DE_PAGO } from '@nucleo/utils/formaDePago';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { imprimirConstanciaDeReserva } from '@nucleo/utils/reservaConstancia';
@@ -15,10 +15,18 @@ import { fetchReglasDeReserva } from '@nucleo/data/reservas';
  */
 export async function cobrarAnticipo({ sala, nombreSala, userId, quienAtiende, clave, monto, apartado, pago, papel }) {
     let fotoUrl = null;
+    // La foto que no sube no frena el cobro (2026-11-03): queda en este equipo
+    // y se sube sola — ver `data/fotosEnEspera`. El cliente está enfrente.
+    let fotoPendiente = false;
     if (pago?.forma && pago.forma !== 'EFECTIVO' && pago.foto) {
-        try { fotoUrl = await subirComprobante(pago.foto, { salaId: sala, userId }); } catch (e) { return { ok: false, error: e }; }
+        try {
+            ({ url: fotoUrl, pendiente: fotoPendiente } = await subirComprobanteOEncolar(pago.foto, { salaId: sala, userId }));
+        } catch (e) { return { ok: false, error: e }; }
         if (!fotoUrl) return { ok: false, error: new Error('No se pudo subir la foto del comprobante.') };
     }
+    const avisoFoto = fotoPendiente
+        ? 'La foto del comprobante quedó en este equipo y se sube sola cuando el servicio responda.'
+        : undefined;
     const r = await anotarIngreso({
         sala, monto, clave, tipo: 'APARTADO', apartado, concepto: 'Anticipo', fotoUrl,
         ...datosDeFormaDePago(pago, fotoUrl),
@@ -37,7 +45,7 @@ export async function cobrarAnticipo({ sala, nombreSala, userId, quienAtiende, c
             venceAt: a.vence_at ?? null, sala: nombreSala, atendio: shortEmployeeName(quienAtiende ?? ''), reglas,
         }, { sala });
     } catch (e) {
-        return { ok: true, apartado: a, aviso: r.aviso, papel: e };
+        return { ok: true, apartado: a, aviso: r.aviso ?? avisoFoto, papel: e };
     }
-    return { ok: true, apartado: a, aviso: r.aviso };
+    return { ok: true, apartado: a, aviso: r.aviso ?? avisoFoto };
 }

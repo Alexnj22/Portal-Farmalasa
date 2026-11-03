@@ -1231,7 +1231,7 @@ export const AREAS = [
             'src/hooks/useSyncMonitor.js', 'src/hooks/useBannerPortal.js',
             'src/plataforma/cajaNegra.js',
             // 2026-11-03: la foto que no sube no frena el registro (incidente del 2-nov).
-            'src/plataforma/archivosEnEspera.js', 'src/data/fotosEnEspera.js', 'src/hooks/useFotosEnEspera.js',
+            'src/plataforma/archivosEnEspera.js', 'src/data/fotosEnEspera.js', 'src/hooks/useColasEnEspera.js', 'src/data/ingresosEnEspera.js',
             'src/components/forms/FormAuditDetail.jsx',
             'src/data/egreso.js',
         ],

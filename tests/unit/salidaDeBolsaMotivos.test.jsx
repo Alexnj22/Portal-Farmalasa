@@ -74,7 +74,7 @@ vi.mock('@nucleo/data/bolsas', () => ({
         { tipo: 'POS_PROMERICA', nombre: 'RIA' },
     ]),
     registrarSalida: (...a) => registrarSalida(...a),
-    subirComprobante: vi.fn(async () => 'https://x/f.jpg'),
+    subirComprobanteOEncolar: vi.fn(async () => ({ url: 'https://x/f.jpg', pendiente: false })),
     leerBoleta: (...a) => leerBoleta(...a),
     guardarLecturaDeBoleta: vi.fn(async () => {}),
     boletaYaRegistrada: vi.fn(async () => []),

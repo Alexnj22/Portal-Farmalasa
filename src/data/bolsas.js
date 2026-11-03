@@ -3,6 +3,7 @@ import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { signPhotosDeep, subirArchivo } from '../utils/storageFiles';
 import { encolarFoto } from './fotosEnEspera';
+import { recordarIngresoEnEspera } from './ingresosEnEspera';
 import { repartoDeUnaSalida } from '../utils/repartoDeSalida';
 import { hoySV } from '../utils/fecha';
 import { anotar } from './audit';
@@ -1154,7 +1155,7 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
     //
     // `lectura` es lo que la máquina leyó de la foto, para poder auditarla
     // después: sin ese rastro, un monto mal leído no deja ninguna huella.
-    return operar({
+    const r = await operar({
         accion: 'ingreso', sala, monto, concepto, tipo, boleta, foto_url: fotoUrl, vendedor,
         detalle: conceptoCompleto, lectura,
         // «Lo comparé con el papel», para un monto que la foto no comprobó.
@@ -1176,6 +1177,13 @@ export async function anotarIngreso({ sala, monto, concepto, tipo = null, boleta
          * queda pendiente de autorización, y el servidor exige el motivo. */
         ...(motivoSinComprobante ? { motivo_sin_comprobante: motivoSinComprobante } : {}),
     });
+    // La caja no contestó y el ingreso quedó anotado sin su número: este
+    // equipo lo manda solo cuando responda (ver `data/ingresosEnEspera`). El
+    // aviso para la sala ya viene en `r.aviso`.
+    if (r?.en_espera && r.movimiento_del_portal) {
+        await recordarIngresoEnEspera({ movimiento: r.movimiento_del_portal, sala });
+    }
+    return r;
 }
 
 /**

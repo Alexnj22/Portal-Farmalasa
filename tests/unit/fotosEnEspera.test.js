@@ -15,6 +15,7 @@ vi.mock('@plataforma/archivosEnEspera', () => ({
     guardar: vi.fn(async (it) => { if (globalThis.__sinCola) throw new Error('sin IndexedDB'); cola.set(it.id, it); }),
     listar: vi.fn(async () => [...cola.values()]),
     quitar: vi.fn(async (id) => { cola.delete(id); }),
+    guardarIngreso: vi.fn(), listarIngresos: vi.fn(async () => []), quitarIngreso: vi.fn(),
 }));
 
 const rpc = vi.fn(async () => ({ data: 1, error: null }));

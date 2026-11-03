@@ -4388,6 +4388,8 @@ export type Database = {
           entidad: string | null
           folio: string
           foto_lectura: Json | null
+          foto_pendiente_avisada_at: string | null
+          foto_pendiente_desde: string | null
           foto_url: string | null
           id: number
           monto: number
@@ -4415,6 +4417,8 @@ export type Database = {
           entidad?: string | null
           folio: string
           foto_lectura?: Json | null
+          foto_pendiente_avisada_at?: string | null
+          foto_pendiente_desde?: string | null
           foto_url?: string | null
           id?: number
           monto: number
@@ -4442,6 +4446,8 @@ export type Database = {
           entidad?: string | null
           folio?: string
           foto_lectura?: Json | null
+          foto_pendiente_avisada_at?: string | null
+          foto_pendiente_desde?: string | null
           foto_url?: string | null
           id?: number
           monto?: number
@@ -5272,6 +5278,8 @@ export type Database = {
           customer_id: number | null
           detalle: string | null
           encargo_id: number | null
+          envio_avisado_at: string | null
+          envio_intentado_at: string | null
           erp_apertura_id: number | null
           erp_movimiento_id: number | null
           fecha: string
@@ -5314,6 +5322,8 @@ export type Database = {
           customer_id?: number | null
           detalle?: string | null
           encargo_id?: number | null
+          envio_avisado_at?: string | null
+          envio_intentado_at?: string | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
           fecha: string
@@ -5356,6 +5366,8 @@ export type Database = {
           customer_id?: number | null
           detalle?: string | null
           encargo_id?: number | null
+          envio_avisado_at?: string | null
+          envio_intentado_at?: string | null
           erp_apertura_id?: number | null
           erp_movimiento_id?: number | null
           fecha?: string
@@ -30577,6 +30589,8 @@ export type Database = {
           entidad: string | null
           folio: string
           foto_lectura: Json | null
+          foto_pendiente_avisada_at: string | null
+          foto_pendiente_desde: string | null
           foto_url: string | null
           id: number
           monto: number
@@ -30613,6 +30627,8 @@ export type Database = {
           entidad: string | null
           folio: string
           foto_lectura: Json | null
+          foto_pendiente_avisada_at: string | null
+          foto_pendiente_desde: string | null
           foto_url: string | null
           id: number
           monto: number
@@ -31154,6 +31170,8 @@ export type Database = {
           entidad: string | null
           folio: string
           foto_lectura: Json | null
+          foto_pendiente_avisada_at: string | null
+          foto_pendiente_desde: string | null
           foto_url: string | null
           id: number
           monto: number
@@ -37083,6 +37101,8 @@ export type Database = {
           entidad: string | null
           folio: string
           foto_lectura: Json | null
+          foto_pendiente_avisada_at: string | null
+          foto_pendiente_desde: string | null
           foto_url: string | null
           id: number
           monto: number

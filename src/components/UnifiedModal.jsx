@@ -3,8 +3,9 @@ import { horarioIncompleto, horarioCruzaMedianoche } from '@nucleo/utils/edicion
 import Button from './common/Button';
 import {
     X, ClipboardList, Building2, BookOpen, Save, AlertCircle, ShieldCheck, Scale, Zap, Clock, Star, FilePlus, Settings, Sparkles, UserPlus,
-    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Pencil, Truck, Contact
+    User, Briefcase, CreditCard, CheckCircle2, ChevronLeft, ChevronRight, RefreshCw, Palmtree, DollarSign, Pencil, Truck, Contact, GraduationCap, KeyRound
 } from 'lucide-react';
+import { motivoPasantiaIncompleta, TIPO_FICHA_PRACTICANTE } from '@nucleo/utils/practicanteFormulario';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import LiquidModal from "./common/LiquidModal";
 import Notice from './common/Notice';
@@ -153,7 +154,7 @@ const getEmployeeValidationError = (formData, type) => {
         if (formData?.contract_type === 'TEMPORAL' && (!formData?.contract_temporal_legal_basis || !formData?.contract_temporal_reason?.trim())) {
             return "Falta la Base Legal y/o el Motivo Concreto del contrato Temporal (Art. 25).";
         }
-        return null;
+        return motivoDeLaPasantia(formData);
     }
     if (type === 'editEmployee') {
         if (!formData?.first_names?.trim() || !formData?.last_names?.trim()) {
@@ -167,10 +168,20 @@ const getEmployeeValidationError = (formData, type) => {
         if (formData?.contract_type === 'TEMPORAL' && (!formData?.contract_temporal_legal_basis || !formData?.contract_temporal_reason?.trim())) {
             return "Falta la Base Legal y/o el Motivo Concreto del contrato Temporal (Art. 25).";
         }
-        return null;
+        return motivoDeLaPasantia(formData);
     }
     return null;
 };
+
+// El practicante (2026-11-03): su ficha es la de empleado, y además la
+// pasantía tiene que estar completa —institución, tutor, fechas, convenio—
+// porque sin eso no se puede escribir su fila de `practicantes`.
+function motivoDeLaPasantia(formData) {
+    if (formData?.tipo_ficha !== TIPO_FICHA_PRACTICANTE) return null;
+    return motivoPasantiaIncompleta(formData, formData.pasantia || {}, {
+        tieneConvenio: !!(formData.pasantia_convenio_file || formData.pasantia_convenio_url),
+    });
+}
 
 const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubmit, activeEmployee, setView, setActiveEmployee: setGlobalActiveEmployee }) => {
 
@@ -307,18 +318,26 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         setEmpActiveTab('personal');
     }, [type, isOpen]);
 
+    // El practicante usa las mismas cuatro pestañas, con lo que de verdad
+    // tienen para él: su práctica en lugar del contrato, y sólo el acceso al
+    // portal en lugar de la nómina.
+    const esFichaDePracticante = formData?.tipo_ficha === TIPO_FICHA_PRACTICANTE;
     const EMP_STEPS = [
         { key: 'personal',    label: 'Personal',    icon: User },
-        { key: 'laboral',     label: 'Contrato',    icon: Briefcase },
-        { key: 'nomina',      label: 'Nómina',      icon: CreditCard },
+        esFichaDePracticante
+            ? { key: 'laboral', label: 'Práctica',  icon: GraduationCap }
+            : { key: 'laboral', label: 'Contrato',  icon: Briefcase },
+        esFichaDePracticante
+            ? { key: 'nomina',  label: 'Acceso',    icon: KeyRound }
+            : { key: 'nomina',  label: 'Nómina',    icon: CreditCard },
         { key: 'documentos',  label: 'Documentos',  icon: FilePlus },
     ];
     const empStepCompletion = useMemo(() => ({
         personal: !!(formData?.first_names?.trim() && formData?.last_names?.trim()),
         laboral:  !!(formData?.branch_id && formData?.role_id),
-        nomina:   !!(formData?.isss_number || formData?.afp_number || formData?.bank_name),
+        nomina:   formData?.tipo_ficha === TIPO_FICHA_PRACTICANTE ? !!formData?.username : !!(formData?.isss_number || formData?.afp_number || formData?.bank_name),
         documentos: !!(formData?.employee_documents?.length > 0),
-    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name, formData?.employee_documents]);
+    }), [formData?.first_names, formData?.last_names, formData?.branch_id, formData?.role_id, formData?.isss_number, formData?.afp_number, formData?.bank_name, formData?.employee_documents, formData?.tipo_ficha, formData?.username]);
 
     useEffect(() => {
         if (validationError && scrollRef.current) {
@@ -370,8 +389,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         switch (type) {
             case "viewAuditDetail": return "Detalle de auditoría";
             case "manageKiosks": return "Dispositivos del kiosco";
-            case "newEmployee": return "Nuevo empleado";
-            case "editEmployee": return "Actualizar información";
+            case "newEmployee": return esFichaDePracticante ? "Nuevo practicante" : "Nuevo empleado";
+            case "editEmployee": return esFichaDePracticante ? "Actualizar practicante" : "Actualizar información";
             case "rehireEmployee": return "Recontratación";
             case "vacationRecall": return "Ingreso en vacaciones";
             case "newBranch": return "Nueva sucursal";
@@ -466,11 +485,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 if (finalData.weekly_contracted_hours === "") finalData.weekly_contracted_hours = null;
 
                 const { showToast } = useToastStore.getState();
+                let idDeLaFicha = formData.id || null;
                 if (type === "editEmployee" || (formData.id)) {
                     await updateEmployee(formData.id, finalData);
                     if (showToast) showToast("Personal Actualizado", "La ficha del empleado se guardó exitosamente.", "success");
                 } else {
                     const created = await addEmployee(finalData);
+                    idDeLaFicha = created?.id || null;
                     // La temporal solo existe en esta respuesta — mostrarla al admin
                     // (antes se descartaba y el primer login era imposible sin reset).
                     // El aviso dice cuál de las dos cosas pasó, y lo dice
@@ -664,6 +685,22 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 // El borrador del alta se limpia por el canónico: escrito a
                 // mano quedaría apuntando a una clave que ya nadie escribe, y
                 // el borrador sobreviviría al alta ofreciéndose de nuevo.
+                // ── La pasantía, con la ficha ya guardada (2026-11-03) ──────
+                // Va después a propósito: necesita el id de la ficha. Si falla,
+                // la ficha y su acceso YA existen — se dice qué faltó en vez de
+                // un «no se pudo guardar» que mandaría a crearla dos veces.
+                if (formData.tipo_ficha === TIPO_FICHA_PRACTICANTE && idDeLaFicha) {
+                    try {
+                        await useStaff.getState().guardarPasantiaDeFicha(idDeLaFicha, formData);
+                    } catch (errPasantia) {
+                        console.error('guardarPasantiaDeFicha:', errPasantia);
+                        if (showToast) showToast(
+                            'La ficha se guardó, pero la práctica no del todo',
+                            `${mensajeAmigable(errPasantia)} Ábrela desde Practicantes y vuelve a guardar.`,
+                            'warning', 20000);
+                    }
+                }
+
                 clearDraft('alta_empleado');
                 onClose();
             } catch (err) {

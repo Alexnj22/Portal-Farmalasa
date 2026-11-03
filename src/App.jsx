@@ -7,6 +7,7 @@ import { IMPORTADORES } from "./routeImporters";
 // Contextos
 import { useAuth } from "@nucleo/context/AuthContext";
 import { useStaffStore as useStaff } from "@nucleo/store/staffStore";
+import { fichaConPasantia } from "@nucleo/utils/practicanteFormulario";
 import { useToastStore } from "@nucleo/store/toastStore";
 import { isMobileOrApp } from '@nucleo/utils/helpers';
 import { MODULE_MAP } from '@nucleo/constants/moduleMap';
@@ -477,7 +478,19 @@ function MainApp() {
                 ed.first_names = parts.slice(0, mid).join(' ');
                 ed.last_names = parts.slice(mid).join(' ');
             }
-            setFormData(ed);
+            // El practicante (2026-11-03) trae su pasantía a la ficha, venga de
+            // donde venga: sin ella el formulario pediría un convenio que ya
+            // está guardado. Si la lista no estaba cargada, se trae y se
+            // completa apenas llega.
+            const conPasantia = fichaConPasantia(ed, useStaff.getState().practicantes);
+            setFormData(conPasantia);
+            if (conPasantia !== ed && !conPasantia.pasantia_id) {
+                useStaff.getState().fetchPracticantes().then((lista) => {
+                    setFormData((prev) => (prev?.id === ed.id && !prev.pasantia_id
+                        ? fichaConPasantia({ ...prev, pasantia: undefined }, lista)
+                        : prev));
+                });
+            }
         } else if (type === "newEmployee") {
             setFormData({
                 hire_date: hoySV(),

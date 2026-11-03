@@ -31,3 +31,9 @@ export function updatePracticante(id, payload) {
 export function deletePracticante(id) {
     return supabase.from('practicantes').delete().eq('id', id);
 }
+
+// Cuánto lleva cada practicante, de sus marcajes en el kiosco (2026-11-03).
+// `[{ practicante_id, horas, dias, dias_sin_salida, ultimo_dia }]`.
+export function fetchHorasDePracticantes() {
+    return supabase.rpc('get_horas_de_practicantes');
+}

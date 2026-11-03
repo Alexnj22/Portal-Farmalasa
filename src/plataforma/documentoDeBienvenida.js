@@ -524,13 +524,18 @@ export const BASICO_DEL_REGLAMENTO = [
 export function paginaDelCarne({
     nombre, cargo = '', sala = '', tipoDeSede = '', cargoId = null, fechaDeInicio = null,
     barrasPng = null, retratoPng = null, iconoPng = null, logoPng = null,
+    /* Para la hoja de carnés (2026-11-03): `origen` pone la tarjeta donde se
+     * le diga, `soloTarjeta` devuelve sólo el cartón —sin título, nota ni
+     * inducción— y `marcasCortas` achica las marcas de corte para que quepan
+     * en el espacio entre dos tarjetas vecinas. */
+    origen = null, soloTarjeta = false, marcasCortas = false,
 }) {
     /* La tarjeta se dibuja en coordenadas absolutas sobre la hoja: es la única
      * forma de que mida exactamente lo que tiene que medir. Centrada al ancho de
      * una carta (612 pt) y en la MITAD DE ARRIBA — la de abajo lleva la
      * inducción al portal, que es la otra cosa que hace falta el primer día. */
-    const x0 = Math.round((612 - CARNE.ancho) / 2);
-    const y0 = 112;
+    const x0 = origen ? origen.x : Math.round((612 - CARNE.ancho) / 2);
+    const y0 = origen ? origen.y : 112;
     const P = 10;                     // el margen interno de la tarjeta
     const canto = 6.2;                // el canto verde: 2.2 mm
     const RADIO = 9;                  // el redondeo de la tarjeta, 3.2 mm
@@ -543,7 +548,7 @@ export function paginaDelCarne({
      * que el papel de alrededor— y una tarjeta recortada torcida no entra en la
      * funda. Van SEPARADAS de la tarjeta y hacia afuera, para que la tijera
      * pase por donde se cruzan y ninguna quede dentro del carné terminado. */
-    const SEP = 5, LARGO = 14;
+    const SEP = marcasCortas ? 2 : 5, LARGO = marcasCortas ? 5 : 14;
     const A = CARNE.ancho, B = CARNE.alto;
     const marcas = [];
     for (const [ex, ey] of [[0, 0], [A, 0], [0, B], [A, B]]) {
@@ -553,7 +558,7 @@ export function paginaDelCarne({
         marcas.push({ type: 'line', x1: ex, y1: ey + vy, x2: ex, y2: ey + vy + LARGO });
     }
 
-    return [
+    const cabecera = [
         { text: '', pageBreak: 'before' },
 
         {
@@ -568,6 +573,9 @@ export function paginaDelCarne({
             }],
         },
 
+    ];
+
+    const tarjeta = [
         // ── El cartón ──────────────────────────────────────────────────────
         {
             ...abs(0, 0),
@@ -686,6 +694,13 @@ export function paginaDelCarne({
             image: barrasPng, width: CARNE.ancho - canto - P * 2, height: 20,
             ...abs(canto + P, CARNE.alto - 30),
         }] : []),
+
+    ];
+    if (soloTarjeta) return tarjeta;
+
+    return [
+        ...cabecera,
+        ...tarjeta,
 
         /* ── Lo que vale este pedazo de papel, DICHO ─────────────────────────
          * El código no caduca y es el mismo del plástico, así que quien le tome
@@ -982,6 +997,84 @@ export async function descargarDocumentoDeBienvenida(datos) {
         });
         pdfMake.createPdf(def).download(nombreDelArchivo(datos?.nombre));
         return { ok: true };
+    } catch (e) {
+        return { ok: false, motivo: String(e?.message || e) };
+    }
+}
+
+// ── La hoja de carnés (2026-11-03) ──────────────────────────────────────────
+//
+// Pedido del usuario para los practicantes: «que se puedan imprimir en una hoja
+// los que quepan». Es el MISMO carné del documento de bienvenida —misma
+// tarjeta, mismo código de barras con el `kiosk_pin`, mismas medidas ID-1—
+// repetido en una cuadrícula: si fuera otro dibujo, el día que cambie uno el
+// otro se queda viejo y el lector del kiosco lee dos carnés distintos.
+//
+// En carta caben 3 × 3 = 9 (tarjeta de 153 × 242.6 pt, 12 pt entre una y
+// otra). Las marcas de corte van cortas para que entren en ese espacio.
+const HOJA = { columnas: 3, filas: 3, separacion: 12, ancho: 612, alto: 792 };
+export const CARNES_POR_HOJA = HOJA.columnas * HOJA.filas;
+
+/** Dónde va la tarjeta número `i` (0 = arriba a la izquierda) de su hoja. */
+export function posicionEnLaHoja(i) {
+    const k = i % CARNES_POR_HOJA;
+    const anchoTotal = HOJA.columnas * CARNE.ancho + (HOJA.columnas - 1) * HOJA.separacion;
+    const altoTotal = HOJA.filas * CARNE.alto + (HOJA.filas - 1) * HOJA.separacion;
+    const x = Math.round((HOJA.ancho - anchoTotal) / 2) + (k % HOJA.columnas) * (CARNE.ancho + HOJA.separacion);
+    const y = Math.round((HOJA.alto - altoTotal) / 2) + Math.floor(k / HOJA.columnas) * (CARNE.alto + HOJA.separacion);
+    return { x, y };
+}
+
+/** La definición de pdfmake de la hoja, sin descargar nada (probable sin navegador). */
+export function definicionDeHojaDeCarnes(carnes, { logoPng = null, iconoPng = null } = {}) {
+    const content = [];
+    (carnes || []).forEach((c, i) => {
+        if (i > 0 && i % CARNES_POR_HOJA === 0) content.push({ text: '', pageBreak: 'before' });
+        content.push(...paginaDelCarne({
+            ...c, logoPng, iconoPng,
+            origen: posicionEnLaHoja(i), soloTarjeta: true, marcasCortas: true,
+        }));
+    });
+    return {
+        pageSize: 'LETTER',
+        pageMargins: [20, 20, 20, 20],
+        info: { title: 'Carnés' },
+        content,
+        styles: {
+            carneEmpresa: { fontSize: 6.6, bold: true, color: MARCA.magenta, characterSpacing: .9, lineHeight: 1.15 },
+            carneNombre:  { fontSize: 11.5, bold: true, color: MARCA.tinta, lineHeight: 1.05 },
+            carneCargo:   { fontSize: 8.5, color: MARCA.magenta, bold: true },
+            carneDato:    { fontSize: 7.5, color: MARCA.gris },
+        },
+        defaultStyle: { fontSize: 10 },
+    };
+}
+
+/**
+ * Arma la hoja y la descarga. Cada persona: `{ nombre, cargo, sala, tipoDeSede,
+ * cargoId, fechaDeInicio, valorDelCarne, foto }`. Quien no tiene `valorDelCarne`
+ * no entra: un carné sin código no marca, y parecería que sí.
+ *
+ * @returns {Promise<{ok: boolean, impresos?: number, sinCodigo?: string[], motivo?: string}>}
+ */
+export async function descargarHojaDeCarnes(personas, { archivo = 'carnes.pdf' } = {}) {
+    try {
+        const conCodigo = (personas || []).filter(p => String(p?.valorDelCarne || '').trim());
+        const sinCodigo = (personas || []).filter(p => !String(p?.valorDelCarne || '').trim()).map(p => p?.nombre || '');
+        if (!conCodigo.length) return { ok: false, impresos: 0, sinCodigo, motivo: 'Nadie tiene código de carné todavía.' };
+        const { LOGO_DE_LA_EMPRESA, logoComoDataUrl } = await import('@nucleo/utils/marcaDeLaSala');
+        const [pdfMake, iconoPng, logoPng] = await Promise.all([
+            getPdfMake(), iconoDeLaFarmaciaPng(), logoComoDataUrl(LOGO_DE_LA_EMPRESA),
+        ]);
+        const carnes = await Promise.all(conCodigo.map(async (p) => ({
+            ...p,
+            barrasPng: await barrasComoPng(p.valorDelCarne),
+            retratoPng: (p.foto && await retratoDeMarcaPng(p.foto))
+                || (p.foto && await fotoComoDiscoPng(p.foto))
+                || await avatarComoPng(p.nombre),
+        })));
+        pdfMake.createPdf(definicionDeHojaDeCarnes(carnes, { logoPng, iconoPng })).download(archivo);
+        return { ok: true, impresos: carnes.length, sinCodigo };
     } catch (e) {
         return { ok: false, motivo: String(e?.message || e) };
     }

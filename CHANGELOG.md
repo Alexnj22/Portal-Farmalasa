@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1422.0 — Practicantes con ficha, kiosco, horas y hoja de carnés
+
+- **El practicante es una ficha de personal** (`tipo_ficha = 'practicante'`, cargo «Practicante»). El alta usa el formulario de empleado: foto del DUI leída, dirección, código y usuario con contraseña de primer uso. En vez del contrato y la nómina lleva su pasantía: institución, tutor, fechas, horas y convenio. Sigue fuera de planilla, horarios y avisos de sala.
+- **Marca en el kiosco** con su carné. Al finalizar o cancelar la práctica se le cierra el acceso, y al reactivarla se le vuelve a abrir.
+- **Horas cumplidas contra la meta** en cada tarjeta, calculadas desde sus marcajes (`get_horas_de_practicantes`). Un día sin salida no suma y se muestra aparte.
+- **Hoja de carnés**: «Imprimir carnés» en Practicantes saca 9 carnés por hoja carta, con marcas de corte. Es el mismo carné del documento de bienvenida.
+- Los practicantes que existían sin ficha tienen el botón «Dar acceso».
 ## v2.1421.0 — Juegos de Bienestar con sonido, vibración y el jardín zen
 
 *«Los juegos están bien, pero no vibran, no tienen sonido… que se vean

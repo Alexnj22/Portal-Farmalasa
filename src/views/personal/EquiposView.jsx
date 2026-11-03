@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
-  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays, AlertTriangle, ChevronRight,
+  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays, AlertTriangle, ChevronRight, KeyRound, IdCard,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -20,7 +20,6 @@ import ConfirmModal from '../../components/common/ConfirmModal';
 // «librerías pesadas sólo por await import()» aplicada a un formulario: al
 // absorber lo que hacía el listado, esta vista pasó de 37 a 54 kB y cruzó su
 // techo. Diferido vuelve a entrar.
-const PracticanteModal = lazy(() => import('../../components/practicantes/PracticanteModal'));
 // El seguro de vida colectivo: póliza, pago anual y quién está solvente.
 const SeguroDeVidaColectivo = lazy(() => import('./SeguroDeVidaColectivo'));
 import { EmptyState } from '../../components/common/StateViews';
@@ -35,6 +34,9 @@ import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
 import { alertasDePersona, antiguedadDePersona, pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
 import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
+import { TIPO_FICHA_PRACTICANTE, PASANTIA_VACIA, pasantiaDe, fichaConPasantia } from '@nucleo/utils/practicanteFormulario';
+import { fetchHorasDePracticantes } from '@nucleo/data/practicantes';
+import { fetchCredenciales } from '@nucleo/data/employees';
 import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
@@ -345,7 +347,7 @@ const fechaCortaDMA = (d) => {
   return `${dd}/${m}/${y}`;
 };
 
-function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
+function TarjetaPracticante({ p, ficha, horas, sucursal, onEdit, onDarAcceso, onDelete, puedeEditar }) {
   // Un estado que la tabla no conoce se dice TAL CUAL y en neutro. Caer a
   // «Activo» afirmaba algo que nadie escribió sobre alguien que quizá ya
   // terminó sus horas.
@@ -356,10 +358,14 @@ function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
   return (
     <div data-surface="card" data-lugar="practicante"
       className="group relative flex gap-3 p-3.5 transition-all duration-[var(--dur-base)]">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
-        border border-chart-3/30 bg-chart-3/10 text-chart-3-text">
-        <GraduationCap size={20} strokeWidth={2} />
-      </span>
+      {ficha ? (
+        <AvatarConEstado emp={ficha} px={48} className="rounded-xl" />
+      ) : (
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl
+          border border-chart-3/30 bg-chart-3/10 text-chart-3-text">
+          <GraduationCap size={20} strokeWidth={2} />
+        </span>
+      )}
 
       <div className="min-w-0 flex-1 space-y-1.5">
         <p className="truncate font-black tracking-tight text-content text-body-sm" title={nombre}>
@@ -375,6 +381,9 @@ function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
         <p className="text-micro font-bold text-content-3" style={{ fontVariantNumeric: 'tabular-nums' }}>
           {fechaCortaDMA(p.fecha_inicio)} → {fechaCortaDMA(p.fecha_fin)}
         </p>
+        {/* Cuánto lleva, de sus marcajes (2026-11-03). Sin ficha no marca, así
+            que no se pinta un «0 h» que parecería que no vino. */}
+        {ficha && <AvanceDeHoras horas={horas} meta={p.horas_requeridas} />}
 
         <div className="flex items-center gap-2 pt-0.5">
           {!sucursal && (
@@ -383,6 +392,13 @@ function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
             </span>
           )}
           <span className="ml-auto flex items-center gap-1.5">
+            {/* Sin ficha = registrado antes del 2026-11-03: no tiene usuario ni
+                contraseña. «Dar acceso» abre la ficha con lo que ya se sabe y
+                el alta normal le crea la cuenta. */}
+            {!ficha && (
+              <Button tone="chart-3" soft size="sm" icon={KeyRound}
+                disabled={!puedeEditar} onClick={() => onDarAcceso(p)}>Dar acceso</Button>
+            )}
             <Button tone="warning" soft size="sm" icon={Pencil} iconOnly title="Editar practicante"
               disabled={!puedeEditar} onClick={() => onEdit(p)} />
             <Button variant="destructive" size="sm" icon={Trash2} iconOnly title="Eliminar practicante"
@@ -390,6 +406,35 @@ function TarjetaPracticante({ p, sucursal, onEdit, onDelete, puedeEditar }) {
           </span>
         </div>
       </div>
+    </div>
+  );
+}
+
+// Las horas de la práctica contra su meta. La barra es el DATO (proporción),
+// así que no se estira al blanco de dedo: `data-medida="dato"`.
+function AvanceDeHoras({ horas, meta }) {
+  const lleva = Number(horas?.horas || 0);
+  const objetivo = Number(meta || 0);
+  const pct = objetivo > 0 ? Math.min(100, Math.round((lleva / objetivo) * 100)) : null;
+  const sinSalida = Number(horas?.dias_sin_salida || 0);
+  const fmt = (n) => (Math.round(n * 10) / 10).toLocaleString('es-SV');
+  return (
+    <div className="space-y-1">
+      <p className="text-micro font-bold text-content-2" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        {fmt(lleva)} h{objetivo > 0 ? ` de ${fmt(objetivo)} h` : ''}
+        {horas?.dias ? ` · ${horas.dias} día${horas.dias === 1 ? '' : 's'}` : ' · sin marcajes'}
+      </p>
+      {pct !== null && (
+        <div data-medida="dato" className="h-1.5 w-full overflow-hidden rounded-full bg-surface-card-hover"
+          role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Avance de horas">
+          <div className={`h-full rounded-full ${pct >= 100 ? 'bg-success' : 'bg-chart-3-solid'}`} style={{ width: `${pct}%` }} />
+        </div>
+      )}
+      {sinSalida > 0 && (
+        <p className="text-micro font-bold text-warning-text">
+          {sinSalida} día{sinSalida === 1 ? '' : 's'} sin marcar salida (no suman)
+        </p>
+      )}
     </div>
   );
 }
@@ -644,21 +689,29 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   const esPracticantes = vista === 'practicantes';
   const esExternos = vista === 'externos';
 
-  const [modalPracticante, setModalPracticante] = useState(false);
   const [verSeguro, setVerSeguro] = useState(false);
   // Quién entra en la póliza: la misma lista que usa el modal del seguro.
   const enPlanilla = useMemo(
     () => soloPersonalEnPlanilla((employees || []).filter(e => e.status === 'ACTIVO')),
     [employees]);
-  // Se monta la PRIMERA vez que se abre y ya no se desmonta: con el montaje
-  // atado a `modalPracticante` el diálogo desaparecería de golpe al cerrar, sin
-  // su animación de salida.
-  const [pidioModal, setPidioModal] = useState(false);
-  const [practicanteEnEdicion, setPracticanteEnEdicion] = useState(null);
   const [practicanteABorrar, setPracticanteABorrar] = useState(null);
   const [borrando, setBorrando] = useState(false);
 
   useEffect(() => { fetchPracticantes(); }, [fetchPracticantes]);
+
+  // Las horas que lleva cada practicante. Sólo en su pestaña: es una lectura
+  // de asistencia que el resto de la vista no usa. Si falla, la tarjeta dice
+  // «sin marcajes» — y por eso el error se avisa en consola y no se traga.
+  const [horasDePracticantes, setHorasDePracticantes] = useState({});
+  useEffect(() => {
+    if (!esPracticantes) return;
+    let vivo = true;
+    fetchHorasDePracticantes().then(({ data, error }) => {
+      if (error) { console.warn('get_horas_de_practicantes:', error.message); return; }
+      if (vivo) setHorasDePracticantes(Object.fromEntries((data || []).map(h => [h.practicante_id, h])));
+    });
+    return () => { vivo = false; };
+  }, [esPracticantes, practicantes]);
 
   const nombreDeSucursal = useMemo(() => {
     const m = new Map();
@@ -694,7 +747,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     // «Externos y sistema» es la ÚNICA vista que muestra fichas que no son
     // personal contratado. Las otras parten de la planilla, así que ninguna las
     // cuenta ni las exporta.
-    const conTipo = esExternos ? soloNoEmpleados(base) : soloPersonalEnPlanilla(base);
+    // El practicante tampoco: tiene su propia pestaña (2026-11-03).
+    const conTipo = esExternos
+      ? soloNoEmpleados(base).filter(e => (e.tipo_ficha ?? e.tipoFicha) !== TIPO_FICHA_PRACTICANTE)
+      : soloPersonalEnPlanilla(base);
 
     const personas = conTipo
       // Un solo predicado, y sale de `estadoDePersona`: devuelve algo cuando la
@@ -828,6 +884,89 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
 
   const recontratar = useCallback((emp) => openModal?.('rehireEmployee', emp), [openModal]);
 
+  // ── El practicante se da de alta con la ficha de empleado (2026-11-03) ──
+  // Así sube y lee el DUI igual, lleva foto y dirección, y sale con usuario y
+  // contraseña de primer uso. `tipo_ficha` lo deja fuera de planilla y del
+  // kiosco; la pasantía va en la pestaña «Práctica».
+  const idCargoPracticante = useMemo(
+    () => (roles || []).find(r => r.name === 'Practicante')?.id ?? '', [roles]);
+  const baseDePracticante = useCallback(() => ({
+    tipo_ficha: TIPO_FICHA_PRACTICANTE,
+    role_id: idCargoPracticante ? String(idCargoPracticante) : '',
+    contract_type: null,
+    weekly_contracted_hours: null,
+  }), [idCargoPracticante]);
+
+  const nuevoPracticante = useCallback(() => {
+    openModal?.('newEmployee', { ...baseDePracticante(), pasantia: { ...PASANTIA_VACIA } });
+  }, [openModal, baseDePracticante]);
+
+  // El registrado antes de que existiera la ficha: la ficha nace con lo que ya
+  // se sabe de él, y al guardar se ENLAZA su fila (no se crea otra).
+  const darAccesoAPracticante = useCallback((p) => {
+    openModal?.('newEmployee', {
+      ...baseDePracticante(),
+      first_names: p.first_names || '', last_names: p.last_names || '',
+      birth_date: p.birth_date || '', dui: p.dui || '',
+      alt_identity_document: p.alt_identity_document || '', phone: p.phone || '',
+      branch_id: p.branch_id != null ? String(p.branch_id) : '',
+      hire_date: p.fecha_inicio || undefined,
+      pasantia: pasantiaDe(p), pasantia_id: p.id, pasantia_convenio_url: p.convenio_url || null,
+    });
+  }, [openModal, baseDePracticante]);
+
+  // ── La hoja de carnés ──────────────────────────────────────────────────
+  // Los activos que ya tienen ficha: sin ficha no hay código que imprimir. El
+  // código del carné es el `kiosk_pin`, que no viaja en la lista de personal —
+  // se pide aparte (`get_employee_credenciales`), como en la ficha.
+  const [imprimiendoCarnes, setImprimiendoCarnes] = useState(false);
+  const imprimirCarnes = useCallback(async () => {
+    const { showToast } = useToastStore.getState();
+    const conFicha = (practicantes || [])
+      .filter(p => p.estado === 'ACTIVO' && p.employee_id)
+      .map(p => ({ p, ficha: (employees || []).find(e => String(e.id) === String(p.employee_id)) }))
+      .filter(x => x.ficha);
+    const sinAcceso = (practicantes || []).filter(p => p.estado === 'ACTIVO' && !p.employee_id).length;
+    if (!conFicha.length) {
+      showToast('Nadie para imprimir', sinAcceso
+        ? 'Los practicantes activos todavía no tienen acceso: dales acceso primero, ahí se les asigna el código.'
+        : 'No hay practicantes activos.', 'info');
+      return;
+    }
+    setImprimiendoCarnes(true);
+    try {
+      const cred = await fetchCredenciales(conFicha.map(x => x.ficha.id), { lanzar: true });
+      const { descargarHojaDeCarnes } = await import('../../plataforma/documentoDeBienvenida');
+      const r = await descargarHojaDeCarnes(conFicha.map(({ p, ficha }) => ({
+        nombre: shortEmployeeName(ficha),
+        cargo: (roles || []).find(r => String(r.id) === String(ficha.role_id ?? ficha.roleId))?.name || 'Practicante',
+        sala: nombreDeSucursal.get(Number(p.branch_id)) || '',
+        tipoDeSede: (branches || []).find(b => String(b.id) === String(p.branch_id))?.type || '',
+        cargoId: ficha.role_id ?? ficha.roleId ?? null,
+        fechaDeInicio: p.fecha_inicio,
+        valorDelCarne: cred.get(ficha.id)?.kiosk_pin || null,
+        foto: ficha.photo || null,
+      })), { archivo: 'carnes-practicantes.pdf' });
+      if (!r.ok) { showToast('No se pudo armar la hoja', r.motivo || 'Intenta de nuevo.', 'error'); return; }
+      const { registrarEgreso } = await import('@nucleo/data/egreso');
+      registrarEgreso('staff_list', { formato: 'pdf', filas: r.impresos, detalle: { motivo: 'hoja de carnés de practicantes' } });
+      const faltan = (r.sinCodigo?.length || 0) + sinAcceso;
+      showToast('Hoja de carnés descargada',
+        `${r.impresos} carné${r.impresos === 1 ? '' : 's'}.` + (faltan ? ` ${faltan} sin código todavía: dales acceso primero.` : ''),
+        'success', 10000);
+    } catch (e) {
+      showToast('No se pudo armar la hoja', mensajeAmigable(e), 'error');
+    } finally {
+      setImprimiendoCarnes(false);
+    }
+  }, [practicantes, employees, roles, branches, nombreDeSucursal]);
+
+  const editarPracticante = useCallback((p) => {
+    const ficha = p.employee_id ? (employees || []).find(e => String(e.id) === String(p.employee_id)) : null;
+    if (!ficha) { darAccesoAPracticante(p); return; }
+    editarRapido(fichaConPasantia(ficha, practicantes, p));
+  }, [employees, practicantes, darAccesoAPracticante, editarRapido]);
+
   const borrarPracticante = useCallback(async () => {
     if (!practicanteABorrar) return;
     setBorrando(true);
@@ -877,12 +1016,15 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
     // `label` sigue de título y en la hoja del teléfono.
     { key: 'practicante', icon: GraduationCap, label: 'Nuevo practicante', rotulo: 'Pasante',
       tone: 'chart-3', soloIcono: true, disabled: !canEdit,
-      onClick: () => { setPracticanteEnEdicion(null); setPidioModal(true); setModalPracticante(true); } },
+      onClick: () => nuevoPracticante() },
     // El seguro de vida ya no va acá: no es una acción sobre la lista sino un
     // tema de toda la empresa con su propio estado, y vive en su franja arriba
     // de las salas (`FranjaDelSeguro`), en escritorio y en el teléfono.
     // En «Externos y sistema» no se ofrece: lo único que exporta esta vista es
     // el directorio de PERSONAL, y ahí no hay ninguno.
+    // La hoja de carnés de los practicantes activos (2026-11-03): 9 por carta.
+    ...(esPracticantes ? [{ key: 'carnes', icon: IdCard, label: 'Imprimir carnés', soloIcono: true,
+      disabled: !canEdit || imprimiendoCarnes, onClick: () => imprimirCarnes() }] : []),
     ...(canDownload && !esExternos && !esPracticantes ? [{ key: 'exportar', icon: Download,
       label: 'Exportar', soloIcono: true,
       onClick: () => exportarDirectorio(visibles, nombreDeSucursal, llavesDelDirectorio) }] : []),
@@ -991,7 +1133,10 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
               {g.lista.map(p => (
                 <TarjetaPracticante
                   key={p.id} p={p} sucursal={g.sucursal} puedeEditar={canEdit}
-                  onEdit={pr => { setPracticanteEnEdicion(pr); setPidioModal(true); setModalPracticante(true); }}
+                  ficha={p.employee_id ? (employees || []).find(e => String(e.id) === String(p.employee_id)) || null : null}
+                  horas={horasDePracticantes[p.id]}
+                  onEdit={editarPracticante}
+                  onDarAcceso={darAccesoAPracticante}
                   onDelete={setPracticanteABorrar}
                 />
               ))}
@@ -1007,17 +1152,6 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
         ))}
 
       </div>
-
-      {pidioModal && (
-        <Suspense fallback={null}>
-          <PracticanteModal
-            isOpen={modalPracticante}
-            onClose={() => setModalPracticante(false)}
-            practicante={practicanteEnEdicion}
-            onSaved={() => fetchPracticantes()}
-          />
-        </Suspense>
-      )}
 
       {verSeguro && (
         <Suspense fallback={null}>

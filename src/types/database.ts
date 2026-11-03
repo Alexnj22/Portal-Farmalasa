@@ -21507,6 +21507,7 @@ export type Database = {
           created_at: string
           created_by: string | null
           dui: string | null
+          employee_id: string | null
           estado: string
           fecha_fin: string
           fecha_inicio: string
@@ -21529,6 +21530,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dui?: string | null
+          employee_id?: string | null
           estado?: string
           fecha_fin: string
           fecha_inicio: string
@@ -21551,6 +21553,7 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           dui?: string | null
+          employee_id?: string | null
           estado?: string
           fecha_fin?: string
           fecha_inicio?: string
@@ -21583,6 +21586,20 @@ export type Database = {
           {
             foreignKeyName: "practicantes_created_by_fkey"
             columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practicantes_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "practicantes_employee_id_fkey"
+            columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees_safe"
             referencedColumns: ["id"]
@@ -34179,6 +34196,7 @@ export type Database = {
         }[]
       }
       get_faltantes_de_bolsa: { Args: never; Returns: Json }
+      get_horas_de_practicantes: { Args: never; Returns: Json }
       get_inventory_cost_summary: {
         Args: { p_erp_sucursal_id?: number }
         Returns: Json

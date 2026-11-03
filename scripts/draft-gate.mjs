@@ -96,6 +96,10 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+    // La pasantía del practicante (2026-11-03) no es un formulario propio: es
+    // una sección del alta de empleado y escribe en su `formData`, que ya se
+    // guarda solo con la clave `alta_empleado`.
+    'src/components/practicantes/SeccionDeLaPractica.jsx': 'sección del alta de empleado: su formData ya se guarda con alta_empleado',
     // El cobro de una inyección se hace con el cliente enfrente y la ampolla
     // en la mano, y el monto lo recalcula el servidor. Restaurarlo después de
     // un cierre de sesión volvería a cobrar una venta que ya se fue del mostrador.

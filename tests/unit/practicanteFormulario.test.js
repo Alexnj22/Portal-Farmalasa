@@ -28,3 +28,47 @@ describe('practicanteFormulario', () => {
         expect(f.convenio_url).toBe('url');
     });
 });
+
+// ── La pasantía dentro de la ficha (2026-11-03) ─────────────────────────────
+import {
+    motivoPasantiaIncompleta, filaDePracticanteDesdeFicha, fichaConPasantia, pasantiaDe, PASANTIA_VACIA,
+} from '@nucleo/utils/practicanteFormulario';
+import { faltantesDelExpediente } from '@nucleo/utils/expediente';
+
+describe('pasantía de una ficha de practicante', () => {
+    const persona = { first_names: 'ANA', last_names: 'PEREZ', birth_date: '2000-01-01', dui: '', branch_id: 27 };
+    const pasantia = { ...PASANTIA_VACIA, institucion_educativa: 'ITCHA', tutor_nombre: 'TUTOR',
+        fecha_inicio: '2026-11-03', fecha_fin: '2026-11-30', horas_requeridas: '160' };
+
+    it('completa y con convenio, se puede guardar', () => {
+        expect(motivoPasantiaIncompleta(persona, pasantia, { tieneConvenio: true })).toBeNull();
+    });
+    it('dice qué falta: sala, institución, convenio, fechas al revés', () => {
+        expect(motivoPasantiaIncompleta({ ...persona, branch_id: '' }, pasantia, { tieneConvenio: true })).toMatch(/sucursal/);
+        expect(motivoPasantiaIncompleta(persona, { ...pasantia, institucion_educativa: '' }, { tieneConvenio: true })).toMatch(/institución/);
+        expect(motivoPasantiaIncompleta(persona, pasantia, { tieneConvenio: false })).toMatch(/convenio/);
+        expect(motivoPasantiaIncompleta(persona, { ...pasantia, fecha_fin: '2026-11-01' }, { tieneConvenio: true })).toMatch(/posterior/);
+    });
+    it('la fila copia la identidad de la ficha y lleva el employee_id', () => {
+        const f = filaDePracticanteDesdeFicha(persona, pasantia, 'url', 'emp-1');
+        expect(f).toMatchObject({ first_names: 'ANA', branch_id: 27, institucion_educativa: 'ITCHA',
+            horas_requeridas: 160, convenio_url: 'url', employee_id: 'emp-1' });
+    });
+    it('fichaConPasantia trae la fila que nombra a la ficha, y no toca a un empleado', () => {
+        const fila = { id: 'p1', employee_id: 'emp-1', convenio_url: 'u', ...pasantia };
+        const r = fichaConPasantia({ id: 'emp-1', tipo_ficha: 'practicante' }, [fila]);
+        expect(r.pasantia_id).toBe('p1');
+        expect(r.pasantia_convenio_url).toBe('u');
+        expect(r.pasantia).toEqual(pasantiaDe(fila));
+        const emp = { id: 'x', tipo_ficha: 'empleado' };
+        expect(fichaConPasantia(emp, [fila])).toBe(emp);
+    });
+    it('al practicante no se le piden contrato, sueldo ni ISSS/AFP', () => {
+        const campos = faltantesDelExpediente({ tipo_ficha: 'practicante' }).map(f => f.campo);
+        for (const c of ['contract_type', 'base_salary', 'periodo_pago', 'isss_estado', 'afp_estado', 'contrato_fecha_celebracion']) {
+            expect(campos).not.toContain(c);
+        }
+        expect(campos).toContain('address');
+        expect(faltantesDelExpediente({}).map(f => f.campo)).toContain('base_salary');
+    });
+});

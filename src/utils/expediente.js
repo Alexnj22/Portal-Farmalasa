@@ -60,6 +60,11 @@ const EXIGIDOS = [
     { campo: 'code',              label: 'Código de carné' },
 ];
 
+const NO_APLICAN_AL_PRACTICANTE = new Set([
+    'contract_type', 'base_salary', 'periodo_pago', 'contrato_lugar_celebracion',
+    'contrato_fecha_celebracion', 'contract_end_date', 'isss_estado', 'afp_estado',
+]);
+
 const vacio = (v) => v === null || v === undefined || v === '' ||
     (Array.isArray(v) && v.length === 0);
 
@@ -139,6 +144,12 @@ export function faltantesDelExpediente(datos, { soloLoConocido = false } = {}) {
     if (vacioDeVerdad(datos.isss_estado)) faltan.push({ campo: 'isss_estado', label: 'Si tiene ISSS' });
     if (vacioDeVerdad(datos.afp_estado))  faltan.push({ campo: 'afp_estado',  label: 'Si tiene AFP' });
 
+    // El practicante (2026-11-03) tiene ficha pero no contrato: hace horas
+    // sociales, no cobra y no cotiza. Pedirle salario, firma o ISSS sería
+    // inventarle faltas sobre datos que no existen para él.
+    if ((datos.tipo_ficha ?? datos.tipoFicha) === 'practicante') {
+        return faltan.filter(f => !NO_APLICAN_AL_PRACTICANTE.has(f.campo));
+    }
     return faltan;
 }
 

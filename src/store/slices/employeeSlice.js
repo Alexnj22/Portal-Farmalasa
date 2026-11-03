@@ -891,6 +891,18 @@ export const createEmployeeSlice = (set, get) => ({
                 status: 'ACTIVO',
             };
 
+            // ── El practicante (2026-11-03) ────────────────────────────────
+            // Misma ficha, mismo acceso al portal, pero `tipo_ficha` lo saca de
+            // planilla, horarios y avisos de sala (todos preguntan
+            // `= 'empleado'`); sí marca en el kiosco, para medir sus horas. No tiene contrato:
+            // sin esto se guardaba «INDEFINIDO, 44 horas», que en una inspección
+            // diría que es personal permanente.
+            if (formData.tipo_ficha === 'practicante') {
+                dbPayload.tipo_ficha = 'practicante';
+                dbPayload.contract_type = null;
+                dbPayload.weekly_contracted_hours = null;
+            }
+
             // La foto se sube DESPUÉS (necesita el id de la fila), así que el
             // alta arranca con la columna en null y la llena en un segundo
             // paso. Al absorber eso sería un borrado: quien enlaza una ficha

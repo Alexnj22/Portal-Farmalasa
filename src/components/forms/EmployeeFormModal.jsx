@@ -99,6 +99,8 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { NOMBRES_DE_MES, fechaTexto, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { analizarDocumento, leerDui } from '@nucleo/data/ia';
+import SeccionDeLaPractica from '../practicantes/SeccionDeLaPractica';
+import { TIPO_FICHA_PRACTICANTE } from '@nucleo/utils/practicanteFormulario';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -360,6 +362,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // activeTab controlado. Sin setter porque no hay UI de tabs interna que lo dispare.
     const [localActiveTab] = useState('personal');
     const activeTab = activeTabProp !== undefined ? activeTabProp : localActiveTab;
+    // El practicante (2026-11-03) usa esta misma ficha —DUI, foto, dirección,
+    // acceso— y cambia el contrato y la nómina por su pasantía.
+    const esPracticante = formData?.tipo_ficha === TIPO_FICHA_PRACTICANTE;
     const [hasDraft, setHasDraft] = useState(false);
 
     // Especialidades/profesiones viven en education_catalog_entries — se
@@ -4329,6 +4334,14 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             </div>
                         </div>
 
+                        {/* ── El practicante: la pasantía en lugar del contrato ──
+                            (2026-11-03) No tiene contrato, sueldo ni horario: lo que
+                            va acá es su institución, tutor, fechas y convenio. El
+                            resto de esta pestaña es del Código de Trabajo y no le
+                            aplica. */}
+                        {esPracticante && <SeccionDeLaPractica formData={formData} setFormData={setFormData} />}
+                        {!esPracticante && (<>
+
                         {/* ── Acá vivía «Si no está, lo cubre» ─────────────────────
                             Se quitó el 2026-08-28, a pedido del usuario mirando la
                             pantalla: «en contrato, eso no lo veo necesario, ya que debe
@@ -4828,12 +4841,16 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </>
                             )}
                         </div>
+                        </>)}
                     </>
                 )}
 
                 {/* TAB 3: NÓMINA Y ACCESOS */}
                 {activeTab === 'nomina' && (
                     <>
+                        {/* El practicante no cobra: de esta pestaña sólo le toca el
+                            acceso al portal (2026-11-03). */}
+                        {!esPracticante && (<>
                         <div className={`${islandClass} ${islandHoverClass}`}>
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="p-2 bg-success/10 text-success rounded-xl border border-success/30 shadow-[var(--shadow-shine)]">
@@ -4898,6 +4915,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                 </div>
                             );
                         })()}
+                        </>)}
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div className={`${islandClass} ${islandHoverClass}`}>

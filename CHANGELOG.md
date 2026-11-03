@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.4 — La app de clientes pide confirmar el reglamento v2 el día que rige
+
+- El reglamento v2 de Puntos Salud rige el 15-nov-2026, pero `app-clientes`
+  seguía pidiendo aceptar `reglamento-2026-10-01`. Hoy la versión vigente sale
+  de `documentosVigentes()` (`_shared/consentimientoPuntos.ts`), por fecha y
+  por petición: ese día la app se lo pide a todo el mundo sin redesplegar.
+- Regla del usuario: siempre que un documento se actualice, el cliente lo
+  vuelve a confirmar. `tests/unit/documentosVigentes.test.js` amarra cada
+  versión a la fecha «vigente a partir del…» de su documento.
+
+## v2.1417.3 — Antigüedad: meses cumplidos, no meses de calendario
+
+- Reporte del usuario sobre Mi perfil: ingreso 04-sep-2026 y el 03-nov decía
+  «2 meses». `tiempoEnLaEmpresa` restaba meses de calendario sin mirar el día;
+  hoy cuenta meses CUMPLIDOS (1 mes) y, bajo el mes, días («28 días», «Primer
+  día» en vez de «Nuevo»).
+- La ficha de Personal tenía la misma cuenta escrita a mano con el mismo
+  defecto; ahora usa el canónico. La app del teléfono lo hereda (perfil y ficha).
+
 ## v2.1417.2 — El carné ya no tiene el PIN por contraseña (etapa 2)
 
 - SEGURIDAD-Y-ACCESO §3.1, cerrado. Con el número de alguien se podía calcular

@@ -20,3 +20,22 @@ export const TEXTOS_CONSENTIMIENTO = {
     "Acepto recibir promociones y descuentos especiales al teléfono o al " +
     "correo que tengo registrados.",
 };
+
+// Las versiones del reglamento del programa, cada una con la fecha de su
+// «vigente a partir del…» (docs/legal/reglamento-programa-de-puntos*.html).
+// La vigente es la última cuya fecha ya llegó, así que el día que rige una
+// nueva la app se la pide a todo el mundo SIN redesplegar nada.
+// `tests/unit/documentosVigentes.test.js` compara estas fechas y la del aviso
+// contra el texto de los documentos: cambiar un documento sin subir su versión
+// falla la prueba — es lo que garantiza que el cliente lo vuelva a confirmar.
+export const REGLAMENTOS = [
+  { version: "reglamento-2026-10-01", desde: "2026-10-01" },
+  { version: "reglamento-2026-11-15", desde: "2026-11-15" },
+];
+
+/** Las versiones que el cliente tiene que haber aceptado HOY (hora de El Salvador). */
+export function documentosVigentes(ahora: Date = new Date()) {
+  const hoy = new Date(ahora.getTime() - 6 * 3600_000).toISOString().slice(0, 10);
+  const vigente = [...REGLAMENTOS].reverse().find((r) => r.desde <= hoy) ?? REGLAMENTOS[0];
+  return { reglamento: vigente.version, aviso: TEXTOS_CONSENTIMIENTO.aviso };
+}

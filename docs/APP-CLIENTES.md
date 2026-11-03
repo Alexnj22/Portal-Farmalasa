@@ -473,13 +473,15 @@ recoja; «Opcional», que depende de una función que él elige usar.
    pagos **se conservan** (comprobantes de dinero cobrado). El cliente puede
    vaciar su chat, sólo para él (`cliente_vacio_hasta_id`). Siguen sin plazo:
    recetas, encargos, historias vistas, aceptaciones y encuestas.
-6. **Versión del aviso aceptado.** El aviso subió a versión 2, pero
-   `TEXTOS_CONSENTIMIENTO.aviso` (`supabase/functions/_shared/consentimientoPuntos.ts`)
-   sigue en `aviso-2026-09-04`. Subirlo a `aviso-2026-10-17` hace que la app le
-   vuelva a pedir la aceptación a todo el mundo y exige desplegar
-   `app-clientes` y la función de `/mis-puntos`. No se cambió: es una decisión
-   del usuario. El cambio no agrega finalidades sobre los datos de las salas;
-   las de la app son las del servicio que el cliente pide.
+6. **Versión de los documentos aceptados.** Cerrado el 2026-11-03. El aviso v2
+   (`aviso-2026-10-17`) está en producción desde el 24-oct y la app se lo vuelve
+   a pedir a quien aceptó sólo el anterior. El reglamento lo elige
+   `documentosVigentes()` (`_shared/consentimientoPuntos.ts`) por fecha: el
+   **15-nov-2026** pasa solo a `reglamento-2026-11-15` y la app lo pide de
+   nuevo, sin redesplegar. Regla del usuario: **siempre que un documento se
+   actualice, el cliente lo vuelve a confirmar** — `tests/unit/documentosVigentes.test.js`
+   falla si la fecha de una versión no es la del «vigente a partir del…» de su
+   documento.
 7. **Accessed APIs.** El manifiesto declara sólo UserDefaults con `CA92.1` y
    `1C8F.1` (el App Group que comparte con el widget; `@bacons/apple-targets`
    no trae manifiesto propio). El resto (FileTimestamp, SystemBootTime,

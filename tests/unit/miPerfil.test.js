@@ -3,8 +3,16 @@ import { ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximas
 
 describe('miPerfil', () => {
     it('tiempo en la empresa por mes calendario', () => {
-        expect(tiempoEnLaEmpresa('2024-07-15', '2026-10-02')).toBe('2 años 3 meses');
-        expect(tiempoEnLaEmpresa('2026-10-01', '2026-10-02')).toBe('Nuevo');
+        // Meses CUMPLIDOS: el 2-oct todavía no se cumple el mes que empezó el 15.
+        expect(tiempoEnLaEmpresa('2024-07-15', '2026-10-02')).toBe('2 años 2 meses');
+        expect(tiempoEnLaEmpresa('2024-07-02', '2026-10-02')).toBe('2 años 3 meses');
+        // El caso del reporte: entró el 4-sep, el 3-nov lleva 1 mes y 30 días.
+        expect(tiempoEnLaEmpresa('2026-09-04', '2026-11-03')).toBe('1 mes');
+        expect(tiempoEnLaEmpresa('2026-09-04', '2026-11-04')).toBe('2 meses');
+        expect(tiempoEnLaEmpresa('2026-01-31', '2026-02-28')).toBe('28 días');
+        expect(tiempoEnLaEmpresa('2025-11-03', '2026-11-03')).toBe('1 año');
+        expect(tiempoEnLaEmpresa('2026-10-01', '2026-10-02')).toBe('1 día');
+        expect(tiempoEnLaEmpresa('2026-10-02', '2026-10-02')).toBe('Primer día');
         expect(tiempoEnLaEmpresa(null)).toBe('—');
     });
     it('historial con el ingreso, el más reciente primero, y su filtro', () => {

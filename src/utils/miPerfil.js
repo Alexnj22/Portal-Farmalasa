@@ -9,16 +9,28 @@ import { tokenMatch } from './searchUtils';
 import { diasEntre, hoySV, sumarDias } from './fecha';
 import { resolverTurnoDelDia } from './turnoDelDia';
 
-/** «2 años 3 meses», «5 meses», «Nuevo» o «—». */
+/**
+ * «2 años 3 meses», «5 meses», «12 días», «Primer día» o «—».
+ *
+ * Cuenta meses CUMPLIDOS: el mes sólo suma cuando llega el día del ingreso.
+ * Antes restaba meses de calendario sin mirar el día, y quien entró el 4-sep
+ * figuraba con «2 meses» el 3-nov, cuando lleva 1 mes y 30 días (reporte del
+ * usuario, 2026-11-03). Bajo el mes se dice en días: «Nuevo» no decía nada.
+ */
 export function tiempoEnLaEmpresa(hireDate, hoy = hoySV()) {
     if (!hireDate) return '—';
-    const [hy, hm] = String(hireDate).slice(0, 10).split('-').map(Number);
-    const [ty, tm] = hoy.split('-').map(Number);
-    let y = ty - hy;
-    let m = tm - hm;
-    // Por mes calendario, sin mirar el día: así lo contó siempre el portal.
-    if (m < 0) { y -= 1; m += 12; }
-    if (y === 0 && m === 0) return 'Nuevo';
+    const ingreso = String(hireDate).slice(0, 10);
+    if (ingreso > hoy) return '—';
+    const [hy, hm, hd] = ingreso.split('-').map(Number);
+    const [ty, tm, td] = hoy.split('-').map(Number);
+    let meses = (ty - hy) * 12 + (tm - hm) - (td < hd ? 1 : 0);
+    if (meses <= 0) {
+        const dias = diasEntre(ingreso, hoy);
+        if (dias === 0) return 'Primer día';
+        return `${dias} día${dias > 1 ? 's' : ''}`;
+    }
+    const y = Math.floor(meses / 12);
+    const m = meses % 12;
     return `${y > 0 ? `${y} año${y > 1 ? 's' : ''} ` : ''}${m > 0 ? `${m} mes${m > 1 ? 'es' : ''}` : ''}`.trim();
 }
 

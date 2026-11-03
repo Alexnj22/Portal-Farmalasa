@@ -44,6 +44,7 @@ const VisorDeDocumento = lazy(() => import('../components/common/VisorDeDocument
 const EmployeeDocumentsList = lazy(() => import('../components/common/EmployeeDocumentsList'));
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import useMediaQuery from '../plataforma/useMediaQuery';
+import { tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
 import PortalTextarea from '../components/common/PortalTextarea';
@@ -238,15 +239,12 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
         return Math.floor(diff / (1000 * 60 * 60 * 24 * 365.25));
     }, [emp?.birth_date, emp?.birthDate]);
 
+    // La antigüedad sale del canónico (`tiempoEnLaEmpresa`): esta copia a mano
+    // contaba meses de calendario sin mirar el día y daba «2 Meses» a quien
+    // llevaba 1 mes y 30 días.
     const tenure = useMemo(() => {
-        if (!emp?.hire_date && !emp?.hireDate) return 'Sin fecha';
-        const hDate = new Date((emp.hire_date || emp.hireDate) + 'T12:00:00');
-        const now = new Date();
-        let years = now.getFullYear() - hDate.getFullYear();
-        let months = now.getMonth() - hDate.getMonth();
-        if (months < 0) { years--; months += 12; }
-        if (years === 0 && months === 0) return 'Nuevo Ingreso';
-        return `${years > 0 ? `${years} Año${years > 1 ? 's' : ''} ` : ''}${months > 0 ? `${months} Mes${months > 1 ? 'es' : ''}` : ''}`;
+        const hire = emp?.hire_date || emp?.hireDate;
+        return hire ? tiempoEnLaEmpresa(hire) : 'Sin fecha';
     }, [emp?.hire_date, emp?.hireDate]);
 
     const latePunches = useMemo(() => {

@@ -29,7 +29,7 @@
 // Todo lo que escribe es reversible o es del propio cliente: sus permisos, su
 // aviso al teléfono, su sesión.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { TEXTOS_CONSENTIMIENTO as TEXTOS } from "../_shared/consentimientoPuntos.ts";
+import { TEXTOS_CONSENTIMIENTO as TEXTOS, documentosVigentes } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_shared/paseGoogle.ts";
 import { escaleraDeNiveles, nivelDeCliente, programaParaApp } from "../_shared/nivel.ts";
@@ -504,11 +504,11 @@ async function horarioFarmacia(admin: any) {
 const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 
 // Las versiones VIGENTES de los dos documentos que la app pide leer y aceptar
-// en el primer inicio (2026-10-14, app/guia.js). El reglamento lleva la fecha
-// de su «Vigente a partir del…» (public/reglamento-puntos.html) y el aviso es
-// el mismo `TEXTOS.aviso` del consentimiento. Subir una de las dos = la app le
-// vuelve a pedir la aceptación (sólo esa página) a todo el mundo.
-const DOCUMENTOS_VIGENTES = { reglamento: "reglamento-2026-10-01", aviso: TEXTOS.aviso };
+// en el primer inicio (2026-10-14, app/guia.js). Salen de `documentosVigentes()`
+// en `_shared/consentimientoPuntos.ts`, POR PETICIÓN y no al arrancar: el
+// reglamento cambia solo el día que rige el nuevo, y un isolate vivo desde la
+// víspera seguiría pidiendo el viejo. Subir una = la app le vuelve a pedir la
+// aceptación (sólo esa página) a todo el mundo.
 
 // Para el alta que no se puede hacer desde la app (el documento ya tiene un
 // registro pendiente con otro teléfono). No dice por qué: confirmar que ese
@@ -967,7 +967,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     if (accion === "textos") {
-      return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones }, documentos: DOCUMENTOS_VIGENTES });
+      return json({ ok: true, textos: { programa: TEXTOS.programa, promociones: TEXTOS.promociones }, documentos: documentosVigentes() });
     }
 
     // ── Ofertas exclusivas por nivel (2026-10-14) ─────────────────────────
@@ -1481,6 +1481,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // versión de la app. Valen también para el pre-registro (sin ficha): lo
     // aceptado como pre-registro sigue valiendo cuando se vincula la ficha.
     if (accion === "documentos_estado" || accion === "aceptar_documentos") {
+      const DOCUMENTOS_VIGENTES = documentosVigentes();
       const filtro = [
         customerId ? `customer_id.eq.${Number(customerId)}` : null,
         ses.preregistro_id ? `preregistro_id.eq.${ses.preregistro_id}` : null,

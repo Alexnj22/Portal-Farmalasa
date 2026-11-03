@@ -828,6 +828,34 @@ export async function resolverPresentacion(
 }
 
 /**
+ * Cuando los lotes tienen las UNIDADES pero ninguno completa un paquete, el
+ * mismo despacho se manda suelto: en la presentación de 1, `paquetes × unidad`
+ * unidades repartidas lote por lote.
+ *
+ * Medido el 2026-10-31 (pedido 11-311026-3-S2): LISITRAM RELAX «CAJA X 20» es
+ * factor 2, y en bodega había 1 unidad en cada uno de dos lotes. Bodega armó la
+ * caja con una de cada uno y la sala la recibió, pero el tope cuenta
+ * `floor(stock/unidad)` POR LOTE —0 y 0— y el traslado no se registró: la caja
+ * quedó en el estante de la sala y en el inventario de Bodega. Para el sistema
+ * 1 caja de 2 y 2 unidades de 1 son lo mismo; lo que no se puede es partir un
+ * paquete entre dos lotes dentro de un renglón.
+ *
+ * Sólo para regulados: sin lote no hay reparto y el tope ya sale del total.
+ * Devuelve null si no hace falta, si no alcanza ni en unidades, o si el
+ * producto no ofrece presentación de 1 — y ahí manda el mensaje de siempre.
+ */
+export async function armarEnSuelto(
+  cookie: string, fila: Fila, unidad: number, paquetes: number,
+): Promise<{ pres: { id: string; costo: string; precio: string; unidad: string }; cantidad: number } | null> {
+  const u = Number(unidad) || 1;
+  if (!fila.regulado || !fila.lotes.length || u <= 1) return null;
+  const unidades = fila.lotes.reduce((n, l) => n + l.stock, 0);
+  if (unidades < paquetes * u) return null;
+  const suelta = await resolverPresentacion(cookie, fila, "UNIDAD", 1, { porFactor: true });
+  return suelta ? { pres: suelta, cantidad: paquetes * u } : null;
+}
+
+/**
  * Los traslados de esta ubicación despachados y todavía sin recibir.
  *
  * ⚠️ **El listado ignora el orden que se le pide.** Se le manda

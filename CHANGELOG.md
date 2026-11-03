@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.8 — Pedidos: el producto sale suelto cuando ningún lote completa una caja
+
+Pedido 11-311026-3-S2 (31-oct): LISITRAM RELAX «CAJA X 20» es factor 2 y en
+bodega había 1 unidad en cada uno de dos lotes. Bodega armó la caja con una de
+cada lote y Salud 2 la recibió, pero el traslado no se registró — «alcanzan para
+0 y hacen falta 1» — porque el tope cuenta cajas enteras POR LOTE.
+
+Ahora `armarEnSuelto` (`_shared/erp-traslado.ts`): si los lotes tienen las
+unidades y ninguno completa la presentación, el traslado sale en la presentación
+de 1 (`cantidad × factor` unidades, repartidas lote por lote) y el renglón lleva
+el aviso. El simulacro de la pantalla de confirmar usa la misma regla. Sin
+presentación de 1, o si ni en unidades alcanza, sale el mensaje de siempre.
+Pruebas: `tests/unit/armarEnSuelto.test.js`.
+
 ## v2.1417.7 — Reservas: el bloqueo dura 30 días desde la tercera vencida; raspable mayorista con compra del mes anterior
 
 Auditoría de los reglamentos firmados contra el sistema (2026-11-03), con las

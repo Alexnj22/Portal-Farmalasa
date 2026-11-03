@@ -17,6 +17,7 @@ import {
   nombreCorto,
   pendientesDeOrigen,
   repartirEnLotes,
+  armarEnSuelto,
   resolverPresentacion,
   sesionEn,
   traerFila,
@@ -1071,7 +1072,7 @@ Deno.serve(async (req) => {
           const f = await traerFila(cookie, ln.erp_product_id as number, ubicOrigen);
           if (!f.encontrado) { await fallar("Ya no tiene existencia en bodega."); continue; }
 
-          const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, Number(it.factor ?? 0), { porFactor: true });
+          let pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, Number(it.factor ?? 0), { porFactor: true });
           if (!pres) {
             await fallar(`Se despachó ${it.presentacion_tipo} de ${it.factor}, y hoy ninguna presentación `
               + `con ese nombre trae ese factor. Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`);
@@ -1093,19 +1094,33 @@ Deno.serve(async (req) => {
           // Lo apartado en el área de vencidos ya NO achica este número: el
           // sistema respeta la ubicación desde el 26-ago (ver
           // `disponibleEnBodega`). Si falta, falta en el estante.
-          if (Number(ln.cantidad) > hay.paquetes) {
-            await fallar(`Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`);
-            continue;
+          // Las unidades están pero ningún lote completa un paquete: se manda
+          // suelto, una unidad de cada lote. Ver `armarEnSuelto`.
+          const renglones: { cantidad: number; idLote: string; lote: string | null }[] = [];
+          const avisos: string[] = [];
+          let cantidad = Number(ln.cantidad);
+          let reservas = reservadosDe(it, Number(pres.unidad));
+          let rotulo = `${it.presentacion_tipo} (${pres.unidad})`;
+          if (cantidad > hay.paquetes) {
+            const suelto = await armarEnSuelto(cookie, f, Number(pres.unidad), cantidad);
+            if (!suelto) {
+              await fallar(`Hoy ${hayEnTexto(hay)}: alcanzan para ${hay.paquetes} y hacen falta ${ln.cantidad}.`);
+              continue;
+            }
+            const u = Number(pres.unidad);
+            reservas = reservas.map((r) => ({ ...r, paquetes: r.paquetes * u }));
+            avisos.push(`ningún lote completaba ${it.presentacion_tipo}: salió en ${suelto.cantidad} unidades sueltas`);
+            pres = suelto.pres;
+            cantidad = suelto.cantidad;
+            rotulo = `UNIDAD (1) · ${ln.cantidad} ${it.presentacion_tipo} (${u})`;
           }
 
           // ── Los lotes van DENTRO del mismo traslado ────────────────────
           // Un producto con dos lotes son dos renglones del mismo traslado, no
           // dos traslados: sigue siendo un producto y se recibe de una vez.
-          const renglones: { cantidad: number; idLote: string; lote: string | null }[] = [];
-          const avisos: string[] = [];
 
           if (!f.regulado) {
-            renglones.push({ cantidad: Number(ln.cantidad), idLote: "0", lote: null });
+            renglones.push({ cantidad, idLote: "0", lote: null });
           } else {
             // El reparto es `repartirEnLotes` de `_shared` y no una copia: hasta
             // el 2026-08-18 esta función tenía la suya, y las dos se movieron por
@@ -1113,7 +1128,7 @@ Deno.serve(async (req) => {
             // sin el retorno al lote reservado por lo que le sobra — que es lo
             // que hace que el tope y el reparto digan lo mismo.
             const reparto = repartirEnLotes(
-              f.lotes, Number(ln.cantidad), Number(pres.unidad), reservadosDe(it, Number(pres.unidad)), "el pedido",
+              f.lotes, cantidad, Number(pres.unidad), reservas, "el pedido",
             );
             renglones.push(...reparto.renglones);
             avisos.push(...reparto.avisos);
@@ -1245,7 +1260,7 @@ Deno.serve(async (req) => {
             aviso: avisos.length ? avisos.join(" · ") : null,
             detalle: {
               producto: it.nombre,
-              presentacion: `${it.presentacion_tipo} (${pres.unidad})`,
+              presentacion: rotulo,
               id_presentacion_erp: pres.id,
               renglones,
               concepto,
@@ -1395,7 +1410,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, factor, { porFactor: true });
+        let pres = await resolverPresentacion(cookie, f, it.presentacion_tipo, factor, { porFactor: true });
         if (!pres) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "FACTOR_CAMBIO",
@@ -1418,7 +1433,21 @@ Deno.serve(async (req) => {
           enUbicacion ? (enUbicacion.get(Number(it.erp_product_id)) ?? 0) : null,
           apartadoQueEstorba(lecturaEstanteSim, lecturaVencidosSim, Number(it.erp_product_id)),
         );
-        if (it.cantidad > hay.paquetes) {
+        // La misma salida que el despacho: si los lotes tienen las unidades y
+        // ninguno completa un paquete, va suelto. Ver `armarEnSuelto`.
+        let cantidadSim = it.cantidad;
+        let reservasSim = reservadosDe(it, Number(pres.unidad));
+        let rotuloSim = `${it.presentacion_tipo} (${pres.unidad})`;
+        const suelto = it.cantidad > hay.paquetes
+          ? await armarEnSuelto(cookie, f, Number(pres.unidad), it.cantidad)
+          : null;
+        if (suelto) {
+          const u = Number(pres.unidad);
+          reservasSim = reservasSim.map((r) => ({ ...r, paquetes: r.paquetes * u }));
+          rotuloSim = `UNIDAD (1) · ${it.cantidad} ${it.presentacion_tipo} (${u})`;
+          pres = suelto.pres;
+          cantidadSim = suelto.cantidad;
+        } else if (it.cantidad > hay.paquetes) {
           hallazgos.push({
             erp_product_id: it.erp_product_id, producto: it.nombre, codigo: "SIN_EXISTENCIA",
             // Lo apartado en el área de vencidos ya no achica este número: el
@@ -1438,7 +1467,7 @@ Deno.serve(async (req) => {
         // productos con dos lotes de igual número y vencimientos distintos.
         const lineasItem: { cantidad: number; idLote: string; lote: string | null }[] = [];
         if (!f.regulado) {
-          lineasItem.push({ cantidad: it.cantidad, idLote: "0", lote: null });
+          lineasItem.push({ cantidad: cantidadSim, idLote: "0", lote: null });
         } else {
           // Que el pedido no haya guardado lote no corta: se cubre igual con lo
           // que hay, empezando por el que vence primero. El despacho real hace
@@ -1457,7 +1486,7 @@ Deno.serve(async (req) => {
           // Que el lote reservado ya no esté NO es un problema: se cubre con el
           // que vence primero, que es lo que quien levanta hizo físicamente.
           const reparto = repartirEnLotes(
-            f.lotes, it.cantidad, Number(pres.unidad), reservadosDe(it, Number(pres.unidad)), "el pedido",
+            f.lotes, cantidadSim, Number(pres.unidad), reservasSim, "el pedido",
           );
           lineasItem.push(...reparto.renglones);
 
@@ -1482,7 +1511,7 @@ Deno.serve(async (req) => {
             pedido_item_id: it.id,
             erp_product_id: it.erp_product_id,
             producto: it.nombre,
-            presentacion: `${it.presentacion_tipo} (${pres.unidad})`,
+            presentacion: rotuloSim,
             id_presentacion_erp: pres.id,
             cantidad: l.cantidad,
             cantidad_asignada: it.cantidad_asignada,

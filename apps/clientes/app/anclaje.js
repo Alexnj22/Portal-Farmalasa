@@ -1,87 +1,134 @@
-// 5 · 4 · 3 · 2 · 1 (Bienestar, 2026-11-03): la técnica de anclaje con los
-// cinco sentidos — cinco cosas que ves, cuatro que tocas, tres que oyes, dos
-// que hueles y una que saboreas. Saca la atención de la preocupación y la
-// trae al lugar donde uno está. Un paso por pantalla, sin apuro.
-import { useState } from 'react';
+// 5 · 4 · 3 · 2 · 1 (Bienestar, 2026-11-03; rehecho el mismo día: «no vibran,
+// no tienen sonido… que se vean modernos»). La técnica de anclaje con los
+// cinco sentidos: cinco cosas que ves, cuatro que tocas, tres que oyes, dos
+// que hueles y una que saboreas.
+//
+// Ahora se CUENTA: por cada cosa que uno nota, toca el círculo. Cada toque es
+// una nota más aguda de una escala que nunca suena mal, un golpecito del
+// teléfono y una luz que se enciende. Al completar el sentido suena el acierto
+// y pasa solo al siguiente: no hay que leer ni apretar «siguiente», se puede
+// hacer mirando alrededor, que es justamente el ejercicio.
+import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
-import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
-import { Boton, Pantalla, Tarjeta } from '../componentes/ui';
-import { useSinMovimiento } from '../componentes/animacion';
+import { Tocable, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
-import { colorSistema } from '../componentes/sistema';
-import { suave, useTema } from '../tema/tema';
+import { BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
 const PASOS = [
-  { n: 5, sf: 'eye.fill', texto: 'cosas que puedes VER', ayuda: 'Míralas una por una: un color, una forma, una luz.' },
-  { n: 4, sf: 'hand.raised.fill', texto: 'cosas que puedes TOCAR', ayuda: 'Tu ropa, la mesa, tu cabello. Nota si es suave, frío o áspero.' },
-  { n: 3, sf: 'ear.fill', texto: 'sonidos que puedes OÍR', ayuda: 'Lejos y cerca: un carro, el viento, tu respiración.' },
-  { n: 2, sf: 'nose.fill', texto: 'olores que puedes SENTIR', ayuda: 'Si no hueles nada, piensa en dos olores que te gusten.' },
-  { n: 1, sf: 'mouth.fill', texto: 'sabor que puedes NOTAR', ayuda: 'Lo que tomaste hace poco, o simplemente tu boca ahora.' },
+  { n: 5, sf: 'eye.fill', titulo: 'cosas que puedes VER', ayuda: 'Un color, una forma, una luz. Míralas una por una.', colores: ['#FF9A62', '#FF5E7E'] },
+  { n: 4, sf: 'hand.raised.fill', titulo: 'cosas que puedes TOCAR', ayuda: 'Tu ropa, la mesa, tu cabello. ¿Es suave, frío, áspero?', colores: ['#FFC062', '#FF7A45'] },
+  { n: 3, sf: 'ear.fill', titulo: 'sonidos que puedes OÍR', ayuda: 'Lejos y cerca: un carro, el viento, tu respiración.', colores: ['#FF7EB3', '#C04BD8'] },
+  { n: 2, sf: 'nose.fill', titulo: 'olores que puedes SENTIR', ayuda: 'Si no hueles nada, piensa en dos olores que te gusten.', colores: ['#B48CFF', '#6E5CE8'] },
+  { n: 1, sf: 'mouth.fill', titulo: 'sabor que puedes NOTAR', ayuda: 'Lo que tomaste hace poco, o tu boca ahora mismo.', colores: ['#7FD4FF', '#4F7BFF'] },
 ];
+const SONIDOS = ['toque-1', 'toque-2', 'toque-3', 'toque-4', 'toque-5', 'par', 'campana', 'gota'];
 
-export default function Anclaje() {
-  const t = useTema();
-  const quieta = useSinMovimiento();
-  const [paso, setPaso] = useState(0);
-  const fin = paso >= PASOS.length;
-  const p = PASOS[Math.min(paso, PASOS.length - 1)];
-  const colores = [t.acentos.naranja.fuerte, t.color.magenta];
-  const siguiente = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-    setPaso((x) => x + 1);
+function BotonContar({ paso, alTocar, quieta }) {
+  const s = useSharedValue(1);
+  const estilo = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  const tocar = () => {
+    if (!quieta) s.value = withSequence(withTiming(0.92, { duration: 70 }), withSpring(1, { damping: 7, stiffness: 320 }));
+    alTocar();
   };
-  const animar = quieta ? {} : { entering: FadeIn.duration(350), exiting: FadeOut.duration(150) };
-
   return (
-    <Pantalla conPestanas={false} conBurbuja={false}>
-      {/* El avance: cinco puntos. */}
-      <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 8 }} accessibilityLabel={`Paso ${Math.min(paso + 1, 5)} de 5`}>
-        {PASOS.map((x, i) => (
-          <View key={x.n} style={{ width: i === paso ? 22 : 8, height: 8, borderRadius: 4, backgroundColor: i <= paso ? t.color.magenta : suave(t.color.magenta, 0.2) }} />
-        ))}
-      </View>
-
-      <Animated.View key={paso} {...animar}>
-        <LinearGradient colors={colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ borderRadius: 28, padding: 26, gap: 14, minHeight: 300, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' }}>
-          {fin ? (
-            <>
-              <Icono sf="heart.fill" respaldo="♥" tam={56} color="#FFFFFF" />
-              <Text style={{ fontSize: 28, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>Estás aquí, ahora.</Text>
-              <Text style={{ fontSize: 16, lineHeight: 22, color: 'rgba(255,255,255,0.92)', textAlign: 'center' }}>
-                Respira hondo una vez más. Puedes volver a hacerlo cuando lo necesites.
-              </Text>
-            </>
-          ) : (
-            <>
-              <Text style={{ position: 'absolute', right: 14, top: -40, fontSize: 220, fontWeight: '900', color: 'rgba(255,255,255,0.12)' }}>{p.n}</Text>
-              <Icono sf={p.sf} respaldo="" tam={52} color="#FFFFFF" />
-              <Text accessibilityRole="header" style={{ fontSize: 30, fontWeight: '800', color: '#FFFFFF', textAlign: 'center' }}>
-                {p.n} {p.texto.toLowerCase()}
-              </Text>
-              <Text style={{ fontSize: 16, lineHeight: 22, color: 'rgba(255,255,255,0.92)', textAlign: 'center' }}>{p.ayuda}</Text>
-            </>
-          )}
+    <Tocable etiqueta={`Ya noté una. ${paso.titulo}`} alTocar={tocar}>
+      <Animated.View style={[{ alignSelf: 'center', width: 196, height: 196, borderRadius: 98, padding: 10, backgroundColor: 'rgba(255,255,255,0.16)' }, estilo]}>
+        <LinearGradient colors={paso.colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ flex: 1, borderRadius: 90, alignItems: 'center', justifyContent: 'center', gap: 4,
+            shadowColor: paso.colores[1], shadowOpacity: 0.6, shadowRadius: 24, shadowOffset: { width: 0, height: 8 } }}>
+          <Icono sf={paso.sf} respaldo="" tam={58} color={BLANCO} />
+          <Text style={{ fontSize: 14, fontWeight: '800', color: BLANCO }}>Toca al notar una</Text>
         </LinearGradient>
       </Animated.View>
+    </Tocable>
+  );
+}
+
+export default function Anclaje() {
+  const quieta = useSinMovimiento();
+  const [paso, setPaso] = useState(0);
+  const [cuenta, setCuenta] = useState(0);
+  const pasar = useRef(null);
+  const fin = paso >= PASOS.length;
+  const p = PASOS[Math.min(paso, PASOS.length - 1)];
+  useEffect(() => { precargar(SONIDOS); return () => { clearTimeout(pasar.current); callar(SONIDOS); }; }, []);
+
+  const contar = () => {
+    if (fin || cuenta >= p.n || pasar.current) return;
+    const c = cuenta + 1;
+    setCuenta(c);
+    // La nota sube con cada cosa notada: 5 toques son la escala completa.
+    sonar(`toque-${Math.min(5, c + (5 - p.n))}`, { volumen: 0.85 });
+    tacto.toque();
+    if (c === p.n) {
+      pasar.current = setTimeout(() => {
+        pasar.current = null;
+        const ultimo = paso === PASOS.length - 1;
+        if (ultimo) { sonar('campana', { volumen: 0.8 }); tacto.exito(); } else { sonar('par', { volumen: 0.7 }); tacto.exito(); }
+        setPaso((x) => x + 1); setCuenta(0);
+      }, 650);
+    }
+  };
+  const otraVez = () => { sonar('gota', { volumen: 0.5 }); setPaso(0); setCuenta(0); };
+  const animar = quieta ? {} : { entering: FadeIn.duration(380), exiting: FadeOut.duration(160) };
+
+  return (
+    <Escena colores={ESCENAS.anclaje}>
+      <ControlesSensaciones izquierda={
+        <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', height: 44 }} accessibilityLabel={`Sentido ${Math.min(paso + 1, 5)} de 5`}>
+          {PASOS.map((x, i) => (
+            <View key={x.n} style={{ width: i === paso ? 26 : 9, height: 9, borderRadius: 5, backgroundColor: i < paso || fin ? BLANCO : i === paso ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.25)' }} />
+          ))}
+        </View>
+      } />
 
       {fin ? (
-        <>
-          <Boton alTocar={() => router.back()}>Terminar</Boton>
-          <Boton tipo="secundario" alTocar={() => setPaso(0)}>Hacerlo otra vez</Boton>
-        </>
+        <Animated.View {...animar} style={{ alignItems: 'center', gap: 14, paddingVertical: 24 }}>
+          <Animated.View entering={quieta ? undefined : ZoomIn.springify()}>
+            <View style={{ width: 132, height: 132, borderRadius: 66, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' }}>
+              <Icono sf="heart.fill" respaldo="♥" tam={62} color={BLANCO} />
+            </View>
+          </Animated.View>
+          <Text style={{ fontSize: 30, fontWeight: '800', color: BLANCO, textAlign: 'center' }}>Estás aquí, ahora.</Text>
+          <Text style={{ fontSize: 16, lineHeight: 23, color: BLANCO_2, textAlign: 'center', paddingHorizontal: 12 }}>
+            Notaste 15 cosas a tu alrededor. Respira hondo una vez más: puedes volver a hacerlo cuando lo necesites.
+          </Text>
+        </Animated.View>
       ) : (
-        <Boton alTocar={siguiente}>{paso === PASOS.length - 1 ? 'Listo' : 'Siguiente'}</Boton>
+        <Animated.View key={paso} {...animar} style={{ gap: 18 }}>
+          <View style={{ alignItems: 'center', gap: 6 }}>
+            <Text style={{ fontSize: 96, lineHeight: 104, fontWeight: '900', color: BLANCO }}>{p.n}</Text>
+            <Text accessibilityRole="header" style={{ fontSize: 24, fontWeight: '800', color: BLANCO, textAlign: 'center' }}>{p.titulo.toLowerCase()}</Text>
+            <Text style={{ fontSize: 15, lineHeight: 21, color: BLANCO_2, textAlign: 'center', paddingHorizontal: 16 }}>{p.ayuda}</Text>
+          </View>
+          <BotonContar paso={p} alTocar={contar} quieta={quieta} />
+          {/* Una luz por cada cosa: se encienden al tocar. */}
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 12 }} accessibilityLabel={`${cuenta} de ${p.n}`}>
+            {Array.from({ length: p.n }, (_, i) => (
+              <View key={i} style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: 'rgba(255,255,255,0.5)', alignItems: 'center', justifyContent: 'center' }}>
+                {i < cuenta ? <Animated.View entering={quieta ? undefined : ZoomIn.springify()} style={{ width: 20, height: 20, borderRadius: 10, backgroundColor: BLANCO, shadowColor: BLANCO, shadowOpacity: 0.9, shadowRadius: 8 }} /> : null}
+              </View>
+            ))}
+          </View>
+        </Animated.View>
       )}
 
-      <Tarjeta>
-        <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
+      {fin ? (
+        <View style={{ gap: 10 }}>
+          <BotonJuego sf="checkmark" alTocar={() => router.back()}>Terminar</BotonJuego>
+          <BotonJuego secundario sf="arrow.counterclockwise" alTocar={otraVez}>Hacerlo otra vez</BotonJuego>
+        </View>
+      ) : null}
+
+      <PanelVidrio>
+        <Text style={textoAyuda}>
           Nómbralas en voz baja o en tu mente. No hay respuestas correctas: lo importante es notar lo que está a tu alrededor.
         </Text>
-      </Tarjeta>
-    </Pantalla>
+      </PanelVidrio>
+    </Escena>
   );
 }

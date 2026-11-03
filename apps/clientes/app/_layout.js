@@ -5,6 +5,7 @@ import { AppState, Platform, useColorScheme } from 'react-native';
 import { DarkTheme, DefaultTheme, router, Stack, ThemeProvider, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { BARRA_DE_JUEGO } from '../componentes/juegos/Escena';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Aurora from '../componentes/Aurora';
 import { useAppActiva } from '../lib/visible';
@@ -382,10 +383,12 @@ function Raiz() {
             <Stack.Screen name="ofertas" options={{ title: 'Ofertas' }} />
             <Stack.Screen name="movimientos" options={{ title: 'Mis puntos' }} />
             {/* Bienestar (2026-11-03): los ejercicios de la zona anti estrés. */}
-            <Stack.Screen name="respira" options={{ title: 'Respira' }} />
-            <Stack.Screen name="burbujas" options={{ title: 'Burbujas' }} />
-            <Stack.Screen name="memoria" options={{ title: 'Memoria' }} />
-            <Stack.Screen name="anclaje" options={{ title: '5 · 4 · 3 · 2 · 1' }} />
+            {/* Los juegos van sobre su propia escena: barra transparente y letras blancas. */}
+            <Stack.Screen name="respira" options={{ title: 'Respira', ...BARRA_DE_JUEGO }} />
+            <Stack.Screen name="burbujas" options={{ title: 'Burbujas', ...BARRA_DE_JUEGO }} />
+            <Stack.Screen name="memoria" options={{ title: 'Memoria', ...BARRA_DE_JUEGO }} />
+            <Stack.Screen name="anclaje" options={{ title: '5 · 4 · 3 · 2 · 1', ...BARRA_DE_JUEGO }} />
+            <Stack.Screen name="jardin" options={{ title: 'Jardín zen', ...BARRA_DE_JUEGO, gestureEnabled: false }} />
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
             <Stack.Screen name="legal" options={{ title: '' }} />
             <Stack.Screen name="inyecciones" options={{ title: 'Mis inyecciones' }} />

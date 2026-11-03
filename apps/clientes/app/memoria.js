@@ -1,130 +1,229 @@
-// Memoria (Bienestar, 2026-11-03): 16 cartas, 8 parejas con íconos de la
-// farmacia. Se voltean dos; si son iguales se quedan, si no vuelven solas. El
-// récord (menos movimientos) queda en el teléfono.
+// Memoria (Bienestar, 2026-11-03; rehecho el mismo día: «no vibran, no tienen
+// sonido… que se vean modernos»). Parejas de íconos de la farmacia en tres
+// niveles. Las cartas giran en 3D; al acertar suenan dos notas que suben y la
+// pareja brilla, al fallar la carta tiembla y suena una nota grave — sin
+// regañar. Los aciertos seguidos son una RACHA, y cada uno suena un tono más
+// arriba. Al terminar: estrellas según los movimientos, el tiempo y el récord
+// de ese nivel, que queda en el teléfono.
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import * as Haptics from 'expo-haptics';
-import Animated, { interpolate, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { interpolate, useAnimatedStyle, useSharedValue, withDelay, withSequence, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Boton, Pantalla, RADIO, Tarjeta } from '../componentes/ui';
-import { Confeti } from '../componentes/animacion';
+import { Confeti, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
-import { colorSistema } from '../componentes/sistema';
-import { suave, useTema } from '../tema/tema';
+import { BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio } from '../componentes/juegos/Escena';
+import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
-const CLAVE = 'puntos_salud_memoria_record';
-const FIGURAS = ['heart.fill', 'leaf.fill', 'pills.fill', 'drop.fill', 'star.fill', 'syringe.fill', 'moon.fill', 'sparkles'];
+const NIVELES = {
+  facil: { texto: 'Fácil', detalle: '6 parejas', parejas: 6, columnas: 3 },
+  normal: { texto: 'Normal', detalle: '8 parejas', parejas: 8, columnas: 4 },
+  dificil: { texto: 'Difícil', detalle: '10 parejas', parejas: 10, columnas: 4 },
+};
+const FIGURAS = [
+  { sf: 'heart.fill', colores: ['#FF6B9A', '#E0336E'] },
+  { sf: 'leaf.fill', colores: ['#6EE7A8', '#1FA36A'] },
+  { sf: 'pills.fill', colores: ['#8BB8FF', '#3D6BFF'] },
+  { sf: 'drop.fill', colores: ['#7FE3FF', '#1C9BD8'] },
+  { sf: 'star.fill', colores: ['#FFD86B', '#F5A100'] },
+  { sf: 'syringe.fill', colores: ['#C6A6FF', '#7A4DE8'] },
+  { sf: 'moon.fill', colores: ['#A3B1FF', '#4B4FC9'] },
+  { sf: 'sparkles', colores: ['#FF9DE6', '#C43BB8'] },
+  { sf: 'sun.max.fill', colores: ['#FFC17A', '#F2711C'] },
+  { sf: 'cross.case.fill', colores: ['#FF8F8F', '#D93636'] },
+];
+const SONIDOS = ['voltear', 'par', 'fallo', 'ganar', 'toque-1', 'toque-2', 'toque-3', 'toque-4', 'toque-5', 'toque-6'];
+const clave = (nivel) => `puntos_salud_memoria_record_${nivel}`;
 
-function barajar() {
-  const cartas = [...FIGURAS, ...FIGURAS].map((sf, i) => ({ id: i, sf }));
+function barajar(parejas) {
+  const figs = FIGURAS.slice(0, parejas);
+  const cartas = [...figs, ...figs].map((f, i) => ({ id: i, ...f }));
   for (let i = cartas.length - 1; i > 0; i -= 1) {
     const j = Math.floor(Math.random() * (i + 1));
     [cartas[i], cartas[j]] = [cartas[j], cartas[i]];
   }
   return cartas;
 }
+const reloj = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+// Estrellas: perfecto es una vuelta por pareja; se tolera un poco más.
+const estrellas = (movs, parejas) => (movs <= parejas * 1.4 ? 3 : movs <= parejas * 2 ? 2 : 1);
 
-const Carta = memo(function Carta({ carta, tam, abierta, hecha, color, dorso, alTocar }) {
+const Carta = memo(function Carta({ carta, ancho, alto, abierta, hecha, fallo, alTocar, quieta }) {
   const giro = useSharedValue(0);
-  useEffect(() => { giro.value = withTiming(abierta || hecha ? 1 : 0, { duration: 260 }); }, [abierta, hecha, giro]);
-  const frente = useAnimatedStyle(() => ({ opacity: giro.value > 0.5 ? 1 : 0, transform: [{ perspective: 600 }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }] }));
-  const atras = useAnimatedStyle(() => ({ opacity: giro.value > 0.5 ? 0 : 1, transform: [{ perspective: 600 }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }] }));
-  const caja = { position: 'absolute', top: 0, left: 0, width: tam, height: tam, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center', backfaceVisibility: 'hidden' };
+  const pulso = useSharedValue(1);
+  const temblor = useSharedValue(0);
+  useEffect(() => { giro.value = withTiming(abierta || hecha ? 1 : 0, { duration: quieta ? 0 : 320 }); }, [abierta, hecha, giro, quieta]);
+  useEffect(() => {
+    if (hecha && !quieta) pulso.value = withSequence(withDelay(200, withSpring(1.1, { damping: 6, stiffness: 300 })), withSpring(1, { damping: 10 }));
+  }, [hecha, pulso, quieta]);
+  useEffect(() => {
+    if (fallo && !quieta) temblor.value = withSequence(withTiming(-7, { duration: 50 }), withTiming(7, { duration: 70 }), withTiming(-5, { duration: 60 }), withTiming(0, { duration: 50 }));
+  }, [fallo, temblor, quieta]);
+  const envoltura = useAnimatedStyle(() => ({ transform: [{ translateX: temblor.value }, { scale: pulso.value }] }));
+  const frente = useAnimatedStyle(() => ({ opacity: giro.value > 0.5 ? 1 : 0, transform: [{ perspective: 800 }, { rotateY: `${interpolate(giro.value, [0, 1], [180, 360])}deg` }] }));
+  const atras = useAnimatedStyle(() => ({ opacity: giro.value > 0.5 ? 0 : 1, transform: [{ perspective: 800 }, { rotateY: `${interpolate(giro.value, [0, 1], [0, 180])}deg` }] }));
+  const caja = { position: 'absolute', top: 0, left: 0, width: ancho, height: alto, borderRadius: 18, alignItems: 'center', justifyContent: 'center', overflow: 'hidden', backfaceVisibility: 'hidden' };
+  const nombre = carta.sf.split('.')[0];
   return (
-    <Pressable onPress={() => alTocar(carta.id)} disabled={abierta || hecha} style={{ width: tam, height: tam }}
-      accessibilityRole="button" accessibilityLabel={abierta || hecha ? `Carta ${carta.sf.split('.')[0]}` : 'Carta boca abajo'}>
-      <Animated.View style={[caja, atras]}>
-        <LinearGradient colors={dorso} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[caja, { position: 'relative' }]}>
-          <Text style={{ fontSize: tam * 0.36, fontWeight: '900', color: 'rgba(255,255,255,0.35)' }}>+</Text>
-        </LinearGradient>
-      </Animated.View>
-      <Animated.View style={[caja, frente, { backgroundColor: hecha ? suave(color, 0.22) : colorSistema.superficie,
-        borderWidth: 2, borderColor: suave(color, hecha ? 0.5 : 0.9) }]}>
-        <Icono sf={carta.sf} respaldo="●" tam={tam * 0.42} color={color} />
+    <Pressable onPress={() => alTocar(carta.id)} disabled={abierta || hecha} style={{ width: ancho, height: alto }}
+      accessibilityRole="button" accessibilityLabel={hecha ? `Pareja ${nombre}, encontrada` : abierta ? `Carta ${nombre}` : 'Carta boca abajo'}>
+      <Animated.View style={[{ width: ancho, height: alto }, envoltura]}>
+        <Animated.View style={[caja, atras]}>
+          <LinearGradient colors={['rgba(255,255,255,0.28)', 'rgba(255,255,255,0.08)']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+            style={[caja, { position: 'relative', borderWidth: 1, borderColor: 'rgba(255,255,255,0.30)' }]}>
+            {/* El dorso: un rombo de puntos, la marca de la casa. */}
+            <View style={{ width: ancho * 0.36, height: ancho * 0.36, borderRadius: 10, transform: [{ rotate: '45deg' }], borderWidth: 2, borderColor: 'rgba(255,255,255,0.35)', alignItems: 'center', justifyContent: 'center' }}>
+              <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.55)' }} />
+            </View>
+          </LinearGradient>
+        </Animated.View>
+        <Animated.View style={[caja, frente]}>
+          <LinearGradient colors={carta.colores} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={[caja, { position: 'relative' }]}>
+            <View style={{ position: 'absolute', top: -ancho * 0.3, left: -ancho * 0.2, width: ancho, height: ancho * 0.7, borderRadius: ancho, backgroundColor: 'rgba(255,255,255,0.18)' }} />
+            <Icono sf={carta.sf} respaldo="●" tam={Math.min(ancho, alto) * 0.42} color={BLANCO} />
+            {hecha ? <View style={{ position: 'absolute', right: 6, top: 6 }}><Icono sf="checkmark.circle.fill" respaldo="✓" tam={16} color="rgba(255,255,255,0.9)" /></View> : null}
+          </LinearGradient>
+        </Animated.View>
       </Animated.View>
     </Pressable>
   );
 });
 
 export default function Memoria() {
-  const t = useTema();
+  const quieta = useSinMovimiento();
   const { width } = useWindowDimensions();
-  const [cartas, setCartas] = useState(barajar);
+  const [nivel, setNivel] = useState('normal');
+  const conf = NIVELES[nivel];
+  const [cartas, setCartas] = useState(() => barajar(conf.parejas));
   const [abiertas, setAbiertas] = useState([]);
   const [hechas, setHechas] = useState(() => new Set());
+  const [fallidas, setFallidas] = useState([]);
   const [movs, setMovs] = useState(0);
+  const [racha, setRacha] = useState(0);
+  const [mejorRacha, setMejorRacha] = useState(0);
+  const [segundos, setSegundos] = useState(0);
+  const [empezo, setEmpezo] = useState(false);
   const [record, setRecord] = useState(null);
   const [nuevoRecord, setNuevoRecord] = useState(false);
   const espera = useRef(null);
-  useEffect(() => {
-    SecureStore.getItemAsync(CLAVE).then((v) => { const n = Number(v); if (v && Number.isFinite(n)) setRecord(n); }).catch(() => {});
-    return () => clearTimeout(espera.current);
-  }, []);
+  const gano = hechas.size === cartas.length;
 
-  const colorDe = useCallback((sf) => {
-    const lista = [t.color.magenta, t.acentos.verde.fuerte, t.acentos.azul.fuerte, t.acentos.violeta.fuerte, t.acentos.naranja.fuerte, t.acentos.rojo.fuerte, t.acentos.azul.fuerte, t.color.magenta];
-    return lista[FIGURAS.indexOf(sf)];
-  }, [t]);
+  useEffect(() => { precargar(SONIDOS); return () => { clearTimeout(espera.current); callar(SONIDOS); }; }, []);
+  useEffect(() => {
+    setRecord(null);
+    SecureStore.getItemAsync(clave(nivel)).then((v) => { const n = Number(v); if (v && Number.isFinite(n)) setRecord(n); }).catch(() => {});
+  }, [nivel]);
+  // El reloj corre desde la primera carta hasta la última pareja.
+  useEffect(() => {
+    if (!empezo || gano) return undefined;
+    const id = setInterval(() => setSegundos((s) => s + 1), 1000);
+    return () => clearInterval(id);
+  }, [empezo, gano]);
 
   const alTocar = useCallback((id) => {
     if (espera.current || abiertas.length >= 2) return;
-    Haptics.selectionAsync().catch(() => {});
+    setEmpezo(true);
+    sonar('voltear', { tono: 0.95 + Math.random() * 0.1 });
+    tacto.roce();
     const dos = [...abiertas, id];
     setAbiertas(dos);
     if (dos.length < 2) return;
     setMovs((m) => m + 1);
     const [a, b] = dos.map((x) => cartas.find((c) => c.id === x));
     if (a.sf === b.sf) {
-      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      setHechas((h) => new Set([...h, a.id, b.id]));
-      setAbiertas([]);
+      const r = racha + 1;
+      setRacha(r); setMejorRacha((m) => Math.max(m, r));
+      espera.current = setTimeout(() => {
+        espera.current = null;
+        sonar('par');
+        if (r > 1) sonar(`toque-${Math.min(6, r)}`, { volumen: 0.6 });
+        tacto.exito();
+        setHechas((h) => new Set([...h, a.id, b.id]));
+        setAbiertas([]);
+      }, 260);
     } else {
-      espera.current = setTimeout(() => { espera.current = null; setAbiertas([]); }, 800);
+      setRacha(0);
+      espera.current = setTimeout(() => {
+        sonar('fallo', { volumen: 0.6 });
+        tacto.aviso();
+        setFallidas(dos);
+        espera.current = setTimeout(() => { espera.current = null; setAbiertas([]); setFallidas([]); }, 520);
+      }, 420);
     }
-  }, [abiertas, cartas]);
+  }, [abiertas, cartas, racha]);
 
-  const gano = hechas.size === cartas.length;
   useEffect(() => {
     if (!gano) return;
+    sonar('ganar');
+    tacto.exito();
     if (record == null || movs < record) {
       setNuevoRecord(true);
       setRecord(movs);
-      SecureStore.setItemAsync(CLAVE, String(movs)).catch(() => {});
+      SecureStore.setItemAsync(clave(nivel), String(movs)).catch(() => {});
     }
   }, [gano]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const otraVez = () => {
+  const reiniciar = (n = nivel) => {
     clearTimeout(espera.current); espera.current = null;
-    setCartas(barajar()); setAbiertas([]); setHechas(new Set()); setMovs(0); setNuevoRecord(false);
+    setCartas(barajar(NIVELES[n].parejas)); setAbiertas([]); setHechas(new Set()); setFallidas([]);
+    setMovs(0); setRacha(0); setMejorRacha(0); setSegundos(0); setEmpezo(false); setNuevoRecord(false);
   };
+  const cambiarNivel = (n) => { setNivel(n); reiniciar(n); };
 
   const hueco = 10;
-  const tam = Math.floor((Math.min(width, 560) - 32 - hueco * 3) / 4);
-  const dorso = [t.acentos.violeta.fuerte, t.color.magenta];
+  const cols = conf.columnas;
+  const ancho = Math.floor((Math.min(width, 560) - 32 - hueco * (cols - 1)) / cols);
+  const alto = Math.round(ancho * (cols === 3 ? 1.05 : 1.2));
+  const parejas = hechas.size / 2;
+  const nEstrellas = estrellas(movs, conf.parejas);
+
   return (
-    <Pantalla conPestanas={false} conBurbuja={false}>
-      <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 4 }}>
-        <Text style={{ fontSize: 15, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{movs} movimiento{movs === 1 ? '' : 's'}</Text>
-        <Text style={{ fontSize: 15, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{record != null ? `Récord: ${record}` : `Parejas: ${hechas.size / 2} de 8`}</Text>
+    <Escena colores={ESCENAS.memoria}>
+      <ControlesSensaciones izquierda={<>
+        <Marcador sf="timer" texto={reloj(segundos)} etiqueta={`Tiempo ${reloj(segundos)}`} />
+        <Marcador sf="hand.tap.fill" texto={`${movs}`} etiqueta={`${movs} movimientos`} />
+      </>} />
+
+      {empezo && !gano ? null : <OpcionesJuego valor={nivel} alCambiar={cambiarNivel}
+        opciones={Object.entries(NIVELES).map(([valor, x]) => ({ valor, texto: x.texto, detalle: x.detalle }))} />}
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 2 }}>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: BLANCO_2 }}>Parejas {parejas} de {conf.parejas}</Text>
+        {racha > 1 ? (
+          <Animated.Text key={racha} entering={quieta ? undefined : ZoomIn.springify()} style={{ fontSize: 15, fontWeight: '900', color: '#FFE08A' }}>
+            ¡Racha ×{racha}!
+          </Animated.Text>
+        ) : (
+          <Text style={{ fontSize: 15, fontWeight: '700', color: BLANCO_2 }}>{record != null ? `Récord: ${record}` : ''}</Text>
+        )}
       </View>
+
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: hueco }}>
         {cartas.map((c) => (
-          <Carta key={c.id} carta={c} tam={tam} abierta={abiertas.includes(c.id)} hecha={hechas.has(c.id)}
-            color={colorDe(c.sf)} dorso={dorso} alTocar={alTocar} />
+          <Carta key={`${nivel}-${c.id}-${cartas.length}`} carta={c} ancho={ancho} alto={alto} quieta={quieta}
+            abierta={abiertas.includes(c.id)} hecha={hechas.has(c.id)} fallo={fallidas.includes(c.id)} alTocar={alTocar} />
         ))}
       </View>
+
       {gano ? (
         <View>
-          <Tarjeta tono={t.color.verde} estilo={{ alignItems: 'center', gap: 6 }}>
-            <Icono sf="trophy.fill" respaldo="🏆" tam={30} color={t.color.verdeTexto} />
-            <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{nuevoRecord ? '¡Nuevo récord!' : '¡Lo lograste!'}</Text>
-            <Text style={{ fontSize: 15, color: colorSistema.texto2 }}>Encontraste las 8 parejas en {movs} movimientos.</Text>
-          </Tarjeta>
-          <Confeti colores={[t.color.verde, t.color.magenta, t.acentos.azul.fuerte, t.acentos.naranja.fuerte]} />
+          <PanelVidrio estilo={{ alignItems: 'center', gap: 8 }}>
+            <View style={{ flexDirection: 'row', gap: 6 }} accessibilityLabel={`${nEstrellas} de 3 estrellas`}>
+              {[1, 2, 3].map((k) => (
+                <Animated.View key={k} entering={quieta ? undefined : ZoomIn.delay(k * 160).springify()}>
+                  <Icono sf="star.fill" respaldo="★" tam={34} color={k <= nEstrellas ? '#FFD86B' : 'rgba(255,255,255,0.22)'} />
+                </Animated.View>
+              ))}
+            </View>
+            <Text style={{ fontSize: 22, fontWeight: '800', color: BLANCO }}>{nuevoRecord ? '¡Nuevo récord!' : '¡Lo lograste!'}</Text>
+            <Text style={{ fontSize: 15, color: BLANCO_2, textAlign: 'center' }}>
+              {conf.parejas} parejas en {movs} movimientos y {reloj(segundos)}.{mejorRacha > 1 ? ` Mejor racha: ${mejorRacha}.` : ''}
+            </Text>
+          </PanelVidrio>
+          <Confeti colores={['#FFD86B', '#6EE7A8', '#8BB8FF', '#FF6B9A']} />
         </View>
       ) : null}
-      <Boton tipo={gano ? 'principal' : 'secundario'} alTocar={otraVez}>{gano ? 'Jugar otra vez' : 'Barajar de nuevo'}</Boton>
-    </Pantalla>
+      <BotonJuego sf={gano ? 'play.fill' : 'shuffle'} secundario={!gano} alTocar={() => reiniciar()}>{gano ? 'Jugar otra vez' : 'Barajar de nuevo'}</BotonJuego>
+    </Escena>
   );
 }

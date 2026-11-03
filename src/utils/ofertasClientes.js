@@ -67,6 +67,7 @@ export const DESTINOS_DE_LA_APP = [
     // versión anterior el botón cae en «pantalla no encontrada».
     { valor: '/bienestar', rotulo: 'Bienestar', boton: 'Ir a Bienestar' },
     { valor: '/respira', rotulo: 'Bienestar · Respira', boton: 'Respirar un minuto' },
+    { valor: '/jardin', rotulo: 'Bienestar · Jardín zen', boton: 'Ir al jardín zen' },
 ];
 
 /** Una historia se puede guardar con título de 3 letras y una imagen (nueva o la que ya tenía). */

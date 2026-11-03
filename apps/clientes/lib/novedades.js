@@ -41,7 +41,7 @@ export const NOVEDADES = [
     titulo: 'Qué hay de nuevo',
     cosas: [
       { sf: 'leaf.fill', titulo: 'Bienestar',
-        detalle: 'Una frase nueva cada mañana a las 8:00 y una zona anti estrés: respira, revienta burbujas o juega memoria.' },
+        detalle: 'Una frase nueva cada mañana y una zona anti estrés con sonido y vibración: respira, burbujas, memoria y el nuevo jardín zen.' },
       { sf: 'square.grid.2x2.fill', titulo: 'Un Inicio más ordenado',
         detalle: 'Tus reservas, inyecciones, compras y puntos, juntos en un menú.' },
       { sf: 'tag.fill', titulo: 'Las ofertas, en la Tienda',

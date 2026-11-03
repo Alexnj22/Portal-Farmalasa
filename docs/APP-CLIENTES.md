@@ -45,6 +45,34 @@ las pasamos a la tienda»*. Tres cambios:
   no se apaga mientras corre), Burbujas, Memoria (récord en el llavero) y el
   anclaje 5-4-3-2-1. La burbuja del chat no sale en ellos.
 
+### Los juegos, con sonido y vibración (2026-11-03, misma tarde)
+
+*«Los juegos están bien, pero no vibran, no tienen sonido… que se vean
+modernos… agreguemos algún otro más trabajado.»*
+
+- **`lib/sensaciones.js` es el único sitio** que suena o vibra en Bienestar.
+  `sonar(nombre)` con reproductores precargados (varios por sonido cuando se
+  repite rápido, como los «pop»), `bucle('arena')` con volumen variable, y
+  `tacto.roce/toque/golpe/exito/aviso`. En Android el «Light» y la «selección»
+  de `expo-haptics` casi no se sienten: ahí se sube un escalón. Dos
+  interruptores en cada juego (sonido, vibración), guardados en el llavero. El
+  audio se MEZCLA con la música del cliente (`mixWithOthers`), no la corta.
+- **Los sonidos son nuestros**: sintetizados por
+  `scripts/app-clientes-sonidos.mjs` (19 WAV, ~1 MB, sin licencia de terceros).
+  Para afinar uno se cambia un número ahí y se regenera.
+- **La escena** (`componentes/juegos/Escena.js`): degradado propio por juego,
+  luces que suben despacio (Skia), barra de arriba transparente
+  (`BARRA_DE_JUEGO`). Sobre la escena todo es blanco y de vidrio en los dos
+  temas.
+- Respira trae tres técnicas (calma 4·4·6, caja 4·4·4·4, dormir 4·7·8) y late
+  una vez por segundo: se hace con los ojos cerrados. Burbujas se revienta
+  también **arrastrando**. Memoria tiene tres niveles, rachas, estrellas,
+  tiempo y récord por nivel. El 5-4-3-2-1 se cuenta tocando.
+- **Jardín zen** (`app/jardin.js`, el nuevo): arena para rastrillar, piedras
+  que se mueven con anillos alrededor, huella al tocar, «Alisar». El trazo en
+  curso se arma en el hilo de la interfaz y sólo al soltar se suma a los surcos
+  hechos. Tiene el gesto de volver apagado: el borde izquierdo es arena.
+
 ## La sesión
 
 Entra con **documento + teléfono** (o el código de 7 letras del ticket), igual

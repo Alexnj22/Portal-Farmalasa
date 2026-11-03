@@ -159,6 +159,16 @@ const MATERIAL = {
   'mouth.fill': 'restaurant',
   'trophy.fill': 'emoji_events',
   'leaf': 'spa',
+  // Zona anti estrés: sonido y vibración de cada juego, y el jardín (2026-11-03).
+  'speaker.wave.2.fill': 'volume_up',
+  'speaker.slash.fill': 'volume_off',
+  'iphone.radiowaves.left.and.right': 'vibration',
+  'iphone.slash': 'mobile_off',
+  'mountain.2.fill': 'landscape',
+  'hand.tap.fill': 'touch_app',
+  'shuffle': 'shuffle',
+  'sun.max.fill': 'light_mode',
+  'circle.dotted': 'blur_on',
   'list.bullet.rectangle.fill': 'receipt_long',
 };
 

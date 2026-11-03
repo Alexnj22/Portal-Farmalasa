@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1421.0 — Juegos de Bienestar con sonido, vibración y el jardín zen
+
+*«Los juegos están bien, pero no vibran, no tienen sonido… que se vean
+modernos, visuales, bonitos. Agreguemos alguno más trabajado.»*
+
+- `lib/sensaciones.js`: un solo sitio para sonar y vibrar, con interruptores de
+  sonido y vibración en cada juego (guardados en el teléfono). En Android se
+  sube un escalón: el «Light» casi no se siente.
+- 19 sonidos sintetizados por `scripts/app-clientes-sonidos.mjs` (sin licencia
+  de terceros, ~1 MB), mezclados con la música del cliente.
+- Escena propia por juego (degradado, luces con Skia, barra transparente).
+- Respira con tres técnicas y un latido por segundo; Burbujas en Skia que se
+  revientan arrastrando; Memoria con niveles, rachas, estrellas y tiempo;
+  5-4-3-2-1 que se cuenta tocando.
+- **Jardín zen**, nuevo: rastrillar la arena, mover piedras, huellas, alisar.
+- El portal ofrece el jardín como destino del botón de una historia.
+
 ## v2.1420.1 — Una reserva lista que la sala ya no tiene entera dice cuántas faltan
 
 La R-000151 de Salud 2 apartó 3 cajas el 31-oct y la tarjeta siguió diciendo

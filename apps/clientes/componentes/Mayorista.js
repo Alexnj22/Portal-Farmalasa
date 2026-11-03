@@ -29,6 +29,17 @@ export const RANGOS = [
 ];
 export const PRECIOS = { mayoreo: 'Mayoreo', mayoreo_plus: 'Mayoreo Plus' };
 
+// Qué es ser Cliente Mayorista, en corto (2026-11-03, «que diga que es para
+// surtir tiendas, clínicas, botiquines, instituciones etc.»). Es el texto del
+// aviso que sale al tocar «Quiero ser Cliente Mayorista» en Cuenta; los
+// requisitos son los de las Condiciones §2.
+export const QUE_ES_MAYORISTA = {
+  titulo: 'Ser Cliente Mayorista',
+  texto: 'Es para quien compra para surtir: tiendas, clínicas, botiquines, farmacias pequeñas, empresas e instituciones.\n\n'
+    + 'Requisitos: haber comprado en promedio $100 al mes en los últimos 3 meses (o $500 en una sola factura) y tener tu ficha completa (documento y teléfono).\n\n'
+    + 'Te respondemos en 5 días hábiles.',
+};
+
 // Desde el 15-nov-2026 (`reglas_v2_desde()`) los umbrales son 200/500/1000 sobre
 // las compras ELEGIBLES (Condiciones §4). No se escriben dos veces: la base los
 // manda en `mayorista_de().umbrales` según la fecha, y lo de arriba queda como

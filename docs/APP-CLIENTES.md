@@ -13,11 +13,11 @@ personal va por distribución no listada.
 
 | Pestaña | Qué muestra | De dónde sale |
 |---|---|---|
-| Inicio | tarjeta de socio, nivel, avance al canje, cupón, la frase del día y el **menú** de 3 × 3 (reservas, inyecciones, tratamientos, compras, mis puntos, facturas, créditos o chat, sucursales, invitar) | `puntos_estado_cuenta` vía `app-clientes` |
+| Inicio | tarjeta de socio, nivel, avance al canje, cupón, la frase del día y el **menú** de seis atajos (reservas, tratamientos, compras, mis puntos, sucursales y créditos, inyecciones o invitar) | `puntos_estado_cuenta` vía `app-clientes` |
 | Tienda | catálogo, banners y la entrada «Todas las ofertas» (`/ofertas`) | `catalogo`, `banners`, `ofertas_clientes` |
 | Bienestar | la frase del día en grande y la zona anti estrés | **la app** (nada del servidor) |
 | Carrito | lo que se va a reservar | la app |
-| Cuenta | permisos del programa y promociones, avisos al teléfono, reglamento, cerrar sesión, **borrar cuenta** | `app-clientes` |
+| Cuenta | el índice completo de la app por grupos (compras, salud, puntos, ayuda), permisos del programa y promociones, avisos al teléfono, reglamento, cerrar sesión, **borrar cuenta** | `app-clientes` |
 
 ### Rediseño del 2026-11-03
 
@@ -44,6 +44,23 @@ las pasamos a la tienda»*. Tres cambios:
   son cuatro ejercicios sin servidor: Respira (4·4·6 s, 1/3/5 min, la pantalla
   no se apaga mientras corre), Burbujas, Memoria (récord en el llavero) y el
   anclaje 5-4-3-2-1. La burbuja del chat no sale en ellos.
+
+### Inicio con seis atajos, Cuenta como índice (2026-11-03, misma tarde)
+
+*«En inicio dejar solo 6 opciones… las más útiles, y las otras a cuenta. Y
+mejoramos cuenta.»* El menú del Inicio quedó en **seis casillas** (dos filas de
+tres; tres de dos con letra grande): Reservas, Tratamientos, Compras, Mis
+puntos, Sucursales y una sexta «lo que te toca» — Créditos si hay alguno
+pendiente, si no Inyecciones si hay alguna por aplicar, y si no Invitar. Al lado
+del título, «Ver todo» lleva a Cuenta. Salieron Facturas (sólo la usa quien pide
+crédito fiscal) y el chat (ya tiene la burbuja en todas las pantallas).
+**Cuenta es el índice completo** — nada vive sólo en el Inicio: Mis compras
+(reservas, compras, facturas, créditos, saldo a favor) · Mi salud
+(tratamientos, inyecciones) · Mis puntos (movimientos, invitar, mayorista,
+Wallet) · Seguridad · Notificaciones (más la bandeja de avisos) · Ayuda (chat,
+sucursales, guía, novedades) · Legal y privacidad · sesión. Cada fila: ícono en
+recuadro de color, título, una línea de cómo va y el número rojo si algo pide
+atención; los números salen del mismo `resumen`, sin consultas nuevas.
 
 ### Los juegos, con sonido y vibración (2026-11-03, misma tarde)
 
@@ -291,6 +308,22 @@ retirar, cancelar un cambio). Bajar a Mayoreo y retirar rigen a los 15 días
 ($800) y Diamante ($2,000). El listado sale de `mayoristas_resumen_mensual`,
 que se rehace cada noche: leer las ventas en vivo eran 625 MB por consulta.
 
+## Carrito y condiciones de la reserva (2026-11-03)
+
+- **Seguir comprando** lleva siempre a la Tienda: desde el carrito con
+  productos, desde la confirmación del pedido y desde el aviso «Agregado al
+  carrito» del producto (antes «Seguir viendo», que dejaba al cliente en el
+  producto). Si el producto se abrió sobre la Tienda basta cerrarlo; si no, se
+  cierra y se va a `/catalogo`.
+- **Las condiciones** (`reserva_terminos`, 14 puntos) se muestran con
+  `componentes/CondicionesReserva.js`: resumen del pedido (total, dónde, hasta
+  cuándo, con los días de `reglas`) y a lo sumo cuatro puntos clave. Los 14
+  siguen completos detrás de «Ver todas las condiciones» y se aceptan por
+  `version` igual que antes. El texto del servidor no se tocó.
+- **Cliente Mayorista**: el texto de «Quiero ser Cliente Mayorista» (para
+  surtir tiendas, clínicas, botiquines, etc.) vive en `QUE_ES_MAYORISTA` de
+  `componentes/Mayorista.js`.
+
 ## La vitrina: ofertas, historias y banners
 
 Se escriben directo; el RLS exige `ofertas_clientes`. Cada guardado manda sólo
@@ -412,6 +445,12 @@ y —peor— una afirmación falsa al cliente.
   distancia en el teléfono y `salas` no recibe coordenadas. Lo mismo el
   movimiento (brillo de la tarjeta), la biometría (`expo-local-authentication`
   sólo responde sí/no) y los horarios de toma (`lib/tomas.js`, archivo local).
+  Desde 2026-11-03 el recordatorio también guarda **cuándo empieza** (`empieza`,
+  ningún aviso suena antes), la duración en días libres (3 a 90 o «Otro», hasta
+  365) y la **cantidad por toma de ¼ en ¼** (`lib/dosis.js`, «½ tableta»,
+  «1 ½ tabletas», también en el texto del aviso): todo en el mismo archivo
+  local. Al servidor sigue yendo sólo la dosis diaria (`tratamiento_dosis` →
+  `app_tratamientos.dosis_dia numeric(5,2)`, ya admite cuartos; se topa en 24).
 - **«Vinculado a la identidad»**: todo lo que viaja con la sesión queda unido al
   `customer_id`, así que **todo es vinculado**, incluidos los fallos
   (`app_errores.customer_id`).

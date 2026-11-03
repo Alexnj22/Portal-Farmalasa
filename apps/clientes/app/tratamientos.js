@@ -156,7 +156,7 @@ function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, al
         </View>
         <Presionable onPress={alVer ? () => { Haptics.selectionAsync().catch(() => {}); alVer(); } : undefined} disabled={!alVer}
           accessibilityRole={alVer ? 'link' : undefined} accessibilityHint={alVer ? 'Abre el producto' : undefined} style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombrePropio(t.nombre)}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombrePropio(t.nombre)}</Text>
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
             {apagado ? t.motivo : t.origen === 'cliente' ? `Agregado por ti · última compra ${fecha(t.ultima)}` : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
           </Text>
@@ -216,7 +216,7 @@ function Boton({ texto, alTocar, principal, sf, deshabilitado }) {
   return (
     <Presionable onPress={() => { if (deshabilitado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
       disabled={!!deshabilitado} accessibilityState={{ disabled: !!deshabilitado }}
-      style={({ pressed }) => ({ flex: 1, minHeight: 42, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, paddingHorizontal: 8, paddingVertical: 6,
+      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, paddingHorizontal: 8, paddingVertical: 6,
         opacity: deshabilitado ? 0.7 : 1,
         backgroundColor: principal ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       {sf ? <Icono sf={sf} respaldo="" tam={13} color={principal ? '#FFFFFF' : colorSistema.texto} /> : null}

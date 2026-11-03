@@ -37,6 +37,7 @@ import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { router } from 'expo-router';
 import RecetaFoto from './RecetaFoto';
+import CondicionesReserva from './CondicionesReserva';
 import { subirReceta } from '../lib/fotos';
 import { datosDePrueba } from '../lib/exclusiva';
 import { colorDeTono, estadoDeAlcance, fondoDeTono } from './DondeLoHay';
@@ -171,20 +172,11 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
         ) : null}
 
         {paso === 'terminos' && terminos ? (
-          <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }}>
-            <Text style={{ fontSize: 24, fontWeight: '900', color: colorSistema.texto }}>{terminos.titulo}</Text>
-            <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 12 }}>
-              {terminos.puntos.map((p, i) => (
-                <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-                  <View style={{ minWidth: 24, minHeight: 24, borderRadius: 12, backgroundColor: t.color.magenta, alignItems: 'center', justifyContent: 'center' }}>
-                    <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
-                  </View>
-                  <Text style={{ flex: 1, fontSize: 15, lineHeight: 21, color: colorSistema.texto }}>{p}</Text>
-                </View>
-              ))}
-            </View>
+          // Lo importante arriba y los puntos completos detrás de «Ver todas las
+          // condiciones» (2026-11-03, componentes/CondicionesReserva).
+          <CondicionesReserva terminos={terminos}>
             <Boton texto="Entendido, continuar" color={t.color.magenta} alTocar={aceptar} />
-          </ScrollView>
+          </CondicionesReserva>
         ) : null}
 
         {paso === 'elegir' ? (

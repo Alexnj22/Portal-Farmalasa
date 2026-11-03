@@ -14,11 +14,11 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { Canvas, Circle, Group, LinearGradient, Path, RadialGradient, Rect, RoundedRect, Skia, vec } from '@shopify/react-native-skia';
+import { Canvas, Group, LinearGradient, Path, Picture, Rect, RoundedRect, Skia, TileMode, vec } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { Easing, FadeIn, FadeOut, ZoomIn, runOnJS, useDerivedValue, useFrameCallback, useSharedValue, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeIn, FadeOut, runOnJS, useDerivedValue, useFrameCallback, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Confeti } from '../componentes/animacion';
-import { BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
 const CLAVE = 'puntos_salud_torre_record';
@@ -36,6 +36,37 @@ function hsl(h, s, l) {
   return `#${hx(f(0))}${hx(f(8))}${hx(f(4))}`;
 }
 const tono = (i) => { const h = (195 + i * 12) % 360; return [hsl(h, 95, 74), hsl(h, 82, 58), hsl(h, 72, 40)]; };
+
+// La base y los pisos ya puestos, grabados en una sola imagen (en JavaScript,
+// una vez por bloque soltado).
+function dibujarTorre(bloques, g) {
+  const rec = Skia.PictureRecorder();
+  const tope = g.baseY - (bloques.length + 40) * g.H - g.A;
+  const c = rec.beginRecording(Skia.XYWHRect(-g.W, tope, g.W * 3, g.baseY + g.H * 6 - tope));
+  const p = Skia.Paint(); p.setAntiAlias(true);
+  const cx = g.W / 2;
+  p.setShader(Skia.Shader.MakeRadialGradient(Skia.Point(cx, g.baseY + g.H), g.W * 0.5,
+    [Skia.Color('rgba(170,190,255,0.35)'), Skia.Color('rgba(170,190,255,0)')], null, TileMode.Clamp));
+  c.drawCircle(cx, g.baseY + g.H, g.W * 0.5, p);
+  p.setShader(Skia.Shader.MakeLinearGradient(Skia.Point(0, g.baseY), Skia.Point(0, g.baseY + g.H * 3),
+    [Skia.Color('rgba(255,255,255,0.42)'), Skia.Color('rgba(255,255,255,0.06)')], null, TileMode.Clamp));
+  c.drawRRect(Skia.RRectXY(Skia.XYWHRect((g.W - g.W0) / 2 - 18, g.baseY, g.W0 + 36, g.H * 4), 14, 14), p);
+  const liso = Skia.Paint(); liso.setAntiAlias(true);
+  liso.setColor(Skia.Color('rgba(255,255,255,0.7)'));
+  c.drawRect(Skia.XYWHRect((g.W - g.W0) / 2 - 10, g.baseY + 2, g.W0 + 20, 2), liso);
+  const sombra = Skia.Paint(); sombra.setAntiAlias(true); sombra.setColor(Skia.Color('rgba(0,0,20,0.28)'));
+  const brillo = Skia.Paint(); brillo.setAntiAlias(true); brillo.setColor(Skia.Color('rgba(255,255,255,0.5)'));
+  for (const b of bloques) {
+    const y = g.baseY - (b.i + 1) * g.H;
+    const [c1, c2, c3] = tono(b.i);
+    c.drawRRect(Skia.RRectXY(Skia.XYWHRect(b.x + 1, y + 4, b.w, g.H), 7, 7), sombra);
+    p.setShader(Skia.Shader.MakeLinearGradient(Skia.Point(0, y), Skia.Point(0, y + g.H),
+      [Skia.Color(c1), Skia.Color(c2), Skia.Color(c3)], null, TileMode.Clamp));
+    c.drawRRect(Skia.RRectXY(Skia.XYWHRect(b.x, y, b.w, g.H), 7, 7), p);
+    c.drawRRect(Skia.RRectXY(Skia.XYWHRect(b.x + 5, y + 3, Math.max(0, b.w - 10), Math.max(2, g.H * 0.16)), 3, 3), brillo);
+  }
+  return rec.finishRecordingAsPicture();
+}
 
 const Bloque = memo(function Bloque({ x, y, w, h, i }) {
   const [c1, c2, c3] = tono(i);
@@ -303,6 +334,7 @@ export default function Torre() {
   const n = torre.length;
   // Mientras se juega sólo se pintan los últimos pisos; al final, la torre entera.
   const visibles = fase === 'fin' ? torre.slice(-160) : torre.slice(-24);
+  const torrePic = useMemo(() => (geo ? dibujarTorre(visibles, geo) : null), [geo, torre, fase]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Escena colores={ESCENAS.torre} fijo estilo={{ paddingHorizontal: 0, gap: 10 }}>
@@ -319,16 +351,10 @@ export default function Torre() {
                 <Cielo ancho={geo.W} alto={geo.A} camara={camara} pisoAlto={geo.H} />
                 <Group transform={zoomT} origin={vec(geo.W / 2, geo.baseY)}>
                   <Group transform={camaraT}>
-                    {/* La base: un pedestal de vidrio con su resplandor. */}
-                    <Circle cx={geo.W / 2} cy={geo.baseY + geo.H} r={geo.W * 0.5}>
-                      <RadialGradient c={vec(geo.W / 2, geo.baseY + geo.H)} r={geo.W * 0.5} colors={['rgba(170,190,255,0.35)', 'rgba(170,190,255,0)']} />
-                    </Circle>
-                    <RoundedRect x={(geo.W - geo.W0) / 2 - 18} y={geo.baseY} width={geo.W0 + 36} height={geo.H * 4} r={14}>
-                      <LinearGradient start={vec(0, geo.baseY)} end={vec(0, geo.baseY + geo.H * 3)} colors={['rgba(255,255,255,0.42)', 'rgba(255,255,255,0.06)']} />
-                    </RoundedRect>
-                    <Rect x={(geo.W - geo.W0) / 2 - 10} y={geo.baseY + 2} width={geo.W0 + 20} height={2} color="rgba(255,255,255,0.7)" />
-
-                    {visibles.map((b) => <Bloque key={b.i} x={b.x} y={geo.baseY - (b.i + 1) * geo.H} w={b.w} h={geo.H} i={b.i} />)}
+                    {/* La torre hecha es UNA imagen grabada al soltar cada bloque:
+                        mientras el bloque de arriba se mueve, los pisos de abajo no
+                        se vuelven a armar en cada cuadro. */}
+                    <Picture picture={torrePic} />
 
                     {/* La guía: dónde caería un perfecto. */}
                     {fase !== 'fin' && n ? (
@@ -346,12 +372,7 @@ export default function Torre() {
               <View pointerEvents="none" style={{ position: 'absolute', top: 6, left: 0, right: 0, alignItems: 'center' }}>
                 <Text maxFontSizeMultiplier={1.15} style={{ fontSize: 68, fontWeight: '900', color: BLANCO, fontVariant: ['tabular-nums'],
                   textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 12, textShadowOffset: { width: 0, height: 4 } }}>{puntos}</Text>
-                {combo >= 1 && fase !== 'fin' ? (
-                  <Animated.View key={combo} entering={ZoomIn.springify().damping(9)} exiting={FadeOut}
-                    style={{ paddingHorizontal: 14, paddingVertical: 4, minHeight: 32, borderRadius: 16, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
-                    <Text style={{ fontSize: 15, fontWeight: '900', color: BLANCO }}>{combo > 1 ? `¡Perfecto ×${combo}!` : '¡Perfecto!'}</Text>
-                  </Animated.View>
-                ) : null}
+                <AvisoJuego clave={combo} texto={combo >= 1 && fase !== 'fin' ? (combo > 1 ? `¡Perfecto ×${combo}!` : '¡Perfecto!') : null} />
               </View>
 
               {fase === 'listo' ? (

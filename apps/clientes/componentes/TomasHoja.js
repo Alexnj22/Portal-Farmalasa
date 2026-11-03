@@ -19,6 +19,16 @@
 // manda al servidor (`tratamiento_dosis`) para calcular cuándo se acaba lo
 // comprado. No se pregunta en anticonceptivos ni en los de toma semanal
 // (`ajusta_dosis` falso): su ciclo es fijo.
+//
+// 2026-11-03 (usuario: «si me tomo 1/4? si me tomo 3? no tengo esas opciones.
+// en los días, también más opciones. poner cuándo inicio el tratamiento si es
+// nuevo»):
+//   · Cantidad de ¼ en ¼, de ¼ a 10, con atajos ¼ ½ 1 2 3 y un contador
+//     (lib/dosis.js). El aviso dice cuánto («½ tableta»).
+//   · Duración: 3, 5, 7, 10, 14, 21, 30, 60 o 90 días, «Otro» con contador,
+//     «Sin fecha de fin» y «Hasta una fecha».
+//   · «¿Cuándo empiezas?»: hoy, mañana u otra fecha. Ningún aviso suena antes
+//     y el último día sale de ahí (lib/tomas.js, `empieza`).
 import { useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
@@ -28,9 +38,11 @@ import Icono from './Icono';
 import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
 import SelectorHora, { HORA_NATIVA } from './SelectorHora';
+import SelectorFecha, { FECHA_NATIVA } from './SelectorFecha';
+import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadTexto, fraccionTexto, moverCantidad, normalizarCantidad } from '../lib/dosis';
 import { nombrePropio } from '../lib/formato';
 import { useSesion } from '../lib/sesion';
-import { DURACIONES, INICIO_DEFECTO, MAX_TOMAS_LIBRES, OPCIONES, diaTexto, guardarRecordatorio, horaTexto, horasCada, horasRecomendadas, inicioRecomendado, horasVeces, hoyLocal, opcionGuardada, quitarRecordatorio, revisarHoras, sumarDias } from '../lib/tomas';
+import { DIAS_DURACION, MAX_DIAS_DURACION, finDelTratamiento, INICIO_DEFECTO, MAX_TOMAS_LIBRES, OPCIONES, diaTexto, guardarRecordatorio, horaTexto, horasCada, horasRecomendadas, inicioRecomendado, horasVeces, hoyLocal, opcionGuardada, quitarRecordatorio, revisarHoras, sumarDias } from '../lib/tomas';
 import { useTema } from '../tema/tema';
 
 const dos = (n) => String(n).padStart(2, '0');
@@ -42,7 +54,17 @@ function mover(h, horas, minutos) {
   return `${dos(Math.floor(total / 60))}:${dos(total % 60)}`;
 }
 const MAX_DIAS = 365;
-const CANTIDADES = [{ v: 0.5, texto: '½' }, { v: 1, texto: '1' }, { v: 1.5, texto: '1½' }, { v: 2, texto: '2' }];
+// Hasta cuánto antes de hoy se puede decir que empezó (ya lo venía tomando) y
+// hasta cuánto después.
+const ATRAS_INICIO = 60;
+const ADELANTE_INICIO = 90;
+// La duración guardada → { tipo, dias }. Los '7', '14', '30' de antes son días.
+function duracionGuardada(actual) {
+  const d = actual?.duracion;
+  if (d === 'continuo' || d === 'fecha') return { tipo: d, dias: 7 };
+  const dias = Number(actual?.dias ?? d);
+  return Number.isInteger(dias) && dias > 0 ? { tipo: 'dias', dias: Math.min(MAX_DIAS_DURACION, dias) } : { tipo: null, dias: 7 };
+}
 
 export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   const t = useTema();
@@ -54,17 +76,28 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   const cada = OPCIONES.find((o) => o.id === opcion)?.cada ?? null;
   const libre = cada == null;
   const n = libre ? horas.length : cada;
-  const [duracion, setDuracion] = useState(actual?.duracion ?? null);
-  const [hasta, setHasta] = useState(actual?.duracion === 'fecha' ? actual.hasta : sumarDias(hoyLocal(), 14));
+  const hoy = hoyLocal();
+  const [durInicial] = useState(() => duracionGuardada(actual));
+  // `duracion`: 'dias' (con `dias`), 'continuo' o 'fecha'; null hasta que elija.
+  const [duracion, setDuracion] = useState(durInicial.tipo);
+  const [dias, setDias] = useState(durInicial.dias);
+  const [otrosDias, setOtrosDias] = useState(durInicial.tipo === 'dias' && !DIAS_DURACION.includes(durInicial.dias));
+  // Cuándo empieza. Uno guardado antes de 2026-11-03 no lo tiene: ya empezó.
+  const [empiezaInicial] = useState(() => actual?.empieza ?? hoy);
+  const [empieza, setEmpieza] = useState(empiezaInicial);
+  const [otraFecha, setOtraFecha] = useState(empiezaInicial !== hoy && empiezaInicial !== sumarDias(hoy, 1));
+  const minInicio = empiezaInicial < sumarDias(hoy, -ATRAS_INICIO) ? empiezaInicial : sumarDias(hoy, -ATRAS_INICIO);
+  const maxInicio = sumarDias(hoy, ADELANTE_INICIO);
+  const [hasta, setHasta] = useState(actual?.duracion === 'fecha' ? actual.hasta : finDelTratamiento(empiezaInicial, 14));
   const [nota, setNota] = useState(actual?.nota ?? '');
   const ajusta = !!tratamiento.ajusta_dosis;
-  const [cantidad, setCantidad] = useState(() => actual?.cantidad ?? 1);
+  // Número (0.25 … 10). Lo guardado antes (0.5, 1.5) se lee igual.
+  const [cantidad, setCantidad] = useState(() => normalizarCantidad(actual?.cantidad, 1));
   const pedir = useSesion((s) => s.pedir);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
-  const hoy = hoyLocal();
 
   const elegirOpcion = (id) => {
     if (id === opcion) return;
@@ -103,32 +136,59 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
     const base = horasVeces(horas[0], n);
     setHoras(revisarHoras(base, n) ? horasRecomendadas('veces', n) : base);
   };
-  const moverFecha = (n) => setHasta((f) => {
-    const nueva = sumarDias(f, n);
-    if (nueva <= hoy) return sumarDias(hoy, 1);
-    if (nueva > sumarDias(hoy, MAX_DIAS)) return sumarDias(hoy, MAX_DIAS);
-    return nueva;
-  });
+  // «Hasta el»: no antes del primer día (ni de hoy) ni más de un año después.
+  const minHasta = empieza > hoy ? empieza : hoy;
+  const maxHasta = sumarDias(minHasta, MAX_DIAS);
+  const acotar = (f, min, max) => (f < min ? min : f > max ? max : f);
+  const moverFecha = (n) => setHasta((f) => acotar(sumarDias(f, n), minHasta, maxHasta));
+  const ponerEmpieza = (nueva) => {
+    const f = acotar(nueva, minInicio, maxInicio);
+    setEmpieza(f);
+    // Si el fin quedó antes del nuevo inicio, se corre con él.
+    setHasta((h) => (h < f ? finDelTratamiento(f, 14) : h));
+  };
+  const moverEmpieza = (n) => ponerEmpieza(sumarDias(empieza, n));
+  const elegirInicio = (id) => {
+    Haptics.selectionAsync().catch(() => {});
+    if (id === 'hoy') { setOtraFecha(false); ponerEmpieza(hoy); } else if (id === 'manana') { setOtraFecha(false); ponerEmpieza(sumarDias(hoy, 1)); } else setOtraFecha(true);
+  };
+  const elegirDuracion = (id) => {
+    Haptics.selectionAsync().catch(() => {});
+    if (id === 'continuo' || id === 'fecha') { setDuracion(id); setOtrosDias(false); return; }
+    setDuracion('dias');
+    if (id === 'otro') { setOtrosDias(true); return; }
+    setOtrosDias(false); setDias(Number(id));
+  };
+  const moverDias = (n) => setDias((d) => Math.max(1, Math.min(MAX_DIAS_DURACION, d + n)));
+  // El último día, tal como se va a guardar. Si no cambió ni la duración ni
+  // el inicio se respeta la fecha de fin que ya tenía: editar la hora el día
+  // 5 de un tratamiento de 7 días no lo alarga a 12.
+  const guardadaIgual = actual?.hasta && empieza === empiezaInicial && duracion === durInicial.tipo
+    && (duracion !== 'dias' || dias === durInicial.dias) && duracion !== 'fecha';
+  const fin = duracion === 'continuo' || !duracion ? null
+    : duracion === 'fecha' ? acotar(hasta, minHasta, maxHasta)
+      : guardadaIgual ? actual.hasta : finDelTratamiento(empieza, dias);
+  const yaTermino = !!fin && fin < hoy;
 
   const guardar = async () => {
     if (guardando || !duracion) return;
+    if (yaTermino) { setError('Con esa fecha de inicio el tratamiento ya terminó. Revisa cuándo empezaste o por cuántos días lo tomas.'); return; }
     setGuardando(true); setError(null);
-    const preset = DURACIONES.find((d) => d.id === duracion);
-    // Si no cambió la duración se respeta la fecha de fin que ya tenía: editar
-    // la hora el día 5 de un tratamiento de 7 días no lo alarga a 12.
-    const fin = duracion === 'continuo' ? null
-      : duracion === 'fecha' ? hasta
-        : actual?.duracion === duracion && actual?.hasta ? actual.hasta
-          : sumarDias(hoy, preset.dias - 1);
     const r = await guardarRecordatorio({
       product_id: String(tratamiento.product_id), nombre: tratamiento.nombre, se_acaba: tratamiento.se_acaba ?? null,
-      horas, duracion, hasta: fin, nota: nota.trim(),
+      horas, duracion: duracion === 'dias' ? String(dias) : duracion, dias: duracion === 'dias' ? dias : null, hasta: fin,
+      // Uno viejo sin inicio que no se tocó sigue sin inicio (ya empezó).
+      empieza: actual && !actual.empieza && empieza === empiezaInicial ? null : empieza,
+      nota: nota.trim(),
       modo: libre ? 'veces' : 'cada', n, inicio: libre ? null : horas[0], cantidad: ajusta ? cantidad : null,
     });
     if (!r.ok) { setGuardando(false); setError(r.error); return; }
     // El recordatorio ya quedó en el teléfono: si la dosis no llega, se avisa
     // pero no se deshace lo guardado.
-    const d = ajusta ? await pedir('tratamiento_dosis', { product_id: tratamiento.product_id, dosis: horas.length * cantidad }) : { ok: true };
+    // El servidor acepta hasta 24 al día (`app_tratamientos.dosis_dia`,
+    // numeric(5,2)); más que eso sólo cambia cuándo se le acaba, así que se
+    // topa ahí en vez de perder el aviso de recompra.
+    const d = ajusta ? await pedir('tratamiento_dosis', { product_id: tratamiento.product_id, dosis: Math.min(24, horas.length * cantidad) }) : { ok: true };
     setGuardando(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     alCerrar();
@@ -177,7 +237,7 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48 }}>
                     <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
                     <Text style={{ flex: 1, fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{o.texto}</Text>
-                    {o.detalle ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>{o.detalle}</Text> : null}
+                    {o.detalle ? <Text style={{ flexShrink: 1, textAlign: 'right', fontSize: 13, color: colorSistema.texto3 }}>{o.detalle}</Text> : null}
                   </View>
                 </Presionable>
               );
@@ -229,7 +289,7 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
               <View style={{ flex: 1, gap: 8 }}>
                 <Text style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto }}>{aviso.mensaje}</Text>
                 <Presionable onPress={ajustar} accessibilityRole="button" hitSlop={6}
-                  style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center',
+                  style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999, justifyContent: 'center',
                     backgroundColor: t.color.magenta, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
                   <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFFFFF' }}>Ajustar automáticamente</Text>
                 </Presionable>
@@ -241,52 +301,65 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
           {ajusta ? (
             <>
               <Seccion>¿Cuánto tomas cada vez?</Seccion>
-              <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
-                {CANTIDADES.map((c) => {
-                  const elegida = c.v === cantidad;
-                  return (
-                    <Presionable key={c.v} onPress={() => { Haptics.selectionAsync().catch(() => {}); setCantidad(c.v); }}
-                      accessibilityRole="radio" accessibilityState={{ selected: elegida }}
-                      accessibilityLabel={`${c.texto} ${c.v === 1 ? 'tableta' : 'tabletas'}`}
-                      style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: elegida ? t.color.magenta : superficie, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-                      <Text style={{ fontSize: 18, fontWeight: '800', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{c.texto}</Text>
-                    </Presionable>
-                  );
-                })}
+              <Pildoras opciones={CANTIDADES_RAPIDAS.map((v) => ({ id: String(v), texto: fraccionTexto(v), etiqueta: cantidadTexto(v) }))}
+                valor={CANTIDADES_RAPIDAS.includes(cantidad) ? String(cantidad) : null} superficie={superficie} grande
+                alElegir={(id) => { Haptics.selectionAsync().catch(() => {}); setCantidad(Number(id)); }} />
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
+                <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Cada toma</Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <Paso sf="minus" etiqueta="Un cuarto menos" alTocar={() => setCantidad((c) => moverCantidad(c, -1))} apagado={cantidad <= CANTIDAD_MIN} />
+                  <Text accessibilityLabel={cantidadTexto(cantidad)} accessibilityLiveRegion="polite"
+                    style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 96, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cantidadTexto(cantidad)}</Text>
+                  <Paso sf="plus" etiqueta="Un cuarto más" alTocar={() => setCantidad((c) => moverCantidad(c, 1))} apagado={cantidad >= CANTIDAD_MAX} />
+                </View>
               </View>
               <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-                {`Tabletas por toma. En total, ${String(horas.length * cantidad).replace('.5', '½').replace(/^0½$/, '½')} al día: con eso calculamos cuándo se te acaba.`}
+                {`De ¼ en ¼. En total, ${cantidadTexto(horas.length * cantidad)} al día: con eso calculamos cuándo se te acaba.`}
               </Text>
             </>
           ) : null}
 
+          <Seccion>¿Cuándo empiezas?</Seccion>
+          <Pildoras opciones={[{ id: 'hoy', texto: 'Hoy' }, { id: 'manana', texto: 'Mañana' }, { id: 'otra', texto: 'Otra fecha' }]}
+            valor={otraFecha ? 'otra' : empieza === hoy ? 'hoy' : empieza === sumarDias(hoy, 1) ? 'manana' : 'otra'} superficie={superficie} alElegir={elegirInicio} />
+          {otraFecha ? (
+            <FilaFecha etiqueta="Empiezo el" titulo="Empiezo el" valor={empieza} desde={minInicio} hasta={maxInicio} superficie={superficie}
+              alCambiar={ponerEmpieza} alMover={moverEmpieza} />
+          ) : null}
+          <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
+            {empieza > hoy ? `Los avisos empiezan el ${diaTexto(empieza)}; antes no suena nada.`
+              : empieza < hoy ? `Si ya lo venías tomando, contamos los días desde el ${diaTexto(empieza)}.`
+                : 'Si es un tratamiento nuevo y lo empiezas otro día, cámbialo aquí.'}
+          </Text>
+
           <Seccion>¿Por cuánto tiempo?</Seccion>
-          <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
-            {DURACIONES.map((d, i) => {
-              const elegida = d.id === duracion;
-              return (
-                <Presionable key={d.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setDuracion(d.id); }} accessibilityRole="radio" accessibilityState={{ selected: elegida }}>
-                  {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, minHeight: 44 }}>
-                    <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
-                    <Text style={{ flex: 1, fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{d.texto}</Text>
-                  </View>
-                </Presionable>
-              );
-            })}
-          </View>
-          {duracion === 'fecha' ? (
+          <Pildoras superficie={superficie} alElegir={elegirDuracion}
+            opciones={[...DIAS_DURACION.map((x) => ({ id: String(x), texto: `${x} días` })), { id: 'otro', texto: 'Otro', etiqueta: 'Otro número de días' },
+              { id: 'continuo', texto: 'Sin fecha de fin' }, { id: 'fecha', texto: 'Hasta una fecha' }]}
+            valor={duracion === 'dias' ? (otrosDias ? 'otro' : String(dias)) : duracion} />
+          {duracion === 'dias' && otrosDias ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
-              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Hasta el</Text>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Paso texto="−7" etiqueta="Una semana antes" alTocar={() => moverFecha(-7)} />
-                <Paso sf="minus" etiqueta="Un día antes" alTocar={() => moverFecha(-1)} />
-                <Text style={{ fontSize: 17, fontWeight: '900', color: colorSistema.texto, minWidth: 74, textAlign: 'center' }}>{diaTexto(hasta)}</Text>
-                <Paso sf="plus" etiqueta="Un día después" alTocar={() => moverFecha(1)} />
-                <Paso texto="+7" etiqueta="Una semana después" alTocar={() => moverFecha(7)} />
+              <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Días</Text>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <Paso texto="−7" etiqueta="Una semana menos" alTocar={() => moverDias(-7)} apagado={dias <= 1} />
+                <Paso sf="minus" etiqueta="Un día menos" alTocar={() => moverDias(-1)} apagado={dias <= 1} />
+                <Text accessibilityLabel={`${dias} ${dias === 1 ? 'día' : 'días'}`} accessibilityLiveRegion="polite"
+                  style={{ fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 74, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{`${dias} ${dias === 1 ? 'día' : 'días'}`}</Text>
+                <Paso sf="plus" etiqueta="Un día más" alTocar={() => moverDias(1)} apagado={dias >= MAX_DIAS_DURACION} />
+                <Paso texto="+7" etiqueta="Una semana más" alTocar={() => moverDias(7)} apagado={dias >= MAX_DIAS_DURACION} />
               </View>
             </View>
+          ) : null}
+          {duracion === 'fecha' ? (
+            <FilaFecha etiqueta="Hasta el" titulo="Hasta el" valor={acotar(hasta, minHasta, maxHasta)} desde={minHasta} hasta={maxHasta} superficie={superficie}
+              alCambiar={(f) => setHasta(acotar(f, minHasta, maxHasta))} alMover={moverFecha} />
+          ) : null}
+          {duracion ? (
+            <Text style={{ fontSize: 12, lineHeight: 17, color: yaTermino ? t.color.peligroTexto : colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
+              {duracion === 'continuo' ? 'Te lo recordamos todos los días hasta que quites el recordatorio.'
+                : yaTermino ? `Con esa fecha de inicio terminó el ${diaTexto(fin)}.`
+                  : `Del ${diaTexto(empieza)} al ${diaTexto(fin)}${duracion === 'dias' ? ' (el primer día cuenta)' : ''}.`}
+            </Text>
           ) : null}
 
           <TextInput value={nota} onChangeText={setNota} placeholder="Nota (opcional), por ejemplo «con comida»" placeholderTextColor={colorSistema.texto3}
@@ -311,16 +384,59 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   );
 }
 
-function Paso({ sf, texto, etiqueta, alTocar }) {
+function Paso({ sf, texto, etiqueta, alTocar, apagado }) {
   const t = useTema();
   return (
-    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
-      accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
+    <Presionable onPress={() => { if (apagado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }}
+      accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6} disabled={!!apagado} accessibilityState={{ disabled: !!apagado }}
       // 32 de lado + 6 de `hitSlop` por lado = 44 pt de dedo (2026-10-13).
       style={({ pressed }) => ({ minWidth: 32, minHeight: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.92 : 1 }],
+        opacity: apagado ? 0.35 : 1,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' })}>
       {texto ? <Text style={{ fontSize: 12, fontWeight: '800', color: colorSistema.texto }}>{texto}</Text>
         : <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />}
     </Presionable>
+  );
+}
+
+// Opciones excluyentes como píldoras que bajan de renglón (2026-11-03): con
+// letra grande pasan a la línea siguiente en vez de cortarse, y cada una mide
+// al menos 48 de alto. Sirven igual en iPhone y en Android.
+function Pildoras({ opciones, valor, alElegir, superficie, grande }) {
+  const t = useTema();
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityRole="radiogroup">
+      {opciones.map((o) => {
+        const elegida = o.id === valor;
+        return (
+          <Presionable key={o.id} onPress={() => alElegir(o.id)}
+            accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={o.etiqueta ?? o.texto}
+            style={({ pressed }) => ({ flexGrow: 1, minWidth: grande ? 56 : 84, minHeight: 48, paddingHorizontal: 12, paddingVertical: 8, borderRadius: RADIO.medio,
+              alignItems: 'center', justifyContent: 'center', backgroundColor: elegida ? t.color.magenta : superficie, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+            <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: grande ? 18 : 15, fontWeight: elegida || grande ? '800' : '600', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{o.texto}</Text>
+          </Presionable>
+        );
+      })}
+    </View>
+  );
+}
+
+// Una fecha: en iPhone el selector del sistema; en Android, ± un día y ± una semana.
+function FilaFecha({ etiqueta, titulo, valor, desde, hasta, superficie, alCambiar, alMover }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
+      <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{etiqueta}</Text>
+      {FECHA_NATIVA ? (
+        <SelectorFecha valor={valor} titulo={titulo} desde={desde} hasta={hasta} alCambiar={alCambiar} />
+      ) : (
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+          <Paso texto="−7" etiqueta="Una semana antes" alTocar={() => alMover(-7)} apagado={valor <= desde} />
+          <Paso sf="minus" etiqueta="Un día antes" alTocar={() => alMover(-1)} apagado={valor <= desde} />
+          <Text accessibilityLiveRegion="polite" style={{ fontSize: 17, fontWeight: '900', color: colorSistema.texto, minWidth: 74, textAlign: 'center' }}>{diaTexto(valor)}</Text>
+          <Paso sf="plus" etiqueta="Un día después" alTocar={() => alMover(1)} apagado={valor >= hasta} />
+          <Paso texto="+7" etiqueta="Una semana después" alTocar={() => alMover(7)} apagado={valor >= hasta} />
+        </View>
+      )}
+    </View>
   );
 }

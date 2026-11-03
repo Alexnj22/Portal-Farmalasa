@@ -15,12 +15,11 @@
 // `carrito_existencias`); una sucursal con 1 de las 3 cajas pedidas ya no
 // cuenta como que «tiene todo». La regla es la de componentes/DondeLoHay.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Text, TextInput, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
@@ -42,6 +41,7 @@ import { precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 import { sinBloquear } from '../../../lib/bloqueo';
 import { estadoDeAlcance } from '../../../componentes/DondeLoHay';
 import SoloConDocumento from '../../../componentes/SoloConDocumento';
+import CondicionesReserva from '../../../componentes/CondicionesReserva';
 
 const CLAVE_TERMINOS = 'puntos_salud_terminos_reserva';
 
@@ -288,7 +288,8 @@ function Carrito() {
           </Text>
         </Tarjeta>
         <Boton alTocar={() => { setHecho(null); navegar('/reservas'); }}>Ver mis reservas</Boton>
-        <Boton tipo="secundario" alTocar={() => setHecho(null)}>Seguir comprando</Boton>
+        {/* Seguir comprando lleva a la Tienda (2026-11-03): antes se quedaba en el carrito vacío. */}
+        <Boton tipo="secundario" alTocar={() => { setHecho(null); navegar('/catalogo'); }}>Seguir comprando</Boton>
       </Pantalla>
     );
   }
@@ -298,7 +299,7 @@ function Carrito() {
       <Pantalla conBurbuja={false}>
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
-        <Boton alTocar={() => navegar('/catalogo')}>Ver el catálogo</Boton>
+        <Boton alTocar={() => navegar('/catalogo')}>Ir a la Tienda</Boton>
       </Pantalla>
     );
   }
@@ -453,9 +454,14 @@ function Carrito() {
       <Boton alTocar={() => reservar()} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion || (conReceta && !fotoReceta?.uri)}>
         {conReceta ? 'Enviar para revisión' : faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : aDomicilio ? 'Pedir · pagar al recibir' : 'Reservar · pagar al retirar'}
       </Boton>
+      {/* «Seguir comprando si quiero agregar más» (2026-11-03): a la Tienda, con
+          el carrito tal cual. */}
+      <Boton tipo="secundario" alTocar={() => navegar('/catalogo')}>Seguir comprando</Boton>
 
       <Modal visible={!!terminos} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setTerminos(null)}>
-        <Terminos terminos={terminos} alAceptar={async () => {
+        <Terminos terminos={terminos} resumen={{
+          total, sala: salas?.find((s) => s.id === sala)?.sala, pago: pagoReal, domicilio: aDomicilio, receta: conReceta, porConfirmar: faltan > 0,
+        }} alAceptar={async () => {
           await SecureStore.setItemAsync(CLAVE_TERMINOS, terminos.version).catch(() => {});
           enviar(terminos.version);
         }} alCerrar={() => setTerminos(null)} />
@@ -561,30 +567,17 @@ function Contador({ valor, alCambiar }) {
   );
 }
 
-function Terminos({ terminos, alAceptar, alCerrar }) {
+// Las condiciones antes de enviar (2026-11-03): un resumen del pedido y lo
+// importante; los 14 puntos, detrás de «Ver todas las condiciones»
+// (componentes/CondicionesReserva). La aceptación sigue siendo por versión.
+function Terminos({ terminos, resumen, alAceptar, alCerrar }) {
   const t = useTema();
-  const ins = useSafeAreaInsets();
   if (!terminos) return null;
   return (
     <View style={{ flex: 1, backgroundColor: t.oscuro ? '#121016' : '#F5F4F8' }}>
-      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Text style={{ fontSize: 22, fontWeight: '900', color: colorSistema.texto, flex: 1 }}>{terminos.titulo}</Text>
-          <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
-            style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
-          </Presionable>
-        </View>
-        {terminos.puntos.map((p, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
-            <View style={{ minWidth: 24, minHeight: 24, borderRadius: 12, backgroundColor: t.color.magenta, alignItems: 'center', justifyContent: 'center' }}>
-              <Text style={{ color: '#FFF', fontWeight: '800', fontSize: 13 }}>{i + 1}</Text>
-            </View>
-            <Text style={{ flex: 1, fontSize: 15, lineHeight: 21, color: colorSistema.texto }}>{p}</Text>
-          </View>
-        ))}
-        <Boton alTocar={alAceptar}>Aceptar y reservar</Boton>
-      </ScrollView>
+      <CondicionesReserva terminos={terminos} resumen={resumen} alCerrar={alCerrar}>
+        <Boton alTocar={alAceptar}>{resumen?.pago === 'en_linea' && !resumen?.receta && !resumen?.porConfirmar ? `Aceptar y pagar ${dolares(resumen.total)}` : 'Aceptar y reservar'}</Boton>
+      </CondicionesReserva>
     </View>
   );
 }

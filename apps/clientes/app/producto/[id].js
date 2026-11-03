@@ -15,7 +15,7 @@ import Presionable from '../../componentes/Presionable';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import EncargoHoja from '../../componentes/EncargoHoja';
 import DondeLoHay from '../../componentes/DondeLoHay';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { Cargando, Vacio } from '../../componentes/ui';
@@ -34,6 +34,7 @@ import { useSesion } from '../../lib/sesion';
 
 export default function Producto() {
   const { id } = useLocalSearchParams();
+  const navigation = useNavigation();
   const ins = useSafeAreaInsets();
   const t = useTema();
   const [d, setD] = useState(null);
@@ -82,6 +83,18 @@ export default function Producto() {
   const mayor = [...(p.presentaciones ?? [])].sort((a, b) => (b.factor ?? 1) - (a.factor ?? 1))[0];
   const elegida_factor = sel ?? mayor?.factor ?? 1;
   const elegidaP = (p.presentaciones ?? []).find((x) => (x.factor ?? 1) === elegida_factor) ?? mayor;
+  // Volver a la Tienda (2026-11-03). El producto es un modal sobre las
+  // pestañas: si debajo está la Tienda, basta cerrarlo; si se abrió desde otro
+  // lado (Inicio, el chat, un tratamiento), se cierra y se va a la Tienda.
+  const volverALaTienda = () => {
+    if (!router.canGoBack()) { navegar('/catalogo'); return; }
+    const pila = navigation.getState?.();
+    const debajo = pila?.routes?.[(pila?.index ?? 0) - 1];
+    const pestanas = debajo?.name === '(tabs)' ? debajo.state : null;
+    const enLaTienda = pestanas?.routes?.[pestanas.index ?? 0]?.name === 'catalogo';
+    router.back();
+    if (!enLaTienda) setTimeout(() => navegar('/catalogo'), 300);
+  };
   const agregar = async (x, n = 1) => {
     if (!x) return;
     // Si ya está reservado, se pregunta antes (2026-10-09). Para ver la
@@ -95,8 +108,10 @@ export default function Producto() {
     if (!ok) { Alert.alert('Carrito lleno', 'El carrito admite hasta 10 productos distintos.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setCant(1);
+    // «Seguir viendo» dejaba al cliente en el producto (2026-11-03): ahora es
+    // «Seguir comprando» y vuelve a la Tienda.
     Alert.alert('Agregado al carrito', `${n} × ${nombreProducto(p.nombre)} · ${nombreProducto(x.tipo)}`, [
-      { text: 'Seguir viendo', style: 'cancel' },
+      { text: 'Seguir comprando', style: 'cancel', onPress: volverALaTienda },
       { text: 'Ir al carrito', onPress: () => { router.back(); setTimeout(() => navegar('/carrito'), 300); } },
     ]);
   };

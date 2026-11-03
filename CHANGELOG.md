@@ -21,6 +21,36 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1428.0 — App clientes: sonido sin trabas, Inicio con 6 atajos, recordatorios y carrito
+
+*«Los sonidos, haptic, etc. no funcionan apropiadamente… en inicio dejar
+sólo 6 opciones… debe ser muy fácil de usar, sentirse inmediata, fluida.»*
+
+- **Sonido**: `expo-audio` ejecuta cada `play`/`seekTo`/`volume` en el hilo
+  PRINCIPAL de Android (`runOnMain`, `AudioModule.kt`) — el mismo que dibuja —
+  y con 2-3 reproductores por sonido el cuarto toque cortaba al primero. Los
+  efectos de los juegos pasan a `react-native-audio-api` (buffers decodificados
+  una vez, un nodo por sonido en el hilo de audio, polifonía real). Plugin sin
+  modo de fondo, sin servicio en primer plano y sin FFmpeg. `expo-audio` queda
+  para las notas de voz del chat. **Requiere compilación nueva.**
+- **Vibración**: en Android los toques usan el háptico del sistema
+  (`performAndroidHapticsAsync`) en vez del motor con forma de onda, con
+  30 ms mínimos entre dos.
+- **Torre**: los pisos hechos son UNA imagen grabada al soltar cada bloque;
+  el aviso de racha es una vista que late, no una animación de entrada por
+  toque (igual en Burbujas).
+- **Inicio** con 6 atajos (Reservas, Tratamientos, Compras, Mis puntos,
+  Sucursales y uno según el cliente: Créditos / Inyecciones / Invitar) y
+  «Ver todo». **Cuenta** es el índice completo, en grupos, con contadores.
+- **Recordatorios**: dosis en cuartos (¼ a 10), duraciones 3–90 días u otro
+  hasta 365, y fecha de inicio (no avisa antes).
+- **Carrito**: «Seguir comprando» lleva a la Tienda (también desde el aviso
+  de «Agregado al carrito»); las condiciones de la reserva se leen en un
+  resumen de total/dónde/hasta cuándo y 4 puntos, con las 14 completas
+  detrás de «Ver todas las condiciones».
+- **Cliente Mayorista**: dice que es para surtir tiendas, clínicas,
+  botiquines, farmacias pequeñas, empresas e instituciones.
+
 ## v2.1427.1 — Practicantes: prueba que dibuja su ficha
 
 Sin cambios en pantalla. Una prueba dibuja la pestaña Personal para un empleado y para un practicante, y comprueba que al practicante no le aparecen ISSS/AFP, dependientes, estado civil, nivel académico, vehículos ni salud, y que el expediente no se los pide.

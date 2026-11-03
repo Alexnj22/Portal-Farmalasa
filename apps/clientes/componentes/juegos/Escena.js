@@ -7,12 +7,13 @@
 // Las luces son Skia en el hilo de la interfaz, a 30 cuadros: suben despacio y
 // no le cuestan nada a JavaScript. Con «reducir movimiento» o en un teléfono
 // liviano quedan quietas.
+import { useEffect } from 'react';
 import { Platform, ScrollView, StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import { Canvas, Picture, Skia, TileMode } from '@shopify/react-native-skia';
-import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle, useDerivedValue, useFrameCallback, useSharedValue, withSequence, withSpring, withTiming } from 'react-native-reanimated';
 import { useSinMovimiento, Tocable } from '../animacion';
 import Icono from '../Icono';
 import { useAjustesSensaciones, tacto } from '../../lib/sensaciones';
@@ -90,6 +91,26 @@ export function Escena({ colores, children, fijo = false, luces = true, estilo }
         </ScrollView>
       )}
     </View>
+  );
+}
+
+/**
+ * El aviso de un juego («¡Perfecto ×3!», «¡Racha ×5!»): UNA vista que late al
+ * cambiar `clave`. Antes cada aviso se montaba de nuevo con una animación de
+ * entrada, y en una ráfaga eso era una animación de diseño nativa por toque.
+ */
+export function AvisoJuego({ texto, clave }) {
+  const s = useSharedValue(1);
+  useEffect(() => {
+    if (!texto) return;
+    s.value = withSequence(withTiming(1.16, { duration: 80 }), withSpring(1, { damping: 12, stiffness: 320 }));
+  }, [clave, texto, s]);
+  const estilo = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  if (!texto) return null;
+  return (
+    <Animated.View pointerEvents="none" style={[estilos.aviso, estilo]}>
+      <Text style={{ fontSize: 15, fontWeight: '900', color: BLANCO, textAlign: 'center' }}>{texto}</Text>
+    </Animated.View>
   );
 }
 
@@ -188,5 +209,7 @@ const estilos = StyleSheet.create({
     shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 16, shadowOffset: { width: 0, height: 6 }, elevation: 4 },
   opcion: { minHeight: 44, minWidth: 64, paddingHorizontal: 14, paddingVertical: 6, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
     backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
+  aviso: { paddingHorizontal: 14, paddingVertical: 5, minHeight: 32, borderRadius: 16, justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' },
   panel: { borderRadius: 22, padding: 16, backgroundColor: 'rgba(255,255,255,0.10)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.16)' },
 });

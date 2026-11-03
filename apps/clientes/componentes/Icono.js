@@ -170,6 +170,9 @@ const MATERIAL = {
   'sun.max.fill': 'light_mode',
   'circle.dotted': 'blur_on',
   'list.bullet.rectangle.fill': 'receipt_long',
+  // Cuenta (2026-11-03): «entrar con DUI y teléfono».
+  'person.text.rectangle.fill': 'id_card',
+  'person.text.rectangle': 'id_card',
 };
 
 export default function Icono({ sf, respaldo = '•', tam = 22, color }) {

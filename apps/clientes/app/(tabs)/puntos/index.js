@@ -316,13 +316,17 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* El menú (2026-11-03, «hay muchas cosas en inicio, creemos un menú
-          mejor»): todo lo que antes eran tarjetas sueltas una debajo de otra
-          —reservas, inyecciones, tratamientos, compras, movimientos,
-          sucursales, invitar— en una cuadrícula de 3 × 3. El punto rojo es lo
-          que pide atención. */}
-      <Entrada indice={4}>
-        <Seccion>Lo tuyo</Seccion>
+      {/* El menú (2026-11-03): seis accesos, los más usados (ver `Menu`). El
+          resto vive en Cuenta, y «Todo» lleva allá. El punto rojo es lo que
+          pide atención. */}
+      <Entrada indice={4} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <View style={{ flexShrink: 1 }}><Seccion>Lo tuyo</Seccion></View>
+        <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/cuenta'); }} accessibilityRole="button"
+          accessibilityLabel="Ver todo en Cuenta" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 32, opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ fontSize: 15, fontWeight: '600', color: t.color.magentaTexto }}>Ver todo</Text>
+          <Icono sf="chevron.right" respaldo="›" tam={12} color={t.color.magentaTexto} />
+        </Presionable>
       </Entrada>
       <Entrada indice={4}>
         <Menu resumen={resumen} urgentes={urgentes.length} />
@@ -543,10 +547,21 @@ function TratamientosInicio({ lista }) {
   );
 }
 
-// El menú del Inicio (2026-11-03): nueve casillas, siempre nueve —la de
-// créditos aparece cuando hay alguno pendiente y, si no, su lugar es para el
-// chat—, así la cuadrícula nunca queda con un hueco. Con letra grande pasa a
-// dos columnas.
+// El menú del Inicio: SEIS casillas (2026-11-03, «en inicio se quiere dejar
+// solo 6 opciones abajo… que queden las más útiles, y las otras a cuenta»).
+// Dos filas de tres (tres de dos con letra grande): nunca queda un hueco.
+// Se quedaron las que un cliente de farmacia abre más seguido:
+//   · Reservas — lo que apartó y si ya está listo para retirar.
+//   · Tratamientos — lo que toma seguido y cuándo se le acaba.
+//   · Compras — qué compró, para volver a pedirlo igual.
+//   · Mis puntos — en qué ganó y en qué usó; es el programa.
+//   · Sucursales — horarios y cómo llegar.
+//   · La sexta es «lo que te toca»: Créditos si debe algo, si no Inyecciones
+//     si tiene alguna por aplicar, y si no Invitar (+50 puntos).
+// Salieron al menú de Cuenta (donde está TODO, ordenado por grupos): Facturas
+// (sólo la usa quien pide crédito fiscal), Inyecciones y Créditos cuando no
+// piden nada, Invitar cuando hay algo más urgente, y el chat — que además
+// tiene la burbuja en todas las pantallas.
 function Menu({ resumen, urgentes }) {
   const t = useTema();
   const { fontScale } = useWindowDimensions();
@@ -555,23 +570,25 @@ function Menu({ resumen, urgentes }) {
   const dos = fontScale > 1.15;
   const r = resumen;
   const tratamientos = Array.isArray(r.tratamientos) ? r.tratamientos.length : 0;
-  const creditos = r.creditos?.pendientes > 0;
+  const sexta = r.creditos?.pendientes > 0
+    ? { sf: 'creditcard.fill', titulo: 'Créditos', color: t.acentos.rojo.fuerte, ruta: '/creditos', resaltar: r.creditos.vencidos > 0,
+        detalle: r.creditos.vencidos > 0 ? `${r.creditos.vencidos} vencido${r.creditos.vencidos === 1 ? '' : 's'}` : `${r.creditos.pendientes} al día` }
+    // (El rojo de los tokens y no `colorSistema.rojo`: en iPhone ése es un
+    // PlatformColor, `suave()` no lo aclara y el fondo salía del mismo rojo
+    // que el ícono.)
+    : r.inyecciones_pendientes > 0
+      ? { sf: 'syringe.fill', titulo: 'Inyecciones', color: t.acentos.verde.fuerte, ruta: '/inyecciones', resaltar: true,
+          detalle: `${r.inyecciones_pendientes} por aplicar` }
+      : { sf: 'person.2.fill', titulo: 'Invitar', color: t.acentos.verde.fuerte, ruta: '/invitar', detalle: '+50 puntos' };
   const casillas = [
     { sf: 'bag.fill', titulo: 'Reservas', color: t.color.magenta, ruta: '/reservas', resaltar: r.reservas_listas > 0,
       detalle: r.reservas_listas ? `${r.reservas_listas} lista${r.reservas_listas === 1 ? '' : 's'}` : r.reservas_abiertas ? `${r.reservas_abiertas} en curso` : 'Ninguna' },
-    { sf: 'syringe.fill', titulo: 'Inyecciones', color: t.acentos.verde.fuerte, ruta: '/inyecciones', resaltar: r.inyecciones_pendientes > 0,
-      detalle: r.inyecciones_pendientes ? `${r.inyecciones_pendientes} por aplicar` : 'Al día' },
     { sf: 'pills.fill', titulo: 'Tratamientos', color: t.acentos.azul.fuerte, ruta: '/tratamientos', resaltar: urgentes > 0,
       detalle: urgentes ? `${urgentes} por acabarse` : tratamientos ? `${tratamientos} activo${tratamientos === 1 ? '' : 's'}` : 'Ver' },
-    { sf: 'list.bullet.rectangle.fill', titulo: 'Compras', color: t.acentos.violeta.fuerte, ruta: '/compras', detalle: 'Qué compraste' },
+    { sf: 'list.bullet.rectangle.fill', titulo: 'Compras', color: t.acentos.violeta.fuerte, ruta: '/compras', detalle: 'Volver a pedir' },
     { sf: 'star.fill', titulo: 'Mis puntos', color: t.acentos.naranja.fuerte, ruta: '/movimientos', detalle: 'Movimientos' },
-    { sf: 'doc.richtext.fill', titulo: 'Facturas', color: t.acentos.azul.fuerte, ruta: '/facturas', detalle: 'Electrónicas' },
-    creditos
-      ? { sf: 'doc.text.fill', titulo: 'Créditos', color: colorSistema.rojo, ruta: '/creditos', resaltar: r.creditos.vencidos > 0,
-          detalle: r.creditos.vencidos > 0 ? `${r.creditos.vencidos} vencido${r.creditos.vencidos === 1 ? '' : 's'}` : `${r.creditos.pendientes} al día` }
-      : { sf: 'bubble.left.and.bubble.right.fill', titulo: 'Pregúntanos', color: t.color.magenta, ruta: '/chat', detalle: 'Chat' },
     { sf: 'mappin.and.ellipse', titulo: 'Sucursales', color: t.acentos.violeta.fuerte, ruta: '/sucursales', detalle: 'Horarios' },
-    { sf: 'person.2.fill', titulo: 'Invitar', color: t.acentos.verde.fuerte, ruta: '/invitar', detalle: '+50 puntos' },
+    sexta,
   ];
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>

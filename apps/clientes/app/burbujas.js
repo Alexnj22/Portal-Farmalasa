@@ -23,9 +23,9 @@ import { PixelRatio, Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { BlurStyle, Canvas, PaintStyle, Picture, Skia, TileMode } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeIn, FadeOut, ZoomIn, runOnJS, useAnimatedStyle, useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, runOnJS, useAnimatedStyle, useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { Confeti, useSinMovimiento } from '../componentes/animacion';
-import { BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
 import { entero } from '../lib/formato';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
@@ -378,10 +378,7 @@ export default function Burbujas() {
         ) : null}
         {aviso && quedan > 0 && !perdio ? (
           <View pointerEvents="none" style={{ position: 'absolute', top: 10, left: 0, right: 0, alignItems: 'center' }}>
-            <Animated.View key={aviso.k} entering={quieta ? undefined : ZoomIn.duration(180)}
-              style={{ paddingHorizontal: 14, paddingVertical: 4, minHeight: 32, borderRadius: 16, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.22)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.35)' }}>
-              <Text style={{ fontSize: 15, fontWeight: '900', color: BLANCO }}>{aviso.texto}</Text>
-            </Animated.View>
+            <AvisoJuego clave={aviso.k} texto={aviso.texto} />
           </View>
         ) : null}
         {reto && quedan === N && !perdio ? (

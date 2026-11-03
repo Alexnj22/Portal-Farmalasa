@@ -20,6 +20,7 @@ import * as FS from 'expo-file-system/legacy';
 import { create } from 'zustand';
 import { pedirPermisoDeAvisos } from './avisos';
 import { nombrePropio } from './formato';
+import { cantidadTexto } from './dosis';
 
 export const DISPONIBLE = Platform.OS !== 'web';
 const ARCHIVO = FS.documentDirectory ? `${FS.documentDirectory}tomas.json` : null;
@@ -139,13 +140,14 @@ export function revisarHoras(horas, n) {
   }
   return null;
 }
-export const DURACIONES = [
-  { id: '7', texto: '7 días', dias: 7 },
-  { id: '14', texto: '14 días', dias: 14 },
-  { id: '30', texto: '30 días', dias: 30 },
-  { id: 'continuo', texto: 'Uso continuo' },
-  { id: 'fecha', texto: 'Hasta una fecha' },
-];
+// ¿Por cuánto tiempo? (2026-11-03, «en los días, también más opciones»): antes
+// eran 7, 14 o 30 días. Ahora estos atajos, «Otro» con un contador de días,
+// «Sin fecha de fin» y «Hasta una fecha». Lo guardado no cambia de forma:
+// `duracion` es el número de días como texto ('7', '45'), 'continuo' o
+// 'fecha', y `hasta` la fecha del último día — los '7', '14' y '30' de antes
+// se abren tal cual.
+export const DIAS_DURACION = [3, 5, 7, 10, 14, 21, 30, 60, 90];
+export const MAX_DIAS_DURACION = 365;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 // Fechas en la hora DEL TELÉFONO: el aviso suena con su reloj.
@@ -163,6 +165,15 @@ function enFecha(iso, hora) {
 }
 const diasEntre = (a, b) => Math.round((enFecha(b, '12:00') - enFecha(a, '12:00')) / 86400_000);
 
+// Cuándo empieza (2026-11-03, «poner cuándo inicio el tratamiento si es
+// nuevo»). `empieza` es la fecha del primer día ('2026-11-04'); los
+// recordatorios guardados antes no la tienen y cuentan como ya empezados.
+// Ningún aviso suena antes de ese día, y el fin sale de ahí: 7 días desde el
+// martes terminan el lunes siguiente (el primer día cuenta).
+export const finDelTratamiento = (empieza, dias) => sumarDias(empieza, Math.max(1, dias) - 1);
+/** El primer día con avisos: el de inicio, o hoy si ya empezó (o no lo dijo). */
+const primerDia = (c, hoy) => (c.empieza && c.empieza > hoy ? c.empieza : hoy);
+
 /** '08:00' → «8:00». */
 export const horaTexto = (h) => { const [hh, mm] = h.split(':'); return `${Number(hh)}:${mm}`; };
 /** '2026-10-30' → «30 oct» (con el año sólo si no es este). */
@@ -173,10 +184,17 @@ export function diaTexto(iso) {
 const enLista = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join(', ')} y ${xs[xs.length - 1]}`);
 
 /** «Te recuerdo 8:00 y 20:00 · hasta el 30 oct» (o «cada 8 h: 6:00, 14:00 y 22:00 · …»). */
+// Con la cantidad adelante cuando la hay («½ tableta · 8:00 y 20:00») y, si
+// todavía no empezó, desde cuándo («del 5 nov al 11 nov»).
 export function resumenRecordatorio(c) {
   const lista = c.modo === 'cada' && c.inicio ? horasCada(c.inicio, c.n) : c.horas;
   const horas = `${c.modo === 'cada' && c.n && c.n < 24 ? `cada ${c.n} h: ` : ''}${enLista(lista.map(horaTexto))}`;
-  return `Te recuerdo ${horas} · ${c.duracion === 'continuo' ? 'uso continuo' : `hasta el ${diaTexto(c.hasta)}`}`;
+  const cant = c.cantidad ? `${cantidadTexto(c.cantidad)} · ` : '';
+  const futuro = c.empieza && c.empieza > hoyLocal();
+  const tiempo = c.duracion === 'continuo'
+    ? (futuro ? `desde el ${diaTexto(c.empieza)}, sin fecha de fin` : 'sin fecha de fin')
+    : futuro ? `del ${diaTexto(c.empieza)} al ${diaTexto(c.hasta)}` : `hasta el ${diaTexto(c.hasta)}`;
+  return `Te recuerdo ${cant}${horas} · ${tiempo}`;
 }
 
 // «ACETAMINOFEN 500 MG TABLETA X 100» → «Acetaminofen»: el título de un aviso
@@ -192,6 +210,8 @@ export function nombreCorto(nombre) {
 // En un archivo y no en SecureStore: con varias medicinas y 30 días de tomas
 // pasa del tamaño que el llavero acepta (igual que lib/sinConexion.js).
 // `config` va por product_id: { product_id, nombre, horas, duracion, hasta, nota, se_acaba }.
+// Desde 2026-11-03 también `empieza` (fecha del primer día), `dias` (cuántos,
+// si la duración es en días) y `cantidad` acepta cuartos (0.25, 0.75, 3…).
 // `registro`: [{ p: product_id, h: ISO }] — «Tomado», los últimos 30 días.
 
 async function escribir(estado) {
@@ -300,7 +320,9 @@ const pocas = (c, dia) => !!c.se_acaba && diasEntre(dia, c.se_acaba) <= 3;
 
 function contenido(c, dia, extra = '') {
   const quedanPocas = pocas(c, dia);
-  const partes = [`${nombreCorto(c.nombre)}.`, c.nota?.trim() || 'Toca «Tomado» cuando lo tomes.'];
+  // «Acetaminofen: ½ tableta.» — cuánto, en el mismo aviso (2026-11-03).
+  const cant = c.cantidad ? cantidadTexto(c.cantidad) : '';
+  const partes = [cant ? `${nombreCorto(c.nombre)}: ${cant}.` : `${nombreCorto(c.nombre)}.`, c.nota?.trim() || 'Toca «Tomado» cuando lo tomes.'];
   if (quedanPocas) partes.push('Te quedan pocas, ¿lo reservamos?');
   if (extra) partes.push(extra);
   return {
@@ -343,7 +365,10 @@ async function planificar() {
   const canal = Platform.OS === 'android' ? { channelId: CANAL } : {};
 
   // Uso continuo: un diario por hora. Van primero porque no se renuevan solos.
-  for (const c of lista.filter((x) => x.duracion === 'continuo')) {
+  // Si todavía no empezó, un diario sonaría desde ya: ése va con avisos de
+  // fecha desde su primer día (abajo) y pasa a diario cuando ya empezó.
+  const yaEmpezo = (c) => !c.empieza || c.empieza <= hoy;
+  for (const c of lista.filter((x) => x.duracion === 'continuo' && yaEmpezo(x))) {
     for (const h of c.horas) {
       if (libres <= 0) break;
       const [hour, minute] = h.split(':').map(Number);
@@ -358,9 +383,12 @@ async function planificar() {
   const ahora = Date.now() + 30_000;
   const tomas = [];
   const total = {};
-  for (const c of lista.filter((x) => x.duracion !== 'continuo')) {
+  for (const c of lista.filter((x) => x.duracion !== 'continuo' || !yaEmpezo(x))) {
     let n = 0;
-    for (let dia = hoy; dia <= c.hasta; dia = sumarDias(dia, 1)) {
+    // Un continuo que empieza más adelante: se cuenta un año para que el
+    // último aviso que quepa pida abrir la app (y ahí ya pasa a diario).
+    const fin = c.duracion === 'continuo' ? sumarDias(c.empieza, 365) : c.hasta;
+    for (let dia = primerDia(c, hoy); dia <= fin; dia = sumarDias(dia, 1)) {
       for (const h of c.horas) {
         const cuando = enFecha(dia, h);
         if (cuando.getTime() <= ahora) continue;

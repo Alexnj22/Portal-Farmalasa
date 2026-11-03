@@ -259,6 +259,15 @@
           "recordAudioAndroid": true,
           "enableBackgroundPlayback": false
         }
+      ],
+      [
+        "react-native-audio-api",
+        {
+          "iosBackgroundMode": false,
+          "androidPermissions": [],
+          "androidForegroundService": false,
+          "enableFFmpeg": false
+        }
       ]
     ],
     "owner": "farmasalud",

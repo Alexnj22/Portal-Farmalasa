@@ -8,6 +8,10 @@
 // aviso cuenta desde su última compra. Según el producto se pregunta una cosa
 // (`pide`): cuántas toma al día, cuántos días le dura una compra, o nada
 // (anticonceptivos y semanales: su ciclo es fijo).
+//
+// 2026-11-03: la dosis de ¼ en ¼ (¼ ½ 1 2 3 y un contador hasta 10,
+// lib/dosis.js) y los días con «Otro» y contador; las píldoras bajan de
+// renglón con letra grande en vez de cortarse.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
@@ -19,9 +23,11 @@ import { Boton, RADIO, Seccion } from './ui';
 import { fecha, nombrePropio } from '../lib/formato';
 import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
+import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadTexto, fraccionTexto, moverCantidad } from '../lib/dosis';
 
-const DOSIS = [{ v: 0.5, texto: '½' }, { v: 1, texto: '1' }, { v: 1.5, texto: '1½' }, { v: 2, texto: '2' }, { v: 3, texto: '3' }];
+const DOSIS = CANTIDADES_RAPIDAS.map((v) => ({ v, texto: fraccionTexto(v) }));
 const DIAS = [7, 15, 30, 60, 90];
+const OTRO = 'otro';
 const sinTildes = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 
 export default function AgregarTratamientoHoja({ alCerrar }) {
@@ -33,6 +39,7 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   const [elegido, setElegido] = useState(null);
   const [dosis, setDosis] = useState(1);
   const [dias, setDias] = useState(30);
+  const [otrosDias, setOtrosDias] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
@@ -65,13 +72,13 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   };
 
   const pildoras = (opciones, valor, poner, etiqueta) => (
-    <View style={{ flexDirection: 'row', gap: 8 }} accessibilityRole="radiogroup">
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityRole="radiogroup">
       {opciones.map((o) => {
         const elegida = o.v === valor;
         return (
           <Presionable key={o.v} onPress={() => { Haptics.selectionAsync().catch(() => {}); poner(o.v); }}
             accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={etiqueta(o)}
-            style={({ pressed }) => ({ flex: 1, minHeight: 48, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
+            style={({ pressed }) => ({ flexGrow: 1, minWidth: 56, minHeight: 48, paddingVertical: 6, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
               backgroundColor: elegida ? t.color.magenta : superficie, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: elegida ? '#FFFFFF' : colorSistema.texto, textAlign: 'center', paddingHorizontal: 4 }}>{o.texto}</Text>
           </Presionable>
@@ -122,7 +129,7 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
                       backgroundColor: pressed ? (t.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent' })}>
                     <Icono sf="pills.fill" respaldo="💊" tam={16} color={t.color.magentaTexto} />
                     <View style={{ flex: 1, gap: 2 }}>
-                      <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>{nombrePropio(p.nombre)}</Text>
+                      <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }}>{nombrePropio(p.nombre)}</Text>
                       <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Última compra {fecha(p.ultima)}</Text>
                     </View>
                     <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
@@ -140,15 +147,25 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
             {elegido.pide === 'dosis' ? (
               <>
                 <Seccion>¿Cuántas tomas al día?</Seccion>
-                {pildoras(DOSIS, dosis, setDosis, (o) => `${o.texto} al día`)}
+                {pildoras(DOSIS, CANTIDADES_RAPIDAS.includes(dosis) ? dosis : null, setDosis, (o) => `${cantidadTexto(o.v)} al día`)}
+                <Contador superficie={superficie} etiqueta="Al día" valor={cantidadTexto(dosis)}
+                  menos={{ etiqueta: 'Un cuarto menos', alTocar: () => setDosis((d) => moverCantidad(d, -1)), apagado: dosis <= CANTIDAD_MIN }}
+                  mas={{ etiqueta: 'Un cuarto más', alTocar: () => setDosis((d) => moverCantidad(d, 1)), apagado: dosis >= CANTIDAD_MAX }} />
                 <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-                  Tabletas, cápsulas o sobres en total al día. Si lo tomas día por medio, elige ½.
+                  Tabletas, cápsulas o sobres en total al día, de ¼ en ¼. Si lo tomas día por medio, elige la mitad de lo que tomas ese día.
                 </Text>
               </>
             ) : elegido.pide === 'dias' ? (
               <>
                 <Seccion>¿Cuántos días te dura una compra?</Seccion>
-                {pildoras(DIAS.map((d) => ({ v: d, texto: String(d) })), dias, setDias, (o) => `${o.texto} días`)}
+                {pildoras([...DIAS.map((d) => ({ v: d, texto: String(d) })), { v: OTRO, texto: 'Otro' }], otrosDias ? OTRO : dias,
+                  (v) => { if (v === OTRO) setOtrosDias(true); else { setOtrosDias(false); setDias(v); } },
+                  (o) => (o.v === OTRO ? 'Otro número de días' : `${o.texto} días`))}
+                {otrosDias ? (
+                  <Contador superficie={superficie} etiqueta="Me dura" valor={`${dias} ${dias === 1 ? 'día' : 'días'}`}
+                    menos={{ etiqueta: 'Un día menos', alTocar: () => setDias((d) => Math.max(1, d - 1)), apagado: dias <= 1 }}
+                    mas={{ etiqueta: 'Un día más', alTocar: () => setDias((d) => Math.min(365, d + 1)), apagado: dias >= 365 }} />
+                ) : null}
                 <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
                   De este producto no podemos saber cuánto dura: dinos más o menos cada cuánto se te acaba.
                 </Text>
@@ -166,5 +183,29 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
         )}
       </View>
     </Modal>
+  );
+}
+
+// Una fila «etiqueta  −  valor  +» (2026-11-03). Los botones miden 32 + 6 de
+// `hitSlop` por lado = 44 pt de dedo; la fila baja de renglón con letra grande.
+function Contador({ superficie, etiqueta, valor, menos, mas }) {
+  const t = useTema();
+  const boton = (b, sf) => (
+    <Presionable onPress={() => { if (b.apagado) return; Haptics.selectionAsync().catch(() => {}); b.alTocar(); }} disabled={!!b.apagado}
+      accessibilityRole="button" accessibilityLabel={b.etiqueta} accessibilityState={{ disabled: !!b.apagado }} hitSlop={6}
+      style={({ pressed }) => ({ minWidth: 32, minHeight: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', opacity: b.apagado ? 0.35 : 1,
+        transform: [{ scale: pressed ? 0.92 : 1 }], backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' })}>
+      <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />
+    </Presionable>
+  );
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
+      <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{etiqueta}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+        {boton(menos, 'minus')}
+        <Text accessibilityLiveRegion="polite" style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 96, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{valor}</Text>
+        {boton(mas, 'plus')}
+      </View>
+    </View>
   );
 }

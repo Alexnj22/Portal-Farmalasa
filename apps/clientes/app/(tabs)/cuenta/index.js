@@ -13,12 +13,24 @@
 // Nuestras sucursales y «Agregar a Google Wallet», que allá está siempre); se
 // queda lo que sólo vive aquí (Mis facturas, Cliente Mayorista, ver o volver a
 // agregar la tarjeta en Apple Wallet — el Inicio sólo ofrece agregarla).
+//
+// 2026-11-03 («en inicio dejar sólo 6 opciones… las otras a cuenta, y
+// mejoramos cuenta»): Cuenta es ahora el ÍNDICE COMPLETO de la app — el Inicio
+// tiene seis atajos y todo lo demás, más esos seis, está acá, para que nada
+// dependa de recordar dónde estaba. Grupos, en el orden de uso:
+//   Mis compras (reservas, compras, facturas, créditos, saldo a favor) ·
+//   Mi salud (tratamientos, inyecciones) · Mis puntos (movimientos, invitar,
+//   mayorista, Wallet) · Seguridad · Notificaciones · Ayuda (chat,
+//   sucursales, guía, novedades) · Legal y privacidad · sesión.
+// Cada fila: ícono en su recuadro de color + título + una línea de cómo va,
+// con el número rojo cuando algo pide atención. Los contadores salen del mismo
+// `resumen` que pinta el Inicio: no hay consultas nuevas.
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Haptics from 'expo-haptics';
 import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
-import { colorSistema, FilaInterruptor, FilaTexto, Formulario, Grupo } from '../../../componentes/sistema';
+import { colorSistema, FilaInterruptor, Formulario, Grupo } from '../../../componentes/sistema';
 import { Aviso, ESPACIO_BURBUJA } from '../../../componentes/ui';
 import { MENSAJE_CODIGO, useConCodigo, useSesion } from '../../../lib/sesion';
 import { irACompletarEntrada } from '../../../componentes/SoloConDocumento';
@@ -30,32 +42,51 @@ import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
 import { avanzarMuestra, reservasDeMuestra, resumenConDemo, useDemo } from '../../../lib/demo';
 import Segmentos from '../../../componentes/Segmentos';
-import { dolares, fecha, nombrePropio } from '../../../lib/formato';
-import { useTema } from '../../../tema/tema';
+import { diasHasta, dolares, entero, fecha, nombrePropio } from '../../../lib/formato';
+import { suave, useTema } from '../../../tema/tema';
 import Icono from '../../../componentes/Icono';
 import { navegar } from '../../../lib/navegar';
 import AvatarNivel, { rotuloNivel } from '../../../componentes/AvatarNivel';
 import { PARA_QUE_FOTO, refrescarFotoPerfil, subirFotoPerfil, useFotoPerfil } from '../../../lib/fotoPerfil';
-import { rangoReal } from '../../../componentes/Mayorista';
+import { QUE_ES_MAYORISTA, rangoReal } from '../../../componentes/Mayorista';
 import { usarVistaPreviaFoto } from '../../../componentes/VistaPreviaFoto';
 import { usePresentacion } from '../../../lib/novedades';
 
+
+// La letra de las filas, la misma de `FilaTexto` (componentes/sistema.js):
+// Body Large de Material 3 en Android, la de Ajustes en iPhone.
+const LETRA_FILA = Platform.OS === 'android' ? 16 : 17;
 
 /**
  * Una fila que se toca, como en Ajustes: ícono, texto en el color del sistema
  * y la flecha si lleva a otra pantalla. Sin el rosa de la marca en el texto
  * (usuario, 2026-10-06: «la letra rosa no me gusta»); el rojo sólo en lo
  * destructivo.
+ *
+ * 2026-11-03: con `tinte`, el ícono va en un recuadro de ese color (como
+ * Ajustes), y `detalle` es una segunda línea corta de cómo va («2 listas»,
+ * «Se te acaba en 3 días»). Nada se corta: sin `numberOfLines`, el texto
+ * envuelve y la fila crece; mínimo 52 pt de alto, más que los 44 del dedo.
  */
-function FilaAccion({ texto, sf, color, flecha = true, alTocar, insignia }) {
+function FilaAccion({ texto, detalle, sf, color, tinte, flecha = true, alTocar, insignia }) {
+  const t = useTema();
+  const etiqueta = [texto, detalle, insignia ? `${insignia} pendiente${insignia === 1 ? '' : 's'}` : null].filter(Boolean).join('. ');
   return (
-    <Presionable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
-      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', paddingLeft: sf ? 16 : 0, paddingRight: 16,
-        backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
-      {sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
-      <View style={{ flex: 1 }}><FilaTexto color={color}>{texto}</FilaTexto></View>
+    <Presionable accessibilityRole="button" accessibilityLabel={etiqueta}
+      onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 10,
+        paddingHorizontal: 16, backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
+      {sf && tinte ? (
+        <View style={{ width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(tinte, t.oscuro ? 0.3 : 0.15) }}>
+          <Icono sf={sf} respaldo="" tam={17} color={color ?? tinte} />
+        </View>
+      ) : sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
+      <View style={{ flex: 1, flexShrink: 1, gap: 2 }}>
+        <Text style={{ fontSize: LETRA_FILA, color: color ?? colorSistema.texto }}>{texto}</Text>
+        {detalle ? <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>{detalle}</Text> : null}
+      </View>
       {insignia ? (
-        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, marginRight: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: colorSistema.rojo }}>
+        <View style={{ minWidth: 22, height: 22, borderRadius: 11, paddingHorizontal: 6, alignItems: 'center', justifyContent: 'center', backgroundColor: colorSistema.rojo }}>
           <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: '800', color: '#FFFFFF', fontVariant: ['tabular-nums'] }}>{insignia > 99 ? '99+' : insignia}</Text>
         </View>
       ) : null}
@@ -63,6 +94,8 @@ function FilaAccion({ texto, sf, color, flecha = true, alTocar, insignia }) {
     </Presionable>
   );
 }
+
+const plural = (n, uno, varios) => `${n} ${n === 1 ? uno : varios}`;
 
 export default function Cuenta() {
   const t = useTema();
@@ -158,6 +191,15 @@ export default function Cuenta() {
   };
 
   const c = resumen?.consentimiento;
+  // Los números de las filas, del mismo `resumen` que pinta el Inicio.
+  const listas = Number(resumen?.reservas_listas) || 0;
+  const abiertas = Number(resumen?.reservas_abiertas) || 0;
+  const vencidos = Number(resumen?.creditos?.vencidos) || 0;
+  const inyecciones = Number(resumen?.inyecciones_pendientes) || 0;
+  const chatSinLeer = Number(resumen?.chat_sin_leer) || 0;
+  const listaTratamientos = Array.isArray(resumen?.tratamientos) ? resumen.tratamientos : [];
+  const tratamientos = listaTratamientos.length;
+  const urgentes = listaTratamientos.filter((x) => { const d = diasHasta(x.se_acaba); return d != null && d <= 3; }).length;
 
   // Optimista y con candado: el interruptor cambia al instante y no acepta
   // otro toque hasta que el servidor contesta. Antes volvía a su valor viejo
@@ -297,33 +339,71 @@ export default function Cuenta() {
       ) : null}
       {mensaje ? <Aviso>{mensaje}</Aviso> : null}
 
-      {/* Perfil: lo que sólo vive aquí. */}
+      {/* Mis compras: lo que más se abre, primero. Con la sesión de código
+          sólo el camino a entrar con DUI y teléfono (el servidor no las da). */}
       {conFicha ? (
-        <Grupo titulo="Perfil">
+        <Grupo titulo="Mis compras">
           {conCodigo ? (
-            <FilaAccion sf="person.text.rectangle.fill" texto="Ver mis compras, facturas y reservas" alTocar={irACompletarEntrada} />
+            <FilaAccion sf="person.text.rectangle.fill" tinte={t.color.magenta} texto="Ver mis compras, facturas y reservas"
+              detalle="Entra con tu DUI y teléfono" alTocar={irACompletarEntrada} />
+          ) : null}
+          {!conCodigo ? (
+            <FilaAccion sf="bag.fill" tinte={t.color.magenta} texto="Mis reservas" insignia={listas}
+              detalle={listas ? `${plural(listas, 'lista', 'listas')} para retirar` : abiertas ? `${plural(abiertas, 'en curso', 'en curso')}` : 'Aparta y retira en tu sucursal'}
+              alTocar={() => navegar('/reservas')} />
+          ) : null}
+          {!conCodigo ? (
+            <FilaAccion sf="list.bullet.rectangle.fill" tinte={t.acentos.violeta.fuerte} texto="Mis compras"
+              detalle="Lo que compraste, para volver a pedirlo" alTocar={() => navegar('/compras')} />
           ) : null}
           {/* Sólo créditos fiscales (2026-10-20): sin ninguno, no hay qué ver.
               Un servidor viejo no manda `con_ccf`: ahí se ofrece igual. */}
-          {!conCodigo && resumen?.con_ccf !== false ? <FilaAccion sf="doc.text.fill" texto="Mis facturas" alTocar={() => navegar('/facturas')} /> : null}
-          {/* Saldo a favor (2026-10-19): lo pagado que no se entregó o un
-              anticipo; vale en cualquier sucursal. El detalle, en Mis reservas. */}
-          {!conCodigo && resumen?.saldo_a_favor?.total > 0 ? (
-            <FilaAccion sf="dollarsign.circle.fill" color={t.color.exitoTexto}
-              texto={`Saldo a favor: ${dolares(resumen.saldo_a_favor.total)}${resumen.saldo_a_favor.vence ? ` · hasta el ${fecha(resumen.saldo_a_favor.vence)}` : ''} · úsalo en cualquier sucursal`}
-              alTocar={() => navegar('/reservas')} />
+          {!conCodigo && resumen?.con_ccf !== false ? (
+            <FilaAccion sf="doc.richtext.fill" tinte={t.acentos.azul.fuerte} texto="Mis facturas"
+              detalle="Descárgalas o envíalas por correo" alTocar={() => navegar('/facturas')} />
           ) : null}
           {/* Mis créditos (2026-10-15): sólo si debe algo; la insignia, los vencidos. */}
           {!conCodigo && resumen?.creditos?.pendientes > 0 ? (
-            <FilaAccion sf="creditcard.fill" texto="Mis créditos" insignia={Number(resumen.creditos.vencidos) || 0}
+            <FilaAccion sf="creditcard.fill" tinte={t.acentos.rojo.fuerte} texto="Mis créditos" insignia={vencidos}
+              detalle={vencidos ? `${plural(vencidos, 'vencido', 'vencidos')}` : `${plural(Number(resumen.creditos.pendientes), 'pendiente, al día', 'pendientes, al día')}`}
               alTocar={() => navegar('/creditos')} />
           ) : null}
+          {/* Saldo a favor (2026-10-19): lo pagado que no se entregó o un
+              anticipo; vale en cualquier sucursal. El detalle, en Mis reservas. */}
+          {!conCodigo && resumen?.saldo_a_favor?.total > 0 ? (
+            <FilaAccion sf="dollarsign.circle.fill" tinte={t.acentos.verde.fuerte} texto={`Saldo a favor: ${dolares(resumen.saldo_a_favor.total)}`}
+              detalle={`${resumen.saldo_a_favor.vence ? `Hasta el ${fecha(resumen.saldo_a_favor.vence)} · ` : ''}úsalo en cualquier sucursal`}
+              alTocar={() => navegar('/reservas')} />
+          ) : null}
+        </Grupo>
+      ) : null}
+
+      {/* Mi salud: tratamientos e inyecciones. */}
+      {completa ? (
+        <Grupo titulo="Mi salud">
+          <FilaAccion sf="pills.fill" tinte={t.acentos.azul.fuerte} texto="Mis tratamientos" insignia={urgentes}
+            detalle={urgentes ? `${plural(urgentes, 'se acaba', 'se acaban')} en 3 días o menos` : tratamientos ? plural(tratamientos, 'activo', 'activos') : 'Te avisamos antes de que se acabe'}
+            alTocar={() => navegar('/tratamientos')} />
+          <FilaAccion sf="syringe.fill" tinte={t.acentos.verde.fuerte} texto="Mis inyecciones" insignia={inyecciones}
+            detalle={inyecciones ? `${plural(inyecciones, 'por aplicar', 'por aplicar')}` : 'Al día'}
+            alTocar={() => navegar('/inyecciones')} />
+        </Grupo>
+      ) : null}
+
+      {/* Mis puntos: el programa, invitar, mayoreo y la tarjeta en Wallet. */}
+      {conFicha ? (
+        <Grupo titulo="Mis puntos">
+          <FilaAccion sf="star.fill" tinte={t.acentos.naranja.fuerte} texto="Movimientos de puntos"
+            detalle={`${entero(Number(resumen?.saldo ?? 0))} puntos · lo que ganaste y usaste`} alTocar={() => navegar('/movimientos')} />
+          <FilaAccion sf="person.2.fill" tinte={t.acentos.verde.fuerte} texto="Invitar a un amigo"
+            detalle="Ganan 50 puntos cada uno" alTocar={() => navegar('/invitar')} />
           {!conCodigo ? <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} /> : null}
           {resumen?.wallet_serial && walletDisponible() && enWallet ? (
-            <FilaAccion sf="wallet.pass.fill" texto="Ver mi tarjeta en Apple Wallet" alTocar={() => wallet()} />
+            <FilaAccion sf="wallet.pass.fill" tinte={t.acentos.azul.fuerte} texto="Ver mi tarjeta en Apple Wallet" alTocar={() => wallet()} />
           ) : null}
           {resumen?.wallet_serial && walletDisponible() && enWallet ? (
-            <FilaAccion sf="arrow.clockwise" texto="Volver a agregar la tarjeta a Wallet" alTocar={() => wallet({ abrir: false })} />
+            <FilaAccion sf="arrow.clockwise" tinte={t.acentos.azul.fuerte} texto="Volver a agregar la tarjeta a Wallet"
+              detalle="Si la borraste u ocultaste en Wallet" alTocar={() => wallet({ abrir: false })} />
           ) : null}
         </Grupo>
       ) : null}
@@ -353,43 +433,45 @@ export default function Cuenta() {
           <FilaInterruptor titulo="Promociones" detalle={c?.textos?.promociones}
             valor={valorDe('promociones', c?.promociones === true)} alCambiar={(v) => permiso('promociones', v)} color={t.color.magenta} />
         ) : null}
+        {/* La bandeja (la campana del Inicio), también desde aquí. */}
+        {conFicha ? (
+          <FilaAccion sf="bell.fill" tinte={t.color.magenta} texto="Mis avisos" detalle="Los que te llegaron a la campana"
+            alTocar={() => navegar('/notificaciones')} />
+        ) : null}
       </Grupo>
       ) : null}
 
-      {/* El chat con la farmacia (2026-10-12), con los sin leer. Sin ficha
-          todavía no hay Inicio con sus accesos: las sucursales van aquí. */}
-      {conFicha ? (
-        <Grupo titulo="Ayuda y chat" pie="Te responde el equipo de Farmacia Salud en el horario de las sucursales.">
-          {!conCodigo ? (
-            <FilaAccion sf="bubble.left.and.bubble.right.fill" texto="Pregúntale a la farmacia" insignia={Number(resumen?.chat_sin_leer) || 0}
-              alTocar={() => navegar('/chat')} />
-          ) : null}
-          {/* La guía del primer inicio y las novedades de esta versión, otra vez (2026-10-14). */}
-          <FilaAccion sf="questionmark.circle" texto="Cómo funciona la app" alTocar={() => navegar('/guia')} />
-          <FilaAccion sf="sparkles" texto="Novedades" alTocar={() => usePresentacion.getState().abrirNovedades()} />
-        </Grupo>
-      ) : (
-        <Grupo titulo="Ayuda">
-          <FilaAccion sf="mappin.and.ellipse" texto="Nuestras sucursales" alTocar={() => navegar('/sucursales')} />
-          <FilaAccion sf="questionmark.circle" texto="Cómo funciona la app" alTocar={() => navegar('/guia')} />
-          <FilaAccion sf="sparkles" texto="Novedades" alTocar={() => usePresentacion.getState().abrirNovedades()} />
-        </Grupo>
-      )}
+      {/* Ayuda (2026-10-12; desde el 2026-11-03 con las sucursales también
+          aquí, que salieron del Inicio sólo con ficha pendiente). El chat,
+          con los sin leer; con la sesión de código no hay chat. */}
+      <Grupo titulo="Ayuda" pie={conFicha && !conCodigo ? 'Te responde el equipo de Farmacia Salud en el horario de las sucursales.' : undefined}>
+        {conFicha && !conCodigo ? (
+          <FilaAccion sf="bubble.left.and.bubble.right.fill" tinte={t.color.magenta} texto="Pregúntale a la farmacia" insignia={chatSinLeer}
+            detalle={chatSinLeer ? `${plural(chatSinLeer, 'respuesta', 'respuestas')} sin leer` : 'Escríbenos por el chat'}
+            alTocar={() => navegar('/chat')} />
+        ) : null}
+        <FilaAccion sf="mappin.and.ellipse" tinte={t.acentos.violeta.fuerte} texto="Nuestras sucursales" detalle="Horarios y cómo llegar"
+          alTocar={() => navegar('/sucursales')} />
+        {/* La guía del primer inicio y las novedades de esta versión, otra vez (2026-10-14). */}
+        <FilaAccion sf="questionmark.circle" tinte={t.acentos.azul.fuerte} texto="Cómo funciona la app" alTocar={() => navegar('/guia')} />
+        <FilaAccion sf="sparkles" tinte={t.acentos.naranja.fuerte} texto="Novedades" detalle="Lo nuevo de esta versión"
+          alTocar={() => usePresentacion.getState().abrirNovedades()} />
+      </Grupo>
 
       <Grupo titulo="Legal y privacidad" pie={completa ? 'Si quitas el programa, tu saldo queda en pausa; no se pierde.' : undefined}>
         {completa ? (
           <FilaInterruptor titulo="Programa de puntos" detalle={c?.textos?.programa}
             valor={valorDe('programa', c?.programa !== false)} alCambiar={(v) => permiso('programa', v)} color={t.color.magenta} />
         ) : null}
-        <FilaAccion sf="doc.text.fill" texto="Reglamento del programa" alTocar={() => navegar('/legal?doc=reglamento')} />
-        <FilaAccion sf="hand.raised.fill" texto="Aviso de privacidad" alTocar={() => navegar('/legal?doc=privacidad')} />
+        <FilaAccion sf="doc.text.fill" tinte={t.acentos.violeta.fuerte} texto="Reglamento del programa" alTocar={() => navegar('/legal?doc=reglamento')} />
+        <FilaAccion sf="hand.raised.fill" tinte={t.acentos.violeta.fuerte} texto="Aviso de privacidad" detalle="Qué datos guardamos y para qué" alTocar={() => navegar('/legal?doc=privacidad')} />
       </Grupo>
 
       {resumen?.prueba ? <PanelDePrueba prueba={prueba} pedir={pedir} /> : null}
 
       <Grupo>
-        <FilaAccion texto="Cerrar sesión" flecha={false} alTocar={salir} />
-        <FilaAccion texto="Borrar mi cuenta" color={colorSistema.rojo} alTocar={borrar} />
+        <FilaAccion sf="rectangle.portrait.and.arrow.right" tinte={t.acentos.azul.fuerte} texto="Cerrar sesión" flecha={false} alTocar={salir} />
+        <FilaAccion sf="trash" tinte={t.acentos.rojo.fuerte} texto="Borrar mi cuenta" color={colorSistema.rojo} alTocar={borrar} />
       </Grupo>
     </Formulario>
   );
@@ -401,19 +483,20 @@ const fechaCorta = (iso) => { const [, mm, dd] = String(iso).slice(0, 10).split(
 // Cliente Mayorista (Condiciones §2, Procedimiento §3): se pide desde aquí y
 // lo decide Administración en el portal en 5 días hábiles.
 function FilaMayorista({ m, pedir, alCambiar }) {
+  const t = useTema();
+  const tinte = t.acentos.violeta.fuerte;
   const estado = m?.estado;
   if (estado === 'aprobado') {
     // Un cambio avisado (2026-10-19, Condiciones §6): rige 15 días después.
     const cambio = m.retiro_programado ? ` · termina el ${fechaCorta(m.retiro_programado)}`
       : m.precio_programado_el ? ` · pasa a Mayoreo el ${fechaCorta(m.precio_programado_el)}` : '';
-    return <FilaAccion sf="diamond.fill" texto={`Cliente Mayorista · ${m.precio === 'mayoreo_plus' ? 'Mayoreo Plus' : 'Mayoreo'}${cambio}`} flecha={false} alTocar={() => navegar('/puntos')} />;
+    return <FilaAccion tinte={tinte} sf="diamond.fill" texto={`Cliente Mayorista · ${m.precio === 'mayoreo_plus' ? 'Mayoreo Plus' : 'Mayoreo'}${cambio}`} flecha={false} alTocar={() => navegar('/puntos')} />;
   }
   if (estado === 'solicitado') {
-    return <FilaAccion sf="clock.fill" texto="Cliente Mayorista: solicitud en revisión" flecha={false}
+    return <FilaAccion tinte={tinte} sf="clock.fill" texto="Cliente Mayorista: solicitud en revisión" flecha={false}
       alTocar={() => Alert.alert('Solicitud en revisión', 'Administración la responde en un máximo de 5 días hábiles. Te avisamos aquí.')} />;
   }
-  const pedirla = () => Alert.alert('Ser Cliente Mayorista',
-    'Es para quien compra en volumen y de forma habitual. Para pedirlo necesitas haber comprado en promedio $100 al mes en los últimos 3 meses, o una compra de $500 en una sola factura, y tu ficha completa (documento y teléfono).\n\nLa empresa responde en 5 días hábiles.',
+  const pedirla = () => Alert.alert(QUE_ES_MAYORISTA.titulo, QUE_ES_MAYORISTA.texto,
     [{ text: 'Cancelar', style: 'cancel' }, { text: 'Solicitar', onPress: async () => {
       const r = await pedir('solicitar_mayorista', {});
       Alert.alert(r?.ok ? 'Solicitud enviada' : 'No se pudo', r?.ok ? 'Te avisamos cuando Administración la revise.' : (r?.mensaje ?? 'Revisa tu conexión.'));
@@ -424,13 +507,13 @@ function FilaMayorista({ m, pedir, alCambiar }) {
   if (estado === 'rechazado') {
     return (
       <>
-        <FilaAccion sf="xmark.circle" texto={`Solicitud no aprobada${m?.motivo ? `: ${m.motivo}` : ''}`} flecha={false}
+        <FilaAccion tinte={tinte} sf="xmark.circle" texto={`Solicitud no aprobada${m?.motivo ? `: ${m.motivo}` : ''}`} flecha={false}
           alTocar={() => Alert.alert('Solicitud no aprobada', m?.motivo ? `Motivo: ${m.motivo}\n\nPuedes volver a pedirlo cuando quieras.` : 'Puedes volver a pedirlo cuando quieras.')} />
-        <FilaAccion sf="diamond" texto="Volver a solicitar ser Cliente Mayorista" alTocar={pedirla} />
+        <FilaAccion tinte={tinte} sf="diamond" texto="Volver a solicitar ser Cliente Mayorista" alTocar={pedirla} />
       </>
     );
   }
-  return <FilaAccion sf="diamond" texto="Quiero ser Cliente Mayorista" alTocar={pedirla} />;
+  return <FilaAccion tinte={tinte} sf="diamond" texto="Quiero ser Cliente Mayorista" alTocar={pedirla} />;
 }
 
 // El panel del modo de prueba (2026-10-07; ordenado en subgrupos y ampliado

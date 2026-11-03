@@ -1,20 +1,37 @@
 // Sonido y vibración de la zona anti estrés (2026-11-03), en UN solo sitio.
 //
-// «Los juegos están bien, pero no vibran, no tienen sonido»: cada juego
-// llamaba a `expo-haptics` por su cuenta, con golpes «Light» y «selección» —los
-// más tenues que hay; en Android el de selección casi no se siente— y no había
-// un solo sonido. Acá viven los dos, con dos interruptores que el cliente ve en
-// cada juego y que quedan guardados en el teléfono.
+// Tercera versión, el mismo día: «los sonidos, haptic, etc. no funcionan
+// apropiadamente» · «al presionar varios no se sienten fluidos» · «se traba».
 //
-// Los sonidos están sintetizados en `scripts/app-clientes-sonidos.mjs` (sin
-// licencia de terceros). Se mezclan con la música que el cliente tenga puesta
-// (`mixWithOthers`) en vez de cortarla: un juego para bajar el estrés no le
-// apaga la canción a nadie.
+// La causa estaba en el código de la librería, no adivinada: en Android,
+// `expo-audio` ejecuta CADA llamada de un reproductor —`play`, `seekTo`,
+// `volume`, `setPlaybackRate`— en el hilo PRINCIPAL (`runOnMain` en
+// `AudioModule.kt`), que es el mismo que dibuja la pantalla. Un reventón eran
+// tres o cuatro de esas llamadas; arrastrar el dedo por una fila, veinte en
+// medio segundo, justo cuando el tablero más necesitaba ese hilo. Y como cada
+// sonido tenía 2 o 3 reproductores que se turnaban, el cuarto toque seguido
+// cortaba al primero: por eso «al presionar varios» sonaba entrecortado.
+//
+// Ahora los efectos van por `react-native-audio-api` (Web Audio nativo, de
+// Software Mansion): los WAV se decodifican UNA vez en memoria y cada sonido es
+// un nodo que se dispara en el hilo de audio, sin tocar el de la pantalla.
+// Polifonía de verdad: diez «pop» seguidos suenan los diez, y el tono es un
+// parámetro del nodo, sin costo. `expo-audio` se queda sólo para las notas de
+// voz del chat.
+//
+// La vibración, igual: en Android los golpes «impact» de `expo-haptics` usan el
+// motor de vibración con una forma de onda —blandos y lentos de arrancar— y
+// encimados en una ráfaga se sienten como un zumbido. Para los toques se usa
+// el háptico del SISTEMA (`performHapticFeedback`, el del teclado): seco,
+// inmediato y sin cola. Y nunca más de un toque cada 30 ms: dos vibraciones
+// pegadas no se sienten como dos, se sienten como una mala.
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import { createAudioPlayer, setAudioModeAsync } from 'expo-audio';
+
+let AudioAPI = null;
+try { AudioAPI = require('react-native-audio-api'); } catch { AudioAPI = null; }
 
 const ARCHIVOS = {
   'pop-1': require('../assets/sonidos/pop-1.wav'),
@@ -40,9 +57,9 @@ const ARCHIVOS = {
   derrumbe: require('../assets/sonidos/derrumbe.wav'),
   gota: require('../assets/sonidos/gota.wav'),
 };
-// Los que pueden sonar encima de sí mismos (reventar rápido) llevan varios
-// reproductores y se turnan; con uno solo, el segundo «pop» cortaría al primero.
-const VOCES = { 'pop-1': 2, 'pop-2': 2, 'pop-3': 2, 'pop-4': 2, 'pop-5': 2, 'pop-6': 2, voltear: 2, 'toque-1': 2, 'toque-2': 2, 'toque-3': 2, 'toque-4': 2, 'toque-5': 2, 'toque-6': 2, bloque: 3 };
+// Cuántas copias de un mismo sonido pueden sonar a la vez: de sobra para una
+// ráfaga, y con techo para que un dedo loco no apile cien.
+const MAX_A_LA_VEZ = 8;
 
 const CLAVE_SONIDO = 'puntos_salud_bienestar_sonido';
 const CLAVE_VIBRA = 'puntos_salud_bienestar_vibra';
@@ -82,76 +99,121 @@ export function useAjustesSensaciones() {
 }
 
 // ── Sonido ──────────────────────────────────────────────────────────────────
-const reproductores = {};
-const turno = {};
-let modoListo = false;
-function preparar(nombre) {
-  if (!reproductores[nombre]) {
-    reproductores[nombre] = Array.from({ length: VOCES[nombre] ?? 1 }, () => {
-      try { return createAudioPlayer(ARCHIVOS[nombre]); } catch { return null; }
-    }).filter(Boolean);
-    turno[nombre] = 0;
+let ctx = null;
+let salida = null;
+const buffers = {}; // nombre → AudioBuffer ya decodificado
+const cargando = {}; // nombre → promesa, para no decodificar dos veces
+const sonando = {}; // nombre → [{ nodo, fin }]
+let relojDormir = null;
+
+function contexto() {
+  if (ctx || !AudioAPI) return ctx;
+  try {
+    // En iPhone: suena aunque el interruptor de silencio esté puesto (es un
+    // juego que el cliente abrió a propósito) y se MEZCLA con su música en vez
+    // de cortarla. En Android la música sigue sola: no se pide el foco de audio.
+    if (Platform.OS === 'ios') {
+      AudioAPI.AudioManager?.setSystemOptions?.({ ios: { category: 'playback', options: ['mixWithOthers'] } });
+    }
+    ctx = new AudioAPI.AudioContext();
+    salida = ctx.createGain();
+    salida.gain.value = 0.9;
+    salida.connect(ctx.destination);
+  } catch {
+    ctx = null;
   }
-  return reproductores[nombre];
-}
-function modo() {
-  if (modoListo) return;
-  modoListo = true;
-  setAudioModeAsync({ playsInSilentMode: true, interruptionMode: 'mixWithOthers', shouldPlayInBackground: false })
-    .catch(() => { modoListo = false; });
+  return ctx;
 }
 
-/** Deja cargados los sonidos de un juego al entrar, para que el primero no llegue tarde. */
+function cargar(nombre) {
+  const c = contexto();
+  if (!c || buffers[nombre] || cargando[nombre] || !ARCHIVOS[nombre]) return cargando[nombre];
+  cargando[nombre] = AudioAPI.decodeAudioData(ARCHIVOS[nombre])
+    .then((b) => { buffers[nombre] = b; })
+    .catch(() => {})
+    .finally(() => { delete cargando[nombre]; });
+  return cargando[nombre];
+}
+
+function despertar() {
+  clearTimeout(relojDormir);
+  if (ctx && ctx.state === 'suspended') ctx.resume().catch(() => {});
+}
+
+/** Deja decodificados los sonidos de un juego al entrar, para que el primero no llegue tarde. */
 export function precargar(nombres) {
   leerAjustes();
-  modo();
-  nombres.forEach(preparar);
+  if (!contexto()) return;
+  despertar();
+  nombres.forEach(cargar);
 }
 
 /**
- * Suena un efecto. `volumen` de 0 a 1; `tono` cambia la velocidad (1 = igual),
- * útil para que dos «pop» seguidos no suenen idénticos.
+ * Suena un efecto. `volumen` de 0 a 1; `tono` cambia la velocidad (1 = igual).
+ * Cada llamada es un nodo nuevo: los sonidos se SUMAN, ninguno corta a otro.
  */
 export function sonar(nombre, { volumen = 1, tono = 1 } = {}) {
-  if (!ajustes.sonido || !ARCHIVOS[nombre]) return;
-  modo();
-  const lista = preparar(nombre);
-  if (!lista.length) return;
-  const p = lista[turno[nombre] % lista.length];
-  turno[nombre] += 1;
-  // Cada propiedad que se toca es una llamada nativa —en Android, en el hilo
-  // de la interfaz—: sólo se toca lo que cambió desde la vez anterior.
+  if (!ajustes.sonido) return;
+  const c = contexto();
+  const b = buffers[nombre];
+  if (!c || !b) { cargar(nombre); return; }
+  despertar();
   try {
-    if (p._vol !== volumen) { p.volume = volumen; p._vol = volumen; }
-    const rate = p._rate ?? 1;
-    if (rate !== tono) { p.shouldCorrectPitch = false; p.setPlaybackRate(tono); p._rate = tono; }
-    p.seekTo(0).catch(() => {});
-    p.play();
+    const lista = (sonando[nombre] ??= []);
+    const t = c.currentTime;
+    // Fuera los que ya terminaron; si hay demasiados, se apaga el más viejo.
+    for (let i = lista.length - 1; i >= 0; i--) if (lista[i].fin <= t) lista.splice(i, 1);
+    if (lista.length >= MAX_A_LA_VEZ) { try { lista.shift().nodo.stop(); } catch { /* ya paró */ } }
+    const nodo = c.createBufferSource();
+    nodo.buffer = b;
+    if (tono !== 1) nodo.playbackRate.value = tono;
+    const ganancia = c.createGain();
+    ganancia.gain.value = volumen;
+    nodo.connect(ganancia);
+    ganancia.connect(salida);
+    nodo.start();
+    lista.push({ nodo, fin: t + b.duration / tono + 0.05 });
   } catch { /* un sonido que no sale no puede romper el juego */ }
 }
 
-function callarTodo() {
-  Object.values(reproductores).flat().forEach((p) => { try { p.pause(); } catch { /* nada */ } });
+function pararLista(lista) {
+  (lista ?? []).forEach(({ nodo }) => { try { nodo.stop(); } catch { /* ya paró */ } });
+  if (lista) lista.length = 0;
 }
-/** Al salir de un juego: que no quede nada sonando. */
+function callarTodo() { Object.values(sonando).forEach(pararLista); }
+
+/**
+ * Al salir de un juego: que no quede nada sonando. Un rato después el motor de
+ * audio se duerme, para no gastar batería con el juego cerrado.
+ */
 export function callar(nombres) {
-  nombres.forEach((n) => (reproductores[n] ?? []).forEach((p) => { try { p.pause(); } catch { /* nada */ } }));
+  nombres.forEach((n) => pararLista(sonando[n]));
+  clearTimeout(relojDormir);
+  relojDormir = setTimeout(() => { if (ctx && ctx.state === 'running') ctx.suspend().catch(() => {}); }, 4000);
 }
 
 // ── Vibración ───────────────────────────────────────────────────────────────
-// En Android `expo-haptics` usa el vibrador con amplitudes bajas para «Light»
-// y «selección»: en muchos teléfonos no se siente nada. Ahí se sube un escalón.
 const ANDROID = Platform.OS === 'android';
-const golpe = (estilo) => { if (ajustes.vibra) Haptics.impactAsync(estilo).catch(() => {}); };
+const SEPARACION = 30; // ms mínimos entre dos toques
+let ultimoToque = 0;
+function rapido(hacer) {
+  if (!ajustes.vibra) return;
+  const ahora = Date.now();
+  if (ahora - ultimoToque < SEPARACION) return;
+  ultimoToque = ahora;
+  hacer().catch(() => {});
+}
+const sistema = (tipo) => () => Haptics.performAndroidHapticsAsync(tipo);
+const impacto = (estilo) => () => Haptics.impactAsync(estilo);
 export const tacto = {
-  /** Un roce: voltear una carta, cambiar una opción. */
-  roce: () => golpe(ANDROID ? Haptics.ImpactFeedbackStyle.Medium : Haptics.ImpactFeedbackStyle.Light),
-  /** Un toque claro: reventar, contar. */
-  toque: () => golpe(ANDROID ? Haptics.ImpactFeedbackStyle.Heavy : Haptics.ImpactFeedbackStyle.Rigid),
+  /** Un roce: voltear una carta, cambiar una opción, un segundo de la respiración. */
+  roce: () => rapido(ANDROID ? sistema(Haptics.AndroidHaptics.Clock_Tick) : impacto(Haptics.ImpactFeedbackStyle.Light)),
+  /** Un toque claro: reventar, contar, soltar un bloque. */
+  toque: () => rapido(ANDROID ? sistema(Haptics.AndroidHaptics.Keyboard_Tap) : impacto(Haptics.ImpactFeedbackStyle.Rigid)),
   /** Un golpe firme: un bloque perfecto, la torre que se cae. */
-  golpe: () => golpe(Haptics.ImpactFeedbackStyle.Heavy),
+  golpe: () => rapido(ANDROID ? sistema(Haptics.AndroidHaptics.Long_Press) : impacto(Haptics.ImpactFeedbackStyle.Heavy)),
   /** Algo salió bien. */
-  exito: () => { if (ajustes.vibra) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); },
-  /** No era (la pareja equivocada): avisa sin regañar. */
-  aviso: () => { if (ajustes.vibra) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); },
+  exito: () => { if (ajustes.vibra) (ANDROID ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Confirm) : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)).catch(() => {}); },
+  /** No era: avisa sin regañar. */
+  aviso: () => { if (ajustes.vibra) (ANDROID ? Haptics.performAndroidHapticsAsync(Haptics.AndroidHaptics.Reject) : Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning)).catch(() => {}); },
 };

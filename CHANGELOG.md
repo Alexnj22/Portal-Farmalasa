@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.0 — Mi perfil: rediseño y la semana con el horario real
+
+- **La semana mostraba «Libre» en días que sí se trabajan.** `semanaDelPerfil`
+  miraba sólo `shiftId`: un día con horas propias y sin turno del catálogo
+  (lo que el editor guarda como «Manual») y las horas de un cambio de turno
+  aprobado no se veían. Hoy cada día pasa por `resolverTurnoDelDia`, el
+  canónico; la app del teléfono lo hereda. Sin horario publicado la tarjeta lo
+  dice en vez de pintar siete días libres.
+- La semana trae el total de horas pagadas y los días que se trabajan, «Hoy»
+  marcado con el color de marca (antes, texto blanco sobre fondo claro: no se
+  leía) y en el teléfono pasa a lista, un día por renglón.
+- Resumen arriba con `StatCard`: antigüedad, solicitudes pendientes (lleva a
+  Solicitudes personales), próximas vacaciones y cumpleaños.
+- «Mis datos» en una sola tarjeta de renglones; sale el celular y el DUI
+  repetidos del encabezado. El contacto de emergencia se muestra siempre y,
+  si falta, dice a quién pedirlo.
+- Se quitó el punto verde fijo del avatar (no medía nada).
+
 ## v2.1416.1 — La app del teléfono entra sólo con usuario y contraseña
 
 - Decisión del usuario (3-nov): en la app del teléfono se entra con usuario y

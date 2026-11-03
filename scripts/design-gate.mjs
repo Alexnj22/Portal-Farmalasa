@@ -467,13 +467,6 @@ const EXCEPTIONS = {
   'src/views/AnnouncementsView.jsx': ['white'],
   'src/views/PermissionsView.jsx': ['white'],
   'src/views/BranchDetailView.jsx': ['white'],
-  // 'lift-clavado': la fila de vacaciones es tarjeta O tiene lift a mano, nunca
-  // las dos — ambas ramas cuelgan del MISMO `isUpcoming` y dan 2px
-  // (`data-surface="card"` cuando ya pasó; lift a mano cuando es próxima y no
-  // hay superficie que la levante). El gate ve las dos cosas en la etiqueta y
-  // no puede probar que las condiciones son complementarias; queda anotado acá
-  // en vez de reescribir el marcado sólo para esconderlo del escáner.
-  'src/views/employee/EmployeeProfileView.jsx': ['white', 'lift-clavado'],
   'src/views/productos/tabminmax/LabsPanel.jsx': ['white'],
   // Barridos especulares (`via-white/[0.08-0.25]`) sobre botones brand: el
   // fondo es azul en los 4 temas, así que el destello blanco es correcto —

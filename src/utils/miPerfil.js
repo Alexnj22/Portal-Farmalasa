@@ -7,6 +7,7 @@
  */
 import { tokenMatch } from './searchUtils';
 import { diasEntre, hoySV, sumarDias } from './fecha';
+import { resolverTurnoDelDia } from './turnoDelDia';
 
 /** «2 años 3 meses», «5 meses», «Nuevo» o «—». */
 export function tiempoEnLaEmpresa(hireDate, hoy = hoySV()) {
@@ -47,8 +48,17 @@ const DIAS = [
 
 /**
  * La semana de la persona, de lunes a domingo, con el turno de cada día según
- * su horario habitual (`weeklySchedule`) y la fecha de esta semana.
- *   → [{ id, short, fecha: 'YYYY-MM-DD', turno | null }]
+ * su horario publicado (`weeklySchedule`) y la fecha de esta semana.
+ *   → [{ id, short, fecha: 'YYYY-MM-DD', turno | null, minutos }]
+ *
+ * Cada día se resuelve con `resolverTurnoDelDia`, el canónico (ver la regla
+ * «un día de horario se resuelve en UN solo sitio»). Antes miraba sólo
+ * `shiftId`: un día con horas propias y sin turno del catálogo —que el editor
+ * deja guardar y pinta «Manual»— salía «Libre» en el perfil. Y las horas
+ * propias de un cambio de turno aprobado no pisaban las del catálogo.
+ *
+ * `turno` conserva su forma `{ name, start, end }` porque la app del teléfono
+ * la lee igual; `minutos` son los pagados (sin la pausa alimenticia).
  */
 export function semanaDelPerfil(weeklySchedule, turnos = [], hoy = hoySV()) {
     if (!weeklySchedule) return [];
@@ -56,11 +66,26 @@ export function semanaDelPerfil(weeklySchedule, turnos = [], hoy = hoySV()) {
     const lunes = sumarDias(hoy, dow === 0 ? -6 : 1 - dow);
     return DIAS.map((d) => {
         const raw = weeklySchedule[d.id] ?? weeklySchedule[String(d.id)];
-        const id = typeof raw === 'object' ? raw?.shiftId : raw;
-        const turno = id && id !== 'LIBRE' ? turnos.find((s) => String(s.id) === String(id)) || null : null;
-        return { ...d, fecha: sumarDias(lunes, d.id === 0 ? 6 : d.id - 1), turno };
+        const id = raw && typeof raw === 'object' ? raw.shiftId : raw;
+        let turno = id && id !== 'LIBRE' ? turnos.find((s) => String(s.id) === String(id)) || null : null;
+        const resuelto = resolverTurnoDelDia(
+            raw && typeof raw === 'object' ? raw : (id ? { shiftId: id } : null), turnos);
+        if (resuelto.trabaja) {
+            turno = { ...(turno || {}), id: turno?.id ?? null, name: resuelto.nombre,
+                start: resuelto.inicio, end: resuelto.fin, manual: resuelto.esManual };
+        } else if (raw && typeof raw === 'object') {
+            // El canónico dijo «no trabaja» (isOff, sin horas, entrada = salida).
+            turno = null;
+        }
+        return { ...d, fecha: sumarDias(lunes, d.id === 0 ? 6 : d.id - 1), turno,
+            minutos: resuelto.trabaja ? resuelto.minutosPagados : 0 };
     });
 }
+
+/** ¿Hay horario publicado esta semana? Sin él, «Libre» sería mentir: no es que
+ *  no trabaje, es que todavía no se sabe. */
+export const tieneHorarioPublicado = (weeklySchedule) =>
+    !!weeklySchedule && typeof weeklySchedule === 'object' && Object.keys(weeklySchedule).length > 0;
 
 /** La ausencia (vacación, incapacidad o permiso) que cubre ese día, si hay. */
 export function ausenciaDelDia(eventos, dia) {

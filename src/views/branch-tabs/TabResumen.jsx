@@ -1,14 +1,15 @@
 import React, { useEffect, useState } from 'react';
-import { AlertTriangle, CalendarX, PackageX, Sparkles, TrendingDown, Wallet } from 'lucide-react';
-import Badge from '../../components/common/Badge';
+import { AlertTriangle, CalendarX, PackageX, TrendingDown, Wallet } from 'lucide-react';
+import SalyAvatar from '../../components/common/SalyAvatar';
+import SalyDice from '../../components/common/SalyDice';
 import Notice from '../../components/common/Notice';
-import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchResumenDeSalas, tonoDelResumen } from '@nucleo/data/resumenSala';
+import { SkeletonText } from '../../components/common/StateViews';
+import { animoDeSaly, fetchResumenDeSalas } from '@nucleo/data/resumenSala';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
-// La pestaña «Resumen» de la ficha (PENDIENTES 31 y 32): lo que Sally dijo
+// La pestaña «Resumen» de la ficha (PENDIENTES 31 y 32): lo que Saly dijo
 // cada mañana, y debajo los números de donde salió — que ninguna frase se
 // tenga que creer sin poder mirarla.
 
@@ -17,12 +18,6 @@ const dineroExacto = (v) => formatMoney(v);
 const dia = (f, largo = false) => fechaTexto(f, largo
     ? { weekday: 'long', day: 'numeric', month: 'long' }
     : { weekday: 'short', day: 'numeric', month: 'short' });
-
-const TONO = {
-    alta:  { icono: 'text-danger',  badge: 'danger',  label: 'Para atender' },
-    media: { icono: 'text-warning', badge: 'warning', label: 'Para mirar' },
-    nada:  { icono: 'text-success', badge: 'success', label: 'Sin novedades' },
-};
 
 function Bloque({ icon: Icon, titulo, children }) {
     return (
@@ -107,20 +102,23 @@ export default function TabResumen({ liveBranch }) {
     if (cargando) return <SkeletonText lines={4} />;
     if (error) return <Notice variant="danger" icon={AlertTriangle}>{mensajeAmigable(error)}</Notice>;
     if (!ultimo) {
-        return <EmptyState icon={Sparkles} title="Todavía no hay resumen"
-            subtitle="Sally escribe el de cada día a las 5:30 de la mañana siguiente." />;
+        return (
+            <div className="py-6 max-w-xl mx-auto">
+                <SalyDice animo="pensando" tamano="lg">
+                    Todavía no les he escrito nada. Cada mañana, a las 5:30, les cuento cómo le fue ayer a esta sala.
+                </SalyDice>
+            </div>
+        );
     }
 
-    const t = TONO[tonoDelResumen(ultimo)];
     return (
         <div className="space-y-6">
-            <header className="space-y-2">
-                <div className="flex flex-wrap items-center gap-2">
-                    <Sparkles size={18} aria-hidden="true" className={t.icono} />
-                    <h3 className="text-title-sm font-black text-content tracking-tight first-letter:uppercase">{dia(ultimo.fecha, true)}</h3>
-                    <Badge variant={t.badge} size="sm" uppercase={false}>{t.label}</Badge>
-                </div>
-                <p className="text-body text-content leading-relaxed max-w-3xl">{ultimo.texto}</p>
+            <header className="max-w-3xl">
+                <h3 className="sr-only">Resumen del {dia(ultimo.fecha, true)}</h3>
+                <SalyDice animo={animoDeSaly(ultimo)} tamano="lg"
+                    titulo={<span className="first-letter:uppercase">{dia(ultimo.fecha, true)}</span>}>
+                    {ultimo.texto}
+                </SalyDice>
             </header>
 
             <Numeros ind={ultimo.indicadores} />
@@ -128,12 +126,11 @@ export default function TabResumen({ liveBranch }) {
             {anteriores.length > 0 && (
                 <section className="space-y-2">
                     <h4 className="text-label font-black uppercase tracking-widest text-content-2">Días anteriores</h4>
-                    <ul className="divide-y divide-divider border-y border-divider">
+                    <ul className="saly-toque rounded-2xl px-3 divide-y divide-divider">
                         {anteriores.map((r) => {
-                            const tr = TONO[tonoDelResumen(r)];
                             return (
                                 <li key={r.id} className="flex items-start gap-3 py-2.5">
-                                    <Sparkles size={14} aria-hidden="true" className={`mt-1 shrink-0 ${tr.icono}`} />
+                                    <SalyAvatar animo={animoDeSaly(r)} size={32} />
                                     <div className="min-w-0">
                                         <p className="text-caption font-bold text-content-3 first-letter:uppercase">{dia(r.fecha)}</p>
                                         <p className="text-body-sm text-content-2 leading-snug">{r.texto}</p>

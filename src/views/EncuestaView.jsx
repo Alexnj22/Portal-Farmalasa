@@ -8,7 +8,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     BarChart2, Users, Star, MessageSquare, ChevronDown, ChevronUp,
     TrendingUp, TrendingDown, Award, Heart, AlertTriangle, Building2,
-    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, Loader2, ArrowLeft, Sparkles, RotateCcw, Zap, Minus
+    UserCheck, UserX, ThumbsUp, Smile, Meh, Frown, Info, ArrowLeft, Sparkles, RotateCcw, Zap, Minus
 } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -25,6 +25,7 @@ import { clickable } from '@nucleo/utils/clickable';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { seccionesDelResumen } from '@nucleo/utils/resumenDeComentarios';
+import SalyAvatar from '../components/common/SalyAvatar';
 import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, personasPorOpcion, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase, SUPERVISOR_DE_JEFE } from '@nucleo/utils/climaLaboral';
 
 // Jefe inmediato de cada sucursal: `SUPERVISOR_DE_JEFE` vive en el núcleo
@@ -1259,16 +1260,15 @@ export default function EncuestaView() {
                             <div
                                 key={seg.key}
                                 {...clickable(() => canToggle && setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })))}
-                                className={`rounded-2xl overflow-hidden border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)] bg-gradient-to-br from-[var(--card-tint-base-soft)] via-chart-3/10 to-chart-3/5 transition-all duration-[var(--dur-base)] ${canToggle ? 'cursor-pointer hover:shadow-[var(--shadow-glow-chart-3-lg)] hover:border-chart-3/50' : ''}`}
+                                data-animo={isLoading ? 'pensando' : 'atencion'}
+                                className={`saly-toque rounded-2xl overflow-hidden ${canToggle ? 'cursor-pointer' : ''}`}
                             >
                                 {/* Segment header bar */}
-                                <div className="flex items-center justify-between px-4 py-3 border-b border-chart-3/20 bg-gradient-to-r from-chart-3/10 to-chart-3/5">
+                                <div className="flex items-center justify-between px-4 py-3 border-b border-divider">
                                     <div className="flex items-center gap-2.5">
-                                        <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-chart-3 to-chart-6 flex items-center justify-center shadow-[var(--shadow-glow-chart-3-md)]">
-                                            <Sparkles size={10} className="text-white" />
-                                        </div>
+                                        <SalyAvatar animo={isLoading ? 'pensando' : 'atencion'} size={32} />
                                         <span className="text-body-sm font-black text-content-2 tracking-tight">
-                                            Resumen IA <span className="text-content-3 font-normal">·</span> <span className="text-chart-3-text">{seg.label}</span>
+                                            Saly <span className="text-content-3 font-normal">·</span> <span className="text-chart-3-text">{seg.label}</span>
                                         </span>
                                         <span className="text-caption text-content-3 font-medium">{seg.comments.length} comentarios</span>
                                     </div>
@@ -1283,7 +1283,7 @@ export default function EncuestaView() {
                                                 }} />
                                         )}
                                         {summary && !isLoading && (
-                                            <Button tone="chart-3" title="isCollapsed ? 'Expandir' : 'Minimizar'" onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}>{isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}</Button>
+                                            <Button tone="chart-3" title={isCollapsed ? 'Expandir' : 'Minimizar'} onClick={e => { e.stopPropagation(); setCollapsedSummaries(p => ({ ...p, [seg.key]: !p[seg.key] })); }}>{isCollapsed ? <ChevronDown size={11} strokeWidth={2.5} /> : <Minus size={11} strokeWidth={2.5} />}</Button>
                                         )}
                                     </div>
                                 </div>
@@ -1292,8 +1292,7 @@ export default function EncuestaView() {
                                 {isLoading ? (
                                     <div className="p-5">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <Loader2 size={13} className="animate-spin text-chart-3-text shrink-0" />
-                                            <span className="text-body-sm text-chart-3-text/80 font-medium">Leyendo los comentarios…</span>
+                                                                                        <span className="text-body-sm text-chart-3-text/80 font-medium">Estoy leyendo los comentarios, dame un momento…</span>
                                         </div>
                                         <div className="space-y-2.5">
                                             {[1, 0.8, 0.6, 0.75, 0.5].map((w, i) => (

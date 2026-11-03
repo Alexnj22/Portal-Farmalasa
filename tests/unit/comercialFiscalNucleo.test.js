@@ -92,7 +92,7 @@ describe('encuestas a clientes', () => {
     });
     it('resumen con IA: sin repetidos y cuándo se rehace', () => {
         expect(loteParaResumir([{ texto: 'Hola' }, { texto: ' hola ' }, { texto: '' }])).toHaveLength(1);
-        expect(estadoDelResumen(null)).toMatchObject({ puede: true, boton: 'Resumir con IA' });
+        expect(estadoDelResumen(null)).toMatchObject({ puede: true, boton: 'Pedirle el resumen a Saly' });
         expect(estadoDelResumen({ texto: 'x', nuevos: 2, minimo_nuevos: 5 })).toMatchObject({ puede: false });
     });
     it('enlace, archivo y borrar', () => {

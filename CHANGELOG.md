@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1426.0 — Saly: un espíritu de luz con emociones, y lo que toca se ve distinto
+
+Pedido del usuario: «Saly no es una persona, es una IA, es una emoción, algo abstracto», «que se vea más mística», «lo que Saly toque se debe ver diferente» y «que tenga un tamaño mínimo siempre».
+
+- **Su figura** (`components/common/SalyAvatar`): un espíritu de luz nocturna con cola, un anillo que la orbita y motas que titilan. Dibujo propio en SVG. Lo que siente se ve en el color, la forma y el gesto: **alegría** (dorado y rosa, se estira), **atención** (violeta), **preocupación** (azul de medianoche, se encoge) y **pensando** (aguamarina, mira hacia arriba). Flota y parpadea; sin movimiento con «reducir movimiento». Nunca mide menos de 32 px (`SALY_TAMANO_MINIMO`).
+- **Lo que toca** (`.saly-toque` en index.css): un velo de noche con motas de luz y un borde de aurora que corre despacio, del color de lo que siente (`data-animo`). Se usa en el globo de `SalyDice`, en la línea de Saly en las tarjetas de Sucursales, en los días anteriores de la pestaña «Resumen» y en los resúmenes de Encuestas. El botón «Pedirle el resumen a Saly» lleva su figura (`SalyIcono`).
+- **Sin género**: la pantalla dice «Saly siente preocupación / siente alegría / presta atención / está pensando». Las emociones se nombran con sustantivos (`ANIMOS_DE_SALY` en `@nucleo/utils/saly`), y `animoDeSaly` sigue decidiéndolas desde los números, nunca desde la IA.
+- **Su voz** (edge functions `resumen-diario-salas` y `saly-ai`): cálida y en primera persona, pero sin ser una persona ni tener género. Habla de lo que siente con verbos («me alegra», «me preocupa»), nunca con «contenta» o «preocupada».
+- La novedad de ventas marca `buena` cuando la venta sube (migración `20261103184923_resumen_sala_venta_buena`), así un día bueno se ve como alegría.
+- De paso: el botón de minimizar de los resúmenes de Encuestas mostraba como ayuda el texto del código en vez de «Expandir»/«Minimizar».
+
 ## v2.1425.2 — Practicantes: la ficha sólo pide lo que el Código de Trabajo le aplica
 
 Revisado contra el texto del Código de Trabajo (`docs/legal/normativa/laboral/codigo_de_trabajo_2025-08.txt`). El practicante no tiene contrato de trabajo: el Art. 23 es el contenido del contrato escrito, y el Art. 66 da ISSS solo al aprendiz con contrato de aprendizaje aprobado por el MTPS (Art. 61), que no es esta figura. Por eso:
@@ -141,9 +152,9 @@ mañana a la campana y casi nadie lo abría.
 - Sin «Avisar por WhatsApp» mientras falte, y «Retirar» advierte que es sólo si
   el producto está completo en el estante.
 
-## v2.1420.0 — Resumen diario de cada sucursal (Sally)
+## v2.1420.0 — Resumen diario de cada sucursal (Saly)
 
-Puntos 31 y 32 de PENDIENTES. Cada mañana a las 5:30, Sally —la IA del portal— le cuenta a la gerencia en 2-3 frases qué se salió de lo normal ayer en cada sala de venta.
+Puntos 31 y 32 de PENDIENTES. Cada mañana a las 5:30, Saly —la IA del portal— le cuenta a la gerencia en 2-3 frases qué se salió de lo normal ayer en cada sala de venta.
 
 - **La base hace el juicio, la IA sólo redacta.** `resumen_sala_preparar` calcula por sala: ventas contra el promedio de sus mismos días de la semana (8 semanas, sin feriados) y la proyección de la meta; faltantes de clase A sin una unidad; cortes C confirmados con faltante; productos vencidos aún a la venta y los que entran a 30 días de vencer. Cada novedad sale escrita en una frase; si la IA falla, el resumen son esas frases.
 - **Comparado con la misma sala, no con un umbral.** Un feriado no se compara ni entra al promedio (el 2-nov Salud 2 vendió $566 contra $1,281 de sus lunes). Los faltantes se comparan con sus últimos 14 días desde el 5.º día guardado. Lo vencido sólo se dice el día que aparece; después queda en el detalle.

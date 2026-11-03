@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-    Gauge, Users, Smile, Frown, Download, Sparkles, MessageSquareText, History, AlertTriangle, Store, Phone,
+    Gauge, Users, Smile, Frown, Download, MessageSquareText, History, AlertTriangle, Store, Phone,
 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -20,6 +20,8 @@ import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
 } from '@nucleo/data/encuestasClientes';
 import { preguntarASaly } from '@nucleo/data/ia';
+import SalyDice from '../../components/common/SalyDice';
+import SalyIcono from '../../components/common/SalyIcono';
 import { barraDeDimension } from './iconos';
 
 /**
@@ -212,7 +214,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                                 // Cuándo se puede rehacer y qué dice el botón: núcleo (`estadoDelResumen`).
                                 const r = estadoDelResumen(resumen);
                                 return (
-                                    <Button variant="secondary" size="sm" icon={Sparkles} loading={resumiendo} disabled={!r.puede}
+                                    <Button variant="secondary" size="sm" icon={SalyIcono} loading={resumiendo} disabled={!r.puede}
                                         title={r.ayuda || 'Resume los comentarios con IA y lo guarda para todos'}
                                         onClick={resumir}>
                                         {r.boton}
@@ -220,14 +222,13 @@ export default function ResultadosEncuesta({ encuesta }) {
                                 );
                             })()}
                         </div>
-                        {resumen?.texto && (
-                            <div className="rounded-xl bg-brand/5 border border-brand/20 p-3 space-y-2">
-                                <div className="text-body-sm text-content whitespace-pre-line"><ConNegritas texto={resumen.texto} /></div>
-                                <p className="text-micro text-content-3">
-                                    Resumen de {resumen.comentarios_n} comentario(s) · {fechaTexto(resumen.generado_at, { day: 'numeric', month: 'short' })} {hora12(resumen.generado_at)}
-                                    {resumen.nuevos > 0 ? ` · ${resumen.nuevos} nuevo(s) desde entonces` : ''}
-                                </p>
-                            </div>
+                        {salyLeyendo(resumiendo)}
+                        {resumen?.texto && !resumiendo && (
+                            <SalyDice animo="atencion" titulo={`leyó ${resumen.comentarios_n} comentario(s)`}
+                                pie={<>{fechaTexto(resumen.generado_at, { day: 'numeric', month: 'short' })} {hora12(resumen.generado_at)}
+                                    {resumen.nuevos > 0 ? ` · ${resumen.nuevos} nuevo(s) desde entonces` : ''}</>}>
+                                <div className="whitespace-pre-line"><ConNegritas texto={resumen.texto} /></div>
+                            </SalyDice>
                         )}
                         {!comentarios.length ? (
                             <p className="text-body-sm text-content-3">Sin comentarios escritos.</p>
@@ -332,6 +333,12 @@ function Distribucion({ p, numero }) {
             {cuerpo}
         </div>
     );
+}
+
+/** Mientras Saly lee, se la ve leyendo. */
+function salyLeyendo(resumiendo) {
+    if (!resumiendo) return null;
+    return <SalyDice animo="pensando">Estoy leyendo los comentarios, dame un momento…</SalyDice>;
 }
 
 /** El resumen de la IA marca los títulos con **; acá se vuelven negritas. */

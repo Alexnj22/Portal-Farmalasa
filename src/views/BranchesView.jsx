@@ -13,7 +13,7 @@ import {
     Building2, MapPin, Phone, Smartphone, Clock, Pencil, Trash2, Plus,
     Users, Monitor, AlertTriangle, CheckCircle2, Info, AlertCircle,
     Search, Filter, X, Copy, MessageCircle,
-    Briefcase, Shield, Stethoscope, Sparkles
+    Briefcase, Shield, Stethoscope
 } from "lucide-react";
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { kioscosActivos, LIMITE_KIOSCOS } from '@nucleo/utils/kioscos';
@@ -27,7 +27,8 @@ import { useAuth } from '@nucleo/context/AuthContext';
 
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { fetchBranchKiosks } from '@nucleo/data/branches';
-import { fetchResumenDeSalas, tonoDelResumen } from '@nucleo/data/resumenSala';
+import { animoDeSaly, fetchResumenDeSalas } from '@nucleo/data/resumenSala';
+import SalyAvatar from '../components/common/SalyAvatar';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
@@ -215,22 +216,19 @@ const BranchCard = memo(({
                 </div>
             </header>
 
-            {/* ── El resumen de ayer (Sally) ──
-                Una línea: lo más urgente. El detalle, con cada número, vive en
-                la pestaña «Resumen» de la ficha. */}
-            {resumen?.texto && (() => {
-                const tono = tonoDelResumen(resumen);
-                return (
-                    <div className="mt-3 flex items-start gap-2">
-                        <Sparkles size={14} strokeWidth={2} aria-hidden="true"
-                            className={`mt-0.5 shrink-0 ${tono === 'alta' ? 'text-danger' : tono === 'media' ? 'text-warning' : 'text-success'}`} />
-                        <p className="min-w-0 text-body-sm text-content-2 leading-snug line-clamp-2">
-                            <span className="sr-only">Resumen del {fechaTexto(resumen.fecha, { day: 'numeric', month: 'long' })}: </span>
-                            {resumen.texto}
-                        </p>
-                    </div>
-                );
-            })()}
+            {/* ── El resumen de ayer: lo dice Saly ──
+                Una línea: lo más urgente. Su cara cuenta cómo está con el día
+                (`animoDeSaly`). El detalle, con cada número, vive en la pestaña
+                «Resumen» de la ficha. */}
+            {resumen?.texto && (
+                <div data-animo={animoDeSaly(resumen)} className="saly-toque mt-3 flex items-start gap-2 rounded-xl px-2.5 py-2">
+                    <SalyAvatar animo={animoDeSaly(resumen)} size={32} />
+                    <p className="min-w-0 text-body-sm text-content-2 leading-snug line-clamp-2">
+                        <span className="sr-only">Resumen del {fechaTexto(resumen.fecha, { day: 'numeric', month: 'long' })}: </span>
+                        <span className="font-bold text-content">Saly: </span>{resumen.texto}
+                    </p>
+                </div>
+            )}
 
             {/* ── Datos ── */}
             <div className="mt-3 divide-y divide-divider border-y border-divider">

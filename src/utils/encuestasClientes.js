@@ -561,7 +561,7 @@ export function estadoDelResumen(resumen) {
     const puede = !hay || nuevos >= minimo;
     return {
         hay, nuevos, puede,
-        boton: !hay ? 'Resumir con IA' : puede ? `Actualizar resumen (${nuevos} nuevos)` : 'Resumen al día',
+        boton: !hay ? 'Pedirle el resumen a Saly' : puede ? `Actualizar resumen (${nuevos} nuevos)` : 'Resumen al día',
         ayuda: hay && !puede ? `Se actualiza cuando entren ${minimo} comentarios nuevos (van ${nuevos}).` : null,
     };
 }

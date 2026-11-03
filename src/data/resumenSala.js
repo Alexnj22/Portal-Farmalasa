@@ -22,3 +22,17 @@ export function tonoDelResumen(r) {
     if (!nov.length) return 'nada';
     return nov.some(n => n.nivel === 'alta') ? 'alta' : 'media';
 }
+
+/**
+ * Qué siente Saly con el día de una sala. Sale de las novedades —nunca de
+ * la IA—, así que su color cuenta lo mismo que los números:
+ * - algo «alta» (vencidos a la venta, un faltante en caja, la venta hundida) → preocupacion
+ * - nada fuera de lo normal, o sólo buenas noticias (`buena`: la venta subió) → alegria
+ * - lo demás (algo para mirar) → atencion
+ */
+export function animoDeSaly(r) {
+    const nov = Array.isArray(r?.novedades) ? r.novedades : [];
+    if (nov.some(n => n.nivel === 'alta')) return 'preocupacion';
+    if (nov.every(n => n.buena === true)) return 'alegria';
+    return 'atencion';
+}

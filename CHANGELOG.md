@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1424.0 — Practicantes: horario fácil, Horarios y turnos, fin estimado y sus documentos
+
+- **Horario de la práctica, fácil**: en la pestaña Práctica se eligen los días, la hora de entrada y de salida y la pausa. Al guardar, la base escribe sus semanas en Horarios y turnos, publicadas, desde la semana en curso hasta la fecha de fin (`aplicar_horario_de_practica`). Así el kiosco conoce su turno y la asistencia mide sus tardanzas y faltas.
+- **Cuándo termina**: con las horas requeridas y las que ya lleva, el formulario y la tarjeta dicen la fecha en que completa si cumple su horario. Avisan si no alcanza antes de la fecha del convenio y si el horario pasa los topes del Código de Trabajo: Art. 116 para el menor (6 h al día, 34 a la semana) y Art. 161 para el adulto.
+- **Horarios y turnos los muestra** al final de cada sala. A cada uno se le mide contra su patrón, no contra las 44 h ni contra un descanso por semana. No cuentan para la cobertura de la sala, y publicar la semana los incluye.
+- **Sus documentos son los de una práctica**, no los de un contrato de trabajo: carta de la institución, constancia de estudios, declaración ética, constancia de inducción, certificado médico anual y constancia de horas al terminar. Ya no se le piden la solicitud ni la oferta de empleo, el CV, el contrato, el acuse del MTPS, el NIT, el ISSS, la AFP ni el seguro.
+- El botón para volver de Documentos decía «Nómina»: ahora dice «Acceso».
 ## v2.1423.0 — Bienestar: la torre reemplaza al jardín zen
 
 *«El zen no me gusta, pon otro juego entretenido… que sea muy visual,

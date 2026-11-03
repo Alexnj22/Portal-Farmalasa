@@ -74,10 +74,14 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
 
     // 44 h la semana diurna y un día de descanso — RIT Art. 16 y 19. Estaban
     // escritos a mano en seis sitios; hoy salen de `utils/turnoDelDia.js`.
-    const isHoursPerfect = hours === HORAS_SEMANA_DIURNA;
-    const isHoursOver = hours > HORAS_SEMANA_DIURNA;
-    const isHoursUnder = hours < HORAS_SEMANA_DIURNA;
-    const isDaysOffPerfect = daysOffCount === DESCANSOS_POR_SEMANA;
+    // El practicante (2026-11-03) se mide contra SU patrón, no contra las 44 h
+    // ni contra «un descanso por semana»: viene los días de su práctica.
+    // Sin patrón todavía, no se le inventa un faltante: su meta es lo que tiene.
+    const meta = emp.esPracticante ? (emp.metaSemanalDePractica || hours) : HORAS_SEMANA_DIURNA;
+    const isHoursPerfect = hours === meta;
+    const isHoursOver = hours > meta;
+    const isHoursUnder = hours < meta;
+    const isDaysOffPerfect = emp.esPracticante ? daysOffCount > 0 : daysOffCount === DESCANSOS_POR_SEMANA;
 
     // Configuración visual de la barra de progreso
     let barColor = 'bg-success shadow-[var(--shadow-glow-chart-9-md)]'; // Estado Perfecto
@@ -210,7 +214,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                     {/* Validar Horas */}
                                     {!isHoursPerfect && (
                                         <span className={`text-micro 2xl:text-[7.5px] px-1.5 py-0.5 rounded font-black shadow-sm shrink-0 ${isHoursOver ? 'bg-danger/10 text-danger animate-pulse' : 'bg-warning/10 text-warning'}`}>
-                                            {isHoursOver ? `+${Number((hours - HORAS_SEMANA_DIURNA).toFixed(1))}h` : `${Number((hours - HORAS_SEMANA_DIURNA).toFixed(1))}h`}
+                                            {isHoursOver ? `+${Number((hours - meta).toFixed(1))}h` : `${Number((hours - meta).toFixed(1))}h`}
                                         </span>
                                     )}
                                     {/* Todo Perfecto */}
@@ -221,7 +225,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                             </div>
                             
                             <div className="h-1.5 bg-surface-card-hover/50 rounded-full overflow-hidden shadow-inner shrink-0">
-                                <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ${barColor}`} style={{ width: `${Math.min((hours / HORAS_SEMANA_DIURNA) * 100, 100)}%` }} />
+                                <div className={`h-full rounded-full transition-all duration-[var(--dur-lento)] ${barColor}`} style={{ width: `${meta ? Math.min((hours / meta) * 100, 100) : 0}%` }} />
                             </div>
                         </div>
 
@@ -471,7 +475,9 @@ const ScheduleCalendar = memo(({
     });
 
     const allSchedulesArray = useMemo(() => {
-        return employeesInView.map(emp => {
+        // La cobertura de la sala la cubre el PERSONAL: un practicante no
+        // tapa un hueco en horas de venta.
+        return employeesInView.filter(emp => !emp.esPracticante).map(emp => {
             let rawSchedule = weeklyRosters[emp.id] || {};
             const parsed = (typeof rawSchedule === 'string') ? JSON.parse(rawSchedule || '{}') : rawSchedule;
             return { ...parsed, name: emp.name };

@@ -1155,7 +1155,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                 {!hidesFooter && (() => {
                     const isEmpForm = type === 'newEmployee' || type === 'editEmployee';
                     const EMP_STEP_KEYS = ['personal', 'laboral', 'nomina', 'documentos'];
-                    const EMP_STEP_LABELS = { personal: 'Personal', laboral: 'Contrato', nomina: 'Nómina', documentos: 'Documentos' };
+                    // Los rótulos salen de EMP_STEPS: el practicante dice «Práctica» y
+                    // «Acceso», y el botón de volver decía «Nómina» (2026-11-03).
+                    const EMP_STEP_LABELS = Object.fromEntries(EMP_STEPS.map(st => [st.key, st.label]));
                     const empIdx = EMP_STEP_KEYS.indexOf(empActiveTab);
                     const prevStep = isEmpForm && empIdx > 0 ? EMP_STEP_KEYS[empIdx - 1] : null;
                     const nextStep = isEmpForm && empIdx < EMP_STEP_KEYS.length - 1 ? EMP_STEP_KEYS[empIdx + 1] : null;

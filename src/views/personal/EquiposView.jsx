@@ -34,7 +34,7 @@ import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
 import { alertasDePersona, antiguedadDePersona, pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
 import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
-import { TIPO_FICHA_PRACTICANTE, PASANTIA_VACIA, pasantiaDe, fichaConPasantia } from '@nucleo/utils/practicanteFormulario';
+import { TIPO_FICHA_PRACTICANTE, PASANTIA_VACIA, pasantiaDe, fichaConPasantia, finDeLaPractica } from '@nucleo/utils/practicanteFormulario';
 import { fetchHorasDePracticantes } from '@nucleo/data/practicantes';
 import { fetchCredenciales } from '@nucleo/data/employees';
 import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
@@ -383,7 +383,7 @@ function TarjetaPracticante({ p, ficha, horas, sucursal, onEdit, onDarAcceso, on
         </p>
         {/* Cuánto lleva, de sus marcajes (2026-11-03). Sin ficha no marca, así
             que no se pinta un «0 h» que parecería que no vino. */}
-        {ficha && <AvanceDeHoras horas={horas} meta={p.horas_requeridas} />}
+        {ficha && <AvanceDeHoras horas={horas} p={p} />}
 
         <div className="flex items-center gap-2 pt-0.5">
           {!sucursal && (
@@ -412,9 +412,14 @@ function TarjetaPracticante({ p, ficha, horas, sucursal, onEdit, onDarAcceso, on
 
 // Las horas de la práctica contra su meta. La barra es el DATO (proporción),
 // así que no se estira al blanco de dedo: `data-medida="dato"`.
-function AvanceDeHoras({ horas, meta }) {
+function AvanceDeHoras({ horas, p }) {
   const lleva = Number(horas?.horas || 0);
-  const objetivo = Number(meta || 0);
+  const objetivo = Number(p?.horas_requeridas || 0);
+  // Cuándo termina si cumple su horario (2026-11-03: «así dice cuándo finalizan»).
+  const fin = p?.estado === 'ACTIVO' && p?.horario ? finDeLaPractica({
+    horario: p.horario, fechaInicio: p.fecha_inicio, fechaFin: p.fecha_fin,
+    horasRequeridas: p.horas_requeridas, horasCumplidas: lleva,
+  }) : null;
   const pct = objetivo > 0 ? Math.min(100, Math.round((lleva / objetivo) * 100)) : null;
   const sinSalida = Number(horas?.dias_sin_salida || 0);
   const fmt = (n) => (Math.round(n * 10) / 10).toLocaleString('es-SV');
@@ -429,6 +434,16 @@ function AvanceDeHoras({ horas, meta }) {
           role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Avance de horas">
           <div className={`h-full rounded-full ${pct >= 100 ? 'bg-success' : 'bg-chart-3-solid'}`} style={{ width: `${pct}%` }} />
         </div>
+      )}
+      {p?.estado === 'ACTIVO' && !p?.horario && (
+        <p className="text-micro font-bold text-content-3">Sin horario: no se sabe cuándo termina.</p>
+      )}
+      {fin?.fecha && (
+        <p className={`text-micro font-bold ${fin.alcanza === false ? 'text-warning-text' : 'text-content-2'}`}>
+          {fin.faltan > 0 ? `Termina el ${fechaCortaDMA(fin.fecha)}` : 'Ya cumplió sus horas'}
+          {fin.alcanza === false ? ` — después del ${fechaCortaDMA(p.fecha_fin)} del convenio` : ''}
+          {` · ${(Math.round(fin.horasSemana * 10) / 10).toLocaleString('es-SV')} h/sem`}
+        </p>
       )}
       {sinSalida > 0 && (
         <p className="text-micro font-bold text-warning-text">

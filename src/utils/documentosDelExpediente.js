@@ -94,6 +94,11 @@ export const ROTULOS = {
     DUI_FRENTE: 'DUI — frente',
     DUI_REVERSO: 'DUI — reverso',
     DOCUMENTO_IDENTIDAD: 'Documento de identidad',
+    // El practicante (2026-11-03). No es un trabajador: no lleva contrato,
+    // planilla, ISSS ni AFP, y su expediente es el de una práctica.
+    CARTA_INSTITUCION: 'Carta de presentación de la institución',
+    CONSTANCIA_ESTUDIOS: 'Constancia de estudios vigente',
+    CONSTANCIA_HORAS: 'Constancia de horas cumplidas — al terminar',
 };
 
 // ── El grupo: por qué la persona tiene este papel ──────────────────────────
@@ -123,6 +128,9 @@ export const GRUPOS = {
 
     DUI_COMPLETO: 'Identidad', DUI_FRENTE: 'Identidad',
     DUI_REVERSO: 'Identidad', DOCUMENTO_IDENTIDAD: 'Identidad',
+
+    CARTA_INSTITUCION: 'La práctica', CONSTANCIA_ESTUDIOS: 'La práctica',
+    CONSTANCIA_HORAS: 'Al terminar',
 };
 
 // Una clave del catálogo: MAYÚSCULAS, dígitos y guiones bajos, y nada más. Es
@@ -317,6 +325,51 @@ export const SECCIONES_DE_DOCUMENTOS = [
         claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD'],
     },
 ];
+
+/* ── El expediente del PRACTICANTE (2026-11-03) ──────────────────────────
+ *
+ * Pedido del usuario: «no deben salir documentos, al menos no todos, es
+ * practicante no empleado; rígete con el Código de Trabajo». El Art. 20 del
+ * Código no aplica a quien hace horas sociales o una práctica por convenio, así
+ * que NO lleva lo que sale del contrato de trabajo: solicitud y oferta de
+ * empleo, CV, contrato, acuse del MTPS, NIT, ISSS, AFP, seguro de vida ni
+ * regencia. El convenio con la institución se sube en la pestaña Práctica.
+ *
+ * Lo que sí: la carta de la institución que lo presenta, la constancia de que
+ * sigue estudiando, la declaración ética (atiende al público y ve datos de
+ * pacientes), la constancia de inducción, el certificado médico anual que la
+ * empresa pide a todo el que atiende, y al terminar la constancia de horas
+ * que se le entrega a la institución. */
+export const SECCIONES_DEL_PRACTICANTE = [
+    {
+        id: 'practica',
+        titulo: 'La práctica',
+        bajada: 'Lo que pide una práctica o servicio social. No es un contrato de trabajo: no lleva planilla, ISSS ni AFP.',
+        claves: ['CARTA_INSTITUCION', 'CONSTANCIA_ESTUDIOS', 'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION'],
+    },
+    {
+        id: 'anual',
+        titulo: 'Cada año',
+        bajada: 'Caducan: hay que volver a traerlos, y el portal avisa antes de que venzan.',
+        claves: ['CERTIFICADO_MEDICO_ANUAL', 'EXAMEN_MEDICO'],
+    },
+    {
+        id: 'cierre',
+        titulo: 'Al terminar',
+        bajada: 'La constancia que la empresa le entrega a la institución con las horas cumplidas.',
+        claves: ['CONSTANCIA_HORAS'],
+    },
+    {
+        id: 'siaplica',
+        titulo: 'Sólo si aplica',
+        bajada: 'Dependen de la persona: aparecen cuando su ficha dice que los tiene.',
+        claves: ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD'],
+    },
+];
+
+/** Las claves del expediente del practicante, en el orden en que se piden. */
+export const DOCUMENTOS_DEL_PRACTICANTE = ['CARTA_INSTITUCION', 'CONSTANCIA_ESTUDIOS',
+    'DECLARACION_ETICA', 'CONSTANCIA_INDUCCION', 'CERTIFICADO_MEDICO_ANUAL', 'CONSTANCIA_HORAS'];
 
 export const HISTORIAL_MAXIMO = 10;
 
@@ -609,4 +662,6 @@ export const SIN_VENCIMIENTO = new Set([
     // La inscripción en la junta no caduca: lo que se renueva cada año es la
     // anualidad, que tiene su propio documento.
     'CERTIFICADO_JVPQF',
+    // El practicante: la carta y la constancia de horas son hechos.
+    'CARTA_INSTITUCION', 'CONSTANCIA_HORAS',
 ]);

@@ -442,7 +442,13 @@ const SchedulesView = ({ openModal, setView }) => {
     }, [filterBranch, viewMode, branches]);
 
     // Planilla activa de la sala, por cargo y nombre: `personasDelHorario` (núcleo).
-    const employeesInView = useMemo(() => personasDelHorario(employees, filterBranch), [employees, filterBranch]);
+    // Y sus practicantes al final, medidos contra su propio patrón (2026-11-03).
+    const practicantes = useStaff(s => s.practicantes);
+    const fetchPracticantes = useStaff(s => s.fetchPracticantes);
+    useEffect(() => {
+        if (!(practicantes || []).length && (employees || []).some(e => (e.tipo_ficha ?? e.tipoFicha) === 'practicante')) fetchPracticantes();
+    }, [practicantes, employees, fetchPracticantes]);
+    const employeesInView = useMemo(() => personasDelHorario(employees, filterBranch, practicantes), [employees, filterBranch, practicantes]);
 
     const filteredEmployees = useMemo(() => {
         if (!searchTerm) return employeesInView;

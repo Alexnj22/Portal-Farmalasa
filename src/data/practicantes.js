@@ -37,3 +37,9 @@ export function deletePracticante(id) {
 export function fetchHorasDePracticantes() {
     return supabase.rpc('get_horas_de_practicantes');
 }
+
+// Escribe las semanas del horario de la práctica en Horarios y turnos
+// (2026-11-03). Repetible: lo que no cambió no se reescribe.
+export function aplicarHorarioDePractica(practicanteId) {
+    return supabase.rpc('aplicar_horario_de_practica', { p_practicante_id: practicanteId });
+}

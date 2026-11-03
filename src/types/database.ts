@@ -21512,6 +21512,7 @@ export type Database = {
           fecha_fin: string
           fecha_inicio: string
           first_names: string
+          horario: Json | null
           horas_requeridas: number | null
           id: string
           institucion_educativa: string
@@ -21535,6 +21536,7 @@ export type Database = {
           fecha_fin: string
           fecha_inicio: string
           first_names: string
+          horario?: Json | null
           horas_requeridas?: number | null
           id?: string
           institucion_educativa: string
@@ -21558,6 +21560,7 @@ export type Database = {
           fecha_fin?: string
           fecha_inicio?: string
           first_names?: string
+          horario?: Json | null
           horas_requeridas?: number | null
           id?: string
           institucion_educativa?: string
@@ -30963,6 +30966,10 @@ export type Database = {
         Returns: Json
       }
       aplicar_espejo_erp: { Args: { p_filas: Json }; Returns: Json }
+      aplicar_horario_de_practica: {
+        Args: { p_practicante_id: string }
+        Returns: Json
+      }
       aplicar_horarios_bitacora: {
         Args: { p_branch_id: number; p_franjas?: Json; p_limpiezas?: Json }
         Returns: number

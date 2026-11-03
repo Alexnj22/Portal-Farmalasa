@@ -102,16 +102,22 @@ export function filaDePracticante(form, convenioUrl) {
 
 export const TIPO_FICHA_PRACTICANTE = 'practicante';
 
+// El patrón por defecto del horario de la práctica — ver «El horario de la
+// práctica» al final del archivo.
+export const HORARIO_VACIO = { dias: [1, 2, 3, 4, 5], entrada: '08:00', salida: '12:00', pausa_inicio: '', pausa_minutos: 0 };
+
 export const PASANTIA_VACIA = {
     institucion_educativa: '', tutor_nombre: '', tutor_telefono: '',
     supervisor_employee_id: '', fecha_inicio: '', fecha_fin: '',
     horas_requeridas: '', estado: 'ACTIVO', notas: '',
+    horario: null,
 };
 
 /** Sólo los campos de la pasantía de una fila de `practicantes`. */
 export function pasantiaDe(p) {
     const f = formularioDePracticante(p);
-    return Object.fromEntries(Object.keys(PASANTIA_VACIA).map((k) => [k, f[k]]));
+    return { ...Object.fromEntries(Object.keys(PASANTIA_VACIA).map((k) => [k, f[k]])),
+        horario: p?.horario ? { ...HORARIO_VACIO, ...p.horario, pausa_inicio: p.horario.pausa_inicio || '' } : null };
 }
 
 /** El formulario completo que entienden `validarPracticante`/`filaDePracticante`,
@@ -148,7 +154,8 @@ export function motivoPasantiaIncompleta(persona, pasantia, { tieneConvenio }) {
 
 /** La fila de `practicantes` con la persona de la ficha y su `employee_id`. */
 export function filaDePracticanteDesdeFicha(persona, pasantia, convenioUrl, employeeId) {
-    return { ...filaDePracticante(formularioCompleto(persona, pasantia), convenioUrl), employee_id: employeeId };
+    return { ...filaDePracticante(formularioCompleto(persona, pasantia), convenioUrl),
+        employee_id: employeeId, horario: horarioParaGuardar(pasantia?.horario) };
 }
 
 /**
@@ -164,4 +171,126 @@ export function fichaConPasantia(ficha, practicantes, fila = null) {
     const p = fila || (practicantes || []).find((x) => x.employee_id && String(x.employee_id) === String(ficha.id));
     if (!p) return { ...ficha, pasantia: { ...PASANTIA_VACIA } };
     return { ...ficha, pasantia: pasantiaDe(p), pasantia_id: p.id, pasantia_convenio_url: p.convenio_url || null };
+}
+
+// ── El horario de la práctica (2026-11-03) ──────────────────────────────────
+//
+// Un patrón por semana —qué días, entrada, salida, pausa— y no una semana a la
+// vez: es «la forma fácil» que pidió el usuario. La base lo convierte en sus
+// semanas de Horarios y turnos (`aplicar_horario_de_practica`); acá vive la
+// cuenta de horas y la fecha en que termina, que la pantalla dice antes de
+// guardar. Los días son los de `claveDeDia`: 0 = domingo … 6 = sábado.
+// (HORARIO_VACIO vive arriba, junto a PASANTIA_VACIA: `pasantiaDe` lo lee.)
+
+export const DIAS_DE_LA_SEMANA = [
+    { dia: 1, corto: 'L', nombre: 'lunes' }, { dia: 2, corto: 'M', nombre: 'martes' },
+    { dia: 3, corto: 'M', nombre: 'miércoles' }, { dia: 4, corto: 'J', nombre: 'jueves' },
+    { dia: 5, corto: 'V', nombre: 'viernes' }, { dia: 6, corto: 'S', nombre: 'sábado' },
+    { dia: 0, corto: 'D', nombre: 'domingo' },
+];
+
+const aMin = (h) => {
+    const m = /^(\d{1,2}):(\d{2})/.exec(String(h || ''));
+    return m ? Number(m[1]) * 60 + Number(m[2]) : null;
+};
+const redondea = (n) => Math.round(n * 10) / 10;
+const isoDe = (d) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`;
+const UN_DIA = 86400000;
+
+/** Horas de UN día del patrón (salida − entrada − pausa). 0 si está mal escrito. */
+export function horasDelDiaDePractica(horario) {
+    const e = aMin(horario?.entrada), s = aMin(horario?.salida);
+    if (e == null || s == null || s <= e) return 0;
+    const pausa = horario?.pausa_inicio ? Number(horario?.pausa_minutos || 0) : 0;
+    return Math.max(0, (s - e - pausa) / 60);
+}
+
+/** Horas por semana del patrón. */
+export function horasPorSemanaDePractica(horario) {
+    return horasDelDiaDePractica(horario) * (horario?.dias?.length || 0);
+}
+
+/** Lo que se guarda en `practicantes.horario`, o `null` si no hay patrón válido. */
+export function horarioParaGuardar(horario) {
+    if (!horario || !horario.dias?.length || !horasDelDiaDePractica(horario)) return null;
+    const conPausa = !!horario.pausa_inicio && Number(horario.pausa_minutos) > 0;
+    return {
+        dias: [...new Set(horario.dias.map(Number))].sort((a, b) => a - b),
+        entrada: horario.entrada, salida: horario.salida,
+        pausa_inicio: conPausa ? horario.pausa_inicio : null,
+        pausa_minutos: conPausa ? Number(horario.pausa_minutos) : 0,
+    };
+}
+
+/**
+ * Cuándo termina la práctica si cumple su horario.
+ *
+ * Cuenta las horas que faltan (`horasRequeridas − horasCumplidas`) día por día
+ * del patrón, desde hoy (o desde el inicio si todavía no empezó). Devuelve el
+ * día en que se completa y si eso cae ANTES o DESPUÉS de `fechaFin` — que es lo
+ * que hay que saber: un horario que no alcanza a cubrir las horas antes de la
+ * fecha del convenio es una práctica que no termina a tiempo.
+ *
+ * @returns {null | { fecha: string|null, alcanza: boolean|null, faltan: number,
+ *   horasSemana: number, horasHastaElFin: number|null }}
+ */
+export function finDeLaPractica({ horario, fechaInicio, fechaFin, horasRequeridas, horasCumplidas = 0, hoy }) {
+    const porDia = horasDelDiaDePractica(horario);
+    const meta = Number(horasRequeridas || 0);
+    if (!porDia || !horario?.dias?.length || !meta || !fechaInicio) return null;
+    const faltan = Math.max(0, meta - Number(horasCumplidas || 0));
+    const dias = new Set(horario.dias.map(Number));
+    const inicio = new Date(`${fechaInicio}T12:00:00Z`);
+    const hoyD = new Date(`${hoy || isoDe(new Date())}T12:00:00Z`);
+    const desde = inicio > hoyD ? inicio : hoyD;
+
+    let fecha = faltan === 0 ? isoDe(desde) : null;
+    let acumula = 0;
+    for (let d = desde, i = 0; !fecha && i < 3660; i++, d = new Date(d.getTime() + UN_DIA)) {
+        if (dias.has(d.getUTCDay())) {
+            acumula += porDia;
+            if (acumula >= faltan - 1e-9) fecha = isoDe(d);
+        }
+    }
+    let horasHastaElFin = null;
+    if (fechaFin) {
+        horasHastaElFin = 0;
+        const fin = new Date(`${fechaFin}T12:00:00Z`);
+        for (let d = desde; d <= fin; d = new Date(d.getTime() + UN_DIA)) {
+            if (dias.has(d.getUTCDay())) horasHastaElFin += porDia;
+        }
+    }
+    return {
+        fecha, faltan, horasSemana: porDia * dias.size,
+        alcanza: fechaFin && fecha ? fecha <= fechaFin : null,
+        horasHastaElFin,
+    };
+}
+
+/**
+ * Lo que el horario no debería tener, con su artículo. El practicante no es un
+ * trabajador, pero la jornada del menor la limita el Código de Trabajo
+ * (Art. 116: 6 horas diarias y 34 semanales para menores de 18) y la del
+ * adulto se mide contra la jornada ordinaria (Art. 161: 8 diarias, 44
+ * semanales). Los primeros tres avisos impiden guardar un horario; los de
+ * tope sólo avisan.
+ */
+export function avisosDelHorarioDePractica(horario, { esMenor = false } = {}) {
+    const avisos = [];
+    if (!horario) return avisos;
+    const e = aMin(horario.entrada), s = aMin(horario.salida);
+    if (!horario.dias?.length) avisos.push('Elige al menos un día.');
+    if (e == null || s == null || s <= e) avisos.push('La salida tiene que ser después de la entrada.');
+    if (horario.pausa_inicio && Number(horario.pausa_minutos) > 0) {
+        const p = aMin(horario.pausa_inicio);
+        if (p != null && e != null && s != null && (p < e || p + Number(horario.pausa_minutos) > s)) {
+            avisos.push('La pausa tiene que caer dentro de la jornada.');
+        }
+    }
+    const dia = horasDelDiaDePractica(horario), semana = horasPorSemanaDePractica(horario);
+    const [topeDia, topeSemana, art] = esMenor ? [6, 34, '116'] : [8, 44, '161'];
+    const quien = esMenor ? ' para un menor de edad' : '';
+    if (dia > topeDia) avisos.push(`${redondea(dia)} h al día pasan de ${topeDia} h${quien} (Código de Trabajo, Art. ${art}).`);
+    if (semana > topeSemana) avisos.push(`${redondea(semana)} h a la semana pasan de ${topeSemana} h${quien} (Código de Trabajo, Art. ${art}).`);
+    return avisos;
 }

@@ -10,7 +10,9 @@
 // `formData.pasantia_convenio_file`, y quien guarda la ficha (UnifiedModal)
 // escribe la fila de `practicantes` después de crear o actualizar la ficha.
 import React, { useEffect, useMemo, useState } from 'react';
-import { AlertCircle, Building2, Clock, GraduationCap, Phone, Upload, User, Users } from 'lucide-react';
+import { AlertCircle, Building2, CalendarClock, Clock, GraduationCap, Phone, Upload, User, Users } from 'lucide-react';
+import Button from '../common/Button';
+import TimePicker12 from '../common/TimePicker12';
 import Badge from '../common/Badge';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
@@ -19,9 +21,14 @@ import PortalTextarea from '../common/PortalTextarea';
 import FileField from '../common/FileField';
 import { CatalogSelect, CatalogOtherInput } from '../common/CatalogSelect';
 import { inputHoverClass } from '@nucleo/utils/inputStyles';
-import { fetchInstitucionCatalogValues } from '@nucleo/data/practicantes';
+import { fetchInstitucionCatalogValues, fetchHorasDePracticantes } from '@nucleo/data/practicantes';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ESTADOS_DE_PRACTICANTE, PASANTIA_VACIA } from '@nucleo/utils/practicanteFormulario';
+import {
+    ESTADOS_DE_PRACTICANTE, PASANTIA_VACIA, HORARIO_VACIO, DIAS_DE_LA_SEMANA,
+    horasDelDiaDePractica, finDeLaPractica, avisosDelHorarioDePractica,
+} from '@nucleo/utils/practicanteFormulario';
+import { calcAge } from '@nucleo/utils/ageUtils';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 import { isCatalogOther, buildCatalogOptions, OTRA_ESPECIALIDAD } from '@nucleo/utils/educationCatalogs';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { esPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
@@ -37,8 +44,140 @@ const IslandHeader = ({ icon: Icon, title }) => (
     </div>
 );
 
+const fechaCortaDMA = (d) => fechaNumerica(d, { vacio: '—' });
+const fmtH = (n) => (Math.round(n * 10) / 10).toLocaleString('es-SV');
+
+/* ── El horario de la práctica (2026-11-03) ─────────────────────────────────
+ *
+ * «Que se establezcan de alguna forma fácil»: un patrón —qué días, entrada,
+ * salida, pausa— y no una semana a la vez. Al guardar la ficha, la base lo
+ * convierte en sus semanas de Horarios y turnos, publicadas, hasta la fecha de
+ * fin. Y con las horas requeridas dice CUÁNDO termina: es la otra mitad del
+ * pedido, «así dice cuándo finalizan». */
+function HorarioDeLaPractica({ pasantia, horasCumplidas, esMenor, onChange }) {
+    const horario = pasantia.horario;
+    const setH = (k, v) => onChange({ ...HORARIO_VACIO, ...(horario || {}), [k]: v });
+    const alternarDia = (d) => {
+        const dias = new Set(horario?.dias || []);
+        if (dias.has(d)) dias.delete(d); else dias.add(d);
+        setH('dias', [...dias]);
+    };
+    const fin = horario ? finDeLaPractica({
+        horario, fechaInicio: pasantia.fecha_inicio, fechaFin: pasantia.fecha_fin,
+        horasRequeridas: pasantia.horas_requeridas, horasCumplidas,
+    }) : null;
+    const avisos = horario ? avisosDelHorarioDePractica(horario, { esMenor }) : [];
+    const porDia = horario ? horasDelDiaDePractica(horario) : 0;
+
+    if (!horario) {
+        return (
+            <div className={islandClass}>
+                <IslandHeader icon={CalendarClock} title="Horario de la práctica" />
+                <p className="text-body-sm text-content-2 mb-3">
+                    Sin horario, el kiosco le pide autorización a un supervisor cada vez que marca y no se puede
+                    saber cuándo termina.
+                </p>
+                <Button variant="secondary" size="sm" icon={CalendarClock} onClick={() => onChange({ ...HORARIO_VACIO })}>
+                    Ponerle horario
+                </Button>
+            </div>
+        );
+    }
+
+    return (
+        <div className={islandClass}>
+            <IslandHeader icon={CalendarClock} title="Horario de la práctica" />
+            <div className="space-y-4">
+                <div>
+                    <label className={fieldLabel}><span>Días que viene</span></label>
+                    <div className="flex flex-wrap gap-1.5" role="group" aria-label="Días de la práctica">
+                        {DIAS_DE_LA_SEMANA.map(({ dia, corto, nombre }) => {
+                            const activo = (horario.dias || []).includes(dia);
+                            return (
+                                <Button key={dia} size="sm" variant={activo ? 'primary' : 'secondary'}
+                                    aria-pressed={activo} aria-label={nombre} title={nombre}
+                                    className="min-w-[var(--tap-min)]" onClick={() => alternarDia(dia)}>
+                                    {corto}
+                                </Button>
+                            );
+                        })}
+                    </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="relative z-tabs">
+                        <label className={fieldLabel}><span>Entra</span></label>
+                        <TimePicker12 value={horario.entrada} onChange={(v) => setH('entrada', v)} />
+                    </div>
+                    <div className="relative z-tabs">
+                        <label className={fieldLabel}><span>Sale</span></label>
+                        <TimePicker12 value={horario.salida} onChange={(v) => setH('salida', v)} defaultMeridiem="PM" />
+                    </div>
+                    <div className="relative z-content">
+                        <label className={fieldLabel}><span>Pausa (opcional)</span></label>
+                        <TimePicker12 value={horario.pausa_inicio || ''} onChange={(v) => {
+                            onChange({ ...HORARIO_VACIO, ...horario, pausa_inicio: v,
+                                pausa_minutos: Number(horario.pausa_minutos) > 0 ? horario.pausa_minutos : 60 });
+                        }} defaultMeridiem="PM" />
+                    </div>
+                    <PortalInput label="Minutos de pausa" name="pausa_minutos" type="number"
+                        value={horario.pausa_minutos || ''} icon={Clock} placeholder="0"
+                        onChange={(e) => setH('pausa_minutos', e.target.value)} />
+                </div>
+
+                <div className="rounded-2xl border border-border-card bg-surface-card-hover p-3 space-y-1"
+                    style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    <p className="text-body-sm font-bold text-content-1">
+                        {fmtH(porDia)} h por día · {fmtH(porDia * (horario.dias?.length || 0))} h por semana
+                    </p>
+                    {fin?.fecha && (
+                        <p className={`text-body-sm font-bold ${fin.alcanza === false ? 'text-warning-text' : 'text-success-text'}`}>
+                            {fin.faltan > 0
+                                ? `Le faltan ${fmtH(fin.faltan)} h: termina el ${fechaCortaDMA(fin.fecha)} si cumple su horario.`
+                                : 'Ya cumplió sus horas.'}
+                        </p>
+                    )}
+                    {fin?.alcanza === false && (
+                        <p className="text-micro font-bold text-warning-text">
+                            Con este horario no completa antes del {fechaCortaDMA(pasantia.fecha_fin)}: hasta ese día suma
+                            {' '}{fmtH(fin.horasHastaElFin)} h. Agrega días u horas, o corre la fecha de fin.
+                        </p>
+                    )}
+                    {!fin && (
+                        <p className="text-micro text-content-3">
+                            Pon la fecha de inicio y las horas requeridas para saber cuándo termina.
+                        </p>
+                    )}
+                </div>
+                {avisos.map((a) => (
+                    <p key={a} className="text-micro text-warning-text font-bold ml-1 flex items-center gap-1">
+                        <AlertCircle size={10} /> {a}
+                    </p>
+                ))}
+                <p className="text-micro text-content-3 ml-1">
+                    Al guardar se escriben sus semanas en Horarios y turnos, desde esta semana hasta la fecha de fin.
+                    Un día suelto se corrige allá.
+                </p>
+                <Button variant="ghost" size="sm" onClick={() => onChange(null)}>Quitar el horario</Button>
+            </div>
+        </div>
+    );
+}
+
 export default function SeccionDeLaPractica({ formData, setFormData }) {
     const employees = useStaffStore((s) => s.employees);
+    // Lo que ya lleva, para que la fecha de fin cuente desde hoy y no desde cero.
+    const [horasCumplidas, setHorasCumplidas] = useState(0);
+    const pasantiaId = formData.pasantia_id || null;
+    useEffect(() => {
+        if (!pasantiaId) return undefined;
+        let vivo = true;
+        fetchHorasDePracticantes().then(({ data, error }) => {
+            if (error) { console.warn('get_horas_de_practicantes:', error.message); return; }
+            const h = (data || []).find((x) => String(x.practicante_id) === String(pasantiaId));
+            if (vivo) setHorasCumplidas(Number(h?.horas || 0));
+        });
+        return () => { vivo = false; };
+    }, [pasantiaId]);
     const [institucionCatalog, setInstitucionCatalog] = useState([]);
 
     useEffect(() => {
@@ -132,6 +271,10 @@ export default function SeccionDeLaPractica({ formData, setFormData }) {
                     </p>
                 )}
             </div>
+
+            <HorarioDeLaPractica pasantia={pasantia} horasCumplidas={horasCumplidas}
+                esMenor={(() => { const e = calcAge(formData.birth_date); return e !== null && e < 18; })()}
+                onChange={(h) => set('horario', h)} />
 
             <div className={islandClass}>
                 <IslandHeader icon={Upload} title="Convenio y notas" />

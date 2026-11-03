@@ -24,7 +24,9 @@ export function reparosDeLaSemana({ personas = [], rosters = {}, turnos = [], fe
         const descansos = dias.filter((d) => !d.resuelto.trabaja).length;
         if (descansos === 0) sinDescanso++;
         else if (horas > HORAS_SEMANA_DIURNA) excedidos++;
-        else if (horas < HORAS_SEMANA_DIURNA || descansos > DESCANSOS_POR_SEMANA) incompletos++;
+        // El practicante no tiene semana de 44 h: se mide contra su patrón.
+        else if (emp.esPracticante ? (emp.metaSemanalDePractica && horas < emp.metaSemanalDePractica)
+            : (horas < HORAS_SEMANA_DIURNA || descansos > DESCANSOS_POR_SEMANA)) incompletos++;
         if (descansoInsuficiente(dias).length > 0) seguidos.push(shortEmployeeName(emp));
     });
     const reparos = [];

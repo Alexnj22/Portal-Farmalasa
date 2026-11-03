@@ -70,7 +70,7 @@ import { fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { getStoragePathFromUrl } from '@nucleo/utils/storageFiles';
 import { GRADO_BASICA_OPTIONS, OTRA_ESPECIALIDAD, isCatalogOther, buildCatalogOptions } from '@nucleo/utils/educationCatalogs';
 import { getExpiryBadge, getExpiringDocuments, getNextAnnualidadCsspDueDate } from '@nucleo/utils/documentExpiry';
-import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado, enUnaPieza,
+import { DOS_CARAS, COMPARTIBLES, VARIAS_HOJAS, SIN_VENCIMIENTO, ROTULOS, rotuloDeCategoria, rotuloDelDocumento, humanizar, SECCIONES_DE_DOCUMENTOS, SECCIONES_DEL_PRACTICANTE, DOCUMENTOS_DEL_PRACTICANTE, EDUCATION_OPTIONS, LEVELS_WITH_SPECIALTY, LEVELS_WITH_STUDY_TOGGLE, LEVELS_WITH_PROFESSION, documentoReemplazado, enUnaPieza,
     POR_ANIO_CALENDARIO, vencimientoDelAnio, anioDelVencimiento, anioQueCubre, estadoDelDocumento, carasConElVencimientoDelDui } from '@nucleo/utils/documentosDelExpediente';
 import TarjetaDeDocumento from './TarjetaDeDocumento';
 import { isDependentAgeOnly, isDependentAgeInvalid, getDependentAge, MIN_DEPENDENT_AGE, MAX_DEPENDENT_AGE } from '@nucleo/utils/economicDependents';
@@ -1085,7 +1085,15 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
     // Se suben en la sección Acreditaciones, no en Documentación: ahí el
     // archivo es el que trae el número y el vencimiento.
     const EN_ACREDITACIONES = ['SRS', 'CERTIFICADO_JVPQF', 'ENFERMERIA', 'MEDICO', 'CONTADURIA', 'DEPENDIENTE_FARMACIA'];
-    const documentCategories = useMemo(() => [
+    // El practicante (2026-11-03): su expediente es el de una práctica, no el
+    // de un contrato de trabajo — ver `SECCIONES_DEL_PRACTICANTE`. De la lista
+    // de siempre conserva sólo lo que depende de la persona y no del contrato.
+    const paraElPracticante = (todos) => (!esPracticante ? todos : [
+        ...DOCUMENTOS_DEL_PRACTICANTE.filter(k => k !== 'CONSTANCIA_HORAS' || formData?.id)
+            .map(k => ({ key: k, label: ROTULOS[k] })),
+        ...todos.filter(c => ['LICENCIA_MOTO', 'LICENCIA_CARRO', 'CERTIFICACION_DISCAPACIDAD', 'EXAMEN_MEDICO'].includes(c.key)),
+    ]);
+    const documentCategories = useMemo(() => paraElPracticante([
         ...FIXED_DOCUMENT_CATEGORIES.map(c => (isNursingRegent && c.key === 'CONTRATO'
             ? { ...c, label: `${ROTULOS.CONTRATO} — como dependiente` } : c)),
         ...(formData.has_motorcycle_license ? [{ key: 'LICENCIA_MOTO', label: ROTULOS.LICENCIA_MOTO }] : []),
@@ -1177,7 +1185,8 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
         { key: 'DECLARACION_ETICA',    label: ROTULOS.DECLARACION_ETICA },
         { key: 'CONSTANCIA_INDUCCION', label: ROTULOS.CONSTANCIA_INDUCCION },
         { key: 'CERTIFICADO_SEGURO_VIDA', label: ROTULOS.CERTIFICADO_SEGURO_VIDA },
-    ], [formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursingRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- paraElPracticante se arma con esPracticante y formData.id, que ya están
+    ]), [esPracticante, formData?.id, formData.has_motorcycle_license, formData.has_car_license, isPharmacistRegent, isNursingRegent, isNursing, formData.disability_has_certification, esMenorParaDocumentos, acreditacionesQueAplican, formData.tiene_acreditacion_dependiente]);
 
     const uploadFileToStorage = useStaffStore(state => state.uploadFileToStorage);
     const [analyzingDocs, setAnalyzingDocs] = useState({});
@@ -1276,8 +1285,9 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
      * documento que existe, se puede subir y no se ve en ninguna parte. */
     const seccionesConDocumentos = useMemo(() => {
         const visibles = documentCategories.filter(cat => !EN_ACREDITACIONES.includes(cat.key));
-        const ubicadas = new Set(SECCIONES_DE_DOCUMENTOS.flatMap(s => s.claves));
-        const secciones = SECCIONES_DE_DOCUMENTOS.map(sec => ({
+        const catalogo = esPracticante ? SECCIONES_DEL_PRACTICANTE : SECCIONES_DE_DOCUMENTOS;
+        const ubicadas = new Set(catalogo.flatMap(s => s.claves));
+        const secciones = catalogo.map(sec => ({
             ...sec,
             // El orden DENTRO de la sección es el de la lista, no el del
             // catálogo: la lista dice en qué orden se piden.
@@ -1289,7 +1299,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                 bajada: 'Documentos que todavía no tienen sección propia.', docs: sueltas });
         }
         return secciones.filter(sec => sec.docs.length > 0);
-    }, [documentCategories]);
+    }, [documentCategories, esPracticante]);
 
     const getDocEntry = (category) => (formData.employee_documents || []).find(d => d.category === category)
         || { category, title: rotuloDelDocumento(category, documentCategories), file_name: '', url: null, expiry_date: '' };

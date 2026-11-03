@@ -1,7 +1,9 @@
 import {
     upsertInstitucionCatalogEntry, fetchPracticantes as fetchPracticantesData,
     insertPracticante, updatePracticante as updatePracticanteData, deletePracticante as deletePracticanteData,
+    aplicarHorarioDePractica,
 } from '../../data/practicantes';
+import { useToastStore } from '../toastStore';
 import { updateEmployee as updateEmployeeRow, cuentaDeAcceso } from '../../data/employees';
 import { subirArchivo } from '../../utils/storageFiles';
 import { filaDePracticanteDesdeFicha, PASANTIA_VACIA } from '../../utils/practicanteFormulario';
@@ -14,6 +16,19 @@ const registerInstitucionCatalogEntry = (institucion) => {
     if (!institucion) return;
     upsertInstitucionCatalogEntry(institucion)
         .then(({ error }) => { if (error) console.warn('No se pudo registrar institución en catálogo:', error.message); });
+};
+
+// El horario de la práctica se escribe en Horarios y turnos DESPUÉS de guardar
+// la fila (2026-11-03). Si falla, la práctica ya quedó guardada: se avisa y no
+// se tumba lo que sí salió — «guardar de nuevo» lo vuelve a intentar.
+const aplicarHorario = async (fila) => {
+    if (!fila?.id || !fila.employee_id) return;
+    const { error } = await aplicarHorarioDePractica(fila.id);
+    if (error) {
+        console.error('aplicar_horario_de_practica:', error.message);
+        useToastStore.getState().showToast('El horario no llegó a Horarios y turnos',
+            'La práctica se guardó. Ábrela y guarda de nuevo para reintentar.', 'warning', 10000);
+    }
 };
 
 export const createPracticantesSlice = (set, get) => ({
@@ -53,6 +68,7 @@ export const createPracticantesSlice = (set, get) => ({
         });
 
         set((state) => ({ practicantes: [newRow, ...state.practicantes] }));
+        await aplicarHorario(newRow);
         return newRow;
     },
 
@@ -95,6 +111,8 @@ export const createPracticantesSlice = (set, get) => ({
             new_value: `Estado: ${updated.estado}`,
         });
 
+        // Finalizar o cancelar también le quita las semanas futuras.
+        await aplicarHorario(updated);
         if (avisoDeCuenta) throw avisoDeCuenta;
         return updated;
     },

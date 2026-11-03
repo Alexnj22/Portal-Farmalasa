@@ -19,6 +19,8 @@ vi.mock('@nucleo/data/practicantes', () => ({
     upsertInstitucionCatalogEntry: vi.fn(() => Promise.resolve({})),
     fetchPracticantes: (...a) => practicantesData.fetchPracticantes(...a),
     insertPracticante: vi.fn(), updatePracticante: vi.fn(), deletePracticante: vi.fn(),
+    fetchHorasDePracticantes: vi.fn(() => Promise.resolve({ data: [], error: null })),
+    aplicarHorarioDePractica: vi.fn(() => Promise.resolve({ data: null, error: null })),
 }));
 
 let estado = {};

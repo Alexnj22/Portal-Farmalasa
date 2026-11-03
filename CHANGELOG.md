@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1427.1 — Practicantes: prueba que dibuja su ficha
+
+Sin cambios en pantalla. Una prueba dibuja la pestaña Personal para un empleado y para un practicante, y comprueba que al practicante no le aparecen ISSS/AFP, dependientes, estado civil, nivel académico, vehículos ni salud, y que el expediente no se los pide.
+
 ## v2.1427.0 — App clientes: juegos fluidos con niveles y nada cortado con letra grande
 
 *«El de burbujas aún se traba… la app debe ser completamente fluida en todo

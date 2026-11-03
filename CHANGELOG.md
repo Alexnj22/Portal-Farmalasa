@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.9 — El personal acumula 1 punto por dólar en cualquier compra
+
+Decisión del usuario (2026-11-03): el personal (Team Farmacia Salud) acumula
+**1 punto por $1 en cualquier compra, a cualquier precio, siempre con factor
+1**. Lo que no acumula para nadie (productos y laboratorios marcados) tampoco
+acumula para él, y lo pagado con puntos no suma.
+
+- `ventas_elegibles_puntos` (rama v2) y `puntos_acumular`, migración
+  `20261103165843` (aplicada con `db query -f` y registrada a mano por su
+  tamaño). Antes de la regla nueva, el personal sólo acumulaba lo comprado a
+  precio Preferente y con el factor de su nivel.
+- Rige desde `reglas_v2_desde()` (15-nov), como el resto del reglamento v2.
+  Medido adelantando la fecha dentro de una transacción que se deshizo: del
+  20-oct al 2-nov, **115 compras del personal habrían sumado 1,294 puntos**
+  ($1,348.45) que hoy no suman.
+- App de clientes: la tarjeta del Team dice «1 punto por cada $1 en cualquier
+  compra, a cualquier precio».
+
 ## v2.1417.8 — Pedidos: el producto sale suelto cuando ningún lote completa una caja
 
 Pedido 11-311026-3-S2 (31-oct): LISITRAM RELAX «CAJA X 20» es factor 2 y en

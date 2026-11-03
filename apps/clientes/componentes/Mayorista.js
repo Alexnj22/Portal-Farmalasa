@@ -160,8 +160,10 @@ export default function Mayorista({ rango, pie = null }) {
 }
 
 // La tarjeta de Equipo (2026-10-08): por política, el personal compra a precio
-// Mayoreo Plus. Lo comprado a precio de personal no acumula puntos (Reglamento,
-// cláusula 3.3: sólo acumula lo comprado a precio Público o Preferente).
+// Mayoreo Plus. Desde el 2026-11-03 (decisión del usuario) el personal acumula
+// 1 punto por $1 en CUALQUIER compra, a cualquier precio y sin factor de nivel
+// (`ventas_elegibles_puntos`, regla 'personal'); lo que no acumula para nadie
+// tampoco acumula para él.
 // Los beneficios del personal (2026-10-08): van DENTRO del panel de su nivel
 // o de su rango —una sola tarjeta, un solo panel—; sólo si no hay panel de
 // nivel (niveles apagados) se muestran solos.
@@ -182,7 +184,7 @@ export function BeneficiosEquipo({ mayoreo = null }) {
       <Texto nivel={3} estilo={{ fontSize: 12 }}>
         {mayoreo
           ? `Lo de mayoreo suma según tu rango ${mayoreo.nombre}; lo demás, 1 punto por $1.`
-          : 'A precio de personal no sumas puntos; a Preferente o más, sí.'}
+          : '1 punto por cada $1 en cualquier compra, a cualquier precio.'}
       </Texto>
     </View>
   );

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1417.2 — El carné ya no tiene el PIN por contraseña (etapa 2)
+
+- SEGURIDAD-Y-ACCESO §3.1, cerrado. Con el número de alguien se podía calcular
+  su PIN y entrar directo al servicio de cuentas, sin pasar por el portal.
+- Las 74 cuentas `@staff.local` (48 del carné, 26 viejas por número ya
+  bloqueadas) tienen ahora una contraseña al azar que nadie conoce. Las 9 del
+  carné de papel no se tocaron: su contraseña es su secreto propio.
+- `ensure_user_by_code` (v70): las cuentas nuevas nacen con clave al azar, y
+  sin pase de un solo uso no hay entrada (`PASE_ERROR`).
+- Portal: con pase ya no se intenta la contraseña; sólo el carné de papel la
+  usa.
+- Probado contra producción con la ficha de QA: el PIN como contraseña da
+  `invalid_credentials`; el carné entra en 805 ms y la sesión lee el perfil.
+- Para la gente: nada cambia. Mismo carné, mismo gesto.
+- Vuelta atrás, si hiciera falta: devolver `encrypted_password =
+  crypt(kiosk_pin, gen_salt('bf'))` a esas cuentas.
 ## v2.1417.1 — Mi perfil: encabezado canónico y tarjeta de la persona
 
 - Reporte del usuario: «no se ve canónico». El encabezado vuelve al canon de

@@ -56,7 +56,7 @@ modo aviso.
 
 | qué | estado |
 |---|---|
-| La contraseña de Auth de la cuenta del carné **sigue siendo el PIN**, y el PIN se deriva del número con una fórmula sin secreto | etapa 1 (pase de un solo uso) **en producción desde el 28-oct**; la app del teléfono ya no entra con carné (3-nov). Falta la etapa 2 — §3.1 |
+| ~~La contraseña de Auth de la cuenta del carné es el PIN~~ | **cerrado el 3-nov**: el carné entra sólo con el pase de un solo uso y las 74 cuentas tienen contraseña al azar — §3.1 |
 | Login por token de un solo uso (B1) y rotación de contraseñas (C2) | no construido |
 | Login por carné atado a terminal registrada; tope de intentos por código | no construido |
 | PIN al azar / secreto propio del carné plástico (reimprimir) | postergado por decisión del usuario (v2.1288.1) |

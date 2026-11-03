@@ -8,8 +8,8 @@ const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
 const serviceKey  = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const admin       = supabaseUrl && serviceKey ? createClient(supabaseUrl, serviceKey) : null;
 
-// ── Rate limit anti fuerza-bruta: el password de login es lo que trae el carné
-// (ver AuthContext.jsx signInWithPassword), así que este endpoint es el único
+// ── Rate limit anti fuerza-bruta: el carné entra con el pase que emite esta
+// función (ver AuthContext.jsx verifyOtp), así que este endpoint es el único
 // oráculo que distingue un carné válido/activo de uno inválido. Solo se cuentan
 // intentos FALLIDOS (NOT_FOUND/INACTIVE) por IP — un login exitoso nunca suma,
 // así que un kiosco con tráfico real de múltiples empleados jamás lo dispara.
@@ -356,9 +356,13 @@ Deno.serve(async (req: Request) => {
     // Se encontró por PIN (es la única búsqueda que queda), así que la cuenta es
     // siempre la del PIN. Ya no se crea la `<número>@staff.local`.
     const email = `${employee.kiosk_pin.toLowerCase()}@staff.local`;
+    // Contraseña al azar que nadie conoce (etapa 2, 2026-11-03): se entra SÓLO
+    // con el pase de abajo. Con `password: kiosk_pin` cada cuenta nueva
+    // reabría la puerta que la etapa 2 cerró en las existentes.
+    const claveAlAzar = `${crypto.randomUUID()}${crypto.randomUUID()}`;
     const createPayload: Record<string, unknown> = {
       email,
-      password: employee.kiosk_pin,
+      password: claveAlAzar,
       email_confirm: true,
       user_metadata: { code: employee.code, kiosk: true },
     };
@@ -408,9 +412,14 @@ Deno.serve(async (req: Request) => {
     // navegador entra como antes. Cuando los registros muestren que nadie usa
     // el camino viejo, las contraseñas de estas cuentas se cambian a un valor
     // al azar (etapa 2) y la puerta de atrás queda cerrada.
+    //
+    // Etapa 2 (2026-11-03): las contraseñas ya son al azar, así que sin pase
+    // no hay entrada — se contesta el error en vez de devolver un usuario con
+    // el que el navegador no puede hacer nada.
     const { data: pase, error: errPase } = await admin.auth.admin.generateLink({ type: "magiclink", email });
     if (errPase) console.error("[ensure_user_by_code] generateLink:", errPase.message);
     const tokenHash = (pase?.properties as { hashed_token?: string } | undefined)?.hashed_token ?? null;
+    if (!tokenHash) return json({ ok: false, error: "PASE_ERROR", details: errPase?.message ?? "sin pase" });
 
     return json({ ok: true, isNewUser, user: { email, isKiosk: true, token_hash: tokenHash } });
 

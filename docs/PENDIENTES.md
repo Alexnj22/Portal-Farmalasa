@@ -54,14 +54,13 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
    esperar la primera NC real.
 
 ### Seguridad y acceso (cada uno pide además una decisión; ver SEGURIDAD-Y-ACCESO)
-10. **El PIN deja de ser la contraseña de la cuenta del carné** — etapa 1 (pase
-    de un solo uso) **EN PRODUCCIÓN desde el 28-oct 16:30** (función v69 + web).
-    Medido el 3-nov, 24 h: 155 entradas con carné por el pase (21 personas), 0
-    fallos, 1 por contraseña — vino de la app del teléfono. **La app ya no entra
-    con carné** (usuario, 3-nov: sólo usuario y contraseña o Face ID/huella;
-    v2.1416.1). Falta: compilar la app con ese cambio, verificar 0 entradas con
-    carné por contraseña unos días, y la etapa 2 (contraseñas al azar) con OK
-    del usuario. — SEGURIDAD:59-110
+10. ~~El PIN deja de ser la contraseña de la cuenta del carné~~ — **hecho
+    3-nov** (v2.1417.2): etapa 1 en producción desde el 28-oct; etapa 2 el 3-nov
+    —contraseña al azar en las 74 cuentas `@staff.local` (48 de PIN + 26 viejas
+    por número; las 9 de carné de papel no se tocan), `ensure_user_by_code` v70
+    crea las nuevas al azar y sin pase no hay entrada. Probado con QA: el PIN
+    como contraseña da `invalid_credentials` y el carné entra en 805 ms. La app
+    del teléfono ya no entra con carné (iOS 66 / Play 32). — SEGURIDAD:59-110
     Después: **carné sólo en su horario** (ítem 14), sobre esta misma puerta,
     primero en modo aviso.
 11. ⏸ **Carné sólo desde terminal registrada + tope de intentos** — **en espera:

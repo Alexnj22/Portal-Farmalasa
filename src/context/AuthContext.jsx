@@ -1283,8 +1283,12 @@ export const AuthProvider = ({ children }) => {
       // Se entra con el pase de un solo uso que emite el servidor, no con el PIN
       // como contraseña (SEGURIDAD-Y-ACCESO §3.1). Sin `withNetworkRetry` a
       // propósito: el pase vale una vez, y un reintento tras una respuesta
-      // perdida fallaría siempre. Si el pase no vino o no entró, se usa la
-      // contraseña — mientras dure la etapa 1, en que conviven las dos.
+      // perdida fallaría siempre.
+      //
+      // Etapa 2 (2026-11-03): las cuentas del carné ya no tienen el PIN por
+      // contraseña, así que con pase NO hay respaldo — si el pase falla, falla
+      // la entrada y queda anotado. La contraseña sólo la usa el carné de
+      // PAPEL, que no trae pase: su contraseña es su secreto propio.
       let authData = null;
       let authErr = null;
       if (ensured.user.token_hash) {
@@ -1292,8 +1296,7 @@ export const AuthProvider = ({ children }) => {
           token_hash: ensured.user.token_hash, type: 'magiclink',
         }));
         if (!authData?.session) anotar('carne-pase-fallo', { mensaje: String(authErr?.message || 'sin sesión').slice(0, 140) });
-      }
-      if (!authData?.session) {
+      } else {
         ({ data: authData, error: authErr } = await withNetworkRetry(() =>
           supabase.auth.signInWithPassword({ email: ensured.user.email, password: cleanId })
         ));

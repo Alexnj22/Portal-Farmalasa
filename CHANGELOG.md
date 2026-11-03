@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1425.0 — Bienestar: burbujas fluidas y el 5·4·3·2·1 explicado
+
+*«El juego de las burbujas se me traba, mejóralo, que sea fluido… el 54321
+explícalo, o mejóralo.»*
+
+- **Burbujas** ya no se traba: el tablero entero (toque, estado, animación,
+  chispas) corre en el hilo de la interfaz y JavaScript sólo suena y vibra.
+  Antes: un `runOnJS` por cuadro del arrastre y 35 sombras con filtro
+  repintadas por React en cada reventón. El arrastre rápido ya no salta
+  burbujas, la hoja nueva entra inflándose en ola y el «pop» sube de tono con
+  la racha («¡Racha ×N!»).
+- **5·4·3·2·1** abre con una portada que explica para qué sirve y cómo se
+  juega, y cada sentido trae ejemplos de qué buscar.
+- **Respira**: halos con degradado en vez de desenfoque animado.
+
 ## v2.1424.0 — Practicantes: horario fácil, Horarios y turnos, fin estimado y sus documentos
 
 - **Horario de la práctica, fácil**: en la pestaña Práctica se eligen los días, la hora de entrada y de salida y la pausa. Al guardar, la base escribe sus semanas en Horarios y turnos, publicadas, desde la semana en curso hasta la fecha de fin (`aplicar_horario_de_practica`). Así el kiosco conoce su turno y la asistencia mide sus tardanzas y faltas.

@@ -10,7 +10,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
-import { Canvas, Circle, Group, Path, RadialGradient, Skia, vec, BlurMask } from '@shopify/react-native-skia';
+import { Canvas, Circle, Group, Path, RadialGradient, Skia, vec } from '@shopify/react-native-skia';
 import { Easing, cancelAnimation, useDerivedValue, useFrameCallback, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSinMovimiento } from '../componentes/animacion';
 import { BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
@@ -60,8 +60,14 @@ function Esfera({ lado, p, avance, reloj }) {
   return (
     <Canvas style={{ width: lado, height: lado }}>
       <Group>
-        <Circle cx={c} cy={c} r={halo2} color="rgba(140,170,255,0.10)"><BlurMask blur={30} style="normal" /></Circle>
-        <Circle cx={c} cy={c} r={halo1} color="rgba(170,150,255,0.18)"><BlurMask blur={18} style="normal" /></Circle>
+        {/* Los halos son degradados, no desenfoques: un BlurMask de radio 30 que
+            cambia de tamaño en cada cuadro era lo más caro de la pantalla. */}
+        <Circle cx={c} cy={c} r={halo2}>
+          <RadialGradient c={centro} r={halo2} colors={['rgba(140,170,255,0.28)', 'rgba(140,170,255,0.10)', 'rgba(140,170,255,0)']} positions={[0.45, 0.7, 1]} />
+        </Circle>
+        <Circle cx={c} cy={c} r={halo1}>
+          <RadialGradient c={centro} r={halo1} colors={['rgba(190,160,255,0.45)', 'rgba(170,150,255,0.18)', 'rgba(170,150,255,0)']} positions={[0.6, 0.8, 1]} />
+        </Circle>
         <Circle cx={c} cy={c} r={r}>
           <RadialGradient c={vec(c - lado * 0.06, c - lado * 0.08)} r={rMax * 1.1}
             colors={['#FFFFFF', '#C9D7FF', '#8C9BFF', '#7A5CE0']} positions={[0, 0.25, 0.65, 1]} />

@@ -20,9 +20,9 @@ import { navegar } from '../../../lib/navegar';
 const DESTACADO = { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre', nuevo: true };
 const EJERCICIOS = [
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
-  { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Revienta el plástico, una o en fila.', escena: 'burbujas' },
+  { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Revienta el plástico arrastrando el dedo.', escena: 'burbujas' },
   { ruta: '/memoria', sf: 'square.grid.2x2.fill', titulo: 'Memoria', detalle: 'Encuentra las parejas en tres niveles.', escena: 'memoria' },
-  { ruta: '/anclaje', sf: 'hand.raised.fill', titulo: '5 · 4 · 3 · 2 · 1', detalle: 'Vuelve al presente con tus sentidos.', escena: 'anclaje' },
+  { ruta: '/anclaje', sf: 'hand.raised.fill', titulo: '5 · 4 · 3 · 2 · 1', detalle: 'Calma los nervios buscando cosas con tus sentidos.', escena: 'anclaje' },
 ];
 
 function TarjetaJuego({ e, grande = false }) {

@@ -68,6 +68,16 @@ modernos… agreguemos algún otro más trabajado.»*
   una vez por segundo: se hace con los ojos cerrados. Burbujas se revienta
   también **arrastrando**. Memoria tiene tres niveles, rachas, estrellas,
   tiempo y récord por nivel. El 5-4-3-2-1 se cuenta tocando.
+- **Burbujas sin trabarse** (tercera versión, mismo día): todo el tablero vive
+  en el hilo de la interfaz —qué burbuja hay bajo el dedo, cuáles están
+  reventadas, la animación—; JavaScript sólo suena y vibra. Antes había un
+  `runOnJS` por cuadro del arrastre y 35 filtros de sombra repintados con
+  React en cada reventón. El arrastre se interpola entre cuadros (no salta
+  burbujas) y el «pop» sube de tono con la racha.
+- **5·4·3·2·1 explicado**: abre con una portada (para qué sirve, los cinco
+  pasos, cómo se juega) y cada sentido trae ejemplos de qué buscar.
+- Respira: los halos son degradados y no `BlurMask` (el desenfoque animado era
+  lo más caro de la pantalla).
 - **Torre** (`app/torre.js`, el nuevo; reemplazó al jardín zen el mismo día
   —«el zen no me gusta»—): un bloque va y viene y se toca para soltarlo; lo que
   sobresale cae girando. Perfecto = destello + nota que sube con la racha, y

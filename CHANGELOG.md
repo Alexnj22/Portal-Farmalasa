@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1416.1 — La app del teléfono entra sólo con usuario y contraseña
+
+- Decisión del usuario (3-nov): en la app del teléfono se entra con usuario y
+  contraseña, o con Face ID / huella. Se quitó «Entrar con el carné» de la
+  pantalla de entrada; el carné sigue siendo para el lector y la cámara del
+  portal en la sala.
+- Por qué ahora: la etapa 1 del pase de un solo uso (v2.1357.46) está en
+  producción desde el 28-oct y no la subió nadie después; la lista decía
+  que no. Medido el 3-nov en 24 h: 155 entradas con carné por el pase
+  (21 personas), 0 fallos, y una sola por contraseña, desde la app. Las
+  compilaciones instaladas son anteriores al pase y la app no se actualiza
+  sola: con el carné en la app, la etapa 2 (contraseñas al azar) la habría
+  dejado sin entrada.
+- Llega a los teléfonos con la próxima compilación de la app.
+
 ## v2.1416.0 — Si la caja no contesta el ingreso entra igual; la foto tampoco frena bolsas ni cobros
 
 Segunda tanda después del incidente del 2-nov en Salud 1: los otros lugares donde un servicio que no responde frenaba a la sala.

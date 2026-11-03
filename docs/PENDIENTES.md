@@ -55,9 +55,13 @@ pendiente» (A2) tiene que excluirlas o sonará todas las noches.
 
 ### Seguridad y acceso (cada uno pide además una decisión; ver SEGURIDAD-Y-ACCESO)
 10. **El PIN deja de ser la contraseña de la cuenta del carné** — etapa 1 (pase
-    de un solo uso) **hecha y probada en pruebas, v2.1357.46**. Falta: subir función
-    + web el domingo 01:00–04:00 SV; días después, la etapa 2 (contraseñas al
-    azar), con OK del usuario. — SEGURIDAD:59-110
+    de un solo uso) **EN PRODUCCIÓN desde el 28-oct 16:30** (función v69 + web).
+    Medido el 3-nov, 24 h: 155 entradas con carné por el pase (21 personas), 0
+    fallos, 1 por contraseña — vino de la app del teléfono. **La app ya no entra
+    con carné** (usuario, 3-nov: sólo usuario y contraseña o Face ID/huella;
+    v2.1416.1). Falta: compilar la app con ese cambio, verificar 0 entradas con
+    carné por contraseña unos días, y la etapa 2 (contraseñas al azar) con OK
+    del usuario. — SEGURIDAD:59-110
     Después: **carné sólo en su horario** (ítem 14), sobre esta misma puerta,
     primero en modo aviso.
 11. ⏸ **Carné sólo desde terminal registrada + tope de intentos** — **en espera:

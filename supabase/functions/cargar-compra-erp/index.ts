@@ -435,23 +435,33 @@ async function leerDeVuelta(cookie: string, sobre: Record<string, unknown>, line
   if (!(Math.abs(total - Number(sobre.total)) <= TOLERANCIA)) notas.push(`Total en el sistema $${total} contra $${sobre.total}.`);
   const items: any[] = c.items ?? [];
   const productos = lineas.filter((l) => l.bandera === "PRODUCTO");
-  // Los servicios (consumo) no se sabe todavía si salen en esta lista: el
-  // conteo sólo se exige cuando la compra es toda de productos.
-  if (productos.length === lineas.length && items.length !== lineas.length) {
-    notas.push(`El sistema tiene ${items.length} renglones y se mandaron ${lineas.length}.`);
-  }
   // Agrupado por producto (uno puede venir en dos renglones). Se acepta la
   // cantidad en unidades o en la presentación: la lista no dice en cuál está,
   // y las compras medidas eran todas de 1 unidad.
-  const porProducto = new Map<string, { cant: number; unidades: number }>();
+  const porProducto = new Map<string, { cant: number; unidades: number; renglones: number }>();
   for (const l of productos) {
-    const a = porProducto.get(l.id_producto) ?? { cant: 0, unidades: 0 };
-    a.cant += Number(l.cant); a.unidades += Number(l.cant) * Number(l.unidad);
+    const a = porProducto.get(l.id_producto) ?? { cant: 0, unidades: 0, renglones: 0 };
+    a.cant += Number(l.cant); a.unidades += Number(l.cant) * Number(l.unidad); a.renglones += 1;
     porProducto.set(l.id_producto, a);
   }
+  // La lista del sistema REPITE los renglones de un producto que viene en
+  // varios: con k renglones devuelve k×k (cada uno k veces). Medido en la
+  // compra 6483 (2026-11-03): 6 renglones mandados, 10 en la lista, y la
+  // existencia de Bodega subió lo justo — y en la copia del portal hay 441
+  // grupos así desde may-2025, o sea que es de la lista y no de la carga.
+  // Se aceptan las dos formas: la real y la repetida.
+  const repetidos = [...porProducto.values()].reduce((a, e) => a + e.renglones * e.renglones, 0)
+    + (lineas.length - productos.length);
+  // Los servicios (consumo) no se sabe todavía si salen en esta lista: el
+  // conteo sólo se exige cuando la compra es toda de productos.
+  if (productos.length === lineas.length && items.length !== lineas.length && items.length !== repetidos) {
+    notas.push(`El sistema tiene ${items.length} renglones y se mandaron ${lineas.length}.`);
+  }
+  const cerca = (a: number, b: number) => Math.abs(a - b) <= 0.001;
   for (const [id, e] of porProducto) {
     const delSistema = items.filter((it) => String(it.producto_id) === id).reduce((a, it) => a + Number(it.cantidad), 0);
-    if (Math.abs(delSistema - e.unidades) > 0.001 && Math.abs(delSistema - e.cant) > 0.001) {
+    const k = e.renglones;
+    if (![e.unidades, e.cant, e.unidades * k, e.cant * k].some((v) => cerca(delSistema, v))) {
       notas.push(`Producto ${id}: ${delSistema} en el sistema, se esperaban ${e.unidades} unidades.`);
     }
   }

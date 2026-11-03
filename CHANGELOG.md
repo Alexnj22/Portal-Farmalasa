@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1428.1 — Compras: la revisión no acusa a una compra por los renglones repetidos de la lista
+
+Primeras cargas reales de Cargar compra (3-nov, COFARSAL): las dos entraron
+bien al sistema y a la existencia de Bodega, pero el portal acusó a las dos.
+
+- **«Sin verificar» falso (compra 6483).** La lista de compras del sistema
+  repite los renglones de un producto que viene en varios: con k renglones
+  devuelve k×k. Se mandaron 6, la lista trajo 10, y el Clo-Prim daba 560 donde
+  eran 280 — mientras la glimepirida subía en Bodega 25 cajas justas. En la
+  copia del portal hay 441 grupos así desde may-2025: es de la lista, no de la
+  carga. `leerDeVuelta` acepta ahora la forma real y la repetida. La 6483 se
+  pasó a verificada a mano (sus 10 renglones del registro cuadran).
+- **«Difiere» falso en Registro (compra 6484, Viro-Grip caja de 24).**
+  `get_compra_registro_json` comparaba 10 cajas a $8.2491 contra la copia del
+  sistema, que guarda 240 unidades a $0.3437: sólo cuadraba con presentación
+  de 1. Ahora compara unidades y el total del renglón al centavo.
+
 ## v2.1428.0 — App clientes: sonido sin trabas, Inicio con 6 atajos, recordatorios y carrito
 
 *«Los sonidos, haptic, etc. no funcionan apropiadamente… en inicio dejar

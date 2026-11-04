@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1445.4 — MIN·MAX: lo retirado de todas las salas no se recalcula
+
+Un producto que una persona dejó en 0/0 en las seis salas («0 en todas las
+salas») ya no recibe propuesta del cálculo: queda en 0/0. El cálculo del 1-nov
+les había propuesto número y la pantalla los marcaba «En conflicto» — 113
+productos retirados, 46 en conflicto, 86 borradores. Se limpiaron sus
+borradores y calc_min/calc_max. Vuelve al cálculo cuando alguna sala recibe
+número otra vez. Migración `20261104214149` (verificada en transacción
+revertida sobre las 6 salas: 0 de 113 con propuesta).
+
 ## v2.1445.3 — Saly: borde completo en las esquinas y sin el aviso de «sin contar» a media tarde
 
 - El borde de aurora del recuadro de Saly se cortaba en las esquinas: el

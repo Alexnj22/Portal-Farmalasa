@@ -1,8 +1,9 @@
-import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, BookOpen, CheckCircle2, PenLine, Pill } from 'lucide-react';
+import { AlertTriangle, BookOpen, Building2, CheckCircle2, PenLine, Pill } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import LiquidSelect from '../../components/common/LiquidSelect';
 import ListRow from '../../components/common/ListRow';
 import Notice from '../../components/common/Notice';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -10,7 +11,10 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
 import { useResumenWidget } from './tamanoWidget';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import { BRANCH_A_ERP, ERP_ORDEN } from '@nucleo/constants/erp';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 
 /* El formulario se baja al apretar «Completar», no al entrar al Inicio: arrastra
  * el canónico de archivo, el desplegable y el buscador de médico, y la baldosa
@@ -58,128 +62,205 @@ const fmtFecha = (f) => (f
 const diasDesde = (f) => Math.max(0, diasEntre(f, hoySV()));
 
 export default function WidgetRecetasPendientes() {
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
     const navigate = useNavigate();
     const puedeCompletar = hasPermission('bitacoras', 'can_edit');
+    // El botón al libro sólo si la pantalla se puede abrir: un botón que
+    // termina en «sin permiso» enseña a no apretarlo.
+    const puedeVerLibro = hasPermission('bitacoras', 'can_view');
     const miSala = user?.branchId ?? user?.branch_id ?? null;
     const branches = useStaff((st) => st.branches);
+
+    // ── Con alcance ALL se elige la sala ───────────────────────────────────
+    // Quien ve todas las salas trabaja desde Administración, que no dispensa:
+    // con su propia sala la baldosa decía «Aquí no se dispensa» para siempre.
+    // Se le ofrecen las salas de ventas, en el orden en que el negocio las
+    // nombra, y arranca en la primera. Con BRANCH no cambia nada: es su sala.
+    const alcanceTodas = getScope?.('dash_recetas_pendientes') === 'ALL';
+    const salasQueDispensan = useMemo(() => ERP_ORDEN
+        .map((erp) => Object.keys(BRANCH_A_ERP).find((b) => BRANCH_A_ERP[b] === erp))
+        .map((id) => (branches || []).find((b) => String(b.id) === String(id)))
+        .filter((b) => b && (b.type || 'FARMACIA') === 'FARMACIA')
+        .map((b) => ({ value: String(b.id), label: b.name })), [branches]);
+    const [salaElegida, setSalaElegida] = useState('');
+    const sala = alcanceTodas
+        ? (salaElegida || salasQueDispensan[0]?.value || null)
+        : miSala;
+
     // Sólo las salas de ventas dispensan. En Bodega o Administración un «sin
     // pendientes» se leería como «todo al día», cuando en realidad ahí no se
     // vende — y ese matiz importa cuando el widget existe para no olvidarse.
     const dispensa = (branches || []).some(
-        b => String(b.id) === String(miSala) && (b.type || 'FARMACIA') === 'FARMACIA');
+        b => String(b.id) === String(sala) && (b.type || 'FARMACIA') === 'FARMACIA');
 
     const [filas, setFilas] = useState([]);
     const [cargando, setCargando] = useState(true);
+    // Un fallo de lectura NO es «Sin pendientes»: se dice.
+    const [error, setError] = useState(null);
     const [completando, setCompletando] = useState(null);
 
+    // Sólo la última lectura escribe: al cambiar de sala, la respuesta de la
+    // anterior no puede pisar a la nueva.
+    const secuencia = useRef(0);
     const cargar = useCallback(async () => {
-        if (!miSala || !dispensa) { setCargando(false); return; }
+        const mia = ++secuencia.current;
+        if (!sala || !dispensa) { setCargando(false); return; }
         const hoy = hoySV();
-        const { renglones } = await fetchLibro(miSala, {
+        const { renglones, error: fallo } = await fetchLibro(sala, {
             desde: sumarDias(hoy, -DIAS_ATRAS), hasta: hoy, estado: 'pendiente',
         });
+        if (mia !== secuencia.current) return;
+        if (fallo) {
+            console.error('WidgetRecetasPendientes: no se pudo leer el libro', fallo);
+            setError(fallo);
+            setCargando(false);
+            return;
+        }
+        setError(null);
         // Los más viejos primero: son los que se están por olvidar.
         setFilas([...renglones].sort((a, b) => String(a.fecha).localeCompare(String(b.fecha))));
         setCargando(false);
-    }, [miSala, dispensa]);
+    }, [sala, dispensa]);
 
+    // La carga inicial acá; el refresco, con `useRefrescoEnVivo`: con la
+    // pestaña oculta no consulta y, al volver, lee una vez si ya venció.
     useEffect(() => {
-        // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial y refresco cada 5 min
-        cargar();
-        const t = setInterval(cargar, REFRESCO_MS);
-        return () => clearInterval(t);
+        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial y al cambiar de sala
+        return () => { secuencia.current += 1; };
     }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: REFRESCO_MS });
+
+    const elegirSala = (val) => {
+        if (!val || String(val) === String(sala)) return;
+        setCargando(true);
+        setError(null);
+        setFilas([]);
+        setSalaElegida(String(val));
+    };
 
     const viejasVistazo = filas.filter(r => diasDesde(r.fecha) >= 2).length;
     useResumenWidget(cargando ? null
-        : !miSala ? { texto: 'Sin sala asignada' }
+        : !sala ? { texto: 'Sin sala asignada' }
         : !dispensa ? { texto: 'Aquí no se dispensa' }
+        : error ? { texto: 'No se pudo leer', tono: 'danger' }
         : filas.length ? { valor: filas.length, texto: viejasVistazo > 0 ? `por completar · ${viejasVistazo} con 2+ días` : 'por completar', tono: viejasVistazo > 0 ? 'danger' : 'warning' }
         : { texto: 'Sin pendientes' });
 
-    if (cargando) return <SkeletonText lines={3} />;
+    const selector = alcanceTodas && salasQueDispensan.length > 1 ? (
+        <div className="shrink-0 px-2 pt-2">
+            <LiquidSelect
+                value={String(sala ?? '')}
+                onChange={elegirSala}
+                options={salasQueDispensan}
+                placeholder="Sala"
+                ariaLabel="Sala de ventas"
+                icon={Building2}
+                clearable={false}
+                compact
+            />
+        </div>
+    ) : null;
 
-    if (!miSala) {
-        return <EmptyState icon={Pill} compact
+    let contenido;
+    if (cargando) {
+        contenido = <div className="p-2"><SkeletonText lines={3} /></div>;
+    } else if (!sala) {
+        contenido = <EmptyState icon={Pill} compact
             title="Sin sala asignada"
             subtitle="El libro bajo receta es de una sala de ventas." />;
-    }
-
-    if (!dispensa) {
-        return <EmptyState icon={Pill} compact
+    } else if (!dispensa) {
+        contenido = <EmptyState icon={Pill} compact
             title="Aquí no se dispensa"
             subtitle="El libro bajo receta es de las salas de ventas." />;
-    }
+    } else if (error) {
+        contenido = <EmptyState linea icon={AlertTriangle}
+            title="No se pudieron leer las recetas"
+            subtitle={mensajeAmigable(error, 'Revisa la conexión e intenta de nuevo.')} />;
+    } else if (!filas.length) {
+        // La ventana es el año (ver `DIAS_ATRAS`), no el mes: el texto lo dice
+        // sin prometer un período que no se miró.
+        contenido = <EmptyState icon={CheckCircle2} compact
+            title="Sin pendientes"
+            subtitle="Todas las ventas bajo receta tienen su receta completa." />;
+    } else {
+        // Una venta de más de un día ya cuesta reconstruirla: quién se la llevó
+        // y con qué receta se olvida rápido, y ese olvido es el hueco del libro.
+        const viejas = filas.filter(r => diasDesde(r.fecha) >= 2).length;
+        const sobran = filas.length > MAX_FILAS;
+        // ── El alto de la baldosa ───────────────────────────────────────────
+        // `WidgetCard` le da a su cuerpo `overflow-hidden`: lo que no entra se
+        // CORTA. La lista se desplaza dentro de la tarjeta y el pie —cuántos
+        // faltan y el botón al libro— queda fijo abajo, como en los cortes.
+        contenido = (
+            <>
+                <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2">
+                    {viejas > 0 && (
+                        <Notice variant="danger" icon={AlertTriangle} compact>
+                            {viejas} {viejas === 1 ? 'lleva' : 'llevan'} 2 días o más sin completar
+                        </Notice>
+                    )}
 
-    if (!filas.length) {
-        return (
-            <EmptyState icon={CheckCircle2} compact
-                title="Sin pendientes"
-                subtitle="Todas las ventas bajo receta del mes tienen su receta completa." />
+                    <ul className="space-y-1.5 min-w-0">
+                        {filas.slice(0, MAX_FILAS).map((r) => {
+                            const faltan = faltantesDelRenglon(r);
+                            const dias = diasDesde(r.fecha);
+                            return (
+                                <li key={r.id}>
+                                    <ListRow
+                                        surface="card"
+                                        density="sm"
+                                        tone={dias >= 2 ? 'danger' : null}
+                                        icon={Pill}
+                                        title={r.producto_nombre}
+                                        subtitle={`${r.folio_txt} · ${fmtFecha(r.fecha)} · ${r.cliente || 'sin cliente'}`}
+                                        trailing={puedeCompletar ? (
+                                            <Button variant="primary" size="xs" icon={PenLine}
+                                                onClick={() => setCompletando(r)}>
+                                                Completar
+                                            </Button>
+                                        ) : (
+                                            <Badge variant="warning" size="sm" uppercase={false}>
+                                                faltan {faltan.length}
+                                            </Badge>
+                                        )}
+                                    />
+                                </li>
+                            );
+                        })}
+                    </ul>
+                </div>
+
+                {/* Lo que no entra NO se esconde en silencio: el número dice
+                    cuánto falta ver, y el botón lleva al libro entero. */}
+                {(sobran || puedeVerLibro) && (
+                    <div className="shrink-0 flex flex-wrap items-center gap-2 px-2 py-2 border-t border-divider">
+                        {sobran && (
+                            <span className="text-label text-content-3">
+                                y {filas.length - MAX_FILAS} más
+                            </span>
+                        )}
+                        {puedeVerLibro && (
+                            <Button variant="secondary" size="sm" icon={BookOpen} className="ml-auto"
+                                onClick={() => navigate('/bitacoras')}>
+                                Ver el libro
+                            </Button>
+                        )}
+                    </div>
+                )}
+            </>
         );
     }
 
-    // Una venta de más de un día ya cuesta reconstruirla: quién se la llevó y
-    // con qué receta se olvida rápido, y ese olvido es el hueco del libro.
-    const viejas = filas.filter(r => diasDesde(r.fecha) >= 2).length;
-
     return (
-        <div className="flex flex-col gap-2 h-full">
-            {viejas > 0 && (
-                <Notice variant="danger" icon={AlertTriangle} compact>
-                    {viejas} {viejas === 1 ? 'lleva' : 'llevan'} 2 días o más sin completar
-                </Notice>
-            )}
-
-            <ul className="space-y-1.5 min-w-0">
-                {filas.slice(0, MAX_FILAS).map((r) => {
-                    const faltan = faltantesDelRenglon(r);
-                    const dias = diasDesde(r.fecha);
-                    return (
-                        <li key={r.id}>
-                            <ListRow
-                                surface="card"
-                                density="sm"
-                                tone={dias >= 2 ? 'danger' : null}
-                                icon={Pill}
-                                title={r.producto_nombre}
-                                subtitle={`${r.folio_txt} · ${fmtFecha(r.fecha)} · ${r.cliente || 'sin cliente'}`}
-                                trailing={puedeCompletar ? (
-                                    <Button variant="primary" size="xs" icon={PenLine}
-                                        onClick={() => setCompletando(r)}>
-                                        Completar
-                                    </Button>
-                                ) : (
-                                    <Badge variant="warning" size="sm" uppercase={false}>
-                                        faltan {faltan.length}
-                                    </Badge>
-                                )}
-                            />
-                        </li>
-                    );
-                })}
-            </ul>
-
-            {/* Lo que no entra NO se esconde en silencio: el número dice cuánto
-                falta ver, y el botón lleva al libro entero. */}
-            <div className="mt-auto flex flex-wrap items-center gap-2">
-                {filas.length > MAX_FILAS && (
-                    <span className="text-label text-content-3">
-                        y {filas.length - MAX_FILAS} más
-                    </span>
-                )}
-                <Button variant="secondary" size="sm" icon={BookOpen}
-                    onClick={() => navigate('/bitacoras')}>
-                    Ver el libro
-                </Button>
-            </div>
+        <div className="h-full flex flex-col min-h-0">
+            {selector}
+            {contenido}
 
             {completando && (
                 <Suspense fallback={null}>
                     <CompletarRenglon
                         renglon={completando}
-                        branchId={miSala}
+                        branchId={sala}
                         onCerrar={(hubo) => { setCompletando(null); if (hubo) cargar(); }}
                     />
                 </Suspense>

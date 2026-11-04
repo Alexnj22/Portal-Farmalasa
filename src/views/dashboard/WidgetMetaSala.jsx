@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 import { Target } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -45,12 +46,16 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Cada lectura lleva su número y sólo la ÚLTIMA escribe: una respuesta
+    // lenta del ciclo anterior —o de la sala de antes— no puede pisar a una
+    // más nueva. Al desmontar, el número sube y todo lo que esté en vuelo
+    // queda descartado.
+    const secuencia = useRef(0);
     const cargar = useCallback(() => {
-        let vivo = true;
+        const mia = ++secuencia.current;
         fetchMetaSala(selectedBranchId)
-            .then((data) => { if (vivo) { setRow(data); setError(null); setLoading(false); } })
-            .catch((err) => { if (vivo) { setError(mensajeAmigable(err, 'No se pudo cargar la meta')); setLoading(false); } });
-        return () => { vivo = false; };
+            .then((data) => { if (mia === secuencia.current) { setRow(data); setError(null); setLoading(false); } })
+            .catch((err) => { if (mia === secuencia.current) { setError(mensajeAmigable(err, 'No se pudo cargar la meta')); setLoading(false); } });
     }, [selectedBranchId]);
 
     // El mes de la nota sale de `row.year_month`, que lo calcula el servidor en
@@ -73,17 +78,13 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
         return () => { vivo = false; };
     }, [row?.year_month, selectedBranchId]);
 
+    // La carga inicial acá; el refresco, con `useRefrescoEnVivo`: no consulta
+    // con la pestaña oculta y, al volver, lee una vez si ya venció el ciclo.
     useEffect(() => {
-        const cancelar = cargar();
-        const timer = setInterval(cargar, REFRESCO_MS);
-        const alVolver = () => { if (document.visibilityState === 'visible') cargar(); };
-        document.addEventListener('visibilitychange', alVolver);
-        return () => {
-            cancelar();
-            clearInterval(timer);
-            document.removeEventListener('visibilitychange', alVolver);
-        };
+        cargar();
+        return () => { secuencia.current += 1; };
     }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: REFRESCO_MS });
 
     useResumenWidget(loading ? null
         : error ? { texto: 'No se pudo cargar', tono: 'danger' }

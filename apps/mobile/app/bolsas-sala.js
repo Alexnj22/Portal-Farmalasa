@@ -96,7 +96,7 @@ export default function BolsasDeLaSala() {
     ]);
     if (!abiertas) { setDatos({ error: true, bolsas: [], faltan: [], diferencias: [] }); return; }
     const saldos = await fetchSaldos([...abiertas, ...(conDif || [])].map((b) => b.id));
-    const conSaldo = (b) => ({ ...b, ...(saldos.get(b.id) || {}) });
+    const conSaldo = (b) => ({ ...b, ...(saldos?.get(b.id) || {}) });
     setDatos({ bolsas: abiertas.map(conSaldo), faltan: faltan || [], diferencias: (conDif || []).map(conSaldo) });
   }, []);
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));

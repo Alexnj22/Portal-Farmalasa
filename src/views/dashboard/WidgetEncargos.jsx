@@ -15,6 +15,7 @@ import { RegistrarLlamada } from './AvisosDeReserva';
 import { CambiarFecha, NoEntrego } from './AccionesDeEncargoV2';
 import { PedirProrroga } from './Prorroga';
 import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 import { vigenciaDelSaldo } from '@nucleo/utils/abonoTicket';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -96,7 +97,10 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
             setFilas((f) => f ?? []);
         }
     }, [branchId]);
-    useEffect(() => { cargar(); const t = setInterval(cargar, 120_000); return () => clearInterval(t); }, [cargar]);
+    // La carga inicial acá; el refresco cada 2 min, con `useRefrescoEnVivo`:
+    // con la pestaña oculta no consulta y, al volver, lee una vez si ya venció.
+    useEffect(() => { cargar(); }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: 120_000 });
     useEffect(() => { if (recarga) cargar(); }, [recarga, cargar]);
     // Sólo en la sala del retiro: el efectivo entra al cajón de esa sala.
     const cobrable = (e) => !soloLectura && !!onCobrar && salaDeCobro != null && encargoPorCobrar(e) && String(e.branch_id) === String(salaDeCobro);

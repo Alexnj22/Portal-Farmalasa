@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { ausenciasDelDia, nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas } from '@nucleo/utils/inicio';
+import { nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas } from '@nucleo/utils/inicio';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
@@ -93,7 +93,7 @@ import SegmentedControl from '../components/common/SegmentedControl';
 import ListRow from '../components/common/ListRow';
 import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
-    fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
+    fetchPendingApprovalRequests, fetchAusenciasDeHoy, fetchTodayHourlySales, fetchAlertasOperativas,
     fetchBranchHourlySalesRange, fetchCotizacionesActivas, fetchTodayInvoicesSummary, contarSolicitudesPendientes, NO_SON_SOLICITUDES,
     fetchDashboardCanon, upsertDashboardCanon,
 } from '@nucleo/data/dashboard';
@@ -108,8 +108,11 @@ import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
     hospedaBaldosasDeSucursal,
 } from '@nucleo/constants/dashboardTabs';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto, diaSV } from '@nucleo/utils/fecha';
 import { fetchTopProductosDelMes } from '@nucleo/data/ventas';
+import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
+import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
+import { hora12 } from '@nucleo/utils/hora';
 
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
@@ -594,7 +597,13 @@ const STATUS_CONFIG = {
   BUSINESS:  { label: 'Gest. externa', dot: 'bg-chart-1',   variante: 'chart-1' },
   OUT:       { label: 'Salida',        dot: 'bg-content-3', variante: 'neutral' },
   ABSENT:    { label: 'Sin marcar',    dot: 'bg-warning',   variante: 'warning' },
+  // Estos dos los devolvía `getTodayAttendanceStatus` y el widget no los
+  // pintaba: quien estaba de vacaciones o de día libre desaparecía de la sala.
+  OTHER:     { label: 'Ausente',       dot: 'bg-chart-3',   variante: 'chart-3' },
+  OFF:       { label: 'Día libre',     dot: 'bg-content-3', variante: 'neutral' },
 };
+// Antes de la primera marcación del portal, «Sin marcar» no es una falta.
+const SIN_MARCACIONES_AUN = { label: 'Por marcar', dot: 'bg-content-3', variante: 'neutral' };
 
 // El tinte de un acento: mismo color, bajado a un porcentaje. Reemplaza a los
 // `rgba(0,82,204,0.10)` escritos a mano, que clavaban el valor del token y se
@@ -885,7 +894,6 @@ const MonthYearPicker = ({ value, onChange, isMobile = false }) => {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-const parseMeta = (raw) => typeof raw === 'object' && raw !== null ? raw : (() => { try { return JSON.parse(raw); } catch { return {}; } })();
 const localDateStr = (d = new Date()) => { const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), day = String(d.getDate()).padStart(2,'0'); return `${y}-${m}-${day}`; };
 // Vive en el núcleo (`utils/inicio.js`): la usa también el Inicio de la app.
 const getBranchIssue = problemaDeSucursal;
@@ -972,6 +980,7 @@ const DashboardView = ({ openModal }) => {
   const branches         = useStaff(s => s.branches);
   const holidays         = useStaff(s => s.holidays);
   const announcements    = useStaff(s => s.announcements);
+  const rolesDelStore    = useStaff(s => s.roles);
   const attendanceLoaded = useStaff(s => s.attendanceLoaded);
   const loadAttendance   = useStaff(s => s.loadAttendanceLastDays);
 
@@ -1837,8 +1846,24 @@ const DashboardView = ({ openModal }) => {
   const [bolsasBranch,   setBolsasBranch]   = useState('');
   const [absences,       setAbsences]       = useState([]);
   const [absLoading,     setAbsLoading]     = useState(true);
+  const [absError,       setAbsError]       = useState(false);
   const [todaySales,     setTodaySales]     = useState({});
   const [todayLoading,   setTodayLoading]   = useState(false);
+  const [todayError,     setTodayError]     = useState(false);
+  const [salesError,     setSalesError]     = useState(false);
+  const [factError,      setFactError]      = useState(false);
+  const [cotizError,     setCotizError]     = useState(false);
+  const [topProdError,   setTopProdError]   = useState(false);
+  const [attError,       setAttError]       = useState(false);
+  const [alertasOp,      setAlertasOp]      = useState([]);
+  // Top productos con alcance ALL: vacío = toda la red.
+  const [topBranch,      setTopBranch]      = useState('');
+  // Meta del mes y Venta por vendedor tenían UN selector de sala compartido:
+  // cambiar la sala en uno cambiaba el otro sin decirlo.
+  const [vendBranch,     setVendBranch]     = useState(() => {
+    const propia = Number(user?.branchId ?? user?.branch_id);
+    return String(META_SALA_IDS.includes(propia) ? propia : META_SALA_IDS[0]);
+  });
 
   // ── Comercial tab data ─────────────────────────────────────────────────────
   const [cotizStats,     setCotizStats]     = useState({ activas: 0, total: 0, recent: [] });
@@ -1852,7 +1877,8 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     const since = new Date(); since.setDate(since.getDate()-7);
     fetchSalesBranchIdsSince(localDateStr(since))
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (error) { console.error('[dash] salas con ventas', error); setTodayError(true); }
         setSalesBranchIds(new Set((data||[]).map(r => String(r.branch_id))));
         setSalesBranchIdsLoading(false);
       });
@@ -1883,7 +1909,12 @@ const DashboardView = ({ openModal }) => {
     });
   }, [salesBranches, user, widgetSizes]);
 
-  useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
+  // Si la lectura falla, `attendanceLoaded` se queda en false y el esqueleto
+  // giraba para siempre: ahora se dice.
+  useEffect(() => {
+    if (attendanceLoaded) return;
+    Promise.resolve(loadAttendance(14)).then(ok => setAttError(ok === false)).catch(() => setAttError(true));
+  }, [attendanceLoaded, loadAttendance]);
 
   useEffect(() => {
     // El error ya no se convierte en «Sin solicitudes» y una red caída ya no
@@ -1899,21 +1930,24 @@ const DashboardView = ({ openModal }) => {
       .finally(() => setReqLoading(false));
   }, []);
 
+  // Las ausencias de HOY salen de la ficha (`get_estados_de_personas`), no de
+  // las solicitudes: ver `fetchAusenciasDeHoy`.
+  const idsActivos = useMemo(
+    () => employees.filter(e => e.status !== 'INACTIVO' && e.status !== 'LIQUIDADO').map(e => e.id).sort().join(','),
+    [employees]);
   useEffect(() => {
-    const today = localDateStr();
-    // Devuelve el ARRAY (o `null` si falló la primera página), no `{ data }`:
-    // desestructurar `{ data }` de un array da `undefined` y el widget habría
-    // quedado en cero sin decir nada. Mismo contrato que
-    // `fetchTodayInvoicesSummary` más abajo.
-    fetchActiveLeaveRequests()
-      .then((rows) => {
-        // El juez es el del núcleo (`ausenciasDelDia`), el mismo del Inicio de
-        // la app: un permiso por días sueltos no es un rango del primero al último.
-        const active = ausenciasDelDia(rows || [], today);
-        setAbsences(active); setAbsLoading(false);
+    if (!idsActivos) return;
+    let vivo = true;
+    fetchAusenciasDeHoy(idsActivos.split(','))
+      .then(({ filas, error }) => {
+        if (!vivo) return;
+        setAbsError(!!error);
+        setAbsences(filas.map(f => ({ id: f.employee_id, ...f })));
       })
-      .catch((e) => { console.error('DashboardView: ausencias vigentes falló:', e?.message ?? e); setAbsLoading(false); });
-  }, []);
+      .catch(() => vivo && setAbsError(true))
+      .finally(() => vivo && setAbsLoading(false));
+    return () => { vivo = false; };
+  }, [idsActivos]);
 
   useEffect(() => {
     if (salesBranch || !salesBranches.length) return;
@@ -1925,11 +1959,12 @@ const DashboardView = ({ openModal }) => {
     }
   }, [salesBranches, salesBranch, getScope, userBranchStr]);
 
-  useEffect(() => {
-    if (!branches.length) return;
-    setTodayLoading(true);
-    fetchTodayHourlySales(localDateStr())
-      .then(({ data }) => {
+  const cargarHoy = useCallback((primera = false) => {
+    if (primera) setTodayLoading(true);
+    return fetchTodayHourlySales(localDateStr())
+      .then(({ data, error }) => {
+        if (error) { console.error('[dash] ventas de hoy', error); setTodayError(true); setTodayLoading(false); return; }
+        setTodayError(false);
         const map = {};
         (data||[]).forEach(r => {
           const bid = String(r.branch_id);
@@ -1941,13 +1976,20 @@ const DashboardView = ({ openModal }) => {
         });
         setTodaySales(map); setTodayLoading(false);
       });
+  }, []);
+  useEffect(() => {
+    if (!branches.length) return;
+    cargarHoy(true);
   // `branches.length` y no `branches` (2026-08-20). El efecto sólo mira si YA
   // hay sucursales —no lee ni una de ellas: el mapa se arma con los
   // `branch_id` que devuelve la consulta—, pero dependía del array, y el store
   // lo reescribe dos veces al arrancar. Resultado medido en producción: DOS
   // peticiones idénticas (`sale_date=eq.<hoy>`) en cada carga del Inicio. Con
   // la longitud se dispara una sola vez y el dato es el mismo.
-  }, [branches.length]);
+  }, [branches.length, cargarHoy]);
+  // «Hoy» se relee cada 5 minutos con la pestaña a la vista: el punto de
+  // «ahora» avanzaba y las barras se quedaban como al entrar.
+  useRefrescoEnVivo(() => cargarHoy(false), { ms: 5 * 60 * 1000, activo: branches.length > 0 });
 
   useEffect(() => {
     if (!salesBranch) { setSalesStats({ days:[], generalHours:[], specificHours:{} }); return; }
@@ -1965,7 +2007,8 @@ const DashboardView = ({ openModal }) => {
       });
     };
     fetchBranchHourlySalesRange(salesBranch, localDateStr(since))
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        setSalesError(!!error);
         const cb = branches.find(b=>String(b.id)===String(salesBranch));
         const { dias, horas, porDia } = promediosDeVentas(data, cb);
         const fD = dias.map(d => ({ ...d, label: DAY_NAMES[d.day] }));
@@ -1981,6 +2024,7 @@ const DashboardView = ({ openModal }) => {
     fetchCotizacionesActivas()
       .then(({ data, count, error }) => {
         if (error) console.error('[dash cotizaciones]', error);
+        setCotizError(!!error);
         const activas = data || [];
         setCotizStats({
           activas: count ?? activas.length,
@@ -1991,14 +2035,15 @@ const DashboardView = ({ openModal }) => {
       });
   }, []);
 
-  useEffect(() => {
+  const cargarFacturacion = useCallback(() => {
     // `fetchAllRows` devuelve el array directo (o null si fallo la primera
-    // pagina) — no `{ data }`. Antes se desestructuraba `{ data }` de un
-    // array, que da `undefined`, y el widget habria quedado en cero sin decir
-    // nada. El `.catch` tampoco estaba.
-    fetchTodayInvoicesSummary(localDateStr())
+    // pagina) — no `{ data }`. Y `null` es un ERROR, no un día sin ventas: se
+    // pintaba «0 documentos · $0.00».
+    return fetchTodayInvoicesSummary(localDateStr())
       .then((rows) => {
-        const filas = rows || [];
+        if (rows === null) { setFactError(true); setFactLoading(false); return; }
+        setFactError(false);
+        const filas = rows;
         setFactStats({
           count: filas.length,
           total: filas.reduce((s, r) => s + (parseFloat(r.total) || 0), 0),
@@ -2007,8 +2052,20 @@ const DashboardView = ({ openModal }) => {
         });
         setFactLoading(false);
       })
-      .catch((e) => { console.error('[dashboard] facturación de hoy', e); setFactLoading(false); });
+      .catch((e) => { console.error('[dashboard] facturación de hoy', e); setFactError(true); setFactLoading(false); });
   }, []);
+  useEffect(() => { cargarFacturacion(); }, [cargarFacturacion]);
+  useRefrescoEnVivo(cargarFacturacion, { ms: 5 * 60 * 1000 });
+
+  // Alertas operativas de sala (cortes, caja, ventas). Si falla, el widget
+  // sigue con las de la ficha y lo dice en consola.
+  const cargarAlertasOp = useCallback(() => fetchAlertasOperativas().then(({ data, error }) => {
+    if (error) { console.error('[dash] alertas operativas', error); return; }
+    setAlertasOp(Array.isArray(data) ? data : []);
+  }), []);
+  const veAlertas = showWidget('branches', 'dash_branches');
+  useEffect(() => { if (veAlertas) cargarAlertasOp(); }, [veAlertas, cargarAlertasOp]);
+  useRefrescoEnVivo(cargarAlertasOp, { ms: 5 * 60 * 1000, activo: veAlertas });
 
   // El widget pinta diez filas con dos campos, y hasta hoy se los pedía a
   // `get_product_sales_agg` —las 14 columnas de la pantalla de Ventas— con el
@@ -2024,22 +2081,25 @@ const DashboardView = ({ openModal }) => {
   // el widget se va a pintar. El `ref` —y no `topProductos.length`— es lo que
   // garantiza una sola vuelta: un mes sin ventas devuelve `[]`, y con la
   // guarda por longitud volvería a pedirlo en cada cambio de pestaña.
-  const topProdPedido = useRef(false);
+  const topProdPedido = useRef(null);
   useEffect(() => {
-    if (topProdPedido.current) return;
+    if (topProdPedido.current === topBranch) return;
     if (!showWidget('top_productos', 'dash_top_productos')) return;
-    topProdPedido.current = true;
+    topProdPedido.current = topBranch;
     const now  = new Date();
     const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
     const ffin = localDateStr();
     setTopProdLoading(true);
-    fetchTopProductosDelMes({ p_fini: fini, p_ffin: ffin, p_limite: 10 })
+    // Sólo por sala (decisión del usuario, 2026-11-04): sin alcance ALL la
+    // base pone la sala propia e ignora este parámetro.
+    fetchTopProductosDelMes({ p_fini: fini, p_ffin: ffin, p_limite: 10, p_branch_id: topBranch ? Number(topBranch) : null })
       .then(({ data, error }) => {
         if (error) console.error('[top_productos]', error);
+        setTopProdError(!!error);
         setTopProductos(data || []);
         setTopProdLoading(false);
       });
-  }, [showWidget]);
+  }, [showWidget, topBranch]);
 
   // Los helpers de visibilidad (`isWidgetOn`, `canSee`, `canManage`,
   // `showWidget`) viven arriba, junto al canon: `activeLayout` los necesita
@@ -2084,16 +2144,34 @@ const DashboardView = ({ openModal }) => {
   const today           = localDateStr();
   const activeEmployees = useMemo(()=>employees.filter(e=>e.status!=='INACTIVO'&&e.status!=='LIQUIDADO'),[employees]);
   const presentToday    = useMemo(()=>presentesEl(employees, today),[employees,today]);
-  const branchAlerts    = useMemo(()=>branches.filter(b=>getBranchIssue(b)!==null),[branches]);
+  // ¿Se marca en el portal? Hoy NO (medido el 2026-11-04: `attendance` vacía;
+  // el usuario: «aún no se inicia, pero sí estará»). Sin una sola marcación en
+  // los 14 días cargados, «Sin marcar» en ámbar acusaba a TODA la plantilla de
+  // algo que todavía no se le pide. Se dice neutro hasta que exista la primera.
+  const hayMarcaciones  = useMemo(()=>employees.some(e=>(e.attendance||[]).length>0),[employees]);
+  // Problemas de cada sala: los de la ficha (`problemaDeSucursal`) más los
+  // OPERATIVOS del día (`inicio_alertas_operativas`). Una sala, una tarjeta.
+  const problemasPorSala = useMemo(() => {
+    const m = new Map();
+    const add = (id, t) => { const k = String(id); if (!m.has(k)) m.set(k, []); m.get(k).push(t); };
+    branches.forEach(b => { const i = getBranchIssue(b); if (i) add(b.id, i); });
+    alertasOp.forEach(a => {
+      if (a.cortes_sin_confirmar > 0) add(a.branch_id, a.cortes_sin_confirmar === 1 ? '1 corte sin confirmar' : `${a.cortes_sin_confirmar} cortes sin confirmar`);
+      if (a.caja_sin_cerrar_desde) add(a.branch_id, `Caja sin cerrar desde el ${fechaTexto(a.caja_sin_cerrar_desde, { day: 'numeric', month: 'short' })}`);
+      if (a.sin_ventas) add(a.branch_id, a.sin_ventas_desde ? `Sin ventas desde las ${hora12(a.sin_ventas_desde)}` : 'Sin ventas hoy');
+    });
+    return m;
+  }, [branches, alertasOp]);
+  const branchAlerts    = useMemo(()=>branches.filter(b=>problemasPorSala.has(String(b.id))),[branches, problemasPorSala]);
 
   const trendScopeIsBranch = getScope('dash_trend') !== 'ALL';
-  const trendEmployees = trendScopeIsBranch && userBranchStr
+  const trendEmployees = useMemo(() => (trendScopeIsBranch && userBranchStr
     ? employees.filter(e => String(e.branchId ?? e.branch_id ?? '') === userBranchStr)
-    : employees;
+    : employees), [trendScopeIsBranch, userBranchStr, employees]);
 
   const trendData = useMemo(()=>{
     const base=new Date(); base.setDate(base.getDate()+trendOffset*7);
-    return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); trendEmployees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||a.timestamp?.split('T')[0])===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es-SV',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
+    return Array.from({length:7},(_,i)=>{ const d=new Date(base); d.setDate(d.getDate()-(6-i)); const ds=localDateStr(d); const ids=new Set(); trendEmployees.forEach(e=>(e.attendance||[]).forEach(a=>{if((a.date||(a.timestamp&&diaSV(a.timestamp)))===ds) ids.add(e.id);})); return {day:d.toLocaleDateString('es-SV',{weekday:'short'}).replace('.',''),date:ds,total:ids.size}; });
   },[trendEmployees,trendOffset]);
 
   // ── Una semana sin marcaciones NO es una semana de cero asistencia ────────
@@ -2138,7 +2216,10 @@ const DashboardView = ({ openModal }) => {
     return {cells,year:y,month:m};
   },[calMonth]);
 
-  const recentAnnouncements = useMemo(()=>announcements.filter(a=>!a.isArchived&&(!a.scheduledFor||new Date(a.scheduledFor)<=new Date())).slice(0,5),[announcements]);
+  // Sólo los avisos dirigidos a ESTA persona (decisión del usuario, 2026-11-04):
+  // el Inicio mostraba los de todas las salas y cargos. Mismo juez que el toast
+  // y la campana (`announcementAppliesToUser`).
+  const recentAnnouncements = useMemo(()=>announcements.filter(a=>!a.isArchived&&(!a.scheduledFor||new Date(a.scheduledFor)<=new Date())&&announcementAppliesToUser(a,user,rolesDelStore)).slice(0,5),[announcements,user,rolesDelStore]);
 
   const birthdaysOfMonth = useMemo(()=>{
     const y=bdMonth.getFullYear(), m=bdMonth.getMonth(), todayStr=localDateStr();
@@ -2531,10 +2612,15 @@ const DashboardView = ({ openModal }) => {
               onNext={() => setTrendOffset(o => Math.min(0, o + 1))}
               onReset={() => setTrendOffset(0)}
               nextDisabled={trendOffset === 0}
+              // Se cargan 14 días (`loadAttendance(14)`): más atrás de la semana
+              // anterior, el gráfico dibujaba ceros que no eran datos.
+              prevDisabled={trendOffset <= -1}
             />
           }>
           <div className="px-4 pb-4 pt-2 h-full flex flex-col">
-            {!attendanceLoaded ? (
+            {attError ? (
+              <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las marcaciones" />
+            ) : !attendanceLoaded ? (
               <EsqueletoTendencia />
             ) : tendenciaVacia ? (
               /* Sin marcaciones: no se dibuja la serie. Ver `tendenciaVacia`.
@@ -2549,7 +2635,7 @@ const DashboardView = ({ openModal }) => {
               <EmptyState
                 linea
                 icon={Activity}
-                title={trendOffset === 0 ? 'Sin marcaciones esta semana' : 'Sin marcaciones en esa semana'}
+                title={!hayMarcaciones ? 'Aún sin marcaciones en el portal' : trendOffset === 0 ? 'Sin marcaciones esta semana' : 'Sin marcaciones en esa semana'}
               />
             ) : (
               /* El mismo esqueleto como espera del chunk de `recharts`: las dos
@@ -2570,7 +2656,9 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Estado de turnos" icon={Clock} category="personal"
           action={getScope('dash_shifts') === 'ALL' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
           <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
-            {employees.length === 0 ? (
+            {attError ? (
+              <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las marcaciones" />
+            ) : employees.length === 0 || !attendanceLoaded ? (
               <div className="px-4 py-3 space-y-5">
                 {[0,1,2].map(i => (
                   <div key={i} className="space-y-2">
@@ -2594,8 +2682,9 @@ const DashboardView = ({ openModal }) => {
             ):Object.values(STATUS_CONFIG).every((_,i)=>!(shiftGroups[Object.keys(STATUS_CONFIG)[i]]||[]).length)?(
               <EmptyState linea icon={Clock} title="Sin turnos hoy" />
             ):(
-              Object.entries(STATUS_CONFIG).map(([status,cfg])=>{
+              Object.entries(STATUS_CONFIG).map(([status,cfgBase])=>{
                 const group=shiftGroups[status]||[]; if(!group.length) return null;
+                const cfg = status==='ABSENT' && !hayMarcaciones ? SIN_MARCACIONES_AUN : cfgBase;
                 return (
                   <div key={status} className="px-4 py-3">
                     <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-wide text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
@@ -2671,6 +2760,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ):(() => {
                   const chartData = typeof salesView==='number'?salesStats.specificHours[salesView]||[]:salesView==='HOURS'?salesStats.generalHours:salesStats.days;
+                  if (salesError) return <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las ventas" />;
                   if (!chartData?.length) return <EmptyState linea icon={BarChart2} title="Sin historial de ventas" />;
                   return chartData.map((item,i)=>(
                     <div key={i} {...clickable(()=>{if(salesView==='DAYS')setSalesView(item.day);})}
@@ -2743,7 +2833,7 @@ const DashboardView = ({ openModal }) => {
           <div className="relative h-full p-3.5 flex flex-col gap-1.5">
             <div className="flex items-start justify-between gap-1">
               <p className="text-body-sm font-black text-content-2 leading-tight truncate">{b.name}</p>
-              <span className={`text-label font-black shrink-0 ${dH.length?'text-success-text':'text-content-3'}`}>{fS(totalS)??'—'}</span>
+              <span className={`text-label font-black shrink-0 ${todayError?'text-danger-text':dH.length?'text-success-text':'text-content-3'}`}>{todayError?'Sin leer':(fS(totalS)??'—')}</span>
             </div>
             {todayLoading?(
               <div className="skeleton rounded-lg flex-1"/>
@@ -2819,15 +2909,16 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-5 w-16 rounded-full flex-shrink-0" />
               </div>
             ))
+              :absError?<EmptyState linea icon={AlertTriangle} title="No se pudieron leer las ausencias" />
               :displayAbsences.length===0?<EmptyState linea icon={UserCheck} title="Sin ausencias activas" />
               :displayAbsences.map(r=>{
-                const meta=parseMeta(r.metadata), cfg=ABSENCE_COLORS[r.type]||ABSENCE_COLORS.PERMIT;
-                const end=meta.endDate||(meta.permissionDates||[])[(meta.permissionDates||[]).length-1];
+                const cfg=ABSENCE_COLORS[r.clave]||ABSENCE_COLORS.PERMIT;
+                const end=r.hasta;
                 return (
                   <div key={r.id} className="flex items-center gap-3 px-5 py-3">
                     <div className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 ${cfg.bg} ${cfg.border}`}><UserX size={13} className={cfg.text}/></div>
-                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{nombreDeTipo(r.type)}{end&&` · hasta ${fechaTexto(end, {day:'2-digit',month:'short'})}`}</p></div>
-                    <Badge variant={cfg.variante} size="sm">{nombreCorto(r.type)}</Badge>
+                    <div className="flex-1 min-w-0"><p className="text-body-sm font-semibold text-content truncate">{getEmpName(r.employee_id)}</p><p className="text-caption font-medium text-content-3">{nombreDeTipo(r.clave)}{end&&` · hasta ${fechaTexto(end, {day:'2-digit',month:'short'})}`}</p></div>
+                    <Badge variant={cfg.variante} size="sm">{nombreCorto(r.clave)}</Badge>
                   </div>
                 );
               })}
@@ -2921,7 +3012,7 @@ const DashboardView = ({ openModal }) => {
               <EmptyState linea icon={CheckCircle2} title="Todo en orden" />
             ):(
               displayBranchAlerts.map(b=>{
-                const issue=getBranchIssue(b);
+                const issue=(problemasPorSala.get(String(b.id))||[]).join(' · ');
                 return (
                   // Sin permiso NO es un control: era un `<button>` con `onClick`
                   // indefinido, o sea una parada de tabulación que no hacía nada.
@@ -3145,7 +3236,7 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones activas" icon={Receipt} category="ventas"
-          resumen={cotizLoading ? null : { valor: cotizStats.activas, texto: cotizStats.activas===1?'cotización activa':'cotizaciones activas' }}
+          resumen={cotizLoading ? null : cotizError ? { texto: 'No se pudo leer', tono: 'danger' } : { valor: cotizStats.activas, texto: cotizStats.activas===1?'cotización activa':'cotizaciones activas' }}
           action={puedeAbrir('/cotizaciones')&&<Button variant="ghost" size="xs" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
@@ -3185,7 +3276,9 @@ const DashboardView = ({ openModal }) => {
               </div>
             </div>
             <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
-              {cotizStats.recent.length === 0 ? (
+              {cotizError ? (
+                <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las cotizaciones" />
+              ) : cotizStats.recent.length === 0 ? (
                 <EmptyState linea icon={Receipt} title="Sin cotizaciones activas" />
               ) : cotizStats.recent.map(c => (
                 <div key={c.id} className="flex items-center gap-3 px-4 py-2.5">
@@ -3212,9 +3305,11 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación hoy" icon={FileText} category="ventas"
-          resumen={factLoading ? null : { valor: factStats.count, texto: `${factStats.count===1?'documento':'documentos'} · ${formatMoney(factStats.total)}` }}
+          resumen={factLoading ? null : factError ? { texto: 'No se pudo leer', tono: 'danger' } : { valor: factStats.count, texto: `${factStats.count===1?'documento':'documentos'} · ${formatMoney(factStats.total)}` }}
           action={puedeAbrir('/facturacion')&&<Button variant="ghost" size="xs" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
-          {factLoading ? (
+          {factError && !factLoading ? (
+            <div className="h-full grid place-items-center p-3"><EmptyState linea icon={AlertTriangle} title="No se pudo leer la facturación de hoy" /></div>
+          ) : factLoading ? (
             <div className="flex flex-col h-full px-4 py-3 gap-3">
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-surface-card-hover/80 rounded-2xl p-3 space-y-2">
@@ -3277,9 +3372,11 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v, { decimales: 0 });
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
-        <WidgetCard title="Top productos · mes actual" icon={Package} category="productos"
-          resumen={topProdLoading ? null : topProductos[0] ? { valor: '#1', texto: topProductos[0].descripcion } : { texto: 'Sin ventas este mes' }}
-          action={puedeAbrir('/ventas')&&<Button variant="ghost" size="xs" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>}>
+        <WidgetCard title={getScope('dash_top_productos') === 'ALL' ? 'Top productos · mes actual' : 'Top productos · mi sala'} icon={Package} category="productos"
+          resumen={topProdLoading ? null : topProdError ? { texto: 'No se pudo leer', tono: 'danger' } : topProductos[0] ? { valor: '#1', texto: topProductos[0].descripcion } : { texto: 'Sin ventas este mes' }}
+          action={getScope('dash_top_productos') === 'ALL' && salesBranches.length > 1
+            ? <LiquidSelect value={topBranch} onChange={v => setTopBranch(v ?? '')} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Toda la red" icon={Building2} clearable compact bare/>
+            : (puedeAbrir('/ventas')&&<Button variant="ghost" size="xs" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>)}>
           <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full px-3 py-2">
             {topProdLoading ? (
               <div className="space-y-0.5 py-1">
@@ -3296,6 +3393,8 @@ const DashboardView = ({ openModal }) => {
                   </div>
                 ))}
               </div>
+            ) : topProdError ? (
+              <EmptyState linea icon={AlertTriangle} title="No se pudo leer el top del mes" />
             ) : topProductos.length === 0 ? (
               <EmptyState linea icon={Package} title="Sin datos este mes" />
             ) : topProductos.map((p, i) => {
@@ -3603,8 +3702,8 @@ const DashboardView = ({ openModal }) => {
           resumen={{ texto: 'Ranking del mes' }}
           action={isVendAllScope && vendOpts.length > 1 && (
             <LiquidSelect
-              value={metaBranch}
-              onChange={val => setMetaBranch(val ?? String(META_SALA_IDS[0]))}
+              value={vendBranch}
+              onChange={val => setVendBranch(val ?? String(META_SALA_IDS[0]))}
               options={vendOpts}
               placeholder="Sala..."
               icon={Building2}
@@ -3616,8 +3715,8 @@ const DashboardView = ({ openModal }) => {
         >
           <div className="px-4 pb-4 pt-2 h-full overflow-y-auto overscroll-contain">
             <WidgetVendedores
-              key={metaBranch}
-              selectedBranchId={isVendAllScope ? Number(metaBranch) : null}
+              key={vendBranch}
+              selectedBranchId={isVendAllScope ? Number(vendBranch) : null}
             />
           </div>
         </WidgetCard>
@@ -3904,7 +4003,7 @@ const DashboardView = ({ openModal }) => {
                 {/* `0% del total` cuando nadie marcó todavía se lee como un
                     cálculo que falló, no como la hora del día. Un cero con
                     motivo tiene que decir el motivo. */}
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiPresent===0?'Sin marcaciones aún':(kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:undefined)}/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={hayMarcaciones?kpiPresent:'—'}              color="var(--success)" sub={!hayMarcaciones?'Aún sin marcaciones':kpiPresent===0?'Sin marcaciones hoy':(kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:undefined)}/>
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
                 <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={puedeAbrir('/sucursales')?()=>navigate('/sucursales'):undefined}/>
               </div>
@@ -3922,7 +4021,7 @@ const DashboardView = ({ openModal }) => {
             ? <div key="kpi-rrhh-skel" className="grid grid-cols-2 lg:grid-cols-4 gap-4">{[0,1,2,3].map(i=><KpiCardSkeleton key={i}/>)}</div>
             : <div key="kpi-rrhh" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <KpiCard icon={Users}         label="Empleados activos"     value={kpiEmps.length}          color="var(--brand)"/>
-                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={kpiPresent}              color="var(--success)" sub={kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
+                <KpiCard icon={UserCheck}     label="Presentes hoy"         value={hayMarcaciones?kpiPresent:'—'}              color="var(--success)" sub={!hayMarcaciones?'Aún sin marcaciones':kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:'0%'}/>
                 <KpiCard icon={UserX}         label="Ausencias activas"     value={kpiAbsCount}             color="var(--danger)" sub={kpiAbsCount===0?'Sin ausencias':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
               </div>

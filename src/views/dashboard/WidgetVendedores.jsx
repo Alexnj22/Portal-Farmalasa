@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 import { SkeletonText } from '../../components/common/StateViews';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchMesEnCurso } from '@nucleo/data/metas';
@@ -25,27 +26,24 @@ export default function WidgetVendedores({ selectedBranchId = null }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Sólo la ÚLTIMA lectura escribe: una respuesta lenta de un ciclo anterior
+    // —o de la sala de antes— no pisa a una más nueva.
+    const secuencia = useRef(0);
     const cargar = useCallback(() => {
-        let vivo = true;
+        const mia = ++secuencia.current;
         fetchMesEnCurso(selectedBranchId)
-            .then((d) => { if (vivo) { setData(d); setError(null); setLoading(false); } })
-            .catch((err) => { if (vivo) { setError(mensajeAmigable(err, 'No se pudo cargar el ranking')); setLoading(false); } });
-        return () => { vivo = false; };
+            .then((d) => { if (mia === secuencia.current) { setData(d); setError(null); setLoading(false); } })
+            .catch((err) => { if (mia === secuencia.current) { setError(mensajeAmigable(err, 'No se pudo cargar el ranking')); setLoading(false); } });
     }, [selectedBranchId]);
 
     // Se refresca solo, igual que el widget de la meta: un ranking congelado
-    // desde las 8 de la mañana miente sobre quién va ganando.
+    // desde las 8 de la mañana miente sobre quién va ganando. Con la pestaña
+    // oculta no consulta; al volver, lee una vez si ya venció el ciclo.
     useEffect(() => {
-        const cancelar = cargar();
-        const timer = setInterval(cargar, REFRESCO_MS);
-        const alVolver = () => { if (document.visibilityState === 'visible') cargar(); };
-        document.addEventListener('visibilitychange', alVolver);
-        return () => {
-            cancelar();
-            clearInterval(timer);
-            document.removeEventListener('visibilitychange', alVolver);
-        };
+        cargar();
+        return () => { secuencia.current += 1; };
     }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: REFRESCO_MS });
 
     if (loading) return <div className="p-1"><SkeletonText lines={5} /></div>;
 

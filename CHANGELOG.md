@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.2 — Inicio: ausencias reales, avisos propios, alertas de sala y errores visibles
+
+Cierre de la auditoría widget por widget del Inicio (2026-11-04), con las
+decisiones del usuario.
+
+- **Ausencias** sale de la ficha (`get_estados_de_personas`, el mismo juez del
+  aro de la foto), no de solicitudes aprobadas — en producción hay cero de ésas
+  y el widget decía «Sin ausencias» con gente de vacaciones.
+- **Asistencia** (tendencia, turnos, «Presentes hoy»): mientras el portal no
+  tenga ni una marcación, se dice neutro («Aún sin marcaciones», «Por marcar»)
+  en vez de acusar en ámbar a toda la plantilla. El día de la marcación es el
+  de El Salvador, no el de UTC. La tendencia no retrocede más allá de lo
+  cargado. Turnos muestra a quien está ausente o de día libre.
+- **Top productos** sólo por sala: la base pone la sala propia sin alcance
+  ALL; con ALL hay selector (vacío = toda la red).
+- **Avisos**: cada persona ve sólo los dirigidos a ella.
+- **Alertas · Sucursales** suma las del día: cortes C sin confirmar, caja de un
+  día anterior sin cerrar, sala abierta sin ventas en 2 h
+  (`inicio_alertas_operativas`).
+- Google Play ya no tiene los widgets de movimiento de inventario ni MIN·MAX.
+- Ventas, baldosas de hoy, Facturación, Cotizaciones y Top dicen «No se pudo
+  leer» en vez de pintar ceros; hoy y Facturación se releen cada 5 min con la
+  pestaña a la vista. Meta y Vendedores tienen cada uno su selector de sala.
+- Widgets de sala y caja (recetas, reservas, bolsas, cortes, facturación,
+  meta, vendedores): estados de error, alcance y refresco sin pestaña oculta.
+  `fetchSaldos`/`fetchCortesPorEmbolsar` devuelven `null` al fallar.
+- `branch_hourly_sales` usa `venta_valida(estado)`.
+
 ## v2.1448.1 — Eficiencia: faltantes, puntos y CCF pendientes más livianos
 
 Auditoría de las consultas que más trabajan (pg_stat_statements por bloques,

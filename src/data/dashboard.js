@@ -112,6 +112,28 @@ export async function contarSolicitudesPendientes({ tipos = null, excepto = null
     return count ?? 0;
 }
 
+/**
+ * Quién está AUSENTE HOY, según la misma función que pinta el aro de la foto
+ * (`get_estados_de_personas`). Devuelve `{ filas, error }`; cada fila es
+ * `{ employee_id, clave, hasta }`.
+ *
+ * El Inicio leía `approval_requests` aprobadas de tipo vacación/incapacidad/
+ * permiso, y en producción hay CERO de esas: las ausencias se registran como
+ * eventos de la ficha. El widget decía «Sin ausencias activas» con una persona
+ * de vacaciones (medido el 2026-11-04). «En apoyo» e «Inducción» no son
+ * ausencias: la persona trabaja, en otro lado.
+ */
+const CLAVES_DE_AUSENCIA = new Set(['VACATION', 'DISABILITY', 'PERMIT', 'SUSPENSION']);
+export async function fetchAusenciasDeHoy(ids) {
+    if (!ids?.length) return { filas: [], error: null };
+    const { data, error } = await supabase.rpc('get_estados_de_personas', { p_ids: ids });
+    if (error) return { filas: [], error };
+    const filas = (data || [])
+        .filter(f => CLAVES_DE_AUSENCIA.has(f.clave) && !(Number(f.faltan) > 0))
+        .map(f => ({ employee_id: f.id, clave: f.clave, hasta: f.hasta || null }));
+    return { filas, error: null };
+}
+
 export function fetchActiveLeaveRequests() {
     return fetchAllRows(() => supabase.from('approval_requests')
         .select('id, type, employee_id, metadata')
@@ -188,4 +210,13 @@ export function fetchTodayInvoicesSummary(dateStr) {
         .eq('fecha', dateStr)
         .eq('estado', 'FINALIZADA')
         .order('id'));
+}
+
+/**
+ * Alertas OPERATIVAS por sala para el Inicio: cortes C sin confirmar, caja de un
+ * día anterior sin cerrar, sala abierta sin ventas en 2 h. El juez y el alcance
+ * viven en la base (`inicio_alertas_operativas`). Devuelve `{ data, error }`.
+ */
+export function fetchAlertasOperativas() {
+    return supabase.rpc('inicio_alertas_operativas');
 }

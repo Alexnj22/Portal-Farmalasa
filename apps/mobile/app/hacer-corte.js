@@ -64,7 +64,7 @@ export default function HacerCorte() {
     ]).catch(() => [[], { filas: [] }, []]);
     const mias = (abiertas || []).filter((b) => String(b.branch_id) === String(sala));
     const saldos = await fetchSaldos(mias.map((b) => b.id)).catch(() => new Map());
-    setBolsasDeHoy(bolsasDelDia(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })), dia));
+    setBolsasDeHoy(bolsasDelDia(mias.map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })), dia));
     setVales(valesDeLaSala(v?.filas, sala).length);
     setCortesDelDia(delDia || []);
     setEstado(e?.error ? { error: mensajeAmigable(e.error) } : e);

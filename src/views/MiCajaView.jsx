@@ -525,7 +525,7 @@ export default function MiCajaView({ comoPestana = false }) {
          * una salida, y sin él `useCerrarBolsa` cae al nombre de QUIEN ESTÁ
          * MIRANDO: la etiqueta diría que la guardó alguien que no la guardó. */
         setEmbolsaron(new Map((quienes || []).map((q) => [q.id, q.name])));
-        setBolsas(mias.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+        setBolsas(mias.map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
 
         /* ── Y RECIÉN ACÁ SE LE PREGUNTA AL ORIGEN, SIEMPRE ─────────────────
          *

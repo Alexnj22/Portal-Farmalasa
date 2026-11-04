@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
-import { ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowRight, ShieldCheck, TrendingDown, TrendingUp, Wallet } from 'lucide-react';
+import Button from '../../components/common/Button';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
@@ -11,6 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import useResolverCorte from '../../components/cortes/useResolverCorte';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 
 /* El detalle del corte se baja al abrir uno, no al entrar al Inicio.
  *
@@ -71,6 +74,10 @@ const METRICAS_MES = [
 export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null }) {
     const { user, hasPermission } = useAuth();
     const puedeResolver = hasPermission('cortes_caja', 'can_edit');
+    // El enlace a la lista completa sólo si la pantalla se puede abrir: un
+    // enlace que termina en «sin permiso» enseña a no apretarlo.
+    const puedeVerCortes = hasPermission('cortes_caja', 'can_view');
+    const navigate = useNavigate();
 
     // La sala de quien mira, sólo si de verdad tiene una con cortes. Quien
     // trabaja desde Administración —o ve todas las salas— no tiene caja propia:
@@ -90,6 +97,9 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
 
     const [filas, setFilas] = useState([]);
     const [mes, setMes] = useState([]);
+    // El resumen del mes se pide aparte y puede fallar solo: un fallo NO es
+    // «0 cuadraron, 0 faltantes», es que no se pudo leer.
+    const [errorMes, setErrorMes] = useState(false);
     const [personas, setPersonas] = useState(() => new Map());
     const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
@@ -115,20 +125,21 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
     const cargarMes = useCallback(async () => {
         const hasta = hoySV();
         const data = await fetchCortesResumen({ desde: `${hasta.slice(0, 7)}-01`, hasta });
-        setMes(data || []);
+        // Si falla se conserva lo último que se leyó para el alcance, pero la
+        // franja dice que no se pudo leer en vez de pintar ceros.
+        if (!data) { setErrorMes(true); return; }
+        setErrorMes(false);
+        setMes(data);
     }, []);
 
+    // La carga inicial acá; el refresco, con `useRefrescoEnVivo`: con la
+    // pestaña oculta no consulta y, al volver, lee una vez si ya venció.
     useEffect(() => {
-        cargarLista(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco
-        const t = setInterval(cargarLista, REFRESCO_MS);
-        return () => clearInterval(t);
-    }, [cargarLista]);
-
-    useEffect(() => {
-        cargarMes(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco
-        const t = setInterval(cargarMes, REFRESCO_MES_MS);
-        return () => clearInterval(t);
-    }, [cargarMes]);
+        cargarLista(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
+        cargarMes();
+    }, [cargarLista, cargarMes]);
+    useRefrescoEnVivo(cargarLista, { ms: REFRESCO_MS });
+    useRefrescoEnVivo(cargarMes, { ms: REFRESCO_MES_MS });
 
     // ── El alcance, decidido UNA vez ────────────────────────────────────────
     // La lista y el resumen tienen que hablar de las mismas salas. Si cada uno
@@ -165,6 +176,18 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
         .sort((a, b) => String(b.fecha).localeCompare(String(a.fecha))
             || String(b.hora).localeCompare(String(a.hora))),
     [conTramo]);
+
+    // Los sin confirmar del MES que ya quedaron fuera de la ventana de la lista.
+    // Se cuentan con la misma regla que la lista —corte C en PENDIENTE— y por
+    // fecha, no restando dos números de universos distintos: el resumen del mes
+    // deja fuera los que no contaron efectivo y la lista no, y a principio de
+    // mes la ventana de 7 días toma días del mes anterior que el resumen no ve.
+    // Restar daba avisos de más y de menos.
+    const fueraDeLaVentana = useMemo(() => {
+        const desdeLista = sumarDias(hoySV(), -(DIAS_PENDIENTES - 1));
+        return deLaSala(mes).filter((c) => c.tipo === 'C' && c.estado === 'PENDIENTE'
+            && String(c.fecha) < desdeLista).length;
+    }, [mes, deLaSala]);
 
     const variasSalas = useMemo(
         () => new Set(pendientes.map((c) => c.branch_id)).size > 1,
@@ -206,20 +229,31 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
         <div className="h-full flex flex-col min-h-0">
             {/* ── Cómo va el mes ──────────────────────────────────────────── */}
             <div className="shrink-0 px-2 pt-2 pb-1 border-b border-divider">
+                {/* Cada número dice de qué habla: «sin confirmar» es lo de la
+                    lista de abajo (los últimos 7 días) y «confirmados» y las tres
+                    tarjetas son del mes. El mismo rótulo para dos universos es
+                    cómo la franja decía 3 con una sola tarjeta abajo. */}
                 <div className="flex items-baseline justify-between gap-2 mb-1 px-0.5">
                     <span className="text-caption font-black uppercase tracking-widest text-content-3">
                         Este mes
                     </span>
-                    <span className="text-caption text-content-3 tabular-nums truncate">
-                        {resumen.pendientes} sin confirmar · {resumen.confirmados} {resumen.confirmados === 1 ? 'confirmado' : 'confirmados'}
-                    </span>
+                    {!error && !errorMes && (
+                        <span className="text-caption text-content-3 tabular-nums truncate"
+                            title={`${pendientes.length} sin confirmar en los últimos ${DIAS_PENDIENTES} días · ${resumen.confirmados} confirmados este mes`}>
+                            {pendientes.length} sin confirmar ({DIAS_PENDIENTES} días) · {resumen.confirmados} {resumen.confirmados === 1 ? 'confirmado' : 'confirmados'}
+                        </span>
+                    )}
                 </div>
-                <CarrilCards ariaLabel="Cortes del mes">
-                    {METRICAS_MES.map((m) => (
-                        <StatCard key={m.clave} densa icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                            label={m.label} value={resumen[m.clave]} valueCls={m.valueCls} />
-                    ))}
-                </CarrilCards>
+                {errorMes ? (
+                    <EmptyState linea icon={AlertTriangle} title="No se pudo leer el resumen del mes" />
+                ) : (
+                    <CarrilCards ariaLabel="Cortes del mes">
+                        {METRICAS_MES.map((m) => (
+                            <StatCard key={m.clave} densa icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
+                                label={m.label} value={resumen[m.clave]} valueCls={m.valueCls} />
+                        ))}
+                    </CarrilCards>
+                )}
             </div>
 
             {/* ── Lo que falta confirmar ──────────────────────────────────── */}
@@ -241,15 +275,22 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                     />
                 )}
 
-                {/* La franja de arriba cuenta el MES y la lista muestra los
-                    últimos 7 días. Cuando no coinciden hay que decirlo: una
-                    lista más corta que su propio número se lee como «ya está
-                    todo», que es justo lo contrario. */}
-                {!error && resumen.pendientes > pendientes.length && (
-                    <p className="text-caption text-content-3 text-center px-2 pt-1">
-                        Hay {resumen.pendientes - pendientes.length} sin confirmar de antes de
-                        {' '}{DIAS_PENDIENTES} días. Están en Cortes de caja.
-                    </p>
+                {/* La lista muestra los últimos 7 días. Si en el mes quedaron sin
+                    confirmar de antes, hay que decirlo: una lista vacía se lee
+                    como «ya está todo», que es justo lo contrario. */}
+                {!error && !errorMes && fueraDeLaVentana > 0 && (
+                    <div className="flex flex-col items-center gap-1 px-2 pt-1">
+                        <p className="text-caption text-content-3 text-center">
+                            {fueraDeLaVentana === 1 ? 'Hay 1 sin confirmar' : `Hay ${fueraDeLaVentana} sin confirmar`} de este mes
+                            {' '}con más de {DIAS_PENDIENTES} días.{puedeVerCortes ? '' : ' Están en Cortes de caja.'}
+                        </p>
+                        {puedeVerCortes && (
+                            <Button variant="ghost" size="xs" icon={ArrowRight}
+                                onClick={() => navigate('/caja?tab=cortes')}>
+                                Ver en Cortes de caja
+                            </Button>
+                        )}
+                    </div>
                 )}
 
                 {!error && pendientes.map((c) => (

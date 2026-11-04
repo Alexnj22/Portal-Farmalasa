@@ -231,7 +231,7 @@ export function Bolsas({ ctx }) {
     ]);
     if (!abiertas) throw new Error('No se pudieron cargar las bolsas');
     const saldos = await fetchSaldos(abiertas.map((b) => b.id));
-    return { bolsas: abiertas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })), faltan: pendientes || [] };
+    return { bolsas: abiertas.map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })), faltan: pendientes || [] };
   });
   const sala = todas ? null : Number(ctx.sala);
   const deLaSala = (l) => (sala == null || Number.isNaN(sala) ? l : l.filter((x) => x.branch_id === sala));

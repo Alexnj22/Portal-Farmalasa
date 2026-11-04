@@ -15,6 +15,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { saldoDeBolsa } from '@nucleo/utils/bolsasReparto';
 import { hora12 } from '@nucleo/utils/hora';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 
 /* El formulario se baja al apretar su botón, no al entrar al Inicio: arrastra el
  * canónico de archivo y el selector de personas, y la baldosa se ve entera sin
@@ -116,20 +117,27 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
             fetchCortesPorEmbolsar({ desde: sumarDias(hasta, -(POR_EMBOLSAR_DIAS - 1)), hasta }),
         ]);
         if (!abiertas) { setError('No se pudieron cargar las bolsas'); setCargando(false); return; }
-        setError(null);
+        // Los cortes sin bolsa son la mitad de la baldosa: si no se pudieron
+        // leer, una lista vacía diría «todo lo cortado está guardado».
+        if (!pendientes) { setError('No se pudieron leer los cortes por guardar'); setCargando(false); return; }
         // Con el saldo pegado: lo guardado ya no es lo que hay adentro desde que
-        // se puede sacar dinero para una remesa.
+        // se puede sacar dinero para una remesa. Sin saldo, `saldoDeBolsa` da 0
+        // y la baldosa diría $0.00 de efectivo guardado: eso es un error, no
+        // un monto.
         const saldos = await fetchSaldos(abiertas.map((b) => b.id));
+        if (!saldos) { setError('No se pudo leer cuánto hay en cada bolsa'); setCargando(false); return; }
+        setError(null);
         setBolsas(abiertas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
-        setPorEmbolsar(pendientes || []);
+        setPorEmbolsar(pendientes);
         setCargando(false);
     }, []);
 
+    // La carga inicial acá; el refresco, con `useRefrescoEnVivo`: con la
+    // pestaña oculta no consulta y, al volver, lee una vez si ya venció.
     useEffect(() => {
-        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial + refresco
-        const t = setInterval(cargar, REFRESCO_MS);
-        return () => clearInterval(t);
+        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial
     }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: REFRESCO_MS });
 
     // El alcance se decide UNA vez para las dos listas: si cada una resolviera su
     // propio respaldo podrían quedar en alcances distintos, y la baldosa diría
@@ -212,6 +220,10 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                 la segunda quedaba cortada. El número que hay que leer entero es
                 el efectivo — cuántas bolsas y de cuántos días son contexto, y en
                 palabras caben. */}
+            {/* Con error la franja entera NO se pinta: la tarjeta diría $0.00
+                —o la cifra de antes— sobre algo que no se pudo leer. El error
+                lo dice el cuerpo, con el motivo. */}
+            {!error && (
             <div className="shrink-0 px-2 pt-2 pb-1 border-b border-divider">
                 <div className="flex items-baseline justify-between gap-2 mb-1 px-0.5">
                     <span className="text-caption font-black uppercase tracking-widest text-content-3">
@@ -257,10 +269,11 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                     </div>
                 )}
             </div>
+            )}
 
             <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-1.5">
                 {error && (
-                    <EmptyState linea icon={Package} title="No se pudieron cargar" subtitle={error} />
+                    <EmptyState linea icon={AlertTriangle} title="No se pudo leer el efectivo" subtitle={error} />
                 )}
 
                 {/* La alarma va arriba de todo: es lo único de esta baldosa que
@@ -348,9 +361,20 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
                                         Corte del {rotularDia(b.fecha)} · {hora12(b.hora)}
                                     </div>
                                 </div>
+                                {/* El SALDO, igual que el total de arriba: la suma
+                                    de las filas tiene que dar la cifra de la
+                                    tarjeta. Si ya salió dinero, lo guardado va al
+                                    lado en tinta apagada. */}
                                 {verMontos && (
-                                    <div className="text-label font-bold tabular-nums text-success-text text-right shrink-0">
-                                        {formatMoney(b.monto_inicial)}
+                                    <div className="text-right shrink-0">
+                                        <div className="text-label font-bold tabular-nums text-success-text">
+                                            {formatMoney(saldoDeBolsa(b))}
+                                        </div>
+                                        {Math.abs(saldoDeBolsa(b) - Number(b.monto_inicial ?? 0)) > 0.004 && (
+                                            <div className="text-caption tabular-nums text-content-3">
+                                                de {formatMoney(Number(b.monto_inicial ?? 0))}
+                                            </div>
+                                        )}
                                     </div>
                                 )}
                             </div>

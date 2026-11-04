@@ -12,6 +12,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { decidirProrroga, fetchProrrogasPendientes, pedirProrroga } from '@nucleo/data/reservas';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // La prórroga por solicitud (Reglamento de reservas v2, cláusula 6.4 ·
@@ -101,7 +102,11 @@ export function ProrrogasPorAutorizar({ soloLectura = false }) {
             .then((l) => setLista(agrupar(l)))
             .catch((err) => console.error('ProrrogasPorAutorizar: no se pudieron leer las prórrogas pendientes', err));
     }, [puede]);
+    // Se relee sola cada 2 min, como la lista de reservas que la rodea: una
+    // prórroga pedida después de abrir el Inicio no esperaba a que alguien
+    // recargara. Con la pestaña oculta no consulta (`useRefrescoEnVivo`).
     useEffect(() => { cargar(); }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: 120_000, activo: puede });
 
     if (!puede || !lista.length) return null;
     return (

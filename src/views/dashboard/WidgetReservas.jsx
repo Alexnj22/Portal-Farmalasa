@@ -1,9 +1,12 @@
-import React, { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react';
-import { AlertTriangle, ArrowLeftRight, Banknote, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
+import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { AlertTriangle, ArrowLeftRight, ArrowRight, Banknote, Building2, CalendarPlus, CheckCircle2, FileCheck, HandCoins, MessageCircle, PackageCheck, PhoneCall, Plus, Send, ShoppingBag, Truck, Wallet, Wrench, XCircle } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
 import SearchInput from '../../components/common/SearchInput';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import Notice from '../../components/common/Notice';
 import WidgetEncargos from './WidgetEncargos';
 import Encabezado from './EncabezadoDeLista';
 import TarjetaDeReserva from './TarjetaDeReserva';
@@ -36,6 +39,8 @@ import {
     modoDeProrroga, origenDelSaldo, plazoDeRetiro, quienRevisaLaReceta, renglonesDelPedido, reservasAbiertas, saldosAFavor, seccionesDeReservas, textoDeNivel,
 } from '@nucleo/utils/reservasDeSala';
 import { PedirProrroga, ProrrogasPorAutorizar } from './Prorroga';
+import { BRANCH_A_ERP, ERP_ORDEN } from '@nucleo/constants/erp';
+import useRefrescoEnVivo from '@nucleo/hooks/useRefrescoEnVivo';
 
 // Cuánto lleva esperando una receta, en palabras cortas («25 min», «3 h 10 min»).
 function esperaDeReceta(desde, ahora) {
@@ -89,7 +94,10 @@ const MAX_FILAS = 6;
 // el carril de métricas. Sin esas props, la baldosa sigue como siempre.
 export default function WidgetReservas({ todas = false, completa = false, soloLectura = false, sala = undefined,
     codigo: codigoDeAfuera = undefined, nueva: nuevaDeAfuera = false, onNuevaCerrada = null, onConteo = null }) {
-    const { user, hasPermission } = useAuth();
+    const { user, hasPermission, getScope } = useAuth();
+    const navigate = useNavigate();
+    // «y N más» lleva a la pantalla de Reservas sólo si se puede abrir.
+    const puedeVerPantalla = hasPermission('reservas', 'can_view');
     const showToast = useToastStore((s) => s.showToast);
     const appendAuditLog = useStaff((st) => st.appendAuditLog);
     // Devolver en dinero un saldo a favor: sólo administración (2026-10-19).
@@ -101,11 +109,30 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // Enviar la preventa a caja (2026-10-21): editar la pantalla de Reservas.
     // La sala y el permiso los vuelve a decidir el servidor.
     const puedePreventa = !soloLectura && hasPermission('reservas', 'can_edit');
-    const miSala = sala ?? (todas ? null : (user?.branchId ?? user?.branch_id ?? null));
     const branches = useStaff((st) => st.branches);
-    const nombreSala = (branches || []).find((b) => String(b.id) === String(miSala))?.name ?? '';
+    // ── En la baldosa, con alcance ALL se elige la sala (2026-11-04) ───────
+    // Quien ve todas las salas trabaja desde Administración: con su propia
+    // sala, `reservas_de_sucursal` devolvía vacío y la baldosa decía «Sin
+    // reservas» con reservas abiertas en las salas. Sólo en la baldosa: la
+    // pantalla del menú pasa `sala`/`todas` y tiene su propio filtro.
+    const esBaldosa = sala === undefined && !todas && !completa;
+    const alcanceTodas = esBaldosa && getScope?.('dash_reservas') === 'ALL';
+    const salasDeVenta = useMemo(() => ERP_ORDEN
+        .map((erp) => Object.keys(BRANCH_A_ERP).find((b) => BRANCH_A_ERP[b] === erp))
+        .map((id) => (branches || []).find((b) => String(b.id) === String(id)))
+        .filter((b) => b && (b.type || 'FARMACIA') === 'FARMACIA')
+        .map((b) => ({ value: String(b.id), label: b.name })), [branches]);
+    const [salaElegida, setSalaElegida] = useState('');
+    const miSala = sala ?? (todas ? null
+        : alcanceTodas ? (salaElegida || salasDeVenta[0]?.value || null)
+        : (user?.branchId ?? user?.branch_id ?? null));
+    const filaDeSala = (branches || []).find((b) => String(b.id) === String(miSala));
+    const nombreSala = filaDeSala?.name ?? '';
     // Bodega no tiene reservas propias, pero ve TODOS los encargos (2026-10-07).
-    const esBodega = (branches || []).find((b) => String(b.id) === String(miSala))?.type === 'BODEGA';
+    const esBodega = filaDeSala?.type === 'BODEGA';
+    // Sólo una sala de ventas tiene caja donde cobrar un anticipo: en
+    // Administración el botón abría un cobro sin cajón.
+    const esSalaDeVenta = !!filaDeSala && (filaDeSala.type || 'FARMACIA') === 'FARMACIA';
     const salaEncargos = todas || esBodega ? null : miSala;
 
     const [filas, setFilas] = useState([]);
@@ -155,32 +182,62 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     // también fuera de esta sala cuando aquí no aparece.
     const [saldosDeFuera, setSaldosDeFuera] = useState([]);
 
+    // Sólo la última lectura escribe: al cambiar de sala, la respuesta de la
+    // anterior no puede pisar a la nueva.
+    const secuencia = useRef(0);
     const cargar = useCallback(async () => {
+        const mia = ++secuencia.current;
         if (!miSala && !todas) { setCargando(false); return; }
         try {
-            setFilas(await fetchReservasDeSucursal(miSala, true));
+            const leidas = await fetchReservasDeSucursal(miSala, true);
+            if (mia !== secuencia.current) return;
+            setFilas(leidas);
             setAhora(Date.now());
             setErrorCarga(null);
         } catch (err) {
+            if (mia !== secuencia.current) return;
             console.error('WidgetReservas: no se pudieron cargar', err);
             setErrorCarga(err);
         } finally {
-            setCargando(false);
+            if (mia === secuencia.current) setCargando(false);
         }
     }, [miSala, todas]);
 
+    // La carga inicial acá; el refresco cada 2 min, con `useRefrescoEnVivo`:
+    // con la pestaña oculta no consulta y, al volver, lee una vez si ya venció.
     useEffect(() => {
-        // Carga inicial y refresco cada 2 min.
         cargar();
-        const t = setInterval(cargar, REFRESCO_MS);
-        return () => clearInterval(t);
+        return () => { secuencia.current += 1; };
     }, [cargar]);
+    useRefrescoEnVivo(cargar, { ms: REFRESCO_MS });
+
+    const elegirSala = (val) => {
+        if (!val || String(val) === String(miSala)) return;
+        setCargando(true);
+        setErrorCarga(null);
+        setFilas([]);
+        setSalaElegida(String(val));
+    };
+    const selectorSala = alcanceTodas && salasDeVenta.length > 1 ? (
+        <LiquidSelect
+            value={String(miSala ?? '')}
+            onChange={elegirSala}
+            options={salasDeVenta}
+            placeholder="Sala"
+            ariaLabel="Sala de ventas"
+            icon={Building2}
+            clearable={false}
+            compact
+        />
+    ) : null;
 
     // El dato del vistazo (tarjeta más chica que la lista): cuántas esperan.
     const abiertasVistazo = reservasAbiertas(filas);
     const porRevisarVistazo = abiertasVistazo.filter((r) => r.estado === 'en_revision' && r.receta_estado === 'pendiente').length;
     useResumenWidget(cargando ? null
         : (!miSala && !todas) ? { texto: 'Sin sala asignada' }
+        // Un fallo de lectura no es «Sin reservas»: el vistazo lo dice.
+        : errorCarga ? { texto: 'No se pudo leer', tono: 'danger' }
         : porRevisarVistazo > 0 ? { valor: porRevisarVistazo, texto: porRevisarVistazo === 1 ? 'receta por revisar' : 'recetas por revisar', tono: 'warning' }
         : abiertasVistazo.length > 0 ? { valor: abiertasVistazo.length, texto: abiertasVistazo.length === 1 ? 'reserva abierta' : 'reservas abiertas', tono: 'brand' }
         : { texto: 'Sin reservas' });
@@ -349,7 +406,12 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const salaPropia = user?.branchId ?? user?.branch_id ?? null;
     const salaDeCobro = !todas && !soloLectura && miSala && !esBodega && String(miSala) === String(salaPropia) ? miSala : null;
     const cobrarEncargo = (e) => { setCobrandoEncargo(e.id); setNueva(true); };
-    const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (
+    // Sólo en una sala de ventas (Administración y Bodega no tienen caja) y
+    // sólo en la PROPIA: el anticipo entra al cajón de esa sala, la misma
+    // regla que `puedeApartar` de ReservasView. Quien elige otra sala desde
+    // la baldosa mira sus reservas pero no cobra en su cajón.
+    const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && esSalaDeVenta
+        && String(miSala) === String(salaPropia) ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
     const modalReceta = receta ? (
@@ -393,6 +455,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         return (
             <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
                 <div className={completa ? 'flex flex-col gap-2' : 'flex-1 min-h-0 overflow-y-auto overscroll-contain p-2 space-y-2'}>
+                    {selectorSala}
                     <ProrrogasPorAutorizar soloLectura={soloLectura} />
                     {!esBodega && (errorCarga ? (
                         <EmptyState icon={AlertTriangle} compact title="No se pudieron leer las reservas"
@@ -455,6 +518,15 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     return (
         <div className={completa ? 'flex flex-col gap-2' : 'flex flex-col h-full min-h-0'}>
             <div className={completa ? 'flex flex-col gap-2' : 'shrink-0 flex flex-col gap-2 px-2 pt-2'}>
+            {selectorSala}
+            {/* Un refresco que falló con la lista a la vista: la lista se
+                queda —es la última que se leyó— pero se avisa que puede no
+                estar al día. */}
+            {errorCarga && (
+                <Notice variant="danger" icon={AlertTriangle} compact>
+                    No se pudo actualizar: {mensajeAmigable(errorCarga, 'revisa la conexión.')}
+                </Notice>
+            )}
             {!onConteo && (resumen || botonNueva) && (
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <p className="text-label text-content-2 min-w-0 break-words">
@@ -642,7 +714,15 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
             </section>
             ))}
             {!todas && !completa && !buscado && abiertas.length > MAX_FILAS && (
-                <span className="text-label text-content-3">y {abiertas.length - MAX_FILAS} más</span>
+                puedeVerPantalla ? (
+                    <div>
+                        <Button variant="ghost" size="xs" icon={ArrowRight} onClick={() => navigate('/reservas')}>
+                            y {abiertas.length - MAX_FILAS} más · ver todas
+                        </Button>
+                    </div>
+                ) : (
+                    <span className="text-label text-content-3">y {abiertas.length - MAX_FILAS} más</span>
+                )
             )}
             {saldos.length > 0 && (
                 <div className="space-y-1.5">

@@ -1305,8 +1305,8 @@ export default function CircuitoDeBolsas({
         // el efectivo que hay adentro.
         const saldos = await fetchSaldos(todas.map((b) => b.id));
         if (!vigente()) return;
-        setBolsas(todas.map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
-        setDiferencias((conDif || []).map((b) => ({ ...b, ...(saldos.get(b.id) || {}) })));
+        setBolsas(todas.map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
+        setDiferencias((conDif || []).map((b) => ({ ...b, ...(saldos?.get(b.id) || {}) })));
         setPorDepositar(paraBanco || []);
         setLeidoEn(Date.now());
         setCargando(false);

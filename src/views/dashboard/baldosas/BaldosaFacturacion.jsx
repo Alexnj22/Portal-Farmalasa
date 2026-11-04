@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
 import { Loader2, Receipt } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
@@ -36,23 +36,51 @@ const CLASES = [
   { type: 'PAYMENT_CHANGE_REQUEST', nombre: 'pago',     tinta: 'suave'  },
 ];
 
+// Se monta dentro del modal y avisa al desmontarse, o sea al cerrarlo.
+function AlCerrar({ onCerrar }) {
+  const ref = useRef(onCerrar);
+  useEffect(() => { ref.current = onCerrar; }, [onCerrar]);
+  useEffect(() => () => ref.current?.(), []);
+  return null;
+}
+
 export default function BaldosaFacturacion(props) {
   const [filas, setFilas] = useState(null);
+  // Un fallo de lectura no es «Sin pendientes»: la baldosa lo dice (`error`
+  // de `LanzadorSolicitud`) en vez de pintar el check verde.
+  const [error, setError] = useState(null);
   // El reloj se congela cuando llegan las filas: la antigüedad se mide contra
   // el momento de la lectura, no contra el de un re-render cualquiera. Y
   // `Date.now()` dentro del `useMemo` de abajo sería una llamada impura durante
   // el render, que el compilador de React rechaza.
   const [ahora, setAhora] = useState(null);
+  // Sólo la última lectura escribe, y al desmontar nada en vuelo escribe.
+  const secuencia = useRef(0);
+  // Se envió una solicitud con el modal abierto: al cerrarlo se relee el
+  // número, que si no seguiría diciendo lo de antes de enviarla.
+  const huboEnvio = useRef(false);
 
-  useEffect(() => {
-    let cancelado = false;
+  const cargar = useCallback(() => {
+    const mia = ++secuencia.current;
     fetchSolicitudesFacturacionPendientes().then(r => {
-      if (cancelado) return;
+      if (mia !== secuencia.current) return;
+      setError(r.error ?? null);
       setFilas(r.filas);
       setAhora(Date.now());
     });
-    return () => { cancelado = true; };
   }, []);
+
+  useEffect(() => {
+    cargar();
+    return () => { secuencia.current += 1; };
+  }, [cargar]);
+
+  const alEnviar = useCallback(() => { huboEnvio.current = true; }, []);
+  const alCerrarModal = useCallback(() => {
+    if (!huboEnvio.current) return;
+    huboEnvio.current = false;
+    cargar();
+  }, [cargar]);
 
   // ── La franja: de qué son las pendientes, y desde cuándo ─────────────────
   // Un solo número junta cuatro trámites que no pesan lo mismo: tres
@@ -92,6 +120,7 @@ export default function BaldosaFacturacion(props) {
       icon={Receipt}
       label="Modificar facturación"
       pendientes={filas === null ? null : filas.length}
+      error={error}
       etiquetaPendientes="solicitud pendiente"
       etiquetaPendientesPlural="solicitudes pendientes"
       vacio="Sin pendientes"
@@ -109,8 +138,9 @@ export default function BaldosaFacturacion(props) {
               el selector: quien tiene alcance sobre todas las salas se quedaba
               sin poder cambiar de sala. Se muda acá adentro. */}
           {props.selectorSucursal}
+          <AlCerrar onCerrar={alCerrarModal} />
           <Suspense fallback={<Cargando />}>
-            <FormularioFacturacion {...props} />
+            <FormularioFacturacion {...props} onEnviada={alEnviar} />
           </Suspense>
         </div>
       )}

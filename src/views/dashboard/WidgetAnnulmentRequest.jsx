@@ -282,7 +282,7 @@ function TypeSelector({ inv, onSelect, onBack, employees, cajaAbierta }) {
     },
     {
       key: 'vendor_change', icon: UserCog, label: 'Cambio de vendedor',
-      desc: vendor ? vendor.name.split(' ')[0] : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
+      desc: vendor ? shortEmployeeName(vendor) : `Vendedor: #${inv.cod_vendedor || 'N/A'}`,
       color: 'text-chart-3-text', bg: 'bg-chart-3/10 border-chart-3/30', iconBg: 'bg-chart-3/10',
     },
     {
@@ -804,7 +804,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
 }
 
 /* ─── Main component ─────────────────────────────────────────────────────────── */
-export function FormularioFacturacion({ selectedBranchId: propBranchId = null }) {
+export function FormularioFacturacion({ selectedBranchId: propBranchId = null, onEnviada = null }) {
   const { user }       = useAuth();
   const employees      = useStaffStore(s => s.employees);
   const branches       = useStaffStore(s => s.branches);
@@ -818,6 +818,8 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   const [invoices,    setInvoices]    = useState([]);
   const [facturasParecidas, setFacturasParecidas] = useState(false);
   const [loading,     setLoading]     = useState(true);
+  // La lectura de facturas falló: se dice, en vez de «No hay facturas».
+  const [errorLista,  setErrorLista]  = useState(null);
   const [search,      setSearch]      = useState('');
   const [dateFilter,  setDateFilter]  = useState('');
   // Se calcula una vez por montaje: el modal no vive de un día para el otro.
@@ -924,6 +926,7 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
         : await fetchBranchInvoicesRecent(activeBranchId, ambito);
       if (cancelado) return;
       if (error) console.error('WidgetAnnulmentRequest:', error.message);
+      setErrorLista(error ? mensajeAmigable(error, 'Revisa la conexión e intenta de nuevo.') : null);
       setInvoices(data || []);
       setFacturasParecidas(!!aproximado);
       setLoading(false);
@@ -957,6 +960,8 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
   const handleSuccess = (type, supervisor) => {
     setSuccessInfo({ type, supervisor });
     setView('success');
+    // Quien abrió el formulario (la baldosa) relee su número al cerrar.
+    onEnviada?.(type);
     setTimeout(() => { setView('list'); setFocused(null); setReloadKey(k => k + 1); }, 4000);
   };
 
@@ -1041,7 +1046,11 @@ export function FormularioFacturacion({ selectedBranchId: propBranchId = null })
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain space-y-1.5 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && <div className="flex justify-center py-8"><SkeletonText lines={4} className="w-full max-w-md" /></div>}
 
-        {!loading && invoices.length === 0 && (
+        {!loading && errorLista && (
+          <EmptyState linea icon={AlertTriangle} title="No se pudieron leer las facturas" subtitle={errorLista} />
+        )}
+
+        {!loading && !errorLista && invoices.length === 0 && (
           <div className="py-8 text-center text-body-sm text-content-3 font-medium">
             {buscando || dateFilter ? 'Sin resultados con estos filtros' : 'No hay facturas este mes'}
           </div>

@@ -72,7 +72,7 @@ export default function SacarDinero() {
       fetchBolsas({ estados: ['ABIERTA'] }).then(async (lista) => {
         const mias = (lista || []).filter((b) => String(b.branch_id) === String(sala));
         const saldos = await fetchSaldos(mias.map((b) => b.id));
-        if (vivo) setBolsas(disponibles(mias, saldos));
+        if (vivo) setBolsas(disponibles(mias, saldos ?? new Map()));
       });
     }
     return () => { vivo = false; };

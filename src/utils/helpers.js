@@ -1,6 +1,6 @@
 import { claveDeDia, resolverTurnoDelDia } from './turnoDelDia';
 import { hora12 } from './hora';
-import { fechaNumerica } from './fecha';
+import { fechaNumerica, diaSV } from './fecha';
 
 // --- FECHAS Y TIEMPO (CORREGIDO UTC vs LOCAL) ---
 
@@ -169,7 +169,10 @@ export const getTodayAttendanceStatus = (emp, shifts) => {
 
     if (todayConfig.isOffDay) return { status: 'OFF', label: 'Día Libre', color: 'bg-surface-card-hover text-content-2 border-divider' };
 
-    const p = (emp.attendance || []).filter(a => a.timestamp?.startsWith(todayStr));
+    // El día de la marcación en El Salvador, no el de UTC: `timestamp` es
+    // timestamptz y desde las 18:00 de acá ya es «mañana» en UTC — quien salió
+    // a las 7 pm seguía «En labores» (2026-11-04).
+    const p = (emp.attendance || []).filter(a => a.timestamp && diaSV(a.timestamp) === todayStr);
 
     if (p.length === 0) return { status: 'ABSENT', label: 'Sin marcar', color: 'bg-surface-card-hover text-content-2 border-divider' };
 

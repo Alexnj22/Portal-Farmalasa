@@ -72,11 +72,13 @@ export function fetchBolsas({ desde, hasta, estados = ['ABIERTA'], porFechaDeCon
  * sería tener dos definiciones de cuánto dinero hay, y la del navegador no es la
  * que manda.
  */
+// Devuelve `null` si la lectura falla: una lista vacía se lee como «no falta
+// guardar nada», que es justo lo que no se midió.
 export async function fetchCortesPorEmbolsar({ desde, hasta }) {
     const { data, error } = await supabase.rpc('get_cortes_por_embolsar', {
         p_desde: desde, p_hasta: hasta,
     });
-    if (error) { console.error('bolsas: fetchCortesPorEmbolsar failed:', error.message); return []; }
+    if (error) { console.error('bolsas: fetchCortesPorEmbolsar failed:', error.message); return null; }
     return data || [];
 }
 
@@ -945,6 +947,10 @@ export function anularSalida(operacionId, motivo) {
  * `monto_inicial` es lo que se guardó; el SALDO es lo que debe haber en
  * billetes hoy. Desde que se puede sacar dinero, la pantalla que muestre el
  * primero sin el segundo está diciendo que hay plata que no está.
+ *
+ * Devuelve `null` si la lectura falla (2026-11-04). Antes devolvía un `Map`
+ * vacío, y como `saldoDeBolsa` da 0 sin saldo, cada bolsa se pintaba en $0.00:
+ * un fallo se leía como «no hay efectivo». Quien la llama decide qué hacer.
  */
 export async function fetchSaldos(ids) {
     const unicos = [...new Set((ids || []).filter(Boolean))];
@@ -958,7 +964,7 @@ export async function fetchSaldos(ids) {
     for (let i = 0; i < unicos.length; i += 500) tandas.push(unicos.slice(i, i + 500));
     const resultados = await Promise.all(tandas.map((p_ids) => supabase.rpc('get_bolsas_saldos', { p_ids })));
     const fallo = resultados.find((r) => r.error);
-    if (fallo) { console.error('bolsas: fetchSaldos failed:', fallo.error.message); return new Map(); }
+    if (fallo) { console.error('bolsas: fetchSaldos failed:', fallo.error.message); return null; }
     return new Map(resultados.flatMap((r) => r.data || []).map((r) => [r.bolsa_id, r]));
 }
 

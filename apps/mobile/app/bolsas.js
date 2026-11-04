@@ -211,7 +211,7 @@ export default function Bolsas() {
     const todas = [...(vivas || []), ...(conDif || []), ...(contadas || [])];
     const saldos = await fetchSaldos([...new Set(todas.map((b) => b.id))]);
     if (esta !== lecturaRef.current) return;
-    const conSaldo = (b) => ({ ...b, ...(saldos.get(b.id) || {}) });
+    const conSaldo = (b) => ({ ...b, ...(saldos?.get(b.id) || {}) });
     setBolsas((vivas || []).map(conSaldo));
     setDiferencias((conDif || []).map(conSaldo));
     setContadas((contadas || []).map(conSaldo));

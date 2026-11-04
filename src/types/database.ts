@@ -27989,6 +27989,90 @@ export type Database = {
           },
         ]
       }
+      saly_ayuda_memoria: {
+        Row: {
+          created_at: string
+          employee_id: string
+          resumen: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          resumen?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          resumen?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saly_ayuda_memoria_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saly_ayuda_memoria_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      saly_ayuda_registro: {
+        Row: {
+          created_at: string
+          employee_id: string
+          id: number
+          modulo: string
+          pregunta: string
+          respuesta: Json | null
+          tokens: number | null
+          util: boolean | null
+        }
+        Insert: {
+          created_at?: string
+          employee_id: string
+          id?: never
+          modulo: string
+          pregunta: string
+          respuesta?: Json | null
+          tokens?: number | null
+          util?: boolean | null
+        }
+        Update: {
+          created_at?: string
+          employee_id?: string
+          id?: never
+          modulo?: string
+          pregunta?: string
+          respuesta?: Json | null
+          tokens?: number | null
+          util?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saly_ayuda_registro_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saly_ayuda_registro_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       schedule_coverage: {
         Row: {
           coverage_branch_id: number
@@ -37985,6 +38069,10 @@ export type Database = {
         Returns: Json
       }
       saldo_favor_dias: { Args: never; Returns: number }
+      saly_ayuda_calificar: {
+        Args: { p_id: number; p_util: boolean }
+        Returns: boolean
+      }
       save_pedido_snapshot: {
         Args: { p_nombre: string; p_sucursal_ids: number[] }
         Returns: string

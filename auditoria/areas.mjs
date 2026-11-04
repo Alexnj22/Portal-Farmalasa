@@ -1238,12 +1238,16 @@ export const AREAS = [
             'src/plataforma/archivosEnEspera.js', 'src/data/fotosEnEspera.js', 'src/hooks/useColasEnEspera.js', 'src/data/ingresosEnEspera.js',
             'src/components/forms/FormAuditDetail.jsx',
             'src/data/egreso.js',
+            // 2026-11-04: Saly, ayuda en pantalla.
+            'src/components/saly/', 'src/utils/salyAyuda.js', 'src/data/salyAyuda.js',
         ],
         tablas: ['audit_logs', 'sync_log', 'sync_alert_log', 'backup_sync_log', 'orphan_objects_registry',
                  'security_config', 'export_log', 'reinicios_de_la_base',
                  // 2026-11-03: las fallas de servicio que ve el portal y sus avisos.
-                 'fallas_de_servicio', 'avisos_de_servicio'],
-        edge: ['check-sync-health-alerts', 'backup-critical-tables', 'oss-proxy', 'saly-ai'],
+                 'fallas_de_servicio', 'avisos_de_servicio',
+                 // 2026-11-04: Saly, ayuda en pantalla.
+                 'saly_ayuda_registro', 'saly_ayuda_memoria'],
+        edge: ['check-sync-health-alerts', 'backup-critical-tables', 'oss-proxy', 'saly-ai', 'saly-ayuda'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',

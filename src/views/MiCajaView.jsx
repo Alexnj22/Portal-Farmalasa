@@ -82,6 +82,8 @@ import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { accionDeLaCaja, bolsasDelDia, declaradoDelCorte, embolsadoDelDia } from '@nucleo/utils/corteDeCaja';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { avisoDeCortesSinResolver, avisoDeError, avisoDeFaltaPorContar } from '@nucleo/utils/salyAyuda';
+import { useSalyEnPantalla } from '../components/saly/salyAyudaStore';
 
 /**
  * Mi caja — el turno de esta sala, ahora.
@@ -918,6 +920,30 @@ export default function MiCajaView({ comoPestana = false }) {
                 rotuloFijo: true, onClick: () => setDialogo('cerrar') },
         ];
     }, [puedeOperar, sala, estado, noSePudo, correr, diaCerrado]);
+
+    /* Saly, ayuda en pantalla (2026-11-04). Los tres avisos salen de lo que
+     * esta pantalla ya sabe —el mismo juez que el candado del cierre—, así
+     * que cuestan $0 y no pueden contradecir al botón. Sólo con la caja
+     * abierta y el día sin cerrar: después ya no hay freno que explicar. */
+    const DIALOGOS_SALY = { corte: 'el corte', ingreso: 'una entrada', salida: 'una salida', cerrar: 'el cierre del día', abrir: 'la apertura' };
+    const cajaViva = estado?.abierta && !diaCerrado;
+    useSalyEnPantalla({
+        modulo: sala ? 'caja' : null,
+        titulo: `Mi caja · ${nombreSala}`,
+        leer: () => ({
+            sala: nombreSala, dia: estado?.dia, abierta: !!estado?.abierta, dia_cerrado: diaCerrado,
+            vendiendo: estado?.turno_corriendo !== false, efectivo_esperado: estado?.efectivo ?? null,
+            falta_por_contar: faltaPorContar,
+            cortes: (estado?.cortes || []).slice(-10).map((c) => ({ hora: String(c.hora || '').slice(0, 5), tipo: c.tipo, estado: c.estado })),
+            no_se_pudo_leer: noSePudo || null,
+        }),
+        avisos: [
+            noSePudo ? avisoDeError(noSePudo, 'caja') : null,
+            cajaViva ? avisoDeCortesSinResolver(cortesSinResolver) : null,
+            cajaViva && !cortesSinResolver.length ? avisoDeFaltaPorContar(faltaPorContar, { sala: nombreSala }) : null,
+        ],
+        enFormulario: DIALOGOS_SALY[dialogo] || null,
+    });
 
     /* «Abierta» y «vendiendo» no son lo mismo: la apertura del día puede estar
      * viva con el turno parado, y en ese estado no se puede cortar ni cerrar.

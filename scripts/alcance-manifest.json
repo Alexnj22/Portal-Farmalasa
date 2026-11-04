@@ -297,6 +297,10 @@
       ],
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
     },
+    "saly-ayuda": {
+      "guarda": "sin-sala",
+      "motivo": "Ayuda en pantalla (2026-11-04). No lee ninguna tabla de negocio: responde sobre los datos que la pantalla ya le mostró a quien pregunta (que pasaron por su RLS). Sólo escribe su propio registro y memoria, con employee_id sacado de la sesión."
+    },
     "saly-ai": {
       "guarda": "sin-sala",
       "motivo": "Desde el 2026-10-02 sólo responde los dos análisis de encuestas, que trabajan sobre los comentarios que manda quien llama; no lee la base. Las demás acciones (chat, analyze-document, generate-schedule…) devuelven 410: no tenían quien las llamara y dos eran puertas abiertas."

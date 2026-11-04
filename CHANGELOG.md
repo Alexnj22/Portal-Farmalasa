@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1435.0 — Saly, ayuda en pantalla: Cortes y Mi caja
+
+Saly ya ayuda en pantalla, por ahora en **Efectivo → Cortes** y **Mi caja (Hoy)**.
+Una burbuja con su figura, abajo a la derecha, que sólo aparece donde sabe ayudar.
+
+- **Avisos sin costo**: cuando ve un faltante sin confirmar, entró dinero después
+  del último conteo, quedó un corte sin resolver o algo no cargó, cambia de
+  emoción y ofrece explicarlo. La explicación —cifras, línea de tiempo y pasos—
+  sale de los mismos números de la pantalla, sin IA.
+- **Preguntas escritas**: lo único que va a la IA, con el modelo más barato
+  (`gemini-2.5-flash-lite`, sin pensamiento), sólo lo que la pantalla muestra y
+  con DUI, NIT, teléfonos, correos y salarios tapados. ~$0.0003 por pregunta;
+  tope de 30 por persona al día, contado en la base. La misma pregunta sobre la
+  misma pantalla no se vuelve a pagar.
+- Puede poner filtros (quedan marcados con su color) y llevar a otra pantalla;
+  nunca guarda, aprueba ni envía.
+- Recuerda un resumen corto de cada persona (`saly_ayuda_memoria`) y anota cada
+  pregunta con su 👍/👎 (`saly_ayuda_registro`, 180 días).
+- Si se queda quieto 3 minutos en un formulario de la caja, se ofrece a ayudar.
+
+Función nueva `saly-ayuda` (con sesión). Plan: `docs/PLAN-SALY-AYUDA-EN-PANTALLA-2026-11-04.md`.
+
 ## v2.1434.1 — Las flechas flotantes ya no tapan la última tarjeta
 
 - El relleno inferior de toda vista era de 2.5rem y la columna de flechas

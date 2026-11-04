@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-04T17:42:05.789Z",
+ "generado": "2026-11-04T17:56:57.562Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -5552,6 +5552,10 @@
   "sales_invoice_items_congelar_costo": {
    "area": "ventas",
    "por": "trigger"
+  },
+  "saly_ayuda_calificar": {
+   "area": "sistema",
+   "por": "código"
   },
   "save_pedido_snapshot": {
    "area": "pedidos",

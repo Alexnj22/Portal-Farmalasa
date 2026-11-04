@@ -4330,4 +4330,28 @@ html[data-en-pestana] #main-scroll {
 .saly-toque[data-animo="alegria"]      { --t1: var(--saly-alegria-2); --t2: var(--saly-alegria-1); --t3: var(--saly-atencion-2); }
 .saly-toque[data-animo="preocupacion"] { --t1: var(--saly-preocupacion-2); --t2: var(--saly-atencion-2); --t3: var(--saly-preocupacion-1); }
 .saly-toque[data-animo="pensando"]     { --t1: var(--saly-pensando-2); --t2: var(--saly-atencion-2); --t3: var(--saly-pensando-1); }
+/* Las piezas con que Saly arma la ayuda en pantalla (2026-11-04): no escribe
+   párrafos, combina estas. Cifras en recuadro, barras para comparar, pasos
+   numerados y una línea de tiempo. El rojo es el del tema (`--danger`), así
+   que «lo que está mal» se lee igual que en el resto del portal. */
+.saly-cifra { border-radius: 0.75rem; padding: 0.5rem 0.625rem; background: color-mix(in srgb, var(--saly-atencion-2) 12%, transparent); }
+.saly-cifra[data-tono="mal"] { background: color-mix(in srgb, var(--danger) 14%, transparent); }
+.saly-cifra[data-tono="bien"] { background: color-mix(in srgb, var(--success) 14%, transparent); }
+.saly-barra { height: 0.5rem; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, var(--saly-atencion-2) 16%, transparent); }
+.saly-barra > span { display: block; height: 100%; border-radius: 99px; background: var(--saly-pensando-2); }
+.saly-barra > span[data-tono="mal"] { background: var(--danger); }
+.saly-barra > span[data-tono="bien"] { background: var(--success); }
+.saly-paso-num { flex: none; width: 1.25rem; height: 1.25rem; border-radius: 99px; display: grid; place-items: center;
+  font-size: 0.6875rem; font-weight: 900; color: var(--saly-brillo); background: var(--saly-atencion-3); }
+.saly-hito-punto { position: relative; margin: 0 auto; width: 0.875rem; height: 0.875rem; border-radius: 99px;
+  background: var(--saly-atencion-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--saly-atencion-2) 25%, transparent); }
+.saly-hito-punto[data-tono="mal"] { background: var(--danger); box-shadow: 0 0 0 3px color-mix(in srgb, var(--danger) 25%, transparent); }
+.saly-hito-punto[data-tono="bien"] { background: var(--saly-alegria-2); box-shadow: 0 0 0 3px color-mix(in srgb, var(--saly-alegria-2) 25%, transparent); }
+.saly-hito-trazo { position: absolute; top: 0.375rem; left: 50%; right: -50%; height: 2px; background: color-mix(in srgb, var(--saly-atencion-2) 45%, transparent); }
+/* Lo que Saly señala o llenó: su color, nunca el del tema, para que se sepa
+   que fue ella y no la pantalla. */
+[data-saly-senalado] {
+  outline: 2px solid var(--saly-atencion-2); outline-offset: 2px; border-radius: 0.75rem;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--saly-atencion-2) 22%, transparent);
+}
 @media (prefers-reduced-motion: reduce) { .saly-cuerpo, .saly-ojos, .saly-anillo, .saly-mota, .saly-toque::before { animation: none; } }

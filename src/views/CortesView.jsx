@@ -66,7 +66,9 @@ import { fetchCobrosDelPortal } from '@nucleo/data/creditos';
  * forma en que sale dinero de una sala, y la única que no dejaba rastro en
  * ninguna pantalla de Efectivo. */
 import { fetchAnotadosDelPortal, fetchSalidasDeBolsaDelRango, fetchTiposDeSalida } from '@nucleo/data/bolsas';
-import { conTramoPorSalaYDia, filtrarCortes, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
+import { conTramoPorSalaYDia, diferenciaDelCorte, filtrarCortes, resumenDeCortes, severidad } from '@nucleo/utils/cortesDiagnostico';
+import { avisoDeFaltante } from '@nucleo/utils/salyAyuda';
+import { useSalyEnPantalla } from '../components/saly/salyAyudaStore';
 import {
     diaEnFiltro, diaEnMes, mesesDeLosDias, ordenarDias, pendientesDeRegistrar, porSigno, resolucionesDe, resumenDeDias,
 } from '@nucleo/utils/diferenciasDeCaja';
@@ -633,6 +635,7 @@ const CortesView = () => {
         [filtrados, pagActual, porPagina],
     );
 
+
     // Agrupar por día y, dentro del día, POR SALA. Los cortes de una sala son
     // una serie —cada uno se mide contra el anterior—, así que intercalarlos
     // con los de otra sala obliga a reconstruir mentalmente cuál sigue a cuál.
@@ -726,6 +729,39 @@ const CortesView = () => {
             .filter((b) => puedeVerTodas || String(b.id) === String(miSala))
             .map((b) => ({ value: String(b.id), label: b.name }));
     }, [branches, cortes, aperturas, salasConCaja, getScope, user]);
+
+    /* Saly, ayuda en pantalla (2026-11-04). Sólo en la pestaña «Cortes»: «Hoy»
+     * es Mi caja y se anota sola. Lo que lee es lo que la página MUESTRA, en
+     * datos cortos —no la tabla entera—, porque cada carácter que viaja a la
+     * IA se paga. El aviso del faltante sale de los mismos números de la
+     * tarjeta (`diferenciaDelCorte`) y no cuesta nada: sólo el más reciente
+     * sin confirmar, para no llenar la burbuja. */
+    const salyCortes = useMemo(() => enPagina
+        .filter((c) => c.tipo !== 'X')
+        .slice(0, 25)
+        .map((c) => {
+            const d = diferenciaDelCorte(c);
+            return { id: c.id, branch_id: c.branch_id, sala: nombreSala[c.branch_id] || `Sucursal ${c.branch_id}`,
+                fecha: c.fecha, hora: String(c.hora || '').slice(0, 5), tipo: c.tipo, estado: c.estado,
+                contado: Number(c.total_declarado) || 0, esperado: d.esperado, diferencia: d.valor,
+                severidad: severidad(c.tramo) };
+        }), [enPagina, nombreSala]);
+    const avisoFaltante = useMemo(() => {
+        const c = salyCortes.find((x) => x.estado === 'PENDIENTE' && x.severidad === 'falta' && x.diferencia != null);
+        return c ? avisoDeFaltante(c) : null;
+    }, [salyCortes]);
+    useSalyEnPantalla({
+        modulo: enCortes ? 'cortes_caja' : null,
+        titulo: 'Cortes de caja',
+        leer: () => ({ periodo, sala: sala ? nombreSala[sala] : 'todas', estado, diferencia,
+            total_filtrados: filtrados.length, cortes: salyCortes }),
+        filtros: {
+            estado: { rotulo: 'Estado', valor: estado, opciones: ESTADOS, poner: (v) => { setEstado(v); setPagina(1); } },
+            diferencia: { rotulo: 'Diferencia', valor: diferencia, opciones: DIFERENCIAS, poner: (v) => { setDiferencia(v); setPagina(1); } },
+            ...(alcanceTodas ? { sala: { rotulo: 'Sucursal', valor: sala, opciones: salaOptions, poner: (v) => { setSala(v); setPagina(1); } } } : {}),
+        },
+        avisos: [avisoFaltante],
+    });
 
     const HOY = `${hoySV()}|${hoySV()}`;
     const verPeriodo = useCallback((v) => {
@@ -1123,8 +1159,9 @@ const CortesView = () => {
 
                                 <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
                                     {s.lista.map((c) => (
+                                        // El ancla con que Saly la señala al explicar un faltante.
+                                        <div key={c.id} data-saly-ancla={`corte-${c.id}`} className="min-w-0">
                                         <TarjetaCorte
-                                            key={c.id}
                                             corte={c}
                                             persona={personas.get(c.resuelto_por) || null}
                                             puedeResolver={puedeResolver}
@@ -1132,6 +1169,7 @@ const CortesView = () => {
                                             onAbrir={abrirDetalle}
                                             onConfirmar={confirmarRapido}
                                         />
+                                        </div>
                                     ))}
                                 </div>
                             </div>

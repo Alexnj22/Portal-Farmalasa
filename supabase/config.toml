@@ -485,6 +485,12 @@ entrypoint = "./functions/saly-ai/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/saly-ai/*.html" ]
 
+[functions.saly-ayuda]
+enabled = true
+verify_jwt = true
+import_map = "./functions/saly-ayuda/deno.json"
+entrypoint = "./functions/saly-ayuda/index.ts"
+
 [functions.bulk-create-employee-users]
 verify_jwt = false
 

@@ -33,6 +33,9 @@ const NotificationBell = React.lazy(() => import('../common/NotificationBell'));
  * —y además sólo se monta para quien tiene `chat_clientes`, así que el resto
  * no la baja nunca—. Ver `views/chat-clientes/BurbujaChat.jsx`. */
 const BurbujaChat = React.lazy(() => import('../../views/chat-clientes/BurbujaChat'));
+/* Saly, ayuda en pantalla (2026-11-04). Se dibuja sólo donde una vista se
+ * anotó con `useSalyEnPantalla`; el chunk es chico y se baja aparte. */
+const SalyBurbuja = React.lazy(() => import('../saly/SalyBurbuja'));
 
 /* El diálogo de «avisos apagados»: decide él solo si aparece (una vez al día,
  * y sólo si los avisos están apagados), así que nada de la pantalla espera
@@ -1570,6 +1573,10 @@ const AppLayout = ({ children, handleLogout }) => {
                 <AvisosApagadosDialog />
             </React.Suspense>
             <OfflineBanner />
+
+            <React.Suspense fallback={null}>
+                <SalyBurbuja oculta={isMobile && isSidebarOpen} hayDialogo={hayDialogo} />
+            </React.Suspense>
 
             {hasPermission('chat_clientes', 'can_view') && (
                 <React.Suspense fallback={null}>

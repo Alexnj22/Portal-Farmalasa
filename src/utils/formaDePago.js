@@ -12,6 +12,14 @@
 // queda pendiente de autorización —y para pedirla hay que decir por qué no hay
 // foto—: es dinero que no está en ningún cajón que alguien pueda contar.
 //
+// ── Con foto, el total y el número también son obligatorios (2026-11-04) ───
+// Antes eran opcionales, y cuando la lectura de la foto fallaba la sala los
+// dejaba vacíos: seis ingresos con tarjeta o transferencia entre el 21-oct y
+// el 4-nov quedaron sin número o sin total, y `caja_vouchers_del_dia` no los
+// puede cuadrar contra ninguna venta (Salud 1, «Voucher sin número»). Regla
+// del usuario: obligatorios, y si no se pueden escribir, con autorización
+// (`sinDatos` + motivo), igual que cuando no hay foto.
+//
 // ── Un voucher puede cubrir más que este ingreso ───────────────────────────
 // Un voucher de $16 = $15 de una venta con tarjeta + $1 de una inyección
 // (ejemplo del usuario). El ingreso anota su parte y el total del voucher; el
@@ -30,7 +38,7 @@ export const FORMAS_DE_PAGO = [
 /** El estado vacío: efectivo, que es lo que era todo ingreso hasta hoy. */
 export const FORMA_DE_PAGO_INICIAL = Object.freeze({
     forma: 'EFECTIVO', foto: null, lectura: null, comprobanteTotal: '', numero: '',
-    sinComprobante: false, motivo: '',
+    sinComprobante: false, sinDatos: false, motivo: '',
 });
 
 /** El papel que hace de prueba, nombrado como lo dice la sala. */
@@ -42,13 +50,22 @@ const aNumero = (v) => {
     return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
 };
 
+/** Con foto, ¿falta el total o el número? (los dos los exige el cuadre). */
+export const faltanDatosDelComprobante = (v) => {
+    const p = v ?? FORMA_DE_PAGO_INICIAL;
+    return aNumero(p.comprobanteTotal) == null || !String(p.numero ?? '').trim();
+};
+
+/** El rótulo del número, como lo dice el papel. */
+export const nombreDelNumero = (forma) => (forma === 'TARJETA' ? 'número del voucher' : 'referencia');
+
 /**
  * Qué falta y qué se va a hacer con este pago.
  *
  * `monto` es lo que se cobra en ESTE ingreso. Devuelve:
  *   valido          se puede anotar
  *   noEfectivo      no va a la caja
- *   pideAutorizacion  sin comprobante: queda esperando autorización
+ *   pideAutorizacion  sin comprobante, o sin su total/número: queda esperando autorización
  *   resto           lo que el voucher cubre además de este ingreso (> 0 = una venta con tarjeta)
  *   falta           qué impide anotarlo, en palabras de la sala (o null)
  */
@@ -60,13 +77,17 @@ export function estadoDeFormaDePago(v, monto) {
 
     const papel = nombreDelComprobante(p.forma);
     const conFoto = !!p.foto;
-    const pideAutorizacion = !conFoto && !!p.sinComprobante;
+    const sinDatos = conFoto && faltanDatosDelComprobante(p);
+    const pideAutorizacion = (!conFoto && !!p.sinComprobante) || (sinDatos && !!p.sinDatos);
     const total = aNumero(p.comprobanteTotal);
     const resto = total != null && cobro != null ? Math.round((total - cobro) * 100) / 100 : 0;
 
     let falta = null;
     if (!conFoto && !p.sinComprobante) falta = `Sube la foto del ${papel}.`;
-    else if (pideAutorizacion && String(p.motivo ?? '').trim().length < 5) falta = `Explica por qué no hay ${papel}.`;
+    else if (sinDatos && !p.sinDatos) falta = `Escribe el total y el ${nombreDelNumero(p.forma)}.`;
+    else if (pideAutorizacion && String(p.motivo ?? '').trim().length < 5) {
+        falta = conFoto ? `Explica por qué no hay total o ${nombreDelNumero(p.forma)}.` : `Explica por qué no hay ${papel}.`;
+    }
     else if (total != null && cobro != null && resto < -0.004) falta = `El cobro no puede pasar del total del ${papel} (${total.toFixed(2)}).`;
 
     return { valido: !falta, noEfectivo, pideAutorizacion, resto: resto > 0.004 ? resto : 0, falta };
@@ -83,6 +104,9 @@ export function datosDeFormaDePago(v, fotoUrl = null) {
         // partes de un mismo voucher y lo que el servidor suma contra su total.
         boleta: String(p.numero ?? '').trim() || null,
         lectura: fotoUrl ? (p.lectura ?? null) : null,
-        motivoSinComprobante: fotoUrl ? '' : String(p.motivo ?? '').trim(),
+        // El motivo viaja cuando se pide autorización: sin foto, o con foto
+        // pero sin el total o el número.
+        motivoSinComprobante: !fotoUrl || (p.sinDatos && faltanDatosDelComprobante(p))
+            ? String(p.motivo ?? '').trim() : '',
     };
 }

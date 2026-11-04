@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1437.0 — Caja: el voucher pide total y número, o autorización
+
+- **Con foto, el total y el número del voucher (o la referencia de la
+  transferencia) ahora son obligatorios.** Antes eran opcionales y, cuando la
+  foto no se leía, quedaban vacíos: seis ingresos entre el 21-oct y el 4-nov
+  (Salud 1, Salud 4 y otra sala) no se podían cuadrar contra ninguna venta con
+  tarjeta, y Mi caja mostraba «Voucher sin número · sin total del voucher».
+- Si no se pueden escribir, «No puedo leer el total o el número» deja anotar el
+  ingreso **pendiente de autorización**, con su porqué — el mismo circuito que
+  cuando no hay foto.
+- La regla vive en `estadoDeFormaDePago` (los cuatro diálogos que cobran) y se
+  repite en `operar-caja`, que rechaza el envío sin datos ni motivo.
 ## v2.1436.0 — Bienestar con niveles e Inicio más visual
 
 *«Aplica los niveles a los juegos que ya están.»* · *«En inicio, accesos

@@ -9,7 +9,8 @@ import { leerBoleta } from '@nucleo/data/bolsas';
 import { lecturaDeBoleta } from '@nucleo/utils/ingresoDeCaja';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
-    estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO, nombreDelComprobante,
+    estadoDeFormaDePago, faltanDatosDelComprobante, FORMA_DE_PAGO_INICIAL, FORMAS_DE_PAGO,
+    nombreDelComprobante, nombreDelNumero,
 } from '@nucleo/utils/formaDePago';
 
 /**
@@ -46,7 +47,7 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
 
     const alElegirFoto = async (f) => {
         setAviso(null);
-        poner({ foto: f, lectura: null, sinComprobante: false });
+        poner({ foto: f, lectura: null, sinComprobante: false, sinDatos: false });
         if (!f) return;
         setLeyendo(true);
         const r = await leerBoleta(f, { entidad: null, numeroBoleta: null, monto: null });
@@ -54,11 +55,11 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
         const l = lecturaDeBoleta(r, { pideBoleta: true });
         if (l.error) {
             setAviso('No se pudo leer la foto. Escribe el total y el número a mano.');
-            onCambiar({ ...v, foto: f, sinComprobante: false });
+            onCambiar({ ...v, foto: f, sinComprobante: false, sinDatos: false });
             return;
         }
         onCambiar({
-            ...v, foto: f, sinComprobante: false, lectura: l.lectura,
+            ...v, foto: f, sinComprobante: false, sinDatos: false, lectura: l.lectura,
             comprobanteTotal: l.monto ?? v.comprobanteTotal, numero: l.boleta ?? v.numero,
         });
         if (l.monto != null) onMontoLeido?.(l.monto);
@@ -96,6 +97,32 @@ export default function FormaDePago({ valor, onCambiar, monto, onMontoLeido, mon
                             <PortalInput label={v.forma === 'TARJETA' ? 'Número del voucher' : 'Referencia'}
                                 value={v.numero} maxLength={40} onChange={(e) => poner({ numero: e.target.value })} />
                         </div>
+                    )}
+
+                    {/* Total y número son obligatorios (2026-11-04): sin ellos el
+                        voucher no se puede cuadrar. Si no se pueden escribir,
+                        el ingreso entra pendiente de autorización. */}
+                    {v.foto && faltanDatosDelComprobante(v) && !v.sinDatos && (
+                        <button type="button" onClick={() => poner({ sinDatos: true })}
+                            className="text-caption underline text-content-3 min-h-[var(--tap-min)]">
+                            No puedo leer el total o el {nombreDelNumero(v.forma)}
+                        </button>
+                    )}
+
+                    {v.foto && faltanDatosDelComprobante(v) && v.sinDatos && (
+                        <>
+                            <Notice variant="warning" icon={Lock}>
+                                Sin el total y el {nombreDelNumero(v.forma)}, el ingreso se anota pero
+                                queda <b>pendiente de autorización</b>. Lo revisa Supervisión o Talento Humano.
+                            </Notice>
+                            <PortalTextarea label={`Por qué no hay total o ${nombreDelNumero(v.forma)}`} rows={2}
+                                value={v.motivo} onChange={(e) => poner({ motivo: e.target.value })}
+                                placeholder="el voucher salió borroso y no se lee el número" />
+                            <button type="button" onClick={() => poner({ sinDatos: false, motivo: '' })}
+                                className="text-caption underline text-content-3 min-h-[var(--tap-min)]">
+                                Sí los tengo: escribirlos
+                            </button>
+                        </>
                     )}
 
                     {/* Lo que el voucher cubre además de este cobro. No frena: la

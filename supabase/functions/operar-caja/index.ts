@@ -1861,10 +1861,20 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: "La forma de pago no es válida." }, 400);
       }
       const noEfectivo = formaPago !== "EFECTIVO";
-      const sinComprobante = noEfectivo && !String(body.foto_url ?? "").trim();
+      /* Con foto, el total y el número también son obligatorios (2026-11-04):
+       * sin ellos `caja_vouchers_del_dia` no puede cuadrar el voucher. Si no
+       * vienen, el ingreso entra igual pero pendiente de autorización, como
+       * sin foto. Misma regla que `estadoDeFormaDePago` del núcleo. */
+      const sinFoto = noEfectivo && !String(body.foto_url ?? "").trim();
+      const totalDado = Number(body.comprobante_total);
+      const sinDatos = noEfectivo && !sinFoto
+        && (!String(body.boleta ?? "").trim() || !(Number.isFinite(totalDado) && totalDado > 0));
+      const sinComprobante = sinFoto || sinDatos;
       const motivoSinComprobante = String(body.motivo_sin_comprobante ?? "").trim();
       if (sinComprobante && motivoSinComprobante.length < 5) {
-        return json({ ok: false, error: "Sin foto del comprobante, explica por qué para pedir la autorización." }, 400);
+        return json({ ok: false, error: sinFoto
+          ? "Sin foto del comprobante, explica por qué para pedir la autorización."
+          : "Escribe el total y el número del comprobante, o explica por qué no se puede para pedir la autorización." }, 400);
       }
       /* El total del voucher puede ser MAYOR que el ingreso: un voucher de $16
        * cubre $15 de una venta con tarjeta y $1 de una inyección. Lo que sobra

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.3 — Eficiencia: estado de sincronización y refresco de inventario
+
+Segunda tanda de la auditoría de consultas (5 a 8). Medido en producción:
+
+- **`v_sync_health` · inventario**: `inventory_sync_log` (781K filas) no tenía
+  índice por fecha. Índice `idx_inventory_sync_log_synced_at`: 2,388 → 1 ms.
+- **`inventory_grouped_mv`** (se refresca cada 2 min): `norm_search` corría en
+  los 13,750 grupos y hay 3,308 descripciones distintas; ahora una vez por
+  descripción. EXCEPT en los dos sentidos = 0 filas. REFRESH 800 → 460 ms.
+  Corrección: la llama `sync-dte-sales`, no el navegador.
+- **`sync_inventory_batch` · `upsert_product_precios_batch`**: sin cambio, ya
+  escriben sólo lo que cambió.
+- **`reclamar_impresion`**: sin cambio, 1 ms y 5 bloques (optimizada el 22-sep).
+
 ## v2.1448.2 — Inicio: ausencias reales, avisos propios, alertas de sala y errores visibles
 
 Cierre de la auditoría widget por widget del Inicio (2026-11-04), con las

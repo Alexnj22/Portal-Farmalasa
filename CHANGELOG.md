@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1438.1 — Las flechas flotantes se esconden al dejar de bajar
+
+- El relleno de abajo (v2.1434.1) sólo servía al llegar al final: mientras se
+  recorría la página, las flechas «Ir al inicio / Ir al final» seguían encima
+  del borde derecho de las tarjetas, que es donde va el monto (Mi caja, el total
+  del voucher). Ahora aparecen al hacer scroll y se esconden 1.8 s después de
+  quedarse quieto; con el puntero encima no se van.
+
 ## v2.1438.0 — Bienestar: Botiquín, el juego de unir
 
 *«Agreguemos un juego de unir objetos del mismo tipo que se van

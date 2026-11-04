@@ -84,12 +84,30 @@ const GlassViewLayout = ({
         return null;
     }, []);
 
+    // ── Las flechas aparecen al moverse y se van al quedarse quieto ──────
+    // (2026-11-04) Flotan encima del contenido, y a la derecha es justo donde
+    // va el monto de cada tarjeta: fijas, tapaban el total del último voucher
+    // de Mi caja aunque el relleno de abajo ya dejara llegar al final. Se usan
+    // MIENTRAS se recorre una lista; leyendo, estorban. Con el puntero encima
+    // no se esconden, para no irse debajo del clic.
+    const ocultarTimer = useRef(null);
+    const encimaRef = useRef(false);
+    const programarOcultar = useCallback(() => {
+        clearTimeout(ocultarTimer.current);
+        ocultarTimer.current = setTimeout(() => {
+            if (!encimaRef.current) setShowScrollNav(false);
+        }, 1800);
+    }, []);
+    useEffect(() => () => clearTimeout(ocultarTimer.current), []);
+
     const handleInternalScroll = useCallback(() => {
         requestAnimationFrame(() => {
             const el = scroller();
-            setShowScrollNav((el ? el.scrollTop : window.scrollY) > 150);
+            const lejos = (el ? el.scrollTop : window.scrollY) > 150;
+            setShowScrollNav(lejos);
+            if (lejos) programarOcultar();
         });
-    }, [scroller]);
+    }, [scroller, programarOcultar]);
 
     // El documento sólo se escucha cuando ES el que scrollea. Escucharlo siempre
     // haría que en escritorio los botones aparecieran por el scroll de la página
@@ -471,6 +489,8 @@ const GlassViewLayout = ({
                         // burbuja tapaba «Ir al final» y la mitad de «Ir al inicio».
                         // Lo decide CSS porque la burbuja la monta `AppLayout`.
                         // Igual con la de Saly, que vive en esa misma columna.
+                        onMouseEnter={() => { encimaRef.current = true; clearTimeout(ocultarTimer.current); }}
+                        onMouseLeave={() => { encimaRef.current = false; programarOcultar(); }}
                         className="fixed right-4 md:right-8 [body:has([data-burbuja-chat])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)] [body:has([data-burbuja-saly])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)] z-sidebar flex flex-col gap-2 pointer-events-auto"
                     >
                         <motion.button

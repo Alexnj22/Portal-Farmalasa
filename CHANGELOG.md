@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1432.0 — Compras: se quita «Facturas de mi sala»
+
+- **Se quitan la vista `/facturas-sala` y el widget «Facturas de mi sala»** del
+  tablero (usuario, 2026-11-04: «quítalo»). Con las compras centralizadas en
+  Bodega y la carga desde Cargar compra, que cada sala tome su factura dejó de
+  ser el flujo. Fuera también sus permisos (`facturas_sala`,
+  `facturas_sala_ver_montos`, `dash_facturas_sala`) del catálogo, el menú y la
+  búsqueda. Las funciones y tablas de la base se quedan: guardan qué se tomó
+  hasta hoy.
+
 ## v2.1431.0 — Encargos: los pasos con quién hizo cada uno y qué toca ahora
 
 - **La tarjeta del encargo no decía quién hizo nada.** Los datos existían

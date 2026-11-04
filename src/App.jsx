@@ -84,7 +84,6 @@ const MinMaxView = lazy(IMPORTADORES.MinMaxView);
 const TrasladosView = lazy(IMPORTADORES.TrasladosView);
 const VentasPperdidasView = lazy(IMPORTADORES.VentasPperdidasView);
 const ComprasView = lazy(IMPORTADORES.ComprasView);
-const FacturasSalaView = lazy(IMPORTADORES.FacturasSalaView);
 const CuentasPorPagarView = lazy(IMPORTADORES.CuentasPorPagarView);
 const CargarCompraView = lazy(IMPORTADORES.CargarCompraView);
 const FacturasCompraView = lazy(IMPORTADORES.FacturasCompraView);
@@ -986,7 +985,6 @@ function MainApp() {
                                     <Route path="traslados" element={<PermissionGuard moduleKey="traslados"><TrasladosView /></PermissionGuard>} />
                                     <Route path="ventas-perdidas" element={<PermissionGuard moduleKey="ventas_perdidas"><VentasPperdidasView /></PermissionGuard>} />
                                     <Route path="compras" element={<PermissionGuard moduleKey="compras"><ComprasView /></PermissionGuard>} />
-                                    <Route path="facturas-sala" element={<PermissionGuard moduleKey="facturas_sala"><FacturasSalaView /></PermissionGuard>} />
                                     <Route path="cuentas-por-pagar" element={<PermissionGuard moduleKey="cuentas_por_pagar"><CuentasPorPagarView /></PermissionGuard>} />
                                     <Route path="cargar-compra" element={<PermissionGuard moduleKey="cargar_compra"><CargarCompraView /></PermissionGuard>} />
                                     <Route path="facturas-compra" element={<PermissionGuard moduleKey="facturas_compra"><FacturasCompraView openModal={openModal} /></PermissionGuard>} />
@@ -1230,7 +1228,6 @@ const ROUTE_TITLES = {
     '/encuesta-admin':    'Gestión de encuestas',
     '/compras':           'Compras (Bodega)',
     '/facturas-compra':   'Facturas de compra',
-    '/facturas-sala':     'Facturas de sala',
     '/cuentas-por-pagar': 'Cuentas por pagar',
     '/cargar-compra':     'Cargar compra',
     '/proveedores':       'Proveedores',

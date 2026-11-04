@@ -360,15 +360,6 @@ const GRUPOS_CRUDOS = [
                 { key: 'compras_tab_productos', label: 'Productos',  tipo: 'tab' },
                 { key: 'compras_ver_montos',    label: 'Ver montos', tipo: 'cap' },
             ]},
-            // La otra mitad del widget «Facturas de mi Sala» del tablero. Nació
-            // como pestaña de Compras (v2.487.0) y pasó a vista propia el mismo
-            // día: tiene su propia pregunta —qué se tomó y no se cargó—, su
-            // propio período y su propio ciclo. `can_edit` es lo que habilita
-            // liberar una factura tomada por una sala: la sala sola no puede si
-            // ya quedó cargada como compra.
-            { key: 'facturas_sala', label: 'Facturas de sala', desc: 'Qué factura tomó cada sala, quién la tomó y si terminó cargada como compra; liberar una tomada por error', icono: 'ReceiptText', hasApprove: false, sub: [
-                { key: 'facturas_sala_ver_montos', label: 'Ver montos', tipo: 'cap' },
-            ]},
             // «Compras lo marca, pero Gerencia ve el control y aprueba los
             // cheques» (decisión del usuario, 2026-08-16). Por eso los tres
             // permisos NO son intercambiables acá: `can_edit` registra el pago
@@ -592,7 +583,6 @@ const GRUPOS_CRUDOS = [
                 { key: 'dash_reservas_prorroga', label: 'Autorizar o negar las prórrogas del plazo para retirar una reserva o un encargo', tipo: 'cap' },
             ]},
             { key: 'dash_recetas_pendientes', label: 'Widget: Recetas pendientes de mi sala', desc: 'Las ventas bajo receta que todavía esperan el paciente, el médico y la foto de la receta, las más viejas primero, y el formulario para completarlas ahí mismo. Un renglón se confirma cuando se le agrega toda esa información', icono: 'Pill', hasApprove: false, hasScope: true },
-            { key: 'dash_facturas_sala',  label: 'Widget: Facturas de mi sala',   desc: 'Tomar la factura del proveedor —agua y recargas de Tigo, Claro y Movistar— para cargar la compra. Todas las compras se cargan en Bodega', icono: 'ReceiptText', hasApprove: false, hasScope: true },
             // Los dos widgets de venta tienen DOS lecturas, y la capacidad
             // «vista completa» es la que decide cuál se pinta. Apagada, el
             // widget sigue estando —la sala necesita saber cómo va— pero habla

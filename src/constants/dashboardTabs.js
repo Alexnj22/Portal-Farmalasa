@@ -18,7 +18,7 @@ export const PESTANAS_TEMATICAS = {
     // de mostrador, como un traslado. Antes no estaba en ninguna temática y
     // sólo salía en General. Si el canon publicado no la nombra, `ordenDeLaPestana`
     // la pone al final (y al SU se le avisa que quedó sin ubicar): no se esconde.
-    operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'facturas_sala', 'bitacoras', 'recetas_pend', 'reservas'],
+    operacion: ['inv_search', 'annulment_req', 'minmax_req', 'inv_movement', 'traslados', 'bitacoras', 'recetas_pend', 'reservas'],
 };
 
 /** Los widgets de una pestaña. General es el resumen: todo el catálogo. */

@@ -110,7 +110,6 @@ export const MODULE_MAP = {
     minmax:            { path: '/minmax',           label: 'Min / Max',                icono: 'BarChart2'     },
     ventas_perdidas:   { path: '/ventas-perdidas',  label: 'Ventas perdidas',          icono: 'PackageMinus'  },
     compras:           { path: '/compras',           label: 'Compras',                  icono: 'ShoppingCart'  },
-    facturas_sala:     { path: '/facturas-sala',     label: 'Facturas de sala',         icono: 'ReceiptText'   },
     cuentas_por_pagar: { path: '/cuentas-por-pagar', label: 'Cuentas por pagar',        icono: 'Landmark'      },
     cargar_compra:     { path: '/cargar-compra',      label: 'Cargar compra',            icono: 'PackagePlus'   },
     facturas_compra:   { path: '/facturas-compra',    label: 'Facturas de compra',       icono: 'Mail'          },

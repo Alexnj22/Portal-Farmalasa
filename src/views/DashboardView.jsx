@@ -29,7 +29,7 @@ import {
   AlertTriangle, LayoutDashboard, CheckCircle2,
   BarChart2, UserX, Gift, Loader2, Clock, GripVertical, RotateCcw, Maximize2,
   FileText, Package, Receipt, ShoppingCart, Zap, Target, PackageMinus, ArrowLeftRight,
-  ReceiptText, Upload, Eye, Lock, Thermometer, Pill,
+  Upload, Eye, Lock, Thermometer, Pill,
   Wallet, Mail, ShoppingBag
 } from 'lucide-react';
 import { DAY_NAMES, formatHourAMPM } from '@nucleo/utils/scheduleHelpers';
@@ -42,7 +42,6 @@ import {
     ERP_ORDEN as MM_ERP_ORDER,
     BRANCH_A_ERP as MM_BRANCH_TO_ERP,
     ERP_UBICACION_POR_SUCURSAL,
-    ERP_BODEGA,
 } from '@nucleo/constants/erp';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
@@ -53,7 +52,6 @@ import SearchInput from '../components/common/SearchInput';
 import WidgetAnnulmentRequest from './dashboard/baldosas/BaldosaFacturacion';
 import WidgetMinMaxRequest from './dashboard/baldosas/BaldosaMinMax';
 import WidgetInventoryMovement from './dashboard/baldosas/BaldosaInventario';
-import WidgetFacturasSala from './dashboard/WidgetFacturasSala';
 import WidgetDatoPedido from './dashboard/WidgetDatoPedido';
 import WidgetBitacoras from './dashboard/WidgetBitacoras';
 import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
@@ -195,7 +193,6 @@ const WIDGET_SIZES = {
   annulment_req: { minCols: 1, minRows: 1, label: 'Anulaciones'  },
   minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste inventario' },
-  facturas_sala: { minCols: 1, minRows: 1, label: 'Facturas Sala' },
   // Dos renglones: arriba los avisos del día (hasta tres franjas) y abajo los
   // botones. Con uno solo, el aviso de lo vencido tapaba el de lo que toca ahora.
   bitacoras:     { minCols: 1, minRows: 2, label: 'Bitácoras'      },
@@ -287,7 +284,7 @@ const getWidgetSize = (id) => {
  * calendario de tres filas la convierte en una tarjeta de 360px con un ícono
  * arriba y nada más. Esa fila de tolerancia no es un detalle: sin ella,
  * Operación —cuatro lanzadores de 1×1, `traslados` de 2×2 y uno más— terminaba
- * con `facturas_sala` solo, a todo lo ancho, en un renglón propio.
+ * con el último lanzador solo, a todo lo ancho, en un renglón propio.
  *
  * Es también la respuesta al pedido del 2026-08-07 —«nunca cambiar el tamaño a
  * más pequeño, pero sí a más grande para intentar hacer rectángulos siempre»—
@@ -468,10 +465,6 @@ const TABS = [
 
 // Min/Max usa sucursal ERP (1-7); el portal usa branch_id. Los mapas están en
 // `constants/erp` y se importan arriba con sus nombres de acá.
-// Las compras se cargan TODAS en Bodega (usuario, 2026-10-29: «vamos a
-// centralizar todas las compras a bodega»). El widget de Facturas de Sala abre
-// siempre la suya y la base rechaza cualquier otra (`facturas_sala_guarda`).
-const SALA_DE_COMPRAS = Number(Object.keys(MM_BRANCH_TO_ERP).find(b => MM_BRANCH_TO_ERP[b] === ERP_BODEGA));
 
 // Las salas que venden (Bodega no tiene meta) — la lista vive en el módulo de
 // Metas, que es su dueño; acá solo se consume.
@@ -626,7 +619,6 @@ const WIDGET_DEFS = [
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
-  { id: 'facturas_sala',label: 'Facturas de mi sala',     permission: 'dash_facturas_sala',icon: ReceiptText,  category: 'productos' },
   { id: 'bitacoras',    label: 'Bitácoras de mi sala',     permission: 'dash_bitacoras',    icon: Thermometer,  category: 'productos' },
   { id: 'recetas_pend', label: 'Recetas pendientes de mi sala', permission: 'dash_recetas_pendientes', icon: Pill, category: 'productos' },
   { id: 'reservas',     label: 'Reservas de mi sala',     permission: 'dash_reservas',     icon: ShoppingBag,  category: 'ventas'    },
@@ -3392,17 +3384,6 @@ const DashboardView = ({ openModal }) => {
         <WidgetCard title="Bitácoras" icon={Thermometer} category="productos">
           <WidgetBitacoras />
         </WidgetCard>
-      , staggerIdx);
-    }
-
-    /* ── FACTURAS DE MI SALA ── */
-    // Baldosa 1×1 que abre la lista en un modal, como sus hermanas. El selector
-    // de sucursal va adentro (en la ranura de herramientas del modal), no en la
-    // baldosa: la baldosa es la puerta y solo lleva el número de lo que espera.
-    if (wid === 'facturas_sala') {
-      if (!showWidget('facturas_sala', 'dash_facturas_sala')) return null;
-      return wrapWidget('facturas_sala',
-        <WidgetFacturasSala branchId={SALA_DE_COMPRAS} />
       , staggerIdx);
     }
 

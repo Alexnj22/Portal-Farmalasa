@@ -314,7 +314,15 @@ function empacarFilas(orden, medidas, gridCols) {
       // baldosa de 360px con un ícono arriba y nada más.
       const cabe = id => ancho(id) <= libre;
       let i = pendientes.findIndex(id => alto(id) === h && cabe(id));
-      if (i === -1) i = pendientes.findIndex(id => alto(id) === h - 1 && cabe(id));
+      // …pero sólo si los de una fila menos NO pueden armar su propio renglón.
+      // Con dos o más pendientes de ese alto, robarle uno deja al otro solo y
+      // estirado a todo lo ancho. Medido en el tablero de Jefa de Compras
+      // (2026-11-04, «tiene montón de espacios, desorden»): «Consulta de
+      // inventario» subía a 2×2 junto a los avisos —una tarjeta grande con un
+      // ícono y nada más— y «Ajuste de inventario» quedaba sola, de 4×1. Así
+      // las dos baldosas van juntas en un renglón y nadie se estira en alto.
+      const menores = pendientes.filter(id => alto(id) === h - 1).length;
+      if (i === -1 && menores < 2) i = pendientes.findIndex(id => alto(id) === h - 1 && cabe(id));
       if (i === -1) break;
       const [id] = pendientes.splice(i, 1);
       ids.push(id);

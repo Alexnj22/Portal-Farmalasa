@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1444.1 — Inicio · General: las baldosas chicas van juntas
+
+El tablero de Cendy (Jefa de Compras, 5 widgets) salía con «Consulta de
+inventario» estirada a 2×2 junto a los avisos —una tarjeta grande vacía— y
+«Ajuste de inventario» sola a todo lo ancho. `empacarFilas` aceptaba un widget
+de una fila menos en un renglón alto aunque quedaran otros de su alto para
+armar el suyo. Ahora sólo lo hace si queda uno solo. Sobre 3,000 recortes al
+azar del catálogo: 0 huecos como antes, estirados en alto 1,938 → 729 y
+baldosas de una columna solas a todo lo ancho 746 → 422.
+
 ## v2.1444.0 — Mis tratamientos: selector de días y cantidad simples, sin límites
 
 App de clientes, hojas «Recordarme tomarlo» y «Agregar medicamento»:

@@ -207,7 +207,10 @@ export default function MiCajaView({ comoPestana = false }) {
         // para salir de la pantalla.
         }, { replace: true });
     }, [setParams]);
-    const [conCaja, setConCaja] = useState(VACIO);
+    // `null` = todavía no se sabe. Con `[]` de entrada la pantalla decía «Sin
+    // salas con caja» mientras cargaba (usuario, 2026-11-04: «¿por qué no puedo
+    // seleccionar la sucursal?… ya me apareció, pero se tardó»).
+    const [conCaja, setConCaja] = useState(null);
     const [estado, setEstado] = useState(null);
     /* «No pude leer la caja» y «la caja está cerrada» son respuestas OPUESTAS y
      * se veían igual: la tarjeta decía «Cerrada · Nadie puede vender» sobre una
@@ -294,7 +297,7 @@ export default function MiCajaView({ comoPestana = false }) {
         if (alcance !== 'ALL') {
             return branches.filter((b) => String(b.id) === String(miSala));
         }
-        return branches.filter((b) => conCaja.includes(b.id));
+        return branches.filter((b) => (conCaja || VACIO).includes(b.id));
     }, [branches, conCaja, alcance, miSala]);
 
     /* Cuál sale elegida.
@@ -1164,7 +1167,11 @@ export default function MiCajaView({ comoPestana = false }) {
                     </div>
                 </div>
 
-                {!sala && (
+                {!sala && alcance === 'ALL' && (conCaja === null || !branches.length) && (
+                    <EmptyState compact icon={Wallet} title="Buscando las salas…"
+                        subtitle="Un momento: estoy viendo qué salas tienen caja." />
+                )}
+                {!sala && !(alcance === 'ALL' && (conCaja === null || !branches.length)) && (
                     <EmptyState compact icon={Wallet}
                         title={salas.length ? 'Elige una sala'
                             : alcance !== 'ALL' ? 'Tu ficha no está en una sala'

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1445.2 — Efectivo dice que está buscando las salas en vez de «Sin salas con caja»
+
+Reporte del usuario: «¿por qué no puedo seleccionar la sucursal? … ya me
+apareció, pero se tardó». Mientras la lista de salas con caja todavía venía en
+camino, Mi caja la daba por vacía y pintaba «Sin salas con caja — todavía no se
+ha visto ninguna caja abierta», sin selector. Ahora dice «Buscando las salas…»
+hasta saberlo.
+
 ## v2.1445.1 — Inicio en tableta y teléfono: sin huecos
 
 Debajo de 1024px el tablero sin acomodo propio no usaba el empacado por

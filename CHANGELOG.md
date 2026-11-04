@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1436.0 — Bienestar con niveles e Inicio más visual
+
+*«Aplica los niveles a los juegos que ya están.»* · *«En inicio, accesos
+rápidos que sigan de 3 columnas… puedes canjear, frase del día y puntos por
+vencer sólo son cards de texto, mejóralas.»*
+
+- `componentes/juegos/Niveles.js`: progreso y estrellas por nivel
+  (`useProgreso`), la cuadrícula de niveles, la tarjeta de fin de nivel y la
+  racha de días (`useRacha`).
+- **Memoria**: 12 niveles de 3×4 a 6×6 (8 figuras nuevas); los primeros
+  muestran las cartas unos segundos, los altos las mezclan una vez; meta de
+  movimientos para ★★★. «Libre» es el juego de antes.
+- **Torre**: 12 niveles de 8 a 30 pisos, más rápidos y angostos; pisos
+  dorados desde el 3 y viento desde el 5 (en el mismo `useFrameCallback`).
+  «Infinito» conserva el récord.
+- **Burbujas**: el contrarreloj pasa a 12 niveles elegibles (12 s → 5 s);
+  ★ por el tiempo que sobra. Quien ya tenía niveles los conserva.
+- **Respira**: patrón «Coherente» 5·5, 10 min y racha de días.
+  **5·4·3·2·1**: racha de días.
+- **Inicio**: accesos rápidos otra vez en 3 columnas; las columnas salen de
+  medir la palabra más ancha en la letra real (ninguna se parte). Canje con
+  el monto grande y un regalo dibujado (`IlustracionesInicio.js`, Skia
+  estático); «Tu primer canje» con anillo de avance; frase del día con ondas
+  y la frase como cita; puntos por vencer con línea de tiempo de las próximas
+  fechas.
+
 ## v2.1435.0 — Saly, ayuda en pantalla: Cortes y Mi caja
 
 Saly ya ayuda en pantalla, por ahora en **Efectivo → Cortes** y **Mi caja (Hoy)**.

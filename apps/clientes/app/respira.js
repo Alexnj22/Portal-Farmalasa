@@ -7,6 +7,11 @@
 // empezar y al terminar) y el teléfono late una vez por segundo mientras se
 // inhala o exhala. Tres técnicas, las tres con la exhalación igual o más larga
 // que la inhalación, que es lo que baja las pulsaciones.
+//
+// Programas (2026-11-04, «aplica los niveles»): no es un juego, así que no hay
+// niveles ni puntaje. Hay cuatro ritmos —se sumó «Coherente», 5 y 5, el más
+// fácil de sostener— y cuatro duraciones, y una racha suave de días seguidos
+// que se cuenta al terminar una sesión completa.
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Text, useWindowDimensions, View } from 'react-native';
 import { useKeepAwake } from 'expo-keep-awake';
@@ -14,9 +19,11 @@ import { Canvas, Circle, Group, Path, RadialGradient, Skia, vec } from '@shopify
 import { Easing, cancelAnimation, useDerivedValue, useFrameCallback, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSinMovimiento } from '../componentes/animacion';
 import { BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { textoRacha, useRacha } from '../componentes/juegos/Niveles';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
 const TECNICAS = {
+  coherente: { texto: 'Coherente', detalle: '5 · 5', fases: [['inhala', 5], ['exhala', 5]] },
   calma: { texto: 'Calma', detalle: '4 · 4 · 6', fases: [['inhala', 4], ['sostén', 4], ['exhala', 6]] },
   caja: { texto: 'Caja', detalle: '4 · 4 · 4 · 4', fases: [['inhala', 4], ['sostén', 4], ['exhala', 4], ['pausa', 4]] },
   dormir: { texto: 'Dormir', detalle: '4 · 7 · 8', fases: [['inhala', 4], ['sostén', 7], ['exhala', 8]] },
@@ -27,7 +34,7 @@ const FASE = {
   exhala: { texto: 'Exhala', ayuda: 'lento, por la boca', hasta: 0 },
   pausa: { texto: 'Pausa', ayuda: 'vacío y tranquilo', hasta: null },
 };
-const MINUTOS = [1, 3, 5];
+const MINUTOS = [1, 3, 5, 10];
 const SONIDOS = ['inhalar', 'exhalar', 'campana', 'gota'];
 const PUNTOS = 14;
 
@@ -93,6 +100,7 @@ export default function Respira() {
   const [resta, setResta] = useState(0);
   const [ciclos, setCiclos] = useState(0);
   const [terminado, setTerminado] = useState(false);
+  const racha = useRacha('puntos_salud_respira_racha');
   const p = useSharedValue(0);
   const avance = useSharedValue(0);
   const reloj = useSharedValue(0);
@@ -114,7 +122,7 @@ export default function Respira() {
     p.value = withTiming(0, { duration: 700 });
     avance.value = withTiming(0, { duration: 400 });
     setActivo(false); setFase(null);
-    if (completo) { setTerminado(true); sonar('campana', { volumen: 0.8 }); tacto.exito(); }
+    if (completo) { setTerminado(true); racha.marcar(); sonar('campana', { volumen: 0.8 }); tacto.exito(); }
   };
 
   const empezar = () => {
@@ -154,7 +162,9 @@ export default function Respira() {
   return (
     <Escena colores={ESCENAS.respira}>
       {activo ? <NoApagar /> : null}
-      <ControlesSensaciones izquierda={activo ? <Marcador sf="wind" texto={`${Math.min(ciclos + 1, total)} de ${total}`} etiqueta={`Respiración ${Math.min(ciclos + 1, total)} de ${total}`} /> : null} />
+      <ControlesSensaciones izquierda={activo
+        ? <Marcador sf="wind" texto={`${Math.min(ciclos + 1, total)} de ${total}`} etiqueta={`Respiración ${Math.min(ciclos + 1, total)} de ${total}`} />
+        : racha.dias ? <Marcador sf="sun.max.fill" texto={textoRacha(racha.dias)} etiqueta={`Llevas ${textoRacha(racha.dias)} respirando`} /> : null} />
 
       <View style={{ alignItems: 'center', justifyContent: 'center' }}>
         <Esfera lado={lado} p={p} avance={avance} reloj={reloj} />
@@ -163,7 +173,7 @@ export default function Respira() {
             {f ? f.texto : terminado ? '¡Bien hecho!' : 'Respira'}
           </Text>
           <Text style={{ fontSize: 15, fontWeight: '700', color: 'rgba(27,27,74,0.75)' }}>
-            {f ? `${f.ayuda} · ${resta}` : terminado ? `${ciclos} respiraciones` : 'cuando estés listo'}
+            {f ? `${f.ayuda} · ${resta}` : terminado ? `${ciclos} respiraciones${racha.dias > 1 ? ` · ${racha.dias} días` : ''}` : 'cuando estés listo'}
           </Text>
         </View>
       </View>
@@ -182,7 +192,9 @@ export default function Respira() {
 
       <PanelVidrio>
         <Text style={textoAyuda}>
-          {tecnica === 'dormir'
+          {tecnica === 'coherente'
+            ? 'La respiración coherente: cinco segundos para entrar y cinco para salir, unas seis por minuto. Es la más fácil para empezar.'
+            : tecnica === 'dormir'
             ? 'Para conciliar el sueño: hazla acostado, con la luz baja. Si sostener 7 segundos te cuesta, no fuerces.'
             : tecnica === 'caja'
               ? 'La respiración en caja: cuatro lados iguales. La usan para calmarse antes de un momento difícil.'

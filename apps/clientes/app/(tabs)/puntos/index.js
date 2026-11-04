@@ -7,7 +7,8 @@ import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
-import { Aviso, Cargando, Pantalla, Seccion, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
+import { Aviso, Cargando, Pantalla, RADIO, Seccion, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
+import Vidrio from '../../../componentes/Vidrio';
 import { useCuenta } from '../../../lib/cuenta';
 import { diasHasta, dolares, entero, fechaLarga, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
@@ -21,6 +22,7 @@ import Cumpleanos from '../../../componentes/Cumpleanos';
 import Historias from '../../../componentes/Historias';
 import Icono from '../../../componentes/Icono';
 import FraseDelDia from '../../../componentes/FraseDelDia';
+import { Regalo } from '../../../componentes/IlustracionesInicio';
 import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
 import { useConCodigo, useSesion } from '../../../lib/sesion';
@@ -230,23 +232,54 @@ export default function Puntos() {
         {/* Sin tinte propio (2026-11-04, «las cards tienen muchos colores…
             unifica pero que no pierdan la identidad»): el mismo vidrio que las
             demás, y su acento —el magenta— sólo en el recuadro y la cifra. */}
-        <Tarjeta estilo={{ gap: 10 }}>
+        {/* 2026-11-04 («siento extraño que… sólo sean cards de texto»): la
+            cifra en grande y el regalo dibujado al lado. Con la letra grande el
+            regalo baja (envuelve) en vez de apretar el texto. */}
+        <Tarjeta estilo={{ gap: 14, overflow: 'hidden' }}>
           {falta > 0 ? (
             <>
-              <EncabezadoTarjeta sf="star.fill" texto="Tu primer canje" />
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
-                <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 28, fontWeight: '800', color: t.color.magentaTexto }} />
-                <Texto nivel={2} estilo={{ flexShrink: 1 }}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
+                <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 180, gap: 6 }}>
+                  <Text accessibilityRole="header" style={{ fontSize: 13, fontWeight: '800', letterSpacing: 0.6, color: t.color.magentaTexto }}>TU PRIMER CANJE</Text>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6 }}>
+                    <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 40, fontWeight: '900', letterSpacing: -1, color: colorSistema.texto, fontVariant: ['tabular-nums'] }} />
+                    <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto2 }}>/ {MINIMO_DE_CANJE} pts</Text>
+                  </View>
+                  <Texto nivel={2} estilo={{ fontSize: 14 }}>
+                    Te faltan <Text style={{ fontWeight: '800', color: t.color.magentaTexto }}>{entero(falta)} puntos</Text> para tu primer descuento.
+                  </Texto>
+                </View>
+                <Regalo tam={88} avance={saldo / MINIMO_DE_CANJE} />
               </View>
-              <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, 0.18)} />
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>Te faltan {entero(falta)} puntos.</Texto>
+              <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, t.oscuro ? 0.3 : 0.16)} alto={10} />
             </>
           ) : (
             <>
-              <EncabezadoTarjeta sf="gift.fill" texto="¡Ya puedes canjear!" grande latido />
-              <Texto nivel={2} estilo={{ fontSize: 14 }}>
-                Tienes <Text style={{ fontWeight: '800', color: t.color.magentaTexto }}>{dolares(resumen.equivale)}</Text> para descontar. Toca tu tarjeta y muestra el código en caja.
-              </Texto>
+              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
+                <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 180, gap: 4 }}>
+                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
+                    <Text accessibilityRole="header" style={{ flexShrink: 1, fontSize: 17, fontWeight: '800', letterSpacing: -0.2, color: colorSistema.texto }}>¡Ya puedes canjear!</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.3 : 0.12) }}>
+                      <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.magentaTexto} />
+                      <Text style={{ fontSize: 12, fontWeight: '800', color: t.color.magentaTexto }}>Listo</Text>
+                    </View>
+                  </View>
+                  <NumeroAnimado valor={Number(resumen.equivale ?? 0)} estilo={{ fontSize: 44, fontWeight: '900', letterSpacing: -1.2, color: t.color.magentaTexto, fontVariant: ['tabular-nums'] }} />
+                  <Texto nivel={2} estilo={{ fontSize: 14 }}>para descontar en tu próxima compra · {entero(saldo)} pts</Texto>
+                </View>
+                <Latido><Regalo tam={92} /></Latido>
+              </View>
+              {/* Cómo se usa: no es un botón —el código se muestra tocando la
+                  tarjeta de socio de arriba, que es lo que ya hacía—, por eso
+                  va como un paso y no como una píldora que no haría nada. */}
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colorSistema.separador }}>
+                <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+                  <Icono sf="barcode.viewfinder" respaldo="▥" tam={17} color={t.color.magentaTexto} />
+                </View>
+                <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>
+                  <Text style={{ fontWeight: '800', color: colorSistema.texto }}>Toca tu tarjeta de arriba</Text> y muestra el código en caja.
+                </Text>
+              </View>
             </>
           )}
         </Tarjeta>
@@ -333,28 +366,6 @@ export default function Puntos() {
         <Menu resumen={resumen} urgentes={urgentes.length} />
       </Entrada>
     </Pantalla>
-  );
-}
-
-// El encabezado común de las tarjetas del Inicio (2026-11-04, «las cards
-// tienen muchos colores… unifica pero que no pierdan la identidad»): el mismo
-// recuadro suave de la marca con su ícono y el rótulo al lado. Cada tarjeta se
-// reconoce por SU ícono y su rótulo, no por un color propio. Lo usan el canje
-// y la frase del día (componentes/FraseDelDia.js lleva el mismo dibujo).
-function EncabezadoTarjeta({ sf, texto, grande = false, latido = false }) {
-  const t = useTema();
-  const cuadro = (
-    <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
-      <Icono sf={sf} respaldo="" tam={17} color={t.color.magentaTexto} />
-    </View>
-  );
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-      {latido ? <Latido>{cuadro}</Latido> : cuadro}
-      <Text accessibilityRole="header" style={grande
-        ? { flex: 1, fontSize: 19, fontWeight: '800', letterSpacing: -0.3, color: colorSistema.texto }
-        : { flex: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto2 }}>{texto}</Text>
-    </View>
   );
 }
 
@@ -601,12 +612,18 @@ function TratamientosInicio({ lista }) {
 // tiene la burbuja en todas las pantallas.
 function Menu({ resumen, urgentes }) {
   const t = useTema();
-  const { fontScale } = useWindowDimensions();
-  // Dos columnas (2026-11-04, «mejora las cards… que se vean más modernas y
-  // bonitas»): cada acceso es una ficha a lo ancho —recuadro, nombre y cómo
-  // va— en vez de un cuadrito de tres por fila, que en letra grande cortaba
-  // «Tratamientos». Con la letra muy grande, una por fila: nada se corta.
-  const una = fontScale > 1.35;
+  const { fontScale, width: anchoVentana } = useWindowDimensions();
+  // Tres columnas otra vez (2026-11-04, «en inicio accesos rápidos que sigan
+  // de 3 columnas»), con el ícono arriba y el nombre debajo. La regla que manda
+  // es que ningún nombre se parta a la mitad de una palabra («Tratamiento / s»):
+  // se MIDE la palabra más larga en su letra real (`MedirPalabras`) y se usan
+  // tantas columnas como dejen caber esa palabra. Además, con la letra grande
+  // del sistema, dos (> 1.3) o una (> 1.6) aunque la medida diga otra cosa.
+  const [ancho, setAncho] = useState(anchoVentana - 32);
+  const [palabra, setPalabra] = useState(0);
+  const tope = fontScale > 1.6 ? 1 : fontScale > 1.3 ? 2 : 3;
+  const cabe = (n) => (ancho - GAP_MENU * (n - 1)) / n - RELLENO_CASILLA * 2 >= palabra;
+  const columnas = palabra ? ([3, 2, 1].find((n) => n <= tope && cabe(n)) ?? 1) : tope;
   const r = resumen;
   const tratamientos = Array.isArray(r.tratamientos) ? r.tratamientos.length : 0;
   const sexta = r.creditos?.pendientes > 0
@@ -629,33 +646,84 @@ function Menu({ resumen, urgentes }) {
     { sf: 'mappin.and.ellipse', titulo: 'Sucursales', color: t.acentos.violeta.fuerte, ruta: '/sucursales', detalle: 'Horarios' },
     sexta,
   ];
+  // En filas armadas a mano (y no `flexWrap` con porcentajes): así las tres
+  // de una fila miden lo mismo de alto y la última fila no se estira sola.
+  const filas = [];
+  for (let i = 0; i < casillas.length; i += columnas) filas.push(casillas.slice(i, i + columnas));
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-      {casillas.map((c) => <Casilla key={c.ruta} {...c} ancho={una ? '100%' : '47%'} />)}
+    <View style={{ gap: GAP_MENU }} onLayout={(e) => setAncho(e.nativeEvent.layout.width)}>
+      <MedirPalabras casillas={casillas} alMedir={setPalabra} />
+      {filas.map((fila) => (
+        <View key={fila[0].ruta} style={{ flexDirection: 'row', gap: GAP_MENU }}>
+          {fila.map((c) => <Casilla key={c.ruta} {...c} />)}
+          {/* Huecos de la última fila, para que no se ensanchen las que quedan. */}
+          {Array.from({ length: columnas - fila.length }, (_, i) => <View key={`h${i}`} style={{ flex: 1 }} />)}
+        </View>
+      ))}
     </View>
   );
 }
 
-// Un acceso: el recuadro de la marca con el ícono (un solo color, el de la
-// marca, igual que en Cuenta — 2026-11-03, «demasiados colores»), el nombre y
-// una línea de cómo va. Lo urgente: el punto rojo sobre el recuadro y la línea
-// en negrita. Sin `numberOfLines` ni letra que se encoge: si no cabe, envuelve
-// y la ficha crece (usuario: «en ningún lado se debe ocultar el contenido»).
-// Mínimo 68 pt de alto, de sobra para el dedo; al tocarla se hunde un poco.
-function Casilla({ sf, titulo, detalle, resaltar, ruta, ancho }) {
+const GAP_MENU = 8;
+const RELLENO_CASILLA = 11;
+const ESTILO_TITULO = { fontSize: 14, fontWeight: '800', letterSpacing: -0.2 };
+const ESTILO_DETALLE = { fontSize: 13, lineHeight: 17 };
+const ESTILO_DETALLE_FUERTE = { ...ESTILO_DETALLE, fontWeight: '700' };
+
+// Mide, invisible y fuera del flujo, cada palabra de los nombres y de los
+// detalles con su letra de verdad (la del sistema, con su tamaño de fuente):
+// la más ancha decide cuántas columnas caben. Medir y no estimar: la letra
+// de Android es más ancha que la del iPhone y la del usuario puede ser mayor.
+function MedirPalabras({ casillas, alMedir }) {
+  const medidas = useRef({});
+  // La lista se rehace sólo si cambian las palabras (`casillas` es nueva en
+  // cada pintada del Inicio).
+  const clave = casillas.map((c) => `${c.titulo}|${c.detalle}`).join('|');
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const lista = useMemo(() => {
+    const out = [];
+    casillas.forEach((c) => {
+      String(c.titulo).split(/\s+/).forEach((w) => w && out.push({ w, clave: `t:${w}`, estilo: ESTILO_TITULO }));
+      String(c.detalle).split(/\s+/).forEach((w) => w && out.push({ w, clave: `d:${w}`, estilo: ESTILO_DETALLE_FUERTE }));
+    });
+    // Sin repetidas (la clave es la palabra y su letra).
+    return out.filter((x, i) => out.findIndex((y) => y.clave === x.clave) === i);
+  }, [clave]);
+  return (
+    <View pointerEvents="none" importantForAccessibility="no-hide-descendants" accessibilityElementsHidden
+      style={{ position: 'absolute', left: 0, top: 0, width: 2000, opacity: 0, alignItems: 'flex-start' }}>
+      {lista.map((x) => (
+        <Text key={x.clave} style={x.estilo} onLayout={(e) => {
+          medidas.current[x.clave] = e.nativeEvent.layout.width;
+          const anchos = lista.map((y) => medidas.current[y.clave]);
+          if (anchos.every((a) => a != null)) alMedir(Math.ceil(Math.max(...anchos)) + 2);
+        }}>{x.w}</Text>
+      ))}
+    </View>
+  );
+}
+
+// Un acceso: el recuadro de la marca con el ícono arriba (un solo color, el de
+// la marca, igual que en Cuenta — 2026-11-03, «demasiados colores»), el nombre
+// y una línea de cómo va. Lo urgente: el punto rojo sobre el recuadro y la
+// línea en negrita. Sin `numberOfLines` ni letra que se encoge: si no cabe,
+// envuelve entre palabras y la ficha crece (usuario: «en ningún lado se debe
+// ocultar el contenido»). Más de 44 pt de alto; al tocarla se hunde un poco.
+function Casilla({ sf, titulo, detalle, resaltar, ruta }) {
   const t = useTema();
   return (
     <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(ruta); }} accessibilityRole="button"
       accessibilityLabel={`${titulo}: ${detalle}${resaltar ? ', pide atención' : ''}`}
-      style={({ pressed }) => ({ width: ancho, flexGrow: 1, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-      {/* Ícono arriba y el texto debajo, a lo ancho (2026-11-04): al lado del
-          ícono, «Tratamientos» no cabía y se partía en «Tratamiento / s». */}
-      <Tarjeta estilo={{ gap: 10, paddingVertical: 14, paddingHorizontal: 14, minHeight: 68 }}>
+      style={({ pressed }) => ({ flex: 1, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      {/* El vidrio de la tarjeta con `flex: 1`: las de una misma fila miden
+          lo mismo aunque el detalle de una envuelva a dos líneas. */}
+      <Vidrio radio={RADIO.tarjeta} style={{ flex: 1 }}>
+      <View style={{ flex: 1, gap: 9, paddingVertical: 13, paddingHorizontal: RELLENO_CASILLA, minHeight: 96 }}>
         <View style={{ alignSelf: 'flex-start' }}>
-          <View style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+          <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center',
             backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.12),
             borderWidth: 1, borderColor: suave(t.color.magenta, t.oscuro ? 0.32 : 0.16) }}>
-            <Icono sf={sf} respaldo="" tam={19} color={t.color.magentaTexto} />
+            <Icono sf={sf} respaldo="" tam={18} color={t.color.magentaTexto} />
           </View>
           {resaltar ? (
             <View style={{ position: 'absolute', top: -3, right: -3, width: 12, height: 12, borderRadius: 6, backgroundColor: colorSistema.rojo,
@@ -663,10 +731,11 @@ function Casilla({ sf, titulo, detalle, resaltar, ruta, ancho }) {
           ) : null}
         </View>
         <View style={{ gap: 2 }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', letterSpacing: -0.2, color: colorSistema.texto }}>{titulo}</Text>
-          <Text style={{ fontSize: 13, lineHeight: 17, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }}>{detalle}</Text>
+          <Text style={[ESTILO_TITULO, { color: colorSistema.texto }]}>{titulo}</Text>
+          <Text style={[ESTILO_DETALLE, { color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }]}>{detalle}</Text>
         </View>
-      </Tarjeta>
+      </View>
+      </Vidrio>
     </Presionable>
   );
 }

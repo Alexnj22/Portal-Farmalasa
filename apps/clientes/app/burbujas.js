@@ -18,14 +18,21 @@
 // Dos modos: «Relax» —hojas sin fin— y «Contrarreloj» —niveles: vaciar la
 // hoja antes de que se acabe el tiempo, y cada nivel da menos—. En las dos
 // salen burbujas DORADAS: valen más, y en contrarreloj suman tiempo.
+//
+// Niveles (2026-11-04): el contrarreloj ya no es una escalera que se pierde
+// entera al fallar. Son doce niveles en una grilla —se elige cuál jugar—, cada
+// uno con sus estrellas según el tiempo que sobró. La curva: 12 segundos en el
+// 1, uno menos por nivel hasta 5 en el 8; del 9 en adelante 5 segundos, y
+// desde el 10 ya no salen doradas (no hay tiempo extra que buscar).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PixelRatio, Text, View } from 'react-native';
+import { PixelRatio, ScrollView, Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 import { BlurStyle, Canvas, PaintStyle, Picture, Skia, TileMode } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, { FadeIn, FadeOut, runOnJS, useAnimatedStyle, useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
 import { Confeti, useSinMovimiento } from '../componentes/animacion';
-import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, textoAyuda } from '../componentes/juegos/Escena';
+import { SelectorNiveles, TarjetaNivel, useProgreso } from '../componentes/juegos/Niveles';
 import { entero } from '../lib/formato';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
@@ -33,7 +40,9 @@ const COLUMNAS = 5;
 const FILAS = 7;
 const N = COLUMNAS * FILAS;
 const CLAVE = 'puntos_salud_burbujas_total';
-const CLAVE_RETO = 'puntos_salud_burbujas_nivel';
+const CLAVE_RETO = 'puntos_salud_burbujas_nivel'; // el último nivel superado (antes: el récord de la escalera)
+const CLAVE_ESTRELLAS = 'puntos_salud_burbujas_estrellas';
+const NIVELES = 12;
 const SONIDOS = ['pop-1', 'pop-2', 'pop-3', 'pop-4', 'pop-5', 'pop-6', 'par', 'ganar', 'fallo'];
 const HOJAS = [
   ['#FF8AD8', '#C04BD8'], ['#8BD6FF', '#4F7BFF'], ['#9BF0C2', '#2FB98A'],
@@ -48,9 +57,14 @@ const MODOS = [{ valor: 'relax', texto: 'Relax' }, { valor: 'reto', texto: 'Cont
 // Segundos por nivel en contrarreloj: 12 al principio, uno menos cada nivel, nunca menos de 5.
 const segundosDe = (nivel) => Math.max(5, 13 - nivel);
 const BONO = 1.5; // segundos que da una dorada
+// Desde el nivel 10 no hay doradas: el tiempo es el que es.
+const conDoradas = (nivel) => nivel < 10;
+// Estrellas por la parte del tiempo que sobró al vaciar la hoja.
+const estrellasDe = (queda, nivel) => { const f = queda / segundosDe(nivel); return f >= 0.4 ? 3 : f >= 0.15 ? 2 : 1; };
 
-function doradasAlAzar() {
+function doradasAlAzar(hay = true) {
   const d = new Array(N).fill(false);
+  if (!hay) return d;
   const cuantas = 1 + Math.floor(Math.random() * 2);
   for (let k = 0; k < cuantas; k++) d[Math.floor(Math.random() * N)] = true;
   return d;
@@ -106,8 +120,9 @@ export default function Burbujas() {
   const [modo, setModo] = useState('relax');
   const [numHoja, setNumHoja] = useState(0);
   const [nivel, setNivel] = useState(1);
-  const [mejorNivel, setMejorNivel] = useState(0);
-  const [perdio, setPerdio] = useState(false);
+  const progreso = useProgreso(CLAVE_RETO, CLAVE_ESTRELLAS);
+  const [fase, setFase] = useState('elegir'); // contrarreloj: elegir · jugando · gano · perdio
+  const [resultado, setResultado] = useState(null);
   const [quedan, setQuedan] = useState(N);
   const [total, setTotal] = useState(0);
   const [aviso, setAviso] = useState(null); // «¡Racha ×N!», «¡Dorada! +1.5 s»
@@ -139,7 +154,6 @@ export default function Burbujas() {
   useEffect(() => {
     precargar(SONIDOS);
     SecureStore.getItemAsync(CLAVE).then((v) => { const n = Number(v); if (Number.isFinite(n)) setTotal((x) => x + n); }).catch(() => {});
-    SecureStore.getItemAsync(CLAVE_RETO).then((v) => setMejorNivel(Number(v) || 0)).catch(() => {});
     return () => { clearTimeout(guardar.current); clearTimeout(relojHoja.current); callar(SONIDOS); };
   }, []);
   useEffect(() => {
@@ -233,7 +247,7 @@ export default function Burbujas() {
   const nuevaHoja = useCallback((siguienteNivel) => {
     clearTimeout(relojHoja.current);
     marcas.value = VACIAS();
-    doradas.value = doradasAlAzar();
+    doradas.value = doradasAlAzar(modoRef.current !== 'reto' || conDoradas(siguienteNivel));
     restan.value = N;
     chispas.value = [];
     nace.value = tiempo.value;
@@ -243,31 +257,37 @@ export default function Burbujas() {
     bloqueada.value = false;
     setQuedan(N);
     setAviso(null);
-    setPerdio(false);
     setNumHoja((x) => x + 1);
     sonar('pop-6', { volumen: 0.3 });
   }, [bloqueada, chispas, doradas, duracion, hasta, limite, marcas, nace, restan, tiempo]);
 
+  const jugarNivel = (n) => {
+    nivelRef.current = n; setNivel(n);
+    setResultado(null);
+    setFase('jugando');
+    nuevaHoja(n);
+  };
+  const aNiveles = () => {
+    clearTimeout(relojHoja.current);
+    bloqueada.value = true;
+    setFase('elegir');
+  };
   const cambiarModo = (m) => {
     modoRef.current = m; setModo(m);
     enReto.value = m === 'reto';
+    if (m === 'reto') { aNiveles(); return; }
     nivelRef.current = 1; setNivel(1);
+    setFase('elegir');
     nuevaHoja(1);
   };
 
   alAcabarse.current = () => {
-    const n = nivelRef.current;
     sonar('fallo'); tacto.aviso();
-    setPerdio(true);
-    const logrado = n - 1;
-    if (logrado > mejorNivel) {
-      setMejorNivel(logrado);
-      SecureStore.setItemAsync(CLAVE_RETO, String(logrado)).catch(() => {});
-    }
+    setFase('perdio');
   };
 
   // JavaScript sólo hace lo que no puede el hilo de la interfaz: sonar, vibrar y contar.
-  const alReventar = useCallback((n, quedanAhora, eraOro) => {
+  const alReventar = useCallback((n, quedanAhora, eraOro, quedaTiempo) => {
     sonar(`pop-${Math.min(6, 1 + Math.floor((n - 1) / 2))}`, { volumen: 0.9 });
     if (eraOro) { sonar('par', { volumen: 0.6 }); tacto.exito(); } else tacto.toque();
     setTotal((x) => x + (eraOro ? 5 : 1));
@@ -279,14 +299,15 @@ export default function Burbujas() {
       tacto.exito();
       setFestejo((k) => k + 1);
       if (modoRef.current === 'reto') {
-        const sig = nivelRef.current + 1;
-        nivelRef.current = sig;
-        relojHoja.current = setTimeout(() => { setNivel(sig); nuevaHoja(sig); }, 1100);
+        const nv = nivelRef.current;
+        const k = estrellasDe(Math.max(0, quedaTiempo ?? 0), nv);
+        setResultado({ estrellas: k, queda: quedaTiempo, ...progreso.registrar(nv, k) });
+        relojHoja.current = setTimeout(() => setFase('gano'), 650);
       } else {
         relojHoja.current = setTimeout(() => nuevaHoja(1), 1100);
       }
     }
-  }, [nuevaHoja]);
+  }, [nuevaHoja, progreso]);
 
   const gesto = useMemo(() => {
     const probar = (x, y) => {
@@ -314,7 +335,7 @@ export default function Burbujas() {
       if (restan.value === 0) bloqueada.value = true;
       chispas.value = [...chispas.value.filter((s) => t - s.t < CHISPA), { x: cx, y: cy, r: g.r, t, giro: (i * 1.7) % 6.28, oro }];
       hasta.value = Math.max(hasta.value, t + CHISPA + 0.05);
-      runOnJS(alReventar)(racha.value, restan.value, oro);
+      runOnJS(alReventar)(racha.value, restan.value, oro, limite.value - t);
     };
     // Con el dedo rápido se prueba también el camino entre dos cuadros.
     const recorrer = (x, y) => {
@@ -342,17 +363,19 @@ export default function Burbujas() {
   });
 
   const reto = modo === 'reto';
+  const eligiendo = reto && fase === 'elegir';
+  const perdio = reto && fase === 'perdio';
   return (
     <Escena colores={ESCENAS.burbujas} fijo>
       <ControlesSensaciones izquierda={reto ? <>
-        <Marcador sf="star.fill" texto={`Nivel ${nivel}`} />
-        <Marcador sf="trophy.fill" texto={`Récord ${mejorNivel}`} etiqueta={`Récord: nivel ${mejorNivel}`} />
+        {eligiendo ? null : <Marcador sf="square.grid.2x2.fill" texto={`Nivel ${nivel}`} />}
+        {eligiendo ? null : <Marcador sf="timer" texto={`${segundosDe(nivel)} s`} etiqueta={`${segundosDe(nivel)} segundos`} />}
       </> : <>
         <Marcador sf="circle.grid.3x3.fill" texto={quedan ? `Quedan ${quedan}` : '¡Hoja lista!'} />
         <Marcador sf="sparkles" texto={entero(total)} etiqueta={`${entero(total)} reventadas en total`} />
       </>} />
       <OpcionesJuego opciones={MODOS} valor={modo} alCambiar={cambiarModo} />
-      {reto ? (
+      {reto && !eligiendo ? (
         <View style={{ height: 8, borderRadius: 4, backgroundColor: 'rgba(255,255,255,0.15)', overflow: 'hidden' }}
           accessibilityLabel={`Tienes ${segundosDe(nivel)} segundos desde el primer reventón`}>
           <Animated.View style={[{ height: 8, borderRadius: 4 }, barra]} />
@@ -369,7 +392,7 @@ export default function Burbujas() {
           restan.value -= 1; hasta.value = tiempo.value + CHISPA;
           alReventar(1, restan.value, doradas.value[i]);
         }}>
-        {geo ? (
+        {geo && !eligiendo ? (
           <GestureDetector gesture={gesto}>
             <Canvas style={{ flex: 1 }}>
               <Picture picture={cuadro} />
@@ -381,30 +404,48 @@ export default function Burbujas() {
             <AvisoJuego clave={aviso.k} texto={aviso.texto} />
           </View>
         ) : null}
-        {reto && quedan === N && !perdio ? (
+        {eligiendo ? (
+          <ScrollView style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ padding: 14, gap: 12 }}>
+            <SelectorNiveles total={NIVELES} progreso={progreso} alElegir={jugarNivel} margen={32 + 28}
+              detalle={(n) => `${segundosDe(n)} s${conDoradas(n) ? '' : ' · sin oro'}`} />
+            <Text style={[textoAyuda, { textAlign: 'center' }]}>Cada nivel da menos tiempo. Más tiempo de sobra, más estrellas.</Text>
+          </ScrollView>
+        ) : null}
+        {reto && fase === 'jugando' && quedan === N ? (
           <Animated.View pointerEvents="none" entering={FadeIn.delay(300)} exiting={FadeOut.duration(150)}
             style={{ position: 'absolute', bottom: 14, left: 0, right: 0, alignItems: 'center' }}>
             <Text style={{ fontSize: 15, fontWeight: '800', color: BLANCO }}>Nivel {nivel} · {segundosDe(nivel)} segundos</Text>
-            <Text style={{ fontSize: 13, color: BLANCO_2 }}>El tiempo corre desde la primera burbuja</Text>
+            <Text style={{ fontSize: 13, color: BLANCO_2 }}>El tiempo corre desde la primera burbuja{conDoradas(nivel) ? '' : ' · sin doradas'}</Text>
           </Animated.View>
         ) : null}
         {perdio ? (
-          <Animated.View entering={FadeIn.duration(250)} style={{ position: 'absolute', left: 16, right: 16, top: '30%' }}>
-            <PanelVidrio estilo={{ gap: 10, alignItems: 'center', backgroundColor: 'rgba(30,6,40,0.72)' }}>
-              <Text style={{ fontSize: 20, fontWeight: '800', color: BLANCO }}>¡Se acabó el tiempo!</Text>
-              <Text style={{ fontSize: 15, color: BLANCO_2, textAlign: 'center' }}>
-                {nivel > 1 ? `Pasaste ${nivel - 1} ${nivel - 1 === 1 ? 'nivel' : 'niveles'}.` : 'Vuelve a intentarlo: arrastra el dedo por las filas.'} Tu récord: nivel {mejorNivel}.
-              </Text>
-              <View style={{ alignSelf: 'stretch' }}>
-                <BotonJuego sf="arrow.clockwise" alTocar={() => { nivelRef.current = 1; setNivel(1); nuevaHoja(1); }}>Otra vez</BotonJuego>
+          <Animated.View entering={FadeIn.duration(250)} style={{ position: 'absolute', left: 16, right: 16, top: '22%' }}>
+            <TarjetaNivel fondo="rgba(30,6,40,0.78)" titulo="¡Se acabó el tiempo!"
+              texto={`Quedaron ${quedan} ${quedan === 1 ? 'burbuja' : 'burbujas'}. Arrastra el dedo por las filas sin soltar: es más rápido que tocar una por una.`}>
+              <BotonJuego sf="arrow.clockwise" alTocar={() => jugarNivel(nivel)}>Otra vez</BotonJuego>
+              <BotonJuego secundario sf="square.grid.2x2.fill" alTocar={aNiveles}>Niveles</BotonJuego>
+            </TarjetaNivel>
+          </Animated.View>
+        ) : null}
+        {reto && fase === 'gano' && resultado ? (
+          <Animated.View entering={FadeIn.duration(250)} style={{ position: 'absolute', left: 16, right: 16, top: '18%' }}>
+            <TarjetaNivel fondo="rgba(30,6,40,0.78)" estrellas={resultado.estrellas}
+              insignia={resultado.mejoro && !resultado.primera ? '¡MÁS ESTRELLAS!' : null}
+              titulo={nivel >= NIVELES ? '¡Terminaste los 12 niveles!' : `¡Nivel ${nivel} listo!`}
+              texto={`Te sobraron ${Math.max(0, resultado.queda ?? 0).toFixed(1)} segundos.${resultado.estrellas < 3 ? ' Más rápido, más estrellas.' : ''}`}>
+              {nivel < NIVELES ? <BotonJuego sf="play.fill" alTocar={() => jugarNivel(nivel + 1)}>Siguiente nivel</BotonJuego> : null}
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}><BotonJuego secundario sf="arrow.clockwise" alTocar={() => jugarNivel(nivel)}>Repetir</BotonJuego></View>
+                <View style={{ flex: 1 }}><BotonJuego secundario sf="square.grid.2x2.fill" alTocar={aNiveles}>Niveles</BotonJuego></View>
               </View>
-            </PanelVidrio>
+            </TarjetaNivel>
           </Animated.View>
         ) : null}
         {festejo ? <Confeti key={festejo} colores={[...color, '#FFFFFF', '#FFD38A']} alTerminar={() => {}} /> : null}
       </View>
       <Text style={[textoAyuda, { textAlign: 'center' }]}>
-        {reto ? 'Vacía la hoja antes de que se acabe la barra. Las doradas suman tiempo.' : 'Arrastra el dedo sin soltar: en racha el «pop» sube de tono. Las doradas valen 5.'}
+        {eligiendo ? 'Elige un nivel para empezar.' : reto ? `Vacía la hoja antes de que se acabe la barra.${conDoradas(nivel) ? ' Las doradas suman tiempo.' : ''}` : 'Arrastra el dedo sin soltar: en racha el «pop» sube de tono. Las doradas valen 5.'}
       </Text>
       {!reto ? <BotonJuego secundario sf="arrow.clockwise" alTocar={() => nuevaHoja(1)}>Hoja nueva</BotonJuego> : null}
     </Escena>

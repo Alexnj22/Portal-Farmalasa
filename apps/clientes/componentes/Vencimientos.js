@@ -33,7 +33,7 @@ function hoySV() {
 
 export default function Vencimientos({ vencimientos }) {
   const t = useTema();
-  const { pronto, proximo, barras, maximo } = useMemo(() => {
+  const { pronto, proximo, barras, maximo, siguientes } = useMemo(() => {
     const lista = (vencimientos ?? []).filter((v) => (diasHasta(v.vence) ?? -1) >= 0);
     const pronto = lista.filter((v) => diasHasta(v.vence) <= VENTANA_DIAS);
     const h = hoySV();
@@ -52,6 +52,7 @@ export default function Vencimientos({ vencimientos }) {
     return {
       pronto: { puntos: pronto.reduce((s, v) => s + Number(v.puntos), 0), cuantos: pronto.length },
       proximo: lista[0] ?? null,
+      siguientes: lista.slice(0, 3),
       barras,
       maximo: Math.max(1, ...barras.map((b) => b.puntos)),
     };
@@ -93,15 +94,22 @@ export default function Vencimientos({ vencimientos }) {
           {/* El recuadro de la marca, como las demás tarjetas del Inicio
               (2026-11-04, «unifica pero que no pierdan la identidad»); el
               naranja queda sólo para lo que vence pronto, que es un aviso. */}
-          <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11), alignItems: 'center', justifyContent: 'center' }}>
-            <Icono sf="checkmark" respaldo="✓" tam={17} color={t.color.magentaTexto} />
+          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11), alignItems: 'center', justifyContent: 'center' }}>
+            <Icono sf="checkmark.shield.fill" respaldo="✓" tam={19} color={t.color.magentaTexto} />
           </View>
           <View style={{ flex: 1 }}>
             <Texto estilo={{ fontWeight: '700' }}>Nada vence en los próximos 3 meses</Texto>
-            <Texto nivel={2} estilo={{ fontSize: 14 }}>Lo próximo: {entero(proximo.puntos)} pts el {fecha(proximo.vence)}.</Texto>
+            <Texto nivel={2} estilo={{ fontSize: 14 }}>
+              {hayGrafica ? `Lo próximo: ${entero(proximo.puntos)} pts el ${fecha(proximo.vence)}.` : 'Tus puntos están a salvo por ahora.'}
+            </Texto>
           </View>
         </View>
       )}
+
+      {/* Sin nada en los próximos 6 meses la gráfica quedaría vacía
+          (2026-11-04, «siento extraño que… sólo sean cards de texto»): en su
+          lugar, la línea del tiempo de lo que viene, hasta tres fechas. */}
+      {!hayGrafica ? <LineaDelTiempo lista={siguientes} t={t} /> : null}
 
       {hayGrafica ? (
         <View style={{ gap: 8 }}>
@@ -148,5 +156,47 @@ function Barra({ barra, indice, maximo, elegida, color, alTocar }) {
       <Animated.View style={[{ width: '100%', borderRadius: 8, backgroundColor: barra.puntos ? color : colorSistema.separador }, estiloBarra]} />
       <Text style={{ fontSize: 12, fontWeight: elegida ? '800' : '600', color: elegida ? colorSistema.texto : colorSistema.texto2 }}>{barra.mes}</Text>
     </Presionable>
+  );
+}
+
+// La línea del tiempo (2026-11-04): un punto por fecha, unidos por una raya,
+// con cuánto falta en grande y los puntos en una píldora. Vertical a propósito:
+// con la letra grande cada fila crece hacia abajo y nada se encima (una línea
+// horizontal con rótulos se pisaría). Magenta en calma; naranja sólo si una
+// fecha cae en los próximos 3 meses.
+function LineaDelTiempo({ lista, t }) {
+  if (!lista?.length) return null;
+  return (
+    <View>
+      {lista.map((v, i) => {
+        const dias = diasHasta(v.vence);
+        const pronto = dias != null && dias <= VENTANA_DIAS;
+        const color = pronto ? NARANJA : t.color.magenta;
+        const ultimo = i === lista.length - 1;
+        return (
+          <View key={`${v.vence}-${i}`} style={{ flexDirection: 'row', gap: 12 }}
+            accessible accessibilityLabel={`${fecha(v.vence)}: vencen ${entero(v.puntos)} puntos, en ${dias} días`}>
+            <View style={{ width: 18, alignItems: 'center' }}>
+              <View style={{ width: 14, height: 14, borderRadius: 7, marginTop: 4, backgroundColor: i === 0 ? color : 'transparent', borderWidth: 3,
+                borderColor: i === 0 ? suave(color, t.oscuro ? 0.45 : 0.3) : suave(color, 0.55) }} />
+              {!ultimo ? <View style={{ flex: 1, width: 2, marginVertical: 3, borderRadius: 1, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.35 : 0.2) }} /> : null}
+            </View>
+            <View style={{ flex: 1, flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8, paddingBottom: ultimo ? 0 : 14 }}>
+              <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 150 }}>
+                <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>{fecha(v.vence)}</Text>
+                <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+                  {dias === 0 ? 'hoy' : dias === 1 ? 'mañana' : `en ${entero(dias)} días`}
+                </Text>
+              </View>
+              <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999, backgroundColor: suave(color, t.oscuro ? 0.3 : 0.12) }}>
+                <Text style={{ fontSize: 13, fontWeight: '800', fontVariant: ['tabular-nums'], color: pronto ? (t.oscuro ? NARANJA : '#B35C00') : t.color.magentaTexto }}>
+                  {entero(v.puntos)} pts · {dolares(Number(v.puntos) / 100)}
+                </Text>
+              </View>
+            </View>
+          </View>
+        );
+      })}
+    </View>
   );
 }

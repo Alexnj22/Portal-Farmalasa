@@ -19,6 +19,7 @@ import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
 import { CATEGORIAS, useFraseDelDia } from '../lib/fraseDelDia';
 import { navegar } from '../lib/navegar';
+import { OndasFrase } from './IlustracionesInicio';
 
 const DIAS = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
@@ -94,25 +95,39 @@ export default function FraseDelDia({ grande = false }) {
   );
 
   if (grande) return cuerpo;
+  // El compacto del Inicio (2026-11-04, «siento extraño que… sólo sean cards
+  // de texto»): ondas de calma dibujadas en la esquina, la comilla grande
+  // encima, el rótulo como antetítulo, la frase con más cuerpo y la invitación
+  // como una píldora. Toda la tarjeta se toca; la píldora dice adónde lleva.
   return (
     <Tocable etiqueta={`Frase del día: ${frase.texto}. Abre Bienestar`} alTocar={() => navegar('/bienestar')}>
-      <Tarjeta estilo={{ gap: 10, overflow: 'hidden' }}>
+      <Tarjeta estilo={{ gap: 12, overflow: 'hidden', paddingVertical: 20 }}>
+        <View pointerEvents="none" style={{ position: 'absolute', right: 0, top: 0 }}>
+          <OndasFrase tam={170} />
+        </View>
         <Text importantForAccessibility="no" accessibilityElementsHidden
-          style={{ position: 'absolute', right: 14, top: -40, fontSize: 160, fontWeight: '900', color: suave(t.color.magenta, t.oscuro ? 0.16 : 0.1) }}>“</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          style={{ position: 'absolute', right: 22, top: -30, fontSize: 140, fontWeight: '900', color: suave(t.color.magenta, t.oscuro ? 0.34 : 0.2) }}>“</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingRight: 64 }}>
           <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
             <Icono sf={cat.sf} respaldo="" tam={16} color={t.color.magentaTexto} />
           </View>
-          <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto2 }}>
-            Frase del día · {cat.nombre}
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 12, fontWeight: '800', letterSpacing: 0.8, color: t.color.magentaTexto }}>FRASE DEL DÍA</Text>
+            <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{cat.nombre}</Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: 'row', gap: 12 }}>
+          {/* El filo de la cita: una raya de la marca, como en un libro. */}
+          <View style={{ width: 3, borderRadius: 2, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.6 : 0.45) }} />
+          <Text maxFontSizeMultiplier={1.6}
+            style={{ flex: 1, fontSize: 20, lineHeight: 27, fontWeight: '800', letterSpacing: -0.3, color: colorSistema.texto }}>
+            {frase.texto}
           </Text>
         </View>
-        <Text maxFontSizeMultiplier={1.6}
-          style={{ fontSize: 19, lineHeight: 25, fontWeight: '800', letterSpacing: -0.3, color: colorSistema.texto }}>
-          {frase.texto}
-        </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-          <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Tu momento de bienestar</Text>
+        <View style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+          backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
+          <Icono sf="sparkles" respaldo="" tam={13} color={t.color.magentaTexto} />
+          <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '800', color: t.color.magentaTexto }}>Tu momento de bienestar</Text>
           <Icono sf="chevron.right" respaldo="›" tam={11} color={t.color.magentaTexto} />
         </View>
       </Tarjeta>

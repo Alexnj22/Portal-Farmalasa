@@ -13,6 +13,9 @@
 // hacer. Ahora abre con una portada que lo explica en una frase —para qué
 // sirve y cómo se juega—, muestra los cinco pasos de un vistazo y cada sentido
 // trae ejemplos concretos de qué buscar.
+//
+// 2026-11-04: sin niveles —es un ejercicio, no un juego—; sólo cuenta, sin
+// presión, cuántos días seguidos se hizo, y lo dice al terminar.
 import { useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withSequence, withSpring, withTiming, ZoomIn } from 'react-native-reanimated';
@@ -20,7 +23,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import { Tocable, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
-import { BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import { textoRacha, useRacha } from '../componentes/juegos/Niveles';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 
 const PASOS = [
@@ -92,6 +96,7 @@ export default function Anclaje() {
   const [paso, setPaso] = useState(0);
   const [cuenta, setCuenta] = useState(0);
   const pasar = useRef(null);
+  const racha = useRacha('puntos_salud_anclaje_racha');
   const fin = paso >= PASOS.length;
   const p = PASOS[Math.min(paso, PASOS.length - 1)];
   useEffect(() => { precargar(SONIDOS); return () => { clearTimeout(pasar.current); callar(SONIDOS); }; }, []);
@@ -107,7 +112,7 @@ export default function Anclaje() {
       pasar.current = setTimeout(() => {
         pasar.current = null;
         const ultimo = paso === PASOS.length - 1;
-        if (ultimo) { sonar('campana', { volumen: 0.8 }); tacto.exito(); } else { sonar('par', { volumen: 0.7 }); tacto.exito(); }
+        if (ultimo) { racha.marcar(); sonar('campana', { volumen: 0.8 }); tacto.exito(); } else { sonar('par', { volumen: 0.7 }); tacto.exito(); }
         setPaso((x) => x + 1); setCuenta(0);
       }, 650);
     }
@@ -117,7 +122,7 @@ export default function Anclaje() {
 
   return (
     <Escena colores={ESCENAS.anclaje}>
-      <ControlesSensaciones izquierda={!empezado ? null :
+      <ControlesSensaciones izquierda={!empezado ? (racha.dias ? <Marcador sf="sun.max.fill" texto={textoRacha(racha.dias)} etiqueta={`Llevas ${textoRacha(racha.dias)}`} /> : null) :
         <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', height: 44 }} accessibilityLabel={`Sentido ${Math.min(paso + 1, 5)} de 5`}>
           {PASOS.map((x, i) => (
             <View key={x.n} style={{ width: i === paso ? 26 : 9, height: 9, borderRadius: 5, backgroundColor: i < paso || fin ? BLANCO : i === paso ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.25)' }} />
@@ -135,6 +140,7 @@ export default function Anclaje() {
           <Text style={{ fontSize: 30, fontWeight: '800', color: BLANCO, textAlign: 'center' }}>Estás aquí, ahora.</Text>
           <Text style={{ fontSize: 16, lineHeight: 23, color: BLANCO_2, textAlign: 'center', paddingHorizontal: 12 }}>
             Notaste 15 cosas a tu alrededor. Respira hondo una vez más: puedes volver a hacerlo cuando lo necesites.
+            {racha.dias > 1 ? ` Llevas ${racha.dias} días seguidos.` : ''}
           </Text>
         </Animated.View>
       ) : (

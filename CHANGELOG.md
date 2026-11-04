@@ -21,9 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1433.1 — Changelog de la v2.1433.0
+
+Se completa la entrada de la v2.1433.0, que salió vacía.
+
 ## v2.1433.0 — App clientes: Inicio con accesos rápidos, tarjetas de un tono y Wallet en Cuenta
 
-_(pendiente de redactar)_
+*«Sigue saliendo agregar a la wallet aun cuando ya está agregada… al abrir
+los beneficios del nivel, que salga abajo cerrar… las cards tienen muchos
+colores… lo tuyo no me gusta.»*
+
+- **Wallet**: el Inicio ya no ofrece agregarla si está agregada — también con
+  la tarjeta del modo de prueba, que tiene otro número de serie
+  (`serieEnWallet`). Google Wallet no avisa si se guardó: se recuerda en el
+  teléfono después de abrir el enlace. En Cuenta › Mis puntos siempre está
+  (ver, volver a agregar, o «Mi tarjeta en Google Wallet» en Android).
+- **Beneficios del nivel**: «Ocultar beneficios» también al final.
+- **Un tono por tarjeta**: el nivel usa el metal de su nivel; canje, frase
+  del día, puntos por vencer y tratamientos, la superficie neutra con el
+  recuadro magenta. El naranja queda sólo para puntos que vencen pronto. La
+  tarjeta de socio no se tocó.
+- **«Lo tuyo» → «Accesos rápidos»**: tarjetas de dos columnas con el ícono
+  arriba y el texto a lo ancho (al lado del ícono «Tratamientos» se partía).
 
 ## v2.1432.0 — Compras: se quita «Facturas de mi sala»
 

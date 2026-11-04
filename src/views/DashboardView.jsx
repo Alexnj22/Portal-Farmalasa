@@ -810,7 +810,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
         {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
             entre «Ver todas» y su flecha, así que en el teléfono el chevron se
             iba solo a un segundo renglón, debajo del texto. Son seis widgets. */}
-        {action && <div className="shrink-0 whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:gap-8">{action}</div>}
+        {action && <div className="shrink-0 whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden @max-[17rem]/cabeza:[&>button:not([aria-haspopup])>span]:gap-8">{action}</div>}
       </div>
       <div className={`@container/cuerpo relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>

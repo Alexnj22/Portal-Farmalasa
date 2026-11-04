@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.10 — Inicio: la flecha del «Ver» sin letras sueltas
+
+El espacio que aparta el texto de la flecha se ponía en el botón, pero
+`Button` envuelve a sus hijos en un `<span>` con su propio `gap-1`: el final
+del texto («er», «as») seguía asomando junto a la flecha. Visto en producción
+sobre v2.1448.9.
+
 ## v2.1448.9 — Inicio: la flecha sola, Top productos en dos filas y quién va primero
 
 Visto en producción sobre v2.1448.7:

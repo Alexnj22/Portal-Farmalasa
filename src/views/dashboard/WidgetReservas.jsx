@@ -341,8 +341,13 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar', 'cancelar'].includes(a.k) }));
     };
 
-    // Cobra quien puede apartar en su propia sala: el efectivo entra a ESE cajón.
-    const salaDeCobro = !todas && !soloLectura && miSala && !esBodega ? miSala : null;
+    // Cobra quien puede apartar en SU sala: el efectivo entra a ESE cajón. Se
+    // compara con la sala de la ficha y no con `miSala`, que con el filtro de
+    // sucursal es la ELEGIDA: un supervisor de Administración mirando La
+    // Popular no cobra en el cajón de La Popular (la misma regla que
+    // `puedeApartar` de ReservasView).
+    const salaPropia = user?.branchId ?? user?.branch_id ?? null;
+    const salaDeCobro = !todas && !soloLectura && miSala && !esBodega && String(miSala) === String(salaPropia) ? miSala : null;
     const cobrarEncargo = (e) => { setCobrandoEncargo(e.id); setNueva(true); };
     const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>

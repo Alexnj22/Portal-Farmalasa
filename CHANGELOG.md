@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1430.2 — Encargos: «Cobrar» sólo en la sala propia
+
+_(pendiente de redactar)_
+
 ## v2.1430.1 — Saly: se borra el chat descartado que quedaba en su función
 
 *«Antes había un chat para hacer preguntas, pero lo descarté, ¿hay archivos

@@ -12,36 +12,29 @@
 // «Agregar un medicamento que tomo» (2026-10-29, componentes/
 // AgregarTratamientoHoja): lo que la lista automática no ve. Los que agregó el
 // cliente se quitan con «Quitar de mi lista» en vez de «Ya no lo tomo».
-// Lista del sistema (2026-11-04, usuario: «no me gusta… que sean más nativas,
-// en iOS se ve mal, se ve barato… al tocar me lleva a comprar el producto, no
-// al recordatorio»). Reemplaza las tarjetas de ese mismo día:
-//   · «Hoy»: cada toma del día con «Tomar» / «Deshacer», como Medicamentos de
-//     la app Salud. Es lo que se usa todos los días, por eso va arriba.
-//   · «Mis medicamentos»: lista agrupada como Ajustes. Tocar la fila abre el
-//     RECORDATORIO. El ícono de color dice cuánto falta; «Pedir» aparece sólo
-//     a 7 días o menos; el resto (volver a pedir, ver el producto, preguntar,
-//     ya no lo tomo) en el «⋯», el menú desplegable del sistema
-//     (componentes/AccionesFila).
-//   · «Agregar» es el «+» de la barra.
-import { Children, isValidElement, useCallback, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, StyleSheet, Text, View } from 'react-native';
+// De vuelta a la tarjeta original (2026-11-04, usuario: «me gustaba más la
+// card que había antes, la primera, y no estas 2 reediciones»). Los dos
+// rediseños de ese día —tarjeta con barra y «⋯», y lista agrupada con «Hoy»—
+// se deshicieron. Se quedan dos cosas que pidió aparte: tocar el nombre abre
+// el RECORDATORIO y no el producto («al tocar me lleva a comprar el producto,
+// no al recordatorio»), y al agregar un medicamento se puede pasar directo a
+// «Recordarme tomarlo».
+import { useCallback, useState } from 'react';
+import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
-import { Stack, useFocusEffect } from 'expo-router';
+import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Pantalla, Seccion, Vacio } from '../componentes/ui';
-import Vidrio from '../componentes/Vidrio';
-import { Capsula, MenuMas } from '../componentes/AccionesFila';
+import { Cargando, Pantalla, Seccion, Tarjeta, Vacio } from '../componentes/ui';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
 import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
-import { nombrePropio } from '../lib/formato';
-import { cantidadDe } from '../lib/dosis';
+import { fecha, nombrePropio } from '../lib/formato';
 import { navegar } from '../lib/navegar';
-import { useTema } from '../tema/tema';
+import { suave, useTema } from '../tema/tema';
 import TomasHoja from '../componentes/TomasHoja';
 import AgregarTratamientoHoja from '../componentes/AgregarTratamientoHoja';
-import { DISPONIBLE as TOMAS, desmarcarToma, horaTexto, marcarTomado, quitarRecordatorio, sincronizarConTratamientos, tomaDeHoy, tomasQueTocanHoy, useTomas } from '../lib/tomas';
+import { DISPONIBLE as TOMAS, marcarTomado, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomasDeHoy, useTomas } from '../lib/tomas';
 import { copiaParaEmpezar } from '../lib/sinConexion';
 import { useVolverAPedir } from '../componentes/VolverAPedir';
 
@@ -50,7 +43,6 @@ const hoySV = () => new Date(Date.now() - 6 * 3600_000).toISOString().slice(0, 1
 const diasHasta = (f) => Math.round((Date.parse(`${f}T12:00:00Z`) - Date.parse(`${hoySV()}T12:00:00Z`)) / 86400_000);
 
 export default function Tratamientos() {
-  const tema = useTema();
   const pedir = useSesion((s) => s.pedir);
   const [d, setD] = useState(null);
   const [refrescando, setRefrescando] = useState(false);
@@ -69,9 +61,8 @@ export default function Tratamientos() {
     if (r?.ok) sincronizarConTratamientos(r.tratamientos);
     return r;
   }, [pedir]);
-  // Recién agregado y con «Recordarme tomarlo» pedido: se abre su hoja cuando
-  // la de agregar terminó de cerrarse (iOS no presenta una hoja mientras otra
-  // se está yendo).
+  // Recién agregado y con «Recordarme tomarlo» pedido: su hoja se abre cuando
+  // la de agregar terminó de irse (iOS no presenta una hoja mientras otra se va).
   const alCerrarAgregar = async (agrego, recordar) => {
     setAgregando(false);
     if (!agrego) return;
@@ -138,237 +129,126 @@ export default function Tratamientos() {
       </Pantalla>
     );
   }
-  const activos = d.tratamientos.filter((t) => t.estado === 'activo');
-  const apagados = d.tratamientos.filter((t) => t.estado !== 'activo');
-  const vacio = !activos.length && !apagados.length;
-  const porPid = Object.fromEntries(activos.map((t) => [String(t.product_id), t]));
-  // Tocar la fila abre el recordatorio (usuario, 2026-11-04: «al tocar me
-  // lleva a comprar el producto, no al recordatorio»). En la web no hay
-  // recordatorios: ahí abre el producto.
-  const abrir = (t) => (TOMAS ? setTomas(t) : navegar(`/producto/${t.product_id}`));
-  const opcionesDe = (t) => [
-    { texto: 'Volver a pedir', sf: 'arrow.clockwise', alElegir: () => volverAPedir(t) },
-    ...(TOMAS ? [{ texto: 'Recordatorio de tomas', sf: 'bell', alElegir: () => setTomas(t) }] : []),
-    { texto: 'Ver el producto', sf: 'info.circle', alElegir: () => navegar(`/producto/${t.product_id}`) },
-    { texto: 'Preguntar a la farmacia', sf: 'bubble.left.and.bubble.right', alElegir: () => navegar(`/chat?producto=${t.product_id}`) },
-    t.origen === 'cliente'
-      ? { texto: 'Quitar de mi lista', sf: 'trash', destructivo: true, alElegir: () => quitarDeLaLista(t) }
-      : { texto: 'Ya no lo tomo', sf: 'xmark.circle', destructivo: true, alElegir: () => yaNo(t) },
-  ];
+  const activos = d.ok ? d.tratamientos.filter((t) => t.estado === 'activo') : [];
+  const apagados = d.ok ? d.tratamientos.filter((t) => t.estado !== 'activo') : [];
   return (
     <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
-      <Stack.Screen options={{
-        headerRight: () => (
-          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAgregando(true); }} hitSlop={10}
-            accessibilityRole="button" accessibilityLabel="Agregar un medicamento que tomo"
-            style={({ pressed }) => ({ minHeight: 44, minWidth: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
-            <Icono sf="plus" respaldo="+" tam={Platform.OS === 'android' ? 24 : 20} color={Platform.OS === 'android' ? colorSistema.texto : tema.color.magentaTexto} />
-          </Presionable>
-        ),
-      }} />
-      {vacio ? (
-        <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚" accion="Agregar un medicamento" alAccion={() => setAgregando(true)}>
-          Cuando compres un medicamento con regularidad, aparecerá aquí. Si tomas uno que no aparece, agrégalo.
-        </Vacio>
+      <Text style={{ fontSize: 15, color: colorSistema.texto2 }}>
+        Lo que compras con regularidad. Te avisamos unos días antes de que se te acabe.
+      </Text>
+      {!activos.length && !apagados.length ? (
+        <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí. Si tomas uno que no aparece, agrégalo.</Vacio>
       ) : null}
-
-      {TOMAS ? <Hoy porPid={porPid} alAbrir={(t) => setTomas(t)} /> : null}
-
-      {activos.length ? (
-        <Lista titulo="Mis medicamentos" pie={TOMAS
-          ? 'Toca uno para que te recordemos cada toma. Te avisamos unos días antes de que se te acabe.'
-          : 'Te avisamos unos días antes de que se te acabe.'}>
-          {activos.map((t) => (
-            <FilaMedicamento key={t.id} t={t} alTocar={() => abrir(t)} opciones={opcionesDe(t)}
-              alPedir={() => volverAPedir(t)} pidiendo={ocupado && volviendo === t.id} />
-          ))}
-        </Lista>
-      ) : null}
-
-      {apagados.length ? (
-        <Lista titulo="Ya no lo tomo" pie="Si lo vuelves a comprar, vuelve a aparecer arriba solo.">
-          {apagados.map((t) => <FilaApagada key={t.id} t={t} alEncender={() => cambiar(t, true, null)} />)}
-        </Lista>
-      ) : null}
-
+      <View style={{ flexDirection: 'row' }}><Boton texto="Agregar un medicamento que tomo" sf="plus" alTocar={() => setAgregando(true)} /></View>
+      {activos.map((t) => <Fila key={t.id} t={t} alVer={() => (TOMAS ? setTomas(t) : navegar(`/producto/${t.product_id}`))} alVolver={() => volverAPedir(t)}
+        volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
+        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined} />)}
+      {apagados.length ? <Seccion estilo={{ marginTop: 8 }}>Ya no lo tomo</Seccion> : null}
+      {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
       {agregando ? <AgregarTratamientoHoja alCerrar={alCerrarAgregar} /> : null}
       {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => { setTomas(null); cargar(); }} /> : null}
     </Pantalla>
   );
 }
 
-// ── La lista agrupada, como Ajustes y Salud ─────────────────────────────────
-// Un grupo de filas sobre una sola superficie, con separadores que empiezan
-// donde empieza el texto (no bajo el ícono), título arriba y pie abajo en gris.
-// Es `Grupo` de componentes/sistema.js sin su margen propio: acá `Pantalla` ya
-// pone el de los lados.
-const ANCHO_ICONO = 32;
-function Lista({ titulo, pie, children }) {
-  const filas = Children.toArray(children).filter(isValidElement);
-  return (
-    <View>
-      {titulo ? <Seccion estilo={{ marginLeft: 16, marginBottom: 6 }}>{titulo}</Seccion> : null}
-      <Vidrio radio={Platform.OS === 'ios' ? 26 : 16}>
-        {filas.map((fila, i) => (
-          <View key={fila.key ?? i}>
-            {fila}
-            {i < filas.length - 1 ? <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: colorSistema.separador, marginLeft: 16 + ANCHO_ICONO + 12 }} /> : null}
-          </View>
-        ))}
-      </Vidrio>
-      {pie ? <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2, marginHorizontal: 16, marginTop: 6 }}>{pie}</Text> : null}
-    </View>
-  );
-}
-
-// El estado por los días que faltan: verde, naranja (7 o menos) o rojo (hoy o
-// ya pasó). Sin fecha, verde.
-function estadoDe(tema, dias) {
-  if (dias == null || dias > 7) return { color: tema.color.verde, texto: tema.color.verdeTexto, pronto: false };
-  if (dias > 0) return { color: tema.color.aviso, texto: tema.color.avisoTexto, pronto: true };
-  return { color: tema.color.peligro, texto: tema.color.peligroTexto, pronto: true };
-}
-
-// El ícono de la fila: cuadrado de color lleno con el glifo en blanco, como los
-// de Ajustes. El color ES el estado.
-function IconoFila({ color, sf = 'pills.fill', apagado }) {
-  return (
-    <View style={{ width: ANCHO_ICONO, height: ANCHO_ICONO, borderRadius: 8, alignItems: 'center', justifyContent: 'center',
-      backgroundColor: apagado ? colorSistema.texto3 : color }}>
-      <Icono sf={sf} respaldo="💊" tam={17} color="#FFFFFF" />
-    </View>
-  );
-}
-
-const textoCuando = (dias) => (dias == null ? null : dias < 0 ? `Se te acabó hace ${-dias} día${dias === -1 ? '' : 's'}`
-  : dias === 0 ? 'Se te acaba hoy' : `Se te acaba en ${dias} día${dias === 1 ? '' : 's'}`);
-
-function FilaMedicamento({ t, alTocar, opciones, alPedir, pidiendo }) {
+function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDeLaLista }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
-  const dias = t.se_acaba ? diasHasta(t.se_acaba) : null;
-  const estado = estadoDe(tema, dias);
-  const nombre = nombrePropio(t.nombre);
-  const cuando = textoCuando(dias);
-  // La segunda línea dice lo que más importa de un vistazo: a qué hora se toma
-  // y cuánto, o que todavía no tiene recordatorio.
-  const horario = recordatorio ? horarioCorto(recordatorio, t.nombre) : TOMAS ? 'Sin recordatorio de tomas' : `Cada ${t.intervalo ?? t.dura_cliente ?? '—'} días`;
-  // La zona que abre el recordatorio y los botones van LADO A LADO, nunca uno
-  // dentro del otro: un botón nativo dentro de un Presionable puede disparar
-  // los dos con un solo toque.
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 10 }}>
-    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }}
-      accessibilityRole="button" accessibilityLabel={[nombre, horario, cuando].filter(Boolean).join('. ')}
-      accessibilityHint={TOMAS ? 'Abre el recordatorio de tomas' : 'Abre el producto'}
-      style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 64, paddingLeft: 16, paddingRight: 8, paddingVertical: 10,
-        opacity: pressed ? 0.55 : 1 })}>
-      <IconoFila color={estado.color} />
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{nombre}</Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-          {recordatorio ? <Icono sf="bell.fill" respaldo="" tam={11} color={colorSistema.texto2} /> : null}
-          <Text style={{ flexShrink: 1, fontSize: 15, color: colorSistema.texto2 }}>{horario}</Text>
-        </View>
-        {cuando ? <Text style={{ fontSize: 13, fontWeight: estado.pronto ? '600' : '400', color: estado.pronto ? estado.texto : colorSistema.texto3 }}>{cuando}</Text> : null}
-      </View>
-    </Presionable>
-      {/* «Pedir» sólo cuando hace falta; siempre está también en el menú. */}
-      {estado.pronto ? <Capsula etiqueta={pidiendo ? '…' : 'Pedir'} alTocar={pidiendo ? () => {} : alPedir} color={tema.color.magenta} /> : null}
-      <View style={{ width: 8 }} />
-      <MenuMas opciones={opciones} etiqueta={`Más opciones de ${nombre}`} titulo={nombre} color={tema.color.magenta} />
-    </View>
-  );
-}
-
-function FilaApagada({ t, alEncender }) {
-  const tema = useTema();
-  const nombre = nombrePropio(t.nombre);
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingLeft: 16, paddingRight: 12, paddingVertical: 10 }}
-      accessible accessibilityLabel={[nombre, t.motivo].filter(Boolean).join('. ')}>
-      <IconoFila apagado />
-      <View style={{ flex: 1, gap: 1 }}>
-        <Text style={{ fontSize: 17, color: colorSistema.texto2 }}>{nombre}</Text>
-        {t.motivo ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>{t.motivo}</Text> : null}
-      </View>
-      <Capsula etiqueta="Reactivar" alTocar={alEncender} color={tema.color.magenta} prominente={false} />
-    </View>
-  );
-}
-
-// «8:00 y 20:00 · 1 tableta»: lo del recordatorio en una línea corta (el
-// resumen largo vive en la hoja).
-function horarioCorto(c, nombreProd) {
-  const horas = [...new Set(c.horas ?? [])].sort().map(horaTexto);
-  const lista = horas.length < 3 ? horas.join(' y ') : `${horas.length} veces al día`;
-  return c.cantidad ? `${lista} · ${cantidadDe(c.cantidad, nombreProd)}` : lista;
-}
-
-// ── Hoy: cada toma con su botón, como Medicamentos de la app Salud ──────────
-function Hoy({ porPid, alAbrir }) {
-  const tema = useTema();
-  const config = useTomas((s) => s.config);
+  // El registro entero y no un arreglo armado en el selector: zustand
+  // compara por identidad y un arreglo nuevo en cada lectura re-renderiza sin fin.
   const registro = useTomas((s) => s.registro);
-  // Sólo lo que sigue en la lista: un recordatorio de algo que ya no está no se muestra.
-  const tomas = tomasQueTocanHoy(config).filter((x) => porPid[x.pid]);
-  if (!tomas.length) return null;
-  const hechas = tomas.filter((x) => tomaDeHoy(registro, x.pid, x.hora)).length;
-  const ahora = new Date();
-  const minutosAhora = ahora.getHours() * 60 + ahora.getMinutes();
-  const deshacer = (x, nombre) => Alert.alert('¿Desmarcar esta toma?', `${nombre}, ${horaTexto(x.hora)}.`, [
-    { text: 'Cancelar', style: 'cancel' },
-    { text: 'Desmarcar', style: 'destructive', onPress: () => desmarcarToma(x.pid, x.hora) },
-  ]);
+  const hoy = recordatorio ? tomasDeHoy(registro, pid) : [];
+  // Cuántas tocan hoy: las horas del recordatorio (sin repetidas).
+  const tocan = recordatorio ? new Set(recordatorio.horas ?? []).size || 1 : 0;
+  const completo = tocan > 0 && hoy.length >= tocan;
+  const tomar = () => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); marcarTomado(pid); };
+  // `se_acaba` puede venir vacío (la columna lo admite): sin fecha no se
+  // inventa «en NaN días», simplemente no se dice.
+  const dias = t.se_acaba ? diasHasta(t.se_acaba) : null;
+  const urgente = !apagado && dias != null && dias <= 3;
+  const cuando = dias == null ? null : dias < 0 ? `Se te acabó hace ${-dias} día${dias === -1 ? '' : 's'}` : dias === 0 ? 'Se te acaba hoy' : `Se te acaba en ${dias} día${dias === 1 ? '' : 's'}`;
+  const color = urgente ? tema.color.magenta : tema.color.verde;
   return (
-    <Lista titulo={`Hoy · ${hechas} de ${tomas.length}`}>
-      {tomas.map((x) => {
-        const t = porPid[x.pid];
-        const nombre = nombrePropio(t.nombre);
-        const hecha = tomaDeHoy(registro, x.pid, x.hora);
-        const [hh, mm] = x.hora.split(':').map(Number);
-        const tarde = !hecha && hh * 60 + mm < minutosAhora - 30;
-        const detalle = [x.c.cantidad ? cantidadDe(x.c.cantidad, t.nombre) : null, x.c.nota || null].filter(Boolean).join(' · ');
-        const cuando = hecha ? `Tomado a las ${horaDe(hecha.h)}` : tarde ? 'Pendiente' : null;
-        return (
-          <View key={`${x.pid}-${x.hora}`} style={{ flexDirection: 'row', alignItems: 'center', paddingRight: 12 }}>
-          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alAbrir(t); }}
-            accessibilityRole="button" accessibilityLabel={[horaTexto(x.hora), nombre, detalle, cuando].filter(Boolean).join('. ')}
-            accessibilityHint="Abre el recordatorio"
-            style={({ pressed }) => ({ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 60, paddingLeft: 16, paddingRight: 8, paddingVertical: 10,
-              opacity: pressed ? 0.55 : 1 })}>
-            <View style={{ width: ANCHO_ICONO, alignItems: 'center' }}>
-              <Icono sf={hecha ? 'checkmark.circle.fill' : 'circle'} respaldo={hecha ? '✓' : '○'} tam={24}
-                color={hecha ? tema.color.verde : tarde ? tema.color.avisoTexto : colorSistema.texto3} />
-            </View>
-            <View style={{ flex: 1, gap: 1 }}>
-              <Text style={{ fontSize: 17, fontWeight: '600', color: hecha ? colorSistema.texto2 : colorSistema.texto }}>
-                <Text style={{ fontVariant: ['tabular-nums'] }}>{horaTexto(x.hora)}</Text>{`  ${nombre}`}
-              </Text>
-              {detalle || cuando ? (
-                <Text style={{ fontSize: 13, color: hecha ? tema.color.verdeTexto : tarde ? tema.color.avisoTexto : colorSistema.texto2 }}>
-                  {[cuando, detalle].filter(Boolean).join(' · ')}
+    <Tarjeta estilo={{ gap: 12, opacity: apagado ? 0.65 : 1 }}>
+      <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+        <View style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, tema.oscuro ? 0.26 : 0.15) }}>
+          <Icono sf="pills.fill" respaldo="💊" tam={19} color={urgente ? tema.color.magentaTexto : tema.color.verdeTexto} />
+        </View>
+        <Presionable onPress={alVer ? () => { Haptics.selectionAsync().catch(() => {}); alVer(); } : undefined} disabled={!alVer}
+          accessibilityRole={alVer ? 'button' : undefined} accessibilityHint={alVer ? (TOMAS ? 'Abre el recordatorio de tomas' : 'Abre el producto') : undefined} style={{ flex: 1, gap: 2 }}>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombrePropio(t.nombre)}</Text>
+          <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+            {apagado ? t.motivo : t.origen === 'cliente' ? `Agregado por ti · última compra ${fecha(t.ultima)}` : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
+          </Text>
+          {!apagado && cuando ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
+        </Presionable>
+        {/* Preguntar a la farmacia por este medicamento (2026-10-13): abre el chat con él puesto. */}
+        {alPreguntar ? (
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alPreguntar(); }} accessibilityRole="button"
+            accessibilityLabel={`Preguntar a la farmacia por ${nombrePropio(t.nombre)}`} hitSlop={4}
+            style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+              backgroundColor: suave(tema.color.magenta, pressed ? 0.3 : (tema.oscuro ? 0.22 : 0.12)) })}>
+            <Icono sf="bubble.left.and.bubble.right.fill" respaldo="💬" tam={18} color={tema.color.magentaTexto} />
+          </Presionable>
+        ) : null}
+      </View>
+      <View style={{ flexDirection: 'row', gap: 8 }}>
+        {apagado ? <Boton texto="Volver a recordarme" alTocar={alEncender} /> : (
+          <>
+            <Boton texto={volviendo ? 'Agregando…' : 'Volver a pedir'} sf="arrow.clockwise" principal alTocar={alVolver} deshabilitado={volviendo} />
+            {alQuitarDeLaLista ? <Boton texto="Quitar de mi lista" alTocar={alQuitarDeLaLista} /> : <Boton texto="Ya no lo tomo" alTocar={alApagar} />}
+          </>
+        )}
+      </View>
+      {!apagado && TOMAS ? (recordatorio ? (
+        <View style={{ gap: 8, borderRadius: 12, padding: 12, backgroundColor: tema.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.035)' }}>
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
+            <Icono sf="bell.fill" respaldo="🔔" tam={14} color={tema.color.magentaTexto} />
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto }}>{resumenRecordatorio(recordatorio)}</Text>
+              {recordatorio.nota ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{recordatorio.nota}</Text> : null}
+              {hoy.length ? (
+                <Text style={{ fontSize: 13, fontWeight: '600', color: tema.color.verdeTexto }}>
+                  {tocan > 1 ? `Hoy ${Math.min(hoy.length, tocan)} de ${tocan} · última a las ${hoy[hoy.length - 1]}` : `Tomado hoy a las ${hoy[hoy.length - 1]}`}
                 </Text>
               ) : null}
             </View>
-          </Presionable>
-            {hecha
-              ? <Capsula etiqueta="Deshacer" alTocar={() => deshacer(x, nombre)} prominente={false} />
-              : <Capsula etiqueta="Tomar" alTocar={() => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); marcarTomado(x.pid, x.hora); }} color={tema.color.verde} />}
           </View>
-        );
-      })}
-    </Lista>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* «Lo tomé» (2026-11-04) en lugar de «Quitar recordatorio», que
+                sigue dentro de «Editar»: la tarjeta tenía cinco botones y
+                ninguno servía para lo que más se hace cada día. */}
+            <Boton texto={completo ? 'Listo por hoy' : 'Lo tomé'} sf={completo ? 'checkmark' : 'checkmark.circle'} alTocar={tomar} deshabilitado={completo} />
+            <Boton texto="Editar" alTocar={alRecordar} />
+          </View>
+        </View>
+      ) : (
+        <View style={{ flexDirection: 'row' }}><Boton texto="Recordarme tomarlo" alTocar={alRecordar} /></View>
+      )) : null}
+    </Tarjeta>
   );
 }
-const horaDe = (iso) => { const d = new Date(iso); return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
 function Reintentar({ alTocar }) {
   const t = useTema();
   return (
     <Presionable onPress={alTocar} accessibilityRole="button" hitSlop={8} style={{ alignSelf: 'center', minHeight: 44, justifyContent: 'center', paddingHorizontal: 14 }}>
       <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
+    </Presionable>
+  );
+}
+
+function Boton({ texto, alTocar, principal, sf, deshabilitado }) {
+  const t = useTema();
+  return (
+    <Presionable onPress={() => { if (deshabilitado) return; Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
+      disabled={!!deshabilitado} accessibilityState={{ disabled: !!deshabilitado }}
+      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center', flexDirection: 'row', gap: 6, paddingHorizontal: 8, paddingVertical: 6,
+        opacity: deshabilitado ? 0.7 : 1,
+        backgroundColor: principal ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)'), transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      {sf ? <Icono sf={sf} respaldo="" tam={13} color={principal ? '#FFFFFF' : colorSistema.texto} /> : null}
+      <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 14, fontWeight: '700', color: principal ? '#FFFFFF' : colorSistema.texto }}>{texto}</Text>
     </Presionable>
   );
 }

@@ -74,7 +74,7 @@ const MAX_DIAS = 365;
 const ATRAS_INICIO = 60;
 // Los atajos de días: lo que más se receta (antibióticos 3–14, un mes, dos o
 // tres meses). El contador cubre todo lo demás.
-const ATAJOS_DIAS = [3, 5, 7, 10, 14, 30, 60, 90];
+const ATAJOS_DIAS = [3, 5, 7, 10, 14, 30, 60];
 const ADELANTE_INICIO = 90;
 // La duración guardada → { tipo, dias }. Los '7', '14', '30' de antes son días.
 function duracionGuardada(actual) {

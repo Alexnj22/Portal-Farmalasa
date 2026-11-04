@@ -56,19 +56,22 @@ export function Contador({ valor, texto, detalle, min, max, paso = 1, salto, alC
 }
 
 /** opciones: [{ v, texto, etiqueta? }]; el elegido es el que coincide con `valor`. */
+// Una sola fila (2026-11-04, usuario: «quita el de 90 días, así salen en una
+// sola fila»): las píldoras se reparten el ancho en partes iguales en vez de
+// envolverse en dos renglones disparejos.
 export function Atajos({ opciones, valor, alElegir }) {
   const t = useTema();
   const fondo = t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)';
   return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }} accessibilityRole="radiogroup">
+    <View style={{ flexDirection: 'row', gap: 5 }} accessibilityRole="radiogroup">
       {opciones.map((o) => {
         const elegida = o.v === valor;
         return (
           <Presionable key={String(o.v)} onPress={() => { toque(); alElegir(o.v); }}
             accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={o.etiqueta ?? o.texto}
-            style={({ pressed }) => ({ minWidth: 48, minHeight: 44, paddingHorizontal: 12, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
+            style={({ pressed }) => ({ flex: 1, minWidth: 0, minHeight: 44, paddingHorizontal: 2, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
               backgroundColor: elegida ? t.color.magenta : fondo, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-            <Text style={{ fontSize: 15, fontWeight: elegida ? '800' : '600', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{o.texto}</Text>
+            <Text numberOfLines={1} adjustsFontSizeToFit style={{ fontSize: 15, fontWeight: elegida ? '800' : '600', color: elegida ? '#FFFFFF' : colorSistema.texto }}>{o.texto}</Text>
           </Presionable>
         );
       })}

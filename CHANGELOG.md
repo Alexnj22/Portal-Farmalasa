@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1447.3 — Mis tratamientos: vuelve la tarjeta original; atajos de días en una fila
+
+App de clientes. El usuario, sobre la 92: «me gustaba más la card que había
+antes, la primera, y no estas 2 reediciones».
+
+- `app/tratamientos.js` vuelve a la tarjeta de v2.1440.1 (la original con
+  «Lo tomé»). Se deshacen la tarjeta de v2.1442.0 y la lista de v2.1446.0, y
+  se borra `componentes/AccionesFila*`.
+- Se quedan dos cosas pedidas aparte: tocar el nombre abre el recordatorio
+  (antes, el producto) y «Recordarme tomarlo» al terminar de agregar.
+- «¿Por cuánto tiempo?»: sin el atajo de 90 días, y los atajos (`Atajos` de
+  `componentes/Pasos.js`) van en una sola fila repartida en partes iguales.
+
 ## v2.1447.2 — Inicio: solicitudes, cotizaciones y nombres cortos
 
 Segundo lote de la revisión widget por widget del Inicio.

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1430.3 — Encargos: «ninguna sucursal» en vez de «la red»
+
+- La ayuda de la lista de encargos decía «Lo que no hay en la red»: «la red»
+  no es un término que use la empresa. Ahora: «Lo que no hay en ninguna
+  sucursal». Portal y app del personal.
+
 ## v2.1430.2 — Encargos: «Cobrar» sólo en la sala propia
 
 - **«Cobrar» se comparaba con la sala ELEGIDA, no con la propia.** En

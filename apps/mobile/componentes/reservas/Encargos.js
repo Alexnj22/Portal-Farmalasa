@@ -76,7 +76,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
   if (!filas?.length) return null;
   const hoy = hoySV();
   return (
-    <Seccion titulo={`Encargos · ${filas.length}`} pie="Lo que no hay en la red: Compras lo consigue y confirma el precio.">
+    <Seccion titulo={`Encargos · ${filas.length}`} pie="Lo que no hay en ninguna sucursal: Compras lo consigue y confirma el precio.">
       {filas.map((e, i) => {
         const est = estadoDeEncargo(e);
         const sinVincular = encargoSinVincular(e);

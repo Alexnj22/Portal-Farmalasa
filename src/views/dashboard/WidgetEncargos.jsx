@@ -184,7 +184,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
     if (!filas?.length) return null;
     return (
         <div className="space-y-1.5">
-            <Encabezado titulo="Encargos" n={filas.length} ayuda="Lo que no hay en la red: Compras lo consigue y confirma el precio" />
+            <Encabezado titulo="Encargos" n={filas.length} ayuda="Lo que no hay en ninguna sucursal: Compras lo consigue y confirma el precio" />
             {completa ? (
             <ul className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3 items-stretch min-w-0">
                 {filas.map((e) => {

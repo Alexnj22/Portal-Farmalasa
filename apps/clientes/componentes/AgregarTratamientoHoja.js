@@ -12,6 +12,10 @@
 // 2026-11-03: la dosis de ¼ en ¼ (¼ ½ 1 2 3 y un contador hasta 10,
 // lib/dosis.js) y los días con «Otro» y contador; las píldoras bajan de
 // renglón con letra grande en vez de cortarse.
+//
+// 2026-11-04: al agregar no se cierra de golpe — un último paso ofrece
+// «Recordarme tomarlo» (lo siguiente que casi todos hacen). Al elegirlo, la
+// hoja se cierra con el product_id y la pantalla abre la de tomas.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
@@ -22,6 +26,7 @@ import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
 import { fecha, nombrePropio } from '../lib/formato';
 import { useSesion } from '../lib/sesion';
+import { DISPONIBLE as TOMAS } from '../lib/tomas';
 import { useTema } from '../tema/tema';
 import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadDe, fraccionTexto, moverCantidad } from '../lib/dosis';
 
@@ -42,6 +47,7 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   const [otrosDias, setOtrosDias] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
+  const [agregado, setAgregado] = useState(false);
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
 
@@ -68,7 +74,9 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
     setGuardando(false);
     if (!r?.ok) { setError(r?.mensaje ?? 'No se pudo agregar. Revisa tu conexión.'); return; }
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-    alCerrar(true);
+    // En la web no hay avisos de toma: se cierra como antes.
+    if (!TOMAS) { alCerrar(true); return; }
+    setAgregado(true);
   };
 
   const pildoras = (opciones, valor, poner, etiqueta) => (
@@ -88,23 +96,41 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   );
 
   return (
-    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => alCerrar(false)}>
+    <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => alCerrar(agregado)}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, padding: 18 }}>
-          {elegido ? (
+          {elegido && !agregado ? (
             <Presionable onPress={() => { setElegido(null); setError(null); }} hitSlop={12} accessibilityRole="button"
               style={{ minHeight: 44, minWidth: 44, justifyContent: 'center' }}>
               <Text style={{ fontSize: 17, fontWeight: '600', color: t.color.magentaTexto }}>Atrás</Text>
             </Presionable>
           ) : <View style={{ minWidth: 44 }} />}
           <Text style={{ flex: 1, textAlign: 'center', fontSize: 18, fontWeight: '800', color: colorSistema.texto }}>Agregar medicamento</Text>
-          <Presionable onPress={() => alCerrar(false)} hitSlop={12} accessibilityRole="button"
+          <Presionable onPress={() => alCerrar(agregado)} hitSlop={12} accessibilityRole="button"
             style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
+            <Text style={{ fontSize: 17, fontWeight: agregado ? '700' : '600', color: agregado ? t.color.magentaTexto : colorSistema.texto }}>{agregado ? 'Listo' : 'Cerrar'}</Text>
           </Presionable>
         </View>
 
-        {!elegido ? (
+        {agregado ? (
+          <ScrollView contentContainerStyle={{ padding: 24, paddingTop: 32, paddingBottom: ins.bottom + 24, gap: 14, alignItems: 'center' }}>
+            <View style={{ width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', backgroundColor: superficie }}>
+              <Icono sf="checkmark.circle.fill" respaldo="✓" tam={40} color={t.color.verdeTexto} />
+            </View>
+            <Text accessibilityRole="header" style={{ fontSize: 20, fontWeight: '800', textAlign: 'center', color: colorSistema.texto }}>Agregado a tus tratamientos</Text>
+            <Text style={{ fontSize: 15, lineHeight: 21, textAlign: 'center', color: colorSistema.texto2, maxWidth: 340 }}>
+              Te avisaremos antes de que se te acabe {nombrePropio(elegido.nombre)}. ¿Quieres que también te recordemos cada toma?
+            </Text>
+            <View style={{ alignSelf: 'stretch', gap: 10, marginTop: 10 }}>
+              <View style={{ minHeight: 52, justifyContent: 'center' }}>
+                <Boton alTocar={() => alCerrar(true, elegido.product_id)}>Recordarme tomarlo</Boton>
+              </View>
+              <View style={{ minHeight: 48, justifyContent: 'center' }}>
+                <Boton tipo="secundario" alTocar={() => alCerrar(true)}>Ahora no</Boton>
+              </View>
+            </View>
+          </ScrollView>
+        ) : !elegido ? (
           <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 4, paddingBottom: ins.bottom + 24, gap: 12 }} keyboardShouldPersistTaps="handled">
             <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
               Elige un medicamento que tomas y no aparece en tu lista. Te avisamos antes de que se te acabe, contando desde tu última compra.

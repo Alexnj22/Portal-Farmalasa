@@ -214,7 +214,10 @@ export function nombreCorto(nombre) {
 // `config` va por product_id: { product_id, nombre, horas, duracion, hasta, nota, se_acaba }.
 // Desde 2026-11-03 también `empieza` (fecha del primer día), `dias` (cuántos,
 // si la duración es en días) y `cantidad` acepta cuartos (0.25, 0.75, 3…).
-// `registro`: [{ p: product_id, h: ISO }] — «Tomado», los últimos 30 días.
+// `registro`: [{ p: product_id, h: ISO, t: 'AAAA-MM-DD HH:MM' }] — «Tomado»,
+// los últimos 30 días. `t` (2026-11-04) es la TOMA que se dio por hecha: con
+// ella el aviso de una toma ya tomada no suena, y «Hoy 2 de 3» cuenta tomas y
+// no toques. Los de antes no la tienen y cuentan por el día de `h`.
 
 async function escribir(estado) {
   if (!ARCHIVO) return;
@@ -258,14 +261,54 @@ export function tomadoHoy(registro, productId) {
  */
 export function tomasDeHoy(registro, productId) {
   const hoy = hoyLocal();
+  const vistas = new Set();
   const out = [];
   for (const x of registro) {
     if (x.p !== productId) continue;
     const d = new Date(x.h);
-    if (aIso(d) === hoy) out.push(`${d.getHours()}:${dos(d.getMinutes())}`);
+    const dia = x.t ? x.t.slice(0, 10) : aIso(d);
+    if (dia !== hoy) continue;
+    // Dos toques sobre la misma toma son UNA toma.
+    const llave = x.t ?? x.h;
+    if (vistas.has(llave)) continue;
+    vistas.add(llave);
+    out.push(`${d.getHours()}:${dos(d.getMinutes())}`);
   }
   return out;
 }
+
+// ── A qué toma corresponde un «Lo tomé» (2026-11-04) ───────────────────────
+// Se puede tomar un poco ANTES de que suene: hasta 2 horas, y nunca más de la
+// mitad del rato desde la toma anterior (cada 4 h: 2 h; cada 8 h: 2 h; dos
+// tomas a 3 h: 1 h 30). Más temprano que eso se lee como la toma anterior
+// tomada tarde.
+const ADELANTO_MAX = 120;
+const llaveToma = (dia, hora) => `${dia} ${hora}`;
+function adelanto(horas, hora) {
+  const xs = [...new Set(horas)].sort();
+  if (xs.length < 2) return ADELANTO_MAX;
+  const i = xs.indexOf(hora);
+  const prev = xs[(i - 1 + xs.length) % xs.length];
+  const gap = ((aMinutos(hora) - aMinutos(prev)) + 1440) % 1440 || 1440;
+  return Math.min(ADELANTO_MAX, gap / 2);
+}
+/** La toma que cubre un «Lo tomé» hecho AHORA: la próxima si falta poco, si no la última que pasó. */
+function tomaDeAhora(c, registro) {
+  const hoy = hoyLocal();
+  const ahora = Date.now();
+  const horas = [...new Set(c.horas ?? [])].sort();
+  const hecha = (k) => registro.some((x) => x.p === String(c.product_id) && x.t === k);
+  for (const h of horas) {
+    const t = enFecha(hoy, h).getTime();
+    if (t > ahora && t - ahora <= adelanto(horas, h) * 60_000 && !hecha(llaveToma(hoy, h))) return llaveToma(hoy, h);
+  }
+  // La última que ya pasó (de hoy o, de madrugada, la de anoche) y no se anotó.
+  const pasadas = [];
+  for (const dia of [sumarDias(hoy, -1), hoy]) for (const h of horas) if (enFecha(dia, h).getTime() <= ahora) pasadas.push(llaveToma(dia, h));
+  for (let i = pasadas.length - 1; i >= 0; i--) if (!hecha(pasadas[i])) return pasadas[i];
+  return pasadas[pasadas.length - 1] ?? null;
+}
+const cubierta = (registro, pid, dia, hora) => registro.some((x) => x.p === pid && x.t === llaveToma(dia, hora));
 
 /**
  * «Lo tomé» desde la tarjeta (2026-11-04): antes la única forma de anotarlo
@@ -274,10 +317,20 @@ export function tomasDeHoy(registro, productId) {
  */
 export async function marcarTomado(productId) {
   if (!DISPONIBLE) return;
+  const pid = String(productId);
   await useTomas.getState().cargar();
-  const { registro, poner } = useTomas.getState();
+  const { registro, poner, config } = useTomas.getState();
   const corte = Date.now() - DIAS_REGISTRO * 86400_000;
-  poner({ registro: [...registro.filter((x) => Date.parse(x.h) >= corte), { p: String(productId), h: new Date().toISOString() }] });
+  const t = config[pid] ? tomaDeAhora(config[pid], registro) : null;
+  poner({ registro: [...registro.filter((x) => Date.parse(x.h) >= corte), { p: pid, h: new Date().toISOString(), ...(t ? { t } : {}) }] });
+  // Un «Más tarde» pendiente de esta medicina ya no hace falta.
+  const pendientes = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
+  for (const n of pendientes) {
+    const d = n?.content?.data ?? {};
+    if (d.toma === pid && d.pospuesta) await Notifications.cancelScheduledNotificationAsync(n.identifier).catch(() => {});
+  }
+  // Y el aviso de la toma que se adelantó, tampoco: lo saca la replanificación.
+  await replanificar();
 }
 
 // ── Lo que hace la hoja ─────────────────────────────────────────────────────
@@ -348,8 +401,9 @@ async function asegurarCategoria() {
 // ¿Se le acaba en 3 días o menos, contando desde el día de la toma?
 const pocas = (c, dia) => !!c.se_acaba && diasEntre(dia, c.se_acaba) <= 3;
 
-function contenido(c, dia, extra = '') {
-  const quedanPocas = pocas(c, dia);
+function contenido(c, dia, hora, extra = '') {
+  // Un diario (`dia` nulo) nunca lo dice: repetiría el mismo texto para siempre.
+  const quedanPocas = !!dia && pocas(c, dia);
   // «Acetaminofen: ½ tableta.» — cuánto, en el mismo aviso (2026-11-03).
   const cant = c.cantidad ? cantidadDe(c.cantidad, c.nombre) : '';
   const partes = [cant ? `${nombreCorto(c.nombre)}: ${cant}.` : `${nombreCorto(c.nombre)}.`, c.nota?.trim() || 'Toca «Tomado» cuando lo tomes.'];
@@ -363,7 +417,7 @@ function contenido(c, dia, extra = '') {
     categoryIdentifier: CATEGORIA,
     // `tipo` pinta el banner con la app abierta como los de tratamientos; la
     // `url` sólo cuando hay que reservar (tocarlo lleva a «Mis tratamientos»).
-    data: { toma: String(c.product_id), tipo: 'tratamiento', ...(quedanPocas ? { url: '/tratamientos' } : {}) },
+    data: { toma: String(c.product_id), tipo: 'tratamiento', hora, ...(dia ? { dia } : {}), ...(quedanPocas ? { url: '/tratamientos' } : {}) },
   };
 }
 
@@ -395,15 +449,25 @@ async function planificar() {
   const canal = Platform.OS === 'android' ? { channelId: CANAL } : {};
 
   // Uso continuo: un diario por hora. Van primero porque no se renuevan solos.
-  // Si todavía no empezó, un diario sonaría desde ya: ése va con avisos de
-  // fecha desde su primer día (abajo) y pasa a diario cuando ya empezó.
+  // Un diario repite SIEMPRE el mismo texto y no se puede saltar un día, así
+  // que tres casos van con avisos de fecha (abajo) y vuelven a diario solos en
+  // la próxima replanificación:
+  //   · todavía no empezó (un diario sonaría desde ya);
+  //   · se le acaba en 3 días o menos — el «Te quedan pocas» va día por día y
+  //     no queda pegado en un diario después de que volvió a comprar
+  //     (2026-11-04);
+  //   · alguna toma de hoy que falta ya está anotada como tomada (se adelantó).
   const yaEmpezo = (c) => !c.empieza || c.empieza <= hoy;
-  for (const c of lista.filter((x) => x.duracion === 'continuo' && yaEmpezo(x))) {
+  const { registro } = useTomas.getState();
+  const ahoraMs = Date.now();
+  const conFechas = (c) => !yaEmpezo(c) || pocas(c, hoy)
+    || c.horas.some((h) => enFecha(hoy, h).getTime() > ahoraMs && cubierta(registro, String(c.product_id), hoy, h));
+  for (const c of lista.filter((x) => x.duracion === 'continuo' && !conFechas(x))) {
     for (const h of c.horas) {
       if (libres <= 0) break;
       const [hour, minute] = h.split(':').map(Number);
       await Notifications.scheduleNotificationAsync({
-        content: contenido(c, hoy),
+        content: contenido(c, null, h),
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DAILY, hour, minute, ...canal },
       }).then(() => { libres--; }).catch(() => {});
     }
@@ -413,20 +477,26 @@ async function planificar() {
   const ahora = Date.now() + 30_000;
   const tomas = [];
   const total = {};
-  for (const c of lista.filter((x) => x.duracion !== 'continuo' || !yaEmpezo(x))) {
+  for (const c of lista.filter((x) => x.duracion !== 'continuo' || conFechas(x))) {
     let n = 0;
     // Un continuo que empieza más adelante: se cuenta un año para que el
-    // último aviso que quepa pida abrir la app (y ahí ya pasa a diario).
-    const fin = c.duracion === 'continuo' ? sumarDias(c.empieza, 365) : c.hasta;
+    // último aviso que quepa pida abrir la app (y ahí ya pasa a diario). Uno
+    // que ya empezó y va con fechas por otro motivo: una semana, y el último
+    // también pide abrirla — nunca se queda mudo.
+    const continuo = c.duracion === 'continuo';
+    const fin = continuo ? (yaEmpezo(c) ? sumarDias(hoy, 6) : sumarDias(c.empieza, 365)) : c.hasta;
+    const pid = String(c.product_id);
     for (let dia = primerDia(c, hoy); dia <= fin; dia = sumarDias(dia, 1)) {
       for (const h of c.horas) {
         const cuando = enFecha(dia, h);
         if (cuando.getTime() <= ahora) continue;
+        // Ya se la tomó (la adelantó): no suena.
+        if (cubierta(registro, pid, dia, h)) continue;
         n++;
-        if (n <= TOPE_POR_MEDICINA) tomas.push({ c, dia, cuando });
+        if (n <= TOPE_POR_MEDICINA) tomas.push({ c, dia, h, cuando });
       }
     }
-    total[c.product_id] = n;
+    total[c.product_id] = continuo ? Infinity : n;
   }
   tomas.sort((a, b) => a.cuando - b.cuando);
   const elegidas = tomas.slice(0, libres);
@@ -437,10 +507,10 @@ async function planificar() {
   const cuentan = {};
   elegidas.forEach((x) => { cuentan[x.c.product_id] = (cuentan[x.c.product_id] ?? 0) + 1; });
   for (let i = 0; i < elegidas.length; i++) {
-    const { c, dia, cuando } = elegidas[i];
+    const { c, dia, h, cuando } = elegidas[i];
     const corta = ultima[c.product_id] === i && cuentan[c.product_id] < total[c.product_id];
     await Notifications.scheduleNotificationAsync({
-      content: contenido(c, dia, corta ? 'Abre Puntos Salud para seguir recibiendo tus recordatorios.' : ''),
+      content: contenido(c, dia, h, corta ? 'Abre Puntos Salud para seguir recibiendo tus recordatorios.' : ''),
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: cuando, ...canal },
     }).catch(() => {});
   }
@@ -476,8 +546,15 @@ async function atender(r) {
   if (r.actionIdentifier === ACCION_TOMADO) {
     await useTomas.getState().cargar();
     const { registro, poner } = useTomas.getState();
-    const corte = Date.now() - DIAS_REGISTRO * 86400_000;
-    poner({ registro: [...registro.filter((x) => Date.parse(x.h) >= corte), { p: pid, h: new Date().toISOString() }] });
+    const ahora = Date.now();
+    const corte = ahora - DIAS_REGISTRO * 86400_000;
+    const d = n.request.content.data;
+    const sono = typeof n.date === 'number' && n.date > 0 ? n.date : ahora;
+    // Con la app cerrada, la respuesta puede llegar cuando se vuelve a abrir
+    // (horas después): entonces la hora es la del aviso, no la de abrir.
+    const h = new Date(ahora - sono > 30 * 60_000 ? sono : ahora).toISOString();
+    const t = d.hora ? llaveToma(d.dia ?? aIso(new Date(sono)), d.hora) : null;
+    poner({ registro: [...registro.filter((x) => Date.parse(x.h) >= corte), { p: pid, h, ...(t ? { t } : {}) }] });
     return;
   }
   // «Más tarde»: 15 minutos después de que sonó. Si la respuesta llega tarde

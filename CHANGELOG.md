@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1442.0 — Mis tratamientos: tarjeta nueva, «Lo tomé» que calla el aviso y recordatorio al agregar
+
+App de clientes:
+- **Tarjeta rediseñada.** El color dice cuánto falta (verde; naranja a 7 días o menos; rojo hoy o ya pasado) y una barra muestra lo que queda de la compra. Un solo botón principal, «Volver a pedir», con «Recordarme tomarlo» al lado si todavía no hay recordatorio; ver el producto, preguntar a la farmacia y «Ya no lo tomo» pasan al menú «⋯». El recordatorio lleva un punto por toma de hoy. «Agregar» es el «+» de la barra, y queda además una fila al final de la lista.
+- **«Lo tomé» calla el aviso.** Cada anotación queda atada a una toma (`t`); adelantar hasta 2 h (nunca más de la mitad del rato desde la anterior) cubre la próxima y su aviso ya no suena; más temprano cuenta como la anterior tomada tarde. Quita también el «Más tarde» pendiente. En uso continuo, como un aviso diario no se puede saltar, ese día va con avisos de fecha y vuelve a diario sola en la próxima replanificación.
+- **«Te quedan pocas» ya no queda pegado.** Un aviso diario repite su texto para siempre; ahora nunca lo lleva, y cuando falta poco el continuo va con avisos de fecha, evaluados día por día. El último de esa tanda pide abrir la app.
+- **«Tomado» con la app cerrada:** si la respuesta llega tarde (al volver a abrirla), se anota la hora del aviso y no la de abrir.
+- **Al agregar un medicamento**, un último paso ofrece «Recordarme tomarlo» y abre esa hoja.
+- Pruebas: `tests/unit/tomasClientes.test.js` (se saltea si la app no tiene sus dependencias instaladas).
+
 ## v2.1441.0 — Cajas con Windows: el agente de impresión también se instala ahí
 
 Para el día que una PC de caja se reemplace por una con Windows. `agente.py` imprime ahí por la cola de Windows en modo RAW (`winspool.drv` con `ctypes`, sin librerías extra); nuevo `instalar.cmd`/`instalar.ps1` (doble clic: instala Python con winget si falta, busca la ticketera, canjea el código, deja una tarea programada como SYSTEM sin límite de tiempo y manda una hoja de prueba por el mismo camino) y `actualizar.ps1` publicado junto al de Linux. `IMPRESORA=` en `agente.conf` corrige el nombre local de la ticketera. En Linux no cambia nada. La pantalla de Cajas de las salas dice cómo instalar en los dos. Escrito y revisado; no probado aún en una caja Windows real.

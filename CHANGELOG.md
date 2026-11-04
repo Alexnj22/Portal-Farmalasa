@@ -23,7 +23,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1430.2 — Encargos: «Cobrar» sólo en la sala propia
 
-_(pendiente de redactar)_
+- **«Cobrar» se comparaba con la sala ELEGIDA, no con la propia.** En
+  Reservas, con el filtro de sucursal, `miSala` es la que se eligió: un
+  Supervisor de Administración mirando La Popular habría visto «Cobrar» y
+  metido el cobro en un cajón que no es el suyo. Ahora se compara con la sala
+  de la ficha, igual que «Reservar con anticipo» (`puedeApartar` de
+  ReservasView). La app del personal ya lo hacía bien.
 
 ## v2.1430.1 — Saly: se borra el chat descartado que quedaba en su función
 

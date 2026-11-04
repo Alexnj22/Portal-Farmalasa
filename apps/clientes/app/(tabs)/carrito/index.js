@@ -124,7 +124,7 @@ function Carrito() {
       for (const x of items) {
         const hayAlgo = (deSalas.hay.get(`${x.id}|${s.id}`) ?? 0) > 0;
         const alcance = deSalas.alcance ? (deSalas.alcance.get(`${x.id}|${Number(x.factor) || 1}|${s.id}`) ?? 0) : null;
-        const e = estadoDeAlcance({ alcance, hayAlgo, cantidad: x.cantidad });
+        const e = estadoDeAlcance({ alcance, hayAlgo, cantidad: x.cantidad, factor: Number(x.factor) || 1 });
         if (e.clave === 'agotado') sin.push(x);
         else if (e.clave !== 'suficiente') cortos.push({ x, e });
       }

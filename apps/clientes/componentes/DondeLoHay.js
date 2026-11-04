@@ -32,7 +32,7 @@ import { suave, useTema } from '../tema/tema';
  *  - `hayAlgo`: si tiene existencia de ese producto.
  * Devuelve { clave: 'suficiente' | 'parcial' | 'corto' | 'agotado', texto, sf, tono }.
  */
-export function estadoDeAlcance({ alcance, hayAlgo, nivel, cantidad }) {
+export function estadoDeAlcance({ alcance, hayAlgo, nivel, cantidad, factor = 1 }) {
   const n = Math.max(1, Number(cantidad) || 1);
   if (!hayAlgo) return { clave: 'agotado', texto: 'Agotado', sf: 'xmark.circle', tono: 'neutro' };
   if (alcance == null) {
@@ -42,6 +42,11 @@ export function estadoDeAlcance({ alcance, hayAlgo, nivel, cantidad }) {
   }
   if (alcance >= n) return { clave: 'suficiente', texto: 'Tiene suficiente', sf: 'checkmark.circle.fill', tono: 'exito' };
   if (alcance > 0) return { clave: 'parcial', texto: `Tiene ${alcance} de las ${n} que pides`, sf: 'circle.lefthalf.filled', tono: 'aviso' };
+  // Cero disponibles en una presentación de 1 (2026-11-04, «en El Calvario
+  // sale "no completa esta presentación"»): no son sueltas de menos, es que
+  // todo lo que hay ya está apartado en reservas (Neuro Campolon Energy en
+  // Salud 2: 3 en existencia, 3 apartadas). Para quien compra es agotado.
+  if (!(Number(factor) > 1)) return { clave: 'agotado', texto: 'Agotado por ahora', sf: 'xmark.circle', tono: 'neutro' };
   // Tiene algo, pero no completa ni una de la presentación elegida (p. ej.
   // unidades sueltas de una caja de 100).
   return { clave: 'corto', texto: n === 1 ? 'No completa esta presentación' : `No completa las ${n} que pides`, sf: 'circle.lefthalf.filled', tono: 'aviso' };
@@ -101,7 +106,7 @@ export default function DondeLoHay({ existencias, salas, factor, cantidad, tipo,
       const e = ex.get(Number(s.id));
       const h = hs.get(Number(s.id)) ?? null;
       const alcance = e?.alcance ? (e.alcance[String(factor)] ?? e.alcance[factor] ?? null) : null;
-      const estado = estadoDeAlcance({ alcance, hayAlgo: !!e, nivel: e?.nivel, cantidad });
+      const estado = estadoDeAlcance({ alcance, hayAlgo: !!e, nivel: e?.nivel, cantidad, factor });
       const km = distanciaKm(ubicacion.posicion, h);
       const rango = RANGO[estado.clave] + (estado.clave !== 'agotado' && !h?.abierta ? 1 : 0);
       return { ...s, h, estado, km, rango };

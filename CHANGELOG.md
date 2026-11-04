@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1430.4 — App clientes: lo que ya está apartado dice «Agotado por ahora»
+
+*«En tienda, entré en Neuro Campolon Energy, ¿por qué el Calvario sale "no
+completa esta presentación"?»*
+
+- En Salud 2 había 3 cajas y las 3 estaban apartadas en reservas: 0
+  disponibles. «No completa esta presentación» es para sueltas que no llegan
+  a una caja grande; con una presentación de 1 y nada libre la sala dice
+  **«Agotado por ahora»** (ficha del producto y carrito).
+
 ## v2.1430.3 — Encargos: «ninguna sucursal» en vez de «la red»
 
 - La ayuda de la lista de encargos decía «Lo que no hay en la red»: «la red»

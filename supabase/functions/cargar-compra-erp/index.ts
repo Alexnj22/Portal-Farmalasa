@@ -1481,6 +1481,131 @@ async function erroneoYaEnVencidos(admin: any, id: number) {
   return { ok: true };
 }
 
+/**
+ * Faltante con nota de crédito (2026-11-04). «Llegaron menos» deja la factura
+ * entrar COMPLETA, así que Bodega quedó con unidades que nunca llegaron. Cuando
+ * el proveedor manda la nota por lo que faltó, se hace lo mismo que con un
+ * erróneo —MISMO registro en el libro—, pero lo que se descarga sale del
+ * ESTANTE de Bodega: ahí entró y de ahí nunca salió (a las salas no se manda
+ * lo que no llegó: lo frena la carga).
+ *
+ * Antes de mandar nada se mira que el estante tenga al menos lo que falta: si
+ * ya no lo tiene, alguien lo ajustó a mano y descargarlo otra vez dejaría la
+ * existencia corta.
+ */
+async function faltanteDeBodega(admin: any, id: number) {
+  const { data: f, error: eF } = await admin.from("compra_por_llegar").select("*").eq("id", id).maybeSingle();
+  if (eF) throw eF;
+  if (!f) return null;
+  const { data: g, error: eG } = await admin.from("compra_registro")
+    .select("erp_product_id, producto, descripcion_proveedor, lote, erp_compra_id, document_id, manual_id, proveedor_nombre, numero_documento")
+    .eq("id", f.registro_id).maybeSingle();
+  if (eG) throw eG;
+  return g ? { f, g } : null;
+}
+
+async function anotarFaltante(admin: any, id: number, estado: string, cambios: Record<string, unknown>, quien: string | null, nota: string | null) {
+  const t = new Date().toISOString();
+  const { error } = await admin.from("compra_por_llegar").update({ estado, ...cambios, updated_at: t, cambiado_at: t, ...(quien ? { cambiado_por: quien } : {}) }).eq("id", id);
+  if (error) { console.error("[cargar-compra-erp] anotar el faltante", id, estado, error.message); return; }
+  const { error: eL } = await admin.from("compra_por_llegar_log").insert({ por_llegar_id: id, estado, nota, por: quien });
+  if (eL) console.error("[cargar-compra-erp] historial del faltante", id, eL.message);
+}
+
+async function darSalidaFaltante(admin: any, id: number, quien: string) {
+  if (!Number.isFinite(id)) return { error: "Falta el faltante." };
+  const { data: tomadas, error: eT } = await admin.from("compra_por_llegar")
+    .update({ estado: "saliendo", updated_at: new Date().toISOString() })
+    .eq("id", id).eq("estado", "con_nota").select("id");
+  if (eT) throw eT;
+  if (!tomadas?.length) return { error: "Ese faltante no está listo para salir (tiene que tener su nota de crédito adjunta)." };
+  const x = await faltanteDeBodega(admin, id);
+  if (!x) return { error: "No se encontró el renglón de la compra." };
+  const { f, g } = x;
+  const faltan = Number(f.faltan);
+  const volver = (nota: string) => anotarFaltante(admin, id, "con_nota", { nota }, null, nota);
+  let mandado = false;
+  try {
+    const cookie = await sesionEn(ERP_BODEGA, login);
+    const libro = f.nota_papel_id
+      ? await registrarNotaPapelEnLibro(admin, cookie,
+          { nota_papel_id: f.nota_papel_id, erp_compra_id: g.erp_compra_id, manual_id: g.manual_id, document_id: g.document_id }, quien)
+      : await registrarNotaEnLibro(admin, cookie, Number(f.nota_credito_document_id), quien);
+    if (!libro.ok) { await volver(libro.error ?? "No se pudo registrar la nota."); return { error: libro.error }; }
+
+    const estante = await ubicacionDeBodega(admin, false);
+    if (!estante) { await volver("No se conoce el estante de Bodega."); return { error: "No se conoce el estante de Bodega." }; }
+    const antes = await existenciasDeUbicacion(cookie, ERP_BODEGA, estante);
+    if (!antes) { await volver("No se pudo leer la existencia de Bodega."); return { error: "No se pudo leer la existencia de Bodega: intenta de nuevo." }; }
+    const stockAntes = antes.get(Number(g.erp_product_id)) ?? 0;
+    if (stockAntes < faltan - 1e-6) {
+      const nota = `En Bodega hay ${stockAntes} y salen ${faltan}: alguien ya lo ajustó. La nota quedó en el libro; revisa la existencia antes de seguir.`;
+      await volver(nota); return { error: nota };
+    }
+    await anotarFaltante(admin, id, "saliendo", { salida: { antes: stockAntes } }, null, null);
+    const { data: nc, error: eNc } = f.nota_papel_id
+      ? await admin.from("compra_nota_credito_papel").select("numero_control:numero").eq("id", f.nota_papel_id).maybeSingle()
+      : await admin.from("purchase_dte_documents").select("numero_control").eq("id", f.nota_credito_document_id).maybeSingle();
+    if (eNc) { await volver(`No se pudo leer la nota: ${eNc.message}`); return { error: "No se pudo leer la nota de crédito: intenta de nuevo." }; }
+    const descripcion = String(g.producto ?? g.descripcion_proveedor ?? "");
+    const concepto = armarConcepto(
+      `FALTANTE DE ${g.proveedor_nombre ?? "PROVEEDOR"} - NOTA DE CREDITO ${nc?.numero_control ?? ""} - COMPRA ${g.erp_compra_id ?? ""} - ${descripcion}`,
+    ).concepto;
+    mandado = true;
+    const r = await descartarUnaLinea({
+      erpSucursal: ERP_BODEGA, erpUbicacion: estante, concepto, iden: "DESCARTE",
+      linea: { erp_product_id: Number(g.erp_product_id), presentacion_tipo: "", factor: 1, cantidad: faltan, descripcion, lote: g.lote ?? null },
+    });
+    if (!r.ok) {
+      if (r.codigo === "INCIERTO") {
+        const c = await comprobarSalidaDeFaltante(admin, cookie, id, Number(g.erp_product_id), faltan, estante, stockAntes, quien);
+        return c.salio ? { ok: true, comprobado: true } : { error: "No se sabe si salió: NO le des salida de nuevo; toca «Comprobar» en un momento." };
+      }
+      await anotarFaltante(admin, id, "con_nota", { nota: r.error, salida: null }, null, r.error ?? null);
+      return { error: r.error };
+    }
+    const despues = await existenciasDeUbicacion(cookie, ERP_BODEGA, estante);
+    const bajo = despues ? stockAntes - (despues.get(Number(g.erp_product_id)) ?? 0) : null;
+    const comprobado = bajo != null && bajo >= faltan - 1e-6;
+    await anotarFaltante(admin, id, "nota_credito", {
+      salida: { ...r.aplicado, antes: stockAntes, comprobado, bajo },
+      nota: comprobado ? null : "Se descargó, pero la existencia de Bodega no bajó lo esperado: revisarlo.",
+    }, quien, `salió de Bodega (${faltan})`);
+    return { ok: true, comprobado };
+  } catch (err) {
+    if (mandado) await anotarFaltante(admin, id, "sin_verificar", { nota: `Se cortó al descargarlo: ${(err as Error)?.message ?? err}. Comprobar antes de seguir.` }, null, "se cortó al descargar");
+    else await volver(`Falló: ${(err as Error)?.message ?? err}`);
+    throw err;
+  }
+}
+
+/** ¿Salió del estante? La misma regla que `comprobarSalida` de los erróneos. Sólo lectura. */
+async function comprobarSalidaDeFaltante(admin: any, cookie: string, id: number, producto: number, faltan: number,
+  estante: number, antes: number, quien: string | null) {
+  const ahora = await existenciasDeUbicacion(cookie, ERP_BODEGA, estante);
+  const bajo = ahora ? antes - (ahora.get(producto) ?? 0) : null;
+  const salio = bajo != null && bajo >= faltan - 1e-6;
+  const nada = bajo != null && Math.abs(bajo) < 1e-6;
+  if (salio) await anotarFaltante(admin, id, "nota_credito", { nota: null, salida: { antes, bajo, comprobado: true } }, quien, `salió de Bodega (${faltan}), comprobado`);
+  else if (nada) await anotarFaltante(admin, id, "con_nota", { nota: "No había salido: se puede dar salida de nuevo." }, null, "no había salido");
+  else await anotarFaltante(admin, id, "sin_verificar", {
+    nota: bajo == null ? "No se pudo leer Bodega para comprobar." : `Bodega bajó ${bajo} y salían ${faltan}: revisarlo en el sistema.`,
+  }, null, null);
+  return { salio };
+}
+
+async function comprobarFaltante(admin: any, id: number, quien: string) {
+  const x = await faltanteDeBodega(admin, id);
+  if (!x) return { error: "Ese faltante no existe." };
+  if (x.f.estado !== "sin_verificar") return { error: "Ese faltante no está por comprobar." };
+  const antes = Number(x.f.salida?.antes);
+  if (!Number.isFinite(antes)) return { error: "No quedó la existencia de antes: revisarlo en el sistema." };
+  const estante = await ubicacionDeBodega(admin, false);
+  if (!estante) return { error: "No se conoce el estante de Bodega." };
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  return await comprobarSalidaDeFaltante(admin, cookie, id, Number(x.g.erp_product_id), Number(x.f.faltan), estante, antes, quien);
+}
+
 async function productoNuevo(admin: any, body: any, creaQuien: string | null = null) {
   const problemas: string[] = [];
   const nombre = String(body?.nombre ?? "").replace(/\s+/g, " ").trim().toUpperCase();
@@ -1632,7 +1757,7 @@ Deno.serve(async (req: Request) => {
   // no el de cargar compras, así que va antes de ese freno.
   const cuerpo = await req.clone().json().catch(() => ({}));
   const escribe = cuerpo?.enviar === true || cuerpo?.accion === "reparto_recibir" || cuerpo?.accion === "reparto_reintentar"
-    || cuerpo?.accion === "erroneo_salida" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
+    || cuerpo?.accion === "erroneo_salida" || cuerpo?.accion === "faltante_salida" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
   if (escribe) {
     const p = await pausa(admin);
     if (p) return responder({ error: p, pausada: true }, 409);
@@ -1675,6 +1800,8 @@ Deno.serve(async (req: Request) => {
     }
     if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
     if (body?.accion === "erroneo_comprobar") return responder(await comprobarErroneo(admin, Number(body?.id)));
+    if (body?.accion === "faltante_salida") return responder(await darSalidaFaltante(admin, Number(body?.id), quien.id));
+    if (body?.accion === "faltante_comprobar") return responder(await comprobarFaltante(admin, Number(body?.id), quien.id));
     if (body?.accion === "erroneo_ya_en_vencidos") return responder(await erroneoYaEnVencidos(admin, Number(body?.id)));
     if (body?.accion === "producto_nuevo") return responder(await productoNuevo(admin, body, body?.crear === true ? quien.id : null));
     if (body?.accion === "manual_proveedores") return responder(await proveedoresParaPapel(admin));

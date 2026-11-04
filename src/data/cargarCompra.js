@@ -523,9 +523,42 @@ export async function fetchPorLlegar() {
     return { filas: Array.isArray(data) ? data : [], error: null };
 }
 
-/** `estado`: 'llego' · 'reclamar' · 'nota_credito' · 'por_llegar' (deshacer). */
+/** `estado`: 'llego' · 'reclamar' · 'por_llegar' (deshacer). La nota de crédito va por `adjuntarNotaAFaltante`. */
 export async function marcarPorLlegar(id, estado, nota = null) {
     const { error } = await supabase.rpc('compra_por_llegar_marcar', { p_id: id, p_estado: estado, p_nota: nota });
     if (!error) anotar('COMPRA_POR_LLEGAR_' + estado.toUpperCase(), String(id), { nota });
     return { error: error ? (error.message === 'FORBIDDEN' ? 'No tienes permiso.' : error.message) : null };
 }
+
+/* ── Faltante con nota de crédito (2026-11-04) ───────────────────────────────
+ * La nota se adjunta como en los erróneos; «Dar salida» la registra en el libro
+ * de compras y descarga lo que faltó del estante de Bodega. */
+
+/** Adjunta (o quita, con `null`) la nota de crédito electrónica de un faltante. */
+export async function adjuntarNotaAFaltante(id, notaId) {
+    const { error } = await supabase.rpc('compra_por_llegar_adjuntar_nota', { p_id: Number(id), p_nota: notaId ? Number(notaId) : null });
+    if (!error) anotar(notaId ? 'COMPRA_FALTANTE_NOTA_ADJUNTA' : 'COMPRA_FALTANTE_NOTA_QUITADA', String(id), { nota: notaId });
+    return { error: error ? (error.message === 'FORBIDDEN' ? 'No tienes permiso.' : error.message) : null };
+}
+
+/** La nota de un faltante vino en papel: `{ numero, serie, fecha, subtotal, iva, total }`. */
+export async function adjuntarNotaEnPapelAFaltante(id, nota) {
+    const { data, error } = await supabase.rpc('compra_por_llegar_adjuntar_nota_papel', { p_id: Number(id), p_nota: nota });
+    anotar('COMPRA_FALTANTE_NOTA_PAPEL', String(id), { numero: nota?.numero, total: nota?.total, nota: data ?? null, error: error?.message ?? null });
+    return { error: error ? (error.message === 'FORBIDDEN' ? 'No tienes permiso.' : error.message) : null };
+}
+
+/** Registra la nota en el libro y descarga lo que faltó de Bodega. */
+export async function darSalidaFaltante(id) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion: 'faltante_salida', id } });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('COMPRA_FALTANTE_SALIDA', String(id), { ok: !msg, comprobado: data?.comprobado ?? null, error: msg });
+    return { resultado: msg ? null : data, error: msg };
+}
+
+/** Un faltante cuya salida se cortó: ¿bajó Bodega? */
+export const comprobarSalidaFaltante = (id) => comprobar('faltante_comprobar', id, 'COMPRA_FALTANTE_COMPROBADO');

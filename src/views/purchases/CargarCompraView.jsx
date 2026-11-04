@@ -29,7 +29,7 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
-    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta, fetchPorLlegar, marcarPorLlegar,
+    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta, fetchPorLlegar, marcarPorLlegar, adjuntarNotaAFaltante, adjuntarNotaEnPapelAFaltante, darSalidaFaltante, comprobarSalidaFaltante,
 } from '@nucleo/data/cargarCompra';
 import PausaDeEscrituras from './PausaDeEscrituras';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
@@ -93,7 +93,10 @@ const ESTADO_POR_LLEGAR = {
     por_llegar:   { label: 'Por llegar',        variant: 'warning' },
     reclamar:     { label: 'Pedir nota',        variant: 'danger' },
     llego:        { label: 'Llegó',             variant: 'success' },
-    nota_credito: { label: 'Con nota de crédito', variant: 'neutral' },
+    con_nota:      { label: 'Con nota de crédito', variant: 'success' },
+    saliendo:      { label: 'Saliendo…',           variant: 'warning' },
+    sin_verificar: { label: 'Comprobar si salió',  variant: 'danger' },
+    nota_credito:  { label: 'Salió con su nota',   variant: 'neutral' },
 };
 // Pasado este plazo sin llegar, la fila sugiere pedir la nota de crédito.
 const DIAS_PARA_RECLAMAR = 15;
@@ -1472,7 +1475,7 @@ const ESTADO_ERRONEO = {
  * compras como documento impreso. El total se calcula: escribirlo aparte era
  * una tercera cifra que podía no cuadrar con las otras dos.
  */
-function NotaEnPapel({ fila, onListo, onCancelar }) {
+function NotaEnPapel({ fila, onListo, onCancelar, adjuntar = adjuntarNotaEnPapel }) {
     const [n, setN] = useState({ serie: '', numero: '', fecha: '', subtotal: '', iva: '' });
     const [guardando, setG] = useState(false);
     const [error, setError] = useState('');
@@ -1480,7 +1483,7 @@ function NotaEnPapel({ fila, onListo, onCancelar }) {
     const total = Math.round(((Number(n.subtotal) || 0) + (Number(n.iva) || 0)) * 100) / 100;
     const guardar = async () => {
         setG(true); setError('');
-        const { error: e } = await adjuntarNotaEnPapel(fila.id, {
+        const { error: e } = await adjuntar(fila.id, {
             ...n, subtotal: Number(n.subtotal), iva: Number(n.iva), total,
         });
         setG(false);
@@ -1636,10 +1639,16 @@ function TabRegistro({ busca }) {
 
 // Lo que el proveedor facturó y no mandó («Llegaron menos» al cargar). La
 // factura entró completa; esto es la cuenta de lo que todavía se le espera.
+// Si en vez de mandarlo manda la nota de crédito, se adjunta como en los
+// erróneos y «Dar salida» la registra en el libro y descarga lo que faltó de
+// Bodega (2026-11-04).
 function TabPorLlegar({ puedeEditar, busca }) {
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState('');
     const [guardando, setG] = useState(null);
+    const [elegida, setEleg] = useState({});      // {id: nota}
+    const [enPapel, setEnPapel] = useState(null); // id con el formulario abierto
+    const [confirmaSalida, setConfSal] = useState(null);
     const cargar = useCallback(async () => {
         const { filas: f, error: e } = await fetchPorLlegar();
         if (e) setError(e);
@@ -1647,11 +1656,20 @@ function TabPorLlegar({ puedeEditar, busca }) {
     }, []);
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial de datos
     useEffect(() => { cargar(); }, [cargar]);
-    const marcar = async (f, estado) => {
+    const accion = async (f, fn) => {
         setG(f.id); setError('');
-        const { error: e } = await marcarPorLlegar(f.id, estado);
+        const { error: e } = await fn();
         setG(null);
         if (e) setError(e);
+        cargar();
+    };
+    const marcar = (f, estado) => accion(f, () => marcarPorLlegar(f.id, estado));
+    const darSalida = async (f) => {
+        setG(f.id); setError('');
+        const { resultado, error: e } = await darSalidaFaltante(f.id);
+        setG(null); setConfSal(null);
+        if (e) setError(e);
+        else if (!resultado?.comprobado) setError('Se le dio salida, pero la existencia de Bodega no bajó lo esperado: revísalo.');
         cargar();
     };
     const vista = (filas ?? []).filter(f => !busca
@@ -1664,43 +1682,109 @@ function TabPorLlegar({ puedeEditar, busca }) {
         <div className="space-y-3">
             {error && <Notice variant="danger" icon={AlertTriangle}>{error}</Notice>}
             <Notice variant="info" icon={HelpCircle}>
-                Lo que el proveedor cobró y no mandó. La factura se cargó completa; esto se queda aquí hasta que llegue o se pida
-                la nota de crédito. A las {DIAS_PARA_RECLAMAR} días sin llegar se marca para reclamar.
+                Lo que el proveedor cobró y no mandó. La factura se cargó completa; esto se queda aquí hasta que llegue o
+                llegue su nota de crédito. Con la nota, «Dar salida» la registra en el libro de compras y descarga de Bodega
+                lo que faltó. A los {DIAS_PARA_RECLAMAR} días sin llegar se marca para reclamar.
                 {abiertos.length > 0 && <> Pendiente: <b>{abiertos.length}</b> {abiertos.length === 1 ? 'producto' : 'productos'} · <b>{formatMoney(monto)}</b>.</>}
             </Notice>
+            {confirmaSalida && (
+                <ConfirmModal isOpen onClose={() => guardando !== confirmaSalida.id && setConfSal(null)} onConfirm={() => darSalida(confirmaSalida)}
+                    isProcessing={guardando === confirmaSalida.id} isDestructive={false}
+                    title="Dar salida"
+                    message={`Se registra la nota de crédito ${confirmaSalida.nota_numero} en el libro de compras y se descargan ${Number(confirmaSalida.faltan)} unidades de «${confirmaSalida.producto ?? confirmaSalida.descripcion_proveedor}» de Bodega. No se puede deshacer.`}
+                    confirmText="Dar salida" />
+            )}
             {!vista.length && <p className="text-label text-content-3">No hay nada por llegar.</p>}
             {vista.map(f => {
                 const est = ESTADO_POR_LLEGAR[f.estado] ?? ESTADO_POR_LLEGAR.por_llegar;
                 const viejo = f.estado === 'por_llegar' && f.dias >= DIAS_PARA_RECLAMAR;
+                const esperando = f.estado === 'por_llegar' || f.estado === 'reclamar';
+                const tieneNota = f.nota_credito_document_id || f.nota_papel_id;
+                const opciones = (f.notas_candidatas ?? []).map(n => ({
+                    value: String(n.id),
+                    label: `${n.numero ?? n.id} · ${fechaNumerica(n.fecha)} · ${formatMoney(n.total)}${n.relacionada ? ' · de esta factura' : ''}`,
+                }));
+                const relacionada = (f.notas_candidatas ?? []).find(n => n.relacionada);
+                const nota = elegida[f.id] ?? (relacionada ? String(relacionada.id) : '');
                 return (
-                    <div key={f.id} data-surface="card" className="px-3 py-2.5 flex flex-wrap items-center gap-2">
-                        <div className="flex-1 min-w-[14rem]">
-                            <p className="font-bold text-content">{f.producto ?? f.descripcion_proveedor}</p>
-                            <p className="text-micro text-content-3">
-                                {f.proveedor_nombre} · {f.tipo_documento} {f.numero_documento?.slice(0, 8)} · {fechaNumerica(f.fecha_documento)} · hace {f.dias} días
-                            </p>
-                            <p className="text-label tabular-nums">
-                                Faltan <b>{Number(f.faltan)}</b> de {Number(f.unidades)} · {formatMoney(f.monto)}
-                            </p>
-                            {f.cambiado_por && !f.abierto && (
-                                <p className="text-micro text-content-3 inline-flex items-center gap-1">
-                                    <AvatarConEstado emp={{ id: f.cambiado_por, name: f.cambiado_por_nombre }} px={14} radio="rounded-full" marco="" />
-                                    {shortEmployeeName(f.cambiado_por_nombre ?? '')} · {fechaNumerica(String(f.cambiado_at).slice(0, 10))}
+                    <div key={f.id} data-surface="card" className="px-3 py-2.5">
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex-1 min-w-[14rem]">
+                                <p className="font-bold text-content">{f.producto ?? f.descripcion_proveedor}</p>
+                                <p className="text-micro text-content-3">
+                                    {f.proveedor_nombre} · {f.tipo_documento} {f.numero_documento?.slice(0, 8)} · {fechaNumerica(f.fecha_documento)} · hace {f.dias} días
+                                    {f.erp_compra_id ? ` · compra ${f.erp_compra_id}` : ''}
                                 </p>
+                                <p className="text-label tabular-nums">
+                                    Faltan <b>{Number(f.faltan)}</b> de {Number(f.unidades)} · {formatMoney(f.monto)}
+                                </p>
+                                {f.nota && <p className="text-micro text-warning-text font-bold mt-0.5">{f.nota}</p>}
+                                {f.cambiado_por && !f.abierto && (
+                                    <p className="text-micro text-content-3 inline-flex items-center gap-1">
+                                        <AvatarConEstado emp={{ id: f.cambiado_por, name: f.cambiado_por_nombre }} px={14} radio="rounded-full" marco="" />
+                                        {shortEmployeeName(f.cambiado_por_nombre ?? '')} · {fechaNumerica(String(f.cambiado_at).slice(0, 10))}
+                                    </p>
+                                )}
+                            </div>
+                            <Badge size="sm" variant={viejo ? 'danger' : est.variant}>{viejo ? `${f.dias} días: reclamar` : est.label}</Badge>
+                            {puedeEditar && esperando && (
+                                <div className="flex gap-1 flex-wrap">
+                                    <Button size="xs" loading={guardando === f.id} onClick={() => marcar(f, 'llego')}>Llegó</Button>
+                                    {f.estado === 'por_llegar' && (
+                                        <Button size="xs" variant="secondary" disabled={guardando === f.id} onClick={() => marcar(f, 'reclamar')}>Pedir nota de crédito</Button>
+                                    )}
+                                </div>
+                            )}
+                            {puedeEditar && f.estado === 'llego' && (
+                                <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => marcar(f, 'por_llegar')}>Deshacer</Button>
                             )}
                         </div>
-                        <Badge size="sm" variant={viejo ? 'danger' : est.variant}>{viejo ? `${f.dias} días: reclamar` : est.label}</Badge>
-                        {puedeEditar && f.abierto && (
-                            <div className="flex gap-1 flex-wrap">
-                                <Button size="xs" loading={guardando === f.id} onClick={() => marcar(f, 'llego')}>Llegó</Button>
-                                {f.estado === 'por_llegar'
-                                    ? <Button size="xs" variant="secondary" disabled={guardando === f.id} onClick={() => marcar(f, 'reclamar')}>Pedir nota de crédito</Button>
-                                    : <Button size="xs" variant="secondary" disabled={guardando === f.id} onClick={() => marcar(f, 'nota_credito')}>Llegó la nota</Button>}
+                        {tieneNota ? (
+                            <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                <p className="text-micro text-content">
+                                    Nota de crédito{f.nota_papel ? ' en papel' : ''}{' '}
+                                    <b>{f.nota_papel?.serie ? `${f.nota_papel.serie} · ` : ''}{f.nota_numero}</b> · {fechaNumerica(f.nota_fecha)} · {formatMoney(f.nota_total)}
+                                    {LIBRO_PAPEL[f.nota_papel?.estado] && (
+                                        <span className={f.nota_papel.estado === 'registrada' ? 'text-content-3' : 'text-warning-text font-bold'}>
+                                            {' · '}{LIBRO_PAPEL[f.nota_papel.estado]}{f.nota_papel.error ? `: ${f.nota_papel.error}` : ''}
+                                        </span>
+                                    )}
+                                </p>
+                                {puedeEditar && f.estado === 'con_nota' && (<>
+                                    <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => accion(f, () => adjuntarNotaAFaltante(f.id, null))}>
+                                        Quitar
+                                    </Button>
+                                    <Button size="xs" disabled={guardando === f.id} onClick={() => setConfSal(f)}>
+                                        {guardando === f.id ? 'Dando salida…' : 'Dar salida'}
+                                    </Button>
+                                </>)}
+                                {puedeEditar && f.estado === 'sin_verificar' && (
+                                    <Button size="xs" loading={guardando === f.id} onClick={() => accion(f, () => comprobarSalidaFaltante(f.id))}>
+                                        Comprobar
+                                    </Button>
+                                )}
                             </div>
-                        )}
-                        {puedeEditar && !f.abierto && (
-                            <Button size="xs" variant="ghost" disabled={guardando === f.id} onClick={() => marcar(f, 'por_llegar')}>Deshacer</Button>
-                        )}
+                        ) : puedeEditar && esperando && enPapel === f.id ? (
+                            <NotaEnPapel fila={f} adjuntar={adjuntarNotaEnPapelAFaltante}
+                                onCancelar={() => setEnPapel(null)} onListo={() => { setEnPapel(null); cargar(); }} />
+                        ) : puedeEditar && esperando && (<>
+                            {opciones.length ? (
+                                <div className="mt-2 flex items-center gap-2 flex-wrap">
+                                    <div className="min-w-[16rem] flex-1 max-w-md">
+                                        <LiquidSelect value={nota} onChange={v => setEleg(x => ({ ...x, [f.id]: v || '' }))}
+                                            options={opciones} placeholder="Nota de crédito" ariaLabel="Nota de crédito" clearable={false} compact />
+                                    </div>
+                                    <Button size="xs" disabled={!nota || guardando === f.id} onClick={() => accion(f, () => adjuntarNotaAFaltante(f.id, nota))}>
+                                        Adjuntar nota
+                                    </Button>
+                                </div>
+                            ) : (
+                                <p className="text-micro text-content-3 mt-2">Todavía no llega ninguna nota de crédito electrónica de este proveedor.</p>
+                            )}
+                            <Button size="xs" variant="ghost" icon={FileText} className="mt-1" onClick={() => setEnPapel(f.id)}>
+                                La nota vino en papel
+                            </Button>
+                        </>)}
                     </div>
                 );
             })}

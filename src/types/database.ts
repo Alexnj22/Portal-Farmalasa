@@ -7077,7 +7077,11 @@ export type Database = {
           faltan: number
           id: number
           nota: string | null
+          nota_credito_document_id: number | null
+          nota_papel_id: number | null
           registro_id: number
+          salida: Json | null
+          updated_at: string | null
         }
         Insert: {
           cambiado_at?: string | null
@@ -7088,7 +7092,11 @@ export type Database = {
           faltan: number
           id?: number
           nota?: string | null
+          nota_credito_document_id?: number | null
+          nota_papel_id?: number | null
           registro_id: number
+          salida?: Json | null
+          updated_at?: string | null
         }
         Update: {
           cambiado_at?: string | null
@@ -7099,7 +7107,11 @@ export type Database = {
           faltan?: number
           id?: number
           nota?: string | null
+          nota_credito_document_id?: number | null
+          nota_papel_id?: number | null
           registro_id?: number
+          salida?: Json | null
+          updated_at?: string | null
         }
         Relationships: [
           {
@@ -7121,6 +7133,27 @@ export type Database = {
             columns: ["carga_id"]
             isOneToOne: false
             referencedRelation: "compra_carga"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_nota_credito_document_id_fkey"
+            columns: ["nota_credito_document_id"]
+            isOneToOne: false
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_nota_credito_document_id_fkey"
+            columns: ["nota_credito_document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_por_llegar_nota_papel_id_fkey"
+            columns: ["nota_papel_id"]
+            isOneToOne: false
+            referencedRelation: "compra_nota_credito_papel"
             referencedColumns: ["id"]
           },
           {
@@ -26107,6 +26140,7 @@ export type Database = {
           id: number
           linea_num: number
           lote: string | null
+          lote_aproximado: boolean
           precio_unitario: number | null
           receipt_id: number
           total_linea: number | null
@@ -26119,6 +26153,7 @@ export type Database = {
           id?: number
           linea_num: number
           lote?: string | null
+          lote_aproximado?: boolean
           precio_unitario?: number | null
           receipt_id: number
           total_linea?: number | null
@@ -26131,6 +26166,7 @@ export type Database = {
           id?: number
           linea_num?: number
           lote?: string | null
+          lote_aproximado?: boolean
           precio_unitario?: number | null
           receipt_id?: number
           total_linea?: number | null
@@ -32000,6 +32036,16 @@ export type Database = {
         Args: { p_codigo: string; p_texto: string }
         Returns: string
       }
+      compra_nota_papel_guardar: {
+        Args: {
+          p_id: number
+          p_nit: string
+          p_nombre: string
+          p_nota: Json
+          p_tabla: string
+        }
+        Returns: number
+      }
       compra_pausa_estado: { Args: never; Returns: Json }
       compra_pausar: {
         Args: { p_motivo?: string; p_pausar: boolean }
@@ -32007,6 +32053,14 @@ export type Database = {
       }
       compra_pedir_vence: {
         Args: { p_branch_id: number; p_document_id: number; p_renglones: Json }
+        Returns: number
+      }
+      compra_por_llegar_adjuntar_nota: {
+        Args: { p_id: number; p_nota: number }
+        Returns: undefined
+      }
+      compra_por_llegar_adjuntar_nota_papel: {
+        Args: { p_id: number; p_nota: Json }
         Returns: number
       }
       compra_por_llegar_marcar: {
@@ -36290,6 +36344,7 @@ export type Database = {
         Args: { p_desde: string; p_hasta: string }
         Returns: Json
       }
+      podar_renglones_de_compra: { Args: { p_rows: Json }; Returns: number }
       pos_de_otra_sala: {
         Args: {
           m: Database["public"]["Tables"]["caja_movimientos_portal"]["Row"]

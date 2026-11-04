@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1434.0 — Cargar compra: la nota de crédito de un faltante entra al libro y descarga Bodega
+
+- **«Llegó la nota» era un rótulo.** Un faltante («Llegaron menos») deja la
+  factura entrar completa, así que Bodega queda con unidades que nunca
+  llegaron. Marcarlo con nota de crédito no registraba la nota en el libro de
+  compras ni bajaba la existencia. Ahora en **Por llegar** se adjunta la nota
+  —electrónica, la que dice corregir esa factura va primero, o en papel— y
+  **Dar salida** hace lo mismo que con un producto erróneo: la registra en el
+  libro (mira antes si ya estaba) y descarga lo que faltó del **estante** de
+  Bodega como DESCARTE, con proveedor, nota y compra en el concepto. Comprueba
+  la existencia antes y después; si Bodega ya tiene menos de lo que falta
+  (alguien lo ajustó a mano) no descarga nada. Usuario, 2026-11-04.
+- `compra_por_llegar` gana la nota, la salida y los estados `con_nota`,
+  `saliendo`, `sin_verificar`; `nota_credito` es ahora el cierre (libro +
+  existencia) y ya no se pone a mano. Acciones `faltante_salida` y
+  `faltante_comprobar` en `cargar-compra-erp`.
+- La nota en papel se guarda en **un** sitio (`compra_nota_papel_guardar`) para
+  erróneos y faltantes: una misma nota del proveedor puede cubrir las dos
+  cosas.
+
 ## v2.1433.1 — Changelog de la v2.1433.0
 
 Se completa la entrada de la v2.1433.0, que salió vacía.

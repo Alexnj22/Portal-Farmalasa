@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-03T23:08:29.187Z",
+ "generado": "2026-11-04T17:42:05.789Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1300,6 +1300,10 @@
    "area": "facturacion-dte",
    "por": "código"
   },
+  "compra_nota_papel_guardar": {
+   "area": "compras",
+   "por": "tablas"
+  },
   "compra_pausa_estado": {
    "area": "compras",
    "por": "código"
@@ -1309,6 +1313,14 @@
    "por": "código"
   },
   "compra_pedir_vence": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compra_por_llegar_adjuntar_nota": {
+   "area": "compras",
+   "por": "código"
+  },
+  "compra_por_llegar_adjuntar_nota_papel": {
    "area": "compras",
    "por": "código"
   },
@@ -2606,8 +2618,8 @@
    "por": "código"
   },
   "facturas_sala_guarda": {
-   "area": "tablero",
-   "por": "código"
+   "area": "sucursales",
+   "por": "tablas"
   },
   "familia_de_tratamiento": {
    "area": "app-clientes",
@@ -2990,12 +3002,12 @@
    "por": "código"
   },
   "get_facturas_sala": {
-   "area": "tablero",
-   "por": "código"
+   "area": "compras",
+   "por": "tablas"
   },
   "get_facturas_sala_panel": {
    "area": "compras",
-   "por": "código"
+   "por": "tablas"
   },
   "get_faltantes_con_stock_en_otra_sala": {
    "area": "inventario",
@@ -4337,6 +4349,10 @@
    "por": "código",
    "manual": true
   },
+  "podar_renglones_de_compra": {
+   "area": "compras",
+   "por": "código"
+  },
   "pos_de_otra_sala": {
    "area": "cortes-efectivo",
    "por": "código",
@@ -5031,7 +5047,7 @@
   },
   "reclamar_factura_compra": {
    "area": "compras",
-   "por": "código"
+   "por": "tablas"
   },
   "reclamar_impresion": {
    "area": "impresion",
@@ -5673,8 +5689,8 @@
    "por": "tablas"
   },
   "soltar_factura_compra": {
-   "area": "compras",
-   "por": "código"
+   "area": "personal",
+   "por": "tablas"
   },
   "soltar_paso_envio": {
    "area": "traslados",

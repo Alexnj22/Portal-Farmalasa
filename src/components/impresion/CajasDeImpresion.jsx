@@ -187,8 +187,9 @@ export default function CajasDeImpresion({ puedeEditar }) {
                         {codigoPartido(nueva.codigo)}
                     </span>
                     <span className="block font-normal text-content-2">
-                        En esa computadora, abre una terminal y escribe{' '}
-                        <code>bash instalar.sh</code>. Te va a pedir este código.
+                        En esa computadora: si es Linux, abre una terminal y escribe{' '}
+                        <code>bash instalar.sh</code>; si es Windows, doble clic en{' '}
+                        <code>instalar.cmd</code>. Te va a pedir este código.
                         {' '}<strong>Dura 15 minutos</strong> y se usa una sola vez.
                     </span>
                     <span className="flex gap-2 mt-2">

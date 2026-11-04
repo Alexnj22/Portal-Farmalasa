@@ -443,7 +443,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                         </Notice>
                     ) : null}
                     {conAnticipo && opciones.baja_rotacion && (
-                        <p className="text-caption text-warning-text ml-1">Es de muy baja rotación: conviene cobrarlo completo.</p>
+                        <p className="text-caption text-warning-text ml-1">
+                            Es de muy baja rotación: se sugiere cobrarlo completo, pero <b>puede dejar menos</b> con «Otro monto».
+                        </p>
                     )}
                     {puedeApartarOtro && (
                         <Button variant="secondary" size="sm" icon={Plus} onClick={apartarOtro}>
@@ -469,8 +471,11 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                                     { value: 'otro', label: 'Otro monto' }]} />
                         </Campo>
                         {cuanto === 'otro' && (
-                            <PortalInput label="Anticipo" prefix="$" inputMode="decimal" value={anticipo} placeholder={String(mitad)} autoFocus
-                                onChange={(e) => setAnticipo(e.target.value.replace(/[^0-9.]/g, ''))} />
+                            <PortalInput label="Anticipo" prefix="$" inputMode="decimal" maskType="DECIMAL" value={anticipo} placeholder={String(mitad)} autoFocus
+                                // El motivo va pegado al campo: al pie del diálogo, en letra chica, no se veía.
+                                hasError={anticipo !== '' && montoAnticipo > totalCobro + 0.004}
+                                errorMessage={`No puede pasar de ${formatMoney(totalCobro)}`}
+                                onChange={(e) => setAnticipo(e.target.value.replace('-', ''))} />
                         )}
                         {/* El enlace de pago es para un solo producto: un pedido se cobra en caja. */}
                         {!enPedido && <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />}
@@ -854,8 +859,8 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null }) {
             </ul>
             {elegido && (
                 <>
-                    <PortalInput label="Monto" prefix="$" inputMode="decimal" value={monto} readOnly={elegido.tipo === 'encargo'}
-                        onChange={(e) => setMonto(e.target.value.replace(/[^0-9.]/g, ''))} />
+                    <PortalInput label="Monto" prefix="$" inputMode="decimal" maskType="DECIMAL" value={monto} readOnly={elegido.tipo === 'encargo'}
+                        onChange={(e) => setMonto(e.target.value.replace('-', ''))} />
                     <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />
                     {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={n} montoFijo={elegido.tipo === 'encargo'} />}
                     {falta && <p className="text-caption text-content-3">{falta}</p>}

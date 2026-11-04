@@ -46,6 +46,56 @@ Si salió el papel de prueba, ya está. No hay que configurar nada más.
 
 ---
 
+## Si la caja es Windows (2026-11-04)
+
+Para el día que una computadora de caja se reemplace por una con Windows
+(10 u 11). Mismo código del portal, mismos 5 minutos:
+
+1. Generá el código en el portal, igual que arriba.
+2. Copiá a esa computadora `instalar.cmd`, `instalar.ps1` y `agente.py`.
+3. **Doble clic en `instalar.cmd`** y aceptá el permiso de administrador.
+
+El instalador:
+
+- instala Python si falta (con `winget`, para todos los usuarios);
+- busca la ticketera entre las impresoras de Windows y te pide que confirmes;
+- canjea el código y escribe la configuración en
+  `C:\ProgramData\Farmalasa\agente-impresion\` (cerrada a los demás usuarios:
+  lleva el token);
+- deja una **tarea programada** («Farmalasa - agente de impresion») que arranca
+  con la computadora, como SYSTEM, sin ventana y sin límite de tiempo;
+- y manda una hoja de prueba **por el mismo camino que los tickets**.
+
+**La ticketera tiene que estar instalada en Windows antes**, enchufada por USB
+a esa computadora, con el controlador del fabricante o con «Generic / Text
+Only». El agente le manda los bytes en crudo (`RAW`) por la cola de Windows; un
+controlador que no acepta RAW lo dice en el error. Una impresora «de red»
+conectada desde otra PC (`\\otra-pc\ticketera`) no sirve: la tarea corre como
+SYSTEM y no la ve.
+
+Lo que hace es lo mismo que en Linux —pide trabajos cada 2 s, se actualiza
+solo cada 15 min con los mismos frenos—, salvo dos cosas: no hay
+`/dev/usb/lp0` (todo va por la cola de Windows, que pone en fila al sistema de
+facturación y al portal sin pelearse por el aparato), y quien lo vuelve a
+levantar tras una actualización es `iniciar.cmd`, no systemd.
+
+**Para verlo trabajar:** `C:\ProgramData\Farmalasa\agente-impresion\agente.log`
+(se rota solo a los 5 MB).
+
+**Para actualizarlo a mano**, en un PowerShell abierto como administrador:
+
+```powershell
+irm https://portal.farmasalud.lat/agente-impresion/actualizar.ps1 | iex
+```
+
+**Si la ticketera cambió de nombre en Windows:** editar `IMPRESORA=` en
+`agente.conf` y reiniciar la computadora.
+
+⚠️ **Escrito y revisado, NO probado todavía en una caja Windows real.** La
+primera instalación se hace mirando el papel de prueba y el `agente.log`.
+
+---
+
 ## Preguntas que van a salir
 
 **¿Qué pasa si me equivoco al escribir el código?**

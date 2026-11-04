@@ -25,7 +25,8 @@ const DESTINO = join(RAIZ, 'public', 'agente-impresion');
 // `instalar.sh` NO se publica: lleva el canje del código de vinculación y se
 // entrega junto con la carpeta. Lo que se publica es lo que una caja ya
 // instalada necesita para ponerse al día sola.
-const ARCHIVOS = ['agente.py', 'actualizar.sh'];
+// `actualizar.ps1` es el gemelo de Windows (2026-11-04).
+const ARCHIVOS = ['agente.py', 'actualizar.sh', 'actualizar.ps1'];
 
 const agente = await readFile(join(ORIGEN, 'agente.py'));
 const firma = createHash('sha256').update(agente).digest('hex');

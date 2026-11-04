@@ -122,6 +122,14 @@ def config():
     cfg["DISPOSITIVO"] = [r.strip() for r
                           in cfg.get("DISPOSITIVO", DISPOSITIVO_POR_DEFECTO).split(",")
                           if r.strip()]
+    # En Windows no hay archivo de dispositivo: todo va por la cola de Windows.
+    if ES_WINDOWS:
+        cfg["DISPOSITIVO"] = []
+
+    # El nombre de la impresora de ESTA computadora. Gana sobre el que guarda el
+    # portal: si la ticketera se reinstala con otro nombre, se corrige acá sin
+    # tocar la base. Vacío = el que guardó el portal al vincular.
+    cfg["IMPRESORA"] = cfg.get("IMPRESORA", "").strip()
 
     # `PORTAL_URL=` vacío apaga la actualización sola. Existe para una caja que
     # no deba tocarse sin aviso, no para "probar sin actualizar".
@@ -261,6 +269,81 @@ def imprimir_por_cups(datos, impresora):
         return False, "{}: {}".format(type(e).__name__, e)[:400]
 
 
+ES_WINDOWS = os.name == "nt"
+
+
+def imprimir_en_windows(datos, impresora):
+    """Los bytes a la ticketera por la cola de Windows, en modo CRUDO.
+
+    Para una caja que se reemplazó por una computadora con Windows (usuario,
+    2026-11-04: «estemos listos para Windows por cualquier cosa»). Es el mismo
+    contrato que `lp -o raw`: los bytes ya traen sus columnas y sus códigos, y
+    Windows no los toca si el documento se abre con el tipo de datos `RAW`.
+
+    Va por `winspool.drv` con `ctypes` —que viene con Python— y no por
+    `pywin32`, para que la instalación no tenga que bajar nada más que Python.
+
+    En Windows no hay pelea por el aparato como con `usblp`: el sistema de
+    facturación, si también corre ahí, imprime por la MISMA cola, y la cola los
+    pone uno detrás del otro.
+
+    `ok` significa «la cola de Windows lo aceptó entero», igual que con CUPS:
+    el spooler no dice si salió papel.
+    """
+    try:
+        import ctypes
+        from ctypes import wintypes
+    except Exception as e:                                       # noqa: BLE001
+        return False, "no se pudo cargar ctypes ({})".format(e)[:300]
+
+    class DOC_INFO_1(ctypes.Structure):
+        _fields_ = [("pDocName", wintypes.LPWSTR),
+                    ("pOutputFile", wintypes.LPWSTR),
+                    ("pDatatype", wintypes.LPWSTR)]
+
+    ws = ctypes.WinDLL("winspool.drv", use_last_error=True)
+    ws.OpenPrinterW.argtypes = [wintypes.LPWSTR, ctypes.POINTER(wintypes.HANDLE), ctypes.c_void_p]
+    ws.OpenPrinterW.restype = wintypes.BOOL
+    ws.StartDocPrinterW.argtypes = [wintypes.HANDLE, wintypes.DWORD, ctypes.POINTER(DOC_INFO_1)]
+    ws.StartDocPrinterW.restype = wintypes.DWORD
+    ws.StartPagePrinter.argtypes = [wintypes.HANDLE]
+    ws.WritePrinter.argtypes = [wintypes.HANDLE, ctypes.c_void_p, wintypes.DWORD,
+                                ctypes.POINTER(wintypes.DWORD)]
+    ws.WritePrinter.restype = wintypes.BOOL
+    for f in (ws.EndPagePrinter, ws.EndDocPrinter, ws.ClosePrinter):
+        f.argtypes = [wintypes.HANDLE]
+
+    def error(que):
+        return "{} fallo (error de Windows {})".format(que, ctypes.get_last_error())
+
+    h = wintypes.HANDLE()
+    if not ws.OpenPrinterW(impresora, ctypes.byref(h), None):
+        return False, error("abrir la impresora «{}»".format(impresora)) \
+            + ". ¿Cambió de nombre? Va en IMPRESORA= de agente.conf."
+    try:
+        doc = DOC_INFO_1("Portal Farmalasa", None, "RAW")
+        if not ws.StartDocPrinterW(h, 1, ctypes.byref(doc)):
+            # El caso típico es un controlador v4 (XPS) que no acepta RAW: la
+            # ticketera tiene que estar instalada con el controlador del
+            # fabricante o con «Generic / Text Only».
+            return False, error("abrir el documento RAW") \
+                + ". El controlador de la ticketera no acepta bytes crudos."
+        try:
+            ws.StartPagePrinter(h)
+            buf = (ctypes.c_char * len(datos)).from_buffer_copy(datos)
+            escrito = wintypes.DWORD(0)
+            ok = ws.WritePrinter(h, buf, len(datos), ctypes.byref(escrito))
+            ws.EndPagePrinter(h)
+        finally:
+            ws.EndDocPrinter(h)
+    finally:
+        ws.ClosePrinter(h)
+
+    if not ok or escrito.value != len(datos):
+        return False, error("escribir ({} de {} bytes)".format(escrito.value, len(datos)))
+    return True, "por la cola de Windows ({})".format(impresora)
+
+
 def imprimir(datos, impresora, cortar, rutas):
     """Manda los bytes a la ticketera y devuelve (ok, detalle).
 
@@ -275,6 +358,9 @@ def imprimir(datos, impresora, cortar, rutas):
     """
     if cortar:
         datos += b"\x1dV\x00"       # GS V 0 — corte total
+
+    if ES_WINDOWS:
+        return imprimir_en_windows(datos, impresora)
 
     aviso = None
     ruta = elegir_dispositivo(rutas)
@@ -421,6 +507,13 @@ def reclamar(cfg, version, canal):
                    {"p_device": cfg["DEVICE_ID"], "p_token": cfg["DEVICE_TOKEN"]})
 
 
+def canal_de(cfg):
+    """Por dónde escribe esta caja, como lo ve el portal en «Cajas de las salas»."""
+    if ES_WINDOWS:
+        return "Windows" + (" ({})".format(cfg["IMPRESORA"]) if cfg["IMPRESORA"] else "")
+    return elegir_dispositivo(cfg["DISPOSITIVO"]) or "CUPS"
+
+
 def main():
     # `--autoprueba` es lo que corre la version en curso ANTES de instalar
     # ésta: carga la configuracion y sale. Si algo revienta al arrancar, revienta
@@ -430,12 +523,23 @@ def main():
         print("autoprueba ok", flush=True)
         return 0
 
+    # `--hoja-de-prueba "Salud 1"`: la usa el instalador de Windows para que la
+    # prueba salga por el MISMO camino que van a usar los tickets.
+    if "--hoja-de-prueba" in sys.argv:
+        cfg = config()
+        i = sys.argv.index("--hoja-de-prueba")
+        sala = sys.argv[i + 1] if len(sys.argv) > i + 1 else ""
+        hoja = ("\x1b@PORTAL FARMALASA\n\nEsta caja quedo lista.\n{}\n{}\n\n\n\n\n\n\x1dV1"
+                .format(sala, time.strftime("%d/%m/%Y %H:%M"))).encode("latin-1", "replace")
+        ok, detalle = imprimir(hoja, cfg["IMPRESORA"] or "pos-80", False, cfg["DISPOSITIVO"])
+        print(("ok: " if ok else "FALLO: ") + detalle, flush=True)
+        return 0 if ok else 1
+
     cfg = config()
     version = mi_hash()
     print("Agente de impresion en marcha. Caja {}. Version {}. Escribe en: {}. "
           "Ctrl-C para salir."
-          .format(cfg["DEVICE_ID"][:8], version[:12],
-                  elegir_dispositivo(cfg["DISPOSITIVO"]) or "CUPS (no hay dispositivo)"),
+          .format(cfg["DEVICE_ID"][:8], version[:12], canal_de(cfg)),
           flush=True)
 
     espera = INTERVALO_SEG
@@ -448,8 +552,7 @@ def main():
             # archivo del dispositivo aparece y desaparece con quien lo tenga
             # tomado, asi que una foto del arranque miente en la pantalla — y
             # justamente miente en el caso que importa.
-            filas = reclamar(cfg, version,
-                             elegir_dispositivo(cfg["DISPOSITIVO"]) or "CUPS")
+            filas = reclamar(cfg, version, canal_de(cfg))
             espera = INTERVALO_SEG
 
             # Sin trabajos la cola contesta una lista vacia: es lo normal, no un
@@ -489,8 +592,8 @@ def main():
                 else:
                     definitivo = False
                     ok, detalle = imprimir(
-                        datos, job.get("impresora") or "pos-80", cfg["CORTAR"],
-                        cfg["DISPOSITIVO"],
+                        datos, cfg["IMPRESORA"] or job.get("impresora") or "pos-80",
+                        cfg["CORTAR"], cfg["DISPOSITIVO"],
                     )
                 print("[{}] {} — {}".format(
                     job.get("id"), job.get("titulo"),

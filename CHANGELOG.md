@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1441.0 — Cajas con Windows: el agente de impresión también se instala ahí
+
+Para el día que una PC de caja se reemplace por una con Windows. `agente.py` imprime ahí por la cola de Windows en modo RAW (`winspool.drv` con `ctypes`, sin librerías extra); nuevo `instalar.cmd`/`instalar.ps1` (doble clic: instala Python con winget si falta, busca la ticketera, canjea el código, deja una tarea programada como SYSTEM sin límite de tiempo y manda una hoja de prueba por el mismo camino) y `actualizar.ps1` publicado junto al de Linux. `IMPRESORA=` en `agente.conf` corrige el nombre local de la ticketera. En Linux no cambia nada. La pantalla de Cajas de las salas dice cómo instalar en los dos. Escrito y revisado; no probado aún en una caja Windows real.
+
+## v2.1440.2 — Apartar: la baja rotación sugiere, no obliga
+
+Salud 5 (4-nov) no apartó un AUMINIL porque la clienta dejaba poco dinero y la sala entendió que «por baja rotación no se podía». La regla nunca tuvo mínimo (`apartado_cotizar` acepta desde $0.01); lo que confundía era la pantalla:
+- **El aviso ya no suena a obligación**: «conviene cobrarlo completo» pasa a «se sugiere cobrarlo completo, pero puede dejar menos con «Otro monto»».
+- **El monto acepta coma**: el campo borraba la coma y «2,50» quedaba en $250, que pasa del total y deja el botón gris para siempre. Ahora usa la máscara `DECIMAL` canónica (también en «Por cobrar»).
+- **Si el monto pasa del total, lo dice el campo**, no sólo la letra chica al pie del diálogo.
+
 ## v2.1440.1 — Mis tratamientos: la unidad correcta, «Lo tomé» en la tarjeta
 
 App de clientes, auditoría de Mis tratamientos:

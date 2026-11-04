@@ -4,8 +4,9 @@
 //
 // Cada juego es una tarjeta del color de su escena (las mismas de
 // componentes/juegos/Escena), con el ícono grande de fondo: al entrar, el
-// juego continúa el color de la tarjeta que se tocó. La torre va arriba y
-// a lo ancho: es el más trabajado y el que más invita a volver.
+// juego continúa el color de la tarjeta que se tocó. El destacado va arriba y
+// a lo ancho: hoy es Botiquín (2026-11-04), el de unir piezas; la torre pasó a
+// la lista.
 import { Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pantalla, Seccion, Tarjeta } from '../../../componentes/ui';
@@ -17,8 +18,9 @@ import { colorSistema } from '../../../componentes/sistema';
 import { useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 
-const DESTACADO = { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre', nuevo: true };
+const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Une dos iguales y se transforman: de una gota hasta un corazón sano.', escena: 'botiquin', nuevo: true };
 const EJERCICIOS = [
+  { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
   { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Relax, o contrarreloj con niveles.', escena: 'burbujas' },
   { ruta: '/memoria', sf: 'square.grid.2x2.fill', titulo: 'Memoria', detalle: 'Encuentra las parejas en tres niveles.', escena: 'memoria' },
@@ -76,7 +78,7 @@ export default function Bienestar() {
         ))}
       </View>
 
-      <Entrada indice={7}>
+      <Entrada indice={8}>
         <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Icono sf="heart.text.square.fill" respaldo="♥" tam={22} color={t.color.magentaTexto} />
           <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>

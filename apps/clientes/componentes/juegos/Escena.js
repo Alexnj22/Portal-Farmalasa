@@ -31,6 +31,7 @@ export const ESCENAS = {
   memoria: ['#062B3A', '#0E4D5C', '#1D6B5E'],
   anclaje: ['#3A1206', '#7A2E14', '#8A1E55'],
   torre: ['#0A1240', '#26308A', '#7A3B9A'],
+  botiquin: ['#06283D', '#0F5470', '#86206F'],
 };
 
 // Todas las luces son UN dibujo (un `Picture`) que se rehace a 30 cuadros: un

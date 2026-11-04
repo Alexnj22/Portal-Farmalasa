@@ -115,6 +115,44 @@ modernos… agreguemos algún otro más trabajado.»*
   el cielo se oscurece hacia las estrellas, confeti cada 10 pisos y, al perder,
   la cámara se aleja para mostrar la torre entera. El bloque que se mueve y el
   toque se leen en el hilo de la interfaz: se corta donde se ve.
+- **Niveles en los juegos que ya estaban** (2026-11-04, «aplica los niveles a
+  los juegos que ya están»). Piezas comunes en `componentes/juegos/Niveles.js`:
+  `useProgreso` (último nivel superado + estrellas por nivel en el llavero),
+  `SelectorNiveles` (grilla con candados y estrellas) y `TarjetaNivel` (cierre
+  con estrellas); `useRacha` para los ejercicios. Las pantallas de elegir y de
+  cierre son vistas comunes: el juego no corre mientras se muestran.
+  - **Memoria**: 12 tableros, 3×4 → 4×4 → 4×5 → 4×6 → 5×6 → 6×6. Los primeros
+    enseñan las cartas un momento («Memoriza»), después no, y los últimos
+    mezclan una vez las que quedan a mitad de partida. Estrellas por meta de
+    movimientos. **Libre** es el juego de antes (Fácil/Normal/Difícil, récord).
+    Llavero `puntos_salud_memoria_nivel` / `_estrellas`.
+  - **Torre**: 12 torres con meta de pisos (8 → 30); cada una arranca más
+    rápida y angosta; pisos **dorados** desde el 3 (perfecto ×2 y devuelve
+    ancho) y **viento** desde el 5 (la velocidad sube y baja en el hilo de la
+    interfaz). Estrellas por perfectos (la mitad de la meta = 3). **Infinito**
+    es la torre de antes con su récord. `puntos_salud_torre_nivel` / `_estrellas`.
+  - **Burbujas**: el contrarreloj pasó de escalera a 12 niveles elegibles —12 s
+    el 1, uno menos hasta 5 en el 8, sin doradas desde el 10— con estrellas por
+    el tiempo que sobró. `puntos_salud_burbujas_nivel` conserva su sentido
+    (último superado), así el récord viejo abre los niveles ya ganados.
+  - **Respira**: sin niveles; se sumó el ritmo **Coherente** (5·5) y 10 min, y
+    una racha de días seguidos al completar una sesión. **5·4·3·2·1**: sólo la
+    racha. Llavero `puntos_salud_respira_racha` / `puntos_salud_anclaje_racha`.
+- **Botiquín** (`app/botiquin.js`, 2026-11-04, el destacado; la torre pasó a
+  la lista): juego de unir. Se arrastra una pieza sobre otra IGUAL que esté a su
+  lado (también en diagonal) y suben un escalón: Gota → Pastilla → Cápsula →
+  Jarabe → Curita → Termómetro → Estetoscopio → Botiquín → Corazón sano (dos
+  corazones juntos se van: +1.000). Arrastrar a un hueco mueve; cada jugada trae
+  una pieza nueva y el juego acaba cuando el tablero se llena sin parejas al
+  lado. **Niveles** (12 a mano y después se repiten los tres últimos, más
+  apretados): meta de qué crear, cajas que se rompen al unir junto a ellas,
+  tope de movimientos y 1–3 estrellas por los que sobran; 5×5 al principio y
+  6×6 desde el 6. El nivel 1 trae una mano que muestra el gesto. **Relax**: sin
+  tope, puntos con combos y récord. Llavero: `puntos_salud_botiquin_nivel`
+  (nivel abierto), `_record` (Relax) y `_estrellas` (JSON por nivel). Las
+  piezas se hornean una vez como imágenes y el tablero es un solo `Picture` en
+  el hilo de la interfaz; el gesto decide la jugada ahí mismo y JavaScript sólo
+  se entera al soltar. Sin sonidos nuevos.
 
 ## La sesión
 

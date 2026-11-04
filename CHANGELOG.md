@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1438.0 — Bienestar: Botiquín, el juego de unir
+
+*«Agreguemos un juego de unir objetos del mismo tipo que se van
+transformando en otros, de cosas médicas y salud… visualmente muy bonito,
+eficiente, fluido, para niños y adultos.»*
+
+- **Botiquín** (`app/botiquin.js`): se arrastra una pieza sobre otra igual
+  de al lado (también en diagonal) y se vuelven la siguiente: Gota →
+  Pastilla → Cápsula → Jarabe → Curita → Termómetro → Estetoscopio →
+  Botiquín → Corazón sano. Cada pieza con su forma y su color, dibujada con
+  Skia una vez por tamaño de casilla.
+- 12 niveles con meta y movimientos (5×5 → 6×6, cajas que se rompen al unir
+  al lado), estrellas por movimientos que sobran, mano que enseña en el
+  nivel 1, y Relax sin límite con récord.
+- Rendimiento: el tablero es un solo `Picture` armado en el hilo de la
+  interfaz; arrastrar, unir y aparecer corren en los worklets del gesto y
+  el JS se entera sólo al tomar y al soltar.
+- Es el destacado de Bienestar; la burbuja del chat no lo tapa.
+
 ## v2.1437.1 — Saly: la ayuda se cierra al tocar afuera y se ve más limpia
 
 Corrección pedida por el usuario sobre la burbuja de Saly («no se ve bien, si

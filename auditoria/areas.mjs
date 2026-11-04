@@ -325,7 +325,7 @@ export const AREAS = [
         ],
         tablas: ['employee_rosters', 'shifts', 'holidays', 'schedule_coverage',
                  'vacation_plans', 'vacation_plan_headers', 'wfm_snapshots'],
-        edge: ['auto-copy-weekly-roster', 'generate-vacation-plan', 'wfm-ai-scheduler'],
+        edge: ['auto-copy-weekly-roster', 'generate-vacation-plan'],
         // `auto-copy-roster-saturday` se apagó el 2026-08-27: era un duplicado de
         // `auto-copy-weekly-roster` a las 06:00 UTC que copiaba ANTES de que la
         // alarma de las 15:00 preguntara si faltaban horarios — así que esa

@@ -376,13 +376,6 @@
     "verificar-csv-libros": {
       "guarda": "cron"
     },
-    "wfm-ai-scheduler": {
-      "guarda": "modulo-de-red",
-      "modulos": [
-        "schedules"
-      ],
-      "motivo": "Módulo que hoy sólo tienen cargos de toda la red: no compara la sala porque no hay sala que comparar. Si un cargo de sala lo recibe, el gate falla."
-    },
     "leer-orden-de-descuento": {
       "guarda": "modulo-de-red",
       "modulos": [

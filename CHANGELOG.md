@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1430.5 — Se borra la función que armaba horarios con IA
+
+*«Quita eso que arma horarios también.»* `wfm-ai-scheduler` no tenía quien la
+llamara (ni el portal, ni la app, ni un cron, ni una función de la base). Se
+borró del proyecto de Supabase y del repo, con su registro en `config.toml`,
+`auditoria/areas.mjs`, `alcance-manifest.json` y el baseline de lint.
+
 ## v2.1430.4 — App clientes: lo que ya está apartado dice «Agotado por ahora»
 
 *«En tienda, entré en Neuro Campolon Energy, ¿por qué el Calvario sale "no

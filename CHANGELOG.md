@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1430.1 — Saly: se borra el chat descartado que quedaba en su función
+
+*«Antes había un chat para hacer preguntas, pero lo descarté, ¿hay archivos
+basura de eso aún? Arréglalo.»*
+
+La pantalla del chat ya no existía; lo que quedaba era su mitad de servidor.
+`saly-ai` bajó de 332 a 162 líneas: se borraron las cinco acciones que
+contestaban 410 desde el 2-oct y nadie llamaba (`chat`, con su lectura de
+empleados, asistencia, turnos y avisos de toda la empresa y el borrador de
+avisos; `analyze-branch`, `analyze-history`, `analyze-document`,
+`generate-schedule`), la regla de 44 h y el formato de hora que sólo servían
+al chat, y un comentario que todavía decía que Saly era «una persona». Quedan
+los dos resúmenes de encuestas, sin cambios. Desplegada v60, con JWT.
+El comentario de Anuncios que nombraba a `SalyChat` ahora dice qué hace de
+verdad: recargar tras crear, editar, archivar o borrar un aviso.
+Se quedan a propósito: `force-history-refresh` (es el evento general de
+recarga, lo emiten 30 acciones) y las funciones propias `analyze-branch`,
+`analyze-history` y `analyze-document`, que usan Personal, Historial y el
+expediente.
 ## v2.1430.0 — Encargos: «Por cobrar», cobrar desde la tarjeta y aviso en persona
 
 - **La tarjeta decía «Pagado» sobre lo que falta cobrar.** E-000016 estaba

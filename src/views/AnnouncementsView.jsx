@@ -214,18 +214,18 @@ const AnnouncementsView = ({ openModal }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 5;
 
-  // 🚨 NUEVO: Escuchador global de "force-history-refresh" (Llamado por SalyChat)
+  // Tras crear, editar, archivar o borrar un aviso, el store emite
+  // «force-history-refresh»: se recargan los datos y se vuelve a Activos.
   useEffect(() => {
-    const handleSalyRefresh = async () => {
-      // Forzamos al store a ir a Supabase y traer la info fresca
+    const alRefrescar = async () => {
       if (fetchInitialData) {
          await fetchInitialData();
-         setListTab('ACTIVE'); // Volvemos a Activos por si Saly publicó algo nuevo
+         setListTab('ACTIVE');
          setCurrentPage(1);
       }
     };
-    window.addEventListener('force-history-refresh', handleSalyRefresh);
-    return () => window.removeEventListener('force-history-refresh', handleSalyRefresh);
+    window.addEventListener('force-history-refresh', alRefrescar);
+    return () => window.removeEventListener('force-history-refresh', alRefrescar);
   }, [fetchInitialData, setListTab]);
 
 

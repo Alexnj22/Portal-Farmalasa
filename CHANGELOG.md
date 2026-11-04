@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1440.0 — Tickets más cortos: cada renglón avanza sólo lo que necesita
+
+El rollo avanzaba el interlineado de fábrica después de cada renglón, fuera de letra chica (17 puntos) o de doble alto (48). Ahora cada salto lleva el suyo (`ESC 3 n`): letra chica 21, normal 28, doble alto 52 — el papel sale más corto sin encimar renglones. El margen de corte no cambia (vuelve a `ESC 2` antes de los saltos finales), y el recorrido es byte a byte para no meter nada dentro del largo del código de barras. La vista previa del navegador baja su interlineado a 1.12.
+
 ## v2.1439.0 — Tickets: el logo completo en vez del icono y el nombre
 
 Cuando el título del ticket es la marca (cortes, abonos, movimientos, prueba de impresión), arriba sale el logo horizontal completo —«FARMACIAS LA POPULAR Y LA SALUD» con el icono— en vez del icono de 16 mm más el nombre en doble alto: ~22 mm de rollo pasan a ~8.5 mm. Por los tres caminos: rollo (512 × 68 puntos, 384 × 51 en 58 mm), programa de la caja (`logo-ticket-completo.png`) y diálogo del navegador. Con otro título (carné, traslado, pedido, puntos) sigue el icono con su título.

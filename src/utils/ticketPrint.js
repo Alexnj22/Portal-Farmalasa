@@ -337,7 +337,7 @@ export function construirTicketHtml(ticket) {
     color: #000;
     font-family: ${MONO};
     font-size: 8.5pt;
-    line-height: 1.28;
+    line-height: 1.12;   /* 2026-11-04: menos papel, igual que el rollo */
     /* El navegador aclara los negros al imprimir si no se le prohíbe, y en
        térmico eso es la diferencia entre negro y gris entramado. */
     -webkit-print-color-adjust: exact;
@@ -586,6 +586,73 @@ const DESTACADO = `${ESC}!\x18`;
  */
 const DESTACADO_GRANDE = `${ESC}!\x38`;
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
+
+// ── El interlineado, renglón por renglón (2026-11-04) ────────────────────────
+//
+// Usuario: «haz que los tickets ocupen menos espacio para que no salgan tan
+// grandes los papeles. pero todo bien». El papel se iba en el aire ENTRE
+// renglones: la impresora avanza el interlineado de fábrica (`ESC 2`) después
+// de cada renglón, sea de letra chica (17 puntos de alto) o de doble alto
+// (48). Con un solo número fijo para todo, o la letra chica sobra de aire o el
+// doble alto se encima con el renglón de abajo.
+//
+// Por eso cada salto lleva el SUYO: el alto de la letra más alta que se
+// imprimió en ese renglón, más un respiro. Se pone `ESC 3 n` justo ANTES del
+// salto —el avance lo decide el interlineado vigente en el momento del `\n`—
+// y sólo cuando cambia.
+//
+// Se recorre byte a byte y no partiendo en `\n`, porque `GS k` (el código de
+// barras) lleva su LARGO como byte, y un valor de 8 caracteres da 10: un
+// `\n` que no es un salto. Partirlo ahí metería un comando adentro del dato.
+//
+// El margen de corte NO se toca: antes de los saltos del final se vuelve al
+// interlineado de fábrica (`ESC 2`), que es con el que se midieron los
+// ~17 mm de SALTOS_DE_CORTE.
+const RESPIRO = 4;                              // puntos entre renglones
+const ALTO_DE_LETRA = { chica: 17, normal: 24 }; // fuente B / fuente A, en puntos
+const INTERLINEADO_DE_FABRICA = `${ESC}2`;
+
+function altoDelModo(modo) {
+    const base = (modo & 0x01) ? ALTO_DE_LETRA.chica : ALTO_DE_LETRA.normal;
+    return base * ((modo & 0x10) ? 2 : 1);
+}
+
+/** Inserta `ESC 3 n` antes de cada salto, con el alto que ese renglón necesita. */
+export function apretarRenglones(texto, modoInicial = 0) {
+    const t = String(texto ?? '');
+    let out = '', modo = modoInicial, alto = 0, vigente = -1;
+    const conParametro = new Set(['!', 'a', 'R', '3', 'd', 'J', 'E', 'M', 't', '-', 'G']);
+    for (let i = 0; i < t.length; i++) {
+        const c = t[i];
+        if (c === ESC) {
+            const cmd = t[i + 1];
+            if (cmd === '!') modo = t.charCodeAt(i + 2) || 0;
+            if (cmd === '@') modo = 0;
+            const largo = conParametro.has(cmd) ? 3 : 2;
+            out += t.slice(i, i + largo); i += largo - 1; continue;
+        }
+        if (c === GS) {
+            const cmd = t[i + 1];
+            let largo = 3;                                   // GS h/w/H/V/! n
+            if (cmd === 'k') {
+                const m = t.charCodeAt(i + 2);
+                if (m >= 65) largo = 4 + t.charCodeAt(i + 3);
+                else { const fin = t.indexOf(' ', i + 3); largo = (fin < 0 ? t.length : fin + 1) - i; }
+            } else if (cmd === '(') {
+                largo = 5 + t.charCodeAt(i + 3) + t.charCodeAt(i + 4) * 256;
+            }
+            out += t.slice(i, i + largo); i += largo - 1; continue;
+        }
+        if (c === '\n') {
+            const n = Math.min(255, (alto || altoDelModo(modo)) + RESPIRO);
+            if (n !== vigente) { out += `${ESC}3` + String.fromCharCode(n); vigente = n; }
+            out += c; alto = 0; continue;
+        }
+        if (c.charCodeAt(0) >= 0x20) alto = Math.max(alto, altoDelModo(modo));
+        out += c;
+    }
+    return out;
+}
 
 // ── El código de barras ─────────────────────────────────────────────────────
 //
@@ -1023,8 +1090,8 @@ export function seccionesParaElPrograma(ticket) {
     ].join('\n') + '\n';
 
     return {
-        encabezado: soloASCII(cabeza),
-        cuerpo: soloASCII(medio),
+        encabezado: apretarRenglones(soloASCII(cabeza)),
+        cuerpo: apretarRenglones(soloASCII(medio), 0x01),
         // El origen manda acá sólo los códigos y pone las cifras en el cuerpo.
         totales: DOBLE_ALTO + LETRA_NORMAL,
         total_letras: CENTRO,
@@ -1041,8 +1108,8 @@ export function seccionesParaElPrograma(ticket) {
         // alguien va a contar con las manos— de lo que viene abajo, y sin pie no
         // separa nada. Se vio en el ticket de traslado, que desde el 2026-08-24
         // no lleva pie: era un renglón en blanco de más en cada papel.
-        pie: soloASCII(LETRA_CHICA + CENTRO + (pie.length ? '\n' + pie.join('\n') : ''))
-            + '\n'.repeat(SALTOS_DE_CORTE),
+        pie: apretarRenglones(soloASCII(LETRA_CHICA + CENTRO + (pie.length ? '\n' + pie.join('\n') : '')), 0x01)
+            + INTERLINEADO_DE_FABRICA + '\n'.repeat(SALTOS_DE_CORTE),
         // El icono, sólo si el ticket lleva la marca arriba (una etiqueta de
         // bolsa no la lleva). Ver logoTicket.js.
         img: marca ? LOGO_COMPLETO_URL : (encabezado.titulo ? LOGO_TICKET_URL : ''),

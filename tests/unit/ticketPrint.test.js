@@ -39,7 +39,7 @@ const renglones = (t) => seccionesParaElPrograma(t).cuerpo.split('\n');
 // manda (para no gastar un renglón en blanco por cada uno), ese byte de más era
 // la diferencia entre 54 y «55, no cabe».
 // eslint-disable-next-line no-control-regex
-const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt].|@)/g, '');
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3].|[@2])/g, '');
 
 describe('el ticket que se manda al programa de impresión', () => {
     it('pone cantidad, precio e importe en las columnas del ticket real', () => {
@@ -115,11 +115,12 @@ describe('el ticket que se manda al programa de impresión', () => {
         // Y se apaga en el MISMO renglon: un codigo suelto se lleva un renglon
         // entero de rollo, y lo que sigue no tiene por que salir agrandado.
         const linea = s.cuerpo.split('\n').find((l) => l.includes('EFECTIVO'));
-        expect(linea.endsWith('\x1b!\x00')).toBe(true);
+        // (el interlineado `ESC 3 n` va al final, justo antes del salto)
+        expect(linea.replace(/\x1b3.$/, '').endsWith('\x1b!\x00')).toBe(true);
         // El renglon destacado sigue midiendo 40 columnas: el doble alto no
         // cambia el ancho, y por eso el relleno de `dosColumnas` sigue valiendo.
         // eslint-disable-next-line no-control-regex
-        expect(linea.replace(/\x1b(?:[!aRt].|@)/g, '')).toHaveLength(40);
+        expect(linea.replace(/\x1b(?:[!aRt3].|[@2])/g, '')).toHaveLength(40);
     });
 
     // Los dos que siguen salieron del PRIMER ticket impreso desde el portal
@@ -286,5 +287,32 @@ describe('el logo completo en el encabezado', () => {
     it('en 58 mm el logo baja a 384 puntos para caber', () => {
         const t = { ...conTitulo('FARMACIAS LA POPULAR Y LA SALUD'), ancho: 58 };
         expect(textoParaElRollo(t)).toContain('\x1dv0\x00' + String.fromCharCode(48, 0, 51, 0));
+    });
+});
+
+// Usuario, 2026-11-04: «que los tickets ocupen menos espacio… pero todo bien».
+describe('el interlineado de cada renglón', () => {
+    const t = () => ({
+        encabezado: { titulo: 'FARMACIAS LA POPULAR Y LA SALUD', lineas: ['NIT 1'] },
+        datos: [['Fecha', '04/11/2026']],
+        totales: [['IVA', '$1.00'], ['TOTAL', '$9.00', true]],
+        codigos: [{ valor: 'PRUEBA12' }],
+        pie: ['Gracias'],
+    });
+
+    it('la letra chica avanza 21 puntos y el doble alto 52, no lo mismo', () => {
+        const s = seccionesParaElPrograma(t());
+        expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(21) + '\n');
+        const total = s.cuerpo.split('\n').find(l => l.includes('TOTAL'));
+        expect(total.endsWith('\x1b3' + String.fromCharCode(52))).toBe(true);
+    });
+
+    it('no mete nada adentro del código de barras (su largo es un \\n)', () => {
+        const s = seccionesParaElPrograma(t());
+        expect(s.cuerpo).toContain('\x1dkI\n{BPRUEBA12');
+    });
+
+    it('el margen de corte vuelve al interlineado de fábrica', () => {
+        expect(seccionesParaElPrograma(t()).pie).toMatch(/\x1b2\n{6}$/);
     });
 });

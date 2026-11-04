@@ -315,13 +315,15 @@ const cubierta = (registro, pid, dia, hora) => registro.some((x) => x.p === pid 
  * era el botón del aviso, y quien lo descartaba o lo tomaba antes de que
  * sonara no tenía cómo. Mismo registro que el botón del aviso.
  */
-export async function marcarTomado(productId) {
+export async function marcarTomado(productId, hora) {
   if (!DISPONIBLE) return;
   const pid = String(productId);
   await useTomas.getState().cargar();
   const { registro, poner, config } = useTomas.getState();
   const corte = Date.now() - DIAS_REGISTRO * 86400_000;
-  const t = config[pid] ? tomaDeAhora(config[pid], registro) : null;
+  // Con `hora` (la lista «Hoy» dice cuál), esa toma de hoy; si no, la que
+  // corresponda a este momento.
+  const t = hora ? llaveToma(hoyLocal(), hora) : config[pid] ? tomaDeAhora(config[pid], registro) : null;
   poner({ registro: [...registro.filter((x) => Date.parse(x.h) >= corte), { p: pid, h: new Date().toISOString(), ...(t ? { t } : {}) }] });
   // Un «Más tarde» pendiente de esta medicina ya no hace falta.
   const pendientes = await Notifications.getAllScheduledNotificationsAsync().catch(() => []);
@@ -331,6 +333,38 @@ export async function marcarTomado(productId) {
   }
   // Y el aviso de la toma que se adelantó, tampoco: lo saca la replanificación.
   await replanificar();
+}
+
+/** La anotación de una toma de hoy (`{ h }`), o null. */
+export function tomaDeHoy(registro, productId, hora) {
+  const k = llaveToma(hoyLocal(), hora);
+  return registro.find((x) => x.p === String(productId) && x.t === k) ?? null;
+}
+
+/** Deshace «Tomado» de una toma de hoy; si todavía no pasó, su aviso vuelve. */
+export async function desmarcarToma(productId, hora) {
+  if (!DISPONIBLE) return;
+  const pid = String(productId);
+  const k = llaveToma(hoyLocal(), hora);
+  await useTomas.getState().cargar();
+  const { registro, poner } = useTomas.getState();
+  poner({ registro: registro.filter((x) => !(x.p === pid && x.t === k)) });
+  await replanificar();
+}
+
+/**
+ * Las tomas que tocan HOY, de todos los recordatorios vigentes, en orden de
+ * hora: [{ pid, hora, c }]. Lo que todavía no empezó o ya terminó no entra.
+ */
+export function tomasQueTocanHoy(config) {
+  const hoy = hoyLocal();
+  const out = [];
+  for (const [pid, c] of Object.entries(config ?? {})) {
+    if (c.empieza && c.empieza > hoy) continue;
+    if (c.duracion !== 'continuo' && (!c.hasta || c.hasta < hoy)) continue;
+    for (const hora of [...new Set(c.horas ?? [])].sort()) out.push({ pid, hora, c });
+  }
+  return out.sort((a, b) => aMinutos(a.hora) - aMinutos(b.hora));
 }
 
 // ── Lo que hace la hoja ─────────────────────────────────────────────────────

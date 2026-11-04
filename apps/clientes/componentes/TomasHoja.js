@@ -216,11 +216,19 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo }}>
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
-          <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Recordarme tomarlo</Text>
+        {/* La barra de una hoja de edición de iOS (2026-11-04): «Cancelar» a la
+            izquierda, el título al centro y «Guardar» en negrita a la derecha. */}
+        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingVertical: 10 }}>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"
-            style={{ minHeight: 44, minWidth: 44, justifyContent: 'center', alignItems: 'flex-end' }}>
-            <Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text>
+            style={({ pressed }) => ({ minHeight: 44, minWidth: 72, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+            <Text style={{ fontSize: 17, color: t.color.magentaTexto }}>Cancelar</Text>
+          </Presionable>
+          <Text accessibilityRole="header" numberOfLines={1} style={{ flexShrink: 1, fontSize: 17, fontWeight: '700', color: colorSistema.texto, textAlign: 'center' }}>
+            {actual ? 'Recordatorio' : 'Nuevo recordatorio'}
+          </Text>
+          <Presionable onPress={guardar} disabled={guardando} hitSlop={12} accessibilityRole="button" accessibilityState={{ disabled: guardando }}
+            style={({ pressed }) => ({ minHeight: 44, minWidth: 72, justifyContent: 'center', alignItems: 'flex-end', opacity: pressed || guardando ? 0.5 : 1 })}>
+            {guardando ? <ActivityIndicator /> : <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Guardar</Text>}
           </Presionable>
         </View>
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }} keyboardShouldPersistTaps="handled">
@@ -236,11 +244,14 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
               return (
                 <Presionable key={o.id} onPress={() => elegirOpcion(o.id)} accessibilityRole="radio" accessibilityState={{ selected: elegida }}
                   accessibilityLabel={o.detalle ? `${o.texto}, ${o.detalle}` : o.texto}>
-                  {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 50 }} /> : null}
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 14, paddingVertical: 12, minHeight: 48 }}>
-                    <Icono sf={elegida ? 'checkmark.circle.fill' : 'circle'} respaldo="" tam={22} color={elegida ? t.color.magenta : colorSistema.texto3} />
-                    <Text style={{ flex: 1, fontSize: 15, fontWeight: elegida ? '700' : '500', color: colorSistema.texto }}>{o.texto}</Text>
-                    {o.detalle ? <Text style={{ flexShrink: 1, textAlign: 'right', fontSize: 13, color: colorSistema.texto3 }}>{o.detalle}</Text> : null}
+                  {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
+                  {/* Elección única como en Ajustes: la marca va a la derecha. */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 16, paddingVertical: 12, minHeight: 48 }}>
+                    <View style={{ flex: 1, gap: 1 }}>
+                      <Text style={{ fontSize: 17, color: colorSistema.texto }}>{o.texto}</Text>
+                      {o.detalle ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>{o.detalle}</Text> : null}
+                    </View>
+                    {elegida ? <Icono sf="checkmark" respaldo="✓" tam={17} color={t.color.magentaTexto} /> : null}
                   </View>
                 </Presionable>
               );

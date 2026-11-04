@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1446.0 — Mis tratamientos: lista del sistema, «Hoy» con cada toma y tocar abre el recordatorio
+
+App de clientes. El usuario, sobre la compilación 91: «no me gusta… que sean
+más nativas, en iOS se ve mal, se ve barato… al tocar me lleva a comprar el
+producto, no al recordatorio».
+
+- **Las tarjetas se van**: lista agrupada como Ajustes y Salud, con ícono de
+  color lleno (el color es cuánto falta), nombre, horario corto
+  («8:00 y 20:00 · 1 tableta») y cuándo se acaba.
+- **Tocar la fila abre el recordatorio**, no el producto. «Ver el producto»,
+  «Volver a pedir», «Preguntar» y «Ya no lo tomo» van en el «⋯», que en iPhone
+  es el menú desplegable de SwiftUI (`componentes/AccionesFila.ios.js`).
+  «Pedir» sale en la fila sólo a 7 días o menos.
+- **«Hoy · 1 de 3»**: cada toma del día con «Tomar» / «Deshacer», como
+  Medicamentos de la app Salud. `marcarTomado(pid, hora)` anota esa toma
+  exacta y `desmarcarToma` la devuelve (su aviso vuelve si no pasó).
+- Hoja del recordatorio: barra «Cancelar · título · Guardar» y elección
+  única con la marca a la derecha.
+- 2 pruebas nuevas en `tests/unit/tomasClientes.test.js` (8 en total).
+
 ## v2.1445.4 — MIN·MAX: lo retirado de todas las salas no se recalcula
 
 Un producto que una persona dejó en 0/0 en las seis salas («0 en todas las

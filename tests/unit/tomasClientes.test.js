@@ -26,7 +26,7 @@ vi.mock('../../apps/clientes/node_modules/expo-notifications/build/index.js', ()
 }));
 
 const tomas = HAY_APP ? await import('../../apps/clientes/lib/tomas.js') : {};
-const { useTomas, guardarRecordatorio, marcarTomado, tomasDeHoy, replanificar } = tomas;
+const { useTomas, guardarRecordatorio, marcarTomado, tomasDeHoy, replanificar, desmarcarToma, tomaDeHoy, tomasQueTocanHoy } = tomas;
 
 const base = { product_id: '7', nombre: 'LOSARTAN 50 MG TABLETA', horas: ['08:00', '20:00'], nota: '', modo: 'cada', n: 12, inicio: '08:00', cantidad: 1 };
 const fechas = () => programadas.filter((p) => p.trigger.type === 'date').map((p) => p.trigger.date.getHours() + '@' + p.trigger.date.getDate());
@@ -85,6 +85,30 @@ describe('«Lo tomé» antes de que suene', () => {
     vi.setSystemTime(new Date(2026, 10, 4, 21, 0));
     await replanificar();
     expect(programadas.every((p) => p.trigger.type === 'daily')).toBe(true);
+    vi.useRealTimers();
+  });
+});
+
+describe('la lista «Hoy»', () => {
+  it('«Tomar» de una toma concreta la anota, calla su aviso, y «Deshacer» lo devuelve', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 4, 7, 0));
+    await guardarRecordatorio({ ...base, duracion: '3', hasta: '2026-11-06', empieza: '2026-11-04' });
+    expect(tomasQueTocanHoy(useTomas.getState().config).map((x) => x.hora)).toEqual(['08:00', '20:00']);
+    await marcarTomado('7', '20:00');
+    expect(tomaDeHoy(useTomas.getState().registro, '7', '20:00')).not.toBeNull();
+    expect(fechas()).not.toContain('20@4');
+    expect(fechas()).toContain('8@4');
+    await desmarcarToma('7', '20:00');
+    expect(tomaDeHoy(useTomas.getState().registro, '7', '20:00')).toBeNull();
+    expect(fechas()).toContain('20@4');
+    vi.useRealTimers();
+  });
+  it('lo que todavía no empezó no está en «Hoy»', async () => {
+    vi.useFakeTimers({ toFake: ['Date'] });
+    vi.setSystemTime(new Date(2026, 10, 4, 7, 0));
+    await guardarRecordatorio({ ...base, duracion: '3', hasta: '2026-11-08', empieza: '2026-11-06' });
+    expect(tomasQueTocanHoy(useTomas.getState().config)).toHaveLength(0);
     vi.useRealTimers();
   });
 });

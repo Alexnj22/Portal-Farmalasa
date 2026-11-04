@@ -9,17 +9,24 @@ import { callGemini, parseGeminiJson } from "../_shared/gemini.ts"
 // explicaciones los arma el portal sin IA.
 //
 // El costo es la restricción del usuario («que Saly no cueste mucho, lo mínimo
-// posible»), y se cuida en cinco lugares:
-//   · el modelo más barato (flash-lite) y SIN pensamiento;
-//   · lo que se le manda es lo que la pantalla resume (≤3,500 caracteres), no
-//     el DOM ni la tabla entera, y la guía es sólo la del módulo;
-//   · contesta en PIEZAS (JSON corto), con tope de salida;
-//   · 30 preguntas por persona y por día, contadas en la base;
-//   · el navegador no repite la misma pregunta sobre la misma pantalla.
-// Medido a precios de lista: ~1,800 tokens de entrada y ~250 de salida por
-// pregunta ≈ $0.0003. Mil preguntas al mes, unos 30 centavos.
+// posible»), y se cuida en seis lugares:
+//   · lo de siempre ni llega acá: las preguntas frecuentes las contesta el
+//     navegador (`PREGUNTAS_FRECUENTES`, $0);
+//   · el modelo más barato y SIN pensamiento;
+//   · el CONOCIMIENTO va primero y es idéntico en cada llamada: Gemini cachea
+//     solo un prefijo repetido (≥1,024 tokens) y lo cobra con descuento. Lo que
+//     cambia —pantalla, pregunta— va al final, a propósito;
+//   · lo que se manda de la pantalla es su resumen (≤3,500 caracteres);
+//   · contesta en PIEZAS (JSON corto);
+//   · 30 preguntas por persona y por día, contadas en la base.
+// ~2,500 tokens de entrada y ~250 de salida ≈ $0.0003–0.0005 por pregunta.
 
-const MODELO = "gemini-2.5-flash-lite"
+// En orden. `gemini-2.5-flash-lite` dejó de estar disponible para cuentas
+// nuevas (medido el 2026-11-04: «no longer available to new users») y fue la
+// razón de que NINGUNA pregunta se contestara en la primera prueba. Si el
+// primero falla, se prueba el siguiente: una pregunta no puede quedarse sin
+// respuesta porque Google retiró un nombre.
+const MODELOS = ["gemini-3.5-flash-lite", "gemini-2.5-flash"]
 const TOPE_DIARIO = 30
 const MAX_PANTALLA = 3500
 const MAX_PREGUNTA = 300
@@ -27,45 +34,61 @@ const RETENCION_DIAS = 180
 // EN PRUEBA: gemela de SALY_AYUDA_SOLO_PARA (src/utils/salyAyuda.js). `null` = todos.
 const SOLO_PARA: string[] | null = ["bbc796d7-7435-495b-9306-a2115f44a18f"]
 
-// La guía de cada pantalla: qué es, qué significa cada número, qué se hace y
-// qué NO puede decidir Saly. Es lo que evita que invente.
+// Cómo funciona el EFECTIVO del portal, de punta a punta. Es lo mismo para
+// las dos pantallas, así que forma parte del prefijo que se cachea. Escrito
+// contra el portal real: los botones de Mi caja, los frenos de
+// `hacer-corte-caja` y el catálogo `caja_tipos_movimiento`.
+const CONOCIMIENTO = `CÓMO FUNCIONA EL EFECTIVO EN EL PORTAL (menú Efectivo, ruta /caja)
+Pestañas: Hoy (la caja de la sala, hoy) · Cortes (todos los cortes) · Diferencias (días con faltante o sobrante y qué falta hacer) · Movimientos (entradas y salidas, también las editadas o borradas en la caja).
+
+EL DÍA DE UNA CAJA, en orden:
+1. Abrir la caja (botón «Abrir»): se escribe con cuánto efectivo arranca; si arranca en cero se deja vacío. Si la caja está abierta pero el turno parado, botón «Iniciar turno»: sin turno no se vende, corta ni cierra.
+2. Durante el día se anotan ENTRADAS y SALIDAS de efectivo que no son ventas (botones «Entrada» y «Salida»).
+3. Cortes (botón «Corte»): se cuenta SÓLO el efectivo del cajón; lo que ya está en las bolsas de hoy lo suma el portal. El portal compara contra lo esperado y dice si cuadró, sobró o faltó. Cada corte se CONFIRMA (el conteo es el real, aunque tenga diferencia: la diferencia queda firmada) o se DESCARTA (se contó mal o fue prueba: no cuenta, se hace otro). Al confirmar, el efectivo se embolsa.
+4. Cerrar el día (botón «Cerrar»): emite el corte Z y NO se deshace; la caja no vuelve a abrir ese día.
+
+LOS CUATRO FRENOS DEL CIERRE (si uno está activo, el día no cierra):
+a) un corte sin confirmar ni descartar → resolverlo; b) ningún corte confirmado hoy → hacer uno y confirmarlo; c) entró efectivo después del último corte confirmado («Falta por contar») → hacer otro corte y confirmarlo; d) preventas guardadas sin finalizar en la caja → finalizarlas en la caja. La preventa también frena el corte.
+Si nadie cierra, el portal cierra solo una hora después de la hora de cierre si hay un corte reciente; si quedan preventas no cierra y avisa a supervisión.
+
+TIPOS DE ENTRADA: Aplicación de inyección (se elige la venta o se marca que el cliente trajo la inyección) · Prueba de glucosa · POS Promerica (foto de la boleta OBLIGATORIA: llena sola monto y número) · Pago de asegurado Mapfre (se elige la factura y el asegurado) · Apartar o encargar (anticipo de un producto; sale comprobante) · Servicio a domicilio · Otro (escribir el detalle).
+TIPOS DE SALIDA: Compra o gasto urgente (agua, saldo, mandado; la boleta es el respaldo) · Pago a proveedor · Anticipo a un empleado · Pago de bonificación (comisión autorizada) · Devolución a un cliente · Cambio por monedas · POS Promerica (salida, con foto) · Otro. En las salidas se elige QUIÉN se lleva el efectivo. Las salidas del día se juntan solas en un vale de caja al hacer el siguiente corte.
+"registrado · n.º X" en un movimiento = ya está anotado en la caja con ese número; "sin cortar todavía" = entró después del último corte y lo va a contar el próximo.
+Boletas: un mismo número sólo es la misma operación si es la misma terminal y el mismo monto (cada banco y cada terminal numera por su lado). Si la terminal de una sala falla y se usa la de otra, es válido.
+
+DINERO: ESPERADO = lo que debería haber en el cajón · CONTADO = lo que se contó · DIFERENCIA = contado − esperado (negativa FALTANTE, positiva SOBRANTE). Los cobros de crédito en efectivo hechos desde el portal YA están sumados al esperado.
+Causas típicas de un faltante: un gasto o pago sin anotar como Salida, un cobro con tarjeta marcado como efectivo, vuelto mal dado, conteo mal hecho. Qué hacer: recontar (si se contó mal, descartar y hacer otro corte); anotar lo que faltó en Mi caja y hacer otro corte; si no aparece, confirmar el corte y lo resuelve supervisión en Diferencias. Un sobrante suele ser una entrada sin anotar o una venta en efectivo cobrada de más.
+Cobros de crédito: se hacen en Cuentas por cobrar; el efectivo entra a esta caja.
+Tipos de corte: C = corte del turno · Z = cierre del día · X = lectura (no cuenta efectivo).`
+
+// Lo propio de cada pantalla, después del conocimiento común.
 const GUIAS: Record<string, string> = {
-  cortes_caja: `PANTALLA: Cortes de caja (lista de cortes de todas las salas a las que la persona tiene acceso).
-- Un CORTE es contar el efectivo del cajón en un momento del día. Tipo C = corte del turno; tipo Z = cierre del día (no se deshace).
-- ESPERADO = lo que el sistema dice que debería haber en el cajón. CONTADO = lo que la persona contó. DIFERENCIA = contado − esperado: negativa es FALTANTE, positiva es SOBRANTE.
-- Estados: PENDIENTE (nadie lo firmó), CONFIRMADO (alguien dio por bueno el conteo), DESCARTADO (el conteo se tiró, no cuenta).
-- Un faltante suele ser un vale o un pago a proveedor que no se anotó, un cobro con tarjeta registrado como efectivo, o vuelto mal dado. Se revisa en Mi caja.
-- Los cobros de créditos en efectivo hechos desde el portal YA se suman al esperado.
-- Quien decide qué pasa con un faltante es quien supervisa la sala, no Saly.
-- Filtros: sala, estado, diferencia (falta/sobra/ok), búsqueda y periodo.`,
-  caja: `PANTALLA: Mi caja, pestaña Hoy (la caja de una sala, el día de hoy).
-- Pasos del día: abrir caja → anotar ingresos y vales → hacer cortes (contar el cajón) y confirmarlos → cerrar el día (corte Z, no se deshace).
-- Cerrar el día tiene CUATRO frenos: (1) un corte sin confirmar ni descartar; (2) ningún corte confirmado hoy; (3) entró efectivo después del último corte confirmado (hay que hacer otro corte y contarlo); (4) quedan preventas guardadas sin finalizar en la caja.
-- "Falta por contar" = dinero que entró después del último conteo confirmado. No es un faltante: es dinero que nadie contó todavía.
-- Si nadie cierra el día, el portal lo cierra solo una hora después de la hora de cierre, siempre que haya un corte reciente.
-- Un vale es una salida de efectivo (pago a proveedor, compra menor). Hay que anotarlo con su boleta.
-- Saly no puede abrir, cortar ni cerrar la caja: sólo explicar y llevar.`,
+  cortes_caja: `PANTALLA ACTUAL: Efectivo → Cortes. Lista de cortes por día y por sala, con esperado, contado y diferencia. Estados: Sin confirmar (PENDIENTE), Confirmados, Descartados. Filtros: sucursal, fecha, estado y diferencia (Cuadraron / Con exceso / Con faltante). Tocar un corte abre su detalle para confirmarlo o descartarlo.`,
+  caja: `PANTALLA ACTUAL: Efectivo → Hoy (Mi caja). Arriba el estado de la caja y los botones Corte · Entrada · Salida · Cerrar (o Abrir / Iniciar turno). Abajo «Movimientos de este día», agrupados por corte, con hora, tipo, detalle, quién lo anotó y monto; tocar uno muestra su detalle, la boleta y «Corregir».`,
 }
 
-const PERSONA = `Eres Saly, la ayuda en pantalla del portal de "Farmacia La Salud" y "La Popular". No eres una persona ni tienes género: eres una presencia cálida que explica lo que hay en pantalla.
-Hablas en español neutro, de "tú", sin voseo y sin emojis. Primera persona con verbos ("me preocupa", "te explico"), nunca adjetivos con género sobre ti.
+const PERSONA = `Eres Saly, la guía del portal de "Farmacia La Salud" y "La Popular". No eres una persona ni tienes género. Conoces los procesos del portal de memoria (están abajo) y tu trabajo es ORIENTAR: decir qué significa lo que se ve y qué hacer después, paso por paso.
+Hablas en español neutro, de "tú", sin voseo y sin emojis. Primera persona con verbos, nunca adjetivos con género sobre ti.
 Reglas:
-1. Responde SOLO con lo que dice la GUÍA y los DATOS DE LA PANTALLA. Si no está ahí, dilo ("eso no lo veo en esta pantalla") y sugiere a quién preguntar (supervisión de la sala o quien administra el portal). Nunca inventes números ni nombres.
-2. No guardas, apruebas ni envías nada. Puedes PONER FILTROS de la pantalla (sólo valores de las opciones que se te dan) y LLEVAR a otra pantalla.
-3. Corto y por pasos. Nunca párrafos largos.
-4. No regañes ni culpes a nadie.`
+1. NUNCA respondas "no sé" ni "no lo veo" a secas. Si la pregunta es de un proceso, contéstala con el CONOCIMIENTO. Si es de un dato que no está en la pantalla, di dónde verlo en el portal (pestaña y botón) y qué buscar. Sólo si de verdad es una decisión de otra persona (perdonar un faltante, cambiar un permiso), di quién la toma: supervisión de la sala o administración.
+2. Los NÚMEROS salen sólo de los DATOS DE LA PANTALLA o de lo SEÑALADO. Nunca inventes un monto, una hora ni un nombre.
+3. Si la persona señaló algo, la respuesta es sobre ESO: qué es, si está bien y qué hacer, usando sus datos.
+4. Ve al punto: responde primero, después los pasos. Nada de saludos ni de repetir la pregunta.
+5. No guardas, apruebas ni envías nada. Puedes PONER FILTROS (sólo valores de las opciones dadas) y LLEVAR a otra pantalla con un botón.
+6. No regañes ni culpes a nadie.`
 
 const FORMATO = `Responde SOLO un JSON con esta forma:
 {"animo":"alegria|atencion|preocupacion|pensando","piezas":[...],"filtros":{"clave":"valor"},"recuerda":"..."}
-Piezas permitidas (usa 2 a 4, la primera siempre "titular"):
+Piezas permitidas (usa 2 a 4, la primera siempre "titular", que es la RESPUESTA en una línea):
 {"tipo":"titular","texto":"≤60 car.","sub":"≤60 car."}
-{"tipo":"cifras","items":[{"rotulo":"≤14","valor":"≤12","tono":"mal|bien"}]}  (hasta 3)
+{"tipo":"cifras","items":[{"rotulo":"≤14","valor":"≤12","tono":"mal|bien"}]}  (hasta 3; para montos de la pantalla)
 {"tipo":"barras","items":[{"rotulo":"≤14","valor":123,"texto":"≤10","tono":"mal|bien"}]}  (hasta 5, para comparar)
-{"tipo":"pasos","items":["≤90 car. cada uno, **negrita** permitida"]}  (hasta 4)
+{"tipo":"pasos","items":["≤90 car. cada uno, **negrita** para botones y pestañas"]}  (hasta 4)
 {"tipo":"nota","texto":"≤140 car."}
-{"tipo":"botones","items":[{"texto":"≤24","ir":"/ruta"}]}  (sólo rutas de la GUÍA o /caja?tab=hoy, /caja?tab=cortes)
+{"tipo":"botones","items":[{"texto":"≤24","ir":"/ruta"}]}  (rutas: /caja?tab=hoy, /caja?tab=cortes, /caja?tab=diferencias, /caja?tab=movimientos, /cuentas-por-cobrar)
+"animo": alegria si todo está bien, preocupacion si hay un problema de dinero, atencion para explicar.
 "filtros": sólo si la pregunta pide ver algo que un filtro muestra; si no, {}.
-"recuerda": una frase corta sobre la persona que sirva la próxima vez (qué suele preguntar), o "" si nada.`
+"recuerda": una frase corta sobre la persona que sirva la próxima vez, o "".`
 
 const corto = (v: unknown, n: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, n)
 
@@ -166,9 +189,13 @@ Deno.serve(async (req) => {
       .select("resumen").eq("employee_id", emp.id).maybeSingle()
     if (eMem) throw eMem
 
+    // Lo fijo PRIMERO (se cachea solo), lo que cambia AL FINAL.
     const prompt = `${PERSONA}
 
-GUÍA:
+${FORMATO}
+
+${CONOCIMIENTO}
+
 ${guia}
 
 LO QUE SÉ DE ESTA PERSONA: ${mem?.resumen || "(nada todavía)"}
@@ -179,15 +206,24 @@ ${Object.entries(filtros).map(([k, f]) => `${k} (${f.rotulo}): ${f.opciones.join
 DATOS DE LA PANTALLA:
 ${pantalla || "{}"}
 ${senalado ? `\nLO QUE LA PERSONA SEÑALÓ (la pregunta es sobre ESTO; es el texto tal como se ve en pantalla):\n${senalado}\n` : ""}
-PREGUNTA: ${preguntaLimpia}
-
-${FORMATO}`
+PREGUNTA: ${preguntaLimpia}`
 
     let tokens = 0
-    const crudo = await callGemini({
-      prompt, model: MODELO, temperature: 0.2, jsonOutput: true, thinkingBudget: 0, timeoutMs: 20_000,
-      uso: (u) => { tokens = (u.promptTokenCount || 0) + (u.candidatesTokenCount || 0) },
-    })
+    let crudo = ""
+    let ultimoError: unknown = null
+    for (const model of MODELOS) {
+      try {
+        crudo = await callGemini({
+          prompt, model, temperature: 0.2, jsonOutput: true, thinkingBudget: 0, timeoutMs: 20_000,
+          uso: (u) => { tokens = (u.promptTokenCount || 0) + (u.candidatesTokenCount || 0) },
+        })
+        break
+      } catch (e) {
+        ultimoError = e
+        console.error(`[saly-ayuda] ${model} falló, pruebo el siguiente:`, e instanceof Error ? e.message : e)
+      }
+    }
+    if (!crudo) throw ultimoError ?? new Error("Ningún modelo respondió")
     const r = parseGeminiJson<any>(crudo)
     const animo = ["alegria", "atencion", "preocupacion", "pensando"].includes(r?.animo) ? r.animo : "atencion"
     const piezas = validarPiezas(r?.piezas)

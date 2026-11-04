@@ -51,3 +51,17 @@ describe('avisos', () => {
         expect(avisoDeCortesSinResolver([{ id: 1, hora: '21:00' }]).oferta[0].texto).toMatch(/Un corte/);
     });
 });
+
+describe('preguntaFrecuente', () => {
+    it('contesta lo de siempre sin IA', async () => {
+        const { preguntaFrecuente } = await import('@nucleo/utils/salyAyuda');
+        expect(preguntaFrecuente('caja', '¿Cómo hago un corte?').id).toBe('corte');
+        expect(preguntaFrecuente('caja', 'no me deja cerrar el día').id).toBe('cerrar');
+        expect(preguntaFrecuente('caja', 'tengo un faltante')?.id).toBe('faltante');
+    });
+    it('lo concreto y largo va a la IA', async () => {
+        const { preguntaFrecuente } = await import('@nucleo/utils/salyAyuda');
+        expect(preguntaFrecuente('caja', 'por qué la salida de las 12 del agua cristal dice registrado y no cortado')).toBeNull();
+        expect(preguntaFrecuente('caja', 'hola')).toBeNull();
+    });
+});

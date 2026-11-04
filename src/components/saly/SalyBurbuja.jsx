@@ -8,8 +8,8 @@ import Button from '../common/Button';
 import { useSalyAyudaStore } from './salyAyudaStore';
 import { calificarAyudaDeSaly, preguntarAyudaDeSaly } from '@nucleo/data/salyAyuda';
 import {
-    SALY_MAX_PANTALLA, SALY_MAX_PREGUNTA, avisoDeInactividad, claveDePregunta,
-    taparDatosPersonales, validarPiezas,
+    PREGUNTAS_FRECUENTES, SALY_MAX_PANTALLA, SALY_MAX_PREGUNTA, avisoDeInactividad, claveDePregunta,
+    preguntaFrecuente, taparDatosPersonales, validarPiezas,
 } from '@nucleo/utils/salyAyuda';
 
 /**
@@ -254,6 +254,16 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         if (!texto || !pantalla || pensando) return;
         limpiarMarcas();
 
+        // Lo de siempre se contesta acá, sin IA. Con algo señalado no: la
+        // pregunta es sobre ESO y la respuesta escrita sería genérica.
+        const frecuente = !senalado && preguntaFrecuente(pantalla.modulo, texto);
+        if (frecuente) {
+            setPregunta('');
+            setAbierto(true);
+            setContenido({ animo: 'alegria', piezas: frecuente.piezas, volver: true });
+            return;
+        }
+
         let vista = '';
         try { vista = JSON.stringify(pantalla.leer()); } catch { vista = '{}'; }
         vista = taparDatosPersonales(vista).slice(0, SALY_MAX_PANTALLA);
@@ -419,6 +429,19 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                                                     </span>
                                                                     <ChevronRight size={16} className="shrink-0 text-content-3" aria-hidden="true" />
                                                                 </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                {(PREGUNTAS_FRECUENTES[pantalla.modulo] || []).length > 0 && (
+                                                    <div>
+                                                        <p className="mb-1.5 text-micro font-black uppercase tracking-widest text-content-3">Preguntas rápidas</p>
+                                                        <div className="flex flex-wrap gap-1.5">
+                                                            {PREGUNTAS_FRECUENTES[pantalla.modulo].slice(0, 5).map((f) => (
+                                                                <Button key={f.id} variant="secondary" size="sm"
+                                                                    onClick={() => setContenido({ animo: 'alegria', piezas: f.piezas, volver: true })}>
+                                                                    {f.pregunta}
+                                                                </Button>
                                                             ))}
                                                         </div>
                                                     </div>

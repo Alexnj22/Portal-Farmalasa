@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1443.0 — Saly conoce los procesos de la caja y contesta lo de siempre sin IA
+
+Después de la primera prueba del usuario («no me funciona tan bien… que sea
+súper útil, que me guíe, que ya sepa los procesos del portal para que no use
+tanto token, que no diga que no sabe»).
+
+- **La causa de que no contestara**: el modelo `gemini-2.5-flash-lite` ya no está
+  disponible para cuentas nuevas y Google rechazaba cada pregunta (el registro
+  quedó vacío). Ahora usa `gemini-3.5-flash-lite` y, si falla, `gemini-2.5-flash`.
+- **Preguntas rápidas sin IA ($0)**: al abrir a Saly salen botones con lo de
+  siempre —cómo hacer un corte, por qué no cierra el día, cómo anotar una salida
+  o una entrada, qué hacer con un faltante, confirmar o descartar, abrir la caja—.
+  Una pregunta escrita corta que nombra eso mismo también se contesta sin IA.
+- **Saly sabe cómo funciona el Efectivo**: el día de una caja, los cuatro frenos
+  del cierre, cada tipo de entrada y salida, boletas y terminales, faltantes y
+  sobrantes. Va primero en cada pregunta y es idéntico siempre, así Google lo
+  cachea y lo cobra con descuento.
+- **No dice «no sé»**: si el dato no está en pantalla, dice dónde verlo; sólo
+  remite a supervisión cuando la decisión es de otra persona.
+- En Mi caja ahora ve los movimientos del día (hora, tipo, detalle, monto,
+  boleta, si ya está en la caja), así puede contestar sobre una fila concreta.
+
 ## v2.1442.1 — Inicio · General vuelve a armarse solo para todos
 
 Varias personas tenían la pestaña General del Inicio desordenada: sus tableros

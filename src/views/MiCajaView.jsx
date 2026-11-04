@@ -935,6 +935,15 @@ export default function MiCajaView({ comoPestana = false }) {
             vendiendo: estado?.turno_corriendo !== false, efectivo_esperado: estado?.efectivo ?? null,
             falta_por_contar: faltaPorContar,
             cortes: (estado?.cortes || []).slice(-10).map((c) => ({ hora: String(c.hora || '').slice(0, 5), tipo: c.tipo, estado: c.estado })),
+            // Los movimientos que la persona ve en la lista, cortos: sin esto
+            // Saly no podía contestar nada sobre una entrada o salida concreta.
+            movimientos: (movimientos || []).slice(0, 20).map((m) => ({
+                hora: m.registrado_at ? hora12(m.registrado_at) : null, tipo: m.tipo, concepto: m.concepto,
+                detalle: m.detalle ? String(m.detalle).slice(0, 60) : undefined, monto: Number(m.monto) || 0,
+                pago: m.forma_pago || undefined, boleta: m.numero_boleta || undefined,
+                en_la_caja: m.erp_movimiento_id ? 'registrado' : 'sin registrar', anulado: m.anulado_at ? true : undefined,
+                autorizacion: m.autorizacion || undefined,
+            })),
             no_se_pudo_leer: noSePudo || null,
         }),
         avisos: [

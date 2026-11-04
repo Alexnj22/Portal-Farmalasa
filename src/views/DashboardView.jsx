@@ -227,6 +227,11 @@ const WIDGET_SIZES = {
   // columna el campo queda tan angosto que no se ve lo que se escribió, y
   // esto es un dato que va a un documento fiscal a nombre de otra persona.
   dato_pedido:   { minCols: 2, minRows: 2, label: 'Datos que faltan'  },
+  // No tenía entrada y caía al 1×1 de baldosa (2026-11-04): en escritorio una
+  // celda de 120px donde entraban el encabezado y la cifra, y los botones
+  // Entregar/Sacar dinero y la lista quedaban cortados; en el teléfono la
+  // trataba como baldosa de media columna. Lista con botones, como cortes.
+  bolsas_sala:   { minCols: 2, minRows: 3, label: 'Bolsas de efectivo' },
 };
 
 // La acción de un widget manda a OTRO módulo, así que el permiso que decide si

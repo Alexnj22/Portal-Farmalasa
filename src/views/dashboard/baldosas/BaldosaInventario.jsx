@@ -68,6 +68,7 @@ export default function BaldosaInventario(props) {
             icon={PackageMinus}
             label="Ajuste de inventario"
             pendientes={plazo === null ? null : plazo.vencidas}
+            error={plazo?.error ?? null}
             etiquetaPendientes="línea vencida"
             etiquetaPendientesPlural="líneas vencidas"
             vacio="Sin vencidos"

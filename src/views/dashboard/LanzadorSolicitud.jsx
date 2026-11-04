@@ -2,7 +2,7 @@ import React, { useState, useCallback, useMemo, useLayoutEffect, useContext, use
 import { createPortal } from 'react-dom';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
-import { CheckCircle2, ChevronRight } from 'lucide-react';
+import { CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useTamanoWidget } from './tamanoWidget';
 
 // La baldosa que abre una solicitud, y el modal donde se arma.
@@ -224,6 +224,15 @@ export default function LanzadorSolicitud({
     // que no tiene sala con inventario: el guión se lee como «se está cargando»
     // y no como «acá no aplica», y quien lo mira espera un número que no viene.
     sinDato = null,
+    // ── La consulta FALLÓ (2026-11-04) ────────────────────────────────────
+    // Hasta acá un error se pintaba igual que «nada pendiente»: el número no
+    // llegaba, la capa de datos devolvía cero o lista vacía, y la baldosa decía
+    // «Sin vencidos» con su check verde. O sea que afirmaba algo que nadie
+    // midió. Con `error` la baldosa lo dice, sin check y sin figura.
+    error = null,
+    // El número salió de una lista con TOPE: si llegó al tope, el real puede
+    // ser mayor, y se muestra «40+» en vez de presentar el corte como el total.
+    tope = null,
     tono = 'brand',         // brand | warning | danger | success
     maxWidth = 'max-w-2xl',
     children,               // (cerrar) => contenido del modal
@@ -233,7 +242,8 @@ export default function LanzadorSolicitud({
     // Con dos renglones o más hay alto para la descripción y un número mayor.
     const alto = (useTamanoWidget()?.rows ?? 1) >= 2;
 
-    const hay = typeof pendientes === 'number' && pendientes > 0;
+    const hay = !error && typeof pendientes === 'number' && pendientes > 0;
+    const cifra = hay && tope != null && pendientes >= tope ? `${tope}+` : pendientes;
     const etiqueta = pendientes === 1
         ? etiquetaPendientes
         : (etiquetaPendientesPlural ?? etiquetaPendientes);
@@ -312,9 +322,14 @@ export default function LanzadorSolicitud({
 
                 <div className="w-full min-w-0 flex flex-col gap-1.5">
                     <div className="w-full min-w-0 flex items-baseline gap-2">
-                        {hay ? (
+                        {error ? (
+                            <span className="min-w-0 flex items-center gap-1.5 text-body-sm font-bold text-danger-text">
+                                <AlertTriangle size={15} strokeWidth={2.5} className="shrink-0" />
+                                <span className="truncate">No se pudo leer</span>
+                            </span>
+                        ) : hay ? (
                             <>
-                                <span className={`shrink-0 font-black leading-none tabular-nums ${alto ? 'text-display-lg' : 'text-display'} ${acento.texto}`}>{pendientes}</span>
+                                <span className={`shrink-0 font-black leading-none tabular-nums ${alto ? 'text-display-lg' : 'text-display'} ${acento.texto}`}>{cifra}</span>
                                 <span className={`min-w-0 truncate text-caption font-semibold ${acento.texto}`}>{etiqueta}</span>
                             </>
                         ) : (
@@ -332,7 +347,7 @@ export default function LanzadorSolicitud({
                             esconde por el ANCHO de la baldosa, no de la ventana:
                             pegado al número en 171px se cortaba en la segunda
                             palabra. */}
-                        {detalle && (
+                        {detalle && !error && (
                             <span className="hidden @[20rem]:inline ml-auto shrink min-w-0 truncate text-caption font-medium text-content-3">{detalle}</span>
                         )}
                     </div>
@@ -341,7 +356,7 @@ export default function LanzadorSolicitud({
                         `empty:hidden`: las figuras se niegan solas a dibujarse
                         cuando no hay nada, y un elemento que rinde `null` sigue
                         siendo truthy. */}
-                    <div className="w-full empty:hidden" aria-hidden="true">{instrumento}</div>
+                    <div className="w-full empty:hidden" aria-hidden="true">{error ? null : instrumento}</div>
                 </div>
             </button>
 

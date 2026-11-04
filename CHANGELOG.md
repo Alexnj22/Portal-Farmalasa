@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1447.1 — Inicio: un error ya no se ve como «al día»
+
+Primer lote de la revisión widget por widget del Inicio.
+
+- **Las baldosas dicen cuando no pudieron leer.** `LanzadorSolicitud` acepta
+  `error`: pinta «No se pudo leer» en rojo, sin check y sin figura. Antes un
+  fallo se veía como «Sin vencidos ✓», «Sin propuestas ✓» o «Sin traslados ✓».
+  Lo usan Consulta de inventario, Ajuste de Min/Max, Ajuste de inventario y
+  Traslados. Bitácoras y Datos que faltan tampoco tapan el error con un vacío.
+- **Consulta de inventario ya no presenta el tope como total.** Pedía 40
+  faltantes y mostraba «40»; 6 de 7 salas tenían más (Salud 1: 94). Ahora dice
+  «40+» cuando llega al tope.
+- **Traslados se relee cada 3 minutos** con la pestaña a la vista (antes sólo al
+  entrar al Inicio). Bitácoras deja de releer con la pestaña oculta.
+- **Bolsas de efectivo** tenía tamaño de baldosa 1×1 y cortaba sus botones; ahora
+  2×3 como Cortes.
+
 ## v2.1447.0 — App de clientes: errores, nativo, accesibilidad y peso
 
 Revisión completa de la app de clientes (2026-11-04). Nada de esto toca el

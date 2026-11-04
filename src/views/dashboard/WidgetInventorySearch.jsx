@@ -29,9 +29,15 @@ const FormularioPedirASala = lazy(() =>
 //
 // El buscador se va ADENTRO con ella. Vivía en la cabecera de la tarjeta, que
 // al volverse baldosa deja de existir.
+// La lista viene con tope; con el tope lleno el número se muestra «40+». Medido
+// el 2026-11-04: 6 de las 7 salas tenían más de 40 (Salud 1: 94) y la baldosa
+// decía «40» como si fuera el total.
+const TOPE_FALTANTES = 40;
+
 export default function WidgetInventorySearch() {
   const { user } = useAuth();
   const [faltan, setFaltan] = useState(null);
+  const [errorFaltan, setErrorFaltan] = useState(null);
   const [q, setQ] = useState('');
 
   const miErp = MI_ERP_POR_BRANCH[user?.branchId ?? user?.branch_id] ?? null;
@@ -46,8 +52,10 @@ export default function WidgetInventorySearch() {
   useEffect(() => {
     if (!miErp) return;
     let cancelado = false;
-    fetchFaltantesConStockEnOtraSala(miErp, 40).then(r => {
-      if (!cancelado && !r.error) setFaltan(r.filas);
+    fetchFaltantesConStockEnOtraSala(miErp, TOPE_FALTANTES).then(r => {
+      if (cancelado) return;
+      if (r.error) setErrorFaltan(r.error);
+      else { setErrorFaltan(null); setFaltan(r.filas); }
     });
     return () => { cancelado = true; };
   }, [miErp]);
@@ -92,6 +100,8 @@ export default function WidgetInventorySearch() {
       icon={Package}
       label="Consulta de inventario"
       pendientes={faltantesDeMiSala ? faltantesDeMiSala.length : null}
+      tope={TOPE_FALTANTES}
+      error={miErp ? errorFaltan : null}
       etiquetaPendientes="sin existencia aquí"
       etiquetaPendientesPlural="sin existencia aquí"
       // Sin sala propia no hay faltantes que repartir, así que tampoco hay

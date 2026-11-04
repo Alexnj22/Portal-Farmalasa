@@ -40,18 +40,24 @@ export default function WidgetBitacoras() {
 
     const [dia, setDia] = useState(null);
     const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
 
     const cargar = useCallback(async () => {
         if (!miSala) { setCargando(false); return; }
-        const { dia: d } = await fetchBitacoraDia(miSala, hoySV());
-        setDia(d);
+        // El error NO se traga (2026-11-04): sin esto, un fallo de red o un
+        // 42501 de `bitacora_exigir_acceso` dejaba `dia` en null y la tarjeta
+        // decía «Hoy no hay nada que anotar» — la sala creía estar al día.
+        const { dia: d, error: e } = await fetchBitacoraDia(miSala, hoySV());
+        setError(e ?? null);
+        if (!e) setDia(d);
         setCargando(false);
     }, [miSala]);
 
     useEffect(() => {
         // eslint-disable-next-line react-hooks/set-state-in-effect -- carga inicial y refresco cada 5 min
         cargar();
-        const t = setInterval(cargar, REFRESCO_MS);
+        // Con la pestaña oculta no se relee: nadie la está mirando.
+        const t = setInterval(() => { if (document.visibilityState === 'visible') cargar(); }, REFRESCO_MS);
         return () => clearInterval(t);
     }, [cargar]);
 
@@ -59,6 +65,7 @@ export default function WidgetBitacoras() {
 
     useResumenWidget(cargando ? null
         : !miSala ? { texto: 'Sin sala asignada' }
+        : error ? { texto: 'No se pudo leer', tono: 'danger' }
         : resumen.vencidas > 0 ? { valor: resumen.vencidas, texto: resumen.vencidas === 1 ? 'lectura pasada de hora' : 'lecturas pasadas de hora', tono: 'danger' }
         : resumen.abiertas > 0 ? { valor: resumen.abiertas, texto: resumen.abiertas === 1 ? 'lectura toca ahora' : 'lecturas tocan ahora', tono: 'warning' }
         : resumen.total > 0 ? { valor: `${resumen.hechas}/${resumen.total}`, texto: 'al día', tono: 'success' }
@@ -70,6 +77,14 @@ export default function WidgetBitacoras() {
         return <EmptyState icon={Thermometer} compact
             title="Sin sala asignada"
             subtitle="Las bitácoras son de una sala." />;
+    }
+
+    if (error) {
+        return (
+            <Notice variant="danger" icon={AlertTriangle} compact>
+                No se pudieron leer las bitácoras de hoy. Se vuelve a intentar en unos minutos.
+            </Notice>
+        );
     }
 
     const alDia = resumen.abiertas === 0 && resumen.vencidas === 0;

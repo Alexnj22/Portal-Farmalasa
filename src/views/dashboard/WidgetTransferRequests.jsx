@@ -422,6 +422,8 @@ const RetiroModal         = lazy(() => import('../traslados/RetiroModal'));
 // El total NO es `porConfirmar.length`: sale del `count` exacto que devuelve la
 // misma consulta. La lista está topada en 201 filas, así que contar por su largo
 // sería un tope silencioso esperando a que alguien lo cruce.
+const REFRESCO_MS = 3 * 60 * 1000;
+
 export default function WidgetTransferRequests() {
     const { user, getScope } = useAuth();
     const [porConfirmar, setPorConfirmar] = useState(null);
@@ -457,6 +459,8 @@ export default function WidgetTransferRequests() {
         ]);
         if (a.error || b.error || c.error) {
             setError((a.error ?? b.error ?? c.error).message ?? 'No se pudo leer.');
+        } else {
+            setError(null);
         }
         setPorConfirmar(a.filas);
         setPorRecibir(b.filas);
@@ -467,7 +471,17 @@ export default function WidgetTransferRequests() {
     // El `setState` ocurre DESPUÉS del `await`, no en el cuerpo del efecto, así
     // que no encadena renders — la regla no puede distinguirlo. Misma anotación
     // y mismo motivo que en `TrasladosView`.
-    useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+    // Y se RELEE cada 3 minutos mientras la pestaña está a la vista (2026-11-04):
+    // cargaba una sola vez, así que un «te piden» que llegaba con el Inicio
+    // abierto no aparecía hasta recargar — y son ~37 traslados por día. Con la
+    // pestaña oculta no se lee; al volver, se lee enseguida.
+    useEffect(() => {
+        cargar(); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
+        const t = setInterval(() => { if (document.visibilityState === 'visible') cargar(); }, REFRESCO_MS);
+        const alVolver = () => { if (document.visibilityState === 'visible') cargar(); };
+        document.addEventListener('visibilitychange', alVolver);
+        return () => { clearInterval(t); document.removeEventListener('visibilitychange', alVolver); };
+    }, [cargar]);
 
     /* El número de la baldosa cuenta lo que ESPERA UNA RESPUESTA TUYA, no las
      * filas que hay: lo que te piden de tu sala más lo que te enviaron y todavía
@@ -488,6 +502,7 @@ export default function WidgetTransferRequests() {
             icon={ArrowLeftRight}
             label="Traslados entre salas"
             pendientes={pendientes === null ? null : pendientes + porDecidir}
+            error={error}
             etiquetaPendientes="por contestar"
             etiquetaPendientesPlural="por contestar"
             vacio="Sin traslados"

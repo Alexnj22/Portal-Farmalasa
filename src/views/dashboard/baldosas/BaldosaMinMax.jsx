@@ -73,6 +73,7 @@ export default function BaldosaMinMax(props) {
       icon={TrendingUp}
       label="Ajuste de Min/Max"
       pendientes={estados === null ? null : estados.pendientes}
+      error={estados?.error ?? null}
       etiquetaPendientes="propuesta pendiente"
       etiquetaPendientesPlural="propuestas pendientes"
       vacio="Sin propuestas"

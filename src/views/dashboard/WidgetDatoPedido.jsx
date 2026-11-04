@@ -8,6 +8,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchDatosPedidos, responderDatoPedido } from '@nucleo/data/datosPedidos';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useResumenWidget } from './tamanoWidget';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -127,7 +128,7 @@ export default function WidgetDatoPedido() {
         } catch (e) {
             // Un fallo NO puede quedar como «no hay nada pendiente»: ese silencio
             // es exactamente el defecto que este circuito vino a cerrar.
-            setError(e?.message || String(e));
+            setError(mensajeAmigable(e, 'No se pudieron cargar los datos pendientes.'));
             setFilas([]);
         } finally {
             setCarg(false);
@@ -151,11 +152,13 @@ export default function WidgetDatoPedido() {
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain p-3 space-y-3">
 
-            {error && <Notice tone="danger">{error}</Notice>}
+            {error && <Notice variant="danger" compact>{error}</Notice>}
 
             {cargando ? <SkeletonText lines={3} />
+                : error ? null
                 : filas.length === 0 ? (
                     <EmptyState
+                        linea
                         icon={CheckCircle2}
                         title="Sin datos pendientes"
                         subtitle="Cuando una venta necesite un dato del cliente, aparece aquí."

@@ -11,11 +11,12 @@ import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, notaDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../Formulario';
 import { Seccion } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
@@ -24,6 +25,27 @@ import { fallo, listo } from '../Progreso';
 import { Accion, colorDeTono } from './piezas';
 
 const corta = (d) => fechaTexto(d, { day: 'numeric', month: 'short' });
+const cuando = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+// El recorrido del encargo con quién hizo cada paso, y qué toca ahora — los
+// mismos pasos y el mismo texto que la tarjeta del portal (salen del núcleo).
+function Pasos({ e, cobraAqui }) {
+  const ahora = siguientePasoDeEncargo(e, { cobraAqui });
+  return (
+    <View style={{ gap: 3 }}>
+      {pasosDeEncargo(e).map((p) => (
+        <Text key={p.clave} style={{ color: p.hecho ? colorSistema.texto : colorSistema.texto2, fontSize: 13 }}>
+          <Text style={{ color: p.hecho ? MARCA.verde : colorSistema.texto2 }}>{p.hecho ? '✓ ' : '○ '}</Text>
+          <Text style={{ fontWeight: p.hecho ? '600' : '400' }}>{p.titulo}</Text>
+          {p.hecho && (p.persona || p.quien || p.at)
+            ? <Text style={{ color: colorSistema.texto2 }}>{` · ${[p.persona ? shortEmployeeName(p.persona) : p.quien, p.at ? cuando(p.at) : null].filter(Boolean).join(' · ')}`}</Text>
+            : null}
+        </Text>
+      ))}
+      {ahora ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: 2 }}><Text style={{ fontWeight: '700', color: colorSistema.texto }}>Ahora: </Text>{ahora}</Text> : null}
+    </View>
+  );
+}
 
 // `salaDeCobro` (2026-11-04): la sala donde quien mira puede cobrar; ahí el
 // encargo que espera el pago trae «Cobrar», que abre «Por cobrar» ya elegido.
@@ -99,7 +121,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
                 {vencido ? <Pildora texto="Sin retirar · llamar" color={MARCA.ambar} /> : null}
               </View>
             ) : null}
-            {notaDeEncargo(e) && !cobrable(e) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{notaDeEncargo(e)}</Text> : null}
+            <Pasos e={e} cobraAqui={cobrable(e)} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {cobrable(e) ? <Accion texto={ROT.cobrar} color={MARCA.verde}
                 onPress={() => router.push({ pathname: '/reserva-anticipo', params: { sala: String(salaDeCobro), vista: 'cobrar', elegir: `e${e.id}` } })} /> : null}

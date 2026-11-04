@@ -4,6 +4,7 @@
 // carrito P-XXXXXX, que el lector escribe como un teclado) y sumar el pedido.
 import { codigoDeEncargo, codigoDeReserva, reservaPorResolver, reservaPorTraer } from '../data/reservas';
 import { fechaTexto } from './fecha';
+import { formatMoney } from './formatNumber';
 import { puedeEnviarPreventa } from './preventa';
 
 const ABIERTAS = ['en_revision', 'pendiente', 'lista'];
@@ -505,6 +506,63 @@ export function cifraDeEncargo(e) {
     const valor = Number(e?.anticipo);
     if (!(valor > 0)) return null;
     return encargoPorCobrar(e) ? { rotulo: 'Por cobrar', valor, cobrado: false } : { rotulo: 'Pagado', valor, cobrado: true };
+}
+
+/**
+ * Los pasos de un encargo, en orden, con quién hizo cada uno (2026-11-04).
+ * `e.pasos` lo manda `encargos_de_sucursal`: `{ paso, at, por_id, por,
+ * por_nombres, por_apellidos }`. Devuelve los seis pasos del recorrido —los
+ * hechos con su persona y su hora, y los que faltan sin ellos— para que la
+ * tarjeta muestre dónde está el encargo y qué viene.
+ *
+ * `persona` es `null` cuando el paso no lo hizo nadie del personal: entonces
+ * `quien` lo dice («El cliente, desde la app», «En línea»).
+ */
+export function pasosDeEncargo(e) {
+    const hechos = Object.fromEntries((e?.pasos ?? []).map((p) => [p.paso, p]));
+    const persona = (p) => (p?.por_id ? { id: p.por_id, first_names: p.por_nombres, last_names: p.por_apellidos, name: p.por } : null);
+    const resto = !!(e?.reserva || e?.reserva_id);
+    const orden = ['solicitado', 'confirmado', 'aceptado', 'pedido', 'listo', 'entregado'];
+    const en = orden.indexOf(e?.estado);
+    // Hecho = hay registro, o el estado ya pasó por ahí (un encargo viejo sin bitácora).
+    const paso = (clave, titulo, desde, sinPersona = null) => {
+        const h = hechos[clave];
+        const hecho = !!h || (en >= 0 && en >= orden.indexOf(desde));
+        return { clave, titulo, hecho, at: h?.at ?? null, persona: persona(h), quien: hecho && !persona(h) ? sinPersona : null };
+    };
+    return [
+        paso('encargado', 'Se encargó', 'solicitado', resto ? `Resto de la reserva ${e.reserva ?? ''}`.trim() : 'El cliente, desde la app'),
+        paso('confirmado', 'Compras confirmó precio y fecha', 'confirmado'),
+        resto ? { clave: 'cobrado', titulo: 'Pagado con la reserva', hecho: true, at: null, persona: null, quien: null }
+            : paso('cobrado', 'El cliente pagó', 'aceptado', 'En línea'),
+        paso('pedido', 'Se le pidió al proveedor', 'pedido'),
+        paso('llego', 'Llegó a la sala', 'listo'),
+        paso('entregado', 'Se le entregó al cliente', 'entregado'),
+    ];
+}
+
+/**
+ * Lo que toca AHORA con un encargo, dicho para quien lo tiene enfrente: quién
+ * lo hace y con qué botón. `cobraAqui`: quien mira puede cobrar desde la
+ * tarjeta; si no, se dice dónde se cobra.
+ */
+export function siguientePasoDeEncargo(e, { cobraAqui = false } = {}) {
+    const llega = e?.fecha_estimada ? fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'long' }) : null;
+    switch (e?.estado) {
+        case 'solicitado':
+            return 'Compras averigua si se consigue, a qué precio y cuándo llega, y aprieta «Confirmar». Si no se consigue, «No se puede conseguir».';
+        case 'confirmado':
+            if (e?.reserva || e?.reserva_id) return 'El cliente decide si acepta el precio nuevo; se resuelve desde su reserva.';
+            return `Avisarle al cliente el precio y cobrarle el total${Number(e?.anticipo) > 0 ? ` (${formatMoney(Number(e.anticipo))})` : ''}. Hasta que pague, no se pide al proveedor.${cobraAqui ? '' : ' Se cobra en Reservar con anticipo → Por cobrar, en la sala del retiro.'}`;
+        case 'aceptado':
+            return 'Ya está pagado. Compras le hace el pedido al proveedor y aprieta «Ya se pidió», para que nadie lo pida dos veces.';
+        case 'pedido':
+            return `Esperar a que llegue${llega ? ` (aprox. ${llega})` : ''}. Cuando esté en la sala, apretar «Llegó»: el cliente recibe el aviso.`;
+        case 'listo':
+            return `El cliente pasa a retirarlo${e?.retirar_hasta ? ` hasta el ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'long' })}` : ''}. Al dárselo, apretar «Entregar».`;
+        default:
+            return '';
+    }
 }
 
 /** Un producto que no tenemos y Bodega todavía no amarró al catálogo: sin eso no se marca «Llegó». */

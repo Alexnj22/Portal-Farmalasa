@@ -22,7 +22,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, pasosDeEncargo, siguientePasoDeEncargo, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
 import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -228,7 +228,6 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                     `${e.cantidad} × ${e.producto}`,
                                     e.producto_nuevo ? (e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : sinVincular(e) && e.sugerido ? `Producto nuevo · ¿ya está como «${e.sugerido}»?` : 'Producto nuevo') : null,
                                     e.reserva ? `Resto de la reserva ${e.reserva}` : null,
-                                    (!cobrable(e) && notaDeEncargo(e)) || null,
                                     textoDeNivel(e.nivel),
                                     ultimoAviso(e),
                                 ]}
@@ -236,6 +235,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                     ...(cifra ? [{ rotulo: cifra.rotulo, valor: cifra.valor, tono: cifra.cobrado ? 'text-success-text' : 'text-warning-text' }] : []),
                                     ...(e.fecha_estimada ? [{ rotulo: 'Llega', valor: fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' }) }] : []),
                                 ]}
+                                pasos={pasosDeEncargo(e)} ahora={siguientePasoDeEncargo(e, { cobraAqui: cobrable(e) })}
                                 aviso={vencido(e) ? 'No lo retiró a tiempo: llamar al cliente' : null}
                                 plazo={e.retirar_hasta ? `Retira hasta el ${dia(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : null}
                                 acciones={acc} />

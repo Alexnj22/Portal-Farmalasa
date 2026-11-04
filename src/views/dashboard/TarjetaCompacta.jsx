@@ -1,9 +1,12 @@
 import React, { useState } from 'react';
-import { Clock, MoreHorizontal, Store } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, MoreHorizontal, Store } from 'lucide-react';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BotonDeAccion } from './TarjetaDeReserva';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -22,9 +25,13 @@ import { BotonDeAccion } from './TarjetaDeReserva';
 //
 // `acciones`: [{ k, label, icon, onClick, title?, loading?, disabled? }], en
 // orden de importancia — la misma forma que `accionesDeReserva`.
+//
+// `pasos` + `ahora` (2026-11-04, encargos): el recorrido con quién hizo cada
+// paso (foto y nombre corto) y, debajo, qué toca ahora y con qué botón.
 // ═══════════════════════════════════════════════════════════════════════════
 export default function TarjetaCompacta({
     codigo, estado = null, sala = null, cliente, lineas = [], cifras = [], plazo = null, aviso = null, acciones = [], tono = null,
+    pasos = null, ahora = null,
 }) {
     const [masAbierto, setMasAbierto] = useState(false);
     const [principal, segunda, ...resto] = acciones;
@@ -47,6 +54,8 @@ export default function TarjetaCompacta({
                         ))}
                     </div>
                 )}
+
+                {pasos?.length > 0 && <Pasos pasos={pasos} ahora={ahora} />}
 
                 {(cifras.length > 0 || aviso || plazo) ? (
                 <div className="border-t border-divider pt-3 mt-auto">
@@ -103,5 +112,40 @@ export default function TarjetaCompacta({
                 </LiquidModal>
             )}
         </article>
+    );
+}
+
+const cuando = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+
+// El recorrido del encargo: lo hecho con su persona, lo que falta en gris.
+function Pasos({ pasos, ahora }) {
+    return (
+        <div className="border-t border-divider pt-3 space-y-2 min-w-0">
+            <ol className="space-y-1.5 min-w-0" aria-label="Pasos del encargo">
+                {pasos.map((p) => (
+                    <li key={p.clave} className="flex items-start gap-2 min-w-0">
+                        {p.hecho
+                            ? <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-success-text" aria-label="Hecho" />
+                            : <Circle size={16} className="mt-0.5 shrink-0 text-content-3" aria-label="Falta" />}
+                        <div className="min-w-0 flex-1">
+                            <p className={`text-body-sm ${p.hecho ? 'text-content font-semibold' : 'text-content-3'}`}>{p.titulo}</p>
+                            {p.hecho && (p.persona || p.quien || p.at) && (
+                                <p className="flex items-center gap-1.5 text-caption text-content-3 min-w-0">
+                                    {p.persona && <AvatarConEstado emp={p.persona} px={18} mostrarChip={false} />}
+                                    <span className="truncate">
+                                        {[p.persona ? shortEmployeeName(p.persona) : p.quien, p.at ? cuando(p.at) : null].filter(Boolean).join(' · ')}
+                                    </span>
+                                </p>
+                            )}
+                        </div>
+                    </li>
+                ))}
+            </ol>
+            {ahora && (
+                <p className="text-body-sm text-content-2 rounded-xl bg-surface-card-hover px-3 py-2">
+                    <span className="font-semibold text-content">Ahora: </span>{ahora}
+                </p>
+            )}
+        </div>
     );
 }

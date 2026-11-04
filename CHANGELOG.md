@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1431.0 — Encargos: los pasos con quién hizo cada uno y qué toca ahora
+
+- **La tarjeta del encargo no decía quién hizo nada.** Los datos existían
+  —bitácora, `respondido_por`, el movimiento de caja del cobro— y no se
+  mostraban. `encargos_de_sucursal` manda ahora `pasos` (migración
+  `20261104172359`, sólo lectura) y la tarjeta pinta el recorrido completo:
+  se encargó → Compras confirmó → el cliente pagó → se le pidió al proveedor →
+  llegó → se entregó, cada paso hecho con foto, nombre corto y hora, y los que
+  faltan en gris. Sin persona se dice quién fue: «El cliente, desde la app»,
+  «En línea», «Resto de la reserva».
+- **«Ahora: …» explica el paso que sigue**, con quién lo hace y qué botón
+  apretar (`siguientePasoDeEncargo`). Reemplaza la nota «Se cobra en Reservar
+  con anticipo → Por cobrar», que ahora va dentro de ese texto cuando quien
+  mira no puede cobrar. Portal y app del personal.
+
 ## v2.1430.5 — Se borra la función que armaba horarios con IA
 
 *«Quita eso que arma horarios también.»* `wfm-ai-scheduler` no tenía quien la

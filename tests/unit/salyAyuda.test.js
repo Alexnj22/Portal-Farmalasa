@@ -65,3 +65,38 @@ describe('preguntaFrecuente', () => {
         expect(preguntaFrecuente('caja', 'hola')).toBeNull();
     });
 });
+
+describe('nombres, montos y revisión', () => {
+    it('tapa y devuelve nombres', async () => {
+        const { crearMascaraDeNombres } = await import('@nucleo/utils/salyAyuda');
+        const m = crearMascaraDeNombres(['KARLA PATRICIA CORTEZ VALLE', 'GABRIELA TOBAR']);
+        const t = m.tapar('Cobro de KARLA PATRICIA CORTEZ VALLE · lo anotó GABRIELA TOBAR · Karla Cortez');
+        expect(t).not.toMatch(/KARLA|GABRIELA|Karla/i);
+        expect(m.destapar('Persona 2 lo anotó')).toBe('Gabriela Tobar lo anotó');
+    });
+    it('caza un monto inventado y deja pasar sumas', async () => {
+        const { montosInventados } = await import('@nucleo/utils/salyAyuda');
+        const fuente = ['{"esperado":319.1,"contado":309.25}'];
+        expect(montosInventados([{ tipo: 'titular', texto: 'Faltan $9.85' }], fuente)).toEqual([]);
+        expect(montosInventados([{ tipo: 'cifras', items: [{ rotulo: 'Esperado', valor: '$319.10' }] }], fuente)).toEqual([]);
+        expect(montosInventados([{ tipo: 'titular', texto: 'Faltan $12.40' }], fuente)).toEqual(['$12.40']);
+        expect(montosInventados([{ tipo: 'pasos', items: ['Paso 1 a las 12'] }], fuente)).toEqual([]);
+    });
+    it('revisa salidas sin foto y boletas dobles', async () => {
+        const { revisarMovimientos } = await import('@nucleo/utils/salyAyuda');
+        const base = { anulado: false, cuando: new Date().toISOString() };
+        const lineas = [
+            { ...base, clave: 'a', clase: 'sale', titulo: 'Compra o gasto urgente · agua', monto: 14.25, foto: null, movimiento: {} },
+            { ...base, clave: 'e', clase: 'sale', titulo: 'Cambio por monedas', monto: 5, foto: null, movimiento: {} },
+            { ...base, clave: 'b', clase: 'entra', monto: 10.43, foto: 'x', movimiento: { numero_boleta: '0956' } },
+            { ...base, clave: 'c', clase: 'entra', monto: 10.43, foto: 'y', movimiento: { numero_boleta: '956' } },
+            { ...base, clave: 'd', clase: 'entra', monto: 1, foto: null, movimiento: {} },
+        ];
+        const r = revisarMovimientos(lineas);
+        expect(r.get('a')[0].corto).toBe('Sin foto del respaldo');
+        expect(r.get('b')[0].corto).toBe('Boleta repetida');
+        expect(r.get('c')[0].corto).toBe('Boleta repetida');
+        expect(r.has('d')).toBe(false);
+        expect(r.has('e')).toBe(false);
+    });
+});

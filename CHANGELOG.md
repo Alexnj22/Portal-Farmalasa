@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1445.0 — Saly guía en la pantalla, revisa los movimientos y cuida nombres y números
+
+Los cinco puntos que el usuario aprobó (2026-11-04). Sigue sólo para Edwin.
+
+- **Guía en la pantalla**: en una pregunta rápida (hacer un corte, anotar una
+  salida o una entrada, cerrar, abrir), «Guíame en la pantalla» marca el botón o
+  el campo REAL de cada paso y avanza sola cuando se toca. Si el paso está en un
+  diálogo que todavía no se abrió, espera y lo marca cuando aparece. Busca por el
+  rótulo visible, así que no hubo que tocar componentes compartidos.
+- **Revisión de los movimientos ($0)**: en Mi caja marca en la fila, con el color
+  de Saly, las compras, gastos o pagos a proveedor sin foto de la boleta y las
+  boletas con el mismo número y monto dos veces. Un aviso de Saly junta todo lo
+  que conviene arreglar antes del cierre (también lo que no llegó a la caja o
+  lleva rato sin autorizar) y lo señala en la lista.
+- **Lo que me preguntan**: para quien tiene Auditoría, las preguntas de la
+  semana, primero las que recibieron 👎 y después las que se repiten — lo que se
+  repite se pasa a pregunta rápida y deja de costar.
+- **Nombres tapados**: los nombres del personal viajan a la IA como «Persona N»
+  y vuelven con el nombre corto al mostrar la respuesta.
+- **Números comprobados**: un monto de la respuesta que no está en la pantalla
+  (ni es suma o resta de dos que sí están) no se muestra; si cae la respuesta
+  entera, Saly lo dice en vez de adivinar.
+
 ## v2.1444.1 — Inicio · General: las baldosas chicas van juntas
 
 El tablero de Cendy (Jefa de Compras, 5 widgets) salía con «Consulta de

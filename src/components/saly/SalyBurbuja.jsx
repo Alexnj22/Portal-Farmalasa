@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronRight, Crosshair, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { ChevronRight, Crosshair, ListChecks, MessagesSquare, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import SalyAvatar from '../common/SalyAvatar';
 import PiezasDeSaly from './PiezasDeSaly';
 import PortalInput from '../common/PortalInput';
 import Button from '../common/Button';
 import { useSalyAyudaStore } from './salyAyudaStore';
-import { calificarAyudaDeSaly, preguntarAyudaDeSaly } from '@nucleo/data/salyAyuda';
+import { calificarAyudaDeSaly, fetchPreguntasDeLaSemana, preguntarAyudaDeSaly } from '@nucleo/data/salyAyuda';
+import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { buscarObjetivo } from './guiaEnPantalla';
 import {
     PREGUNTAS_FRECUENTES, SALY_MAX_PANTALLA, SALY_MAX_PREGUNTA, avisoDeInactividad, claveDePregunta,
-    preguntaFrecuente, taparDatosPersonales, validarPiezas,
+    crearMascaraDeNombres, destaparPiezas, montosInventados, preguntaFrecuente, taparDatosPersonales, validarPiezas,
 } from '@nucleo/utils/salyAyuda';
 
 /**
@@ -87,6 +90,11 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const [senalado, setSenalado] = useState(null);     // { texto }
     const [apuntando, setApuntando] = useState(false);  // modo «Señalar»
     const [arrastre, setArrastre] = useState(null);     // { x, y } mientras se arrastra
+    const [guia, setGuia] = useState(null);             // { pasos, i, hallado }
+    const [semana, setSemana] = useState(null);         // preguntas de la semana (Auditoría)
+    const { hasPermission } = useAuth();
+    const puedeVerPreguntas = hasPermission('auditview', 'can_view');
+    const employees = useStaffStore((s) => s.employees);
     const desmarcar = useRef(null);
     const marcaSenalado = useRef(null);
     const raiz = useRef(null);
@@ -102,6 +110,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     }, []);
     const cerrar = useCallback(() => {
         setAbierto(false); setContenido(null); limpiarMarcas(); soltarSenalado(); setApuntando(false);
+        setGuia(null); setSemana(null);
     }, [limpiarMarcas, soltarSenalado]);
 
     // Cambiar de MÓDULO cierra el globo. No de título: el título se completa
@@ -139,7 +148,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         apartados.add(a.clave);   // ya no se asoma solo; sigue en la lista
         setContenido({ animo: a.animo, piezas: a.explicacion, volver: true });
         setAbierto(true);
-        if (a.ancla) desmarcar.current = marcar([a.ancla]);
+        if (a.anclas?.length || a.ancla) desmarcar.current = marcar(a.anclas?.length ? a.anclas : [a.ancla]);
     }, [limpiarMarcas]);
 
     const abrirInicio = useCallback(() => { limpiarMarcas(); setContenido(null); setAbierto(true); }, [limpiarMarcas]);
@@ -248,6 +257,78 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         };
     }, [resaltar, quitarResaltado, tomar]);
 
+    // ── Guía en pantalla: marca el botón real de cada paso ──────────────────
+    // Se busca cada medio segundo porque el objetivo del paso siguiente suele
+    // estar en un diálogo que todavía no se abrió. Avanza sola cuando la
+    // persona toca el objetivo de ese paso —o de uno posterior: si se adelantó,
+    // la guía la alcanza— y, en un campo, cuando deja de escribir.
+    const guiar = useCallback((pasos) => {
+        limpiarMarcas(); soltarSenalado();
+        setContenido(null);
+        setGuia({ pasos, i: 0, hallado: false });
+        setAbierto(true);
+    }, [limpiarMarcas, soltarSenalado]);
+
+    useEffect(() => {
+        if (!guia) return undefined;
+        const paso = guia.pasos[guia.i];
+        if (!paso) return undefined;
+        let marcado = null;
+        let desplazado = false;
+        const buscar = () => {
+            const el = buscarObjetivo(paso, raiz.current);
+            if (el === marcado) return;
+            marcado?.removeAttribute('data-saly-senalado');
+            marcado = el;
+            if (el) {
+                el.setAttribute('data-saly-senalado', '');
+                if (!desplazado) { el.scrollIntoView?.({ block: 'center', behavior: 'smooth' }); desplazado = true; }
+            }
+            setGuia((g) => (g && g.i === guia.i && g.hallado !== !!el ? { ...g, hallado: !!el } : g));
+        };
+        buscar();
+        const reloj = setInterval(buscar, 500);
+        const avanzar = (a) => setGuia((g) => (g ? { ...g, i: a, hallado: false } : g));
+        const tocar = (e) => {
+            if (raiz.current?.contains(e.target)) return;
+            for (let k = guia.i; k < guia.pasos.length; k++) {
+                const el = k === guia.i ? marcado : buscarObjetivo(guia.pasos[k], raiz.current);
+                if (el && el.contains(e.target) && !guia.pasos[k].campo) { setTimeout(() => avanzar(k + 1), 350); return; }
+            }
+        };
+        let escribiendo = null;
+        const escribir = (e) => {
+            if (!paso.campo || !marcado?.contains(e.target)) return;
+            clearTimeout(escribiendo);
+            escribiendo = setTimeout(() => avanzar(guia.i + 1), 1500);
+        };
+        document.addEventListener('click', tocar, true);
+        document.addEventListener('input', escribir, true);
+        return () => {
+            clearInterval(reloj); clearTimeout(escribiendo);
+            document.removeEventListener('click', tocar, true);
+            document.removeEventListener('input', escribir, true);
+            marcado?.removeAttribute('data-saly-senalado');
+        };
+    }, [guia?.i, guia?.pasos]); // eslint-disable-line react-hooks/exhaustive-deps -- `hallado` lo escribe este mismo efecto
+
+    const verSemana = useCallback(async () => {
+        setContenido(null);
+        setSemana({ cargando: true });
+        const { data, error } = await fetchPreguntasDeLaSemana();
+        if (error) { setSemana({ error: true }); return; }
+        // Las que no sirvieron primero; después las que se repiten.
+        const cuenta = new Map();
+        for (const f of data) {
+            const k = `${f.modulo}|${String(f.pregunta).toLowerCase().trim()}`;
+            const c = cuenta.get(k) || { pregunta: f.pregunta, modulo: f.modulo, veces: 0, malas: 0 };
+            c.veces += 1; if (f.util === false) c.malas += 1;
+            cuenta.set(k, c);
+        }
+        const lista = [...cuenta.values()].sort((a, b) => (b.malas - a.malas) || (b.veces - a.veces));
+        setSemana({ total: data.length, lista: lista.slice(0, 12) });
+    }, []);
+
     const preguntar = useCallback(async (e, textoFijo) => {
         e?.preventDefault?.();
         const texto = (textoFijo || pregunta).trim().slice(0, SALY_MAX_PREGUNTA);
@@ -260,19 +341,22 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         if (frecuente) {
             setPregunta('');
             setAbierto(true);
-            setContenido({ animo: 'alegria', piezas: frecuente.piezas, volver: true });
+            setContenido({ animo: 'alegria', piezas: frecuente.piezas, guia: frecuente.guia, volver: true });
             return;
         }
 
-        let vista = '';
-        try { vista = JSON.stringify(pantalla.leer()); } catch { vista = '{}'; }
-        vista = taparDatosPersonales(vista).slice(0, SALY_MAX_PANTALLA);
+        let crudo = '';
+        try { crudo = JSON.stringify(pantalla.leer()); } catch { crudo = '{}'; }
+        // Los nombres de las personas del portal salen como «Persona N» y se
+        // devuelven al mostrar la respuesta: la IA no necesita saber quién es.
+        const mascara = crearMascaraDeNombres((employees || []).map((x) => x.name));
+        const vista = mascara.tapar(taparDatosPersonales(crudo)).slice(0, SALY_MAX_PANTALLA);
         const decl = pantalla.filtros();
         const filtros = Object.fromEntries(Object.entries(decl).map(([k, f]) => [k, {
             rotulo: f.rotulo, valor: f.valor ?? '',
             opciones: (f.opciones || []).slice(0, 30).map((o) => ({ value: String(o.value), label: String(o.label) })),
         }]));
-        const lo = senalado?.texto || '';
+        const lo = mascara.tapar(senalado?.texto || '');
 
         const clave = claveDePregunta(pantalla.modulo, texto, `${vista}|${lo}`);
         let data = respondidas.get(clave);
@@ -280,7 +364,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
             setPensando(true);
             setAbierto(true);
             setContenido({ animo: 'pensando', piezas: [{ tipo: 'titular', texto: 'Déjame ver…', sub: lo ? 'Estoy leyendo lo que señalaste' : 'Estoy leyendo lo que hay en pantalla' }] });
-            const r = await preguntarAyudaDeSaly({ modulo: pantalla.modulo, pregunta: texto, pantalla: vista, filtros, senalado: lo || undefined });
+            const r = await preguntarAyudaDeSaly({ modulo: pantalla.modulo, pregunta: mascara.tapar(texto), pantalla: vista, filtros, senalado: lo || undefined });
             setPensando(false);
             data = r.data;
             if (r.error || !data?.ok) {
@@ -305,14 +389,26 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
             f.poner(op.value);
             puestos.push({ ancla: `filtro-${k}`, texto: `${f.rotulo}: ${op.label}` });
         }
-        const piezas = validarPiezas(data.piezas);
+        let piezas = destaparPiezas(validarPiezas(data.piezas), mascara.destapar);
+        // Un monto que no sale de la pantalla no se muestra: es el error que
+        // más daño hace, porque se lee como un dato. Se quita la pieza que lo
+        // trae; si se cae la respuesta misma, se dice en vez de adivinar.
+        const fuentes = [crudo, senalado?.texto, texto];
+        const limpias = piezas.filter((p) => !montosInventados([p], fuentes).length);
+        if (limpias.length !== piezas.length) {
+            console.warn('Saly: quité una pieza con un monto que no está en pantalla', montosInventados(piezas, fuentes));
+            piezas = limpias[0]?.tipo === 'titular' ? limpias : [
+                { tipo: 'titular', texto: 'Prefiero no darte un número que no veo', sub: 'Señala la fila o el corte y te lo explico con sus montos' },
+                ...limpias.filter((p) => p.tipo !== 'titular'),
+            ];
+        }
         if (puestos.length) {
             piezas.splice(1, 0, { tipo: 'chips', items: puestos.map((p) => p.texto) });
             piezas.push({ tipo: 'nota', texto: 'Quita los filtros cuando quieras: no guardé nada.' });
         }
         setContenido({ animo: data.animo || 'atencion', piezas, id: data.id, quedan: data.quedan, volver: true });
         if (puestos.length) setTimeout(() => { desmarcar.current = marcar(puestos.map((p) => p.ancla)); }, 60);
-    }, [pregunta, pantalla, pensando, limpiarMarcas, senalado]);
+    }, [pregunta, pantalla, pensando, limpiarMarcas, senalado, employees]);
 
     const calificar = useCallback(async (util) => {
         if (!contenido?.id) return;
@@ -324,7 +420,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     // Se cierra con Escape y con un toque FUERA. `pointerdown` y en captura,
     // para que ningún componente de la pantalla se lo trague antes.
     useEffect(() => {
-        if (!abierto || apuntando) return undefined;
+        if (!abierto || apuntando || guia) return undefined;
         const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
         const afuera = (e) => { if (raiz.current && !raiz.current.contains(e.target)) cerrar(); };
         window.addEventListener('keydown', tecla);
@@ -333,7 +429,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
             window.removeEventListener('keydown', tecla);
             document.removeEventListener('pointerdown', afuera, true);
         };
-    }, [abierto, apuntando, cerrar]);
+    }, [abierto, apuntando, cerrar, guia]);
 
     useEffect(() => {
         if (abierto && !contenido) setTimeout(() => campo.current?.querySelector('input')?.focus(), 30);
@@ -386,8 +482,8 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                             {abierto ? (
                                 <>
                                     <div className="-mr-2 mb-1 flex items-center justify-between">
-                                        {contenido?.volver ? (
-                                            <button type="button" onClick={abrirInicio}
+                                        {(contenido?.volver || semana) && !guia ? (
+                                            <button type="button" onClick={() => { setSemana(null); abrirInicio(); }}
                                                 className="-ml-1 min-h-[var(--tap-min)] rounded-lg px-1 text-micro font-black uppercase tracking-widest text-content-3 hover:text-content active:scale-[0.97]">
                                                 ‹ Saly
                                             </button>
@@ -400,8 +496,59 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                         </button>
                                     </div>
 
+                                    {guia ? (
+                                        <div className="grid gap-3">
+                                            {guia.i < guia.pasos.length ? (
+                                                <>
+                                                    <p className="text-micro font-black uppercase tracking-widest text-content-3">
+                                                        Paso {guia.i + 1} de {guia.pasos.length}
+                                                    </p>
+                                                    <PiezasDeSaly piezas={[{ tipo: 'pasos', desde: guia.i, items: [guia.pasos[guia.i].texto] }]} />
+                                                    {(guia.pasos[guia.i].boton || guia.pasos[guia.i].campo) && !guia.hallado && (
+                                                        <p className="text-caption text-content-3">Todavía no lo veo en pantalla: te lo marco en cuanto aparezca.</p>
+                                                    )}
+                                                    <div className="flex gap-2">
+                                                        <Button variant="secondary" size="sm" onClick={() => setGuia((g) => ({ ...g, i: g.i + 1, hallado: false }))}>
+                                                            {guia.i + 1 < guia.pasos.length ? 'Siguiente' : 'Listo'}
+                                                        </Button>
+                                                        <Button variant="ghost" size="sm" onClick={cerrar}>Terminar</Button>
+                                                    </div>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <PiezasDeSaly piezas={[{ tipo: 'titular', texto: '¡Listo!', sub: 'Así se hace. Cuando quieras, te guío otra vez.' }]} />
+                                                    <Button variant="secondary" size="sm" onClick={cerrar}>Cerrar</Button>
+                                                </>
+                                            )}
+                                        </div>
+                                    ) : (
                                     <div className="max-h-[min(26rem,60vh)] overflow-y-auto pr-1">
+                                        {semana ? (
+                                            semana.cargando ? <PiezasDeSaly piezas={[{ tipo: 'titular', texto: 'Déjame ver…', sub: 'Leyendo lo que se preguntó' }]} />
+                                            : semana.error ? <PiezasDeSaly piezas={[{ tipo: 'titular', texto: 'No pude leer las preguntas', sub: 'Inténtalo de nuevo en un momento.' }]} />
+                                            : (
+                                                <div className="grid gap-2">
+                                                    <PiezasDeSaly piezas={[{ tipo: 'titular', texto: `${semana.total} preguntas esta semana`, sub: 'Primero las que no sirvieron, después las que más se repiten' }]} />
+                                                    {semana.lista.map((f) => (
+                                                        <div key={`${f.modulo}-${f.pregunta}`} className="flex items-start gap-2 text-body-sm">
+                                                            <span className="min-w-0 flex-1 text-content-2">{f.pregunta}</span>
+                                                            <span className="shrink-0 text-caption tabular-nums text-content-3">
+                                                                {f.veces > 1 ? `×${f.veces}` : ''}{f.malas ? ` · 👎${f.malas}` : ''}
+                                                            </span>
+                                                        </div>
+                                                    ))}
+                                                    <p className="text-caption text-content-3">Lo que se repite conviene pasarlo a pregunta rápida: así se contesta sin IA.</p>
+                                                </div>
+                                            )
+                                        ) : (
                                         <PiezasDeSaly onIr={ir} piezas={contenido?.piezas || inicioPiezas} />
+                                        )}
+
+                                        {contenido?.guia?.length > 0 && (
+                                            <Button className="mt-3" variant="primary" size="sm" icon={ListChecks} onClick={() => guiar(contenido.guia)}>
+                                                Guíame en la pantalla
+                                            </Button>
+                                        )}
 
                                         {!contenido && senalado && (
                                             <div className="mt-3">
@@ -414,7 +561,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                             </div>
                                         )}
 
-                                        {!contenido && !senalado && (
+                                        {!contenido && !senalado && !semana && (
                                             <div className="mt-3 grid gap-3">
                                                 {vigentes.length > 0 && (
                                                     <div>
@@ -439,7 +586,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                                         <div className="flex flex-wrap gap-1.5">
                                                             {PREGUNTAS_FRECUENTES[pantalla.modulo].slice(0, 5).map((f) => (
                                                                 <Button key={f.id} variant="secondary" size="sm"
-                                                                    onClick={() => setContenido({ animo: 'alegria', piezas: f.piezas, volver: true })}>
+                                                                    onClick={() => setContenido({ animo: 'alegria', piezas: f.piezas, guia: f.guia, volver: true })}>
                                                                     {f.pregunta}
                                                                 </Button>
                                                             ))}
@@ -454,11 +601,22 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                                         <span className="block text-caption text-content-3">O arrástrame encima de una fila</span>
                                                     </span>
                                                 </button>
+                                                {puedeVerPreguntas && (
+                                                    <button type="button" onClick={verSemana}
+                                                        className="flex min-h-[var(--tap-min)] items-center gap-2 rounded-xl px-2 text-left hover:bg-surface-card-hover active:scale-[0.99]">
+                                                        <MessagesSquare size={16} className="shrink-0 text-content-2" aria-hidden="true" />
+                                                        <span className="min-w-0 flex-1">
+                                                            <span className="block text-body-sm font-bold text-content">Lo que me preguntan</span>
+                                                            <span className="block text-caption text-content-3">Las de esta semana, para mejorarme</span>
+                                                        </span>
+                                                    </button>
+                                                )}
                                             </div>
                                         )}
                                     </div>
+                                    )}
 
-                                    {contenido?.id && (
+                                    {!guia && contenido?.id && (
                                         <div className="mt-3 flex items-center gap-1 text-caption text-content-3">
                                             <span className="mr-1">¿Te sirvió?</span>
                                             {[[true, ThumbsUp, 'Sí me sirvió'], [false, ThumbsDown, 'No me sirvió']].map(([v, Icono, rot]) => (
@@ -471,7 +629,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                         </div>
                                     )}
 
-                                    <form onSubmit={preguntar} className="mt-4 flex items-center gap-2 border-t border-divider pt-3">
+                                    {!guia && <form onSubmit={preguntar} className="mt-4 flex items-center gap-2 border-t border-divider pt-3">
                                         <div className="min-w-0 flex-1" ref={campo}>
                                             <PortalInput name="saly-pregunta" value={pregunta} onChange={(e) => setPregunta(e.target.value)}
                                                 placeholder={senalado ? 'O escribe tu pregunta…' : 'Escribe tu duda…'} readOnly={pensando} aria-label="Pregúntale a Saly"
@@ -480,7 +638,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                         </div>
                                         <Button type="submit" variant="primary" iconOnly icon={Send}
                                             aria-label="Enviar la pregunta" disabled={!pregunta.trim() || pensando} />
-                                    </form>
+                                    </form>}
                                 </>
                             ) : (
                                 <>

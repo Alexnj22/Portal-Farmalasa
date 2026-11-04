@@ -4337,6 +4337,7 @@ html[data-en-pestana] #main-scroll {
 .saly-cifra { border-radius: 0.75rem; padding: 0.5rem 0.625rem; background: color-mix(in srgb, var(--saly-atencion-2) 12%, transparent); }
 .saly-cifra[data-tono="mal"] { background: color-mix(in srgb, var(--danger) 14%, transparent); }
 .saly-cifra[data-tono="bien"] { background: color-mix(in srgb, var(--success) 14%, transparent); }
+.saly-marca { background: color-mix(in srgb, var(--saly-atencion-2) 16%, transparent); color: var(--color-content); }
 .saly-barra { height: 0.5rem; border-radius: 99px; overflow: hidden; background: color-mix(in srgb, var(--saly-atencion-2) 16%, transparent); }
 .saly-barra > span { display: block; height: 100%; border-radius: 99px; background: var(--saly-pensando-2); }
 .saly-barra > span[data-tono="mal"] { background: var(--danger); }

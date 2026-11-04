@@ -82,7 +82,7 @@ import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { accionDeLaCaja, bolsasDelDia, declaradoDelCorte, embolsadoDelDia } from '@nucleo/utils/corteDeCaja';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
-import { avisoDeCortesSinResolver, avisoDeError, avisoDeFaltaPorContar } from '@nucleo/utils/salyAyuda';
+import { avisoDeCortesSinResolver, avisoDeError, avisoDeFaltaPorContar, avisoDeRevision, revisarMovimientos, salyAyudaParaMi } from '@nucleo/utils/salyAyuda';
 import { useSalyEnPantalla } from '../components/saly/salyAyudaStore';
 
 /**
@@ -927,6 +927,14 @@ export default function MiCajaView({ comoPestana = false }) {
      * abierta y el día sin cerrar: después ya no hay freno que explicar. */
     const DIALOGOS_SALY = { corte: 'el corte', ingreso: 'una entrada', salida: 'una salida', cerrar: 'el cierre del día', abrir: 'la apertura' };
     const cajaViva = estado?.abierta && !diaCerrado;
+    /* La revisión fila por fila ($0): lo que supervisión miraría antes del
+     * cierre. Mientras Saly está en prueba, sólo para quien la prueba. */
+    const conSaly = salyAyudaParaMi(user?.id);
+    const revision = useMemo(() => {
+        if (!conSaly) return { lineas: [], motivos: new Map() };
+        const lineas = lineasDelDia({ movimientos, deBolsas: [], cobros: [] });
+        return { lineas, motivos: revisarMovimientos(lineas) };
+    }, [conSaly, movimientos]);
     useSalyEnPantalla({
         modulo: sala ? 'caja' : null,
         titulo: `Mi caja · ${nombreSala}`,
@@ -950,6 +958,7 @@ export default function MiCajaView({ comoPestana = false }) {
             noSePudo ? avisoDeError(noSePudo, 'caja') : null,
             cajaViva ? avisoDeCortesSinResolver(cortesSinResolver) : null,
             cajaViva && !cortesSinResolver.length ? avisoDeFaltaPorContar(faltaPorContar, { sala: nombreSala }) : null,
+            cajaViva ? avisoDeRevision(revision.lineas, revision.motivos) : null,
         ],
         enFormulario: DIALOGOS_SALY[dialogo] || null,
     });
@@ -1235,7 +1244,7 @@ export default function MiCajaView({ comoPestana = false }) {
                         <BonosPorPagar sala={sala} cajaAbierta={estado?.abierta === true}
                             puedeOperar={puedeOperar} onSalida={anotarSalidaDelCajon} />
 
-                        <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas}
+                        <MovimientosDelDia movimientos={movimientos} deBolsas={deBolsas} revisionSaly={revision.motivos}
                             cobros={cobros}
                             dia={estado?.dia} tipos={tipos} puedeOperar={puedeOperar}
                             puedeVerBolsas={puedeVerBolsas} onCorregir={setCorrigiendo}
@@ -2041,7 +2050,7 @@ const CLASE_DE_MOVIMIENTO = {
  * corrección y el reparto entre bolsas. «Corregir» vive adentro: es una acción
  * sobre UN movimiento que ya se está mirando, no un botón repetido en cada fila.
  */
-function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorregir, onReenviar, onMandar, ocupado,
+function Movimiento({ l, corte, saly, abierto, onAlternar, quien, puedeOperar, onCorregir, onReenviar, onMandar, ocupado,
     foto, firmando, onVerComprobante, onAmpliar }) {
     const { Icono, tono } = l.anulado
         ? { Icono: Ban, tono: 'bg-content-3/10 text-content-3' }
@@ -2071,7 +2080,7 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
     ].filter(([, v]) => v != null && v !== '');
 
     return (
-        <div data-surface="card"
+        <div data-surface="card" data-saly-ancla={`mov-${l.clave}`}
             className={`rounded-xl overflow-hidden transition-shadow ${abierto ? 'ring-1 ring-brand/30' : ''}`}>
             <button type="button" onClick={onAlternar} aria-expanded={abierto} aria-controls={idDetalle}
                 className="w-full flex items-center gap-3 px-3 sm:px-4 py-2.5 text-left
@@ -2096,8 +2105,15 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
                             </span>
                         )}
                     </span>
-                    {(l.anulado || pendiente || corregido || l.sinEfectivo || l.sinCaja || l.autorizacion || ROTULO_DE_ORIGEN[l.montoOrigen]) && (
+                    {(l.anulado || pendiente || corregido || l.sinEfectivo || l.sinCaja || l.autorizacion || ROTULO_DE_ORIGEN[l.montoOrigen]
+                        || saly?.some((m) => m.enFila)) && (
                         <span className="flex flex-wrap gap-1 mt-1">
+                            {/* Lo que vio la revisión de Saly y la fila no
+                                dice sola. Con su color, para que se sepa de
+                                dónde sale la marca. */}
+                            {(saly || []).filter((m) => m.enFila).map((m) => (
+                                <Marca key={m.corto} tono="saly">{m.corto}</Marca>
+                            ))}
                             {l.anulado && <Marca tono="apagada">Anulado</Marca>}
                             {/* A la vista y no sólo en el detalle: entre dos
                                 anotados iguales, es lo que dice cuál es el que
@@ -2248,13 +2264,14 @@ function Movimiento({ l, corte, abierto, onAlternar, quien, puedeOperar, onCorre
 function Marca({ tono, children }) {
     return (
         <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-micro font-semibold ${
-            tono === 'aviso' ? 'bg-warning/10 text-warning-text' : 'bg-content-3/10 text-content-2'}`}>
+            tono === 'aviso' ? 'bg-warning/10 text-warning-text'
+                : tono === 'saly' ? 'saly-marca' : 'bg-content-3/10 text-content-2'}`}>
             {children}
         </span>
     );
 }
 
-function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
+function MovimientosDelDia({ movimientos, deBolsas, revisionSaly, cobros, dia, tipos, puedeOperar, puedeVerBolsas,
     onCorregir, onReenviar, onMandar, ocupado, anotaron, cortes, correcciones }) {
     const etiquetaDe = useCallback((codigo) =>
         tipos?.find((t) => t.codigo === codigo)?.etiqueta || conMayuscula(codigo), [tipos]);
@@ -2408,7 +2425,7 @@ function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, tipos, puedeOpe
 
                     <div className="space-y-1.5">
                         {g.lineas.map((l) => (
-                            <Movimiento key={l.clave} l={l} corte={g.corte}
+                            <Movimiento key={l.clave} l={l} corte={g.corte} saly={revisionSaly?.get(l.clave)}
                                 abierto={abierto === l.clave}
                                 onAlternar={() => setAbierto((c) => (c === l.clave ? null : l.clave))}
                                 quien={anotaron?.get(l.quien)}

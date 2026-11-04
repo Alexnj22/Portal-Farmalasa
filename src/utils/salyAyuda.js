@@ -260,6 +260,12 @@ const CORTE = {
         ] },
         { tipo: 'nota', texto: 'Si hay preventas guardadas en la caja, primero hay que finalizarlas: el corte no deja guardar.' },
     ],
+    guia: [
+        { boton: ['Hacer corte', 'Corte'], texto: 'Toca **Corte**, arriba.' },
+        { campo: 'Efectivo en el cajón', texto: 'Cuenta **sólo el efectivo del cajón** y escríbelo aquí. Lo de las bolsas lo suma el portal.' },
+        { boton: ['Hacer el corte'], texto: 'Toca **Hacer el corte**: te digo si cuadró, sobró o faltó.' },
+        { boton: ['Confirmar'], texto: 'Si el conteo es el real, **Confirmar**. Si contaste mal, **Descartar** y vuelve a contar.' },
+    ],
 };
 const CERRAR = {
     id: 'cerrar', pregunta: '¿Por qué no puedo cerrar el día?', claves: [['cerrar', 'dia'], ['cierre'], ['no', 'deja', 'cerrar']],
@@ -273,6 +279,9 @@ const CERRAR = {
         ] },
         { tipo: 'nota', texto: 'Cerrar el día emite el Z y no se deshace. Si nadie cierra, el portal lo cierra solo una hora después de la hora de cierre.' },
     ],
+    guia: [
+        { boton: ['Cerrar el día', 'Cerrar'], texto: 'Toca **Cerrar**, arriba. Si algo frena el cierre, la ventana te dice qué.' },
+    ],
 };
 const SALIDA = {
     id: 'salida', pregunta: '¿Cómo anoto un gasto o una salida?', claves: [['salida'], ['gasto'], ['vale'], ['pago', 'proveedor'], ['anticipo'], ['compra', 'urgente']],
@@ -285,6 +294,11 @@ const SALIDA = {
         ] },
         { tipo: 'nota', texto: 'Las salidas del día se juntan en un vale de caja al hacer el siguiente corte: no hay que hacerlo a mano.' },
     ],
+    guia: [
+        { boton: ['Salida'], texto: 'Toca **Salida**, arriba.' },
+        { texto: 'Elige el **tipo** de salida, escribe el **monto** y el detalle. Si hay boleta, tómale **foto**.' },
+        { boton: ['Anotar', 'Continuar'], texto: 'Toca **Anotar**. Si te pide quién se lleva el efectivo, elígelo.' },
+    ],
 };
 const ENTRADA = {
     id: 'entrada', pregunta: '¿Cómo anoto una entrada o un pago con POS?', claves: [['entrada'], ['pos'], ['promerica'], ['inyeccion'], ['glucosa'], ['mapfre'], ['apartar'], ['domicilio']],
@@ -296,6 +310,11 @@ const ENTRADA = {
             'Revisa el monto y toca **Anotar**.',
         ] },
         { tipo: 'nota', texto: 'Un mismo número de boleta sólo choca si es la misma terminal y el mismo monto: cada banco numera por su lado.' },
+    ],
+    guia: [
+        { boton: ['Entrada'], texto: 'Toca **Entrada**, arriba.' },
+        { texto: 'Elige el **tipo**. En POS Promerica, toma la **foto de la boleta**: llena sola el monto.' },
+        { boton: ['Anotar', 'Continuar'], texto: 'Revisa el monto y toca **Anotar**.' },
     ],
 };
 const FALTANTE = {
@@ -319,6 +338,10 @@ const ABRIR = {
             'Si la caja está cerrada, toca **Abrir** (Abrir la caja) y escribe con cuánto efectivo arranca. Si arranca en cero, déjalo vacío.',
             'Si está abierta pero el turno está parado, toca **Iniciar turno**: sin turno no se puede vender, cortar ni cerrar.',
         ] },
+    ],
+    guia: [
+        { boton: ['Abrir la caja', 'Abrir', 'Iniciar el turno'], texto: 'Toca **Abrir** (o **Iniciar turno** si la caja ya está abierta).' },
+        { campo: 'Monto de apertura', texto: 'Escribe con cuánto efectivo arranca. Si es cero, déjalo vacío.' },
     ],
 };
 const PESTANAS_EFECTIVO = {
@@ -373,3 +396,161 @@ export function preguntaFrecuente(modulo, texto) {
     }
     return mejor;
 }
+
+/* ── Nombres: se cambian por un alias antes de salir hacia la IA ────────────
+ * Decisión del usuario (2026-11-04, punto 4). El nombre de una persona
+ * —empleado o cliente— viaja como «Persona 1», y al volver la respuesta se le
+ * devuelve el nombre real. Se cubren el nombre completo y el corto (primer
+ * nombre + primer apellido), que es como el portal lo pinta. Los más largos
+ * van primero: «KARLA PATRICIA CORTEZ VALLE» antes que «KARLA CORTEZ». */
+const sinTildes = (t) => String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '');
+const escapar = (t) => t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+export function crearMascaraDeNombres(nombres) {
+    const formas = [];
+    const alias = new Map();          // alias → nombre corto legible
+    let n = 0;
+    for (const crudo of nombres || []) {
+        const palabras = sinTildes(crudo).trim().split(/\s+/).filter((p) => p.length > 1);
+        if (palabras.length < 2) continue;
+        const completo = palabras.join(' ');
+        if (formas.some((f) => f.forma === completo)) continue;
+        const corto = palabras.length >= 4 ? `${palabras[0]} ${palabras[2]}` : `${palabras[0]} ${palabras[1]}`;
+        const id = `Persona ${++n}`;
+        alias.set(id, corto.split(' ').map((p) => p[0] + p.slice(1).toLowerCase()).join(' '));
+        formas.push({ forma: completo, id });
+        if (corto !== completo) formas.push({ forma: corto, id });
+    }
+    formas.sort((a, b) => b.forma.length - a.forma.length);
+    const reglas = formas.map((f) => [new RegExp(`\\b${escapar(f.forma).replace(/ /g, '\\s+')}\\b`, 'gi'), f.id]);
+    return {
+        tapar: (texto) => {
+            let t = sinTildes(texto);
+            for (const [re, id] of reglas) t = t.replace(re, id);
+            return t;
+        },
+        destapar: (texto) => String(texto ?? '').replace(/Persona \d+/g, (m) => alias.get(m) || 'esa persona'),
+    };
+}
+
+/** Le devuelve los nombres a las piezas que contestó la IA. */
+export function destaparPiezas(piezas, destapar) {
+    const d = (v) => (typeof v === 'string' ? destapar(v) : v);
+    return (piezas || []).map((p) => ({
+        ...p,
+        texto: d(p.texto), sub: d(p.sub),
+        items: Array.isArray(p.items) ? p.items.map((i) => (typeof i === 'string' ? d(i)
+            : { ...i, rotulo: d(i.rotulo), valor: d(i.valor), texto: d(i.texto), hora: d(i.hora) })) : p.items,
+    }));
+}
+
+/* ── Los números de una respuesta se comprueban (punto 5) ───────────────────
+ * Un monto que la IA inventa es el peor error posible en la caja: se lee como
+ * un dato. Toda cantidad con centavos o con `$` que aparezca en la respuesta
+ * tiene que salir de lo que la pantalla mostró —o ser la suma o la resta de
+ * dos de esas cantidades, que es lo que una explicación hace—. Si no, la
+ * respuesta no se muestra. Los números chicos sin centavos (pasos, horas,
+ * «4 frenos») no se miran: no son dinero. */
+const MONTO_EN_RESPUESTA = /\$\s?-?\d[\d,]*(?:\.\d+)?|\b\d[\d,]*\.\d{2}\b/g;
+const NUMERO_EN_FUENTE = /-?\d[\d,]*(?:\.\d+)?/g;
+const aCentavos = (s) => Math.round(Math.abs(Number(String(s).replace(/[$,\s]/g, ''))) * 100);
+
+function textoDePiezas(piezas) {
+    const partes = [];
+    for (const p of piezas || []) {
+        partes.push(p.texto, p.sub);
+        for (const i of p.items || []) {
+            if (typeof i === 'string') partes.push(i);
+            else partes.push(i.rotulo, i.valor, i.texto, i.hora);
+        }
+    }
+    return partes.filter(Boolean).join(' \n ');
+}
+
+/** Los montos de la respuesta que NO salen de las fuentes. Vacío = todo bien. */
+export function montosInventados(piezas, fuentes) {
+    const conocidos = new Set();
+    for (const f of fuentes || []) {
+        for (const m of String(f ?? '').match(NUMERO_EN_FUENTE) || []) {
+            const c = aCentavos(m);
+            if (Number.isFinite(c)) conocidos.add(c);
+        }
+    }
+    const lista = [...conocidos];
+    const derivados = new Set(lista);
+    if (lista.length <= 200) {
+        for (let i = 0; i < lista.length; i++) {
+            for (let j = i + 1; j < lista.length; j++) {
+                derivados.add(lista[i] + lista[j]);
+                derivados.add(Math.abs(lista[i] - lista[j]));
+            }
+        }
+    }
+    const malos = [];
+    for (const m of textoDePiezas(piezas).match(MONTO_EN_RESPUESTA) || []) {
+        const c = aCentavos(m);
+        if (Number.isFinite(c) && c > 0 && !derivados.has(c)) malos.push(m.trim());
+    }
+    return malos;
+}
+
+/* ── La revisión de los movimientos del día (punto 2, $0) ──────────────────
+ * Lo que una persona de supervisión miraría fila por fila, hecho por el
+ * portal. Devuelve `Map<clave, motivos[]>` sobre las líneas de `lineasDelDia`.
+ * Sólo marca lo que tiene arreglo HOY, antes del cierre. Lo que la fila ya
+ * dice sola («No llegó a la caja», «Falta autorizarlo») no se repite en la
+ * fila: va sólo en la explicación de la burbuja. */
+const MIN = 60_000;
+export function revisarMovimientos(lineas, { ahora = Date.now() } = {}) {
+    const motivos = new Map();
+    const poner = (l, m) => { if (!motivos.has(l.clave)) motivos.set(l.clave, []); motivos.get(l.clave).push(m); };
+    const vivas = (lineas || []).filter((l) => !l.anulado && l.movimiento);
+
+    for (const l of vivas) {
+        const edad = l.cuando ? ahora - new Date(l.cuando).getTime() : 0;
+        // Sólo donde hay un papel que respaldar: compra, gasto o proveedor. Un
+        // cambio por monedas o un anticipo no traen boleta.
+        const conPapel = /compra|gasto|proveedor/i.test(`${l.titulo || ''} ${l.movimiento?.concepto || ''}`);
+        if (l.clase === 'sale' && conPapel && !l.foto) poner(l, { corto: 'Sin foto del respaldo', largo: 'una salida sin foto de la boleta o factura', enFila: true });
+        if (l.sinCaja && edad > 10 * MIN) poner(l, { corto: 'No llegó a la caja', largo: 'se anotó en el portal pero no llegó a la caja', enFila: false });
+        if (l.autorizacion === 'PENDIENTE' && edad > 30 * MIN) poner(l, { corto: 'Lleva rato sin autorizar', largo: 'lleva más de media hora esperando autorización', enFila: false });
+    }
+    // La misma boleta con el mismo monto dos veces: casi siempre se anotó doble.
+    const vistas = new Map();
+    for (const l of vivas) {
+        const b = l.movimiento?.numero_boleta;
+        if (!b) continue;
+        const k = `${String(b).replace(/^0+/, '')}|${l.monto.toFixed(2)}`;
+        if (vistas.has(k)) {
+            const otra = vistas.get(k);
+            poner(l, { corto: 'Boleta repetida', largo: `la misma boleta y el mismo monto que otra de hoy`, enFila: true });
+            if (!(motivos.get(otra.clave) || []).some((m) => m.corto === 'Boleta repetida')) {
+                poner(otra, { corto: 'Boleta repetida', largo: 'la misma boleta y el mismo monto que otra de hoy', enFila: true });
+            }
+        } else vistas.set(k, l);
+    }
+    return motivos;
+}
+
+/** El aviso de la burbuja con lo que encontró la revisión. */
+export function avisoDeRevision(lineas, motivos) {
+    if (!motivos?.size) return null;
+    const porClave = new Map((lineas || []).map((l) => [l.clave, l]));
+    const filas = [...motivos.entries()].map(([clave, ms]) => ({ l: porClave.get(clave), ms })).filter((f) => f.l);
+    if (!filas.length) return null;
+    const titulo = (l) => String(l.titulo || '').split(' · ')[0];
+    return {
+        clave: `revision:${[...motivos.keys()].sort().join(',')}`,
+        animo: 'atencion',
+        ancla: `mov-${filas[0].l.clave}`,
+        oferta: [{ tipo: 'titular', texto: `Revisé los movimientos: ${filas.length} para mirar`, sub: 'Mejor arreglarlo antes del cierre' }],
+        explicacion: [
+            { tipo: 'titular', texto: filas.length === 1 ? 'Un movimiento para mirar' : `${filas.length} movimientos para mirar`, sub: 'Los marqué en la lista' },
+            { tipo: 'pasos', items: filas.slice(0, 4).map(({ l, ms }) =>
+                `**${titulo(l)}** (${formatMoney(l.monto)}): ${ms.map((m) => m.largo).join('; ')}.`) },
+            { tipo: 'nota', texto: 'Ábrelo y usa **Corregir** para agregar la foto o arreglar el dato. Si una boleta quedó doble, pide anular una.' },
+        ],
+        anclas: filas.map(({ l }) => `mov-${l.clave}`),
+    };
+}
+

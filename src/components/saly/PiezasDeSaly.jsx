@@ -71,7 +71,7 @@ function Pieza({ p, onIr }) {
                 <ol className="grid gap-2">
                     {p.items.map((t, i) => (
                         <li key={i} className="flex items-start gap-2.5">
-                            <span className="saly-paso-num" aria-hidden="true">{i + 1}</span>
+                            <span className="saly-paso-num" aria-hidden="true">{(p.desde || 0) + i + 1}</span>
                             <span className="pt-px text-body-sm leading-snug text-content-2"><Texto>{t}</Texto></span>
                         </li>
                     ))}

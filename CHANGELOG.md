@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1429.2 — Saly vuelve a nombrar los vencidos que siguen a la venta
+
+El resumen de la mañana sólo nombraba los vencidos NUEVOS respecto de ayer: el
+3-nov cuatro salas dijeron «Sin novedades» con los mismos vencidos en el
+estante (11 en Salud 2). Ahora el vencido que ya se señaló y sigue a la venta
+vuelve al titular cada 3 días (3, 6, 9…), contados por los resúmenes que ya lo
+traían (`resumen_sala_novedades`, bloque 4b, migración `20261104162900`). La
+novedad lleva `insiste` y Saly lo dice con más preocupación y pide retirarlo,
+sin culpar a nadie. Simulado sobre el 4-nov: las 6 salas lo nombrarían.
+Desplegada `resumen-diario-salas` v7 (`--no-verify-jwt`).
+
 ## v2.1429.1 — App clientes: un solo color de íconos, días desde el 1 y revisión visual
 
 *«En cuenta, los íconos tienen demasiados colores, unifica y mejora. Da una

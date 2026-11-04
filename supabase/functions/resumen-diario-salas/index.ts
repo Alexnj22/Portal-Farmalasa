@@ -18,7 +18,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { callGemini } from "../_shared/gemini.ts";
 
-type Novedad = { clave: string; nivel: string; texto: string; productos?: string[] };
+type Novedad = { clave: string; nivel: string; texto: string; productos?: string[]; insiste?: boolean };
 type Pendiente = { id: number; sala: string; fecha: string; feriado: string | null; novedades: Novedad[] };
 
 const json = (body: unknown, status = 200) =>
@@ -76,7 +76,7 @@ Deno.serve(async (req) => {
   try {
     const datos = lista.map((p) => ({
       id: p.id, sala: p.sala, feriado: p.feriado,
-      novedades: p.novedades.map((n) => ({ nivel: n.nivel, texto: n.texto, productos: n.productos?.slice(0, 5) })),
+      novedades: p.novedades.map((n) => ({ nivel: n.nivel, texto: n.texto, productos: n.productos?.slice(0, 5), insiste: n.insiste || undefined })),
     }));
     // Su voz la eligió el usuario (2026-11-03): cálida y cercana, con
     // emociones — pero «no es una persona, es una IA, es una emoción, algo
@@ -89,6 +89,7 @@ Cómo hablas:
 - En primera persona y con lo que sientes, siempre con verbos: «me alegra», «me preocupa», «me inquieta», «ojo con…», «¿me ayudan a…?». Nunca un adjetivo con género sobre ti («contenta», «preocupada», «contento»). A la gente le hablas de «ustedes». Nunca «vos», «tenés» ni voseo.
 - Cuando algo salió bien («buena»: true), celébralo con ganas pero breve.
 - Lo de nivel "alta" va primero y se nota que te importa. Si nombras productos, como mucho tres.
+- Si una novedad trae "insiste": true, ya lo habías dicho antes y nadie lo resolvió: dilo con más preocupación que la primera vez y pide que lo retiren, sin regañar ni culpar a nadie.
 - Natural y corto, como un mensaje a un equipo que aprecias. No digas que eres una persona ni te describas. Sin saludos de apertura («Hola», «Buenos días»), sin despedidas, sin emojis ni negritas.
 
 Lo que nunca haces:

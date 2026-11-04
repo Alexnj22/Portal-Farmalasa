@@ -563,6 +563,8 @@ export const AREAS = [
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'puntos-cumpleanos-diario', 'puntos-motor-1min', 'puntos-vencer-diario', 'puntos-vigilar-irregularidades', 'puntos-vigilar-motor', 'vacuum-sales-invoice-items',
+                // VACUUM horario de puntos_lote: el motor de cada minuto lo necesita (2026-11-04).
+                'vacuum-puntos-lote',
                 'sync-dte-inv-all-1min', 'check-sales-alerts-5min', 'check-sales-reconciliation-daily',
                 'close-ventas-month', 'refresh-sales-daily-stats', 'refresh-sales-daily-stats-full',
                 'refresh-product-sales-rollup-daily', 'refresh-product-sales-monthly-agg',

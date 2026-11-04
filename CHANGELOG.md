@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.1 — Eficiencia: faltantes, puntos y CCF pendientes más livianos
+
+Auditoría de las consultas que más trabajan (pg_stat_statements por bloques,
+no por tiempo: los tiempos venían inflados por la saturación de
+`employees_safe`). Medido en producción, antes → después:
+
+- **`get_faltantes_con_stock_en_otra_sala`**: «¿tengo?» sin resolver el factor
+  de presentación (siempre >= 1). Salida idéntica en las 7 salas. Sala 1
+  52 → 23 ms y 25,658 → 9,745 bloques; Bodega 115 → 69 ms.
+- **`inyecciones_para_cobrar`**: sin cambio. Sola tarda 130–195 ms (búsqueda
+  80 ms); el máximo de 11.7 s era espera por la saturación.
+- **Motor de puntos** (cada minuto): el anti-join contra `puntos_lote` iba al
+  heap 13,008 veces por el mapa de visibilidad viejo. VACUUM + cron
+  `vacuum-puntos-lote` cada hora: 14,623 → 5,266 bloques, 35 → 29 ms.
+- **CCF sin sello** (`reenviar-ccf-10min`): seq scan de 402K facturas para 757
+  CCF. Índice `idx_si_tipo_documento_fecha`: 812 → 1 ms, 17,604 → 635 bloques.
+
 ## v2.1448.0 — App de clientes: juego nuevo «Pastillero»
 
 Pedido del usuario (2026-11-04): caen medicamentos en un botiquín, dos iguales

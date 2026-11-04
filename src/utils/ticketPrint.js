@@ -1,6 +1,9 @@
 import * as almacen from '@plataforma/almacen';
 import { mensajeAmigable } from './errorMessages';
-import { LOGO_TICKET_PNG, LOGO_TICKET_URL, logoParaElRollo } from './logoTicket';
+import {
+    LOGO_TICKET_PNG, LOGO_TICKET_URL, logoParaElRollo,
+    LOGO_COMPLETO_PNG, LOGO_COMPLETO_URL, logoCompletoParaElRollo, tituloEsLaMarca,
+} from './logoTicket';
 import { svgDeCodigoDeBarras, ajustarAltoDelMarco, imprimirMarco as imprimirMarcoDelNavegador, imprimirHtmlSinVista, permisoDeRedLocal } from '@plataforma/impresion';
 // ─── Impresión en rollo (ticketera) ──────────────────────────────────────────
 //
@@ -342,6 +345,9 @@ export function construirTicketHtml(ticket) {
   }
   .centro { text-align: center; }
   .logo { display: block; width: 16mm; height: 16mm; margin: 0 auto 1.5mm; image-rendering: pixelated; }
+  /* El logo completo reemplaza icono + nombre cuando el título es la marca.
+     64 mm × 8.5 mm: los mismos 512 × 68 puntos que salen por el rollo. */
+  .logo-completo { display: block; width: min(64mm, 100%); height: auto; margin: 0 auto 1.2mm; image-rendering: pixelated; }
   .marca { font-size: 11pt; font-weight: 700; letter-spacing: .3px; }
   .sub { font-size: 8pt; }
   .titulo {
@@ -409,8 +415,10 @@ export function construirTicketHtml(ticket) {
 </head>
 <body>
   <div class="centro">
-    ${encabezado.titulo ? `<img class="logo" src="${LOGO_TICKET_PNG}" alt=""/>` : ''}
-    ${encabezado.titulo ? `<div class="marca">${esc(encabezado.titulo)}</div>` : ''}
+    ${tituloEsLaMarca(encabezado.titulo)
+        ? `<img class="logo-completo" src="${LOGO_COMPLETO_PNG}" alt="${esc(encabezado.titulo)}"/>`
+        : `${encabezado.titulo ? `<img class="logo" src="${LOGO_TICKET_PNG}" alt=""/>` : ''}
+           ${encabezado.titulo ? `<div class="marca">${esc(encabezado.titulo)}</div>` : ''}`}
     ${(encabezado.lineas ?? []).map(l => `<div class="sub">${esc(l)}</div>`).join('')}
   </div>
   ${ticket.titulo ? `<div class="titulo">${esc(ticket.titulo)}</div>` : ''}
@@ -915,12 +923,22 @@ export function seccionesParaElPrograma(ticket) {
     // bolsa no lleva ninguna— el cambio de letra viaja con la regla: en su
     // propio renglón sería un renglón vacío.
     const lineasDeEncabezado = (encabezado.lineas ?? []).filter(Boolean);
-    const cabeza = [
-        JUEGO_DE_CARACTERES + CENTRO + DOBLE_ALTO + (encabezado.titulo ?? ''),
-        ...(lineasDeEncabezado.length ? [LETRA_CHICA + lineasDeEncabezado.join('\n')] : []),
-        LETRA_CHICA + regla(),
-        (ticket.titulo ?? '').toUpperCase(),
-    ].filter(Boolean).join('\n') + '\n';
+    // Cuando el título es la marca, el nombre ya va dibujado en el logo
+    // completo (logoTicket.js): escribirlo otra vez en doble alto es el
+    // renglón que se quería ahorrar. Los códigos de juego y centrado viajan
+    // pegados al primer renglón que queda, para no gastar uno vacío.
+    const marca = tituloEsLaMarca(encabezado.titulo);
+    const cabeza = (marca
+        ? [
+            JUEGO_DE_CARACTERES + CENTRO + LETRA_CHICA + [...lineasDeEncabezado, regla()].join('\n'),
+            (ticket.titulo ?? '').toUpperCase(),
+        ]
+        : [
+            JUEGO_DE_CARACTERES + CENTRO + DOBLE_ALTO + (encabezado.titulo ?? ''),
+            ...(lineasDeEncabezado.length ? [LETRA_CHICA + lineasDeEncabezado.join('\n')] : []),
+            LETRA_CHICA + regla(),
+            (ticket.titulo ?? '').toUpperCase(),
+        ]).filter(Boolean).join('\n') + '\n';
 
     const medio = [
         // El centrado y la letra chica ya vienen puestos del encabezado.
@@ -1027,7 +1045,7 @@ export function seccionesParaElPrograma(ticket) {
             + '\n'.repeat(SALTOS_DE_CORTE),
         // El icono, sólo si el ticket lleva la marca arriba (una etiqueta de
         // bolsa no la lleva). Ver logoTicket.js.
-        img: encabezado.titulo ? LOGO_TICKET_URL : '',
+        img: marca ? LOGO_COMPLETO_URL : (encabezado.titulo ? LOGO_TICKET_URL : ''),
         // Por ESTE camino el QR va como URL: el programa de la caja lo dibuja,
         // que es lo que el sistema de facturación ya hace. Los bytes ESC/POS
         // NO pueden ir acá — llevan NUL y el NUL se pierde en el trayecto.
@@ -1062,7 +1080,10 @@ export function textoParaElRollo(ticket) {
     // El QR va acá y no dentro de las secciones, por lo mismo que el corte: es
     // lo ÚNICO que se emite distinto según el camino. Entre el cuerpo y el pie,
     // que es donde el programa de la caja pone el suyo.
-    const logo = ticket?.encabezado?.titulo ? logoParaElRollo(ticket?.ancho) : '';
+    const titulo = ticket?.encabezado?.titulo;
+    const logo = tituloEsLaMarca(titulo)
+        ? logoCompletoParaElRollo(ticket?.ancho)
+        : (titulo ? logoParaElRollo(ticket?.ancho) : '');
     return `${ESC}@` + logo + s.encabezado + s.cuerpo + qrParaElRollo(ticket?.qr) + s.pie + CORTAR_PAPEL;
 }
 

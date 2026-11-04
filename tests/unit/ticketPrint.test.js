@@ -262,3 +262,29 @@ describe('ticketPrint · código de barras', () => {
         expect(textoParaElRollo(ticket())).not.toContain('\x1dk');
     });
 });
+
+// Usuario, 2026-11-04: el logo completo reemplaza icono + nombre cuando el
+// título del ticket ES la marca — y sólo entonces.
+describe('el logo completo en el encabezado', () => {
+    const conTitulo = (titulo) => ({ ancho: 80, encabezado: { titulo, lineas: ['NIT 1'] }, datos: [], pie: [] });
+
+    it('con la marca, el nombre no se escribe: va dibujado en el logo', () => {
+        const s = seccionesParaElPrograma(conTitulo('FARMACIAS LA POPULAR Y LA SALUD'));
+        expect(s.encabezado).not.toContain('POPULAR');
+        expect(s.img).toContain('logo-ticket-completo.png');
+        // 512 × 68 puntos centrados en un rollo de 576: 72 bytes por fila.
+        expect(textoParaElRollo(conTitulo('Farmacias La Popular y La Salud')))
+            .toContain('\x1dv0\x00' + String.fromCharCode(72, 0, 68, 0));
+    });
+
+    it('con otro título, sigue el icono y el título escrito', () => {
+        const s = seccionesParaElPrograma(conTitulo('PUNTOS SALUD'));
+        expect(s.encabezado).toContain('PUNTOS SALUD');
+        expect(s.img).toContain('logo-ticket.png');
+    });
+
+    it('en 58 mm el logo baja a 384 puntos para caber', () => {
+        const t = { ...conTitulo('FARMACIAS LA POPULAR Y LA SALUD'), ancho: 58 };
+        expect(textoParaElRollo(t)).toContain('\x1dv0\x00' + String.fromCharCode(48, 0, 51, 0));
+    });
+});

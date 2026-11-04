@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1439.0 — Tickets: el logo completo en vez del icono y el nombre
+
+Cuando el título del ticket es la marca (cortes, abonos, movimientos, prueba de impresión), arriba sale el logo horizontal completo —«FARMACIAS LA POPULAR Y LA SALUD» con el icono— en vez del icono de 16 mm más el nombre en doble alto: ~22 mm de rollo pasan a ~8.5 mm. Por los tres caminos: rollo (512 × 68 puntos, 384 × 51 en 58 mm), programa de la caja (`logo-ticket-completo.png`) y diálogo del navegador. Con otro título (carné, traslado, pedido, puntos) sigue el icono con su título.
+
 ## v2.1438.3 — Saly en prueba: la ayuda sólo la ve Edwin
 
 La ayuda en pantalla de Saly queda **sólo para Edwin Núñez** mientras la prueba

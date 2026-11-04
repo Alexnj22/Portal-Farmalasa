@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.6 — Eficiencia: los syncs de inventario y precios descartan lo igual en una pasada
+
+Tercera tanda de la auditoría de consultas. Los dos syncs mandaban la lista
+entera y el `ON CONFLICT` buscaba cada fila por índice aunque casi ninguna
+cambiara. Ahora la tabla se lee una vez y un hash join aparta lo nuevo o
+distinto antes del INSERT. Mismo resultado y mismo md5 de las tablas
+afectadas, medido en transacción revertida con payloads reales.
+
+- **`sync_inventory_batch`** (7 salas × 2 áreas, cada minuto): corrida sin
+  cambios 20,797 → 868 bloques, 38 → 19 ms. En vivo: 646 bloques, 0 fallas.
+- **`upsert_product_precios_batch`**: 40,933 → 311 bloques, 86 → 54 ms; con
+  cambios 197 → 108 ms.
+- Sin cambio: `puntos_sellar_estado` (~25 ms, por índice) y el tiempo real
+  (su costo sale del volumen total de escrituras, no de quién escucha).
+
 ## v2.1448.5 — Inicio: vacíos chicos en el teléfono, feriados escritos y botón con nombre
 
 - En el teléfono, Turnos, Cumpleaños, Avisos, Alertas de sucursales, Recetas

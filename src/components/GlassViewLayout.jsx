@@ -188,10 +188,15 @@ const GlassViewLayout = ({
                 Inicio (2026-09-24): le sobraban 34px, y según dónde empezara el
                 dedo el gesto movía uno u otro — «el scroll es raro». `clip`
                 recorta igual y no crea scroll. En escritorio éste SÍ es el
-                scroller (`lg:overflow-y-auto`), y ahí no cambia nada. */}
+                scroller (`lg:overflow-y-auto`), y ahí no cambia nada.
+                El relleno de abajo reserva la columna de flechas flotantes
+                (1rem + 2 botones de 44px + 8px ≈ 7rem): con los 2.5rem de antes,
+                al llegar al final la última tarjeta quedaba DEBAJO de las
+                flechas y no había scroll que la destapara (Mi caja, vouchers
+                de Salud 1, 2026-11-04). */}
             <div
                 ref={scrollContainerRef}
-                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-[max(2.5rem,calc(var(--alto-barra-flotante,0px)+0.75rem))] lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden overflow-x-clip lg:overflow-x-hidden ${
+                className={`lg:absolute lg:inset-0 lg:w-full lg:h-full pb-[calc(var(--alto-barra-flotante,0px)+var(--sa-bottom,0px)+7.5rem)] lg:flex lg:flex-col [&::-webkit-scrollbar]:hidden overflow-x-clip lg:overflow-x-hidden ${
                     fixedScrollMode ? 'lg:overflow-hidden lg:overscroll-contain scroll-smooth' : 'lg:overflow-y-auto lg:overscroll-contain scroll-smooth'
                 }`}
                 onScroll={handleInternalScroll}

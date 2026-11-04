@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1434.1 — Las flechas flotantes ya no tapan la última tarjeta
+
+- El relleno inferior de toda vista era de 2.5rem y la columna de flechas
+  «Ir al inicio / Ir al final» mide ~7rem: al llegar al final, la última
+  tarjeta quedaba debajo de las flechas sin scroll que la destapara (en Mi caja
+  se perdía el total del último voucher). Ahora el relleno reserva la columna.
+
 ## v2.1434.0 — Cargar compra: la nota de crédito de un faltante entra al libro y descarga Bodega
 
 - **«Llegó la nota» era un rótulo.** Un faltante («Llegaron menos») deja la

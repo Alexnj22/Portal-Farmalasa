@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.5 — Inicio: vacíos chicos en el teléfono, feriados escritos y botón con nombre
+
+- En el teléfono, Turnos, Cumpleaños, Avisos, Alertas de sucursales, Recetas
+  pendientes y Datos que faltan bajan a una fila cuando no tienen nada. Cortes,
+  Bolsas y Reservas no: aunque no haya pendientes muestran la franja del mes,
+  los montos o las prórrogas.
+- Calendario: los feriados del mes van escritos debajo. Antes el nombre sólo
+  salía al pasar el mouse, o sea nunca en el teléfono.
+- El botón del análisis de ventas dice qué es.
+
 ## v2.1448.4 — MIN·MAX: la sugerencia de la regla de despacho ya no propone 0·2
 
 Dos defectos del diálogo REGLA, reportados en sala el 2026-11-04:

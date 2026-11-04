@@ -116,7 +116,7 @@ function Pedido({ p, onListo }) {
     );
 }
 
-export default function WidgetDatoPedido() {
+export default function WidgetDatoPedido({ onVacio } = {}) {
     const [filas, setFilas]   = useState([]);
     const [cargando, setCarg] = useState(true);
     const [error, setError]   = useState(null);
@@ -149,6 +149,11 @@ export default function WidgetDatoPedido() {
     // El encabezado lo pone `WidgetCard` (2026-10-21): este widget era el único
     // del tablero sin tarjeta, o sea sin vidrio, sin borde y sin el vistazo
     // cuando el tamaño no le alcanza. El conteo va en el vistazo.
+    // Vacío de verdad (sin error y ya leído): el Inicio lo baja a una fila en el
+    // teléfono. Sin avisar, la tarjeta ocupaba su alto entero para una línea.
+    const vacio = !cargando && !error && filas.length === 0;
+    useEffect(() => { onVacio?.(vacio); }, [vacio, onVacio]);
+
     return (
         <div className="h-full min-h-0 overflow-y-auto overscroll-contain p-3 space-y-3">
 

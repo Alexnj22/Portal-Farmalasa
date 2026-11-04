@@ -1856,6 +1856,13 @@ const DashboardView = ({ openModal }) => {
   const [topProdError,   setTopProdError]   = useState(false);
   const [attError,       setAttError]       = useState(false);
   const [alertasOp,      setAlertasOp]      = useState([]);
+  // Widgets hijos que avisan que están vacíos (para bajarlos a una fila en el
+  // teléfono). Un setter estable por id para no re-renderizar en bucle.
+  const [vaciosHijos,    setVaciosHijos]    = useState({});
+  const avisosVacio = useMemo(() => {
+    const hacer = (id) => (v) => setVaciosHijos(p => (p[id] === v ? p : { ...p, [id]: v }));
+    return { recetas_pend: hacer('recetas_pend'), dato_pedido: hacer('dato_pedido') };
+  }, []);
   // Top productos con alcance ALL: vacío = toda la red.
   const [topBranch,      setTopBranch]      = useState('');
   // Meta del mes y Venta por vendedor tenían UN selector de sala compartido:
@@ -2695,7 +2702,7 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, attendanceLoaded && !attError && employees.length > 0 && Object.keys(STATUS_CONFIG).every(k => !(shiftGroups[k]||[]).length));
     }
 
     /* ── SALES ── */
@@ -2718,6 +2725,7 @@ const DashboardView = ({ openModal }) => {
                               size="xs"
                               variant="primary"
                               onClick={()=>openModal('viewWfmAnalytics')}
+                              title="Ver análisis de ventas"
                           />}
               {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
               <div className="flex items-center gap-1">
@@ -3037,7 +3045,7 @@ const DashboardView = ({ openModal }) => {
             )}
           </div>
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, displayBranches.length > 0 && displayBranchAlerts.length === 0);
     }
 
     /* ── CALENDAR ── */
@@ -3091,6 +3099,25 @@ const DashboardView = ({ openModal }) => {
               </div>
               )}
             </div>
+            {/* Los feriados del mes, escritos. Antes el nombre sólo salía al
+                pasar el mouse por el día — en el teléfono no se veía nunca. */}
+            {(() => {
+              const pre = `${calendarDays.year}-${String(calendarDays.month+1).padStart(2,'0')}-`;
+              const delMes = Object.entries(calendarEvents)
+                .filter(([k, ev]) => k.startsWith(pre) && ev.holidays?.length)
+                .sort(([a],[b]) => a.localeCompare(b));
+              if (!delMes.length) return null;
+              return (
+                <ul className="shrink-0 mt-1.5 pt-1.5 border-t border-divider space-y-0.5">
+                  {delMes.map(([k, ev]) => (
+                    <li key={k} className="flex items-baseline gap-2 text-caption min-w-0">
+                      <span className="font-black text-danger-text tabular-nums shrink-0">{Number(k.slice(8))}</span>
+                      <span className="text-content-2 truncate">{ev.holidays.join(' · ')}</span>
+                    </li>
+                  ))}
+                </ul>
+              );
+            })()}
           </div>
         </WidgetCard>
       , staggerIdx);
@@ -3126,7 +3153,7 @@ const DashboardView = ({ openModal }) => {
               ))}
           </div>
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, employees.length > 0 && recentAnnouncements.length === 0);
     }
 
     /* ── BIRTHDAYS ── */
@@ -3227,7 +3254,7 @@ const DashboardView = ({ openModal }) => {
           </div>
         </div>
         </SiCompacto>
-      , staggerIdx);
+      , staggerIdx, employees.length > 0 && displayBirthdays.length === 0);
     }
 
     /* ── COTIZACIONES ── */
@@ -3514,9 +3541,9 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('recetas_pend', 'dash_recetas_pendientes')) return null;
       return wrapWidget('recetas_pend',
         <WidgetCard title="Recetas pendientes" icon={Pill} category="productos">
-          <WidgetRecetasPendientes />
+          <WidgetRecetasPendientes onVacio={avisosVacio.recetas_pend} />
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, !!vaciosHijos.recetas_pend);
     }
 
     /* ── RESERVAS DE MI SALA ── */
@@ -3565,9 +3592,9 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('dato_pedido', 'dash_dato_pedido')) return null;
       return wrapWidget('dato_pedido',
         <WidgetCard title="Datos que faltan" icon={Mail} category="ventas">
-          <WidgetDatoPedido />
+          <WidgetDatoPedido onVacio={avisosVacio.dato_pedido} />
         </WidgetCard>
-      , staggerIdx);
+      , staggerIdx, !!vaciosHijos.dato_pedido);
     }
 
     /* ── META DE LA SALA ── */

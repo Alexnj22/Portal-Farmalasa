@@ -61,7 +61,7 @@ const fmtFecha = (f) => (f
 
 const diasDesde = (f) => Math.max(0, diasEntre(f, hoySV()));
 
-export default function WidgetRecetasPendientes() {
+export default function WidgetRecetasPendientes({ onVacio } = {}) {
     const { user, hasPermission, getScope } = useAuth();
     const navigate = useNavigate();
     const puedeCompletar = hasPermission('bitacoras', 'can_edit');
@@ -160,6 +160,11 @@ export default function WidgetRecetasPendientes() {
             />
         </div>
     ) : null;
+
+    // Vacío de verdad (sin error y ya leído): el Inicio lo baja a una fila en el
+    // teléfono. Sin avisar, la tarjeta ocupaba su alto entero para una línea.
+    const vacio = !cargando && !error && !filas.length;
+    useEffect(() => { onVacio?.(vacio); }, [vacio, onVacio]);
 
     let contenido;
     if (cargando) {

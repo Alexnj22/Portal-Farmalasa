@@ -185,8 +185,8 @@ const WIDGET_SIZES = {
   announcements: { minCols: 1, minRows: 2, label: 'Avisos'       },
   birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
   cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
-  facturacion:   { minCols: 2, minRows: 2, label: 'Facturación'  },
-  top_productos: { minCols: 2, minRows: 3, label: 'Top productos'},
+  facturacion:   { minCols: 1, minRows: 2, label: 'Facturación'  },
+  top_productos: { minCols: 1, minRows: 3, label: 'Top productos'},
   // 1×1 como sus tres hermanas: `WidgetInventorySearch` ya no trae el buscador
   // adentro —es un `LanzadorSolicitud`, o sea una baldosa que abre un modal—,
   // pero el registro conservaba el 2×3 del widget viejo. Resultado en el
@@ -795,7 +795,14 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
           Ahora el icono va suelto —sin su recuadro, que era un marco dentro de
           otro— y el aire baja a 10px: 42px, un 25% menos, en los 21 widgets a
           la vez. El color de categoría sigue estando; lo lleva el glifo. */}
-      <div className="relative flex items-center justify-between px-4 py-2.5 border-b border-border-card shrink-0 gap-2 flex-wrap">
+      {/* SIN `flex-wrap` (2026-11-04). En una tarjeta de una columna la acción
+          se bajaba a un segundo renglón: el encabezado pasaba de 42 a ~70px y
+          el contenido se cortaba por abajo — Alertas · Sucursales en una fila
+          escondía su «Todo en orden». Ahora la acción se queda en la línea y,
+          en tarjetas angostas, el «Ver …» queda como su flecha sola (el nombre
+          accesible no cambia: el texto sigue ahí, recortado a la izquierda). Los selectores
+          (`aria-haspopup`) conservan su texto: es el dato elegido. */}
+      <div className="@container/cabeza relative flex items-center justify-between px-4 py-2.5 border-b border-border-card shrink-0 gap-2">
         <div className="flex items-center gap-2 min-w-0">
           <Icon size={15} style={{ color: cat.color }} strokeWidth={2.5} className="shrink-0" />
           <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
@@ -803,9 +810,9 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
         {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
             entre «Ver todas» y su flecha, así que en el teléfono el chevron se
             iba solo a un segundo renglón, debajo del texto. Son seis widgets. */}
-        {action && <div className="shrink-0 whitespace-nowrap">{action}</div>}
+        {action && <div className="shrink-0 whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden">{action}</div>}
       </div>
-      <div className={`relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
+      <div className={`@container/cuerpo relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>
   );
 };
@@ -3360,14 +3367,16 @@ const DashboardView = ({ openModal }) => {
               </div>
             </div>
           ) : (
-          <div className="flex flex-col h-full px-4 py-3 gap-3">
-            <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col h-full px-4 py-3 gap-3 overflow-y-auto overscroll-contain">
+            {/* Una columna en una tarjeta angosta: el total en dinero no cabe
+                en media tarjeta de 210px (2026-11-04). */}
+            <div className="grid grid-cols-1 @[18rem]/cuerpo:grid-cols-2 gap-3">
               <div className="bg-surface-card-hover/80 rounded-2xl p-3">
                 <p className="text-display font-black text-content leading-none">{factStats.count}</p>
                 <p className="text-caption font-semibold text-content-3 mt-1">documentos</p>
               </div>
               <div className="bg-success/10 rounded-2xl p-3">
-                <p className="text-body-xl font-black text-success-text leading-none">{fmt(factStats.total)}</p>
+                <p className="text-body-xl font-black text-success-text leading-none tabular-nums break-all">{fmt(factStats.total)}</p>
                 <p className="text-caption font-semibold text-success-text mt-1">total emitido</p>
               </div>
             </div>

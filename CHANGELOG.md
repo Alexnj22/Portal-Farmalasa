@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.7 — Inicio: el encabezado no se parte y nada queda cortado
+
+Pedido del usuario: «siempre se debe poder ver todo y ser usable».
+
+- El encabezado de los widgets ya no se parte en dos renglones. En una tarjeta
+  de una columna el «Ver …» se bajaba, el encabezado crecía ~30px y el
+  contenido se cortaba (Alertas · Sucursales escondía «Todo en orden»). En
+  tarjetas angostas el «Ver» queda como su flecha; los selectores de sala
+  conservan su texto.
+- Facturación y Top productos funcionan en una columna: antes, angostos,
+  pasaban a vistazo y se veían como una tarjeta vacía con la cifra al fondo.
+  Facturación apila sus cifras cuando no caben lado a lado.
+
 ## v2.1448.6 — Eficiencia: los syncs de inventario y precios descartan lo igual en una pasada
 
 Tercera tanda de la auditoría de consultas. Los dos syncs mandaban la lista

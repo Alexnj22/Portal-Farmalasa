@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1445.1 — Inicio en tableta y teléfono: sin huecos
+
+Debajo de 1024px el tablero sin acomodo propio no usaba el empacado por
+renglones: heredaba el orden de escritorio y lo pasaba por `autoPlaceOrder`,
+que deja medias filas en blanco y hace saltar baldosas hacia atrás. Ahora
+General (sin acomodo propio) y las pestañas temáticas en el teléfono se
+empacan igual que en escritorio, partiendo de las medidas del aparato. Medido
+sobre 3,000 recortes al azar del catálogo: con hueco en tableta 1,700 → 0, en
+teléfono 1,463 → 0, sin encimados ni widgets más angostos que su mínimo.
+
 ## v2.1445.0 — Saly guía en la pantalla, revisa los movimientos y cuida nombres y números
 
 Los cinco puntos que el usuario aprobó (2026-11-04). Sigue sólo para Edwin.

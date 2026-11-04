@@ -1253,12 +1253,15 @@ const DashboardView = ({ openModal }) => {
     if (acomodoLibre) return null;
     const orden   = ordenDeLaPestana(activeTab, canon?.[activeTab]?.orden, esVisibleEnTablero, baldosasDeSucursal);
     const medidas = canon?.[activeTab]?.medidas || EMPTY_OBJ;
-    // En el teléfono NO se empaca: el ancho de cada baldosa lo decide
-    // `anchoEnTelefono` y `getEffectiveCols` lo impone por encima de las
-    // medidas, así que ensanchar acá dejaría la rejilla y el widget diciendo
-    // cosas distintas. Con 2 columnas y la regla de baldosa tampoco hay mucho
-    // hueco que rellenar.
-    if (esTelefono) return { layout: autoPlaceOrder(orden, medidas, MOBILE_COLS, anchoEnTelefono), medidas };
+    // En el teléfono se parte del ancho de `anchoEnTelefono` (baldosa = 1, el
+    // resto = 2) y se empaca igual que en tableta y escritorio: con
+    // `autoPlaceOrder` una baldosa suelta entre dos listas dejaba su media fila
+    // en blanco. `getEffectiveCols` lee el ancho empacado (`empacadoEnTelefono`).
+    if (esTelefono) {
+      const enTelefono = Object.fromEntries(orden.map(id => [id, {
+        cols: anchoEnTelefono(id), rows: medidas[id]?.rows ?? getWidgetSize(id).minRows }]));
+      return empacarFilas(orden, enTelefono, MOBILE_COLS);
+    }
     return empacarFilas(orden, medidas, activeCols);
   }, [acomodoLibre, activeTab, canon, esTelefono, anchoEnTelefono, activeCols, verComoRol, permisosPorCargo, hasPermission, widgetConfig]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -1281,11 +1284,32 @@ const DashboardView = ({ openModal }) => {
   // cuadrado y sin espacios en blanco», pedido del usuario— y ese ancho es el
   // que después lee `getEffectiveCols`. Si sólo devolviera posiciones, la
   // rejilla diría una cosa y el widget mediría otra.
+  //
+  // **También en tableta y teléfono** (2026-11-04). Hasta entonces, debajo de
+  // 1024px el tablero sin acomodo propio heredaba el ORDEN del de escritorio y
+  // lo pasaba por `autoPlaceOrder`, que coloca al primer hueco que encuentra:
+  // un aviso de 1×2 al lado de un traslado de 2×2 dejaba media fila en blanco,
+  // y la baldosa siguiente saltaba hacia atrás a taparla —«huecos y
+  // desorden»—. Medido sobre 3,000 recortes al azar del catálogo: 1,700 con al
+  // menos un hueco en tableta y 1,463 en el teléfono. Con el mismo empacado
+  // por renglones que escritorio: 0 en los dos.
+  //
+  // En el teléfono el ancho de partida es el de `anchoEnTelefono` (baldosa = 1,
+  // el resto = 2); `empacarFilas` sólo puede AGRANDARLO, y `getEffectiveCols`
+  // lee el resultado en vez de volver a imponer la regla. Si la persona ya
+  // acomodó su tablero (escritorio o móvil), esto no corre y manda lo suyo.
   const acomodoAutomatico = useMemo(() => {
-    if (!acomodoLibre || isMobile || tabsAcomodadas.has(activeTab)) return null;
-    const medidas = widgetSizes[activeTab] || EMPTY_OBJ;
-    return empacarFilas(catalogoVisible, medidas, GRID_COLS);
-  }, [acomodoLibre, isMobile, tabsAcomodadas, activeTab, widgetSizes, catalogoVisible]);
+    if (!acomodoLibre || tabsAcomodadas.has(activeTab)) return null;
+    if (!isMobile) return empacarFilas(catalogoVisible, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
+    const movilPropio = Object.keys(mobileLayout[activeTab] || {}).length > 0
+      || Object.keys(mobileSizes[activeTab] || {}).length > 0;
+    if (movilPropio) return null;
+    const medidas = Object.fromEntries(catalogoVisible.map(id => {
+      const def = getWidgetSize(id);
+      return [id, { cols: esTelefono ? anchoEnTelefono(id) : Math.min(def.minCols, MOBILE_COLS), rows: def.minRows }];
+    }));
+    return empacarFilas(catalogoVisible, medidas, MOBILE_COLS);
+  }, [acomodoLibre, isMobile, esTelefono, anchoEnTelefono, tabsAcomodadas, activeTab, widgetSizes, mobileLayout, mobileSizes, catalogoVisible]);
 
   // Los `sales_branch_*` entran al catálogo tomándolos del acomodo de
   // escritorio, que es donde su efecto los da de alta.
@@ -1328,8 +1352,8 @@ const DashboardView = ({ openModal }) => {
     // acomodó— pero las que hay antes de tocar nada las calculó el arranque
     // sobre TODOS los widgets, así que conservan los huecos de los que este
     // cargo no ve. En cuanto arrastra uno, manda lo suyo (`marcarAcomodada`).
+    if (acomodoAutomatico) return acomodoAutomatico.layout;
     if (!isMobile) {
-      if (acomodoAutomatico) return acomodoAutomatico.layout;
       return alDia(tabLayout, widgetSizes[activeTab] || EMPTY_OBJ, GRID_COLS);
     }
 
@@ -1365,7 +1389,11 @@ const DashboardView = ({ openModal }) => {
     : (isMobile ? (mobileSizes[activeTab] || EMPTY_OBJ) : (widgetSizes[activeTab] || EMPTY_OBJ)));
 
   // Active cols clamped for effective size
-  const getEffectiveCols = (id) => (esTelefono
+  // En el teléfono manda `anchoEnTelefono`, SALVO cuando el acomodo lo armó
+  // `empacarFilas`: ahí ya partió de esa regla y sólo ensanchó para llenar el
+  // renglón, y volver a imponerla dejaría el hueco que el empacado tapó.
+  const empacadoEnTelefono = esTelefono && (acomodoAutomatico || !acomodoLibre);
+  const getEffectiveCols = (id) => (esTelefono && !empacadoEnTelefono
     ? anchoEnTelefono(id)
     : Math.min(activeSizes[id]?.cols ?? getWidgetSize(id).minCols, activeCols));
   const getEffectiveRows = (id) => activeSizes[id]?.rows ?? getWidgetSize(id).minRows;

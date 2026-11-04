@@ -58,7 +58,13 @@ export default function Puntos() {
   const sesionDeCodigo = useConCodigo();
   const real = useMemo(() => resumenConDemo(crudo, demo), [crudo, demo]);
   // Modo de prueba (sólo la cuenta de prueba): se ve como el nivel elegido.
-  const prueba = useModoPrueba();
+  // Sólo lo que esta pantalla lee, con `useShallow` (2026-11-04): con la
+  // tienda entera, cualquier cambio del modo de prueba —también los que no se
+  // ven acá— volvía a pintar todo el Inicio.
+  const prueba = useModoPrueba(useShallow((s) => ({
+    activo: s.activo, ajuste: s.ajuste, cuponUsado: s.cuponUsado, demoCupon: s.demoCupon, empleado: s.empleado,
+    logo: s.logo, mayorista: s.mayorista, nivel: s.nivel, semilla: s.semilla,
+  })));
   const enPrueba = !!real?.prueba && prueba.activo;
   // En prueba el saldo se puede mover a mano («Simular: ganar/usar puntos») para ver la animación.
   const saldoPrueba = enPrueba && real ? Math.max(0, Number(real.saldo ?? 0) + prueba.ajuste) : null;
@@ -498,6 +504,12 @@ function BotonGoogleWallet({ id, nivelPrueba }) {
 let campanaAt = 0;
 let campanaUltimo = 0;
 let campanaGen = -1;
+// Al cerrar sesión la campana vuelve a cero (2026-11-04): el número es de
+// módulo y sobrevivía a la sesión — quien entraba después veía, hasta la
+// próxima consulta, los avisos sin leer de la cuenta anterior.
+useSesion.subscribe((s, antes) => {
+  if (antes.token && !s.token) { campanaUltimo = 0; campanaAt = 0; campanaGen = -1; }
+});
 function Campana({ generacion }) {
   const t = useTema();
   const pedir = useSesion((s) => s.pedir);
@@ -511,7 +523,13 @@ function Campana({ generacion }) {
   }, [pedir, generacion]));
   // Un aviso que llega con la app abierta suma uno al instante, sin esperar
   // al minuto de la próxima consulta.
-  useEffect(() => alLlegarAviso(() => { campanaUltimo += 1; setSinLeer(campanaUltimo); }), []);
+  // Sólo los push que van a la BANDEJA (2026-11-04): traen `tipo` y no son
+  // del chat (el chat tiene su propio punto y no entra a la bandeja). Los
+  // recordatorios de toma son locales y sin `tipo`: antes cada uno sumaba.
+  useEffect(() => alLlegarAviso((a) => {
+    if (!a?.tipo || a.tipo === 'chat') return;
+    campanaUltimo += 1; setSinLeer(campanaUltimo);
+  }), []);
   // Abrir la bandeja los marca leídos: la campana se apaga ya, no al minuto.
   const abrirBandeja = () => { campanaUltimo = 0; setSinLeer(0); navegar('/notificaciones'); };
   return (
@@ -575,7 +593,9 @@ function TratamientosInicio({ lista }) {
         return (
           <View key={x.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ flex: 1, gap: 1 }}>
-              <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={1}>{nombrePropio(x.nombre)}</Text>
+              {/* En dos líneas (2026-11-04): «Losartan Potásico 50 mg Tabletas»
+                  cortado en una no decía cuál se acaba. */}
+              <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>{nombrePropio(x.nombre)}</Text>
               {d != null ? (
                 <Text style={{ fontSize: 13, fontWeight: urge ? '700' : '400', color: urge ? t.color.magentaTexto : colorSistema.texto2 }}>
                   {d < 0 ? `Se te acabó hace ${-d} día${d === -1 ? '' : 's'}` : d === 0 ? 'Se te acaba hoy' : `Se te acaba en ${d} día${d === 1 ? '' : 's'}`}

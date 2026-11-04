@@ -28,6 +28,7 @@
 // con el número rojo cuando algo pide atención. Los contadores salen del mismo
 // `resumen` que pinta el Inicio: no hay consultas nuevas.
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useShallow } from 'zustand/react/shallow';
 import * as Haptics from 'expo-haptics';
 import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
@@ -112,7 +113,11 @@ export default function Cuenta() {
   const [enWallet, setEnWallet] = useState(null);
   useFocusEffect(useCallback(() => { if (serialW) setEnWallet(serieEnWallet(serialW)); }, [serialW]));
   // Ya agregada: se abre en Wallet. Si no: se arma y se ofrece la hoja de Apple.
-  const prueba = useModoPrueba();
+  // Sólo lo que esta pantalla lee del modo de prueba (2026-11-04, auditoría de
+  // rendimiento): con el store entero, cada cambio del demo —un cupón, una
+  // reserva de muestra— volvía a pintar toda Cuenta. El panel de prueba se
+  // suscribe por su cuenta (sólo lo ve la cuenta de prueba).
+  const prueba = useModoPrueba(useShallow((x) => ({ activo: x.activo, nivel: x.nivel, mayorista: x.mayorista, empleado: x.empleado })));
   // `abrir`: si ya está, se abre; si no (o al «volver a agregar»), se arma y
   // se ofrece la hoja de Apple. Volver a agregar sirve si se borró o se ocultó
   // en Wallet y la app todavía la ve (usuario, 2026-10-07).
@@ -137,8 +142,10 @@ export default function Cuenta() {
     }
     await marcarGoogleWalletAgregada(resumen?.wallet_serial ?? resumen?.codigo);
   };
-  const { pedir, cerrar } = useSesion();
-  const { resumen: crudo, cargar } = useCuenta();
+  // Con selectores (2026-11-04): `useCuenta()` a secas se suscribía al store
+  // entero, y `cargando`/`cargadoAt` cambian en cada carga del Inicio.
+  const { pedir, cerrar } = useSesion(useShallow((x) => ({ pedir: x.pedir, cerrar: x.cerrar })));
+  const { resumen: crudo, cargar } = useCuenta(useShallow((x) => ({ resumen: x.resumen, cargar: x.cargar })));
   // El demo del modo de prueba (2026-10-20): el saldo a favor de muestra se ve
   // aquí como el real, y la vista «entró con el código» (lib/demo.js).
   const demo = useDemo();
@@ -282,6 +289,34 @@ export default function Cuenta() {
       { text: 'Cerrar sesión', style: 'destructive', onPress: async () => { await pedir('salir'); await cerrar(); } },
     ]);
   }
+
+  // «Cerrar las demás sesiones» (2026-11-04): si se perdió un teléfono o se
+  // entró en uno ajeno, cerrar ésas sin salir de ésta. Lo hace el servidor
+  // (`cerrar_otras_sesiones`). Mientras esa acción no esté publicada, el
+  // servidor contesta «Acción desconocida»: eso no se le muestra a nadie, se
+  // dice que todavía no se puede.
+  const [cerrandoOtras, setCerrandoOtras] = useState(false);
+  const cerrarOtras = () => {
+    if (cerrandoOtras) return;
+    Alert.alert('¿Cerrar las demás sesiones?', 'Se cierra la sesión en los otros teléfonos donde entraste. En éste sigues dentro.', [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Cerrar las demás', style: 'destructive', onPress: async () => {
+        setCerrandoOtras(true);
+        try {
+          const r = await pedir('cerrar_otras_sesiones');
+          if (r?.ok) {
+            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+            const n = [r.cerradas, r.sesiones, r.n].map(Number).find((x) => Number.isFinite(x));
+            Alert.alert(n === 0 ? 'No había otras sesiones' : n ? `Cerramos ${plural(n, 'sesión', 'sesiones')}` : 'Listo',
+              n === 0 ? 'Sólo estás dentro en este teléfono.' : 'Tus otros teléfonos tendrán que volver a entrar.');
+          } else {
+            const generico = 'Todavía no se puede hacer desde aquí. Intenta más tarde.';
+            Alert.alert('No se cerraron', !r?.mensaje || /desconocida/i.test(r.mensaje) ? generico : r.mensaje);
+          }
+        } finally { setCerrandoOtras(false); }
+      } },
+    ]);
+  };
 
   // Qué pasa con los puntos, dicho como es (2026-10-14). `borrar_cuenta` cierra
   // las sesiones, apaga los avisos, borra el pre-registro y —desde el
@@ -498,9 +533,15 @@ export default function Cuenta() {
         <FilaAccion sf="hand.raised.fill" tinte={t.acentos.violeta.fuerte} texto="Aviso de privacidad" detalle="Qué datos guardamos y para qué" alTocar={() => navegar('/legal?doc=privacidad')} />
       </Grupo>
 
-      {resumen?.prueba ? <PanelDePrueba prueba={prueba} pedir={pedir} /> : null}
+      {resumen?.prueba ? <PanelDePrueba pedir={pedir} /> : null}
 
       <Grupo>
+        {/* Con la sesión de código no: desde un ticket no se cierra la sesión
+            de quien entró con su DUI. */}
+        {conFicha && !conCodigo ? (
+          <FilaAccion sf="iphone.slash" tinte={t.acentos.azul.fuerte} texto="Cerrar las demás sesiones" detalle="En los otros teléfonos donde entraste"
+            flecha={false} alTocar={cerrarOtras} />
+        ) : null}
         <FilaAccion sf="rectangle.portrait.and.arrow.right" tinte={t.acentos.azul.fuerte} texto="Cerrar sesión" flecha={false} alTocar={salir} />
         <FilaAccion sf="trash" tinte={t.acentos.rojo.fuerte} texto="Borrar mi cuenta" color={colorSistema.rojo} alTocar={borrar} />
       </Grupo>
@@ -553,8 +594,10 @@ function FilaMayorista({ m, pedir, alCambiar }) {
 // las tiendas tiene muestras pero no esto. Todo lo nuevo vive en la memoria
 // del teléfono (lib/demo.js) y no escribe nada en el servidor; sólo «Avisos al
 // teléfono» —que ya existía— le pide al servidor que mande el aviso.
-function PanelDePrueba({ prueba, pedir }) {
+function PanelDePrueba({ pedir }) {
   const t = useTema();
+  // El store entero, a propósito: este panel muestra y cambia casi todo.
+  const prueba = useModoPrueba();
   const demo = useDemo();
   const cupon = prueba.activo && ['oro', 'platino'].includes(prueba.nivel);
   const nombreNivel = prueba.activo ? (NIVELES_PRUEBA.find((n) => n.clave === prueba.nivel)?.nombre ?? '') : '';

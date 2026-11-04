@@ -38,7 +38,11 @@ export default function Legal() {
     <View style={{ flex: 1, backgroundColor: fondo }}>
       <Stack.Screen options={{ title: d.titulo }} />
       {error ? (
-        <Vacio titulo="No se pudo abrir">Revisa tu conexión y vuelve a intentar.</Vacio>
+        // Con «Reintentar» (2026-11-04): antes el error no tenía salida más
+        // que volver atrás. Quitar el error vuelve a montar la vista web.
+        <View style={{ padding: 16 }}>
+          <Vacio titulo="No se pudo abrir" accion="Reintentar" alAccion={() => setError(false)}>Revisa tu conexión y vuelve a intentar.</Vacio>
+        </View>
       ) : (
         <WebView source={{ uri: d.url }} style={{ flex: 1, backgroundColor: fondo }}
           startInLoadingState renderLoading={() => <ActivityIndicator style={{ marginTop: 40 }} />}

@@ -163,7 +163,8 @@ function Carrito() {
     if (tocando.current) return;
     tocando.current = true;
     try {
-      if (enviando || !sala) return;
+      // Sin existencias (`salas` null) no se envía: ver el botón (2026-11-04).
+      if (enviando || !sala || salas == null) return;
       if (!confirmada && inusuales.length) {
         Alert.alert('¿Las cantidades son correctas?',
           `${inusuales.map((x) => `${x.cantidad} × ${nombreProducto(x.nombre)}`).join('\n')}\n\nEs más de lo que se lleva normalmente de ${inusuales.length === 1 ? 'este producto' : 'estos productos'}.`,
@@ -451,7 +452,15 @@ function Carrito() {
 
       {conReceta ? <RecetaFoto foto={fotoReceta} alCambiar={setFotoReceta} /> : null}
 
-      <Boton alTocar={() => reservar()} cargando={enviando} deshabilitado={!sala || !!problemaFiscal || faltaDireccion || (conReceta && !fotoReceta?.uri)}>
+      {/* Sin existencias no se sabe qué le falta a la sala elegida (2026-11-04):
+          con `salas` en null, `faltan` daba 0 y el botón ofrecía «Pagar» un
+          pedido que quizá la sala no tenía. Se espera a saberlo y se dice. */}
+      {salas == null ? (
+        <Texto nivel={3} estilo={{ fontSize: 13, textAlign: 'center' }}>
+          {errorSalas ? 'Para enviar el pedido necesitamos revisar en qué sucursales hay. Toca «Reintentar» arriba.' : 'Revisando en qué sucursales hay…'}
+        </Texto>
+      ) : null}
+      <Boton alTocar={() => reservar()} cargando={enviando} deshabilitado={!sala || salas == null || !!problemaFiscal || faltaDireccion || (conReceta && !fotoReceta?.uri)}>
         {conReceta ? 'Enviar para revisión' : faltan ? 'Enviar para confirmar' : pagoReal === 'en_linea' ? `Pagar ${dolares(total)}` : aDomicilio ? 'Pedir · pagar al recibir' : 'Reservar · pagar al retirar'}
       </Boton>
       {/* «Seguir comprando si quiero agregar más» (2026-11-03): a la Tienda, con
@@ -571,10 +580,9 @@ function Contador({ valor, alCambiar }) {
 // importante; los 14 puntos, detrás de «Ver todas las condiciones»
 // (componentes/CondicionesReserva). La aceptación sigue siendo por versión.
 function Terminos({ terminos, resumen, alAceptar, alCerrar }) {
-  const t = useTema();
   if (!terminos) return null;
   return (
-    <View style={{ flex: 1, backgroundColor: t.oscuro ? '#121016' : '#F5F4F8' }}>
+    <View style={{ flex: 1, backgroundColor: colorSistema.fondo /* el token, no un hex (2026-11-04) */ }}>
       <CondicionesReserva terminos={terminos} resumen={resumen} alCerrar={alCerrar}>
         <Boton alTocar={alAceptar}>{resumen?.pago === 'en_linea' && !resumen?.receta && !resumen?.porConfirmar ? `Aceptar y pagar ${dolares(resumen.total)}` : 'Aceptar y reservar'}</Boton>
       </CondicionesReserva>

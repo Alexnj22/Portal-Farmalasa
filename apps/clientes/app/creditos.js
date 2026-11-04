@@ -231,7 +231,8 @@ function PagosEnLaApp({ pagos, t }) {
   if (!pagos?.length) return null;
   const compartir = (p) => {
     const lineas = [
-      'Comprobante de pago · Farmacias La Salud',
+      // El nombre de la marca como en el resto de la app (2026-11-04).
+      'Comprobante de pago · Farmacia Salud',
       `Monto: ${dolares(p.monto)}`,
       `Fecha: ${fechaHora(p.fecha)}`,
       p.transaccion ? `Transacción: ${p.transaccion}` : null,

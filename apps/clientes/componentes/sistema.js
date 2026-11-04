@@ -11,6 +11,7 @@ import { Appearance, KeyboardAvoidingView, Platform, PlatformColor, ScrollView, 
 import { Host, Switch } from '@expo/ui';
 import BotonNativo from './BotonNativo';
 import Vidrio from './Vidrio';
+import { useTema } from '../tema/tema';
 
 const ios = Platform.OS === 'ios';
 const android = Platform.OS === 'android';
@@ -75,12 +76,15 @@ export function Formulario({ children, contentContainerStyle, ...props }) {
 
 /** Grupo de filas como en Ajustes: título arriba y pie abajo, en gris; vidrio sobre la aurora. */
 export function Grupo({ titulo, pie, children }) {
+  // El título del grupo en Android, en el magenta de texto de los tokens
+  // (2026-11-04; antes dos hex a mano, el mismo valor escrito otra vez).
+  const t = useTema();
   const filas = Children.toArray(children).filter(isValidElement);
   return (
     <View style={{ marginHorizontal: 16 }}>
       {titulo ? (android
-        ? <Text style={{ color: oscuro() ? '#E2A3E0' : '#981D97', fontSize: 14, fontWeight: '500', letterSpacing: 0.1, marginLeft: 16, marginBottom: 8 }}>{titulo}</Text>
-        : <Text style={{ color: colorSistema.texto2, fontSize: 13, textTransform: 'uppercase', marginLeft: 16, marginBottom: 6 }}>{titulo}</Text>) : null}
+        ? <Text accessibilityRole="header" style={{ color: t.color.magentaTexto, fontSize: 14, fontWeight: '500', letterSpacing: 0.1, marginLeft: 16, marginBottom: 8 }}>{titulo}</Text>
+        : <Text accessibilityRole="header" style={{ color: colorSistema.texto2, fontSize: 13, textTransform: 'uppercase', marginLeft: 16, marginBottom: 6 }}>{titulo}</Text>) : null}
       <Vidrio radio={ios ? 26 : 16}>
         {filas.map((fila, i) => (
           <View key={fila.key ?? i}>
@@ -94,10 +98,17 @@ export function Grupo({ titulo, pie, children }) {
   );
 }
 
-/** Una fila con el campo de texto del sistema. */
-export const FilaCampo = forwardRef(function FilaCampo({ style, ...props }, ref) {
+/**
+ * Una fila con el campo de texto del sistema.
+ *
+ * 2026-11-04 (accesibilidad): el campo no tenía nombre propio — VoiceOver y
+ * TalkBack lo leían por su texto de ejemplo, que desaparece en cuanto se
+ * escribe algo, y quedaba «campo de texto» a secas. Ahora se anuncia con
+ * `accessibilityLabel` si la pantalla lo da y, si no, con el placeholder.
+ */
+export const FilaCampo = forwardRef(function FilaCampo({ style, accessibilityLabel, ...props }, ref) {
   return (
-    <TextInput ref={ref} placeholderTextColor={colorSistema.placeholder}
+    <TextInput ref={ref} placeholderTextColor={colorSistema.placeholder} accessibilityLabel={accessibilityLabel ?? props.placeholder}
       style={[{ minHeight: FILA.alto, paddingHorizontal: 16, fontSize: FILA.fontSize, color: colorSistema.texto },
         Platform.OS === 'web' && { outlineStyle: 'none' }, style]} {...props} />
   );

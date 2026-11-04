@@ -227,7 +227,12 @@ function Productos({ productos, todos, color }) {
         </View>
       ))}
       {!abiertos && productos.length > 3 ? (
-        <Text onPress={() => setAbiertos(true)} accessibilityRole="button" style={{ color, fontWeight: '600', paddingVertical: 12, minHeight: 44 }}>Y {productos.length - 3} más</Text>
+        // Un botón de verdad (2026-11-04): con `<Text onPress>` el toque no
+        // acusaba recibo y no se anunciaba qué hacía.
+        <Presionable onPress={() => setAbiertos(true)} accessibilityRole="button" accessibilityLabel={`Ver ${productos.length - 3} productos más`}
+          style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ color, fontWeight: '600', paddingVertical: 12 }}>Y {productos.length - 3} más</Text>
+        </Presionable>
       ) : null}
       {todos ? <Texto nivel={3} estilo={{ fontSize: 12 }}>Precio desde, por unidad. El descuento se aplica en caja.</Texto> : null}
     </View>

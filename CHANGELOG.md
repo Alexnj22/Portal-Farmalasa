@@ -21,6 +21,42 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1447.0 — App de clientes: errores, nativo, accesibilidad y peso
+
+Revisión completa de la app de clientes (2026-11-04). Nada de esto toca el
+portal web.
+
+**Errores**
+- Una escritura que pierde la red ahora dice «No pudimos confirmar si se hizo»
+  y relee antes de ofrecer repetir (reservas, encargos, prórrogas, correo de
+  facturas). Doble toque ya no duplica: candado `useRef` en las cuatro hojas.
+- Lo de una cuenta ya no pasa a la siguiente: la copia sin conexión lleva
+  «época» y se mudó a la caché; carrito, tomas y vistos se vacían si entra
+  otra persona en el mismo teléfono.
+- Chat: el primer mensaje de una conversación vacía ya no desaparece.
+- Respuestas viejas ya no pisan a las nuevas (cuenta, reservas).
+- Fechas con hora se cortan en la hora de El Salvador; la campana sólo cuenta
+  avisos de la bandeja; subida de fotos con tope de 60 s y sin `x-upsert`;
+  el carrito no deja pagar sin existencias confirmadas.
+- Android: la vuelta del pago ya no apila otra «Mis reservas»
+  (`app/+native-intent.js`); seis íconos que salían como texto.
+
+**Nativo y accesibilidad**
+- Facturas y reservas en listas virtualizadas; el ZIP cede el hilo y muestra
+  progreso, con «Enviar por correo» como alternativa; compartir en Android con
+  la hoja del sistema; atrás sale del modo selección.
+- Fecha de nacimiento con el selector de Android. Fotos de producto pedidas al
+  tamaño de la miniatura.
+- Etiquetas, estados `expanded`, contadores `adjustable` y blancos de 44 pt;
+  colores escritos a mano pasan a tokens; «Reintentar» en cinco pantallas.
+- «Cerrar las demás sesiones» en Cuenta (la acción del servidor sale aparte).
+
+**Peso** (`plugins/peso-android.js`, `plugins/peso-ios.js`)
+- Android: R8 con `-dontobfuscate` y reglas `-keep`; fuera las tablas
+  `bouncycastle/pqc`. iOS: `strip -x` de los frameworks (`PESO_SIN_STRIP=1`
+  lo apaga). Sonidos largos a m4a, texturas del widget a JPEG, Metro sin la
+  grabación de sesión web. Estimado: iOS −3.3 MB, Android −10 a −14 MB.
+
 ## v2.1446.0 — Mis tratamientos: lista del sistema, «Hoy» con cada toma y tocar abre el recordatorio
 
 App de clientes. El usuario, sobre la compilación 91: «no me gusta… que sean

@@ -72,7 +72,9 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
     // El precio de viñeta, el mismo que pone el servidor en la tarjeta enviada.
     alElegir({ id: Number(p.id), nombre: p.nombre, foto: p.foto ?? null, precio: p.precio ?? null });
   };
-  const fondo = IOS ? (t.oscuro ? '#1C1C1E' : '#F2F2F7') : (t.oscuro ? '#121016' : '#F5F4F8');
+  // Fuera de iPhone, el fondo de Material del token del sistema (2026-11-04)
+  // en vez del hex a mano: el mismo tono. En iPhone, el agrupado del sistema.
+  const fondo = IOS ? (t.oscuro ? '#1C1C1E' : '#F2F2F7') : colorSistema.fondo;
   return (
     <Modal visible={visible} animationType="slide" presentationStyle={IOS ? 'pageSheet' : 'fullScreen'} onRequestClose={alCerrar}>
       <View style={{ flex: 1, backgroundColor: fondo, paddingTop: IOS ? 0 : ins.top }}>

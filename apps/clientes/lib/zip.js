@@ -5,6 +5,16 @@
 // Los dos documentos ya son chicos (decenas de kB), así que no hace falta
 // comprimir — y sin compresión no hay nada que pueda salir mal al abrirlo.
 
+// 2026-11-04 (auditoría de rendimiento): con «Seleccionar» se juntan hasta 30
+// facturas, o sea 60 archivos. Pasarlos de base64 a bytes, sacarles el CRC32 y
+// volver a base64 en una sola pasada ocupaba el hilo de JavaScript entero y la
+// app se congelaba —ni el botón ni el progreso se repintaban—. Las versiones
+// `…Cediendo` hacen el mismo trabajo pero devuelven el hilo entre archivo y
+// archivo (un tick de `setTimeout`), así la interfaz se repinta y el progreso
+// avanza. No es más rápido: es lo mismo, sin congelar. Para algo más rápido
+// haría falta un módulo nativo, y la app no agrega dependencias nativas.
+export const cederHilo = () => new Promise((r) => setTimeout(r, 0));
+
 const TABLA_CRC = (() => {
   const t = new Uint32Array(256);
   for (let n = 0; n < 256; n++) {
@@ -34,6 +44,19 @@ export function bytesABase64(bytes) {
   return btoa(bin);
 }
 
+// Lo mismo, por tramos, cediendo el hilo entre uno y otro. El tramo es
+// múltiplo de 3 bytes: así cada pedazo en base64 sale sin relleno `=` y
+// pegarlos da exactamente el base64 del total.
+const TRAMO_B64 = 3 * 0x10000; // ~192 kB por vuelta
+export async function bytesABase64Cediendo(bytes) {
+  const pedazos = [];
+  for (let i = 0; i < bytes.length; i += TRAMO_B64) {
+    pedazos.push(bytesABase64(bytes.subarray(i, i + TRAMO_B64)));
+    if (i + TRAMO_B64 < bytes.length) await cederHilo();
+  }
+  return pedazos.join('');
+}
+
 // Nombres sólo ASCII: así cualquier descompresor los lee igual, sin depender
 // de la marca de UTF-8.
 const nombreAscii = (s) => Array.from(String(s).normalize('NFD').replace(/[̀-ͯ]/g, ''))
@@ -41,6 +64,34 @@ const nombreAscii = (s) => Array.from(String(s).normalize('NFD').replace(/[̀-ͯ
 
 /** archivos: [{ nombre, bytes: Uint8Array }] → Uint8Array del .zip. */
 export function armarZip(archivos) {
+  return armarZipCon(archivos, null);
+}
+
+/**
+ * Igual que `armarZip`, pero cede el hilo después de cada archivo y avisa
+ * `alAvance(hechos, total)` (2026-11-04). Devuelve una promesa.
+ */
+export async function armarZipCediendo(archivos, alAvance) {
+  return armarZipCon(archivos, async (i) => { alAvance?.(i, archivos.length); await cederHilo(); });
+}
+
+// El armado, una sola vez para las dos: con `pausa`, es asíncrono y espera
+// después de cada archivo; sin ella, es síncrono como siempre.
+function armarZipCon(archivos, pausa) {
+  if (!pausa) return armarZipPasos(archivos, false).next().value;
+  return (async () => {
+    const pasos = armarZipPasos(archivos, true);
+    for (let r = pasos.next(); ; r = pasos.next()) {
+      if (r.done) return r.value;
+      await pausa(r.value);
+    }
+  })();
+}
+
+// Generador: con `ceder`, entrega cuántos archivos van después de cada uno y,
+// al final, el .zip. Sin `ceder` no se detiene nunca, así que el primer
+// `.next()` ya trae el .zip terminado.
+function* armarZipPasos(archivos, ceder) {
   const partes = [];
   const central = [];
   let desplazamiento = 0;
@@ -83,6 +134,7 @@ export function armarZip(archivos) {
     central.push(new Uint8Array(c.buffer), Uint8Array.from(nombre));
 
     desplazamiento += 30 + nombre.length + tam;
+    if (ceder) yield partes.length / 3;
   }
 
   const tamCentral = central.reduce((s, p) => s + p.length, 0);

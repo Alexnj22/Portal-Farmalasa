@@ -86,12 +86,13 @@ export default function Registro() {
         <FilaCampo placeholder="Nombre completo" value={f.nombre} onChangeText={cambiar('nombre')} autoCapitalize="words"
           textContentType="name" autoComplete="name" returnKeyType="next" blurOnSubmit={false}
           onSubmitEditing={() => duiRef.current?.focus()} />
-        <FilaCampo ref={duiRef} placeholder="DUI" value={f.documento} autoCorrect={false}
+        {/* Nombres explícitos para el lector de pantalla (2026-11-04): ver FilaCampo. */}
+        <FilaCampo ref={duiRef} placeholder="DUI" accessibilityLabel="DUI" value={f.documento} autoCorrect={false}
           keyboardType="number-pad" autoComplete="off" textContentType="none"
           inputAccessoryViewID={IOS ? BARRA_DUI : undefined}
           returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => telRef.current?.focus()}
           onChangeText={(v) => cambiar('documento')(documentoEscrito(v))} />
-        <FilaCampo ref={telRef} placeholder="Teléfono" value={f.telefono} keyboardType="phone-pad" textContentType="telephoneNumber"
+        <FilaCampo ref={telRef} placeholder="Teléfono" accessibilityLabel="Teléfono" value={f.telefono} keyboardType="phone-pad" textContentType="telephoneNumber"
           autoComplete="tel" inputAccessoryViewID={IOS ? BARRA_TEL : undefined}
           returnKeyType="next" blurOnSubmit={false} onSubmitEditing={() => correoRef.current?.focus()}
           onChangeText={(v) => cambiar('telefono')(telefonoEscrito(v))} />
@@ -103,12 +104,12 @@ export default function Registro() {
         </>
       ) : null}
       <Grupo titulo="Opcional" pie={fechaMala ? 'Esa fecha no existe. Escríbela como DD/MM/AAAA.' : 'La fecha es para tu regalo de cumpleaños.'}>
-        <FilaCampo ref={correoRef} placeholder="Correo" value={f.email} onChangeText={cambiar('email')} keyboardType="email-address"
+        <FilaCampo ref={correoRef} placeholder="Correo" accessibilityLabel="Correo, opcional" value={f.email} onChangeText={cambiar('email')} keyboardType="email-address"
           autoCapitalize="none" autoCorrect={false} textContentType="emailAddress" autoComplete="email" returnKeyType="done" />
         <FechaNacimiento valor={f.fecha_nacimiento} alCambiar={cambiar('fecha_nacimiento')} />
       </Grupo>
       <Grupo titulo="¿Te invitaron?" pie="Escribe el código de quien te invitó: con tu primera compra de $10 o más, los dos ganan 50 puntos.">
-        <FilaCampo placeholder="Código de invitación" value={f.referido} autoCapitalize="characters" autoCorrect={false}
+        <FilaCampo placeholder="Código de invitación" accessibilityLabel="Código de invitación, opcional" value={f.referido} autoCapitalize="characters" autoCorrect={false}
           onChangeText={(v) => cambiar('referido')(v.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6))} />
       </Grupo>
       <Grupo titulo="Tus permisos" pie="El programa es necesario para acumular. Las promociones son opcionales y las puedes quitar cuando quieras.">
@@ -126,7 +127,8 @@ export default function Registro() {
       </Text>
       {sinTextos ? (
         <Aviso tipo="aviso">No se pudieron cargar tus permisos. Revisa tu señal y{' '}
-          <Text onPress={pedirTextos} style={{ fontWeight: '700', textDecorationLine: 'underline' }}>vuelve a intentar</Text>.
+          {/* Con su rol (2026-11-04): sin él, el lector de pantalla lo leía como texto y no se sabía que se toca. */}
+          <Text onPress={pedirTextos} accessibilityRole="link" style={{ fontWeight: '700', textDecorationLine: 'underline' }}>vuelve a intentar</Text>.
         </Aviso>
       ) : null}
       {error ? (

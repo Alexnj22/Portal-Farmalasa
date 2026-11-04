@@ -355,7 +355,17 @@ export default function Chat() {
       // Con franja, la lista se muestra cuando ya está ubicada en ella.
       if (franja) setListo(false);
     }
-    setMensajes(r.mensajes);
+    // Lo que se está mandando o quedó sin enviar NO viene del servidor y se
+    // conserva (2026-11-04). Con el chat vacío (`ultimoId` 0), el sondeo hace
+    // esta carga completa; `setMensajes(r.mensajes)` a secas borraba el globo
+    // temporal del primer mensaje, y al llegar la respuesta de `chat_enviar`
+    // no había globo que reemplazar: el mensaje enviado no aparecía. Un globo
+    // «sin confirmar» que en realidad entró se va, porque ya viene acá.
+    setMensajes((ant) => {
+      const propios = (ant ?? []).filter((m) => typeof m.id !== 'number'
+        && !(m.dudoso && r.mensajes.some((n) => esElEnviado(n, m.reintento))));
+      return [...r.mensajes, ...propios];
+    });
     if (r.sin_leer) leido();
   }, [pedir, leido]);
 
@@ -364,7 +374,14 @@ export default function Chat() {
     // `preguntando` guarda la hora: si una consulta quedó colgada más de 15 s,
     // se da por perdida y se vuelve a preguntar (2026-10-12).
     if ((preguntando.current && Date.now() - preguntando.current < 15_000) || AppState.currentState !== 'active') return;
-    if (!ultimoId.current) { await cargar(); return; }
+    // Sin ningún mensaje todavía, lo nuevo es la carga completa — con el MISMO
+    // candado (2026-11-04): sin él, cada vuelta del sondeo lanzaba otra encima
+    // de la que seguía en vuelo.
+    if (!ultimoId.current) {
+      preguntando.current = Date.now();
+      try { await cargar(); } finally { preguntando.current = 0; }
+      return;
+    }
     preguntando.current = Date.now();
     try {
       const r = await pedir('chat_mensajes', { desde_id: ultimoId.current, ...(cambiosDesde.current ? { cambios_desde: cambiosDesde.current } : {}) });
@@ -548,8 +565,15 @@ export default function Chat() {
     return (r.mensajes ?? []).find((m) => esElEnviado(m, envio)) ?? false;
   };
   // El globo temporal pasa a ser el del servidor (sin repetirlo si ya estaba).
+  // Si el globo ya no estaba (una recarga lo sacó), el real se agrega igual
+  // (2026-11-04): antes sólo se reemplazaba, y si no había qué reemplazar el
+  // mensaje enviado no salía en pantalla.
   const ponerEnviado = (tmpId, real) => {
-    setMensajes((ant) => (ant ?? []).filter((m) => m.id !== real.id).map((m) => (m.id === tmpId ? real : m)));
+    setMensajes((ant) => {
+      const habia = (ant ?? []).some((m) => m.id === tmpId);
+      const sin = (ant ?? []).filter((m) => m.id !== real.id).map((m) => (m.id === tmpId ? real : m));
+      return habia ? sin : [...sin, real];
+    });
   };
   const mandar = async ({ texto: tx = null, uri = null, prod = null, cita = null, reemplaza = null, previo = null, archivo = null }) => {
     if (enviarYa.current) return false;
@@ -606,8 +630,10 @@ export default function Chat() {
       const extra = r.automaticas ?? (r.automatico ? [r.automatico] : []);
       const idsExtra = new Set(extra.map((x) => x.id));
       setMensajes((ant) => {
+        const habia = (ant ?? []).some((m) => m.id === tmp.id);
         const sin = (ant ?? []).filter((m) => m.id !== r.mensaje.id && !idsExtra.has(m.id)).map((m) => (m.id === tmp.id ? r.mensaje : m));
-        return [...sin, ...extra];
+        // Sin globo que reemplazar (lo sacó una recarga), el real va igual.
+        return [...sin, ...(habia ? [] : [r.mensaje]), ...extra];
       });
       if (extra.length) { anotarUltimo(extra); for (const x of extra) recien.current.add(x.id); }
       Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});

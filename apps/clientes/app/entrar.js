@@ -115,8 +115,10 @@ export default function Entrar() {
       ) : null}
       {modo === 'dui' ? (
         <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo.'}>
+          {/* Nombres explícitos para el lector de pantalla (2026-11-04): ver FilaCampo. */}
           <FilaCampo
             placeholder="DUI"
+            accessibilityLabel="DUI"
             keyboardType="number-pad"
             autoCorrect={false}
             autoComplete="off"
@@ -131,6 +133,7 @@ export default function Entrar() {
           <FilaCampo
             ref={telRef}
             placeholder="Teléfono"
+            accessibilityLabel="Teléfono"
             keyboardType="phone-pad"
             textContentType="telephoneNumber"
             autoComplete="tel"
@@ -145,6 +148,7 @@ export default function Entrar() {
         <Grupo pie="Las 7 letras que vienen impresas en tu ticket de puntos. Con el código ves tus puntos, tu tarjeta y las ofertas; para tus compras, facturas, reservas y el chat, entra con tu DUI y teléfono.">
           <FilaCampo
             placeholder="Código"
+            accessibilityLabel="Código del ticket de puntos, 7 letras"
             autoCapitalize="characters"
             autoCorrect={false}
             value={codigo}

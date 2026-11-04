@@ -4,7 +4,7 @@
 //
 // Nunca lanza: devuelve `{ ok:false, mensaje }` con una frase que se puede
 // mostrar. Del otro lado hay un cliente, no un técnico.
-import { LECTURAS, guardar, leer, useConexion } from './sinConexion';
+import { LECTURAS, epocaActual, guardar, leer, useConexion } from './sinConexion';
 
 // Las consultas EN VIVO del chat (2026-10-12) también llevan tope de tiempo:
 // sin él, una petición colgada en mala señal dejaba al chat esperándola para
@@ -17,6 +17,16 @@ const CONSULTAS = new Set([
   'factura_documento', 'carrito_existencias', 'reserva_existencias', 'documentos_estado',
   'correos_lista', 'mis_datos_fiscales', 'perfil', 'version_publicada',
   'frase_del_dia', // la app guarda su propia copia por día (lib/fraseDelDia.js)
+]);
+
+// Acciones que no son lecturas guardadas pero que REPETIR no duplica nada
+// (2026-11-04): entrar abre otra sesión igual, preparar el cobro y reportar un
+// error son idempotentes, y las búsquedas no cambian nada. Sin red dicen «Sin
+// conexión» y no «no sabemos si se hizo», que en la pantalla de entrar no
+// significaría nada.
+const REPETIBLES = new Set([
+  'entrar', 'pago_preparar', 'reportar_error', 'chat_buscar', 'chat_galeria',
+  'historia_vista', 'historia_vista_publica', 'tratamiento_candidatos', 'premio_salas',
 ]);
 
 // Las ESCRITURAS también llevan tope (2026-10-15): sin él, enviar un mensaje,
@@ -34,6 +44,11 @@ export async function llamar(accion, datos = {}) {
     return { ok: false, mensaje: 'La app no está configurada.' };
   }
   const esLectura = LECTURAS.has(accion);
+  // La época de la sesión AL PEDIR (lib/sinConexion, 2026-11-04): si se cierra
+  // sesión mientras la respuesta viaja, ésta ya es de otra persona — ni se
+  // guarda sin conexión ni se le entrega a la pantalla.
+  const miEpoca = epocaActual();
+  const descartada = () => ({ ok: false, descartada: true, mensaje: 'Vuelve a entrar.' });
   let control = null;
   try {
     // Una lectura con señal mala no puede colgar la pantalla: a los 12 s se
@@ -61,22 +76,34 @@ export async function llamar(accion, datos = {}) {
     }
     if (!cuerpo) return { ok: false, mensaje: 'No se pudo consultar. Intenta en un rato.' };
     useConexion.getState().marcar(false);
-    guardar(accion, datos, cuerpo);
+    // Lo que sólo LEE (guardado o no) se descarta; una escritura que ya se
+    // hizo se informa igual: ocultarla no la deshace.
+    if (epocaActual() !== miEpoca && (esLectura || CONSULTAS.has(accion) || EN_VIVO.has(accion))) return descartada();
+    guardar(accion, datos, cuerpo, miEpoca);
     return cuerpo;
   } catch {
     // Una consulta en vivo que se cortó no es «sin conexión»: el chat vuelve a
     // preguntar en unos segundos.
     if (EN_VIVO.has(accion)) return { ok: false, mensaje: 'No se pudo consultar.' };
-    // Una escritura que se cortó por TIEMPO pudo haber llegado: se avisa
-    // distinto para que la pantalla relea antes de ofrecer repetirla.
-    if (!esLectura && control?.signal?.aborted) {
-      if (CONSULTAS.has(accion)) return { ok: false, mensaje: 'No se pudo consultar. Intenta en un rato.' };
+    // Una consulta que no se guarda y se cortó por tiempo: no cambió nada.
+    if (!esLectura && CONSULTAS.has(accion) && control?.signal?.aborted) {
+      return { ok: false, mensaje: 'No se pudo consultar. Intenta en un rato.' };
+    }
+    // Una ESCRITURA que falló pudo haber llegado, se haya cortado por tiempo o
+    // no (2026-11-04). Antes sólo el corte por tiempo lo decía: un «Network
+    // request failed» —la señal se cae con la petición ya enviada— caía al
+    // camino de las lecturas y decía «Sin conexión», o sea «no se hizo», y
+    // la persona repetía una reserva que sí había entrado. Que la señal
+    // estuviera caída desde ANTES no se puede distinguir desde acá, así que
+    // se pide siempre releer antes de repetir.
+    if (!esLectura && !CONSULTAS.has(accion) && !REPETIBLES.has(accion)) {
       return {
         ok: false, sinConfirmar: true,
         mensaje: 'No pudimos confirmar si se hizo. Revisa antes de intentarlo de nuevo.',
       };
     }
     // Sin red: lo último que se vio, marcado como guardado.
+    if (epocaActual() !== miEpoca) return descartada();
     const guardado = await leer(accion, datos);
     useConexion.getState().marcar(true, guardado?.guardadoEn ?? null);
     return guardado ?? { ok: false, sinConexion: true, mensaje: 'Sin conexión. Revisa tu señal e intenta de nuevo.' };

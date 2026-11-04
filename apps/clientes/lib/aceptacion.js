@@ -34,6 +34,14 @@ export const useAceptacion = create((set) => ({
   listo: (vigentes) => set((e) => ({ pendiente: false, vigentes: vigentes ?? e.vigentes })),
 }));
 
+// Al cerrar sesión, lo pendiente se olvida (2026-11-04): quedaba en true, y
+// quien entraba después —con sus documentos ya aceptados— caía igual en la
+// guía «sólo reglas» por lo que le faltaba a la cuenta anterior. La próxima
+// sesión lo vuelve a revisar con `revisarAceptacion`.
+useSesion.subscribe((s, antes) => {
+  if (antes.token && !s.token) useAceptacion.setState({ pendiente: false, vigentes: null });
+});
+
 // La sesión a la que pertenece lo guardado: el final del token. Así lo que
 // aceptó una cuenta no vale para otra que entre después en el mismo teléfono.
 const huella = (token) => (token ? String(token).slice(-16) : null);

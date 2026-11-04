@@ -17,6 +17,7 @@ import * as FS from 'expo-file-system/legacy';
 import { sinBloquear } from './bloqueo';
 
 const LADO_MAYOR = 1600;
+const TOPE_SUBIDA = 60_000;
 
 /** «Tomar foto» o «Elegir de la galería». Devuelve 'camara' | 'galeria' | null. */
 export function preguntarOrigen(titulo = 'Agregar foto', mensaje) {
@@ -101,11 +102,25 @@ export async function subirFoto(pedir, accionUrl, datos, uri, tipo = 'image/jpeg
   const r = await pedir(accionUrl, datos);
   if (!r?.ok || !r.url) return { ok: false, mensaje: r?.mensaje ?? 'No se pudo preparar la subida. Revisa tu conexión.' };
   try {
-    const s = await FS.uploadAsync(r.url, uri, {
-      httpMethod: 'PUT',
-      uploadType: FS.FileSystemUploadType.BINARY_CONTENT,
-      headers: { 'Content-Type': tipo, 'x-upsert': 'true' },
-    });
+    // Sin `x-upsert` (2026-11-04): el servidor firma con upsert:false y una
+    // ruta NUEVA por intento (recetas `<n>-<timestamp>.jpg`), así que una
+    // subida a una ruta ya ocupada tiene que FALLAR en vez de reemplazar el
+    // archivo que ya revisó la sucursal.
+    //
+    // Y con tope (2026-11-04): `uploadAsync` no tiene uno propio, y con señal
+    // mala la ruedita giraba para siempre. A los 60 s se da por fallida; la
+    // subida pudo seguir de fondo, pero sin confirmarla (`*_confirmar`) no
+    // cuenta, y la próxima va a otra ruta.
+    let reloj = null;
+    const tope = new Promise((_, mal) => { reloj = setTimeout(() => mal(new Error('tope')), TOPE_SUBIDA); });
+    const s = await Promise.race([
+      FS.uploadAsync(r.url, uri, {
+        httpMethod: 'PUT',
+        uploadType: FS.FileSystemUploadType.BINARY_CONTENT,
+        headers: { 'Content-Type': tipo },
+      }),
+      tope,
+    ]).finally(() => clearTimeout(reloj));
     if (s.status < 200 || s.status >= 300) return { ok: false, mensaje: 'La foto no se pudo subir. Intenta de nuevo.' };
     return { ok: true, ruta: r.ruta };
   } catch {

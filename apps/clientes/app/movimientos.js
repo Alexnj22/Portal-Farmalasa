@@ -3,6 +3,7 @@
 // Inicio se quedó con la tarjeta, el nivel y el estado del canje.
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Text, View } from 'react-native';
+import Presionable from '../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import { useShallow } from 'zustand/react/shallow';
 import { Cargando, Pantalla, Tarjeta, Texto, Titulo, Vacio } from '../componentes/ui';
@@ -87,8 +88,18 @@ export default function Movimientos() {
           {movimientos.length === 0 ? <Texto nivel={2}>Todavía no hay movimientos.</Texto> : null}
           {movimientos.map((m, i) => {
             const gana = Number(m.puntos) > 0;
+            // Una sola lectura por fila (2026-11-04): el lector de pantalla
+            // leía cuatro pedazos sueltos —el rótulo, la fecha, «+120» con el
+            // signo— y no se entendía si se ganó o se usó.
+            const vence = m.tipo === 'cupon' ? textoVence(m.fecha) : null;
+            const etiqueta = [
+              `${ROTULOS[m.tipo] ?? 'Movimiento'}: ${gana ? 'ganaste' : 'usaste'} ${entero(Math.abs(m.puntos))} ${Math.abs(Number(m.puntos)) === 1 ? 'punto' : 'puntos'}`,
+              `${fecha(m.fecha)}${m.sala ? `, ${m.sala}` : ''}`,
+              vence?.texto,
+            ].filter(Boolean).join('. ');
             return (
-              <View key={`${m.fecha}-${i}`} style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 12 }}>
+              <View key={`${m.fecha}-${i}`} accessible accessibilityLabel={etiqueta}
+                style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 6, gap: 12 }}>
                 <View style={{ flex: 1 }}>
                   <Texto>{ROTULOS[m.tipo] ?? 'Movimiento'}</Texto>
                   <Texto nivel={3}>{fecha(m.fecha)}{m.sala ? ` · ${m.sala}` : ''}</Texto>
@@ -101,10 +112,14 @@ export default function Movimientos() {
             );
           })}
           {movimientos.length < total ? (
-            <Text onPress={cargandoMas ? undefined : verMas} accessibilityRole="button"
-              style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 12, minHeight: 44 }}>
-              {cargandoMas ? 'Cargando…' : `Ver más · ${movimientos.length} de ${total}`}
-            </Text>
+            // Un botón de verdad (2026-11-04): con `<Text onPress>` el toque no
+            // acusaba recibo y el área era sólo la del texto.
+            <Presionable onPress={verMas} disabled={cargandoMas} accessibilityRole="button" accessibilityState={{ busy: cargandoMas }}
+              style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', alignSelf: 'flex-start', opacity: pressed ? 0.6 : 1 })}>
+              <Text style={{ color: t.color.magentaTexto, fontWeight: '600', paddingVertical: 12 }}>
+                {cargandoMas ? 'Cargando…' : `Ver más · ${movimientos.length} de ${total}`}
+              </Text>
+            </Presionable>
           ) : null}
         </Tarjeta>
       </Entrada>
@@ -113,14 +128,21 @@ export default function Movimientos() {
 }
 
 // Los puntos de un cupón vencen el último día de SU mes (2026-10-14).
-function VenceCupon({ fecha: f }) {
-  const t = useTema();
+// El texto sale de una función aparte para que la etiqueta de la fila diga lo
+// mismo que se ve (2026-11-04).
+function textoVence(f) {
   const vence = finDeMes(f);
   const dias = diasHasta(vence);
   if (vence == null || dias == null) return null;
+  return { vigente: dias >= 0, texto: dias >= 0 ? `Vencen el ${fechaLarga(vence)} — úsalos este mes` : `Vencieron el ${fechaLarga(vence)}` };
+}
+function VenceCupon({ fecha: f }) {
+  const t = useTema();
+  const v = textoVence(f);
+  if (!v) return null;
   return (
-    <Text style={{ fontSize: 13, fontWeight: dias >= 0 ? '700' : '400', color: dias >= 0 ? t.color.magentaTexto : colorSistema.texto3 }}>
-      {dias >= 0 ? `Vencen el ${fechaLarga(vence)} — úsalos este mes` : `Vencieron el ${fechaLarga(vence)}`}
+    <Text style={{ fontSize: 13, fontWeight: v.vigente ? '700' : '400', color: v.vigente ? t.color.magentaTexto : colorSistema.texto3 }}>
+      {v.texto}
     </Text>
   );
 }

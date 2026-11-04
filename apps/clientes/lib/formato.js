@@ -1,13 +1,27 @@
 // Fechas y montos como los lee una persona en El Salvador.
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
-/** '2026-10-05' o ISO → «5 oct 2026». */
+/**
+ * '2026-10-05' o ISO → «5 oct 2026». Un INSTANTE con zona (timestamptz:
+ * '2026-11-04T02:30:00+00:00', '…Z') se dice en el día de El Salvador
+ * (2026-11-04): cortar los diez primeros caracteres lo dejaba en el día de
+ * UTC, y lo pagado o aplicado después de las 6 p. m. salía con fecha de
+ * mañana. Una fecha pura 'AAAA-MM-DD' (o una hora sin zona) queda igual.
+ */
 export function fecha(v) {
   if (!v) return '';
-  const m = String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  const texto = String(v);
+  if (CON_ZONA.test(texto)) {
+    const t = Date.parse(texto);
+    if (Number.isFinite(t)) return fecha(diaSV(t));
+  }
+  const m = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
   if (!m) return String(v);
   return `${Number(m[3])} ${MESES[Number(m[2]) - 1]} ${m[1]}`;
 }
+
+// Fecha con hora Y zona: 'Z' o un desfase ±hh, ±hhmm o ±hh:mm al final.
+const CON_ZONA = /^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}(?::\d{2}(?:\.\d+)?)?(?:Z|[+-]\d{2}(?::?\d{2})?)$/i;
 
 const MESES_LARGOS = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 

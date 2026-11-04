@@ -96,7 +96,7 @@ export function EncabezadoSeccion({ titulo, primera }) {
   const t = useTema();
   return ANDROID ? (
     <Text accessibilityRole="header"
-      style={{ color: t.oscuro ? '#E2A3E0' : '#981D97', fontSize: 14, fontWeight: '500', letterSpacing: 0.1, marginLeft: 16, marginTop: primera ? 4 : 20, marginBottom: 8 }}>
+      style={{ color: t.color.magentaTexto, fontSize: 14, fontWeight: '500', letterSpacing: 0.1, marginLeft: 16, marginTop: primera ? 4 : 20, marginBottom: 8 }}>
       {titulo}
     </Text>
   ) : (

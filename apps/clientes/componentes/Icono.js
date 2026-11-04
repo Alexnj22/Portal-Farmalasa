@@ -174,6 +174,18 @@ const MATERIAL = {
   // Cuenta (2026-11-03): «entrar con DUI y teléfono».
   'person.text.rectangle.fill': 'id_card',
   'person.text.rectangle': 'id_card',
+  // Los que faltaban (2026-11-04, barrido de cada `sf=` de app/ y componentes/
+  // contra este mapa): sin par, en Android salía el respaldo o un hueco.
+  'square': 'check_box_outline_blank',
+  'checkmark.square.fill': 'check_box',
+  'rotate.left': 'rotate_left',
+  'rotate.right': 'rotate_right',
+  'arrow.uturn.backward.circle': 'undo',
+  'barcode.viewfinder': 'barcode_scanner',
+  'bubble.left.and.bubble.right': 'forum',
+  'clock.badge.exclamationmark.fill': 'alarm',
+  'dollarsign.circle.fill': 'paid',
+  'forward.fill': 'fast_forward',
 };
 
 export default function Icono({ sf, respaldo = '•', tam = 22, color }) {

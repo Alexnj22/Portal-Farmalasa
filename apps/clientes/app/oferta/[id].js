@@ -95,7 +95,8 @@ export default function Oferta() {
     return () => clearTimeout(reloj);
   }, [reservar, puedeReservar, unico, reservando]); // eslint-disable-line react-hooks/exhaustive-deps -- `abrirReserva` se lee en el momento
 
-  const fondo = t.oscuro ? '#121016' : '#F5F4F8';
+  // El fondo de pantalla del sistema (2026-11-04; antes dos hex a mano).
+  const fondo = colorSistema.fondo;
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const cerrar = () => { Haptics.selectionAsync().catch(() => {}); router.back(); };
 
@@ -104,10 +105,10 @@ export default function Oferta() {
   if (!datos.ok) {
     return (
       <View style={{ flex: 1, backgroundColor: fondo, justifyContent: 'center' }}>
-        <Vacio titulo="No se pudo cargar">{datos.mensaje ?? 'Revisa tu conexión.'}</Vacio>
-        <Presionable onPress={() => cargar({ forzar: true })} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Reintentar</Text>
-        </Presionable>
+        {/* «Reintentar» con el botón del sistema dentro del vacío (2026-11-04). */}
+        <View style={{ padding: 16 }}>
+          <Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={() => cargar({ forzar: true }).catch(() => {})}>{datos.mensaje ?? 'Revisa tu conexión.'}</Vacio>
+        </View>
       </View>
     );
   }

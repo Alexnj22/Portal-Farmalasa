@@ -162,7 +162,10 @@ export default function Mayorista({ rango, pie = null }) {
       {pie}
       </Animated.View>
       ) : (
-        <Presionable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
+        // Con rol, estado y 44 pt de alto (2026-11-04): era un texto de ~30 pt
+        // que el lector de pantalla no anunciaba como botón.
+        <Presionable onPress={alternar} hitSlop={{ top: 4, bottom: 4, left: 8, right: 8 }} accessibilityRole="button"
+          accessibilityState={{ expanded: false }} style={{ alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' }}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Ver beneficios</Text>
         </Presionable>
       )}

@@ -33,7 +33,12 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
   const [error, setError] = useState(null);
   const [hecho, setHecho] = useState(null);
   const campo = useRef(null);
-  const fondo = t.oscuro ? '#121016' : '#F5F4F8';
+  // Del token del sistema (2026-11-04), no un hex a mano: el mismo tono.
+  const fondo = colorSistema.fondo;
+  // El candado del envío es una REF (2026-11-04): con el estado, dos toques
+  // antes del siguiente render mandaban el correo dos veces. Se toma en la
+  // primera línea y se suelta en `finally`, como el carrito.
+  const enviandoYa = useRef(false);
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
 
   useEffect(() => {
@@ -71,11 +76,20 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
   };
 
   const enviar = async () => {
-    if (enviando) return;
+    if (enviandoYa.current) return;
     if (!destino) { setTocadoNuevo(true); setError(usandoNuevo ? 'Ese correo no parece válido.' : 'Elige o escribe un correo.'); return; }
-    setEnviando(true); setError(null);
-    const r = await pedir('facturas_enviar', { ids, correo: destino });
-    setEnviando(false);
+    enviandoYa.current = true;
+    let r;
+    try {
+      setEnviando(true); setError(null);
+      r = await pedir('facturas_enviar', { ids, correo: destino });
+    } finally { enviandoYa.current = false; setEnviando(false); }
+    // Sin respuesta (lib/api, 2026-11-04): pudo haber salido. Se dice para no
+    // mandarlo dos veces a ciegas.
+    if (r?.sinConfirmar) {
+      setError('No sabemos si se envió. Revisa tu correo en unos minutos antes de intentarlo de nuevo.');
+      return;
+    }
     if (!r?.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError(r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');

@@ -110,8 +110,8 @@ export default function Encuesta() {
   if (!d.ok) {
     return (
       <Pantalla conPestanas={false} conBurbuja={false}>
-        <Vacio titulo="No se pudo cargar">{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio>
-        <Boton tipo="secundario" alTocar={() => { setD(null); cargar(); }}>Reintentar</Boton>
+        {/* «Reintentar» dentro del vacío, como el resto de los errores (2026-11-04). */}
+        <Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={() => { setD(null); cargar(); }}>{d.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'}</Vacio>
       </Pantalla>
     );
   }

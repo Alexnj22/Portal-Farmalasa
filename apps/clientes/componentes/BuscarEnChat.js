@@ -18,14 +18,15 @@ import { colorSistema } from './sistema';
 import { useSesion } from '../lib/sesion';
 import { navegar } from '../lib/navegar';
 import { nombreProducto } from '../lib/catalogo';
-import { dolares } from '../lib/formato';
+import { dolares, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 
 const IOS = Platform.OS === 'ios';
 const SECCIONES = [{ valor: 'mensajes', rotulo: 'Mensajes' }, { valor: 'fotos', rotulo: 'Fotos' }, { valor: 'productos', rotulo: 'Productos' }];
-const fecha = (iso) => {
-  try { return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'short', year: '2-digit' }); } catch { return ''; }
-};
+// La fecha de un mensaje es un instante (timestamptz): se dice en el día de
+// El Salvador con `fecha()` de lib/formato (2026-11-04). `toLocaleDateString`
+// usaba la zona del teléfono —y en Android, sin datos de Intl completos, a
+// veces la de UTC—, así que lo escrito de noche salía con el día siguiente.
 const sinTildes = (x) => String(x ?? '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
 
 export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {

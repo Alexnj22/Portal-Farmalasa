@@ -94,6 +94,13 @@ module.exports = ({ config }) => {
       blockedPermissions: [...new Set([...(config.android?.blockedPermissions ?? []), ...BLOQUEADOS])],
       ...(googleServicesFile ? { googleServicesFile } : {}),
     },
-    plugins: [...(config.plugins ?? []), './plugins/permisos-android'],
+    plugins: [
+      ...(config.plugins ?? []),
+      './plugins/permisos-android',
+      // El peso de la app (2026-11-04): R8 y bouncycastle en Android, símbolos
+      // locales de los frameworks en iOS. El porqué, en cada archivo.
+      './plugins/peso-android',
+      './plugins/peso-ios',
+    ],
   };
 };

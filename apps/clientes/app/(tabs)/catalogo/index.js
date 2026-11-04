@@ -247,7 +247,16 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
   const suyo = rotuloPrecioTuyo(p);
   return (
     <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
-      accessibilityRole="button" accessibilityLabel={`${nombreProducto(p.nombre)}. Precio ${dolares(p.precio)}${suyo ? `, ${suyo} ${dolares(p.precio_tuyo)}` : p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`}
+      // La etiqueta dice lo mismo que se VE (2026-11-04): «Sin existencia» y
+      // «Bajo Receta» se pintaban pero el lector de pantalla no los leía, y el
+      // descuento tampoco.
+      accessibilityRole="button" accessibilityLabel={[
+        nombreProducto(p.nombre),
+        p.bajo_receta ? 'Bajo Receta' : null,
+        p.disponible ? null : 'Sin existencia',
+        `Precio ${dolares(p.precio)}${suyo ? `, ${suyo} ${dolares(p.precio_tuyo)}` : p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`,
+        ahorro >= 0.01 ? `${Math.round((ahorro / p.precio) * 100)}% de descuento` : null,
+      ].filter(Boolean).join('. ')}
       style={({ pressed }) => ({ flex: 1, maxWidth: sola ? '100%' : '50%', borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
         borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',

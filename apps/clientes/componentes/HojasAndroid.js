@@ -12,8 +12,10 @@
 // con la MISMA firma, dibujadas por <HojasAndroid /> (montado una vez en la
 // raíz). En iOS no se toca nada: `instalarHojasAndroid` no hace nada.
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Modal, Platform, Pressable, ScrollView, Text, TextInput, useColorScheme, View } from 'react-native';
+import { ActionSheetIOS, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import HojaDeOpciones from './HojaDeOpciones';
+import { colorSistema } from './sistema';
+import { useTema } from '../tema/tema';
 
 let mostrar = null;          // lo registra el host montado
 const cola = [];             // lo que se pidió antes de que el host montara
@@ -50,7 +52,7 @@ export function instalarHojasAndroid() {
 export default function HojasAndroid() {
   const [hoja, setHoja] = useState(null);
   const [texto, setTexto] = useState('');
-  const oscuro = useColorScheme() === 'dark';
+  const t = useTema();
   useEffect(() => {
     if (Platform.OS !== 'android') return undefined;
     mostrar = (h) => { setTexto(h.valor ?? ''); setHoja(h); };
@@ -60,9 +62,12 @@ export default function HojasAndroid() {
   if (Platform.OS !== 'android' || !hoja) return null;
 
   // surfaceContainerHigh de Material 3 (2026-10-13, como la app del personal).
-  const fondo = oscuro ? '#2B2930' : '#F7F2FA';
-  const tinta = oscuro ? '#FFFFFF' : '#000000';
-  const tenue = oscuro ? 'rgba(255,255,255,0.6)' : 'rgba(0,0,0,0.6)';
+  // Desde el 2026-11-04 sale de `colorSistema` (antes, hex a mano aquí): la
+  // superficie alta, el texto y el secundario del sistema de la app — los
+  // mismos que pintan el resto de las hojas.
+  const fondo = colorSistema.superficieAlta;
+  const tinta = colorSistema.texto;
+  const tenue = colorSistema.texto2;
   const cerrar = (despues) => {
     setHoja(null);
     // La siguiente de la cola, y la acción DESPUÉS de cerrar: si abre otra hoja
@@ -81,18 +86,26 @@ export default function HojasAndroid() {
 
   // El «escribe el motivo»: el diálogo de Material 3 (esquinas de 28, campo con
   // contorno, botones de texto a la derecha).
+  //
+  // 2026-11-04 (accesibilidad): el velo era un Pressable sin nombre que
+  // ENVOLVÍA al diálogo, así que TalkBack lo leía como un solo bloque tocable
+  // sin decir qué hacía. Ahora el velo va detrás, como hermano, con su rótulo
+  // «Cerrar», y el diálogo encima con su título como encabezado; el campo se
+  // anuncia con ese mismo título.
   return (
     <Modal transparent visible animationType="fade" onRequestClose={cancelar} statusBarTranslucent>
-      <Pressable onPress={cancelar} style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: hoja.tipo === 'opciones' ? 'flex-end' : 'center', padding: 16 }}>
-        <Pressable onPress={() => {}} style={{ backgroundColor: fondo, borderRadius: 28, paddingVertical: 16, maxHeight: '80%' }}>
-          {hoja.titulo ? <Text style={{ color: tinta, fontSize: 18, fontWeight: '700', paddingHorizontal: 20, paddingTop: 8 }}>{hoja.titulo}</Text> : null}
+      <View style={{ flex: 1, justifyContent: hoja.tipo === 'opciones' ? 'flex-end' : 'center', padding: 16 }}>
+        <Pressable onPress={cancelar} accessibilityRole="button" accessibilityLabel="Cerrar"
+          style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
+        <View accessibilityViewIsModal style={{ backgroundColor: fondo, borderRadius: 28, paddingVertical: 16, maxHeight: '80%' }}>
+          {hoja.titulo ? <Text accessibilityRole="header" style={{ color: tinta, fontSize: 18, fontWeight: '700', paddingHorizontal: 20, paddingTop: 8 }}>{hoja.titulo}</Text> : null}
           {hoja.mensaje ? <Text style={{ color: tenue, fontSize: 14, paddingHorizontal: 20, paddingTop: 6 }}>{hoja.mensaje}</Text> : null}
           {hoja.tipo === 'opciones' ? (
             <ScrollView style={{ marginTop: 8 }}>
               {hoja.opciones.filter((o) => !o.cancelar).map((o) => (
                 <Pressable key={o.i} disabled={o.apagado} onPress={() => cerrar(() => hoja.alElegir(o.i))} accessibilityRole="button"
                   style={({ pressed }) => ({ minHeight: 52, justifyContent: 'center', paddingHorizontal: 20, opacity: o.apagado ? 0.4 : 1, backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
-                  <Text style={{ fontSize: 16, color: o.destructivo ? '#FF3B30' : tinta }}>{o.texto}</Text>
+                  <Text style={{ fontSize: 16, color: o.destructivo ? colorSistema.rojo : tinta }}>{o.texto}</Text>
                 </Pressable>
               ))}
               {hoja.opciones.some((o) => o.cancelar) ? (
@@ -106,20 +119,21 @@ export default function HojasAndroid() {
             <View style={{ paddingHorizontal: 20, paddingTop: 12, gap: 12 }}>
               <TextInput value={texto} onChangeText={setTexto} autoFocus secureTextEntry={hoja.secreto} keyboardType={hoja.teclado}
                 multiline={!hoja.secreto} placeholderTextColor={tenue}
+                accessibilityLabel={hoja.titulo || 'Escribe aquí'} accessibilityHint={hoja.mensaje || undefined}
                 style={{ minHeight: 56, maxHeight: 140, borderRadius: 4, borderWidth: 1, borderColor: tenue, paddingHorizontal: 16, paddingVertical: 14, fontSize: 16, color: tinta }} />
               <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, flexWrap: 'wrap' }}>
                 {hoja.botones.map((b, i) => (
                   <Pressable key={i} accessibilityRole="button" onPress={() => cerrar(() => b.onPress?.(texto))}
                     android_ripple={{ color: 'rgba(127,127,127,0.22)', foreground: true }}
                     style={{ minHeight: 48, paddingHorizontal: 16, justifyContent: 'center', borderRadius: 24, overflow: 'hidden' }}>
-                    <Text style={{ fontSize: 16, fontWeight: b.style === 'cancel' ? '500' : '700', color: b.style === 'destructive' ? '#B3261E' : b.style === 'cancel' ? tenue : (oscuro ? '#E2A3E0' : '#981D97') }}>{b.text}</Text>
+                    <Text style={{ fontSize: 16, fontWeight: b.style === 'cancel' ? '500' : '700', color: b.style === 'destructive' ? colorSistema.rojo : b.style === 'cancel' ? tenue : t.color.magentaTexto }}>{b.text}</Text>
                   </Pressable>
                 ))}
               </View>
             </View>
           )}
-        </Pressable>
-      </Pressable>
+        </View>
+      </View>
     </Modal>
   );
 }

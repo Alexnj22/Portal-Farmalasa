@@ -18,7 +18,7 @@
 // receta»; sin foto no se confirma. La reserva nace «en revisión», se sube la
 // foto y la sucursal decide. Si la subida falla, la reserva queda igual y la
 // foto se sube desde Mis reservas.
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, ScrollView, Text, View } from 'react-native';
 import { MAX_UNIDADES } from '../lib/carrito';
 import Presionable from './Presionable';
@@ -69,7 +69,15 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
   // Cuántas se piden de lo normal (2026-10-19): arriba de eso se pregunta.
   const [habitual, setHabitual] = useState(5);
   const [fotoReceta, setFotoReceta] = useState(null);
-  const fondo = t.oscuro ? '#121016' : '#F5F4F8';
+  // El fondo de la hoja sale del token del sistema (2026-11-04), no de un hex
+  // escrito a mano: es el mismo tono (#F5F4F9 / #131218) y sigue al modo oscuro.
+  const fondo = colorSistema.fondo;
+  // El candado del envío es una REF y no el estado `enviando` (2026-11-04): el
+  // estado se lee del render anterior, así que dos toques seguidos —antes de
+  // que React vuelva a pintar— pasaban los dos el `if (enviando)` y salían
+  // DOS reservas. La ref se toma en la primera línea y se suelta en `finally`,
+  // como `enviandoYa` del carrito.
+  const enviandoYa = useRef(false);
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
 
   const [intento, setIntento] = useState(0);
@@ -101,7 +109,11 @@ export default function ReservarHoja({ oferta, producto, alCerrar }) {
     setPaso('elegir');
   };
   const reservar = async (confirmada = false) => {
-    if (enviando || !sala) return;
+    if (enviandoYa.current || !sala) return;
+    enviandoYa.current = true;
+    try { await reservarYa(confirmada); } finally { enviandoYa.current = false; }
+  };
+  const reservarYa = async (confirmada) => {
     if (receta && !fotoReceta?.uri) { setError('Agrega la foto de tu receta para continuar.'); return; }
     /* La cantidad es libre, pero si no es la habitual se pregunta (decisión
      * del usuario, 2026-10-19): un dedo de más en «+» aparta unidades que

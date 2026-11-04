@@ -34,6 +34,40 @@ const almacenDe = (clave) => (Platform.OS === 'web'
 const almacen = almacenDe(CLAVE);
 const almacenAlcance = almacenDe(CLAVE_ALCANCE);
 
+// El DUEÑO de lo que se queda en el teléfono (2026-11-04). Con la sesión
+// vencida se conservan carrito, recordatorios de tomas y productos vistos —es
+// la misma persona que vuelve a entrar—, pero en un teléfono compartido quien
+// entraba después heredaba todo eso. Se guarda de quién es (el código de
+// cliente que trae el resumen, `c:…`; un pre-registro sin código, `p:…`) y,
+// al entrar, el primer resumen de la sesión nueva lo compara: si es otra
+// persona, se vacía. Desde el token no se puede saber — el servidor no dice a
+// quién pertenece al entrar —, por eso la comparación espera al resumen.
+const almacenDueno = almacenDe('puntos_salud_dueno');
+let dueno; // undefined = todavía no se leyó del llavero
+const duenoDe = (r) => (r?.codigo ? `c:${r.codigo}` : r?.pendiente ? `p:${r.registrado_el ?? r.nombre ?? ''}` : null);
+
+// Lo que vive en el teléfono y es de una persona: el carrito, los
+// recordatorios de tomas (`olvidarTomas` vacía la configuración, el registro
+// y los avisos programados) y los productos vistos.
+async function olvidarLoDelTelefono() {
+  useCarrito.getState().vaciar();
+  await olvidarTomas();
+  await olvidarVistos().catch(() => {});
+}
+
+async function revisarDueno(r) {
+  const nuevo = duenoDe(r);
+  if (!nuevo) return;
+  if (dueno === undefined) dueno = (await almacenDueno.leer().catch(() => null)) || null;
+  if (dueno === nuevo) return;
+  // Sólo cuando los dos son del mismo tipo se puede afirmar que es OTRA
+  // persona: el pre-registro que ya se vinculó pasa de `p:` a `c:` y sigue
+  // siendo quien era.
+  if (dueno && dueno[0] === nuevo[0]) await olvidarLoDelTelefono();
+  dueno = nuevo;
+  await almacenDueno.guardar(nuevo).catch(() => {});
+}
+
 // La lectura del llavero es asíncrona y las pantallas piden datos al montarse.
 // Sin esperar a esa lectura, la primera llamada salía SIN token, el servidor
 // contestaba «sin sesión» y la app borraba la sesión guardada: quien recargaba
@@ -81,14 +115,16 @@ export const useSesion = create((set, get) => ({
     await olvidarTodo();
     // El carrito vive en el teléfono (2026-10-12): en un teléfono compartido,
     // quien entra después heredaba lo que había agregado la cuenta anterior.
-    // Si sólo venció la sesión es la misma persona: el carrito se queda.
+    // Si sólo venció la sesión, se supone la misma persona: el carrito se
+    // queda —y el dueño también, para comprobarlo al volver a entrar
+    // (`revisarDueno`, 2026-11-04)—.
     if (get().motivoCierre !== 'vencida') {
-      useCarrito.getState().vaciar();
       // Los recordatorios de tomas, igual (2026-10-12): en un teléfono
       // compartido, a quien entra después no le suena la medicina del anterior.
-      await olvidarTomas();
       // Y los productos vistos: son de quien los buscó, no del teléfono.
-      await olvidarVistos().catch(() => {});
+      await olvidarLoDelTelefono();
+      dueno = null;
+      await almacenDueno.borrar().catch(() => {});
     }
     await almacenAlcance.borrar().catch(() => {});
     set({ token: null, alcance: null, completando: false });
@@ -104,6 +140,8 @@ export const useSesion = create((set, get) => ({
     if (!token) return { ok: false, sinSesion: true, mensaje: 'Vuelve a entrar.' };
     const r = await llamar(accion, { ...datos, token });
     if (r?.sinSesion && get().token === token) { set({ motivoCierre: 'vencida' }); await get().cerrar(); }
+    // ¿Es la misma persona dueña de lo que quedó en el teléfono? (2026-11-04)
+    if (accion === 'resumen' && r?.ok && !r.sinConexion && get().token === token) await revisarDueno(r).catch(() => {});
     // El servidor dice el alcance en el resumen y al negar algo al código.
     const a = r?.motivo === 'requiere_documento' ? 'codigo' : r?.alcance;
     if (ALCANCES.has(a) && get().token === token && get().alcance !== a) {

@@ -5,7 +5,7 @@
 //
 // La acción es `pedir_prorroga` de `app-clientes`; la base valida que sea del
 // cliente, que esté lista y que no tenga ya una prórroga.
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -19,7 +19,9 @@ import { fecha } from '../lib/formato';
 const OPCIONES = [7, 15, 30];
 
 /** `tipo`: 'reserva' | 'encargo'; `ids`: los renglones que se prorrogan juntos; `vence`: hasta cuándo puede retirar hoy. */
-export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPedir }) {
+// `alSinConfirmar` (2026-11-04): la pantalla relee la reserva cuando el pedido
+// se cortó sin respuesta, para que lo que se ve diga si quedó pedida.
+export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPedir, alSinConfirmar }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const pedir = useSesion((s) => s.pedir);
@@ -27,18 +29,37 @@ export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPed
   const [motivo, setMotivo] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState(null);
-  const fondo = t.oscuro ? '#121016' : '#F5F4F8';
+  // Del token del sistema (2026-11-04), no un hex a mano: el mismo tono.
+  const fondo = colorSistema.fondo;
+  // El candado del envío es una REF (2026-11-04): con el estado, dos toques
+  // antes del siguiente render mandaban dos pedidos. Se toma en la primera
+  // línea y se suelta en `finally`, como el carrito.
+  const enviandoYa = useRef(false);
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const n = Number(dias);
   const diasOk = Number.isInteger(n) && n >= 1 && n <= 365;
   const valido = diasOk && motivo.trim().length >= 3;
+  // `vence` es un instante (timestamptz). La suma da otro instante y `fecha()`
+  // lo corta en el día de El Salvador (2026-11-04): cortado en UTC, una
+  // reserva que vence a las 7 p. m. decía un día de más.
   const quedaria = diasOk && vence ? new Date(new Date(vence).getTime() + n * 86400000).toISOString() : null;
 
   const enviar = async () => {
-    if (enviando || !valido) return;
-    setEnviando(true); setError(null);
-    const r = await pedir('pedir_prorroga', { tipo, ids, dias: n, motivo: motivo.trim() });
-    setEnviando(false);
+    if (enviandoYa.current || !valido) return;
+    enviandoYa.current = true;
+    let r;
+    try {
+      setEnviando(true); setError(null);
+      r = await pedir('pedir_prorroga', { tipo, ids, dias: n, motivo: motivo.trim() });
+    } finally { enviandoYa.current = false; setEnviando(false); }
+    // Cortada sin respuesta (lib/api, 2026-11-04): pudo haber entrado. Se
+    // avisa la diferencia para que no la pida dos veces a ciegas; la lista de
+    // Mis reservas se relee al cerrar la hoja y ahí se ve si quedó pedida.
+    if (r?.sinConfirmar) {
+      setError('No sabemos si se envió. Cierra y revisa tu reserva antes de pedirla de nuevo.');
+      alSinConfirmar?.();
+      return;
+    }
     if (!r?.ok) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError(r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');

@@ -69,7 +69,9 @@ export default function Compras() {
       {datos.compras.map((c) => (
         // La tarjeta entera es UN botón para el lector de pantalla: «Volver a
         // pedir» va como acción suya (deslizar arriba/abajo), si no quedaba oculto.
+        // `expanded` (2026-11-04): se anuncia si el detalle está abierto.
         <Tocable key={c.id} etiqueta={`Compra en ${c.sala}, ${c.total} dólares`} alTocar={() => setAbierta(abierta === c.id ? null : c.id)}
+          accessibilityState={{ expanded: abierta === c.id }}
           accessibilityActions={(c.productos ?? []).length ? [{ name: 'activate' }, { name: 'volver', label: 'Volver a pedir' }] : undefined}
           onAccessibilityAction={(e) => {
             if (e.nativeEvent.actionName === 'volver') volver({ factura: c.id });

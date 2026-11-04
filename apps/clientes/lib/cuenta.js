@@ -22,6 +22,11 @@ let enCurso = null;
 // cerrar que llega DESPUÉS se descarta. Sin esto devolvía el saldo de la
 // persona anterior a la pantalla y al widget.
 let vuelta = 0;
+// El número del último pedido (2026-11-04): con `forzar` se pide aunque haya
+// otro en curso —después de reservar, de pagar, de canjear—, y las respuestas
+// no llegan en orden. La vieja caía DESPUÉS de la nueva y volvía a pintar el
+// saldo y las reservas de antes del cambio. Sólo se aplica la del último.
+let ultimoPedido = 0;
 
 export const useCuenta = create((set, get) => ({
   resumen: null,
@@ -34,6 +39,7 @@ export const useCuenta = create((set, get) => ({
     const { resumen, cargadoAt } = get();
     if (!forzar && resumen && Date.now() - cargadoAt < VIGENCIA_MS) return resumen;
     if (enCurso && !forzar) return enCurso;
+    const miPedido = ++ultimoPedido;
     const pedido = (async () => {
       const miVuelta = vuelta;
       await useSesion.getState().cargar();
@@ -50,6 +56,9 @@ export const useCuenta = create((set, get) => ({
       const r = await useSesion.getState().pedir('resumen');
       // Se cerró sesión (o entró otra) mientras se pedía: no se pinta ni se publica.
       if (!vigente()) return { ok: false, mensaje: 'Vuelve a entrar.' };
+      // Llegó otro pedido después de éste: el que vale es aquél (que además
+      // apaga `cargando` al llegar). Se devuelve igual a quien lo pidió.
+      if (miPedido !== ultimoPedido) return r;
       if (r?.ok) reconocer(r);
       if (r?.ok) set((x) => ({ resumen: r, cargando: false, cargadoAt: r.sinConexion ? 0 : Date.now(), generacion: x.generacion + 1 }));
       if (r?.ok) { if (!r.sinConexion) publicarEnWidget(r); }

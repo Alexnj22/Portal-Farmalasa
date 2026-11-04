@@ -133,7 +133,9 @@ function TarjetaSucursal({ s, indice }) {
         {s.telefono || s.celular ? <Accion sf="phone.fill" respaldo="📞" texto="Llamar" alTocar={() => abrir(`tel:${soloDigitos(s.celular ?? s.telefono)}`)} /> : null}
       </View>
 
+      {/* `expanded` (2026-11-04): el lector de pantalla dice si el horario está abierto o cerrado. */}
       <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((x) => !x); }} accessibilityRole="button"
+        accessibilityState={{ expanded: abierta }}
         style={{ minHeight: 44, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
         <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Horario de la semana</Text>
         <Animated.View style={giro}>

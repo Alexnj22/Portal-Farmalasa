@@ -58,7 +58,8 @@ export default function Producto() {
   };
   useEffect(() => { cargar(); }, [id]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const fondo = t.oscuro ? '#121016' : '#F5F4F8';
+  // El fondo de pantalla del sistema (2026-11-04; antes dos hex a mano).
+  const fondo = colorSistema.fondo;
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const cerrar = () => { Haptics.selectionAsync().catch(() => {}); router.back(); };
 
@@ -66,10 +67,11 @@ export default function Producto() {
   if (!d.ok) {
     return (
       <View style={{ flex: 1, backgroundColor: fondo, justifyContent: 'center' }}>
-        <Vacio titulo="No se pudo cargar">{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
-        <Presionable onPress={cargar} accessibilityRole="button" style={{ alignSelf: 'center', padding: 14 }}>
-          <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>Reintentar</Text>
-        </Presionable>
+        {/* «Reintentar» con el botón del sistema dentro del vacío (2026-11-04),
+            como el resto de los errores de la app; antes era un texto suelto. */}
+        <View style={{ padding: 16 }}>
+          <Vacio titulo="No se pudo cargar" accion="Reintentar" alAccion={cargar}>{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
+        </View>
       </View>
     );
   }
@@ -245,15 +247,28 @@ export default function Producto() {
           </View>
         ) : (
           <>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, borderRadius: 999, paddingHorizontal: 6, minHeight: 54,
-              backgroundColor: t.oscuro ? '#2A2630' : '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}>
+            {/* 2026-11-04 (accesibilidad): los botones medían 40 × 40 —bajo los
+                44 pt del dedo— y la cantidad no se anunciaba. Ahora 44 × 44, y
+                para VoiceOver/TalkBack el conjunto es UN control ajustable
+                («Cantidad, 2»; deslizar arriba o abajo), como el Contador del
+                carrito. */}
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 2, borderRadius: 999, paddingHorizontal: 5, minHeight: 54,
+              backgroundColor: t.oscuro ? '#2A2630' : '#FFFFFF', shadowColor: '#000', shadowOpacity: 0.12, shadowRadius: 10, shadowOffset: { width: 0, height: 3 } }}
+              accessible accessibilityRole="adjustable" accessibilityLabel="Cantidad"
+              accessibilityValue={{ min: 1, max: MAX_UNIDADES, now: cant, text: `${cant}` }}
+              accessibilityActions={[{ name: 'increment', label: 'Más' }, { name: 'decrement', label: 'Menos' }]}
+              onAccessibilityAction={(e) => {
+                const a = e.nativeEvent.actionName;
+                if (a === 'increment') setCant((c) => Math.min(MAX_UNIDADES, c + 1));
+                else if (a === 'decrement') setCant((c) => Math.max(1, c - 1));
+              }}>
               <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.max(1, c - 1)); }} disabled={cant <= 1}
-                accessibilityRole="button" accessibilityLabel="Menos" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', opacity: cant <= 1 ? 0.3 : 1 }}>
+                accessibilityRole="button" accessibilityLabel="Menos" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: cant <= 1 ? 0.3 : 1 }}>
                 <Icono sf="minus" respaldo="−" tam={15} color={colorSistema.texto} />
               </Presionable>
               <Text style={{ fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 18, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cant}</Text>
               <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setCant((c) => Math.min(MAX_UNIDADES, c + 1)); }} disabled={cant >= MAX_UNIDADES}
-                accessibilityRole="button" accessibilityLabel="Más" style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center', opacity: cant >= MAX_UNIDADES ? 0.3 : 1 }}>
+                accessibilityRole="button" accessibilityLabel="Más" style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: cant >= MAX_UNIDADES ? 0.3 : 1 }}>
                 <Icono sf="plus" respaldo="+" tam={15} color={colorSistema.texto} />
               </Presionable>
             </View>

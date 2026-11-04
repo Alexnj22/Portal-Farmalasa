@@ -36,7 +36,12 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
           const ahorro = p.precio && final < p.precio ? Math.round(((p.precio - final) / p.precio) * 100) : 0;
           return (
             <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }}
-              accessibilityRole="button" accessibilityLabel={nombreProducto(p.nombre)}
+              // Con el precio y el descuento que se ven (2026-11-04): antes sólo el nombre.
+              accessibilityRole="button" accessibilityLabel={[
+                nombreProducto(p.nombre),
+                p.precio != null ? `${dolares(final)}${final < p.precio ? `, antes ${dolares(p.precio)}` : ''}` : null,
+                ahorro >= 1 ? `${ahorro}% de descuento` : null,
+              ].filter(Boolean).join('. ')}
               style={({ pressed }) => ({ width: 150, borderRadius: 20, padding: 8, gap: 6,
                 backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.85)', transform: [{ scale: pressed ? 0.96 : 1 }] })}>
               <View>

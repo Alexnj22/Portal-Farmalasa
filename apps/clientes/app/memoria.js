@@ -22,6 +22,7 @@ import Icono from '../componentes/Icono';
 import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio } from '../componentes/juegos/Escena';
 import { Estrellas, SelectorNiveles, TarjetaNivel, useProgreso } from '../componentes/juegos/Niveles';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
+import { useVisible } from '../lib/visible';
 
 // El juego libre de antes: tres tamaños, cada uno con su récord.
 const LIBRE = {
@@ -177,12 +178,16 @@ export default function Memoria() {
     setRecord(null);
     SecureStore.getItemAsync(clave(libre)).then((v) => { const n = Number(v); if (v && Number.isFinite(n)) setRecord(n); }).catch(() => {});
   }, [libre, modo]);
-  // El reloj corre desde la primera carta hasta la última pareja.
+  // El reloj corre desde la primera carta hasta la última pareja — y sólo con
+  // el juego a la vista (2026-11-04, auditoría de rendimiento): con la app en
+  // segundo plano o en otra pantalla seguía sumando y pintando cada segundo, y
+  // al volver el tiempo incluía el rato que nadie jugó. Se pausa y sigue.
+  const visible = useVisible();
   useEffect(() => {
-    if (!empezo || gano) return undefined;
+    if (!empezo || gano || !visible) return undefined;
     const id = setInterval(() => setSegundos((s) => s + 1), 1000);
     return () => clearInterval(id);
-  }, [empezo, gano]);
+  }, [empezo, gano, visible]);
 
   const preparar = (c) => {
     limpiar();

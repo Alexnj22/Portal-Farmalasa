@@ -6,6 +6,13 @@
 // Se guarda en archivos (expo-file-system) y no en SecureStore: los catálogos
 // y las listas pasan por mucho su tope de tamaño. Al cerrar sesión se borra
 // todo, para que otra cuenta en el mismo teléfono no vea lo de la anterior.
+//
+// En la carpeta de CACHÉ y no en la de documentos (2026-11-04): lo de
+// documentos entra en los respaldos de iCloud y de Android, y acá hay datos de
+// salud (tratamientos, inyecciones, reservas bajo receta) y lo que se debe.
+// Una copia para ver sin señal no tiene por qué viajar a un respaldo; si el
+// sistema vacía la caché por espacio, se vuelve a llenar con la próxima
+// lectura. La carpeta vieja se borra una vez al arrancar (`asegurarCarpeta`).
 import * as FS from 'expo-file-system/legacy';
 import { create } from 'zustand';
 
@@ -17,7 +24,17 @@ export const LECTURAS = new Set([
   'mis_creditos', // lo que se debe: se consulta también sin señal (2026-10-15)
 ]);
 
-const DIR = FS.documentDirectory ? `${FS.documentDirectory}sin-conexion/` : null;
+const DIR = FS.cacheDirectory ? `${FS.cacheDirectory}sin-conexion/` : null;
+const DIR_VIEJO = FS.documentDirectory ? `${FS.documentDirectory}sin-conexion/` : null;
+
+// La «época» de la sesión (2026-11-04). Sube en `olvidarTodo` (cerrar sesión).
+// Una lectura que salió ANTES de cerrar y contesta DESPUÉS volvía a crear su
+// copia sin conexión —la carpeta ya estaba borrada, `guardar` la creaba de
+// nuevo— y la cuenta siguiente veía, sin señal, los datos de la anterior.
+// lib/api toma la época antes de pedir y la pasa a `guardar`: si cambió, ni se
+// guarda ni se entrega a la pantalla.
+let epoca = 0;
+export const epocaActual = () => epoca;
 
 export const useConexion = create((set) => ({
   sinConexion: false,
@@ -58,8 +75,15 @@ function llave(accion, datos) {
 // archivos que ya no se piden, y los del formato de llave anterior también.
 const PODAR_MS = 30 * 24 * 60 * 60_000;
 let carpeta = null;
+let viejoBorrado = false;
 function asegurarCarpeta() {
   if (!carpeta) {
+    // La copia de antes vivía en documentos: se borra (no se muda — es una
+    // caché y se rehace sola) para que deje de entrar en los respaldos.
+    if (!viejoBorrado && DIR_VIEJO && DIR_VIEJO !== DIR) {
+      viejoBorrado = true;
+      FS.deleteAsync(DIR_VIEJO, { idempotent: true }).catch(() => {});
+    }
     carpeta = FS.makeDirectoryAsync(DIR, { intermediates: true }).catch(() => {});
     carpeta.then(podar);
   }
@@ -85,8 +109,9 @@ async function podar() {
 const escrito = new Map();
 const REFRESCAR_MS = 10 * 60_000;
 
-export async function guardar(accion, datos, respuesta) {
-  if (!DIR || !LECTURAS.has(accion) || !respuesta?.ok) return;
+/** `deEpoca`: la época en que se PIDIÓ la respuesta; si ya no es la actual, no se guarda. */
+export async function guardar(accion, datos, respuesta, deEpoca = epoca) {
+  if (!DIR || !LECTURAS.has(accion) || !respuesta?.ok || deEpoca !== epoca) return;
   try {
     const k = llave(accion, datos);
     const texto = JSON.stringify(respuesta);
@@ -94,6 +119,8 @@ export async function guardar(accion, datos, respuesta) {
     const previo = escrito.get(k);
     if (previo && previo.firma === firma && Date.now() - previo.en < REFRESCAR_MS) return;
     await asegurarCarpeta();
+    // Se pudo cerrar sesión mientras se creaba la carpeta.
+    if (deEpoca !== epoca) return;
     const en = Date.now();
     await FS.writeAsStringAsync(`${DIR}${k}.json`, `{"en":${en},"r":${texto}}`);
     escrito.set(k, { firma, en });
@@ -139,10 +166,14 @@ export async function retocar(accion, datos, cambiar) {
 }
 
 export async function olvidarTodo() {
+  // Primero la época, antes de cualquier `await`: lo que esté en vuelo ya no
+  // puede guardar ni pintarse aunque conteste mientras se borra.
+  epoca += 1;
   if (!DIR) return;
   escrito.clear();
   carpeta = null;
   await FS.deleteAsync(DIR, { idempotent: true }).catch(() => {});
+  if (DIR_VIEJO && DIR_VIEJO !== DIR) await FS.deleteAsync(DIR_VIEJO, { idempotent: true }).catch(() => {});
 }
 
 export function haceCuanto(ms) {

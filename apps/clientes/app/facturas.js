@@ -17,18 +17,19 @@
 // - «Descargar» pregunta: enviarla por CORREO (`EnviarCorreoHoja`) o bajar el
 //   PDF y el JSON de una vez. La hoja de compartir de iOS recibe un solo
 //   archivo, así que van juntos en un .zip (`lib/zip.js`). En Android se
-//   guardan en la carpeta que la persona elige (`Share` no manda archivos ahí).
+//   comparten con la hoja del sistema (`expo-sharing`); la carpeta que la
+//   persona elige queda sólo para «Guardar en el teléfono» (2026-11-04).
 // - «Seleccionar» (arriba) marca varias, hasta 30: «Enviar por correo» las
 //   manda en un solo correo y «Descargar» las junta en un .zip.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Modal, Platform, Share, StyleSheet, Text, View } from 'react-native';
+import { ActionSheetIOS, ActivityIndicator, Alert, BackHandler, Modal, Platform, Share, StyleSheet, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack, useFocusEffect } from 'expo-router';
 import { WebView } from 'react-native-webview';
 import * as FS from 'expo-file-system/legacy';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Pantalla, RADIO, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Cargando, PantallaLista, RADIO, Tarjeta, Texto, Vacio } from '../componentes/ui';
 import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Segmentos from '../componentes/Segmentos';
 import { colorSistema } from '../componentes/sistema';
@@ -39,11 +40,17 @@ import IndicadorCarga from '../componentes/IndicadorCarga';
 import { useSesion } from '../lib/sesion';
 import { useCuenta } from '../lib/cuenta';
 import { dolares, fecha } from '../lib/formato';
-import { armarZip, base64ABytes, bytesABase64 } from '../lib/zip';
+import { armarZipCediendo, base64ABytes, bytesABase64Cediendo, cederHilo } from '../lib/zip';
 import { htmlVisorPdf, htmlVisorPdfArchivo, ORIGEN_PDFJS } from '../lib/visorPdf';
 import { suave, useTema } from '../tema/tema';
 import { sinBloquear } from '../lib/bloqueo';
 import { copiaParaEmpezar } from '../lib/sinConexion';
+
+// expo-sharing ya viene en la app (lo usa componentes/CodigoReserva.js); se
+// pide con `require` por si un binario viejo no lo trae: entonces se cae a la
+// carpeta elegida, que es lo que había antes.
+let Sharing = null;
+try { Sharing = require('expo-sharing'); } catch { Sharing = null; }
 
 const TIPO = {
   consumidor_final: { texto: 'Consumidor final', sf: 'doc.text.fill', archivo: 'Factura' },
@@ -84,8 +91,8 @@ const conDocumento = (f) => !f.sin_documento;
 const aplanar = (lista) => lista.flatMap((f) => [f, ...(f.notas ?? [])]);
 const rotulo = (f) => `${tipoDe(f).texto}${f.numero ? ` N.º ${f.numero}` : ''}`;
 
-// En Android `Share` no manda archivos: se guardan en la carpeta que la
-// persona elige (Storage Access Framework, ya incluido en expo-file-system).
+// «Guardar en el teléfono» de Android: la carpeta que la persona elige
+// (Storage Access Framework, ya incluido en expo-file-system).
 async function guardarEnAndroid(uri, nombre, ext) {
   const SAF = FS.StorageAccessFramework;
   const permiso = await sinBloquear(() => SAF.requestDirectoryPermissionsAsync());
@@ -97,8 +104,18 @@ async function guardarEnAndroid(uri, nombre, ext) {
   Alert.alert('Guardado', `«${nombre}.${ext}» quedó en la carpeta que elegiste.`);
   return true;
 }
-async function entregar(uri, nombre, ext) {
-  if (enAndroid) return guardarEnAndroid(uri, nombre, ext);
+// 2026-11-04 (auditoría nativa): en Android «Compartir» abría el selector de
+// carpetas, que es GUARDAR, no compartir — para mandarle la factura a alguien
+// había que guardarla y después buscarla. `Share` de React Native no manda
+// archivos en Android, `Sharing.shareAsync` sí (la hoja del sistema con el
+// tipo de archivo). La carpeta queda para cuando la persona elige guardar.
+async function entregar(uri, nombre, ext, { guardar = false } = {}) {
+  if (enAndroid) {
+    const puede = !guardar && Sharing && (await Sharing.isAvailableAsync().catch(() => false));
+    if (!puede) return guardarEnAndroid(uri, nombre, ext);
+    await sinBloquear(() => Sharing.shareAsync(uri, { mimeType: MIME[ext], dialogTitle: `${nombre}.${ext}` }));
+    return true;
+  }
   await sinBloquear(() => Share.share({ url: uri, title: nombre }));
   return true;
 }
@@ -206,6 +223,8 @@ export default function Facturas() {
     }
   };
   const cerrarVisor = () => { turnoVisor.current += 1; setVisor(null); };
+  // El JSON es el documento que vale ante Hacienda: así se llama en pantalla
+  // (2026-11-04; antes «Compartir JSON», que no dice para qué sirve).
   const compartirJson = (f) => conEspera(`${f.id}json`, async () => {
     await entregar(await bajar(f, 'json'), nombreArchivo(f), 'json');
   });
@@ -215,7 +234,13 @@ export default function Facturas() {
 
   // Varias facturas (o una) en un .zip con su PDF y su JSON. Lo que no esté
   // disponible se salta y se avisa; si sólo hay UN archivo, va ése solo.
-  const bajarEnZip = async (docs, nombreZip) => {
+  //
+  // 2026-11-04 (auditoría de rendimiento): armar el .zip de 30 facturas en el
+  // hilo de JavaScript lo congelaba. Ahora se cede el hilo entre archivo y
+  // archivo (`…Cediendo` de lib/zip.js) y el progreso dice qué está pasando:
+  // «Bajando 4 de 30…» y después «Preparando 4 de 30…».
+  const bajarEnZip = async (docs, nombreZip, { guardar = false } = {}) => {
+    const avisar = (fase, hecho) => { if (docs.length > 1) setBajandoVarias({ fase, hecho: Math.min(docs.length, Math.ceil(hecho)), total: docs.length }); };
     const usados = new Set();
     const nombres = docs.map((f) => {
       let n = nombreArchivo(f);
@@ -229,23 +254,30 @@ export default function Facturas() {
     for (let i = 0; i < tareas.length; i += 4) {
       const tanda = await Promise.allSettled(tareas.slice(i, i + 4).map(async (x) => ({ ...x, uri: await bajar(x.f, x.ext, x.nombre) })));
       for (const r of tanda) if (r.status === 'fulfilled') listos.push(r.value); else faltan++;
-      if (docs.length > 1) setBajandoVarias(Math.min(tareas.length, i + 4) / tareas.length);
+      avisar('bajando', Math.min(tareas.length, i + 4) / 2);
     }
     if (!listos.length) throw new Error('Los documentos todavía no están disponibles. Intenta más tarde.');
     if (listos.length === 1) {
-      await entregar(listos[0].uri, listos[0].nombre, listos[0].ext);
+      await entregar(listos[0].uri, listos[0].nombre, listos[0].ext, { guardar });
     } else {
-      const archivos = await Promise.all(listos.map(async (x) => ({
-        nombre: `${x.nombre}.${x.ext}`,
-        bytes: base64ABytes(await FS.readAsStringAsync(x.uri, { encoding: FS.EncodingType.Base64 })),
-      })));
+      // Uno por uno y cediendo el hilo: la mitad del progreso es leer y
+      // convertir cada archivo, la otra mitad es armar el .zip.
+      const n = listos.length;
+      const archivos = [];
+      for (const x of listos) {
+        const b64 = await FS.readAsStringAsync(x.uri, { encoding: FS.EncodingType.Base64 });
+        archivos.push({ nombre: `${x.nombre}.${x.ext}`, bytes: base64ABytes(b64) });
+        avisar('armando', (archivos.length / n) * docs.length * 0.5);
+        await cederHilo();
+      }
+      const zip = await armarZipCediendo(archivos, (hechos) => avisar('armando', (0.5 + (hechos / n) * 0.5) * docs.length));
       const destino = `${FS.cacheDirectory}${nombreZip}.zip`;
-      await FS.writeAsStringAsync(destino, bytesABase64(armarZip(archivos)), { encoding: FS.EncodingType.Base64 });
-      await entregar(destino, nombreZip, 'zip');
+      await FS.writeAsStringAsync(destino, await bytesABase64Cediendo(zip), { encoding: FS.EncodingType.Base64 });
+      await entregar(destino, nombreZip, 'zip', { guardar });
     }
     if (faltan) Alert.alert('Faltó algún documento', `${faltan === 1 ? 'Un archivo no estaba' : `${faltan} archivos no estaban`} disponible todavía. Intenta con ${faltan === 1 ? 'ése' : 'ésos'} más tarde.`);
   };
-  const descargarAmbos = (f) => conEspera(`${f.id}ambos`, () => bajarEnZip([f], nombreArchivo(f)));
+  const descargarAmbos = (f, guardar = false) => conEspera(`${f.id}ambos`, () => bajarEnZip([f], nombreArchivo(f), { guardar }));
 
   const abrirCorreo = (docs) => {
     if (!docs.length) return;
@@ -260,11 +292,12 @@ export default function Facturas() {
     ActionSheetIOS.showActionSheetWithOptions({
       title: rotulo(f),
       message: 'Su PDF y su archivo JSON.',
-      options: ['Enviar por correo', enAndroid ? 'Guardar en el teléfono' : 'Descargar', 'Cancelar'],
-      cancelButtonIndex: 2,
+      options: enAndroid ? ['Enviar por correo', 'Compartir', 'Guardar en el teléfono', 'Cancelar'] : ['Enviar por correo', 'Descargar', 'Cancelar'],
+      cancelButtonIndex: enAndroid ? 3 : 2,
     }, (i) => {
       if (i === 0) abrirCorreo([f]);
       else if (i === 1) descargarAmbos(f);
+      else if (enAndroid && i === 2) descargarAmbos(f, true);
     });
   };
   // «…» junto a «Ver PDF» (2026-10-13): en un teléfono chico o con letra grande
@@ -272,15 +305,18 @@ export default function Facturas() {
   // de opciones del sistema (en Android, la de componentes/HojasAndroid).
   const masOpciones = (f) => {
     Haptics.selectionAsync().catch(() => {});
+    // En Android, «Compartir» y «Guardar» son dos cosas (2026-11-04).
+    const opciones = [
+      ['Archivo para Hacienda (JSON)', () => compartirJson(f)],
+      ['Enviar por correo', () => abrirCorreo([f])],
+      [enAndroid ? 'Compartir PDF y JSON' : 'Descargar PDF y JSON', () => descargarAmbos(f)],
+      ...(enAndroid ? [['Guardar PDF y JSON en el teléfono', () => descargarAmbos(f, true)]] : []),
+    ];
     ActionSheetIOS.showActionSheetWithOptions({
       title: rotulo(f),
-      options: ['Compartir JSON', 'Enviar por correo', enAndroid ? 'Guardar PDF y JSON en el teléfono' : 'Descargar PDF y JSON', 'Cancelar'],
-      cancelButtonIndex: 3,
-    }, (i) => {
-      if (i === 0) compartirJson(f);
-      else if (i === 1) abrirCorreo([f]);
-      else if (i === 2) descargarAmbos(f);
-    });
+      options: [...opciones.map((o) => o[0]), 'Cancelar'],
+      cancelButtonIndex: opciones.length,
+    }, (i) => { opciones[i]?.[1](); });
   };
   const acciones = { verPdf, compartirJson, obtener, masOpciones };
 
@@ -306,35 +342,74 @@ export default function Facturas() {
     setSeleccion(todasMarcadas ? new Set() : new Set(elegibles.slice(0, TOPE_SELECCION).map((f) => String(f.id))));
   };
   const salirDeSeleccion = () => { setSeleccion(null); setBajandoVarias(null); };
-  const descargarMarcadas = async () => {
+  // Atrás de Android en modo selección (2026-11-04): termina la selección, como
+  // en Fotos o Gmail, en vez de salir de la pantalla y perder lo marcado.
+  // Mismo patrón que app/guia.js: la función vigente por ref.
+  const salirRef = useRef(salirDeSeleccion);
+  salirRef.current = salirDeSeleccion;
+  const eligiendo = !!seleccion;
+  useEffect(() => {
+    if (!eligiendo || !enAndroid) return undefined;
+    const sub = BackHandler.addEventListener('hardwareBackPress', () => { salirRef.current(); return true; });
+    return () => sub.remove();
+  }, [eligiendo]);
+  const bajarMarcadas = async (guardar) => {
     if (!marcados.length || bajandoVarias != null) return;
-    Haptics.selectionAsync().catch(() => {});
-    setBajandoVarias(0);
+    setBajandoVarias({ fase: 'bajando', hecho: 0, total: marcados.length });
     try {
-      await bajarEnZip(marcados, `Facturas-${new Date().toISOString().slice(0, 10)}`);
+      await bajarEnZip(marcados, `Facturas-${new Date().toISOString().slice(0, 10)}`, { guardar });
     } catch (e) {
       Alert.alert('No se pudo descargar', e?.message && !/network|fetch/i.test(e.message) ? e.message : 'Revisa tu conexión e intenta de nuevo.');
     } finally { setBajandoVarias(null); }
   };
+  // Con varias, juntarlas en el teléfono tarda (se bajan y se arma el .zip
+  // aquí): el correo —que arma el servidor con `facturas_enviar`— llega sin
+  // esperar, así que se ofrece en el mismo diálogo (2026-11-04). Con pocas, y
+  // sin nada que elegir (iPhone), se baja directo como antes.
+  const descargarMarcadas = () => {
+    if (!marcados.length || bajandoVarias != null) return;
+    Haptics.selectionAsync().catch(() => {});
+    const varias = marcados.length > 3;
+    if (!varias && !enAndroid) { bajarMarcadas(false); return; }
+    const opciones = [
+      ['Enviar por correo', () => abrirCorreo(marcados)],
+      [enAndroid ? 'Compartir en un .zip' : 'Descargar en un .zip', () => bajarMarcadas(false)],
+      ...(enAndroid ? [['Guardar en el teléfono', () => bajarMarcadas(true)]] : []),
+    ];
+    ActionSheetIOS.showActionSheetWithOptions({
+      title: `${marcados.length} ${marcados.length === 1 ? 'factura' : 'facturas'}`,
+      message: varias ? 'Por correo llegan todas juntas sin esperar. Juntarlas en el teléfono tarda un poco más.' : 'Su PDF y su archivo JSON.',
+      options: [...opciones.map((o) => o[0]), 'Cancelar'],
+      cancelButtonIndex: opciones.length,
+    }, (i) => { opciones[i]?.[1](); });
+  };
 
-  const cuerpo = !d ? <Cargando />
+  // Lo que no es una factura va arriba de la lista: la carga, los vacíos y el
+  // error (éste con «Reintentar», 2026-11-04: antes no tenía salida).
+  const estado = !d ? <Cargando />
     // Sin ficha todavía (2026-10-12): antes decía «… para reservar».
     : d.pendiente || (!d.ok && preRegistro) ? <Vacio titulo="Sin facturas" icono="doc.text.fill" respaldo="▤">Cuando completes tu registro en cualquier sucursal verás aquí las facturas de tus compras.</Vacio>
-    : !d.ok ? <Vacio titulo="No se pudieron cargar">{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
-      : (
-        <>
-          {!lista.length ? <Vacio titulo={filtro === 'todas' ? 'Sin facturas' : 'Nada por aquí'} icono="doc.text.fill" respaldo="▤">{VACIO[filtro]}</Vacio> : null}
-          {lista.map((f) => <Factura key={f.id} f={f} ocupada={ocupada} acciones={acciones} seleccion={seleccion} alternar={alternar} />)}
-          {d.siguiente ? (
-            <Presionable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
-              style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
-              {masCargando ? <ActivityIndicator /> : null}
-              <Texto nivel={2} estilo={{ fontSize: 14, fontWeight: '600' }}>{masCargando ? 'Cargando más…' : 'Ver más facturas'}</Texto>
-            </Presionable>
-          ) : null}
-          {seleccion ? <View style={{ height: 96 }} /> : null}
-        </>
-      );
+    : !d.ok ? <Vacio titulo="No se pudieron cargar" accion="Reintentar" alAccion={cargar}>{d.mensaje ?? 'Revisa tu conexión.'}</Vacio>
+      : !lista.length ? <Vacio titulo={filtro === 'todas' ? 'Sin facturas' : 'Nada por aquí'} icono="doc.text.fill" respaldo="▤">{VACIO[filtro]}</Vacio>
+        : null;
+
+  // 2026-11-04 (auditoría de rendimiento): la lista crece de a 30 y se pintaba
+  // entera dentro de un ScrollView —con «Ver más» varias veces, cientos de
+  // tarjetas montadas—. Ahora va en `PantallaLista` (FlatList), que sólo pinta
+  // lo que está cerca de la vista. Al final van dos filas que no son
+  // facturas: «Ver más» (que además pide la página siguiente al montarse, o
+  // sea al acercarse al final, como hacía `alFinal`) y el hueco que deja
+  // libre la barra de selección.
+  const datos = d?.ok ? [
+    ...lista,
+    ...(d.siguiente ? [{ id: MAS, cursor: d.siguiente }] : []),
+    ...(seleccion ? [{ id: HUECO }] : []),
+  ] : [];
+  const renderItem = ({ item }) => (
+    item.id === MAS ? <VerMas cursor={item.cursor} cargando={masCargando} alPedir={cargarMas} auto={filtro === 'todas'} />
+      : item.id === HUECO ? <View style={{ height: 96 }} />
+        : <Factura f={item} ocupada={ocupada} acciones={acciones} seleccion={seleccion} alternar={alternar} />
+  );
 
   return (
     <>
@@ -347,7 +422,8 @@ export default function Facturas() {
           </Presionable>
         ) : undefined,
       }} />
-      <Pantalla sinVidrio conPestanas={false} conBurbuja={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando} alFinal={d?.siguiente ? cargarMas : undefined}>
+      <PantallaLista sinVidrio conPestanas={false} conBurbuja={false} alRefrescar={d && !seleccion ? refrescar : undefined} refrescando={refrescando}
+        datos={datos} renderItem={renderItem} keyExtractor={(f) => String(f.id)} encabezado={<>
         <View style={{ marginHorizontal: -16 }}>
           <Segmentos opciones={PERIODOS} valor={periodo} alCambiar={(p) => { setPeriodo(p); if (seleccion) setSeleccion(new Set()); }} />
         </View>
@@ -367,8 +443,8 @@ export default function Facturas() {
             ) : null}
           </View>
         ) : null}
-        {cuerpo}
-      </Pantalla>
+        {estado}
+      </>} />
       {seleccion ? (
         <BarraSeleccion cantidad={marcados.length} progreso={bajandoVarias}
           alEnviar={() => { Haptics.selectionAsync().catch(() => {}); abrirCorreo(marcados); }} alDescargar={descargarMarcadas} />
@@ -379,6 +455,28 @@ export default function Facturas() {
           alEnviar={() => { if (seleccion) setSeleccion(new Set()); }} />
       ) : null}
     </>
+  );
+}
+
+const MAS = '__ver_mas';
+const HUECO = '__hueco_seleccion';
+
+// «Ver más facturas» al pie de la lista. La lista virtual lo monta cuando se
+// acerca a la vista: al montarse (y con cada cursor nuevo mientras siga a la
+// vista) pide la página siguiente. Sólo con «Todas» (`auto`): con un filtro
+// que deja pocas, el pie quedaría siempre a la vista y bajaría el historial
+// entero sin que nadie lo pidiera. El botón queda para eso, para quien llega
+// antes de que termine y para cuando la red falló.
+function VerMas({ cursor, cargando, alPedir, auto }) {
+  const pedir = useRef(alPedir);
+  pedir.current = alPedir;
+  useEffect(() => { if (auto) pedir.current(); }, [cursor, auto]);
+  return (
+    <Presionable onPress={alPedir} disabled={cargando} accessibilityRole="button" accessibilityState={{ busy: cargando }}
+      style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
+      {cargando ? <ActivityIndicator /> : null}
+      <Texto nivel={2} estilo={{ fontSize: 14, fontWeight: '600' }}>{cargando ? 'Cargando más…' : 'Ver más facturas'}</Texto>
+    </Presionable>
   );
 }
 
@@ -398,13 +496,16 @@ function BarraSeleccion({ cantidad, progreso, alEnviar, alDescargar }) {
             <Icono sf="envelope.fill" respaldo="" tam={15} color="#FFFFFF" />
             <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: '#FFFFFF' }}>Enviar por correo</Text>
           </Presionable>
-          <Presionable onPress={alDescargar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada }}
-            accessibilityLabel={`Descargar ${cantidad} facturas`}
+          <Presionable onPress={alDescargar} disabled={apagada} accessibilityRole="button" accessibilityState={{ disabled: apagada, busy: progreso != null }}
+            accessibilityLabel={progreso != null ? `${progreso.fase === 'armando' ? 'Preparando' : 'Bajando'} ${progreso.hecho} de ${progreso.total} facturas` : `Descargar ${cantidad} facturas`}
             style={({ pressed }) => ({ flex: 1, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', minHeight: 48, borderRadius: 16, paddingHorizontal: 10, paddingVertical: 8,
               backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', opacity: apagada && progreso == null ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             {progreso != null ? <ActivityIndicator /> : <Icono sf="square.and.arrow.down" respaldo="" tam={15} color={colorSistema.texto} />}
+            {/* Qué está pasando y cuánto falta (2026-11-04), en vez de un %. */}
             <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 15, fontWeight: '700', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
-              {progreso != null ? `${Math.round(progreso * 100)} %` : enAndroid ? 'Guardar' : 'Descargar'}
+              {progreso != null
+                ? `${progreso.fase === 'armando' ? 'Preparando' : 'Bajando'} ${progreso.hecho} de ${progreso.total}…`
+                : 'Descargar'}
             </Text>
           </Presionable>
         </View>
@@ -419,7 +520,9 @@ function BarraSeleccion({ cantidad, progreso, alEnviar, alDescargar }) {
 function VisorPdf({ visor, alCerrar, alCompartir, alRenovar }) {
   const t = useTema();
   const [compartiendo, setCompartiendo] = useState(false);
-  const fondo = t.oscuro ? '#121016' : '#F5F4F8';
+  // El fondo de pantalla del sistema (2026-11-04; antes dos hex a mano). Es
+  // texto en los dos sistemas: también entra al HTML del visor de Android.
+  const fondo = colorSistema.fondo;
   const listo = !visor.cargando && !visor.error;
   const compartir = async () => {
     if (compartiendo || !listo) return;
@@ -436,7 +539,7 @@ function VisorPdf({ visor, alCerrar, alCompartir, alRenovar }) {
           <Text numberOfLines={2} style={{ flex: 1, textAlign: 'center', fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
             {rotulo(visor.f)}
           </Text>
-          <Presionable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel={enAndroid ? 'Guardar PDF' : 'Compartir PDF'}
+          <Presionable onPress={compartir} hitSlop={12} accessibilityRole="button" accessibilityLabel="Compartir PDF"
             disabled={compartiendo || !listo} accessibilityState={{ disabled: compartiendo || !listo }}
             style={{ minWidth: 44, minHeight: 44, alignItems: 'flex-end', justifyContent: 'center', opacity: compartiendo || !listo ? 0.4 : 1 }}>
             {compartiendo ? <ActivityIndicator /> : <Icono sf="square.and.arrow.up" respaldo="↗" tam={20} color={t.color.magenta} />}
@@ -626,7 +729,7 @@ function Documento({ f, ocupada, acciones, seleccion, alternar, anidada = false 
       ) : (
         <View style={{ flexDirection: 'row', gap: 8 }}>
           <Accion sf="doc.richtext.fill" texto="Ver PDF" cargando={ocupada === `${f.id}pdf`} alTocar={() => acciones.verPdf(f)} />
-          <Accion sf="ellipsis" respaldo="…" etiqueta="Más opciones: compartir el JSON, enviar por correo o descargar"
+          <Accion sf="ellipsis" respaldo="…" etiqueta="Más opciones: archivo para Hacienda (JSON), enviar por correo o descargar"
             cargando={ocupada === `${f.id}json` || ocupada === `${f.id}ambos`} alTocar={() => acciones.masOpciones(f)} />
         </View>
       )}

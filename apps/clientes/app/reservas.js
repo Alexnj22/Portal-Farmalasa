@@ -48,7 +48,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import { Boton, Cargando, Pantalla, RADIO, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
+import { Boton, Cargando, Pantalla, PantallaLista, RADIO, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
 import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Icono from '../componentes/Icono';
 import CodigoReserva from '../componentes/CodigoReserva';
@@ -206,14 +206,26 @@ export default function Reservas() {
   const preRegistro = useCuenta((s) => !!s.resumen?.pendiente);
   // Desde el aviso «ya tienes una reserva» o el carrito: esa reserva va primero y marcada.
   const { resaltar } = useLocalSearchParams();
-  const cargar = useCallback(() => Promise.all([
-    pedir('mis_reservas', datosDe(filtro)).then((r) => {
-      setPorFiltro((ant) => ({ ...ant, [filtro]: r?.ok || !ant[filtro]?.ok ? r : ant[filtro] }));
-      // Lo guardado sin conexión no: podría quitar una que sigue abierta.
-      if (r?.ok && !r.sinConexion && (filtro === 'todas' || filtro === 'abiertas')) sincronizarReservasVivas(r.reservas);
-    }),
-    pedir('mis_encargos').then((r) => { if (r?.ok) setEncargos(r.encargos); }),
-  ]), [pedir, filtro]);
+  // Número de pedido por lista (2026-11-04): al volver a la pantalla, al
+  // refrescar y después de pagar se recarga a la vez, y las respuestas no
+  // llegan en orden. Sin esto, la vieja —de antes de pagar o cancelar— caía
+  // DESPUÉS y volvía a pintar la reserva como estaba. Sólo se aplica la del
+  // último pedido de esa lista.
+  const secuencia = useRef({});
+  const cargar = useCallback(() => {
+    const n = (secuencia.current[filtro] ?? 0) + 1;
+    const ne = (secuencia.current.encargos ?? 0) + 1;
+    secuencia.current = { ...secuencia.current, [filtro]: n, encargos: ne };
+    return Promise.all([
+      pedir('mis_reservas', datosDe(filtro)).then((r) => {
+        if (secuencia.current[filtro] !== n) return;
+        setPorFiltro((ant) => ({ ...ant, [filtro]: r?.ok || !ant[filtro]?.ok ? r : ant[filtro] }));
+        // Lo guardado sin conexión no: podría quitar una que sigue abierta.
+        if (r?.ok && !r.sinConexion && (filtro === 'todas' || filtro === 'abiertas')) sincronizarReservasVivas(r.reservas);
+      }),
+      pedir('mis_encargos').then((r) => { if (r?.ok && secuencia.current.encargos === ne) setEncargos(r.encargos); }),
+    ]);
+  }, [pedir, filtro]);
   // Ver más: desde la última reserva mostrada (cursor), se suma a la lista.
   const [masCargando, setMasCargando] = useState(false);
   const pidiendo = useRef(false);
@@ -258,8 +270,12 @@ export default function Reservas() {
       // dinero, así que se paga al retirar. Se avisa al volver de la hoja.
       if (res.prueba) Alert.alert('Cobro de prueba', 'Este cobro fue de prueba: no se cargó dinero. Pagas al retirar en la sucursal.');
       for (let i = 0; i < 4; i++) {
+        // También lleva número (2026-11-04): una recarga anterior que llegue
+        // tarde no puede volver a pintarlo «sin pagar».
+        const ne = (secuencia.current.encargos ?? 0) + 1;
+        secuencia.current = { ...secuencia.current, encargos: ne };
         const r = await pedir('mis_encargos');
-        if (r?.ok) setEncargos(r.encargos);
+        if (r?.ok && secuencia.current.encargos === ne) setEncargos(r.encargos);
         if (r?.encargos?.find((x) => x.id === e.id)?.pago_estado === 'pagado') { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); break; }
         await new Promise((ok) => setTimeout(ok, 1500));
       }
@@ -384,7 +400,9 @@ export default function Reservas() {
       if (esDeMuestra(filas[0])) { avisoMuestra('En la vista de muestra no se cambia el plazo.'); return; }
       const res = await Promise.all(filas.map((r) => pedir('prorrogar_reserva', { id: r.id })));
       const mal = res.find((x) => !x?.ok);
-      if (mal) Alert.alert('No se pudo', mal?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      // Sin respuesta (2026-11-04): pudo haber entrado; se relee abajo con `cargar`.
+      if (mal?.sinConfirmar) avisoSinConfirmar();
+      else if (mal) Alert.alert('No se pudo', mal?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       else Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       cargar();
     } },
@@ -397,7 +415,8 @@ export default function Reservas() {
     { text: 'No', style: 'cancel' },
     { text: 'Pedir 7 días más', onPress: async () => {
       const res = await pedir('prorrogar_encargo', { id: e.id });
-      if (!res?.ok) Alert.alert('No se pudo', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+      if (res?.sinConfirmar) avisoSinConfirmar();
+      else if (!res?.ok) Alert.alert('No se pudo', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
       cargar();
     } },
   ]);
@@ -536,49 +555,86 @@ export default function Reservas() {
       </Entrada>
     );
   };
-  return (
-    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando} alFinal={d.siguiente ? cargarMas : undefined}>
-      {hojaProrroga ? (
-        <ProrrogaHoja {...hojaProrroga} alCerrar={() => setHojaProrroga(null)}
-          alPedir={(r) => { setHojaProrroga(null); Alert.alert('Prórroga pedida', r?.mensaje ?? 'Te avisamos cuando la revisemos.'); cargar(); }} />
-      ) : null}
-      {chips}
-      {vistaPrevia.vista}
-      {filtro === 'todas' && encargos.length ? (
-        <>
-          <SeccionUi>Encargos</SeccionUi>
-          {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} alProrrogar={() => prorrogarEncargo(e)} />)}
-        </>
-      ) : null}
-      {d.saldo_a_favor?.total > 0 ? <ResumenSaldo s={d.saldo_a_favor} /> : null}
-      {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
-      {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length + enRevision.length} /> : null}
-      {enRevision.length ? <Seccion texto="Receta en revisión" n={enRevision.length} /> : null}
-      {enRevision.map((g, i) => (
-        <Entrada key={`v:${g.clave}`} indice={Math.min(i, 8)}>
+  // 2026-11-04 (auditoría de rendimiento): la lista crece de a una página y se
+  // pintaba entera con `.map` dentro de un ScrollView —con «Ver más» varias
+  // veces, cientos de tarjetas montadas a la vez—. Ahora va en `PantallaLista`
+  // (FlatList), que sólo pinta lo que está cerca de la vista, igual que
+  // Facturas. Lo de arriba (filtros, encargos, saldo, resumen) es su
+  // encabezado; cada rótulo de grupo y cada tarjeta, una fila; y al final
+  // «Ver más», que pide la página siguiente al montarse —o sea al acercarse al
+  // final, lo que hacía `alFinal`— y también al tocarlo.
+  const filas = [];
+  if (enRevision.length) filas.push({ k: 's:revision', seccion: 'Receta en revisión', n: enRevision.length });
+  enRevision.forEach((g, i) => filas.push({ k: `v:${g.clave}`, revision: g, i }));
+  if (listas.length) filas.push({ k: 's:listas', seccion: 'Listas para retirar', n: listas.length });
+  listas.forEach((g, i) => filas.push({ k: `a:${g.clave}`, abierto: g, i: enRevision.length + i }));
+  if (preparando.length) filas.push({ k: 's:preparando', seccion: 'En preparación', n: preparando.length });
+  preparando.forEach((g, i) => filas.push({ k: `a:${g.clave}`, abierto: g, i: enRevision.length + listas.length + i }));
+  if (cerradas.length && filtro === 'todas') filas.push({ k: 's:anteriores', seccion: 'Anteriores' });
+  cerradas.forEach((g, i) => filas.push({ k: `c:${g.clave}`, cerrado: g, i: abiertas.length + i }));
+  if (d.siguiente) filas.push({ k: 'mas', mas: d.siguiente });
+  const pintarFila = ({ item: f }) => {
+    if (f.seccion) return <Seccion texto={f.seccion} n={f.n} />;
+    if (f.abierto) return tarjeta(f.abierto, f.i);
+    if (f.revision) {
+      const g = f.revision;
+      return (
+        <Entrada indice={Math.min(f.i, 8)}>
           <EnRevision g={g} resaltada={esResaltado(g)} alSubir={() => subirOtra(g)} subiendo={subiendo === g.clave}
             alQuitarReceta={() => quitarReceta(g)}
             alCancelar={() => (g.filas.length > 1 ? cancelarPedido(g) : cancelar(g.filas[0]))} />
         </Entrada>
-      ))}
-      {listas.length ? <Seccion texto="Listas para retirar" n={listas.length} /> : null}
-      {listas.map((g, i) => tarjeta(g, enRevision.length + i))}
-      {preparando.length ? <Seccion texto="En preparación" n={preparando.length} /> : null}
-      {preparando.map((g, i) => tarjeta(g, enRevision.length + listas.length + i))}
-      {cerradas.length && filtro === 'todas' ? <Seccion texto="Anteriores" /> : null}
-      {cerradas.map((g, i) => (
-        <Entrada key={`c:${g.clave}`} indice={Math.min(abiertas.length + i, 8)}>
+      );
+    }
+    if (f.cerrado) {
+      const g = f.cerrado;
+      return (
+        <Entrada indice={Math.min(f.i, 8)}>
           {g.filas.length > 1 ? <PedidoCerrado g={g} /> : <ReservaCerrada r={g.filas[0]} />}
         </Entrada>
-      ))}
-      {d.siguiente ? (
-        <Presionable onPress={cargarMas} disabled={masCargando} accessibilityRole="button"
-          style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
-          {masCargando ? <ActivityIndicator /> : null}
-          <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{masCargando ? 'Cargando más…' : 'Ver más reservas'}</Text>
-        </Presionable>
+      );
+    }
+    return <VerMasReservas cursor={f.mas} cargando={masCargando} alPedir={cargarMas} />;
+  };
+  return (
+    <>
+      {hojaProrroga ? (
+        <ProrrogaHoja {...hojaProrroga} alCerrar={() => setHojaProrroga(null)}
+          alSinConfirmar={() => { cargar(); }}
+          alPedir={(r) => { setHojaProrroga(null); Alert.alert('Prórroga pedida', r?.mensaje ?? 'Te avisamos cuando la revisemos.'); cargar(); }} />
       ) : null}
-    </Pantalla>
+      {vistaPrevia.vista}
+      <PantallaLista sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}
+        datos={filas} renderItem={pintarFila} keyExtractor={(f) => f.k} encabezado={<>
+          {chips}
+          {filtro === 'todas' && encargos.length ? (
+            <>
+              <SeccionUi>Encargos</SeccionUi>
+              {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} alProrrogar={() => prorrogarEncargo(e)} />)}
+            </>
+          ) : null}
+          {d.saldo_a_favor?.total > 0 ? <ResumenSaldo s={d.saldo_a_favor} /> : null}
+          {filtro !== 'todas' && !d.reservas.length ? <Vacio titulo="Nada por aquí">{VACIO_FILTRO[filtro]}</Vacio> : null}
+          {abiertas.length ? <ResumenReservas listas={listas.length} preparando={preparando.length + enRevision.length} /> : null}
+        </>} />
+    </>
+  );
+}
+
+// «Ver más reservas», la última fila de la lista (2026-11-04, como el de
+// Facturas): al montarse —la lista virtual la monta cuando se acerca al
+// final— pide la página siguiente sola; tocarla también la pide. `cargarMas`
+// tiene su candado, así que montarse y tocar a la vez no duplica la página.
+function VerMasReservas({ cursor, cargando, alPedir }) {
+  const pedir = useRef(alPedir);
+  pedir.current = alPedir;
+  useEffect(() => { pedir.current(); }, [cursor]);
+  return (
+    <Presionable onPress={alPedir} disabled={cargando} accessibilityRole="button" accessibilityState={{ busy: cargando }}
+      style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 18, minHeight: 44, borderRadius: 999, opacity: pressed ? 0.6 : 1 })}>
+      {cargando ? <ActivityIndicator /> : null}
+      <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>{cargando ? 'Cargando más…' : 'Ver más reservas'}</Text>
+    </Presionable>
   );
 }
 

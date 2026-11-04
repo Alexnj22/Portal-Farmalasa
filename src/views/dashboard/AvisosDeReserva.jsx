@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { MessageCircle, Phone, PhoneCall, Smartphone } from 'lucide-react';
+import { MessageCircle, Phone, PhoneCall, Smartphone, UserCheck } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -35,6 +35,7 @@ const CANAL = {
     llamada: { icono: PhoneCall, texto: 'Llamada' },
     whatsapp: { icono: MessageCircle, texto: 'WhatsApp' },
     app: { icono: Smartphone, texto: 'App' },
+    en_persona: { icono: UserCheck, texto: 'En persona' },
 };
 
 /**
@@ -76,20 +77,28 @@ export function HistorialDeAvisos({ avisos, avisoApp }) {
 }
 
 /**
- * Anotar una llamada al cliente: si contestó y, si contestó, qué dijo. La base
- * exige la respuesta cuando contestó (`reserva_registrar_aviso`).
+ * Anotar un aviso hecho a mano: una llamada (si contestó y qué dijo) o en
+ * persona (2026-11-04: el cliente sigue en la sala y se entera ahí mismo). La
+ * base exige la respuesta cuando contestó y siempre en persona
+ * (`reserva_registrar_aviso`).
  */
 export function RegistrarLlamada({ reserva = null, encargo = null, titulo, telefono, onClose, onListo }) {
     const showToast = useToastStore((s) => s.showToast);
+    const [medio, setMedio] = useState('llamada');
     const [contesto, setContesto] = useState('si');
     const [respuesta, setRespuesta] = useState('');
     const [enviando, setEnviando] = useState(false);
-    const falta = contesto === 'si' && respuesta.trim().length < 3;
+    const enPersona = medio === 'en_persona';
+    const exigeRespuesta = enPersona || contesto === 'si';
+    const falta = exigeRespuesta && respuesta.trim().length < 3;
     const guardar = async () => {
         setEnviando(true);
         try {
-            await registrarAvisoDeReserva({ reserva, encargo, canal: 'llamada', contesto: contesto === 'si', respuesta: contesto === 'si' ? respuesta : (respuesta || null) });
-            showToast('Llamada anotada', contesto === 'si' ? 'Quedó lo que respondió el cliente.' : 'Quedó anotado que no contestó.', 'success');
+            await registrarAvisoDeReserva(enPersona
+                ? { reserva, encargo, canal: 'en_persona', respuesta }
+                : { reserva, encargo, canal: 'llamada', contesto: contesto === 'si', respuesta: contesto === 'si' ? respuesta : (respuesta || null) });
+            showToast(enPersona ? 'Aviso anotado' : 'Llamada anotada',
+                enPersona || contesto === 'si' ? 'Quedó lo que respondió el cliente.' : 'Quedó anotado que no contestó.', 'success');
             onListo?.();
         } catch (err) {
             showToast('No se pudo anotar', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
@@ -98,26 +107,30 @@ export function RegistrarLlamada({ reserva = null, encargo = null, titulo, telef
         }
     };
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Registrar llamada">
-            <LiquidModal.Header titulo="Registrar llamada" subtitulo={titulo || undefined} onClose={onClose} />
+        <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Registrar aviso">
+            <LiquidModal.Header titulo="Registrar aviso" subtitulo={titulo || undefined} onClose={onClose} />
             <LiquidModal.Body>
                 <div className="space-y-4">
-                    {telefono && (
+                    <SegmentedControl label="Cómo se le avisó" value={medio} onChange={setMedio} layout="block" columns={2}
+                        options={[{ value: 'llamada', label: 'Llamada' }, { value: 'en_persona', label: 'En persona' }]} />
+                    {!enPersona && telefono && (
                         <a href={`tel:${String(telefono).replace(/\D/g, '')}`}
                             className="inline-flex items-center gap-1.5 rounded-btn text-body-sm font-semibold text-brand-text tabular-nums min-h-[var(--tap-min)] active:scale-[0.97]">
                             <Phone size={14} aria-hidden /> {telefono}
                         </a>
                     )}
-                    <SegmentedControl label="¿Contestó?" value={contesto} onChange={setContesto} layout="block" columns={2}
-                        options={[{ value: 'si', label: 'Contestó' }, { value: 'no', label: 'No contestó' }]} />
-                    <PortalTextarea label={contesto === 'si' ? 'Qué respondió' : 'Nota (opcional)'} rows={3} maxLength={300}
+                    {!enPersona && (
+                        <SegmentedControl label="¿Contestó?" value={contesto} onChange={setContesto} layout="block" columns={2}
+                            options={[{ value: 'si', label: 'Contestó' }, { value: 'no', label: 'No contestó' }]} />
+                    )}
+                    <PortalTextarea label={exigeRespuesta ? 'Qué respondió' : 'Nota (opcional)'} rows={3} maxLength={300}
                         value={respuesta} onChange={(e) => setRespuesta(e.target.value)}
-                        placeholder={contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó; se vuelve a llamar mañana'} />
+                        placeholder={enPersona ? 'Ej. Estaba en la sala; paga el viernes' : contesto === 'si' ? 'Ej. Pasa a retirarla el sábado' : 'Ej. Sonó y no contestó; se vuelve a llamar mañana'} />
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
-                <Button icon={PhoneCall} loading={enviando} disabled={falta} onClick={guardar}>Anotar llamada</Button>
+                <Button icon={enPersona ? UserCheck : PhoneCall} loading={enviando} disabled={falta} onClick={guardar}>Anotar aviso</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

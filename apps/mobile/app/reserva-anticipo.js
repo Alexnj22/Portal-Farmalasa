@@ -76,10 +76,11 @@ function Renglones({ titulo, lineas, total, onQuitar }) {
 export default function ApartarOEncargar() {
   const { user } = useAuth();
   // La sala que se eligió en «Meter dinero» manda; sin ella, la de la ficha.
-  const { sala: salaElegida } = useLocalSearchParams();
+  // `vista`/`elegir` (2026-11-04): «Cobrar» de un encargo abre «Por cobrar» con él elegido.
+  const { sala: salaElegida, vista: vistaInicial, elegir } = useLocalSearchParams();
   const sala = salaElegida ?? user?.branchId ?? user?.branch_id ?? null;
   const nombreSala = useStaffStore((s) => (s.branches || []).find((b) => String(b.id) === String(sala))?.name) || '';
-  const [vista, setVista] = useState('nuevo');
+  const [vista, setVista] = useState(vistaInicial === 'cobrar' ? 'cobrar' : 'nuevo');
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Apartar o encargar' }} />
@@ -89,7 +90,7 @@ export default function ApartarOEncargar() {
           {!sala ? <Aviso tono="freno" texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /> : (
             <>
               <Segmentos opciones={[{ id: 'nuevo', label: 'Nuevo' }, { id: 'cobrar', label: 'Por cobrar' }]} activa={vista} onCambiar={setVista} margen={0} />
-              {vista === 'nuevo' ? <Nuevo sala={sala} nombreSala={nombreSala} user={user} /> : <PorCobrar sala={sala} nombreSala={nombreSala} user={user} />}
+              {vista === 'nuevo' ? <Nuevo sala={sala} nombreSala={nombreSala} user={user} /> : <PorCobrar sala={sala} nombreSala={nombreSala} user={user} elegirClave={elegir ? String(elegir) : null} />}
             </>
           )}
         </ScrollView>

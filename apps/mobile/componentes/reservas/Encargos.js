@@ -11,7 +11,7 @@ import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, mensajeDeEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, whatsappDe } from '@nucleo/data/reservas';
-import { ROTULOS_DE_ENCARGO as ROT, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, notaDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, modoDeProrroga, textoDeProrroga, encargoSinVincular, encargoVencido, estadoDeEncargo, notaDeEncargo, pilaDelCliente } from '@nucleo/utils/reservasDeSala';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -25,7 +25,9 @@ import { Accion, colorDeTono } from './piezas';
 
 const corta = (d) => fechaTexto(d, { day: 'numeric', month: 'short' });
 
-export default function Encargos({ branchId = null, soloLectura = false, recarga = 0 }) {
+// `salaDeCobro` (2026-11-04): la sala donde quien mira puede cobrar; ahí el
+// encargo que espera el pago trae «Cobrar», que abre «Por cobrar» ya elegido.
+export default function Encargos({ branchId = null, soloLectura = false, recarga = 0, salaDeCobro = null }) {
   const [filas, setFilas] = useState(null);
   const [ocupado, setOcupado] = useState(null);
 
@@ -69,6 +71,8 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
   const llamar = (e) => router.push({ pathname: '/reserva-llamada', params: {
     encargo: String(e.id), codigo: e.codigo, cliente: pilaDelCliente(e), telefono: String(e.telefono ?? '') } });
 
+  const cobrable = (e) => !soloLectura && salaDeCobro != null && encargoPorCobrar(e) && String(e.branch_id) === String(salaDeCobro);
+
   if (!filas?.length) return null;
   const hoy = hoySV();
   return (
@@ -86,7 +90,7 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
               <Pildora texto={est.texto} color={colorDeTono(est.tono)} />
             </View>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-              {`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${pilaDelCliente(e)} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${corta(e.fecha_estimada)}` : ''}${e.anticipo ? ` · ${formatMoney(Number(e.anticipo))}` : ''}${e.retirar_hasta ? ` · retira hasta ${corta(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : ''}`}
+              {`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${pilaDelCliente(e)} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${corta(e.fecha_estimada)}` : ''}${cifraDeEncargo(e) ? ` · ${cifraDeEncargo(e).cobrado ? '' : 'por cobrar '}${formatMoney(cifraDeEncargo(e).valor)}` : ''}${e.retirar_hasta ? ` · retira hasta ${corta(e.retirar_hasta)}${textoDeProrroga(e, { encargo: true })}` : ''}`}
             </Text>
             {(sinVincular && e.sugerido) || vencido || e.nivel?.prioridad ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
@@ -95,8 +99,10 @@ export default function Encargos({ branchId = null, soloLectura = false, recarga
                 {vencido ? <Pildora texto="Sin retirar · llamar" color={MARCA.ambar} /> : null}
               </View>
             ) : null}
-            {notaDeEncargo(e) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{notaDeEncargo(e)}</Text> : null}
+            {notaDeEncargo(e) && !cobrable(e) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{notaDeEncargo(e)}</Text> : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+              {cobrable(e) ? <Accion texto={ROT.cobrar} color={MARCA.verde}
+                onPress={() => router.push({ pathname: '/reserva-anticipo', params: { sala: String(salaDeCobro), vista: 'cobrar', elegir: `e${e.id}` } })} /> : null}
               {!soloLectura && !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono)
                 ? <Accion texto={ROT.whatsapp} onPress={() => whatsapp(e)} /> : null}
               {e.foto_url ? <Accion texto={ROT.foto} onPress={() => openStoredFile(e.foto_url).catch((err) => fallo('No se pudo abrir la foto', err?.message ?? ''))} /> : null}

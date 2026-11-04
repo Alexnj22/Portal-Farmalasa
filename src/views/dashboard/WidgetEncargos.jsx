@@ -1,5 +1,5 @@
 import React, { Suspense, lazy, useCallback, useEffect, useState } from 'react';
-import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX } from 'lucide-react';
+import { AlertTriangle, PackageSearch, Check, X, Truck, PackageCheck, CheckCircle2, Link2, Image as ImageIcon, PackagePlus, MessageCircle, Sparkles, CalendarPlus, CalendarClock, Wallet, PhoneCall, PackageX, Banknote } from 'lucide-react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import FilaConAcciones from './FilaConAcciones';
@@ -22,7 +22,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { cambiarFechaDeEncargo, fetchEncargos, mensajeDeEncargo, pasarEncargoASaldo, proveedorNoEntregoEncargo, prorrogarEncargo, registrarAvisoDeReserva, responderEncargo, vincularProductoDeEncargo, whatsappDe } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { ROTULOS_DE_ENCARGO as ROT, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
+import { ROTULOS_DE_ENCARGO as ROT, cifraDeEncargo, encargoPorCobrar, modoDeProrroga, textoDeProrroga, encargoConRiesgo, encargoSinVincular, encargoVencido, estadoDeEncargo, fichaDeProductoNuevo, notaDeEncargo, textoDeNivel } from '@nucleo/utils/reservasDeSala';
 import { EmptyState } from '../../components/common/StateViews';
 
 // Entregar un encargo pagado aplica el pago a su factura (2026-10-20).
@@ -65,9 +65,13 @@ const sinVincular = encargoSinVincular;
 const estadoDe = (e) => { const x = estadoDeEncargo(e); return { label: x.texto, variant: x.tono }; };
 
 // `soloLectura`: quien sólo puede mirar las reservas ve el estado sin los botones.
+// `salaDeCobro` + `onCobrar` (2026-11-04): quien cobra en esa sala ve «Cobrar»
+// en el encargo que espera el pago; abre el MISMO «Por cobrar» de Apartar con
+// el encargo ya elegido, así que el cobro no se escribe dos veces. `recarga`
+// cambia cuando afuera se cobró: la lista se relee sin esperar los 2 minutos.
 // `completa` (2026-10-22): en la pantalla de Reservas, una tarjeta por encargo
 // como las de las reservas; en la baldosa del Inicio, la fila de siempre.
-export default function WidgetEncargos({ branchId = null, soloLectura = false, completa = false }) {
+export default function WidgetEncargos({ branchId = null, soloLectura = false, completa = false, salaDeCobro = null, onCobrar = null, recarga = 0 }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     // Un error de lectura no es «no hay encargos»: se dice y se ofrece reintentar.
@@ -93,6 +97,9 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
         }
     }, [branchId]);
     useEffect(() => { cargar(); const t = setInterval(cargar, 120_000); return () => clearInterval(t); }, [cargar]);
+    useEffect(() => { if (recarga) cargar(); }, [recarga, cargar]);
+    // Sólo en la sala del retiro: el efectivo entra al cajón de esa sala.
+    const cobrable = (e) => !soloLectura && !!onCobrar && salaDeCobro != null && encargoPorCobrar(e) && String(e.branch_id) === String(salaDeCobro);
 
     const mover = async (e, accion, datos) => {
         setOcupado(e.id);
@@ -185,6 +192,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                     const dia = (v) => fechaTexto(v, { weekday: 'short', day: 'numeric', month: 'short' });
                     // En orden: lo que destraba al encargo primero.
                     const acc = [
+                        cobrable(e) && { k: 'cobrar', label: ROT.cobrar, icon: Banknote, onClick: () => onCobrar(e) },
                         !soloLectura && e.estado === 'solicitado' && { k: 'confirmar', label: ROT.confirmar, icon: Check, onClick: () => setConfirmando(e) },
                         !soloLectura && e.estado === 'aceptado' && { k: 'pedido', label: ROT.pedido, icon: Truck, loading: ocupado === e.id, onClick: () => mover(e, 'pedido') },
                         !soloLectura && sinVincular(e) && { k: 'vincular', label: ROT.vincular, icon: Link2, onClick: () => setVinculando(e) },
@@ -209,6 +217,7 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                         !soloLectura && e.estado === 'solicitado' && { k: 'rechazar', label: ROT.rechazar, icon: X, onClick: () => setRechazando(e) },
                     ].filter(Boolean);
                     const estado = estadoDe(e);
+                    const cifra = cifraDeEncargo(e);
                     return (
                         <li key={e.id} className="min-w-0">
                             <TarjetaCompacta codigo={e.codigo} sala={e.sala ? `Retira en ${e.sala}` : null}
@@ -219,12 +228,12 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                                     `${e.cantidad} × ${e.producto}`,
                                     e.producto_nuevo ? (e.product_id ? `Producto nuevo → ${e.producto_catalogo ?? 'vinculado'}` : sinVincular(e) && e.sugerido ? `Producto nuevo · ¿ya está como «${e.sugerido}»?` : 'Producto nuevo') : null,
                                     e.reserva ? `Resto de la reserva ${e.reserva}` : null,
-                                    notaDeEncargo(e) || null,
+                                    (!cobrable(e) && notaDeEncargo(e)) || null,
                                     textoDeNivel(e.nivel),
                                     ultimoAviso(e),
                                 ]}
                                 cifras={[
-                                    ...(e.anticipo ? [{ rotulo: 'Pagado', valor: Number(e.anticipo), tono: 'text-success-text' }] : []),
+                                    ...(cifra ? [{ rotulo: cifra.rotulo, valor: cifra.valor, tono: cifra.cobrado ? 'text-success-text' : 'text-warning-text' }] : []),
                                     ...(e.fecha_estimada ? [{ rotulo: 'Llega', valor: fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' }) }] : []),
                                 ]}
                                 aviso={vencido(e) ? 'No lo retiró a tiempo: llamar al cliente' : null}
@@ -241,11 +250,12 @@ export default function WidgetEncargos({ branchId = null, soloLectura = false, c
                         <FilaConAcciones tone={e.estado === 'solicitado' || e.estado === 'aceptado' || vencido(e) ? 'warning' : null}
                             icon={e.producto_nuevo ? PackagePlus : PackageSearch}
                             titulo={`${e.cantidad} × ${e.producto}${e.producto_nuevo ? (e.product_id ? ` → ${e.producto_catalogo ?? 'vinculado'}` : ' · producto nuevo') : ''}`}
-                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${e.anticipo ? ` · ${formatMoney(e.anticipo)}` : ''}${e.retirar_hasta ? ` · retira hasta ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'short' })}${textoDeProrroga(e, { encargo: true })}` : ''}`}
+                            detalle={`${e.codigo}${e.reserva ? ` · resto de ${e.reserva}` : ''} · ${String(e.cliente ?? '').split(/\s+/)[0]} · retira en ${e.sala}${e.fecha_estimada ? ` · llega ${fechaTexto(e.fecha_estimada, { day: 'numeric', month: 'short' })}` : ''}${cifraDeEncargo(e) ? ` · ${cifraDeEncargo(e).cobrado ? '' : 'por cobrar '}${formatMoney(cifraDeEncargo(e).valor)}` : ''}${e.retirar_hasta ? ` · retira hasta ${fechaTexto(e.retirar_hasta, { day: 'numeric', month: 'short' })}${textoDeProrroga(e, { encargo: true })}` : ''}`}
                             acciones={(
                                 <>
                                     <Badge variant={estadoDe(e)?.variant ?? 'neutral'} uppercase={false}>{estadoDe(e)?.label ?? e.estado}</Badge>
-                                    {notaDeEncargo(e) && <span className="text-caption text-content-2">{notaDeEncargo(e)}</span>}
+                                    {!cobrable(e) && notaDeEncargo(e) && <span className="text-caption text-content-2">{notaDeEncargo(e)}</span>}
+                                    {cobrable(e) && <Button variant="primary" size="xs" icon={Banknote} onClick={() => onCobrar(e)}>{ROT.cobrar}</Button>}
                                     {sinVincular(e) && e.sugerido && <Badge variant="info" uppercase={false} title={`Parece que ya entró como «${e.sugerido}»`}>¿Ya está en el catálogo?</Badge>}
                                     {!soloLectura && !e.reserva && !e.tiene_app && ['confirmado', 'listo'].includes(e.estado) && whatsappDe(e.telefono) && (
                                         <Button variant="ghost" size="xs" iconOnly icon={MessageCircle} title={ROT.whatsapp}
@@ -391,7 +401,7 @@ function ASaldo({ encargo, reglas, onClose, onConfirmar }) {
 function ultimoAviso(e) {
     const a = e.avisos?.[0];
     if (!a) return null;
-    const canal = { llamada: 'Llamada', whatsapp: 'WhatsApp' }[a.canal] ?? 'Aviso';
+    const canal = { llamada: 'Llamada', whatsapp: 'WhatsApp', en_persona: 'En persona' }[a.canal] ?? 'Aviso';
     return `Último aviso: ${canal}${a.canal === 'llamada' ? (a.contesto ? ' · contestó' : ' · no contestó') : ''} · ${fechaTexto(a.at, { weekday: 'short', day: 'numeric', month: 'short' })}`;
 }
 

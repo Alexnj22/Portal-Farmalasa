@@ -73,8 +73,10 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
  */
 const llave = (sala) => `apartar_${sala ?? 'sin-sala'}`;
 
-export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = null, atiende = null, onClose, onCobrar }) {
-    const [vista, setVista] = useState('nuevo');
+// `inicial` (2026-11-04): `{ vista: 'cobrar', clave: 'e16' }` abre «Por cobrar»
+// con esa fila ya elegida — lo usa «Cobrar» de la tarjeta del encargo.
+export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = null, atiende = null, inicial = null, onClose, onCobrar }) {
+    const [vista, setVista] = useState(inicial?.vista ?? 'nuevo');
     if (!abierto) return null;
     return (
         <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Apartar o encargar">
@@ -87,7 +89,7 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
                         options={[{ value: 'nuevo', label: 'Nuevo' }, { value: 'cobrar', label: 'Por cobrar' }]} />
                     {vista === 'nuevo'
                         ? <Nuevo sala={sala} nombreSala={nombreSala} atiende={atiende} ocupado={ocupado} onCobrar={onCobrar} onClose={onClose} />
-                        : <PorCobrar sala={sala} ocupado={ocupado} onCobrar={onCobrar} />}
+                        : <PorCobrar sala={sala} ocupado={ocupado} onCobrar={onCobrar} elegirClave={inicial?.clave ?? null} />}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
@@ -767,7 +769,7 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
 }
 
 // ── Por cobrar: encargos con precio confirmado y reservas con saldo ─────────
-function PorCobrar({ sala, ocupado, onCobrar }) {
+function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     const [elegido, setElegido] = useState(null);
@@ -791,6 +793,16 @@ function PorCobrar({ sala, ocupado, onCobrar }) {
         setElegido(f); setMonto(String(f.saldo)); setPago(FORMA_DE_PAGO_INICIAL); setCobroEn('caja');
         claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `cobrar-${f.clave}-${Date.now()}`;
     };
+    // La fila pedida desde afuera se elige UNA vez, con la primera lista: si ya
+    // no está (alguien la cobró en el medio), queda la lista sin elegir nada.
+    const yaElegida = useRef(false);
+    useEffect(() => {
+        if (!elegirClave || yaElegida.current || !filas) return;
+        yaElegida.current = true;
+        const f = filas.find((x) => x.clave === elegirClave);
+        if (f) elegir(f);
+        else showToast('Ya no está por cobrar', 'Alguien lo cobró recién o cambió de estado.', 'info');
+    }, [elegirClave, filas, showToast]);
     const n = Number(monto);
     const estadoPago = estadoDeFormaDePago(pago, n);
     const falta = !elegido ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`

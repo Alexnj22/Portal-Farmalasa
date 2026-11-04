@@ -315,7 +315,7 @@ export function accionesDeReservaNucleo(r, { soloLectura = false, puedeRecetas =
         title: 'Los días que necesita el cliente y el motivo: la autoriza Talento Humano o Supervisión de ventas' });
     // Reglamento v2, cláusula 9: el aviso por llamada queda registrado (quién,
     // cuándo y qué respondió el cliente). Lo habilita la base (`registrar_llamada`).
-    if (filas.some((x) => x.registrar_llamada)) lista.push({ k: 'llamada', label: 'Registrar llamada', title: 'Anota que llamaste al cliente y qué respondió' });
+    if (filas.some((x) => x.registrar_llamada)) lista.push({ k: 'llamada', label: 'Registrar aviso', title: 'Anota que le avisaste al cliente (por llamada o en persona) y qué respondió' });
     lista.push({ k: 'cancelar', label: 'Cancelar reserva', menor: true });
     return lista;
 }
@@ -468,7 +468,8 @@ export const ROTULOS_DE_ENCARGO = {
     llego: 'Llegó',
     entregar: 'Entregar',
     whatsapp: 'Avisar por WhatsApp',
-    llamada: 'Registrar llamada',
+    llamada: 'Registrar aviso',
+    cobrar: 'Cobrar',
     fecha: 'Cambiar fecha',
     no_entrego: 'El proveedor no entregó',
     foto: 'Ver la foto',
@@ -485,6 +486,25 @@ export const ROTULOS_DE_ENCARGO = {
 export function notaDeEncargo(e) {
     if (e?.estado === 'confirmado' && !e?.reserva) return 'Se cobra en Reservar con anticipo → Por cobrar';
     return '';
+}
+
+/**
+ * Un encargo con precio confirmado cuyo pago todavía no entró (2026-11-04): se
+ * cobra completo en caja. El resto de una reserva no, ése va con la reserva.
+ */
+export const encargoPorCobrar = (e) => e?.estado === 'confirmado' && e?.pago_estado === 'pendiente' && !e?.reserva && !e?.reserva_id;
+
+/**
+ * La cifra de plata de la tarjeta de un encargo. `anticipo` guarda lo que el
+ * cliente paga (el 100 %) desde que Compras confirma el precio, ANTES de que
+ * entre el pago: rotularlo «Pagado» sin mirar `pago_estado` decía «Pagado
+ * $130.00» sobre un encargo «Esperando pago» (E-000016, 2026-11-04).
+ * `null` si no hay monto.
+ */
+export function cifraDeEncargo(e) {
+    const valor = Number(e?.anticipo);
+    if (!(valor > 0)) return null;
+    return encargoPorCobrar(e) ? { rotulo: 'Por cobrar', valor, cobrado: false } : { rotulo: 'Pagado', valor, cobrado: true };
 }
 
 /** Un producto que no tenemos y Bodega todavía no amarró al catálogo: sin eso no se marca «Llegó». */
@@ -509,7 +529,7 @@ export function fichaDeProductoNuevo(e) {
  */
 export function porCobrarDeSala(encargos, reservas) {
     const r2 = (n) => Math.round(Number(n) * 100) / 100;
-    const e = (encargos ?? []).filter((x) => x.estado === 'confirmado' && x.pago_estado === 'pendiente' && !x.reserva_id).map((x) => ({
+    const e = (encargos ?? []).filter(encargoPorCobrar).map((x) => ({
         clave: `e${x.id}`, tipo: 'encargo', id: x.id, codigo: codigoDeEncargo(x.id), cliente: x.cliente, producto: x.producto,
         cantidad: x.cantidad, precio: Number(x.precio_unitario), saldo: Number(x.anticipo), fecha: x.fecha_estimada,
     }));

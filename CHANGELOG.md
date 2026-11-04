@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1430.0 — Encargos: «Por cobrar», cobrar desde la tarjeta y aviso en persona
+
+- **La tarjeta decía «Pagado» sobre lo que falta cobrar.** E-000016 estaba
+  «Esperando pago» con la cifra «Pagado $130.00»: `anticipo` guarda lo que el
+  cliente paga (el 100 %) desde que Compras confirma el precio, antes de que
+  entre el pago, y la tarjeta no miraba `pago_estado`. Ahora la cifra sale de
+  `cifraDeEncargo` del núcleo —«Por cobrar» en ámbar mientras esté pendiente,
+  «Pagado» en verde después— en el portal y en la app del personal.
+- **«Cobrar» en la tarjeta del encargo.** Quien puede apartar en la sala del
+  retiro lo cobra desde ahí: abre el MISMO «Por cobrar» de Reservar con
+  anticipo con el encargo ya elegido (`inicial` en `DialogoApartar`, `vista` y
+  `elegir` en `reserva-anticipo` de la app), así que el cobro no se escribe dos
+  veces. Bodega y quien sólo mira no lo ven. La lista de encargos se relee al
+  cobrar.
+- **«En persona» como medio de aviso.** «Registrar llamada» pasa a «Registrar
+  aviso» con dos medios: llamada o en persona (el cliente sigue en la sala).
+  En persona exige qué respondió. Migración `20261104164850`:
+  `reserva_avisos_log.canal` acepta `en_persona` y `reserva_registrar_aviso`
+  lo registra. Como el resto de los avisos anotados, aparece desde el
+  reglamento v2 (15-nov).
+
 ## v2.1429.3 — Compras: la copia ya no duplica renglones con varios lotes, y «ya está registrada» deja de acertar por casualidad
 
 - **La lista de compras del sistema cruza cantidades con lotes.** Un producto

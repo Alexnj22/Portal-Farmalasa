@@ -285,7 +285,7 @@ export default function ReservasDeSala() {
             ))}
           </Seccion>
         ) : null}
-        {(sala || verTodas) ? <Encargos branchId={salaEncargos} soloLectura={soloLectura} recarga={recarga} /> : null}
+        {(sala || verTodas) ? <Encargos branchId={salaEncargos} soloLectura={soloLectura} recarga={recarga} salaDeCobro={puedeApartar ? miSala : null} /> : null}
       </ScrollView>
     </>
   );

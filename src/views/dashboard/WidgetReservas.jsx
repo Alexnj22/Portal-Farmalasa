@@ -125,7 +125,11 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const codigo = codigoDeAfuera ?? codigoPropio;
     const [nuevaPropia, setNueva] = useState(false);
     const nueva = nuevaPropia || nuevaDeAfuera;
-    const cerrarNueva = () => { setNueva(false); onNuevaCerrada?.(); };
+    // «Cobrar» desde la tarjeta de un encargo (2026-11-04): abre el mismo
+    // diálogo en «Por cobrar» con ese encargo elegido.
+    const [cobrandoEncargo, setCobrandoEncargo] = useState(null);
+    const [recargaEncargos, setRecargaEncargos] = useState(0);
+    const cerrarNueva = () => { setNueva(false); setCobrandoEncargo(null); onNuevaCerrada?.(); };
     // Los renglones que faltan por retirar, de a uno (un pedido del carrito trae varios).
     const [retirando, setRetirando] = useState([]);
     // La reserva cuya receta se está mirando, y la hora de la última lectura
@@ -337,6 +341,9 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 loading: ocupada === r.id && ['apartar', 'retirar', 'caja', 'prorrogar', 'cancelar'].includes(a.k) }));
     };
 
+    // Cobra quien puede apartar en su propia sala: el efectivo entra a ESE cajón.
+    const salaDeCobro = !todas && !soloLectura && miSala && !esBodega ? miSala : null;
+    const cobrarEncargo = (e) => { setCobrandoEncargo(e.id); setNueva(true); };
     const botonNueva = !onNuevaCerrada && !todas && !soloLectura && miSala && !esBodega ? (
         <Button variant="secondary" size="xs" icon={Plus} onClick={() => setNueva(true)}>Reservar con anticipo</Button>
     ) : null;
@@ -356,6 +363,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
     const modalNueva = nueva ? (
         <Suspense fallback={null}>
             <DialogoApartar abierto ocupado={false} sala={miSala} nombreSala={nombreSala} atiende={user?.name} onClose={cerrarNueva}
+                inicial={cobrandoEncargo ? { vista: 'cobrar', clave: `e${cobrandoEncargo}` } : null}
                 onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
                     const r = await cobrarAnticipo({ sala: miSala, nombreSala, userId: user?.id, quienAtiende: user?.name,
                         clave, monto, apartado, pago, papel });
@@ -365,6 +373,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                         r.aviso ? 'warning' : 'success');
                     if (r.papel) showToast('No se imprimió la constancia', mensajeAmigable(r.papel), 'warning');
                     cargar();
+                    setRecargaEncargos((n) => n + 1);
                     // La reserva con su id: si viene de otra sala, el traslado se amarra a ella.
                     return r.apartado;
                 }} />
@@ -393,7 +402,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                             ariaLabel="Buscar un saldo a favor por su código" />
                     )}
                     {botonNueva && <div className="flex justify-center">{botonNueva}</div>}
-                    <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} />
+                    <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura}
+                        salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
                 </div>
                 {modalNueva}
             </div>
@@ -588,7 +598,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         </>
                                     )}
                                     {!soloLectura && filasDe.some((x) => x.registrar_llamada) && (
-                                        <Button variant="ghost" size="xs" iconOnly icon={PhoneCall} title="Registrar llamada"
+                                        <Button variant="ghost" size="xs" iconOnly icon={PhoneCall} title="Registrar aviso"
                                             onClick={() => setLlamando(r)} />
                                     )}
                                     {!soloLectura && (
@@ -729,7 +739,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     )}
                 </div>
             )}
-            <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} completa={completa} />
+            <WidgetEncargos branchId={salaEncargos} soloLectura={soloLectura} completa={completa}
+                salaDeCobro={salaDeCobro} onCobrar={cobrarEncargo} recarga={recargaEncargos} />
             </div>
             {modalNueva}
             {modalRetirar}

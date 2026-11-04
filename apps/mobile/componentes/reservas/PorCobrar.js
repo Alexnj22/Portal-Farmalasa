@@ -24,7 +24,7 @@ import { cobrarAnticipoEnLaApp } from './cobrar';
 
 const dinero = (v) => v.replace(/[^\d.,]/g, '').replace(',', '.');
 
-export default function PorCobrar({ sala, nombreSala, user }) {
+export default function PorCobrar({ sala, nombreSala, user, elegirClave = null }) {
   const [filas, setFilas] = useState(null);
   const [elegido, setElegido] = useState(null);
   const [monto, setMonto] = useState('');
@@ -45,6 +45,14 @@ export default function PorCobrar({ sala, nombreSala, user }) {
     setElegido(f); setMonto(String(f.saldo)); setPago(FORMA_DE_PAGO_INICIAL); setCobroEn('caja');
     clave.current = `app-cobrar-${f.clave}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   };
+  // La fila pedida desde la tarjeta del encargo se elige UNA vez, con la primera lista.
+  const yaElegida = useRef(false);
+  useEffect(() => {
+    if (!elegirClave || yaElegida.current || !filas) return;
+    yaElegida.current = true;
+    const f = filas.find((x) => x.clave === elegirClave);
+    if (f) elegir(f); else fallo('Ya no está por cobrar', 'Alguien lo cobró recién o cambió de estado.');
+  }, [elegirClave, filas]); // eslint-disable-line react-hooks/exhaustive-deps
   const n = Number(monto);
   const estadoPago = estadoDeFormaDePago(pago, n);
   const falta = !elegido ? null : !(n > 0) ? 'Escribe el monto.' : n > elegido.saldo + 0.004 ? `No puede pasar de ${formatMoney(elegido.saldo)}.`

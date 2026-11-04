@@ -1,441 +1,306 @@
-// Botiquín (Bienestar, 2026-11-04). Pedido del usuario: «agreguemos un juego
-// que he visto de unir objetos del mismo tipo, y se van transformando en otros,
-// que sean de cosas médicas y salud» · «muy visual, moderno, entretenido» ·
-// «pensado tanto para niños como para adultos». Juego propio: nombre, dibujos y
-// niveles son nuestros.
+// Botiquín (Bienestar, 2026-11-04) — reemplaza al «Botiquín» anterior, el de
+// unir piezas en un tablero (usuario: «debía quitar el juego anterior, no era
+// uno más»). Nació como «Pastillero»; las claves del récord conservan ese
+// nombre para no perder lo ya jugado en la 94.
+// Pedido del usuario: un juego de «juntar
+// al caer» —caen medicamentos dentro de un botiquín abierto arriba; dos iguales
+// que se tocan se vuelven el siguiente— con nombre, dibujos, colores y sonidos
+// propios, de farmacia. No es copia de ningún juego: la cadena, el arte y las
+// reglas finas son nuestras.
 //
-// Se arrastra una pieza sobre otra IGUAL que esté a su lado (también en
-// diagonal) y las dos se vuelven la siguiente de la cadena:
-//   Gota → Pastilla → Cápsula → Jarabe → Curita → Termómetro → Estetoscopio
-//   → Botiquín → Corazón sano.
-// Dos corazones sanos juntos se van con una lluvia dorada y dejan espacio.
-// Arrastrar a un hueco mueve la pieza. Cada jugada trae una pieza nueva; si el
-// tablero se llena sin parejas al lado, se acabó.
+// La cadena (diez, de la más chica a la más grande):
+//   Pastilla → Gragea → Cápsula → Perla → Sobre → Pomada → Jarabe → Frasco
+//   → Caja → Cruz de farmacia.
+// Sólo las cinco primeras caen al azar; el resto se gana juntando. Dos cruces
+// juntas se van con un premio y dejan espacio. Se pierde si algo que ya cayó
+// queda por encima del borde del botiquín DOS segundos seguidos (el que viene
+// cayendo no cuenta): así una pila que asoma un instante no castiga.
 //
-// Niveles: cada uno pide crear algo («Crea 2 Curitas») y a veces romper cajas
-// (una caja se rompe al unir una pareja junto a ella), con un tope de
-// movimientos; las estrellas salen de los movimientos que sobran. Los tableros
-// crecen a 6×6, las metas suben por la cadena y los topes se aprietan. «Relax»
-// no tiene tope: sólo puntos y récord.
-//
-// Rendimiento (la lección de Burbujas y Torre): cada pieza se dibuja UNA vez
-// como imagen (Skia.Surface, a la densidad del teléfono) y el tablero es un solo
-// `Picture` que las estampa, armado en el hilo de la interfaz. El arrastre, la
-// pieza bajo el dedo, la unión y la pieza nueva se deciden ahí mismo, en el
-// gesto: JavaScript sólo se entera al soltar (sonido, vibración, metas). El
-// «respirar» de las piezas quietas va a 30 cuadros con un solo reloj, y con
-// «reducir movimiento» se queda quieto.
+// Rendimiento: la física (lib/caida.js) corre en JavaScript con
+// `requestAnimationFrame`, en pasos fijos de 1/120 s (0.03 ms por paso), y le
+// pasa al hilo de la interfaz una foto de puros números. Allá un solo `Picture`
+// estampa cada pieza, que se dibujó UNA vez como imagen al medir la pantalla
+// (nada de rearmar formas en cada cuadro). Una falla del motor termina la
+// partida y se reporta; nunca cierra la app. Con la pantalla fuera de vista o
+// la app en segundo plano el reloj se para (`useVisible`) y al volver queda en
+// pausa hasta que se toque «Seguir».
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PixelRatio, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { PixelRatio, StyleSheet, Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import {
-  BlurStyle, Canvas, ClipOp, FilterMode, Image as ImagenSkia, MipmapMode, PaintStyle, Picture, Skia, StrokeCap, StrokeJoin, TileMode,
-} from '@shopify/react-native-skia';
+import { BlurStyle, Canvas, ClipOp, FilterMode, Image as ImagenSkia, MipmapMode, PaintStyle, Picture, Skia, StrokeCap, StrokeJoin, TileMode } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeIn, FadeOut, ZoomIn, runOnJS, runOnUI, useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeOut, runOnJS, useDerivedValue, useSharedValue } from 'react-native-reanimated';
+import tokens from '@nucleo/constants/tokens.json';
 import { Confeti, Tocable, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
-import {
-  AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, VIDRIO, VIDRIO_BORDE, textoAyuda,
-} from '../componentes/juegos/Escena';
+import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, PanelVidrio, VIDRIO, VIDRIO_BORDE, textoAyuda } from '../componentes/juegos/Escena';
+import { ORO, TarjetaNivel } from '../componentes/juegos/Niveles';
+import { ALTURA_SOLTAR, MAX, PAUSA_SOLTAR, PREMIO_CUMBRE, RADIOS, avanzar, crearMundo, soltar } from '../lib/caida';
 import { entero } from '../lib/formato';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
+import { useVisible } from '../lib/visible';
+import { reportarError } from '../lib/errores';
 
-const CLAVE_NIVEL = 'puntos_salud_botiquin_nivel'; // el nivel más alto abierto
-const CLAVE_RECORD = 'puntos_salud_botiquin_record'; // puntos de Relax
-const CLAVE_ESTRELLAS = 'puntos_salud_botiquin_estrellas'; // { "1": 3, "2": 2, … }
-const SONIDOS = ['pop-2', 'pop-3', 'pop-5', 'par', 'ganar', 'fallo', 'gota', 'bloque', 'toque-1', 'toque-2', 'toque-3', 'toque-4', 'toque-5', 'toque-6'];
+const CLAVE_RECORD = 'puntos_salud_pastillero_record';
+const CLAVE_MAYOR = 'puntos_salud_pastillero_mayor'; // la pieza más grande que se llegó a hacer
+const SONIDOS = ['gota', 'pop-1', 'pop-2', 'pop-3', 'pop-4', 'pop-5', 'pop-6', 'par', 'ganar', 'fallo', 'derrumbe'];
 
-const MAX = 9; // el corazón sano
-const CAJA = -1;
-const NOMBRES = [null, 'Gota', 'Pastilla', 'Cápsula', 'Jarabe', 'Curita', 'Termómetro', 'Estetoscopio', 'Botiquín', 'Corazón sano'];
-const PLURAL = [null, 'Gotas', 'Pastillas', 'Cápsulas', 'Jarabes', 'Curitas', 'Termómetros', 'Estetoscopios', 'Botiquines', 'Corazones sanos'];
-const ARTICULO = [null, 'una', 'una', 'una', 'un', 'una', 'un', 'un', 'un', 'un'];
-// Cada pieza tiene forma Y color propios (se distinguen también sin ver colores).
+const ALTO = 1.3; // el botiquín, en anchos: un poco más alto que ancho
+const ZONA = 0.36; // el aire de arriba, donde cuelga la pieza que se va a soltar
+const PARED = 0.045; // grosor de las paredes, en anchos
+
+export const NOMBRES = ['Pastilla', 'Gragea', 'Cápsula', 'Perla', 'Sobre', 'Pomada', 'Jarabe', 'Frasco', 'Caja', 'Cruz de farmacia'];
+const ARTICULO = ['la', 'la', 'la', 'la', 'el', 'la', 'el', 'el', 'la', 'la'];
+
+// Los colores de la marca salen de los tokens (la escena es la misma en tema
+// claro y oscuro, como en todos los juegos: oscura a propósito, con todo
+// blanco encima). Los demás tonos son de esta cadena; cada pieza tiene forma
+// Y color propios, para distinguirlas también sin ver colores.
+const T = tokens.temas.solid;
 const COLORES = [
-  null,
-  ['#A6E4FF', '#2F8FE6'], // gota · celeste
-  ['#E2D2FF', '#8862EC'], // pastilla · lila
-  ['#FFC6E6', '#DD4398'], // cápsula · rosa
-  ['#FFDDB0', '#EC7A2E'], // jarabe · durazno
-  ['#C2F5DC', '#20A97E'], // curita · menta
-  ['#C3CEFF', '#4B5DDC'], // termómetro · índigo
-  ['#FFBCC2', '#DC3C4B'], // estetoscopio · coral
-  ['#FFAEE7', '#BE168B'], // botiquín · magenta de la marca
-  ['#9B47D0', '#3B0D61'], // corazón · violeta profundo con oro
+  ['#E4EEFF', '#6F95D6'], // pastilla · celeste
+  ['#F6C9EF', T['logo-magenta']], // gragea · magenta del logo
+  ['#FFD0AC', '#E66A2C'], // cápsula · naranja
+  ['#FFF0B0', '#D59E00'], // perla · miel
+  ['#C8F3DB', '#1E9E68'], // sobre · menta
+  ['#FFC0CB', '#D8405A'], // pomada · coral
+  ['#D8C9FF', T['brand-purple']], // jarabe · violeta
+  ['#B4D6FF', T.brand], // frasco · azul de la marca
+  ['#A8ECE6', '#0F8C88'], // caja · turquesa
+  ['#E2F7A8', T['logo-green-solid']], // cruz · verde del logo
 ];
-const TONO_CAJA = ['#EDCB9C', '#AE7742'];
-const CHISPA_COLOR = [null, '#7FD3FF', '#B89CFF', '#FF8CC8', '#FFB070', '#6FE3B4', '#8C9CFF', '#FF8A94', '#FF7AD6', '#FFD45C', '#E2B27A'];
-const PUNTOS = [0, 0, 5, 10, 20, 40, 80, 160, 320, 640];
+const VERDE = T['logo-green'];
+const PELIGRO = '#FF6B7E';
 
-// Tiempos de las animaciones (segundos).
-const LEVANTA = 0.12;
-const JUNTA = 0.1; // las dos piezas se acercan
-const POP = 0.42; // la nueva estira y encoge
-const NACE = 0.34;
-const VUELTA = 0.28; // regresa a su casilla si no se podía soltar ahí
-const ROMPE = 0.32;
-const CHISPA = 0.6;
-
-// Los niveles. `meta`: qué pieza crear; `cuantas`; `cajas`: cuántas hay (y hay
-// que romperlas todas); `movs`: tope; `inicio`: piezas al empezar; `p2`:
-// probabilidad de que la pieza nueva ya sea una pastilla.
-const NIVELES = [
-  { C: 5, meta: 4, cuantas: 1, cajas: 0, movs: 14, inicio: 8, p2: 0.25 },
-  { C: 5, meta: 4, cuantas: 2, cajas: 0, movs: 22, inicio: 9, p2: 0.25 },
-  { C: 5, meta: 5, cuantas: 1, cajas: 0, movs: 24, inicio: 9, p2: 0.25 },
-  { C: 5, meta: 5, cuantas: 1, cajas: 3, movs: 28, inicio: 8, p2: 0.22 },
-  { C: 5, meta: 5, cuantas: 2, cajas: 2, movs: 42, inicio: 9, p2: 0.2 },
-  { C: 6, meta: 6, cuantas: 1, cajas: 4, movs: 44, inicio: 11, p2: 0.2 },
-  { C: 6, meta: 6, cuantas: 2, cajas: 4, movs: 72, inicio: 12, p2: 0.2 },
-  { C: 6, meta: 7, cuantas: 1, cajas: 5, movs: 76, inicio: 12, p2: 0.2 },
-  { C: 6, meta: 7, cuantas: 1, cajas: 7, movs: 68, inicio: 12, p2: 0.18 },
-  { C: 6, meta: 8, cuantas: 1, cajas: 5, movs: 140, inicio: 13, p2: 0.2 },
-  { C: 6, meta: 8, cuantas: 1, cajas: 8, movs: 130, inicio: 13, p2: 0.18 },
-  { C: 6, meta: 9, cuantas: 1, cajas: 6, movs: 270, inicio: 14, p2: 0.2 },
-];
-// Después del 12 se repiten los tres últimos, cada vuelta más apretados.
-function nivelDe(n) {
-  if (n <= NIVELES.length) return NIVELES[n - 1];
-  const extra = n - NIVELES.length - 1;
-  const vuelta = 1 + Math.floor(extra / 3);
-  const base = NIVELES[NIVELES.length - 3 + (extra % 3)];
-  return { ...base, movs: Math.round(base.movs * Math.max(0.7, 1 - 0.05 * vuelta)), cajas: Math.min(10, base.cajas + vuelta) };
-}
-const RELAX = { C: 6, meta: 0, cuantas: 0, cajas: 0, movs: 0, inicio: 10, p2: 0.2 };
-const MODOS = [{ valor: 'niveles', texto: 'Niveles' }, { valor: 'relax', texto: 'Relax', detalle: 'sin límite' }];
-
-function textoMeta(conf) {
-  const partes = [conf.cuantas === 1 ? `Crea ${ARTICULO[conf.meta]} ${NOMBRES[conf.meta]}` : `Crea ${conf.cuantas} ${PLURAL[conf.meta]}`];
-  if (conf.cajas) partes.push(conf.cajas === 1 ? 'rompe la caja' : `rompe las ${conf.cajas} cajas`);
-  return partes.join(' y ');
-}
-const estrellasDe = (sobran, movs) => (sobran / movs >= 0.35 ? 3 : sobran / movs >= 0.15 ? 2 : 1);
-
-// ── Lógica del tablero: funciones de hilo de la interfaz (y de JS) ─────────────
-function vecinas(o, d, C) {
-  'worklet';
-  if (o === d) return false;
-  return Math.abs((o % C) - (d % C)) <= 1 && Math.abs(Math.floor(o / C) - Math.floor(d / C)) <= 1;
-}
-function hayPareja(b, C) {
-  'worklet';
-  for (let i = 0; i < b.length; i++) {
-    const v = b[i];
-    if (v <= 0) continue;
-    const c = i % C; const f = Math.floor(i / C);
-    if (c + 1 < C && b[i + 1] === v) return true;
-    if (f + 1 < C && b[i + C] === v) return true;
-    if (f + 1 < C && c + 1 < C && b[i + C + 1] === v) return true;
-    if (f + 1 < C && c > 0 && b[i + C - 1] === v) return true;
-  }
-  return false;
-}
-function buscarPareja(b, C) {
-  'worklet';
-  for (let i = 0; i < b.length; i++) {
-    if (b[i] <= 0) continue;
-    for (let j = 0; j < b.length; j++) if (b[j] === b[i] && vecinas(i, j, C)) return [i, j];
-  }
-  return null;
-}
-function celdaDe(g, x, y) {
-  'worklet';
-  const col = Math.floor((x - g.x0) / g.celda);
-  const fila = Math.floor((y - g.y0) / g.celda);
-  if (col < 0 || col >= g.C || fila < 0 || fila >= g.C) return -1;
-  return fila * g.C + col;
-}
-const centroX = (g, i) => { 'worklet'; return g.x0 + ((i % g.C) + 0.5) * g.celda; };
-const centroY = (g, i) => { 'worklet'; return g.y0 + (Math.floor(i / g.C) + 0.5) * g.celda; };
-// `rr` para el hilo de la interfaz (las del horneado corren en JavaScript).
-const rrw = (x, y, w, h, r) => { 'worklet'; return Skia.RRectXY(Skia.XYWHRect(x, y, w, h), r, r); };
-const saltito = (k) => { 'worklet'; const s = 1.7; const u = k - 1; return 1 + (s + 1) * u * u * u + s * u * u; };
-
-function tableroInicial(conf) {
-  const N = conf.C * conf.C;
-  for (let intento = 0; intento < 60; intento++) {
-    const b = new Array(N).fill(0);
-    const libres = () => b.map((v, i) => (v === 0 ? i : -1)).filter((i) => i >= 0);
-    for (let k = 0; k < conf.cajas; k++) { const l = libres(); b[l[Math.floor(Math.random() * l.length)]] = CAJA; }
-    for (let k = 0; k < conf.inicio; k++) { const l = libres(); b[l[Math.floor(Math.random() * l.length)]] = Math.random() < 0.3 ? 2 : 1; }
-    // Al menos dos parejas a la mano, y cada caja con espacio al lado para romperla.
-    let parejas = 0;
-    for (let i = 0; i < N; i++) for (let j = i + 1; j < N; j++) if (b[i] > 0 && b[i] === b[j] && vecinas(i, j, conf.C)) parejas++;
-    if (parejas >= 2) return b;
-  }
-  const b = new Array(N).fill(0); b[0] = 1; b[1] = 1; b[conf.C] = 2; b[conf.C + 1] = 2;
-  return b;
-}
-
-// ── Los dibujos ──────────────────────────────────────────────────────────────
-const col = (c) => Skia.Color(c);
+// ── Pinceles para el horneado (corren en JavaScript, una vez) ────────────────
+const pincel = (color) => { const p = Skia.Paint(); p.setAntiAlias(true); p.setColor(Skia.Color(color)); return p; };
+const trazo = (color, ancho) => {
+  const p = pincel(color); p.setStyle(PaintStyle.Stroke); p.setStrokeWidth(ancho); p.setStrokeCap(StrokeCap.Round); p.setStrokeJoin(StrokeJoin.Round); return p;
+};
+const degradado = (x0, y0, x1, y1, colores) => {
+  const p = Skia.Paint(); p.setAntiAlias(true);
+  p.setShader(Skia.Shader.MakeLinearGradient(Skia.Point(x0, y0), Skia.Point(x1, y1), colores.map((c) => Skia.Color(c)), null, TileMode.Clamp));
+  return p;
+};
+const radial = (x, y, r, colores) => {
+  const p = Skia.Paint(); p.setAntiAlias(true);
+  p.setShader(Skia.Shader.MakeRadialGradient(Skia.Point(x, y), r, colores.map((c) => Skia.Color(c)), null, TileMode.Clamp));
+  return p;
+};
 const rr = (x, y, w, h, r) => Skia.RRectXY(Skia.XYWHRect(x, y, w, h), r, r);
-const lineal = (x0, y0, x1, y1, cs, pos = null) => Skia.Shader.MakeLinearGradient(Skia.Point(x0, y0), Skia.Point(x1, y1), cs.map(col), pos, TileMode.Clamp);
-function pincel(color) { const p = Skia.Paint(); p.setAntiAlias(true); p.setColor(col(color)); return p; }
-function trazo(color, ancho) {
-  const p = pincel(color); p.setStyle(PaintStyle.Stroke); p.setStrokeWidth(ancho);
-  p.setStrokeCap(StrokeCap.Round); p.setStrokeJoin(StrokeJoin.Round); return p;
-}
-function degradado(x0, y0, x1, y1, cs) { const p = Skia.Paint(); p.setAntiAlias(true); p.setShader(lineal(x0, y0, x1, y1, cs)); return p; }
 
-// Una carita discreta (gota, pastilla, corazón): dos puntos y una sonrisa.
-function carita(c, x, y, k, color) {
-  const ojo = pincel(color);
-  c.drawCircle(x - k * 0.11, y, k * 0.035, ojo);
-  c.drawCircle(x + k * 0.11, y, k * 0.035, ojo);
-  const boca = Skia.Path.Make();
-  boca.moveTo(x - k * 0.07, y + k * 0.07);
-  boca.quadTo(x, y + k * 0.13, x + k * 0.07, y + k * 0.07);
-  c.drawPath(boca, trazo(color, k * 0.03));
-}
-function destello(c, x, y, r, color) {
-  const e = Skia.Path.Make(); const q = r * 0.22;
-  e.moveTo(x, y - r); e.lineTo(x + q, y - q); e.lineTo(x + r, y); e.lineTo(x + q, y + q);
-  e.lineTo(x, y + r); e.lineTo(x - q, y + q); e.lineTo(x - r, y); e.lineTo(x - q, y - q); e.close();
-  c.drawPath(e, pincel(color));
+function cruz(c, m, n, L, g, p) {
+  c.drawRRect(rr(m - g, n - L, g * 2, L * 2, g * 0.45), p);
+  c.drawRRect(rr(m - L, n - g, L * 2, g * 2, g * 0.45), p);
 }
 
-// Dibuja el ícono de una pieza dentro de un cuadro de lado k centrado en (m, n).
-function icono(c, tier, m, n, k, fuerte) {
-  switch (tier) {
-    case 1: { // Gota de agua
-      const r = k * 0.3; const cy = n + k * 0.12; const ty = n - k * 0.42;
-      const p = Skia.Path.Make();
-      p.moveTo(m, ty);
-      p.cubicTo(m + r * 0.45, ty + r * 0.85, m + r, cy - r * 0.55, m + r, cy);
-      p.cubicTo(m + r, cy + r * 0.552, m + r * 0.552, cy + r, m, cy + r);
-      p.cubicTo(m - r * 0.552, cy + r, m - r, cy + r * 0.552, m - r, cy);
-      p.cubicTo(m - r, cy - r * 0.55, m - r * 0.45, ty + r * 0.85, m, ty);
-      p.close();
-      c.drawPath(p, degradado(m, ty, m, cy + r, ['#FFFFFF', '#D8F2FF']));
-      c.drawOval(Skia.XYWHRect(m - r * 0.62, cy - r * 0.62, r * 0.3, r * 0.5), pincel('rgba(255,255,255,0.95)'));
-      carita(c, m, cy + r * 0.05, k, fuerte);
+// El dibujo de cada pieza, centrado en (m, n), en una caja de lado ~k.
+function icono(c, nivel, m, n, k, claro, fuerte) {
+  const sombra = pincel('rgba(10,20,50,0.22)');
+  switch (nivel) {
+    case 0: { // Pastilla: un disco blanco con su ranura
+      c.drawCircle(m, n + k * 0.04, k * 0.4, sombra);
+      c.drawCircle(m, n, k * 0.4, degradado(m, n - k * 0.4, m, n + k * 0.4, ['#FFFFFF', '#E1E9F5']));
+      c.drawCircle(m, n, k * 0.4, trazo('rgba(60,90,150,0.28)', k * 0.03));
+      c.drawLine(m - k * 0.26, n, m + k * 0.26, n, trazo('rgba(60,90,150,0.45)', k * 0.06));
       break;
     }
-    case 2: { // Pastilla redonda con su ranura
-      const r = k * 0.36;
-      c.drawCircle(m, n + k * 0.03, r, pincel('rgba(60,20,120,0.25)'));
-      c.drawCircle(m, n, r, degradado(m - r, n - r, m + r, n + r, ['#FFFFFF', '#E9E0FF']));
-      c.drawCircle(m, n, r * 0.8, trazo('rgba(136,98,236,0.25)', k * 0.025));
+    case 1: { // Gragea: un óvalo brillante, inclinado
       c.save(); c.rotate(-30, m, n);
-      c.drawLine(m - r * 0.62, n - r * 0.45, m + r * 0.62, n - r * 0.45, trazo('rgba(136,98,236,0.45)', k * 0.04));
+      c.drawOval(Skia.XYWHRect(m - k * 0.44, n - k * 0.26 + k * 0.04, k * 0.88, k * 0.52), sombra);
+      c.drawOval(Skia.XYWHRect(m - k * 0.44, n - k * 0.26, k * 0.88, k * 0.52), degradado(m, n - k * 0.26, m, n + k * 0.26, ['#FFE2F8', fuerte]));
+      c.drawOval(Skia.XYWHRect(m - k * 0.28, n - k * 0.2, k * 0.34, k * 0.12), pincel('rgba(255,255,255,0.75)'));
       c.restore();
-      carita(c, m, n + r * 0.12, k, fuerte);
       break;
     }
-    case 3: { // Cápsula de dos colores
-      const w = k * 0.98; const h = k * 0.42;
+    case 2: { // Cápsula: dos mitades, blanca y de color
       c.save(); c.rotate(-40, m, n);
-      c.drawRRect(rr(m - w / 2, n - h / 2 + k * 0.03, w, h, h / 2), pincel('rgba(90,0,50,0.25)'));
-      c.drawRRect(rr(m - w / 2, n - h / 2, w, h, h / 2), degradado(0, n - h / 2, 0, n + h / 2, ['#FFFFFF', '#F3E8EE']));
-      c.save(); c.clipRect(Skia.XYWHRect(m, n - h, w, h * 2), ClipOp.Intersect, true);
-      c.drawRRect(rr(m - w / 2, n - h / 2, w, h, h / 2), degradado(0, n - h / 2, 0, n + h / 2, ['#FF7DBF', '#C21F7A']));
+      const L = k * 0.5; const A = k * 0.21;
+      c.drawRRect(rr(m - L, n - A + k * 0.04, L * 2, A * 2, A), sombra);
+      c.drawRRect(rr(m - L, n - A, L * 2, A * 2, A), degradado(m, n - A, m, n + A, ['#FFFFFF', '#E6ECF5']));
+      c.save(); c.clipRect(Skia.XYWHRect(m, n - A - 1, L + 1, A * 2 + 2), ClipOp.Intersect, true);
+      c.drawRRect(rr(m - L, n - A, L * 2, A * 2, A), degradado(m, n - A, m, n + A, [claro, fuerte]));
       c.restore();
-      c.drawLine(m, n - h / 2 + 1, m, n + h / 2 - 1, trazo('rgba(120,0,60,0.25)', k * 0.025));
-      c.drawRRect(rr(m - w * 0.38, n - h * 0.32, w * 0.76, h * 0.18, h * 0.09), pincel('rgba(255,255,255,0.75)'));
-      c.restore();
-      break;
-    }
-    case 4: { // Frasco de jarabe con etiqueta
-      const bx = m - k * 0.3; const by = n - k * 0.12; const bw = k * 0.6; const bh = k * 0.56;
-      c.drawRRect(rr(m - k * 0.12, n - k * 0.27, k * 0.24, k * 0.2, k * 0.04), pincel('#FFF6EC'));
-      c.drawRRect(rr(m - k * 0.17, n - k * 0.44, k * 0.34, k * 0.18, k * 0.06), degradado(0, n - k * 0.44, 0, n - k * 0.26, ['#FF9A52', '#C2541A']));
-      c.drawRRect(rr(bx, by, bw, bh, k * 0.13), pincel('rgba(255,250,244,0.96)'));
-      c.save(); c.clipRRect(rr(bx, by, bw, bh, k * 0.13), ClipOp.Intersect, true);
-      c.drawRect(Skia.XYWHRect(bx, by + bh * 0.42, bw, bh), degradado(0, by + bh * 0.42, 0, by + bh, ['#FFA24C', '#D9531A']));
-      c.restore();
-      c.drawRRect(rr(m - k * 0.2, by + bh * 0.2, k * 0.4, bh * 0.36, k * 0.05), pincel('#FFFFFF'));
-      const cr = pincel(fuerte); const g = k * 0.045;
-      c.drawRect(Skia.XYWHRect(m - g, by + bh * 0.25, g * 2, bh * 0.26), cr);
-      c.drawRect(Skia.XYWHRect(m - bh * 0.13, by + bh * 0.38 - g, bh * 0.26, g * 2), cr);
-      c.drawRRect(rr(bx + bw * 0.1, by + bh * 0.1, bw * 0.12, bh * 0.7, bw * 0.06), pincel('rgba(255,255,255,0.6)'));
-      break;
-    }
-    case 5: { // Curita
-      const w = k * 1.02; const h = k * 0.38;
-      c.save(); c.rotate(-35, m, n);
-      c.drawRRect(rr(m - w / 2, n - h / 2 + k * 0.03, w, h, h / 2), pincel('rgba(0,70,50,0.25)'));
-      c.drawRRect(rr(m - w / 2, n - h / 2, w, h, h / 2), degradado(0, n - h / 2, 0, n + h / 2, ['#FFE9D2', '#F2C79C']));
-      c.drawRRect(rr(m - w * 0.17, n - h * 0.36, w * 0.34, h * 0.72, h * 0.12), pincel('#FFF8F0'));
-      const hoyo = pincel('rgba(180,120,70,0.45)');
-      for (const dx of [-0.34, -0.27, 0.27, 0.34]) for (const dy of [-0.14, 0.14]) c.drawCircle(m + w * dx, n + h * dy, k * 0.022, hoyo);
-      c.drawRRect(rr(m - w * 0.4, n - h * 0.38, w * 0.8, h * 0.16, h * 0.08), pincel('rgba(255,255,255,0.55)'));
+      c.drawLine(m, n - A, m, n + A, trazo('rgba(0,0,0,0.15)', k * 0.025));
+      c.drawRRect(rr(m - L * 0.8, n - A * 0.65, L * 1.6, A * 0.42, A * 0.2), pincel('rgba(255,255,255,0.55)'));
       c.restore();
       break;
     }
-    case 6: { // Termómetro
-      c.save(); c.rotate(35, m, n);
-      const tw = k * 0.22; const ty = n - k * 0.46; const th = k * 0.72;
-      c.drawRRect(rr(m - tw / 2, ty, tw, th, tw / 2), pincel('#FFFFFF'));
-      c.drawCircle(m, n + k * 0.3, k * 0.17, pincel('#FFFFFF'));
-      c.drawCircle(m, n + k * 0.3, k * 0.12, degradado(m, n + k * 0.18, m, n + k * 0.42, ['#FF6B6B', '#D61F35']));
-      c.drawRRect(rr(m - tw * 0.2, n - k * 0.12, tw * 0.4, k * 0.44, tw * 0.2), pincel('#E8323F'));
-      const raya = trazo('rgba(75,93,220,0.45)', k * 0.025);
-      for (let j = 0; j < 4; j++) c.drawLine(m + tw * 0.12, ty + k * (0.1 + j * 0.09), m + tw * 0.38, ty + k * (0.1 + j * 0.09), raya);
-      c.drawRRect(rr(m - tw * 0.38, ty + tw * 0.3, tw * 0.16, th * 0.5, tw * 0.08), pincel('rgba(200,210,255,0.8)'));
-      c.restore();
+    case 3: { // Perla: la cápsula blanda, dorada y translúcida
+      c.drawOval(Skia.XYWHRect(m - k * 0.36, n - k * 0.3 + k * 0.05, k * 0.72, k * 0.6), sombra);
+      c.drawOval(Skia.XYWHRect(m - k * 0.36, n - k * 0.3, k * 0.72, k * 0.6), radial(m - k * 0.1, n - k * 0.12, k * 0.5, ['#FFF7D0', '#F5BF1C', '#B07C00']));
+      c.drawLine(m - k * 0.36, n, m + k * 0.36, n, trazo('rgba(140,90,0,0.3)', k * 0.02));
+      c.drawOval(Skia.XYWHRect(m - k * 0.22, n - k * 0.22, k * 0.22, k * 0.13), pincel('rgba(255,255,255,0.85)'));
       break;
     }
-    case 7: { // Estetoscopio
-      const t = trazo('#FFFFFF', k * 0.085);
-      const u = Skia.Path.Make();
-      u.moveTo(m - k * 0.32, n - k * 0.38);
-      u.cubicTo(m - k * 0.32, n + k * 0.04, m + k * 0.16, n + k * 0.04, m + k * 0.16, n - k * 0.38);
-      c.drawPath(u, t);
-      const tubo = Skia.Path.Make();
-      tubo.moveTo(m - k * 0.08, n - k * 0.07);
-      tubo.cubicTo(m - k * 0.08, n + k * 0.42, m + k * 0.3, n + k * 0.42, m + k * 0.3, n + k * 0.16);
-      c.drawPath(tubo, t);
-      const tapa = pincel('#FFFFFF');
-      c.drawCircle(m - k * 0.32, n - k * 0.4, k * 0.06, tapa);
-      c.drawCircle(m + k * 0.16, n - k * 0.4, k * 0.06, tapa);
-      c.drawCircle(m + k * 0.3, n + k * 0.07, k * 0.15, tapa);
-      c.drawCircle(m + k * 0.3, n + k * 0.07, k * 0.09, degradado(m + k * 0.2, n, m + k * 0.4, n + k * 0.16, ['#8C9CFF', '#3346B8']));
-      c.drawCircle(m + k * 0.27, n + k * 0.04, k * 0.03, pincel('rgba(255,255,255,0.9)'));
-      break;
-    }
-    case 8: { // Botiquín
-      c.drawRRect(rr(m - k * 0.17, n - k * 0.37, k * 0.34, k * 0.22, k * 0.07), trazo('#FFFFFF', k * 0.07));
-      const by = n - k * 0.2; const bh = k * 0.6;
-      c.drawRRect(rr(m - k * 0.44, by + k * 0.03, k * 0.88, bh, k * 0.12), pincel('rgba(90,0,60,0.25)'));
-      c.drawRRect(rr(m - k * 0.44, by, k * 0.88, bh, k * 0.12), degradado(0, by, 0, by + bh, ['#FFFFFF', '#FBE3F2']));
-      c.drawRect(Skia.XYWHRect(m - k * 0.44, by + bh * 0.16, k * 0.88, k * 0.03), pincel('rgba(190,22,139,0.18)'));
-      const cy = by + bh * 0.56; const g = k * 0.075; const L = k * 0.2;
-      const cruz = pincel(fuerte);
-      c.drawRRect(rr(m - g, cy - L, g * 2, L * 2, g * 0.5), cruz);
-      c.drawRRect(rr(m - L, cy - g, L * 2, g * 2, g * 0.5), cruz);
-      break;
-    }
-    case 9: { // Corazón sano, dorado, con su latido
+    case 4: { // Sobre: un sachet con bordes en zigzag y su cruz
+      const w = k * 0.42; const h = k * 0.4; const z = k * 0.06;
       const p = Skia.Path.Make();
-      p.moveTo(m, n + k * 0.38);
-      p.cubicTo(m - k * 0.6, n + k * 0.0, m - k * 0.44, n - k * 0.46, m, n - k * 0.2);
-      p.cubicTo(m + k * 0.44, n - k * 0.46, m + k * 0.6, n + k * 0.0, m, n + k * 0.38);
+      p.moveTo(m - w, n - h);
+      for (let i = 0; i < 6; i++) { p.lineTo(m - w + ((i + 0.5) * 2 * w) / 6, n - h - z); p.lineTo(m - w + ((i + 1) * 2 * w) / 6, n - h); }
+      p.lineTo(m + w, n + h);
+      for (let i = 0; i < 6; i++) { p.lineTo(m + w - ((i + 0.5) * 2 * w) / 6, n + h + z); p.lineTo(m + w - ((i + 1) * 2 * w) / 6, n + h); }
       p.close();
-      const brillo = pincel('rgba(255,214,90,0.35)');
-      brillo.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, k * 0.08, true));
-      c.drawPath(p, brillo);
-      c.drawPath(p, degradado(m, n - k * 0.4, m, n + k * 0.4, ['#FFF7BF', '#FFC928', '#E58E00']));
-      c.drawPath(p, trazo('rgba(255,255,255,0.7)', k * 0.025));
-      const ecg = Skia.Path.Make();
-      ecg.moveTo(m - k * 0.3, n + k * 0.02); ecg.lineTo(m - k * 0.12, n + k * 0.02); ecg.lineTo(m - k * 0.06, n - k * 0.12);
-      ecg.lineTo(m + k * 0.03, n + k * 0.14); ecg.lineTo(m + k * 0.09, n - k * 0.02); ecg.lineTo(m + k * 0.3, n - k * 0.02);
-      c.drawPath(ecg, trazo('#FFFFFF', k * 0.05));
-      c.drawOval(Skia.XYWHRect(m - k * 0.3, n - k * 0.26, k * 0.14, k * 0.09), pincel('rgba(255,255,255,0.8)'));
-      destello(c, m + k * 0.38, n - k * 0.36, k * 0.1, '#FFF3B0');
-      destello(c, m - k * 0.4, n + k * 0.28, k * 0.07, '#FFF3B0');
+      c.save(); c.translate(0, k * 0.04); c.drawPath(p, sombra); c.restore();
+      c.drawPath(p, degradado(m, n - h, m, n + h, ['#FFFFFF', '#E7EEF6']));
+      c.drawLine(m - w, n - h * 0.55, m + w, n - h * 0.55, trazo('rgba(0,0,0,0.12)', k * 0.025));
+      cruz(c, m, n + h * 0.15, k * 0.17, k * 0.06, pincel(fuerte));
       break;
     }
-    default: { // La caja de cartón con su cinta
-      c.drawRect(Skia.XYWHRect(m - k * 0.12, n - k * 0.5, k * 0.24, k), pincel('rgba(255,240,210,0.75)'));
-      c.drawLine(m - k * 0.12, n - k * 0.5, m - k * 0.12, n + k * 0.5, trazo('rgba(120,70,30,0.3)', k * 0.02));
-      c.drawLine(m + k * 0.12, n - k * 0.5, m + k * 0.12, n + k * 0.5, trazo('rgba(120,70,30,0.3)', k * 0.02));
-      c.drawLine(m - k * 0.5, n - k * 0.18, m - k * 0.2, n - k * 0.18, trazo('rgba(120,70,30,0.25)', k * 0.025));
-      c.drawLine(m + k * 0.2, n - k * 0.18, m + k * 0.5, n - k * 0.18, trazo('rgba(120,70,30,0.25)', k * 0.025));
+    case 5: { // Pomada: el tubo con su tapa
+      c.save(); c.rotate(-35, m, n);
+      const L = k * 0.52; const A = k * 0.2;
+      const p = Skia.Path.Make();
+      p.moveTo(m - L, n - A * 1.15); p.lineTo(m + L * 0.55, n - A); p.lineTo(m + L * 0.55, n + A); p.lineTo(m - L, n + A * 1.15); p.close();
+      c.save(); c.translate(0, k * 0.04); c.drawPath(p, sombra); c.restore();
+      c.drawPath(p, degradado(m, n - A, m, n + A, ['#FFFFFF', '#E3EAF3']));
+      c.drawRect(Skia.XYWHRect(m - L * 0.35, n - A, L * 0.5, A * 2), pincel(fuerte));
+      for (let i = 0; i < 3; i++) c.drawLine(m - L + k * 0.04 + i * k * 0.04, n - A * 1.1, m - L + k * 0.04 + i * k * 0.04, n + A * 1.1, trazo('rgba(0,0,0,0.14)', k * 0.018));
+      c.drawRRect(rr(m + L * 0.55, n - A * 0.7, L * 0.45, A * 1.4, A * 0.3), degradado(m, n - A, m, n + A, [claro, fuerte]));
+      c.restore();
+      break;
+    }
+    case 6: { // Jarabe: el frasco ámbar con su etiqueta
+      const w = k * 0.3; const top = n - k * 0.08; const h = k * 0.5;
+      c.drawRRect(rr(m - w, top + k * 0.04, w * 2, h, k * 0.1), sombra);
+      c.drawRect(Skia.XYWHRect(m - k * 0.1, n - k * 0.3, k * 0.2, k * 0.24), degradado(m, 0, m + 1, 0, ['#E59A4E', '#A4501A']));
+      c.drawRRect(rr(m - k * 0.14, n - k * 0.44, k * 0.28, k * 0.15, k * 0.04), degradado(m, n - k * 0.44, m, n - k * 0.29, [claro, fuerte]));
+      c.drawRRect(rr(m - w, top, w * 2, h, k * 0.1), degradado(m - w, top, m + w, top, ['#F0A85A', '#A4501A']));
+      c.drawRRect(rr(m - w * 0.78, top + h * 0.28, w * 1.56, h * 0.46, k * 0.04), pincel('#FFFFFF'));
+      c.drawLine(m - w * 0.5, top + h * 0.44, m + w * 0.5, top + h * 0.44, trazo(fuerte, k * 0.04));
+      c.drawLine(m - w * 0.5, top + h * 0.58, m + w * 0.2, top + h * 0.58, trazo('rgba(0,0,0,0.2)', k * 0.03));
+      c.drawRect(Skia.XYWHRect(m - w * 0.75, top + k * 0.04, w * 0.18, h * 0.8), pincel('rgba(255,255,255,0.35)'));
+      break;
+    }
+    case 7: { // Frasco de pastillas: tapa con estrías y etiqueta
+      const w = k * 0.32; const top = n - k * 0.2; const h = k * 0.56;
+      c.drawRRect(rr(m - w, top + k * 0.04, w * 2, h, k * 0.08), sombra);
+      c.drawRRect(rr(m - w, top, w * 2, h, k * 0.08), degradado(m - w, 0, m + w, 0, ['#FFFFFF', '#DCE5F0']));
+      c.drawRect(Skia.XYWHRect(m - w, top + h * 0.3, w * 2, h * 0.42), pincel(fuerte));
+      c.drawCircle(m, top + h * 0.51, k * 0.1, pincel('#FFFFFF'));
+      c.drawLine(m - k * 0.06, top + h * 0.51, m + k * 0.06, top + h * 0.51, trazo(fuerte, k * 0.03));
+      c.drawRRect(rr(m - w * 1.08, n - k * 0.4, w * 2.16, k * 0.2, k * 0.05), degradado(m, n - k * 0.4, m, n - k * 0.2, ['#FFFFFF', '#C9D4E2']));
+      for (let i = 1; i < 6; i++) c.drawLine(m - w * 1.08 + (i * w * 2.16) / 6, n - k * 0.37, m - w * 1.08 + (i * w * 2.16) / 6, n - k * 0.23, trazo('rgba(0,0,0,0.13)', k * 0.02));
+      break;
+    }
+    case 8: { // Caja de medicina: frente, tapa en perspectiva, franja y cruz
+      const w = k * 0.42; const top = n - k * 0.12; const h = k * 0.44; const d = k * 0.14;
+      c.drawRect(Skia.XYWHRect(m - w, top + k * 0.05, w * 2, h), sombra);
+      const tapa = Skia.Path.Make();
+      tapa.moveTo(m - w, top); tapa.lineTo(m - w + d, top - d); tapa.lineTo(m + w + d * 0.4, top - d); tapa.lineTo(m + w, top); tapa.close();
+      c.drawPath(tapa, pincel('#F4F8FC'));
+      c.drawRect(Skia.XYWHRect(m - w, top, w * 2, h), degradado(m, top, m, top + h, ['#FFFFFF', '#E2E9F2']));
+      c.drawRect(Skia.XYWHRect(m - w, top + h * 0.62, w * 2, h * 0.2), pincel(fuerte));
+      cruz(c, m - w * 0.45, top + h * 0.32, k * 0.1, k * 0.035, pincel(fuerte));
+      c.drawLine(m - w * 0.05, top + h * 0.26, m + w * 0.7, top + h * 0.26, trazo('rgba(0,0,0,0.25)', k * 0.03));
+      c.drawLine(m - w * 0.05, top + h * 0.42, m + w * 0.45, top + h * 0.42, trazo('rgba(0,0,0,0.15)', k * 0.025));
+      break;
+    }
+    default: { // Cruz de farmacia: la cruz verde, con su luz
+      const L = k * 0.46; const g = k * 0.16;
+      const luz = pincel('rgba(200,255,120,0.55)');
+      luz.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, k * 0.08, true));
+      cruz(c, m, n, L, g, luz);
+      cruz(c, m, n, L, g, degradado(m, n - L, m, n + L, ['#D4F57A', VERDE, fuerte]));
+      const borde = trazo('rgba(255,255,255,0.85)', k * 0.03);
+      c.drawRRect(rr(m - g, n - L, g * 2, L * 2, g * 0.45), borde);
+      c.drawRRect(rr(m - L, n - g, L * 2, g * 2, g * 0.45), borde);
+      cruz(c, m, n, L - k * 0.05, g - k * 0.05, degradado(m, n - L, m, n + L, ['#D4F57A', VERDE, fuerte]));
+      c.drawRRect(rr(m - g * 0.6, n - L * 0.85, g * 1.2, L * 0.4, g * 0.3), pincel('rgba(255,255,255,0.4)'));
     }
   }
 }
 
-// Una pieza (o la caja) como imagen de lado S, con su sombra suave horneada.
-function hornear(S, tier) {
+// Una pieza como imagen de diámetro D (a la densidad del teléfono): el disco
+// de su color con el borde de vidrio, el dibujo adentro y un brillo arriba.
+function hornearPieza(nivel, D) {
   const d = PixelRatio.get();
-  const sup = Skia.Surface.Make(Math.ceil(S * d), Math.ceil(S * d));
+  const lado = Math.max(4, Math.ceil(D * d));
+  const sup = Skia.Surface.Make(lado, lado);
   if (!sup) return null;
   const c = sup.getCanvas();
-  c.scale(d, d);
-  const m = S / 2; const T = S * 0.82; const x = m - T / 2; const y = m - T / 2 - S * 0.025; const r = T * 0.3;
-  const sombra = pincel('rgba(10,0,35,0.4)');
-  sombra.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, S * 0.035, true));
-  c.drawRRect(rr(x + S * 0.01, y + S * 0.055, T, T, r), sombra);
-  const [claro, fuerte] = tier === CAJA ? TONO_CAJA : COLORES[tier];
-  c.drawRRect(rr(x, y, T, T, r), degradado(x, y, x + T * 0.6, y + T, [claro, fuerte]));
-  c.save(); c.clipRRect(rr(x, y, T, T, r), ClipOp.Intersect, true);
-  if (tier === CAJA) icono(c, CAJA, m, y + T / 2, T, fuerte);
-  c.restore();
-  // El brillo de arriba y un borde claro: el «vidrio» de la pieza.
-  c.drawRRect(rr(x + T * 0.07, y + T * 0.05, T * 0.86, T * 0.42, r * 0.8), degradado(0, y, 0, y + T * 0.47, ['rgba(255,255,255,0.42)', 'rgba(255,255,255,0)']));
-  c.drawRRect(rr(x + 0.7, y + 0.7, T - 1.4, T - 1.4, r), trazo(tier === MAX ? '#FFD86B' : 'rgba(255,255,255,0.55)', tier === MAX ? S * 0.03 : 1.2));
-  if (tier !== CAJA) icono(c, tier, m, y + T / 2, T * 0.66, fuerte);
+  c.scale(lado / D, lado / D);
+  const R = D / 2; const m = R;
+  const [claro, fuerte] = COLORES[nivel];
+  c.drawCircle(m, m, R - 0.4, radial(m - R * 0.3, m - R * 0.4, R * 1.5, [claro, fuerte]));
+  c.drawCircle(m, m, R - Math.max(1, R * 0.06), trazo('rgba(0,0,0,0.14)', Math.max(1, R * 0.05)));
+  c.drawCircle(m, m, R - 0.8, trazo(nivel === MAX ? '#FFFFFF' : 'rgba(255,255,255,0.6)', Math.max(1, R * (nivel === MAX ? 0.07 : 0.04))));
+  icono(c, nivel, m, m + R * 0.02, R * 1.3, claro, fuerte);
+  c.drawOval(Skia.XYWHRect(m - R * 0.55, m - R * 0.82, R * 0.75, R * 0.32), pincel('rgba(255,255,255,0.28)'));
   sup.flush();
   return sup.makeImageSnapshot();
 }
-function hornearTodo(S) {
-  const items = [null];
-  for (let t = 1; t <= MAX; t++) items.push(hornear(S, t));
-  const caja = hornear(S, CAJA);
-  if (items.some((x, i) => i > 0 && !x) || !caja) return null;
-  return { items, caja, S, src: Skia.XYWHRect(0, 0, items[1].width(), items[1].height()) };
-}
-// El tablero de fondo: un panel de vidrio con sus casillas.
-function hornearFondo(g) {
-  const d = PixelRatio.get();
-  const sup = Skia.Surface.Make(Math.ceil(g.lado * d), Math.ceil(g.lado * d));
-  if (!sup) return null;
-  const c = sup.getCanvas();
-  c.scale(d, d);
-  c.drawRRect(rr(0, 0, g.lado, g.lado, 26), degradado(0, 0, g.lado, g.lado, ['rgba(255,255,255,0.13)', 'rgba(255,255,255,0.06)']));
-  c.drawRRect(rr(0.5, 0.5, g.lado - 1, g.lado - 1, 26), trazo('rgba(255,255,255,0.2)', 1));
-  const p = g.pad; const e = g.celda;
-  for (let i = 0; i < g.C * g.C; i++) {
-    const x = p + (i % g.C) * e; const y = p + Math.floor(i / g.C) * e;
-    c.drawRRect(rr(x + e * 0.06, y + e * 0.06, e * 0.88, e * 0.88, e * 0.24), pincel('rgba(10,0,40,0.16)'));
-    c.drawRRect(rr(x + e * 0.06, y + e * 0.06, e * 0.88, e * 0.88, e * 0.24), trazo('rgba(255,255,255,0.08)', 1));
+function hornearPiezas(escala) {
+  const piezas = []; const src = [];
+  for (let n = 0; n <= MAX; n++) {
+    const img = hornearPieza(n, RADIOS[n] * 2 * escala);
+    if (!img) return null;
+    piezas.push(img); src.push(Skia.XYWHRect(0, 0, img.width(), img.height()));
   }
-  sup.flush();
-  return sup.makeImageSnapshot();
+  return { piezas, src };
 }
 
-function medida(caja, C) {
-  if (!caja) return null;
-  const lado = Math.floor(Math.min(caja.w, caja.h));
-  const pad = Math.max(6, lado * 0.025);
-  const celda = (lado - pad * 2) / C;
-  const ox = (caja.w - lado) / 2; const oy = (caja.h - lado) / 2;
-  return { w: caja.w, h: caja.h, C, lado, pad, celda, ox, oy, x0: ox + pad, y0: oy + pad };
+// El botiquín: fondo de vidrio con una cruz grande y tenue, paredes blancas
+// de estuche y la cruz verde en la base. Se graba una vez por medida.
+function grabarBotiquin(g) {
+  const rec = Skia.PictureRecorder();
+  const c = rec.beginRecording(Skia.XYWHRect(0, 0, g.W, g.H));
+  const { ox, oy, S } = g; const P = PARED * S; const H = ALTO * S;
+  c.drawRRect(rr(ox, oy - P * 0.4, S, H + P * 0.4, P * 0.6), degradado(0, oy, 0, oy + H, ['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.15)']));
+  cruz(c, ox + S / 2, oy + H * 0.58, S * 0.26, S * 0.085, pincel('rgba(255,255,255,0.06)'));
+  const sombra = pincel('rgba(0,10,20,0.35)');
+  sombra.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, P * 0.8, true));
+  c.drawRRect(rr(ox - P, oy + H + P * 0.6, S + P * 2, P, P * 0.5), sombra);
+  const pared = degradado(0, oy, 0, oy + H, ['#FFFFFF', '#D9E2EE']);
+  c.drawRRect(rr(ox - P, oy - P * 0.6, P, H + P * 1.6, P * 0.5), pared);
+  c.drawRRect(rr(ox + S, oy - P * 0.6, P, H + P * 1.6, P * 0.5), pared);
+  c.drawRRect(rr(ox - P, oy + H, S + P * 2, P, P * 0.5), degradado(0, oy + H, 0, oy + H + P, ['#E9EFF6', '#C9D4E2']));
+  // Los broches de arriba y la cruz de la base.
+  c.drawRRect(rr(ox - P * 1.25, oy - P * 0.2, P * 1.5, P * 0.9, P * 0.3), pincel(VERDE));
+  c.drawRRect(rr(ox + S - P * 0.25, oy - P * 0.2, P * 1.5, P * 0.9, P * 0.3), pincel(VERDE));
+  cruz(c, ox + S / 2, oy + H + P / 2, P * 0.36, P * 0.13, pincel(T['logo-green-solid']));
+  return rec.finishRecordingAsPicture();
 }
 
-// ── La cadena de abajo: las nueve piezas, las ya vistas encendidas ─────────────
-function Cadena({ sprites, max, meta }) {
+function medir(W, H) {
+  if (!W || !H) return null;
+  const S = Math.floor(Math.min(W / (1 + PARED * 2 + 0.04), H / (ZONA + ALTO + PARED + 0.04)));
+  const usado = S * (ZONA + ALTO + PARED);
+  return { W, H, S, ox: (W - S) / 2, oy: (H - usado) / 2 + S * ZONA };
+}
+
+// La cadena de la portada y del final: las diez en una sola imagen.
+function Cadena({ chicas, mayor }) {
   const [w, setW] = useState(0);
-  const gap = 5;
-  const s = w ? Math.min(46, (w - gap * 8) / 9) : 0;
+  const gap = 4;
+  const s = w ? Math.min(44, (w - gap * 4) / 5) : 0;
   const pic = useMemo(() => {
-    if (!w || !sprites) return null;
+    if (!w || !chicas) return null;
     const rec = Skia.PictureRecorder();
-    const c = rec.beginRecording(Skia.XYWHRect(0, 0, w, s + 8));
-    const x0 = (w - (s * 9 + gap * 8)) / 2;
+    const c = rec.beginRecording(Skia.XYWHRect(0, 0, w, s * 2 + gap));
+    const x0 = (w - (s * 5 + gap * 4)) / 2;
     const p = Skia.Paint();
-    for (let i = 1; i <= MAX; i++) {
-      const x = x0 + (i - 1) * (s + gap);
-      p.setAlphaf(i <= max ? 1 : 0.32);
-      c.drawImageRectOptions(sprites.items[i], sprites.src, Skia.XYWHRect(x, 4, s, s), FilterMode.Linear, MipmapMode.Linear, p);
-      if (i === meta) c.drawRRect(rr(x - 1, 3, s + 2, s + 2, s * 0.32), trazo('#FFFFFF', 2));
+    for (let i = 0; i <= MAX; i++) {
+      const x = x0 + (i % 5) * (s + gap); const y = Math.floor(i / 5) * (s + gap);
+      p.setAlphaf(mayor == null || i <= mayor ? 1 : 0.3);
+      c.drawImageRectOptions(chicas.piezas[i], chicas.src[i], Skia.XYWHRect(x, y, s, s), FilterMode.Linear, MipmapMode.Linear, p);
     }
     return rec.finishRecordingAsPicture();
-  }, [w, s, sprites, max, meta]);
+  }, [w, s, chicas, mayor]);
   return (
-    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: (s || 40) + 8 }} accessible
-      accessibilityLabel={`La cadena: ${NOMBRES.slice(1).join(', ')}. Llevas hasta ${NOMBRES[max] ?? 'la gota'}.`}>
+    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: (s || 40) * 2 + gap }} accessible
+      accessibilityLabel={`La cadena: ${NOMBRES.join(', ')}.${mayor != null ? ` Tu pieza más grande: ${NOMBRES[mayor]}.` : ''}`}>
       {pic ? <Canvas style={{ flex: 1 }}><Picture picture={pic} /></Canvas> : null}
     </View>
   );
 }
 
-function Pieza({ sprites, tier, tam = 56 }) {
-  if (!sprites) return <View style={{ width: tam, height: tam }} />;
+function PiezaChica({ chicas, nivel, tam = 34 }) {
+  if (!chicas) return <View style={{ width: tam, height: tam }} />;
   return (
     <Canvas style={{ width: tam, height: tam }}>
-      <ImagenSkia image={tier === CAJA ? sprites.caja : sprites.items[tier]} x={0} y={0} width={tam} height={tam} fit="contain" />
+      <ImagenSkia image={chicas.piezas[nivel]} x={0} y={0} width={tam} height={tam} fit="contain" />
     </Canvas>
-  );
-}
-
-function Estrellas({ n, tam = 30 }) {
-  return (
-    <View style={{ flexDirection: 'row', gap: 6 }} accessibilityLabel={`${n} de 3 estrellas`}>
-      {[1, 2, 3].map((k) => <Icono key={k} sf="star.fill" respaldo="★" tam={tam} color={k <= n ? '#FFD86B' : 'rgba(255,255,255,0.25)'} />)}
-    </View>
   );
 }
 
@@ -447,660 +312,342 @@ function BotonChico({ sf, etiqueta, alTocar }) {
   );
 }
 
+// La foto que cruza al hilo de la interfaz en cada cuadro: sólo números, 5 por
+// pieza (nivel, x, y, giro, escala) y 5 por anillo (x, y, radio, nivel, avance).
+// El saltito de una pieza recién unida y el avance de los anillos se calculan
+// acá, así el dibujo no recorre nada que no vaya a pintar.
+function fotografiar(m, mov, cuelga) {
+  const cs = m.cuerpos; const c = new Array(cs.length * 5); let k = 0;
+  for (let i = 0; i < cs.length; i++) {
+    const b = cs[i]; let esc = 1;
+    if (b.junta && mov) { const q = (m.t - b.nace) / 0.28; if (q < 1) esc = 1 + 0.18 * Math.sin(q * Math.PI); }
+    c[k++] = b.n; c[k++] = b.x; c[k++] = b.y; c[k++] = b.ang; c[k++] = esc;
+  }
+  const a = [];
+  if (mov) {
+    for (let i = 0; i < m.anillos.length; i++) {
+      const r = m.anillos[i]; const q = (m.t - r.t) / 0.5;
+      if (q >= 0 && q < 1) a.push(r.x, r.y, r.r, r.n, q);
+    }
+  }
+  return {
+    t: m.t, peligro: m.peligro, actual: m.actual, c, a,
+    cuelga: cuelga && !m.perdio,
+    lista: m.t - m.ultimaSoltada >= PAUSA_SOLTAR,
+  };
+}
+
 export default function Botiquin() {
   const quieta = useSinMovimiento();
-  const [fase, setFase] = useState('portada'); // portada · jugando
-  const [modo, setModo] = useState('niveles');
-  const [nivel, setNivel] = useState(1);
-  const [abierto, setAbierto] = useState(1);
-  const [estrellas, setEstrellas] = useState({});
-  const [record, setRecord] = useState(0);
-  const [conf, setConf] = useState(NIVELES[0]);
-  const [vista, setVista] = useState({ movs: 0, creados: 0, rotas: 0, puntos: 0, max: 1, combo: 0 });
-  const [fin, setFin] = useState(null); // { tipo: 'gano' | 'movs' | 'lleno' | 'relax', estrellas, nuevoRecord }
+  const visible = useVisible();
+  const [fase, setFase] = useState('portada'); // portada · jugando · fin
   const [pausa, setPausa] = useState(false);
+  const [puntos, setPuntos] = useState(0);
+  const [record, setRecord] = useState(0);
+  const [mayorHistorico, setMayorHistorico] = useState(null);
+  const [nuevoRecord, setNuevoRecord] = useState(false);
+  const [actual, setActual] = useState(0);
+  const [siguiente, setSiguiente] = useState(0);
+  const [mayor, setMayor] = useState(0);
+  const [cuantas, setCuantas] = useState(0);
   const [aviso, setAviso] = useState(null);
-  const [novedad, setNovedad] = useState(null); // { k, tier }
   const [festejo, setFestejo] = useState(0);
   const [caja, setCaja] = useState(null);
-  const juego = useRef({ movs: 0, creados: 0, rotas: 0, puntos: 0, max: 1, combo: 0, vistos: 1 });
-  const confRef = useRef(NIVELES[0]);
-  const modoRef = useRef('niveles');
-  const nivelRef = useRef(1);
   const recordRef = useRef(0);
-  const relojes = useRef([]);
-  const luego = (fn, ms) => { relojes.current.push(setTimeout(fn, ms)); };
+  const mayorHistRef = useRef(-1);
+  const racha = useRef({ n: 0, t: 0 });
+  const mayorRef = useRef(0);
 
-  // El tablero vive en el hilo de la interfaz.
-  const tablero = useSharedValue([]);
-  const nacio = useSharedValue([]);
-  const fusion = useSharedValue([]);
-  const roto = useSharedValue([]);
-  const arr = useSharedValue({ i: -1, tier: 0, dx: 0, dy: 0, t: 0 });
-  const dedo = useSharedValue({ x: 0, y: 0 });
-  const vuelta = useSharedValue(null);
-  const golpe = useSharedValue(null);
-  const chispas = useSharedValue([]);
-  const guia = useSharedValue(null); // la mano del primer nivel: { o, d }
-  const p2 = useSharedValue(0.25);
-  const bloqueada = useSharedValue(true);
+  // El mundo vive en JavaScript (lib/caida.js) y el hilo de la interfaz sólo
+  // DIBUJA una foto compacta que se le pasa en cada cuadro. Hasta la build 94
+  // la física corría en el hilo de la interfaz (`mundo.modify` dentro de
+  // `useFrameCallback`) y el juego se cerraba al iniciarlo: un error ahí no se
+  // puede atrapar y tumba la app entera. Éste es el patrón del Botiquín
+  // anterior —lógica en JavaScript, sólo el cuadro en el otro hilo—, que nunca
+  // se cayó. El costo de cruzar la foto es chico: 5 números por pieza.
+  const mundo = useRef(null);
+  const foto = useSharedValue(null);
   const geoV = useSharedValue(null);
   const imgs = useSharedValue(null);
-  const tiempo = useSharedValue(0);
-  const ahora = useSharedValue(0);
-  const hasta = useSharedValue(0);
-  const acum = useSharedValue(0);
-  const respira = useSharedValue(!quieta);
-  useEffect(() => { respira.value = !quieta; }, [quieta, respira]);
+  const apunta = useSharedValue(0.5); // dónde se va a soltar, en anchos
+  const enJuego = useSharedValue(false);
+  const enJuegoRef = useRef(false);
+  const animar = useSharedValue(!quieta);
+  const animarRef = useRef(!quieta);
+  useEffect(() => { animar.value = !quieta; animarRef.current = !quieta; }, [quieta, animar]);
 
   useEffect(() => {
     precargar(SONIDOS);
-    SecureStore.getItemAsync(CLAVE_NIVEL).then((v) => { const n = Math.max(1, Number(v) || 1); setAbierto(n); setNivel(n); nivelRef.current = n; }).catch(() => {});
     SecureStore.getItemAsync(CLAVE_RECORD).then((v) => { const n = Number(v) || 0; recordRef.current = n; setRecord(n); }).catch(() => {});
-    SecureStore.getItemAsync(CLAVE_ESTRELLAS).then((v) => { try { const e = JSON.parse(v || '{}'); if (e && typeof e === 'object') setEstrellas(e); } catch { /* vacío */ } }).catch(() => {});
-    return () => { relojes.current.forEach(clearTimeout); callar(SONIDOS); };
+    SecureStore.getItemAsync(CLAVE_MAYOR).then((v) => { if (v != null && v !== '') { const n = Number(v); if (Number.isFinite(n)) { mayorHistRef.current = n; setMayorHistorico(n); } } }).catch(() => {});
+    return () => callar(SONIDOS);
   }, []);
 
-  // Las piezas de la portada y de la cadena: una vez.
-  const chicas = useMemo(() => hornearTodo(56), []);
-
-  const geo = useMemo(() => medida(caja, conf.C), [caja, conf.C]);
-  useEffect(() => { geoV.value = geo; }, [geo, geoV]);
+  const chicas = useMemo(() => hornearPiezas(22), []); // diámetro ~44 para la portada
+  const geo = useMemo(() => (caja ? medir(caja.w, caja.h) : null), [caja]);
   useEffect(() => {
     if (!geo) return;
-    const s = hornearTodo(geo.celda);
-    const fondo = hornearFondo(geo);
-    if (!s || !fondo) return;
-    const tonos = CHISPA_COLOR.map((c2) => (c2 ? col(c2) : null));
-    imgs.value = { ...s, fondo, srcFondo: Skia.XYWHRect(0, 0, fondo.width(), fondo.height()), tonos };
-  }, [geo, imgs]);
+    const s = hornearPiezas(geo.S);
+    if (!s) return;
+    geoV.value = geo;
+    imgs.value = { ...s, caja: grabarBotiquin(geo) };
+  }, [geo, geoV, imgs]);
 
-  // El reloj: `ahora` corre cada cuadro mientras algo se anima; quieto, el
-  // «respirar» de las piezas se pinta a 30 cuadros (y nada con reducir movimiento).
-  useFrameCallback((f) => {
-    const dt = Math.min(0.05, (f.timeSincePreviousFrame ?? 16) / 1000);
-    tiempo.value += dt;
-    if (tiempo.value < hasta.value || arr.value.i >= 0) { ahora.value = tiempo.value; acum.value = 0; return; }
-    if (!respira.value) { if (ahora.value < hasta.value) ahora.value = hasta.value; return; }
-    acum.value += dt;
-    if (acum.value >= 0.033) { ahora.value = tiempo.value; acum.value = 0; }
-  });
+  // ── Lo que JavaScript hace cuando el mundo avisa (sonido, vibración, marcador)
+  const js = useRef({});
+  js.current.soltada = (n, a, s, total) => {
+    setActual(a); setSiguiente(s); setCuantas(total);
+    sonar('gota', { volumen: 0.45, tono: 1.25 - n * 0.06 });
+    tacto.roce();
+  };
+  js.current.eventos = (evs, pts, total) => {
+    setPuntos(pts); setCuantas(total);
+    const ahora = Date.now();
+    for (const e of evs) {
+      racha.current = ahora - racha.current.t < 900 ? { n: racha.current.n + 1, t: ahora } : { n: 1, t: ahora };
+      if (e.tipo === 'cumbre') {
+        sonar('ganar'); tacto.exito(); setFestejo((k) => k + 1);
+        setAviso({ k: ahora, texto: `¡Dos cruces! +${PREMIO_CUMBRE}` });
+        continue;
+      }
+      sonar(`pop-${1 + (e.n % 6)}`, { tono: Math.max(0.7, 1.2 - e.n * 0.05), volumen: 0.8 });
+      if (e.n >= 5) tacto.golpe(); else tacto.toque();
+      if (e.n > mayorRef.current) {
+        mayorRef.current = e.n; setMayor(e.n);
+        if (e.n >= 4) { sonar('par', { volumen: 0.6 }); setAviso({ k: ahora, texto: `¡Hiciste ${ARTICULO[e.n] === 'el' ? 'tu primer' : 'tu primera'} ${NOMBRES[e.n]}!` }); }
+      }
+      if (racha.current.n >= 3) setAviso({ k: ahora + 1, texto: `¡Cadena ×${racha.current.n}!` });
+    }
+  };
+  js.current.peligro = (si) => {
+    if (si) { sonar('fallo', { volumen: 0.5 }); tacto.aviso(); setAviso({ k: Date.now(), texto: '¡Se desborda!' }); } else setAviso(null);
+  };
+  js.current.perder = (pts, may) => {
+    enJuego.value = false;
+    setPuntos(pts); setFase('fin'); setAviso(null);
+    sonar('derrumbe'); tacto.aviso();
+    if (may > mayorHistRef.current) { mayorHistRef.current = may; setMayorHistorico(may); SecureStore.setItemAsync(CLAVE_MAYOR, String(may)).catch(() => {}); }
+    if (pts > recordRef.current) {
+      recordRef.current = pts; setRecord(pts); setNuevoRecord(true);
+      SecureStore.setItemAsync(CLAVE_RECORD, String(pts)).catch(() => {});
+      setTimeout(() => { sonar('ganar'); tacto.exito(); setFestejo((k) => k + 1); }, 600);
+    }
+  };
+  const mostrar = (cuelga) => { if (mundo.current) foto.value = fotografiar(mundo.current, animarRef.current, cuelga); };
 
-  const cuadro = useDerivedValue(() => {
-    const rec = Skia.PictureRecorder();
-    const g = geoV.value;
-    const im = imgs.value;
-    const c = rec.beginRecording(Skia.XYWHRect(0, 0, g ? g.w : 1, g ? g.h : 1));
-    const b = tablero.value;
-    if (!g || !im || b.length !== g.C * g.C) return rec.finishRecordingAsPicture();
-    const t = ahora.value;
-    const na = nacio.value; const fu = fusion.value; const ro = roto.value;
-    const a = arr.value; const v = vuelta.value; const gp = golpe.value;
-    const p = Skia.Paint();
-    const S = im.S;
-    const estampa = (img, x, y, sx, sy, alfa) => {
-      p.setAlphaf(alfa);
-      const w = S * sx; const h = S * sy;
-      c.drawImageRect(img, im.src, Skia.XYWHRect(x - w / 2, y - h / 2, w, h), p);
+  // ── El reloj: requestAnimationFrame, pasos fijos (lib/caida.js) ─────────────
+  const cuadroJs = useRef(null);
+  cuadroJs.current = (dt) => {
+    const m = mundo.current;
+    if (!m || m.perdio) return;
+    avanzar(m, dt);
+    if (m.eventos.length) { const evs = m.eventos; m.eventos = []; js.current.eventos(evs, m.puntos, m.cuerpos.length); }
+    if (!m.alerta && m.peligro > 0.4) { m.alerta = true; js.current.peligro(true); } else if (m.alerta && m.peligro === 0) { m.alerta = false; js.current.peligro(false); }
+    mostrar(!m.perdio);
+    if (m.perdio) js.current.perder(m.puntos, m.mayor);
+  };
+  const corriendo = fase === 'jugando' && !pausa && visible && !!geo;
+  useEffect(() => {
+    enJuegoRef.current = corriendo; enJuego.value = corriendo;
+    if (!corriendo) return undefined;
+    let id = 0; let antes = 0; let vivo = true;
+    const tic = (ahora) => {
+      if (!vivo) return;
+      const dt = antes ? (ahora - antes) / 1000 : 1 / 60;
+      antes = ahora;
+      try { cuadroJs.current(dt); } catch (err) {
+        // Una falla del motor termina la partida; nunca cierra la app.
+        reportarError(err, { pantalla: 'botiquin' });
+        enJuegoRef.current = false; enJuego.value = false;
+        setFase('fin');
+        return;
+      }
+      id = requestAnimationFrame(tic);
     };
-    c.drawImageRect(im.fondo, im.srcFondo, Skia.XYWHRect(g.ox, g.oy, g.lado, g.lado), p);
+    id = requestAnimationFrame(tic);
+    return () => { vivo = false; cancelAnimationFrame(id); };
+  }, [corriendo, enJuego]);
+  // Si la pantalla deja de verse a media partida, queda en pausa al volver.
+  useEffect(() => { if (!visible && fase === 'jugando') setPausa(true); }, [visible, fase]);
 
-    // Mientras se arrastra: las iguales de al lado brillan y la casilla de destino se marca.
-    let ix = 0; let iy = 0; let kl = 0;
-    if (a.i >= 0) {
-      kl = Math.min(1, (t - a.t) / LEVANTA);
-      ix = dedo.value.x + a.dx;
-      iy = dedo.value.y + a.dy - g.celda * 0.16 * kl;
-      const d = celdaDe(g, ix, iy);
-      const marco = Skia.Paint(); marco.setAntiAlias(true); marco.setStyle(PaintStyle.Stroke); marco.setStrokeWidth(2.5);
-      const relleno = Skia.Paint(); relleno.setAntiAlias(true);
-      const latido = 0.55 + 0.25 * Math.sin(t * 7);
-      for (let j = 0; j < b.length; j++) {
-        if (b[j] !== a.tier || !vecinas(a.i, j, g.C)) continue;
-        const x = centroX(g, j); const y = centroY(g, j); const e = g.celda * 0.9;
-        const ok = j === d;
-        relleno.setColor(Skia.Color(ok ? 'rgba(255,255,255,0.35)' : 'rgba(255,255,255,0.14)'));
-        c.drawRRect(rrw(x - e / 2, y - e / 2, e, e, e * 0.26), relleno);
-        marco.setColor(Skia.Color('#FFFFFF')); marco.setAlphaf(ok ? 1 : latido);
-        c.drawRRect(rrw(x - e / 2, y - e / 2, e, e, e * 0.26), marco);
+  const empezar = useCallback(() => {
+    const semilla = (Date.now() % 2147483000) + 1;
+    setPuntos(0); setMayor(0); mayorRef.current = 0; setCuantas(0); setNuevoRecord(false); setAviso(null); setPausa(false);
+    racha.current = { n: 0, t: 0 };
+    const m = crearMundo(ALTO, semilla);
+    m.alerta = false;
+    mundo.current = m;
+    apunta.value = 0.5;
+    foto.value = fotografiar(m, animarRef.current, true);
+    setActual(m.actual); setSiguiente(m.siguiente);
+    setFase('jugando');
+  }, [apunta, foto]);
+
+  // Soltar: el dedo se lee en el hilo de la interfaz; la pieza la suelta el mundo.
+  js.current.soltarEn = (x) => {
+    const m = mundo.current;
+    if (!enJuegoRef.current || !m) return;
+    const b = soltar(m, x);
+    if (b) { js.current.soltada(b.n, m.actual, m.siguiente, m.cuerpos.length); mostrar(true); }
+  };
+  const alSoltarEn = useCallback((x) => js.current.soltarEn(x), []);
+
+  const aAnchos = (px) => { 'worklet'; const g = geoV.value; return g ? Math.min(1, Math.max(0, (px - g.ox) / g.S)) : 0.5; };
+  const gesto = useMemo(() => Gesture.Pan().minDistance(0).maxPointers(1)
+    .onBegin((e) => { apunta.value = aAnchos(e.x); })
+    .onUpdate((e) => { apunta.value = aAnchos(e.x); })
+    // Se suelta al levantar el dedo, haya arrastrado o sólo tocado (un toque
+    // corto puede no llegar a «activar» el arrastre: por eso no se mira `ok`).
+    .onFinalize((e) => { const v = aAnchos(e.x); apunta.value = v; runOnJS(alSoltarEn)(v); }), [apunta, alSoltarEn]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── El cuadro: un solo Picture con todo ─────────────────────────────────────
+  const cuadro = useDerivedValue(() => {
+    const g = geoV.value; const im = imgs.value; const f = foto.value;
+    const rec = Skia.PictureRecorder();
+    const c = rec.beginRecording(Skia.XYWHRect(0, 0, g ? g.W : 1, g ? g.H : 1));
+    if (!g || !im) return rec.finishRecordingAsPicture();
+    c.drawPicture(im.caja);
+    if (!f) return rec.finishRecordingAsPicture();
+    const S = g.S; const t = f.t; const mov = animar.value;
+    const p = Skia.Paint(); p.setAntiAlias(true);
+    const X = (x) => g.ox + x * S; const Y = (y) => g.oy + y * S;
+    const estampa = (n, x, y, ang, esc) => {
+      const r = RADIOS[n] * S * esc;
+      c.save(); c.translate(X(x), Y(y));
+      if (ang) c.rotate((ang * 180) / Math.PI, 0, 0);
+      c.drawImageRect(im.piezas[n], im.src[n], Skia.XYWHRect(-r, -r, r * 2, r * 2), p);
+      c.restore();
+    };
+
+    // El borde: punteado, y en rojo que late mientras algo se desborda.
+    const linea = Skia.Paint(); linea.setAntiAlias(true);
+    if (f.peligro > 0) {
+      linea.setColor(Skia.Color(PELIGRO));
+      linea.setAlphaf(mov ? 0.55 + 0.45 * Math.sin(t * 14) : 1);
+    } else { linea.setColor(Skia.Color('#FFFFFF')); linea.setAlphaf(0.32); }
+    const seg = S * 0.035;
+    for (let x = 0; x < S; x += seg * 2) c.drawRect(Skia.XYWHRect(g.ox + x, g.oy - 1, Math.min(seg, S - x), 2), linea);
+
+    // La pieza que cuelga y su guía hasta el fondo.
+    if (enJuego.value && f.cuelga) {
+      const n = f.actual; const r = RADIOS[n];
+      const x = Math.min(1 - r, Math.max(r, apunta.value));
+      const guia = Skia.Paint(); guia.setColor(Skia.Color('#FFFFFF')); guia.setAlphaf(f.lista ? 0.2 : 0.08);
+      c.drawRect(Skia.XYWHRect(X(x) - 0.75, Y(ALTURA_SOLTAR + r), 1.5, Y(ALTO) - Y(ALTURA_SOLTAR + r)), guia);
+      if (f.lista) estampa(n, x, ALTURA_SOLTAR, 0, 1);
+    }
+
+    const cs = f.c;
+    for (let i = 0; i < cs.length; i += 5) estampa(cs[i], cs[i + 1], cs[i + 2], cs[i + 3], cs[i + 4]);
+
+    // El anillo de cada unión: se abre y se apaga (no llega con «reducir movimiento»).
+    const an = f.a;
+    if (an.length) {
+      const aro = Skia.Paint(); aro.setAntiAlias(true); aro.setStyle(PaintStyle.Stroke);
+      for (let i = 0; i < an.length; i += 5) {
+        const ax = an[i]; const ay = an[i + 1]; const ar = an[i + 2]; const nn = an[i + 3]; const q = an[i + 4];
+        aro.setColor(Skia.Color(nn === MAX ? ORO : '#FFFFFF'));
+        aro.setAlphaf((1 - q) * 0.85);
+        aro.setStrokeWidth(1 + 3 * (1 - q));
+        c.drawCircle(X(ax), Y(ay), ar * S * (1 + 0.55 * q), aro);
+        aro.setStrokeWidth(2.5 * (1 - q));
+        for (let k = 0; k < 6; k++) {
+          const ang = (k / 6) * Math.PI * 2 + nn;
+          const d = ar * S * (1.05 + 0.9 * q);
+          c.drawPoint(X(ax) + Math.cos(ang) * d, Y(ay) + Math.sin(ang) * d, aro);
+        }
       }
-      if (d >= 0 && d !== a.i && b[d] === 0) {
-        const x = centroX(g, d); const y = centroY(g, d); const e = g.celda * 0.84;
-        relleno.setColor(Skia.Color('rgba(255,255,255,0.16)'));
-        c.drawRRect(rrw(x - e / 2, y - e / 2, e, e, e * 0.26), relleno);
-      }
-    }
-
-    for (let i = 0; i < b.length; i++) {
-      const x = centroX(g, i); const y = centroY(g, i);
-      // Una caja que se rompe: crece y se apaga.
-      if (ro[i] > 0 && t < ro[i] + ROMPE) {
-        const q = Math.max(0, (t - ro[i]) / ROMPE);
-        estampa(im.caja, x, y, 1 + 0.4 * q, 1 + 0.4 * q, 1 - q);
-      }
-      const tier = b[i];
-      if (tier === 0) continue;
-      if (tier === CAJA) { estampa(im.caja, x, y, 1, 1, 1); continue; }
-      if (a.i === i) { estampa(im.items[tier], x, y, 0.92, 0.92, 0.25); continue; }
-      if (v && v.i === i && t < v.t + VUELTA) continue;
-      if (gp && gp.i === i && t < gp.t + JUNTA) continue;
-      if (t < na[i]) continue;
-      let sx = 1; let sy = 1;
-      const kn = (t - na[i]) / NACE;
-      if (na[i] >= 0 && kn < 1) { const s = saltito(kn); sx = s; sy = s; }
-      const kf = (t - fu[i]) / POP;
-      if (kf >= 0 && kf < 1) {
-        // Estira y encoge: ancha primero, alta después, y se asienta.
-        const amort = 1 - kf;
-        sx *= 1 + 0.34 * Math.sin(kf * Math.PI * 2.2) * amort;
-        sy *= 1 - 0.24 * Math.sin(kf * Math.PI * 2.2) * amort + 0.1 * Math.sin(kf * Math.PI) * amort;
-      } else if (respira.value) {
-        // Respirar: muy poquito, cada una a su ritmo.
-        const r = 1 + 0.022 * Math.sin(t * 2.1 + i * 1.3);
-        sx *= r; sy *= 2 - r;
-      }
-      estampa(im.items[tier], x, y, sx, sy, 1);
-    }
-
-    // Las dos piezas que se acercan antes de unirse.
-    if (gp && t < gp.t + JUNTA) {
-      const q = Math.max(0, (t - gp.t) / JUNTA); const e = q * q;
-      const gx = centroX(g, gp.i); const gy = centroY(g, gp.i);
-      estampa(im.items[gp.tier], gx, gy, 1 + 0.06 * q, 1 + 0.06 * q, 1);
-      estampa(im.items[gp.tier], gp.x + (gx - gp.x) * e, gp.y + (gy - gp.y) * e, 1.14 - 0.1 * e, 1.14 - 0.1 * e, 1);
-    }
-    // La que vuelve a su casilla, con un resorte.
-    if (v && t < v.t + VUELTA) {
-      const q = Math.max(0, (t - v.t) / VUELTA); const e = saltito(q);
-      const vx = centroX(g, v.i); const vy = centroY(g, v.i);
-      const s = 1.14 - 0.14 * Math.min(1, q * 1.4);
-      estampa(im.items[v.tier], v.x + (vx - v.x) * e, v.y + (vy - v.y) * e, s, s, 1);
-    }
-
-    // Chispas, destellos y un anillo que se abre.
-    const chispa = Skia.Paint(); chispa.setAntiAlias(true);
-    const anillo = Skia.Paint(); anillo.setAntiAlias(true); anillo.setStyle(PaintStyle.Stroke);
-    anillo.setColor(Skia.Color('white'));
-    for (const s of chispas.value) {
-      const q = (t - s.t) / (s.grande ? CHISPA * 1.5 : CHISPA);
-      if (q < 0 || q > 1) continue;
-      const cuantas = s.grande ? 18 : 11;
-      const R = g.celda * (s.grande ? 0.5 : 0.36);
-      for (let j = 0; j < cuantas; j++) {
-        const ang = (j / cuantas) * Math.PI * 2 + s.giro;
-        const dd = R * (0.6 + q * (1.5 + (j % 3) * 0.35) * (s.grande ? 1.6 : 1));
-        chispa.setColor(j % 3 === 0 ? Skia.Color('#FFFFFF') : im.tonos[s.c]);
-        chispa.setAlphaf(1 - q * q);
-        c.drawCircle(s.x + Math.cos(ang) * dd, s.y + Math.sin(ang) * dd + q * q * R * 0.7, Math.max(0.1, (2 + (j % 2) * 1.8) * (1 - q) * (s.grande ? 1.4 : 1)), chispa);
-      }
-      const qa = Math.min(1, q / 0.6);
-      anillo.setStrokeWidth(3 * (1 - qa) + 0.5);
-      anillo.setAlphaf((1 - qa) * 0.7);
-      c.drawCircle(s.x, s.y, R * (0.9 + qa * (s.grande ? 2.2 : 1.1)), anillo);
-    }
-
-    // La mano del primer nivel: muestra el gesto sobre una pareja.
-    const gu = guia.value;
-    if (gu && a.i < 0 && b[gu.o] > 0 && b[gu.o] === b[gu.d]) {
-      const ciclo = (t % 2.2) / 2.2;
-      const mov = Math.max(0, Math.min(1, (ciclo - 0.2) / 0.5));
-      const e = mov * mov * (3 - 2 * mov);
-      const ox = centroX(g, gu.o); const oy = centroY(g, gu.o);
-      const hx = ox + (centroX(g, gu.d) - ox) * e; const hy = oy + (centroY(g, gu.d) - oy) * e;
-      const alfa = ciclo < 0.1 ? ciclo / 0.1 : ciclo > 0.85 ? (1 - ciclo) / 0.15 : 1;
-      estampa(im.items[b[gu.o]], hx, hy - g.celda * 0.12, 1.08, 1.08, 0.55 * alfa);
-      chispa.setColor(Skia.Color('#FFFFFF')); chispa.setAlphaf(0.85 * alfa);
-      c.drawCircle(hx + g.celda * 0.18, hy + g.celda * 0.22, g.celda * 0.15, chispa);
-      anillo.setStrokeWidth(2); anillo.setAlphaf(0.6 * alfa * (1 - e * 0.5));
-      c.drawCircle(hx + g.celda * 0.18, hy + g.celda * 0.22, g.celda * (0.2 + 0.08 * Math.sin(t * 6)), anillo);
-    }
-
-    // La que va en el dedo, encima de todo: levantada y un poco más grande.
-    if (a.i >= 0) {
-      const s = 1 + 0.16 * kl;
-      estampa(im.items[a.tier], ix, iy, s, s, 1);
     }
     return rec.finishRecordingAsPicture();
   });
 
-  // ── JavaScript: sonido, vibración, metas ─────────────────────────────────────
-  const terminar = useCallback((tipo) => {
-    const j = juego.current;
-    const cf = confRef.current;
-    bloqueada.value = true;
-    guia.value = null;
-    if (tipo === 'gano') {
-      const n = nivelRef.current;
-      const est = estrellasDe(cf.movs - j.movs, cf.movs);
-      sonar('ganar'); tacto.exito(); setFestejo((k) => k + 1);
-      setEstrellas((e) => {
-        if ((e[n] ?? 0) >= est) return e;
-        const nuevo = { ...e, [n]: est };
-        SecureStore.setItemAsync(CLAVE_ESTRELLAS, JSON.stringify(nuevo)).catch(() => {});
-        return nuevo;
-      });
-      setAbierto((ab) => {
-        if (n + 1 <= ab) return ab;
-        SecureStore.setItemAsync(CLAVE_NIVEL, String(n + 1)).catch(() => {});
-        return n + 1;
-      });
-      luego(() => setFin({ tipo, estrellas: est }), 700);
-    } else if (tipo === 'relax') {
-      const nuevoRecord = j.puntos > 0 && j.puntos >= recordRef.current;
-      sonar('par'); tacto.aviso();
-      luego(() => setFin({ tipo, nuevoRecord }), 500);
-    } else {
-      sonar('fallo', { volumen: 0.6 }); tacto.aviso();
-      luego(() => setFin({ tipo }), 500);
-    }
-  }, [bloqueada, guia]);
-
-  const manejar = useRef(null);
-  manejar.current = (tipo, tier, cajas, atascado) => {
-    const j = juego.current;
-    const cf = confRef.current;
-    const relax = modoRef.current === 'relax';
-    j.movs += 1;
-    if (guia.value) guia.value = null;
-    if (tipo === 1) {
-      j.combo = 0;
-      sonar('gota', { volumen: 0.45 }); tacto.toque();
-    } else if (tipo === 2) {
-      j.combo += 1;
-      const nota = Math.max(1, Math.min(6, tier - 1));
-      sonar(`toque-${nota}`, { volumen: 0.8, tono: tier >= 8 ? 1.12 : 1 });
-      sonar(j.combo >= 3 ? 'pop-5' : 'pop-3', { volumen: 0.55 });
-      tacto.golpe();
-      const extra = j.combo >= 2 ? j.combo : 1;
-      j.puntos += PUNTOS[tier] * extra;
-      if (cf.meta === tier) j.creados += 1;
-      if (tier > j.vistos) {
-        j.vistos = tier;
-        luego(() => { sonar('par', { volumen: 0.7 }); tacto.exito(); }, 120);
-        setNovedad({ k: Date.now(), tier });
-        luego(() => setNovedad((nv) => (nv && nv.tier === tier ? null : nv)), 1700);
-      } else if (j.combo >= 2) setAviso({ k: Date.now(), texto: `¡Combo ×${j.combo}! ${NOMBRES[tier]}` });
-      else setAviso({ k: Date.now(), texto: `¡${NOMBRES[tier]}!` });
-      j.max = Math.max(j.max, tier);
-    } else if (tipo === 3) {
-      j.combo += 1;
-      j.puntos += 1000;
-      sonar('ganar', { volumen: 0.8 }); tacto.exito(); setFestejo((k) => k + 1);
-      setAviso({ k: Date.now(), texto: '¡Dos corazones sanos! +1000' });
-    }
-    if (cajas) { j.rotas += cajas; sonar('bloque', { volumen: 0.7 }); luego(() => tacto.toque(), 60); }
-    setVista({ ...j });
-    if (relax) {
-      if (j.puntos > recordRef.current) {
-        recordRef.current = j.puntos; setRecord(j.puntos);
-        SecureStore.setItemAsync(CLAVE_RECORD, String(j.puntos)).catch(() => {});
-      }
-      if (atascado) terminar('relax');
-      return;
-    }
-    if (j.creados >= cf.cuantas && j.rotas >= cf.cajas) terminar('gano');
-    else if (j.movs >= cf.movs) terminar('movs');
-    else if (atascado) terminar('lleno');
+  const jugando = fase === 'jugando';
+  const acciones = [
+    { name: 'izquierda', label: 'Soltar a la izquierda' },
+    { name: 'centro', label: 'Soltar al centro' },
+    { name: 'derecha', label: 'Soltar a la derecha' },
+  ];
+  const alAccion = (e) => {
+    const x = { izquierda: 0.15, centro: 0.5, derecha: 0.85, activate: 0.5 }[e.nativeEvent.actionName];
+    if (x == null) return;
+    apunta.value = x;
+    js.current.soltarEn(x);
   };
-  const alJugar = useCallback((...x) => manejar.current?.(...x), []);
-  const alTomar = useCallback((tier) => { tacto.roce(); sonar('pop-2', { volumen: 0.25, tono: 0.9 + tier * 0.03 }); }, []);
-  const alRebotar = useCallback((motivo, tier) => {
-    tacto.roce();
-    if (motivo === 'lejos') setAviso({ k: Date.now(), texto: 'Tienen que estar una al lado de la otra' });
-    else if (motivo === 'distinta') setAviso({ k: Date.now(), texto: 'Sólo se unen dos iguales' });
-    else if (motivo === 'toque' && tier > 0) setAviso({ k: Date.now(), texto: tier < MAX ? `${NOMBRES[tier]} + ${NOMBRES[tier]} = ${NOMBRES[tier + 1]}` : 'Junta dos corazones sanos: +1000' });
-  }, []);
-
-  // Una jugada, decidida en el hilo de la interfaz. Devuelve 0 si no se podía.
-  const actuar = useMemo(() => (o, d, x, y) => {
-    'worklet';
-    const g = geoV.value;
-    if (!g) return 0;
-    const C = g.C;
-    const b = tablero.value.slice();
-    const tier = b[o];
-    const t = tiempo.value;
-    let tipo = 0;
-    if (tier <= 0) return 0;
-    if (b[d] === 0) { b[d] = tier; b[o] = 0; tipo = 1; } else if (b[d] === tier && vecinas(o, d, C)) {
-      tipo = tier === MAX ? 3 : 2; b[o] = 0; b[d] = tipo === 3 ? 0 : tier + 1;
-    } else return 0;
-    const na = nacio.value.slice(); const fu = fusion.value.slice(); const ro = roto.value.slice();
-    const cx = centroX(g, d); const cy = centroY(g, d);
-    let cajas = 0;
-    const viejas = chispas.value.filter((s) => t - s.t < CHISPA * 1.6);
-    if (tipo === 1) {
-      na[d] = t - NACE * 0.55; fu[d] = -10; // se asienta con un rebote corto
-    } else {
-      golpe.value = { tier, x, y, i: d, t };
-      fu[d] = t + JUNTA; na[d] = -1;
-      viejas.push({ x: cx, y: cy, t: t + JUNTA, c: tipo === 3 ? MAX : tier + 1, grande: tipo === 3 || tier + 1 >= 7, giro: (d * 1.7) % 6.28 });
-      for (let k = 0; k < b.length; k++) {
-        if (b[k] === CAJA && vecinas(d, k, C)) {
-          b[k] = 0; ro[k] = t + JUNTA; cajas++;
-          viejas.push({ x: centroX(g, k), y: centroY(g, k), t: t + JUNTA, c: 10, grande: false, giro: k });
-        }
-      }
-    }
-    chispas.value = viejas;
-    // La pieza nueva, en un hueco al azar (no justo donde se jugó, si hay otro).
-    const libres = [];
-    for (let k = 0; k < b.length; k++) if (b[k] === 0 && k !== o && k !== d) libres.push(k);
-    if (!libres.length) for (let k = 0; k < b.length; k++) if (b[k] === 0) libres.push(k);
-    if (libres.length) {
-      const k = libres[Math.floor(Math.random() * libres.length)];
-      b[k] = Math.random() < p2.value ? 2 : 1;
-      na[k] = t + (tipo === 1 ? 0.1 : 0.3); fu[k] = -10;
-    }
-    let lleno = true;
-    for (let k = 0; k < b.length; k++) if (b[k] === 0) { lleno = false; break; }
-    const atascado = lleno && !hayPareja(b, C);
-    tablero.value = b; nacio.value = na; fusion.value = fu; roto.value = ro;
-    hasta.value = Math.max(hasta.value, t + (tipo === 3 ? CHISPA * 1.6 : 0.9));
-    if (atascado) bloqueada.value = true;
-    runOnJS(alJugar)(tipo, tipo === 2 ? tier + 1 : tier, cajas, atascado);
-    return tipo;
-  }, [alJugar, bloqueada, chispas, fusion, geoV, golpe, hasta, nacio, p2, roto, tablero, tiempo]);
-
-  const gesto = useMemo(() => Gesture.Pan().minDistance(0).maxPointers(1)
-    .onBegin((e) => {
-      const g = geoV.value;
-      if (!g || bloqueada.value) return;
-      const i = celdaDe(g, e.x, e.y);
-      if (i < 0) return;
-      const tier = tablero.value[i];
-      if (tier <= 0 || tiempo.value < nacio.value[i]) return;
-      if (vuelta.value && vuelta.value.i === i && tiempo.value < vuelta.value.t + VUELTA) return;
-      arr.value = { i, tier, dx: centroX(g, i) - e.x, dy: centroY(g, i) - e.y, t: tiempo.value };
-      dedo.value = { x: e.x, y: e.y };
-      runOnJS(alTomar)(tier);
-    })
-    .onUpdate((e) => {
-      if (arr.value.i < 0) return;
-      dedo.value = { x: e.x, y: e.y };
-    })
-    .onFinalize(() => {
-      const a = arr.value;
-      const g = geoV.value;
-      if (a.i < 0 || !g) return;
-      const t = tiempo.value;
-      const kl = Math.min(1, (t - a.t) / LEVANTA);
-      const x = dedo.value.x + a.dx;
-      const y = dedo.value.y + a.dy - g.celda * 0.16 * kl;
-      arr.value = { i: -1, tier: 0, dx: 0, dy: 0, t: 0 };
-      const d = celdaDe(g, x, y);
-      if (d >= 0 && d !== a.i && actuar(a.i, d, x, y) > 0) return;
-      vuelta.value = { tier: a.tier, x, y, i: a.i, t };
-      hasta.value = Math.max(hasta.value, t + VUELTA + 0.05);
-      if (d === a.i || d < 0) {
-        if (d === a.i && Math.hypot(dedo.value.x + a.dx - centroX(g, a.i), dedo.value.y + a.dy - centroY(g, a.i)) < g.celda * 0.3) runOnJS(alRebotar)('toque', a.tier);
-        return;
-      }
-      const otra = tablero.value[d];
-      runOnJS(alRebotar)(otra === a.tier ? 'lejos' : 'distinta', a.tier);
-    }), [actuar, alRebotar, alTomar, arr, bloqueada, dedo, geoV, hasta, nacio, tablero, tiempo, vuelta]);
-
-  const empezar = useCallback((m, n) => {
-    const cf = m === 'relax' ? RELAX : nivelDe(n);
-    relojes.current.forEach(clearTimeout); relojes.current = [];
-    confRef.current = cf; setConf(cf);
-    modoRef.current = m; nivelRef.current = n;
-    const b = tableroInicial(cf);
-    const N = b.length;
-    const t = tiempo.value;
-    const na = new Array(N).fill(-1);
-    let k = 0;
-    for (let i = 0; i < N; i++) if (b[i] !== 0) { na[i] = t + 0.25 + k * 0.035; k++; }
-    // El tamaño del tablero cambia antes que las piezas: así el dibujo nunca mezcla los dos.
-    geoV.value = medida(caja, cf.C);
-    tablero.value = b; nacio.value = na;
-    fusion.value = new Array(N).fill(-10); roto.value = new Array(N).fill(-1);
-    chispas.value = []; golpe.value = null; vuelta.value = null;
-    arr.value = { i: -1, tier: 0, dx: 0, dy: 0, t: 0 };
-    p2.value = cf.p2;
-    hasta.value = t + 0.25 + k * 0.035 + NACE + 0.1;
-    bloqueada.value = false;
-    let max = 1; for (const v of b) max = Math.max(max, v);
-    juego.current = { movs: 0, creados: 0, rotas: 0, puntos: 0, max, combo: 0, vistos: max };
-    setVista({ ...juego.current });
-    // En el primer nivel, una mano muestra el gesto hasta la primera jugada.
-    guia.value = m === 'niveles' && n === 1 ? (() => { const par = buscarPareja(b, cf.C); return par ? { o: par[0], d: par[1] } : null; })() : null;
-    setFin(null); setPausa(false); setNovedad(null);
-    setAviso({ k: Date.now(), texto: m === 'relax' ? 'Relax: sin límite de movimientos' : `Nivel ${n} · ${textoMeta(cf)}` });
-    setFase('jugando');
-    sonar('pop-5', { volumen: 0.3 });
-  }, [arr, bloqueada, caja, chispas, fusion, geoV, golpe, guia, hasta, nacio, p2, roto, tablero, tiempo, vuelta]);
-
-  const cambiarModo = (m) => { setModo(m); };
-  const relax = conf === RELAX;
-  const sobran = relax ? 0 : conf.movs - vista.movs;
-  const siguiente = Math.min(MAX, vista.max + 1);
-  const escalaLetra = PixelRatio.getFontScale();
-  const altoAviso = Math.ceil(15 * escalaLetra * 1.3) * (escalaLetra > 1.25 ? 2 : 1) + 12;
-
-  if (fase === 'portada') {
-    const cf = nivelDe(nivel);
-    return (
-      <Escena colores={ESCENAS.botiquin}>
-        <ControlesSensaciones izquierda={modo === 'relax'
-          ? <Marcador sf="trophy.fill" texto={`Récord ${entero(record)}`} />
-          : <Marcador sf="star.fill" texto={`Nivel ${abierto}`} etiqueta={`Llegaste al nivel ${abierto}`} />} />
-        <View style={{ alignItems: 'center', gap: 8 }}>
-          <Pieza sprites={chicas} tier={8} tam={84} />
-          <Text style={{ fontSize: 30, fontWeight: '900', color: BLANCO, textAlign: 'center' }}>Botiquín</Text>
-          <Text style={[textoAyuda, { textAlign: 'center' }]}>
-            Arrastra una pieza sobre otra igual que esté a su lado: se unen y se convierten en la siguiente. ¿Llegarás al corazón sano?
-          </Text>
-        </View>
-
-        <PanelVidrio estilo={{ gap: 12 }}>
-          <Text style={estilos.titulo}>La cadena</Text>
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', rowGap: 12, columnGap: 6 }}>
-            {NOMBRES.slice(1).map((nombre, i) => (
-              <View key={nombre} style={{ flexBasis: '30%', flexGrow: 1, alignItems: 'center', gap: 4 }}>
-                <Pieza sprites={chicas} tier={i + 1} tam={52} />
-                <Text style={{ fontSize: 13, fontWeight: '700', color: BLANCO, textAlign: 'center' }}>{nombre}</Text>
-              </View>
-            ))}
-          </View>
-          <Text style={[textoAyuda, { fontSize: 13, textAlign: 'center' }]}>Dos iguales hacen la siguiente. Dos corazones sanos juntos valen 1.000 puntos.</Text>
-        </PanelVidrio>
-
-        <OpcionesJuego opciones={MODOS} valor={modo} alCambiar={cambiarModo} />
-
-        {modo === 'niveles' ? (
-          <PanelVidrio estilo={{ gap: 12 }}>
-            <Text style={estilos.titulo}>Elige un nivel</Text>
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityRole="radiogroup">
-              {Array.from({ length: abierto }, (_, i) => i + 1).map((n) => {
-                const activo = n === nivel;
-                const e = estrellas[n] ?? 0;
-                return (
-                  <Tocable key={n} etiqueta={`Nivel ${n}${e ? `, ${e} estrellas` : ''}`} alTocar={() => { tacto.roce(); setNivel(n); }}>
-                    <View accessibilityRole="radio" accessibilityState={{ selected: activo }}
-                      style={[estilos.nivel, activo && { backgroundColor: BLANCO, borderColor: BLANCO }]}>
-                      <Text style={{ fontSize: 17, fontWeight: '900', color: activo ? '#1B1B2F' : BLANCO }}>{n}</Text>
-                      <Text style={{ fontSize: 10, letterSpacing: 1, color: activo ? '#C98A00' : '#FFD86B' }}>{'★'.repeat(e)}{'☆'.repeat(3 - e)}</Text>
-                    </View>
-                  </Tocable>
-                );
-              })}
-            </View>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <Pieza sprites={chicas} tier={cf.meta} tam={48} />
-              <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontSize: 16, fontWeight: '800', color: BLANCO }}>Nivel {nivel}: {textoMeta(cf)}</Text>
-                <Text style={{ fontSize: 13, color: BLANCO_2 }}>
-                  Tablero de {cf.C}×{cf.C} · {cf.movs} movimientos{cf.cajas ? ' · las cajas se rompen al unir una pareja a su lado' : ''}
-                </Text>
-              </View>
-            </View>
-          </PanelVidrio>
-        ) : (
-          <PanelVidrio estilo={{ gap: 6 }}>
-            <Text style={estilos.titulo}>Relax</Text>
-            <Text style={textoAyuda}>Sin límite de movimientos: junta piezas a tu ritmo hasta que el tablero se llene. Los combos (uniones seguidas) valen el doble y el triple.</Text>
-            <Text style={{ fontSize: 14, fontWeight: '700', color: BLANCO }}>Tu récord: {entero(record)} puntos</Text>
-          </PanelVidrio>
-        )}
-
-        <BotonJuego sf="play.fill" alTocar={() => empezar(modo, modo === 'relax' ? 1 : nivel)}>
-          {modo === 'relax' ? 'Jugar en Relax' : `Jugar el nivel ${nivel}`}
-        </BotonJuego>
-      </Escena>
-    );
-  }
-
-  const estado = relax
-    ? `Relax. ${entero(vista.puntos)} puntos.`
-    : `Nivel ${nivel}. ${textoMeta(conf)}. Llevas ${vista.creados} de ${conf.cuantas}${conf.cajas ? ` y ${vista.rotas} de ${conf.cajas} cajas` : ''}. Quedan ${sobran} movimientos.`;
 
   return (
-    <Escena colores={ESCENAS.botiquin} fijo estilo={{ gap: 12 }}>
+    <Escena colores={ESCENAS.botiquin} fijo estilo={{ gap: 10 }}>
       <ControlesSensaciones izquierda={<>
-        <BotonChico sf="pause.fill" etiqueta="Pausa" alTocar={() => setPausa(true)} />
-        {relax ? <>
-          <Marcador sf="sparkles" texto={entero(vista.puntos)} etiqueta={`${entero(vista.puntos)} puntos`} />
-          <Marcador sf="trophy.fill" texto={entero(record)} etiqueta={`Récord: ${entero(record)} puntos`} />
-        </> : <>
-          <Marcador sf="hand.draw.fill" texto={`${sobran}`} etiqueta={`Quedan ${sobran} movimientos`} />
-        </>}
+        <Marcador sf="star.fill" texto={entero(puntos)} etiqueta={`${entero(puntos)} puntos`} />
+        <Marcador sf="trophy.fill" texto={entero(record)} etiqueta={`Récord: ${entero(record)} puntos`} />
+        {jugando && !pausa ? <BotonChico sf="pause.fill" etiqueta="Pausar" alTocar={() => setPausa(true)} /> : null}
       </>} />
 
-      {!relax ? (
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }} accessible accessibilityLabel={estado}>
-          <View style={[estilos.meta, vista.creados >= conf.cuantas && estilos.metaLista]}>
-            <Pieza sprites={chicas} tier={conf.meta} tam={30} />
-            <Text style={estilos.metaTexto}>{Math.min(vista.creados, conf.cuantas)}/{conf.cuantas}</Text>
-            {vista.creados >= conf.cuantas ? <Icono sf="checkmark" respaldo="✓" tam={14} color={BLANCO} /> : null}
+      {jugando ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minHeight: 40 }}>
+          <View style={{ flexShrink: 1 }}>
+            <AvisoJuego clave={aviso?.k} texto={aviso?.texto} />
           </View>
-          {conf.cajas ? (
-            <View style={[estilos.meta, vista.rotas >= conf.cajas && estilos.metaLista]}>
-              <Pieza sprites={chicas} tier={CAJA} tam={30} />
-              <Text style={estilos.metaTexto}>{Math.min(vista.rotas, conf.cajas)}/{conf.cajas}</Text>
-              {vista.rotas >= conf.cajas ? <Icono sf="checkmark" respaldo="✓" tam={14} color={BLANCO} /> : null}
-            </View>
-          ) : null}
-          <Text style={{ flexShrink: 1, fontSize: 13, fontWeight: '700', color: BLANCO_2 }}>Nivel {nivel}</Text>
+          <View style={estilos.sigue} accessible accessibilityLabel={`Ahora cae: ${NOMBRES[actual]}. Después: ${NOMBRES[siguiente]}.`}>
+            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: BLANCO_2 }}>Sigue</Text>
+            <PiezaChica chicas={chicas} nivel={siguiente} tam={30} />
+          </View>
         </View>
       ) : null}
 
-      {/* El aviso tiene su lugar fijo encima del tablero (alto según el tamaño de
-          letra, para no tapar la primera fila ni cambiar la medida del tablero
-          cada vez que cambia el texto). */}
-      <View pointerEvents="none" style={{ height: altoAviso, justifyContent: 'flex-end', alignItems: 'center' }}>
-        {aviso && !fin && !novedad ? <AvisoJuego clave={aviso.k} texto={aviso.texto} /> : null}
-      </View>
-
       <View style={{ flex: 1 }}
-        onLayout={(e) => { const { width: w, height: h } = e.nativeEvent.layout; if (!caja || caja.w !== w || caja.h !== h) setCaja({ w, h }); }}
-        accessible accessibilityLabel={`Tablero de ${conf.C} por ${conf.C}. ${estado} Arrastra una pieza sobre otra igual que esté a su lado.`}
-        accessibilityActions={[{ name: 'activate', label: 'Unir una pareja' }]}
-        onAccessibilityAction={() => {
-          runOnUI(() => {
-            'worklet';
-            const g = geoV.value;
-            if (!g || bloqueada.value) return;
-            const par = buscarPareja(tablero.value, g.C);
-            if (par) actuar(par[0], par[1], centroX(g, par[0]), centroY(g, par[0]));
-          })();
-        }}>
-        {geo ? (
+        onLayout={(e) => { const { width: w, height: h } = e.nativeEvent.layout; if (!caja || caja.w !== w || caja.h !== h) setCaja({ w, h }); }}>
+        {geo && fase !== 'portada' ? (
           <GestureDetector gesture={gesto}>
-            <Canvas style={{ flex: 1 }}>
-              <Picture picture={cuadro} />
-            </Canvas>
+            <View style={{ flex: 1 }} accessible
+              accessibilityLabel={`Botiquín con ${cuantas} ${cuantas === 1 ? 'pieza' : 'piezas'}. ${entero(puntos)} puntos. Ahora cae: ${NOMBRES[actual]}. Arrastra a los lados y suelta para dejarla caer.`}
+              accessibilityActions={jugando && !pausa ? acciones : []} onAccessibilityAction={alAccion}>
+              <Canvas style={{ flex: 1 }}>
+                <Picture picture={cuadro} />
+              </Canvas>
+            </View>
           </GestureDetector>
         ) : null}
-        {novedad && !fin ? (
-          <Animated.View key={novedad.k} pointerEvents="none" entering={ZoomIn.springify().damping(14)} exiting={FadeOut.duration(200)}
-            style={{ position: 'absolute', left: 0, right: 0, top: '30%', alignItems: 'center' }}>
-            <View style={estilos.novedad}>
-              <Pieza sprites={chicas} tier={novedad.tier} tam={64} />
-              <View style={{ flexShrink: 1 }}>
-                <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFD86B' }}>¡NUEVO!</Text>
-                <Text style={{ fontSize: 20, fontWeight: '900', color: BLANCO }}>{NOMBRES[novedad.tier]}</Text>
-              </View>
-            </View>
+
+        {fase === 'portada' ? (
+          <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
+            <PanelVidrio estilo={{ gap: 12 }}>
+              <Text style={{ fontSize: 24, fontWeight: '900', color: BLANCO, textAlign: 'center' }}>Botiquín</Text>
+              <Text style={{ ...textoAyuda, textAlign: 'center' }}>
+                Arrastra a los lados y suelta: el medicamento cae al botiquín. Dos iguales que se tocan se juntan en el siguiente. ¡Llega a la cruz de farmacia! Si algo se queda asomado sobre el borde, se acaba.
+              </Text>
+              <Cadena chicas={chicas} mayor={mayorHistorico} />
+            </PanelVidrio>
+            <BotonJuego sf="play.fill" alTocar={empezar}>Jugar</BotonJuego>
           </Animated.View>
         ) : null}
-        {festejo ? <Confeti key={festejo} colores={['#FFFFFF', '#FFD86B', '#FF9DE6', '#8BE9FF']} alTerminar={() => {}} /> : null}
+
+        {jugando && pausa ? (
+          <Animated.View entering={FadeIn.duration(200)} exiting={FadeOut.duration(150)} style={estilos.encima}>
+            <TarjetaNivel titulo="En pausa" texto={`Llevas ${entero(puntos)} puntos.`}>
+              <BotonJuego sf="play.fill" alTocar={() => setPausa(false)}>Seguir</BotonJuego>
+              <BotonJuego secundario sf="arrow.clockwise" alTocar={empezar}>Empezar de nuevo</BotonJuego>
+            </TarjetaNivel>
+          </Animated.View>
+        ) : null}
+
+        {fase === 'fin' ? (
+          <Animated.View entering={FadeIn.delay(500).duration(400)} style={estilos.encima}>
+            <TarjetaNivel insignia={nuevoRecord ? '¡NUEVO RÉCORD!' : null} titulo={`${entero(puntos)} puntos`}
+              texto={`${nuevoRecord ? 'Tu mejor partida hasta ahora.' : `Tu récord es de ${entero(record)}.`} Tu pieza más grande: ${NOMBRES[mayor]}.`}>
+              <Cadena chicas={chicas} mayor={mayor} />
+              <BotonJuego sf="arrow.clockwise" alTocar={empezar}>Jugar otra vez</BotonJuego>
+            </TarjetaNivel>
+          </Animated.View>
+        ) : null}
+
+        {festejo ? <Confeti key={festejo} colores={['#FFFFFF', ORO, VERDE, '#F6C9EF']} alTerminar={() => {}} /> : null}
       </View>
-
-      <Cadena sprites={chicas} max={vista.max} meta={relax ? 0 : conf.meta} />
-      <Text style={[textoAyuda, { textAlign: 'center', fontSize: 13, lineHeight: 18 }]}>
-        {vista.max < MAX ? `Lo más alto: ${NOMBRES[vista.max]} · Sigue: ${NOMBRES[siguiente]}` : '¡Llegaste al corazón sano! Junta dos para +1.000'}
-      </Text>
-
-      {pausa || fin ? (
-        <Animated.View entering={FadeIn.duration(220)} style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(6,8,30,0.5)' }]}>
-          <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 16 }}>
-            <PanelVidrio estilo={{ gap: 12, alignItems: 'center', backgroundColor: 'rgba(24,10,48,0.88)' }}>
-              {pausa && !fin ? <>
-                <Text style={estilos.panelTitulo}>Pausa</Text>
-                <Text style={[textoAyuda, { textAlign: 'center' }]}>{relax ? 'Tu tablero te espera.' : `Nivel ${nivel}: ${textoMeta(conf)}.`}</Text>
-                <View style={{ alignSelf: 'stretch', gap: 10 }}>
-                  <BotonJuego sf="play.fill" alTocar={() => setPausa(false)}>Seguir</BotonJuego>
-                  <BotonJuego secundario sf="arrow.clockwise" alTocar={() => empezar(modoRef.current, nivelRef.current)}>Empezar de nuevo</BotonJuego>
-                  <BotonJuego secundario sf="square.grid.2x2.fill" alTocar={() => { setPausa(false); setFase('portada'); }}>Menú</BotonJuego>
-                </View>
-              </> : null}
-              {fin?.tipo === 'gano' ? <>
-                <Estrellas n={fin.estrellas} tam={34} />
-                <Text style={estilos.panelTitulo}>¡Nivel {nivel} listo!</Text>
-                <Text style={[textoAyuda, { textAlign: 'center' }]}>Te sobraron {sobran} {sobran === 1 ? 'movimiento' : 'movimientos'}.{fin.estrellas < 3 ? ' Con más movimientos de sobra ganas más estrellas.' : ''}</Text>
-                <View style={{ alignSelf: 'stretch', gap: 10 }}>
-                  <BotonJuego sf="arrow.right" alTocar={() => { const n = nivel + 1; setNivel(n); empezar('niveles', n); }}>Siguiente nivel</BotonJuego>
-                  <BotonJuego secundario sf="arrow.clockwise" alTocar={() => empezar('niveles', nivel)}>Repetir</BotonJuego>
-                  <BotonJuego secundario sf="square.grid.2x2.fill" alTocar={() => setFase('portada')}>Menú</BotonJuego>
-                </View>
-              </> : null}
-              {fin?.tipo === 'movs' || fin?.tipo === 'lleno' ? <>
-                <Pieza sprites={chicas} tier={fin.tipo === 'movs' ? 1 : 8} tam={60} />
-                <Text style={estilos.panelTitulo}>{fin.tipo === 'movs' ? '¡Casi!' : 'El botiquín se llenó'}</Text>
-                <Text style={[textoAyuda, { textAlign: 'center' }]}>
-                  {fin.tipo === 'movs'
-                    ? `Se acabaron los movimientos. Llevabas ${Math.min(vista.creados, conf.cuantas)} de ${conf.cuantas}. Truco: une primero las parejas que ya están juntas.`
-                    : 'No quedan parejas una al lado de la otra. Truco: deja espacio y junta las iguales en un rincón.'}
-                </Text>
-                <View style={{ alignSelf: 'stretch', gap: 10 }}>
-                  <BotonJuego sf="arrow.clockwise" alTocar={() => empezar('niveles', nivel)}>Reintentar</BotonJuego>
-                  <BotonJuego secundario sf="square.grid.2x2.fill" alTocar={() => setFase('portada')}>Menú</BotonJuego>
-                </View>
-              </> : null}
-              {fin?.tipo === 'relax' ? <>
-                {fin.nuevoRecord ? (
-                  <View style={{ paddingHorizontal: 12, paddingVertical: 4, minHeight: 26, borderRadius: 13, justifyContent: 'center', backgroundColor: '#FFD86B' }}>
-                    <Text style={{ fontSize: 13, fontWeight: '900', color: '#3A2A00' }}>¡NUEVO RÉCORD!</Text>
-                  </View>
-                ) : null}
-                <Text style={estilos.panelTitulo}>{entero(vista.puntos)} puntos</Text>
-                <Text style={[textoAyuda, { textAlign: 'center' }]}>
-                  El tablero se llenó. Llegaste hasta {ARTICULO[vista.max]} {NOMBRES[vista.max]}. Tu récord: {entero(record)}.
-                </Text>
-                <View style={{ alignSelf: 'stretch', gap: 10 }}>
-                  <BotonJuego sf="arrow.clockwise" alTocar={() => empezar('relax', 1)}>Otra vez</BotonJuego>
-                  <BotonJuego secundario sf="square.grid.2x2.fill" alTocar={() => setFase('portada')}>Menú</BotonJuego>
-                </View>
-              </> : null}
-            </PanelVidrio>
-          </ScrollView>
-        </Animated.View>
-      ) : null}
     </Escena>
   );
 }
 
 const estilos = StyleSheet.create({
-  titulo: { fontSize: 17, fontWeight: '800', color: BLANCO },
-  panelTitulo: { fontSize: 22, fontWeight: '900', color: BLANCO, textAlign: 'center' },
   redondo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
-  nivel: { minWidth: 56, minHeight: 56, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
-    backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
-  meta: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingLeft: 4, paddingRight: 12, minHeight: 40, borderRadius: 20,
-    backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
-  metaLista: { backgroundColor: 'rgba(60,210,150,0.35)', borderColor: 'rgba(140,255,200,0.6)' },
-  metaTexto: { fontSize: 15, fontWeight: '800', color: BLANCO, fontVariant: ['tabular-nums'] },
-  novedad: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, paddingLeft: 10, paddingRight: 20, borderRadius: 24, maxWidth: '90%',
-    backgroundColor: 'rgba(24,10,48,0.82)', borderWidth: 1, borderColor: 'rgba(255,216,107,0.6)' },
+  sigue: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 12, paddingRight: 5, minHeight: 40, borderRadius: 20, backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
+  encima: { position: 'absolute', left: 0, right: 0, bottom: 8 },
 });

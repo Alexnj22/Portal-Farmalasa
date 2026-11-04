@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.8 — App clientes: el Botiquín nuevo reemplaza al anterior y ya no se cierra
+
+Pedido del usuario: «el nuevo juego no funciona… se cierra al iniciarlo. Además
+debía quitar el juego anterior, no era uno más».
+
+- **Se cerraba al iniciarlo (build 94).** La física corría en el hilo de la
+  interfaz dentro de `useFrameCallback` + `mundo.modify`; un error ahí no se
+  atrapa y tumba la app. Ahora el motor (`lib/caida.js`, sin cambios) corre en
+  JavaScript con `requestAnimationFrame` y al hilo de la interfaz sólo cruza una
+  foto de números (5 por pieza, 5 por anillo) que un único `Picture` dibuja: el
+  patrón del Botiquín anterior, que nunca se cayó. Un error del motor termina la
+  partida y se reporta (`reportarError`), no cierra la app.
+- **Reemplaza al anterior.** `app/botiquin.js` (el de unir piezas en tablero) se
+  borró y el juego nuevo ocupa su ruta, su nombre y su lugar destacado en
+  Bienestar; «Pastillero» deja de existir como entrada aparte. Las claves del
+  récord conservan el nombre `pastillero` para no perder lo jugado en la 94.
+
 ## v2.1448.7 — Inicio: el encabezado no se parte y nada queda cortado
 
 Pedido del usuario: «siempre se debe poder ver todo y ser usable».

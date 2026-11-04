@@ -18,10 +18,10 @@ import { colorSistema } from '../../../componentes/sistema';
 import { useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 
-const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Une dos iguales y se transforman: de una gota hasta un corazón sano.', escena: 'botiquin', nuevo: true };
+// Botiquín (2026-11-04): el de juntar al caer, con física. Reemplazó al de
+// unir piezas en tablero, que tenía el mismo nombre y ruta.
+const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Suelta medicamentos en el botiquín: dos iguales se juntan y suben de nivel.', escena: 'botiquin', nuevo: true };
 const EJERCICIOS = [
-  // Pastillero (2026-11-04): el de juntar al caer, con física.
-  { ruta: '/pastillero', sf: 'pills.fill', titulo: 'Pastillero', detalle: 'Suelta medicamentos en el botiquín y junta dos iguales.', escena: 'pastillero', nuevo: true },
   { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
   { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Relax, o contrarreloj con niveles.', escena: 'burbujas' },

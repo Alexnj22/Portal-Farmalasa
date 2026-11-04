@@ -4,7 +4,7 @@ import { supabase } from '../supabaseClient';
 // sesión, cuenta el tope diario en la base y anota el registro. Devuelven
 // `{ data, error }` como `functions.invoke`.
 
-/** `{ modulo, pregunta, pantalla, filtros }` → `{ id, animo, piezas, filtros, quedan }`. */
+/** `{ modulo, pregunta, pantalla, filtros, senalado? }` → `{ id, animo, piezas, filtros, quedan }`. */
 export const preguntarAyudaDeSaly = (body) => supabase.functions.invoke('saly-ayuda', { body });
 
 /** 👍/👎 sobre una respuesta propia. */

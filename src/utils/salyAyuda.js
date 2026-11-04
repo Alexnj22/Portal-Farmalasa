@@ -161,7 +161,7 @@ export function avisoDeFaltaPorContar(falta, { sala } = {}) {
     const monto = Number(falta.falta);
     if (!(monto >= 0.01)) return null;
     return {
-        clave: `falta-por-contar:${falta.desde || 'sin-corte'}:${monto}`,
+        clave: `falta-por-contar:${falta.desde || 'sin-corte'}`,
         animo: 'atencion',
         ancla: 'cerrar-dia',
         oferta: [{ tipo: 'titular', texto: `Hay ${dinero(monto)} sin contar`, sub: 'Entraron después del último conteo' }],

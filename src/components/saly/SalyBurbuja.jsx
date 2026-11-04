@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Send, ThumbsDown, ThumbsUp, X } from 'lucide-react';
+import { ChevronRight, Crosshair, Send, ThumbsDown, ThumbsUp, X } from 'lucide-react';
 import SalyAvatar from '../common/SalyAvatar';
 import PiezasDeSaly from './PiezasDeSaly';
 import PortalInput from '../common/PortalInput';
@@ -25,19 +25,25 @@ import {
  *   3. Una PREGUNTA escrita: la única que va a la IA, con lo que se ve en
  *      pantalla (con los datos personales tapados) y el modelo más barato.
  *
+ * Para preguntar por algo CONCRETO (usuario, 2026-11-04: «si arrastro a Saly o
+ * algo para que me dé info?») hay dos caminos y los dos terminan igual:
+ * ARRASTRAR a Saly encima de una fila, o tocar «Señalar» y después la fila. Lo
+ * señalado se marca con su color y su texto visible viaja con la pregunta. No
+ * pregunta solo: señalar no cuesta, preguntar sí.
+ *
+ * Los avisos no se gastan al leerlos: mientras sigan vigentes, quedan en la
+ * lista «Lo que veo ahora» al abrir la burbuja. Antes, explicar uno lo daba
+ * por visto y al volver a abrir ya no estaba.
+ *
  * Nunca guarda, aprueba ni envía: puede poner filtros —quedan marcados con su
  * color— y llevar a otra pantalla. Lo demás lo hace la persona.
- *
- * Se para como la burbuja del chat con clientes y se corre a su izquierda si
- * está. Con un diálogo abierto se esconde, salvo para ofrecer ayuda a quien
- * lleva rato quieto en un formulario: ahí aparece abajo a la IZQUIERDA, donde
- * no tapa los botones del diálogo.
  */
 
 const QUIETO_MS = 3 * 60_000;
-// Lo que ya se descartó o se contestó vive lo que la pestaña: así una vuelta
-// a la pantalla no repite el mismo aviso, y la misma pregunta no se paga dos veces.
-const descartadas = new Set();
+const MOVER_PARA_ARRASTRAR = 8;
+// Lo que se apartó con «Ahora no» o se contestó vive lo que la pestaña: así
+// el mismo aviso no vuelve a asomarse solo, y la misma pregunta no se paga dos veces.
+const apartados = new Set();
 const respondidas = new Map();
 
 function marcar(anclas) {
@@ -52,6 +58,20 @@ function marcar(anclas) {
     return () => marcados.forEach((el) => el.removeAttribute('data-saly-senalado'));
 }
 
+/** El bloque con sentido debajo de un punto: una ficha, una fila, una tarjeta. */
+function bloqueEn(x, y, propio) {
+    let el = document.elementFromPoint(x, y);
+    if (!el || propio?.contains(el)) return null;
+    const candidato = el.closest('[data-saly-ancla], [data-surface="card"], tr, li, article, [role="row"], section');
+    el = candidato && candidato !== document.body ? candidato : el;
+    // Un bloque que es casi la página entera no dice nada: se queda el de abajo.
+    if (el.getBoundingClientRect().height > window.innerHeight * 0.8) el = document.elementFromPoint(x, y);
+    if (!el || el === document.body || el === document.documentElement) return null;
+    return el;
+}
+
+const textoDe = (el) => taparDatosPersonales(String(el?.innerText || '').replace(/\s+/g, ' ').trim()).slice(0, 600);
+
 export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const navigate = useNavigate();
     const pantalla = useSalyAyudaStore((s) => s.pantalla);
@@ -62,18 +82,33 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const [contenido, setContenido] = useState(null);   // { animo, piezas, id?, util? }
     const [pregunta, setPregunta] = useState('');
     const [pensando, setPensando] = useState(false);
-    const [, setVersion] = useState(0);                  // repinta al descartar
+    const [, setVersion] = useState(0);                  // repinta al apartar
     const [quieto, setQuieto] = useState(null);
+    const [senalado, setSenalado] = useState(null);     // { texto }
+    const [apuntando, setApuntando] = useState(false);  // modo «Señalar»
+    const [arrastre, setArrastre] = useState(null);     // { x, y } mientras se arrastra
     const desmarcar = useRef(null);
+    const marcaSenalado = useRef(null);
     const raiz = useRef(null);
     const campo = useRef(null);
+    const inicio = useRef(null);
+    const huboArrastre = useRef(false);
 
     const limpiarMarcas = useCallback(() => { desmarcar.current?.(); desmarcar.current = null; }, []);
-    const cerrar = useCallback(() => { setAbierto(false); setContenido(null); limpiarMarcas(); }, [limpiarMarcas]);
+    const soltarSenalado = useCallback(() => {
+        marcaSenalado.current?.removeAttribute('data-saly-senalado');
+        marcaSenalado.current = null;
+        setSenalado(null);
+    }, []);
+    const cerrar = useCallback(() => {
+        setAbierto(false); setContenido(null); limpiarMarcas(); soltarSenalado(); setApuntando(false);
+    }, [limpiarMarcas, soltarSenalado]);
 
-    // Cambiar de pantalla cierra el globo: lo que decía era de la otra.
-    useEffect(() => { cerrar(); }, [pantalla, cerrar]);
-    useEffect(() => limpiarMarcas, [limpiarMarcas]);
+    // Cambiar de MÓDULO cierra el globo. No de título: el título se completa
+    // cuando llega el nombre de la sala, y eso no es cambiar de pantalla.
+    const modulo = pantalla?.modulo;
+    useEffect(() => { cerrar(); }, [modulo, cerrar]);
+    useEffect(() => () => { limpiarMarcas(); marcaSenalado.current?.removeAttribute('data-saly-senalado'); }, [limpiarMarcas]);
 
     // ── Rato quieto en un formulario ────────────────────────────────────────
     useEffect(() => {
@@ -89,34 +124,133 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         return () => { clearInterval(reloj); eventos.forEach((e) => document.removeEventListener(e, mover, true)); };
     }, [enFormulario]);
 
+    const vigentes = useMemo(() => [quieto, ...(avisos || [])].filter(Boolean), [quieto, avisos]);
+    // El que se asoma solo: el primero que nadie apartó.
     const aviso = useMemo(
-        () => [quieto, ...(avisos || [])].find((a) => a && !descartadas.has(a.clave)) || null,
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- `descartadas` cambia con `setVersion`
-        [quieto, avisos, abierto],
+        () => vigentes.find((a) => !apartados.has(a.clave)) || null,
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `apartados` cambia con `setVersion`
+        [vigentes, abierto],
     );
 
-    const descartar = useCallback((a) => { if (a) descartadas.add(a.clave); setVersion((v) => v + 1); }, []);
+    const apartar = useCallback((a) => { if (a) apartados.add(a.clave); setVersion((v) => v + 1); }, []);
 
     const explicar = useCallback((a) => {
         limpiarMarcas();
-        descartadas.add(a.clave);
-        setContenido({ animo: a.animo, piezas: a.explicacion });
+        apartados.add(a.clave);   // ya no se asoma solo; sigue en la lista
+        setContenido({ animo: a.animo, piezas: a.explicacion, volver: true });
         setAbierto(true);
         if (a.ancla) desmarcar.current = marcar([a.ancla]);
     }, [limpiarMarcas]);
 
+    const abrirInicio = useCallback(() => { limpiarMarcas(); setContenido(null); setAbierto(true); }, [limpiarMarcas]);
+
     const abrirOCerrar = useCallback(() => {
+        if (huboArrastre.current) { huboArrastre.current = false; return; }
         if (abierto) { cerrar(); return; }
         if (aviso) { explicar(aviso); return; }
-        setContenido(null);
-        setAbierto(true);
-    }, [abierto, aviso, cerrar, explicar]);
+        abrirInicio();
+    }, [abierto, aviso, cerrar, explicar, abrirInicio]);
 
     const ir = useCallback((ruta) => { cerrar(); navigate(ruta); }, [cerrar, navigate]);
 
-    const preguntar = useCallback(async (e) => {
+    // ── Señalar: tomar un bloque de la pantalla ─────────────────────────────
+    const tomar = useCallback((el) => {
+        soltarSenalado();
+        limpiarMarcas();
+        const texto = textoDe(el);
+        if (!texto) return;
+        el.setAttribute('data-saly-senalado', '');
+        marcaSenalado.current = el;
+        setSenalado({ texto });
+        setContenido(null);
+        setAbierto(true);
+        setTimeout(() => campo.current?.querySelector('input')?.focus(), 30);
+    }, [soltarSenalado, limpiarMarcas]);
+
+    // Resaltado mientras se pasa por encima (en modo Señalar o arrastrando).
+    const sobre = useRef(null);
+    const resaltar = useCallback((el) => {
+        if (sobre.current === el) return;
+        if (sobre.current && sobre.current !== marcaSenalado.current) sobre.current.removeAttribute('data-saly-senalado');
+        sobre.current = el;
+        el?.setAttribute('data-saly-senalado', '');
+    }, []);
+    const quitarResaltado = useCallback(() => resaltar(null), [resaltar]);
+
+    useEffect(() => {
+        if (!apuntando) return undefined;
+        const mover = (e) => resaltar(bloqueEn(e.clientX, e.clientY, raiz.current));
+        const tocar = (e) => {
+            if (raiz.current?.contains(e.target)) return;
+            e.preventDefault(); e.stopPropagation();
+            const el = bloqueEn(e.clientX, e.clientY, raiz.current);
+            quitarResaltado();
+            setApuntando(false);
+            // El `click` de este mismo toque llega DESPUÉS de que el modo se
+            // apaga: sin esto la fila señalada se abriría igual.
+            const unaVez = (ev) => { ev.preventDefault(); ev.stopPropagation(); document.removeEventListener('click', unaVez, true); };
+            document.addEventListener('click', unaVez, true);
+            setTimeout(() => document.removeEventListener('click', unaVez, true), 600);
+            if (el) tomar(el); else setAbierto(true);
+        };
+        const tecla = (e) => { if (e.key === 'Escape') { quitarResaltado(); setApuntando(false); setAbierto(true); } };
+        // El clic se traga en captura: tocar una fila para señalarla no la abre.
+        const tragar = (e) => { if (!raiz.current?.contains(e.target)) { e.preventDefault(); e.stopPropagation(); } };
+        document.addEventListener('pointermove', mover, true);
+        document.addEventListener('pointerdown', tocar, true);
+        document.addEventListener('click', tragar, true);
+        window.addEventListener('keydown', tecla);
+        document.body.style.cursor = 'crosshair';
+        return () => {
+            document.removeEventListener('pointermove', mover, true);
+            document.removeEventListener('pointerdown', tocar, true);
+            document.removeEventListener('click', tragar, true);
+            window.removeEventListener('keydown', tecla);
+            document.body.style.cursor = '';
+            quitarResaltado();
+        };
+    }, [apuntando, resaltar, quitarResaltado, tomar]);
+
+    // Arrastrar a Saly encima de algo.
+    const alApretar = useCallback((e) => {
+        if (e.button != null && e.button !== 0) return;
+        inicio.current = { x: e.clientX, y: e.clientY, id: e.pointerId };
+        huboArrastre.current = false;
+    }, []);
+    useEffect(() => {
+        const mover = (e) => {
+            const i = inicio.current;
+            if (!i || e.pointerId !== i.id) return;
+            if (!huboArrastre.current && Math.hypot(e.clientX - i.x, e.clientY - i.y) < MOVER_PARA_ARRASTRAR) return;
+            huboArrastre.current = true;
+            e.preventDefault();
+            setArrastre({ x: e.clientX, y: e.clientY });
+            resaltar(bloqueEn(e.clientX, e.clientY, raiz.current));
+        };
+        const soltar = (e) => {
+            const i = inicio.current;
+            inicio.current = null;
+            if (!i || !huboArrastre.current) return;
+            setArrastre(null);
+            const el = bloqueEn(e.clientX, e.clientY, raiz.current);
+            quitarResaltado();
+            if (el) tomar(el);
+            // El `click` que sigue al soltar no tiene que abrir/cerrar la burbuja.
+            setTimeout(() => { huboArrastre.current = false; }, 0);
+        };
+        window.addEventListener('pointermove', mover, { passive: false });
+        window.addEventListener('pointerup', soltar);
+        window.addEventListener('pointercancel', soltar);
+        return () => {
+            window.removeEventListener('pointermove', mover);
+            window.removeEventListener('pointerup', soltar);
+            window.removeEventListener('pointercancel', soltar);
+        };
+    }, [resaltar, quitarResaltado, tomar]);
+
+    const preguntar = useCallback(async (e, textoFijo) => {
         e?.preventDefault?.();
-        const texto = pregunta.trim().slice(0, SALY_MAX_PREGUNTA);
+        const texto = (textoFijo || pregunta).trim().slice(0, SALY_MAX_PREGUNTA);
         if (!texto || !pantalla || pensando) return;
         limpiarMarcas();
 
@@ -128,19 +262,20 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
             rotulo: f.rotulo, valor: f.valor ?? '',
             opciones: (f.opciones || []).slice(0, 30).map((o) => ({ value: String(o.value), label: String(o.label) })),
         }]));
+        const lo = senalado?.texto || '';
 
-        const clave = claveDePregunta(pantalla.modulo, texto, vista);
+        const clave = claveDePregunta(pantalla.modulo, texto, `${vista}|${lo}`);
         let data = respondidas.get(clave);
         if (!data) {
             setPensando(true);
             setAbierto(true);
-            setContenido({ animo: 'pensando', piezas: [{ tipo: 'titular', texto: 'Déjame ver…', sub: 'Estoy leyendo lo que hay en pantalla' }] });
-            const r = await preguntarAyudaDeSaly({ modulo: pantalla.modulo, pregunta: texto, pantalla: vista, filtros });
+            setContenido({ animo: 'pensando', piezas: [{ tipo: 'titular', texto: 'Déjame ver…', sub: lo ? 'Estoy leyendo lo que señalaste' : 'Estoy leyendo lo que hay en pantalla' }] });
+            const r = await preguntarAyudaDeSaly({ modulo: pantalla.modulo, pregunta: texto, pantalla: vista, filtros, senalado: lo || undefined });
             setPensando(false);
             data = r.data;
             if (r.error || !data?.ok) {
                 const tope = data?.motivo === 'TOPE';
-                setContenido({ animo: 'preocupacion', piezas: [
+                setContenido({ animo: 'preocupacion', volver: true, piezas: [
                     { tipo: 'titular', texto: tope ? 'Por hoy ya no puedo responder más' : 'No pude responderte ahora',
                         sub: tope ? 'Llegaste a las 30 preguntas del día. Mañana sigo.' : 'Inténtalo de nuevo en un momento.' },
                 ] });
@@ -165,9 +300,9 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
             piezas.splice(1, 0, { tipo: 'chips', items: puestos.map((p) => p.texto) });
             piezas.push({ tipo: 'nota', texto: 'Quita los filtros cuando quieras: no guardé nada.' });
         }
-        setContenido({ animo: data.animo || 'atencion', piezas, id: data.id, quedan: data.quedan });
+        setContenido({ animo: data.animo || 'atencion', piezas, id: data.id, quedan: data.quedan, volver: true });
         if (puestos.length) setTimeout(() => { desmarcar.current = marcar(puestos.map((p) => p.ancla)); }, 60);
-    }, [pregunta, pantalla, pensando, limpiarMarcas]);
+    }, [pregunta, pantalla, pensando, limpiarMarcas, senalado]);
 
     const calificar = useCallback(async (util) => {
         if (!contenido?.id) return;
@@ -176,11 +311,10 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         if (error) console.error('Saly: no se pudo anotar la calificación', error);
     }, [contenido]);
 
-    // Se cierra con Escape y con un toque FUERA (usuario, 2026-11-04: «si doy
-    // click afuera no se cierra»). `pointerdown` y en captura, para que ningún
-    // componente de la pantalla se lo trague antes con un `stopPropagation`.
+    // Se cierra con Escape y con un toque FUERA. `pointerdown` y en captura,
+    // para que ningún componente de la pantalla se lo trague antes.
     useEffect(() => {
-        if (!abierto) return undefined;
+        if (!abierto || apuntando) return undefined;
         const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
         const afuera = (e) => { if (raiz.current && !raiz.current.contains(e.target)) cerrar(); };
         window.addEventListener('keydown', tecla);
@@ -189,9 +323,8 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
             window.removeEventListener('keydown', tecla);
             document.removeEventListener('pointerdown', afuera, true);
         };
-    }, [abierto, cerrar]);
+    }, [abierto, apuntando, cerrar]);
 
-    // Al abrir sin aviso, el cursor ya está en la pregunta.
     useEffect(() => {
         if (abierto && !contenido) setTimeout(() => campo.current?.querySelector('input')?.focus(), 30);
     }, [abierto, contenido]);
@@ -201,98 +334,153 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const sobreDialogo = hayDialogo;
     if (sobreDialogo && !(quieto && aviso === quieto) && !abierto) return null;
 
-    const animo = pensando ? 'pensando' : (abierto ? (contenido?.animo || 'atencion') : (aviso?.animo || 'atencion'));
-    const ofreciendo = !abierto && aviso;
-    const etiqueta = ofreciendo ? `Saly: ${aviso.oferta?.[0]?.texto || 'tiene algo que contarte'}` : 'Saly: pedir ayuda sobre esta pantalla';
+    const animo = pensando ? 'pensando' : (abierto ? (contenido?.animo || (senalado ? 'pensando' : 'atencion')) : (aviso?.animo || 'atencion'));
+    const ofreciendo = !abierto && !apuntando && !arrastre && aviso;
+    const etiqueta = ofreciendo ? `Saly: ${aviso.oferta?.[0]?.texto || 'tiene algo que contarte'}` : 'Saly: pedir ayuda sobre esta pantalla. Arrástrala sobre algo para preguntar por eso.';
 
-    // Vive en la MISMA columna que la burbuja del chat con clientes, encima de
-    // ella: a su lado se encimaba con las flechas de subir/bajar de la lista.
-    // Abierta sube a `z-dropdown` para quedar sobre esas flechas.
     const lado = sobreDialogo
         ? 'left-[max(16px,var(--sa-left))] z-toast flex-row-reverse'
-        : `right-[max(16px,var(--sa-right))] ${abierto ? 'z-dropdown' : 'z-tabs'}`;
+        : `right-[max(16px,var(--sa-right))] ${abierto || apuntando ? 'z-dropdown' : 'z-tabs'}`;
+
+    const inicioPiezas = senalado
+        ? [{ tipo: 'titular', texto: '¿Qué quieres saber de esto?', sub: 'Lo marqué en la pantalla' }]
+        : [{ tipo: 'titular', texto: '¿En qué te ayudo?', sub: pantalla.titulo }];
 
     return (
-        <div data-burbuja-saly="" ref={raiz}
-            className={`fixed ${lado} flex items-end gap-2 pointer-events-none
-                bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom)))]
-                [body:has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+4.5rem)]
-                [body:has([data-barra-flotante])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+5rem)]
-                [body:has([data-barra-flotante]):has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+9.5rem)]`}>
-
-            {(abierto || ofreciendo) && (
-                <div data-surface="dropdown" role="region" aria-live="polite" aria-label="Ayuda de Saly"
-                    className={`pointer-events-auto rounded-2xl ${sobreDialogo ? 'rounded-bl-md' : 'rounded-br-md'} overflow-hidden
-                        ${abierto ? 'w-[min(22rem,calc(100vw-6.5rem))]' : 'w-[min(16rem,calc(100vw-6.5rem))]'}`}>
-                    <div data-animo={animo} className="saly-toque px-4 pb-4 pt-3">
-                        {abierto ? (
-                            <>
-                                <div className="-mr-2 mb-1 flex items-center justify-between">
-                                    <span className="text-micro font-black uppercase tracking-widest text-content-3">Saly</span>
-                                    <button type="button" onClick={cerrar} aria-label="Cerrar la ayuda de Saly"
-                                        className="grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-full text-content-3 hover:text-content active:scale-[0.97]">
-                                        <X size={16} aria-hidden="true" />
-                                    </button>
-                                </div>
-                                <div>
-                                    <div className="max-h-[min(26rem,60vh)] overflow-y-auto pr-1">
-                                        <PiezasDeSaly onIr={ir} piezas={contenido?.piezas || [
-                                            { tipo: 'titular', texto: '¿En qué te ayudo?', sub: pantalla.titulo },
-                                            { tipo: 'nota', texto: 'Pregúntame sobre lo que ves en esta pantalla. Puedo explicarte, llevarte o poner filtros por ti.' },
-                                        ]} />
-                                    </div>
-                                </div>
-
-                                {contenido?.id && (
-                                    <div className="mt-3 flex items-center gap-1 text-caption text-content-3">
-                                        <span className="mr-1">¿Te sirvió?</span>
-                                        {[[true, ThumbsUp, 'Sí me sirvió'], [false, ThumbsDown, 'No me sirvió']].map(([v, Icono, rot]) => (
-                                            <button key={rot} type="button" onClick={() => calificar(v)} aria-label={rot} aria-pressed={contenido.util === v}
-                                                className={`grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-lg active:scale-[0.97]
-                                                    ${contenido.util === v ? 'text-content' : 'hover:text-content'}`}>
-                                                <Icono size={15} aria-hidden="true" />
-                                            </button>
-                                        ))}
-                                    </div>
-                                )}
-
-                                <form onSubmit={preguntar} className="mt-4 flex items-center gap-2 border-t border-divider pt-3">
-                                    <div className="min-w-0 flex-1" ref={campo}>
-                                        <PortalInput name="saly-pregunta" value={pregunta} onChange={(e) => setPregunta(e.target.value)}
-                                            placeholder="Escribe tu duda…" readOnly={pensando} aria-label="Pregúntale a Saly"
-                                            inputClassName="!text-body-sm !font-medium"
-                                            maxLength={SALY_MAX_PREGUNTA} autoComplete="off" />
-                                    </div>
-                                    <Button type="submit" variant="primary" iconOnly icon={Send}
-                                        aria-label="Enviar la pregunta" disabled={!pregunta.trim() || pensando} />
-                                </form>
-                            </>
-                        ) : (
-                            <>
-                                <PiezasDeSaly piezas={aviso.oferta} onIr={ir} />
-                                <div className="mt-3 flex gap-2">
-                                    <button type="button" onClick={() => explicar(aviso)}
-                                        className="min-h-[var(--tap-min)] rounded-lg bg-surface-card px-3 text-caption font-bold text-content ring-1 ring-inset ring-border-card active:scale-[0.97]">
-                                        Explícamelo
-                                    </button>
-                                    <button type="button" onClick={() => descartar(aviso)}
-                                        className="min-h-[var(--tap-min)] rounded-lg px-2 text-caption font-bold text-content-3 hover:text-content active:scale-[0.97]">
-                                        Ahora no
-                                    </button>
-                                </div>
-                            </>
-                        )}
+        <>
+            {apuntando && (
+                <div className="pointer-events-none fixed inset-x-0 top-[max(12px,var(--sa-top))] z-toast flex justify-center px-4">
+                    <div data-surface="dropdown" className="saly-toque rounded-full px-4 py-2 text-caption font-bold text-content">
+                        Toca lo que quieres que te explique · Esc para salir
                     </div>
                 </div>
             )}
+            {arrastre && (
+                <div aria-hidden="true" className="pointer-events-none fixed z-toast" style={{ left: arrastre.x - 26, top: arrastre.y - 26 }}>
+                    <SalyAvatar animo="pensando" size={52} decorativa />
+                </div>
+            )}
 
-            <button type="button" onClick={abrirOCerrar} aria-label={etiqueta} title={etiqueta}
-                aria-expanded={abierto}
-                className="pointer-events-auto grid h-14 w-14 shrink-0 place-items-center rounded-full transition-transform duration-[var(--dur-fast)] hover:scale-[1.04] active:scale-[0.97]">
-                <span className="drop-shadow-[0_6px_14px_color-mix(in_srgb,var(--saly-rasgo)_40%,transparent)]">
-                    <SalyAvatar animo={animo} size={52} decorativa />
-                </span>
-            </button>
-        </div>
+            <div data-burbuja-saly="" ref={raiz}
+                className={`fixed ${lado} flex items-end gap-2 pointer-events-none
+                    bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom)))]
+                    [body:has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+4.5rem)]
+                    [body:has([data-barra-flotante])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+5rem)]
+                    [body:has([data-barra-flotante]):has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+9.5rem)]`}>
+
+                {((abierto && !apuntando) || ofreciendo) && (
+                    <div data-surface="dropdown" role="region" aria-live="polite" aria-label="Ayuda de Saly"
+                        className={`pointer-events-auto rounded-2xl ${sobreDialogo ? 'rounded-bl-md' : 'rounded-br-md'} overflow-hidden
+                            ${abierto ? 'w-[min(22rem,calc(100vw-6.5rem))]' : 'w-[min(16rem,calc(100vw-6.5rem))]'}`}>
+                        <div data-animo={animo} className="saly-toque px-4 pb-4 pt-3">
+                            {abierto ? (
+                                <>
+                                    <div className="-mr-2 mb-1 flex items-center justify-between">
+                                        {contenido?.volver ? (
+                                            <button type="button" onClick={abrirInicio}
+                                                className="-ml-1 min-h-[var(--tap-min)] rounded-lg px-1 text-micro font-black uppercase tracking-widest text-content-3 hover:text-content active:scale-[0.97]">
+                                                ‹ Saly
+                                            </button>
+                                        ) : (
+                                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Saly</span>
+                                        )}
+                                        <button type="button" onClick={cerrar} aria-label="Cerrar la ayuda de Saly"
+                                            className="grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-full text-content-3 hover:text-content active:scale-[0.97]">
+                                            <X size={16} aria-hidden="true" />
+                                        </button>
+                                    </div>
+
+                                    <div className="max-h-[min(26rem,60vh)] overflow-y-auto pr-1">
+                                        <PiezasDeSaly onIr={ir} piezas={contenido?.piezas || inicioPiezas} />
+
+                                        {!contenido && senalado && (
+                                            <div className="mt-3">
+                                                <p className="line-clamp-3 rounded-xl px-3 py-2 text-caption text-content-2" data-saly-senalado="">{senalado.texto}</p>
+                                                <div className="mt-2 flex flex-wrap gap-1.5">
+                                                    {['Explícame esto', '¿Está bien esto?', '¿Qué hago con esto?'].map((t) => (
+                                                        <Button key={t} variant="secondary" size="sm" onClick={() => preguntar(null, t)} disabled={pensando}>{t}</Button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {!contenido && !senalado && (
+                                            <div className="mt-3 grid gap-3">
+                                                {vigentes.length > 0 && (
+                                                    <div>
+                                                        <p className="mb-1 text-micro font-black uppercase tracking-widest text-content-3">Lo que veo ahora</p>
+                                                        <div className="grid gap-1">
+                                                            {vigentes.map((a) => (
+                                                                <button key={a.clave} type="button" onClick={() => explicar(a)}
+                                                                    className="flex min-h-[var(--tap-min)] items-center gap-2 rounded-xl px-2 text-left hover:bg-surface-card-hover active:scale-[0.99]">
+                                                                    <span className="min-w-0 flex-1">
+                                                                        <span className="block truncate text-body-sm font-bold text-content">{a.oferta?.[0]?.texto}</span>
+                                                                        {a.oferta?.[0]?.sub && <span className="block truncate text-caption text-content-3">{a.oferta[0].sub}</span>}
+                                                                    </span>
+                                                                    <ChevronRight size={16} className="shrink-0 text-content-3" aria-hidden="true" />
+                                                                </button>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                )}
+                                                <button type="button" onClick={() => setApuntando(true)}
+                                                    className="flex min-h-[var(--tap-min)] items-center gap-2 rounded-xl px-2 text-left hover:bg-surface-card-hover active:scale-[0.99]">
+                                                    <Crosshair size={16} className="shrink-0 text-content-2" aria-hidden="true" />
+                                                    <span className="min-w-0 flex-1">
+                                                        <span className="block text-body-sm font-bold text-content">Señalar algo de la pantalla</span>
+                                                        <span className="block text-caption text-content-3">O arrástrame encima de una fila</span>
+                                                    </span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {contenido?.id && (
+                                        <div className="mt-3 flex items-center gap-1 text-caption text-content-3">
+                                            <span className="mr-1">¿Te sirvió?</span>
+                                            {[[true, ThumbsUp, 'Sí me sirvió'], [false, ThumbsDown, 'No me sirvió']].map(([v, Icono, rot]) => (
+                                                <button key={rot} type="button" onClick={() => calificar(v)} aria-label={rot} aria-pressed={contenido.util === v}
+                                                    className={`grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-lg active:scale-[0.97]
+                                                        ${contenido.util === v ? 'text-content' : 'hover:text-content'}`}>
+                                                    <Icono size={15} aria-hidden="true" />
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    <form onSubmit={preguntar} className="mt-4 flex items-center gap-2 border-t border-divider pt-3">
+                                        <div className="min-w-0 flex-1" ref={campo}>
+                                            <PortalInput name="saly-pregunta" value={pregunta} onChange={(e) => setPregunta(e.target.value)}
+                                                placeholder={senalado ? 'O escribe tu pregunta…' : 'Escribe tu duda…'} readOnly={pensando} aria-label="Pregúntale a Saly"
+                                                inputClassName="!text-body-sm !font-medium"
+                                                maxLength={SALY_MAX_PREGUNTA} autoComplete="off" />
+                                        </div>
+                                        <Button type="submit" variant="primary" iconOnly icon={Send}
+                                            aria-label="Enviar la pregunta" disabled={!pregunta.trim() || pensando} />
+                                    </form>
+                                </>
+                            ) : (
+                                <>
+                                    <PiezasDeSaly piezas={aviso.oferta} onIr={ir} />
+                                    <div className="mt-3 flex gap-2">
+                                        <Button variant="secondary" size="sm" onClick={() => explicar(aviso)}>Explícamelo</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => apartar(aviso)}>Ahora no</Button>
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                )}
+
+                <button type="button" onClick={abrirOCerrar} onPointerDown={alApretar} aria-label={etiqueta} title={etiqueta}
+                    aria-expanded={abierto}
+                    className={`pointer-events-auto grid h-14 w-14 shrink-0 touch-none select-none place-items-center rounded-full transition-transform duration-[var(--dur-fast)] hover:scale-[1.04] active:scale-[0.97] cursor-grab
+                        ${arrastre ? 'opacity-30' : ''}`}>
+                    <span className="drop-shadow-[0_6px_14px_color-mix(in_srgb,var(--saly-rasgo)_40%,transparent)]">
+                        <SalyAvatar animo={animo} size={52} decorativa />
+                    </span>
+                </button>
+            </div>
+        </>
     );
 }

@@ -52,9 +52,16 @@ export function useSalyEnPantalla({ modulo, titulo, leer, filtros, avisos, enFor
     const firma = (avisos || []).filter(Boolean).map((a) => a.clave).join('|');
     const avisosRef = useRef(avisos);
     useEffect(() => { avisosRef.current = avisos; });
+    // Y un aviso que se va, se va con 15 s de gracia: la pantalla se relee
+    // sola y en el medio de una relectura sus números pasan por vacío. Sin la
+    // gracia, el aviso se asomaba y se borraba antes de poder leerlo
+    // (usuario, 2026-11-04: «da una sugerencia pero se cierra rápido»).
     useEffect(() => {
-        if (!modulo) return;
-        useSalyAyudaStore.getState().ponerAvisos((avisosRef.current || []).filter(Boolean));
+        if (!modulo) return undefined;
+        const lista = (avisosRef.current || []).filter(Boolean);
+        if (lista.length) { useSalyAyudaStore.getState().ponerAvisos(lista); return undefined; }
+        const t = setTimeout(() => useSalyAyudaStore.getState().ponerAvisos([]), 15_000);
+        return () => clearTimeout(t);
     }, [firma, modulo]);
 
     useEffect(() => {

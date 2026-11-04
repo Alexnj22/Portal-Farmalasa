@@ -139,6 +139,9 @@ Deno.serve(async (req) => {
     if (!guia || !pregunta) return responder({ ok: false, motivo: "PEDIDO" }, 400)
     const pantalla = tapar(String(body?.pantalla || "")).slice(0, MAX_PANTALLA)
     const preguntaLimpia = tapar(pregunta)
+    // Lo que la persona señaló en pantalla (arrastrando a Saly o con
+    // «Señalar»): el texto visible de ese bloque, ya tapado en el navegador.
+    const senalado = tapar(corto(body?.senalado, 600))
 
     // Filtros que la pantalla ofrece: la IA sólo puede elegir entre éstos.
     const filtrosIn = (body?.filtros && typeof body.filtros === "object") ? body.filtros as Record<string, any> : {}
@@ -172,7 +175,7 @@ ${Object.entries(filtros).map(([k, f]) => `${k} (${f.rotulo}): ${f.opciones.join
 
 DATOS DE LA PANTALLA:
 ${pantalla || "{}"}
-
+${senalado ? `\nLO QUE LA PERSONA SEÑALÓ (la pregunta es sobre ESTO; es el texto tal como se ve en pantalla):\n${senalado}\n` : ""}
 PREGUNTA: ${preguntaLimpia}
 
 ${FORMATO}`
@@ -194,7 +197,7 @@ ${FORMATO}`
     }
 
     const { data: fila, error: eIns } = await admin.from("saly_ayuda_registro").insert({
-      employee_id: emp.id, modulo, pregunta: preguntaLimpia,
+      employee_id: emp.id, modulo, pregunta: senalado ? `${preguntaLimpia} ⟨señaló: ${senalado.slice(0, 200)}⟩` : preguntaLimpia,
       respuesta: { animo, piezas, filtros: filtrosOut }, tokens,
     }).select("id").single()
     if (eIns) throw eIns

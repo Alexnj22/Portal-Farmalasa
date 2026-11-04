@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1438.2 — Saly: los avisos no se pierden y se le puede señalar algo
+
+Pedido del usuario: «saly da una sugerencia pero se cierra rápido y al abrir ya
+no sale, si quiero preguntar por algo en específico cómo hago? si arrastro a Saly…».
+
+- **Los avisos ya no se gastan.** Al abrir la burbuja aparece «Lo que veo ahora»
+  con todos los vigentes; explicar uno ya no lo borra. Y un aviso que desaparece
+  espera 15 s antes de irse: la pantalla se relee sola y en el medio pasaba por
+  vacío, que era lo que lo cerraba de golpe.
+- **Preguntar por algo concreto**, de dos formas: arrastrar a Saly encima de una
+  fila, o tocar «Señalar algo de la pantalla» y después la fila. Lo señalado se
+  marca con su color y aparecen tres preguntas rápidas (Explícame esto · ¿Está
+  bien esto? · ¿Qué hago con esto?) o se escribe una. Señalar no cuesta; sólo la
+  pregunta va a la IA, con el texto visible de esa fila (datos personales tapados).
+- «‹ Saly» vuelve al inicio desde una respuesta.
+
 ## v2.1438.1 — Las flechas flotantes se esconden al dejar de bajar
 
 - El relleno de abajo (v2.1434.1) sólo servía al llegar al final: mientras se

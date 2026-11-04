@@ -68,6 +68,12 @@ export default function Nivel({ nivel, pie = null }) {
   // Desplegable (2026-10-09, «que no ocupe tanta pantalla»): cerrado se ve el
   // nivel, la barra y cuánto falta; al tocarlo, los beneficios y el detalle.
   const alternar = () => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); };
+  // Un solo acento en la tarjeta (2026-11-04, «las cards tienen muchos
+  // colores… unifica pero que no pierdan la identidad»): el METAL del nivel,
+  // que es su identidad — en el recuadro, el ×, la barra y las palomitas. Antes
+  // el × y la barra iban en verde. En oscuro, el tono claro del metal (se lee
+  // sobre el vidrio oscuro; el del Platino es casi negro); en claro, el medio.
+  const tono = t.oscuro ? paleta.acento : paleta.frente[1];
   return (
     <Tarjeta estilo={{ gap: 12 }}>
       <Presionable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
@@ -82,7 +88,7 @@ export default function Nivel({ nivel, pie = null }) {
           <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{nivel.nombre}</Text>
         </View>
         <View style={{ alignItems: 'flex-end' }}>
-          <Text style={{ fontSize: 20, fontWeight: '900', color: t.color.verdeTexto, fontVariant: ['tabular-nums'] }}>×{Number(nivel.factor)}</Text>
+          <Text style={{ fontSize: 20, fontWeight: '900', color: tono, fontVariant: ['tabular-nums'] }}>×{Number(nivel.factor)}</Text>
           <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{factorTexto(nivel.factor)} / $1</Text>
         </View>
         <FlechaDesplegable abierto={abierto} color={colorSistema.texto3} />
@@ -92,7 +98,7 @@ export default function Nivel({ nivel, pie = null }) {
         <Texto nivel={2} estilo={{ fontSize: 14 }}>{nivel.desde ? `Hoy: 1 punto por cada $1. Los niveles empiezan el ${fechaLarga(nivel.desde)}.` : 'Hoy: 1 punto por cada $1. Los niveles llegan pronto.'}</Texto>
       ) : sig ? (
         <View style={{ gap: 6 }}>
-          <BarraAnimada avance={avance} color={t.color.verde} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
+          <BarraAnimada avance={avance} color={tono} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
           <Texto nivel={2} estilo={{ fontSize: 14 }}>
             Te faltan <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(sig.falta)}</Text> para{' '}
             <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{sig.nombre}</Text>
@@ -116,7 +122,7 @@ export default function Nivel({ nivel, pie = null }) {
         {beneficios.map((b) => (
           <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5,
             backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }}>
-            <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.verdeTexto} />
+            <Icono sf="checkmark" respaldo="✓" tam={10} color={tono} />
             <Text maxFontSizeMultiplier={1.3} style={{ flexShrink: 1, fontSize: 12, fontWeight: '600', color: colorSistema.texto2 }}>{b}</Text>
           </View>
         ))}
@@ -133,7 +139,7 @@ export default function Nivel({ nivel, pie = null }) {
           </View>
           {beneficiosSig.map((b) => (
             <View key={b} style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginLeft: 4 }}>
-              <Icono sf="sparkles" respaldo="✦" tam={11} color={t.color.magentaTexto} />
+              <Icono sf="sparkles" respaldo="✦" tam={11} color={tono} />
               <Text style={{ flexShrink: 1, fontSize: 13, color: colorSistema.texto2 }}>{b}</Text>
             </View>
           ))}
@@ -141,14 +147,34 @@ export default function Nivel({ nivel, pie = null }) {
       ) : null}
       <Texto nivel={3} estilo={{ fontSize: 12 }}>Tus compras de 12 meses: {dolares(nivel.compra)}</Texto>
       {pie}
+      {/* Cerrar también desde ABAJO (2026-11-04, «al abrir los beneficios del
+          nivel, que salga abajo cerrar… para que se pueda cerrar desde abajo
+          también»): con la lista abierta, el encabezado ya quedó arriba de la
+          pantalla. Hace lo mismo que tocar el encabezado. */}
+      <BotonDesplegar abierto alTocar={alternar} />
       </Animated.View>
       ) : (
-        <Presionable onPress={alternar} hitSlop={8} style={{ alignSelf: 'flex-start' }}>
-          <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>
-            Ver beneficios
-          </Text>
-        </Presionable>
+        <BotonDesplegar abierto={false} alTocar={alternar} />
       )}
     </Tarjeta>
+  );
+}
+
+// «Ver beneficios» / «Ocultar beneficios»: la misma pieza abajo de la tarjeta
+// cerrada y al final de la abierta, con su flecha. Ancho completo y 44 pt de
+// alto: se acierta con el pulgar sin buscarla.
+function BotonDesplegar({ abierto, alTocar }) {
+  const t = useTema();
+  return (
+    <Presionable onPress={alTocar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
+      accessibilityLabel={abierto ? 'Ocultar beneficios' : 'Ver beneficios'}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, minHeight: 44,
+        borderRadius: 14, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)',
+        opacity: pressed ? 0.6 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>
+        {abierto ? 'Ocultar beneficios' : 'Ver beneficios'}
+      </Text>
+      <Icono sf={abierto ? 'chevron.up' : 'chevron.down'} respaldo={abierto ? '⌃' : '⌄'} tam={12} color={t.color.magentaTexto} />
+    </Presionable>
   );
 }

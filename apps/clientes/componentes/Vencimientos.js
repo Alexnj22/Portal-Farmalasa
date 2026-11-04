@@ -90,8 +90,11 @@ export default function Vencimientos({ vencimientos }) {
         </View>
       ) : (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: suave(t.color.verde, 0.3), alignItems: 'center', justifyContent: 'center' }}>
-            <Icono sf="checkmark" respaldo="✓" tam={17} color={t.color.verdeTexto} />
+          {/* El recuadro de la marca, como las demás tarjetas del Inicio
+              (2026-11-04, «unifica pero que no pierdan la identidad»); el
+              naranja queda sólo para lo que vence pronto, que es un aviso. */}
+          <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11), alignItems: 'center', justifyContent: 'center' }}>
+            <Icono sf="checkmark" respaldo="✓" tam={17} color={t.color.magentaTexto} />
           </View>
           <View style={{ flex: 1 }}>
             <Texto estilo={{ fontWeight: '700' }}>Nada vence en los próximos 3 meses</Texto>
@@ -105,7 +108,7 @@ export default function Vencimientos({ vencimientos }) {
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: ALTO + 40, gap: 8 }}>
             {barras.map((b, i) => (
               <Barra key={b.clave} barra={b} indice={i} maximo={maximo} elegida={elegido === i}
-                color={b.pronto ? NARANJA : t.color.verde} alTocar={() => {
+                color={b.pronto ? NARANJA : t.color.magenta} alTocar={() => {
                   Haptics.selectionAsync().catch(() => {});
                   setElegido(elegido === i ? null : i);
                 }} />

@@ -27,7 +27,7 @@ import { useConCodigo, useSesion } from '../../../lib/sesion';
 import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, raspableDePrueba, useModoPrueba } from '../../../lib/prueba';
 import { resumenConDemo, useDemo } from '../../../lib/demo';
-import { BotonWalletNativo, abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, tienePase, walletDisponible } from '../../../modules/wallet';
+import { BotonWalletNativo, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, googleWalletYaAgregada, marcarGoogleWalletAgregada, serieEnWallet, walletDisponible } from '../../../modules/wallet';
 import { suave, useTema } from '../../../tema/tema';
 import { colorSistema } from '../../../componentes/sistema';
 import { navegar } from '../../../lib/navegar';
@@ -198,7 +198,7 @@ export default function Puntos() {
         </Entrada>
       ) : googleWalletDisponible(resumen) ? (
         <Entrada indice={1}>
-          <BotonGoogleWallet nivelPrueba={enPrueba ? `${material ?? prueba.nivel}${empleado ? '+equipo' : ''}` : null} />
+          <BotonGoogleWallet id={resumen.wallet_serial ?? resumen.codigo} nivelPrueba={enPrueba ? `${material ?? prueba.nivel}${empleado ? '+equipo' : ''}` : null} />
         </Entrada>
       ) : null}
 
@@ -227,9 +227,13 @@ export default function Puntos() {
       {/* El estado del canje (2026-10-09: justo debajo del nivel, pedido del usuario). El saldo cuenta hacia arriba y la barra se llena
           con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
       <Entrada indice={2}>
-        <Tarjeta tono={falta > 0 ? t.color.magenta : t.color.verde} estilo={{ gap: 10 }}>
+        {/* Sin tinte propio (2026-11-04, «las cards tienen muchos colores…
+            unifica pero que no pierdan la identidad»): el mismo vidrio que las
+            demás, y su acento —el magenta— sólo en el recuadro y la cifra. */}
+        <Tarjeta estilo={{ gap: 10 }}>
           {falta > 0 ? (
             <>
+              <EncabezadoTarjeta sf="star.fill" texto="Tu primer canje" />
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
                 <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 28, fontWeight: '800', color: t.color.magentaTexto }} />
                 <Texto nivel={2} estilo={{ flexShrink: 1 }}>de {MINIMO_DE_CANJE} puntos para tu primer canje</Texto>
@@ -239,19 +243,15 @@ export default function Puntos() {
             </>
           ) : (
             <>
-              <Latido estilo={{ alignSelf: 'flex-start' }}>
-                <View style={{ backgroundColor: t.color.verde, borderRadius: 999, paddingHorizontal: 14, paddingVertical: 7 }}>
-                  <Text style={{ fontSize: 15, fontWeight: '800', color: '#1A2600' }}>¡Ya puedes canjear!</Text>
-                </View>
-              </Latido>
+              <EncabezadoTarjeta sf="gift.fill" texto="¡Ya puedes canjear!" grande latido />
               <Texto nivel={2} estilo={{ fontSize: 14 }}>
-                Tienes <Text style={{ fontWeight: '800', color: t.color.verdeTexto }}>{dolares(resumen.equivale)}</Text> para descontar. Toca tu tarjeta y muestra el código en caja.
+                Tienes <Text style={{ fontWeight: '800', color: t.color.magentaTexto }}>{dolares(resumen.equivale)}</Text> para descontar. Toca tu tarjeta y muestra el código en caja.
               </Texto>
             </>
           )}
         </Tarjeta>
         {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión. */}
-        {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.verde, t.color.magenta, '#FFD60A', '#5AC8FA']} alTerminar={marcarConfeti} /> : null}
+        {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.magenta, t.color.magentaTexto, '#FFD60A', '#FFFFFF']} alTerminar={marcarConfeti} /> : null}
       </Entrada>
 
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
@@ -266,12 +266,12 @@ export default function Puntos() {
         <Entrada indice={2}>
           <Tocable alTocar={() => navegar(`/encuesta?id=${resumen.encuesta.id}`)}>
             <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-              <View style={{ width: 44, height: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.15) }}>
-                <Icono sf="checklist" respaldo="📝" tam={20} color={t.color.magentaTexto} />
+              <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+                <Icono sf="checklist" respaldo="📝" tam={19} color={t.color.magentaTexto} />
               </View>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>Gana {entero(resumen.encuesta.puntos)} puntos</Text>
-                <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={2}>Responde «{resumen.encuesta.nombre}» en un par de minutos.</Text>
+                <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Responde «{resumen.encuesta.nombre}» en un par de minutos.</Text>
               </View>
               <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
             </Tarjeta>
@@ -318,9 +318,10 @@ export default function Puntos() {
 
       {/* El menú (2026-11-03): seis accesos, los más usados (ver `Menu`). El
           resto vive en Cuenta, y «Todo» lleva allá. El punto rojo es lo que
-          pide atención. */}
+          pide atención. 2026-11-04 («lo tuyo no me gusta, cambia el texto»):
+          «Accesos rápidos». */}
       <Entrada indice={4} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <View style={{ flexShrink: 1 }}><Seccion>Lo tuyo</Seccion></View>
+        <View style={{ flexShrink: 1 }}><Seccion>Accesos rápidos</Seccion></View>
         <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/cuenta'); }} accessibilityRole="button"
           accessibilityLabel="Ver todo en Cuenta" hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 4, minHeight: 32, opacity: pressed ? 0.6 : 1 })}>
@@ -332,6 +333,28 @@ export default function Puntos() {
         <Menu resumen={resumen} urgentes={urgentes.length} />
       </Entrada>
     </Pantalla>
+  );
+}
+
+// El encabezado común de las tarjetas del Inicio (2026-11-04, «las cards
+// tienen muchos colores… unifica pero que no pierdan la identidad»): el mismo
+// recuadro suave de la marca con su ícono y el rótulo al lado. Cada tarjeta se
+// reconoce por SU ícono y su rótulo, no por un color propio. Lo usan el canje
+// y la frase del día (componentes/FraseDelDia.js lleva el mismo dibujo).
+function EncabezadoTarjeta({ sf, texto, grande = false, latido = false }) {
+  const t = useTema();
+  const cuadro = (
+    <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+      <Icono sf={sf} respaldo="" tam={17} color={t.color.magentaTexto} />
+    </View>
+  );
+  return (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+      {latido ? <Latido>{cuadro}</Latido> : cuadro}
+      <Text accessibilityRole="header" style={grande
+        ? { flex: 1, fontSize: 19, fontWeight: '800', letterSpacing: -0.3, color: colorSistema.texto }
+        : { flex: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto2 }}>{texto}</Text>
+    </View>
   );
 }
 
@@ -360,28 +383,29 @@ function TarjetaEnVista({ activa, ...props }) {
 
 // Apple Wallet. La tarjeta se agrega con la HOJA de Apple dentro de la app
 // (modules/wallet): el servidor la firma y la manda en base64 — sin abrir
-// Safari ni mostrar la dirección del servidor. Si ya está en Wallet, el botón
-// cambia a «Ver en Wallet» (antes seguía ofreciendo agregarla, 2026-10-06).
+// Safari ni mostrar la dirección del servidor.
+//
+// 2026-11-04 («sigue saliendo agregar a la wallet… aun cuando ya está
+// agregada. quítalo de ahí si ya se agregó, y pásalo a cuenta»): el botón
+// sólo está mientras la tarjeta NO esté en Wallet — con cualquiera de sus
+// series, también la del modo de prueba, que antes lo dejaba siempre a la
+// vista—. Verla o volver a agregarla vive en Cuenta › Mis puntos.
 function BotonWallet({ serial, nivelPrueba }) {
   const pedir = useSesion((s) => s.pedir);
   const [cargando, setCargando] = useState(false);
-  const [tiene, setTiene] = useState(() => (serial ? tienePase(serial) : false));
+  const [tiene, setTiene] = useState(() => !!serieEnWallet(serial));
   // Al volver a la app (pudo quitarla en Wallet) se vuelve a preguntar.
   useEffect(() => {
     if (!serial) return undefined;
-    setTiene(tienePase(serial));
-    const sub = AppState.addEventListener('change', (e) => { if (e === 'active') setTiene(tienePase(serial)); });
+    setTiene(!!serieEnWallet(serial));
+    const sub = AppState.addEventListener('change', (e) => { if (e === 'active') setTiene(!!serieEnWallet(serial)); });
     return () => sub.remove();
   }, [serial]);
-  useFocusEffect(useCallback(() => { if (serial) setTiene(tienePase(serial)); }, [serial]));
-  // Ya está en Wallet: el botón se va (se abre desde Cuenta). Sólo invita a
-  // agregarla mientras no esté (pedido del usuario, 2026-10-06).
-  // En modo de prueba se muestra siempre: es para ver la tarjeta de cada nivel.
-  if (!walletDisponible() || (tiene && !nivelPrueba)) return null;
+  useFocusEffect(useCallback(() => { if (serial) setTiene(!!serieEnWallet(serial)); }, [serial]));
+  if (!serial || !walletDisponible() || tiene) return null;
 
   const tocar = async () => {
     if (cargando) return;
-    if (tiene && abrirPase(serial)) return;
     setCargando(true);
     // Directo a Wallet (2026-10-08): la tarjeta se baja acá y la hoja de Apple
     // se presenta en una ventana propia. Si algo falla, por Safari.
@@ -389,12 +413,12 @@ function BotonWallet({ serial, nivelPrueba }) {
     if (ok === null && !(await agregarPorSafari(pedir, nivelPrueba))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
     }
-    if (ok) setTiene(tienePase(serial));
+    if (ok) setTiene(!!serieEnWallet(serial));
     setCargando(false);
   };
   // El botón oficial de Apple (PKAddPassButton) cuando está en la compilación;
   // el dibujado a mano queda de respaldo.
-  if (BotonWalletNativo && !tiene) {
+  if (BotonWalletNativo) {
     return (
       <View style={{ alignSelf: 'center', width: 260, height: 48, opacity: cargando ? 0.6 : 1 }} accessibilityRole="button" accessibilityLabel="Agregar a Apple Wallet">
         <BotonWalletNativo style={{ width: 260, height: 48 }} onAgregar={tocar} />
@@ -402,7 +426,7 @@ function BotonWallet({ serial, nivelPrueba }) {
     );
   }
   return (
-    <Presionable onPress={tocar} accessibilityRole="button" accessibilityLabel={tiene ? 'Ver en Apple Wallet' : 'Agregar a Apple Wallet'}
+    <Presionable onPress={tocar} accessibilityRole="button" accessibilityLabel="Agregar a Apple Wallet"
       style={({ pressed }) => ({
         alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#000000',
         borderRadius: 12, paddingHorizontal: 18, minHeight: 48, borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
@@ -418,16 +442,29 @@ function BotonWallet({ serial, nivelPrueba }) {
 
 // Google Wallet (Android): el mismo lugar y la misma forma que el de Apple —
 // botón negro, redondeado, con el nombre de la cartera—. Google no sabe
-// decirle a la app si ya está guardada, así que el botón queda siempre: tocarlo
-// otra vez la vuelve a mostrar en Google Wallet.
-function BotonGoogleWallet({ nivelPrueba }) {
+// decirle a la app si ya está guardada, así que se recuerda en el teléfono que
+// se abrió el enlace (modules/wallet, 2026-11-04): desde ahí el botón se va del
+// Inicio, y en Cuenta › Mis puntos queda siempre «Ver mi tarjeta en Google
+// Wallet» para verla o volver a agregarla.
+function BotonGoogleWallet({ id, nivelPrueba }) {
   const pedir = useSesion((s) => s.pedir);
   const [cargando, setCargando] = useState(false);
+  // null = todavía no se sabe: no se pinta, para que no aparezca y se vaya.
+  const [agregada, setAgregada] = useState(null);
+  useFocusEffect(useCallback(() => {
+    let vivo = true;
+    googleWalletYaAgregada(id).then((v) => { if (vivo) setAgregada(v); });
+    return () => { vivo = false; };
+  }, [id]));
+  if (agregada !== false) return null;
   const tocar = async () => {
     if (cargando) return;
     setCargando(true);
     if (!(await sinBloquear(() => agregarAGoogleWallet(pedir, nivelPrueba)))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
+    } else {
+      await marcarGoogleWalletAgregada(id);
+      setAgregada(true);
     }
     setCargando(false);
   };
@@ -512,8 +549,8 @@ function TratamientosInicio({ lista }) {
     <Tarjeta estilo={{ gap: 10 }}>
       <Presionable onPress={() => navegar('/tratamientos')} accessibilityRole="button" accessibilityLabel="Mis tratamientos, ver todos"
         style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
-        <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, t.oscuro ? 0.28 : 0.16) }}>
-          <Icono sf="pills.fill" respaldo="💊" tam={17} color={t.color.verdeTexto} />
+        <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+          <Icono sf="pills.fill" respaldo="💊" tam={17} color={t.color.magentaTexto} />
         </View>
         <Text style={{ flex: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Se te acaba pronto</Text>
         <Text style={{ fontSize: 14, fontWeight: '600', color: colorSistema.texto2 }}>Ver todos</Text>
@@ -549,7 +586,7 @@ function TratamientosInicio({ lista }) {
 
 // El menú del Inicio: SEIS casillas (2026-11-03, «en inicio se quiere dejar
 // solo 6 opciones abajo… que queden las más útiles, y las otras a cuenta»).
-// Dos filas de tres (tres de dos con letra grande): nunca queda un hueco.
+// Tres filas de dos (seis de una con letra muy grande): nunca queda un hueco.
 // Se quedaron las que un cliente de farmacia abre más seguido:
 //   · Reservas — lo que apartó y si ya está listo para retirar.
 //   · Tratamientos — lo que toma seguido y cuándo se le acaba.
@@ -565,9 +602,11 @@ function TratamientosInicio({ lista }) {
 function Menu({ resumen, urgentes }) {
   const t = useTema();
   const { fontScale } = useWindowDimensions();
-  // Desde 1.15: con tres columnas de ~78 pt, «Tratamientos» o «3 por
-  // acabarse» ya no caben en letra grande y se cortaban.
-  const dos = fontScale > 1.15;
+  // Dos columnas (2026-11-04, «mejora las cards… que se vean más modernas y
+  // bonitas»): cada acceso es una ficha a lo ancho —recuadro, nombre y cómo
+  // va— en vez de un cuadrito de tres por fila, que en letra grande cortaba
+  // «Tratamientos». Con la letra muy grande, una por fila: nada se corta.
+  const una = fontScale > 1.35;
   const r = resumen;
   const tratamientos = Array.isArray(r.tratamientos) ? r.tratamientos.length : 0;
   const sexta = r.creditos?.pendientes > 0
@@ -592,29 +631,40 @@ function Menu({ resumen, urgentes }) {
   ];
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-      {casillas.map((c) => <Casilla key={c.ruta} {...c} ancho={dos ? '48%' : '31%'} />)}
+      {casillas.map((c) => <Casilla key={c.ruta} {...c} ancho={una ? '100%' : '47%'} />)}
     </View>
   );
 }
 
-function Casilla({ sf, titulo, detalle, color, resaltar, ruta, ancho }) {
+// Un acceso: el recuadro de la marca con el ícono (un solo color, el de la
+// marca, igual que en Cuenta — 2026-11-03, «demasiados colores»), el nombre y
+// una línea de cómo va. Lo urgente: el punto rojo sobre el recuadro y la línea
+// en negrita. Sin `numberOfLines` ni letra que se encoge: si no cabe, envuelve
+// y la ficha crece (usuario: «en ningún lado se debe ocultar el contenido»).
+// Mínimo 68 pt de alto, de sobra para el dedo; al tocarla se hunde un poco.
+function Casilla({ sf, titulo, detalle, resaltar, ruta, ancho }) {
   const t = useTema();
   return (
     <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(ruta); }} accessibilityRole="button"
-      accessibilityLabel={`${titulo}: ${detalle}`}
-      style={({ pressed }) => ({ width: ancho, flexGrow: 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-      <Tarjeta estilo={{ padding: 12, gap: 8, minHeight: 104 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          {/* Un solo color, el de la marca, igual que en Cuenta (2026-11-03,
-              «demasiados colores»): lo urgente lo marca el punto rojo. */}
-          <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
-            <Icono sf={sf} respaldo="" tam={18} color={t.color.magentaTexto} />
+      accessibilityLabel={`${titulo}: ${detalle}${resaltar ? ', pide atención' : ''}`}
+      style={({ pressed }) => ({ width: ancho, flexGrow: 1, opacity: pressed ? 0.85 : 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      {/* Ícono arriba y el texto debajo, a lo ancho (2026-11-04): al lado del
+          ícono, «Tratamientos» no cabía y se partía en «Tratamiento / s». */}
+      <Tarjeta estilo={{ gap: 10, paddingVertical: 14, paddingHorizontal: 14, minHeight: 68 }}>
+        <View style={{ alignSelf: 'flex-start' }}>
+          <View style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+            backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.12),
+            borderWidth: 1, borderColor: suave(t.color.magenta, t.oscuro ? 0.32 : 0.16) }}>
+            <Icono sf={sf} respaldo="" tam={19} color={t.color.magentaTexto} />
           </View>
-          {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colorSistema.rojo }} /> : null}
+          {resaltar ? (
+            <View style={{ position: 'absolute', top: -3, right: -3, width: 12, height: 12, borderRadius: 6, backgroundColor: colorSistema.rojo,
+              borderWidth: 2, borderColor: t.oscuro ? '#1C1A22' : '#FFFFFF' }} />
+          ) : null}
         </View>
-        <View style={{ gap: 1 }}>
-          <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
-          <Text style={{ fontSize: 12, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }}>{detalle}</Text>
+        <View style={{ gap: 2 }}>
+          <Text style={{ fontSize: 15, fontWeight: '800', letterSpacing: -0.2, color: colorSistema.texto }}>{titulo}</Text>
+          <Text style={{ fontSize: 13, lineHeight: 17, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }}>{detalle}</Text>
         </View>
       </Tarjeta>
     </Presionable>

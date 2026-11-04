@@ -10,9 +10,11 @@
 // Notificaciones, Ayuda y chat, Legal y privacidad, Modo de prueba (sólo la
 // cuenta de prueba) y, al final, Cerrar sesión / Borrar mi cuenta. Salió de
 // aquí lo que ya está en el Inicio (Invitar, Mis reservas, Mis tratamientos,
-// Nuestras sucursales y «Agregar a Google Wallet», que allá está siempre); se
-// queda lo que sólo vive aquí (Mis facturas, Cliente Mayorista, ver o volver a
-// agregar la tarjeta en Apple Wallet — el Inicio sólo ofrece agregarla).
+// Nuestras sucursales); se queda lo que sólo vive aquí (Mis facturas, Cliente
+// Mayorista, ver o volver a agregar la tarjeta en Wallet — el Inicio sólo
+// ofrece agregarla, y desde el 2026-11-04 sólo mientras no esté agregada:
+// «quítalo de ahí si ya se agregó, y pásalo a cuenta». Aquí está SIEMPRE, en
+// Apple Wallet y en Google Wallet).
 //
 // 2026-11-03 («en inicio dejar sólo 6 opciones… las otras a cuenta, y
 // mejoramos cuenta»): Cuenta es ahora el ÍNDICE COMPLETO de la app — el Inicio
@@ -36,7 +38,7 @@ import { MENSAJE_CODIGO, useConCodigo, useSesion } from '../../../lib/sesion';
 import { irACompletarEntrada } from '../../../componentes/SoloConDocumento';
 import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
-import { abrirPase, agregarDirecto, agregarPorSafari, tienePase, walletDisponible } from '../../../modules/wallet';
+import { abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, marcarGoogleWalletAgregada, serieEnWallet, walletDisponible } from '../../../modules/wallet';
 import { conBiometria, nombreBiometria, rotuloBiometria, sinBloquear, useBloqueo } from '../../../lib/bloqueo';
 import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
@@ -106,22 +108,34 @@ export default function Cuenta() {
   const t = useTema();
   const pedirW = useSesion((s) => s.pedir);
   const serialW = useCuenta((s) => s.resumen?.wallet_serial);
-  const [enWallet, setEnWallet] = useState(false);
-  useFocusEffect(useCallback(() => { if (serialW) setEnWallet(tienePase(serialW)); }, [serialW]));
+  // La serie que está en Wallet (la real o la del modo de prueba), o null.
+  const [enWallet, setEnWallet] = useState(null);
+  useFocusEffect(useCallback(() => { if (serialW) setEnWallet(serieEnWallet(serialW)); }, [serialW]));
   // Ya agregada: se abre en Wallet. Si no: se arma y se ofrece la hoja de Apple.
   const prueba = useModoPrueba();
   // `abrir`: si ya está, se abre; si no (o al «volver a agregar»), se arma y
   // se ofrece la hoja de Apple. Volver a agregar sirve si se borró o se ocultó
   // en Wallet y la app todavía la ve (usuario, 2026-10-07).
   const wallet = async ({ abrir = true } = {}) => {
-    if (abrir && enWallet && abrirPase(serialW)) return;
+    if (abrir && enWallet && abrirPase(enWallet)) return;
     const enPrueba = !!resumen?.prueba && prueba.activo;
     // Directo a Wallet; por Safari si falla (2026-10-08).
     const ok = await sinBloquear(() => agregarDirecto(pedirW, enPrueba ? prueba.nivel : null));
-    if (ok) setEnWallet(tienePase(serialW));
+    if (ok) setEnWallet(serieEnWallet(serialW));
     if (ok === null && !(await agregarPorSafari(pedirW, enPrueba ? prueba.nivel : null))) {
       Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
     }
+  };
+  // Google Wallet (Android): el mismo enlace sirve para agregarla y para verla
+  // si ya está; Google decide. Se recuerda que se abrió, para que el Inicio
+  // deje de ofrecerla (modules/wallet).
+  const googleWallet = async () => {
+    const enPrueba = !!resumen?.prueba && prueba.activo;
+    if (!(await sinBloquear(() => agregarAGoogleWallet(pedirW, enPrueba ? prueba.nivel : null)))) {
+      Alert.alert('No se pudo preparar la tarjeta', 'Revisa tu conexión e intenta de nuevo.');
+      return;
+    }
+    await marcarGoogleWalletAgregada(resumen?.wallet_serial ?? resumen?.codigo);
   };
   const { pedir, cerrar } = useSesion();
   const { resumen: crudo, cargar } = useCuenta();
@@ -403,12 +417,24 @@ export default function Cuenta() {
           <FilaAccion sf="person.2.fill" tinte={t.acentos.verde.fuerte} texto="Invitar a un amigo"
             detalle="Ganan 50 puntos cada uno" alTocar={() => navegar('/invitar')} />
           {!conCodigo ? <FilaMayorista m={resumen.mayorista} pedir={pedir} alCambiar={() => cargar({ forzar: true })} /> : null}
-          {resumen?.wallet_serial && walletDisponible() && enWallet ? (
-            <FilaAccion sf="wallet.pass.fill" tinte={t.acentos.azul.fuerte} texto="Ver mi tarjeta en Apple Wallet" alTocar={() => wallet()} />
+          {/* La tarjeta en Wallet, SIEMPRE aquí (2026-11-04): agregarla si no
+              está; verla o volver a agregarla si ya está. */}
+          {Platform.OS === 'ios' && resumen?.wallet_serial && walletDisponible() ? (
+            enWallet ? (
+              <>
+                <FilaAccion sf="wallet.pass.fill" tinte texto="Ver mi tarjeta en Apple Wallet"
+                  detalle="Para mostrarla en caja sin abrir la app" alTocar={() => wallet()} />
+                <FilaAccion sf="arrow.clockwise" tinte texto="Volver a agregar la tarjeta a Wallet"
+                  detalle="Si la borraste u ocultaste en Wallet" alTocar={() => wallet({ abrir: false })} />
+              </>
+            ) : (
+              <FilaAccion sf="wallet.pass.fill" tinte texto="Agregar mi tarjeta a Apple Wallet"
+                detalle="Para mostrarla en caja sin abrir la app" alTocar={() => wallet({ abrir: false })} />
+            )
           ) : null}
-          {resumen?.wallet_serial && walletDisponible() && enWallet ? (
-            <FilaAccion sf="arrow.clockwise" tinte={t.acentos.azul.fuerte} texto="Volver a agregar la tarjeta a Wallet"
-              detalle="Si la borraste u ocultaste en Wallet" alTocar={() => wallet({ abrir: false })} />
+          {googleWalletDisponible(resumen) ? (
+            <FilaAccion sf="wallet.pass.fill" tinte texto="Mi tarjeta en Google Wallet"
+              detalle="Verla o agregarla, para mostrarla en caja sin abrir la app" alTocar={googleWallet} />
           ) : null}
         </Grupo>
       ) : null}

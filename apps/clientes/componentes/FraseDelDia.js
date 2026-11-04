@@ -2,14 +2,21 @@
 // la comilla grande de fondo y la frase en blanco. Dos tamaños: `grande` en
 // Bienestar (con la fecha y «Compartir») y el compacto del Inicio, que lleva a
 // Bienestar. Los colores salen de los acentos del tema (tokens del portal).
+//
+// 2026-11-04 («siento que las cards tienen muchos colores… unifica pero que no
+// pierdan la identidad»): el compacto del Inicio deja el degradado y va en el
+// mismo vidrio que las demás tarjetas, con el recuadro de la marca y la comilla
+// grande de fondo en magenta suave — la comilla es lo que la hace reconocible.
+// El degradado se queda en Bienestar (`grande`), donde la frase es la portada.
 import { Share, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import Presionable from './Presionable';
 import { Tocable } from './animacion';
-import { RADIO } from './ui';
-import { useTema } from '../tema/tema';
+import { RADIO, Tarjeta } from './ui';
+import { colorSistema } from './sistema';
+import { suave, useTema } from '../tema/tema';
 import { CATEGORIAS, useFraseDelDia } from '../lib/fraseDelDia';
 import { navegar } from '../lib/navegar';
 
@@ -89,7 +96,26 @@ export default function FraseDelDia({ grande = false }) {
   if (grande) return cuerpo;
   return (
     <Tocable etiqueta={`Frase del día: ${frase.texto}. Abre Bienestar`} alTocar={() => navegar('/bienestar')}>
-      {cuerpo}
+      <Tarjeta estilo={{ gap: 10, overflow: 'hidden' }}>
+        <Text importantForAccessibility="no" accessibilityElementsHidden
+          style={{ position: 'absolute', right: 14, top: -40, fontSize: 160, fontWeight: '900', color: suave(t.color.magenta, t.oscuro ? 0.16 : 0.1) }}>“</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+            <Icono sf={cat.sf} respaldo="" tam={16} color={t.color.magentaTexto} />
+          </View>
+          <Text style={{ flex: 1, fontSize: 15, fontWeight: '700', color: colorSistema.texto2 }}>
+            Frase del día · {cat.nombre}
+          </Text>
+        </View>
+        <Text maxFontSizeMultiplier={1.6}
+          style={{ fontSize: 19, lineHeight: 25, fontWeight: '800', letterSpacing: -0.3, color: colorSistema.texto }}>
+          {frase.texto}
+        </Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Tu momento de bienestar</Text>
+          <Icono sf="chevron.right" respaldo="›" tam={11} color={t.color.magentaTexto} />
+        </View>
+      </Tarjeta>
     </Tocable>
   );
 }

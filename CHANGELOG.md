@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1433.0 — App clientes: Inicio con accesos rápidos, tarjetas de un tono y Wallet en Cuenta
+
+_(pendiente de redactar)_
+
 ## v2.1432.0 — Compras: se quita «Facturas de mi sala»
 
 - **Se quitan la vista `/facturas-sala` y el widget «Facturas de mi sala»** del

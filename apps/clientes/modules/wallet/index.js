@@ -14,6 +14,23 @@ export const BotonWalletNativo = VistaBoton;
 export const walletDisponible = () => { try { return !!N?.disponible(); } catch { return false; } };
 export const tienePase = (serial) => { try { return !!N?.tiene(TIPO_PASE, serial); } catch { return false; } };
 export const abrirPase = (serial) => { try { return !!N?.abrir(TIPO_PASE, serial); } catch { return false; } };
+// ¿Está YA en Wallet, con cualquiera de sus series? (2026-11-04, «sigue
+// saliendo agregar a la wallet… aun cuando ya está agregada. quítalo de ahí
+// si ya se agregó, y pásalo a cuenta»). La tarjeta real es `socio-<id>`, pero
+// la que se agrega en el modo de prueba lleva otra serie
+// (`socio-<id>-prueba-<nivel>[-equipo]`, ver supabase/functions/_shared/pase.ts):
+// preguntar sólo por la real daba «no está» con una tarjeta en la Cartera.
+// Devuelve la serie que está (la real primero) o null.
+const CLAVES_PRUEBA = ['vip', 'bronce', 'plata', 'oro', 'platino', 'empleado', 'jade', 'zafiro', 'rubi', 'diamante'];
+export function serieEnWallet(serial) {
+  if (!serial || !N) return null;
+  if (tienePase(serial)) return serial;
+  for (const k of CLAVES_PRUEBA) {
+    for (const s of [`${serial}-prueba-${k}`, `${serial}-prueba-${k}-equipo`]) if (tienePase(s)) return s;
+  }
+  return null;
+}
+
 /** Presenta la hoja de Apple; resuelve true si quedó agregada. */
 export const agregarPase = (base64) => (N ? N.agregar(base64) : Promise.resolve(false));
 
@@ -60,4 +77,24 @@ export async function agregarAGoogleWallet(pedir, nivelPrueba) {
   if (!r?.ok || !r.url) return false;
   await Linking.openURL(r.url);
   return true;
+}
+
+// Google no le dice a la app si la tarjeta ya está guardada (no hay API para
+// eso sin un módulo nativo). Así que se recuerda EN ESTE TELÉFONO que se abrió
+// el enlace para agregarla (2026-11-04): con eso el Inicio deja de ofrecerla,
+// y Cuenta la sigue ofreciendo siempre, para verla o volver a agregarla.
+const claveGoogle = (id) => `puntos_salud_google_wallet_${String(id ?? '').replace(/[^\w]/g, '')}`;
+export async function googleWalletYaAgregada(id) {
+  if (!id) return false;
+  try {
+    const SecureStore = require('expo-secure-store');
+    return (await SecureStore.getItemAsync(claveGoogle(id))) === '1';
+  } catch { return false; }
+}
+export async function marcarGoogleWalletAgregada(id) {
+  if (!id) return;
+  try {
+    const SecureStore = require('expo-secure-store');
+    await SecureStore.setItemAsync(claveGoogle(id), '1');
+  } catch { /* sin almacén: el botón sigue en el Inicio, nada más */ }
 }

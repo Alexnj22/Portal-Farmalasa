@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1447.4 — Personal: la lista carga en 15 ms en vez de 30 s
+
+`employees_safe` —la lectura de personal con la que arranca el portal en todas
+las pantallas— reevaluaba los tres chequeos de permiso en cada uno de sus ~70
+campos y por cada empleado: el CTE `ctx` sin FROM se aplanaba. Promediaba
+4.8 s (máx 12.7 s, ~974 MB por llamada) y ocupaba el pool. Ahora `ctx` va
+`MATERIALIZED` y el rango por un LATERAL con `OFFSET 0`.
+
+Medido en transacción revertida, mismas 51 filas y md5 idéntico:
+administrador 1,470 → 11 ms; cuentas de sala 29,579 → 15 ms y 29,399 → 16 ms.
+En el navegador: 2,700 → 271 ms; el arranque completo de Mín·Máx 4.7 → 1.9 s.
+`anon` sigue rechazado. Migración `20261104221054`.
+
 ## v2.1447.3 — Mis tratamientos: vuelve la tarjeta original; atajos de días en una fila
 
 App de clientes. El usuario, sobre la 92: «me gustaba más la card que había

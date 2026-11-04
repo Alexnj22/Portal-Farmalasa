@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.0 — App de clientes: juego nuevo «Pastillero»
+
+Pedido del usuario (2026-11-04): caen medicamentos en un botiquín, dos iguales
+que se tocan suben de nivel, y si alguno se sale, pierdes. Mecánica del género
+«juntar al caer»; nombre, dibujos y sonidos propios. Se llama «Pastillero»
+porque «Botiquín» ya es otro juego de la app.
+
+- `lib/caida.js`: motor de física propio (pasos fijos de 1/120 s, 4 pasadas de
+  contacto, corrección de penetración sin sumar velocidad, rebote amortiguado,
+  fricción, tope de velocidad). Cada pieza se une una sola vez por paso.
+- `app/pastillero.js`: un `useFrameCallback` y un `Picture` de Skia. Cadena:
+  Pastilla → Gragea → Cápsula → Perla → Sobre → Pomada → Jarabe → Frasco →
+  Caja → Cruz. Sólo caen al azar los 5 chicos; pierdes si algo queda sobre el
+  borde 2 s. Récord en SecureStore, pausa con `useVisible`, acciones de soltar
+  para lector de pantalla, sin saltitos con «reducir movimiento».
+- Registrado en Bienestar (`EJERCICIOS`, marca NUEVO), `_layout.js` y
+  `Escena.js`.
+- `tests/unit/caidaClientes.test.js`: 11 pruebas del motor.
+
 ## v2.1447.5 — App de clientes: seguridad del servidor
 
 Auditoría de la app de clientes (2026-11-04). Aplicado en producción con el OK

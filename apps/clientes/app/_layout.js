@@ -390,6 +390,7 @@ function Raiz() {
             <Stack.Screen name="anclaje" options={{ title: '5 · 4 · 3 · 2 · 1', ...BARRA_DE_JUEGO }} />
             <Stack.Screen name="torre" options={{ title: 'Torre', ...BARRA_DE_JUEGO }} />
             <Stack.Screen name="botiquin" options={{ title: 'Botiquín', ...BARRA_DE_JUEGO }} />
+            <Stack.Screen name="pastillero" options={{ title: 'Pastillero', ...BARRA_DE_JUEGO }} />
             <Stack.Screen name="invitar" options={{ title: 'Invitar a un amigo' }} />
             <Stack.Screen name="legal" options={{ title: '' }} />
             <Stack.Screen name="inyecciones" options={{ title: 'Mis inyecciones' }} />

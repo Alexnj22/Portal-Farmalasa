@@ -32,6 +32,8 @@ export const ESCENAS = {
   anclaje: ['#3A1206', '#7A2E14', '#8A1E55'],
   torre: ['#0A1240', '#26308A', '#7A3B9A'],
   botiquin: ['#06283D', '#0F5470', '#86206F'],
+  // Pastillero (2026-11-04): verde de farmacia, oscuro para que el blanco se lea.
+  pastillero: ['#04262A', '#0B4E4C', '#3B5E12'],
 };
 
 // Todas las luces son UN dibujo (un `Picture`) que se rehace a 30 cuadros: un

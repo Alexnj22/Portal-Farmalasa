@@ -478,7 +478,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                     <div data-surface="dropdown" role="region" aria-live="polite" aria-label="Ayuda de Saly"
                         className={`pointer-events-auto rounded-2xl ${sobreDialogo ? 'rounded-bl-md' : 'rounded-br-md'} overflow-hidden
                             ${abierto ? 'w-[min(22rem,calc(100vw-6.5rem))]' : 'w-[min(16rem,calc(100vw-6.5rem))]'}`}>
-                        <div data-animo={animo} className="saly-toque px-4 pb-4 pt-3">
+                        <div data-animo={animo} className="saly-toque rounded-[inherit] px-4 pb-4 pt-3">
                             {abierto ? (
                                 <>
                                     <div className="-mr-2 mb-1 flex items-center justify-between">

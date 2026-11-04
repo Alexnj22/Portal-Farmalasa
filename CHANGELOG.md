@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1445.3 — Saly: borde completo en las esquinas y sin el aviso de «sin contar» a media tarde
+
+- El borde de aurora del recuadro de Saly se cortaba en las esquinas: el
+  recuadro era redondo y su capa interior cuadrada. Ahora la capa hereda la
+  curva.
+- «Hay $X sin contar» ya no se ofrece solo durante el día: antes del corte es lo
+  normal (usuario: «se me hace irrelevante»). Sale únicamente al abrir «Cerrar el
+  día», que es cuando frena.
+
 ## v2.1445.2 — Efectivo dice que está buscando las salas en vez de «Sin salas con caja»
 
 Reporte del usuario: «¿por qué no puedo seleccionar la sucursal? … ya me

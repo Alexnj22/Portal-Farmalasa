@@ -960,7 +960,11 @@ export default function MiCajaView({ comoPestana = false }) {
         avisos: [
             noSePudo ? avisoDeError(noSePudo, 'caja') : null,
             cajaViva ? avisoDeCortesSinResolver(cortesSinResolver) : null,
-            cajaViva && !cortesSinResolver.length ? avisoDeFaltaPorContar(faltaPorContar, { sala: nombreSala }) : null,
+            /* «Falta por contar» sólo cuando se quiere CERRAR: a media tarde
+             * es lo normal —el corte todavía no se hace— y avisarlo era ruido
+             * (usuario, 2026-11-04: «es normal, no se ha hecho el corte, se me
+             * hace irrelevante»). */
+            cajaViva && dialogo === 'cerrar' && !cortesSinResolver.length ? avisoDeFaltaPorContar(faltaPorContar, { sala: nombreSala }) : null,
             cajaViva ? avisoDeRevision(revision.lineas, revision.motivos) : null,
         ],
         enFormulario: DIALOGOS_SALY[dialogo] || null,

@@ -186,7 +186,7 @@ const WIDGET_SIZES = {
   birthdays:     { minCols: 2, minRows: 2, label: 'Cumpleaños'   },
   cotizaciones:  { minCols: 1, minRows: 2, label: 'Cotizaciones' },
   facturacion:   { minCols: 1, minRows: 2, label: 'Facturación'  },
-  top_productos: { minCols: 1, minRows: 3, label: 'Top productos'},
+  top_productos: { minCols: 1, minRows: 2, label: 'Top productos'},
   // 1×1 como sus tres hermanas: `WidgetInventorySearch` ya no trae el buscador
   // adentro —es un `LanzadorSolicitud`, o sea una baldosa que abre un modal—,
   // pero el registro conservaba el 2×3 del widget viejo. Resultado en el
@@ -810,7 +810,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
         {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
             entre «Ver todas» y su flecha, así que en el teléfono el chevron se
             iba solo a un segundo renglón, debajo del texto. Son seis widgets. */}
-        {action && <div className="shrink-0 whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden">{action}</div>}
+        {action && <div className="shrink-0 whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:gap-8">{action}</div>}
       </div>
       <div className={`@container/cuerpo relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>
@@ -3735,7 +3735,6 @@ const DashboardView = ({ openModal }) => {
         .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('vendedores',
         <WidgetCard title="Venta por vendedor" icon={Users} category="ventas"
-          resumen={{ texto: 'Ranking del mes' }}
           action={isVendAllScope && vendOpts.length > 1 && (
             <LiquidSelect
               value={vendBranch}

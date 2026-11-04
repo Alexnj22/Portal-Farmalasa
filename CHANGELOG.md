@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.9 — Inicio: la flecha sola, Top productos en dos filas y quién va primero
+
+Visto en producción sobre v2.1448.7:
+- En tarjetas angostas, junto a la flecha del «Ver» asomaban letras sueltas
+  («ɪs», «ɜr»): el final del texto recortado. Ya no.
+- Top productos se muestra completo desde dos filas de alto (antes pedía tres
+  y con dos pasaba a vistazo).
+- El vistazo de Venta por vendedor dice quién va primero en vez de «Ranking
+  del mes».
+
 ## v2.1448.8 — App clientes: el Botiquín nuevo reemplaza al anterior y ya no se cierra
 
 Pedido del usuario: «el nuevo juego no funciona… se cierra al iniciarlo. Además

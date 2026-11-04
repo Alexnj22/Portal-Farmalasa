@@ -5,6 +5,9 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fetchMesEnCurso } from '@nucleo/data/metas';
 import { useAuth } from '@nucleo/context/AuthContext';
 import RankingVendedores from '../metas/RankingVendedores';
+import { useResumenWidget } from './tamanoWidget';
+import { rankingDeVendedores } from '@nucleo/utils/metasUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
 // Quién está vendiendo, en el Inicio de la sala. Es el MISMO componente que usa
 // el tablero del módulo (`RankingVendedores`): el ranking, el promedio y el
@@ -44,6 +47,15 @@ export default function WidgetVendedores({ selectedBranchId = null }) {
         return () => { secuencia.current += 1; };
     }, [cargar]);
     useRefrescoEnVivo(cargar, { ms: REFRESCO_MS });
+
+    // El vistazo decía «Ranking del mes» y nada más: en una tarjeta angosta era
+    // una caja vacía. Ahora dice quién va primero —con el mismo orden del
+    // ranking (`rankingDeVendedores`)—.
+    const primero = data ? rankingDeVendedores(data, 'total').filas?.[0] : null;
+    useResumenWidget(loading ? null
+        : error ? { texto: 'No se pudo cargar', tono: 'danger' }
+        : !primero ? { texto: 'Sin ventas este mes' }
+        : { valor: '#1', texto: shortEmployeeName(primero.nombre) });
 
     if (loading) return <div className="p-1"><SkeletonText lines={5} /></div>;
 

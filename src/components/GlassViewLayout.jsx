@@ -470,7 +470,8 @@ const GlassViewLayout = ({
                         // las flechas se corren a su izquierda: encimadas, la
                         // burbuja tapaba «Ir al final» y la mitad de «Ir al inicio».
                         // Lo decide CSS porque la burbuja la monta `AppLayout`.
-                        className="fixed right-4 md:right-8 [body:has([data-burbuja-chat])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)] z-sidebar flex flex-col gap-2 pointer-events-auto"
+                        // Igual con la de Saly, que vive en esa misma columna.
+                        className="fixed right-4 md:right-8 [body:has([data-burbuja-chat])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)] [body:has([data-burbuja-saly])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)] z-sidebar flex flex-col gap-2 pointer-events-auto"
                     >
                         <motion.button
                             onClick={() => scrollTo(0)}

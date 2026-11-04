@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1437.1 — Saly: la ayuda se cierra al tocar afuera y se ve más limpia
+
+Corrección pedida por el usuario sobre la burbuja de Saly («no se ve bien, si
+doy click afuera no se cierra»):
+- Se cierra al tocar fuera de ella (además de Escape y la ✕).
+- Vive encima de la burbuja del chat con clientes, en su misma columna: antes
+  quedaba a su lado y se encimaba con las flechas de subir/bajar. Las flechas
+  se corren también cuando sólo está Saly.
+- Panel más ordenado: encabezado «Saly» con la ✕ discreta, campo de pregunta de
+  texto normal (no gigante), botón de enviar destacado y una línea que separa la
+  respuesta de la pregunta.
+
 ## v2.1437.0 — Caja: el voucher pide total y número, o autorización
 
 - **Con foto, el total y el número del voucher (o la referencia de la

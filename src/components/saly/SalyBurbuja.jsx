@@ -65,6 +65,8 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const [, setVersion] = useState(0);                  // repinta al descartar
     const [quieto, setQuieto] = useState(null);
     const desmarcar = useRef(null);
+    const raiz = useRef(null);
+    const campo = useRef(null);
 
     const limpiarMarcas = useCallback(() => { desmarcar.current?.(); desmarcar.current = null; }, []);
     const cerrar = useCallback(() => { setAbierto(false); setContenido(null); limpiarMarcas(); }, [limpiarMarcas]);
@@ -174,12 +176,25 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         if (error) console.error('Saly: no se pudo anotar la calificación', error);
     }, [contenido]);
 
+    // Se cierra con Escape y con un toque FUERA (usuario, 2026-11-04: «si doy
+    // click afuera no se cierra»). `pointerdown` y en captura, para que ningún
+    // componente de la pantalla se lo trague antes con un `stopPropagation`.
     useEffect(() => {
         if (!abierto) return undefined;
         const tecla = (e) => { if (e.key === 'Escape') cerrar(); };
+        const afuera = (e) => { if (raiz.current && !raiz.current.contains(e.target)) cerrar(); };
         window.addEventListener('keydown', tecla);
-        return () => window.removeEventListener('keydown', tecla);
+        document.addEventListener('pointerdown', afuera, true);
+        return () => {
+            window.removeEventListener('keydown', tecla);
+            document.removeEventListener('pointerdown', afuera, true);
+        };
     }, [abierto, cerrar]);
+
+    // Al abrir sin aviso, el cursor ya está en la pregunta.
+    useEffect(() => {
+        if (abierto && !contenido) setTimeout(() => campo.current?.querySelector('input')?.focus(), 30);
+    }, [abierto, contenido]);
 
     if (!pantalla || oculta) return null;
     // Con un diálogo encima sólo se asoma a ofrecer ayuda a quien está quieto.
@@ -190,35 +205,42 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const ofreciendo = !abierto && aviso;
     const etiqueta = ofreciendo ? `Saly: ${aviso.oferta?.[0]?.texto || 'tiene algo que contarte'}` : 'Saly: pedir ayuda sobre esta pantalla';
 
+    // Vive en la MISMA columna que la burbuja del chat con clientes, encima de
+    // ella: a su lado se encimaba con las flechas de subir/bajar de la lista.
+    // Abierta sube a `z-dropdown` para quedar sobre esas flechas.
     const lado = sobreDialogo
         ? 'left-[max(16px,var(--sa-left))] z-toast flex-row-reverse'
-        : `right-[max(16px,var(--sa-right))] z-tabs
-           [body:has([data-burbuja-chat])_&]:right-[calc(max(16px,var(--sa-right))+4.25rem)]`;
+        : `right-[max(16px,var(--sa-right))] ${abierto ? 'z-dropdown' : 'z-tabs'}`;
 
     return (
-        <div data-burbuja-saly=""
+        <div data-burbuja-saly="" ref={raiz}
             className={`fixed ${lado} flex items-end gap-2 pointer-events-none
                 bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom)))]
-                [body:has([data-barra-flotante])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+5rem)]`}>
+                [body:has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+4.5rem)]
+                [body:has([data-barra-flotante])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+5rem)]
+                [body:has([data-barra-flotante]):has([data-burbuja-chat])_&]:bottom-[calc(var(--alto-nav-inferior,0px)+max(16px,var(--sa-bottom))+9.5rem)]`}>
 
             {(abierto || ofreciendo) && (
                 <div data-surface="dropdown" role="region" aria-live="polite" aria-label="Ayuda de Saly"
                     className={`pointer-events-auto rounded-2xl ${sobreDialogo ? 'rounded-bl-md' : 'rounded-br-md'} overflow-hidden
-                        ${abierto ? 'w-[min(20rem,calc(100vw-6.5rem))]' : 'w-[min(16rem,calc(100vw-6.5rem))]'}`}>
-                    <div data-animo={animo} className="saly-toque px-4 py-3.5">
+                        ${abierto ? 'w-[min(22rem,calc(100vw-6.5rem))]' : 'w-[min(16rem,calc(100vw-6.5rem))]'}`}>
+                    <div data-animo={animo} className="saly-toque px-4 pb-4 pt-3">
                         {abierto ? (
                             <>
-                                <div className="flex items-start gap-2">
-                                    <div className="min-w-0 flex-1 max-h-[min(26rem,60vh)] overflow-y-auto">
+                                <div className="-mr-2 mb-1 flex items-center justify-between">
+                                    <span className="text-micro font-black uppercase tracking-widest text-content-3">Saly</span>
+                                    <button type="button" onClick={cerrar} aria-label="Cerrar la ayuda de Saly"
+                                        className="grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-full text-content-3 hover:text-content active:scale-[0.97]">
+                                        <X size={16} aria-hidden="true" />
+                                    </button>
+                                </div>
+                                <div>
+                                    <div className="max-h-[min(26rem,60vh)] overflow-y-auto pr-1">
                                         <PiezasDeSaly onIr={ir} piezas={contenido?.piezas || [
                                             { tipo: 'titular', texto: '¿En qué te ayudo?', sub: pantalla.titulo },
                                             { tipo: 'nota', texto: 'Pregúntame sobre lo que ves en esta pantalla. Puedo explicarte, llevarte o poner filtros por ti.' },
                                         ]} />
                                     </div>
-                                    <button type="button" onClick={cerrar} aria-label="Cerrar la ayuda de Saly"
-                                        className="-mr-2 -mt-1.5 grid min-h-[var(--tap-min)] min-w-[var(--tap-min)] place-items-center rounded-lg text-content-3 hover:text-content active:scale-[0.97]">
-                                        <X size={16} aria-hidden="true" />
-                                    </button>
                                 </div>
 
                                 {contenido?.id && (
@@ -234,13 +256,14 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                     </div>
                                 )}
 
-                                <form onSubmit={preguntar} className="mt-3 flex items-end gap-1.5">
-                                    <div className="min-w-0 flex-1">
+                                <form onSubmit={preguntar} className="mt-4 flex items-center gap-2 border-t border-divider pt-3">
+                                    <div className="min-w-0 flex-1" ref={campo}>
                                         <PortalInput name="saly-pregunta" value={pregunta} onChange={(e) => setPregunta(e.target.value)}
-                                            placeholder="Pregúntale a Saly…" readOnly={pensando} aria-label="Pregúntale a Saly"
+                                            placeholder="Escribe tu duda…" readOnly={pensando} aria-label="Pregúntale a Saly"
+                                            inputClassName="!text-body-sm !font-medium"
                                             maxLength={SALY_MAX_PREGUNTA} autoComplete="off" />
                                     </div>
-                                    <Button type="submit" variant="secondary" iconOnly icon={Send}
+                                    <Button type="submit" variant="primary" iconOnly icon={Send}
                                         aria-label="Enviar la pregunta" disabled={!pregunta.trim() || pensando} />
                                 </form>
                             </>

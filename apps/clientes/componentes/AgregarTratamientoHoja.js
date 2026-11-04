@@ -24,15 +24,16 @@ import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
+import { Atajos, Caja, Contador } from './Pasos';
 import { fecha, nombrePropio } from '../lib/formato';
 import { useSesion } from '../lib/sesion';
 import { DISPONIBLE as TOMAS } from '../lib/tomas';
 import { useTema } from '../tema/tema';
-import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadDe, fraccionTexto, moverCantidad } from '../lib/dosis';
+import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, CANTIDAD_PASO, cantidadDe, fraccionTexto } from '../lib/dosis';
 
-const DOSIS = CANTIDADES_RAPIDAS.map((v) => ({ v, texto: fraccionTexto(v) }));
-const DIAS = [7, 15, 30, 60, 90];
-const OTRO = 'otro';
+// Lo que suele durar una compra (2026-11-04: atajos + contador, como en la
+// hoja de tomas; antes cinco píldoras y un «Otro» que abría el contador).
+const DIAS = [7, 15, 30, 45, 60, 90];
 const sinTildes = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
 
 export default function AgregarTratamientoHoja({ alCerrar }) {
@@ -44,7 +45,6 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   const [elegido, setElegido] = useState(null);
   const [dosis, setDosis] = useState(1);
   const [dias, setDias] = useState(30);
-  const [otrosDias, setOtrosDias] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [agregado, setAgregado] = useState(false);
@@ -78,22 +78,6 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
     if (!TOMAS) { alCerrar(true); return; }
     setAgregado(true);
   };
-
-  const pildoras = (opciones, valor, poner, etiqueta) => (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }} accessibilityRole="radiogroup">
-      {opciones.map((o) => {
-        const elegida = o.v === valor;
-        return (
-          <Presionable key={o.v} onPress={() => { Haptics.selectionAsync().catch(() => {}); poner(o.v); }}
-            accessibilityRole="radio" accessibilityState={{ selected: elegida }} accessibilityLabel={etiqueta(o)}
-            style={({ pressed }) => ({ flexGrow: 1, minWidth: 56, minHeight: 48, paddingVertical: 6, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
-              backgroundColor: elegida ? t.color.magenta : superficie, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-            <Text style={{ fontSize: 17, fontWeight: '800', color: elegida ? '#FFFFFF' : colorSistema.texto, textAlign: 'center', paddingHorizontal: 4 }}>{o.texto}</Text>
-          </Presionable>
-        );
-      })}
-    </View>
-  );
 
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => alCerrar(agregado)}>
@@ -173,25 +157,24 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
             {elegido.pide === 'dosis' ? (
               <>
                 <Seccion>¿Cuánto tomas al día, en total?</Seccion>
-                {pildoras(DOSIS, CANTIDADES_RAPIDAS.includes(dosis) ? dosis : null, setDosis, (o) => `${cantidadDe(o.v, elegido.nombre)} al día`)}
-                <Contador superficie={superficie} etiqueta="Al día" valor={cantidadDe(dosis, elegido.nombre)}
-                  menos={{ etiqueta: 'Un cuarto menos', alTocar: () => setDosis((d) => moverCantidad(d, -1)), apagado: dosis <= CANTIDAD_MIN }}
-                  mas={{ etiqueta: 'Un cuarto más', alTocar: () => setDosis((d) => moverCantidad(d, 1)), apagado: dosis >= CANTIDAD_MAX }} />
+                <Caja superficie={superficie}>
+                  <Contador valor={dosis} texto={cantidadDe(dosis, elegido.nombre)} detalle="al día" min={CANTIDAD_MIN} max={CANTIDAD_MAX} paso={CANTIDAD_PASO}
+                    etiquetaMenos="Un cuarto menos" etiquetaMas="Un cuarto más" alCambiar={setDosis} />
+                  <Atajos opciones={CANTIDADES_RAPIDAS.map((v) => ({ v, texto: fraccionTexto(v), etiqueta: `${cantidadDe(v, elegido.nombre)} al día` }))}
+                    valor={dosis} alElegir={setDosis} />
+                </Caja>
                 <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-                  Sumando todas las tomas del día, de ¼ en ¼. Si lo tomas día por medio, elige la mitad de lo que tomas ese día.
+                  Sumando todas las tomas del día. Si lo tomas día por medio, elige la mitad de lo que tomas ese día.
                 </Text>
               </>
             ) : elegido.pide === 'dias' ? (
               <>
                 <Seccion>¿Cuántos días te dura una compra?</Seccion>
-                {pildoras([...DIAS.map((d) => ({ v: d, texto: String(d) })), { v: OTRO, texto: 'Otro' }], otrosDias ? OTRO : dias,
-                  (v) => { if (v === OTRO) setOtrosDias(true); else { setOtrosDias(false); setDias(v); } },
-                  (o) => (o.v === OTRO ? 'Otro número de días' : `${o.texto} días`))}
-                {otrosDias ? (
-                  <Contador superficie={superficie} etiqueta="Me dura" valor={`${dias} ${dias === 1 ? 'día' : 'días'}`}
-                    menos={{ etiqueta: 'Un día menos', alTocar: () => setDias((d) => Math.max(1, d - 1)), apagado: dias <= 1 }}
-                    mas={{ etiqueta: 'Un día más', alTocar: () => setDias((d) => Math.min(365, d + 1)), apagado: dias >= 365 }} />
-                ) : null}
+                <Caja superficie={superficie}>
+                  <Contador valor={dias} texto={`${dias} ${dias === 1 ? 'día' : 'días'}`} min={1} max={365} salto={7}
+                    etiquetaMenos="Un día menos" etiquetaMas="Un día más" alCambiar={setDias} />
+                  <Atajos opciones={DIAS.map((d) => ({ v: d, texto: String(d), etiqueta: `${d} días` }))} valor={dias} alElegir={setDias} />
+                </Caja>
                 <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
                   De este producto no podemos saber cuánto dura: dinos más o menos cada cuánto se te acaba.
                 </Text>
@@ -209,29 +192,5 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
         )}
       </View>
     </Modal>
-  );
-}
-
-// Una fila «etiqueta  −  valor  +» (2026-11-03). Los botones miden 32 + 6 de
-// `hitSlop` por lado = 44 pt de dedo; la fila baja de renglón con letra grande.
-function Contador({ superficie, etiqueta, valor, menos, mas }) {
-  const t = useTema();
-  const boton = (b, sf) => (
-    <Presionable onPress={() => { if (b.apagado) return; Haptics.selectionAsync().catch(() => {}); b.alTocar(); }} disabled={!!b.apagado}
-      accessibilityRole="button" accessibilityLabel={b.etiqueta} accessibilityState={{ disabled: !!b.apagado }} hitSlop={6}
-      style={({ pressed }) => ({ minWidth: 32, minHeight: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center', opacity: b.apagado ? 0.35 : 1,
-        transform: [{ scale: pressed ? 0.92 : 1 }], backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)' })}>
-      <Icono sf={sf} respaldo={sf === 'minus' ? '−' : '+'} tam={13} color={colorSistema.texto} />
-    </Presionable>
-  );
-  return (
-    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
-      <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>{etiqueta}</Text>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-        {boton(menos, 'minus')}
-        <Text accessibilityLiveRegion="polite" style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 96, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{valor}</Text>
-        {boton(mas, 'plus')}
-      </View>
-    </View>
   );
 }

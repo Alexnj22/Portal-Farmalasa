@@ -34,6 +34,7 @@ const MATERIAL = {
   'building.2.fill': 'apartment',
   'camera.fill': 'photo_camera',
   'calendar': 'calendar_month',
+  'exclamationmark.triangle.fill': 'warning',
   'cart': 'shopping_cart',
   'cart.badge.plus': 'add_shopping_cart',
   'cart.fill': 'shopping_cart',

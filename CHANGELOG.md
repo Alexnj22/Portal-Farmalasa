@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1444.0 — Mis tratamientos: selector de días y cantidad simples, sin límites
+
+App de clientes, hojas «Recordarme tomarlo» y «Agregar medicamento»:
+- **«¿Por cuánto tiempo?»** deja de ser una lista desplegable de 36 filas: segmentado del sistema con **Días · Hasta una fecha · Sin fin**. En Días, un contador grande con ±1 y ±7 (de 1 a 365, dice «2 semanas», «un mes») y atajos 3 5 7 10 14 30 60 90. Debajo, una frase con lo que va a pasar («Del 4 nov al 10 nov»).
+- **Uno nuevo arranca en «Sin fin»**: lo de Mis tratamientos se compra con regularidad. Antes no había nada elegido y el botón decía «Elige por cuánto tiempo».
+- **Cantidad** con la misma pieza: el contador al centro y ¼ ½ 1 2 3 debajo, en una sola caja. «¿Cuándo empiezas?» también va en caja.
+- **Agregar medicamento**: los días de una compra con contador y atajos (7 15 30 45 60 90), sin el «Otro» que abría un modo aparte.
+- Las piezas nuevas viven en `componentes/Pasos.js` (`Contador`, `Atajos`, `Caja`); botones de 44 pt de verdad, no 32 + `hitSlop`.
+- La nota de privacidad baja al final de la hoja. Android: el ícono de advertencia tenía su equivalente sin mapear y salía como texto.
+
+## v2.1442.1 — Inicio · General vuelve a armarse solo para todos
+
+Varias personas tenían la pestaña General del Inicio desordenada: sus tableros
+se acomodaron a mano contra el catálogo de widgets de otro momento y lo que
+llegó después quedó suelto. Se repite el reinicio del 13-ago (todos menos
+Edwin): la base ya se limpió (`20261104211647`) y cada navegador borra su copia
+local la primera vez que abre el Inicio (`REINICIO_GENERAL = '2026-11-04'`).
+Quien quiera, puede volver a acomodar el suyo.
+
 ## v2.1443.0 — Saly conoce los procesos de la caja y contesta lo de siempre sin IA
 
 Después de la primera prueba del usuario («no me funciona tan bien… que sea

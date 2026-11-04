@@ -8,24 +8,31 @@
 // la pantalla a la que lleva (`tipoDeUrl`).
 
 // [SF Symbol, respaldo de texto, acento del tema]
+//
+// Un solo color (2026-11-03, «demasiados colores, unifica»): la bandeja era un
+// arcoíris —azul, violeta, naranja, verde y magenta según el tipo— y el color
+// no decía nada que el ícono no dijera ya. Ahora todo va en el magenta de la
+// marca, como en Cuenta y el Inicio, y sólo dos conservan color porque ESE
+// color es el dato: el verde de lo que se GANA (los puntos, el canon del logo)
+// y el naranja de lo que está por VENCER (una advertencia).
 const ESTILOS = {
   ganado: ['star.fill', '★', 'verde'],
-  restado: ['creditcard.fill', '$', 'azul'],
-  nivel: ['crown.fill', '♛', 'violeta'],
+  restado: ['creditcard.fill', '$', 'magenta'],
+  nivel: ['crown.fill', '♛', 'magenta'],
   // Mayoreo: subir de rango, pasar a Mayoreo Plus, ser aprobado.
-  mayoreo: ['diamond.fill', '◆', 'azul'],
+  mayoreo: ['diamond.fill', '◆', 'magenta'],
   cumpleanos: ['birthday.cake.fill', '🎂', 'magenta'],
   vence: ['hourglass', '⏳', 'naranja'],
   vencimiento: ['hourglass', '⏳', 'naranja'],
-  inyeccion: ['syringe.fill', '+', 'azul'],
-  tratamiento: ['pills.fill', '💊', 'verde'],
-  reserva: ['bag.fill', '•', 'naranja'],
-  encargo: ['shippingbox.fill', '•', 'naranja'],
+  inyeccion: ['syringe.fill', '+', 'magenta'],
+  tratamiento: ['pills.fill', '💊', 'magenta'],
+  reserva: ['bag.fill', '•', 'magenta'],
+  encargo: ['shippingbox.fill', '•', 'magenta'],
   oferta: ['tag.fill', '%', 'magenta'],
   historia: ['sparkles', '✦', 'magenta'],
   // 2026-10-12: la receta revisada y la respuesta del chat.
-  receta: ['doc.text.fill', '•', 'violeta'],
-  chat: ['bubble.left.and.bubble.right.fill', '•', 'azul'],
+  receta: ['doc.text.fill', '•', 'magenta'],
+  chat: ['bubble.left.and.bubble.right.fill', '•', 'magenta'],
 };
 const GENERICO = ['bell.fill', '•', 'magenta'];
 

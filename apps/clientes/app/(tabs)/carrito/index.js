@@ -313,7 +313,7 @@ function Carrito() {
         <Tarjeta key={`${x.id}|${x.factor}`} estilo={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <View style={{ width: 64 }}><FotoProducto id={x.id} nombre={x.nombre} foto={x.foto} alto={64} radio={14} /></View>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombreProducto(x.nombre)}</Text>
+            <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombreProducto(x.nombre)}</Text>
             <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{nombreProducto(x.tipo || 'Unidad')}</Text>
             {yaReservado ? (
               <Presionable onPress={() => navegar(`/reservas?resaltar=${yaReservado.id}`)} accessibilityRole="link" hitSlop={6}
@@ -512,7 +512,7 @@ function TusReservas({ resumen }) {
           <Text style={{ fontSize: 16, fontWeight: '800', color: listas ? t.color.verdeTexto : colorSistema.texto }}>{titulo}</Text>
           {detalle ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{detalle}</Text> : null}
           {nombres.length ? (
-            <Text style={{ fontSize: 13, color: colorSistema.texto3 }} numberOfLines={1}>
+            <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>
               {nombres.slice(0, 2).join(' · ')}{nombres.length > 2 ? ` y ${nombres.length - 2} más` : ''}
             </Text>
           ) : null}

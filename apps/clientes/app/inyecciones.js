@@ -104,7 +104,7 @@ export default function Inyecciones() {
                 ) : null}
                 {ps.map((p, j) => (
                   <View key={j} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>{titulo(p.nombre)}</Text>
+                    <Text style={{ flex: 1, fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>{titulo(p.nombre)}</Text>
                     {(p.ml ?? (j === 0 && !mezcla ? a.dosis_ml : null)) != null ? (
                       <View style={{ backgroundColor: suave(verde, 0.18), borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
                         <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.verdeTexto }}>{Number(p.ml ?? a.dosis_ml)} ml</Text>
@@ -133,7 +133,7 @@ export default function Inyecciones() {
                     <Icono sf="checkmark" respaldo="✓" tam={13} color={t.color.verdeTexto} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>
+                    <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }}>
                       {partes(a.producto).map((p) => titulo(p.nombre)).join(' + ')}
                     </Text>
                     <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>

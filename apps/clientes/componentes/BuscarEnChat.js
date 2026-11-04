@@ -131,7 +131,7 @@ export default function BuscarEnChat({ visible, alCerrar, alIr, alVerFotos }) {
                       <Icono sf={a.tipo === 'oferta' ? 'tag.fill' : 'pills.fill'} respaldo="•" tam={20} color={t.color.magentaTexto} />
                     </View>}
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text numberOfLines={2} style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{a.tipo === 'oferta' ? a.titulo : nombreProducto(a.nombre)}</Text>
+                    <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{a.tipo === 'oferta' ? a.titulo : nombreProducto(a.nombre)}</Text>
                     <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{a.precio != null ? `${dolares(a.precio)} · ` : ''}{fecha(m.created_at)}</Text>
                   </View>
                   <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />

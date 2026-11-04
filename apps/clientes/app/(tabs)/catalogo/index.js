@@ -266,9 +266,9 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
         ) : null}
       </View>
       <View style={{ gap: 2, paddingHorizontal: 2 }}>
-        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, lineHeight: 18 }} numberOfLines={2}>{nombreProducto(p.nombre)}</Text>
+        <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto, lineHeight: 18 }}>{nombreProducto(p.nombre)}</Text>
         {/* El precio es el de la presentación MAYOR (la caja); si hay más, se dice. */}
-        <Text style={{ fontSize: 12, color: colorSistema.texto3 }} numberOfLines={2}>
+        <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>
           {p.disponible ? nombreProducto(p.presentacion || 'Unidad') : 'Sin existencia'}
         </Text>
         {p.presentaciones > 1 ? (

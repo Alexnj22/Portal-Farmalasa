@@ -58,5 +58,8 @@
     "react-native-webview": "13.16.1",
     "react-native-worklets": "0.10.1",
     "zustand": "^5.0.15"
+  },
+  "react-native-audio-api": {
+    "enableFFmpeg": false
   }
 }

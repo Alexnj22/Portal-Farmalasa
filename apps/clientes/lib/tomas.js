@@ -146,7 +146,9 @@ export function revisarHoras(horas, n) {
 // `duracion` es el número de días como texto ('7', '45'), 'continuo' o
 // 'fecha', y `hasta` la fecha del último día — los '7', '14' y '30' de antes
 // se abren tal cual.
-export const DIAS_DURACION = [3, 5, 7, 10, 14, 21, 30, 60, 90];
+// Del 1 al 30 día por día (usuario, 2026-11-03: «los días, que salgan desde
+// el 1»), y después los largos de siempre.
+export const DIAS_DURACION = [...Array.from({ length: 30 }, (_, i) => i + 1), 45, 60, 90, 120, 180];
 export const MAX_DIAS_DURACION = 365;
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 

@@ -18,7 +18,7 @@ import DondeLoHay from '../../componentes/DondeLoHay';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Vacio } from '../../componentes/ui';
+import { Cargando, RADIO, Seccion, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
 import Icono from '../../componentes/Icono';
 import IconoWhatsapp, { VERDE_WHATSAPP } from '../../componentes/IconoWhatsapp';
@@ -153,7 +153,7 @@ export default function Producto() {
 
         {/* Precios: cada presentación con el de viñeta y el Preferente (antes «VIP», Procedimiento de Clientes §1); se toca la que se quiere. */}
         <Titular texto="Elige la presentación" />
-        <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
+        <View style={{ marginHorizontal: 16, borderRadius: RADIO.medio, backgroundColor: superficie, overflow: 'hidden' }}>
           {(p.presentaciones ?? []).map((x, i) => {
             const ahorro = precioFinal(x) < x.precio ? x.precio - precioFinal(x) : 0;
             const suyo = rotuloPrecioTuyo(x);
@@ -289,8 +289,7 @@ export default function Producto() {
 
 function Titular({ texto }) {
   return (
-    <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.4, textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 32, marginTop: 24, marginBottom: 8 }}>
-      {texto}
-    </Text>
+    // El rótulo canónico (ui.js), alineado con el texto de la lista de abajo.
+    <Seccion estilo={{ marginLeft: 32, marginTop: 24, marginBottom: 8 }}>{texto}</Seccion>
   );
 }

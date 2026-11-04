@@ -1554,7 +1554,7 @@ function Oferta({ a }) {
       </View>
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.4, color: colorSistema.texto3 }}>OFERTA</Text>
-        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{a.titulo}</Text>
+        <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{a.titulo}</Text>
       </View>
       <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
     </Presionable>

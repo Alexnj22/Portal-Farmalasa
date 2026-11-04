@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1429.1 — App clientes: un solo color de íconos, días desde el 1 y revisión visual
+
+*«En cuenta, los íconos tienen demasiados colores, unifica y mejora. Da una
+revisada visual… canónico, nativo, bonito.»* · *«Los días, que salgan desde
+el 1. Hasta una fecha en específico.»*
+
+- **Íconos de un solo color**: Cuenta, los atajos del Inicio y los avisos usan
+  el de la marca en un recuadro suave. El rojo queda para lo destructivo, el
+  verde para «ganaste puntos» y el naranja para «por vencer»: ahí el color es
+  el dato.
+- **Duración del recordatorio**: «Hasta una fecha específica» y «Sin fecha de
+  fin» arriba; después 1 a 30 días de uno en uno y 45, 60, 90, 120, 180.
+- **Revisión visual**: los títulos de sección hechos a mano pasan por
+  `Seccion` (en Android toman el estilo Material); las esquinas fijas de 18/20
+  de hojas y detalles salen de `RADIO` (iPhone igual, Android 12); los nombres
+  de producto, compras, créditos e inyecciones ya no se cortan a 1-2 líneas.
+
 ## v2.1429.0 — Caja: cada boleta POS sabe de qué sala es la terminal
 
 Cuando la terminal POS de una sala no funciona, se usa la de otra: el papel

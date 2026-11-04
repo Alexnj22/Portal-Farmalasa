@@ -217,7 +217,7 @@ function Productos({ productos, todos, color }) {
     <View style={{ gap: 8 }}>
       {visibles.map((p) => (
         <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Text style={{ flex: 1, fontSize: 15, color: colorSistema.texto2 }} numberOfLines={2}>{p.nombre}</Text>
+          <Text style={{ flex: 1, fontSize: 15, color: colorSistema.texto2 }}>{p.nombre}</Text>
           {p.precio != null ? (
             <View style={{ alignItems: 'flex-end' }}>
               <Text style={{ fontSize: 12, color: colorSistema.texto3, textDecorationLine: 'line-through', fontVariant: ['tabular-nums'] }}>{dolares(p.precio)}</Text>

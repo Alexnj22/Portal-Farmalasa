@@ -17,7 +17,7 @@ import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { sinBloquear } from '../lib/bloqueo';
 import { useFocusEffect } from 'expo-router';
-import { Cargando, Pantalla, Tarjeta, Texto, Vacio } from '../componentes/ui';
+import { Cargando, Pantalla, Seccion, Tarjeta, Texto, Vacio } from '../componentes/ui';
 import { Entrada, NumeroAnimado } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import Presionable from '../componentes/Presionable';
@@ -154,7 +154,7 @@ export default function Creditos() {
               <View style={{ flex: 1, paddingVertical: 16, paddingRight: 16, gap: 8 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <View style={{ flex: 1, gap: 2 }}>
-                    <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>
+                    <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
                       {ROTULO_DOC[c.tipo] ?? 'Factura'}{c.numero ? ` N.° ${c.numero}` : ''}
                     </Text>
                     <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
@@ -243,7 +243,8 @@ function PagosEnLaApp({ pagos, t }) {
   };
   return (
     <View style={{ gap: 10, marginTop: 8 }}>
-      <Text style={{ fontSize: 13, fontWeight: '700', letterSpacing: 0.5, color: colorSistema.texto2, marginHorizontal: 8 }}>PAGOS EN LA APP</Text>
+      {/* El rótulo de sección canónico (ui.js): mayúsculas en iPhone, el de Material en Android. */}
+      <Seccion>Pagos en la app</Seccion>
       {pagos.map((p) => {
         const e = ESTADO_PAGO[p.estado] ?? ESTADO_PAGO.en_proceso;
         const tono = p.estado === 'aplicado' ? t.color.verdeTexto : p.estado === 'por_devolver' ? colorSistema.naranja : colorSistema.texto2;

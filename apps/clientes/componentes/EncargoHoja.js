@@ -9,7 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
-import { Boton, Seccion } from './ui';
+import { Boton, RADIO, Seccion } from './ui';
 import { useSesion } from '../lib/sesion';
 import { nombreProducto } from '../lib/catalogo';
 import { suave, useTema } from '../tema/tema';
@@ -63,13 +63,13 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
           </View>
         ) : (
           <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }}>
-            <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 4 }}>
+            <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{nombreProducto(producto.nombre)}</Text>
               {presentacion ? <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>{nombreProducto(presentacion.tipo)}</Text> : null}
               <Text style={{ fontSize: 13, color: colorSistema.texto3, marginTop: 4 }}>Hoy no hay en ninguna sucursal. Pídelo y te lo conseguimos.</Text>
             </View>
 
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, backgroundColor: superficie, borderRadius: 18, padding: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
               <Text style={{ flexShrink: 1, fontSize: 16, fontWeight: '700', color: colorSistema.texto }}>Cantidad</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
                 <Paso sf="minus" etiqueta="Menos" habilitado={cant > 1} alTocar={() => setCant((c) => c - 1)} />
@@ -79,7 +79,7 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
             </View>
 
             <Seccion>Retirar en</Seccion>
-            <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
+            <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
               {(salas ?? []).map((s, i) => {
                 const elegida = s.id === sala;
                 return (

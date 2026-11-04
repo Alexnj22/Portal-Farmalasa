@@ -22,6 +22,7 @@ import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import FotoProducto from './FotoProducto';
 import { colorSistema } from './sistema';
+import { Seccion } from './ui';
 import { copiar } from './ChatPiezas';
 import { llamar } from '../lib/api';
 import { dolares } from '../lib/formato';
@@ -97,7 +98,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
           keyboardDismissMode="on-drag"
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: ins.bottom + 24 }}
           ListHeaderComponent={!buscando && vistos.length ? (
-            <Text style={{ fontSize: 13, fontWeight: '600', textTransform: 'uppercase', color: colorSistema.texto2, marginLeft: 16, marginTop: 12, marginBottom: 6 }}>Vistos recientemente</Text>
+            <Seccion estilo={{ marginLeft: 16, marginTop: 12, marginBottom: 6 }}>Vistos recientemente</Seccion>
           ) : null}
           ListEmptyComponent={(
             <View style={{ alignItems: 'center', gap: 8, paddingTop: 48, paddingHorizontal: 24 }}>
@@ -123,7 +124,7 @@ export function BuscadorProducto({ visible, titulo = 'Consultar un producto', al
                 borderTopWidth: i ? StyleSheet.hairlineWidth : 0, borderTopColor: colorSistema.separador })}>
               <View style={{ width: 48 }}><FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={48} radio={10} /></View>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontSize: 16, color: colorSistema.texto }} numberOfLines={2}>{nombreProducto(p.nombre)}</Text>
+                <Text style={{ fontSize: 16, color: colorSistema.texto }}>{nombreProducto(p.nombre)}</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 8, alignItems: 'center' }}>
                   {p.precio != null ? <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{dolares(precioFinal(p))}</Text> : null}
                   {p.bajo_receta ? <Text style={{ fontSize: 12, fontWeight: '700', color: t.color.magentaTexto }}>Bajo Receta</Text> : null}
@@ -149,7 +150,7 @@ export function ProductoPendiente({ p, alQuitar }) {
       <View style={{ width: 40 }}><FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={40} radio={8} /></View>
       <View style={{ flex: 1, gap: 1 }}>
         <Text style={{ fontSize: 13, fontWeight: '700', color: t.color.magentaTexto }}>Consultar por este producto</Text>
-        <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={2}>
+        <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>
           {nombreProducto(p.nombre)}{p.precio != null ? ` · ${dolares(p.precio)}` : ''}
         </Text>
       </View>
@@ -204,7 +205,7 @@ export function TarjetaProducto({ a, mio }) {
         <View style={{ width: 56 }}><FotoProducto id={a.id} nombre={a.nombre} foto={a.foto} alto={56} radio={12} /></View>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 11, fontWeight: '800', letterSpacing: 0.4, color: colorSistema.texto3 }}>PRODUCTO</Text>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{nombre}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombre}</Text>
           {a.precio != null ? <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(a.precio)}</Text> : null}
         </View>
       </Presionable>

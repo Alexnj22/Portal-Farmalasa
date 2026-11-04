@@ -23,7 +23,7 @@ import * as Haptics from 'expo-haptics';
 import { BadgeAnticipado, BadgeNivel, PortadaOferta, Plazo } from '../../componentes/TarjetaOferta';
 import { EXCLUSIVAS, comoLlegar, useMiNivel } from '../../lib/exclusiva';
 import { Entrada } from '../../componentes/animacion';
-import { Cargando, Seccion, Vacio } from '../../componentes/ui';
+import { Cargando, RADIO, Seccion, Vacio } from '../../componentes/ui';
 import { colorSistema } from '../../componentes/sistema';
 import { useOfertas } from '../../lib/ofertas';
 import { useSesion } from '../../lib/sesion';
@@ -154,7 +154,7 @@ export default function Oferta() {
 
           {/* Hasta cuándo · dónde · para quién */}
           <Entrada indice={1}>
-            <View style={{ flexDirection: 'row', backgroundColor: superficie, borderRadius: 18, paddingVertical: 14 }}>
+            <View style={{ flexDirection: 'row', backgroundColor: superficie, borderRadius: RADIO.medio, paddingVertical: 14 }}>
               <Dato titulo="Vigencia">
                 <Plazo fin={o.fin} color={a.fuerte} />
               </Dato>
@@ -167,7 +167,7 @@ export default function Oferta() {
 
           {!o.disponible ? (
             <Entrada indice={2}>
-              <View style={{ backgroundColor: suave(a.fuerte, 0.14), borderRadius: 18, padding: 16, gap: 4 }}>
+              <View style={{ backgroundColor: suave(a.fuerte, 0.14), borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
                 <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>Exclusiva para socios</Text>
                 <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2 }}>
                   Únete al programa de puntos para ver los productos y usar esta oferta.
@@ -178,7 +178,7 @@ export default function Oferta() {
 
           {faltaNivel ? (
             <Entrada indice={2}>
-              <View style={{ backgroundColor: suave(a.fuerte, 0.14), borderRadius: 18, padding: 16, gap: 4 }}>
+              <View style={{ backgroundColor: suave(a.fuerte, 0.14), borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
                 <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
                   Exclusiva para {o.nivel_minimo === 'mayoreo' ? 'Clientes Mayoristas' : `clientes ${EXCLUSIVAS[o.nivel_minimo]?.rotulo ?? ''}`}
                 </Text>
@@ -192,13 +192,13 @@ export default function Oferta() {
           {o.disponible && o.productos?.length ? (
             <Entrada indice={2} estilo={{ gap: 8 }}>
               <Seccion n={o.productos.length}>Productos</Seccion>
-              <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
+              <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
                 {o.productos.map((p, i) => (
                   <View key={p.id}>
                     {i > 0 ? <View style={{ height: 0.5, backgroundColor: colorSistema.separador, marginLeft: 16 }} /> : null}
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 16, paddingVertical: 12 }}>
                       <View style={{ flex: 1, gap: 4 }}>
-                        <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>{p.nombre}</Text>
+                        <Text style={{ fontSize: 16, fontWeight: '600', color: colorSistema.texto }}>{p.nombre}</Text>
                         {p.precio != null && p.precio_descuento != null && p.precio > p.precio_descuento ? (
                           <Text style={{ fontSize: 13, fontWeight: '700', color: a.texto }}>
                             Ahorras {dolares(p.precio - p.precio_descuento)}
@@ -235,7 +235,7 @@ export default function Oferta() {
           ) : null}
 
           <Entrada indice={3}>
-            <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 10 }}>
+            <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 10 }}>
               <Paso numero="1" texto="Ve a la sala y elige tus productos." color={a.fuerte} />
               <Paso numero="2" texto="Al pagar, el descuento se aplica en caja." color={a.fuerte} />
               <Paso numero="3" texto="¿Prefieres apartarlo? Toca «Reservar» en el producto y pásalo a retirar." color={a.fuerte} />

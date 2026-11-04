@@ -17,7 +17,7 @@ import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Cargando, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
+import { Cargando, Pantalla, Seccion, Tarjeta, Vacio } from '../componentes/ui';
 import { colorSistema } from '../componentes/sistema';
 import Icono from '../componentes/Icono';
 import { useSesion } from '../lib/sesion';
@@ -127,7 +127,7 @@ export default function Tratamientos() {
         volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
         alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined}
         alQuitarDosis={t.ajusta_dosis && t.dosis != null ? () => pedir('tratamiento_dosis', { product_id: t.product_id, dosis: null }).then(cargar) : undefined} />)}
-      {apagados.length ? <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, marginTop: 8, marginLeft: 4 }}>YA NO LO TOMO</Text> : null}
+      {apagados.length ? <Seccion estilo={{ marginTop: 8 }}>Ya no lo tomo</Seccion> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
       {agregando ? <AgregarTratamientoHoja alCerrar={(agrego) => { setAgregando(false); if (agrego) cargar(); }} /> : null}
       {tomas ? <TomasHoja tratamiento={tomas} actual={useTomas.getState().config[String(tomas.product_id)]} alCerrar={() => { setTomas(null); cargar(); }} /> : null}

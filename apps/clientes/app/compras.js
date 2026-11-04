@@ -134,7 +134,7 @@ function Compra({ compra: c, abierta, ocupado, alVolver }) {
                 <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>{Number(p.cantidad)}×</Text>
               </View>
               <View style={{ flex: 1, gap: 2 }}>
-                <Text style={{ fontSize: 15, color: colorSistema.texto }} numberOfLines={2}>{tituloDe(p.descripcion)}</Text>
+                <Text style={{ fontSize: 15, color: colorSistema.texto }}>{tituloDe(p.descripcion)}</Text>
                 {p.inyectable ? <Text style={{ fontSize: 12, fontWeight: '700', color: t.color.verdeTexto }}>Inyección</Text> : null}
               </View>
               <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>{dolares(p.total)}</Text>

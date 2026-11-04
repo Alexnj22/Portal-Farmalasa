@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
-import { Boton, Seccion } from './ui';
+import { Boton, RADIO, Seccion } from './ui';
 import { useSesion } from '../lib/sesion';
 import { suave, useTema } from '../tema/tema';
 
@@ -111,16 +111,16 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
           </View>
         ) : (
           <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }} keyboardShouldPersistTaps="handled">
-            <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 4 }}>
+            <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{n === 1 ? '1 factura' : `${n} facturas`}</Text>
-              {resumen ? <Text style={{ fontSize: 14, color: colorSistema.texto2 }} numberOfLines={2}>{resumen}</Text> : null}
+              {resumen ? <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>{resumen}</Text> : null}
               <Text style={{ fontSize: 13, color: colorSistema.texto3, marginTop: 4 }}>Cada una va con su PDF y su archivo JSON.</Text>
             </View>
 
             {correos === null ? <ActivityIndicator style={{ marginVertical: 12 }} /> : correos.length ? (
               <>
                 <Seccion>Tus correos</Seccion>
-                <View style={{ backgroundColor: superficie, borderRadius: 18, overflow: 'hidden' }}>
+                <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
                   {correos.map((c, i) => {
                     const activo = !usandoNuevo && elegido === c.correo;
                     return (

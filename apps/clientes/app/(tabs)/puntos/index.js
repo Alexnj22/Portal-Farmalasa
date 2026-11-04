@@ -605,8 +605,10 @@ function Casilla({ sf, titulo, detalle, color, resaltar, ruta, ancho }) {
       style={({ pressed }) => ({ width: ancho, flexGrow: 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
       <Tarjeta estilo={{ padding: 12, gap: 8, minHeight: 104 }}>
         <View style={{ flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-          <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, t.oscuro ? 0.3 : 0.15) }}>
-            <Icono sf={sf} respaldo="" tam={18} color={color} />
+          {/* Un solo color, el de la marca, igual que en Cuenta (2026-11-03,
+              «demasiados colores»): lo urgente lo marca el punto rojo. */}
+          <View style={{ width: 38, height: 38, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+            <Icono sf={sf} respaldo="" tam={18} color={t.color.magentaTexto} />
           </View>
           {resaltar ? <View style={{ width: 9, height: 9, borderRadius: 5, backgroundColor: colorSistema.rojo }} /> : null}
         </View>

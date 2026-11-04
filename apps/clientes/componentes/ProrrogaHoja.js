@@ -11,7 +11,7 @@ import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from './sistema';
-import { Boton, Seccion } from './ui';
+import { Boton, RADIO, Seccion } from './ui';
 import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
 import { fecha } from '../lib/formato';
@@ -59,7 +59,7 @@ export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPed
           </Presionable>
         </View>
         <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 14 }} keyboardShouldPersistTaps="handled">
-          <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 4 }}>
+          <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
             {vence ? <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>Hoy puedes retirarla hasta el {fecha(vence)}.</Text> : null}
             <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto3, marginTop: 4 }}>

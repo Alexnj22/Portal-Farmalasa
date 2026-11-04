@@ -77,8 +77,13 @@ function FilaAccion({ texto, detalle, sf, color, tinte, flecha = true, alTocar, 
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 52, paddingVertical: 10,
         paddingHorizontal: 16, backgroundColor: pressed ? colorSistema.separador : 'transparent' })}>
       {sf && tinte ? (
-        <View style={{ width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(tinte, t.oscuro ? 0.3 : 0.15) }}>
-          <Icono sf={sf} respaldo="" tam={17} color={color ?? tinte} />
+        // UN solo color para todos los íconos (usuario, 2026-11-03: «los
+        // íconos tienen demasiados colores, unifica»): el de la marca en un
+        // recuadro suave, y el rojo sólo en lo destructivo. El `tinte` de cada
+        // fila ya no pinta: sólo pide el recuadro.
+        <View style={{ width: 32, height: 32, borderRadius: 9, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: suave(color ? t.acentos.rojo.fuerte : t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
+          <Icono sf={sf} respaldo="" tam={17} color={color ?? t.color.magentaTexto} />
         </View>
       ) : sf ? <Icono sf={sf} respaldo="" tam={18} color={color ?? colorSistema.texto2} /> : null}
       <View style={{ flex: 1, flexShrink: 1, gap: 2 }}>

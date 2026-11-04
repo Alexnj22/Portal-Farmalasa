@@ -340,10 +340,13 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
               que funcione igual en iPhone y en Android. */}
           <Desplegable superficie={superficie} etiqueta="Duración"
             valor={duracion === 'dias' ? (otrosDias ? 'otro' : String(dias)) : duracion}
-            texto={duracion === 'dias' ? `${dias} ${dias === 1 ? 'día' : 'días'}` : duracion === 'continuo' ? 'Sin fecha de fin' : duracion === 'fecha' ? 'Hasta una fecha' : 'Elegir'}
+            texto={duracion === 'dias' ? `${dias} ${dias === 1 ? 'día' : 'días'}` : duracion === 'continuo' ? 'Sin fecha de fin' : duracion === 'fecha' ? 'Hasta una fecha específica' : 'Elegir'}
             alElegir={elegirDuracion}
-            opciones={[...DIAS_DURACION.map((x) => ({ id: String(x), texto: x % 7 === 0 && x <= 28 ? `${x} días (${x / 7} ${x === 7 ? 'semana' : 'semanas'})` : x === 30 ? '30 días (un mes)' : x === 60 ? '60 días (dos meses)' : x === 90 ? '90 días (tres meses)' : `${x} días` })),
-              { id: 'otro', texto: 'Otro número de días' }, { id: 'continuo', texto: 'Sin fecha de fin' }, { id: 'fecha', texto: 'Hasta una fecha' }]} />
+            // Primero las dos que no son un número —para no tener que bajar 35
+            // filas buscándolas—, después los días desde el 1.
+            opciones={[{ id: 'fecha', texto: 'Hasta una fecha específica' }, { id: 'continuo', texto: 'Sin fecha de fin' },
+              ...DIAS_DURACION.map((x) => ({ id: String(x), texto: textoDias(x) })),
+              { id: 'otro', texto: 'Otro número de días' }]} />
           {duracion === 'dias' && otrosDias ? (
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
               <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Días</Text>
@@ -389,6 +392,14 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
       </View>
     </Modal>
   );
+}
+
+const MESES_LARGOS = { 30: 'un mes', 60: 'dos meses', 90: 'tres meses', 120: 'cuatro meses', 180: 'seis meses' };
+function textoDias(x) {
+  if (x === 1) return '1 día';
+  if (MESES_LARGOS[x]) return `${x} días (${MESES_LARGOS[x]})`;
+  if (x % 7 === 0 && x <= 28) return `${x} días (${x / 7} ${x === 7 ? 'semana' : 'semanas'})`;
+  return `${x} días`;
 }
 
 function Desplegable({ etiqueta, texto, valor, opciones, alElegir, superficie }) {

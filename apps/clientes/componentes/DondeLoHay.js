@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import Presionable from './Presionable';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
+import { RADIO } from './ui';
 import { llamar } from '../lib/api';
 import { copiaParaEmpezar } from '../lib/sinConexion';
 import { distanciaKm, textoDistancia, useUbicacionMientrasSeUsa } from '../lib/cercania';
@@ -129,7 +130,7 @@ export default function DondeLoHay({ existencias, salas, factor, cantidad, tipo,
           <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{ubicacion.buscando ? 'Buscando dónde estás…' : 'Ordenar por cercanía'}</Text>
         </Presionable>
       ) : null}
-      <View style={{ marginHorizontal: 16, borderRadius: 20, backgroundColor: superficie, overflow: 'hidden' }}>
+      <View style={{ marginHorizontal: 16, borderRadius: RADIO.medio, backgroundColor: superficie, overflow: 'hidden' }}>
         {filas.map((s, i) => {
           const e = s.estado;
           const horarioTxt = textoHorario(s.h);

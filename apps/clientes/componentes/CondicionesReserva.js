@@ -20,6 +20,7 @@ import Presionable from './Presionable';
 import Icono from './Icono';
 import { FlechaDesplegable } from './animacion';
 import { colorSistema } from './sistema';
+import { RADIO } from './ui';
 import { dolares } from '../lib/formato';
 import { useTema } from '../tema/tema';
 
@@ -85,7 +86,7 @@ export default function CondicionesReserva({ terminos, resumen = null, alCerrar 
       </View>
 
       {filas.length ? (
-        <View style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 14 }}>
+        <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 14 }}>
           {filas.map((f) => (
             <View key={f.etiqueta} style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
               <View style={{ width: 24, paddingTop: 2, alignItems: 'center' }}>
@@ -122,7 +123,7 @@ export default function CondicionesReserva({ terminos, resumen = null, alCerrar 
         <FlechaDesplegable abierto={verTodas} color={t.color.magentaTexto} />
       </Presionable>
       {verTodas ? (
-        <Animated.View entering={FadeIn.duration(200)} style={{ backgroundColor: superficie, borderRadius: 18, padding: 16, gap: 12 }}>
+        <Animated.View entering={FadeIn.duration(200)} style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 12 }}>
           {(terminos.puntos ?? []).map((p, i) => (
             <View key={i} style={{ flexDirection: 'row', gap: 12 }}>
               <Text style={{ minWidth: 22, fontSize: 14, fontWeight: '800', color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{i + 1}.</Text>

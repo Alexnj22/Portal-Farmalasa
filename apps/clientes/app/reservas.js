@@ -48,7 +48,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
-import { Boton, Cargando, Pantalla, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
+import { Boton, Cargando, Pantalla, RADIO, Seccion as SeccionUi, Tarjeta, Vacio } from '../componentes/ui';
 import GrupoDeBotones from '../componentes/GrupoDeBotones';
 import Icono from '../componentes/Icono';
 import CodigoReserva from '../componentes/CodigoReserva';
@@ -591,7 +591,7 @@ function Seccion({ texto, n }) {
 function ResumenReservas({ listas, preparando }) {
   const t = useTema();
   const caja = (n, texto, color, fondo) => (
-    <View style={{ flex: 1, borderRadius: 18, padding: 14, gap: 2, backgroundColor: fondo }}>
+    <View style={{ flex: 1, borderRadius: RADIO.medio, padding: 14, gap: 2, backgroundColor: fondo }}>
       <Text style={{ fontSize: 28, fontWeight: '900', color, fontVariant: ['tabular-nums'] }}>{n}</Text>
       <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2 }}>{texto}</Text>
     </View>
@@ -722,7 +722,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
       <View style={{ gap: 4 }}>
         <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{r.producto_nombre}</Text>
         {r.tipo === 'promocion' && r.oferta_titulo ? (
-          <Text style={{ fontSize: 14, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={2}>{r.oferta_titulo}</Text>
+          <Text style={{ fontSize: 14, fontWeight: '600', color: t.color.magentaTexto }}>{r.oferta_titulo}</Text>
         ) : null}
         {r.pedido && productosDelPedido > 1 ? (
           <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>
@@ -933,7 +933,7 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
             <View style={{ flex: 1, gap: 1 }}>
               <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{f.producto_nombre}</Text>
               {f.tipo === 'promocion' && f.oferta_titulo ? (
-                <Text style={{ fontSize: 12, fontWeight: '600', color: t.color.magentaTexto }} numberOfLines={2}>{f.oferta_titulo}</Text>
+                <Text style={{ fontSize: 12, fontWeight: '600', color: t.color.magentaTexto }}>{f.oferta_titulo}</Text>
               ) : null}
               {f.precio_unitario != null ? (
                 <Text style={{ fontSize: 12, color: colorSistema.texto3, fontVariant: ['tabular-nums'] }}>{dolares(f.precio_unitario)} c/u</Text>
@@ -1067,7 +1067,7 @@ function PedidoCerrado({ g }) {
       <View style={{ marginLeft: 36, gap: 4 }}>
         {g.filas.map((f) => (
           <View key={f.id} style={{ flexDirection: 'row', gap: 8 }}>
-            <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }} numberOfLines={2}>
+            <Text style={{ flex: 1, fontSize: 13, color: colorSistema.texto2 }}>
               {f.cantidad} × {f.producto_nombre}{mismoEstado ? '' : ` · ${estadoDe(t, f.estado).texto}`}
             </Text>
             {f.precio_unitario != null ? (
@@ -1102,7 +1102,7 @@ function ReservaCerrada({ r }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Icono sf={retirada ? 'checkmark.circle.fill' : 'xmark.circle'} respaldo="•" tam={24} color={e.color} />
         <View style={{ flex: 1, gap: 2 }}>
-          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }} numberOfLines={2}>{r.cantidad} × {r.producto_nombre}</Text>
+          <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{r.cantidad} × {r.producto_nombre}</Text>
           <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>
             {e.texto} · {r.entrega === 'domicilio' ? 'A domicilio' : r.sala} · {fechaHora(r.cerrada_at ?? r.created_at)}
           </Text>
@@ -1279,7 +1279,7 @@ function ResumenSaldo({ s }) {
   const t = useTema();
   const codigos = (s.detalle ?? []).map((x) => x.codigo);
   return (
-    <View style={{ borderRadius: 18, padding: 14, gap: 4, backgroundColor: FONDOS.exito }}>
+    <View style={{ borderRadius: RADIO.medio, padding: 14, gap: 4, backgroundColor: FONDOS.exito }}>
       <Text style={{ fontSize: 13, fontWeight: '700', color: colorSistema.texto2 }}>Saldo a favor</Text>
       <Text style={{ fontSize: 28, fontWeight: '900', color: t.color.exitoTexto, fontVariant: ['tabular-nums'] }}>{dolares(s.total)}</Text>
       <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>

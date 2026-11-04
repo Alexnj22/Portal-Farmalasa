@@ -9,6 +9,7 @@ import { Image } from 'expo-image';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
+import { RADIO } from './ui';
 import { PISTA_RECETA, usarVistaPreviaFoto } from './VistaPreviaFoto';
 import { suave, useTema } from '../tema/tema';
 
@@ -23,7 +24,7 @@ export default function RecetaFoto({ foto, alCambiar, superficie }) {
     if (r) alCambiar(r);
   };
   return (
-    <View style={{ backgroundColor: superficie ?? (t.oscuro ? 'rgba(255,255,255,0.08)' : '#FFFFFF'), borderRadius: 18, padding: 16, gap: 12 }}>
+    <View style={{ backgroundColor: superficie ?? (t.oscuro ? 'rgba(255,255,255,0.08)' : '#FFFFFF'), borderRadius: RADIO.medio, padding: 16, gap: 12 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{ width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) }}>
           <Icono sf="doc.text.viewfinder" respaldo="📄" tam={18} color={t.color.magentaTexto} />

@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1442.1 — Inicio · General vuelve a armarse solo para todos
+
+Varias personas tenían la pestaña General del Inicio desordenada: sus tableros
+se acomodaron a mano contra el catálogo de widgets de otro momento y lo que
+llegó después quedó suelto. Se repite el reinicio del 13-ago (todos menos
+Edwin): la base ya se limpió (`20261104211647`) y cada navegador borra su copia
+local la primera vez que abre el Inicio (`REINICIO_GENERAL = '2026-11-04'`).
+Quien quiera, puede volver a acomodar el suyo.
+
 ## v2.1442.0 — Mis tratamientos: tarjeta nueva, «Lo tomé» que calla el aviso y recordatorio al agregar
 
 App de clientes:

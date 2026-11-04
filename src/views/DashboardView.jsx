@@ -922,7 +922,7 @@ const claveAcomodada = (userId, tabId) => `portal_dash_acomodada_${userId || 'gu
 // datos el mismo día (`20260813..._reinicio_dashboard_general`). Hacían falta
 // las dos: la base no puede tocar el `localStorage` de siete navegadores, y el
 // navegador no puede tocar la fila de otro (RLS por `user_id`).
-const REINICIO_GENERAL = '2026-08-13';
+const REINICIO_GENERAL = '2026-11-04';   // 2do reinicio: tableros acomodados contra el catálogo viejo quedaron desordenados
 const claveReinicio = (userId) => `portal_dash_reinicio_general_${userId || 'guest'}`;
 // El único que conserva su acomodo, por pedido expreso. Va por id y no por
 // cargo: «menos a edwin» es una persona, no un permiso — y el otro superusuario

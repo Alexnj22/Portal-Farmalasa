@@ -210,8 +210,13 @@ const BUCKET_ARCHIVOS = "app-clientes-archivos";
 // la pertenencia falla.
 const DOC_EJEMPLO = { pdf: "muestras/FACTURA-DE-EJEMPLO.pdf", json: "muestras/FACTURA-DE-EJEMPLO.json" } as const;
 // deno-lint-ignore no-explicit-any
+//
+// `upsert: false` (auditoría 2026-11-04): con `true`, la URL firmada —que vive
+// dos horas— seguía sirviendo DESPUÉS de confirmar, y una receta ya revisada
+// se podía reemplazar por otra foto. Toda ruta que se firma aquí es nueva por
+// subida (lleva la hora), así que no hay nada legítimo que sobrescribir.
 async function urlDeSubida(admin: any, ruta: string) {
-  const { data, error } = await admin.storage.from(BUCKET_ARCHIVOS).createSignedUploadUrl(ruta, { upsert: true });
+  const { data, error } = await admin.storage.from(BUCKET_ARCHIVOS).createSignedUploadUrl(ruta, { upsert: false });
   if (error) throw error;
   return { ok: true, url: data.signedUrl as string, token: data.token as string, ruta };
 }
@@ -529,10 +534,15 @@ async function vigentesHoy(admin: any) {
 // documento es suyo y, desde el portal (Ofertas para clientes → Pre-registros),
 // se elimina el pre-registro ajeno; después se puede registrar normalmente.
 // `motivo: "soporte"` es lo que la app usa para ofrecer el contacto.
+//
+// Enumeración (auditoría 2026-11-04): es la MISMA respuesta que la de datos
+// retirados (`DATOS_RETIRADOS` es un alias). Con dos mensajes distintos, quien
+// probaba un DUI ajeno distinguía «tiene un registro pendiente» de «pidió
+// retirar sus datos». La app sólo lee `motivo: "soporte"` (registro.js).
 const NO_SE_PUDO_REGISTRAR = {
   ok: false,
   motivo: "soporte",
-  mensaje: "No pudimos completar tu registro con este documento. Escríbenos a soporte: verificamos tus datos y te habilitamos para que te registres.",
+  mensaje: "No pudimos completar tu registro con este documento. Escríbenos a soporte o acércate a una sala con tu DUI: verificamos tus datos y te habilitamos.",
 };
 
 /** 'AAAA-MM-DD' de una fecha REAL entre 1900 y hoy; null si viene vacía; false si es inválida. */
@@ -557,11 +567,14 @@ function fechaDeNacimiento(v: unknown): string | null | false {
 // que dependen del documento.
 // Genérico a propósito (decisión del usuario 26-oct): quien escriba un DUI ajeno
 // no debe enterarse de que esa persona pidió retirar sus datos.
-const DATOS_RETIRADOS = {
-  ok: false,
-  motivo: "soporte",
-  mensaje: "No pudimos abrir tu cuenta desde aquí. Acércate a una sala con tu DUI o escríbenos a soporte y te ayudamos.",
-};
+//
+// Desde el 2026-11-04 (auditoría) es la misma respuesta que
+// `NO_SE_PUDO_REGISTRAR`, y sólo sale al REGISTRARSE: al ENTRAR, un documento
+// retirado contesta `NO_ENCONTRADO` como cualquier otro que no coincide (antes
+// el «soporte» de entrar confirmaba que ese DUI existió). La persona que
+// retiró sus datos, al no encontrarse, va a «Registrarme» y ahí recibe el
+// camino a soporte.
+const DATOS_RETIRADOS = NO_SE_PUDO_REGISTRAR;
 
 // deno-lint-ignore no-explicit-any
 async function documentoAnonimizado(admin: any, doc: string): Promise<boolean> {
@@ -634,6 +647,30 @@ const plataformaValida = (p: unknown) => (["ios", "android", "web"].includes(Str
 
 // Freno por IP de `reportar_error` (ver la acción).
 const topeErrores = new Map<string, { n: number; desde: number }>();
+
+// Freno de URLs de subida por ficha (auditoría 2026-11-04): sin él, una sesión
+// podía pedir firmas sin fin y llenar el bucket. Mismo mecanismo que
+// `topeErrores`: vive en la memoria de la instancia, es un freno barato y no
+// una cuenta exacta. Los topes están muy por encima del uso real (una foto de
+// perfil se cambia de vez en cuando; un chat con fotos y notas de voz, decenas).
+const topeSubidas = new Map<string, { n: number; desde: number }>();
+const TOPE_SUBIDAS_PERFIL = 10;
+const TOPE_SUBIDAS_CHAT = 60;
+const TOPE_SUBIDAS_RECETA = 20;
+const MUCHAS_SUBIDAS = { ok: false, motivo: "muchos_intentos", mensaje: "Subiste muchos archivos en poco tiempo. Intenta de nuevo en un rato." };
+/** true si `clave` todavía tiene cupo en la ventana; cuenta el uso. */
+function pasaElTope(mapa: Map<string, { n: number; desde: number }>, clave: string, tope: number, ventanaMs: number): boolean {
+  const ahora = Date.now();
+  const r = mapa.get(clave);
+  if (r && ahora - r.desde < ventanaMs) {
+    if (r.n >= tope) return false;
+    r.n++;
+    return true;
+  }
+  if (mapa.size > 5000) mapa.clear();
+  mapa.set(clave, { n: 1, desde: ahora });
+  return true;
+}
 
 // ── La traza de cada pedido (2026-10-15) ─────────────────────────────────
 // Una línea JSON por pedido en los registros de la función: qué acción, cuánto
@@ -894,7 +931,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
           await anotarAcierto(doc);
           return json({ ok: true, token: await abrirSesion({ preregistro_id: pre.id }) });
         }
-        if (await documentoAnonimizado(admin, doc)) return json(DATOS_RETIRADOS);
+        // Un documento retirado contesta igual que uno que no existe (ver
+        // DATOS_RETIRADOS): el camino a soporte sale al registrarse.
       }
       return json(NO_ENCONTRADO);
     }
@@ -1443,6 +1481,23 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true });
     }
 
+    // ── Cerrar las demás sesiones (auditoría 2026-11-04) ───────────────────
+    // Para quien perdió un teléfono o sospecha que alguien entró con su
+    // código: revoca TODAS las sesiones de la ficha (o del pre-registro) menos
+    // ésta. Sólo con sesión completa: no está en CON_CODIGO, así que el
+    // portero de arriba ya rechazó a una sesión de código.
+    if (accion === "cerrar_otras_sesiones") {
+      let q = admin.from("app_cliente_sesiones")
+        .update({ revocada_at: new Date().toISOString(), push_token: null })
+        .neq("id", ses.id).is("revocada_at", null);
+      if (customerId) q = q.eq("customer_id", customerId);
+      else if (ses.preregistro_id) q = q.eq("preregistro_id", ses.preregistro_id);
+      else return json({ ok: true, cerradas: 0 });
+      const { data: cerradas, error } = await q.select("id");
+      if (error) throw error;
+      return json({ ok: true, cerradas: cerradas?.length ?? 0 });
+    }
+
     if (accion === "borrar_cuenta") {
       // La cuenta de la app es la sesión, los avisos, el pre-registro y lo
       // personal que se subió desde la app (`borrarLoPersonal`). La
@@ -1692,18 +1747,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!data || data.estado !== "en_revision" || !(data.receta_estado == null || data.receta_estado === "otra_foto")) return null;
       return data;
     };
-    const rutaDeReceta = (r: any) => `recetas/${Number(r.branch_id)}/${Number(r.id)}/${Number(r.receta_fotos ?? 0) + 1}.jpg`;
+    // La ruta lleva la hora (auditoría 2026-11-04): con `upsert: false` una
+    // ruta fija por intento dejaba sin salida al que reintenta tras una subida
+    // que sí llegó pero cuya confirmación no. Al confirmar se acepta cualquier
+    // ruta de ESTE intento (`/<n>-<hora>.jpg`) y se comprueba que exista.
+    const prefijoDeReceta = (r: any) => `recetas/${Number(r.branch_id)}/${Number(r.id)}/${Number(r.receta_fotos ?? 0) + 1}`;
+    const rutaDeReceta = (r: any) => `${prefijoDeReceta(r)}-${Date.now()}.jpg`;
     if (accion === "receta_subir_url") {
       const r = await recetaDe(Number(body?.reserva_id));
       if (!r) return json({ ok: false, mensaje: "Esta reserva ya no necesita una foto de la receta." });
       if (Number(r.receta_fotos ?? 0) >= 10) return json({ ok: false, mensaje: "Ya subiste muchas fotos para esta reserva. Pasa a la sucursal con tu receta." });
+      if (!pasaElTope(topeSubidas, `receta:${customerId}`, TOPE_SUBIDAS_RECETA, 3600_000)) return json(MUCHAS_SUBIDAS);
       return json(await urlDeSubida(admin, rutaDeReceta(r)));
     }
     if (accion === "receta_confirmar") {
       const r = await recetaDe(Number(body?.reserva_id));
       if (!r) return json({ ok: false, mensaje: "Esta reserva ya no necesita una foto de la receta." });
-      const ruta = rutaDeReceta(r);
-      if (String(body?.ruta ?? "") !== ruta) return json({ ok: false, mensaje: "La foto no corresponde a esta reserva. Vuelve a subirla." });
+      const ruta = String(body?.ruta ?? "");
+      if (!ruta.startsWith(`${prefijoDeReceta(r)}-`) || !/^\d{13}\.jpg$/.test(ruta.slice(prefijoDeReceta(r).length + 1))) return json({ ok: false, mensaje: "La foto no corresponde a esta reserva. Vuelve a subirla." });
       if (!(await archivoExiste(admin, ruta))) return json({ ok: false, mensaje: "La foto no terminó de subirse. Intenta de nuevo." });
       const ahora = new Date().toISOString();
       let q = admin.from("app_reservas").update({
@@ -1750,7 +1811,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const f = await fotoDePerfil();
       return json({ ok: true, foto_url: f.url, quitada: f.quitada });
     }
-    if (accion === "perfil_subir_url") return json(await urlDeSubida(admin, `perfil/${customerId}/${Date.now()}.jpg`));
+    if (accion === "perfil_subir_url") {
+      if (!pasaElTope(topeSubidas, `perfil:${customerId}`, TOPE_SUBIDAS_PERFIL, 3600_000)) return json(MUCHAS_SUBIDAS);
+      return json(await urlDeSubida(admin, `perfil/${customerId}/${Date.now()}.jpg`));
+    }
     if (accion === "perfil_confirmar") {
       const ruta = String(body?.ruta ?? "");
       if (!new RegExp(`^perfil/${customerId}/\\d+\\.jpg$`).test(ruta)) return json({ ok: false, mensaje: "La foto no es válida. Vuelve a elegirla." });
@@ -2147,6 +2211,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // La foto (jpg) y, desde el 2026-10-20, el documento (pdf) y la nota de voz (m4a).
     if (accion === "chat_subir_url") {
       const ext = body?.tipo === "pdf" ? "pdf" : body?.tipo === "audio" ? "m4a" : "jpg";
+      if (!pasaElTope(topeSubidas, `chat:${customerId}`, TOPE_SUBIDAS_CHAT, 3600_000)) return json(MUCHAS_SUBIDAS);
       return json(await urlDeSubida(admin, `chat/${customerId}/${Date.now()}.${ext}`));
     }
     // ── Respuestas automáticas (2026-10-20) ─────────────────────────────────
@@ -3047,11 +3112,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // que lleguen: una nota trae `relacionada` = id de la factura que corrige;
     // sin eso sale suelta. Las muestras (cuenta de prueba) ya lo usan.
     // Documentos de factura (ver `documentoGuardado`, más abajo): la firma
-    // dura un día, lo que este proceso ya está bajando no se pide dos veces, y
+    // dura UNA HORA (auditoría 2026-11-04: era un día, y un enlace firmado
+    // sirve a quien lo tenga — un registro, una captura, un reenvío). La app
+    // ya pide una firma nueva si la de la lista venció (`pedirUrl` en
+    // facturas.js). Los enlaces del CORREO no son éstos: llevan su propia
+    // firma de 7 días más abajo. Lo que este proceso ya está bajando no se pide dos veces, y
     // lo que no hace esperar al cliente sigue después de contestar. Declarados
     // ANTES de `mis_facturas`, que precarga (un `const` leído antes de su
     // línea lanza).
-    const FIRMA_DOC = 24 * 3600;
+    const FIRMA_DOC = 3600;
     // deno-lint-ignore no-explicit-any
     const enCurso: Map<string, Promise<any>> = ((globalThis as any).__appClientesDocsEnCurso ??= new Map());
     // Lo que no hace esperar al cliente: sigue después de contestar.

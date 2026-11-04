@@ -236,8 +236,18 @@ export async function clienteDelEnlace(token: string): Promise<number | null> {
   const [id, vence, firma] = String(token ?? "").split(".");
   if (!id || !vence || !firma) return null;
   if (Number(vence) < Date.now() / 1000) return null;
-  if ((await hmac(`${id}.${vence}`)) !== firma) return null;
+  if (!igualesEnTiempoConstante(await hmac(`${id}.${vence}`), firma)) return null;
   return Number(id) || null;
+}
+
+// Comparar la firma con `!==` corta en el primer carácter distinto, y el tiempo
+// de respuesta dice cuántos acertó (auditoría 2026-11-04). Se recorre siempre
+// el largo completo y se junta la diferencia con XOR.
+export function igualesEnTiempoConstante(a: string, b: string): boolean {
+  const x = new TextEncoder().encode(a), y = new TextEncoder().encode(b);
+  let dif = x.length ^ y.length;
+  for (let i = 0; i < x.length; i++) dif |= x[i] ^ (y[i % (y.length || 1)] ?? 0);
+  return dif === 0;
 }
 
 /** La tarjeta de una ficha, leyendo sus datos (la usan `app-clientes` y `wallet-pases`). */

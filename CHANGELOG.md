@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1447.5 — App de clientes: seguridad del servidor
+
+Auditoría de la app de clientes (2026-11-04). Aplicado en producción con el OK
+del usuario, después de probarlo en el branch con `execute_sql`.
+
+- **Vincular un pre-registro** (`20261104221042`): el documento coincide por
+  igualdad de campo (antes, `position()` como subcadena) y, si el teléfono no
+  es el de la ficha, las sesiones se REVOCAN en vez de heredar la cuenta.
+- **Tope de inicio de sesión** (`20261104221100`): 60 fallos en la red ya no
+  dejan a todos afuera; sólo una pausa de 20 s a la IP que nunca acertó. Por
+  DUI, espera creciente desde 5 fallos, y el dueño no espera.
+- **Reemitir el código** (`20261104221120`) cierra las sesiones de código.
+- `app-clientes` (desplegada con `--no-verify-jwt`, igual que estaba):
+  `cerrar_otras_sesiones`; subidas firmadas con `upsert: false` y receta con
+  ruta nueva por intento; topes de subida por ficha y hora; documento
+  retirado responde igual que uno inexistente; facturas firmadas 1 h en la
+  app; HMAC del pase comparado en tiempo constante (`_shared/pase.ts`).
+- `wallet-pases` comparte `_shared/pase.ts` y no se redesplegó: su `===` del
+  token queda para su próximo despliegue.
 ## v2.1447.4 — Personal: la lista carga en 15 ms en vez de 30 s
 
 `employees_safe` —la lectura de personal con la que arranca el portal en todas

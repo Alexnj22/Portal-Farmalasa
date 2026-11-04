@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1438.3 — Saly en prueba: la ayuda sólo la ve Edwin
+
+La ayuda en pantalla de Saly queda **sólo para Edwin Núñez** mientras la prueba
+(usuario: «que solo salga a Edwin ahorita, lo probaré bien primero»). La lista
+vive en dos lugares que se cambian juntos: `SALY_AYUDA_SOLO_PARA`
+(`src/utils/salyAyuda.js`) y `SOLO_PARA` en la función `saly-ayuda`, que
+contesta 403 a cualquier otra persona. `null` en las dos = todos.
+
 ## v2.1438.2 — Saly: los avisos no se pierden y se le puede señalar algo
 
 Pedido del usuario: «saly da una sugerencia pero se cierra rápido y al abrir ya

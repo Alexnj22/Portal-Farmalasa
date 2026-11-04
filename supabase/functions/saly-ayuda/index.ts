@@ -24,6 +24,8 @@ const TOPE_DIARIO = 30
 const MAX_PANTALLA = 3500
 const MAX_PREGUNTA = 300
 const RETENCION_DIAS = 180
+// EN PRUEBA: gemela de SALY_AYUDA_SOLO_PARA (src/utils/salyAyuda.js). `null` = todos.
+const SOLO_PARA: string[] | null = ["bbc796d7-7435-495b-9306-a2115f44a18f"]
 
 // La guía de cada pantalla: qué es, qué significa cada número, qué se hace y
 // qué NO puede decidir Saly. Es lo que evita que invente.
@@ -130,6 +132,7 @@ Deno.serve(async (req) => {
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!)
   const emp = await requireActiveEmployeeUser(req, admin)
   if (!emp) return responder({ ok: false, motivo: "SESION" }, 401)
+  if (SOLO_PARA && !SOLO_PARA.includes(emp.id)) return responder({ ok: false, motivo: "EN_PRUEBA" }, 403)
 
   try {
     const body = await req.json().catch(() => ({}))

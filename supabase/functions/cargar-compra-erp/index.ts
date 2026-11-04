@@ -31,6 +31,7 @@ import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
   lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
+import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 
 const COMPRAS = `${BASE}/compras.php`;
 const ERP_BODEGA = 6;
@@ -1919,17 +1920,22 @@ Deno.serve(async (req: Request) => {
       problemas.push({ renglon: null, texto: `El total armado ($${tot.total}) no cuadra con el del documento ($${totalDoc.toFixed(2)}).` });
     }
 
-    // Cargada a mano con el NÚMERO DE CONTROL (65 de 1,013 desde agosto): sus
-    // 20 caracteres se repiten entre facturas del emisor, así que además mismo
-    // proveedor y mismo total.
+    // Cargada a mano con el NÚMERO DE CONTROL (65 de 1,013 desde agosto) o
+    // con su correlativo solo: además mismo proveedor y mismo total. Qué
+    // número identifica y cuál es el prefijo común del emisor lo decide
+    // `coincideConControl` (2026-11-04: el prefijo de puros ceros daba por
+    // registrada una factura en 14 compras y no veía la verdadera).
     if (!manual && d.numero_control && erpProveedor && totalDoc != null) {
-      const control = normNum(String(d.numero_control));
       const { data: pc, error: ePc } = await admin.from("purchase_receipts")
-        .select("erp_purchase_id, documento_numero, total, estado")
+        .select("erp_purchase_id, documento_numero, total, estado, fecha")
         .eq("erp_supplier_id", erpProveedor).gte("total", totalDoc - 0.05).lte("total", totalDoc + 0.05);
       if (ePc) throw ePc;
-      const ya = (pc ?? []).filter((r: any) => (r.estado ?? "") !== "anulada"
-        && normNum(r.documento_numero ?? "").length >= 15 && control.startsWith(normNum(r.documento_numero ?? "")));
+      const ya = (pc ?? []).filter((r: any) => {
+        if ((r.estado ?? "") === "anulada") return false;
+        const como = coincideConControl(String(d.numero_control), String(r.documento_numero ?? ""));
+        return como === "control" || como === "correlativo"
+          || (como === "prefijo" && fechaCercana(String(d.fecha_emision ?? ""), String(r.fecha ?? "")));
+      });
       if (ya.length) problemas.push({ renglon: null, texto: `Ya está registrada con su número de control (compra ${ya.map((r: any) => r.erp_purchase_id).join(", ")}).` });
     }
 

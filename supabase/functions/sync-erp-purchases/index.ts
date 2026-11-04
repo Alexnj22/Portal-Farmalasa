@@ -4,6 +4,7 @@ import { selectAllByIn } from "../_shared/db.ts";
 import { lineasDelLibro, sellosDeLasCompras, motivoParaRechazarElLibro, type CompraParaSellar } from "../_shared/selloDeCompra.ts";
 import { lineasDeMonto, montosDeLasCompras } from "../_shared/montoDeCompra.ts";
 import { emisoresDelLibro, nitsParaLasFichas, type LineaDeEmisor } from "../_shared/nitDeProveedor.ts";
+import { deshacerCruce } from "../_shared/cruceDeLotes.ts";
 
 function getPurchaseCreds(): { username: string; password: string } {
   const raw = Deno.env.get("ERP_PURCHASES_CREDS");
@@ -287,6 +288,7 @@ async function syncBranch(
 
   // 5. Items — upsert para todas las recepciones (nuevas y modificadas)
   const itemsToUpsert: any[] = [];
+  const renglonesPorRecibo = new Map<number, number>();
   for (const c of compras) {
     const erpPurchaseId = Number(c.compra_id ?? c.id_compra ?? c.id_factura ?? c.id_orden ?? c.id);
     const receiptId = existingMap.get(erpPurchaseId);
@@ -313,10 +315,12 @@ async function syncBranch(
       String(p.cantidad ?? ''),
       String(p.precios?.subtotal_linea ?? p.total_linea ?? p.total ?? ''),
     ].join('\u0000');
-    const lines = [...(c.items ?? c.productos ?? c.detalle ?? [])]
-      .sort((a: any, b: any) => claveDeOrden(a).localeCompare(claveDeOrden(b)));
+    const lines = deshacerCruce([...(c.items ?? c.productos ?? c.detalle ?? [])])
+      .sort((a, b) => claveDeOrden(a.p).localeCompare(claveDeOrden(b.p)));
+    // Sin renglones no se poda: una lectura vacía no autoriza a borrar.
+    if (lines.length > 0) renglonesPorRecibo.set(receiptId, lines.length);
     for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
-      const p = lines[lineIdx];
+      const { p, aproximado } = lines[lineIdx];
       const rawFecha = p.trazabilidad?.fecha_vencimiento ?? p.fecha_vencimiento ?? p.vencimiento ?? null;
 
       const cantidad    = parseFloat(p.cantidad) || 0;
@@ -337,6 +341,7 @@ async function syncBranch(
         total_linea:       totalLinea,
         lote:              (p.trazabilidad?.lote ?? p.lote) || null,
         fecha_vencimiento: (rawFecha && rawFecha !== '0000-00-00') ? rawFecha : null,
+        lote_aproximado:   aproximado,
       });
     }
   }
@@ -353,6 +358,16 @@ async function syncBranch(
       if (error) throw new Error(`items upsert chunk ${i}: ${error.message}`);
     }
     totalItems = itemsToUpsert.length;
+  }
+  // Lo que quedó de más al final de cada compra (antes del cruce deshecho
+  // eran k×k renglones; ahora son k): se borra DESPUÉS de todas las tandas,
+  // porque una compra puede quedar repartida entre dos.
+  if (renglonesPorRecibo.size > 0) {
+    const filas = [...renglonesPorRecibo].map(([receipt_id, n]) => ({ receipt_id, n }));
+    for (let i = 0; i < filas.length; i += 500) {
+      const { error } = await supabase.rpc('podar_renglones_de_compra', { p_rows: filas.slice(i, i + 500) });
+      if (error) throw new Error(`podar renglones ${i}: ${error.message}`);
+    }
   }
 
   return { total: compras.length, new: newErpIds.size, items: totalItems };

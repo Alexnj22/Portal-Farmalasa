@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1429.3 — Compras: la copia ya no duplica renglones con varios lotes, y «ya está registrada» deja de acertar por casualidad
+
+- **La lista de compras del sistema cruza cantidades con lotes.** Un producto
+  en k renglones llega como k×k filas: cada cantidad con cada lote. Medido el
+  4-nov: 1,022 grupos en 707 compras desde may-2025, todos encajan exacto en el
+  cruce. La copia del portal duplicaba unidades y montos de esos renglones —y
+  de ahí bebían el libro bajo receta (compras), el cuadre de antibióticos, el
+  costo de venta y el proveedor principal—. `_shared/cruceDeLotes.ts` lo
+  deshace en `sync-erp-purchases`; `podar_renglones_de_compra` borra la cola
+  sobrante. Limpieza histórica con la MISMA función: **2,516 filas borradas**,
+  0 grupos inconsistentes.
+- **Qué lote va con qué cantidad la lista no lo dice.** Cuando hay varias de
+  cada una, la fila sale con `purchase_receipt_items.lote_aproximado = true`
+  (1,006 filas): el lote es de esa compra, no se sabe si de esa cantidad.
+- **«Ya está registrada con su número de control».** El recorte a 20
+  caracteres de `DTE-03-M001P001-000000000020680` deja `DTE-03-M001P001-0000`,
+  común a todas las facturas del emisor: una de COFARSAL salió registrada en
+  14 compras desde 2025 y no se veía la verdadera (6482, cargada con «20680»).
+  `_shared/numeroDeControl.ts`: el correlativo solo cuenta; el prefijo de
+  ceros sólo con la compra entre 3 días antes y 30 después de la emisión.
+
 ## v2.1429.2 — Saly vuelve a nombrar los vencidos que siguen a la venta
 
 El resumen de la mañana sólo nombraba los vencidos NUEVOS respecto de ayer: el

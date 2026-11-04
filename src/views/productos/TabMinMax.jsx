@@ -801,7 +801,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         const limitedData = hasDraft &&
                             row.draft_data_days != null &&
                             row.draft_data_days < (analysisConfig.analysis_days ?? 180);
-                        const dispatchRisk = !isBodega && hasDispatchRisk(row.effective_max, row.dispatch_pres_factor, row.dispatch_multiplo);
+                        const dispatchRisk = !isBodega && hasDispatchRisk(vistaMax, row.dispatch_pres_factor, row.dispatch_multiplo);
                         // El badge decía sólo que había un problema, no CUÁL era ni
                         // dónde se arregla. La regla vive en Pedidos → Reglas de
                         // despacho, y el número que la vuelve inalcanzable está acá:
@@ -813,7 +813,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         const reglaAyuda = dispatchRisk
                             ? `Se despacha de a ${reglaPack.toLocaleString()} und`
                               + `${row.dispatch_tipo ? ` (${row.dispatch_tipo}${Number(row.dispatch_multiplo ?? 1) > 1 ? ` ×${row.dispatch_multiplo}` : ''})` : ''}`
-                              + `, y el MAX de ${Number(row.effective_max ?? 0).toLocaleString()} no llega ni a una. `
+                              + `, y el MAX${hasDraft ? ' del borrador' : ''} de ${Number(vistaMax ?? 0).toLocaleString()} no llega ni a una. `
                               + 'Así este producto nunca va a entrar en un pedido: hay que subir el MAX o cambiar la regla.'
                               + (puedeVerReglas ? ' Toca para ver la regla.' : '')
                             : '';

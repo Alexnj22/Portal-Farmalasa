@@ -36,7 +36,7 @@ import {
   conteosDeEstadoDeLaSala, cuentaADescartar, estadoAjuste, filaPasaFiltros, filasParaOcultar, mensajeDePublicacion,
   motivoDeSaltoDelCalculo, ordenarFilasDeMinMax, ORDENES_DE_MINMAX,
 } from '@nucleo/utils/revisionDeSala';
-import { fmtMoney, formatUnits, hasDispatchRisk, sortedPres, sugerenciaParaLaRegla } from '@nucleo/utils/minmaxTabla';
+import { fmtMoney, formatUnits, hasDispatchRisk, parParaLaRegla, sortedPres, sugerenciaParaLaRegla } from '@nucleo/utils/minmaxTabla';
 import { planDeGuardadoMinMax } from '@nucleo/utils/minmaxGuardar';
 import { ALERTA_ETIQUETA, ESTADOS_DE_AJUSTE, ESTADOS_DE_STOCK, MOTIVO_AJUSTE } from '@nucleo/constants/minmax';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
@@ -68,7 +68,7 @@ function Fila({ r, esBodega, onAbrir, onMantener }) {
   const cambia = pendiente && (r.draft_min !== r.effective_min || r.draft_max !== r.effective_max);
   const abc = r.draft_abc_class || r.abc_class;
   const ajuste = estadoAjuste(r);
-  const regla = !esBodega && hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo);
+  const regla = !esBodega && hasDispatchRisk(parParaLaRegla(r, esBodega).max, r.dispatch_pres_factor, r.dispatch_multiplo);
   const pres = r.presentations || [];
   const stock = Number(r.current_stock ?? 0);
   return (
@@ -317,11 +317,10 @@ export default function MinMaxSala() {
     const factor = Number(r.dispatch_pres_factor || 0);
     const multiplo = Number(r.dispatch_multiplo ?? 1);
     const paquete = factor * multiplo;
-    const minHoy = Number(r.effective_min ?? 0);
-    const maxHoy = Number(r.effective_max ?? 0);
+    const { min: minHoy, max: maxHoy, esBorrador } = parParaLaRegla(r, esBodega);
     const sug = sugerenciaParaLaRegla(minHoy, maxHoy, factor, multiplo);
     const como = r.dispatch_tipo ? `${r.dispatch_tipo}${multiplo > 1 ? ` ×${multiplo}` : ''}` : `${paquete.toLocaleString()} und`;
-    const texto = `Se despacha de a ${paquete.toLocaleString()} und (${como}).\n\nEl MAX de hoy es ${maxHoy.toLocaleString()}, y aunque la sala quede en cero eso no llega a pedir ni un paquete: el pedido redondea a cero y este producto nunca entra.`
+    const texto = `Se despacha de a ${paquete.toLocaleString()} und (${como}).\n\nEl MAX ${esBorrador ? 'del borrador' : 'de hoy'} es ${maxHoy.toLocaleString()}, y aunque la sala quede en cero eso no llega a pedir ni un paquete: el pedido redondea a cero y este producto nunca entra.`
       + (sug ? `\n\nSugerencia: ${minHoy} · ${maxHoy} → ${sug.minNuevo} · ${sug.maxNuevo}. ${sug.maxNuevo} es el MAX más chico que alcanza el 40% del paquete, el umbral del armado del pedido.` : '')
       + `\n\nSi de verdad no se pide de a ${paquete.toLocaleString()} unidades, lo que hay que cambiar es la regla (Pedidos → Reglas de despacho) y no el MAX.`;
     Alert.alert(r.product_name, texto, [
@@ -343,7 +342,7 @@ export default function MinMaxSala() {
   const menuDeFila = (r) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {});
     const borrador = r.draft_status === 'pending';
-    const regla = !esBodega && hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo);
+    const regla = !esBodega && hasDispatchRisk(parParaLaRegla(r, esBodega).max, r.dispatch_pres_factor, r.dispatch_multiplo);
     const params = { producto: String(r.erp_product_id), sala: String(sala), nombre: r.product_name };
     const opciones = [['Historial de cambios', 'hist']];
     if (puede) opciones.push([r._manual_motivo ? 'Ver motivo del ajuste' : 'Poner motivo del ajuste', 'motivo']);

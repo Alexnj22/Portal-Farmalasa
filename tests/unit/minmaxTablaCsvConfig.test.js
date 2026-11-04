@@ -5,7 +5,7 @@
 import { describe, expect, it } from 'vitest';
 import {
     normXyz, hasDispatchRisk, sortedPres, smallestPres, formatUnits, formatDominant,
-    sugerenciaParaLaRegla, matrizAbcXyz,
+    sugerenciaParaLaRegla, matrizAbcXyz, parParaLaRegla,
 } from '@nucleo/utils/minmaxTabla';
 import { csvDeMinMax } from '@nucleo/utils/csvMinMax';
 import {
@@ -98,8 +98,30 @@ describe('minmaxTabla — riesgo de la regla de despacho', () => {
 
     it('sin MÁX actual la proporción por defecto es la mitad; sin paquete, null', () => {
         expect(sugerenciaParaLaRegla(0, 0, 10, 1)).toEqual({ paquete: 10, minNuevo: 2, maxNuevo: 4 });
+        // 0·1 con paquete de 5: la proporción da MIN 0, pero 0·2 no es un par válido.
+        expect(sugerenciaParaLaRegla(0, 1, 5, 1)).toEqual({ paquete: 5, minNuevo: 1, maxNuevo: 2 });
         expect(sugerenciaParaLaRegla(1, 2, null, 1)).toBeNull();
         expect(sugerenciaParaLaRegla(1, 2, 0, 3)).toBeNull();
+    });
+});
+
+describe('minmaxTabla — la regla se juzga sobre el borrador si lo hay', () => {
+    const fila = { effective_min: 0, effective_max: 1, draft_min: 3, draft_max: 6, draft_status: 'pending' };
+    it('con borrador pendiente usa el borrador; sin él, el vigente; en Bodega, el vigente', () => {
+        expect(parParaLaRegla(fila)).toEqual({ min: 3, max: 6, esBorrador: true });
+        expect(parParaLaRegla({ ...fila, draft_status: 'none' })).toEqual({ min: 0, max: 1, esBorrador: false });
+        expect(parParaLaRegla(fila, true)).toEqual({ min: 0, max: 1, esBorrador: false });
+    });
+});
+
+describe('minmaxTabla — la sugerencia de la regla siempre es un par válido', () => {
+    it('ningún MIN·MAX de partida ni paquete produce un par que la pantalla rechace', async () => {
+        const { parMinMaxValido } = await import('@nucleo/utils/minmaxSolicitud');
+        for (let max = 0; max <= 30; max++) for (let min = 0; min <= max; min++)
+            for (let factor = 1; factor <= 50; factor++) for (const mult of [1, 2, 3]) {
+                const s = sugerenciaParaLaRegla(min, max, factor, mult);
+                expect(parMinMaxValido(s.minNuevo, s.maxNuevo), `${min}·${max} f${factor}×${mult} → ${s.minNuevo}·${s.maxNuevo}`).toBe(true);
+            }
     });
 });
 

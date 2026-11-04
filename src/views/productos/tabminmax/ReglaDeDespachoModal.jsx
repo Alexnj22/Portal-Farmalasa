@@ -4,7 +4,7 @@ import CuerpoDialogo from '../../../components/common/CuerpoDialogo';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import { ERP_NAMES } from './constants';
-import { sugerenciaParaLaRegla } from '@nucleo/utils/minmaxTabla';
+import { parParaLaRegla, sugerenciaParaLaRegla } from '@nucleo/utils/minmaxTabla';
 
 /**
  * Por qué este producto nunca va a entrar en un pedido, y con qué número sí.
@@ -27,8 +27,9 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
 
     const factor   = Number(row.dispatch_pres_factor || 0);
     const multiplo = Number(row.dispatch_multiplo ?? 1);
-    const maxHoy   = Number(row.effective_max ?? 0);
-    const minHoy   = Number(row.effective_min ?? 0);
+    // El borrador si lo hay: es el par que se está decidiendo y donde escribe
+    // «Aceptar sugerencia». El publicado ya no es el número en juego.
+    const { min: minHoy, max: maxHoy, esBorrador } = parParaLaRegla(row);
     const sug      = sugerenciaParaLaRegla(minHoy, maxHoy, factor, multiplo);
 
     const tipo = row.dispatch_tipo ? String(row.dispatch_tipo) : null;
@@ -69,7 +70,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                     </div>
 
                     <p className="text-body font-medium leading-relaxed text-content-3">
-                        El MAX de hoy es <strong className="text-content-1">{maxHoy.toLocaleString()}</strong>, y
+                        El MAX {esBorrador ? 'del borrador' : 'de hoy'} es <strong className="text-content-1">{maxHoy.toLocaleString()}</strong>, y
                         aunque la sala quede en cero eso no llega a pedir ni un paquete: el pedido
                         redondea a cero y este producto <strong className="text-content-1">nunca entra</strong>.
                     </p>

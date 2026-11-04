@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.4 — MIN·MAX: la sugerencia de la regla de despacho ya no propone 0·2
+
+Dos defectos del diálogo REGLA, reportados en sala el 2026-11-04:
+
+- **Sugería un par inválido.** `sugerenciaParaLaRegla` conservaba la proporción
+  del MIN sin aplicar la regla del par (`parMinMaxValido`: MIN 0 → MAX 0–1;
+  MIN ≥ 1 → MAX > MIN). Un `0·1` con paquete de 5 salía `0·2`. Ahora, si la
+  proporción deja el MIN en 0 con un MAX de 2 o más, el MIN sube a 1. Un test
+  recorre todos los pares 0–30 × paquetes 1–50 × múltiplos 1–3 contra
+  `parMinMaxValido`.
+- **Juzgaba el publicado y no el borrador.** El badge, su conteo y el diálogo
+  (portal y app) leían `effective_*` aunque la sala tuviera un borrador
+  pendiente — que es lo que la celda pinta y donde escribe «Aceptar
+  sugerencia». Nuevo `parParaLaRegla(row, esBodega)` en el núcleo, usado en los
+  cinco sitios.
+
 ## v2.1448.3 — Eficiencia: estado de sincronización y refresco de inventario
 
 Segunda tanda de la auditoría de consultas (5 a 8). Medido en producción:

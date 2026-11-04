@@ -9,7 +9,7 @@ import { planDeGuardadoMinMax, planDeRestaurarMinMax } from '../utils/minmaxGuar
 import { useStaffStore as useStaff } from '../store/staffStore';
 import { useToastStore } from '../store/toastStore';
 import { smartFilter } from '../utils/searchUtils';
-import { hasDispatchRisk } from '../utils/minmaxTabla';
+import { hasDispatchRisk, parParaLaRegla } from '../utils/minmaxTabla';
 import { ERP_NAMES, ERP_ORDEN as ERP_ORDER } from '../constants/erp';
 import { ACCIONES_DEL_HISTORIAL_MINMAX, ALERTA_ETIQUETA, ESTADOS_DE_STOCK, ESTADOS_DE_AJUSTE } from '../constants/minmax';
 import { calcularMinMaxDeSala, calcularMinMaxDeTodasLasSalas, descartarBorradorDeFila, descartarBorradoresDeMinMax, effectiveMinMaxPair, fetchAjustesManuales, fetchAnalisisDeStock, fetchAuditLogsForProduct, fetchCostoEstimadoDelBorrador, fetchEmployeeByEmail, fetchEmployeesBasic, fetchResumenDeCostoDelInventario, fetchResumenDelProductoPorSala, fetchStockConfig, fetchStockParams, fetchStockParamsUpdates, ponerEnCeroProductoEnTodasLasSalas, publicarMinMax, updateStockParams, updateStockParamsBulk, upsertStockParams, upsertStockParamsBulk, upsertStockParamsReturning } from '../data/stockParams';
@@ -384,7 +384,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             if (r.alert_status in statCounts) statCounts[r.alert_status]++;
             const est = estadoAjuste(r);
             if (est) { ajustadas++; ajusteCounts[est]++; }
-            if (hasDispatchRisk(r.effective_max, r.dispatch_pres_factor, r.dispatch_multiplo)) dispatchRisk++;
+            if (hasDispatchRisk(parParaLaRegla(r, r._erp_sucursal_id === 6).max, r.dispatch_pres_factor, r.dispatch_multiplo)) dispatchRisk++;
             if (!firstCalc && r.calculated_at && !r.is_dead_stock) firstCalc = r.calculated_at;
             if (!firstDraftCalc && r.draft_status === 'pending' && r.draft_calculated_at) firstDraftCalc = r.draft_calculated_at;
             if (r.abc_class === 'A') {

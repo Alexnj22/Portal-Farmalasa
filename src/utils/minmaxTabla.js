@@ -34,6 +34,21 @@ export function hasDispatchRisk(maxValue, dispatchPresFactor, dispatchMultiplo) 
     return rounded === 0;
 }
 
+/**
+ * El par sobre el que se juzga la regla de despacho: el BORRADOR si la sala
+ * tiene uno pendiente, el vigente si no. Es el mismo par que pinta la celda
+ * (`vistaMin`/`vistaMax` en TabMinMax) y el mismo donde escribe «Aceptar
+ * sugerencia». Juzgando el publicado, el badge y la sugerencia hablaban de un
+ * número que ya no es el que se está decidiendo (reportado el 2026-11-04).
+ * Bodega no usa borrador por esta vía: su pendiente es otra cosa.
+ */
+export function parParaLaRegla(row, esBodega = false) {
+    if (row?.draft_status === 'pending' && !esBodega) {
+        return { min: Number(row.draft_min ?? 0), max: Number(row.draft_max ?? 0), esBorrador: true };
+    }
+    return { min: Number(row?.effective_min ?? 0), max: Number(row?.effective_max ?? 0), esBorrador: false };
+}
+
 export const fmtMoney = (n) => formatMoneyCorto(n ?? 0);
 
 export function sortedPres(presentations) {
@@ -82,17 +97,22 @@ export function formatDominant(units, presentations) {
  *
  * El MÍN acompaña: se conserva la proporción del par que ya existía —quien puso
  * 3·6 quería la mitad— y nunca queda por encima del MÁX nuevo menos uno, que es
- * lo que exige `chk_min_lt_max`.
+ * lo que exige `chk_min_lt_max`. Y si la proporción lo deja en 0 con un MÁX de
+ * 2 o más, sube a 1: el par tiene que pasar `parMinMaxValido`.
  */
 export function sugerenciaParaLaRegla(minActual, maxActual, dispatchPresFactor, dispatchMultiplo) {
     const paquete = Number(dispatchPresFactor || 0) * Number(dispatchMultiplo || 1);
     if (!paquete) return null;
     const maxNuevo = Math.max(1, Math.ceil(0.4 * paquete));
     const proporcion = maxActual > 0 ? Number(minActual || 0) / Number(maxActual) : 0.5;
-    const minNuevo = Math.min(
+    let minNuevo = Math.min(
         Math.max(0, Math.round(maxNuevo * proporcion)),
         Math.max(0, maxNuevo - 1),
     );
+    // MIN 0 sólo admite MAX 0 o 1 (`parMinMaxValido` / `mmcr_pair_valid`).
+    // Sin esto, un par 0·1 —proporción cero— con paquete de 5 sugería 0·2,
+    // que la propia pantalla rechaza. Reportado el 2026-11-04.
+    if (minNuevo === 0 && maxNuevo > 1) minNuevo = 1;
     return { paquete, minNuevo, maxNuevo };
 }
 

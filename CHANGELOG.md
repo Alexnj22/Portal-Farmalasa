@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1448.11 — Inicio: con selector, el título se lee entero
+
+En una tarjeta angosta con selector de sala (Top productos, Estado de turnos)
+el título quedaba en «T…» o «Es…». Ahora el selector baja a un segundo renglón
+sólo cuando no caben los dos; el «Ver», que es una flecha, nunca lo hace.
+
 ## v2.1448.10 — Inicio: la flecha del «Ver» sin letras sueltas
 
 El espacio que aparta el texto de la flecha se ponía en el botón, pero

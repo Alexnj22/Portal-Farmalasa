@@ -802,15 +802,19 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
           en tarjetas angostas, el «Ver …» queda como su flecha sola (el nombre
           accesible no cambia: el texto sigue ahí, recortado a la izquierda). Los selectores
           (`aria-haspopup`) conservan su texto: es el dato elegido. */}
-      <div className="@container/cabeza relative flex items-center justify-between px-4 py-2.5 border-b border-border-card shrink-0 gap-2">
-        <div className="flex items-center gap-2 min-w-0">
+      {/* Base 0 y piso de 7rem para el título: un «Ver» (la flecha sola) nunca
+          lo empuja a otro renglón, y un SELECTOR de sala sí, cuando no caben
+          los dos — así el título se lee entero en vez de quedar en «T…». Los
+          widgets con selector piden 2+ filas, así que ese renglón no corta. */}
+      <div className="@container/cabeza relative flex flex-wrap items-center justify-between px-4 py-2.5 border-b border-border-card shrink-0 gap-x-2 gap-y-1.5">
+        <div className="flex items-center gap-2 min-w-[7rem] flex-[1_1_0%]">
           <Icon size={15} style={{ color: cat.color }} strokeWidth={2.5} className="shrink-0" />
           <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
         </div>
         {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
             entre «Ver todas» y su flecha, así que en el teléfono el chevron se
             iba solo a un segundo renglón, debajo del texto. Son seis widgets. */}
-        {action && <div className="shrink-0 whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden @max-[17rem]/cabeza:[&>button:not([aria-haspopup])>span]:gap-8">{action}</div>}
+        {action && <div className="shrink-0 ml-auto max-w-full whitespace-nowrap @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:w-7 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:px-1.5 @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:justify-end @max-[17rem]/cabeza:[&>button:not([aria-haspopup])]:overflow-hidden @max-[17rem]/cabeza:[&>button:not([aria-haspopup])>span]:gap-8">{action}</div>}
       </div>
       <div className={`@container/cuerpo relative flex-1 min-h-0 ${noClip ? 'overflow-visible' : 'overflow-hidden'}`}>{children}</div>
     </div>

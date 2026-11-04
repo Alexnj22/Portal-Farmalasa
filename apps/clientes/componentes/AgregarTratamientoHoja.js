@@ -23,7 +23,7 @@ import { Boton, RADIO, Seccion } from './ui';
 import { fecha, nombrePropio } from '../lib/formato';
 import { useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
-import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadTexto, fraccionTexto, moverCantidad } from '../lib/dosis';
+import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadDe, fraccionTexto, moverCantidad } from '../lib/dosis';
 
 const DOSIS = CANTIDADES_RAPIDAS.map((v) => ({ v, texto: fraccionTexto(v) }));
 const DIAS = [7, 15, 30, 60, 90];
@@ -146,13 +146,13 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
             </View>
             {elegido.pide === 'dosis' ? (
               <>
-                <Seccion>¿Cuántas tomas al día?</Seccion>
-                {pildoras(DOSIS, CANTIDADES_RAPIDAS.includes(dosis) ? dosis : null, setDosis, (o) => `${cantidadTexto(o.v)} al día`)}
-                <Contador superficie={superficie} etiqueta="Al día" valor={cantidadTexto(dosis)}
+                <Seccion>¿Cuánto tomas al día, en total?</Seccion>
+                {pildoras(DOSIS, CANTIDADES_RAPIDAS.includes(dosis) ? dosis : null, setDosis, (o) => `${cantidadDe(o.v, elegido.nombre)} al día`)}
+                <Contador superficie={superficie} etiqueta="Al día" valor={cantidadDe(dosis, elegido.nombre)}
                   menos={{ etiqueta: 'Un cuarto menos', alTocar: () => setDosis((d) => moverCantidad(d, -1)), apagado: dosis <= CANTIDAD_MIN }}
                   mas={{ etiqueta: 'Un cuarto más', alTocar: () => setDosis((d) => moverCantidad(d, 1)), apagado: dosis >= CANTIDAD_MAX }} />
                 <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-                  Tabletas, cápsulas o sobres en total al día, de ¼ en ¼. Si lo tomas día por medio, elige la mitad de lo que tomas ese día.
+                  Sumando todas las tomas del día, de ¼ en ¼. Si lo tomas día por medio, elige la mitad de lo que tomas ese día.
                 </Text>
               </>
             ) : elegido.pide === 'dias' ? (

@@ -20,7 +20,7 @@ import * as FS from 'expo-file-system/legacy';
 import { create } from 'zustand';
 import { pedirPermisoDeAvisos } from './avisos';
 import { nombrePropio } from './formato';
-import { cantidadTexto } from './dosis';
+import { cantidadDe } from './dosis';
 
 export const DISPONIBLE = Platform.OS !== 'web';
 const ARCHIVO = FS.documentDirectory ? `${FS.documentDirectory}tomas.json` : null;
@@ -191,7 +191,7 @@ const enLista = (xs) => (xs.length < 2 ? xs.join('') : `${xs.slice(0, -1).join('
 export function resumenRecordatorio(c) {
   const lista = c.modo === 'cada' && c.inicio ? horasCada(c.inicio, c.n) : c.horas;
   const horas = `${c.modo === 'cada' && c.n && c.n < 24 ? `cada ${c.n} h: ` : ''}${enLista(lista.map(horaTexto))}`;
-  const cant = c.cantidad ? `${cantidadTexto(c.cantidad)} · ` : '';
+  const cant = c.cantidad ? `${cantidadDe(c.cantidad, c.nombre)} · ` : '';
   const futuro = c.empieza && c.empieza > hoyLocal();
   const tiempo = c.duracion === 'continuo'
     ? (futuro ? `desde el ${diaTexto(c.empieza)}, sin fecha de fin` : 'sin fecha de fin')
@@ -250,6 +250,34 @@ export function tomadoHoy(registro, productId) {
     return aIso(d) === hoy ? `${d.getHours()}:${dos(d.getMinutes())}` : null;
   }
   return null;
+}
+
+/**
+ * Las tomas de HOY de un medicamento, en hora local («8:05», «14:10»). La
+ * tarjeta dice «2 de 3 hoy» en vez de sólo la última (2026-11-04).
+ */
+export function tomasDeHoy(registro, productId) {
+  const hoy = hoyLocal();
+  const out = [];
+  for (const x of registro) {
+    if (x.p !== productId) continue;
+    const d = new Date(x.h);
+    if (aIso(d) === hoy) out.push(`${d.getHours()}:${dos(d.getMinutes())}`);
+  }
+  return out;
+}
+
+/**
+ * «Lo tomé» desde la tarjeta (2026-11-04): antes la única forma de anotarlo
+ * era el botón del aviso, y quien lo descartaba o lo tomaba antes de que
+ * sonara no tenía cómo. Mismo registro que el botón del aviso.
+ */
+export async function marcarTomado(productId) {
+  if (!DISPONIBLE) return;
+  await useTomas.getState().cargar();
+  const { registro, poner } = useTomas.getState();
+  const corte = Date.now() - DIAS_REGISTRO * 86400_000;
+  poner({ registro: [...registro.filter((x) => Date.parse(x.h) >= corte), { p: String(productId), h: new Date().toISOString() }] });
 }
 
 // ── Lo que hace la hoja ─────────────────────────────────────────────────────
@@ -323,7 +351,7 @@ const pocas = (c, dia) => !!c.se_acaba && diasEntre(dia, c.se_acaba) <= 3;
 function contenido(c, dia, extra = '') {
   const quedanPocas = pocas(c, dia);
   // «Acetaminofen: ½ tableta.» — cuánto, en el mismo aviso (2026-11-03).
-  const cant = c.cantidad ? cantidadTexto(c.cantidad) : '';
+  const cant = c.cantidad ? cantidadDe(c.cantidad, c.nombre) : '';
   const partes = [cant ? `${nombreCorto(c.nombre)}: ${cant}.` : `${nombreCorto(c.nombre)}.`, c.nota?.trim() || 'Toca «Tomado» cuando lo tomes.'];
   if (quedanPocas) partes.push('Te quedan pocas, ¿lo reservamos?');
   if (extra) partes.push(extra);

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1440.1 — Mis tratamientos: la unidad correcta, «Lo tomé» en la tarjeta
+
+App de clientes, auditoría de Mis tratamientos:
+- **La unidad sale del producto**: el aviso, el resumen y las hojas decían «½ tableta» también para cápsulas y sobres. `unidadDe`/`cantidadDe` en `lib/dosis.js` (cápsula, sobre, gragea, comprimido; tableta por defecto).
+- **«Lo tomé» en la tarjeta**: antes la toma sólo se podía anotar desde el botón del aviso; quien lo descartaba no tenía cómo. Reemplaza a «Quitar recordatorio» en la tarjeta (sigue dentro de «Editar») y la tarjeta baja de cinco botones a cuatro. Con varias tomas dice «Hoy 2 de 3 · última a las 14:05» y, completas, «Listo por hoy».
+- **Sin fecha de fin no hay «NaN días»**: `app_tratamientos.se_acaba` admite nulo y la tarjeta lo restaba igual.
+- **Agregar medicamento**: la pregunta era «¿Cuántas tomas al día?» con opciones ¼ y ½; ahora «¿Cuánto tomas al día, en total?».
+
 ## v2.1440.0 — Tickets más cortos: cada renglón avanza sólo lo que necesita
 
 El rollo avanzaba el interlineado de fábrica después de cada renglón, fuera de letra chica (17 puntos) o de doble alto (48). Ahora cada salto lleva el suyo (`ESC 3 n`): letra chica 21, normal 28, doble alto 52 — el papel sale más corto sin encimar renglones. El margen de corte no cambia (vuelve a `ESC 2` antes de los saltos finales), y el recorrido es byte a byte para no meter nada dentro del largo del código de barras. La vista previa del navegador baja su interlineado a 1.12.

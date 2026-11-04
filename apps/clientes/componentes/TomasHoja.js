@@ -40,7 +40,7 @@ import { colorSistema } from './sistema';
 import { Boton, RADIO, Seccion } from './ui';
 import SelectorHora, { HORA_NATIVA } from './SelectorHora';
 import SelectorFecha, { FECHA_NATIVA } from './SelectorFecha';
-import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadTexto, fraccionTexto, moverCantidad, normalizarCantidad } from '../lib/dosis';
+import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, cantidadDe, fraccionTexto, moverCantidad, normalizarCantidad } from '../lib/dosis';
 import { nombrePropio } from '../lib/formato';
 import { useSesion } from '../lib/sesion';
 import { DIAS_DURACION, MAX_DIAS_DURACION, finDelTratamiento, INICIO_DEFECTO, MAX_TOMAS_LIBRES, OPCIONES, diaTexto, guardarRecordatorio, horaTexto, horasCada, horasRecomendadas, inicioRecomendado, horasVeces, hoyLocal, opcionGuardada, quitarRecordatorio, revisarHoras, sumarDias } from '../lib/tomas';
@@ -302,20 +302,20 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
           {ajusta ? (
             <>
               <Seccion>¿Cuánto tomas cada vez?</Seccion>
-              <Pildoras opciones={CANTIDADES_RAPIDAS.map((v) => ({ id: String(v), texto: fraccionTexto(v), etiqueta: cantidadTexto(v) }))}
+              <Pildoras opciones={CANTIDADES_RAPIDAS.map((v) => ({ id: String(v), texto: fraccionTexto(v), etiqueta: cantidadDe(v, tratamiento.nombre) }))}
                 valor={CANTIDADES_RAPIDAS.includes(cantidad) ? String(cantidad) : null} superficie={superficie} grande
                 alElegir={(id) => { Haptics.selectionAsync().catch(() => {}); setCantidad(Number(id)); }} />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center', justifyContent: 'space-between', backgroundColor: superficie, borderRadius: RADIO.medio, padding: 14 }}>
                 <Text style={{ flexShrink: 1, fontSize: 15, fontWeight: '600', color: colorSistema.texto2 }}>Cada toma</Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                   <Paso sf="minus" etiqueta="Un cuarto menos" alTocar={() => setCantidad((c) => moverCantidad(c, -1))} apagado={cantidad <= CANTIDAD_MIN} />
-                  <Text accessibilityLabel={cantidadTexto(cantidad)} accessibilityLiveRegion="polite"
-                    style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 96, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cantidadTexto(cantidad)}</Text>
+                  <Text accessibilityLabel={cantidadDe(cantidad, tratamiento.nombre)} accessibilityLiveRegion="polite"
+                    style={{ flexShrink: 1, fontSize: 18, fontWeight: '900', color: colorSistema.texto, minWidth: 96, textAlign: 'center', fontVariant: ['tabular-nums'] }}>{cantidadDe(cantidad, tratamiento.nombre)}</Text>
                   <Paso sf="plus" etiqueta="Un cuarto más" alTocar={() => setCantidad((c) => moverCantidad(c, 1))} apagado={cantidad >= CANTIDAD_MAX} />
                 </View>
               </View>
               <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-                {`De ¼ en ¼. En total, ${cantidadTexto(horas.length * cantidad)} al día: con eso calculamos cuándo se te acaba.`}
+                {`De ¼ en ¼. En total, ${cantidadDe(horas.length * cantidad, tratamiento.nombre)} al día: con eso calculamos cuándo se te acaba.`}
               </Text>
             </>
           ) : null}

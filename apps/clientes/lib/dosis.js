@@ -43,3 +43,20 @@ export function cantidadTexto(n, unidad = 'tableta', plural = `${unidad}s`) {
 
 /** Un paso más o menos (±¼), sin salirse del rango. */
 export const moverCantidad = (n, d) => normalizarCantidad(normalizarCantidad(n) + d * CANTIDAD_PASO);
+
+// En qué viene (2026-11-04): «½ tableta» de una cápsula o un sobre se leía
+// mal. Sale del nombre del producto; lo que no se reconoce queda en tableta,
+// que es lo que la lista automática ve casi siempre.
+const UNIDADES = [
+  [/\bCAP(S|SULA|SULAS)?\b|C[AÁ]PSULA/, 'cápsula', 'cápsulas'],
+  [/\bSOBRES?\b/, 'sobre', 'sobres'],
+  [/\bGRAGEAS?\b/, 'gragea', 'grageas'],
+  [/\bCOMPRIMIDOS?\b/, 'comprimido', 'comprimidos'],
+];
+export function unidadDe(nombre) {
+  const s = String(nombre ?? '').toUpperCase();
+  for (const [re, u, p] of UNIDADES) if (re.test(s)) return [u, p];
+  return ['tableta', 'tabletas'];
+}
+/** cantidadTexto con la unidad del producto: «1 cápsula», «2 sobres». */
+export const cantidadDe = (n, nombre) => cantidadTexto(n, ...unidadDe(nombre));

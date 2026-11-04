@@ -27,7 +27,7 @@ import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
 import TomasHoja from '../componentes/TomasHoja';
 import AgregarTratamientoHoja from '../componentes/AgregarTratamientoHoja';
-import { DISPONIBLE as TOMAS, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomadoHoy, useTomas } from '../lib/tomas';
+import { DISPONIBLE as TOMAS, marcarTomado, quitarRecordatorio, resumenRecordatorio, sincronizarConTratamientos, tomasDeHoy, useTomas } from '../lib/tomas';
 import { copiaParaEmpezar } from '../lib/sinConexion';
 import { useVolverAPedir } from '../componentes/VolverAPedir';
 
@@ -125,8 +125,7 @@ export default function Tratamientos() {
       <View style={{ flexDirection: 'row' }}><Boton texto="Agregar un medicamento que tomo" sf="plus" alTocar={() => setAgregando(true)} /></View>
       {activos.map((t) => <Fila key={t.id} t={t} alVer={() => navegar(`/producto/${t.product_id}`)} alVolver={() => volverAPedir(t)}
         volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
-        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined}
-        alQuitarDosis={t.ajusta_dosis && t.dosis != null ? () => pedir('tratamiento_dosis', { product_id: t.product_id, dosis: null }).then(cargar) : undefined} />)}
+        alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined} />)}
       {apagados.length ? <Seccion estilo={{ marginTop: 8 }}>Ya no lo tomo</Seccion> : null}
       {apagados.map((t) => <Fila key={t.id} t={t} apagado alEncender={() => cambiar(t, true, null)} />)}
       {agregando ? <AgregarTratamientoHoja alCerrar={(agrego) => { setAgregando(false); if (agrego) cargar(); }} /> : null}
@@ -135,18 +134,23 @@ export default function Tratamientos() {
   );
 }
 
-function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDosis, alQuitarDeLaLista }) {
+function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDeLaLista }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
-  const tomado = useTomas((s) => tomadoHoy(s.registro, pid));
-  const quitar = () => Alert.alert('Quitar recordatorio', `Dejamos de avisarte las tomas de ${nombrePropio(t.nombre)}.`, [
-    { text: 'Cancelar', style: 'cancel' },
-    { text: 'Quitar', style: 'destructive', onPress: () => { quitarRecordatorio(pid); alQuitarDosis?.(); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); } },
-  ]);
-  const dias = diasHasta(t.se_acaba);
-  const urgente = !apagado && dias <= 3;
-  const cuando = dias < 0 ? `Se te acabó hace ${-dias} día${dias === -1 ? '' : 's'}` : dias === 0 ? 'Se te acaba hoy' : `Se te acaba en ${dias} día${dias === 1 ? '' : 's'}`;
+  // El registro entero y no un arreglo armado en el selector: zustand
+  // compara por identidad y un arreglo nuevo en cada lectura re-renderiza sin fin.
+  const registro = useTomas((s) => s.registro);
+  const hoy = recordatorio ? tomasDeHoy(registro, pid) : [];
+  // Cuántas tocan hoy: las horas del recordatorio (sin repetidas).
+  const tocan = recordatorio ? new Set(recordatorio.horas ?? []).size || 1 : 0;
+  const completo = tocan > 0 && hoy.length >= tocan;
+  const tomar = () => { Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {}); marcarTomado(pid); };
+  // `se_acaba` puede venir vacío (la columna lo admite): sin fecha no se
+  // inventa «en NaN días», simplemente no se dice.
+  const dias = t.se_acaba ? diasHasta(t.se_acaba) : null;
+  const urgente = !apagado && dias != null && dias <= 3;
+  const cuando = dias == null ? null : dias < 0 ? `Se te acabó hace ${-dias} día${dias === -1 ? '' : 's'}` : dias === 0 ? 'Se te acaba hoy' : `Se te acaba en ${dias} día${dias === 1 ? '' : 's'}`;
   const color = urgente ? tema.color.magenta : tema.color.verde;
   return (
     <Tarjeta estilo={{ gap: 12, opacity: apagado ? 0.65 : 1 }}>
@@ -160,7 +164,7 @@ function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, al
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
             {apagado ? t.motivo : t.origen === 'cliente' ? `Agregado por ti · última compra ${fecha(t.ultima)}` : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
           </Text>
-          {!apagado ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
+          {!apagado && cuando ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
         </Presionable>
         {/* Preguntar a la farmacia por este medicamento (2026-10-13): abre el chat con él puesto. */}
         {alPreguntar ? (
@@ -187,12 +191,19 @@ function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, al
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto }}>{resumenRecordatorio(recordatorio)}</Text>
               {recordatorio.nota ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{recordatorio.nota}</Text> : null}
-              {tomado ? <Text style={{ fontSize: 13, fontWeight: '600', color: tema.color.verdeTexto }}>Tomado hoy a las {tomado}</Text> : null}
+              {hoy.length ? (
+                <Text style={{ fontSize: 13, fontWeight: '600', color: tema.color.verdeTexto }}>
+                  {tocan > 1 ? `Hoy ${Math.min(hoy.length, tocan)} de ${tocan} · última a las ${hoy[hoy.length - 1]}` : `Tomado hoy a las ${hoy[hoy.length - 1]}`}
+                </Text>
+              ) : null}
             </View>
           </View>
           <View style={{ flexDirection: 'row', gap: 8 }}>
+            {/* «Lo tomé» (2026-11-04) en lugar de «Quitar recordatorio», que
+                sigue dentro de «Editar»: la tarjeta tenía cinco botones y
+                ninguno servía para lo que más se hace cada día. */}
+            <Boton texto={completo ? 'Listo por hoy' : 'Lo tomé'} sf={completo ? 'checkmark' : 'checkmark.circle'} alTocar={tomar} deshabilitado={completo} />
             <Boton texto="Editar" alTocar={alRecordar} />
-            <Boton texto="Quitar recordatorio" alTocar={quitar} />
           </View>
         </View>
       ) : (

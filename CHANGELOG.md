@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1447.2 — Inicio: solicitudes, cotizaciones y nombres cortos
+
+Segundo lote de la revisión widget por widget del Inicio.
+
+- **Solicitudes pendientes:** el número era el largo de una lista de 8 (con 12
+  decía 8) y el filtro por sala iba después del tope. Ahora cuenta con
+  `contarSolicitudesPendientes`, deja fuera los traslados —tienen su baldosa;
+  hoy las 3 pendientes eran traslados— y un error dice «No se pudo leer» en vez
+  de «Sin solicitudes» o un esqueleto eterno. Mismo número en la tarjeta KPI.
+- **Cotizaciones activas:** filtraba ACTIVA en el navegador sobre las 50 de los
+  últimos 30 días; la única activa (del 19-may) no aparecía y marcaba 0. Ahora
+  `fetchCotizacionesActivas` filtra en el servidor y sin ventana.
+- **Nombres cortos:** solicitudes, ausencias, turnos (que sólo mostraba el
+  primer nombre) y el ranking de vendedores (nombre completo) usan
+  `shortEmployeeName`.
+- **Alertas de sucursales:** el enlace mira si se puede abrir Sucursales y no el
+  permiso de editar el widget; un contrato ya vencido dice «Contrato vencido» y
+  no «vence en -12 días».
+
 ## v2.1447.1 — Inicio: un error ya no se ve como «al día»
 
 Primer lote de la revisión widget por widget del Inicio.

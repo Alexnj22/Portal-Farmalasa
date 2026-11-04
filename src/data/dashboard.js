@@ -60,10 +60,21 @@ export function fetchSalesBranchIdsSince(sinceDateStr) {
     return supabase.from('branch_hourly_sales').select('branch_id').gte('sale_date', sinceDateStr);
 }
 
+// Los traslados NO son «solicitudes» del widget: tienen su baldosa y su
+// módulo, y la app ya los excluye (`NO_SON_SOLICITUDES`). Medido el
+// 2026-11-04: las 3 pendientes eran traslados y el widget decía «3 por
+// resolver» mandando a una pantalla que no los resuelve.
+export const NO_SON_SOLICITUDES = ['INVENTORY_TRANSFER_REQUEST', 'INVENTORY_TRANSFER_PUSH'];
+
+// Tope de la LISTA, no del conteo: el número sale de `contarSolicitudesPendientes`.
+// Con `.limit(8)` el tablero decía 8 teniendo 12, y el filtro por sala se
+// aplicaba DESPUÉS del tope — «los de mi sala entre los 8 más nuevos».
 export function fetchPendingApprovalRequests() {
     return supabase.from('approval_requests')
         .select('id, type, employee_id, metadata, created_at')
-        .eq('status', 'PENDING').order('created_at', { ascending: false }).limit(8);
+        .eq('status', 'PENDING')
+        .not('type', 'in', `(${NO_SON_SOLICITUDES.join(',')})`)
+        .order('created_at', { ascending: false }).limit(100);
 }
 
 /**
@@ -135,6 +146,22 @@ export async function fetchBranchHourlySalesRange(branchId, sinceDateStr) {
         .order('sale_date', { ascending: true })
         .order('sale_hour', { ascending: true }));
     return data === null ? { data: [], error: new Error('No se pudieron leer las ventas por hora.') } : { data, error: null };
+}
+
+/**
+ * Las cotizaciones ACTIVAS, sin ventana de fechas y filtradas en el servidor.
+ *
+ * El Inicio usaba `fetchRecentCotizaciones` (últimos 30 días, `.limit(50)`) y
+ * filtraba ACTIVA en el navegador: un tope antes del filtro, y una ventana que
+ * dejaba afuera a la única activa que había (del 19-may) — el widget marcaba 0
+ * siempre. Activa es activa sin importar cuándo se hizo.
+ */
+export function fetchCotizacionesActivas() {
+    return supabase.from('cotizaciones')
+        .select('id, numero, fecha, customer_name, total, status', { count: 'exact' })
+        .eq('status', 'ACTIVA')
+        .order('fecha', { ascending: false })
+        .limit(200);
 }
 
 export function fetchRecentCotizaciones(sinceDateStr) {

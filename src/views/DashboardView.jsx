@@ -94,7 +94,7 @@ import ListRow from '../components/common/ListRow';
 import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
     fetchPendingApprovalRequests, fetchActiveLeaveRequests, fetchTodayHourlySales,
-    fetchBranchHourlySalesRange, fetchRecentCotizaciones, fetchTodayInvoicesSummary,
+    fetchBranchHourlySalesRange, fetchCotizacionesActivas, fetchTodayInvoicesSummary, contarSolicitudesPendientes, NO_SON_SOLICITUDES,
     fetchDashboardCanon, upsertDashboardCanon,
 } from '@nucleo/data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
@@ -1114,7 +1114,6 @@ const DashboardView = ({ openModal }) => {
     if (verComoRol != null) return !!permisosPorCargo?.[verComoRol]?.has(p);
     return hasPermission(p, 'can_view');
   }, [verComoRol, permisosPorCargo, hasPermission]);
-  const canManage  = p  => !p || hasPermission(p,'can_edit');
   // ¿Puede ABRIR esa página? (ver `MODULO_DE_RUTA`)
   const puedeAbrir = useCallback((ruta) => canSee(MODULO_DE_RUTA[ruta]), [canSee]);
   // El interruptor de «Personalizar» sólo gobierna General, que es la única
@@ -1803,6 +1802,8 @@ const DashboardView = ({ openModal }) => {
 
   // ── Local data state ───────────────────────────────────────────────────────
   const [pendingReqs,    setPendingReqs]    = useState([]);
+  const [reqTotal,       setReqTotal]       = useState(null);
+  const [reqError,       setReqError]       = useState(false);
   const [reqLoading,     setReqLoading]     = useState(true);
   const [calMonth,       setCalMonth]       = useState(new Date());
   const [bdMonth,        setBdMonth]        = useState(new Date());
@@ -1885,8 +1886,17 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => { if (!attendanceLoaded) loadAttendance(14); }, [attendanceLoaded, loadAttendance]);
 
   useEffect(() => {
-    fetchPendingApprovalRequests()
-      .then(({ data }) => { setPendingReqs(data||[]); setReqLoading(false); });
+    // El error ya no se convierte en «Sin solicitudes» y una red caída ya no
+    // deja el esqueleto girando para siempre.
+    Promise.all([
+      fetchPendingApprovalRequests(),
+      contarSolicitudesPendientes({ excepto: NO_SON_SOLICITUDES }).catch(() => null),
+    ]).then(([{ data, error }, total]) => {
+      setReqError(!!error);
+      setPendingReqs(data || []);
+      setReqTotal(error ? null : total);
+    }).catch(() => setReqError(true))
+      .finally(() => setReqLoading(false));
   }, []);
 
   useEffect(() => {
@@ -1968,13 +1978,12 @@ const DashboardView = ({ openModal }) => {
 
   // ── Comercial data effects ─────────────────────────────────────────────────
   useEffect(() => {
-    const since = new Date(); since.setDate(since.getDate() - 30);
-    fetchRecentCotizaciones(localDateStr(since))
-      .then(({ data }) => {
-        const rows    = data || [];
-        const activas = rows.filter(c => c.status === 'ACTIVA');
+    fetchCotizacionesActivas()
+      .then(({ data, count, error }) => {
+        if (error) console.error('[dash cotizaciones]', error);
+        const activas = data || [];
         setCotizStats({
-          activas: activas.length,
+          activas: count ?? activas.length,
           total:   activas.reduce((s, c) => s + (parseFloat(c.total) || 0), 0),
           recent:  activas.slice(0, 6),
         });
@@ -2148,7 +2157,8 @@ const DashboardView = ({ openModal }) => {
       })
       .sort((a,b)=>a.day-b.day);
   },[activeEmployees,bdMonth,branches]);
-  const getEmpName = id => employees.find(e=>String(e.id)===String(id))?.name||'Empleado';
+  // Nombre corto canónico (primer nombre + primer apellido), no el completo.
+  const getEmpName = id => { const e = employees.find(x=>String(x.id)===String(id)); return e ? shortEmployeeName(e) : 'Empleado'; };
 
   const switchTab = (tabId) => {
     const nextIdx = TABS.findIndex(t => t.id === tabId);
@@ -2589,7 +2599,7 @@ const DashboardView = ({ openModal }) => {
                 return (
                   <div key={status} className="px-4 py-3">
                     <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-wide text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
-                    <div className="flex flex-wrap gap-1">{group.map(e=><Badge key={e.id} variant={cfg.variante} size="sm" uppercase={false}>{e.name?.split(' ')[0]}</Badge>)}</div>
+                    <div className="flex flex-wrap gap-1">{group.map(e=><Badge key={e.id} variant={cfg.variante} size="sm" uppercase={false}>{shortEmployeeName(e)}</Badge>)}</div>
                   </div>
                 );
               })
@@ -2836,9 +2846,13 @@ const DashboardView = ({ openModal }) => {
             return emp && String(emp.branchId ?? emp.branch_id ?? '') === userBranchStr;
           })
         : pendingReqs;
+      // Con alcance de toda la red el número es el CONTEO real; con alcance de
+      // sala, el largo de la lista ya filtrada (el RLS decide qué llega).
+      const cuantasReqs = reqsScope === 'BRANCH' ? displayReqs.length : (reqTotal ?? displayReqs.length);
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes pendientes" icon={ClipboardList} category="personal"
-          resumen={displayReqs.length ? { valor: displayReqs.length, texto: 'por resolver', tono: 'warning' } : { texto: 'Sin pendientes' }}
+          resumen={reqError ? { texto: 'No se pudo leer', tono: 'danger' }
+            : cuantasReqs ? { valor: cuantasReqs, texto: 'por resolver', tono: 'warning' } : { texto: 'Sin pendientes' }}
           action={puedeAbrir('/solicitudes')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/solicitudes')}>Ver todas <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(
@@ -2851,6 +2865,7 @@ const DashboardView = ({ openModal }) => {
                 <Skel className="h-2.5 w-10 flex-shrink-0" />
               </div>
             ))
+              :reqError?<EmptyState linea icon={AlertTriangle} title="No se pudieron leer las solicitudes" />
               :displayReqs.length===0?<EmptyState linea icon={ClipboardList} title="Sin solicitudes pendientes" />
               // §15.7 — caja de ícono + título + subtítulo + algo al final: la
               // anatomía exacta de `ListRow`. Y sin `onClick` renderiza un
@@ -2912,7 +2927,10 @@ const DashboardView = ({ openModal }) => {
                   // indefinido, o sea una parada de tabulación que no hacía nada.
                   // Con permiso es un ENLACE, que es lo que de verdad es.
                   (() => {
-                    const puede = canManage('dash_branches');
+                    // Lleva a la ficha si puede ABRIR Sucursales, no si puede
+                    // editar el widget: Gerente General tiene lo segundo y no lo
+                    // primero, y el enlace lo mandaba a una página cerrada.
+                    const puede = puedeAbrir('/sucursales');
                     const Caja = puede ? Link : 'div';
                     return (
                       <Caja key={b.id} {...(puede ? { to: `/sucursales/${b.id}` } : {})}
@@ -3159,7 +3177,7 @@ const DashboardView = ({ openModal }) => {
             <div className="flex items-end gap-3 px-4 pt-3 pb-2 border-b border-divider shrink-0">
               <div>
                 <p className="text-display-lg font-black text-content leading-none">{cotizStats.activas}</p>
-                <p className="text-caption font-semibold text-content-3 mt-0.5">últ. 30 días</p>
+                <p className="text-caption font-semibold text-content-3 mt-0.5">vigentes</p>
               </div>
               <div className="mb-1">
                 <p className="text-body font-black text-success-text">{fmt(cotizStats.total)}</p>
@@ -3871,7 +3889,7 @@ const DashboardView = ({ openModal }) => {
             : presentToday;
           const kpiPending = kpiBranchStr
             ? pendingReqs.filter(r => { const emp=employees.find(e=>String(e.id)===String(r.employee_id)); return emp&&String(emp.branchId??emp.branch_id??'')===kpiBranchStr; }).length
-            : pendingReqs.length;
+            : (reqTotal ?? pendingReqs.length);
           const kpiBranches = kpiBranchStr ? branches.filter(b=>String(b.id)===kpiBranchStr) : branches;
           const kpiBranchAlerts = kpiBranchStr ? branchAlerts.filter(b=>String(b.id)===kpiBranchStr) : branchAlerts;
           const kpiAbsCount = kpiBranchStr
@@ -3893,7 +3911,7 @@ const DashboardView = ({ openModal }) => {
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="últ. 30 días" onClick={puedeAbrir('/cotizaciones')?()=>navigate('/cotizaciones'):undefined}/>
+            <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="vigentes" onClick={puedeAbrir('/cotizaciones')?()=>navigate('/cotizaciones'):undefined}/>
             <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="var(--success)" sub="en cotizaciones"/>
             <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'documento':'documentos'} onClick={puedeAbrir('/facturacion')?()=>navigate('/facturacion'):undefined}/>
             <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub="total del día"/>

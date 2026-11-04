@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { Users } from 'lucide-react';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { EmptyState } from '../../components/common/StateViews';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { ORDENES_RANKING, SUFIJO_RANKING, rankingDeVendedores } from '@nucleo/utils/metasUtils';
 
@@ -192,7 +193,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                     larga ya dicen quién va primero. Quitado a
                                     pedido del usuario (2026-08-16). */}
                                 <p className={`flex items-baseline text-body-sm font-black ${bajo ? 'text-danger-text' : 'text-content'}`}>
-                                    <span className="min-w-0 truncate">{v.nombre}</span>
+                                    <span className="min-w-0 truncate" title={v.nombre}>{shortEmployeeName(v.nombre)}</span>
                                     {data?.todas && v.sala && (
                                         <span className="shrink-0 text-micro font-semibold text-content-3">&nbsp;· {v.sala}</span>
                                     )}

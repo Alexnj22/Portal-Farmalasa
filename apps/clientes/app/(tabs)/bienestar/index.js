@@ -7,6 +7,10 @@
 // juego continúa el color de la tarjeta que se tocó. El destacado va arriba y
 // a lo ancho: hoy es Botiquín (2026-11-04), el de unir piezas; la torre pasó a
 // la lista.
+//
+// Usuario, 2026-11-04: «separa los juegos de los ejercicios de respiración,
+// etc. que son para salud mental, relajación». Por eso son dos secciones: la
+// de calma va primero —es la razón de ser de la pestaña— y los juegos después.
 import { Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Pantalla, Seccion, Tarjeta } from '../../../componentes/ui';
@@ -20,14 +24,29 @@ import { navegar } from '../../../lib/navegar';
 
 // Botiquín (2026-11-04): el de juntar al caer, con física. Reemplazó al de
 // unir piezas en tablero, que tenía el mismo nombre y ruta.
-const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Suelta medicamentos: dos iguales se juntan y crecen. ¡Llega a la cruz!', escena: 'botiquin', nuevo: true };
-const EJERCICIOS = [
-  { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },
+const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Suelta medicamentos: dos iguales se juntan y crecen. ¡Llega al sello Farmasalud!', escena: 'botiquin', nuevo: true };
+// Salud mental y relajación: ejercicios guiados, sin puntaje.
+const CALMA = [
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
-  { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Relax, o contrarreloj con niveles.', escena: 'burbujas' },
-  { ruta: '/memoria', sf: 'square.grid.2x2.fill', titulo: 'Memoria', detalle: 'Encuentra las parejas en tres niveles.', escena: 'memoria' },
   { ruta: '/anclaje', sf: 'hand.raised.fill', titulo: '5 · 4 · 3 · 2 · 1', detalle: 'Calma los nervios buscando cosas con tus sentidos.', escena: 'anclaje' },
 ];
+const JUEGOS = [
+  { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },
+  { ruta: '/burbujas', sf: 'circle.grid.3x3.fill', titulo: 'Burbujas', detalle: 'Relax, o contrarreloj con niveles.', escena: 'burbujas' },
+  { ruta: '/memoria', sf: 'square.grid.2x2.fill', titulo: 'Memoria', detalle: 'Encuentra las parejas en tres niveles.', escena: 'memoria' },
+];
+
+function Grilla({ lista, desde }) {
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
+      {lista.map((e, i) => (
+        <Entrada key={e.ruta} indice={desde + i} estilo={{ width: '47.5%', flexGrow: 1 }}>
+          <TarjetaJuego e={e} />
+        </Entrada>
+      ))}
+    </View>
+  );
+}
 
 function TarjetaJuego({ e, grande = false }) {
   const colores = ESCENAS[e.escena];
@@ -67,20 +86,22 @@ export default function Bienestar() {
       </Entrada>
 
       <Entrada indice={1}>
-        <Seccion estilo={{ marginTop: 6 }}>Zona anti estrés</Seccion>
+        <Seccion estilo={{ marginTop: 6 }}>Relájate</Seccion>
+        <Text style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto2, marginTop: -6, marginLeft: 4 }}>
+          Ejercicios guiados para bajar el estrés y la ansiedad.
+        </Text>
       </Entrada>
-      <Entrada indice={2}>
+      <Grilla lista={CALMA} desde={2} />
+
+      <Entrada indice={4}>
+        <Seccion estilo={{ marginTop: 6 }}>Juegos</Seccion>
+      </Entrada>
+      <Entrada indice={5}>
         <TarjetaJuego e={DESTACADO} grande />
       </Entrada>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
-        {EJERCICIOS.map((e, i) => (
-          <Entrada key={e.ruta} indice={3 + i} estilo={{ width: '47.5%', flexGrow: 1 }}>
-            <TarjetaJuego e={e} />
-          </Entrada>
-        ))}
-      </View>
+      <Grilla lista={JUEGOS} desde={6} />
 
-      <Entrada indice={8}>
+      <Entrada indice={9}>
         <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Icono sf="heart.text.square.fill" respaldo="♥" tam={22} color={t.color.magentaTexto} />
           <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>

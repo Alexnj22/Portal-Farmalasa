@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.1 — Bienestar: la calma separada de los juegos
+
+App de clientes · Bienestar. Pedido del usuario: «separa los juegos de los
+ejercicios de respiración, etc. que son para salud mental, relajación». La
+pestaña tiene ahora dos secciones: **Relájate** (Respira y 5·4·3·2·1), primero,
+y **Juegos** (Botiquín destacado, Torre, Burbujas y Memoria). La tarjeta del
+Botiquín ya dice «¡Llega al sello Farmasalud!» en vez de «a la cruz».
+
 ## v2.1451.0 — Botiquín premium: arte aprobado, efectos por pieza, tema y 12 niveles
 
 App de clientes · Bienestar · Botiquín, quinta versión. Sale de un prototipo

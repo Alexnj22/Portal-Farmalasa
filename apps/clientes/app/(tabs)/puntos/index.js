@@ -10,7 +10,7 @@ import * as Haptics from 'expo-haptics';
 import { Aviso, Cargando, Pantalla, RADIO, Seccion, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
 import Vidrio from '../../../componentes/Vidrio';
 import { useCuenta } from '../../../lib/cuenta';
-import { diasHasta, dolares, entero, fechaLarga, nombrePropio } from '../../../lib/formato';
+import { diasHasta, entero, fechaLarga, nombrePropio } from '../../../lib/formato';
 import TarjetaSocio from '../../../componentes/TarjetaSocio';
 import AvatarInicio from '../../../componentes/AvatarInicio';
 import Nivel from '../../../componentes/Nivel';
@@ -24,7 +24,7 @@ import Icono from '../../../componentes/Icono';
 import FraseDelDia from '../../../componentes/FraseDelDia';
 import { Regalo } from '../../../componentes/IlustracionesInicio';
 import { useVisible } from '../../../lib/visible';
-import { BarraAnimada, Confeti, Entrada, Latido, NumeroAnimado, Tocable } from '../../../componentes/animacion';
+import { BarraAnimada, Confeti, Entrada, Tocable } from '../../../componentes/animacion';
 import { useConCodigo, useSesion } from '../../../lib/sesion';
 import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, raspableDePrueba, useModoPrueba } from '../../../lib/prueba';
@@ -197,7 +197,7 @@ export default function Puntos() {
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <TarjetaEnVista activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'material'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}
         previo={movSaldo.previo} cambio={movSaldo.cambio}
-        codigo={resumen.codigo} socioDesde={resumen.socio_desde} aFavor={resumen.saldo_a_favor?.total} />
+        codigo={resumen.codigo} socioDesde={resumen.socio_desde} aFavor={resumen.saldo_a_favor?.total} canjeable={falta === 0} />
 
       {/* Apple Wallet, justo debajo de la tarjeta (usuario, 2026-10-08): la tarjeta en la Cartera, para mostrarla en caja sin abrir la app. */}
       {Platform.OS === 'ios' ? (
@@ -232,66 +232,52 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* El estado del canje (2026-10-09: justo debajo del nivel, pedido del usuario). El saldo cuenta hacia arriba y la barra se llena
-          con resorte: lo primero que se ve MOVERSE es lo que la persona tiene. */}
-      <Entrada indice={2}>
-        {/* Sin tinte propio (2026-11-04, «las cards tienen muchos colores…
-            unifica pero que no pierdan la identidad»): el mismo vidrio que las
-            demás, y su acento —el magenta— sólo en el recuadro y la cifra. */}
-        {/* 2026-11-04 («siento extraño que… sólo sean cards de texto»): la
-            cifra en grande y el regalo dibujado al lado. Con la letra grande el
-            regalo baja (envuelve) en vez de apretar el texto. */}
-        <Tarjeta estilo={{ gap: 14, overflow: 'hidden' }}>
-          {falta > 0 ? (
-            <>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 14 }}>
-                <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 180, gap: 6 }}>
-                  <Text accessibilityRole="header" style={{ fontSize: 13, fontWeight: '800', letterSpacing: 0.6, color: t.color.magentaTexto }}>TU PRIMER CANJE</Text>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 6 }}>
-                    <NumeroAnimado valor={saldo} formato="entero" estilo={{ fontSize: 40, fontWeight: '900', letterSpacing: -1, color: colorSistema.texto, fontVariant: ['tabular-nums'] }} />
-                    <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto2 }}>/ {MINIMO_DE_CANJE} pts</Text>
-                  </View>
-                  <Texto nivel={2} estilo={{ fontSize: 14 }}>
-                    Te faltan <Text style={{ fontWeight: '800', color: t.color.magentaTexto }}>{entero(falta)} puntos</Text> para tu primer descuento.
-                  </Texto>
-                </View>
-                <Regalo tam={88} avance={saldo / MINIMO_DE_CANJE} />
-              </View>
-              <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, t.oscuro ? 0.3 : 0.16)} alto={10} />
-            </>
-          ) : (
-            <>
-              <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 12 }}>
-                <View style={{ flexGrow: 1, flexShrink: 1, flexBasis: 180, gap: 4 }}>
-                  <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
-                    <Text accessibilityRole="header" style={{ flexShrink: 1, fontSize: 17, fontWeight: '800', letterSpacing: -0.2, color: colorSistema.texto }}>¡Ya puedes canjear!</Text>
-                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 999, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.3 : 0.12) }}>
-                      <Icono sf="checkmark" respaldo="✓" tam={10} color={t.color.magentaTexto} />
-                      <Text style={{ fontSize: 12, fontWeight: '800', color: t.color.magentaTexto }}>Listo</Text>
-                    </View>
-                  </View>
-                  <NumeroAnimado valor={Number(resumen.equivale ?? 0)} estilo={{ fontSize: 44, fontWeight: '900', letterSpacing: -1.2, color: t.color.magentaTexto, fontVariant: ['tabular-nums'] }} />
-                  <Texto nivel={2} estilo={{ fontSize: 14 }}>para descontar en tu próxima compra · {entero(saldo)} pts</Texto>
-                </View>
-                <Latido><Regalo tam={92} /></Latido>
-              </View>
-              {/* Cómo se usa: no es un botón —el código se muestra tocando la
-                  tarjeta de socio de arriba, que es lo que ya hacía—, por eso
-                  va como un paso y no como una píldora que no haría nada. */}
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: colorSistema.separador }}>
-                <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11) }}>
-                  <Icono sf="barcode.viewfinder" respaldo="▥" tam={17} color={t.color.magentaTexto} />
-                </View>
-                <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>
-                  <Text style={{ fontWeight: '800', color: colorSistema.texto }}>Toca tu tarjeta de arriba</Text> y muestra el código en caja.
+      {/* El canje (2026-11-05, «que salga sólo si aún falta para los 100, de
+          ahí en la card que se entienda»): una fila mientras se junta para el
+          primer descuento. Con 100 o más, la tarjeta de socio dice «PARA
+          CANJEAR» sobre la cifra y esta fila desaparece. */}
+      {falta > 0 ? (
+        <Entrada indice={2}>
+          <Tarjeta estilo={{ gap: 9, paddingVertical: 12 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <Regalo tam={40} avance={saldo / MINIMO_DE_CANJE} />
+              <View style={{ flex: 1, gap: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>
+                  Te faltan <Text style={{ color: t.color.magentaTexto }}>{entero(falta)} pts</Text> para tu primer descuento
+                </Text>
+                <Text style={{ fontSize: 13, color: colorSistema.texto2, fontVariant: ['tabular-nums'] }}>
+                  Llevas {entero(saldo)} de {MINIMO_DE_CANJE} · con 100 pts descuentas $1
                 </Text>
               </View>
-            </>
-          )}
-        </Tarjeta>
-        {/* Fuera de la tarjeta (que recorta) y UNA vez por sesión. */}
-        {falta === 0 && !confetiMostrado ? <Confeti colores={[t.color.magenta, t.color.magentaTexto, '#FFD60A', '#FFFFFF']} alTerminar={marcarConfeti} /> : null}
-      </Entrada>
+            </View>
+            <BarraAnimada avance={saldo / MINIMO_DE_CANJE} color={t.color.magenta} fondo={suave(t.color.magenta, t.oscuro ? 0.3 : 0.16)} alto={8} />
+          </Tarjeta>
+        </Entrada>
+      ) : !confetiMostrado ? (
+        // El día que llega a 100 se celebra igual, una vez por sesión.
+        <Confeti colores={[t.color.magenta, t.color.magentaTexto, '#FFD60A', '#FFFFFF']} alTerminar={marcarConfeti} />
+      ) : null}
+
+      {/* Las inyecciones pagadas por aplicar (2026-11-05): una fila corta al
+          detalle; sólo si hay. */}
+      {resumen.inyecciones_pendientes > 0 ? (
+        <Entrada indice={2}>
+          <Tocable alTocar={() => navegar('/inyecciones')} etiqueta={`${resumen.inyecciones_pendientes === 1 ? 'Una inyección pagada' : `${resumen.inyecciones_pendientes} inyecciones pagadas`} por aplicar. Ver detalle`}>
+            <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 12 }}>
+              <View style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.acentos.verde.fuerte, t.oscuro ? 0.3 : 0.14) }}>
+                <Icono sf="syringe.fill" respaldo="💉" tam={18} color={t.oscuro ? t.color.verde : t.acentos.verde.texto} />
+              </View>
+              <View style={{ flex: 1, gap: 1 }}>
+                <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>
+                  {resumen.inyecciones_pendientes === 1 ? 'Tienes 1 inyección pagada' : `Tienes ${resumen.inyecciones_pendientes} inyecciones pagadas`}
+                </Text>
+                <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{resumen.inyecciones_pendientes === 1 ? 'Aplícatela' : 'Aplícatelas'} en cualquiera de nuestras salas</Text>
+              </View>
+              <Icono sf="chevron.right" respaldo="›" tam={14} color={colorSistema.texto2} />
+            </Tarjeta>
+          </Tocable>
+        </Entrada>
+      ) : null}
 
       {/* El cupón del mes (Platino): saldo de regalo que vence a fin de mes. */}
       {resumen.cupon ? (

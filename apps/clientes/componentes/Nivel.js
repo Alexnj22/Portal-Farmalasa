@@ -74,39 +74,34 @@ export default function Nivel({ nivel, pie = null }) {
   // el × y la barra iban en verde. En oscuro, el tono claro del metal (se lee
   // sobre el vidrio oscuro; el del Platino es casi negro); en claro, el medio.
   const tono = t.oscuro ? paleta.acento : paleta.frente[1];
+  // Compacto (2026-11-05, «más compacto… que aparezca para motivar que ya
+  // subirás de nivel… pero que siempre se pueda interactuar para ver los
+  // beneficios»): una fila con el nivel y cuánto falta, y la barra fina. Al
+  // tocarla se abren los beneficios. Cuando falta poco (menos del 25 %), la
+  // línea lo dice como empujón.
+  const casi = sig && avance >= 0.75;
+  const linea = apagados
+    ? (nivel.desde ? `1 punto por $1 · los niveles empiezan el ${fechaLarga(nivel.desde)}` : '1 punto por $1 · los niveles llegan pronto')
+    : sig ? `${casi ? '¡Ya casi! ' : ''}Te faltan ${dolares(sig.falta)} para ${sig.nombre}`
+      : 'Nivel más alto. ¡Gracias por tu preferencia!';
   return (
-    <Tarjeta estilo={{ gap: 12 }}>
+    <Tarjeta estilo={{ gap: 10, paddingVertical: 12 }}>
       <Presionable onPress={alternar} accessibilityRole="button" accessibilityState={{ expanded: abierto }}
-        accessibilityLabel={`Tu nivel: ${nivel.nombre}. ${abierto ? 'Ocultar' : 'Ver'} beneficios`}
-        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, opacity: pressed ? 0.7 : 1 })}>
+        accessibilityLabel={`Tu nivel: ${nivel.nombre}, ${factorTexto(nivel.factor)} por cada dólar. ${linea}. ${abierto ? 'Ocultar' : 'Ver'} beneficios`}
+        style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 44, opacity: pressed ? 0.7 : 1 })}>
         <LinearGradient colors={paleta.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-          style={{ width: 44, height: 44, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
-          <Icono sf="crown.fill" respaldo="★" tam={19} color="#FFFFFF" />
+          style={{ width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' }}>
+          <Icono sf="crown.fill" respaldo="★" tam={17} color="#FFFFFF" />
         </LinearGradient>
         <View style={{ flex: 1, gap: 1 }}>
-          <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>Tu nivel</Text>
-          <Text style={{ fontSize: 20, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{nivel.nombre}</Text>
-        </View>
-        <View style={{ alignItems: 'flex-end' }}>
-          <Text style={{ fontSize: 20, fontWeight: '900', color: tono, fontVariant: ['tabular-nums'] }}>×{Number(nivel.factor)}</Text>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: colorSistema.texto3 }}>{factorTexto(nivel.factor)} / $1</Text>
+          <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>
+            Nivel {nivel.nombre} <Text style={{ color: tono, fontVariant: ['tabular-nums'] }}>· ×{Number(nivel.factor)}</Text>
+          </Text>
+          <Text style={{ fontSize: 13, fontWeight: casi ? '700' : '400', color: casi ? colorSistema.texto : colorSistema.texto2 }}>{linea}</Text>
         </View>
         <FlechaDesplegable abierto={abierto} color={colorSistema.texto3} />
       </Presionable>
-
-      {apagados ? (
-        <Texto nivel={2} estilo={{ fontSize: 14 }}>{nivel.desde ? `Hoy: 1 punto por cada $1. Los niveles empiezan el ${fechaLarga(nivel.desde)}.` : 'Hoy: 1 punto por cada $1. Los niveles llegan pronto.'}</Texto>
-      ) : sig ? (
-        <View style={{ gap: 6 }}>
-          <BarraAnimada avance={avance} color={tono} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} />
-          <Texto nivel={2} estilo={{ fontSize: 14 }}>
-            Te faltan <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{dolares(sig.falta)}</Text> para{' '}
-            <Text style={{ fontWeight: '800', color: colorSistema.texto }}>{sig.nombre}</Text>
-          </Texto>
-        </View>
-      ) : (
-        <Texto nivel={2} estilo={{ fontSize: 14 }}>Nivel más alto. ¡Gracias por tu preferencia!</Texto>
-      )}
+      {sig ? <BarraAnimada avance={avance} color={tono} fondo={t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)'} alto={6} /> : null}
 
       {abierto ? (
       <Animated.View entering={FadeIn.duration(220)} style={{ gap: 12 }}>
@@ -153,9 +148,7 @@ export default function Nivel({ nivel, pie = null }) {
           pantalla. Hace lo mismo que tocar el encabezado. */}
       <BotonDesplegar abierto alTocar={alternar} />
       </Animated.View>
-      ) : (
-        <BotonDesplegar abierto={false} alTocar={alternar} />
-      )}
+      ) : null}
     </Tarjeta>
   );
 }

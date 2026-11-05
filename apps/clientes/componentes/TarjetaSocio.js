@@ -201,7 +201,7 @@ function tintasDeFranja(paleta) {
 // `aFavor` (2026-10-20): el saldo a favor en dólares. Va en su propia píldora
 // verde, aparte de los puntos: es dinero que se usa en caja, no puntos, y
 // sumarlo al saldo confundiría a quien lo ve.
-function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material', aFavor = 0 }) {
+function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nivelDado = 'vip', activa = true, previo = null, cambio = null, equipo = false, estiloLogo = 'material', aFavor = 0, canjeable = false }) {
   const favor = Number(aFavor) > 0 ? Math.round(Number(aFavor) * 100) / 100 : 0;
   // 'vip' es la clave del nivel de entrada, que ahora es Bronce: lleva su material.
   const nivel = nivelDado === 'vip' ? 'bronce' : nivelDado;
@@ -525,7 +525,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
         accessible accessibilityRole="button"
         accessibilityLabel={deReves
           ? (codigo ? `Tu código de barras. Muéstralo en caja para usar tus puntos.${favor ? ` Tienes ${dolares(favor)} a favor.` : ''}` : 'Tu tarjeta todavía no tiene código.')
-          : `Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. Saldo ${dolares(equivale)}.${favor ? ` ${dolares(favor)} a favor.` : ''} Toca para ver tu código.`}
+          : `Tu tarjeta ${paleta.rotulo.toLowerCase()}${equipo ? ', del Team Farmacia Salud' : ''}. ${canjeable ? `${dolares(equivale)} para canjear` : `Saldo ${dolares(equivale)}`}.${favor ? ` ${dolares(favor)} a favor.` : ''} Toca para ver tu código.`}
         accessibilityHint={deReves ? 'Gira la tarjeta al frente' : 'Gira la tarjeta'} onAccessibilityTap={voltear}>
         {/* La sombra, en su propia placa OPACA (iPhone, 2026-10-14): una sombra
             sobre una vista transparente se calcula píxel a píxel con todo lo
@@ -611,6 +611,10 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
                 <Text maxFontSizeMultiplier={1.3} style={estilos.nombre} numberOfLines={2}>{nombreTarjeta.toUpperCase()}</Text>
               </View>
               <View style={{ alignItems: 'flex-end' }}>
+                {/* Con 100 puntos o más (2026-11-05, «de ahí en la card que se
+                    entienda»): la cifra ES lo que se descuenta. La tarjeta de
+                    canje del Inicio sólo vive mientras falta para el primero. */}
+                {canjeable ? <Text maxFontSizeMultiplier={1.2} style={estilos.canjear}>PARA CANJEAR</Text> : null}
                 <NumeroAnimado key={`s${cambio?.id ?? 0}`} valor={equivale} desde={previo?.equivale ?? equivale} duracion={1200} estilo={[estilos.saldo, { textAlign: 'right' }]} />
                 <View style={{ flexDirection: 'row' }}>
                   <NumeroAnimado key={`p${cambio?.id ?? 0}`} valor={saldo} desde={previo?.saldo ?? saldo} formato="entero" duracion={1200} estilo={[estilos.puntos, { textAlign: 'right' }]} />
@@ -981,6 +985,7 @@ const estilos = StyleSheet.create({
   },
   nombre: { color: '#FFFFFF', fontSize: 17, fontWeight: '800', letterSpacing: 1.5, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 7, textShadowOffset: { width: 0, height: 1 } },
   desde: { color: '#FFFFFF', fontSize: 12, fontWeight: '700', opacity: 0.92, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
+  canjear: { color: 'rgba(255,255,255,0.92)', fontSize: 11, fontWeight: '800', letterSpacing: 1, textShadowColor: 'rgba(0,0,0,0.5)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
   saldo: { color: '#FFFFFF', fontSize: 30, fontWeight: '900', letterSpacing: -0.5, fontVariant: ['tabular-nums'], textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 9, textShadowOffset: { width: 0, height: 1 } },
   puntos: { color: '#FFFFFF', fontSize: 13, fontWeight: '800', opacity: 0.95, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   // La ventana del código: fondo sólido (la sombra de color sale casi gratis).

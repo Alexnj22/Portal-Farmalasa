@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.24 — App clientes: Inicio más compacto (nivel, canje e inyecciones)
+
+- **Canje:** la tarjeta grande de «¡Ya puedes canjear!» se fue. Mientras falta para los 100 puntos queda una fila corta con la barra («Te faltan 40 pts para tu primer descuento»). Con 100 o más, la tarjeta de socio dice **PARA CANJEAR** sobre la cifra en dólares. Pedido del usuario: «que salga sólo si aún falta para los 100, de ahí en la card que se entienda».
+- **Nivel:** pasa a una fila («Nivel Plata · ×1.25 — Te faltan $18 para Oro») con barra fina. Cuando falta menos del 25 % dice «¡Ya casi!». Tocarla abre los beneficios, igual que antes.
+- **Inyecciones pagadas por aplicar:** salen en el Inicio, en una fila que lleva al detalle, sólo si hay alguna.
+
 ## v2.1451.23 — La preventa de una reserva reparte entre lotes
 
 - **Enviar una reserva a la caja ya no falla cuando la cantidad está repartida en dos lotes.** Desde que todo medicamento lleva lote, la existencia vieja vive en GENERICO y lo que entra por compra en su lote real. `preventaCaja.ts` pedía que **un solo** lote alcanzara, y además comparaba contra la existencia del lote que la caja propone, no contra la del producto. Con 2 en GENERICO y 3 en un lote real, una reserva de 4 daba «en la caja hay 2». Ahora reparte en el mismo orden en que la caja ofrece los lotes, un renglón por lote, sin partir una presentación (`repartirEnLotesDeVenta`, con pruebas en `tests/unit/preventaEnLotes.test.js`).

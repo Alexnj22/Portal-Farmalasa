@@ -186,6 +186,20 @@ export async function fetchProductosPorConfirmar(estado = 'pendientes', limite =
 }
 
 /**
+ * Cuántas unidades trae cada una del proveedor, contra el producto que Bodega
+ * eligió a mano. Misma regla que la propuesta (documento → precio), corrida en
+ * el servidor porque el costo del catálogo no se lee desde el navegador.
+ * Devuelve `{ factor: null }` si no se pudo: quien llama decide el respaldo.
+ */
+export async function factorParaProducto({ productId, costoNeto, descripcion }) {
+    const { data, error } = await supabase.functions.invoke('leer-dte-json', {
+        body: { modo: 'factor', product_id: productId, costo_neto: costoNeto ?? null, descripcion: descripcion ?? '' },
+    });
+    if (error || !data?.factor) return { factor: null, origen: null, error: error?.message ?? 'sin respuesta' };
+    return { factor: Number(data.factor), origen: data.origen ?? null, error: null };
+}
+
+/**
  * Leer una tanda de documentos para armar esa lista.
  *
  * Corre por tandas y devuelve cuánto queda porque son 615 documentos y una

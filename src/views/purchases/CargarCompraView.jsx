@@ -25,7 +25,7 @@ import AvisoParecidos from '../../components/common/AvisoParecidos';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
 import {
-    fetchDocumentosSinCargar, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, devolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
+    fetchDocumentosSinCargar, factorParaProducto, fetchEstadosDeCarga, fetchPistasSinCargar, resolverDocumento, devolverDocumento, fetchPropuesta, confirmarProducto, buscarProductos,
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
@@ -569,9 +569,15 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // elige otro y nadie tocó la cantidad, ese número no le corresponde:
         // GARRAFÓN DE AGUA emparejado con «AGUA CRISTAL 355 ML» salía ×12 y,
         // al elegir el garrafón, se cargaba ×12 y se aprendía (2026-11-05).
+        // Y si la propuesta no traía producto (GRIPE-MED de MONTREAL: «1 SOBRE
+        // X 2» por una caja de 50), el tamaño nunca se había calculado: se
+        // calcula ahora contra el elegido, con la misma regla del servidor.
         const intacto = ajustes[i]?.cargar == null && String(ajustes[i]?.factor) === String(renglon.factor_proveedor ?? 1);
-        const factor = producto.id !== renglon.producto_id && renglon.factor_origen === 'costo' && intacto
-            ? '1' : ajustes[i]?.factor;
+        let factor = ajustes[i]?.factor;
+        if (producto.id !== renglon.producto_id && intacto && !['documento', 'aprendido'].includes(renglon.factor_origen)) {
+            const r = await factorParaProducto({ productId: producto.id, costoNeto: renglon.costo_neto, descripcion: renglon.descripcion });
+            factor = r.factor ? String(r.factor) : '1';
+        }
         if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
         if (llave && p.documento.emisor_nit) {
             setG(k);

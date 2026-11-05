@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.1 — Cargar compra: al elegir el producto a mano, la caja se recalcula
+
+- **Al elegir el producto a mano, las unidades por caja se recalculan.** Caso de Bodega: el renglón de MONTREAL «GRIPE-MED … DISP. X 50 TAB.» llegó sin producto propuesto. Al elegirlo a mano quedaba «1 SOBRE X 2» cuando eran 50 a $10.91. Ahora el servidor aplica la misma regla de la propuesta al producto elegido (modo `factor` de `leer-dte-json`): primero lo que dice el documento y después el precio. Una descripción como «DISP. X 50» solo cuenta si el producto ya tiene una presentación de 50. El costo del catálogo sigue sin salir al navegador: el servidor devuelve solo el número.
+
 ## v2.1452.0 — Reservas: apartar sin anticipo y crear una nueva desde Comercial
 
 Pedido del usuario: «que pasa con un encargo si el cliente no deja anticipo (es de lejos, etc)», «en comercial -

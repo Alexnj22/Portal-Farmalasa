@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
+import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -115,6 +115,31 @@ Deno.serve(async (req: Request) => {
       limit = 3, max_items = MAX_ITEMS, modo = "items",
       desde = null,
     } = body ?? {};
+
+    // ── `factor`: el tamaño contra el producto que Bodega eligió a mano ─────
+    //
+    // La propuesta lo calcula sólo contra el producto que ELLA encontró. Un
+    // renglón sin candidato (GRIPE-MED de MONTREAL, 2026-11-05) quedaba en 1
+    // al elegirlo a mano: «1 SOBRE X 2» por una caja de 50 a $10.91. Acá se
+    // corre la MISMA regla contra el elegido. Devuelve sólo el número: el costo
+    // del catálogo no se le muestra al navegador (no tiene permiso de columna).
+    if (modo === "factor") {
+      const pid = Number(body?.product_id);
+      if (!Number.isInteger(pid) || pid <= 0) {
+        return new Response(JSON.stringify({ error: "product_id inválido" }), { status: 400, headers: cors });
+      }
+      const { data: pp, error: errF } = await admin.from("product_precios")
+        .select("factor, costo").eq("product_id", pid).eq("activo", true);
+      if (errF) throw errF;
+      const desc = String(body?.descripcion ?? "");
+      const cu = (pp ?? []).find((x) => Number(x.factor) === 1 && Number(x.costo) > 0)?.costo;
+      const f = elegirFactor({
+        delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), aprendido: null,
+        costoNeto: Number(body?.costo_neto) || 0, costoUnidad: cu != null ? Number(cu) : null,
+        presentaciones: (pp ?? []).map((x) => Number(x.factor)),
+      });
+      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen }), { headers: cors });
+    }
 
     // ── `barrido`: armar la lista de preguntas distintas ────────────────────
     //
@@ -490,12 +515,16 @@ Deno.serve(async (req: Request) => {
           const neto = (Number(r.costo) - descUnidad) * (r.exento ? dsc.exenta : dsc.gravada);
           const f = elegirFactor({
             delDoc: factorEnLaDescripcion(String(r.descripcion ?? "")),
+            debil: factorDebilEnLaDescripcion(String(r.descripcion ?? "")),
             aprendido: r.factor_aprendido ? Number(r.factor_aprendido) : null,
             costoNeto: neto,
             costoUnidad: r.producto_id ? costoUnidad.get(r.producto_id) : null,
             presentaciones: ((r as any).vinetas ?? []).map((v: { factor: number }) => v.factor),
           });
           r.factor_proveedor = f.factor; r.factor_origen = f.origen;
+          // La pantalla lo manda de vuelta cuando Bodega elige otro producto
+          // (modo «factor»): el tamaño se recalcula contra ESE producto.
+          (r as any).costo_neto = Math.round(neto * 10000) / 10000;
           if (f.corrige) (r as any).factor_corrige = f.corrige;
         }
 

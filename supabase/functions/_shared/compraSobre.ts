@@ -291,6 +291,19 @@ export function factorEnLaDescripcion(t: string): number | null {
 }
 
 /**
+ * Un tamaño que el documento sugiere pero no afirma: «DISP. X 50 TAB.»
+ * (MONTREAL, GRIPE-MED, 2026-11-05). «X 50 TAB» puede ser lo que trae el
+ * producto o cuántos trae el display, así que `elegirFactor` sólo lo acepta si
+ * el producto ya tiene una presentación de ese tamaño. A $10.91 contra $0.19 la
+ * unidad, el precio solo daba 57 —el costo subió 15 %— y la caja es de 50.
+ */
+export function factorDebilEnLaDescripcion(t: string): number | null {
+  const m = /\bDISP(?:LAY)?\.?\s*(?:X|DE|CON)\s*(\d+)\b/i.exec(String(t ?? ""));
+  const n = m ? Number(m[1]) : NaN;
+  return Number.isInteger(n) && n >= 2 && n <= 500 ? n : null;
+}
+
+/**
  * Cuántas unidades trae cada una que factura el proveedor, con el PRECIO como
  * juez (2026-11-05).
  *
@@ -309,8 +322,12 @@ export function factorEnLaDescripcion(t: string): number | null {
 export function elegirFactor(x: {
   delDoc: number | null; aprendido: number | null; costoNeto: number;
   costoUnidad: number | null | undefined; presentaciones: number[];
+  debil?: number | null;
 }): { factor: number; origen: "documento" | "aprendido" | "costo" | null; corrige?: number } {
   if (x.delDoc) return { factor: x.delDoc, origen: "documento" };
+  // Lo que el papel dice a medias («DISP. X 50 TAB.») sólo vale si el catálogo
+  // ya vende ese tamaño: así no se confunde con lo que trae el producto.
+  if (x.debil && x.presentaciones.includes(x.debil)) return { factor: x.debil, origen: "documento" };
   const cu = Number(x.costoUnidad);
   const razon = cu > 0 && x.costoNeto > 0 ? x.costoNeto / cu : null;
   const cuadra = (f: number) => razon != null && Math.abs(razon / f - 1) <= 0.08;

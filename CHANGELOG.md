@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.11 — Faltantes del Inicio: una lectura por sala cada 3 minutos
+
+`get_faltantes_con_stock_en_otra_sala` era la función que más tiempo de base consumía (1,478 llamadas en dos días, ~270 ms c/u): el Inicio la pedía dos veces al montar (widget con 40 y panel con 20) y otra vez cada vez que se volvía. Ahora las dos pantallas comparten una sola lectura por sala, vigente 3 minutos; pedir un traslado la refresca al momento.
+
 ## v2.1452.10 — Cargar compra: los productos se actualizan al abrir la factura
 
 - **Los productos se actualizan al abrir la factura y con un botón.** Antes la carga juzgaba con la copia de productos de hasta 10 minutos atrás. Una ficha corregida en el sistema (un costo, una presentación) no contaba: NOR-CLAMIDA siguió con costo de tableta después de arreglarla. Ahora, al abrir una factura, el portal corre la misma sincronización del cron (una petición al sistema, ~5 s, no más de una por minuto) y después arma la propuesta. El botón «Actualizar productos» la repite sin perder lo ajustado. Si la sincronización falla, la carga sigue con lo que hay.

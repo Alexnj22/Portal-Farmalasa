@@ -684,9 +684,9 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
     };
   }, [miErp, results, alternatives, vencidosProds]);
 
-  const cargarFaltantes = useCallback(() => {
+  const cargarFaltantes = useCallback((fresco = false) => {
     if (!miErp) return;
-    fetchFaltantesConStockEnOtraSala(miErp, 20).then(r => {
+    fetchFaltantesConStockEnOtraSala(miErp, 20, { fresco }).then(r => {
       if (!r.error) setFaltantes(r.filas);
     });
   }, [miErp]);
@@ -954,7 +954,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
               // atrás tiene que enterarse — `approval_requests` no viaja por
               // realtime, así que sin este aviso la solicitud recién enviada no
               // aparece y se lee como que no se envió.
-              onListo={() => { cargarFaltantes(); onSolicitado?.(); }}
+              onListo={() => { cargarFaltantes(true); onSolicitado?.(); }}
             />
           </Suspense>
         )}
@@ -1245,7 +1245,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
           <PedirTrasladoModal
             producto={pedido}
             onClose={() => { setPedido(null); setTerminando(false); }}
-            onListo={() => { cargarFaltantes(); onSolicitado?.(); }}
+            onListo={() => { cargarFaltantes(true); onSolicitado?.(); }}
           />
         </Suspense>
       )}

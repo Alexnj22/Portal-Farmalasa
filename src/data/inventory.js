@@ -160,13 +160,33 @@ export function fetchInventorySyncLogRecent() {
  * otra. Todo eso vive en el RPC, no acá: son cuatro tablas cruzadas y traerlas
  * al navegador para filtrarlas sería el camino largo al mismo número.
  */
-export async function fetchFaltantesConStockEnOtraSala(erpSucursalId, limite = 40) {
+// Una sola lectura por sala cada 3 minutos (2026-11-05). Era la función que
+// más tiempo de base consumía: 1,478 llamadas en dos días a ~270 ms, porque el
+// Inicio la pide al montar el widget (40) y otra vez el panel (20), y otra cada
+// vez que alguien vuelve al Inicio. Lo que contesta —qué le falta a la sala y
+// otra tiene— cambia con los traslados, no de un minuto a otro. Se pide siempre
+// el tope mayor y se recorta; las dos pantallas comparten la misma promesa. Tras
+// pedir un traslado, `fresco: true` salta la caché.
+const FALTANTES_TOPE = 40;
+const FALTANTES_TTL_MS = 3 * 60 * 1000;
+const faltantesCache = new Map();   // sala → { at, promesa }
+export async function fetchFaltantesConStockEnOtraSala(erpSucursalId, limite = 40, { fresco = false } = {}) {
     if (!erpSucursalId) return { filas: [], error: null };
-    const { data, error } = await supabase.rpc('get_faltantes_con_stock_en_otra_sala', {
-        p_erp_sucursal_id: Number(erpSucursalId),
-        p_limite: limite,
-    });
-    return { filas: data ?? [], error };
+    const sala = Number(erpSucursalId);
+    const tope = Math.max(limite, FALTANTES_TOPE);
+    let e = faltantesCache.get(sala);
+    if (fresco || !e || e.tope < tope || Date.now() - e.at > FALTANTES_TTL_MS) {
+        const promesa = supabase.rpc('get_faltantes_con_stock_en_otra_sala', { p_erp_sucursal_id: sala, p_limite: tope })
+            .then(({ data, error }) => {
+                // Un error no se guarda: la próxima pantalla vuelve a intentar.
+                if (error) faltantesCache.delete(sala);
+                return { filas: data ?? [], error };
+            });
+        e = { at: Date.now(), tope, promesa };
+        faltantesCache.set(sala, e);
+    }
+    const r = await e.promesa;
+    return r.error ? r : { filas: r.filas.slice(0, limite), error: null };
 }
 
 /**

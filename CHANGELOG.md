@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.22 — Revisión de factor: se ve claro qué salas no han contado
+
+- Se corrigieron tres salas creyendo que ya habían contado: el aviso «la sala
+  no ha contado» era una nota gris y la tarjeta decía «Conteo pedido · 1 de 7».
+- Ahora: la tarjeta dice «Contaron 1 de 7 salas»; cada sala sin contar lleva
+  un aviso amarillo («todavía no ha contado, si corriges ahora lo haces sin su
+  confirmación»); el diálogo de corregir lo repite; y lo corregido sin conteo
+  queda rotulado «Corregida sin conteo».
+
 ## v2.1452.21 — Recepción de traslados: presentación oculta después de despachar
 
 - NOR CLAMIDA salió de Bodega en caja de 30 y después le ocultaron esa

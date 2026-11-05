@@ -177,7 +177,7 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
                 </div>
                 {consulta?.abierta && (
                     <Badge size="sm" uppercase={false} variant="info" icon={ScanSearch}>
-                        Conteo pedido · {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)}
+                        Contaron {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)} salas
                     </Badge>
                 )}
             </div>
@@ -251,7 +251,7 @@ function ConteoDeOtraSala({ s, corregida }) {
                 {s.sala}
                 {!contada ? ' · por contar'
                     : descuadre ? ` · contó ${enPresentaciones(s.contado_texto, s.final?.contado)}, el sistema ${enPresentaciones(s.sistema_texto, s.final?.sistema)}`
-                    : corregida ? (resto
+                    : corregida ? (POR_CONTAR.includes(s.estado) ? ' · corregida, sin conteo' : resto
                         ? ` · corregida; ${formatQty(Math.abs(resto))} ${Math.abs(resto) === 1 ? 'unidad' : 'unidades'} de ${resto > 0 ? 'más' : 'menos'} por pedir`
                         : ' · corregida')
                     : ' · cuadra'}
@@ -266,7 +266,14 @@ function ConteoDeOtraSala({ s, corregida }) {
 function ResultadoDelConteo({ conteo: s, fila: f }) {
     if (!s) return null;
     if (s.estado === 'PENDIENTE') {
-        return <p className="text-label font-bold text-content-3 flex items-center gap-1"><Clock size={12} /> Conteo pedido, la sala no ha contado</p>;
+        // Visible como un aviso, no como una nota gris: se corrigieron tres
+        // salas creyendo que ya habían contado (Nor Clamida, 2026-11-05).
+        return (
+            <div className="rounded-lg border border-warning/30 bg-warning/[0.08] px-2.5 py-1.5 text-label font-bold text-warning-text">
+                <p className="flex items-center gap-1"><Clock size={12} /> {s.sala} todavía no ha contado.</p>
+                <p className="text-content-2 font-bold">Si corriges ahora, lo haces sin su confirmación. Mejor espera el conteo.</p>
+            </div>
+        );
     }
     if (s.estado === 'RECONTAR') {
         return <p className="text-label font-bold text-warning-text flex items-center gap-1"><Clock size={12} /> No cuadró la primera vez, la sala está recontando</p>;
@@ -323,7 +330,7 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     const reintentable = !!sol && !sol.aplicada && sol.status === 'PENDING' && puedeAplicar;
     const sinFecha = pideVence && !sol?.vence;
     const estado = !sol ? null
-        : sol.aplicada ? { texto: 'Corregida', variant: 'success', icon: CheckCircle2 }
+        : sol.aplicada ? { texto: conteo && POR_CONTAR.includes(conteo.estado) ? 'Corregida sin conteo' : 'Corregida', variant: 'success', icon: CheckCircle2 }
         : sol.status === 'APPROVED' ? { texto: 'Aprobada, sin aplicar', variant: 'warning', icon: Clock }
         : reintentable ? { texto: 'No se aplicó', variant: 'warning', icon: AlertTriangle }
         : { texto: 'Pedida', variant: 'warning', icon: Clock };
@@ -444,6 +451,12 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
                             {carga && f.sobran > 0 && ` Sobran ${formatQty(f.sobran)} sueltas que no se pueden sacar.`}
                             {!carga && f.sueltas > 0 && ` Las ${formatQty(f.sueltas)} sueltas también salen.`}
                         </span>
+                        {conteo && POR_CONTAR.includes(conteo.estado) && (
+                            <span className="block text-warning-text font-bold">
+                                {f.sala} todavía no ha contado: corriges sin su confirmación.
+                                {' '}Si en la sala no hay lo que supone el cambio, la existencia queda mal.
+                            </span>
+                        )}
                         {resto !== 0 && (
                             <span className="block text-warning-text font-bold">
                                 {resto > 0

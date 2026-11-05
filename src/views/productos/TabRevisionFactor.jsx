@@ -1,11 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
 import { ArrowRight, PackageX, History, AlertTriangle, CheckCircle2, Clock, Wrench, ScanSearch } from 'lucide-react';
 import Badge from '../../components/common/Badge';
+import StatCard from '../../components/common/StatCard';
+import CarrilCards from '../../components/common/CarrilCards';
 import Button from '../../components/common/Button';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
-import { fetchRevisionDePresentaciones, corregidaDespuesDelConteo, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, restoDelConteo, restoEnPresentaciones, notaDeCorreccion, unidadesDeLaCorreccion, textoDelSospechoso, minmaxDelCambio, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
+import { fetchRevisionDePresentaciones, corregidaDespuesDelConteo, pedirCorreccionDeExistencia, ponerVenceACorreccion, necesitaVence, restoDelConteo, restoEnPresentaciones, notaDeCorreccion, unidadesDeLaCorreccion, textoDelSospechoso, esCarga, presentacionDeCarga } from '@nucleo/data/revisionFactor';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import { fetchConsultasExistencia, agruparPorProducto, enPresentaciones, textoDeDiferencia } from '@nucleo/data/consultasExistencia';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
@@ -85,57 +87,76 @@ export default function TabRevisionFactor() {
     const consultaAbierta = useMemo(() => new Map(agruparPorProducto(consultas)
         .map(g => [g.erp_product_id, g])), [consultas]);
 
-    if (datos === null) {
-        return <div className="p-4"><SkeletonText lines={6} /></div>;
-    }
+    const cargando = datos === null;
+    const { cambios = [], existencias = [], sospechosos = [] } = datos ?? {};
+    const irA = (id) => document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-    const { cambios = [], existencias = [], sospechosos = [] } = datos;
-
+    // Rediseño del 2026-11-05 («no me gusta cómo da la info, se pierde»): un
+    // resumen arriba que dice qué hay que hacer, y las secciones vacías no
+    // ocupan pantalla — el resumen ya dice que están en cero.
     return (
         <div className="space-y-6">
-            <Seccion icono={PackageX} titulo="Existencia por corregir" cuenta={porProducto.length}
-                bajada="La caja no convierte la existencia cuando cambia el tamaño de la presentación: queda contada en la unidad vieja. Si la caja se achicó sobra existencia; si creció, falta.">
-                {existencias.length === 0
-                    ? <EmptyState linea icon={CheckCircle2} title="Sin existencia por corregir" />
-                    : (
-                        <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                            {porProducto.map(g => (
-                                <TarjetaProducto key={g.erp_product_id} grupo={g}
-                                    consulta={consultaAbierta.get(g.erp_product_id)} corregidas={datos.corregidas} onHecho={cargar} />
-                            ))}
-                        </ul>
-                    )}
-            </Seccion>
+            <CarrilCards ariaLabel="Resumen de la revisión de factor">
+                <StatCard icon={PackageX}
+                    iconBg={porProducto.length ? 'bg-warning/10' : 'bg-success/10'}
+                    iconCls={porProducto.length ? 'text-warning-text' : 'text-success-text'}
+                    label="Por corregir" value={formatQty(porProducto.length)}
+                    sub={porProducto.length ? `${formatQty(existencias.length)} ${existencias.length === 1 ? 'sala' : 'salas'} con existencia vieja` : 'Todo en orden'}
+                    onClick={porProducto.length ? () => irA('rf-corregir') : undefined} loading={cargando} />
+                <StatCard icon={AlertTriangle}
+                    iconBg={sospechosos.length ? 'bg-warning/10' : 'bg-success/10'}
+                    iconCls={sospechosos.length ? 'text-warning-text' : 'text-success-text'}
+                    label="Factor que no cuadra" value={formatQty(sospechosos.length)}
+                    sub={sospechosos.length ? 'Se corrige en la ficha' : 'Todo en orden'}
+                    onClick={sospechosos.length ? () => irA('rf-sospechosos') : undefined} loading={cargando} />
+                <StatCard icon={History} iconBg="bg-brand/10" iconCls="text-brand-text"
+                    label="Cambios" value={formatQty(cambios.length)} sub="Últimos 120 días"
+                    onClick={cambios.length ? () => irA('rf-cambios') : undefined} loading={cargando} />
+            </CarrilCards>
 
-            <Seccion icono={AlertTriangle} titulo="Factor que no cuadra" cuenta={sospechosos.length}
-                bajada="Productos cuyo tamaño de presentación no coincide entre el catálogo, la existencia o las ventas recientes. Se corrigen en la ficha del producto de la caja; al corregirlo, el portal convierte lo demás solo.">
-                {sospechosos.length === 0
-                    ? <EmptyState linea icon={CheckCircle2} title="Sin factores que no cuadren" />
-                    : (
-                        <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                            {sospechosos.map(s => <FilaSospechoso key={s.clave} s={s} />)}
-                        </ul>
-                    )}
-            </Seccion>
+            {cargando && <SkeletonText lines={6} />}
 
-            <Seccion icono={History} titulo="Cambios de presentación" cuenta={cambios.length}
-                bajada="Lo que cambió en los últimos 120 días: las ventas que el portal convirtió solo y cómo quedó el MIN·MAX.">
-                {cambios.length === 0
-                    ? <EmptyState linea icon={CheckCircle2} title="Sin cambios de presentación recientes" />
-                    : (
-                        <ul className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-                            {cambios.map(c => <FilaCambio key={c.id} c={c}
-                                salasPorCorregir={salasPorCambio.get(c.id) ?? 0} />)}
-                        </ul>
-                    )}
-            </Seccion>
+            {!cargando && porProducto.length > 0 && (
+                <Seccion id="rf-corregir" icono={PackageX} titulo="Existencia por corregir" cuenta={porProducto.length}
+                    bajada="La caja cambió el tamaño de la presentación y no convirtió la existencia: quedó contada en la unidad vieja.">
+                    <ul className="grid grid-cols-1 gap-3 xl:grid-cols-2">
+                        {porProducto.map(g => (
+                            <TarjetaProducto key={g.erp_product_id} grupo={g}
+                                consulta={consultaAbierta.get(g.erp_product_id)} corregidas={datos.corregidas} onHecho={cargar} />
+                        ))}
+                    </ul>
+                </Seccion>
+            )}
+
+            {!cargando && sospechosos.length > 0 && (
+                <Seccion id="rf-sospechosos" icono={AlertTriangle} titulo="Factor que no cuadra" cuenta={sospechosos.length}
+                    bajada="El tamaño de la presentación no coincide entre el catálogo, la existencia o las ventas. Se corrige en la ficha del producto; el portal convierte lo demás solo.">
+                    <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                        {sospechosos.map(s => <FilaSospechoso key={s.clave} s={s} />)}
+                    </ul>
+                </Seccion>
+            )}
+
+            {!cargando && (
+                <Seccion id="rf-cambios" icono={History} titulo="Cambios de presentación" cuenta={cambios.length}
+                    bajada="Lo que el portal convirtió solo: las ventas y el MIN·MAX de cada sala.">
+                    {cambios.length === 0
+                        ? <EmptyState linea icon={CheckCircle2} title="Sin cambios de presentación recientes" />
+                        : (
+                            <ul className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                                {cambios.map(c => <FilaCambio key={c.id} c={c}
+                                    salasPorCorregir={salasPorCambio.get(c.id) ?? 0} onVer={() => irA('rf-corregir')} />)}
+                            </ul>
+                        )}
+                </Seccion>
+            )}
         </div>
     );
 }
 
-function Seccion({ icono: Icono, titulo, cuenta, bajada, children }) {
+function Seccion({ id, icono: Icono, titulo, cuenta, bajada, children }) {
     return (
-        <section className="space-y-2.5">
+        <section id={id} className="space-y-3 scroll-mt-4">
             <header className="flex items-start gap-2.5">
                 <Icono size={16} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div className="min-w-0">
@@ -167,22 +188,26 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
     const conCorreccion = new Set(g.filas.map(f => f.erp_sucursal_id));
     const otras = (consulta?.salas ?? []).filter(s => !conCorreccion.has(s.erp_sucursal_id));
     const respondidas = consulta ? (consulta.salas ?? []).filter(s => !['PENDIENTE', 'RECONTAR'].includes(s.estado)).length : 0;
+    const hechas = g.filas.filter(f => f.solicitud?.aplicada).length;
 
     return (
-        <li data-surface="card" className="border-divider px-3.5 py-3 space-y-2.5">
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0 space-y-1">
-                    <p className="text-body-sm font-black text-content truncate" title={g.nombre}>{g.nombre}</p>
+        <li data-surface="card" data-tono={hechas === g.filas.length ? 'success' : undefined} className="px-4 py-3.5 space-y-3">
+            <div className="space-y-2">
+                <p className="text-body font-black text-content truncate" title={g.nombre}>{g.nombre}</p>
+                <div className="flex flex-wrap items-center gap-1.5">
                     {mismoCambio && <CambioDeFactor f={f0} />}
-                </div>
-                {consulta?.abierta && (
-                    <Badge size="sm" uppercase={false} variant="info" icon={ScanSearch}>
-                        Contaron {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)} salas
+                    <Badge size="sm" uppercase={false} variant={hechas === g.filas.length ? 'success' : 'neutral'} icon={Wrench}>
+                        Corregidas {formatQty(hechas)} de {formatQty(g.filas.length)}
                     </Badge>
-                )}
+                    {consulta?.abierta && (
+                        <Badge size="sm" uppercase={false} variant={respondidas === (consulta.salas?.length ?? 0) ? 'success' : 'info'} icon={ScanSearch}>
+                            Contaron {formatQty(respondidas)} de {formatQty(consulta.salas?.length ?? 0)} salas
+                        </Badge>
+                    )}
+                </div>
             </div>
 
-            <ul className="divide-y divide-divider border-t border-divider">
+            <ul className="divide-y divide-divider border-y border-divider">
                 {g.filas.map(f => (
                     <SalaPorCorregir key={`${f.cambio_id}-${f.sentido}-${f.erp_sucursal_id}-${f.lote}-${f.presentacion}`}
                         fila={f} conCambio={!mismoCambio} onHecho={onHecho}
@@ -193,8 +218,8 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
             {/* Las salas a las que también se les preguntó y no tienen nada
                 que corregir: un descuadre ahí es otra cosa que revisar. */}
             {otras.length > 0 && (
-                <div className="border-t border-divider pt-2 space-y-1">
-                    <p className="text-label font-black uppercase tracking-widest text-content-3">Las demás salas</p>
+                <div className="space-y-1.5">
+                    <p className="text-label font-bold text-content-3">Conteo en las demás salas</p>
                     <ul className="flex flex-wrap gap-1.5">
                         {otras.map(s => <ConteoDeOtraSala key={s.id} s={s}
                             corregida={corregidaDespuesDelConteo(corregidas, s, g.erp_product_id)} />)}
@@ -224,11 +249,13 @@ function TarjetaProducto({ grupo: g, consulta, corregidas, onHecho }) {
 function CambioDeFactor({ f }) {
     const pres = f.tipo_cambio ?? f.presentacion;
     return (
-        <p className="flex flex-wrap items-center gap-x-2 text-label font-bold">
-            <span className="text-content-3">1 {pres} = {formatQty(f.de)}</span>
-            <ArrowRight size={12} className="text-content-3" />
-            <span className="text-content">1 {pres} = {formatQty(f.a)}</span>
-        </p>
+        <Badge size="sm" uppercase={false} variant="neutral">
+            <span className="inline-flex items-center gap-1.5 tabular-nums">
+                <span className="text-content-3 line-through decoration-content-3/50">1 {pres} = {formatQty(f.de)}</span>
+                <ArrowRight size={12} className="text-content-3" />
+                <span className="text-content">1 {pres} = {formatQty(f.a)}</span>
+            </span>
+        </Badge>
     );
 }
 
@@ -260,24 +287,25 @@ function ConteoDeOtraSala({ s, corregida }) {
     );
 }
 
+// Qué dijo la sala, en una etiqueta al lado del botón: es lo primero que hay
+// que mirar antes de corregir, así que va donde está la decisión y no en una
+// nota gris debajo (se corrigieron tres salas sin conteo, 2026-11-05).
+function EstadoDelConteo({ conteo: s, fila: f }) {
+    if (!s) return null;
+    if (s.estado === 'PENDIENTE') return <Badge size="sm" uppercase={false} variant="warning" icon={Clock}>No ha contado</Badge>;
+    if (s.estado === 'RECONTAR') return <Badge size="sm" uppercase={false} variant="warning" icon={Clock}>Recontando</Badge>;
+    if ((s.diferencia ?? 0) === unidadesDeLaCorreccion(f)) return <Badge size="sm" uppercase={false} variant="success" icon={CheckCircle2}>Su conteo confirma</Badge>;
+    if (s.diferencia === 0) return <Badge size="sm" uppercase={false} variant="info" icon={CheckCircle2}>Contó: ya está bien</Badge>;
+    return <Badge size="sm" uppercase={false} variant="danger" icon={AlertTriangle}>Contó otra cantidad</Badge>;
+}
+
 // Qué dijo la sala al contar, frente a lo que la corrección supone. Las dos
 // cosas en unidades: la corrección carga o descarta exactamente la diferencia
 // que el conteo debería encontrar.
 function ResultadoDelConteo({ conteo: s, fila: f }) {
     if (!s) return null;
-    if (s.estado === 'PENDIENTE') {
-        // Visible como un aviso, no como una nota gris: se corrigieron tres
-        // salas creyendo que ya habían contado (Nor Clamida, 2026-11-05).
-        return (
-            <div className="rounded-lg border border-warning/30 bg-warning/[0.08] px-2.5 py-1.5 text-label font-bold text-warning-text">
-                <p className="flex items-center gap-1"><Clock size={12} /> {s.sala} todavía no ha contado.</p>
-                <p className="text-content-2 font-bold">Si corriges ahora, lo haces sin su confirmación. Mejor espera el conteo.</p>
-            </div>
-        );
-    }
-    if (s.estado === 'RECONTAR') {
-        return <p className="text-label font-bold text-warning-text flex items-center gap-1"><Clock size={12} /> No cuadró la primera vez, la sala está recontando</p>;
-    }
+    // Sin contar o recontando lo dice la etiqueta de la fila (`EstadoDelConteo`).
+    if (POR_CONTAR.includes(s.estado)) return null;
     const supone = unidadesDeLaCorreccion(f);
     const confirma = (s.diferencia ?? 0) === supone;
     return (
@@ -330,7 +358,7 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     const reintentable = !!sol && !sol.aplicada && sol.status === 'PENDING' && puedeAplicar;
     const sinFecha = pideVence && !sol?.vence;
     const estado = !sol ? null
-        : sol.aplicada ? { texto: conteo && POR_CONTAR.includes(conteo.estado) ? 'Corregida sin conteo' : 'Corregida', variant: 'success', icon: CheckCircle2 }
+        : sol.aplicada ? { texto: 'Corregida', variant: 'success', icon: CheckCircle2 }
         : sol.status === 'APPROVED' ? { texto: 'Aprobada, sin aplicar', variant: 'warning', icon: Clock }
         : reintentable ? { texto: 'No se aplicó', variant: 'warning', icon: AlertTriangle }
         : { texto: 'Pedida', variant: 'warning', icon: Clock };
@@ -377,49 +405,61 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
     };
 
     return (
-        <li className="py-2.5 last:pb-0 space-y-1.5">
-            <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                    <p className="text-body-sm font-bold text-content truncate">{f.sala}</p>
+        <li className="py-3 space-y-2">
+            {/* Una fila, cuatro columnas: quién · qué cambia · qué dijo la sala
+                · qué hacer. En el teléfono se apilan en ese mismo orden. */}
+            <div className="grid grid-cols-1 gap-x-4 gap-y-2 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
+                <div className="min-w-0 space-y-0.5">
+                    <p className="text-body-sm font-black text-content truncate">{f.sala}</p>
                     {(f.lote || f.vence) && (
                         <p className="text-label font-bold text-content-3 truncate">
-                            {f.lote ? `lote ${f.lote}` : ''}{f.lote && f.vence ? ' · ' : ''}
+                            {f.lote ? `Lote ${f.lote}` : ''}{f.lote && f.vence ? ' · ' : ''}
                             {f.vence ? `vence ${fechaNumerica(f.vence)}` : ''}
                         </p>
                     )}
-                    {conCambio && <CambioDeFactor f={f} />}
+                    {conCambio && <div className="pt-1"><CambioDeFactor f={f} /></div>}
                 </div>
-                {reintentable ? (
-                    <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
-                        Reintentar
-                    </Button>
-                ) : estado ? (
-                    <Badge size="sm" uppercase={false} variant={estado.variant} icon={estado.icon}>
-                        {estado.texto}
-                    </Badge>
-                ) : (
-                    <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
-                        Corregir
-                    </Button>
-                )}
+                <div className="flex flex-wrap items-center gap-2 sm:justify-end">
+                    <EstadoDelConteo conteo={conteo} fila={f} />
+                    {reintentable ? (
+                        <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
+                            Reintentar
+                        </Button>
+                    ) : estado ? (
+                        <Badge size="sm" uppercase={false} variant={estado.variant} icon={estado.icon}>
+                            {estado.texto}
+                        </Badge>
+                    ) : (
+                        <Button size="sm" variant="primary" icon={Wrench} onClick={() => setConfirmar(true)}>
+                            Corregir
+                        </Button>
+                    )}
+                </div>
             </div>
 
-            {carga ? (
-                <p className="text-label font-bold text-content-2">
-                    Había <span className="tabular-nums">{formatQty(f.muestra)}</span> {pres}, hoy cuenta{' '}
-                    <span className="tabular-nums">{formatQty(f.muestra)}</span> {comoSeVe}
-                    {' '}· se cargan <span className="tabular-nums text-success-text">{formatQty(f.cargar)}</span> {enCarga}
-                </p>
-            ) : (
-                <p className="text-label font-bold text-content-2">
-                    Muestra <span className="tabular-nums">{formatQty(f.muestra)}</span>, son{' '}
-                    <span className="tabular-nums text-content">{formatQty(f.quedan)}</span>
-                    {' '}· se descartan <span className="tabular-nums text-danger-text">{formatQty(f.descartar)}</span>
-                    {f.sueltas > 0 && (
-                        <span className="text-warning-text">
-                            {' '}· sobran {formatQty(f.sueltas)} unidades sueltas que no forman una {pres}
-                        </span>
-                    )}
+            {/* El número que cambia, grande: sistema → real y lo que se mueve. */}
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg bg-surface-card-hover px-3 py-2 tabular-nums">
+                {carga ? (
+                    <>
+                        <span className="text-label font-bold text-content-3">Hay</span>
+                        <span className="text-body-sm font-black text-content">{formatQty(f.muestra)} {pres}</span>
+                        <span className="text-label font-bold text-content-3">y la caja lo cuenta como {formatQty(f.muestra)} {comoSeVe}</span>
+                        <span className="ml-auto text-body-sm font-black text-success-text">+{formatQty(f.cargar)} {enCarga}</span>
+                    </>
+                ) : (
+                    <>
+                        <span className="text-label font-bold text-content-3">La caja dice</span>
+                        <span className="text-body-sm font-black text-content-3 line-through decoration-content-3/50">{formatQty(f.muestra)}</span>
+                        <ArrowRight size={13} className="text-content-3" />
+                        <span className="text-label font-bold text-content-3">son</span>
+                        <span className="text-body-sm font-black text-content">{formatQty(f.quedan)} {pres}</span>
+                        <span className="ml-auto text-body-sm font-black text-danger-text">−{formatQty(f.descartar)}</span>
+                    </>
+                )}
+            </div>
+            {!carga && f.sueltas > 0 && (
+                <p className="text-label font-bold text-warning-text">
+                    Sobran {formatQty(f.sueltas)} unidades sueltas que no forman una {pres}.
                 </p>
             )}
 
@@ -485,7 +525,7 @@ function SalaPorCorregir({ fila: f, conCambio, conteo, onHecho }) {
 // Por qué no cuadra: `textoDelSospechoso` (núcleo), el mismo texto de la app.
 function FilaSospechoso({ s }) {
     return (
-        <li data-surface="card" className="border-divider px-3.5 py-3 space-y-1">
+        <li data-surface="card" data-tono="warning" className="px-4 py-3.5 space-y-1.5">
             <div className="flex items-start justify-between gap-2">
                 <p className="text-body-sm font-black text-content truncate min-w-0" title={s.nombre}>{s.nombre}</p>
                 <Badge size="sm" variant="warning" uppercase={false}>{s.presentacion}</Badge>
@@ -496,7 +536,7 @@ function FilaSospechoso({ s }) {
 }
 
 // ─── Un cambio ya procesado ──────────────────────────────────────────────────
-function FilaCambio({ c, salasPorCorregir }) {
+function FilaCambio({ c, salasPorCorregir, onVer }) {
     const r = c.resultado ?? {};
     const minmax = Array.isArray(r.minmax) ? r.minmax : [];
     // `procesar_cambios_de_factor` sólo deja `existencia_por_corregir` cuando
@@ -505,47 +545,69 @@ function FilaCambio({ c, salasPorCorregir }) {
     // estaba en otra presentación). Pedido del usuario, 2026-10-30: «cuando
     // pase eso, que lo diga».
     const tocoExistencia = Array.isArray(r.existencia_por_corregir) && r.existencia_por_corregir.length > 0;
+    const pres = r.presentacion;
+    const mm = (v) => `${v?.[0] ?? '—'}·${v?.[1] ?? '—'}`;
     return (
-        <li data-surface="card" className="border-divider px-3.5 py-3 space-y-1.5">
-            <div className="flex items-start justify-between gap-2">
-                <p className="text-body-sm font-black text-content truncate min-w-0" title={c.nombre}>{c.nombre}</p>
+        <li data-surface="card" className="px-4 py-3.5 space-y-3">
+            <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0 space-y-1.5">
+                    <p className="text-body-sm font-black text-content truncate" title={c.nombre}>{c.nombre}</p>
+                    {r.factor_antes != null && (
+                        <CambioDeFactor f={{ tipo_cambio: pres ?? 'unidad de venta', de: r.factor_antes, a: r.factor_ahora }} />
+                    )}
+                </div>
                 <span className="text-label font-bold text-content-3 shrink-0 tabular-nums">
-                    {c.procesado_at ? fechaNumerica(c.procesado_at) : 'en proceso'}
+                    {c.procesado_at ? fechaNumerica(c.procesado_at) : 'En proceso'}
                 </span>
             </div>
-            {r.factor_antes != null && (
-                <p className="text-label font-bold text-content-2">
-                    Antes {formatQty(r.factor_antes)} por unidad de venta, ahora {formatQty(r.factor_ahora)}.
-                    {' '}Se convirtieron {formatQty(r.ventas_convertidas ?? 0)} ventas.
-                </p>
-            )}
-            {c.procesado_at && r.factor_antes != null && (
-                !tocoExistencia ? (
-                    <p className="flex items-center gap-1.5 text-label font-bold text-success-text">
-                        <CheckCircle2 size={13} strokeWidth={2.5} className="shrink-0" />
-                        La existencia no necesita ajuste.
-                    </p>
-                ) : salasPorCorregir > 0 ? (
-                    <p className="flex items-center gap-1.5 text-label font-bold text-warning-text">
-                        <AlertTriangle size={13} strokeWidth={2.5} className="shrink-0" />
-                        {salasPorCorregir === 1 ? 'Falta ajustar la existencia de 1 sala' : `Falta ajustar la existencia de ${salasPorCorregir} salas`}: está arriba, en «Existencia por corregir».
-                    </p>
-                ) : (
-                    <p className="flex items-center gap-1.5 text-label font-bold text-content-3">
-                        <CheckCircle2 size={13} strokeWidth={2.5} className="shrink-0" />
-                        La existencia ya no tiene nada por ajustar.
-                    </p>
-                )
-            )}
-            {minmax.length > 0 && (
-                <p className="text-label font-bold text-content-3">
-                    MIN·MAX: {minmaxDelCambio(r)}
-                </p>
-            )}
+
+            <div className="flex flex-wrap items-center gap-1.5">
+                {r.factor_antes != null && (
+                    <Badge size="sm" uppercase={false} variant="neutral">
+                        {formatQty(r.ventas_convertidas ?? 0)} {(r.ventas_convertidas ?? 0) === 1 ? 'venta convertida' : 'ventas convertidas'}
+                    </Badge>
+                )}
+                {c.procesado_at && r.factor_antes != null && (
+                    !tocoExistencia ? (
+                        <Badge size="sm" uppercase={false} variant="success" icon={CheckCircle2}>Existencia sin ajuste</Badge>
+                    ) : salasPorCorregir > 0 ? (
+                        <button type="button" onClick={onVer} className="rounded-full active:scale-[0.97] min-h-[var(--tap-min)]">
+                            <Badge size="sm" uppercase={false} variant="warning" icon={AlertTriangle}>
+                                {salasPorCorregir === 1 ? 'Falta corregir 1 sala' : `Faltan corregir ${salasPorCorregir} salas`}
+                            </Badge>
+                        </button>
+                    ) : (
+                        <Badge size="sm" uppercase={false} variant="success" icon={CheckCircle2}>Existencia corregida</Badge>
+                    )
+                )}
+                {(r.ventas_sin_convertir ?? 0) > 0 && (
+                    <Badge size="sm" uppercase={false} variant="warning" icon={AlertTriangle}>
+                        {formatQty(r.ventas_sin_convertir)} ventas sin convertir
+                    </Badge>
+                )}
+            </div>
             {(r.ventas_sin_convertir ?? 0) > 0 && (
                 <p className="text-label font-bold text-warning-text">
-                    {formatQty(r.ventas_sin_convertir)} ventas con otro tamaño de caja quedaron como estaban: revisar si es la misma caja.
+                    Entraron con otro tamaño de caja y quedaron como estaban: revisar si es la misma caja.
                 </p>
+            )}
+
+            {minmax.length > 0 && (
+                <div className="space-y-1">
+                    <p className="text-label font-bold text-content-3">MIN·MAX por sala</p>
+                    <ul className="grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                        {minmax.map(m => (
+                            <li key={m.sala} className="rounded-lg bg-surface-card-hover px-2.5 py-1.5">
+                                <p className="text-label font-bold text-content-3 truncate">{m.sala}</p>
+                                <p className="flex items-center gap-1 text-label font-black tabular-nums">
+                                    <span className="text-content-3">{mm(m.antes)}</span>
+                                    <ArrowRight size={11} className="text-content-3 shrink-0" />
+                                    <span className="text-content">{mm(m.ahora)}</span>
+                                </p>
+                            </li>
+                        ))}
+                    </ul>
+                </div>
             )}
         </li>
     );

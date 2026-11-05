@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.0 — Revisión de factor: rediseño — resumen arriba, filas por sala claras, historial ordenado
+
+Pedido del usuario: «no me gusta cómo da la info, se pierde, no es clara».
+- Arriba, tres tarjetas de resumen: por corregir, factor que no cuadra y
+  cambios de 120 días. Las secciones en cero ya no ocupan pantalla.
+- Cada sala por corregir es una fila con su estado de conteo («No ha contado»,
+  «Su conteo confirma», «Contó otra cantidad») al lado del botón, y el número
+  que cambia en grande: «la caja dice 30 → son 1 · −29».
+- La tarjeta dice cuántas salas se corrigieron y cuántas contaron.
+- El historial de cambios: el de→a como etiqueta, el estado de la existencia
+  como etiqueta, y el MIN·MAX en una grilla por sala en vez de una línea
+  corrida.
+
 ## v2.1452.23 — Cargar compra abre sin esperar al catálogo; textos de «Otra cantidad»
 
 - **Abrir una compra tardaba ~4 s de más**: antes de pedir la propuesta se esperaba la actualización de productos del sistema (4.1 s medido cuando de verdad corre). Ahora las dos van en paralelo: la compra se ve en ~1–2 s y, si la actualización trajo cambios, la propuesta se vuelve a pedir y se reemplaza conservando lo que se haya tocado.

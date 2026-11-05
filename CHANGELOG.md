@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.7 — Cargar compra: el tamaño que nombra la factura le gana a un redondeo
+
+- **NOR-CLAMIDA X 30 sale en cajas de 30 y no de 33.** La caja costó un 10 % más, el precio daba 33 y se redondeaba a un tamaño que nadie vende; sin presentación de 1, la carga no pasaba. Ahora, si la descripción nombra un tamaño («X 30») que el catálogo vende y el precio queda a ±25 %, gana ese tamaño. Si el precio lo contradice (el producto se vende suelto), no se usa.
+
 ## v2.1452.6 — Cargar compra: el producto elegido trae sus presentaciones y su precio
 
 - **Al elegir otro producto, la pantalla trae sus presentaciones y su precio.** Reporte de Bodega con AMLO-DENK 5 MG. La carga estaba bien: 5 cajas de 5 blísteres son 25 unidades. Pero «Se carga como» no aparecía y «Regular» decía «la de Bodega», porque la pantalla solo conocía las presentaciones del producto PROPUESTO. Ahora el modo `factor` de `leer-dte-json` devuelve también las presentaciones del elegido (nombre y viñeta, sin costo), y «Se carga como» y «Regular» las usan. Si no hay precio, el campo dice «sin cambio».

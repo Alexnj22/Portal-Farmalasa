@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
+import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -136,7 +136,7 @@ Deno.serve(async (req: Request) => {
       const otra = (pp ?? []).find((x) => Number(x.factor) > 1 && Number(x.costo) > 0);
       const cu = uno ? Number(uno.costo) : otra ? Number(otra.costo) / Number(otra.factor) : null;
       const f = elegirFactor({
-        delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), aprendido: null,
+        delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), pistas: tamanosEnLaDescripcion(desc), aprendido: null,
         costoNeto: Number(body?.costo_neto) || 0, costoUnidad: cu != null ? Number(cu) : null,
         presentaciones: (pp ?? []).map((x) => Number(x.factor)),
       });
@@ -530,6 +530,7 @@ Deno.serve(async (req: Request) => {
           const f = elegirFactor({
             delDoc: factorEnLaDescripcion(String(r.descripcion ?? "")),
             debil: factorDebilEnLaDescripcion(String(r.descripcion ?? "")),
+            pistas: tamanosEnLaDescripcion(String(r.descripcion ?? "")),
             aprendido: r.factor_aprendido ? Number(r.factor_aprendido) : null,
             costoNeto: neto,
             costoUnidad: r.producto_id ? costoUnidad.get(r.producto_id) : null,

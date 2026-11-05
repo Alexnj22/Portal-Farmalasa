@@ -1,6 +1,6 @@
 // Cuántas unidades trae cada una del proveedor, con el precio como juez (2026-11-05).
 import { describe, it, expect } from 'vitest';
-import { elegirFactor, factorDebilEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
+import { elegirFactor, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
 
 describe('elegirFactor', () => {
     it('MELOFLEX: lo aprendido (1, de agosto) pierde contra el precio: caja de 10', () => {
@@ -34,6 +34,16 @@ describe('elegirFactor', () => {
     });
     it('lo que el papel dice a medias no vale si el catálogo no tiene ese tamaño', () => {
         expect(elegirFactor({ delDoc: null, debil: 50, aprendido: null, costoNeto: 0.2, costoUnidad: 0.19, presentaciones: [1] }))
+            .toEqual({ factor: 1, origen: null });
+    });
+    it('NOR-CLAMIDA X 30: el precio da 33 (+10 %), la descripción y el catálogo dicen 30', () => {
+        const desc = 'NOR-CLAMIDA 5 MG X 30 TAB L5R3227B V. 01-10-2027 1';
+        expect(tamanosEnLaDescripcion(desc)).toEqual([30]);
+        expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [30], costoNeto: 2.88, costoUnidad: 2.62 / 30, presentaciones: [30] }))
+            .toEqual({ factor: 30, origen: 'costo' });
+    });
+    it('una pista que el precio contradice no se usa: el producto de 30 vendido suelto', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [30], costoNeto: 2.7, costoUnidad: 2.62, presentaciones: [1, 30] }))
             .toEqual({ factor: 1, origen: null });
     });
 });

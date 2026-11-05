@@ -306,6 +306,11 @@ export function factorEnLaDescripcion(t: string): number | null {
  * el producto ya tiene una presentación de ese tamaño. A $10.91 contra $0.19 la
  * unidad, el precio solo daba 57 —el costo subió 15 %— y la caja es de 50.
  */
+/** Los tamaños que nombra la descripción («X 30 TAB», «X50»): sólo pistas. */
+export function tamanosEnLaDescripcion(t: string): number[] {
+  return [...String(t ?? "").matchAll(/\bX\s*(\d{1,3})\b/gi)].map((m) => Number(m[1])).filter((n) => n >= 2 && n <= 500);
+}
+
 export function factorDebilEnLaDescripcion(t: string): number | null {
   const m = /\bDISP(?:LAY)?\.?\s*(?:X|DE|CON)\s*(\d+)\b/i.exec(String(t ?? ""));
   const n = m ? Number(m[1]) : NaN;
@@ -331,7 +336,7 @@ export function factorDebilEnLaDescripcion(t: string): number | null {
 export function elegirFactor(x: {
   delDoc: number | null; aprendido: number | null; costoNeto: number;
   costoUnidad: number | null | undefined; presentaciones: number[];
-  debil?: number | null;
+  debil?: number | null; pistas?: number[];
 }): { factor: number; origen: "documento" | "aprendido" | "costo" | null; corrige?: number } {
   if (x.delDoc) return { factor: x.delDoc, origen: "documento" };
   // Lo que el papel dice a medias («DISP. X 50 TAB.») sólo vale si el catálogo
@@ -343,6 +348,14 @@ export function elegirFactor(x: {
   let porCosto: number | null = null;
   if (razon != null) {
     porCosto = x.presentaciones.filter((f) => f >= 2 && cuadra(f)).sort((a, b) => Math.abs(razon / a - 1) - Math.abs(razon / b - 1))[0] ?? null;
+    // Antes de redondear a un número que nadie vende: si la descripción nombra
+    // un tamaño («X 30 TAB») que el catálogo vende y el precio queda a ±25 %,
+    // es ése — el costo subió, no cambió la caja. NOR-CLAMIDA X 30 salía ×33
+    // (+10 %) y sin presentación de 1 no se podía cargar (2026-11-05).
+    if (!porCosto) {
+      porCosto = (x.pistas ?? []).filter((f) => f >= 2 && x.presentaciones.includes(f) && Math.abs(razon / f - 1) <= 0.25)
+        .sort((a, b) => Math.abs(razon / a - 1) - Math.abs(razon / b - 1))[0] ?? null;
+    }
     if (!porCosto) { const n = Math.round(razon); if (n >= 2 && cuadra(n)) porCosto = n; }
   }
   if (x.aprendido && (razon == null || cuadra(x.aprendido) || !porCosto)) return { factor: x.aprendido, origen: "aprendido" };

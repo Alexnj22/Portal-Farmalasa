@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.39 — Cargar compra: el borrador no tapa lo que la factura ya trae
+
+- **El borrador ya no tapa lo que se lee de la factura.** Desde la carga de BRANDSTAR (reporte del usuario en Bodega, v2.1451.35): el servidor ya proponía el vencimiento en los 12 renglones y MELOFLEX ×10, pero la pantalla seguía mostrando el vencimiento vacío y 15 unidades. La factura se había abierto antes del arreglo, el borrador guardó esos valores y al reabrirla los restauraba por encima de la propuesta nueva. Ahora un lote o vencimiento vacío en el borrador cuenta como «no escrito» y se toma lo leído; y la cantidad por caja solo se restaura si alguien la cambió a mano («Cantidad a cargar»).
+
 ## v2.1451.38 — Se borra una prueba vacía
 
 - `tests/unit/facturasSala.test.js` quedó vacío en v2.1451.37 en vez de borrado (probaba un módulo que se quitó en v2.1432.0); vacío, vitest lo cuenta como fallo.

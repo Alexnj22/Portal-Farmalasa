@@ -223,6 +223,23 @@ const ajusteInicial = (r) => ({
     servicio: r.servicio_sugerido === true,
 });
 
+// El borrador vuelve, pero NO le gana a la propuesta en lo que la persona no
+// tocó (2026-11-05). BRANDSTAR se abrió cuando el lector todavía no entendía
+// «FECHA VENC.» y el precio no corregía la caja: el borrador guardó vence
+// vacío y factor 1, y después del arreglo la pantalla los seguía restaurando.
+// Vacío en el borrador = no se escribió nada → manda lo leído ahora. El factor
+// sólo lo cambia «Cantidad a cargar» (que deja `cargar`): sin `cargar`, nadie
+// lo tocó.
+const conBorrador = (inicial, guardado) => {
+    if (!guardado) return inicial;
+    const r = { ...inicial, ...guardado };
+    if (!guardado.lote) r.lote = inicial.lote;
+    if (!guardado.vence) r.vence = inicial.vence;
+    if (guardado.cargar == null) r.factor = inicial.factor;
+    if (guardado.servicio == null) r.servicio = inicial.servicio;
+    return r;
+};
+
 // La viñeta que tiene hoy Bodega para la presentación con que entraría: la de
 // la revisión si ya se revisó, si no la de la propuesta (misma regla que el
 // servidor: la presentación del tamaño del factor, si no la de 1).
@@ -493,7 +510,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // una factura en papel corregida puede haber cambiado el orden.
         const guardado = loadDraft(claveBorrador);
         const b = guardado?.huella === huellaDe(propuesta.renglones) ? guardado : null;
-        setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, b?.ajustes?.[i] ? { ...ajusteInicial(r), ...b.ajustes[i] } : ajusteInicial(r)])));
+        setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, conBorrador(ajusteInicial(r), b?.ajustes?.[i])])));
         setUso(b?.uso ?? 'venta');
         setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
     }, [doc.document_id, doc.manual_id, claveBorrador]);

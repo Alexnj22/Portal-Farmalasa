@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.5 — App del personal: «Yo» pasa a «Cuenta», con vidrio como el resto
+
+Decisión del usuario (2026-11-05): la pestaña «Yo» se llama **Cuenta**, y su pantalla deja de ser la única sin vidrio. En iPhone usaba la lista de SwiftUI, cuyas filas son opacas; ahora iPhone y Android usan las mismas piezas que el Menú (`Vidrio`, que es el Liquid Glass del sistema y respeta el estilo «Sólido» de Apariencia, y sus renglones). iPhone conserva la fila «Estilo» y el interruptor de Face ID es el del sistema en los dos (`Interruptor`).
+
+Además se corrige un fallo de Android: «Modo» abría `ActionSheetIOS`, que en Android no existe. Ahí va ahora el diálogo del sistema con los tres modos. Verificado con `expo export` de iOS y Android.
+
 ## v2.1451.4 — Bienestar: la frase sin «mañana a las 8» y aire bajo Relájate
 
 App de clientes · Bienestar. Pedido del usuario: la frase del día ya no dice

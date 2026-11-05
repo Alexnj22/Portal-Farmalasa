@@ -59,7 +59,7 @@ export default function Pestanas() {
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="yo">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />
-        <NativeTabs.Trigger.Label>Yo</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Label>Cuenta</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       {/* La búsqueda de toda la app (2026-09-30). `role="search"` es lo que en
           iOS 26 la separa del resto de la barra y la convierte en el campo de

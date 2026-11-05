@@ -1,4 +1,4 @@
-// Yo: lo personal —perfil, documentos, solicitudes— y salir. Es lo que en el
+// Cuenta: lo personal —perfil, documentos, solicitudes— y salir. Es lo que en el
 // portal vive en el menú del empleado y en la esquina del usuario.
 //
 // También lo del menú de Ajustes de la barra del portal: el código del kiosco
@@ -6,17 +6,15 @@
 // `componentes/perfil/codigoDeKiosco`) y la apariencia —los cuatro temas del
 // portal, Estilo × Modo— que se guarda en el teléfono (`tema/preferencia`).
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Switch as SwitchRN, Text, useColorScheme, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, useColorScheme, View } from 'react-native';
 import Interruptor from '../../../componentes/Interruptor';
 import * as Haptics from 'expo-haptics';
-import { Host, Icon, ListItem, Switch } from '@expo/ui';
+import { Host, Icon } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { MODULE_MAP } from '@nucleo/constants/moduleMap';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import Seccion from '../../../componentes/Seccion';
-import Lista from '../../../componentes/Lista';
 import Vidrio from '../../../componentes/Vidrio';
 import { colorSistema } from '../../../componentes/Formulario';
 import { useTema } from '../../../tema/tema';
@@ -39,7 +37,14 @@ function copiar(texto, que) {
   }).catch(() => {});
 }
 
+// La hoja de opciones del sistema. `ActionSheetIOS` no existe en Android (tocar
+// «Modo» fallaba ahí): en Android va el diálogo del sistema, que admite hasta
+// tres botones —los tres modos— y se cierra tocando afuera.
 function elegir(titulo, opciones, onElegir) {
+  if (!ES_IOS) {
+    Alert.alert(titulo, undefined, opciones.map((o) => ({ text: o.label, onPress: () => onElegir(o.id) })), { cancelable: true });
+    return;
+  }
   ActionSheetIOS.showActionSheetWithOptions(
     { title: titulo, options: [...opciones.map((o) => o.label), 'Cancelar'], cancelButtonIndex: opciones.length },
     (i) => { if (i < opciones.length) onElegir(opciones[i].id); },
@@ -94,73 +99,18 @@ export default function Yo() {
     { text: 'Salir', style: 'destructive', onPress: async () => { await soltarAvisos(); logout?.(); } },
   ]);
 
-  if (Platform.OS !== 'ios') {
-    return <YoAndroid nombre={shortEmployeeName(user)} detalle={[cargo, sala].filter(Boolean).join(' · ')} modulos={modulos}
-      biometria={biometria} cambiarBiometria={cambiarBiometria} salir={salir} tema={tema}
-      codigos={codigos} rotuloModo={rotuloModo} elegirModo={elegirModo} />;
-  }
-
-  return (
-    <Host style={{ flex: 1 }} colorScheme={oscuro ? 'dark' : 'light'}>
-      <Lista>
-        <Seccion>
-          <ListItem supporting={[cargo, sala].filter(Boolean).join(' · ') || undefined}
-            leading={<Icon name={iconoDe('User')} size={28} color={tema.color.marca} />}>
-            {shortEmployeeName(user)}
-          </ListItem>
-        </Seccion>
-        {modulos.length > 0 && (
-          <Seccion>
-            {modulos.map((m) => (
-              <ListItem key={m.key} onPress={() => abrirModulo(m)}
-                leading={<Icon name={iconoDe(m.icono)} size={20} color={tema.color.marca} />}>
-                {m.label}
-              </ListItem>
-            ))}
-          </Seccion>
-        )}
-        {biometria.nombre ? (
-          <Seccion>
-            <ListItem trailing={<Interruptor value={biometria.activa} onValueChange={cambiarBiometria} />}>
-              {`Entrar con ${biometria.nombre}`}
-            </ListItem>
-          </Seccion>
-        ) : null}
-        {codigos.length ? (
-          <Seccion>
-            {codigos.map((c) => (
-              <ListItem key={c.id} onPress={() => copiar(c.valor, c.titulo)} supporting={`${c.valor} · toca para copiar · cambia cada hora`}
-                leading={<Icon name={iconoDe('Lock')} size={20} color={tema.color.marca} />}>
-                {c.titulo}
-              </ListItem>
-            ))}
-          </Seccion>
-        ) : null}
-        <Seccion>
-          <ListItem onPress={elegirModo} supporting={rotuloModo}
-            leading={<Icon name={iconoDe(oscuro ? 'Moon' : 'Sun')} size={20} color={tema.color.marca} />}>
-            Modo
-          </ListItem>
-          {ES_IOS ? (
-            <ListItem onPress={elegirEstilo} supporting={rotuloEstilo}
-              leading={<Icon name={iconoDe('Layers')} size={20} color={tema.color.marca} />}>
-              Estilo
-            </ListItem>
-          ) : null}
-        </Seccion>
-        <Seccion>
-          <ListItem onPress={salir} leading={<Icon name={ICONO_SALIR} size={20} color={tema.color.peligro} />}>
-            Salir
-          </ListItem>
-        </Seccion>
-      </Lista>
-    </Host>
-  );
+  // Las mismas piezas que el Menú (vidrio y renglones) en los dos sistemas
+  // (2026-11-05, usuario: «todo lo demás es vidrio pero ahí es sólido»). Antes
+  // iPhone usaba la lista de SwiftUI, cuyas filas son opacas: era la única
+  // pantalla sin vidrio. `Vidrio` es el Liquid Glass del sistema y respeta el
+  // estilo «Sólido» de Apariencia.
+  return <Tarjetas nombre={shortEmployeeName(user)} detalle={[cargo, sala].filter(Boolean).join(' · ')} modulos={modulos}
+    biometria={biometria} cambiarBiometria={cambiarBiometria} salir={salir} tema={tema} oscuro={oscuro}
+    codigos={codigos} rotuloModo={rotuloModo} elegirModo={elegirModo} rotuloEstilo={rotuloEstilo} elegirEstilo={elegirEstilo} />;
 }
 
-// Android (2026-10-09): la lista de Compose salía como filas blancas de borde a
-// borde, sin las tarjetas que tiene en iPhone. Acá va con las MISMAS piezas
-// que el Menú (vidrio y renglones), que es como se ve el resto de la app.
+// Nació para Android (2026-10-09: la lista de Compose salía como filas blancas
+// de borde a borde); desde el 2026-11-05 es también la de iPhone.
 function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
   return (
     <Pressable disabled={!alTocar} onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar?.(); }}
@@ -178,9 +128,9 @@ function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
   );
 }
 
-function YoAndroid({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema, codigos, rotuloModo, elegirModo }) {
+function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema, oscuro, codigos, rotuloModo, elegirModo, rotuloEstilo, elegirEstilo }) {
   return (
-    <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 22 }}>
+    <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 22 }}>
       <Vidrio radio={22}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: tema.color.marca, alignItems: 'center', justifyContent: 'center' }}>
@@ -203,7 +153,7 @@ function YoAndroid({ nombre, detalle, modulos, biometria, cambiarBiometria, sali
         <Vidrio radio={22}>
           <View style={{ paddingVertical: 2 }}>
             <Renglon primero icono={iconoDe('Lock')} color="#12B76A" texto={`Entrar con ${biometria.nombre}`}
-              derecha={<SwitchRN value={biometria.activa} onValueChange={cambiarBiometria} />} />
+              derecha={<Interruptor value={biometria.activa} onValueChange={cambiarBiometria} />} />
           </View>
         </Vidrio>
       ) : null}
@@ -219,8 +169,12 @@ function YoAndroid({ nombre, detalle, modulos, biometria, cambiarBiometria, sali
       ) : null}
       <Vidrio radio={22}>
         <View style={{ paddingVertical: 2 }}>
-          <Renglon primero icono={iconoDe('Moon')} color="#6929C4" texto="Modo" alTocar={elegirModo}
+          <Renglon primero icono={iconoDe(oscuro ? 'Moon' : 'Sun')} color="#6929C4" texto="Modo" alTocar={elegirModo}
             derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloModo}</Text>} />
+          {ES_IOS ? (
+            <Renglon icono={iconoDe('Layers')} color="#6929C4" texto="Estilo" alTocar={elegirEstilo}
+              derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloEstilo}</Text>} />
+          ) : null}
         </View>
       </Vidrio>
       <Vidrio radio={22}>

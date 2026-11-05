@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.7 — Las solicitudes se deciden desde el Inicio
+
+- Al tocar una solicitud en el widget **Solicitudes pendientes** se abre ahí mismo, con su detalle y —si tu permiso alcanza— **Aprobar** y **Rechazar**. Es el mismo diálogo que usan la campana y la pantalla de Solicitudes, así que se decide igual en los tres lados.
+- Cada solicitud se decide con el permiso que le corresponde: las personales con el de solicitudes personales, las de facturación, inventario o caja con el de su familia. Sin permiso se abre sólo para mirar.
+- Antes de abrirla se vuelve a leer: si alguien más ya la resolvió, avisa y la saca de la lista en vez de ofrecer los botones.
+- Al decidir, la fila desaparece y el número del widget baja sin recargar.
+
 ## v2.1451.6 — Actualizaciones por aire: el manifiesto lleva la configuración de la app
 
 App de clientes · actualizaciones por aire. El usuario: «¿por qué las

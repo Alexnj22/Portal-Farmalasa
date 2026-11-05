@@ -81,6 +81,7 @@ const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
 import WidgetVendedores from './dashboard/WidgetVendedores';
 import { TamanoWidgetCtx, useTamanoWidget } from './dashboard/tamanoWidget';
 import VistazoWidget from './dashboard/VistazoWidget';
+import { useSolicitudEnInicio } from './dashboard/useSolicitudEnInicio';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { MODULE_MAP } from '../components/common/catalogos/modulos';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -1827,6 +1828,19 @@ const DashboardView = ({ openModal }) => {
   const [reqTotal,       setReqTotal]       = useState(null);
   const [reqError,       setReqError]       = useState(false);
   const [reqLoading,     setReqLoading]     = useState(true);
+  // Decidir desde el Inicio (paso 3): al resolverse, la fila sale de la lista
+  // y el conteo baja — sin esperar a recargar la página.
+  // El registro de las ya quitadas evita restar dos veces la misma (decidir y
+  // el aviso «ya estaba resuelta» pueden llegar por la misma fila).
+  const solicitudesQuitadas = useRef(new Set());
+  const quitarSolicitud = useCallback((id) => {
+    const k = String(id);
+    if (solicitudesQuitadas.current.has(k)) return;
+    solicitudesQuitadas.current.add(k);
+    setPendingReqs(prev => prev.filter(r => String(r.id) !== k));
+    setReqTotal(t => (t == null ? t : Math.max(0, t - 1)));
+  }, []);
+  const { abrir: abrirSolicitud, cargandoId: solicitudCargando, dialogo: dialogoSolicitud } = useSolicitudEnInicio({ onResuelta: quitarSolicitud });
   const [calMonth,       setCalMonth]       = useState(new Date());
   const [bdMonth,        setBdMonth]        = useState(new Date());
   const [calTooltip,     setCalTooltip]     = useState(null);
@@ -2990,19 +3004,20 @@ const DashboardView = ({ openModal }) => {
               :reqError?<EmptyState linea icon={AlertTriangle} title="No se pudieron leer las solicitudes" />
               :displayReqs.length===0?<EmptyState linea icon={ClipboardList} title="Sin solicitudes pendientes" />
               // §15.7 — caja de ícono + título + subtítulo + algo al final: la
-              // anatomía exacta de `ListRow`. Y sin `onClick` renderiza un
-              // `<div>`, así que la fila deja de ser tabulable cuando el usuario
-              // no tiene permiso para abrirla — antes era un `<button>` sin
-              // acción, una parada de foco que no hacía nada.
+              // anatomía exacta de `ListRow`. Tocarla abre la solicitud AQUÍ,
+              // con su detalle y —si el permiso alcanza— Aprobar/Rechazar
+              // (`useSolicitudEnInicio`). Sin permiso se abre sólo para mirar.
               :displayReqs.map(r=>(
                 <ListRow key={r.id} density="sm"
                   icon={ClipboardList} iconClass="text-warning-text"
                   iconBoxClass="bg-warning/10 border-warning/30"
                   title={getEmpName(r.employee_id)}
                   subtitle={nombreDeTipo(r.type)}
-                  onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}
+                  onClick={()=>abrirSolicitud(r.id)}
                   className="rounded-none border-x-0 border-t-0 px-5"
-                  trailing={<span className="text-caption text-content-3">{fechaTexto(r.created_at, {day:'2-digit',month:'short'})}</span>} />
+                  trailing={solicitudCargando===r.id
+                    ? <span className="text-caption text-content-3">Abriendo…</span>
+                    : <span className="text-caption text-content-3">{fechaTexto(r.created_at, {day:'2-digit',month:'short'})}</span>} />
               ))}
           </div>
         </WidgetCard>
@@ -4195,6 +4210,7 @@ const DashboardView = ({ openModal }) => {
           />
         </Suspense>
       )}
+      {dialogoSolicitud}
     </GlassViewLayout>
   );
 };

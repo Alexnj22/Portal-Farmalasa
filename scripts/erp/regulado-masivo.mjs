@@ -51,6 +51,9 @@ const EJECUTAR = args.includes('--ejecutar');
 // «Los productos sí llevan vencimiento, sólo los insumos no» (usuario, 2026-11-05):
 // con esta opción también se activa «perecedero» al que no la tenga.
 const CON_VENCE = args.includes('--perecedero');
+// Lo contrario: QUITAR «regulado» (tarjetas, chips, vales… que nunca llevan
+// lote). Sólo con --ids: una lista escrita a mano, nunca una categoría.
+const QUITAR = args.includes('--quitar');
 
 // ── Sesión en el ERP ─────────────────────────────────────────────────────────
 let cookie = null;
@@ -229,6 +232,7 @@ if (modo === 'leer') {
     if (fallos.length) console.log('FALLOS', fallos);
     console.log(`foto en ${destino}`);
 } else if (modo === 'marcar') {
+    if (QUITAR && !opt('ids')) throw new Error('--quitar sólo con --ids=… (una lista revisada, nunca una categoría).');
     const cats = (opt('categorias') ?? '').split(',').filter(Boolean);
     if (!cats.length) throw new Error('Falta --categorias=… (ids de categoría del sistema).');
     const max = Number(opt('max') ?? Infinity);
@@ -255,7 +259,9 @@ if (modo === 'leer') {
         }
         const anotar = (resultado, extra = {}) => appendFileSync(bitacora,
             JSON.stringify({ id, nombre: antes.nombre, categoria: antes.categoria.label, resultado, ...extra, at: new Date().toISOString() }) + '\n');
-        if (antes.regulado && (antes.perecedero || !CON_VENCE)) {
+        if (QUITAR) {
+            if (!antes.regulado) { console.log(`= ${id} ${antes.nombre}: ya no era regulado`); continue; }
+        } else if (antes.regulado && (antes.perecedero || !CON_VENCE)) {
             // ¿Lo marcó una corrida que se cortó entre el guardado y la relectura?
             // Se compara contra la foto de `leer` para no dejarlo sin verificar.
             const foto = fotos.find(f => f.id === id);
@@ -269,10 +275,10 @@ if (modo === 'leer') {
         if (!antes.activo) { console.log(`- ${id} ${antes.nombre}: inactivo en el sistema, no se toca`); continue; }
         // Sin vencimiento no hay lote que controlar: en «MEDICAMENTOS» así caen
         // cremas, cepillos y colorantes mal categorizados. Se listan aparte.
-        if (!antes.perecedero && !CON_VENCE && !args.includes('--con-no-perecederos')) { console.log(`- ${id} ${antes.nombre}: no perecedero, se deja para revisar`); anotar('omitido', { motivo: 'no perecedero' }); continue; }
+        if (!QUITAR && !antes.perecedero && !CON_VENCE && !args.includes('--con-no-perecederos')) { console.log(`- ${id} ${antes.nombre}: no perecedero, se deja para revisar`); anotar('omitido', { motivo: 'no perecedero' }); continue; }
         if (antes.conUbi) { console.log(`✗ ${id}: la pantalla trae campos que el sobre no conoce. FRENO.`); anotar('freno', { motivo: 'campos nuevos' }); process.exit(1); }
         if (!antes.presentaciones.length) { console.log(`- ${id} ${antes.nombre}: sin presentaciones, el formulario no guarda`); continue; }
-        const cuerpo = sobreDeEdicion(antes, true, antes.perecedero || CON_VENCE);
+        const cuerpo = sobreDeEdicion(antes, !QUITAR, antes.perecedero || CON_VENCE);
         if (!EJECUTAR) { console.log(`· ${id} ${antes.nombre} [${antes.categoria.label}] → ${cuerpo.length} bytes`); continue; }
 
         let resp;
@@ -297,16 +303,16 @@ if (modo === 'leer') {
             process.exit(1);
         }
         const despues = await ficha(id);
-        if (!despues.regulado || (CON_VENCE && !despues.perecedero) || huella(despues) !== huella(antes)) {
+        if (despues.regulado === QUITAR || (CON_VENCE && !despues.perecedero) || huella(despues) !== huella(antes)) {
             console.log(`✗ ${id} ${antes.nombre}: la ficha quedó distinta. FRENO.`);
             anotar('diferencia', { antes, despues });
             process.exit(1);
         }
-        anotar('marcado');
+        anotar(QUITAR ? 'quitado' : 'marcado');
         ok++; seguidos = 0;
-        console.log(`✓ ${id} ${antes.nombre} [${antes.categoria.label}]`);
+        console.log(`✓ ${id} ${antes.nombre} [${antes.categoria.label}]${QUITAR ? ' — sin lote' : ''}`);
     }
-    console.log(`${ok} marcado(s). Bitácora: ${bitacora}`);
+    console.log(`${ok} ${QUITAR ? "quitado(s)" : "marcado(s)"}. Bitácora: ${bitacora}`);
 } else {
     console.log('uso: leer | marcar --categorias=… [--ids=…] [--max=N] [--ejecutar]');
 }

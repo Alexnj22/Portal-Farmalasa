@@ -89,15 +89,18 @@ async function productoDelSistema(cookie: string, id: number): Promise<ProductoD
   // EN QUÉ se carga, no sólo cuántas unidades entran.
   const opciones = [...String(j.select ?? "").matchAll(/<option[^>]*value=['"]?(\d+)['"]?[^>]*>([^<]*)/g)]
     .map((m) => ({ id: m[1], nombre: m[2].replace(/\s+/g, " ").trim() }));
-  const presentaciones = [];
-  for (const { id: id_presentacion, nombre } of opciones) {
+  // A la vez: la sesión del sistema NO serializa estas lecturas (medido el
+  // 2026-11-05 en Bodega: 10 productos, 24 pedidos, 2,316 ms en serie contra
+  // 402 ms en paralelo con la misma cookie). El orden se conserva.
+  const leidas = await Promise.all(opciones.map(async ({ id: id_presentacion, nombre }) => {
     const p = await pedir(cookie, COMPRAS, new URLSearchParams({ process: "getpresentacion", id_presentacion }),
       { extra: { Referer: COMPRAS } });
     try {
       const jp = JSON.parse(p);
-      presentaciones.push({ id: id_presentacion, unidad: Number(jp.unidad), costo: Number(jp.costo), precio: Number(jp.precio), nombre: nombre || undefined });
-    } catch { /* una presentación ilegible no tumba las otras */ }
-  }
+      return { id: id_presentacion, unidad: Number(jp.unidad), costo: Number(jp.costo), precio: Number(jp.precio), nombre: nombre || undefined };
+    } catch { return null; /* una presentación ilegible no tumba las otras */ }
+  }));
+  const presentaciones = leidas.filter((x): x is NonNullable<typeof x> => x !== null);
   return {
     id, nombre: String(j.descrip ?? id),
     perecedero: String(j.perecedero) === "1", regulado: String(j.regulado) === "1",
@@ -179,13 +182,14 @@ async function enviarCompra(admin: any, x: {
   // revisión) es un espejo que va hasta 10 minutos atrás, y Bodega carga con el
   // día de la carga mientras el portal manda la emisión: se mira en vivo, de la
   // emisión a hoy, en la lista liviana. Si no se puede mirar, no se manda.
-  const yaEsta = await (x.manualId
+  // Las dos lecturas previas (2b y 2c) van A LA VEZ (2026-11-05): son
+  // independientes y la sesión del sistema no las serializa. Los frenos siguen
+  // siendo los mismos y en el mismo orden: si cualquiera falla, no se manda.
+  const yaEstaP = (x.manualId
     ? papelYaRegistrado(x.cookie, String(x.sobre.numero_doc), String(x.sobre.tipo_doc), x.erpProveedor)
     : yaEnBodega(x.cookie, String(x.sobre.fecha), String(x.sobre.numero_doc),
         { control: x.numeroControl, totales: [x.totalDoc, Number(x.sobre.total)] }))
     .catch((e) => ({ error: String(e?.message ?? e) }));
-  if ("error" in yaEsta) return { enviada: false, error: `No se pudo comprobar si Bodega ya la tiene: ${yaEsta.error}` };
-  if (yaEsta.compra) return { enviada: false, error: `Bodega ya la tiene cargada (compra ${yaEsta.compra}): no se mandó.` };
 
   // Freno 2c: la existencia del ESTANTE antes de mandar, para comprobar después
   // que la compra entró AHÍ. El «Success» del sistema y leer la compra de
@@ -200,7 +204,12 @@ async function enviarCompra(admin: any, x: {
     if (!(id > 0)) continue;
     esperado.set(id, (esperado.get(id) ?? 0) + Number(l.cant) * (Number(l.unidad) || 1));
   }
-  const estanteAntes = esperado.size ? await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante) : new Map<number, number>();
+  const [yaEsta, estanteAntes] = await Promise.all([
+    yaEstaP,
+    esperado.size ? existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante).catch(() => null) : Promise.resolve(new Map<number, number>()),
+  ]);
+  if ("error" in yaEsta) return { enviada: false, error: `No se pudo comprobar si Bodega ya la tiene: ${yaEsta.error}` };
+  if (yaEsta.compra) return { enviada: false, error: `Bodega ya la tiene cargada (compra ${yaEsta.compra}): no se mandó.` };
   if (!estanteAntes) return { enviada: false, error: "No se pudo leer la existencia de Bodega para comprobar la carga: no se mandó." };
 
   const { data: tomada, error: eT } = await admin.from("compra_carga")
@@ -256,11 +265,14 @@ async function enviarCompra(admin: any, x: {
   }
 
   // ── Leerla de vuelta ───────────────────────────────────────────────────────
-  const verif = await leerDeVuelta(x.cookie, x.sobre, x.lineas, x.erpProveedor).catch((e) => ({ ok: false, compra: null, notas: [`No se pudo leer de vuelta: ${e?.message ?? e}`] }));
   // ¿Entró al estante? Cada producto tiene que haber subido al menos lo que se
   // cargó (en unidades). Una venta o un traslado en el medio puede dar un
   // falso aviso; preferible a no enterarse de que la mercadería no está.
-  const estanteDespues = esperado.size ? await existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante) : new Map<number, number>();
+  // Las dos lecturas posteriores, a la vez: ninguna depende de la otra.
+  const [verif, estanteDespues] = await Promise.all([
+    leerDeVuelta(x.cookie, x.sobre, x.lineas, x.erpProveedor).catch((e) => ({ ok: false, compra: null, notas: [`No se pudo leer de vuelta: ${e?.message ?? e}`] })),
+    esperado.size ? existenciasDeUbicacion(x.cookie, ERP_BODEGA, estante).catch(() => null) : Promise.resolve(new Map<number, number>()),
+  ]);
   if (!estanteDespues) {
     verif.ok = false; verif.notas.push("No se pudo leer la existencia de Bodega después de cargar: comprobar que entró al estante.");
   } else {
@@ -1994,6 +2006,20 @@ Deno.serve(async (req: Request) => {
     const erroneos: Erroneo[] = [];
     const reparto: LineaReparto[] = [];
     const salas = uso === "venta" ? await salasDeReparto(admin) : new Map<number, Sala>();
+    // Las fichas de todos los productos elegidos, de a 6 a la vez, ANTES del
+    // bucle: leerlas una por una dentro de él era lo que hacía tardar
+    // «Revisar carga» (Bodega, 2026-11-05). El bucle después sólo lee la caché.
+    if (uso !== "consumo") {
+      const pids = [...new Set(items.map((_, i) => {
+        const x = (decisiones[String(i)] ?? {}) as any;
+        if (x.servicio === true) return 0;
+        const n = Number(x.product_id);
+        return x.erroneo === true && !(n > 0) ? PRODUCTO_ERRONEO : n;
+      }).filter((n) => Number.isFinite(n) && n > 0))];
+      for (let k = 0; k < pids.length; k += 6) {
+        await Promise.all(pids.slice(k, k + 6).map(async (pid) => cache.set(pid, await productoDelSistema(cookie, pid))));
+      }
+    }
     // El descuento al pie de la factura se reparte en el costo de cada renglón.
     const dsc = factorDescuentoDeFactura(dte?.resumen);
     for (let i = 0; i < items.length; i++) {

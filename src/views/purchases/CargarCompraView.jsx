@@ -476,6 +476,10 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const [dias, setDias]       = useState('');
     const [revisando, setRev]   = useState(false);
     const [resultado, setRes]   = useState(null);
+    // La última revisión que llegó, aunque después se haya tocado algo: sus
+    // costos siguen valiendo para los renglones que NO cambiaron. Sin esto,
+    // confirmar un producto borraba el costo de todos los demás.
+    const [ultimaRev, setUltimaRev] = useState(null);
     const [creando, setCreando] = useState(null);   // índice del renglón
     const [confirmando, setConf] = useState(false);
     const [enviando, setEnv]     = useState(false);
@@ -693,6 +697,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // La firma viaja con el resultado: si mientras se revisaba la persona
         // cambió algo, la revisión que llega ya no es la de la pantalla.
         setRes({ ...res, firma });
+        setUltimaRev({ ...res, firma });
     };
 
     // El aviso se cuenta ACÁ, con lo que la persona ya resolvió en pantalla
@@ -729,19 +734,33 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const autoRevisada = useRef(false);
     useEffect(() => {
         if (autoRevisada.current || !p || !puedeEditar || yaMandada || resultado || revisando) return;
-        if (faltan > 0 || Object.keys(ajustes).length !== p.renglones.length) return;
+        // Se revisa al abrir AUNQUE falten renglones por resolver (Bodega,
+        // 2026-11-05): los que ya están confirmados muestran su costo y su
+        // margen sin esperar a que se resuelva el resto.
+        if (Object.keys(ajustes).length !== p.renglones.length) return;
         autoRevisada.current = true;
         revisar();
     // eslint-disable-next-line react-hooks/exhaustive-deps -- dispara una vez, cuando la propuesta está completa
     }, [p, faltan, ajustes, puedeEditar, yaMandada]);
     const lista = !!(p && faltan === 0);
-    const entraComo = useMemo(() => new Map((revision?.renglones ?? []).map(x => [x.renglon, x])), [revision]);
+    // Lo que se muestra por renglón: la revisión vigente, o la última que llegó
+    // para los renglones cuya decisión es la MISMA que se revisó.
+    const decisionesAhora = p ? JSON.stringify({ uso, r: decisiones() }) : '';
+    const entraComo = useMemo(() => {
+        if (revision) return new Map((revision.renglones ?? []).map(x => [x.renglon, x]));
+        if (!ultimaRev?.revision || !decisionesAhora) return new Map();
+        const antes = JSON.parse(ultimaRev.firma), ahora = JSON.parse(decisionesAhora);
+        if (antes.uso !== ahora.uso) return new Map();
+        return new Map((ultimaRev.revision.renglones ?? [])
+            .filter(x => JSON.stringify(antes.renglones?.[x.renglon]) === JSON.stringify(ahora.r?.[x.renglon]))
+            .map(x => [x.renglon, x]));
+    }, [revision, ultimaRev, decisionesAhora]);
     // El costo que trae ESTA factura contra el que tiene Bodega, y el margen
     // con el precio de venta actual (la misma regla del catálogo). Sale de la
     // revisión: `linea.compra` ya lleva el descuento y el reparto de regalos.
     const costos = useMemo(() => {
         const m = new Map();
-        for (const x of revision?.renglones ?? []) {
+        for (const x of entraComo.values()) {
             if (!x.linea || x.linea.bandera !== 'PRODUCTO') continue;
             const nuevo = Number(x.linea.compra), antes = x.costo_anterior, venta = Number(x.linea.venta);
             const cambio = antes ? (nuevo - antes) / antes * 100 : null;
@@ -759,7 +778,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             });
         }
         return m;
-    }, [revision]);
+    }, [entraComo]);
     const subenDeCosto = [...costos.values()].filter(c => c.cambio != null && c.cambio >= 0.5).length;
     const bajanDeCosto = [...costos.values()].filter(c => c.cambio != null && c.cambio <= -0.5).length;
     const conMargenMalo = [...costos.values()].filter(c => c.alerta).length;

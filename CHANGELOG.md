@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.4 — Revisar y cargar compra más rápido; costos sin esperar a resolver todo
+
+- **Revisar carga**: las fichas de los productos se leían del sistema una por una, y cada presentación también. Ahora se leen todas a la vez (de a 6 productos). Medido contra el sistema con la misma sesión: 10 productos y 24 pedidos, **2,316 ms en serie y 402 ms en paralelo**.
+- **Cargar en Bodega**: las dos comprobaciones previas (¿Bodega ya la tiene? y la existencia del estante) y las dos posteriores (leer la compra de vuelta y la existencia después) van de a dos a la vez. Los frenos son los mismos; si la lectura del estante después falla, ahora queda «sin verificar» en vez de cortar la respuesta.
+- **Costos sin esperar**: la revisión corre sola al abrir aunque falten renglones por resolver, así los confirmados por código de barras muestran costo, margen y cómo entran de una vez. Y al tocar un renglón, los demás conservan lo que mostraba la última revisión (antes se borraba todo hasta volver a revisar).
+- Catálogo: a la rodillera y a 27 insumos (cepillos, algodón, mascarilla, pañal, condones, sueros) se les quitó «regulado» en el sistema; el script `regulado-masivo --quitar` ya no saltea lo que se marcó el mismo día.
+
 ## v2.1453.3 — Cargar compra: «No es mercadería» en vez de «No va a Bodega»
 
 Bodega apretó «No va a Bodega» creyendo que mandaba la factura a una sucursal, y la factura salió de la cola sin cargarse (MONTREAL, $24.18; ya se devolvió). El botón ahora dice **«No es mercadería»**, y antes de quitarla aparece un aviso: no se carga en ningún inventario, sirve para gastos o facturas ya cargadas, y mandar productos a una sala es «Enviar a sucursales». El botón destacado es «No, volver».

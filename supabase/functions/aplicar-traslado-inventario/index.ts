@@ -76,6 +76,10 @@ import {
   trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 import { cambiarRegulado, leerFichaDe } from "../_shared/erp-regulado.ts";
+import {
+  type Destrabe, deshacerDestrabe, destrabeVacio, filasSinPresentacion, hayDestrabe, mostrarPresentacion,
+  presentacionesParaMostrar,
+} from "../_shared/erp-destrabe.ts";
 
 // Cuánto de lo pedido sale de verdad. Vive aparte de los parsers porque
 // `erp-traslado.ts` dice de sí mismo que las decisiones de cantidad se quedan
@@ -170,31 +174,31 @@ Deno.serve(async (req) => {
   // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
   const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
-  // Solicitudes con `metadata.lote_quitado` de hace más de 3 minutos: la
-  // llamada que lo quitó murió antes de devolverlo. Se devuelve y se borra la
-  // marca; lo que no se pueda devolver queda en el registro, nunca callado.
+  // Solicitudes con `metadata.destrabe` de hace más de 3 minutos: la llamada
+  // que cambió esas fichas (control de lote quitado, presentación a la vista)
+  // murió antes de devolverlas. Se devuelven y se borra la marca; lo que no se
+  // pueda devolver se re-anota y queda en el registro, nunca callado.
+  // Ver `_shared/erp-destrabe.ts`.
   const reactivarLotesHuerfanos = async (_admin: typeof admin, cookie: string) => {
     const { data, error } = await _admin.from("approval_requests")
       .select("id, metadata")
-      .not("metadata->lote_quitado", "is", null)
-      .lt("metadata->lote_quitado->>at", new Date(Date.now() - 3 * 60_000).toISOString())
+      .not("metadata->destrabe", "is", null)
+      .lt("metadata->destrabe->>at", new Date(Date.now() - 3 * 60_000).toISOString())
       .limit(20);
-    if (error) { console.error(`[aplicar-traslado-inventario] no se pudieron leer las marcas de lote: ${error.message}`); return; }
+    if (error) { console.error(`[aplicar-traslado-inventario] no se pudieron leer las marcas de destrabe: ${error.message}`); return; }
     for (const fila of data ?? []) {
       const md = (typeof fila.metadata === "string" ? JSON.parse(fila.metadata) : fila.metadata) ?? {};
-      const ids: number[] = (md.lote_quitado?.ids ?? []).map(Number).filter(Boolean);
-      const malos: string[] = [];
-      for (const id of ids) {
-        try { await cambiarRegulado(cookie, id, true); }
-        catch (e) { malos.push(`${id}: ${(e as Error).message}`); }
-      }
-      if (malos.length) {
-        console.error(`[aplicar-traslado-inventario] solicitud ${fila.id}: no se pudo devolver el control de lote: ${malos.join("; ")}`);
-        continue;
-      }
-      const { lote_quitado: _quitado, ...resto } = md;
-      const { error: e } = await _admin.from("approval_requests").update({ metadata: resto }).eq("id", fila.id);
-      if (e) console.error(`[aplicar-traslado-inventario] solicitud ${fila.id}: no se pudo borrar la marca de lote: ${e.message}`);
+      const marca: Destrabe = {
+        lote: (md.destrabe?.lote ?? []).map(Number).filter(Boolean),
+        pres: (md.destrabe?.pres ?? []).filter((p: { prod?: number; pres?: string }) => p?.prod && p?.pres),
+      };
+      const { pendiente, errores } = await deshacerDestrabe(cookie, marca);
+      if (errores.length)
+        console.error(`[aplicar-traslado-inventario] solicitud ${fila.id}: ficha sin devolver: ${errores.join("; ")}`);
+      const { destrabe: _marca, ...resto } = md;
+      const nueva = hayDestrabe(pendiente) ? { ...resto, destrabe: { ...pendiente, at: new Date().toISOString() } } : resto;
+      const { error: e } = await _admin.from("approval_requests").update({ metadata: nueva }).eq("id", fila.id);
+      if (e) console.error(`[aplicar-traslado-inventario] solicitud ${fila.id}: no se pudo actualizar la marca de destrabe: ${e.message}`);
     }
   };
 
@@ -396,10 +400,16 @@ Deno.serve(async (req) => {
        * `is: null` en la condición y no un chequeo previo: dos personas de la
        * sala que aprieten «ya llegó» a la vez pasan las dos la lectura de más
        * arriba, y acá la segunda no escribe. */
+      // Lo que quedó sin devolver de un destrabe (ver más abajo): si hay algo,
+      // viaja en `metadata.destrabe` también al marcar recibido, para que el
+      // barrido lo encuentre. `meta` es la foto de ANTES de cualquier marca.
+      let destrabePendiente: Destrabe | null = null;
+      const conMarca = (m: Record<string, unknown>) =>
+        destrabePendiente ? { ...m, destrabe: { ...destrabePendiente, at: new Date().toISOString() } } : m;
       const marcarRecibido = async (recibido: Record<string, unknown>) => {
         const { error: updErr } = await admin
           .from("approval_requests")
-          .update({ metadata: { ...meta, erp_recibido: recibido }, updated_at: new Date().toISOString() })
+          .update({ metadata: conMarca({ ...meta, erp_recibido: recibido }), updated_at: new Date().toISOString() })
           .eq("id", sol.id)
           .is("metadata->erp_recibido", null);
         if (updErr) throw updErr;
@@ -511,13 +521,67 @@ Deno.serve(async (req) => {
           error: `El traslado ${idTraslado} no muestra líneas para recibir.`,
         }, 409);
 
+      /* ── Lo que esta recepción le cambie a las fichas, para devolverlo ──
+       * Ver `_shared/erp-destrabe.ts`. Antes de tocar una ficha se anota en
+       * `metadata.destrabe`; al terminar se devuelve todo y se borra; si la
+       * llamada muere en el medio, `reactivarLotesHuerfanos` lo devuelve. */
+      const destrabe = destrabeVacio();
+      const nombres = new Map<number, string>();
+      const hayTiempoParaDestrabar = () => Date.now() - arranque < PRESUPUESTO - MARGEN_DESTRABE_MS;
+      const anotarMarca = async () => !(await admin.from("approval_requests")
+        .update({ metadata: { ...meta, destrabe: { ...destrabe, at: new Date().toISOString() } } })
+        .eq("id", sol.id)).error;
+      // Con esto puesto no se envía nada: se va al camino del fallo, que
+      // devuelve las fichas antes de contestar.
+      let noEnviar: string | null = null;
+
+      /* ── La presentación con que salió ya no está a la vista (2026-11-05) ──
+       * NOR CLAMIDA salió en caja de 30 y después le ocultaron esa
+       * presentación: la pantalla pinta el `<select>` VACÍO y el renglón no se
+       * puede recibir ni a mano. Y acá era peor que en pedidos: con un traslado
+       * de VARIOS productos ese renglón se SALTABA en silencio, se recibía el
+       * resto y la solicitud quedaba recibida completa. Ahora se muestra la
+       * presentación, se relee la pantalla, se recibe y se vuelve a ocultar. */
+      let filasR = filas;
+      const sinPres = filasSinPresentacion(filas);
+      if (sinPres.length) {
+        for (const s of sinPres) nombres.set(s.prod, s.nombre);
+        if (!hayTiempoParaDestrabar()) {
+          noEnviar = "Una presentación del traslado está oculta en la ficha y no quedaba tiempo para destrabarla. Volvé a intentarlo.";
+        } else {
+          const r = await presentacionesParaMostrar(cookie, sinPres)
+            .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
+          if (!r.ok) noEnviar = r.motivo;
+          else {
+            destrabe.pres = r.pres;
+            if (!(await anotarMarca())) {
+              destrabe.pres = [];
+              noEnviar = "No se pudo anotar el destrabe de la presentación. Volvé a intentarlo.";
+            } else {
+              try {
+                for (const p of r.pres) await mostrarPresentacion(cookie, p.prod, p.pres, true);
+                const pagina2 = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idTraslado)}`,
+                  undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+                filasR = [...pagina2.matchAll(/<tr>[\s\S]*?<\/tr>/g)].map((m) => m[0])
+                  .filter((tr) => /class="id_p"/.test(tr));
+              } catch (e) {
+                noEnviar = `No se pudo mostrar la presentación oculta: ${(e as Error).message}`;
+              }
+            }
+          }
+        }
+      }
+
       const partes: string[] = [];
+      // Renglones que siguen sin presentación: con uno solo NO se envía —
+      // mandar el resto sería recibir de menos sin que nadie lo diga.
+      let sinPresentacion = 0;
       // Los renglones que llegan SIN lote, por producto: son los candidatos a
       // la trampa del control de lote activado después del despacho (abajo).
       const sinLote = new Map<number, string>();
       let total = 0;
       let unidades = 0;
-      for (const tr of filas) {
+      for (const tr of filasR) {
         const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
         const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
         const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
@@ -525,6 +589,7 @@ Deno.serve(async (req) => {
         const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
         const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
         const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+        if (idProd && !idPres) sinPresentacion++;
         if (!idProd || !idPres) continue;
         // ⚠️ El octavo campo de `datos` acá NO es el lote: es lo ESPERADO. El
         // encabezado de la tabla lo dice —Esperado · Recibido · Lote · Vence— y
@@ -541,8 +606,9 @@ Deno.serve(async (req) => {
         total += Number(compra) * Number(esp);
         unidades += Number(esp);
       }
-      if (partes.length === 0)
-        return json({ ok: false, error: `No se pudo leer ni una línea del traslado ${idTraslado}.` }, 502);
+      if (!noEnviar && sinPresentacion > 0)
+        noEnviar = `${sinPresentacion} renglón(es) del traslado no tienen presentación en su ficha; no se recibe a medias.`;
+      if (!noEnviar && partes.length === 0) noEnviar = `No se pudo leer ni una línea del traslado ${idTraslado}.`;
 
       // Nombra a las DOS personas que el sistema no guarda —quien despachó y
       // quien recibe—, cada una con su sala. Misma gramática que el pedido y la
@@ -572,7 +638,7 @@ Deno.serve(async (req) => {
         destino: String(ubicDestino),
         id_traslado: idTraslado,
       }), { extra: { Referer: RECIBIR } }));
-      let resp = await enviarRecepcion();
+      let resp = noEnviar ? { ok: false, msg: noEnviar } : await enviarRecepcion();
 
       /* ── El control de lote se activó DESPUÉS de despachar (2026-11-05) ────
        *
@@ -590,67 +656,69 @@ Deno.serve(async (req) => {
        * otro y se devuelve tal cual. La reactivación va en `finally`: un
        * producto que se queda sin control de lote es el peor resultado, y si
        * pasa se anota y se dice en la respuesta. */
-      /* Dos frenos, los mismos que `trasladar-pedido-erp` (2026-11-05): allá una
-       * corrida murió entre quitar y volver a activar, y un `finally` no
-       * protege contra que maten el proceso — AMBROXOL quedó sin lote.
-       *   1. Sin tiempo para terminar el destrabe, no se empieza.
-       *   2. Lo que se va a quitar se anota en la solicitud ANTES de quitarlo
-       *      (`metadata.lote_quitado`); si la llamada muere, la siguiente lo
-       *      devuelve (`reactivarLotesHuerfanos`). */
-      const loteDestrabado: { id: number; nombre: string; reactivado: boolean; error?: string }[] = [];
-      const hayTiempoParaDestrabar = Date.now() - arranque < PRESUPUESTO - MARGEN_DESTRABE_MS;
-      if (!resp.ok && sinLote.size > 0 && !hayTiempoParaDestrabar) {
+      /* Lo que se va a quitar se anota ANTES de quitarlo, y la devolución va
+       * abajo junto con la de las presentaciones (`deshacerDestrabe`): el
+       * 2026-11-05 una corrida de pedidos murió entre quitar y volver a
+       * activar, y el `finally` de entonces nunca corrió — AMBROXOL quedó sin
+       * lote. Sin tiempo para terminar, no se empieza. */
+      if (!noEnviar && !resp.ok && sinLote.size > 0 && !hayTiempoParaDestrabar()) {
         resp = { ...resp, msg: `${resp.msg || "No se proporcionó un lote"} (volvé a intentarlo: no quedaba tiempo para destrabar el lote)` };
       }
-      if (!resp.ok && sinLote.size > 0 && hayTiempoParaDestrabar
+      if (!noEnviar && !resp.ok && sinLote.size > 0 && hayTiempoParaDestrabar()
           && await estadoDeRecepcion(cookie, idTraslado) !== "recibido") {
         const regulados: number[] = [];
         for (const id of sinLote.keys()) {
           try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
           catch { /* sin ficha legible no se toca */ }
         }
-        // Sin la marca escrita no se quita nada: es la única red si la
-        // llamada muere entre quitar y volver a activar.
-        const marcado = regulados.length > 0 && !(await admin.from("approval_requests")
-          .update({ metadata: { ...meta, lote_quitado: { ids: regulados, at: new Date().toISOString() } } })
-          .eq("id", sol.id)).error;
-        if (regulados.length && !marcado) {
-          resp = { ...resp, ok: false, msg: "No se pudo anotar el destrabe del lote; volvé a intentarlo." };
-        }
-        if (marcado) {
-          const quitados: number[] = [];
-          try {
-            // Se anota ANTES de escribir: si el guardado entra y la verificación
-            // lanza, igual hay que volver a activarlo (si nunca se quitó, el
-            // `cambiarRegulado(…, true)` de abajo no escribe nada).
-            for (const id of regulados) { quitados.push(id); await cambiarRegulado(cookie, id, false); }
-            resp = await enviarRecepcion();
-          } catch (e) {
-            resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
-          } finally {
-            for (const id of quitados) {
-              const nombre = sinLote.get(id) ?? String(id);
-              try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
-              catch {
-                // Un reintento antes de rendirse: dejarlo sin lote no es opción.
-                try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
-                catch (e) { loteDestrabado.push({ id, nombre, reactivado: false, error: (e as Error).message }); }
-              }
+        if (regulados.length) {
+          for (const id of regulados) nombres.set(id, sinLote.get(id) ?? String(id));
+          destrabe.lote = regulados;
+          // Sin la marca escrita no se quita nada: es la única red si la
+          // llamada muere entre quitar y volver a activar.
+          if (!(await anotarMarca())) {
+            destrabe.lote = [];
+            resp = { ...resp, ok: false, msg: "No se pudo anotar el destrabe del lote; volvé a intentarlo." };
+          } else {
+            try {
+              for (const id of regulados) await cambiarRegulado(cookie, id, false);
+              resp = await enviarRecepcion();
+            } catch (e) {
+              resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
             }
-          }
-          const sinReactivar = loteDestrabado.filter((x) => !x.reactivado);
-          if (sinReactivar.length)
-            console.error(`[aplicar-traslado-inventario] ${idTraslado}: quedaron SIN control de lote: `
-              + sinReactivar.map((x) => `${x.id} ${x.nombre}`).join(", "));
-          else {
-            // Todo devuelto: se borra la marca (`meta` es la foto de antes de
-            // ponerla). Si esto falla, el barrido lo reintenta: activar un
-            // producto que ya está activo no escribe nada.
-            const { error: e } = await admin.from("approval_requests").update({ metadata: meta }).eq("id", sol.id);
-            if (e) console.error(`[aplicar-traslado-inventario] ${idTraslado}: no se pudo borrar la marca de lote: ${e.message}`);
           }
         }
       }
+
+      // Se devuelven las fichas: control de lote activado y presentaciones
+      // ocultas otra vez. Lo que no se pueda queda en `metadata.destrabe` para
+      // el barrido; si todo volvió, la marca se borra.
+      let pendiente = destrabeVacio();
+      if (hayDestrabe(destrabe)) {
+        const r = await deshacerDestrabe(cookie, destrabe);
+        pendiente = r.pendiente;
+        if (r.errores.length)
+          console.error(`[aplicar-traslado-inventario] ${idTraslado}: ficha sin devolver: ${r.errores.join("; ")}`);
+        destrabePendiente = hayDestrabe(pendiente) ? pendiente : null;
+      }
+      // Misma forma que antes para quien la lea (`{ id, nombre, reactivado }`).
+      const loteDestrabado = destrabe.lote.map((id) => ({
+        id, nombre: nombres.get(id) ?? String(id), reactivado: !pendiente.lote.includes(id),
+      }));
+      const presentacionDestrabada = destrabe.pres.map((p) => ({
+        id: p.prod, nombre: nombres.get(p.prod) ?? String(p.prod), presentacion: p.pres,
+        oculta_de_nuevo: !pendiente.pres.some((x) => x.prod === p.prod && x.pres === p.pres),
+      }));
+      const detalleDestrabe = {
+        ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
+        ...(presentacionDestrabada.length ? { presentacion_destrabada: presentacionDestrabada } : {}),
+      };
+      // Para la salida SIN recibir: la marca queda sólo si hay algo pendiente.
+      const cerrarMarcaSinRecibir = async () => {
+        if (!hayDestrabe(destrabe)) return;
+        const { error: e } = await admin.from("approval_requests").update({ metadata: conMarca(meta) }).eq("id", sol.id);
+        if (e) console.error(`[aplicar-traslado-inventario] ${idTraslado}: no se pudo actualizar la marca de destrabe: ${e.message}`);
+      };
       /* ── Un «no» del sistema no siempre significa que no entró ────────────
        *
        * Es la otra mitad de lo mismo: el 2026-08-17 hubo DIEZ respuestas 502 de
@@ -672,12 +740,13 @@ Deno.serve(async (req) => {
             lineas: partes.length, unidades, total: Number(total.toFixed(4)),
             via: "sistema",
             msg: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
-            ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
+            ...detalleDestrabe,
           });
+        await cerrarMarcaSinRecibir();
         return json({
-          ok: false, error: `El sistema no aceptó la recepción: ${resp.msg || "sin detalle"}`,
-          ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
-        }, 502);
+          ok: false, error: noEnviar ?? `El sistema no aceptó la recepción: ${resp.msg || "sin detalle"}`,
+          ...detalleDestrabe,
+        }, noEnviar ? 409 : 502);
       }
 
       return await marcarRecibido({
@@ -685,7 +754,7 @@ Deno.serve(async (req) => {
         id_traslado: idTraslado, concepto,
         lineas: partes.length, unidades, total: Number(total.toFixed(4)),
         msg: resp.msg,
-        ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
+        ...detalleDestrabe,
       });
     }
 

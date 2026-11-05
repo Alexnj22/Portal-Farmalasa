@@ -30,6 +30,10 @@ import {
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import { cambiarRegulado, leerFichaDe } from "../_shared/erp-regulado.ts";
+import {
+  deshacerDestrabe, destrabeVacio, filasSinPresentacion, hayDestrabe, leerMarca, MARCA_DESTRABE, marcaDe,
+  mostrarPresentacion, presentacionesParaMostrar,
+} from "../_shared/erp-destrabe.ts";
 
 // Mueve al sistema de origen el pedido de reposición que Bodega ya terminó de
 // preparar. Hasta hoy ese movimiento se tecleaba a mano: el portal solo dejaba
@@ -84,13 +88,11 @@ const PRESUPUESTO_BG_MS = 240_000; // background: corto y se retoma, nunca una c
 // Ver `_shared/relojDelWorker.ts`.
 const MARGEN_DEL_WORKER_MS = 120_000;
 
-// El destrabe del control de lote son ~6 viajes al sistema (leer, quitar,
-// releer, recibir, activar, releer). No se empieza con menos que esto por
-// delante: a medio camino, el producto queda sin lote.
+// Destrabar una ficha (control de lote o presentación oculta) son ~6 viajes al
+// sistema (leer, cambiar, releer, recibir, devolver, releer). No se empieza
+// con menos que esto por delante: a medio camino, la ficha queda cambiada.
+// Ver `_shared/erp-destrabe.ts`.
 const MARGEN_DESTRABE_MS = 45_000;
-// La marca que una línea lleva mientras a sus productos les falta el control
-// de lote. Si la ve una corrida posterior, la corrida que la puso murió.
-const MARCA_LOTE_QUITADO = "LOTE QUITADO: ";
 
 // Cuánto tiene que llevar tomada una línea de DESPACHO para buscar su traslado.
 // La corrida que la tomó ya murió (si no, la fila no se habría adoptado), y el
@@ -586,32 +588,31 @@ Deno.serve(async (req) => {
       let recibidas = 0;
       const fallos: { clave: string; error: string }[] = [];
 
-      // Productos que una corrida muerta dejó sin control de lote: se les
-      // devuelve y se borra la marca. Lo que no se pueda devolver queda en
+      // Fichas que una corrida muerta dejó cambiadas (sin control de lote, o
+      // con una presentación a la vista que estaba oculta): se devuelven y se
+      // borra la marca. Lo que no se pueda devolver se re-anota y queda en
       // `fallos` y en el registro — nunca en silencio.
       const reactivarHuerfanos = async (cookie: string) => {
         const { data: marcadas, error } = await admin.from("pedido_traslado_linea")
           .select("id, clave, aviso")
           .eq("erp_sucursal_id", sucId)
-          .like("aviso", `${MARCA_LOTE_QUITADO}%`)
+          .like("aviso", `${MARCA_DESTRABE}%`)
           .lt("updated_at", new Date(Date.now() - 3 * 60_000).toISOString())
           .limit(50);
-        if (error) { console.error(`[trasladar] no se pudieron leer las marcas de lote: ${error.message}`); return; }
+        if (error) { console.error(`[trasladar] no se pudieron leer las marcas de destrabe: ${error.message}`); return; }
         for (const m of marcadas ?? []) {
-          const ids = String(m.aviso).slice(MARCA_LOTE_QUITADO.length).split(",").map(Number).filter(Boolean);
-          const malos: string[] = [];
-          for (const id of ids) {
-            try { await cambiarRegulado(cookie, id, true); }
-            catch (e) { malos.push(`${id}: ${(e as Error).message}`); }
-          }
-          if (malos.length) {
-            console.error(`[trasladar] ${m.clave}: no se pudo devolver el control de lote: ${malos.join("; ")}`);
-            fallos.push({ clave: String(m.clave), error: `Sin control de lote: ${malos.join("; ")}` });
-            continue;
+          const marca = leerMarca(m.aviso);
+          if (!marca) continue;
+          const { pendiente, errores } = await deshacerDestrabe(cookie, marca);
+          if (errores.length) {
+            console.error(`[trasladar] ${m.clave}: no se pudo devolver la ficha: ${errores.join("; ")}`);
+            fallos.push({ clave: String(m.clave), error: `Ficha sin devolver: ${errores.join("; ")}` });
           }
           await anotar(
-            admin.from("pedido_traslado_linea").update({ aviso: null, updated_at: new Date().toISOString() }).eq("id", m.id),
-            `la marca de lote de ${m.clave}`,
+            admin.from("pedido_traslado_linea")
+              .update({ aviso: hayDestrabe(pendiente) ? marcaDe(pendiente) : null, updated_at: new Date().toISOString() })
+              .eq("id", m.id),
+            `la marca de destrabe de ${m.clave}`,
             (msg) => fallos.push({ clave: String(m.clave), error: msg }),
           );
         }
@@ -738,6 +739,55 @@ Deno.serve(async (req) => {
             continue;
           }
 
+          /* ── Lo que esta línea le cambie a las fichas, para devolverlo ──────
+           * Ver `_shared/erp-destrabe.ts`. Antes de tocar una ficha se anota en
+           * `aviso` (la marca); al terminar se devuelve todo y se borra; si el
+           * proceso muere en el medio, `reactivarHuerfanos` lo devuelve. */
+          const destrabe = destrabeVacio();
+          const nombres = new Map<number, string>();
+          const hayTiempoParaDestrabar = () => Date.now() - arranque < presupuesto - MARGEN_DESTRABE_MS;
+          const anotarMarca = async () => !(await admin.from("pedido_traslado_linea")
+            .update({ aviso: marcaDe(destrabe), updated_at: new Date().toISOString() }).eq("id", ln.id)).error;
+          // Con esto puesto no se envía nada: se va directo al camino del fallo,
+          // que es el que devuelve las fichas y deja la línea para reintentar.
+          let noEnviar: string | null = null;
+
+          /* ── La presentación con que salió ya no está a la vista (2026-11-05) ──
+           * NOR CLAMIDA salió en caja de 30 y después le ocultaron esa
+           * presentación: la pantalla pinta el `<select>` VACÍO y el renglón no
+           * se puede recibir ni a mano. Antes se SALTABA en silencio. Ahora se
+           * muestra la presentación, se relee la pantalla, se recibe y se vuelve
+           * a ocultar — lo que se hizo a mano ese día. */
+          let filasR = filas;
+          const sinPres = filasSinPresentacion(filas);
+          if (sinPres.length) {
+            for (const s of sinPres) nombres.set(s.prod, s.nombre);
+            if (!hayTiempoParaDestrabar()) {
+              noEnviar = "Una presentación del traslado está oculta en la ficha (se reintenta: no quedaba tiempo para destrabarla).";
+            } else {
+              const r = await presentacionesParaMostrar(cookie, sinPres)
+                .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
+              if (!r.ok) noEnviar = r.motivo;
+              else {
+                destrabe.pres = r.pres;
+                if (!(await anotarMarca())) {
+                  destrabe.pres = [];
+                  noEnviar = "No se pudo anotar el destrabe de la presentación; se reintenta.";
+                } else {
+                  try {
+                    for (const p of r.pres) await mostrarPresentacion(cookie, p.prod, p.pres, true);
+                    const pagina2 = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(ln.id_traslado))}`,
+                      undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+                    filasR = [...pagina2.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
+                      .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+                  } catch (e) {
+                    noEnviar = `No se pudo mostrar la presentación oculta: ${(e as Error).message}`;
+                  }
+                }
+              }
+            }
+          }
+
           // Se recibe COMPLETO lo que se despachó. Recibir de menos es declarar un
           // faltante, y eso necesita a alguien mirando la caja, no una función:
           // esa diferencia se cuenta en el portal, en la pantalla de recepción.
@@ -745,8 +795,11 @@ Deno.serve(async (req) => {
           // Renglones que llegan SIN lote, por producto: candidatos a la trampa
           // del control de lote activado después del despacho (ver abajo).
           const sinLote = new Map<number, string>();
+          // Renglones que siguen sin presentación: con uno solo NO se envía —
+          // mandar el resto sería recibir de menos sin que nadie lo diga.
+          let sinPresentacion = 0;
           let total = 0;
-          for (const tr of filas) {
+          for (const tr of filasR) {
             const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
             const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
             const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
@@ -754,6 +807,7 @@ Deno.serve(async (req) => {
             const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
             const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
             const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+            if (idProd && !idPres) sinPresentacion++;
             if (!idProd || !idPres) continue;
             // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. El encabezado
             // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
@@ -768,21 +822,13 @@ Deno.serve(async (req) => {
             total += Number(compra) * Number(esp);
           }
 
-          if (partes.length === 0) {
-            // Devolverla a 'enviada' es lo que permite reintentarla. Si esta
-            // escritura falla, la línea se queda en 'recibiendo' y NADIE la
-            // vuelve a tomar: el rescate de arriba tarda 15 minutos y el bucle
-            // sólo levanta las 'enviada'.
-            await anotar(
-              admin.from("pedido_traslado_linea")
-                .update({ estado: "enviada", updated_at: new Date().toISOString() })
-                .eq("id", ln.id),
-              `la devuelta a la cola de ${ln.clave}`,
-              (m) => fallos.push({ clave: String(ln.clave), error: m }),
-            );
-            fallos.push({ clave: String(ln.clave), error: "No se pudo leer ni una línea del traslado." });
-            continue;
-          }
+          // Sin líneas, o con un renglón todavía sin presentación, no se envía:
+          // la línea vuelve a 'enviada' por el camino del fallo, que además
+          // devuelve las fichas. Si esa escritura fallara la línea quedaría en
+          // 'recibiendo' hasta el rescate de 15 minutos.
+          if (!noEnviar && sinPresentacion > 0)
+            noEnviar = `${sinPresentacion} renglón(es) del traslado sin presentación en la ficha; no se recibe a medias.`;
+          if (!noEnviar && partes.length === 0) noEnviar = "No se pudo leer ni una línea del traslado.";
 
           const { concepto } = armarConcepto(`${ln.clave} REC ${yo}`);
           const enviarRecepcion = async () => leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
@@ -795,7 +841,7 @@ Deno.serve(async (req) => {
             destino: String(ubicDestino),
             id_traslado: String(ln.id_traslado),
           }), { extra: { Referer: RECIBIR } }));
-          let resp = await enviarRecepcion();
+          let resp = noEnviar ? { ok: false, msg: noEnviar } : await enviarRecepcion();
 
           /* ── El control de lote se activó DESPUÉS de despachar (2026-11-05) ──
            *
@@ -809,65 +855,59 @@ Deno.serve(async (req) => {
            * Se le QUITA el control de lote al producto, se recibe y se le
            * VUELVE a activar, verificando cada cambio releyendo la ficha. Sólo
            * si la recepción falló, no quedó recibida igual, y el producto sin
-           * lote HOY es regulado. La reactivación va en `finally`. */
-          /* Dos frenos que nacieron el mismo día (2026-11-05, 15:04 SV): una
-           * corrida de Salud 4 se quedó sin tiempo JUSTO después de quitarle el
-           * control de lote a AMBROXOL JBE X 120ML NORDIC, el worker murió y el
-           * `finally` nunca corrió — el producto quedó sin lote. Un `finally` no
-           * protege contra que maten el proceso.
-           *   1. No se EMPIEZA un destrabe sin tiempo para terminarlo: la línea
-           *      vuelve a la cola y la toma la corrida siguiente.
-           *   2. Lo que se va a quitar se anota en la línea ANTES de quitarlo
-           *      (`LOTE QUITADO: …`). Si el proceso muere, la próxima corrida de
-           *      esa sala lo encuentra y lo vuelve a activar (`reactivarHuerfanos`). */
-          const loteDestrabado: { id: number; nombre: string; reactivado: boolean; error?: string }[] = [];
-          const hayTiempoParaDestrabar = Date.now() - arranque < presupuesto - MARGEN_DESTRABE_MS;
-          if (!resp.ok && sinLote.size > 0 && !hayTiempoParaDestrabar) {
+           * lote HOY es regulado. La devolución va más abajo, junto con la de
+           * las presentaciones (`deshacerDestrabe`). Lo que se le va a quitar
+           * se anota ANTES: el 2026-11-05 una corrida murió justo después de
+           * quitárselo a AMBROXOL y el `finally` de entonces nunca corrió. */
+          if (!noEnviar && !resp.ok && sinLote.size > 0 && !hayTiempoParaDestrabar()) {
             resp = { ok: false, msg: `${resp.msg || "No se proporcionó un lote"} (se reintenta: no quedaba tiempo para destrabar el lote)` };
           }
-          if (!resp.ok && sinLote.size > 0 && hayTiempoParaDestrabar
+          if (!noEnviar && !resp.ok && sinLote.size > 0 && hayTiempoParaDestrabar()
               && await estadoDeRecepcion(cookie, String(ln.id_traslado)) !== "recibido") {
             const regulados: number[] = [];
             for (const id of sinLote.keys()) {
               try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
               catch { /* sin ficha legible no se toca */ }
             }
-            // Sin la marca escrita no se quita nada: es la única red si el
-            // proceso muere entre quitar y volver a activar.
-            const marcado = regulados.length > 0 && !(await admin.from("pedido_traslado_linea")
-              .update({ aviso: `${MARCA_LOTE_QUITADO}${regulados.join(",")}`, updated_at: new Date().toISOString() })
-              .eq("id", ln.id)).error;
-            if (regulados.length && !marcado) {
-              resp = { ok: false, msg: "No se pudo anotar el destrabe del lote; se reintenta." };
-            }
-            if (marcado) {
-              const quitados: number[] = [];
-              try {
-                // Se anota ANTES de escribir: si el guardado entra y la
-                // verificación lanza, igual hay que volver a activarlo.
-                for (const id of regulados) { quitados.push(id); await cambiarRegulado(cookie, id, false); }
-                resp = await enviarRecepcion();
-              } catch (e) {
-                resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
-              } finally {
-                for (const id of quitados) {
-                  const nombre = sinLote.get(id) ?? String(id);
-                  try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
-                  catch {
-                    // Un reintento antes de rendirse: dejarlo sin lote no es opción.
-                    try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
-                    catch (e) { loteDestrabado.push({ id, nombre, reactivado: false, error: (e as Error).message }); }
-                  }
+            if (regulados.length) {
+              for (const id of regulados) nombres.set(id, sinLote.get(id) ?? String(id));
+              destrabe.lote = regulados;
+              // Sin la marca escrita no se quita nada: es la única red si el
+              // proceso muere entre quitar y volver a activar.
+              if (!(await anotarMarca())) {
+                destrabe.lote = [];
+                resp = { ok: false, msg: "No se pudo anotar el destrabe del lote; se reintenta." };
+              } else {
+                try {
+                  for (const id of regulados) await cambiarRegulado(cookie, id, false);
+                  resp = await enviarRecepcion();
+                } catch (e) {
+                  resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
                 }
-              }
-              const sinReactivar = loteDestrabado.filter((x) => !x.reactivado);
-              if (sinReactivar.length) {
-                const lista = sinReactivar.map((x) => `${x.id} ${x.nombre}`).join(", ");
-                console.error(`[trasladar] ${ln.clave}: quedaron SIN control de lote: ${lista}`);
-                fallos.push({ clave: String(ln.clave), error: `Quedaron sin control de lote: ${lista}` });
               }
             }
           }
+
+          // Se devuelven las fichas: control de lote activado y presentaciones
+          // ocultas otra vez. Lo que no se pueda queda como marca en `aviso`
+          // —la toma `reactivarHuerfanos`— y en `fallos`.
+          let pendiente = destrabeVacio();
+          if (hayDestrabe(destrabe)) {
+            const r = await deshacerDestrabe(cookie, destrabe);
+            pendiente = r.pendiente;
+            if (r.errores.length) {
+              console.error(`[trasladar] ${ln.clave}: ficha sin devolver: ${r.errores.join("; ")}`);
+              fallos.push({ clave: String(ln.clave), error: `Ficha sin devolver: ${r.errores.join("; ")}` });
+            }
+          }
+          // Qué escribir en `aviso` en cada salida: la marca si quedó algo sin
+          // devolver; si no, borrarla (o el texto que corresponda).
+          const avisoCon = (texto: string | null) => hayDestrabe(pendiente) ? marcaDe(pendiente) : texto;
+          const nombre = (id: number) => nombres.get(id) ?? String(id);
+          const descripcionDestrabe = [
+            destrabe.lote.length ? `control de lote de ${destrabe.lote.map(nombre).join(", ")}` : "",
+            destrabe.pres.length ? `presentación oculta de ${destrabe.pres.map((p) => nombre(p.prod)).join(", ")}` : "",
+          ].filter(Boolean).join("; ");
 
           if (!resp.ok) {
             // Un fallo NO prueba que no entró: el sistema contesta cosas que no
@@ -883,7 +923,7 @@ Deno.serve(async (req) => {
               await anotar(
                 admin.from("pedido_traslado_linea").update({
                   estado: "recibida", recibido_at: new Date().toISOString(), recibido_por: quien!.id,
-                  aviso: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+                  aviso: avisoCon(`El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`),
                   updated_at: new Date().toISOString(),
                 }).eq("id", ln.id),
                 `que ${ln.clave} entró pese al fallo del sistema`,
@@ -896,9 +936,9 @@ Deno.serve(async (req) => {
             await anotar(
               admin.from("pedido_traslado_linea")
                 .update({ estado: "enviada", error_msg: resp.msg || "El sistema no aceptó la recepción.",
-                          // Si hubo destrabe, ya se reactivó (o quedó en `fallos`):
-                          // la marca se borra para que nadie lo vuelva a tocar.
-                          ...(loteDestrabado.length && loteDestrabado.every((x) => x.reactivado) ? { aviso: null } : {}),
+                          // Si hubo destrabe: la marca se borra si todo se devolvió,
+                          // y se queda con lo pendiente si no.
+                          ...(hayDestrabe(destrabe) ? { aviso: avisoCon(null) } : {}),
                           updated_at: new Date().toISOString() })
                 .eq("id", ln.id),
               `la devuelta a la cola de ${ln.clave} tras el fallo del sistema`,
@@ -920,9 +960,8 @@ Deno.serve(async (req) => {
               recibido_at: new Date().toISOString(),
               recibido_por: quien!.id,
               error_msg: null,
-              ...(loteDestrabado.length ? {
-                aviso: `Se recibió quitando y volviendo a activar el control de lote de: `
-                  + loteDestrabado.map((x) => `${x.nombre}${x.reactivado ? "" : " (QUEDÓ SIN REACTIVAR)"}`).join(", "),
+              ...(hayDestrabe(destrabe) ? {
+                aviso: avisoCon(`Se recibió destrabando la ficha y dejándola como estaba: ${descripcionDestrabe}`),
               } : {}),
               updated_at: new Date().toISOString(),
             }).eq("id", ln.id),

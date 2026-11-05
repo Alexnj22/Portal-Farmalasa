@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.21 — Recepción de traslados: presentación oculta después de despachar
+
+- NOR CLAMIDA salió de Bodega en caja de 30 y después le ocultaron esa
+  presentación en la ficha: la pantalla de recibir pinta la presentación
+  VACÍA y no se puede recibir ni a mano. Ahora pedidos y solicitudes la
+  muestran, releen la pantalla, reciben y la vuelven a ocultar, verificando
+  la ficha en cada paso (`_shared/erp-destrabe.ts`).
+- En **Solicitudes** era peor: con un traslado de varios productos ese
+  renglón se saltaba en silencio y la solicitud quedaba recibida completa.
+  Ahora, si un renglón sigue sin presentación, no se recibe a medias.
+- Lote y presentación comparten la misma red: se anota lo que se va a
+  cambiar ANTES de cambiarlo (`aviso` = `DESTRABE: {…}` en pedidos,
+  `metadata.destrabe` en solicitudes), se devuelve todo en un solo lugar, y lo
+  que quede sin devolver lo deshace la siguiente llamada.
+- Probado contra el sistema: lectura de la página real del traslado 61178,
+  búsqueda de la presentación oculta, y mostrar/re-ocultar NOR CLAMIDA
+  (quedó oculta, verificado).
+
 ## v2.1452.20 — Revisión de factor: una sala corregida sin contar ya no aparece «por contar»
 
 - Al corregir una sala, su fila sale de «Existencia por corregir» en cuanto el

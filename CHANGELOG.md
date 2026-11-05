@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.27 — Inicio: la marca de bajo mínimo ya no tapa el nombre
+
+- En Top productos, la marca «bajo mín.» pasa al renglón de la barra: junto al nombre, en el widget de una columna, lo cortaba a «GLIME…». En toda la red dice «bajo mín. · 4 salas» en vez de «en 4».
+
 ## v2.1451.26 — Inicio: Top productos marca lo que está bajo su mínimo
 
 - **Top productos del mes marca los que están bajo su mínimo.** Al lado del nombre aparece «bajo mín. 6/9» (existencia / mínimo) cuando se mira una sala, o «bajo mín. en 4» (salas) en toda la red; al pasar el puntero dice cuáles. El resumen del widget compacto dice cuántos del top están bajo su mínimo.

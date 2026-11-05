@@ -3651,25 +3651,24 @@ const DashboardView = ({ openModal }) => {
                 <div key={p.erp_product_id} className="flex items-center gap-2.5 py-1.5">
                   <span className="text-micro font-black text-content-3 w-4 shrink-0 text-right">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 min-w-0">
-                      <p className="text-caption font-semibold text-content-2 truncate leading-tight min-w-0">{p.descripcion}</p>
+                    <p className="text-caption font-semibold text-content-2 truncate leading-tight">{p.descripcion}</p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      <div className="flex-1 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
+                        <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }}/>
+                      </div>
                       {bajoMinimo[p.erp_product_id] && (() => {
                         const b = bajoMinimo[p.erp_product_id];
-                        // En una sala: «6/9». En la red: en cuántas salas.
+                        // Va en el renglón de la barra y no junto al nombre: en 1 columna
+                        // se comía el nombre («GLIME…»). Acá encoge la barra. En una sala: «6/9». En la red: en cuántas salas.
                         const texto = topBranch || getScope('dash_top_productos') !== 'ALL'
                           ? `bajo mín. ${b.existencia}/${b.minimo}`
-                          : `bajo mín. en ${b.salas_bajo}`;
+                          : `bajo mín. · ${b.salas_bajo} sala${b.salas_bajo === 1 ? '' : 's'}`;
                         return (
                           <span title={`Bajo el mínimo en: ${(b.salas || []).join(', ')}`} className="shrink-0">
                             <Badge variant="warning" size="sm">{texto}</Badge>
                           </span>
                         );
                       })()}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <div className="flex-1 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
-                        <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }}/>
-                      </div>
                       <span className="text-micro font-black text-content-3 shrink-0">{fmt(p.neto)}</span>
                     </div>
                   </div>

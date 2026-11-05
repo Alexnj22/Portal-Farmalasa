@@ -825,7 +825,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                 {!pista?.compra && pista?.gasto && !envio?.enviada && !estadoCarga && (
                     <Notice variant="info" icon={HelpCircle}>
                         El proveedor está clasificado como <b>{pista.gasto}</b>: parece un gasto y no
-                        mercadería. Si no va a Bodega, sácala con «No va a Bodega».
+                        mercadería. Si no es para el inventario, quítala con «No es mercadería».
                     </Notice>
                 )}
                 {!p && !error && <p className="text-label text-content-3">Leyendo el documento y su archivo…</p>}
@@ -1188,13 +1188,23 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
 
             <LiquidModal.Footer>
                 {saliendo ? (
-                <div className="flex items-center gap-2 w-full flex-wrap">
-                    <p className="text-label text-content-2 flex-1 min-w-[12rem]">¿Qué no va a Bodega?</p>
-                    <Button size="sm" variant="ghost" disabled={resolviendo} onClick={() => setSaliendo(false)}>Cancelar</Button>
-                    <Button size="sm" variant="secondary" loading={resolviendo}
-                        onClick={() => sacarDeLaLista('no_va_a_bodega')}>Sólo esta factura</Button>
-                    <Button size="sm" variant="secondary" loading={resolviendo} disabled={!doc.emisor_nit}
-                        onClick={() => setConfProv(true)}>Nada de este proveedor</Button>
+                // Bodega lo confundió con «mandarla a una sucursal» (2026-11-05):
+                // el rótulo viejo, «No va a Bodega», se leía como un destino.
+                // Lo que hace es SACARLA de la lista sin cargar nada, y eso es
+                // lo que tiene que decir antes del clic.
+                <div className="flex flex-col gap-2 w-full">
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        <b>Esta factura no se carga en ningún inventario</b> — ni en Bodega ni en las salas. Sólo sale
+                        de esta lista. Úsalo si es un gasto o servicio (luz, ferretería, papelería) o si ya se cargó.
+                        <br />¿Querías mandar productos a una sala? Eso es <b>«Enviar a sucursales»</b>, en cada producto.
+                    </Notice>
+                    <div className="flex items-center gap-2 flex-wrap justify-end">
+                        <Button size="sm" variant="primary" disabled={resolviendo} onClick={() => setSaliendo(false)}>No, volver</Button>
+                        <Button size="sm" variant="secondary" loading={resolviendo}
+                            onClick={() => sacarDeLaLista('no_va_a_bodega')}>Sí, quitar esta factura</Button>
+                        <Button size="sm" variant="ghost" loading={resolviendo} disabled={!doc.emisor_nit}
+                            onClick={() => setConfProv(true)}>Quitar todo lo de este proveedor</Button>
+                    </div>
                 </div>
                 ) : (
                 <div className="flex items-center gap-2 w-full flex-wrap">
@@ -1208,7 +1218,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                         </p>
                     )}
                     {puedeEditar && !papel && !envio?.enviada && !estadoCarga && (
-                        <Button size="sm" variant="ghost" onClick={() => setSaliendo(true)}>No va a Bodega</Button>
+                        <Button size="sm" variant="ghost" onClick={() => setSaliendo(true)}>No es mercadería</Button>
                     )}
                     {puedeEditar && papel && !envio?.enviada && onCorregirPapel && (
                         <Button size="sm" variant="ghost" onClick={() => { clearDraft(claveBorrador); onCorregirPapel(); }}>Corregir factura</Button>
@@ -1232,7 +1242,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             <ConfirmModal isOpen={confProv} onClose={() => !resolviendo && setConfProv(false)}
                 onConfirm={async () => { await sacarDeLaLista('proveedor_no_va'); setConfProv(false); }}
                 isProcessing={resolviendo} isDestructive={false}
-                title="¿Nada de este proveedor va a Bodega?"
+                title="¿Quitar todo lo de este proveedor?"
                 message={`Las facturas de ${doc.emisor_nombre} salen de esta lista: las de hoy y todas las que lleguen después.`}
                 confirmText="Sí, sacarlas" />
             <ConfirmModal isOpen={confirmando} onClose={() => !enviando && setConf(false)} onConfirm={enviar}

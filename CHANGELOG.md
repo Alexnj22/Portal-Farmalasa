@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.3 — Cargar compra: «No es mercadería» en vez de «No va a Bodega»
+
+Bodega apretó «No va a Bodega» creyendo que mandaba la factura a una sucursal, y la factura salió de la cola sin cargarse (MONTREAL, $24.18; ya se devolvió). El botón ahora dice **«No es mercadería»**, y antes de quitarla aparece un aviso: no se carga en ningún inventario, sirve para gastos o facturas ya cargadas, y mandar productos a una sala es «Enviar a sucursales». El botón destacado es «No, volver».
+
 ## v2.1453.2 — Cargar compra: al cargar se cierra y avisa
 
 Después de «Cargar en Bodega» el documento se quedaba abierto mostrando el resultado, y Bodega lo leía como que se había vuelto a abrir. Ahora, si entró, el modal se cierra, la lista se actualiza y un aviso dice «Compra cargada · <proveedor> · <total> entró a Bodega» (o que se confirma en unos minutos si todavía no se verificó). Si falla o no se pudo confirmar, el modal sigue abierto con el detalle.

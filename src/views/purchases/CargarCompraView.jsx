@@ -48,6 +48,7 @@ const VISTAS = [
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import { useToastStore } from '@nucleo/store/toastStore';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
@@ -664,6 +665,18 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                     producto: x0?.descripcion ?? null, antes: ant, ahora: x.venta,
                 });
             }
+        }
+        // Entró: se cierra y lo dice un aviso (Bodega, 2026-11-05: quedarse en
+        // el mismo documento después de cargarlo se leía como «volvió a
+        // abrirse»). Si no se pudo confirmar o falló, el modal sigue abierto
+        // con el detalle, que es donde hay que actuar.
+        if (r?.enviada === true && !e) {
+            clearDraft(claveBorrador);
+            useToastStore.getState().showToast('Compra cargada',
+                `${doc.emisor_nombre} · ${formatMoney(doc.monto_total)} ${r.verificada ? 'entró a Bodega.' : 'se mandó a Bodega; se confirma en unos minutos.'}`,
+                'success');
+            onCerrar();
+            return;
         }
         setEnvio({ ...(r ?? {}), error: e });
         setRes(null);

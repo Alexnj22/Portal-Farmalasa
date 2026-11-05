@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.2 — Cargar compra: al cargar se cierra y avisa
+
+Después de «Cargar en Bodega» el documento se quedaba abierto mostrando el resultado, y Bodega lo leía como que se había vuelto a abrir. Ahora, si entró, el modal se cierra, la lista se actualiza y un aviso dice «Compra cargada · <proveedor> · <total> entró a Bodega» (o que se confirma en unos minutos si todavía no se verificó). Si falla o no se pudo confirmar, el modal sigue abierto con el detalle.
+
 ## v2.1453.1 — Cargar compra: «Otra cantidad» se valida contra las presentaciones
 
 «Otra cantidad de unidades» dejaba escribir cualquier número aunque el producto no tuviera cómo recibirlo, y el error salía recién al revisar la carga (Bodega). Ahora se valida al escribir, con las mismas reglas que el servidor: si el número no es un múltiplo de lo facturado lo dice y propone los que sí sirven (y si es menos, manda a «¿Llegó todo? → Faltó»); si coincide con una presentación dice «Entra como 5 × CAJA (30)»; si no, entra suelto en la de 1 unidad; y si el producto no tiene ni esa, dice qué presentaciones tiene y que hay que elegir una o crearle la de 1 unidad.

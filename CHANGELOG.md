@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.38 — Se borra una prueba vacía
+
+- `tests/unit/facturasSala.test.js` quedó vacío en v2.1451.37 en vez de borrado (probaba un módulo que se quitó en v2.1432.0); vacío, vitest lo cuenta como fallo.
+
 ## v2.1451.37 — Gates y pruebas en verde: tipos, diseño y pruebas de tickets al día
 
 Sin cambios para quien usa el portal salvo el primero. Era lo que estaba en rojo:

@@ -43,6 +43,9 @@ await build({
     // pdfmake sólo se importa dinámicamente al descargar; acá no se usa y su
     // build de navegador no resuelve en Node.
     external: ['pdfmake/*'],
+    // Los mismos alias que vite.config: el núcleo pide la plataforma por
+    // `@plataforma/…` (la descarga del PDF), y sin esto esbuild no la encuentra.
+    alias: { '@nucleo': './src', '@plataforma': './src/plataforma' },
     logLevel: 'silent',
 });
 const { construirCorteZDoc } = await import(`file://${salida}`);

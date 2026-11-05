@@ -4,6 +4,7 @@
 // qty siempre en PACKS (cajas/blisters/frascos), no en unidades.
 
 import { leerDireccionesDeSalas } from '../data/pedidos';
+import { descargarPdf } from '@plataforma/descargas';
 
 // pdfmake se carga BAJO DEMANDA. Estático costaba 809 kB gzip en el chunk de
 // PedidosView (vfs_fonts son las fuentes embebidas en base64): se bajaban al
@@ -69,7 +70,7 @@ async function getAddressMap() {
 
 async function downloadPdf(docDefinition, filename) {
     const pdfMake = await getPdfMake();
-    pdfMake.createPdf(docDefinition).download(filename);
+    await descargarPdf(pdfMake.createPdf(docDefinition), filename);
 }
 
 

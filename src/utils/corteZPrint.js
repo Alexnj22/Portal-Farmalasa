@@ -1,4 +1,5 @@
 import { formatMoney } from './formatNumber';
+import { descargarPdf } from '@plataforma/descargas';
 import { EMPRESA } from '../constants/empresa';
 import { NOMBRES_DE_MES } from './fecha';
 
@@ -261,7 +262,7 @@ export function construirCorteZDoc(filas) {
 export async function descargarCorteZPdf(filas, nombreArchivo) {
     if (!filas?.length) throw new Error('No hay Corte Z para descargar en este período.');
     const pdfMake = await getPdfMake();
-    pdfMake.createPdf(construirCorteZDoc(filas)).download(nombreArchivo);
+    await descargarPdf(pdfMake.createPdf(construirCorteZDoc(filas)), nombreArchivo);
 }
 
 // ─── El mismo papel en HTML, para el teléfono ───────────────────────────────

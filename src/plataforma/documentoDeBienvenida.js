@@ -37,6 +37,7 @@
  */
 
 import { EMPRESA } from '@nucleo/constants/empresa';
+import { descargarPdf } from '@plataforma/descargas';
 import { comoSeLlamaLaSede } from '@nucleo/utils/marcaDeLaSala';
 
 // pdfmake y jsbarcode van por `await import()`: son las dos librerías pesadas de
@@ -995,7 +996,7 @@ export async function descargarDocumentoDeBienvenida(datos) {
             ...datos, barrasPng, retratoPng, iconoPng, logoPng,
             previsional: orientacionPrevisional(datos),
         });
-        pdfMake.createPdf(def).download(nombreDelArchivo(datos?.nombre));
+        await descargarPdf(pdfMake.createPdf(def), nombreDelArchivo(datos?.nombre));
         return { ok: true };
     } catch (e) {
         return { ok: false, motivo: String(e?.message || e) };
@@ -1073,7 +1074,7 @@ export async function descargarHojaDeCarnes(personas, { archivo = 'carnes.pdf' }
                 || (p.foto && await fotoComoDiscoPng(p.foto))
                 || await avatarComoPng(p.nombre),
         })));
-        pdfMake.createPdf(definicionDeHojaDeCarnes(carnes, { logoPng, iconoPng })).download(archivo);
+        await descargarPdf(pdfMake.createPdf(definicionDeHojaDeCarnes(carnes, { logoPng, iconoPng })), archivo);
         return { ok: true, impresos: carnes.length, sinCodigo };
     } catch (e) {
         return { ok: false, motivo: String(e?.message || e) };

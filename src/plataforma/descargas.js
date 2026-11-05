@@ -30,6 +30,21 @@ export function descargarArchivo(blob, nombre) {
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
 
+/**
+ * Descarga un documento de pdfmake (`pdfMake.createPdf(def)`).
+ *
+ * NUNCA `.download()` de pdfmake: pasa por file-saver, que dispara el clic con
+ * un `<a>` fuera de la página. En Safari eso pierde el `download` y el archivo
+ * llega como «Unknown.pdf — No se puede mover el archivo» (hoja de carnés de
+ * practicantes, 2026-11-05). Además `.download()` es asíncrono y nadie lo
+ * esperaba: un fallo al maquetar quedaba sin aviso y la pantalla decía
+ * «descargada». Acá se espera el blob y sale por el patrón comprobado.
+ */
+export async function descargarPdf(documentoPdfmake, nombre) {
+    const blob = await documentoPdfmake.getBlob();
+    descargarArchivo(blob, nombre);
+}
+
 /** Abre una dirección en otra pestaña. */
 export function abrirEnPestanaNueva(url) {
     window.open(url, '_blank');

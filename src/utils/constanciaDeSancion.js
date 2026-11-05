@@ -25,6 +25,7 @@
  * logo, y no tokens del modo claro/oscuro. Es el mismo criterio del ticket.
  */
 import { EMPRESA } from '../constants/empresa';
+import { descargarPdf } from '@plataforma/descargas';
 import { MARCA } from './marcaDelPapel';
 import { pdfmakeAHtml } from './pdfmakeAHtml';
 
@@ -410,7 +411,7 @@ export async function descargarConstancia(datos) {
             logoComoDataUrl(LOGO_DE_LA_EMPRESA).catch(() => null),
         ]);
         const def = definicionDeLaConstancia({ ...datos, logoPng });
-        pdfMake.createPdf(def).download(nombreDeLaConstancia(datos?.nombre, datos?.fecha));
+        await descargarPdf(pdfMake.createPdf(def), nombreDeLaConstancia(datos?.nombre, datos?.fecha));
         return { ok: true };
     } catch (e) {
         return { ok: false, motivo: String(e?.message || e) };

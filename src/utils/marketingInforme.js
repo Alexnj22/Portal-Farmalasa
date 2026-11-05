@@ -9,6 +9,7 @@
 //
 // El papel no tiene tema: negro y grises, sin tokens de la pantalla.
 import { formatMoney, formatQty, formatPct } from './formatNumber';
+import { descargarPdf } from '@plataforma/descargas';
 import { etiquetaMes, fechaNumerica } from './fecha';
 import {
     ESTADOS_PIEZA, FORMATOS, resumenDelMes, mezclaDelMes, totalesDePauta,
@@ -243,5 +244,5 @@ p { margin: 0 0 6pt 0; }
 
 export async function descargarInformePdf(datos) {
     const pdfMake = await getPdfMake();
-    pdfMake.createPdf(construirInformeDoc(datos)).download(`Marketing_${String(datos.mes.mes).slice(0, 7)}.pdf`);
+    await descargarPdf(pdfMake.createPdf(construirInformeDoc(datos)), `Marketing_${String(datos.mes.mes).slice(0, 7)}.pdf`);
 }

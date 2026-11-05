@@ -4,6 +4,7 @@
 // lógica específica de despacho/factor que no aplica a un conteo físico.
 
 import { exportCsv } from './csvExport';
+import { descargarPdf } from '@plataforma/descargas';
 import { fechaNumerica } from './fecha';
 import { formatMoney } from './formatNumber';
 import {
@@ -494,7 +495,7 @@ function footerFirmas(labelIzq, labelDer) {
 // venía a arreglar.
 async function downloadPdf(docDefinition, filename) {
     const pdfMake = await getPdfMake();
-    await pdfMake.createPdf(docDefinition).download(filename);
+    await descargarPdf(pdfMake.createPdf(docDefinition), filename);
 }
 
 // items: filas de get_conteo_items_jsonb. ciego=true oculta la columna Sistema.

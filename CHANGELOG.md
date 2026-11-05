@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.15 — Los PDF se descargan con su nombre también en Safari
+
+- La **hoja de carnés de practicantes** llegaba en Safari como «Unknown.pdf — No se puede mover el archivo». Lo mismo podía pasarle al documento de bienvenida, la constancia de sanción, el pedido, el conteo de inventario, el informe de marketing y el corte Z: los siete descargaban con `.download()` de pdfmake, que en Safari pierde el nombre. Ahora salen por `descargarPdf` (`plataforma/descargas.js`), el mismo camino que ya usaban las demás descargas.
+- Además la descarga ahora se **espera**: si el PDF no se puede armar, la pantalla avisa en vez de decir «descargada».
+
 ## v2.1451.14 — Las funciones que mueven inventario miran la edad del proceso; Comprobar un envío de compras cortado lo busca solo
 
 Auditoría de las funciones que hablan con el sistema de origen, después del

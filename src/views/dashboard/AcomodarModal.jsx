@@ -285,7 +285,6 @@ export default function AcomodarModal({
     if (!abierto) return null;
 
     const elegidoM = elegido ? medidaDe(elegido) : null;
-    const elegidoMin = elegido ? minimos(elegido) : null;
 
     return (
         <LiquidModal open={abierto} onClose={onCerrar} maxWidth="max-w-4xl"
@@ -473,18 +472,21 @@ export default function AcomodarModal({
                                 value={elegidoM.cols}
                                 onChange={n => cambiarMedida(elegido, 'cols', n)}
                                 options={Array.from({ length: columnas }, (_, i) => ({
+                                    // Todos los anchos (2026-11-04): el widget
+                                    // dibuja su contenido en cualquier ancho y
+                                    // la lista se desplaza dentro. Antes por
+                                    // debajo del mínimo pasaba a vistazo y por
+                                    // eso se ofrecía apagado.
                                     value: i + 1, label: String(i + 1),
-                                    // Por debajo del mínimo el widget no dibuja
-                                    // su contenido: se ofrece apagado en vez de
-                                    // dejar elegir un tamaño que no sirve.
-                                    disabled: i + 1 < elegidoMin.minCols,
                                 }))} />
                             <span className="text-micro font-black text-content-3">×</span>
                             <SegmentedControl size="sm" label="Alto"
                                 value={elegidoM.rows}
                                 onChange={n => cambiarMedida(elegido, 'rows', n)}
-                                options={[1, 2, 3, 4].map(n => ({
-                                    value: n, label: String(n), disabled: n < elegidoMin.minRows,
+                                // 1 fila = el número con su botón; desde 2, el
+                                // contenido. Hasta 6 para las listas largas.
+                                options={[1, 2, 3, 4, 5, 6].map(n => ({
+                                    value: n, label: String(n),
                                 }))} />
                             {/* Las baldosas de sucursal no se quitan de a una:
                                 su encendido es el del widget «Ventas por

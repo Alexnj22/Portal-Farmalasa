@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.2 — Inicio: el editor deja elegir cualquier tamaño
+
+«Acomodar» apagaba los anchos y altos por debajo del mínimo de cada widget
+(«un tamaño que no sirve»): ahí el widget pasaba a vistazo. Desde v2.1450.1 el
+contenido se dibuja en cualquier ancho y desde dos filas, y desde v2.1450.3 la
+fila sola trae su botón, así que todos los tamaños sirven: se ofrecen todos, y
+el alto llega a 6 filas (antes 4) para las listas largas.
+
+Prueba nueva: `tests/unit/vistazoAccion.test.jsx` — la baldosa de una fila
+muestra número, texto y botón; sin `ir` abre el contenido, con `ir` navega.
+
 ## v2.1451.1 — Bienestar: la calma separada de los juegos
 
 App de clientes · Bienestar. Pedido del usuario: «separa los juegos de los

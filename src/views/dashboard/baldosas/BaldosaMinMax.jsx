@@ -83,6 +83,7 @@ export default function BaldosaMinMax(props) {
         ? <FranjaVacia />
         : <BarraTramos tramos={franja.tramos} />}
       detalle={franja?.detalle}
+      irA={props.irA}
     >
       {/* El encabezado ya no se dibuja acá: lo pone `LanzadorSolicitud` con las
           ranuras del canónico (`LiquidModal.Header`), y de paso trae el botón

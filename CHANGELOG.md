@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.22 — Inicio: el número de cada atajo lleva a su lista
+
+- Los atajos del Inicio abren el formulario para **pedir**; lo pendiente se resuelve en su lista. Ahora, cuando hay algo pendiente, al lado del número aparece **«Ver lista»**:
+  - **Modificar facturación** y **Ajuste de Mín·Máx** → Solicitudes.
+  - **Traslados entre salas** → Traslados.
+- Sólo aparece si tu cargo puede abrir esa pantalla. Tocar el resto de la baldosa sigue abriendo el formulario.
+
 ## v2.1451.21 — Fórmulas, sueros y cosméticos también llevan lote
 
 - Por decisión del usuario, también llevan lote **Fórmulas (86), Cosméticos (45), Sueros (29) y Suero IV (21)**. A los **24 medicamentos que no tenían vencimiento** (entre ellos PREDNICORT 15 jarabe) se les activaron las dos casillas: «los productos sí llevan vencimiento, sólo los insumos no». En total, hoy se marcaron 1,759 fichas, todas verificadas contra su estado anterior.

@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import { CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useTamanoWidget } from './tamanoWidget';
 
 // La baldosa que abre una solicitud, y el modal donde se arma.
@@ -235,8 +236,14 @@ export default function LanzadorSolicitud({
     tope = null,
     tono = 'brand',         // brand | warning | danger | success
     maxWidth = 'max-w-2xl',
+    // A dónde lleva el NÚMERO (2026-11-05): `{ ruta, texto }`. La baldosa abre
+    // el formulario para PEDIR; lo pendiente se resuelve en su lista, y sin
+    // este botón había que saber dónde quedaba. Quien la pasa ya comprobó que
+    // esa ruta se puede abrir.
+    irA = null,
     children,               // (cerrar) => contenido del modal
 }) {
+    const navigate = useNavigate();
     const [abierto, setAbierto] = useState(false);
     const cerrar = useCallback(() => setAbierto(false), []);
     // Con dos renglones o más hay alto para la descripción y un número mayor.
@@ -289,11 +296,13 @@ export default function LanzadorSolicitud({
                 ahí (`--lift-card`), con su histéresis de salida — el
                 `hover:translate-y` a mano no la tenía y parpadeaba al entrar por
                 el borde de abajo. */}
-            <button
-                type="button"
+            <div
+                // La tarjeta es un `div` desde el 2026-11-05 y la abre un botón que
+                // la cubre entera (`absolute inset-0`): así el botón del número
+                // vive adentro sin ser un botón dentro de otro. El contenido va
+                // `pointer-events-none` y el toque llega al de abajo.
                 data-surface="card"
                 data-interactive=""
-                onClick={() => setAbierto(true)}
                 // ── Se adapta a la celda (2026-10-21) ─────────────────────
                 // Era una sola composición —ícono arriba, título, figura y un
                 // renglón— para todos los tamaños: en 1×1 cabía justa, y en
@@ -303,11 +312,13 @@ export default function LanzadorSolicitud({
                 //   · ancho (`@container`, ≥ 20rem) → el desglose al costado;
                 //   · alto (2+ renglones)           → la descripción y una
                 //     figura más gruesa.
-                // `@container` va en el BOTÓN y no se hereda de la celda: así
+                // `@container` va en la TARJETA y no se hereda de la celda: así
                 // mide la baldosa también fuera del tablero.
-                className="@container group w-full h-full min-h-0 flex flex-col justify-between gap-2 px-4 pt-3.5 pb-3 text-left overflow-hidden transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
+                className="@container group relative w-full h-full min-h-0 flex flex-col justify-between gap-2 px-4 pt-3.5 pb-3 text-left overflow-hidden transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
             >
-                <div className="w-full flex items-center gap-2.5 min-w-0">
+                <button type="button" aria-label={label} onClick={() => setAbierto(true)}
+                    className="absolute inset-0 w-full h-full rounded-[inherit] cursor-pointer" />
+                <div className="w-full flex items-center gap-2.5 min-w-0 pointer-events-none">
                     <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
                         <Icon size={15} strokeWidth={2} className="text-content-2" />
                     </div>
@@ -320,7 +331,7 @@ export default function LanzadorSolicitud({
                     <ChevronRight size={14} className="shrink-0 text-content-3 opacity-60 transition-[transform,opacity] duration-[var(--dur-fast)] group-hover:opacity-100 group-hover:translate-x-0.5" />
                 </div>
 
-                <div className="w-full min-w-0 flex flex-col gap-1.5">
+                <div className="w-full min-w-0 flex flex-col gap-1.5 pointer-events-none">
                     <div className="w-full min-w-0 flex items-baseline gap-2">
                         {error ? (
                             <span className="min-w-0 flex items-center gap-1.5 text-body-sm font-bold text-danger-text">
@@ -350,6 +361,13 @@ export default function LanzadorSolicitud({
                         {detalle && !error && (
                             <span className="hidden @[20rem]:inline ml-auto shrink min-w-0 truncate text-caption font-medium text-content-3">{detalle}</span>
                         )}
+                        {hay && irA && (
+                            <Button size="xs" variant="secondary"
+                                className="pointer-events-auto relative shrink-0 self-center ml-auto @[20rem]:ml-2"
+                                onClick={() => navigate(irA.ruta)}>
+                                {irA.texto ?? 'Ver lista'}
+                            </Button>
+                        )}
                     </div>
                     {/* `aria-hidden`: la baldosa ES un botón y los números de la
                         figura ya los dice el renglón de arriba en palabras.
@@ -358,7 +376,7 @@ export default function LanzadorSolicitud({
                         siendo truthy. */}
                     <div className="w-full empty:hidden" aria-hidden="true">{error ? null : instrumento}</div>
                 </div>
-            </button>
+            </div>
 
             {/* El contenido se monta SOLO con el modal abierto: si no, cada
                 baldosa del tablero cargaría su catálogo al entrar, que es

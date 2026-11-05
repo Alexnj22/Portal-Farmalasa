@@ -424,7 +424,7 @@ const RetiroModal         = lazy(() => import('../traslados/RetiroModal'));
 // sería un tope silencioso esperando a que alguien lo cruce.
 const REFRESCO_MS = 3 * 60 * 1000;
 
-export default function WidgetTransferRequests() {
+export default function WidgetTransferRequests({ irA = null } = {}) {
     const { user, getScope } = useAuth();
     const [porConfirmar, setPorConfirmar] = useState(null);
     const [porRecibir,   setPorRecibir]   = useState(null);
@@ -521,6 +521,7 @@ export default function WidgetTransferRequests() {
                 ? <FranjaVacia />
                 : <Flujo entra={(pendientes ?? 0) + porDecidir} sale={enVuelo} />}
             detalle={enVuelo ? `${enVuelo} en vuelo` : null}
+            irA={irA}
         >
             {/* Sin `min-h` ni scroller propio: el cuerpo canónico
                 (`LiquidModal.Body`) ya scrollea, y el alto lo topa el modal. */}

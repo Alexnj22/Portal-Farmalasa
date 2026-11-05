@@ -3671,6 +3671,8 @@ const DashboardView = ({ openModal }) => {
         .map(b => ({ value: String(b.id), label: b.name }));
       return wrapWidget('annulment_req',
         <WidgetAnnulmentRequest
+          // El número son solicitudes que se resuelven en su lista (paso 6).
+          irA={puedeAbrir('/solicitudes') ? { ruta: '/solicitudes', texto: 'Ver lista' } : null}
           selectedBranchId={isAnnAllScope ? annulmentBranch : null}
           selectorSucursal={isAnnAllScope && annulmentOpts.length > 0 && (
             <LiquidSelect
@@ -3692,6 +3694,7 @@ const DashboardView = ({ openModal }) => {
       const ownErp = MM_BRANCH_TO_ERP[user?.branchId ?? user?.branch_id] ?? null;
       return wrapWidget('minmax_req',
         <WidgetMinMaxRequest
+          irA={puedeAbrir('/solicitudes') ? { ruta: '/solicitudes', texto: 'Ver lista' } : null}
           selectedErp={isMmAllScope ? Number(minmaxErp) : ownErp}
           selectorSucursal={isMmAllScope && (
             <LiquidSelect
@@ -3783,7 +3786,7 @@ const DashboardView = ({ openModal }) => {
     // ofrecer un desplegable de salas sugeriría un alcance que no existe.
     if (wid === 'traslados') {
       if (!showWidget('traslados', 'dash_traslados')) return null;
-      return wrapWidget('traslados', <WidgetTransferRequests />, staggerIdx);
+      return wrapWidget('traslados', <WidgetTransferRequests irA={puedeAbrir('/traslados') ? { ruta: '/traslados', texto: 'Ver lista' } : null} />, staggerIdx);
     }
 
     /* ── DATOS QUE FALTAN ── */

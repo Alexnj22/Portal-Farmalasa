@@ -46,4 +46,8 @@ describe('elegirFactor', () => {
         expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [30], costoNeto: 2.7, costoUnidad: 2.62, presentaciones: [1, 30] }))
             .toEqual({ factor: 1, origen: null });
     });
+    it('ATROLIP X 28: el precio da 26 y la factura dice 28, aunque el catálogo no venda 28', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [28], costoNeto: 22.18, costoUnidad: 12.04 / 14, presentaciones: [14] }))
+            .toEqual({ factor: 28, origen: 'costo' });
+    });
 });

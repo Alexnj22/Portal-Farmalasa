@@ -356,6 +356,12 @@ export function elegirFactor(x: {
       porCosto = (x.pistas ?? []).filter((f) => f >= 2 && x.presentaciones.includes(f) && Math.abs(razon / f - 1) <= 0.25)
         .sort((a, b) => Math.abs(razon / a - 1) - Math.abs(razon / b - 1))[0] ?? null;
     }
+    // Y aunque el catálogo no venda ese tamaño, el que nombra la factura le
+    // gana a un redondeo cercano: «ATROLIP … X 28 TABL» da 26 por precio.
+    if (!porCosto) {
+      porCosto = (x.pistas ?? []).filter((f) => f >= 2 && Math.abs(razon / f - 1) <= 0.12)
+        .sort((a, b) => Math.abs(razon / a - 1) - Math.abs(razon / b - 1))[0] ?? null;
+    }
     if (!porCosto) { const n = Math.round(razon); if (n >= 2 && cuadra(n)) porCosto = n; }
   }
   if (x.aprendido && (razon == null || cuadra(x.aprendido) || !porCosto)) return { factor: x.aprendido, origen: "aprendido" };

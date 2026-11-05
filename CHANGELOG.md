@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.8 — Cargar compra: el tamaño de la factura le gana a un redondeo cercano
+
+- **El tamaño que nombra la factura le gana a un redondeo del precio**, aunque el catálogo no venda ese tamaño. «ATROLIP … X 28 TABL» daba 26 por precio; ahora sale 28. Aplica si el precio queda a ±12 % de ese tamaño. Comparado sobre toda la cola de compras: los cambios son AMPICILINA 54→50, DESLORATADINA 11→10, ATENUA 1→10, QUINOEFEX 1→14 y GRIPE-MED 1→50.
+
 ## v2.1452.7 — Cargar compra: el tamaño que nombra la factura le gana a un redondeo
 
 - **NOR-CLAMIDA X 30 sale en cajas de 30 y no de 33.** La caja costó un 10 % más, el precio daba 33 y se redondeaba a un tamaño que nadie vende; sin presentación de 1, la carga no pasaba. Ahora, si la descripción nombra un tamaño («X 30») que el catálogo vende y el precio queda a ±25 %, gana ese tamaño. Si el precio lo contradice (el producto se vende suelto), no se usa.

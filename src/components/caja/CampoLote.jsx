@@ -20,7 +20,7 @@ import { lotesQueCoinciden } from '@nucleo/utils/cobroDeAplicacion';
  * @param {{ lote: string, vence: string, veces?: number }[]} conocidos
  * @param {(c: { lote: string, vence: string }) => void} onElegir
  */
-export default function CampoLote({ value, onChange, conocidos = [], onElegir }) {
+export default function CampoLote({ value, onChange, conocidos = [], onElegir, label = 'Lote de la ampolla', ariaLabel }) {
     const [abierto, setAbierto] = useState(false);
     const [activo, setActivo] = useState(-1);
     const [pos, setPos] = useState(null);
@@ -56,7 +56,7 @@ export default function CampoLote({ value, onChange, conocidos = [], onElegir })
 
     return (
         <div ref={cajaRef}>
-            <PortalInput label="Lote de la ampolla" value={value} maxLength={30} placeholder="Ej. 6D1514B"
+            <PortalInput label={label} aria-label={ariaLabel} value={value} maxLength={30} placeholder="Ej. 6D1514B"
                 autoComplete="off" role="combobox" aria-expanded={visible} aria-autocomplete="list"
                 aria-controls="lotes-conocidos"
                 onFocus={() => { medir(); setAbierto(true); }} onBlur={() => setAbierto(false)} onKeyDown={tecla}

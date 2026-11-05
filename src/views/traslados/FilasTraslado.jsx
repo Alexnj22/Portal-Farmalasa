@@ -23,6 +23,8 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '@nucleo/utils/imprimirTraslado';
+import LoteDeLaCaja from './LoteDeLaCaja';
+import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
  * rejilla igualando alturas, un traslado de doce lotes estira a todas las demás
@@ -276,7 +278,7 @@ export function DecisionTraslado({ fila, onHecho }) {
         .filter(x => x.unidades > 0), [items]);
     const [regulados,       setRegulados]       = useState(null);   // Set de erp_product_id
     const [sinLoteServidor, setSinLoteServidor] = useState(null);   // la lista del servidor, si la dio
-    const [loteCaja,        setLoteCaja]        = useState({});     // { [posicion]: { lote, vence } }
+    const [loteCaja,        setLoteCaja]        = useState({});     // { [posicion]: valor de LoteDeLaCaja }
     useEffect(() => {
         if (conGenerico.length === 0) return undefined;
         let cancelado = false;
@@ -306,7 +308,7 @@ export function DecisionTraslado({ fila, onHecho }) {
     // El lote de la caja sólo para los renglones que salen: uno recortado a
     // cero no lleva caja.
     const pidenLote = sinLote.filter(x => sinDatos || !recortado || aceptadas.some(a => a.i === x.posicion));
-    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.lote?.trim() && loteCaja[x.posicion]?.vence);
+    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.envio);
 
     // A quién más pedirle: la cuenta vive en `utils/decisionTraslado`.
     const sugerencia = sugerenciaDeRechazo(lineas, items);
@@ -319,7 +321,7 @@ export function DecisionTraslado({ fila, onHecho }) {
             // `null` es «sale todo lo pedido»: el camino normal hace exactamente
             // el mismo viaje que antes de que existiera el despacho parcial.
             recortado ? aceptadas : null,
-            pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion] })),
+            pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion].envio })),
         );
         setOcupado(false);
         if (!r?.ok) {
@@ -328,6 +330,7 @@ export function DecisionTraslado({ fila, onHecho }) {
             if (r?.codigo === 'FALTA_LOTE_DE_GENERICO' && Array.isArray(r.lineas)) {
                 setSinLoteServidor(r.lineas.map(x => ({
                     posicion: x.posicion, producto: x.producto, unidades: x.unidades,
+                    erp: Number(items[x.posicion]?.erp_product_id),
                 })));
             }
             setError(r?.error ?? 'No se pudo despachar.');
@@ -503,25 +506,11 @@ export function DecisionTraslado({ fila, onHecho }) {
                                 {x.producto}
                                 <span className="text-content-3"> · {x.unidades} {x.unidades === 1 ? 'unidad' : 'unidades'}</span>
                             </p>
-                            <div className="flex flex-wrap gap-2">
-                                <PortalInput
-                                    value={loteCaja[x.posicion]?.lote ?? ''}
-                                    onChange={e => setLoteCaja(c => ({
-                                        ...c, [x.posicion]: { ...c[x.posicion], lote: e.target.value.toUpperCase() },
-                                    }))}
-                                    aria-label={`Lote de ${x.producto}`}
-                                    placeholder="N.º de lote" className="w-36"
-                                />
-                                <PortalInput
-                                    type="date"
-                                    value={loteCaja[x.posicion]?.vence ?? ''}
-                                    onChange={e => setLoteCaja(c => ({
-                                        ...c, [x.posicion]: { ...c[x.posicion], vence: e.target.value },
-                                    }))}
-                                    aria-label={`Vencimiento de ${x.producto}`}
-                                    className="w-40"
-                                />
-                            </div>
+                            <LoteDeLaCaja
+                                erpProductId={x.erp} producto={x.producto}
+                                valor={loteCaja[x.posicion] ?? LOTE_DE_CAJA_VACIO}
+                                onChange={v => setLoteCaja(c => ({ ...c, [x.posicion]: v }))}
+                            />
                         </div>
                     ))}
                 </div>

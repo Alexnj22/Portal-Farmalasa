@@ -38,6 +38,9 @@ vi.mock('@nucleo/data/traslados', () => ({
     despacharTraslado: (...a) => despacharTraslado(...a),
     recibirTraslado: vi.fn(),
     fetchReguladosDe: (...a) => fetchReguladosDe(...a),
+    fetchLotesConocidosDeProducto: vi.fn(async () => [
+        { lote: 'K221', vence: '2031-02', fecha: '2031-02-01', veces: 2 },
+    ]),
     rechazarTraslado: (...a) => rechazarTraslado(...a),
 }));
 
@@ -304,7 +307,7 @@ describe('cuando sale existencia sin lote asignado', () => {
 
         await act(async () => {
             fireEvent.change(screen.getByLabelText(/Lote de ALOPURINOL/i), { target: { value: 'abc123' } });
-            fireEvent.change(screen.getByLabelText(/Vencimiento de ALOPURINOL/i), { target: { value: '2030-05-01' } });
+            fireEvent.change(screen.getByLabelText(/Vencimiento de ALOPURINOL/i), { target: { value: '05/2030' } });
         });
         const boton = screen.getByRole('button', { name: /Confirmar y enviar/i });
         expect(boton).not.toBeDisabled();
@@ -319,5 +322,38 @@ describe('cuando sale existencia sin lote asignado', () => {
         await act(async () => { render(<DecisionTraslado fila={CON_GENERICO} onHecho={vi.fn()} />); });
         expect(screen.queryByText(/no tiene lote asignado/i)).toBeNull();
         expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).not.toBeDisabled();
+    });
+});
+
+describe('el lote de la caja contra los ya registrados', () => {
+    const CON_GENERICO = {
+        id: 'sol-1',
+        metadata: { items: [{ ...FILA.metadata.items[0], lotes: [{ lote: 'GENERICO', vence: null, unidades: 30 }] }] },
+    };
+    beforeEach(() => {
+        disponibilidad = conExistencia(50);
+        fetchReguladosDe.mockImplementation(async () => new Set([2724]));
+    });
+    afterEach(() => { fetchReguladosDe.mockImplementation(async () => new Set()); });
+
+    // Un número registrado con OTRO vencimiento crearía un segundo lote con el
+    // mismo número: no se despacha, y no hay «es otro lote» que lo destrabe.
+    it('un lote registrado con otro vencimiento frena y sólo ofrece el registrado', async () => {
+        await act(async () => { render(<DecisionTraslado fila={CON_GENERICO} onHecho={vi.fn()} />); });
+        await act(async () => {
+            fireEvent.change(screen.getByLabelText(/Vencimiento de ALOPURINOL/i), { target: { value: '07/2030' } });
+            fireEvent.change(screen.getByLabelText(/Lote de ALOPURINOL/i), { target: { value: 'k221' } });
+        });
+        expect(screen.getByText(/ya está registrado con vencimiento/i)).toBeInTheDocument();
+        expect(screen.queryByRole('button', { name: /es otro lote/i })).toBeNull();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).toBeDisabled();
+
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Usar K221/i })); });
+        const boton = screen.getByRole('button', { name: /Confirmar y enviar/i });
+        expect(boton).not.toBeDisabled();
+        await act(async () => { fireEvent.click(boton); });
+        expect(despacharTraslado).toHaveBeenCalledWith(
+            'sol-1', '', null, [{ posicion: 0, lote: 'K221', vence: '2031-02-01' }],
+        );
     });
 });

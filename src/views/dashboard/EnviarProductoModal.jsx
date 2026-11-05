@@ -22,7 +22,9 @@ import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { renglonesDeEnvioSugerido } from '@nucleo/utils/gestionDeStock';
 import { clickable } from '@nucleo/utils/clickable';
 import { imprimirTicketDeTraslado } from '@nucleo/utils/imprimirTraslado';
-import { diaSV, fechaTexto } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
+import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
+import LoteDeLaCaja from '../traslados/LoteDeLaCaja';
 import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '@nucleo/constants/erp';
 
 // Mandarle producto a otra sala sin que te lo pidan.
@@ -375,8 +377,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
      * que escribe su lote y vencimiento, y al despachar se le asignan a ESAS
      * unidades —sin tocar ningún otro lote—. */
     const [regulado, setRegulado] = useState(false);
-    const [cajaLote,  setCajaLote]  = useState('');
-    const [cajaVence, setCajaVence] = useState('');
+    const [caja, setCaja] = useState(LOTE_DE_CAJA_VACIO);   // valor de LoteDeLaCaja
     useEffect(() => {
         let cancelado = false;
         setRegulado(false);
@@ -389,12 +390,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
     const sinLoteEnReparto = regulado
         ? reparto.reparto.filter(l => esLoteGenerico(l.lote)).reduce((s, l) => s + l.toma, 0)
         : 0;
-    const hoy = diaSV();
-    const faltaCaja = sinLoteEnReparto > 0 && (!cajaLote.trim() || !cajaVence)
-        ? 'Escribe el lote y el vencimiento que trae la caja.'
-        : sinLoteEnReparto > 0 && cajaVence <= hoy
-            ? 'Ese vencimiento ya pasó: esa caja no puede salir.'
-            : null;
+    // El motivo exacto lo dice el propio campo; acá sólo se frena el paso.
+    const faltaCaja = sinLoteEnReparto > 0 && !caja.envio
+        ? 'Falta confirmar el lote y el vencimiento que trae la caja.'
+        : null;
 
     /* ── El tope, dicho ANTES ─────────────────────────────────────────────
      * Existía desde el primer día —el despacho vive 110 s— y se descubría a
@@ -485,7 +484,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             lotes: reparto.reparto.map(l => ({
                 lote: l.lote, vence: l.vence, unidades: l.toma,
                 ...(sinLoteEnReparto > 0 && esLoteGenerico(l.lote)
-                    ? { caja: { lote: cajaLote.trim().toUpperCase(), vence: cajaVence } } : {}),
+                    ? { caja: caja.envio } : {}),
             })),
             // Cuántas tiene ESA sala AHORA. Es lo que deja avisar en la lista
             // si se agregó dos veces el mismo producto y entre los dos se pasan.
@@ -496,11 +495,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         setTermino('');
         setResultados(null);
         setCantidad('1');
-        setCajaLote('');
-        setCajaVence('');
+        setCaja(LOTE_DE_CAJA_VACIO);
         setPestana('lista');
     }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length,
-        sinLoteEnReparto, cajaLote, cajaVence]);
+        sinLoteEnReparto, caja]);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -1130,20 +1128,11 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                             {sinLoteEnReparto} {sinLoteEnReparto === 1 ? 'unidad no tiene' : 'unidades no tienen'} lote
                                             asignado. Copia el lote y el vencimiento que trae la caja:
                                         </p>
-                                        <div className="flex flex-wrap gap-2">
-                                            <PortalInput
-                                                value={cajaLote}
-                                                onChange={e => setCajaLote(e.target.value.toUpperCase())}
-                                                aria-label="Lote de la caja"
-                                                placeholder="N.º de lote" className="w-36"
-                                            />
-                                            <PortalInput
-                                                type="date" value={cajaVence}
-                                                onChange={e => setCajaVence(e.target.value)}
-                                                aria-label="Vencimiento de la caja"
-                                                className="w-40"
-                                            />
-                                        </div>
+                                        <LoteDeLaCaja
+                                            erpProductId={elegido.erp_product_id}
+                                            producto={elegido.descripcion}
+                                            valor={caja} onChange={setCaja}
+                                        />
                                     </div>
                                 )}
 

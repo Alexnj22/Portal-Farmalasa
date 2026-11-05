@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.11 — Traslados: el lote de la caja se elige de los ya registrados
+
+Al copiar el lote de la caja (lo que sale sin lote asignado), el campo ahora es el mismo de las inyecciones: al entrar despliega los lotes ya registrados de ese producto **en todas las salas**, y elegir uno llena también el vencimiento. El vencimiento se escribe MM/AAAA.
+
+- **Un lote registrado con otro vencimiento no pasa.** Ofrece usar el registrado y no hay «es otro lote»: el sistema crearía un segundo lote con el mismo número (ya hay 74 así, medido hoy). El servidor lo frena también, contra el inventario de todas las salas y contra el sistema en la sala de origen.
+- **Un número parecido a uno registrado** (error de tecleo) frena hasta confirmar: «Usar» o «No, es otro lote».
+- Un lote registrado viaja con su fecha exacta; uno nuevo, con el día 1 del mes (el 99.3% de las fechas registradas son día 1).
+- Piezas: `src/utils/loteDeCaja.js`, `src/views/traslados/LoteDeLaCaja.jsx`, `fechaRegistradaQueChoca` en `_shared/erp-asignar-lote.ts`.
+
 ## v2.1453.10 — Cargar compra: saldo Tigo
 
 RECARGA SALDO TIGO no se podía cargar bien. En el sistema tiene dos presentaciones, «UNIDAD (1)» a $1.00 y «UNIDAD (0.25)», y la copia del catálogo del portal guarda una sola fila por tipo con el tamaño entero: quedó «UNIDAD» con factor **0**. La tarjeta ofrecía esa opción y la validación nueva decía «no se puede cargar así». Ahora una presentación con factor 0 no se ofrece ni se usa para juzgar (la revisión lee las reales del sistema). Además, el factor aprendido de COFARSAL (código 2218, «RECARGA TIGO $ 25.00») estaba en 1 y se corrigió a **25**: 12 recargas entran como 300 unidades de $1 a $0.8448, que es como Bodega las venía cargando a mano.

@@ -62,6 +62,31 @@ export function validarLoteEscrito(
   return { ok: true, lote: l, vence: v };
 }
 
+/**
+ * ¿Ese número de lote ya está registrado con OTRO vencimiento en alguna sala?
+ * (2026-11-05). El sistema identifica un lote por número + fecha exacta: con
+ * otra fecha crearía un segundo lote con el mismo número — ya hay 74 así —, y
+ * la pantalla lo frena pero no es la autoridad. Si el número ya existe CON
+ * esta fecha, no hay choque (aunque otra fila vieja tenga otra).
+ * Devuelve la fecha registrada que choca, o null. Lanza si no puede leer: un
+ * freno que no pudo mirar no puede dejar pasar.
+ */
+export async function fechaRegistradaQueChoca(
+  // deno-lint-ignore no-explicit-any
+  sb: any, erpProductId: number, lote: string, vence: string,
+): Promise<string | null> {
+  const { data, error } = await sb.from("inventory")
+    .select("fecha_vencimiento")
+    .eq("erp_product_id", erpProductId)
+    .eq("lote", lote)
+    .not("fecha_vencimiento", "is", null)
+    .limit(200);
+  if (error) throw new Error(`No se pudo revisar si el lote ${lote} ya existe: ${error.message}`);
+  const fechas = [...new Set((data ?? []).map((r: { fecha_vencimiento: string }) => dia(r.fecha_vencimiento)))];
+  if (fechas.length === 0 || fechas.includes(vence)) return null;
+  return fechas.sort()[0] as string;
+}
+
 export type ResultadoAsignacion =
   | {
     ok: true;
@@ -120,6 +145,14 @@ export async function asignarLoteAGenerico(opc: {
     return {
       ok: false, codigo: "GENERICO_NO_ALCANZA",
       error: `${nombre}: sin lote asignado hay ${gen} unidades juntas y salen ${enUnidades}.`,
+    };
+  // El mismo número con otra fecha, en ESTA sala, según el sistema mismo.
+  const otraFecha = antes.lotes.find((x) =>
+    norm(x.numero) === norm(o.lote) && dia(x.vence) !== o.vence);
+  if (otraFecha && !delLote(antes.lotes))
+    return {
+      ok: false, codigo: "LOTE_OTRA_FECHA",
+      error: `${nombre}: el lote ${o.lote} ya está registrado con vencimiento ${dia(otraFecha.vence)}. Revisa la caja.`,
     };
   const previo = delLote(antes.lotes)?.stock ?? 0;
 

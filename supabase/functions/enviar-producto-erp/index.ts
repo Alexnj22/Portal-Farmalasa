@@ -27,7 +27,7 @@ import {
   TRASLADO,
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
-import { asignarLoteAGenerico, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
+import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
 
 // Empujar producto a otra sala: el traslado al REVÉS.
 //
@@ -587,6 +587,14 @@ Deno.serve(async (req) => {
           }
           const v = validarLoteEscrito(caja.lote, caja.vence);
           if (!v.ok) { await fallar(`${nombre}: ${v.error}`); continue; }
+          let choca: string | null;
+          try {
+            choca = await fechaRegistradaQueChoca(admin, Number(l.erp_product_id), v.lote, v.vence);
+          } catch (e) { await fallar(`${nombre}: ${(e as Error).message}`); continue; }
+          if (choca) {
+            await fallar(`${nombre}: el lote ${v.lote} ya está registrado con vencimiento ${choca}. Revisa la caja.`);
+            continue;
+          }
           const asig = await asignarLoteAGenerico({
             cookie, erpSucursal: erpOrigen, erpUbicacion: ubicOrigen,
             erpProductId: Number(l.erp_product_id), descripcion: nombre,

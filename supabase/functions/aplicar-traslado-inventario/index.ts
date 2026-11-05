@@ -88,7 +88,7 @@ import {
 // decide es cuánto medicamento sale de una sala.
 import { elegirLineasAceptadas, loQueNoEntro } from "../_shared/lineasAceptadas.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
-import { asignarLoteAGenerico, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
+import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
 
 // `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
 // proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
@@ -964,6 +964,18 @@ Deno.serve(async (req) => {
         return json({
           ok: false, codigo: "LOTE_INVALIDO", posicion: pos,
           error: `${lineas[pos].descripcion ?? lineas[pos].erp_product_id}: ${v.error}`,
+        }, 422);
+      let choca: string | null;
+      try {
+        choca = await fechaRegistradaQueChoca(admin, Number(lineas[pos].erp_product_id), v.lote, v.vence);
+      } catch (e) {
+        return json({ ok: false, codigo: "LOTE_SIN_REVISAR", posicion: pos, error: String((e as Error).message) }, 503);
+      }
+      if (choca)
+        return json({
+          ok: false, codigo: "LOTE_OTRA_FECHA", posicion: pos,
+          error: `${lineas[pos].descripcion ?? lineas[pos].erp_product_id}: el lote ${v.lote} ya está `
+            + `registrado con vencimiento ${choca}. Revisa la caja.`,
         }, 422);
       loteEscrito.set(pos, { lote: v.lote, vence: v.vence });
     }

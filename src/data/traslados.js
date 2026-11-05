@@ -2,6 +2,7 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { conBitacora } from './audit';
 import { rangoDeSemana } from '../utils/semana';
+import { lotesConocidosDeInventario } from '../utils/loteDeCaja';
 
 // Datos del traslado entre salas.
 //
@@ -286,6 +287,42 @@ async function invocar(body) {
 }
 
 /**
+ * Cuáles de estos productos llevan lote («regulado» en la ficha). Sirve para
+ * pedir el lote de la caja ANTES del primer intento de despacho; si falla, el
+ * servidor igual lo pide (`FALTA_LOTE_DE_GENERICO`), así que nunca lanza:
+ * devuelve un `Set` vacío.
+ */
+export async function fetchReguladosDe(erpProductIds) {
+    const ids = [...new Set((erpProductIds ?? []).map(Number).filter(Boolean))];
+    if (ids.length === 0) return new Set();
+    const { data, error } = await supabase.from('products').select('id, regulado').in('id', ids);
+    if (error) { console.error('fetchReguladosDe:', error.message); return new Set(); }
+    return new Set((data ?? []).filter(p => p.regulado === true).map(p => Number(p.id)));
+}
+
+/**
+ * Los lotes ya registrados de un producto, en TODAS las salas y sin los
+ * vencidos (2026-11-05): lo que se le ofrece a quien copia el lote de la caja,
+ * para elegirlo de un toque con su vencimiento. Acotada por el dato: un solo
+ * producto tiene como mucho 63 filas con lote (medido ese día).
+ * Nunca lanza: sin la lista se escribe a mano, y el servidor frena igual un
+ * número registrado con otra fecha.
+ * @returns {Promise<{ lote: string, vence: string, fecha: string, veces: number }[]>}
+ */
+export async function fetchLotesConocidosDeProducto(erpProductId) {
+    const id = Number(erpProductId);
+    if (!id) return [];
+    const { data, error } = await supabase.from('inventory')
+        .select('lote, fecha_vencimiento, erp_sucursal_id')
+        .eq('erp_product_id', id)
+        .neq('lote', 'GENERICO')
+        .not('fecha_vencimiento', 'is', null)
+        .limit(500);
+    if (error) { console.error('fetchLotesConocidosDeProducto:', error.message); return []; }
+    return lotesConocidosDeInventario(data);
+}
+
+/**
  * Despacha el traslado. `lineasAceptadas` es lo que sale cuando NO sale todo.
  *
  * Viaja como ÍNDICES con su cantidad —`[{ i, cantidad }]`— y nunca como los
@@ -310,20 +347,6 @@ async function invocar(body) {
  * y no vinieron; con ellos, les asigna ese lote a esas unidades antes de
  * despachar. Ver `supabase/functions/_shared/erp-asignar-lote.ts`.
  */
-/**
- * Cuáles de estos productos llevan lote («regulado» en la ficha). Sirve para
- * pedir el lote de la caja ANTES del primer intento de despacho; si falla, el
- * servidor igual lo pide (`FALTA_LOTE_DE_GENERICO`), así que nunca lanza:
- * devuelve un `Set` vacío.
- */
-export async function fetchReguladosDe(erpProductIds) {
-    const ids = [...new Set((erpProductIds ?? []).map(Number).filter(Boolean))];
-    if (ids.length === 0) return new Set();
-    const { data, error } = await supabase.from('products').select('id, regulado').in('id', ids);
-    if (error) { console.error('fetchReguladosDe:', error.message); return new Set(); }
-    return new Set((data ?? []).filter(p => p.regulado === true).map(p => Number(p.id)));
-}
-
 export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, lotesDeGenerico = null) =>
     invocar({
         request_id: requestId,

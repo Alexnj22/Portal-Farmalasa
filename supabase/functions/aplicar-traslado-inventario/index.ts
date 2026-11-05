@@ -75,6 +75,7 @@ import {
   leerFila,
   trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
+import { cambiarRegulado, leerFichaDe } from "../_shared/erp-regulado.ts";
 
 // Cuánto de lo pedido sale de verdad. Vive aparte de los parsers porque
 // `erp-traslado.ts` dice de sí mismo que las decisiones de cantidad se quedan
@@ -473,6 +474,9 @@ Deno.serve(async (req) => {
         }, 409);
 
       const partes: string[] = [];
+      // Los renglones que llegan SIN lote, por producto: son los candidatos a
+      // la trampa del control de lote activado después del despacho (abajo).
+      const sinLote = new Map<number, string>();
       let total = 0;
       let unidades = 0;
       for (const tr of filas) {
@@ -492,6 +496,10 @@ Deno.serve(async (req) => {
         // Se recibe COMPLETO lo que se despachó: recibir de menos es declarar un
         // faltante, y eso necesita a alguien mirando la caja, no una función.
         partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+        // La 9.ª celda es «Lote» (encabezado: … Esperado · Recibido · Lote · Vence).
+        const celdas = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
+        const lote = (celdas[8] ?? "").replace(/<[^>]+>/g, "").trim();
+        if (!lote) sinLote.set(Number(idProd), (celdas[1] ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
         total += Number(compra) * Number(esp);
         unidades += Number(esp);
       }
@@ -516,7 +524,7 @@ Deno.serve(async (req) => {
         `REC ${conSala({ ...emp, name: quien.name }, codigoDeBranch(emp?.branch_id))} ENV ${despacho}`,
       );
 
-      const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+      const enviarRecepcion = async () => leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
         process: "insert",
         datos: partes.join("#") + "#",
         cuantos: String(partes.length),
@@ -526,6 +534,58 @@ Deno.serve(async (req) => {
         destino: String(ubicDestino),
         id_traslado: idTraslado,
       }), { extra: { Referer: RECIBIR } }));
+      let resp = await enviarRecepcion();
+
+      /* ── El control de lote se activó DESPUÉS de despachar (2026-11-05) ────
+       *
+       * Desde el 05-nov los medicamentos llevan lote («regulado» en la ficha).
+       * Un traslado despachado antes de que a su producto se le activara salió
+       * SIN lote, y la recepción de un producto regulado sin lote no entra: el
+       * traslado 60970 de Salud 4 lo intentó doce veces. El renglón no se puede
+       * corregir desde acá —el lote lo toma el sistema de lo despachado, no de
+       * lo que se le manda—, así que se hace lo mismo que haría una persona:
+       * se le QUITA el control de lote a esos productos, se recibe, y se le
+       * VUELVE a activar. Cada cambio se verifica releyendo la ficha.
+       *
+       * Sólo se intenta si la recepción falló, no quedó recibida igual, y hay
+       * renglones sin lote cuyo producto HOY es regulado. Si no, el fallo es
+       * otro y se devuelve tal cual. La reactivación va en `finally`: un
+       * producto que se queda sin control de lote es el peor resultado, y si
+       * pasa se anota y se dice en la respuesta. */
+      const loteDestrabado: { id: number; nombre: string; reactivado: boolean; error?: string }[] = [];
+      if (!resp.ok && sinLote.size > 0 && await estadoDeRecepcion(cookie, idTraslado) !== "recibido") {
+        const regulados: number[] = [];
+        for (const id of sinLote.keys()) {
+          try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
+          catch { /* sin ficha legible no se toca */ }
+        }
+        if (regulados.length) {
+          const quitados: number[] = [];
+          try {
+            // Se anota ANTES de escribir: si el guardado entra y la verificación
+            // lanza, igual hay que volver a activarlo (si nunca se quitó, el
+            // `cambiarRegulado(…, true)` de abajo no escribe nada).
+            for (const id of regulados) { quitados.push(id); await cambiarRegulado(cookie, id, false); }
+            resp = await enviarRecepcion();
+          } catch (e) {
+            resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
+          } finally {
+            for (const id of quitados) {
+              const nombre = sinLote.get(id) ?? String(id);
+              try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
+              catch {
+                // Un reintento antes de rendirse: dejarlo sin lote no es opción.
+                try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
+                catch (e) { loteDestrabado.push({ id, nombre, reactivado: false, error: (e as Error).message }); }
+              }
+            }
+          }
+          const sinReactivar = loteDestrabado.filter((x) => !x.reactivado);
+          if (sinReactivar.length)
+            console.error(`[aplicar-traslado-inventario] ${idTraslado}: quedaron SIN control de lote: `
+              + sinReactivar.map((x) => `${x.id} ${x.nombre}`).join(", "));
+        }
+      }
       /* ── Un «no» del sistema no siempre significa que no entró ────────────
        *
        * Es la otra mitad de lo mismo: el 2026-08-17 hubo DIEZ respuestas 502 de
@@ -547,8 +607,12 @@ Deno.serve(async (req) => {
             lineas: partes.length, unidades, total: Number(total.toFixed(4)),
             via: "sistema",
             msg: `El sistema contestó un fallo y sin embargo lo recibió: ${resp.msg || "sin detalle"}`,
+            ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
           });
-        return json({ ok: false, error: `El sistema no aceptó la recepción: ${resp.msg || "sin detalle"}` }, 502);
+        return json({
+          ok: false, error: `El sistema no aceptó la recepción: ${resp.msg || "sin detalle"}`,
+          ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
+        }, 502);
       }
 
       return await marcarRecibido({
@@ -556,6 +620,7 @@ Deno.serve(async (req) => {
         id_traslado: idTraslado, concepto,
         lineas: partes.length, unidades, total: Number(total.toFixed(4)),
         msg: resp.msg,
+        ...(loteDestrabado.length ? { lote_destrabado: loteDestrabado } : {}),
       });
     }
 

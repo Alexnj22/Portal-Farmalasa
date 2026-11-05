@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.34 — Traslados: la recepción destraba sola el control de lote activado después del despacho
+
+_(pendiente de redactar)_
+
 ## v2.1451.33 — Cargar compra: el flete entra como servicio
 
 - **El flete entra como servicio, en la misma compra.** Decisión del usuario: «no se registra como producto, solo como costo». Hoy aparece en 9 facturas de la cola (INCOFA, MEDIDENT, PHARMALAND, MONTREAL, DROGUERÍA CENTROAMERICANA y COFARSAL), y la carga se frenaba porque el renglón no tenía producto.

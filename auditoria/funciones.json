@@ -3569,6 +3569,10 @@
    "area": "pedidos",
    "por": "código"
   },
+  "inicio_bajo_minimo": {
+   "area": "tablero",
+   "por": "código"
+  },
   "init_pedido_sucursal_codigos": {
    "area": "pedidos",
    "por": "código"

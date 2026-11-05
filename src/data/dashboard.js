@@ -128,7 +128,8 @@ export async function fetchAusenciasDeHoy(ids) {
     if (!ids?.length) return { filas: [], error: null };
     const { data, error } = await supabase.rpc('get_estados_de_personas', { p_ids: ids });
     if (error) return { filas: [], error };
-    const filas = (data || [])
+    // `data` llega tipado como `Json`: la función devuelve un arreglo de filas.
+    const filas = /** @type {any[]} */ (data || [])
         .filter(f => CLAVES_DE_AUSENCIA.has(f.clave) && !(Number(f.faltan) > 0))
         .map(f => ({ employee_id: f.id, clave: f.clave, hasta: f.hasta || null }));
     return { filas, error: null };
@@ -221,6 +222,15 @@ export function fetchTodayInvoicesSummary(dateStr) {
  * día anterior sin cerrar, sala abierta sin ventas en 2 h. El juez y el alcance
  * viven en la base (`inicio_alertas_operativas`). Devuelve `{ data, error }`.
  */
+/**
+ * Cuáles de estos productos están bajo su mínimo oficial (Top productos del
+ * Inicio). `branchId` null = toda la red. INVOKER: sin permiso de inventario
+ * devuelve `[]`. Devuelve `{ data, error }`; `data` es un array.
+ */
+export function fetchBajoMinimo(ids, branchId = null) {
+    return supabase.rpc('inicio_bajo_minimo', { p_ids: ids, p_branch_id: branchId });
+}
+
 export function fetchAlertasOperativas() {
     return supabase.rpc('inicio_alertas_operativas');
 }

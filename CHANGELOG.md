@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.26 — Inicio: Top productos marca lo que está bajo su mínimo
+
+- **Top productos del mes marca los que están bajo su mínimo.** Al lado del nombre aparece «bajo mín. 6/9» (existencia / mínimo) cuando se mira una sala, o «bajo mín. en 4» (salas) en toda la red; al pasar el puntero dice cuáles. El resumen del widget compacto dice cuántos del top están bajo su mínimo.
+- El mínimo es el oficial (manual, si no el calculado, si no el publicado) y la existencia no cuenta lo vencido — la misma regla de «faltantes en otra sala». Función nueva `inicio_bajo_minimo` (INVOKER: quien no puede ver inventario no ve la marca).
+- Medido hoy en toda la red: 8 de los 10 más vendidos tienen al menos una sala bajo su mínimo; Neurobion Tri Pack en 4 (Bodega 0/55).
+
 ## v2.1451.25 — Las 2 medicinas sin vencimiento y los 17 regulados que no llevan lote
 
 - Había 19 productos marcados como regulados desde antes de hoy y sin vencimiento. Por decisión del usuario: **ESOPRASEK PLUS** y **ACIBET LOCIÓN** ahora tienen vencimiento, y a 17 que no llevan lote (tarjetas y chips de saldo, vale de descuento, «PUNTOS SALUD», «PAGO REUNIONES COFA», el producto de prueba, camilla, bota, inmovilizador, cepillo, bobina y una bebida) se les quitó «regulado». Ninguno de los 17 tenía existencia.

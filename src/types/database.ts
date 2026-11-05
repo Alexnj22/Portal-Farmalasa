@@ -35550,6 +35550,11 @@ export type Database = {
         Args: { p_run_id: string }
         Returns: undefined
       }
+      inicio_alertas_operativas: { Args: never; Returns: Json }
+      inicio_bajo_minimo: {
+        Args: { p_branch_id?: number; p_ids: number[] }
+        Returns: Json
+      }
       init_pedido_sucursal_codigos: {
         Args: { p_codigos: Json; p_pedido_id: string }
         Returns: undefined

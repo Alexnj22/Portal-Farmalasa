@@ -97,8 +97,7 @@ import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
     fetchPendingApprovalRequests, fetchAusenciasDeHoy, fetchTodayHourlySales, fetchAlertasOperativas,
     fetchBranchHourlySalesRange, fetchCotizacionesActivas, fetchTodayInvoicesSummary, contarSolicitudesPendientes, NO_SON_SOLICITUDES,
-    fetchDashboardCanon, upsertDashboardCanon,
-} from '@nucleo/data/dashboard';
+    fetchDashboardCanon, upsertDashboardCanon, fetchBajoMinimo } from '@nucleo/data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
 import { clickable } from '@nucleo/utils/clickable';
 import { reacomodar } from '@nucleo/utils/acomodoWidgets';
@@ -1914,6 +1913,7 @@ const DashboardView = ({ openModal }) => {
   const [cotizLoading,   setCotizLoading]   = useState(true);
   const [factLoading,    setFactLoading]    = useState(true);
   const [topProductos,   setTopProductos]   = useState([]);
+  const [bajoMinimo,     setBajoMinimo]     = useState({});
   const [topProdLoading, setTopProdLoading] = useState(false);
 
   // ── Effects ────────────────────────────────────────────────────────────────
@@ -2186,8 +2186,18 @@ const DashboardView = ({ openModal }) => {
         setTopProdError(!!error);
         setTopProductos(data || []);
         setTopProdLoading(false);
+        // Cuáles están bajo su mínimo (2026-11-05). En una consulta aparte y
+        // sin bloquear la lista: si falla, el top se ve igual, sin marcas. Sin
+        // alcance ALL la sala es la propia, como en el top.
+        const ids = (data || []).map(p => p.erp_product_id);
+        if (!ids.length) { setBajoMinimo({}); return; }
+        const sala = getScope('dash_top_productos') === 'ALL' ? (topBranch ? Number(topBranch) : null) : (Number(userBranchStr) || null);
+        fetchBajoMinimo(ids, sala).then(({ data: b, error: e }) => {
+          if (e) { console.error('[top_productos] bajo mínimo', e); return; }
+          setBajoMinimo(Object.fromEntries((b || []).map(f => [f.erp_product_id, f])));
+        });
       });
-  }, [topBranch]);
+  }, [topBranch, getScope, userBranchStr]);
   const topProdPedido = useRef(null);
   useEffect(() => {
     if (topProdPedido.current === topBranch) return;
@@ -3604,7 +3614,14 @@ const DashboardView = ({ openModal }) => {
       const maxNeto = topProductos[0]?.neto ?? 1;
       return wrapWidget('top_productos',
         <WidgetCard title={getScope('dash_top_productos') === 'ALL' ? 'Top productos · mes actual' : 'Top productos · mi sala'} icon={Package} category="productos"
-          resumen={topProdLoading ? null : topProdError ? { texto: 'No se pudo leer', tono: 'danger' } : topProductos[0] ? { valor: '#1', texto: topProductos[0].descripcion } : { texto: 'Sin ventas este mes' }}
+          resumen={topProdLoading ? null : topProdError ? { texto: 'No se pudo leer', tono: 'danger' }
+            : topProductos[0] ? (() => {
+                const bajos = topProductos.filter(p => bajoMinimo[p.erp_product_id]).length;
+                return bajos
+                  ? { valor: bajos, texto: `del top bajo su mínimo · #1 ${topProductos[0].descripcion}`, tono: 'warning' }
+                  : { valor: '#1', texto: topProductos[0].descripcion };
+              })()
+            : { texto: 'Sin ventas este mes' }}
           action={getScope('dash_top_productos') === 'ALL' && salesBranches.length > 1
             ? <LiquidSelect value={topBranch} onChange={v => setTopBranch(v ?? '')} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Toda la red" icon={Building2} clearable compact bare/>
             : (puedeAbrir('/ventas')&&<Button variant="ghost" size="xs" onClick={() => navigate('/ventas')}>Ver <ChevronRight size={11}/></Button>)}>
@@ -3634,7 +3651,21 @@ const DashboardView = ({ openModal }) => {
                 <div key={p.erp_product_id} className="flex items-center gap-2.5 py-1.5">
                   <span className="text-micro font-black text-content-3 w-4 shrink-0 text-right">{i + 1}</span>
                   <div className="flex-1 min-w-0">
-                    <p className="text-caption font-semibold text-content-2 truncate leading-tight">{p.descripcion}</p>
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <p className="text-caption font-semibold text-content-2 truncate leading-tight min-w-0">{p.descripcion}</p>
+                      {bajoMinimo[p.erp_product_id] && (() => {
+                        const b = bajoMinimo[p.erp_product_id];
+                        // En una sala: «6/9». En la red: en cuántas salas.
+                        const texto = topBranch || getScope('dash_top_productos') !== 'ALL'
+                          ? `bajo mín. ${b.existencia}/${b.minimo}`
+                          : `bajo mín. en ${b.salas_bajo}`;
+                        return (
+                          <span title={`Bajo el mínimo en: ${(b.salas || []).join(', ')}`} className="shrink-0">
+                            <Badge variant="warning" size="sm">{texto}</Badge>
+                          </span>
+                        );
+                      })()}
+                    </div>
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="flex-1 h-1.5 bg-surface-card-hover rounded-full overflow-hidden">
                         <div className="h-full rounded-full bg-brand" style={{ width: `${pct}%` }}/>

@@ -12,18 +12,20 @@ const hay = existsSync(RAIZ);
 const M = hay ? await import('../../apps/clientes/lib/botiquinMotor.js') : {};
 const Matter = hay ? (await import('../../apps/clientes/node_modules/matter-js/build/matter.js')).default : null;
 const {
-  AL_AZAR, CAJA = {}, ESPERA_PERDER, MAX, PAUSA_SOLTAR, PREMIO_CUMBRE, RADIOS = [],
-  agregar, avanzar, crearMundo, destruir, energia, paso, piezas, puntosDe, soltar,
+  AL_AZAR, CAJA = {}, ESPERA_PERDER, FORMAS = [], GERMENES = [], MAX, PAUSA_SOLTAR, PREMIO_CUMBRE,
+  agregar, avanzar, crearMundo, destruir, energia, medidas, paso, piezas, puntosDe, soltar,
 } = M;
 const describe2 = describe.skipIf(!hay);
 
 const correr = (m, s) => { for (let i = 0; i < Math.round(s * 120); i++) paso(m); };
+const ancho = (n) => medidas(FORMAS[n]).w;
+const alto = (n) => medidas(FORMAS[n]).h;
 
 describe2('dos iguales que se tocan', () => {
   it('se juntan UNA vez en el siguiente nivel', () => {
     const m = crearMundo(7);
-    agregar(m, 2, 180, CAJA.ALTO - RADIOS[2]);
-    agregar(m, 2, 180 + RADIOS[2] * 2 - 1, CAJA.ALTO - RADIOS[2]);
+    agregar(m, 2, 120, CAJA.ALTO - alto(2) / 2);
+    agregar(m, 2, 120 + ancho(2) - 1, CAJA.ALTO - alto(2) / 2);
     correr(m, 0.5);
     const l = piezas(m);
     expect(l).toHaveLength(1);
@@ -32,14 +34,14 @@ describe2('dos iguales que se tocan', () => {
     expect(m.eventos.filter((e) => e.tipo === 'junta')).toHaveLength(1);
   });
 
-  it('la recién unida crece hasta su radio sin hacer explotar la pila', () => {
+  it('la recién unida crece hasta su tamaño sin hacer explotar la pila', () => {
     const m = crearMundo(3);
-    for (let i = 0; i < 6; i++) agregar(m, 5, 50 + i * 60, CAJA.ALTO - 200);
+    for (let i = 0; i < 5; i++) agregar(m, 4, 40 + i * 72, CAJA.ALTO - 200);
     correr(m, 3);
-    agregar(m, 1, 200, 40); agregar(m, 1, 200 + RADIOS[1] * 2, 40);
+    agregar(m, 1, 150, 40); agregar(m, 1, 150 + ancho(1), 40);
     correr(m, 4);
-    for (const b of piezas(m)) expect(b.circleRadius).toBeCloseTo(RADIOS[b.plugin.n], 1);
     for (const b of piezas(m)) {
+      expect(b.plugin.esc).toBe(1);
       expect(b.position.x).toBeGreaterThan(0);
       expect(b.position.x).toBeLessThan(CAJA.ANCHO);
       expect(b.position.y).toBeLessThan(CAJA.ALTO + 1);
@@ -48,48 +50,119 @@ describe2('dos iguales que se tocan', () => {
 
   it('distintas no se juntan', () => {
     const m = crearMundo(1);
-    agregar(m, 1, 150, CAJA.ALTO - 30); agregar(m, 2, 150 + RADIOS[1] + RADIOS[2], CAJA.ALTO - 30);
+    agregar(m, 1, 120, CAJA.ALTO - 30); agregar(m, 2, 120 + (ancho(1) + ancho(2)) / 2, CAJA.ALTO - 30);
     correr(m, 1);
     expect(piezas(m)).toHaveLength(2);
   });
 
   it('dos de la última se van con el premio', () => {
     const m = crearMundo(1);
-    agregar(m, MAX, 110, CAJA.ALTO - RADIOS[MAX]);
-    agregar(m, MAX, 110 + RADIOS[MAX] * 2 - 2, CAJA.ALTO - RADIOS[MAX]);
+    const r = FORMAS[MAX].r;
+    agregar(m, MAX, r + 2, CAJA.ALTO - r);
+    agregar(m, MAX, r * 3, CAJA.ALTO - r);
     correr(m, 0.5);
     expect(piezas(m)).toHaveLength(0);
     expect(m.puntos).toBe(PREMIO_CUMBRE);
   });
+
+  it('dos uniones seguidas multiplican la segunda', () => {
+    const m = crearMundo(4);
+    agregar(m, 0, 60, CAJA.ALTO - 17); agregar(m, 0, 93, CAJA.ALTO - 17);
+    agregar(m, 0, 280, CAJA.ALTO - 17); agregar(m, 0, 313, CAJA.ALTO - 17);
+    correr(m, 0.5);
+    const j = m.eventos.filter((e) => e.tipo === 'junta');
+    expect(j).toHaveLength(2);
+    expect(j[1].racha).toBe(2);
+    expect(m.puntos).toBe(puntosDe(1) + Math.round(puntosDe(1) * 1.5));
+  });
+});
+
+describe2('lo malo y lo bueno', () => {
+  it('dos gérmenes iguales se juntan en uno más grande', () => {
+    const m = crearMundo(2);
+    const r = GERMENES[0].r;
+    agregar(m, { tipo: 'germen', n: 0 }, 150, CAJA.ALTO - r);
+    agregar(m, { tipo: 'germen', n: 0 }, 150 + r * 2 - 1, CAJA.ALTO - r);
+    correr(m, 0.5);
+    const l = piezas(m);
+    expect(l).toHaveLength(1);
+    expect(l[0].plugin.tipo).toBe('germen');
+    expect(l[0].plugin.n).toBe(1);
+    expect(m.germenesVivos).toBe(1);
+  });
+
+  it('una unión de medicamentos al lado elimina al germen', () => {
+    const m = crearMundo(2);
+    agregar(m, { tipo: 'germen', n: 0 }, 200, CAJA.ALTO - GERMENES[0].r);
+    // la de la derecha toca al germen
+    const x = 200 - GERMENES[0].r - ancho(3) / 2;
+    agregar(m, 3, x, CAJA.ALTO - alto(3) / 2);
+    agregar(m, 3, x - ancho(3) + 1, CAJA.ALTO - alto(3) / 2);
+    correr(m, 0.6);
+    expect(m.germenesVivos).toBe(0);
+    expect(m.limpiados).toBe(1);
+    expect(piezas(m).some((b) => b.plugin.tipo === 'germen')).toBe(false);
+  });
+
+  it('el gel estalla al tocar y limpia los de alrededor', () => {
+    const m = crearMundo(2);
+    agregar(m, { tipo: 'germen', n: 1 }, 150, CAJA.ALTO - GERMENES[1].r);
+    agregar(m, { tipo: 'germen', n: 0 }, 240, CAJA.ALTO - GERMENES[0].r);
+    agregar(m, { tipo: 'gel', n: 0 }, 150, CAJA.ALTO - 120);
+    correr(m, 1);
+    expect(m.germenesVivos).toBe(0);
+    expect(piezas(m)).toHaveLength(0);
+    expect(m.eventos.some((e) => e.tipo === 'gel' && e.limpiados === 2)).toBe(true);
+  });
+
+  it('un germen que nadie limpia crece solo', () => {
+    const m = crearMundo(2);
+    agregar(m, { tipo: 'germen', n: 0 }, 150, CAJA.ALTO - GERMENES[0].r);
+    correr(m, 14);
+    expect(piezas(m)[0].plugin.n).toBeGreaterThan(0);
+  });
 });
 
 describe2('soltar', () => {
-  it('sale sólo de las cinco chicas, respeta la pausa y queda dentro', () => {
+  it('las primeras son medicamentos chicos, respeta la pausa y queda dentro', () => {
     const m = crearMundo(11);
-    for (let i = 0; i < 200; i++) {
-      expect(m.actual).toBeLessThan(AL_AZAR);
+    for (let i = 0; i < 6; i++) {
+      expect(m.actual.tipo).toBe('med');
+      expect(m.actual.n).toBeLessThan(AL_AZAR);
       if (!soltar(m, -50)) avanzar(m, PAUSA_SOLTAR + 0.01);
-      if (piezas(m).length > 4) { destruir(m); break; }
     }
+    destruir(m);
     const m2 = crearMundo(2);
     expect(soltar(m2, 9999)).not.toBeNull();
     expect(soltar(m2, 200)).toBeNull(); // la pausa
     const b = piezas(m2)[0];
-    expect(b.position.x).toBeLessThanOrEqual(CAJA.ANCHO - b.circleRadius);
+    expect(b.bounds.max.x).toBeLessThanOrEqual(CAJA.ANCHO + 0.5);
+  });
+
+  it('con el tiempo aparecen gérmenes, nunca dos seguidos', () => {
+    const m = crearMundo(13);
+    let germenes = 0; let antes = false;
+    for (let i = 0; i < 200; i++) {
+      const g = m.actual.tipo === 'germen';
+      if (g) { germenes++; expect(antes).toBe(false); }
+      antes = g;
+      m.ultimaSoltada = -10; soltar(m, 200);
+      for (const b of piezas(m)) Matter.Composite.remove(m.engine.world, b);
+    }
+    expect(germenes).toBeGreaterThan(20);
   });
 });
 
 describe2('la pila', () => {
   it('se calma: la energía cae casi a cero', () => {
     const m = crearMundo(5);
-    for (let i = 0; i < 25; i++) agregar(m, i % 3, 40 + ((i * 53) % 320), 50 - i * 40);
+    for (let i = 0; i < 20; i++) agregar(m, i % 3, 50 + ((i * 53) % 270), 50 - i * 40);
     correr(m, 8);
     expect(energia(m)).toBeLessThan(1);
   });
 
   it('se pierde sólo si algo que ya tocó queda asomado', () => {
     const m = crearMundo(5);
-    // Una pieza que ya tocó, sostenida por encima del borde.
     const b = agregar(m, 3, 200, -40);
     b.plugin.toco = true;
     Matter.Body.setStatic(b, true);
@@ -104,18 +177,19 @@ describe2('la pila', () => {
     expect(m2.perdio).toBe(false);
   });
 
-  it('juega 300 piezas sin escaparse de la caja', () => {
+  it('una partida termina y nada se escapa de la caja', () => {
     const m = crearMundo(9);
-    let s = 1;
-    for (let k = 0; k < 300 && !m.perdio; k++) {
+    let s = 1; let k = 0;
+    for (; k < 1200 && !m.perdio; k++) {
       s = (s * 16807) % 2147483647;
       soltar(m, (s / 2147483647) * CAJA.ANCHO);
-      avanzar(m, 0.5);
+      correr(m, 0.5);
+      for (const b of piezas(m)) {
+        expect(b.position.x).toBeGreaterThan(-1);
+        expect(b.position.x).toBeLessThan(CAJA.ANCHO + 1);
+        expect(b.position.y).toBeLessThan(CAJA.ALTO + 1);
+      }
     }
-    for (const b of piezas(m)) {
-      expect(b.position.x).toBeGreaterThan(-1);
-      expect(b.position.x).toBeLessThan(CAJA.ANCHO + 1);
-      expect(b.position.y).toBeLessThan(CAJA.ALTO + 1);
-    }
+    expect(m.perdio).toBe(true);
   });
 });

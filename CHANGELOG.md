@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1450.0 — Botiquín: medicamentos con su forma real, gérmenes y gel
+
+App de clientes, juego Botiquín (cuarta versión). Pedido del usuario: «que parezcan pastillas… el icono de la empresa… cosas malas… el juego se hace eterno… que se sienta más fluido».
+
+- **Medicamentos con su forma física real.** Tableta y efervescente son redondas; gragea, cápsula, perla y microgránulos son cápsulas; blíster, frasco, caja y botiquín son cajas de esquinas redondeadas. Ruedan, se acuestan y se traban distinto, así que la pila deja de ser lineal. Arte nuevo sin caras. El logo de la casa va en el frasco, la caja, el botiquín, el sello final y el estuche. Cada pieza tiene una sombra propia, desenfocada.
+- **Lo malo: los gérmenes.** Aparecen desde la séptima pieza y cada vez más seguido, nunca dos seguidos. Dos iguales se juntan en uno más grande, un germen que nadie limpia crece solo y el más grande contagia uno nuevo. Una unión de medicamentos que los toque los elimina y da puntos.
+- **Lo bueno: el gel antibacterial.** Sale cuando hay tres gérmenes o más. Al tocar algo estalla y limpia los que tiene alrededor.
+- **Partidas más cortas.** Caja más chica y presión de gérmenes. Calibrado con el banco: un jugador automático, de una pieza por segundo y puntería mediana, dura unos 4 a 5 minutos.
+- **Física más viva.** Las uniones seguidas forman cadena y multiplican los puntos (hasta ×3). Cada unión empuja a las vecinas, las grandes hacen temblar la pantalla, los golpes fuertes aplastan la pieza un instante y suena el choque. El borde se tiñe de rojo mientras algo se desborda.
+- El récord vuelve a empezar: las partidas no se comparan con las de antes.
+
 ## v2.1449.0 — App clientes: Botiquín rehecho — física de verdad y arte nuevo
 
 Pedido del usuario: «el juego está horrible, es injugable, hazlo bien, que

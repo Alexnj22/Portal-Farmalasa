@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.15 — Pedidos: el destrabe de lote no deja productos sin control si la corrida muere
+
+- Una corrida de Salud 4 se quedó sin tiempo justo después de quitarle el
+  control de lote a AMBROXOL JBE X 120ML NORDIC: el worker murió, el `finally`
+  no corrió y el producto quedó sin lote (se le devolvió a mano, verificado).
+  Ahora `trasladar-pedido-erp` (desplegada, v56) no empieza un destrabe con
+  menos de 45 s por delante, anota `LOTE QUITADO: <ids>` en la línea ANTES de
+  quitarlo, y cada corrida de la sala devuelve el control a las marcas de más
+  de 3 minutos (`reactivarHuerfanos`).
+- Verificado en el sistema: los 176 productos destrabados del pedido 240
+  quedaron con el control de lote activado.
+- Se corrigió «Salud 7» → **Salud 5** en la entrada anterior y en dos
+  comentarios: el 7 es el número de la sucursal en el sistema, no la sala.
+
 ## v2.1452.14 — Cargar compra: textos de la tarjeta
 
 «Entran 1 unidad» en singular y «llegaron, de N» en el campo de faltantes.
@@ -34,10 +48,10 @@ Rediseño de la tarjeta de cada renglón en Cargar compra (pedido de Bodega). En
 - **«No entró al inventario» en el pedido 240.** Salió de Bodega a las 8:54 sin
   lote; a sus medicamentos se les activó el control de lote a las 10:19–10:44 y
   la recepción contestó «No se proporcionó un lote» en ~120 renglones de Salud 4
-  y Salud 7 (tampoco se podían recibir a mano). El destrabe de v2.1451.34 —quitar
+  y Salud 5 (tampoco se podían recibir a mano). El destrabe de v2.1451.34 —quitar
   el control de lote, recibir y volver a activarlo, verificando la ficha— estaba
   sólo en Traslados; ahora también en `trasladar-pedido-erp`.
-- **Cambiar la presentación traduce la cantidad.** En Salud 7 eligieron «BOLSA X
+- **Cambiar la presentación traduce la cantidad.** En Salud 5 eligieron «BOLSA X
   50» y la casilla siguió en 25: se guardaron 1,250 sobres sobre 25 enviados.
   Ahora 25 sobres pasan a 1 bolsa.
 - **Una cantidad mucho mayor que la enviada se pregunta** («¿Seguro que son…?»)

@@ -50,7 +50,7 @@ export function enPresentacion(cantidad, r) {
 /**
  * ¿`cantidad` es MUCHO más que lo `esperado`? Las dos en la misma unidad.
  *
- * Nació del bicarbonato del pedido 240 (2026-11-05): en Salud 7 cambiaron la
+ * Nació del bicarbonato del pedido 240 (2026-11-05): en Salud 5 cambiaron la
  * presentación a «BOLSA X 50» y la casilla siguió en 25, así que se guardaron
  * 25 × 50 = 1,250 sobres sobre 25 enviados. El «+1225» estaba en pantalla y
  * pasó igual: un número de diferencia no frena, hay que preguntarlo.

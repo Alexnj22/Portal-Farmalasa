@@ -23,7 +23,7 @@ export default function WidgetVendedores({ selectedBranchId = null }) {
     // `dash_vendedores_vista_completa` decide si el ranking dice montos o
     // porcentajes. El módulo Metas —que es supervisión— usa el mismo componente
     // sin la prop y ve siempre la versión completa.
-    const { hasPermission } = useAuth();
+    const { hasPermission, user } = useAuth();
     const vistaCompleta = hasPermission('dash_vendedores_vista_completa');
     const [data, setData] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -51,10 +51,19 @@ export default function WidgetVendedores({ selectedBranchId = null }) {
     // El vistazo decía «Ranking del mes» y nada más: en una tarjeta angosta era
     // una caja vacía. Ahora dice quién va primero —con el mismo orden del
     // ranking (`rankingDeVendedores`)—.
-    const primero = data ? rankingDeVendedores(data, 'total').filas?.[0] : null;
+    //
+    // Y si quien mira VENDE (está en el ranking), en chico lo que le importa es
+    // SU puesto, no el del líder (2026-11-05). La meta es por sala, no por
+    // persona, así que no hay un «avance contra tu meta» que mostrar: el puesto
+    // es la medida que existe.
+    const filas = data ? rankingDeVendedores(data, 'total').filas ?? [] : [];
+    const primero = filas[0] ?? null;
+    const miPuesto = user?.id != null ? filas.findIndex(v => String(v.employee_id) === String(user.id)) : -1;
     useResumenWidget(loading ? null
         : error ? { texto: 'No se pudo cargar', tono: 'danger' }
         : !primero ? { texto: 'Sin ventas este mes' }
+        : miPuesto > 0 ? { valor: `#${miPuesto + 1}`, texto: `tu puesto de ${filas.length} · va primero ${shortEmployeeName(primero.nombre)}`, tono: 'brand' }
+        : miPuesto === 0 ? { valor: '#1', texto: `vas primero de ${filas.length}`, tono: 'success' }
         : { valor: '#1', texto: shortEmployeeName(primero.nombre) });
 
     if (loading) return <div className="p-1"><SkeletonText lines={5} /></div>;

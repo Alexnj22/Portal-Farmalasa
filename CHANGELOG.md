@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.12 — Venta por vendedor: en chico, tu puesto
+
+- En **Venta por vendedor** en tamaño chico, si tú vendes ves **tu puesto** («#3 · tu puesto de 9 · va primero Ana López»), y si vas primero lo dice. Quien no vende sigue viendo al líder.
+- La meta es por sala y no por persona, así que el widget no muestra un avance individual contra una meta: el puesto es la medida que existe.
+
 ## v2.1451.11 — Ventas en el Inicio: el código que faltó en v2.1451.10
 
 - v2.1451.10 se publicó con su nota pero **sin el código**: lo que describe esa entrada (ventas contra la semana pasada, meta por día, documentos sin sello, cotizaciones más viejas primero, top productos que se actualiza) llega recién con esta versión.

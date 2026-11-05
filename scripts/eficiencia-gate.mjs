@@ -450,6 +450,13 @@ const CRONS = [
           + 'no hace nada mientras el programa siga en el sistema anterior.',
   },
   {
+    job: 'puntos-dui-tardio-hora', slug: null, cadencia: '25 12-23,0-5 * * *',
+    corridasDia: 18, sistema: 0,
+    motivo: 'Pasa los puntos del sistema anterior a la ficha que recibió su DUI después de la '
+          + 'migración (caso DAVID SERRANO GUARDADO, 2026-11-05: 203 puntos invisibles). SQL puro, '
+          + '~72 ms; casi siempre no encuentra nada.',
+  },
+  {
     job: 'puntos-vencer-diario', slug: null, cadencia: '5 12 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'Vence los lotes cumplidos (lo primero vence el 1-oct-2027). SQL puro, con guarda de '

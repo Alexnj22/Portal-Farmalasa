@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.19 — Puntos: la ficha que recibe su DUI tarde recupera los del sistema anterior
+
+- **Los puntos del sistema anterior se unían con la ficha por el DUI, y una sola vez.** Si la ficha no tenía DUI el día de la migración (1-oct) —o todavía no existía—, la cuenta vieja se quedaba sin pasar, y cuando alguien le agregaba el DUI después nada la volvía a mirar: el cliente veía solo los puntos nuevos. Pasó con DAVID ALEXANDER SERRANO GUARDADO: 203 puntos en 17 compras, el DUI se lo escribieron el 1-nov y el portal le mostraba 8. Se le pasaron a mano (hoy tiene 211).
+- **`puntos_migrar_dui_tardio()`** busca las cuentas viejas con saldo que todavía no pasaron y cuyo DUI ya coincide con UNA sola ficha (y está en una sola cuenta vieja), y las pasa con la misma pieza de la migración (`puntos_sincronizar_cuenta_anterior`). Queda `asignada_como = 'dui'` y la nota empieza con «dui_tardio:». Si una no cuadra, se deshace esa sola y queda en `fallas`.
+- La primera versión escribía `asignada_como = 'dui_tardio'`, que el CHECK de la tabla no acepta: las tres cuentas cayeron a `fallas` sin escribir nada. Se corrigió la función, no el CHECK.
+- Cron `puntos-dui-tardio-hora` cada hora en horario de sala, encendido con el OK del usuario. Pasó los 3 casos que ya existían (436 puntos: Marielos Hernández 279, Maricela Murcia 150, Douglas Alas 7); una segunda corrida no encontró nada.
+
 ## v2.1451.18 — Inicio: cumpleaños de hoy, próximo feriado y el atajo de facturación con su nombre
 
 - **Cumpleaños** en tamaño chico dice **quién cumple hoy** («hoy cumple Katlin Molina»); si nadie cumple hoy, quién sigue («mañana cumple…», «el 8 cumple…»).

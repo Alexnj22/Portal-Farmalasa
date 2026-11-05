@@ -4748,6 +4748,10 @@
    "area": "ventas",
    "por": "código"
   },
+  "puntos_migrar_dui_tardio": {
+   "area": "ventas",
+   "por": "cron"
+  },
   "puntos_migrar_historial": {
    "area": "ventas",
    "por": "tablas"

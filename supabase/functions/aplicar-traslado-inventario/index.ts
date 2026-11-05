@@ -102,6 +102,11 @@ const sesionEn = (erpSucursal: number) => abrirSesionEn(erpSucursal, login);
  * `arranque` que mide contra ella. */
 const PRESUPUESTO_MS = 110_000;
 
+// El destrabe del control de lote son ~6 viajes al sistema (leer, quitar,
+// releer, recibir, activar, releer). No se empieza con menos que esto por
+// delante: a medio camino, el producto queda sin lote.
+const MARGEN_DESTRABE_MS = 45_000;
+
 /* Un producto de la solicitud, tal como lo guarda `PedirTrasladoModal` en
  * `metadata.items`. El tipo faltaba —se escribía `Linea[]` contra un nombre que
  * no existía— y como Deno no chequea tipos al desplegar, nada avisó de que
@@ -164,6 +169,34 @@ Deno.serve(async (req) => {
   // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
   // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
   const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
+
+  // Solicitudes con `metadata.lote_quitado` de hace más de 3 minutos: la
+  // llamada que lo quitó murió antes de devolverlo. Se devuelve y se borra la
+  // marca; lo que no se pueda devolver queda en el registro, nunca callado.
+  const reactivarLotesHuerfanos = async (_admin: typeof admin, cookie: string) => {
+    const { data, error } = await _admin.from("approval_requests")
+      .select("id, metadata")
+      .not("metadata->lote_quitado", "is", null)
+      .lt("metadata->lote_quitado->>at", new Date(Date.now() - 3 * 60_000).toISOString())
+      .limit(20);
+    if (error) { console.error(`[aplicar-traslado-inventario] no se pudieron leer las marcas de lote: ${error.message}`); return; }
+    for (const fila of data ?? []) {
+      const md = (typeof fila.metadata === "string" ? JSON.parse(fila.metadata) : fila.metadata) ?? {};
+      const ids: number[] = (md.lote_quitado?.ids ?? []).map(Number).filter(Boolean);
+      const malos: string[] = [];
+      for (const id of ids) {
+        try { await cambiarRegulado(cookie, id, true); }
+        catch (e) { malos.push(`${id}: ${(e as Error).message}`); }
+      }
+      if (malos.length) {
+        console.error(`[aplicar-traslado-inventario] solicitud ${fila.id}: no se pudo devolver el control de lote: ${malos.join("; ")}`);
+        continue;
+      }
+      const { lote_quitado: _quitado, ...resto } = md;
+      const { error: e } = await _admin.from("approval_requests").update({ metadata: resto }).eq("id", fila.id);
+      if (e) console.error(`[aplicar-traslado-inventario] solicitud ${fila.id}: no se pudo borrar la marca de lote: ${e.message}`);
+    }
+  };
 
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
@@ -409,6 +442,11 @@ Deno.serve(async (req) => {
 
       const cookie = await sesionEn(erpDestino);
 
+      // Productos que una llamada MUERTA dejó sin control de lote (ver los
+      // frenos del destrabe, más abajo): se les devuelve antes que nada. La
+      // ficha es una sola para todas las salas, así que cualquier sesión sirve.
+      await reactivarLotesHuerfanos(admin, cookie);
+
       /* ── ¿Sigue esperando entrar? ─────────────────────────────────────────
        *
        * Esto se preguntaba mirando la pantalla de recepción, y la pantalla no
@@ -552,14 +590,34 @@ Deno.serve(async (req) => {
        * otro y se devuelve tal cual. La reactivación va en `finally`: un
        * producto que se queda sin control de lote es el peor resultado, y si
        * pasa se anota y se dice en la respuesta. */
+      /* Dos frenos, los mismos que `trasladar-pedido-erp` (2026-11-05): allá una
+       * corrida murió entre quitar y volver a activar, y un `finally` no
+       * protege contra que maten el proceso — AMBROXOL quedó sin lote.
+       *   1. Sin tiempo para terminar el destrabe, no se empieza.
+       *   2. Lo que se va a quitar se anota en la solicitud ANTES de quitarlo
+       *      (`metadata.lote_quitado`); si la llamada muere, la siguiente lo
+       *      devuelve (`reactivarLotesHuerfanos`). */
       const loteDestrabado: { id: number; nombre: string; reactivado: boolean; error?: string }[] = [];
-      if (!resp.ok && sinLote.size > 0 && await estadoDeRecepcion(cookie, idTraslado) !== "recibido") {
+      const hayTiempoParaDestrabar = Date.now() - arranque < PRESUPUESTO - MARGEN_DESTRABE_MS;
+      if (!resp.ok && sinLote.size > 0 && !hayTiempoParaDestrabar) {
+        resp = { ...resp, msg: `${resp.msg || "No se proporcionó un lote"} (volvé a intentarlo: no quedaba tiempo para destrabar el lote)` };
+      }
+      if (!resp.ok && sinLote.size > 0 && hayTiempoParaDestrabar
+          && await estadoDeRecepcion(cookie, idTraslado) !== "recibido") {
         const regulados: number[] = [];
         for (const id of sinLote.keys()) {
           try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
           catch { /* sin ficha legible no se toca */ }
         }
-        if (regulados.length) {
+        // Sin la marca escrita no se quita nada: es la única red si la
+        // llamada muere entre quitar y volver a activar.
+        const marcado = regulados.length > 0 && !(await admin.from("approval_requests")
+          .update({ metadata: { ...meta, lote_quitado: { ids: regulados, at: new Date().toISOString() } } })
+          .eq("id", sol.id)).error;
+        if (regulados.length && !marcado) {
+          resp = { ...resp, ok: false, msg: "No se pudo anotar el destrabe del lote; volvé a intentarlo." };
+        }
+        if (marcado) {
           const quitados: number[] = [];
           try {
             // Se anota ANTES de escribir: si el guardado entra y la verificación
@@ -584,6 +642,13 @@ Deno.serve(async (req) => {
           if (sinReactivar.length)
             console.error(`[aplicar-traslado-inventario] ${idTraslado}: quedaron SIN control de lote: `
               + sinReactivar.map((x) => `${x.id} ${x.nombre}`).join(", "));
+          else {
+            // Todo devuelto: se borra la marca (`meta` es la foto de antes de
+            // ponerla). Si esto falla, el barrido lo reintenta: activar un
+            // producto que ya está activo no escribe nada.
+            const { error: e } = await admin.from("approval_requests").update({ metadata: meta }).eq("id", sol.id);
+            if (e) console.error(`[aplicar-traslado-inventario] ${idTraslado}: no se pudo borrar la marca de lote: ${e.message}`);
+          }
         }
       }
       /* ── Un «no» del sistema no siempre significa que no entró ────────────

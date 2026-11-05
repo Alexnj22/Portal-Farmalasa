@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.17 — Solicitudes: el destrabe de lote no deja productos sin control si la llamada muere
+
+- El mismo freno de v2.1452.15 ahora en `aplicar-traslado-inventario`
+  (recibir una solicitud de traslado): no se empieza a destrabar el lote sin
+  45 s por delante, lo que se va a quitar se anota en
+  `approval_requests.metadata.lote_quitado` ANTES de quitarlo, y cada llamada
+  de recepción devuelve el control a las marcas de más de 3 minutos.
+
 ## v2.1452.16 — Cargar compra: lote y vencimiento de LANCASCO, Vence alineado
 
 LANCASCO (facturador Factured) escribe el lote y el vencimiento en el PDF como «L.14360 (6) V.2028-04-30»; el lector no lo conocía y el renglón llegaba sin lote ni vence. Ahora lee ese formato (y la fecha aaaa-mm-dd con rótulo «V.»). En la tarjeta, «Vence» tiene el mismo alto y letra que los demás campos (`CampoMesAnio compact`), y «Es nuevo» pasa a secundario cuando hay un parecido para confirmar.

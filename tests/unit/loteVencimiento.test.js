@@ -209,3 +209,44 @@ describe('BRANDSTAR — FECHA VENC.: aaaa-mm-dd', () => {
             .toBe('CAJA MELOFLEX RELAX 15 MG X 10 COMP');
     });
 });
+
+// Formatos de la cola del 2026-11-05, con el texto LITERAL de cada proveedor.
+import { loteYVence as _loteYVence } from '../../supabase/functions/_shared/loteVencimiento.ts';
+describe('proveedores leídos el 2026-11-05', () => {
+    const lee = (pdf, descripcion, cantidad) => { const r = _loteYVence(pdf, { descripcion, cantidad }, 2026); return { lote: r.lote, vence: r.vence }; };
+    it('INCOFA: «26F194 05/2029Lote Vence»', () => {
+        expect(lee('Unidad 15.1858GINKGO BILOBA3.000 36.44601 FRA 0.00000.000.000020.0000 26F194 05/2029Lote Vence PP. $ 21.45 16.9911VITAMINA C', 'GINKGO BILOBA', 3))
+            .toEqual({ lote: '26F194', vence: '2029-05-01' });
+    });
+    it('DROMEDIC: «L: 6E004 V:05/2030»', () => {
+        expect(lee('DROGUERIA DROMEDIC, LTDA DE C.V. STORVAS 10 MG TAB REC X 30 CP $ 61.86$ 19.334.000101A01201 20% L: 6E004 V:05/2030 Cja X 30 STORVAS 20', 'STORVAS 10 MG TAB REC X 30 CP', 4))
+            .toEqual({ lote: '6E004', vence: '2030-05-01' });
+    });
+    it('REDIFAR: «L: T25D017 V:12/2027»', () => {
+        expect(lee('REDIFAR, S.A. DE C.V. VM VITAFUSIN ADU D/5ML C/1FAMP SI $ 412.50$ 16.500025PRD0364 L: T25D017 V:12/2027 $ 412.50', 'VM VITAFUSIN ADU D/5ML C/1FAMP SI', 25))
+            .toEqual({ lote: 'T25D017', vence: '2027-12-01' });
+    });
+    it('DROGUERÍA CENTROAMERICANA: lote sin rótulo antes de dd/mm/aaaa', () => {
+        expect(lee('Lote Vence % Valor FELDOM INY. 75 MG. CX 1 AMP. 1.9500 97.5017091 59 261813 01/03/203050 18+ 35.100.00% POLINSANA', 'FELDOM INY. 75 MG. CX 1 AMP.', 50))
+            .toEqual({ lote: '261813', vence: '2030-03-01' });
+    });
+    it('MEDIDENT: el lote pegado al importe', () => {
+        expect(lee('1 FLETE 2.03 2.03S/N 52517380 5 JARDIANZ 10 MG. X 30 TABLETAS 44.37 221.85H60016 31/07/2028 DESCUENTO DEL 12%', 'JARDIANZ 10 MG. X 30 TABLETAS', 5))
+            .toEqual({ lote: 'H60016', vence: '2028-07-01' });
+    });
+    it('CEFA: «D56307/31MAR28»', () => {
+        expect(lee('4 Unidad DAIVOBET UNGUENTO 30g D56307/31MAR28 26.81000 5.00 25.46950', 'DAIVOBET UNGUENTO 30g', 4))
+            .toEqual({ lote: 'D56307', vence: '2028-03-01' });
+    });
+    it('FARMEX: «L 25C2703 V 30/3/2027»', () => {
+        expect(lee('SV28 SUPLEX TRI SOL INY VIAL 10ML L 25C2703 V 30/3/2027 10.58 0.006.00 63.50 SV38', 'SUPLEX TRI SOL INY VIAL 10ML', 6))
+            .toEqual({ lote: '25C2703', vence: '2027-03-01' });
+    });
+    it('INVERSIONES HOSPITALARIAS: «| 09/27 | 25I245-1» en la descripción', () => {
+        expect(lee('', 'LACTOSI PLUS CX20 TAB.    P.P 21.00| 09/27   | 25I245-1', 4))
+            .toEqual({ lote: '25I245-1', vence: '2027-09-01' });
+    });
+    it('un flete sin lote no inventa uno', () => {
+        expect(lee('', 'FLETE', 1)).toEqual({ lote: null, vence: null });
+    });
+});

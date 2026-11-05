@@ -65,13 +65,25 @@ const FECHAS = [
   /(?:fecha\s*exp\.?|fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|v)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,
   /\(\s*v\s*-\s*(\d{1,2}\s*-\s*\d{2,4})\s*\)/i,          // VIJOSA: (V-12-27)
   /(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4})/,
-  /(\d{1,2}[\/\-.]\d{4})\b/,                              // GAMMA: 04/2028
+  // GAMMA: 04/2028. Sin `\b` al final: INCOFA pega el rótulo a la fecha
+  // («05/2029Lote Vence») y entre `9` y `L` no hay límite de palabra.
+  /(\d{1,2}[\/\-.]\d{4})(?!\d)/,
 ];
 
 const LOTES = [
   /(?:n[uú]mero\s+de\s+)?lote\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
   /\bl0te\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
+  // DROMEDIC y REDIFAR: `L: 6E004 V:05/2030`. Con los dos puntos: una `L`
+  // suelta sin ellos es demasiado común en un nombre.
+  /\bL\s*:\s*([A-Za-z0-9][A-Za-z0-9._\-\/]*)/,
+  // FARMEX: `L 25C2703 V 30/3/2027` — rótulos de una letra, sin puntuación.
+  /\bL\s+([A-Za-z0-9][A-Za-z0-9._\-\/]{2,})\s+V\s+\d/,
 ];
+
+const MESES: Record<string, number> = {
+  ENE: 1, JAN: 1, FEB: 2, MAR: 3, ABR: 4, APR: 4, MAY: 5, JUN: 6, JUL: 7,
+  AGO: 8, AUG: 8, SEP: 9, SET: 9, OCT: 10, NOV: 11, DIC: 12, DEC: 12,
+};
 
 /**
  * Un lote de verdad tiene al menos dos caracteres alfanuméricos.
@@ -81,7 +93,24 @@ const LOTES = [
  * inventario sin que nada avise.
  */
 export const loteValido = (s: string | null): string | null =>
-  s && s.replace(/[^A-Za-z0-9]/g, "").length >= 2 ? s : null;
+  s && s.replace(/[^A-Za-z0-9]/g, "").length >= 2
+    // INCOFA rotula DESPUÉS del valor («26F194 05/2029Lote Vence»): leído
+    // como «Lote: X», X era la palabra «Vence».
+    && !/^(vence|venc|vencimiento|fecha|caducidad|exp)$/i.test(s) ? s : null;
+
+/**
+ * El token pegado ANTES de la fecha, como lote (2026-11-05). Es como lo
+ * escriben las columnas sin rótulo de INCOFA (`26F194 05/2029`), DROGUERÍA
+ * CENTROAMERICANA (`261813 01/03/2030`) y MEDIDENT, que además lo pega al
+ * importe (`221.85H60016 31/07/2028`). Exige 4+ caracteres y un dígito para no
+ * traerse una cantidad («X 30») ni una palabra.
+ */
+function tokenAntesDeLaFecha(antes: string): string | null {
+  const ult = antes.trim().split(/\s+/).pop() ?? "";
+  const tok = ult.replace(/^\d+\.\d{2}(?=[A-Za-z])/, "");
+  if (!/^[A-Za-z0-9][A-Za-z0-9\-\/]{3,}$/.test(tok) || !/\d/.test(tok)) return null;
+  return loteValido(tok);
+}
 
 /**
  * El lote SIN rótulo, que es como lo manda casi la mitad de los proveedores.
@@ -114,7 +143,8 @@ export function loteSinRotulo(t: string, anioRef?: number): string | null {
   //     rótulo. Se exige que mezcle letra y dígito para no traerse el `30` de
   //     «X 30».  `GASTROFLUX 10MG X 30 L138601 V. 01-11-2028`
   const m = t.match(/([A-Za-z0-9][A-Za-z0-9._\-\/]{2,})\s+(?:v\.|vence|vencimiento|f\.?\s*exp)/i);
-  if (m && /[A-Za-z]/.test(m[1]) && /\d/.test(m[1])) return loteValido(m[1]);
+  // Que no sea la fecha con el rótulo pegado (INCOFA: «05/2029Lote Vence»).
+  if (m && /[A-Za-z]/.test(m[1]) && /\d/.test(m[1]) && !/^\d{1,2}[\/\-.]\d{2,4}/.test(m[1])) return loteValido(m[1]);
 
   return null;
 }
@@ -122,10 +152,30 @@ export function loteSinRotulo(t: string, anioRef?: number): string | null {
 /** Lote y vencimiento escondidos en el texto libre de un renglón. */
 export function deTextoLibre(s: string, anioRef?: number): { lote: string | null; vence: string | null } {
   const t = norm(s);
+
+  // CEFA: `D56307/31MAR28` — lote, barra y la fecha con el mes en letras.
+  const cefa = t.match(/\b([A-Za-z0-9]{3,})\/\d{1,2}(ENE|JAN|FEB|MAR|ABR|APR|MAY|JUN|JUL|AGO|AUG|SEP|SET|OCT|NOV|DIC|DEC)(\d{2,4})\b/i);
+  if (cefa) {
+    const v = aMesYAnio(`${MESES[cefa[2].toUpperCase()]}/${cefa[3]}`, anioRef);
+    if (v) return { lote: loteValido(cefa[1]), vence: v };
+  }
+  // INVERSIONES HOSPITALARIAS: `… P.P 21.00| 09/27 | 25I245-1` — la fecha
+  // (mes/año corto) y DESPUÉS el lote, al final de la descripción.
+  const hosp = t.match(/\|\s*(\d{1,2}\/\d{2})\s*\|\s*([A-Za-z0-9][A-Za-z0-9.\-\/]+)\s*$/);
+  if (hosp) {
+    const v = aMesYAnio(hosp[1], anioRef);
+    if (v) return { lote: loteValido(hosp[2]), vence: v };
+  }
+
   let vence: string | null = null;
-  for (const re of FECHAS) {
-    const m = t.match(re);
-    if (m) { vence = aMesYAnio(m[1], anioRef); if (vence) break; }
+  let antesDeLaFecha = "";
+  // Todas las coincidencias, no sólo la primera: en INCOFA `20.0000` (un
+  // porcentaje) parece «mes 20» y tapaba la fecha de verdad que viene después.
+  buscar: for (const re of FECHAS) {
+    for (const m of t.matchAll(new RegExp(re.source, re.flags + "g"))) {
+      vence = aMesYAnio(m[1], anioRef);
+      if (vence) { antesDeLaFecha = t.slice(0, (m.index ?? 0) + m[0].indexOf(m[1])); break buscar; }
+    }
   }
   let lote: string | null = null;
   for (const re of LOTES) {
@@ -133,6 +183,7 @@ export function deTextoLibre(s: string, anioRef?: number): { lote: string | null
     if (m) { lote = loteValido(m[1]); if (lote) break; }
   }
   if (!lote) lote = loteSinRotulo(t, anioRef);
+  if (!lote && vence) lote = tokenAntesDeLaFecha(antesDeLaFecha);
   return { lote, vence };
 }
 
@@ -208,6 +259,9 @@ export function loteYVence(textoPdf: string, item: any, anioRef?: number): Leido
   const m = t.match(re);
   if (m) {
     const medio = norm(m[1]);
+    // FARMEX: `… L 25C2703 V 30/3/2027 10.58 …` — rotulado adentro del tramo.
+    const rot = deTextoLibre(medio, anioRef);
+    if (rot.lote && rot.vence) return { ...rot, de: "pdf/columnas" };
     const f = medio.match(/(\d{1,2}[\/\-.]\d{2,4}(?:[\/\-.]\d{2,4})?)\s*$/);
     const vence = f ? aMesYAnio(f[1], anioRef) : null;
     const lote = loteValido(norm(f ? medio.slice(0, f.index) : medio) || null);

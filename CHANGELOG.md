@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.32 — Cargar compra: lote y vencimiento de seis proveedores más
+
+- **Lote y vencimiento de seis proveedores más.** Se leyeron las 147 facturas en cola y se probó cada formato con su texto literal:
+  - INCOFA: `26F194 05/2029Lote Vence`. El rótulo va después del valor y la palabra «Vence» se tomaba como lote. Además `20.0000` parecía «mes 20» y tapaba la fecha verdadera; ahora se prueban todas las coincidencias, no solo la primera.
+  - DROMEDIC y REDIFAR: `L: 6E004 V:05/2030`.
+  - FARMEX: `L 25C2703 V 30/3/2027`.
+  - CEFA: `D56307/31MAR28`, con el mes en letras.
+  - INVERSIONES HOSPITALARIAS: `| 09/27 | 25I245-1`, con la fecha antes del lote.
+  - DROGUERÍA CENTROAMERICANA y MEDIDENT: el lote sin rótulo justo antes de la fecha. MEDIDENT lo pega al importe (`221.85H60016`).
+
 ## v2.1451.31 — Cargar compra: vencimiento de BRANDSTAR y la caja por precio
 
 - **El vencimiento de BRANDSTAR no se leía.** Su renglón dice `LOTE:BFB028 FECHA VENC.:2029-02-28`: el lote salía, pero ni el rótulo `FECHA VENC.` ni la fecha año-mes-día estaban entre las formas conocidas. Como todo medicamento ya es regulado, la carga se frenaba en los 12 renglones. `loteVencimiento.ts` ahora lee los dos.

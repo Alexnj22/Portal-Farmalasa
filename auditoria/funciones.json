@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-05T22:11:55.173Z",
+ "generado": "2026-11-05T22:56:00.226Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -608,6 +608,10 @@
   },
   "avisar_cierre_del_dia": {
    "area": "cortes-efectivo",
+   "por": "cron"
+  },
+  "avisar_clientes_sin_reconocer": {
+   "area": "facturacion-dte",
    "por": "cron"
   },
   "avisar_cortes_pendientes": {
@@ -2707,6 +2711,10 @@
    "por": "trigger"
   },
   "fusionar_cliente_duplicado": {
+   "area": "facturacion-dte",
+   "por": "código"
+  },
+  "fusionar_cliente_duplicado_con_puntos": {
    "area": "facturacion-dte",
    "por": "código"
   },
@@ -4935,6 +4943,10 @@
    "por": "tablas"
   },
   "puntos_titular": {
+   "area": "ventas",
+   "por": "tablas"
+  },
+  "puntos_unir_cuentas_sistema": {
    "area": "ventas",
    "por": "tablas"
   },

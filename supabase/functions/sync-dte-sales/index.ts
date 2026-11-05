@@ -130,9 +130,19 @@ async function resolverIdCliente(cookie: string, erpInvoiceId: string): Promise<
     headers: { Cookie: cookie, 'User-Agent': 'Mozilla/5.0' },
     signal: AbortSignal.timeout(10_000),
   });
-  if (!res.ok) return null;
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const html = await res.text();
-  return html.match(/id="id_cliente"[\s\S]*?<option value='(\d+)'\s+selected>/)?.[1] ?? null;
+  const id = html.match(/id="id_cliente"[\s\S]*?<option value='(\d+)'\s+selected>/)?.[1] ?? null;
+  // Un null silencioso costó un día entero (2026-11-05): 16 de 16 clientes
+  // nuevos sin reconocer y ni una línea en el registro. Lo que el sistema de
+  // la caja devolvió en vez de la factura —una pantalla de login, un aviso de
+  // permiso— es la pista para saber por qué.
+  if (!id) {
+    const titulo = html.match(/<title>([^<]*)<\/title>/i)?.[1]?.trim();
+    throw new Error(`sin id_cliente (${html.length} B${titulo ? `, «${titulo}»` : ''}): ` +
+                    html.replace(/\s+/g, ' ').slice(0, 160));
+  }
+  return id;
 }
 
 function parseTipoDoc(correlativo: string): string {
@@ -460,7 +470,7 @@ async function syncBranch(
     // Lo que pasa el tope NO se pierde: degrada a ligar por nombre —el
     // comportamiento de siempre— y la limpieza de duplicados lo levanta después.
     const MAX_LECTURAS_ERP = 25;
-    let leidas = 0, omitidas = 0;
+    let leidas = 0, omitidas = 0, sinReconocer = 0;
 
     for (const fila of filas) {
       if (conocidos.has(fila.nombre)) continue;
@@ -474,10 +484,16 @@ async function syncBranch(
       try {
         fila.erp_id = await resolverIdCliente(cookie, facturaEjemplo);
       } catch (e) {
-        console.error(`resolverIdCliente(${facturaEjemplo}):`,
+        sinReconocer++;
+        console.error(`resolverIdCliente(${facturaEjemplo}) «${fila.nombre}»:`,
                       e instanceof Error ? e.message : String(e));
       }
     }
+    // El vigilante `avisar_clientes_sin_reconocer` mira el resultado en la
+    // base; esta línea es para saber POR QUÉ desde el registro de la función.
+    if (sinReconocer > 0)
+      console.warn(`clientes nuevos sin reconocer: ${sinReconocer} de ${leidas} ` +
+                   `(quedan como ficha suelta; la corrida nocturna los une)`);
     // Un tope que no se anuncia se lee como "se resolvieron todos".
     if (omitidas > 0)
       console.warn(`clientes desconocidos sin resolver por tope: ${omitidas} ` +

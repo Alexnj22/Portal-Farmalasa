@@ -656,6 +656,16 @@ const CRONS = [
           + 'origen (U2, 2026-09-26).',
   },
   {
+    job: 'clientes-sin-reconocer', slug: null, cadencia: '40 14-23,0-3 * * *',
+    corridasDia: 14, sistema: 0,
+    motivo: 'SQL puro: `avisar_clientes_sin_reconocer` cuenta fichas nuevas sin número interno, '
+          + 'casos viejos de «fusión con puntos», puntos en otra ficha que su factura y fichas '
+          + 'sin número de más de 3 días; avisa al cargo de alertas técnicas una vez por tipo y '
+          + 'día. Nació el 5-nov, cuando 16 de 16 clientes nuevos quedaron sin reconocer y nada '
+          + 'lo dijo. Medido: 33 ms y ~17k bloques (la ventana de 7 días de los puntos es la que '
+          + 'lo mantiene ahí; con 120 días eran 61k). No toca el sistema de origen.',
+  },
+  {
     job: 'facturas-descuadradas', slug: null, cadencia: '25 * * * *',
     corridasDia: 24, sistema: 0,
     motivo: 'SQL puro: `avisar_facturas_descuadradas` suma el detalle de las facturas de los '

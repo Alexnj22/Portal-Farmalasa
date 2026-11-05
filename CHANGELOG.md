@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.9 — Puntos: fichas sueltas se unen solas y vigilante de clientes sin reconocer
+
+Juan Serrano tenía 136 puntos en su ficha y 22 en una ficha suelta creada por la venta del 5-nov. Al revisar aparecieron **47 clientes más con el saldo partido** (1,488 puntos), algunos desde hacía un mes: la corrida nocturna los encontraba, pero con puntos no unía y los dejaba en «Por revisar», y nadie miraba esa cola. Se unieron a mano el mismo día.
+
+- **Unión automática** (decisión del usuario): cuando el sistema de la caja confirma por la factura que la ficha suelta es el mismo cliente —y los nombres se parecen—, `sincronizar-fichas-clientes` une el libro de puntos y la ficha juntos (`fusionar_cliente_duplicado_con_puntos`). Lo que no puede unir sola sigue yendo a revisión con la razón.
+- El movimiento del libro vive una sola vez en `puntos_unir_cuentas_sistema`; «Unir cuentas» de la pantalla lo llama después de sus chequeos.
+- **Vigilante `clientes-sin-reconocer`** (cada hora en horario de sala): avisa a alertas técnicas si el día lleva ≥75% de clientes nuevos sin número, si hay casos de «fusión con puntos» de más de 2 días, puntos en otra ficha que su factura, o fichas sin número de más de 3 días.
+- `sync-dte-sales` ya no se calla cuando no reconoce a un cliente: deja en el registro cuántos y qué devolvió el sistema de la caja. El 5-nov fueron 16 de 16 sin una sola línea.
+
 ## v2.1453.8 — Traslados: lo que sale sin lote asignado lleva el lote de la caja
 
 Desde el 5-nov los medicamentos llevan lote, pero la existencia que ya estaba quedó como «GENERICO» (medido: 54% de los pares producto·sala de regulados, 65% de las unidades). Un traslado de esa existencia salía como GENERICO mientras de la sala salía una caja con su lote impreso, y los lotes se descuadraban en las dos salas.

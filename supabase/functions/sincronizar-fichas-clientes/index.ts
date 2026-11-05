@@ -209,7 +209,7 @@ Deno.serve(async (req) => {
 
     const cookie = await login();
     const res = {
-      fusionadas: 0, facturas_movidas: 0, a_revisar: 0,
+      fusionadas: 0, fusionadas_con_puntos: 0, facturas_movidas: 0, a_revisar: 0,
       distrito_escrito: 0, distrito_sin_evidencia: 0, espejadas: 0,
       ubicacion_por_defecto: 0, dui_borrado: 0, telefono_puesto: 0,
       correo_reparado: 0, correo_borrado: 0, correo_pedido_a_la_sala: 0,
@@ -332,19 +332,31 @@ Deno.serve(async (req) => {
           if (eDue) throw new Error(`buscar dueño del número ${erpId}: ${eDue.message}`);
           if (dueño && dueño.id !== c.customer_id) {
             if (parecidos(c.name, dueño.name)) {
-              const { data: r, error } = await admin.rpc("fusionar_cliente_duplicado",
+              let { data: r, error } = await admin.rpc("fusionar_cliente_duplicado",
                 { p_huerfana: c.customer_id, p_erp_id: erpId });
-              // Con puntos acumulados no se fusiona: `puntos_cuenta` es una fila
-              // por cliente y sumar dos saldos no lo decide un proceso de noche.
-              // Va a revisión en vez de cortar la corrida.
+              // Con puntos acumulados: se unen el libro y la ficha juntos
+              // (decisión del usuario, 2026-11-05: «unión automática si se
+              // confirma que es el mismo cliente»). La confirmación es la de
+              // arriba —la factura de la ficha suelta pertenece al número de la
+              // buena, y los nombres se parecen—. Antes esto iba siempre a
+              // revisión, nadie miraba la cola, y 47 clientes vivieron un mes
+              // con el saldo partido en dos fichas.
+              let conPuntos = false;
               if (error?.message?.includes("TIENE_PUNTOS")) {
+                ({ data: r, error } = await admin.rpc("fusionar_cliente_duplicado_con_puntos",
+                  { p_huerfana: c.customer_id, p_erp_id: erpId }));
+                conPuntos = !error;
+              }
+              // Lo que la unión automática no puede hacer (una cuenta que alguien
+              // ya unió a mano hacia otro lado, o un destino fuera del programa)
+              // sigue yendo a revisión, con la razón que dio la base.
+              if (error && /TIENE_PUNTOS|no participa en el programa|ya se unió/.test(error.message ?? "")) {
                 aRevisar.push({
                   erp_id: erpId, name: c.name, motivo: "fusion_con_puntos",
                   customer_id: c.customer_id,
                   detalle: `«${c.name}» es la misma persona que «${dueño.name}» ` +
-                           `(número interno ${erpId}), pero la ficha suelta tiene ` +
-                           `puntos acumulados: unirlas movería un saldo. Hay que ` +
-                           `resolverlo a mano.`,
+                           `(número interno ${erpId}), pero sus puntos no se pudieron ` +
+                           `unir solos: ${error.message}. Hay que resolverlo a mano.`,
                   datos: { ficha_suelta_id: c.customer_id, ficha_destino_id: dueño.id },
                 });
                 res.a_revisar++;
@@ -352,8 +364,10 @@ Deno.serve(async (req) => {
               }
               if (error) throw new Error(`fusionar: ${error.message}`);
               res.fusionadas++;
+              if (conPuntos) res.fusionadas_con_puntos++;
               res.facturas_movidas += (r as { facturas_movidas?: number })?.facturas_movidas ?? 0;
-              detalle.push({ ficha: c.name, accion: "fusionada", destino: dueño.name });
+              detalle.push({ ficha: c.name, accion: conPuntos ? "fusionada_con_puntos" : "fusionada",
+                             destino: dueño.name });
             } else {
               aRevisar.push({
                 erp_id: erpId, name: c.name, motivo: "fusion_dudosa",

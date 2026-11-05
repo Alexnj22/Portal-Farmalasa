@@ -31440,6 +31440,7 @@ export type Database = {
         Args: { p_fecha?: string; p_forzado?: boolean }
         Returns: number
       }
+      avisar_clientes_sin_reconocer: { Args: never; Returns: number }
       avisar_cortes_pendientes: { Args: never; Returns: number }
       avisar_cuadre_antibioticos: { Args: { p_hoy: string }; Returns: number }
       avisar_dias_sin_cierre: { Args: { p_fecha: string }; Returns: number }
@@ -33766,6 +33767,10 @@ export type Database = {
         Returns: number
       }
       fusionar_cliente_duplicado: {
+        Args: { p_erp_id: string; p_huerfana: number }
+        Returns: Json
+      }
+      fusionar_cliente_duplicado_con_puntos: {
         Args: { p_erp_id: string; p_huerfana: number }
         Returns: Json
       }
@@ -37157,6 +37162,15 @@ export type Database = {
         Returns: Json
       }
       puntos_titular: { Args: { p_customer_id: number }; Returns: number }
+      puntos_unir_cuentas_sistema: {
+        Args: {
+          p_destino: number
+          p_nota?: string
+          p_origen: number
+          p_por?: string
+        }
+        Returns: Json
+      }
       puntos_vence_el: { Args: { p_ganado_el: string }; Returns: string }
       puntos_vencer_lotes: {
         Args: { p_al_dia?: string; p_simular?: boolean }

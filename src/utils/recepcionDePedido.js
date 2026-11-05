@@ -47,6 +47,34 @@ export function enPresentacion(cantidad, r) {
     return { fQty: n, fPres: erpFactor };
 }
 
+/**
+ * ¿`cantidad` es MUCHO más que lo `esperado`? Las dos en la misma unidad.
+ *
+ * Nació del bicarbonato del pedido 240 (2026-11-05): en Salud 7 cambiaron la
+ * presentación a «BOLSA X 50» y la casilla siguió en 25, así que se guardaron
+ * 25 × 50 = 1,250 sobres sobre 25 enviados. El «+1225» estaba en pantalla y
+ * pasó igual: un número de diferencia no frena, hay que preguntarlo.
+ *
+ * El triple Y diez unidades de más: un sobrante real de 1 a 3 no molesta, y
+ * un error de presentación siempre multiplica.
+ */
+export function excesoGrande(cantidad, esperado) {
+    const c = Number(cantidad) || 0;
+    const e = Number(esperado) || 0;
+    return c > e && c >= Math.max(e * 3, e + 10);
+}
+
+/**
+ * Al cambiar la presentación, la cantidad se TRADUCE para seguir diciendo las
+ * mismas unidades (25 sobres → 1 bolsa de 50, redondeado y nunca a cero si
+ * había algo). Dejarla quieta es lo que convirtió 25 sobres en 1,250.
+ */
+export function cantidadEnOtraPresentacion(cantidad, factorAntes, factorNuevo) {
+    const unidades = (Number(cantidad) || 0) * (Number(factorAntes) || 1);
+    if (unidades <= 0) return 0;
+    return Math.max(1, Math.round(unidades / (Number(factorNuevo) || 1)));
+}
+
 /** Con qué arranca el conteo de un renglón: lo enviado, sin inventar diferencia. */
 export const conteoInicial = (r) => enPresentacion(enviadoDe(r), r);
 

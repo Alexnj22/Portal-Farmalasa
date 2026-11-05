@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { esperadoEnDespacho, renglonContado, renglonTodoOk, toDispatch } from '@nucleo/utils/recepcionDePedido';
+import { cantidadEnOtraPresentacion, esperadoEnDespacho, excesoGrande, renglonContado, renglonTodoOk, toDispatch } from '@nucleo/utils/recepcionDePedido';
 import { tipoDeLlegada } from '@nucleo/data/llegadaDePedido';
 
 // 24 unidades enviadas, se despachan en cajas de 12.
@@ -30,5 +30,35 @@ describe('recepción de pedido', () => {
         expect(tipoDeLlegada({ electrolitFaltantes: 2 })).toBe('falta_caja');
         expect(tipoDeLlegada({ especialesLlegadas: { E1: 'faltante' }, cajasDanadas: [3] })).toBe('mixto');
         expect(tipoDeLlegada({ cajasDanadas: [1] })).toBe('caja_danada');
+    });
+});
+
+// ── Cantidades muy grandes (bicarbonato del pedido 240, 2026-11-05) ──────────
+
+describe('excesoGrande', () => {
+    it('frena 25 «bolsas de 50» sobre 25 enviados', () => {
+        expect(excesoGrande(1250, 25)).toBe(true);
+    });
+    it('no frena un sobrante real chico', () => {
+        expect(excesoGrande(50, 25)).toBe(false);   // la bolsa entera que mandó bodega
+        expect(excesoGrande(3, 1)).toBe(false);     // triple pero sólo 2 de más
+        expect(excesoGrande(25, 25)).toBe(false);
+        expect(excesoGrande(10, 25)).toBe(false);
+    });
+    it('frena desde cero enviado con 10 o más', () => {
+        expect(excesoGrande(10, 0)).toBe(true);
+        expect(excesoGrande(9, 0)).toBe(false);
+    });
+});
+
+describe('cantidadEnOtraPresentacion', () => {
+    it('25 sobres pasan a 1 bolsa de 50, no a 25 bolsas', () => {
+        expect(cantidadEnOtraPresentacion(25, 1, 50)).toBe(1);
+    });
+    it('2 bolsas de 50 pasan a 100 unidades', () => {
+        expect(cantidadEnOtraPresentacion(2, 50, 1)).toBe(100);
+    });
+    it('cero se queda en cero', () => {
+        expect(cantidadEnOtraPresentacion(0, 1, 50)).toBe(0);
     });
 });

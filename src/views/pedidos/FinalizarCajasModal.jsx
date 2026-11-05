@@ -19,6 +19,19 @@ import {
     ajustesDeEnvio, ajustesDelSimulacro, alternarCaja, armarCajaMap, armarPaginaItems, asignacionCompleta, asignacionInicial,
     cuantasCajas, despachablesDe, presentacionesDeEnvio,
 } from '@nucleo/utils/finalizarCajas';
+import { excesoGrande } from '@nucleo/utils/recepcionDePedido';
+
+/**
+ * Lo que sale y lo asignado, en unidades del sistema. Para el aviso de una
+ * cantidad muy grande: la misma trampa que en la recepción —cambiar la
+ * presentación y dejar el número— multiplica lo que sale.
+ */
+function unidadesDeAjuste(it, a) {
+    const R = Number(it?.factor) || 1;
+    const f = Number(a?.factor) || R;
+    const cant = a?.cantidad === '' ? 0 : Number(a?.cantidad) || 0;
+    return { sale: cant * f, asignado: (Number(it?.cantidad_asignada) || 0) * R };
+}
 
 // Un solo «sin productos» para siempre: `items` es dependencia del efecto que
 // reinicia el diálogo, y un `[]` nuevo en cada render lo volvía a correr —y a
@@ -40,6 +53,8 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
     // `ajustes`: { [pedido_item_id]: { cantidad, motivo } }. Solo viven acá las
     // EXCEPCIONES — lo que no está en este mapa sale como se asignó.
     const [ajustes,   setAjustes]   = useState({});
+    // Correcciones con una cantidad muy grande ya confirmadas: { [id]: unidades }.
+    const [excesoOk,  setExcesoOk]  = useState({});
     const [busqueda,  setBusqueda]  = useState('');
     const [simuId,    setSimuId]    = useState(null);
     const [simu,      setSimu]      = useState(null);
@@ -217,11 +232,19 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
 
     const noEnviados = ajustesLista.filter(a => a.cantidad_enviada === 0).length;
 
+    // Correcciones con mucho más de lo asignado que nadie confirmó: frenan.
+    const excesosPendientes = Object.entries(ajustes).filter(([id, a]) => {
+        const it = despachables.find(r => String(r.id) === String(id));
+        if (!it) return false;
+        const { sale, asignado } = unidadesDeAjuste(it, a);
+        return excesoGrande(sale, asignado) && excesoOk[id] !== sale;
+    }).length;
+
     // Espera a que se guarde: si falla, el modal sigue abierto con lo anotado
     // y el borrador intacto. Antes se borraba el borrador y se cerraba antes
     // de saber si se había guardado (2026-10-07).
     const handleConfirm = async () => {
-        if (submitting || !isValid) return;
+        if (submitting || !isValid || excesosPendientes) return;
         setSubmitting(true);
 
         // El reparto sale del núcleo (`finalizarCajas`), el mismo de la app.
@@ -524,6 +547,26 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 </Button>
                                             )}
                                         </div>
+                                        {(() => {
+                                            const { sale, asignado: asigU } = unidadesDeAjuste(it, a);
+                                            if (!excesoGrande(sale, asigU)) return null;
+                                            const n = (x) => Number(x).toLocaleString('es-SV');
+                                            const ok = excesoOk[id] === sale;
+                                            return (
+                                                <div className="mt-2">
+                                                    <Notice variant="danger" icon={TriangleAlert} compact
+                                                        action={ok ? null : (
+                                                            <Button variant="secondary" size="xs"
+                                                                onClick={() => setExcesoOk(p => ({ ...p, [id]: sale }))}>
+                                                                Sí, salen {n(sale)}
+                                                            </Button>
+                                                        )}>
+                                                        <strong>¿Seguro que salen {n(sale)} unidades?</strong> Se asignaron {n(asigU)}.
+                                                        {ok ? ' Confirmado.' : ' Revisa la presentación y la cantidad.'}
+                                                    </Notice>
+                                                </div>
+                                            );
+                                        })()}
                                     </div>
                                 );
                             })}
@@ -604,7 +647,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         Siguiente <span className="opacity-60">→</span>
                     </Button>
                 ) : (
-                    <Button tone="chart-3" disabled={submitting || !isValid || verificando} onClick={handleConfirm}>{submitting || verificando
+                    <Button tone="chart-3" disabled={submitting || !isValid || verificando || excesosPendientes > 0} onClick={handleConfirm}>{submitting || verificando
                             ? <Loader2 size={12} className="animate-spin" />
                             : <PackageCheck size={13} />
                         }

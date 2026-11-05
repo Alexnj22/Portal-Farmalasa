@@ -29,6 +29,7 @@ import {
   VER,
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { cambiarRegulado, leerFichaDe } from "../_shared/erp-regulado.ts";
 
 // Mueve al sistema de origen el pedido de reposición que Bodega ya terminó de
 // preparar. Hasta hoy ese movimiento se tecleaba a mano: el portal solo dejaba
@@ -696,6 +697,9 @@ Deno.serve(async (req) => {
           // faltante, y eso necesita a alguien mirando la caja, no una función:
           // esa diferencia se cuenta en el portal, en la pantalla de recepción.
           const partes: string[] = [];
+          // Renglones que llegan SIN lote, por producto: candidatos a la trampa
+          // del control de lote activado después del despacho (ver abajo).
+          const sinLote = new Map<number, string>();
           let total = 0;
           for (const tr of filas) {
             const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
@@ -710,6 +714,12 @@ Deno.serve(async (req) => {
             // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
             // RECIBIDO. Mismo lugar del string que en el envío, otro significado.
             partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+            // La 9.ª celda es «Lote» (encabezado: … Esperado · Recibido · Lote · Vence).
+            const celdas = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
+            const loteCelda = (celdas[8] ?? "").replace(/<[^>]+>/g, "").trim();
+            if (!loteCelda) {
+              sinLote.set(Number(idProd), (celdas[1] ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+            }
             total += Number(compra) * Number(esp);
           }
 
@@ -730,7 +740,7 @@ Deno.serve(async (req) => {
           }
 
           const { concepto } = armarConcepto(`${ln.clave} REC ${yo}`);
-          const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+          const enviarRecepcion = async () => leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
             process: "insert",
             datos: partes.join("#") + "#",
             cuantos: String(partes.length),
@@ -740,6 +750,57 @@ Deno.serve(async (req) => {
             destino: String(ubicDestino),
             id_traslado: String(ln.id_traslado),
           }), { extra: { Referer: RECIBIR } }));
+          let resp = await enviarRecepcion();
+
+          /* ── El control de lote se activó DESPUÉS de despachar (2026-11-05) ──
+           *
+           * Mismo destrabe que `aplicar-traslado-inventario` (v2.1451.34), que
+           * se había puesto sólo en Traslados: el pedido 240 salió de Bodega a
+           * las 8:54 sin lote, a sus medicamentos se les activó «regulado» a las
+           * 10:19–10:44, y al recibirlos el sistema contestó «No se proporcionó
+           * un lote» en ~120 renglones de Salud 4 y Salud 7 — tampoco se podían
+           * recibir a mano: la pantalla del sistema manda el mismo sobre.
+           *
+           * Se le QUITA el control de lote al producto, se recibe y se le
+           * VUELVE a activar, verificando cada cambio releyendo la ficha. Sólo
+           * si la recepción falló, no quedó recibida igual, y el producto sin
+           * lote HOY es regulado. La reactivación va en `finally`. */
+          const loteDestrabado: { id: number; nombre: string; reactivado: boolean; error?: string }[] = [];
+          if (!resp.ok && sinLote.size > 0
+              && await estadoDeRecepcion(cookie, String(ln.id_traslado)) !== "recibido") {
+            const regulados: number[] = [];
+            for (const id of sinLote.keys()) {
+              try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
+              catch { /* sin ficha legible no se toca */ }
+            }
+            if (regulados.length) {
+              const quitados: number[] = [];
+              try {
+                // Se anota ANTES de escribir: si el guardado entra y la
+                // verificación lanza, igual hay que volver a activarlo.
+                for (const id of regulados) { quitados.push(id); await cambiarRegulado(cookie, id, false); }
+                resp = await enviarRecepcion();
+              } catch (e) {
+                resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
+              } finally {
+                for (const id of quitados) {
+                  const nombre = sinLote.get(id) ?? String(id);
+                  try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
+                  catch {
+                    // Un reintento antes de rendirse: dejarlo sin lote no es opción.
+                    try { await cambiarRegulado(cookie, id, true); loteDestrabado.push({ id, nombre, reactivado: true }); }
+                    catch (e) { loteDestrabado.push({ id, nombre, reactivado: false, error: (e as Error).message }); }
+                  }
+                }
+              }
+              const sinReactivar = loteDestrabado.filter((x) => !x.reactivado);
+              if (sinReactivar.length) {
+                const lista = sinReactivar.map((x) => `${x.id} ${x.nombre}`).join(", ");
+                console.error(`[trasladar] ${ln.clave}: quedaron SIN control de lote: ${lista}`);
+                fallos.push({ clave: String(ln.clave), error: `Quedaron sin control de lote: ${lista}` });
+              }
+            }
+          }
 
           if (!resp.ok) {
             // Un fallo NO prueba que no entró: el sistema contesta cosas que no
@@ -788,6 +849,11 @@ Deno.serve(async (req) => {
               estado: "recibida",
               recibido_at: new Date().toISOString(),
               recibido_por: quien!.id,
+              error_msg: null,
+              ...(loteDestrabado.length ? {
+                aviso: `Se recibió quitando y volviendo a activar el control de lote de: `
+                  + loteDestrabado.map((x) => `${x.nombre}${x.reactivado ? "" : " (QUEDÓ SIN REACTIVAR)"}`).join(", "),
+              } : {}),
               updated_at: new Date().toISOString(),
             }).eq("id", ln.id),
             `la recepción de ${ln.clave} (el producto YA entró a la sala)`,

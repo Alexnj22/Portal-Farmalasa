@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
+import Notice from '../../components/common/Notice';
 import { createPortal } from 'react-dom';
 import { clickable } from '@nucleo/utils/clickable';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -29,7 +30,7 @@ import { alcanceDeRecepcion, construirCajasEspeciales } from '@nucleo/utils/caja
 import { estadoDeHojas, hojasContables, hojasContadas } from '@nucleo/utils/hojasRecepcion';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { conteoInicial, enPresentacion, enviadoDe, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
+import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
@@ -117,6 +118,37 @@ function cantidadConPresentacion(cantidad, r, presMap) {
 }
 
 /**
+ * Una cantidad MUCHO mayor que lo enviado se pregunta antes de guardarse.
+ * El bicarbonato del pedido 240 entró como 1,250 sobre 25 enviados porque la
+ * presentación cambió y la cantidad no: el «+1225» de la esquina no frenó a
+ * nadie. Ver `excesoGrande`. Mientras no se confirme, los botones de guardar
+ * lo rechazan.
+ */
+function AvisoExceso({ cantidad, esperado, confirmado, onConfirmar }) {
+    if (!excesoGrande(cantidad, esperado)) return null;
+    const n = (x) => Number(x).toLocaleString('es-SV');
+    return (
+        <div className="mt-1.5">
+            <Notice variant="danger" icon={AlertTriangle} compact
+                action={confirmado ? null : (
+                    <Button variant="secondary" size="xs" onClick={onConfirmar}>Sí, son {n(cantidad)}</Button>
+                )}>
+                <strong>¿Seguro que son {n(cantidad)}?</strong> Se enviaron {n(esperado)}.
+                {confirmado ? ' Confirmado.' : ' Revisa la presentación y la cantidad.'}
+            </Notice>
+        </div>
+    );
+}
+
+/** Los renglones con una cantidad muy grande que nadie confirmó todavía. */
+function excesosSinConfirmar(rows, pItems, excesoOk) {
+    return pItems
+        .map((it, i) => ({ it, r: rows[i] }))
+        .filter(({ it, r }) => excesoGrande(it.cantidad_recibida, enviadoDe(r))
+            && excesoOk[r.id] !== it.cantidad_recibida);
+}
+
+/**
  * «Vino mal» — tipo de problema, cuántos y la nota. Uno solo para los dos
  * sitios que cuentan.
  */
@@ -196,7 +228,7 @@ function PanelProblema({ id, fQty, campos, onListo }) {
  */
 function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRecibir, campos, correccion }) {
     const [q, setQ] = useState('');
-    const { presMap, fQtyVals, setFQtyVals, fPresVals, setFPresVals, tieneProblema, setTieneProblema } = campos;
+    const { presMap, fQtyVals, setFQtyVals, fPresVals, setFPresVals, tieneProblema, setTieneProblema, excesoOk, setExcesoOk } = campos;
     const term = q.trim();
     const hits = term.length < 2 ? [] : rows
         .filter(r => !sueltosOk.has(r.id) && r.status !== 'recibido')
@@ -279,7 +311,11 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
                             <div className="w-36 shrink-0">
                                 <LiquidSelect
                                     value={String(fPres)}
-                                    onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
+                                    onChange={v => {
+                                        const nuevo = Number(v);
+                                        setFPresVals(p => ({ ...p, [r.id]: nuevo }));
+                                        setFQtyVals(p => ({ ...p, [r.id]: cantidadEnOtraPresentacion(fQty, fPres, nuevo) }));
+                                    }}
                                     options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
                                     compact
                                     clearable={false}
@@ -311,6 +347,9 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
                             <div className="flex-1" />
                             <Button tone="success" size="sm" icon={PackageCheck} disabled={saving} onClick={() => onRecibir(r)}>Recibir</Button>
                         </div>
+                        <AvisoExceso cantidad={fRaw} esperado={enviado}
+                            confirmado={excesoOk?.[r.id] === fRaw}
+                            onConfirmar={() => setExcesoOk?.(p => ({ ...p, [r.id]: fRaw }))} />
 
                         {panelOpen && (
                             <div className="mt-2">
@@ -418,8 +457,10 @@ function CorrectorDeConteo({ row, presMap, saving, onGuardar, onCancelar }) {
     const [fPres, setFPres] = useState(inicio.fPres);
     const [fQty,  setFQty]  = useState(inicio.fQty);
     const [nota,  setNota]  = useState(row.nota_diferencia ?? '');
+    const [excesoOk, setExcesoOk] = useState(null);
 
     const fRaw  = Math.round(fQty * fPres / erpFactor);
+    const excesoPendiente = excesoGrande(fRaw, enviado) && excesoOk !== fRaw;
     const delta = fRaw - enviado;
     const sinCambio = fRaw === contado && (nota.trim() || null) === (row.nota_diferencia ?? null);
 
@@ -430,7 +471,7 @@ function CorrectorDeConteo({ row, presMap, saving, onGuardar, onCancelar }) {
                 <div className="w-32 shrink-0">
                     <LiquidSelect
                         value={String(fPres)}
-                        onChange={v => setFPres(Number(v))}
+                        onChange={v => { const nuevo = Number(v); setFPres(nuevo); setFQty(cantidadEnOtraPresentacion(fQty, fPres, nuevo)); }}
                         options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
                         compact clearable={false} />
                 </div>
@@ -455,6 +496,9 @@ function CorrectorDeConteo({ row, presMap, saving, onGuardar, onCancelar }) {
                 onChange={e => setNota(e.target.value)}
                 placeholder="¿Qué pasó? (opcional)" />
 
+            <AvisoExceso cantidad={fRaw} esperado={enviado}
+                confirmado={excesoOk === fRaw} onConfirmar={() => setExcesoOk(fRaw)} />
+
             {delta !== 0 && (
                 <p className="text-micro text-warning-text mt-1.5 leading-snug">
                     Queda anotado como diferencia y pasa a la conversación con bodega:
@@ -465,7 +509,7 @@ function CorrectorDeConteo({ row, presMap, saving, onGuardar, onCancelar }) {
 
             <div className="flex items-center justify-end gap-1.5 mt-2">
                 <Button variant="secondary" size="sm" disabled={saving} onClick={onCancelar}>Cancelar</Button>
-                <Button tone="success" size="sm" icon={Check} disabled={saving || sinCambio}
+                <Button tone="success" size="sm" icon={Check} disabled={saving || sinCambio || excesoPendiente}
                     onClick={() => onGuardar(row, fRaw, nota.trim() || null)}>Guardar</Button>
             </div>
         </div>
@@ -659,6 +703,9 @@ export default function RecepcionModal({
     const [errorVals, setErrorVals] = useState({});
     const [tieneProblema,    setTieneProblema]    = useState({});
     const [cantProblemaVals, setCantProblemaVals] = useState({});
+    // Cantidades muy grandes ya confirmadas: { [id]: la cantidad confirmada }.
+    // Guarda el NÚMERO y no un sí: si después la cambian, se vuelve a preguntar.
+    const [excesoOk,  setExcesoOk]  = useState({});
     const [presMap,   setPresMap]   = useState({});
     const [saving,    setSaving]    = useState(false);
     const [saveError, setSaveError] = useState(null);
@@ -798,6 +845,7 @@ export default function RecepcionModal({
         errorVals, setErrorVals,
         cantProblemaVals, setCantProblemaVals,
         notaVals, setNotaVals,
+        excesoOk, setExcesoOk,
     };
 
     // En qué hoja cayó un renglón — para que el buscador de «lo necesito ya»
@@ -1172,9 +1220,13 @@ export default function RecepcionModal({
     // Se puede porque cada producto viaja en su propio traslado: recibirlo es
     // recibir ese traslado ENTERO, sin tocar los demás.
     const handleRecibirSolo = useCallback(async (row) => {
+        const p_items = buildPItems([row]);
+        if (excesosSinConfirmar([row], p_items, excesoOk).length) {
+            setSaveError(`«${row.products?.nombre ?? 'El producto'}»: la cantidad es mucho mayor que lo enviado. Confírmala o corrígela antes de recibir.`);
+            return;
+        }
         setSaving(true); setSaveError(null);
         try {
-            const p_items = buildPItems([row]);
             // Cuenta, ingresa y anota en la bitácora (capa de datos).
             const { error, erp } = await recibirProductoSuelto({
                 pedidoId: pedido.id, sucursalId, items: p_items,
@@ -1196,7 +1248,7 @@ export default function RecepcionModal({
         } finally {
             setSaving(false);
         }
-    }, [buildPItems, pedido, sucursalId, user]);
+    }, [buildPItems, excesoOk, pedido, sucursalId, user]);
 
     // ── Corregir lo que YA se contó ─────────────────────────────────────────────
     //
@@ -1344,8 +1396,15 @@ export default function RecepcionModal({
             return;
         }
 
-        setSaving(true); setSaveError(null);
         const p_items = buildPItems(rowsToSave);
+        const excesos = excesosSinConfirmar(rowsToSave, p_items, excesoOk);
+        if (excesos.length) {
+            const nombres = excesos.map(({ r }) => r.products?.nombre ?? 'un producto').join(', ');
+            setSaveError(`Cantidad mucho mayor que lo enviado en: ${nombres}. Confírmala («Sí, son…») o corrígela.`);
+            return;
+        }
+
+        setSaving(true); setSaveError(null);
 
         try {
             // La bitácora la anota la capa de datos: la especial y el pedido
@@ -1393,7 +1452,7 @@ export default function RecepcionModal({
             setSaving(false);
         }
     }, [
-        alcance, filasPorContar, extras, buildPItems, cerrarEspecial, cerrarHoja, selectedEspecial,
+        alcance, filasPorContar, extras, buildPItems, excesoOk, cerrarEspecial, cerrarHoja, selectedEspecial,
         pedido, sucursalId, user, anyHasDiff, asentarExtras, onConfirmed, onClose,
         ingresarAlInventario, avisarIngresoFallido, avisarIngresoEnCurso, marcarContados,
         faltaCajas, hasFaltaItems,
@@ -2410,7 +2469,11 @@ export default function RecepcionModal({
 
                                     <LiquidSelect
                                         value={String(fPres)}
-                                        onChange={v => setFPresVals(p => ({ ...p, [r.id]: Number(v) }))}
+                                        onChange={v => {
+                                            const nuevo = Number(v);
+                                            setFPresVals(p => ({ ...p, [r.id]: nuevo }));
+                                            setFQtyVals(p => ({ ...p, [r.id]: cantidadEnOtraPresentacion(fQty, fPres, nuevo) }));
+                                        }}
                                         options={presOpts.map(o => ({ value: String(o.factor), label: o.label }))}
                                         compact
                                         clearable={false}
@@ -2487,6 +2550,14 @@ export default function RecepcionModal({
                                         </>)}
                                     </div>
                                 </div>
+
+                                {!recibidoSolo && excesoGrande(fRaw, enviado) && (
+                                    <div className="px-5 pb-2">
+                                        <AvisoExceso cantidad={fRaw} esperado={enviado}
+                                            confirmado={excesoOk[r.id] === fRaw}
+                                            onConfirmar={() => setExcesoOk(p => ({ ...p, [r.id]: fRaw }))} />
+                                    </div>
+                                )}
 
                                 {panelOpen && !recibidoSolo && (
                                     <div className="px-5 pb-2.5">

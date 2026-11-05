@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.12 — Pedidos: la recepción destraba el lote y frena cantidades muy grandes
+
+- **«No entró al inventario» en el pedido 240.** Salió de Bodega a las 8:54 sin
+  lote; a sus medicamentos se les activó el control de lote a las 10:19–10:44 y
+  la recepción contestó «No se proporcionó un lote» en ~120 renglones de Salud 4
+  y Salud 7 (tampoco se podían recibir a mano). El destrabe de v2.1451.34 —quitar
+  el control de lote, recibir y volver a activarlo, verificando la ficha— estaba
+  sólo en Traslados; ahora también en `trasladar-pedido-erp`.
+- **Cambiar la presentación traduce la cantidad.** En Salud 7 eligieron «BOLSA X
+  50» y la casilla siguió en 25: se guardaron 1,250 sobres sobre 25 enviados.
+  Ahora 25 sobres pasan a 1 bolsa.
+- **Una cantidad mucho mayor que la enviada se pregunta** («¿Seguro que son…?»)
+  antes de guardarse, al contar, al recibir un producto suelto, al corregir un
+  conteo y en Bodega al corregir lo que sale (`excesoGrande`: el triple y 10 de más).
+
 ## v2.1452.11 — Faltantes del Inicio: una lectura por sala cada 3 minutos
 
 `get_faltantes_con_stock_en_otra_sala` era la función que más tiempo de base consumía (1,478 llamadas en dos días, ~270 ms c/u): el Inicio la pedía dos veces al montar (widget con 40 y panel con 20) y otra vez cada vez que se volvía. Ahora las dos pantallas comparten una sola lectura por sala, vigente 3 minutos; pedir un traslado la refresca al momento.

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.4 — Vercel deja de crear despliegues para main
+
+- **`vercel.json` apaga los despliegues de `main`** (`git.deploymentEnabled`). `scripts/vercel-ignorar.sh` ya los
+  cancelaba, pero sólo al tocarles el turno: mientras tanto esperaban en la fila de Vercel, que arma uno a la vez,
+  delante de los de producción. El 2026-11-05 un Preview de `main` trabado en «Initializing» dejó a la v2.1452.1
+  media hora sin arrancar. Producción sigue saliendo sólo de `produccion` con `npm run publicar`.
+
 ## v2.1452.3 — Publicar espera si Vercel ya está armando producción
 
 - **`npm run publicar` ya no amontona despliegues.** Si Vercel está armando uno de producción, espera a que termine

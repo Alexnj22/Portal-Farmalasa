@@ -1,4 +1,5 @@
 {
+  "git": { "deploymentEnabled": { "main": false } },
   "ignoreCommand": "bash scripts/vercel-ignorar.sh",
   "rewrites": [
     {

@@ -238,8 +238,8 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
         : (!miSala && !todas) ? { texto: 'Sin sala asignada' }
         // Un fallo de lectura no es «Sin reservas»: el vistazo lo dice.
         : errorCarga ? { texto: 'No se pudo leer', tono: 'danger' }
-        : porRevisarVistazo > 0 ? { valor: porRevisarVistazo, texto: porRevisarVistazo === 1 ? 'receta por revisar' : 'recetas por revisar', tono: 'warning' }
-        : abiertasVistazo.length > 0 ? { valor: abiertasVistazo.length, texto: abiertasVistazo.length === 1 ? 'reserva abierta' : 'reservas abiertas', tono: 'brand' }
+        : porRevisarVistazo > 0 ? { valor: porRevisarVistazo, texto: porRevisarVistazo === 1 ? 'receta por revisar' : 'recetas por revisar', tono: 'warning', accion: { texto: 'Revisar' } }
+        : abiertasVistazo.length > 0 ? { valor: abiertasVistazo.length, texto: abiertasVistazo.length === 1 ? 'reserva abierta' : 'reservas abiertas', tono: 'brand', accion: { texto: 'Resolver' } }
         : { texto: 'Sin reservas' });
 
     // El carril de la pantalla: cuánto hay que preparar, cuánto espera al cliente y los saldos.

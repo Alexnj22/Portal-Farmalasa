@@ -146,7 +146,7 @@ export default function WidgetRecetasPendientes({ onVacio } = {}) {
         : !sala ? { texto: 'Sin sala asignada' }
         : !dispensa ? { texto: 'Aquí no se dispensa' }
         : error ? { texto: 'No se pudo leer', tono: 'danger' }
-        : filas.length ? { valor: filas.length, texto: viejasVistazo > 0 ? `por completar · ${viejasVistazo} con 2+ días` : 'por completar', tono: viejasVistazo > 0 ? 'danger' : 'warning' }
+        : filas.length ? { valor: filas.length, texto: viejasVistazo > 0 ? `por completar · ${viejasVistazo} con 2+ días` : 'por completar', tono: viejasVistazo > 0 ? 'danger' : 'warning', accion: { texto: 'Completar' } }
         : { texto: 'Sin pendientes' });
 
     const selector = alcanceTodas && salasQueDispensan.length > 1 ? (

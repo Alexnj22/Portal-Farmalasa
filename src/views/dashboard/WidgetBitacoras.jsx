@@ -66,8 +66,8 @@ export default function WidgetBitacoras() {
     useResumenWidget(cargando ? null
         : !miSala ? { texto: 'Sin sala asignada' }
         : error ? { texto: 'No se pudo leer', tono: 'danger' }
-        : resumen.vencidas > 0 ? { valor: resumen.vencidas, texto: resumen.vencidas === 1 ? 'lectura pasada de hora' : 'lecturas pasadas de hora', tono: 'danger' }
-        : resumen.abiertas > 0 ? { valor: resumen.abiertas, texto: resumen.abiertas === 1 ? 'lectura toca ahora' : 'lecturas tocan ahora', tono: 'warning' }
+        : resumen.vencidas > 0 ? { valor: resumen.vencidas, texto: resumen.vencidas === 1 ? 'lectura pasada de hora' : 'lecturas pasadas de hora', tono: 'danger', accion: { texto: 'Anotar', ir: '/bitacoras?ronda=1' } }
+        : resumen.abiertas > 0 ? { valor: resumen.abiertas, texto: resumen.abiertas === 1 ? 'lectura toca ahora' : 'lecturas tocan ahora', tono: 'warning', accion: { texto: 'Anotar', ir: '/bitacoras?ronda=1' } }
         : resumen.total > 0 ? { valor: `${resumen.hechas}/${resumen.total}`, texto: 'al día', tono: 'success' }
         : { texto: 'Hoy no hay nada que anotar' });
 

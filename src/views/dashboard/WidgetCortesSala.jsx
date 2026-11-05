@@ -220,7 +220,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
 
     useResumenWidget(cargando ? null
         : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
-        : pendientes.length ? { valor: pendientes.length, texto: pendientes.length === 1 ? 'corte sin confirmar' : 'cortes sin confirmar', tono: 'warning' }
+        : pendientes.length ? { valor: pendientes.length, texto: pendientes.length === 1 ? 'corte sin confirmar' : 'cortes sin confirmar', tono: 'warning', accion: { texto: 'Confirmar' } }
         : { texto: 'Todo confirmado' });
 
     if (cargando) return <div className="p-3"><SkeletonText lines={3} /></div>;

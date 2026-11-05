@@ -225,7 +225,9 @@ const WIDGET_SIZES = {
   // cuenta — es la franja de indicadores, que no es una baldosa de la grilla y
   // se filtra por id antes de acomodar.
   vendedores:    { minCols: 2, minRows: 3, label: 'Venta por vendedor' },
-  traslados:     { minCols: 2, minRows: 2, label: 'Traslados'          },
+  // Es una baldosa que abre su modal (`LanzadorSolicitud`), no una lista: el
+  // 2×2 le dejaba media tarjeta vacía. 1×1 como los otros lanzadores.
+  traslados:     { minCols: 1, minRows: 1, label: 'Traslados'          },
   // Un pedido lleva un párrafo, un campo de correo y un botón: con una sola
   // columna el campo queda tan angosto que no se ve lo que se escribió, y
   // esto es un dato que va a un documento fiscal a nombre de otra persona.
@@ -2972,7 +2974,7 @@ const DashboardView = ({ openModal }) => {
       return wrapWidget('requests',
         <WidgetCard title="Solicitudes pendientes" icon={ClipboardList} category="personal"
           resumen={reqError ? { texto: 'No se pudo leer', tono: 'danger' }
-            : cuantasReqs ? { valor: cuantasReqs, texto: 'por resolver', tono: 'warning' } : { texto: 'Sin pendientes' }}
+            : cuantasReqs ? { valor: cuantasReqs, texto: 'por resolver', tono: 'warning', accion: puedeAbrir('/solicitudes') ? { texto: 'Revisar', ir: '/solicitudes' } : undefined } : { texto: 'Sin pendientes' }}
           action={puedeAbrir('/solicitudes')&&<Button variant="ghost" size="xs" onClick={()=>navigate('/solicitudes')}>Ver todas <ChevronRight size={11}/></Button>}>
           <div className="divide-y divide-divider overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full">
             {reqLoading?[0,1,2,3].map(i=>(

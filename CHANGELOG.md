@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1450.3 — Inicio: en una fila, cada widget trae su botón
+
+Paso 2 de «Inicio · Propuesta por widget». Con una fila de alto el widget
+mostraba el número y una línea: se leía, pero no se usaba. Ahora, cuando hay
+algo que hacer, trae el botón al lado del número:
+
+| widget | botón |
+|---|---|
+| Cortes de caja | Confirmar |
+| Bolsas de efectivo | Embolsar |
+| Reservas | Revisar (recetas) · Resolver |
+| Recetas pendientes | Completar |
+| Datos que faltan | Completar |
+| Bitácoras | Anotar → la ronda |
+| Solicitudes pendientes | Revisar → Solicitudes |
+
+Los que no navegan abren el contenido completo, que es donde se hace. La
+tarjeta deja de ser un solo botón: es un botón estirado detrás y la acción
+encima (un botón dentro de otro no es HTML válido).
+
+Traslados pedía 2×2 siendo una baldosa que abre su modal: nace en 1×1.
+
 ## v2.1450.2 — Inicio: en una columna nada se sale de la tarjeta
 
 Barrido de los 31 widgets del tablero a 1×2 en producción, después de que

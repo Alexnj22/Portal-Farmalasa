@@ -203,7 +203,7 @@ export default function WidgetBolsasSala({ soloMiSala = true, salaElegida = null
     // que la baldosa completa.
     useResumenWidget(cargando ? null
         : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
-        : faltan.length ? { valor: faltan.length, texto: faltan.length === 1 ? 'corte por embolsar' : 'cortes por embolsar', tono: 'warning' }
+        : faltan.length ? { valor: faltan.length, texto: faltan.length === 1 ? 'corte por embolsar' : 'cortes por embolsar', tono: 'warning', accion: { texto: 'Embolsar' } }
         : enSala.length ? { valor: verMontos ? formatMoney(total) : enSala.length, texto: `${verMontos ? `en ${enSala.length} ` : ''}${enSala.length === 1 ? 'bolsa' : 'bolsas'} en sala${vencidas ? ` · ${vencidas} con ${DIAS_DE_ALARMA}+ días` : ''}`, tono: vencidas ? 'danger' : null }
         : { texto: 'Sin bolsas en sala' });
 

@@ -143,7 +143,7 @@ export default function WidgetDatoPedido({ onVacio } = {}) {
 
     useResumenWidget(cargando ? null
         : error ? { texto: 'No se pudieron cargar', tono: 'danger' }
-        : filas.length ? { valor: filas.length, texto: filas.length === 1 ? 'dato por averiguar' : 'datos por averiguar', tono: 'warning' }
+        : filas.length ? { valor: filas.length, texto: filas.length === 1 ? 'dato por averiguar' : 'datos por averiguar', tono: 'warning', accion: { texto: 'Completar' } }
         : { texto: 'Sin datos pendientes' });
 
     // El encabezado lo pone `WidgetCard` (2026-10-21): este widget era el único

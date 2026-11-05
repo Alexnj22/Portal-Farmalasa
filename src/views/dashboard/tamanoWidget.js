@@ -38,10 +38,15 @@ export const ResumenWidgetCtx = createContext(null);
  * `resumen`: { valor, texto, tono } — `valor` es el número grande (o null),
  * `texto` la línea que lo explica y `tono` (danger|warning|brand|success) sólo
  * cuando el número pide algo. Fuera de un vistazo no hace nada.
+ *
+ * `accion` (opcional): { texto, ir? } — el botón de la baldosa de una fila
+ * (2026-11-04: «que en chico se pueda USAR, no sólo leer»). Con `ir` navega
+ * a esa ruta; sin `ir` abre el contenido completo, que es donde se hace.
+ * Se declara sólo cuando hay algo que hacer.
  */
 export function useResumenWidget(resumen) {
     const publicar = useContext(ResumenWidgetCtx);
-    const clave = resumen ? `${resumen.valor ?? ''}|${resumen.texto ?? ''}|${resumen.tono ?? ''}` : '';
+    const clave = resumen ? `${resumen.valor ?? ''}|${resumen.texto ?? ''}|${resumen.tono ?? ''}|${resumen.accion?.texto ?? ''}|${resumen.accion?.ir ?? ''}` : '';
     useEffect(() => {
         publicar?.(clave ? resumen : null);
         // eslint-disable-next-line react-hooks/exhaustive-deps -- la clave resume el objeto

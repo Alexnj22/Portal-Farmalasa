@@ -1,6 +1,8 @@
 import React, { useLayoutEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ChevronRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import { ResumenWidgetCtx } from './tamanoWidget';
 
@@ -22,6 +24,7 @@ const TONO_TEXTO = {
 export default function VistazoWidget({ title, icon: Icon, color, action, resumen: resumenFijo = null, children }) {
     const [resumenVivo, setResumenVivo] = useState(null);
     const [abierto, setAbierto] = useState(false);
+    const navigate = useNavigate();
     const [escondite, setEscondite] = useState(null);
     const [cuerpo, setCuerpo] = useState(null);
     const [nodo] = useState(() => {
@@ -41,31 +44,43 @@ export default function VistazoWidget({ title, icon: Icon, color, action, resume
 
     return (
         <>
-            <button
-                type="button"
-                data-surface="card"
-                data-interactive=""
-                onClick={() => setAbierto(true)}
-                aria-label={`${title}${resumen?.texto ? `: ${hayValor ? `${resumen.valor} ` : ''}${resumen.texto}` : ''}. Abrir`}
-                className="@container group w-full h-full min-h-0 flex flex-col justify-between gap-1.5 p-4 text-left overflow-hidden transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
-            >
-                <div className="w-full flex items-center gap-2 min-w-0">
+            {/* La tarjeta entera abre el contenido (botón estirado detrás), y la
+                acción del widget va en su propio botón ENCIMA: un botón dentro
+                de otro no es HTML válido. */}
+            <div data-surface="card"
+                className="@container group relative w-full h-full min-h-0 flex flex-col justify-between gap-1.5 p-4 overflow-hidden">
+                <button
+                    type="button"
+                    data-interactive=""
+                    onClick={() => setAbierto(true)}
+                    aria-label={`${title}${resumen?.texto ? `: ${hayValor ? `${resumen.valor} ` : ''}${resumen.texto}` : ''}. Abrir`}
+                    className="absolute inset-0 rounded-[inherit] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
+                />
+                <div className="pointer-events-none w-full flex items-center gap-2 min-w-0">
                     <Icon size={15} strokeWidth={2.5} className="shrink-0" style={{ color }} />
                     <p className="flex-1 min-w-0 text-body-sm font-black text-content tracking-tight truncate">{title}</p>
                     <ChevronRight size={14} className="shrink-0 text-content-3 transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5" />
                 </div>
 
-                <div className="w-full min-w-0 flex items-baseline gap-2">
-                    {hayValor && (
-                        <span className={`shrink-0 text-display font-black leading-none tabular-nums ${TONO_TEXTO[resumen.tono] ?? 'text-content'}`}>
-                            {resumen.valor}
+                <div className="w-full min-w-0 flex items-end gap-2">
+                    <div className="pointer-events-none flex-1 min-w-0 flex items-baseline gap-2">
+                        {hayValor && (
+                            <span className={`shrink-0 text-display font-black leading-none tabular-nums ${TONO_TEXTO[resumen.tono] ?? 'text-content'}`}>
+                                {resumen.valor}
+                            </span>
+                        )}
+                        <span className={`min-w-0 truncate ${hayValor ? 'text-caption font-semibold text-content-3' : 'text-body-sm font-bold text-content-2'}`}>
+                            {resumen?.texto ?? 'Ver detalle'}
                         </span>
+                    </div>
+                    {resumen?.accion?.texto && (
+                        <Button size="xs" variant="primary" className="relative shrink-0"
+                            onClick={() => (resumen.accion.ir ? navigate(resumen.accion.ir) : setAbierto(true))}>
+                            {resumen.accion.texto}
+                        </Button>
                     )}
-                    <span className={`min-w-0 truncate ${hayValor ? 'text-caption font-semibold text-content-3' : 'text-body-sm font-bold text-content-2'}`}>
-                        {resumen?.texto ?? 'Ver detalle'}
-                    </span>
                 </div>
-            </button>
+            </div>
 
             <div ref={setEscondite} hidden />
             {createPortal(

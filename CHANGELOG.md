@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.10 — Ventas en el Inicio: contra la semana pasada y lo que hay que hacer
+
+- **Ventas por día**: arriba dice cuánto lleva hoy la sala y si va **por encima o por debajo del mismo día de la semana pasada a esta hora** (la hora en curso se compara en proporción, para no salir «abajo» cada vez que empieza una hora). En chico (una fila) se ve el total de hoy con ese porcentaje, en amarillo si va abajo.
+- **Meta del mes** en chico ya no dice sólo el porcentaje: dice **«faltan $X por día»**, o «meta alcanzada».
+- **Facturación hoy**: los documentos de hoy **sin sello de Hacienda** salen arriba con un botón **Revisar** que abre «Pendiente MH». En chico, el aviso y el botón también.
+- **Cotizaciones activas**: primero las que llevan **más tiempo abiertas**, con cuántos días llevan (en amarillo desde los 15). Ahora se actualizan solas cada 5 minutos.
+- **Top productos** se actualiza solo cada 15 minutos; antes se cargaba una vez al entrar.
+
 ## v2.1451.9 — App: la actualización por aire se aplica al abrir, sin segundo arranque
 
 App de clientes. Pedido del usuario después de arreglar las actualizaciones

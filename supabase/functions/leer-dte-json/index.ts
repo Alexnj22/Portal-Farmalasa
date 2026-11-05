@@ -132,7 +132,9 @@ Deno.serve(async (req: Request) => {
         .select("factor, costo").eq("product_id", pid).eq("activo", true);
       if (errF) throw errF;
       const desc = String(body?.descripcion ?? "");
-      const cu = (pp ?? []).find((x) => Number(x.factor) === 1 && Number(x.costo) > 0)?.costo;
+      const uno = (pp ?? []).find((x) => Number(x.factor) === 1 && Number(x.costo) > 0);
+      const otra = (pp ?? []).find((x) => Number(x.factor) > 1 && Number(x.costo) > 0);
+      const cu = uno ? Number(uno.costo) : otra ? Number(otra.costo) / Number(otra.factor) : null;
       const f = elegirFactor({
         delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), aprendido: null,
         costoNeto: Number(body?.costo_neto) || 0, costoUnidad: cu != null ? Number(cu) : null,
@@ -500,7 +502,13 @@ Deno.serve(async (req: Request) => {
             .select("product_id, factor, costo, vineta, presentaciones(tipo)").in("product_id", ids.slice(k, k + 200)).eq("activo", true);
           if (errPP) throw errPP;
           for (const x of pp ?? []) {
-            if (Number(x.factor) === 1 && Number(x.costo) > 0) costoUnidad.set(x.product_id, Number(x.costo));
+            // El costo de UNA unidad: el de la presentación de 1 si existe; si
+            // no (NOR-CLAMIDA X 30 sólo tiene la caja de 30), el de cualquier
+            // presentación dividido entre su tamaño. Sin esto el precio no
+            // podía juzgar y la caja quedaba en 1.
+            const f = Number(x.factor), c = Number(x.costo);
+            if (f === 1 && c > 0) costoUnidad.set(x.product_id, c);
+            else if (f > 1 && c > 0 && !costoUnidad.has(x.product_id)) costoUnidad.set(x.product_id, c / f);
             const l = vinetas.get(x.product_id) ?? [];
             l.push({ factor: Number(x.factor), vineta: Number(x.vineta), nombre: (x as any).presentaciones?.tipo ?? null });
             vinetas.set(x.product_id, l);

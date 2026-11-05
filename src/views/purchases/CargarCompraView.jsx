@@ -1024,20 +1024,33 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 // que es del que se conocen las presentaciones.
                                                 const pres = [...new Map((r.vinetas ?? []).map(x => [x.factor, x])).values()]
                                                     .sort((a, b) => a.factor - b.factor);
-                                                if (pres.length < 2 || productoDe(r, i) !== r.producto_id) return null;
+                                                // «1 × CAJA (50)» y no sólo «CAJA (50)»: al lado de «50» en
+                                                // unidades se leía «50 cajas» (Bodega, GRIPE-MED, 2026-11-05).
                                                 const f = Number(aj.factor) || 1;
+                                                const cuantas = (x) => Math.round(Number(r.cantidad) * f / x * 1000) / 1000;
+                                                if (pres.length < 2 || productoDe(r, i) !== r.producto_id) {
+                                                    const nombre = productoDe(r, i) === r.producto_id ? pres.find(x => x.factor === f)?.nombre : null;
+                                                    return (
+                                                        <div className="min-w-0">
+                                                            <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
+                                                            <p className="text-label font-bold text-content tabular-nums truncate min-h-[var(--tap-min)] flex items-center">
+                                                                {f > 1 ? `${cuantas(f)} × ${nombre ?? 'CAJA'} (${f})` : `${cuantas(1)} × UNIDAD`}
+                                                            </p>
+                                                        </div>
+                                                    );
+                                                }
                                                 return (
                                                     <div className="min-w-0">
                                                         <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
                                                         <LiquidSelect compact clearable={false} disabled={!puedeEditar} ariaLabel="Se carga como"
                                                             value={pres.some(x => x.factor === f) ? String(f) : ''}
                                                             placeholder={`${f} por cada una`}
-                                                            options={pres.map(x => ({ value: String(x.factor), label: `${x.nombre ?? 'Presentación'} (${x.factor})` }))}
+                                                            options={pres.map(x => ({ value: String(x.factor), label: `${Math.round(Number(r.cantidad) * 1000) / 1000} × ${x.nombre ?? 'Presentación'} (${x.factor})` }))}
                                                             onChange={v => v && ajustarCarga(i, r, String(Number(r.cantidad) * Number(v)))} />
                                                     </div>
                                                 );
                                             })()}
-                                            <PortalInput compact labelDenso label="Unidades que entran" inputMode="numeric"
+                                            <PortalInput compact labelDenso label="Total en unidades" inputMode="numeric"
                                                 helperText={cargarAyuda(r, aj)}
                                                 value={aj.cargar ?? cargarDe(r, aj.factor)}
                                                 onChange={e => ajustarCarga(i, r, e.target.value)}

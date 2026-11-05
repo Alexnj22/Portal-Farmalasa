@@ -129,9 +129,18 @@ export function lineaDelSobre(
     if (pres) { cant = r4(r.cantidad * factor); compra = r4(costo / factor); }
   }
   if (!pres) {
+    // Decir QUÉ hay y QUÉ hacer (Bodega, 2026-11-05, NOR-CLAMIDA X 30: el texto
+    // viejo «no tiene presentación de 1 ni de 1 unidad» no se entendía).
+    const hay = p.presentaciones.map((x) => `${x.nombre ?? "presentación"} de ${x.unidad}`).join(", ");
+    const tam = p.presentaciones.filter((x) => x.unidad > 1).map((x) => x.unidad);
+    const sugerencia = tam.length
+      ? ` Si cada una de la factura es una ${p.presentaciones.find((x) => x.unidad === tam[0])?.nombre ?? "caja"} de ${tam[0]}, escribe ${r4(r.cantidad * tam[0])} en «Total en unidades».`
+      : "";
     problemas.push({
       renglon: i,
-      texto: `«${p.nombre}» no tiene presentación de ${factor} ni de 1 unidad.`,
+      texto: factor === 1
+        ? `«${p.nombre}» sólo se vende en el sistema como ${hay || "ninguna presentación"}: no tiene presentación de 1 unidad.${sugerencia} Si de verdad se compró suelto, hay que crearle la presentación de 1 unidad al producto.`
+        : `«${p.nombre}» no tiene presentación de ${factor} ni de 1 unidad (tiene ${hay || "ninguna"}).${sugerencia} Si no, hay que crearle la presentación al producto.`,
     });
     return { linea: null, problemas };
   }

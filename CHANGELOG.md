@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.5 — Cargar compra: cajas a la vista y la falta de presentación explicada
+
+Reportes de Bodega con MONTREAL.
+
+- **«Se carga como» dice cuántas: «1 × CAJA (50)».** Con «CAJA (50)» al lado de «Unidades que entran: 50» se entendía 50 cajas. El campo de unidades ahora se llama «Total en unidades», y «Se carga como» aparece siempre, también cuando no hay varias presentaciones para elegir.
+- **NOR-CLAMIDA X 30 ya no queda en 1.** El producto solo tiene la caja de 30 y no tiene presentación de 1 unidad, así que el precio no tenía con qué comparar. Ahora el costo de la unidad sale de cualquier presentación (costo ÷ tamaño), en la propuesta y al elegir a mano.
+- **El aviso de presentación faltante explica qué hacer.** Antes decía «no tiene presentación de 1 ni de 1 unidad». Ahora dice qué presentaciones tiene el producto, cuánto escribir en «Total en unidades» y que, si de verdad se compró suelto, hay que crearle la presentación de 1 unidad.
+
 ## v2.1452.4 — Vercel deja de crear despliegues para main
 
 - **`vercel.json` apaga los despliegues de `main`** (`git.deploymentEnabled`). `scripts/vercel-ignorar.sh` ya los

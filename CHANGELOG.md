@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.1 — Cargar compra: «Otra cantidad» se valida contra las presentaciones
+
+«Otra cantidad de unidades» dejaba escribir cualquier número aunque el producto no tuviera cómo recibirlo, y el error salía recién al revisar la carga (Bodega). Ahora se valida al escribir, con las mismas reglas que el servidor: si el número no es un múltiplo de lo facturado lo dice y propone los que sí sirven (y si es menos, manda a «¿Llegó todo? → Faltó»); si coincide con una presentación dice «Entra como 5 × CAJA (30)»; si no, entra suelto en la de 1 unidad; y si el producto no tiene ni esa, dice qué presentaciones tiene y que hay que elegir una o crearle la de 1 unidad.
+
 ## v2.1453.0 — Revisión de factor: rediseño — resumen arriba, filas por sala claras, historial ordenado
 
 Pedido del usuario: «no me gusta cómo da la info, se pierde, no es clara».

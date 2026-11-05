@@ -1481,11 +1481,63 @@ function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar })
                         value={unidades} onChange={e => onCargar(e.target.value)} />
                 </div>
             )}
-            <p className="mt-1 text-caption text-content-2 tabular-nums">
-                Entran <b className="text-content">{Number(unidades) || 0}</b> {Number(unidades) === 1 ? 'unidad' : 'unidades'}
-                {f > 1 && Number.isInteger(r3(f)) ? ` · ${r3(f)} por cada una` : ''}
-            </p>
-            {aviso && <p className="mt-0.5 text-caption font-bold text-warning-text">{aviso}</p>}
+            {/* Con «Otra cantidad» se valida contra las presentaciones del
+                sistema, igual que al cargar (Bodega, 2026-11-05): escribir un
+                número no sirve de nada si el producto no tiene cómo recibirlo.
+                Entra en la presentación de ese tamaño, o suelto en la de 1
+                unidad; si no tiene ninguna de las dos, se dice ANTES. */}
+            {(() => {
+                const u = Number(unidades) || 0;
+                if (!abierta || pres.length === 0) {
+                    return (
+                        <>
+                            <p className="mt-1 text-caption text-content-2 tabular-nums">
+                                Entran <b className="text-content">{u}</b> {u === 1 ? 'unidad' : 'unidades'}
+                                {f > 1 && Number.isInteger(r3(f)) ? ` · ${r3(f)} por cada una` : ''}
+                            </p>
+                            {aviso && <p className="mt-0.5 text-caption font-bold text-warning-text">{aviso}</p>}
+                        </>
+                    );
+                }
+                if (!(u > 0)) return <p className="mt-1 text-caption text-content-3">Escribe cuántas unidades entran en total.</p>;
+                // Mismo freno que el servidor (`lineaDelSobre`): cada una de la
+                // factura trae un número ENTERO de unidades. Si llegó menos, eso
+                // no se escribe acá —escondería el faltante en un costo inflado—:
+                // va en «¿Llegó todo? → Faltó».
+                if (!Number.isInteger(r3(f))) {
+                    const abajo = Math.floor(f) * cant, arriba = Math.ceil(f) * cant;
+                    return (
+                        <p className="mt-1 text-caption font-bold text-danger-text tabular-nums">
+                            {u < cant
+                                ? `La factura cobra ${r3(cant)}: se cargan las ${r3(cant)}. Si llegaron ${u}, márcalo en «¿Llegó todo? → Faltó».`
+                                : `${u} no se reparte entre las ${r3(cant)} de la factura (saldrían ${Math.round(f * 100) / 100} por cada una). Tiene que ser múltiplo de ${r3(cant)}: ${abajo > 0 ? `${abajo} o ` : ''}${arriba}.`}
+                        </p>
+                    );
+                }
+                const exacta = pres.find(x => x.factor === r3(f));
+                const suelta = pres.find(x => x.factor === 1);
+                if (exacta) {
+                    return (
+                        <p className="mt-1 text-caption text-content-2 tabular-nums">
+                            Entra como <b className="text-content">{r3(cant)} × {nombreDe(exacta)} ({exacta.factor})</b> · {u} unidades
+                        </p>
+                    );
+                }
+                if (suelta) {
+                    return (
+                        <p className="mt-1 text-caption text-content-2 tabular-nums">
+                            Entran <b className="text-content">{u} × {nombreDe(suelta)}</b> · {r3(f)} por cada una de la factura
+                        </p>
+                    );
+                }
+                return (
+                    <p className="mt-1 text-caption font-bold text-danger-text">
+                        No se puede cargar así: en el sistema este producto sólo se vende como{' '}
+                        {pres.map(x => `${nombreDe(x)} (${x.factor})`).join(', ')}, y {u} unidades no caben en ninguna.
+                        Elige una de la lista, o pide que le creen la presentación de 1 unidad.
+                    </p>
+                );
+            })()}
             {recordar && <div className="mt-1">{recordar}</div>}
         </div>
     );

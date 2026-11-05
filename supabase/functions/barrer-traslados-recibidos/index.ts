@@ -7,6 +7,7 @@ import {
   sesionEn as abrirSesionEn,
   trasladoLlevaProducto,
 } from "../_shared/erp-traslado.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Apaga las tarjetas «Ya llegó, recibir» cuyo traslado el sistema YA tenía
 // recibido.
@@ -63,6 +64,9 @@ Deno.serve(async (req) => {
   );
 
   const arranque = Date.now();
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
@@ -112,7 +116,7 @@ Deno.serve(async (req) => {
     let pendientes = 0, desconocidos = 0, revisadas = 0, corte = false;
 
     for (const [suc, cartas] of [...porSala.entries()].sort((a, b) => a[0] - b[0])) {
-      if (Date.now() - arranque > PRESUPUESTO_MS) { corte = true; break; }
+      if (Date.now() - arranque > PRESUPUESTO) { corte = true; break; }
 
       let cookie: string;
       try {
@@ -131,7 +135,7 @@ Deno.serve(async (req) => {
       const estadoDe = lectorDeRecepcion(cookie);
 
       for (const carta of cartas) {
-        if (Date.now() - arranque > PRESUPUESTO_MS) { corte = true; break; }
+        if (Date.now() - arranque > PRESUPUESTO) { corte = true; break; }
         revisadas++;
         const id = String(carta.id_traslado);
         const estado = await estadoDe(id);

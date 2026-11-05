@@ -1339,8 +1339,11 @@ export type TrasladoHuerfano =
 export async function buscarTrasladoHuerfano(opts: {
   /** Último número de traslado que se sabe anterior a la toma (se excluye). */
   desde: number;
-  /** Descripción del producto como la pinta el sistema. */
-  producto: string;
+  /**
+   * Descripción del producto como la pinta el sistema. Con varios (un envío de
+   * compra lleva todos los de esa sala en UN traslado), tienen que estar todos.
+   */
+  producto: string | string[];
   /** Dirección normalizada de la sala que recibe (`direccionesPorSucursal`). */
   dirDestino: string;
   /**
@@ -1357,8 +1360,9 @@ export async function buscarTrasladoHuerfano(opts: {
   const { desde, dirDestino, yaUsados, leer } = opts;
   const vaciosSeguidos = opts.vaciosSeguidos ?? 10;
   const tope = opts.tope ?? 80;
-  const producto = norm(opts.producto);
-  if (!desde || !producto || !dirDestino) {
+  const productos = (Array.isArray(opts.producto) ? opts.producto : [opts.producto])
+    .map((p) => norm(p)).filter(Boolean);
+  if (!desde || !productos.length || !dirDestino) {
     return { estado: "no_se_sabe", motivo: "faltan datos para buscarlo", candidatos: [], leidos: 0 };
   }
 
@@ -1386,7 +1390,8 @@ export async function buscarTrasladoHuerfano(opts: {
     vacios = 0;
     existentes++;
     if (destino !== dirDestino) continue;
-    if (renglones.some((r) => norm(r.descripcion).includes(producto))) coinciden.push(String(id));
+    const lleva = renglones.map((r) => norm(r.descripcion));
+    if (productos.every((p) => lleva.some((d) => d.includes(p)))) coinciden.push(String(id));
   }
 
   if (coinciden.length) {

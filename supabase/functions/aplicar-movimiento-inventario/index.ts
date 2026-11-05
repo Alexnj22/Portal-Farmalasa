@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Aplica en el ERP la carga o el descarte de inventario que el supervisor
 // aprobó. Cuarta pieza de la misma familia que `aplicar-solicitud-facturacion`,
@@ -198,6 +199,9 @@ Deno.serve(async (req) => {
   );
 
   const arranque = Date.now();
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
   // El arriendo tomado, para poder soltarlo pase lo que pase. Vive afuera del
   // `try` porque el `finally` tiene que verlo.
@@ -423,7 +427,7 @@ Deno.serve(async (req) => {
     let cortadoEn = -1;
 
     for (let i = 0; i < lineas.length; i++) {
-      if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
+      if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
       const l = lineas[i];
 
       const cuerpo = await pedir(cookie, pagina, new URLSearchParams({

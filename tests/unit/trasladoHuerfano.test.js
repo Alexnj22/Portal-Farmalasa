@@ -96,6 +96,22 @@ describe('buscarTrasladoHuerfano', () => {
         expect(r.estado).toBe('no_se_sabe');
     });
 
+    it('envío con varios productos: tienen que estar todos en el mismo traslado', async () => {
+        const leer = async (id) => {
+            if (id !== 60385) return lector()(id);
+            // El 60385 real con un segundo renglón: VITADAK 5 INFANTIL.
+            return real.paginas[60385].replace('</tbody>', '<tr><td>VITADAK 5 INFANTIL</td><td>UNIDAD</td><td>1</td><td>3</td></tr></tbody>');
+        };
+        const ambos = await buscarTrasladoHuerfano({
+            desde: 60384, producto: [LEVO, 'VITADAK 5 INFANTIL'], dirDestino: dirSalud1, yaUsados: usados([]), leer,
+        });
+        expect(ambos).toMatchObject({ estado: 'encontrado', id: '60385' });
+        const falta = await buscarTrasladoHuerfano({
+            desde: 60384, producto: [LEVO, 'AERO OM GOTAS FRESA X 60 ML'], dirDestino: dirSalud1, yaUsados: usados([]), leer: lector(),
+        });
+        expect(falta.estado).toBe('no_salio');
+    });
+
     it('dos que coinciden: no se elige', async () => {
         const paginas = { ...real.paginas, 60386: real.paginas[60385] };
         const r = await buscarTrasladoHuerfano({

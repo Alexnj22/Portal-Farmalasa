@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.14 — Las funciones que mueven inventario miran la edad del proceso; Comprobar un envío de compras cortado lo busca solo
+
+Auditoría de las funciones que hablan con el sistema de origen, después del
+corte del pedido 239 (v2.1451.8). Medido en 7 días de registros: un solo
+proceso muerto por reloj de pared (`WallClockTime`), el de ese despacho. Los
+procesos libres se retiran a los ~200 s; sólo uno ocupado llega al corte de
+400 s. Los pedidos en primer plano duran como máximo 40 s, así que el riesgo
+de estas funciones era bajo, pero sus presupuestos (100–120 s) no miraban la
+edad del proceso.
+
+- `presupuestoDelWorker` en las nueve con presupuesto: devolver-pedido-erp,
+  aplicar-traslado-inventario, aplicar-movimiento-inventario,
+  enviar-producto-erp, barrer-traslados-recibidos, leer-traslados-erp,
+  regularizar-dte, sincronizar-fichas-clientes y
+  check-purchases-reconciliation. Con un proceso nuevo no cambia nada.
+- **Compras, reparto a salas**: un envío cortado lo pasa el barrido a «sin
+  verificar», pero «Comprobar» exigía el número de traslado — que un envío
+  cortado nunca tiene — y respondía «que Bodega lo busque en el sistema»,
+  el mismo callejón que tenía el despacho. Ahora lo busca solo
+  (`buscarTrasladoHuerfano`, exigiendo TODOS los productos del envío): si lo
+  encuentra sigue la comprobación normal; si comprueba que no salió, queda
+  «fallido» y se puede reintentar.
+
 ## v2.1451.13 — Todo medicamento lleva lote: «regulado» deja de significar «controlado»
 
 - **Todo medicamento lleva lote desde hoy.** En el sistema la casilla «regulado» es la que obliga a manejar lote: sin ella el producto vive en el lote GENERICO y ni la compra, ni el traslado, ni la recepción pueden decir qué lote es. Antes de hoy la tenían 2,124 productos; los ~1,550 medicamentos que faltaban se marcan con `scripts/erp/regulado-masivo.mjs`. Ese script lee la ficha, la guarda con un único cambio y la vuelve a leer: si cualquier otro campo cambió, se detiene. Lo que ya estaba en GENERICO se queda así (decisión del usuario); lo que entra de aquí en adelante entra con su lote.

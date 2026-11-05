@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getCorsHeaders, getErpBranchMap } from "../_shared/security.ts";
 import { selectAllPaged } from "../_shared/db.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Cuadre diario del libro de compras: ERP contra portal, por sucursal y mes.
 //
@@ -236,7 +237,8 @@ Deno.serve(async (req) => {
     //
     // Presupuesto: la respuesta de una Edge Function muere a los 150 s y el
     // cron espera 140. Si no queda tiempo, el hallazgo se avisa como antes.
-    const PRESUPUESTO_MS = 120_000;
+    // También mira la edad del WORKER (ver `_shared/relojDelWorker.ts`).
+    const PRESUPUESTO_MS = presupuestoDelWorker(arranque, 120_000, 100_000).ms;
     const MARGEN_MS      = 15_000;
     const recuperados: any[] = [];
     const quedan: typeof hallazgos = [];

@@ -9,6 +9,7 @@ import {
   TRASLADO,
   VER,
 } from "../_shared/erp-traslado.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Anota en el portal cada traslado que se hace en el sistema de la caja:
 // fecha, sala de destino y producto (`traslados_erp_linea`).
@@ -57,6 +58,9 @@ Deno.serve(async (req) => {
     Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "",
   );
   const arranque = Date.now();
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
@@ -100,7 +104,7 @@ Deno.serve(async (req) => {
     let id = ultimo, vacios = 0, leidos = 0, sinDestino = 0, corte = false;
 
     while (vacios < VACIOS_SEGUIDOS) {
-      if (Date.now() - arranque > PRESUPUESTO_MS || leidos >= TOPE_POR_CORRIDA) { corte = true; break; }
+      if (Date.now() - arranque > PRESUPUESTO || leidos >= TOPE_POR_CORRIDA) { corte = true; break; }
       id++;
       const html = await pedir(cookie, `${VER}?id_traslado=${id}`, undefined, {
         extra: { Referer: `${BASE}/admin_traslados.php` },

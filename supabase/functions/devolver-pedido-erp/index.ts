@@ -27,6 +27,7 @@ import {
   TRASLADO,
   trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Cuadra en el sistema lo que la sala contó distinto de lo que salió de Bodega.
 //
@@ -155,6 +156,9 @@ Deno.serve(async (req) => {
   );
 
   const arranque = Date.now();
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
@@ -377,7 +381,7 @@ Deno.serve(async (req) => {
       };
 
       for (const d of aRecibir) {
-        if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
+        if (Date.now() - arranque > PRESUPUESTO) { pendientes.push(d.clave); continue; }
 
         // La sesión se abre ANTES de tomar la fila: si no se puede abrir, la
         // devolución tiene que quedar como estaba y no en 'recibiendo', que es
@@ -782,7 +786,7 @@ Deno.serve(async (req) => {
       const enRiesgo: (RenglonEnRiesgo & { id: string; clave: string; avisoPrevio: string })[] = [];
 
       for (const d of lista) {
-        if (Date.now() - arranque > PRESUPUESTO_MS) { pendientes.push(d.clave); continue; }
+        if (Date.now() - arranque > PRESUPUESTO) { pendientes.push(d.clave); continue; }
 
         const it = porItem.get(d.pedido_item_id);
         if (!it || !it.factor || !it.tipo) {

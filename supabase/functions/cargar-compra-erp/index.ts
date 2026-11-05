@@ -25,7 +25,7 @@ import { descartarUnaLinea } from "../_shared/erp-descarte.ts";
 import { dteDeManual, validarManual } from "../_shared/compraManual.ts";
 import {
   sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
-  TRASLADO, RECIBIR,
+  TRASLADO, RECIBIR, VER, buscarTrasladoHuerfano, direccionesPorSucursal,
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
@@ -893,6 +893,66 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
 }
 
 /**
+ * El número del traslado de un envío que se cortó antes de anotarlo.
+ *
+ * Mismo método que el despacho de pedidos (`buscarTrasladoHuerfano`): los
+ * números son correlativos, así que se recorre desde el último conocido ANTES
+ * de que se armara el envío y se busca el que va a esa sala con TODOS sus
+ * productos. Lo que no se puede decidir con certeza se dice, no se adivina.
+ */
+async function trasladoDelEnvioCortado(admin: any, r: any, salaErp: number):
+  Promise<{ id: string; no_salio?: false } | { no_salio: true } | { error: string }> {
+  const lineas: LineaReparto[] = Array.isArray(r.lineas) ? r.lineas : [];
+  const ids = [...new Set(lineas.map((l) => Number(l.erp_product_id)).filter((n) => n > 0))];
+  if (!ids.length) return { error: "Ese envío no tiene productos." };
+  const { data: prods, error: eP } = await admin.from("products").select("id, nombre").in("id", ids);
+  if (eP) throw eP;
+  const nombres = (prods ?? []).map((p: any) => String(p.nombre ?? "")).filter(Boolean);
+  if (nombres.length !== ids.length) return { error: "No se conocen todos los productos del envío: que Bodega lo busque en el sistema." };
+
+  // El último número anotado antes de armar el envío: el de despacho de
+  // pedidos o el de otro envío de compras, el que sea mayor.
+  const antes = r.created_at;
+  const [{ data: a1, error: e1 }, { data: a2, error: e2 }] = await Promise.all([
+    admin.from("pedido_traslado_linea").select("id_traslado").not("id_traslado", "is", null)
+      .lte("enviado_at", antes).order("enviado_at", { ascending: false }).limit(1),
+    admin.from("compra_reparto").select("erp_traslado_id").not("erp_traslado_id", "is", null)
+      .lte("enviado_at", antes).order("enviado_at", { ascending: false }).limit(1),
+  ]);
+  if (e1) throw e1;
+  if (e2) throw e2;
+  const desde = Math.max(Number(a1?.[0]?.id_traslado ?? 0), Number(a2?.[0]?.erp_traslado_id ?? 0));
+  if (!desde) return { error: "No hay un traslado anterior de referencia: que Bodega lo busque en el sistema." };
+
+  // La sesión de Bodega es la que lista la dirección de todas las salas.
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
+  const dirDestino = direccionesPorSucursal(pagina).get(String(salaErp));
+  if (!dirDestino) return { error: "No se pudo leer la dirección de la sala en el sistema: intenta en un momento." };
+
+  const res = await buscarTrasladoHuerfano({
+    desde, producto: nombres, dirDestino,
+    yaUsados: async (cands) => {
+      const usados = new Set<string>();
+      for (const c of cands) {
+        const [{ data: u1, error: f1 }, { data: u2, error: f2 }] = await Promise.all([
+          admin.from("pedido_traslado_linea").select("id").eq("id_traslado", c).limit(1),
+          admin.from("compra_reparto").select("id").eq("erp_traslado_id", c).limit(1),
+        ]);
+        if (f1 || f2) throw new Error((f1 ?? f2).message);
+        if (u1?.length || u2?.length) usados.add(c);
+      }
+      return usados;
+    },
+    leer: (n) => pedir(cookie, `${VER}?id_traslado=${n}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } }),
+  });
+  console.log(`[cargar-compra-erp] envío cortado ${r.id}: ${JSON.stringify(res)}`);
+  if (res.estado === "encontrado") return { id: res.id };
+  if (res.estado === "no_salio") return { no_salio: true };
+  return { error: `No se pudo comprobar solo (${res.motivo}): que Bodega lo busque en el sistema antes de volver a enviar.` };
+}
+
+/**
  * Un envío que quedó «sin verificar» se comprueba preguntándole al sistema si
  * el traslado ya entró a la sala. Sólo lectura.
  */
@@ -904,9 +964,27 @@ async function comprobarReparto(admin: any, id: number, quien: { id: string }) {
   if (!r) return { error: "Ese envío no existe." };
   if (!permiso.puede || (!permiso.alcanceTodo && permiso.emp?.branch_id !== r.branch_id)) return { error: "Sólo lo puede comprobar alguien de esa sala." };
   if (r.estado !== "sin_verificar") return { error: "Ese envío no está por comprobar." };
-  if (!r.erp_traslado_id) return { error: "No se sabe con qué número salió de Bodega: que Bodega lo busque en el sistema." };
   const sala = (await salasDeReparto(admin)).get(Number(r.branch_id));
   if (!sala) return { error: "No se conoce la ubicación de esa sala." };
+  if (!r.erp_traslado_id) {
+    // El envío se cortó antes de anotar su número (lo dejó así el barrido de
+    // trabados). Antes la respuesta era «que Bodega lo busque en el sistema»,
+    // que nadie puede hacer: ninguna pantalla muestra el concepto. Se busca acá.
+    const h = await trasladoDelEnvioCortado(admin, r, sala.erp);
+    if ("error" in h) return h;
+    if (h.no_salio) {
+      const { error: eF } = await admin.from("compra_reparto").update({
+        estado: "fallido", nota: "Se comprobó en el sistema: el envío no llegó a salir de Bodega. Se puede reintentar.",
+        updated_at: new Date().toISOString(),
+      }).eq("id", id).eq("estado", "sin_verificar");
+      if (eF) throw eF;
+      return { ok: true, estado: "fallido" };
+    }
+    const { error: eN } = await admin.from("compra_reparto")
+      .update({ erp_traslado_id: h.id, updated_at: new Date().toISOString() }).eq("id", id).eq("estado", "sin_verificar");
+    if (eN) throw eN;
+    r.erp_traslado_id = h.id;
+  }
   const cookie = await sesionEn(sala.erp, login);
   const estado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
   if (estado === "desconocido") return { error: "No se pudo consultar el sistema: intenta en un momento." };

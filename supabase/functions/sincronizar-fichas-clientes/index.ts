@@ -7,6 +7,7 @@ import {
   type Ficha,
 } from "../_shared/erp-clientes.ts";
 import { elegirDistrito, ubicacionDe, norm } from "../_shared/distrito.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // La corrida diaria de fichas de clientes, del lado del servidor.
 //
@@ -166,7 +167,10 @@ Deno.serve(async (req) => {
   );
 
   const arranque = Date.now();
-  const queda = () => Date.now() - arranque < PRESUPUESTO_MS;
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
+  const queda = () => Date.now() - arranque < PRESUPUESTO;
 
   try {
     const esCron = requireInvokeSecret(req);

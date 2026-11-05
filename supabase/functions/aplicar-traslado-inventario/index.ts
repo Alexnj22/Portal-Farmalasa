@@ -81,6 +81,7 @@ import {
 // fuera de él, y está anclado en `tests/unit/lineasAceptadas.test.js`: lo que
 // decide es cuánto medicamento sale de una sala.
 import { elegirLineasAceptadas, loQueNoEntro } from "../_shared/lineasAceptadas.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
 // proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
@@ -159,6 +160,9 @@ Deno.serve(async (req) => {
   );
 
   const arranque = Date.now();
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
@@ -737,7 +741,7 @@ Deno.serve(async (req) => {
     const msPorRenglon: number[] = [];
 
     for (let i = 0; i < envio.length; i++) {
-      if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
+      if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
       const arranqueRenglon = Date.now();
       const l = envio[i];
       const nombre = l.descripcion ?? String(l.erp_product_id);

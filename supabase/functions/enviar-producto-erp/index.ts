@@ -25,6 +25,7 @@ import {
   RECIBIR,
   TRASLADO,
 } from "../_shared/erp-traslado.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Empujar producto a otra sala: el traslado al REVÉS.
 //
@@ -200,6 +201,9 @@ Deno.serve(async (req) => {
     });
 
   const arranque = Date.now();
+  // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+  // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+  const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
 
   try {
     const {
@@ -480,7 +484,7 @@ Deno.serve(async (req) => {
       const msPorRenglon: number[] = [];
 
       for (let i = 0; i < pendientes.length; i++) {
-        if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
+        if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
         const arranqueRenglon = Date.now();
         const l = pendientes[i];
         const nombre = l.descripcion ?? String(l.erp_product_id);
@@ -870,7 +874,7 @@ Deno.serve(async (req) => {
       let conocidos: Map<string, string> | null = null;
 
       for (let i = 0; i < trabajo.length; i++) {
-        if (Date.now() - arranque > PRESUPUESTO_MS) { cortadoEn = i; break; }
+        if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
         const { l, decision, motivo, nota: notaL } = trabajo[i];
         const aceptar = decision === "aceptar";
         const nombre = l.descripcion ?? String(l.erp_product_id);
@@ -1333,7 +1337,7 @@ Deno.serve(async (req) => {
     const fallos: { producto: string; error: string }[] = [];
 
     for (const l of porVolver) {
-      if (Date.now() - arranque > PRESUPUESTO_MS) break;
+      if (Date.now() - arranque > PRESUPUESTO) break;
       const nombre = l.descripcion ?? String(l.erp_product_id);
       const idVuelta = String(l.id_traslado_devolucion);
       const clave = claveDe(sol.id, l.posicion);

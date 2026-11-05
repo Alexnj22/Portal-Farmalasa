@@ -4,6 +4,7 @@ import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmploy
 // anuladas en el ERP —eso es lo que las puso en la bolsa— y lo único que
 // falta es el trámite ante Hacienda.
 import { login, formatearDui, enviarDteAlMH, RechazoMH } from "../_shared/erp-dte.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Termina lo que quedó a medias entre el ERP y Hacienda.
 //
@@ -434,13 +435,16 @@ Deno.serve(async (req) => {
     let resueltas = 0, fallidas = 0, conObservaciones = 0;
 
     const arranque = Date.now();
+    // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
+    // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
+    const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
     let cortadaPorTiempo = false;
     let procesadas = 0;
 
     for (const f of pendientes) {
       // Se corta ANTES de empezar otro documento, no en el medio: un envío a
       // Hacienda no se puede dejar por la mitad.
-      if (Date.now() - arranque > PRESUPUESTO_MS) { cortadaPorTiempo = true; break; }
+      if (Date.now() - arranque > PRESUPUESTO) { cortadaPorTiempo = true; break; }
 
       const base = {
         invoice_id: f.id, erp_invoice_id: f.erp_invoice_id,
@@ -605,7 +609,7 @@ Deno.serve(async (req) => {
       // arrancar la cadena sin tiempo de terminarla deja la corrección hecha
       // y el reenvío sin hacer, que es el peor de los dos mundos.
       const MARGEN_SEGUNDA_VUELTA_MS = 60_000;
-      const hayTiempo = Date.now() - arranque < PRESUPUESTO_MS - MARGEN_SEGUNDA_VUELTA_MS;
+      const hayTiempo = Date.now() - arranque < PRESUPUESTO - MARGEN_SEGUNDA_VUELTA_MS;
 
       // La cadena: corregir las fichas rechazadas y, si algo cambió, reenviar.
       // Devuelve lo que pasó en vez de escribir variables de afuera, porque

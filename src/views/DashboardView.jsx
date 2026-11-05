@@ -2456,12 +2456,15 @@ const DashboardView = ({ openModal }) => {
     const eCols = getEffectiveCols(id);
     const eRowsBase = getEffectiveRows(id);
     const eRows = esTelefono && vacio ? 1 : eRowsBase;
-    // Más chico que lo que su contenido necesita → la tarjeta pasa a vistazo
-    // (ver `dashboard/tamanoWidget.jsx`). El vacío del teléfono no cuenta: ahí
-    // la fila se baja A PROPÓSITO y el vacío ya se dice en una línea.
-    const compacto = !(esTelefono && vacio) && (
-      eRows < minRows || (!esTelefono && eCols < Math.min(minCols, activeCols))
-    );
+    // Vistazo SÓLO con una fila de alto (2026-11-04). Antes bastaba con ser
+    // más chico que el tamaño preferido —2×3 en Cortes, Reservas, Bolsas—, y
+    // al achicarlo «se borraba el contenido» (usuario): quedaba el título y una
+    // línea. Ahora el contenido se pinta en cualquier ancho y desde dos filas;
+    // la lista se desplaza dentro. Una fila (120px) no tiene alto para nada
+    // más que el resumen. `minCols/minRows` siguen siendo el tamaño con el que
+    // NACE el widget, no un piso. El vacío del teléfono no cuenta: ahí la fila
+    // se baja A PROPÓSITO y el vacío ya se dice en una línea.
+    const compacto = !(esTelefono && vacio) && eRows < Math.min(minRows, 2);
     const tamano = { cols: eCols, rows: eRows, minCols, minRows, compacto };
     const pos   = activeLayout[id] || { col: 1, row: 1 };
     const isActive     = dndActive === id;
@@ -2599,7 +2602,7 @@ const DashboardView = ({ openModal }) => {
                   <span className="text-micro font-black text-content-2 uppercase tracking-widest mr-0.5">H</span>
                   <SegmentedControl size="sm" label="Alto del widget"
                     value={eRows} onChange={n => updateWidgetSize(id, 'rows', n)}
-                    options={[1,2,3,4].map(n => ({ value: n, label: String(n) }))} />
+                    options={[1,2,3,4,5,6].map(n => ({ value: n, label: String(n) }))} />
                 </div>
               </div>
             )}
@@ -2619,6 +2622,9 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('trend','dash_trend')) return null;
       return wrapWidget('trend',
         <WidgetCard title="Tendencia de asistencia" icon={Activity} category="personal"
+          resumen={attError ? { texto: 'No se pudo leer', tono: 'danger' }
+            : !hayMarcaciones ? { texto: 'Aún sin marcaciones' }
+            : { valor: ['WORKING','LUNCH','LACTATION','BUSINESS'].reduce((n, k) => n + (shiftGroups[k] || []).length, 0), texto: 'en sala ahora' }}
           action={
             <PeriodStepper
               size="sm"
@@ -2672,6 +2678,9 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('shifts','dash_shifts')) return null;
       return wrapWidget('shifts',
         <WidgetCard title="Estado de turnos" icon={Clock} category="personal"
+          resumen={attError ? { texto: 'No se pudo leer', tono: 'danger' }
+            : !hayMarcaciones ? { valor: (shiftGroups.OFF || []).length, texto: 'de día libre · aún sin marcaciones' }
+            : { valor: (shiftGroups.WORKING || []).length, texto: 'en labores' }}
           action={getScope('dash_shifts') === 'ALL' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
           <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
             {attError ? (
@@ -2723,6 +2732,7 @@ const DashboardView = ({ openModal }) => {
       const effectiveSalesBranch = isSalesLocked && userBranchStr ? userBranchStr : salesBranch;
       return wrapWidget('sales',
         <WidgetCard noClip icon={BarChart2} category="ventas"
+          resumen={{ valor: formatMoney(Object.values(todaySales).reduce((t, b) => t + (b?.totalSales || 0), 0)), texto: 'vendido hoy' }}
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex items-center gap-2">

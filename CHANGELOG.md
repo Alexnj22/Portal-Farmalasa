@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1450.1 — Inicio: achicar un widget ya no borra su contenido
+
+«Veo algunos widgets que al ponerlos pequeños se borra el contenido.» Bastaba
+con hacerlo más chico que su tamaño preferido (2×3 en Cortes, Reservas, Bolsas,
+Recetas, Venta por vendedor) para que quedara el título y una línea, y lo demás
+sólo en una ventana aparte.
+
+- El contenido se pinta en cualquier ancho y desde dos filas de alto; la lista
+  se desplaza dentro de la tarjeta. Sólo con una fila de alto queda el resumen.
+- Tendencia de asistencia, Estado de turnos y Ventas por día no tenían resumen
+  y en una fila decían sólo su título: ahora dicen cuántos hay en sala, cuántos
+  en labores y cuánto se vendió hoy.
+- El alto máximo de un widget sube de 4 a 6 filas, para las listas largas.
+
+Primer paso de la propuesta «Inicio · Propuesta por widget».
+
 ## v2.1450.0 — Botiquín: medicamentos con su forma real, gérmenes y gel
 
 App de clientes, juego Botiquín (cuarta versión). Pedido del usuario: «que parezcan pastillas… el icono de la empresa… cosas malas… el juego se hace eterno… que se sienta más fluido».

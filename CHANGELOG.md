@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.40 — Cargar compra: la cantidad se lee en cajas y en unidades
+
+- **La cantidad ya no se lee como «150 cajas».** Reporte de Bodega con BRANDSTAR. La carga mandaba bien 15 cajas de 10 de MELOFLEX (150 unidades) y 2 cajas de 200 de ANARA (400 unidades), pero el campo «Cantidad a cargar» contaba unidades al lado de «Se carga como: CAJA (10)», y se entendía 150 cajas. Ahora el campo se llama «Unidades que entran» y la fila de abajo dice «15 × CAJA (10)».
+
 ## v2.1451.39 — Cargar compra: el borrador no tapa lo que la factura ya trae
 
 - **El borrador ya no tapa lo que se lee de la factura.** Desde la carga de BRANDSTAR (reporte del usuario en Bodega, v2.1451.35): el servidor ya proponía el vencimiento en los 12 renglones y MELOFLEX ×10, pero la pantalla seguía mostrando el vencimiento vacío y 15 unidades. La factura se había abierto antes del arreglo, el borrador guardó esos valores y al reabrirla los restauraba por encima de la propuesta nueva. Ahora un lote o vencimiento vacío en el borrador cuenta como «no escrito» y se toma lo leído; y la cantidad por caja solo se restaura si alguien la cambió a mano («Cantidad a cargar»).

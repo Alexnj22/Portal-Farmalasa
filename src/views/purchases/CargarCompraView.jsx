@@ -1031,7 +1031,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                     </div>
                                                 );
                                             })()}
-                                            <PortalInput compact labelDenso label="Cantidad a cargar" inputMode="numeric"
+                                            <PortalInput compact labelDenso label="Unidades que entran" inputMode="numeric"
                                                 helperText={cargarAyuda(r, aj)}
                                                 value={aj.cargar ?? cargarDe(r, aj.factor)}
                                                 onChange={e => ajustarCarga(i, r, e.target.value)}
@@ -1419,7 +1419,9 @@ function ComoEntra({ sim, costo }) {
         : `${cambio > 0 ? 'sube' : 'baja'} ${Math.abs(cambio).toFixed(1)} % · antes ${formatMoney(costo.antes, { decimales: 4 })}`;
     return (
         <div className="mt-2 pt-2 border-t border-divider grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2">
-            <Dato titulo="Se carga como" valor={nombre}
+            {/* «15 × CAJA (10)», no «CAJA (10)» junto a un 150: así se leía
+                «150 cajas» cuando eran 15 (BRANDSTAR, 2026-11-05). */}
+            <Dato titulo="Se carga como" valor={sim.presentacion > 1 ? `${Math.round(sim.existencias / sim.presentacion * 1000) / 1000} × ${nombre}` : nombre}
                 nota={sim.presentacion > 1 ? `${sim.presentacion} unidades c/u` : '1 unidad c/u'} />
             <Dato titulo="Entran" valor={`${sim.existencias} unid.`}
                 nota={sim.vence_pendiente ? 'el vencimiento lo pone la sala' : null} />

@@ -9,8 +9,9 @@
 // «Actualizar» sale de esa fila: hoy TestFlight y la pista interna de Play, y
 // al salir a la tienda pública se cambia allá sin compilar nada.
 //
-// Cuándo pregunta: al abrir y al volver a primer plano, como mucho cada 6
-// horas. «Más tarde» calla esa compilación tres días; una compilación más
+// Cuándo pregunta: al abrir y al volver a primer plano, como mucho cada
+// minuto (era cada 6 horas; usuario, 2026-11-05: «que avise al tener update
+// aunque sea que se subió a los 30 min la siguiente»). Es una llamada chica. «Más tarde» calla esa compilación tres días; una compilación más
 // nueva vuelve a avisar enseguida.
 import { Alert, Linking, Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
@@ -18,7 +19,7 @@ import { llamar } from './api';
 import { versionInstalada } from './novedades';
 
 const CLAVE = 'puntos_salud_actualizacion_pospuesta';
-const CADA = 6 * 60 * 60 * 1000;
+const CADA = 60 * 1000;
 const CALLAR = 3 * 24 * 60 * 60 * 1000;
 const NATIVA = Platform.OS === 'ios' || Platform.OS === 'android';
 

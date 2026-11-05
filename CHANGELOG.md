@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.16 — App: el aviso de build nueva revisa cada vez que se abre
+
+App de clientes. El aviso «Hay una versión nueva» revisaba como mucho cada 6
+horas; ahora cada vez que se abre la app o se vuelve a ella (tope de un
+minuto). Usuario: «que avise al tener update aunque sea que se subió a los 30
+min la siguiente». «Más tarde» sigue callando esa compilación tres días, y una
+más nueva vuelve a avisar enseguida.
+
 ## v2.1451.15 — Los PDF se descargan con su nombre también en Safari
 
 - La **hoja de carnés de practicantes** llegaba en Safari como «Unknown.pdf — No se puede mover el archivo». Lo mismo podía pasarle al documento de bienvenida, la constancia de sanción, el pedido, el conteo de inventario, el informe de marketing y el corte Z: los siete descargaban con `.download()` de pdfmake, que en Safari pierde el nombre. Ahora salen por `descargarPdf` (`plataforma/descargas.js`), el mismo camino que ya usaban las demás descargas.

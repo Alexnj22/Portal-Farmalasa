@@ -87,7 +87,7 @@ export default function Bienestar() {
 
       <Entrada indice={1}>
         <Seccion estilo={{ marginTop: 6 }}>Relájate</Seccion>
-        <Text style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto2, marginTop: -6, marginLeft: 4 }}>
+        <Text style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto2, marginTop: 4, marginBottom: 6, marginLeft: 4 }}>
           Ejercicios guiados para bajar el estrés y la ansiedad.
         </Text>
       </Entrada>

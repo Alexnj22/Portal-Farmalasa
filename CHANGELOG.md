@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.4 — Bienestar: la frase sin «mañana a las 8» y aire bajo Relájate
+
+App de clientes · Bienestar. Pedido del usuario: la frase del día ya no dice
+«mañana a las 8:00, otra» (queda sólo la fecha), y el texto de «Relájate» tiene
+aire arriba y abajo: estaba pegado al título y a las tarjetas.
+
 ## v2.1451.3 — App del personal: se quita «Facturas de mi sala», igual que en el portal
 
 La v2.1432.0 quitó del portal la vista y el widget «Facturas de mi sala» y borró `src/data/facturasSala.js`, pero la app del personal todavía lo importaba: desde ese commit ninguna build de la app compilaba (`Unable to resolve module @nucleo/data/facturasSala`). Se quitan también de la app las pantallas `/facturas-sala` y `/facturas-sala-panel`, el widget del Inicio y su registro en `pantallas.js`. Verificado con `expo export -p ios`.

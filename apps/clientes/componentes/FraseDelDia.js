@@ -76,7 +76,7 @@ export default function FraseDelDia({ grande = false }) {
         // el botón baja a la siguiente. Nunca se sale de la tarjeta.
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginTop: 'auto' }}>
           <Text style={{ flexGrow: 1, flexShrink: 1, flexBasis: 160, fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.85)' }}>
-            {fechaDeFrase(frase.dia).replace(/^./, (c) => c.toUpperCase())} · mañana a las 8:00, otra
+            {fechaDeFrase(frase.dia).replace(/^./, (c) => c.toUpperCase())}
           </Text>
           <Presionable onPress={compartir} accessibilityRole="button" accessibilityLabel="Compartir la frase" hitSlop={8}
             style={({ pressed }) => ({ flexShrink: 0, flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 12, borderRadius: 999,

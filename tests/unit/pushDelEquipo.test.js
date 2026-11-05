@@ -159,6 +159,39 @@ describe('soltar al cerrar sesión — el `if` que decide todo', () => {
         expect(globalThis.fetch).not.toHaveBeenCalled();
     });
 
+    it('con el token VENCIDO lo renueva primero y suelta con el nuevo', async () => {
+        // El defecto del 2026-11-05: el cierre típico de sala es por
+        // inactividad, con la computadora dormida y el token ya caducado.
+        // PostgREST lo rechazaba con 401 — 42 de 389 cierres no soltaron.
+        const vieja = { access_token: 'viejo', refresh_token: 'r1', expires_at: Math.floor(Date.now() / 1000) - 60, user: { id: 'u' } };
+        globalThis.localStorage._v = JSON.stringify(vieja);
+        globalThis.localStorage.setItem = (_k, v) => { globalThis.localStorage._v = v; };
+        globalThis.fetch = vi.fn(async (url) => (String(url).includes('/auth/v1/token')
+            ? { ok: true, status: 200, json: async () => ({ access_token: 'nuevo', refresh_token: 'r2', expires_at: Math.floor(Date.now() / 1000) + 3600 }) }
+            : { ok: true, status: 204 }));
+        await mod.soltarPushDelEquipoSiEsCompartido('navegador');
+        expect(globalThis.fetch).toHaveBeenCalledTimes(2);
+        const [urlRenovar, optsRenovar] = globalThis.fetch.mock.calls[0];
+        expect(urlRenovar).toMatch(/\/auth\/v1\/token\?grant_type=refresh_token$/);
+        expect(JSON.parse(optsRenovar.body)).toEqual({ refresh_token: 'r1' });
+        expect(globalThis.fetch.mock.calls[1][1].headers.Authorization).toBe('Bearer nuevo');
+        // La sesión renovada queda guardada para que el `signOut` revoque ÉSA.
+        expect(JSON.parse(globalThis.localStorage._v)).toMatchObject({ access_token: 'nuevo', refresh_token: 'r2', user: { id: 'u' } });
+    });
+
+    it('con el token vigente no renueva nada', async () => {
+        globalThis.localStorage._v = JSON.stringify({ access_token: 'tok', refresh_token: 'r1', expires_at: Math.floor(Date.now() / 1000) + 3600 });
+        await mod.soltarPushDelEquipoSiEsCompartido('navegador');
+        expect(soltadoCon().token).toBe('Bearer tok');
+    });
+
+    it('si la renovación falla intenta igual con el token viejo, sin lanzar', async () => {
+        globalThis.localStorage._v = JSON.stringify({ access_token: 'viejo', refresh_token: 'r1', expires_at: 1 });
+        globalThis.fetch = vi.fn(async (url) => (String(url).includes('/auth/v1/token') ? { ok: false, status: 400 } : { ok: true, status: 204 }));
+        await expect(mod.soltarPushDelEquipoSiEsCompartido('navegador')).resolves.toBeUndefined();
+        expect(globalThis.fetch.mock.calls[1][1].headers.Authorization).toBe('Bearer viejo');
+    });
+
     it('un fallo al soltar no lanza — el cierre de sesión sigue', async () => {
         globalThis.fetch = vi.fn(async () => ({ ok: false, status: 401 }));
         await expect(mod.soltarPushDelEquipoSiEsCompartido('navegador')).resolves.toBeUndefined();

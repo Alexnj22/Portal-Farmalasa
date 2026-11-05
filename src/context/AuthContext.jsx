@@ -796,7 +796,10 @@ export const AuthProvider = ({ children }) => {
     // se levante y la sesión venza sola.
     let claseDispositivo = 'navegador';
     try { claseDispositivo = almacen.leer(LS_DEVICE) || 'navegador'; } catch { /* sin localStorage */ }
-    soltarPushDelEquipoSiEsCompartido(claseDispositivo);
+    // Se guarda la promesa: si el token estaba vencido, soltar lo RENUEVA, y la
+    // revocación de abajo tiene que esperar a eso — si no, revoca la sesión
+    // mientras se renueva y el soltado sale con 401 (11% de los cierres).
+    const soltado = soltarPushDelEquipoSiEsCompartido(claseDispositivo);
 
     limpiarSesionLocal();
     // Un cierre a mitad de un login (el cambio de contraseña pendiente deja el
@@ -819,7 +822,9 @@ export const AuthProvider = ({ children }) => {
     // `scope: 'local'` revoca SOLO esta sesión. El default de auth-js es
     // 'global': con él, cerrar por inactividad en la computadora se llevaba
     // también la sesión larga del teléfono.
-    withTimeout(supabase.auth.signOut({ scope: 'local' }), 3000, 'signOut timeout')
+    withTimeout(Promise.resolve(soltado), 2500, 'soltar push timeout')
+      .catch(() => {})
+      .then(() => withTimeout(supabase.auth.signOut({ scope: 'local' }), 3000, 'signOut timeout'))
       .catch(() => {})
       .finally(() => {
         try { almacen.borrar(AUTH_STORAGE_KEY); } catch { /* localStorage no disponible */ }

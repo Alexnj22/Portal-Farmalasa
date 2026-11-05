@@ -109,11 +109,21 @@ export async function soltarPushDelEquipoSiEsCompartido(claseDispositivo) {
     // esa pantalla — justo lo que esta función existe para evitar.
     // El token capturado sigue sirviendo después del `signOut`: el servidor
     // valida la firma y el vencimiento del JWT, no si la sesión sigue abierta.
-    const token = tokenDeLaSesion();
-    if (!token) return;
+    const sesion = sesionGuardada();
+    if (!sesion?.access_token) return;
     try {
         const endpoint = recordado || (await suscripcionDeEsteNavegador())?.toJSON().endpoint;
         if (!endpoint) return;
+        // El cierre típico de sala es por inactividad, y para entonces el token
+        // suele estar VENCIDO: la computadora se durmió o la pestaña quedó en
+        // segundo plano y nadie lo renovó. PostgREST lo rechaza con 401 antes de
+        // llegar a la función — medido el 2026-11-05: 42 de 389 cierres (11%)
+        // no soltaron el equipo. Por eso se renueva primero, y `doLogout`
+        // espera a que esto termine antes de revocar la sesión.
+        // Si la renovación falla se intenta igual con el viejo: peor no queda.
+        const token = tokenVigente(sesion)
+            ? sesion.access_token
+            : (await renovarSesion(sesion)) || sesion.access_token;
         const res = await soltarConToken(endpoint, token);
         if (res && !res.ok) console.error('Push: no se pudo soltar el equipo:', res.status);
     } catch (err) {
@@ -123,11 +133,50 @@ export async function soltarPushDelEquipoSiEsCompartido(claseDispositivo) {
 
 // El token de la sesión, leído de `localStorage` en el acto: `getSession()` es
 // asíncrono, y los dos llamadores de abajo no tienen futuro que esperar.
-function tokenDeLaSesion() {
+function sesionGuardada() {
     try {
-        return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null')?.access_token || null;
+        return JSON.parse(localStorage.getItem(AUTH_STORAGE_KEY) || 'null');
     } catch {
         return null;   // sin sesión guardada: no hay a quién soltar
+    }
+}
+
+function tokenDeLaSesion() {
+    return sesionGuardada()?.access_token || null;
+}
+
+// Con 30 s de margen: el token tiene que seguir valiendo cuando LLEGUE. Sin
+// `expires_at` no hay con qué decidir y se usa tal cual, como antes.
+function tokenVigente(sesion) {
+    const vence = Number(sesion?.expires_at);
+    if (!sesion?.expires_at || !Number.isFinite(vence)) return true;
+    return vence * 1000 > Date.now() + 30_000;
+}
+
+// Se renueva a mano y no con `supabase.auth.refreshSession()`: ésa emite
+// TOKEN_REFRESHED, y el oyente de `AuthContext` podría volver a poner adentro a
+// quien se está yendo. La sesión nueva se guarda donde estaba la vieja —sólo si
+// nadie la cambió en el medio— para que el `signOut` que viene detrás revoque
+// ESTA y no intente renovar con un refresh token que ya se gastó.
+async function renovarSesion(sesion) {
+    const url = import.meta.env.VITE_SUPABASE_URL;
+    const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    if (!url || !anon || !sesion?.refresh_token) return null;
+    try {
+        const res = await fetch(`${url}/auth/v1/token?grant_type=refresh_token`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', apikey: anon },
+            body: JSON.stringify({ refresh_token: sesion.refresh_token }),
+        });
+        if (!res.ok) return null;
+        const nueva = await res.json();
+        if (!nueva?.access_token) return null;
+        if (sesionGuardada()?.refresh_token === sesion.refresh_token) {
+            localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify({ ...sesion, ...nueva }));
+        }
+        return nueva.access_token;
+    } catch {
+        return null;
     }
 }
 

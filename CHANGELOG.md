@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.19 — El cierre de sesión suelta los avisos del equipo aunque el token haya vencido
+
+- Medido el 2026-11-05: 42 de 389 cierres (11%) no soltaban la suscripción de
+  avisos de la computadora compartida — PostgREST rechazaba con 401 un token ya
+  vencido (equipo dormido, pestaña en segundo plano). Los avisos de quien se fue
+  seguían cayendo en esa pantalla hasta el siguiente inicio de sesión.
+- `soltarPushDelEquipoSiEsCompartido` renueva el token a mano si está vencido
+  (sin pasar por el cliente, para no disparar TOKEN_REFRESHED), guarda la
+  sesión nueva y suelta con ella. `doLogout` espera eso (tope 2.5 s) antes del
+  `signOut`, que así revoca la sesión renovada.
+
 ## v2.1452.18 — Lote y vencimiento: ROWALT, FARMEX y sin lotes basura
 
 Revisión de las 173 compras en cola (904 renglones), comparando el lector viejo contra el nuevo sobre los PDF y JSON reales: cambian 18, todos a mejor.

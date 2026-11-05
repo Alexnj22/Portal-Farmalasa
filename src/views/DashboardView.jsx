@@ -195,7 +195,7 @@ const WIDGET_SIZES = {
   // teléfono: una tarjeta de 380px con el ícono arriba, el rótulo abajo y el
   // resto vacío.
   inv_search:    { minCols: 1, minRows: 1, label: 'Inventario'   },
-  annulment_req: { minCols: 1, minRows: 1, label: 'Anulaciones'  },
+  annulment_req: { minCols: 1, minRows: 1, label: 'Modificar facturación' },
   minmax_req:    { minCols: 1, minRows: 1, label: 'Ajuste Min/Max' },
   inv_movement:  { minCols: 1, minRows: 1, label: 'Ajuste inventario' },
   // Dos renglones: arriba los avisos del día (hasta tres franjas) y abajo los
@@ -641,7 +641,7 @@ const WIDGET_DEFS = [
   { id: 'facturacion',   label: 'Facturación hoy',         permission: 'dash_facturacion',   icon: FileText,     category: 'ventas'    },
   { id: 'top_productos', label: 'Top productos del mes',   permission: 'dash_top_productos', icon: Package,      category: 'productos' },
   { id: 'inv_search',   label: 'Consulta de inventario',  permission: 'dash_inv_search',    icon: Package,      category: 'productos' },
-  { id: 'annulment_req',label: 'Solicitud de anulación',  permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
+  { id: 'annulment_req',label: 'Modificar facturación',   permission: 'dash_annulment_req', icon: Receipt,      category: 'ventas'    },
   { id: 'minmax_req',   label: 'Ajuste de Min/Max',       permission: 'dash_minmax_req',   icon: BarChart2,    category: 'productos' },
   { id: 'inv_movement', label: 'Ajuste de inventario',    permission: 'dash_inv_movement', icon: PackageMinus, category: 'productos' },
   { id: 'traslados',    label: 'Traslados entre salas',   permission: 'dash_traslados',    icon: ArrowLeftRight, category: 'productos' },
@@ -3149,7 +3149,23 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('calendar','dash_calendar')) return null;
       return wrapWidget('calendar',
         <WidgetCard title="Calendario" icon={CalendarDays} category="general"
-          resumen={{ texto: fechaTexto(new Date(), { weekday: 'long', day: 'numeric', month: 'long' }) }} action={
+          // En chico: hoy y el PRÓXIMO feriado (2026-11-05), que es lo que se
+          // consulta del calendario. Sale de los feriados cargados; los
+          // recurrentes se proyectan al año que corresponda.
+          resumen={(() => {
+            const hoyStr = localDateStr();
+            const y = Number(hoyStr.slice(0, 4));
+            const prox = holidays
+              .flatMap(h => !h.holiday_date ? [] : h.is_recurring
+                ? [`${y}-${h.holiday_date.slice(5, 10)}`, `${y + 1}-${h.holiday_date.slice(5, 10)}`].map(d => ({ d, n: h.name }))
+                : [{ d: h.holiday_date.slice(0, 10), n: h.name }])
+              .filter(x => x.d >= hoyStr)
+              .sort((a, b) => a.d.localeCompare(b.d))[0];
+            const hoyTxt = fechaTexto(new Date(), { weekday: 'long', day: 'numeric', month: 'long' });
+            if (!prox) return { texto: hoyTxt };
+            if (prox.d === hoyStr) return { texto: `${hoyTxt} · feriado: ${prox.n}`, tono: 'danger' };
+            return { texto: `${hoyTxt} · próximo feriado: ${fechaTexto(prox.d, { day: 'numeric', month: 'short' })}, ${prox.n}` };
+          })()} action={
           // El centro no es un rótulo sino un selector que se abre, así que va
           // como hijo de `PeriodStepper` (§17.1) — envolverlo en el botón de
           // "volver a hoy" daría un `<button>` dentro de otro.
@@ -3262,7 +3278,15 @@ const DashboardView = ({ openModal }) => {
       const MONTH_ES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
       return wrapWidget('birthdays',
         <SiCompacto title="Cumpleaños" icon={Gift} category="personal"
-          resumen={displayBirthdays.length ? { valor: displayBirthdays.length, texto: `cumpleaños en ${MONTH_ES[bdMonth.getMonth()].toLowerCase()}` } : { texto: 'Sin cumpleaños este mes' }}>
+          // En chico, lo que importa HOY (2026-11-05): quién cumple, para
+          // felicitarlo. Si nadie cumple hoy, el próximo; y si no, el conteo.
+          resumen={(() => {
+            const hoy = displayBirthdays.filter(e => e.isToday);
+            if (hoy.length) return { valor: hoy.length, texto: hoy.length === 1 ? `hoy cumple ${shortEmployeeName(hoy[0])}` : `cumplen hoy · ${hoy.map(e => shortEmployeeName(e)).join(', ')}`, tono: 'brand' };
+            const prox = displayBirthdays.find(e => !e.isPast);
+            if (prox) return { valor: displayBirthdays.length, texto: `${prox.isTomorrow ? 'mañana' : `el ${prox.day}`} cumple ${shortEmployeeName(prox)}` };
+            return displayBirthdays.length ? { valor: displayBirthdays.length, texto: `cumpleaños en ${MONTH_ES[bdMonth.getMonth()].toLowerCase()}` } : { texto: 'Sin cumpleaños este mes' };
+          })()}>
         <div data-surface="card" className="h-full relative rounded-card border border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-4)] transition-[transform,box-shadow] duration-[var(--dur-base)] ease-[var(--ease-spring)] flex flex-col overflow-hidden">
           {/* El brillo, igual que en `WidgetCard`. La capa de vidrio que iba acá se
               retiró: `data-surface="card"` ya la pone (ver la nota en WidgetCard). */}

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.18 — Inicio: cumpleaños de hoy, próximo feriado y el atajo de facturación con su nombre
+
+- **Cumpleaños** en tamaño chico dice **quién cumple hoy** («hoy cumple Katlin Molina»); si nadie cumple hoy, quién sigue («mañana cumple…», «el 8 cumple…»).
+- **Calendario** en chico dice la fecha de hoy y el **próximo feriado** con su nombre; si hoy es feriado, lo marca en rojo.
+- El atajo que en la pantalla se llama **Modificar facturación** se llamaba «Solicitud de anulación» en «Personalizar» y en los permisos. Ahora tiene el mismo nombre en los tres lados.
+
 ## v2.1451.17 — El marcador de lotes aguanta los cortes de red del sistema
 
 - `scripts/erp/regulado-masivo.mjs` se cortaba con la conexión al sistema (dos veces en 1,554 fichas). Ahora reintenta las **lecturas**, pero nunca reenvía un guardado: si la conexión se cae con el guardado en curso, relee la ficha para saber si entró. Se detiene después de 5 errores seguidos o ante cualquier diferencia en la ficha. Con eso se terminaron de marcar los **1,554 medicamentos**, todos verificados contra su ficha anterior.

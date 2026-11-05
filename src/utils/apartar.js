@@ -21,6 +21,10 @@ export const redondear = (n) => Math.round(Number(n) * 100) / 100;
 export const TOPE_ENCARGO = 20;
 /** Un apartado de sala va de 1 a 999 unidades. */
 export const TOPE_APARTADO = 999;
+/** Lo que dice el formulario al apartar sin anticipo (2026-11-05). */
+export const FALTA_RESPONSABLE = 'Confirma que quedas como responsable de la reserva.';
+export const SIN_ANTICIPO_NO_SE_TRAE = 'Sin anticipo no se pide a otra sala: sólo lo que hay aquí o ya viene en camino.';
+
 /** Productos que caben en un mismo pedido o encargo, además del de la pantalla. */
 export const TOPE_RENGLONES = 9;
 
@@ -95,13 +99,14 @@ export function tomaDeCadaTraslado(vienen, elegidos, factor, cantidad) {
  * PEDIDO), `vienenElegidos` (ids, `[]` si se descartó lo que viene, `null` si
  * nadie eligió), `traslado` (`{ branch_id, sala, lista }` o null, de «pedir a
  * otra sala»), `cuanto` ('mitad' | 'todo' | 'otro'), `anticipo` (texto),
- * `pago` (forma de pago), `cobroEn` ('caja' | 'enlace'), y para el formulario
+ * `pago` (forma de pago), `cobroEn` ('caja' | 'enlace' | 'sin'), `responsableOk`
+ * (quien aparta sin anticipo aceptó responder por la reserva), y para el formulario
  * completo: `cliente`, `telOk`, `sinCatalogo`, `nombreNuevo`, `srs`,
  * `srsNoAparece`, `errorFoto`.
  */
 export function planDeApartar({
     opciones = null, producto = null, elegida = null, cantidad = '1', lineas = [], apartados = [], vienenElegidos = null,
-    traslado = null, cuanto = 'mitad', anticipo = '', pago = null, cobroEn = 'caja',
+    traslado = null, cuanto = 'mitad', anticipo = '', pago = null, cobroEn = 'caja', responsableOk = false,
     cliente = null, telOk = false, sinCatalogo = false, nombreNuevo = '', srs = null, srsNoAparece = false, errorFoto = '',
 } = {}) {
     const cant = Math.trunc(Number(cantidad)) || 0;
@@ -128,8 +133,12 @@ export function planDeApartar({
     const totalCobro = enPedido ? redondear(totalApartados + (producto && elegida && seAparta ? total : 0)) : total;
     // Reglamento v2 (lo vuelve a decidir `apartado_cotizar`): sin monto mínimo.
     const mitad = redondear(totalCobro * 0.5);
-    const conAnticipo = !soloEncargo && (enPedido || modo === 'reserva' || modo === 'traslado' || modo === 'viene');
-    const montoAnticipo = cuanto === 'mitad' ? mitad : cuanto === 'todo' ? totalCobro : (anticipo === '' ? 0 : Number(anticipo) || 0);
+    const seCobra = !soloEncargo && (enPedido || modo === 'reserva' || modo === 'traslado' || modo === 'viene');
+    // Sin anticipo (2026-11-05): se aparta igual, no se cobra nada y responde
+    // quien la pide. Nunca para pedirlo a otra sala: eso mueve producto.
+    const sinAnticipo = seCobra && cobroEn === 'sin';
+    const conAnticipo = seCobra && !sinAnticipo;
+    const montoAnticipo = sinAnticipo ? 0 : cuanto === 'mitad' ? mitad : cuanto === 'todo' ? totalCobro : (anticipo === '' ? 0 : Number(anticipo) || 0);
     const estadoPago = estadoDeFormaDePago(pago, montoAnticipo);
     const nombreProducto = producto ? `${producto.nombre}${elegida?.tipo ? ` · ${elegida.tipo}` : ''}` : '';
 
@@ -155,6 +164,7 @@ export function planDeApartar({
     const falta = sinCatalogo ? faltaNuevo : !cliente ? 'Elige el cliente del listado.' : faltaTel ? faltaTel
         // Con productos ya agregados, el de la pantalla es opcional.
         : soloEncargo && !producto ? null
+        : enPedido && !producto && sinAnticipo ? (responsableOk ? null : FALTA_RESPONSABLE)
         : enPedido && !producto ? (montoAnticipo < 0.01 ? 'Escribe cuánto deja.' : montoAnticipo > totalCobro + 0.004
             ? 'El anticipo no puede pasar del total.' : estadoPago.falta)
         : !producto ? 'Elige el producto.' : !elegida ? 'Elige la presentación.'
@@ -166,13 +176,15 @@ export function planDeApartar({
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
             // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
             : modo === 'encargo' && cant > TOPE_ENCARGO ? `Un encargo va de 1 a ${TOPE_ENCARGO} unidades.`
+            : sinAnticipo && modo === 'traslado' ? SIN_ANTICIPO_NO_SE_TRAE
+            : sinAnticipo && !responsableOk ? FALTA_RESPONSABLE
             : conAnticipo && montoAnticipo < 0.01 ? 'Escribe cuánto deja.'
                 : conAnticipo && montoAnticipo > totalCobro + 0.004 ? 'El anticipo no puede pasar del total.'
                     : conAnticipo && (cobroEn === 'caja' || enPedido) ? estadoPago.falta : null;
 
     return {
         cant, total, soloEncargo, enPedido, vienen, sugeridos, elegidosIds, vieneSel, vienenUnidades, restoABodega, origenes,
-        modo, seAparta, totalApartados, totalCobro, mitad, conAnticipo, montoAnticipo, estadoPago, nombreProducto,
+        modo, seAparta, totalApartados, totalCobro, mitad, seCobra, sinAnticipo, conAnticipo, montoAnticipo, estadoPago, nombreProducto,
         lineaActual, totalLineas, enCamino, puedeAgregar, puedeApartarOtro, renglonActual, renglonesDelPedido, falta,
         deja: Math.min(redondear(montoAnticipo || 0), totalCobro),
     };

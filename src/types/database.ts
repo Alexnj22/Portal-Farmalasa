@@ -2070,6 +2070,8 @@ export type Database = {
           receta_revisada_por: string | null
           receta_ruta: string | null
           receta_subida_at: string | null
+          responsable_at: string | null
+          responsable_id: string | null
           saldo_favor: number | null
           saldo_favor_devuelto_at: string | null
           saldo_favor_devuelto_monto: number | null
@@ -2150,6 +2152,8 @@ export type Database = {
           receta_revisada_por?: string | null
           receta_ruta?: string | null
           receta_subida_at?: string | null
+          responsable_at?: string | null
+          responsable_id?: string | null
           saldo_favor?: number | null
           saldo_favor_devuelto_at?: string | null
           saldo_favor_devuelto_monto?: number | null
@@ -2230,6 +2234,8 @@ export type Database = {
           receta_revisada_por?: string | null
           receta_ruta?: string | null
           receta_subida_at?: string | null
+          responsable_at?: string | null
+          responsable_id?: string | null
           saldo_favor?: number | null
           saldo_favor_devuelto_at?: string | null
           saldo_favor_devuelto_monto?: number | null
@@ -2319,6 +2325,20 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "app_reservas_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_responsable_id_fkey"
+            columns: ["responsable_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "app_reservas_saldo_favor_devuelto_por_fkey"
             columns: ["saldo_favor_devuelto_por"]
             isOneToOne: false
@@ -2383,12 +2403,14 @@ export type Database = {
           enlace_prueba: boolean | null
           enlace_url: string | null
           es_anticipo: boolean
+          es_lote: boolean
           es_real: boolean | null
           estado: string
           forma_pago: string | null
           id: number
           id_transaccion: string | null
           identificador: string
+          lote_de: number | null
           monto: number
           pagado_at: string | null
           pedido: string | null
@@ -2415,12 +2437,14 @@ export type Database = {
           enlace_prueba?: boolean | null
           enlace_url?: string | null
           es_anticipo?: boolean
+          es_lote?: boolean
           es_real?: boolean | null
           estado?: string
           forma_pago?: string | null
           id?: never
           id_transaccion?: string | null
           identificador: string
+          lote_de?: number | null
           monto: number
           pagado_at?: string | null
           pedido?: string | null
@@ -2447,12 +2471,14 @@ export type Database = {
           enlace_prueba?: boolean | null
           enlace_url?: string | null
           es_anticipo?: boolean
+          es_lote?: boolean
           es_real?: boolean | null
           estado?: string
           forma_pago?: string | null
           id?: never
           id_transaccion?: string | null
           identificador?: string
+          lote_de?: number | null
           monto?: number
           pagado_at?: string | null
           pedido?: string | null
@@ -2493,6 +2519,13 @@ export type Database = {
             columns: ["encargo_id"]
             isOneToOne: false
             referencedRelation: "app_encargos"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_reservas_pagos_lote_de_fkey"
+            columns: ["lote_de"]
+            isOneToOne: false
+            referencedRelation: "app_reservas_pagos"
             referencedColumns: ["id"]
           },
           {
@@ -31104,6 +31137,10 @@ export type Database = {
         Args: { p_apartado: Json; p_branch_id: number }
         Returns: Json
       }
+      apartado_sin_anticipo: {
+        Args: { p_apartado: Json; p_branch_id: number }
+        Returns: Json
+      }
       apartado_traslados_pedidos: {
         Args: { p_apartado: Json }
         Returns: string[]
@@ -31169,6 +31206,18 @@ export type Database = {
       }
       app_cliente_preregistros_purgar: { Args: never; Returns: number }
       app_cliente_sesiones_purgar: { Args: never; Returns: number }
+      app_credito_lote_confirmar: {
+        Args: {
+          p_codigo: string
+          p_detalle: Json
+          p_es_real: boolean
+          p_forma: string
+          p_id_transaccion: string
+          p_identificador: string
+          p_monto: number
+        }
+        Returns: Json
+      }
       app_existencias_netas: { Args: { p_ids: number[] }; Returns: Json }
       app_frase_del_dia: { Args: never; Returns: Json }
       app_frase_dia: { Args: never; Returns: string }
@@ -32539,12 +32588,14 @@ export type Database = {
           enlace_prueba: boolean | null
           enlace_url: string | null
           es_anticipo: boolean
+          es_lote: boolean
           es_real: boolean | null
           estado: string
           forma_pago: string | null
           id: number
           id_transaccion: string | null
           identificador: string
+          lote_de: number | null
           monto: number
           pagado_at: string | null
           pedido: string | null
@@ -35278,7 +35329,12 @@ export type Database = {
         }[]
       }
       get_top_productos_mes: {
-        Args: { p_ffin: string; p_fini: string; p_limite?: number }
+        Args: {
+          p_branch_id?: number
+          p_ffin: string
+          p_fini: string
+          p_limite?: number
+        }
         Returns: {
           descripcion: string
           erp_product_id: number
@@ -36913,6 +36969,7 @@ export type Database = {
         Args: { p_cambios: Json; p_clave: string; p_nota?: string }
         Returns: Json
       }
+      puntos_migrar_dui_tardio: { Args: { p_simular?: boolean }; Returns: Json }
       puntos_migrar_historial: {
         Args: {
           p_despues_de?: number

@@ -58,9 +58,13 @@ export default function ReservasView() {
     const [codigo, setCodigo] = useState('');
     const [nueva, setNueva] = useState(false);
     const [conteo, setConteo] = useState(null);
-    // Se aparta en la caja de la sala propia: con otra sucursal elegida, no.
-    const salaVista = fija ?? (todas ? null : miSala);
-    const puedeApartar = puedeEditar && miSala != null && (salaVista == null ? !todas : String(salaVista) === String(miSala));
+    // Apartar (2026-11-05, «que se pueda crear una nueva»): quien edita
+    // reservas aparta siempre. Con alcance de toda la red elige la sala donde
+    // retira el cliente; en la propia se cobra en caja, en otra por enlace o
+    // sin anticipo. Antes el botón se escondía con «Sucursales» o con otra
+    // sala elegida, o sea casi siempre para quien supervisa.
+    const puedeApartar = puedeEditar && (todas || miSala != null);
+    const salasParaApartar = todas ? salas.map((b) => ({ value: String(b.id), label: b.name })) : null;
 
     return (
         <GlassViewLayout icon={ShoppingBag} title="Reservas" transparentBody
@@ -78,7 +82,7 @@ export default function ReservasView() {
                     </CarrilCards>
                     <div className="flex justify-end min-w-0">
                         <FilterBar onClear={() => setSala('todas')} activeCount={fija != null ? 1 : 0}
-                            acciones={puedeApartar ? [{ key: 'nueva', icon: Plus, label: 'Reservar con anticipo', variant: 'primary', onClick: () => setNueva(true) }] : []}>
+                            acciones={puedeApartar ? [{ key: 'nueva', icon: Plus, label: 'Nueva reserva', variant: 'primary', onClick: () => setNueva(true) }] : []}>
                             {todas && salas.length > 0 && (
                                 <FilterBar.Section active={fija != null} onClear={() => setSala('todas')} label="sucursal">
                                     <FilterBar.Sucursal value={sala} onChange={(v) => setSala(v || 'todas')} options={opciones} />
@@ -88,7 +92,8 @@ export default function ReservasView() {
                     </div>
                 </div>
                 <WidgetReservas key={sala} todas={todas && fija == null} sala={fija} completa soloLectura={!puedeEditar}
-                    codigo={codigo} nueva={nueva} onNuevaCerrada={() => setNueva(false)} onConteo={setConteo} />
+                    codigo={codigo} nueva={nueva} onNuevaCerrada={() => setNueva(false)} onConteo={setConteo}
+                    salasParaApartar={salasParaApartar} />
             </div>
         </GlassViewLayout>
     );

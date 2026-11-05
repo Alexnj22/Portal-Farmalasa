@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.0 — Reservas: apartar sin anticipo y crear una nueva desde Comercial
+
+Pedido del usuario: «que pasa con un encargo si el cliente no deja anticipo (es de lejos, etc)», «en comercial -
+reservas, que se pueda crear una nueva», y «al reservar sin anticipo, queda a responsabilidad de quien solicita la
+reserva (el empleado)».
+
+- **«Dónde paga» tiene una tercera opción: Sin anticipo.** Se aparta igual —lo que hay en la sala o ya viene en
+  camino, un producto o un pedido—, no se cobra nada y el cliente paga todo al retirar. Hay que marcar «Quedo como
+  responsable de esta reserva»; sin la casilla no se aparta. Nunca pide un traslado a otra sala.
+- **La reserva queda firmada.** `app_reservas.responsable_id` lo escribe `apartado_sin_anticipo` con la ficha de la
+  sesión (`auth_employee_id()`), no con un id del navegador; queda en la bitácora (`RESERVA_SIN_ANTICIPO`) y la
+  tarjeta dice «Sin anticipo · foto y nombre de quien responde». Plazo: el de una reserva sin pagar.
+- **Comercial → Reservas: «Nueva reserva» sale siempre** para quien edita reservas. Con alcance de toda la red se
+  elige la sala donde retira el cliente: en la propia se cobra en caja; en otra, por enlace de pago o sin anticipo.
+- Corregido de paso: `apartado_crear_reserva` en modo sin pagar escribía `pago_metodo = NULL` sobre una columna
+  NOT NULL, así que esa rama nunca había podido insertar. Ahora escribe `al_retirar`.
+
+
 ## v2.1451.40 — Cargar compra: la cantidad se lee en cajas y en unidades
 
 - **La cantidad ya no se lee como «150 cajas».** Reporte de Bodega con BRANDSTAR. La carga mandaba bien 15 cajas de 10 de MELOFLEX (150 unidades) y 2 cajas de 200 de ANARA (400 unidades), pero el campo «Cantidad a cargar» contaba unidades al lado de «Se carga como: CAJA (10)», y se entendía 150 cajas. Ahora el campo se llama «Unidades que entran» y la fila de abajo dice «15 × CAJA (10)».

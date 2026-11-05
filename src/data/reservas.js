@@ -285,6 +285,14 @@ export async function entregarApartado(branchId, ref) {
     return sinError(await supabase.rpc('apartado_entregar', { p_branch_id: Number(branchId), p_apartado: ref }));
 }
 
+/** Apartar SIN anticipo (2026-11-05): el cliente no deja nada y la reserva
+ *  queda a responsabilidad de quien la pide —la base firma con la ficha de la
+ *  sesión, no con un id del navegador—. `apartado`: `{ modo: 'nueva', … }` o
+ *  `{ modo: 'pedido', customer_id, lineas }`. Devuelve `{ codigo, id, ids, vence_at, … }`. */
+export async function apartarSinAnticipo(branchId, apartado) {
+    return sinError(await supabase.rpc('apartado_sin_anticipo', { p_branch_id: Number(branchId), p_apartado: apartado }));
+}
+
 /** Registrar un encargo SIN cobrar: Compras o administración confirma precio y fecha. */
 export async function crearEncargoEnSucursal({ branchId, customerId, productoId, productoNombre, factor, cantidad, nota }) {
     return sinError(await supabase.rpc('encargo_en_sucursal_crear', {

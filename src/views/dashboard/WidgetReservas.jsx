@@ -33,6 +33,7 @@ import {
 } from '@nucleo/data/reservas';
 import { anotarSalida } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { puedeEnviarPreventa, textoDePreventa } from '@nucleo/utils/preventa';
 import {
     accionesDeReservaNucleo, agruparPorPedido, codigoCompleto as codigoCompletoDe, codigoLimpio, coincideCodigo, conteoDeReservas, esPagoDePrueba, listaDePrecioDelGrupo,
@@ -93,7 +94,8 @@ const MAX_FILAS = 6;
 // (`ViewTabBar`), `nueva` de la acción de la píldora, y `onConteo` alimenta
 // el carril de métricas. Sin esas props, la baldosa sigue como siempre.
 export default function WidgetReservas({ todas = false, completa = false, soloLectura = false, sala = undefined,
-    codigo: codigoDeAfuera = undefined, nueva: nuevaDeAfuera = false, onNuevaCerrada = null, onConteo = null }) {
+    codigo: codigoDeAfuera = undefined, nueva: nuevaDeAfuera = false, onNuevaCerrada = null, onConteo = null,
+    salasParaApartar = null }) {
     const { user, hasPermission, getScope } = useAuth();
     const navigate = useNavigate();
     // «y N más» lleva a la pantalla de Reservas sólo si se puede abrir.
@@ -427,12 +429,29 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                 onListo={() => { setRetirando((q) => q.slice(1)); cargar(); }} />
         </Suspense>
     ) : null;
+    // ── Apartar desde la pantalla de Reservas (2026-11-05) ──────────────────
+    // Pedido del usuario: «en comercial - reservas, que se pueda crear una
+    // nueva». Antes el botón sólo salía mirando la sala propia, porque el
+    // anticipo entra a SU cajón. Ahora se elige la sala donde retira el
+    // cliente (`salasParaApartar`, sólo con alcance de toda la red): en la
+    // propia se cobra en caja; en otra, por enlace o sin anticipo. Quién
+    // puede apartar en qué sala lo vuelve a decidir la base.
+    const esDeVenta = (id) => (branches || []).some((b) => String(b.id) === String(id) && (b.type || 'FARMACIA') === 'FARMACIA');
+    const salaNuevaInicial = miSala && esSalaDeVenta ? miSala
+        : esDeVenta(salaPropia) ? salaPropia : (salasParaApartar?.[0]?.value ?? miSala);
+    const [salaNuevaElegida, setSalaNueva] = useState(null);
+    const salaNueva = salaNuevaElegida ?? salaNuevaInicial;
+    const nombreSalaNueva = (branches || []).find((b) => String(b.id) === String(salaNueva))?.name ?? nombreSala;
+    const cobraEnCaja = !!salaNueva && String(salaNueva) === String(salaPropia);
     const modalNueva = nueva ? (
         <Suspense fallback={null}>
-            <DialogoApartar abierto ocupado={false} sala={miSala} nombreSala={nombreSala} atiende={user?.name} onClose={cerrarNueva}
+            <DialogoApartar abierto ocupado={false} sala={salaNueva} nombreSala={nombreSalaNueva} atiende={user?.name}
+                onClose={() => { setSalaNueva(null); cerrarNueva(); }}
+                cobraEnCaja={cobraEnCaja} salas={cobrandoEncargo ? null : salasParaApartar}
+                onCambiarSala={(v) => setSalaNueva(v)} onApartado={() => { cargar(); setRecargaEncargos((n) => n + 1); }}
                 inicial={cobrandoEncargo ? { vista: 'cobrar', clave: `e${cobrandoEncargo}` } : null}
                 onCobrar={async ({ clave, monto, apartado, pago, papel }) => {
-                    const r = await cobrarAnticipo({ sala: miSala, nombreSala, userId: user?.id, quienAtiende: user?.name,
+                    const r = await cobrarAnticipo({ sala: salaNueva, nombreSala: nombreSalaNueva, userId: user?.id, quienAtiende: user?.name,
                         clave, monto, apartado, pago, papel });
                     if (!r.ok) { showToast('No se pudo cobrar', mensajeAmigable(r.error), 'error'); return false; }
                     showToast(r.aviso ? 'Anticipo cobrado, con un pendiente' : 'Anticipo cobrado',
@@ -578,6 +597,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                     const porResolverDe = filasDe.find(reservaPorResolver);
                     const porTraerDe = filasDe.find(reservaPorTraer);
                     const anticipoDe = filasDe.reduce((t, x) => t + Number(x.anticipo ?? 0), 0);
+                    const responsableDe = filasDe.find((x) => x.responsable)?.responsable ?? null;
                     const totalDe = filasDe.reduce((t, x) => t + Number(x.precio ?? 0) * Number(x.cantidad ?? 1), 0);
                     const listaDePrecio = listaDePrecioDelGrupo(r);
                     // Las mismas acciones en la tarjeta de la pantalla y en la fila de la baldosa.
@@ -618,6 +638,16 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                     {!completa && !filasDe.every((x) => x.pago_estado === 'pagado') && anticipoDe > 0.004 && (
                                         <Badge variant="warning" uppercase={false}
                                             title={`Saldo al retirar: ${formatMoney(totalDe - anticipoDe)}`}>Anticipo {formatMoney(anticipoDe)}</Badge>
+                                    )}
+                                    {/* Sin anticipo (2026-11-05): responde quien la apartó. Foto y
+                                        nombre corto: es la persona, no un dato suelto. */}
+                                    {responsableDe && anticipoDe <= 0.004 && (
+                                        <Badge variant="warning" uppercase={false}
+                                            title={`Sin anticipo: responde ${shortEmployeeName(responsableDe)}. Se cobra ${formatMoney(totalDe)} al retirar.`}>
+                                            <span className="inline-flex items-center gap-1">
+                                                Sin anticipo · <AvatarConEstado emp={responsableDe} px={14} mostrarChip={false} />{shortEmployeeName(responsableDe)}
+                                            </span>
+                                        </Badge>
                                     )}
                                     {/* Mayoreo (2026-10-19): se cobró a precio de mayoreo en la app; en caja
                                         se factura con ESA lista para cobrar lo mismo. */}

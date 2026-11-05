@@ -14,7 +14,7 @@ import FormaDePago from './FormaDePago';
 import FotosDeEvidencia from '../common/FotosDeEvidencia';
 import { useToastStore } from '@nucleo/store/toastStore';
 import {
-    crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
+    apartarSinAnticipo, crearEncargoDeProductoNuevo, crearEncargoEnSucursal, crearEncargosEnSucursal, fetchEncargos, fetchReservasDeSucursal,
     listaDelCliente, mensajeDeEnlaceDePago, opcionesDeApartado, preciosDeProducto, srsParaEncargo, subirFotoDeEncargo, whatsappDe,
 } from '@nucleo/data/reservas';
 import { enlaceDePagoDeApartado } from '@nucleo/data/bolsas';
@@ -27,6 +27,7 @@ import { useReglasDeReserva } from '@nucleo/hooks/useReglasDeReserva';
 import DeOtraSala from './DeOtraSala';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -75,7 +76,14 @@ const llave = (sala) => `apartar_${sala ?? 'sin-sala'}`;
 
 // `inicial` (2026-11-04): `{ vista: 'cobrar', clave: 'e16' }` abre «Por cobrar»
 // con esa fila ya elegida — lo usa «Cobrar» de la tarjeta del encargo.
-export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = null, atiende = null, inicial = null, onClose, onCobrar }) {
+//
+// Desde la pantalla de Reservas (2026-11-05) se aparta también para OTRA sala:
+// `salas` (opciones `{ value, label }`) y `onCambiarSala` dejan elegir dónde
+// retira el cliente, y `cobraEnCaja` dice si el dinero puede entrar al cajón
+// de esa sala —sólo en la propia—. Fuera de ella se cobra por enlace o se
+// aparta sin anticipo; `onApartado` avisa cuando quedó una reserva sin cobro.
+export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = null, atiende = null, inicial = null, onClose, onCobrar,
+    cobraEnCaja = true, salas = null, onCambiarSala = null, onApartado = null }) {
     const [vista, setVista] = useState(inicial?.vista ?? 'nuevo');
     if (!abierto) return null;
     return (
@@ -87,9 +95,19 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
                 <div className="space-y-4">
                     <SegmentedControl label="Qué hacer" value={vista} onChange={setVista}
                         options={[{ value: 'nuevo', label: 'Nuevo' }, { value: 'cobrar', label: 'Por cobrar' }]} />
+                    {salas?.length > 1 && onCambiarSala && (
+                        <LiquidSelect label="Sala donde retira" value={String(sala ?? '')} options={salas}
+                            onChange={(v) => v && onCambiarSala(v)} />
+                    )}
+                    {!cobraEnCaja && (
+                        <p className="text-caption text-content-3 ml-1">
+                            No es tu sala: el anticipo se cobra por enlace de pago, o se aparta sin anticipo.
+                        </p>
+                    )}
                     {vista === 'nuevo'
-                        ? <Nuevo sala={sala} nombreSala={nombreSala} atiende={atiende} ocupado={ocupado} onCobrar={onCobrar} onClose={onClose} />
-                        : <PorCobrar sala={sala} ocupado={ocupado} onCobrar={onCobrar} elegirClave={inicial?.clave ?? null} />}
+                        ? <Nuevo key={sala} sala={sala} nombreSala={nombreSala} atiende={atiende} ocupado={ocupado} onCobrar={onCobrar} onClose={onClose}
+                            cobraEnCaja={cobraEnCaja} onApartado={onApartado} />
+                        : <PorCobrar key={sala} sala={sala} ocupado={ocupado} onCobrar={onCobrar} elegirClave={inicial?.clave ?? null} cobraEnCaja={cobraEnCaja} />}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>
@@ -100,7 +118,7 @@ export default function DialogoApartar({ abierto, ocupado, sala, nombreSala = nu
 }
 
 // ── Nuevo ───────────────────────────────────────────────────────────────────
-function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
+function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnCaja = true, onApartado = null }) {
     const reglasDeReserva = useReglasDeReserva();
     const showToast = useToastStore((s) => s.showToast);
     // El borrador sobrevive al cierre de sesión por inactividad (gate:borradores).
@@ -142,11 +160,18 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     const [apartados, setApartados] = useState(guardado?.apartados ?? []);
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
     // Reglamento v3 (2026-10-22): se cobra en caja o se le manda un enlace de pago.
-    const [cobroEn, setCobroEn] = useState('caja');
+    // 2026-11-05: o se aparta SIN anticipo, a responsabilidad de quien lo pide.
+    const [cobroElegido, setCobroEn] = useState(cobraEnCaja ? 'caja' : 'enlace');
+    const [responsableOk, setResponsableOk] = useState(false);
     const [enlace, setEnlace] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const claveDeEnvio = useRef(null);
     if (claveDeEnvio.current === null) claveDeEnvio.current = globalThis.crypto?.randomUUID?.() ?? `apartar-${Date.now()}`;
+    // Dónde paga, según lo que se puede aquí: la caja sólo en la sala propia y
+    // el enlace sólo para un producto. Si lo elegido ya no vale, el primero.
+    const enPedidoAhora = apartados.length > 0;
+    const formasDeCobro = [cobraEnCaja && 'caja', !enPedidoAhora && 'enlace', 'sin'].filter(Boolean);
+    const cobroEn = formasDeCobro.includes(cobroElegido) ? cobroElegido : formasDeCobro[0];
 
     useEffect(() => {
         saveDraft(llave(sala), { cliente, producto, pres, lista, cantidad, nota, sinCatalogo, nombreNuevo, srs, srsNoAparece, lineas, apartados });
@@ -202,12 +227,12 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     // de la app del personal: lo que ya viene en camino, el pedido de varios
     // productos, el encargo y el cobro.
     const plan = useMemo(() => planDeApartar({
-        opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn,
+        opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn, responsableOk,
         cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece, errorFoto,
-    }), [opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn,
+    }), [opciones, producto, elegida, cantidad, lineas, apartados, vienenElegidos, traslado, cuanto, anticipo, pago, cobroEn, responsableOk,
         cliente, telOk, sinCatalogo, nombreNuevo, srs, srsNoAparece, errorFoto]);
     const { total, soloEncargo, enPedido, vienen, elegidosIds, vieneSel, restoABodega, origenes, modo, totalApartados,
-        totalCobro, mitad, conAnticipo, montoAnticipo, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar,
+        totalCobro, mitad, seCobra, sinAnticipo, conAnticipo, montoAnticipo, nombreProducto, lineaActual, totalLineas, enCamino, puedeAgregar,
         puedeApartarOtro, renglonActual, renglonesDelPedido, falta } = plan;
 
     // El papel del encargo: no se cobró nada, pero el cliente se lleva su código.
@@ -241,6 +266,21 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 showToast('Consulta enviada a Bodega', `${r.codigo} · Bodega responde el precio y para cuándo, o si no se puede conseguir.`, 'success');
                 await imprimirEncargo(r.codigo, nombreNuevo.trim(), true);
                 clearDraft(llave(sala));
+                onClose();
+                return;
+            }
+            // Sin anticipo (2026-11-05): no pasa por la caja ni por el enlace.
+            // La base firma la reserva con la sesión: responde quien la pidió.
+            if (sinAnticipo) {
+                const r = await apartarSinAnticipo(sala, enPedido
+                    ? apartadoDelPedido(cliente.id, renglonesDelPedido)
+                    : { modo: 'nueva', customer_id: cliente.id, producto_id: producto.id, producto_nombre: nombreProducto,
+                        factor: elegida.factor, cantidad: cant, precio: elegida.precio, ...enCamino });
+                showToast('Apartado sin anticipo', `${r.codigo} · ${shortEmployeeName(cliente.name)} · ${r.vence_at
+                    ? `vale hasta el ${fechaTexto(r.vence_at, { day: 'numeric', month: 'long' })}`
+                    : 'el plazo corre cuando llegue'}. Quedas como responsable.`, 'success');
+                clearDraft(llave(sala));
+                onApartado?.(r);
                 onClose();
                 return;
             }
@@ -322,6 +362,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
     if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
     const { deja } = plan;
     const etiquetaBoton = sinCatalogo ? 'Enviar consulta a Bodega'
+        : sinAnticipo ? (enPedido ? `Apartar ${renglonesDelPedido.length} productos sin anticipo` : 'Apartar sin anticipo')
         : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
         : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
         : modo === 'encargo' ? 'Registrar encargo'
@@ -430,7 +471,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                         </Notice>
                     ) : modo === 'reserva' ? (
                         <Notice variant="success" compact icon={PackageSearch}>
-                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta {plazoAlApartar(reglasDeReserva)}</b> con el precio de hoy.
+                            Hay {Number(opciones.disponibles)} en esta sala: <b>se aparta{sinAnticipo ? '' : ` ${plazoAlApartar(reglasDeReserva)}`}</b> con el precio de hoy.
                         </Notice>
                     ) : modo === 'traslado' ? (
                         <Notice variant="info" compact icon={ArrowLeftRight}>
@@ -458,12 +499,17 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                 </Seccion>
             )}
 
-            {!sinCatalogo && conAnticipo && (opciones || (enPedido && !producto)) && (
+            {!sinCatalogo && seCobra && (opciones || (enPedido && !producto)) && (
                 <Seccion titulo={enPedido ? `Cobro del pedido · ${renglonesDelPedido.length} productos` : 'Cobro'}>
                     {/* Un solo bloque, de arriba abajo: cuánto es, cuánto deja,
                         dónde y con qué paga. Los tres controles a lo ancho para
                         que se lean como una columna y no como tres rieles sueltos. */}
                     <div data-surface="card" className="rounded-xl p-4 space-y-4">
+                        <ComoPaga valor={cobroEn} onCambiar={setCobroEn} formas={formasDeCobro} />
+                        {sinAnticipo ? (
+                            <SinAnticipo total={totalCobro} confirmado={responsableOk} onConfirmar={setResponsableOk}
+                                atiende={atiende} enCamino={modo === 'viene'} />
+                        ) : (<>
                         <ResumenDeCobro total={totalCobro} deja={deja} />
                         <Campo rotulo="Cuánto deja">
                             <SegmentedControl label="Cuánto deja" value={cuanto} onChange={setCuanto} layout="block" columns={3}
@@ -477,10 +523,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose }) {
                                 errorMessage={`No puede pasar de ${formatMoney(totalCobro)}`}
                                 onChange={(e) => setAnticipo(e.target.value.replace('-', ''))} />
                         )}
-                        {/* El enlace de pago es para un solo producto: un pedido se cobra en caja. */}
-                        {!enPedido && <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />}
-                        {(cobroEn === 'caja' || enPedido) && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} aLoAncho />}
-                        {enPedido && (
+                        {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={montoAnticipo} aLoAncho />}
+                        </>)}
+                        {enPedido && !sinAnticipo && (
                             <p className="text-caption text-content-3">
                                 Un solo cobro: cada producto queda apartado con su parte y se retira con el código del pedido.
                             </p>
@@ -774,13 +819,15 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
 }
 
 // ── Por cobrar: encargos con precio confirmado y reservas con saldo ─────────
-function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null }) {
+function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null, cobraEnCaja = true }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     const [elegido, setElegido] = useState(null);
     const [monto, setMonto] = useState('');
     const [pago, setPago] = useState(FORMA_DE_PAGO_INICIAL);
-    const [cobroEn, setCobroEn] = useState('caja');
+    // Fuera de la sala propia no hay cajón donde cobrar: sólo enlace.
+    const [cobroElegido, setCobroEn] = useState('caja');
+    const cobroEn = cobraEnCaja ? cobroElegido : 'enlace';
     const [enlace, setEnlace] = useState(null);
     const [enviando, setEnviando] = useState(false);
     const [vuelta, setVuelta] = useState(0);
@@ -861,7 +908,7 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null }) {
                 <>
                     <PortalInput label="Monto" prefix="$" inputMode="decimal" maskType="DECIMAL" value={monto} readOnly={elegido.tipo === 'encargo'}
                         onChange={(e) => setMonto(e.target.value.replace('-', ''))} />
-                    <ComoPaga valor={cobroEn} onCambiar={setCobroEn} />
+                    <ComoPaga valor={cobroEn} onCambiar={setCobroEn} formas={cobraEnCaja ? ['caja', 'enlace'] : ['enlace']} />
                     {cobroEn === 'caja' && <FormaDePago valor={pago} onCambiar={setPago} monto={n} montoFijo={elegido.tipo === 'encargo'} />}
                     {falta && <p className="text-caption text-content-3">{falta}</p>}
                     <div className="flex justify-end">
@@ -878,12 +925,34 @@ function PorCobrar({ sala, ocupado, onCobrar, elegirClave = null }) {
 // ── El enlace de pago (reglamento v3, 2026-10-22) ───────────────────────────
 // En caja: entra al cajón con su forma de pago. Enlace: el cliente paga con
 // tarjeta desde el teléfono y se suma solo al anticipo; no pasa por el cajón.
-function ComoPaga({ valor, onCambiar }) {
+// `formas` (2026-11-05): cuáles se ofrecen —la caja sólo en la sala propia,
+// el enlace sólo para un producto, «Sin anticipo» sólo al apartar—.
+const ROTULO_DE_COBRO = { caja: 'En caja', enlace: 'Enlace de pago', sin: 'Sin anticipo' };
+function ComoPaga({ valor, onCambiar, formas = ['caja', 'enlace'] }) {
+    if (formas.length < 2) return null;
     return (
         <Campo rotulo="Dónde paga">
-            <SegmentedControl label="Dónde paga" value={valor} onChange={onCambiar} layout="block" columns={2}
-                options={[{ value: 'caja', label: 'En caja' }, { value: 'enlace', label: 'Enlace de pago' }]} />
+            <SegmentedControl label="Dónde paga" value={valor} onChange={onCambiar} layout="block" columns={formas.length}
+                options={formas.map((f) => ({ value: f, label: ROTULO_DE_COBRO[f] }))} />
         </Campo>
+    );
+}
+
+// ── Sin anticipo (2026-11-05) ───────────────────────────────────────────────
+// Pedido del usuario: «al reservar sin anticipo, queda a responsabilidad de
+// quien solicita la reserva (el empleado)». La casilla no es decorativa: sin
+// marcarla no se aparta, y la base guarda quién fue con la sesión.
+function SinAnticipo({ total, confirmado, onConfirmar, atiende, enCamino }) {
+    return (
+        <div className="space-y-3">
+            <Notice variant="warning" compact>
+                <b>No se cobra nada ahora.</b> El cliente paga {formatMoney(total)} completo al retirar.
+                {enCamino ? ' El plazo para retirar empieza cuando llegue a la sala.' : ' Sin anticipo el plazo para retirar es más corto: la fecha sale al apartar.'}
+            </Notice>
+            <Checkbox checked={confirmado} onChange={onConfirmar}
+                label={`Quedo como responsable de esta reserva${atiende ? ` (${shortEmployeeName(atiende)})` : ''}`}
+                description="Si el cliente no la retira, responde quien la apartó." />
+        </div>
     );
 }
 

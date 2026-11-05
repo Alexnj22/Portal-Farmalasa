@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { listaQueLeToca, planDeApartar, telefonoDeFicha, tomaDeCadaTraslado, trasladosQueCubren } from '@nucleo/utils/apartar';
+import { FALTA_RESPONSABLE, listaQueLeToca, planDeApartar, SIN_ANTICIPO_NO_SE_TRAE, telefonoDeFicha, tomaDeCadaTraslado, trasladosQueCubren } from '@nucleo/utils/apartar';
 import { agruparPorPedido, conteoDeReservas, porCobrarDeSala, seccionesDeReservas } from '@nucleo/utils/reservasDeSala';
 
 const cliente = { id: 1, name: 'ANA PEREZ', phone: '7777-7777' };
@@ -53,6 +53,38 @@ describe('planDeApartar — la regla de Apartar del portal y de la app', () => {
     it('un encargo va de 1 a 20 unidades', () => {
         const p = planDeApartar({ ...base, cantidad: '21', opciones: { modo: 'encargo' } });
         expect(p.falta).toBe('Un encargo va de 1 a 20 unidades.');
+    });
+});
+
+describe('planDeApartar — sin anticipo (2026-11-05)', () => {
+    it('no cobra nada y exige que quien aparta acepte la responsabilidad', () => {
+        const p = planDeApartar({ ...base, opciones: { modo: 'reserva', disponibles: 5 }, cobroEn: 'sin' });
+        expect(p.sinAnticipo).toBe(true);
+        expect(p.conAnticipo).toBe(false);
+        expect(p.montoAnticipo).toBe(0);
+        expect(p.falta).toBe(FALTA_RESPONSABLE);
+        const q = planDeApartar({ ...base, opciones: { modo: 'reserva', disponibles: 5 }, cobroEn: 'sin', responsableOk: true });
+        expect(q.falta).toBeNull();
+    });
+
+    it('no se pide a otra sala sin anticipo', () => {
+        const t = planDeApartar({ ...base, opciones: { modo: 'encargo' }, cobroEn: 'sin', responsableOk: true,
+            traslado: { branch_id: 7, sala: 'Salud 3', lista: true } });
+        expect(t.modo).toBe('traslado');
+        expect(t.falta).toBe(SIN_ANTICIPO_NO_SE_TRAE);
+    });
+
+    it('un encargo sigue sin cobrar: «sin anticipo» no le cambia nada', () => {
+        const e = planDeApartar({ ...base, opciones: { modo: 'encargo' }, cobroEn: 'sin' });
+        expect(e.sinAnticipo).toBe(false);
+        expect(e.falta).toBeNull();
+    });
+
+    it('un pedido de varios productos también se aparta sin anticipo', () => {
+        const apartados = [{ productoId: 11, productoNombre: 'X', factor: 1, cantidad: 1, precio: 3 }];
+        const p = planDeApartar({ ...base, producto: null, elegida: null, apartados, cobroEn: 'sin' });
+        expect(p.falta).toBe(FALTA_RESPONSABLE);
+        expect(planDeApartar({ ...base, producto: null, elegida: null, apartados, cobroEn: 'sin', responsableOk: true }).falta).toBeNull();
     });
 });
 

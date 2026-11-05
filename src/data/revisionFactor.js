@@ -39,13 +39,17 @@ export async function fetchRevisionDePresentaciones() {
 /**
  * La corrección aplicada a la sala DESPUÉS de que contara (su conteo ya quedó
  * viejo), o null. Trae `resto`: lo que contó y la corrección no cubrió.
+ *
+ * Si la sala todavía no contó, cualquier corrección aplicada cuenta: al
+ * corregir, la fila sale de «por corregir» (el inventario ya no muestra lo de
+ * la foto) y la sala cae en «las demás salas». Sin esto se pintaba «por
+ * contar», como si nadie la hubiera tocado (Bodega, Nor Clamida, 2026-11-05).
  */
 export function corregidaDespuesDelConteo(corregidas, s, erpProductId) {
     const contado = s?.contado_at ? new Date(s.contado_at).getTime() : null;
-    if (!contado) return null;
     return (corregidas ?? []).find(c => c.erp_product_id === erpProductId
-        && c.erp_sucursal_id === s.erp_sucursal_id
-        && new Date(c.at).getTime() > contado) ?? null;
+        && c.erp_sucursal_id === s?.erp_sucursal_id
+        && (!contado || new Date(c.at).getTime() > contado)) ?? null;
 }
 
 /**

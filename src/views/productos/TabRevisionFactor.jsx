@@ -238,7 +238,9 @@ const POR_CONTAR = ['PENDIENTE', 'RECONTAR'];
 // de tamaño ya entró: no se pinta como descuadre. Lo que la corrección no cubrió
 // (`resto`) sigue en amarillo, porque la sala tiene que pedirlo.
 function ConteoDeOtraSala({ s, corregida }) {
-    const contada = !POR_CONTAR.includes(s.estado);
+    // Corregida sin haber contado: la corrección ya entró, el conteo pendiente
+    // no cambia eso. No se pinta «por contar» como si nadie la hubiera tocado.
+    const contada = !POR_CONTAR.includes(s.estado) || !!corregida;
     const descuadre = contada && s.diferencia && !corregida;
     const resto = corregida?.resto ?? 0;
     const variant = !contada ? 'neutral' : descuadre ? 'danger' : resto ? 'warning' : 'success';

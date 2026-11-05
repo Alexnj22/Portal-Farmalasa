@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.20 — Revisión de factor: una sala corregida sin contar ya no aparece «por contar»
+
+- Al corregir una sala, su fila sale de «Existencia por corregir» en cuanto el
+  inventario refleja el ajuste (ya no muestra lo de la foto). Si a esa sala se
+  le había pedido conteo y todavía no contó, caía en «Las demás salas» como
+  «por contar», como si nadie la hubiera tocado (Bodega, Nor Clamida 5 mg,
+  2026-11-05). Ahora sale «corregida».
+
 ## v2.1452.19 — El cierre de sesión suelta los avisos del equipo aunque el token haya vencido
 
 - Medido el 2026-11-05: 42 de 389 cierres (11%) no soltaban la suscripción de

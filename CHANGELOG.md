@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.36 — Tienda Salud: laboratorios, promociones y volver arriba
+
+Pedido del usuario: «¿y lo que hablamos de promociones? ¿laboratorios? en la tienda? que sea una lista interminable se me hace mucho, no tengo opción de volver arriba de forma fácil».
+
+- **Promociones que nunca quedan vacías.** No había ni una oferta ni un banner publicado, y el carrusel se ocultaba. Sin nada publicado, ahora muestra los 5 productos con más descuento: foto sobre blanco, «−N%», nombre y precio con el de antes tachado (`PromoProducto` en `BannerPromos.js`).
+- **Banners de muestra**, como las historias. Con sesión, la app pide `banners_mios` y `app-clientes` suma las muestras de la ficha (`app_cliente_muestras`, tipo nuevo `banner`, migración `20261105175648`). Hay tres cargadas para las dos cuentas de muestra. Si la acción falla, se piden los banners públicos.
+- **Laboratorios.** Fila con los 12 laboratorios con más productos entre los más vendidos (`FilaLaboratorios.js`). Tocar uno muestra sus productos, primero los más vendidos, con «Quitar» para volver. `app_catalogo` entiende `q = 'lab:<id>'` y devuelve `laboratorios` en la primera tanda sin buscar, sin el prefijo de orden del ERP (migración `20261105175056`). La edge function no cambió para esto: reenvía `q` y esparce la respuesta.
+- **La lista ya no es interminable.** Deja de cargar sola al llegar al final: crece con «Ver más productos» y termina en «Volver arriba». Pasada pantalla y media aparece «Arriba» en la barra superior.
+
 ## v2.1451.35 — Cargar compra: el tamaño por precio no se hereda al elegir otro producto
 
 - **El tamaño «por precio» ya no se queda pegado a otro producto.** De los 51 renglones de la cola con tamaño calculado por precio, 41 se calcularon contra un producto propuesto **por parecido**, sin confirmar. Algunos están mal: GARRAFÓN DE AGUA contra «AGUA CRISTAL 355 ML» daba ×12, y VITAMINA E de INCOFA contra la de otra marca, ×18. Antes, al elegir el producto correcto con «Es otro», el portal mantenía ese ×12 y además lo guardaba para las próximas facturas del proveedor. Ahora, si el producto elegido es otro y nadie tocó la cantidad, vuelve a 1.

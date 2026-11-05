@@ -18,9 +18,15 @@ import { llamar } from '../lib/api';
 import { colorSistema } from './sistema';
 import { acentoDe, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
+import { useSesion } from '../lib/sesion';
+import FotoProducto from './FotoProducto';
+import { dolares } from '../lib/formato';
+import { nombreProducto } from '../lib/catalogo';
+import { precioFinal } from '../lib/precioTuyo';
 
 let ultimos = null;
 let pedidosAt = 0;
+let pedidosPara = null;
 
 // Fuera del render: un componente creado en cada render se desmonta y monta de
 // nuevo entre banner y banner (2026-10-15).
@@ -28,7 +34,7 @@ function Separador() { return <View style={{ width: 10 }} />; }
 
 // `memo`: no recibe props, así que el catálogo puede redibujarse (cada tecla
 // de la búsqueda) sin arrastrar el carrusel.
-export default memo(function BannerPromos() {
+export default memo(function BannerPromos({ productos = [] }) {
   const t = useTema();
   const { width } = useWindowDimensions();
   const { datos, cargar } = useOfertas();
@@ -37,19 +43,32 @@ export default memo(function BannerPromos() {
   const x = useSharedValue(0);
   const alDesplazar = useAnimatedScrollHandler((e) => { x.value = e.contentOffset.x; });
   const [banners, setBanners] = useState(null);
+  const token = useSesion((x) => x.token);
+  const pedir = useSesion((x) => x.pedir);
   useFocusEffect(useCallback(() => {
     cargar();
     // A lo sumo una vez por minuto: cada pedido firma las fotos otra vez.
-    if (Date.now() - pedidosAt < 60_000 && ultimos) { setBanners(ultimos); return; }
-    llamar('banners').then((r) => { if (r?.ok) { ultimos = r.banners; pedidosAt = Date.now(); setBanners(r.banners); } });
-  }, [cargar]));
+    if (Date.now() - pedidosAt < 60_000 && ultimos && pedidosPara === token) { setBanners(ultimos); return; }
+    // Con sesión se piden con las MUESTRAS de la ficha (2026-11-05, como las
+    // historias); si eso falla, los públicos.
+    const pedido = token ? pedir('banners_mios').then((r) => (r?.ok ? r : llamar('banners'))) : llamar('banners');
+    pedido.then((r) => { if (r?.ok) { ultimos = r.banners; pedidosAt = Date.now(); pedidosPara = token; setBanners(r.banners); } });
+  }, [cargar, token, pedir]));
 
   // Los del portal; si no hay, las ofertas (con su etiqueta y título encima).
-  const ofertas = banners?.length
+  const publicadas = banners?.length
     ? banners.map((b) => ({ id: b.id, titulo: b.titulo, imagen: b.imagen, imagen_clave: b.imagen_clave,
         etiqueta: null, mostrarTitulo: b.titulo_visible, destino: b.oferta_id ? `/oferta/${b.oferta_id}` : b.enlace }))
     : (datos?.ofertas ?? []).filter((o) => o.disponible !== false).slice(0, 8)
         .map((o) => ({ ...o, mostrarTitulo: true, destino: `/oferta/${o.id}` }));
+  // Sin banners ni ofertas publicadas, las promociones son los productos con
+  // más descuento (usuario, 2026-11-05: «¿y lo que hablamos de promociones?»
+  // — con nada publicado el carrusel desaparecía entero).
+  const ofertas = publicadas.length ? publicadas : productos.slice(0, 5)
+    .map((p) => ({ p, final: precioFinal(p) }))
+    .filter(({ p, final }) => p.precio > final)
+    .map(({ p, final }) => ({ id: `p${p.id}`, producto: p, final, pct: Math.round(((p.precio - final) / p.precio) * 100),
+      titulo: nombreProducto(p.nombre), destino: `/producto/${p.id}` }));
   if (!ofertas.length) return null;
   const ancho = Math.min(width, 720) - 32;
 
@@ -68,6 +87,7 @@ export default memo(function BannerPromos() {
         scrollEventThrottle={16}
         renderItem={({ item: o }) => {
           const a = acentoDe(t, o.acento);
+          if (o.producto) return <PromoProducto o={o} ancho={ancho} a={a} />;
           // El banner del portal ya trae su diseño: proporción 2.4 : 1, como se subió.
           return (
             <Presionable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
@@ -121,4 +141,32 @@ function Punto({ i, x, paso }) {
     };
   });
   return <Animated.View style={[{ height: 6, borderRadius: 3, backgroundColor: colorSistema.texto2 }, estilo]} />;
+}
+
+// Una promoción hecha con un producto: la foto sobre blanco a la derecha y, a
+// la izquierda, el descuento grande, el nombre y el precio.
+function PromoProducto({ o, ancho, a }) {
+  const p = o.producto;
+  return (
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
+      accessibilityRole="button" accessibilityLabel={`Promoción: ${o.titulo}, ${dolares(o.final)}, antes ${dolares(p.precio)}, ${o.pct}% de descuento`}
+      style={({ pressed }) => ({ width: ancho, minHeight: Math.round(ancho / 2.4), borderRadius: 24, overflow: 'hidden', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <LinearGradient colors={[a.fuerte, '#2B0B3A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
+      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+        <View style={{ flex: 1, gap: 4 }}>
+          <View style={{ alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
+            <Text maxFontSizeMultiplier={1.2} style={{ color: a.fuerte, fontSize: 15, fontWeight: '900' }}>−{o.pct}%</Text>
+          </View>
+          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800', letterSpacing: -0.2 }} numberOfLines={2}>{o.titulo}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
+            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900' }}>{dolares(o.final)}</Text>
+            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecorationLine: 'line-through' }}>{dolares(p.precio)}</Text>
+          </View>
+        </View>
+        <View style={{ width: Math.round(ancho * 0.36) }}>
+          <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={Math.round(ancho * 0.32)} radio={16} />
+        </View>
+      </View>
+    </Presionable>
+  );
 }

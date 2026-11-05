@@ -14,6 +14,7 @@
 // de limpio y se desplaza fluido.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
 import Presionable from '../../../componentes/Presionable';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -35,7 +36,7 @@ import { navegar } from '../../../lib/navegar';
 // le corresponde el servidor le agrega `precio_tuyo` (lib/precioTuyo.js).
 import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../../lib/precioTuyo';
 
-// Cuántos se piden cada vez que la lista se acerca al final.
+// Cuántos trae cada «Ver más productos».
 const POR_TANDA = 30;
 // El servidor no pasa de `desde = 1000` (app-clientes, acción `catalogo`): una
 // tanda que empiece más allá devuelve la misma de antes (2026-10-12). Ahí la
@@ -67,6 +68,25 @@ export default function Catalogo() {
   const [desde, setDesde] = useState(0);
   const [cargandoMas, setCargandoMas] = useState(false);
   const [refrescando, setRefrescando] = useState(false);
+  // Los laboratorios de la fila (vienen con la primera tanda sin buscar) y el
+  // elegido: se busca como `lab:<id>` (app_catalogo, 2026-11-05).
+  const [labs, setLabs] = useState([]);
+  const [lab, setLab] = useState(null);
+  // La lista ya no se alarga sola al llegar al final (usuario, 2026-11-05: «que
+  // sea una lista interminable se me hace mucho, no tengo opción de volver
+  // arriba de forma fácil»): crece con «Ver más productos», y pasada la
+  // primera pantalla y media aparece «Arriba» en la barra.
+  const listaRef = useRef(null);
+  const [lejos, setLejos] = useState(false);
+  const { height: altoPantalla } = useWindowDimensions();
+  const alDesplazar = useCallback((e) => {
+    const y = e.nativeEvent.contentOffset.y;
+    setLejos((v) => (v ? y > altoPantalla : y > altoPantalla * 1.5));
+  }, [altoPantalla]);
+  const arriba = useCallback(() => {
+    Haptics.selectionAsync().catch(() => {});
+    listaRef.current?.scrollToOffset({ offset: 0, animated: true });
+  }, []);
   const pedido = useRef(0);
   // `onEndReached` puede dispararse varias veces seguidas: el estado llega
   // tarde para frenarlo, la referencia no.
@@ -81,6 +101,14 @@ export default function Catalogo() {
     return alCambiarVistos(setVistos);
   }, []);
 
+  // Escribir otra cosa (o tocar una categoría) suelta el laboratorio.
+  const labActivo = lab && texto === `lab:${lab.id}` ? lab : null;
+  const elegirLab = useCallback((l) => {
+    Haptics.selectionAsync().catch(() => {});
+    if (labActivo?.id === l.id) { setTexto(''); return; }
+    setLab(l); setTexto(`lab:${l.id}`);
+    listaRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, [labActivo]);
   // La búsqueda sale 300 ms después de la última tecla.
   useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
 
@@ -93,7 +121,7 @@ export default function Catalogo() {
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
     if (!r?.ok) { setError(true); return; }
     const productos = r.productos ?? [];
-    if (primera) setAhorro(mayorAhorro(productos));
+    if (primera) { setAhorro(mayorAhorro(productos)); if (r.laboratorios?.length) setLabs(r.laboratorios); }
     // Sin repetidos: entre una tanda y la otra el orden de «lo más vendido»
     // puede moverse, y una llave repetida rompe la lista.
     const ya = new Set(previa.map((p) => p.id));
@@ -124,10 +152,11 @@ export default function Catalogo() {
   const filas = useMemo(() => (q ? null : (
     <>
       <FilaProductos titulo="Precio Preferente" sf="tag.fill" productos={ahorro} />
+      <FilaLaboratorios labs={labs} alElegir={elegirLab} />
       <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
         accion={{ texto: 'Limpiar', alTocar: olvidarVistos }} />
     </>
-  )), [q, ahorro, vistos]);
+  )), [q, ahorro, vistos, labs, elegirLab]);
   // Categorías en píldoras (2026-11-05, Tienda «Vitrina»): una fila baja en
   // vez de los mosaicos de 60 px. Tocar una busca; tocarla otra vez la quita.
   const categorias = useMemo(() => (
@@ -151,16 +180,30 @@ export default function Catalogo() {
   const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
-      {!q ? <BannerPromos /> : null}
+      {!q ? <BannerPromos productos={ahorro} /> : null}
       {/* Debajo del banner (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
       {categorias}
       {/* Las ofertas en un carril (2026-11-05, «así ahí aparecen las ofertas,
           más práctico»): antes era una tarjeta que llevaba a otra pantalla. */}
       {!q ? <CarrilOfertas /> : null}
       {filas}
-      <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>
+      {/* Con un laboratorio elegido, su nombre y cómo soltarlo (la fila de
+          laboratorios no se ve mientras se mira uno). */}
+      {labActivo ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text accessibilityRole="header" style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }} numberOfLines={2}>{labActivo.nombre}</Text>
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }} accessibilityRole="button" accessibilityLabel="Ver toda la tienda"
+            style={({ pressed }) => ({ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, borderRadius: 999,
+              backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+            <Icono sf="xmark" respaldo="×" tam={11} color={colorSistema.texto2} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>Quitar</Text>
+          </Presionable>
+        </View>
+      ) : (
+        <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>
+      )}
     </View>
-  ), [q, categorias, filas]);
+  ), [q, categorias, filas, labActivo, t, ahorro]);
   // Estable: con una función nueva en cada render, la lista redibujaba todas
   // las tarjetas a cada tecla.
   const renderItem = useCallback(({ item }) => <TarjetaProducto p={item} sola={columnas === 1} />, [columnas]);
@@ -176,8 +219,18 @@ export default function Catalogo() {
           onChangeText: (e) => setTexto(e.nativeEvent.text ?? ''),
           onCancelButtonPress: () => setTexto(''),
         },
+        headerRight: lejos ? () => (
+          <Presionable onPress={arriba} hitSlop={8} accessibilityRole="button" accessibilityLabel="Volver arriba"
+            style={({ pressed }) => ({ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, opacity: pressed ? 0.6 : 1 })}>
+            <Icono sf="arrow.up" respaldo="↑" tam={14} color={t.color.magentaTexto} />
+            <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Arriba</Text>
+          </Presionable>
+        ) : undefined,
       }} />
       <FlatList
+        ref={listaRef}
+        onScroll={alDesplazar}
+        scrollEventThrottle={100}
         // Cambiar `numColumns` exige montar la lista de nuevo.
         key={`col${columnas}`}
         data={lista ?? []}
@@ -194,8 +247,6 @@ export default function Catalogo() {
         windowSize={7}
         removeClippedSubviews
         renderItem={renderItem}
-        onEndReached={cargarMas}
-        onEndReachedThreshold={0.8}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
         ListEmptyComponent={
           error ? (
@@ -209,8 +260,10 @@ export default function Catalogo() {
         ListFooterComponent={!lista?.length ? null
           // Pedir más falló: lo cargado se queda, se dice y se puede reintentar.
           : error ? <Reintentar alTocar={() => { setError(false); cargar(desde, lista); }} />
-            : cargandoMas || hayMas ? <ActivityIndicator style={{ marginVertical: 16 }} />
-              : null}
+            : cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} />
+              : hayMas ? <VerMas alTocar={cargarMas} />
+                : lista.length > 12 ? <VerMas texto="Volver arriba" sf="arrow.up" alTocar={arriba} />
+                  : null}
       />
     </>
   );
@@ -343,5 +396,20 @@ function Reintentar({ alTocar }) {
         <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>Reintentar</Text>
       </Presionable>
     </View>
+  );
+}
+
+// El pie de la lista (2026-11-05): «Ver más productos» en vez de cargar solo,
+// y al final de todo, «Volver arriba».
+function VerMas({ texto = 'Ver más productos', sf = 'chevron.down', alTocar }) {
+  const t = useTema();
+  return (
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alTocar(); }} accessibilityRole="button"
+      style={({ pressed }) => ({ alignSelf: 'center', marginVertical: 14, minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6,
+        paddingHorizontal: 20, borderRadius: 999, backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.9)',
+        borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.08)', transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{texto}</Text>
+      <Icono sf={sf} respaldo="" tam={12} color={t.color.magentaTexto} />
+    </Presionable>
   );
 }

@@ -60,7 +60,7 @@ const DIAS_SESION = 180;
 const CON_CODIGO = new Set([
   "resumen", "movimientos", "cupon_raspado", "premio_salas", "premio_elegir_sala", "premio_apartar",
   "wallet_pase", "wallet_enlace", "google_wallet_enlace",
-  "ofertas", "historias", "historia_vista",
+  "ofertas", "historias", "historia_vista", "banners_mios",
   "documentos_estado", "aceptar_documentos",
   "salir",
 ]);
@@ -1197,22 +1197,32 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
 
     // ── Banners (2026-10-07): las imágenes horizontales de arriba del
     // catálogo, que se suben en el portal. Públicos, con su foto firmada.
-    if (accion === "banners") {
+    // Los BANNERS de la Tienda. Con ficha (`banners_mios`, 2026-11-05) se
+    // suman sus MUESTRAS (`app_cliente_muestras`, tipo «banner»), igual que en
+    // las historias: un banner de ejemplo para ver el diseño mientras el
+    // portal no tenga ninguno publicado. Los demás no las ven.
+    // deno-lint-ignore no-explicit-any
+    const bannersPara = async (customerId: number | null): Promise<any> => {
       const hoy = hoySV();
-      const { data: filas, error } = await admin.from("app_banners")
-        .select("id, titulo, titulo_visible, imagen_path, oferta_id, enlace")
-        .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
-        .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(10);
+      const [{ data: filas, error }, muestras] = await Promise.all([
+        admin.from("app_banners")
+          .select("id, titulo, titulo_visible, imagen_path, oferta_id, enlace")
+          .eq("publicada", true).lte("inicio", hoy).gte("fin", hoy)
+          .order("orden", { ascending: true }).order("created_at", { ascending: false }).limit(10),
+        muestrasDe(admin, customerId, "banner"),
+      ]);
       if (error) throw error;
-      const firmadas = await firmarOfertas(admin, (filas ?? []).map((b: any) => b.imagen_path));
-      return json({
+      const todas = [...(filas ?? []), ...muestras.map((m) => ({ ...m, id: `muestra-${m.id}` }))];
+      const firmadas = await firmarOfertas(admin, todas.map((b: any) => b.imagen_path));
+      return {
         ok: true,
-        banners: (filas ?? []).filter((b: any) => firmadas.has(b.imagen_path)).map((b: any) => ({
-          id: b.id, titulo: b.titulo, titulo_visible: b.titulo_visible, imagen: firmadas.get(b.imagen_path),
+        banners: todas.filter((b: any) => firmadas.has(b.imagen_path)).map((b: any) => ({
+          id: b.id, titulo: b.titulo, titulo_visible: !!b.titulo_visible, imagen: firmadas.get(b.imagen_path),
           imagen_clave: b.imagen_path, oferta_id: b.oferta_id ?? null, enlace: b.enlace ?? null,
         })),
-      });
-    }
+      };
+    };
+    if (accion === "banners") return json(await bannersPara(null));
 
     // ── La frase del día (2026-11-03): la que el equipo cargó en el portal
     // para hoy, o `frase: null` y la app usa las suyas. Pública como los
@@ -1595,6 +1605,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // ── Ofertas: las ve también quien está pendiente ──────────────────────
     if (accion === "ofertas") return json(await ofertasPara(customerId));
     if (accion === "historias") return json(await historiasPara(customerId));
+    if (accion === "banners_mios") return json(await bannersPara(customerId));
     if (accion === "historia_vista") return await anotarVista(body, customerId);
 
     // ── Reservas de productos en oferta (2026-10-06) ──────────────────────

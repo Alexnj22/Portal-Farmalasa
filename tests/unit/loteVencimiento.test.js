@@ -250,3 +250,18 @@ describe('proveedores leídos el 2026-11-05', () => {
         expect(lee('', 'FLETE', 1)).toEqual({ lote: null, vence: null });
     });
 });
+
+// LANCASCO (facturador «Factured», 2026-11-05): la descripción del JSON no trae
+// nada y el PDF pone `L.14360 (6) V.2028-04-30` entre la descripción y el
+// precio. Texto tal cual lo extrae `unpdf` en el servidor.
+describe('LANCASCO: L.lote (unidades) V.aaaa-mm-dd', () => {
+    const pdf = 'N° Cantidad Unidad Descripción Lote Fecha de Venc. Precio Unitario Descuento por item 1 6 Unidad ASTROTON H4 CON GINSENG Y MACA X 60 CÁPSULAS (ES) L.14360 (6) V.2028-04-30 12.2800 12.28 0.00 0.00 0.00 61.40 SUMA DE VENTAS:';
+    it('lee lote y vencimiento del PDF', () => {
+        const r = loteYVence(pdf, { descripcion: 'ASTROTON H4 CON GINSENG Y MACA X 60 CÁPSULAS (ES)', cantidad: 6 }, 2026);
+        expect(r.lote).toBe('14360');
+        expect(r.vence).toBe('2028-04-01');
+    });
+    it('y en texto libre, sin el paréntesis', () => {
+        expect(deTextoLibre('ALGO X 30 L.AB123 V.2027-11-15', 2026)).toEqual({ lote: 'AB123', vence: '2027-11-01' });
+    });
+});

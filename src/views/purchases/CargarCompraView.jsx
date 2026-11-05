@@ -1020,7 +1020,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 ) : null} />
                                             <PortalInput compact labelDenso label="Lote" value={aj.lote}
                                                 onChange={e => ajustar(i, 'lote', e.target.value)} />
-                                            <CampoMesAnio label="Vence" value={aj.vence} onChange={v => ajustar(i, 'vence', v)} />
+                                            <CampoMesAnio compact label="Vence" value={aj.vence} onChange={v => ajustar(i, 'vence', v)} />
                                             {(() => {
                                                 const actual = vinetaActual(r, aj, sim, vinetasDe(r, i));
                                                 const nueva = Number(aj.venta);
@@ -1103,7 +1103,8 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                     </Button>
                                                 )}
                                                 {!aj.servicio && !conProducto && !aj.erroneo && (
-                                                    <Button size="xs" onClick={() => setCreando(i)} icon={PackagePlus}>
+                                                    <Button size="xs" icon={PackagePlus} onClick={() => setCreando(i)}
+                                                        variant={r.producto_id && r.match_origen === 'parecido' ? 'ghost' : 'primary'}>
                                                         Es nuevo
                                                     </Button>
                                                 )}

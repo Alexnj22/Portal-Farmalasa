@@ -53,7 +53,9 @@ function enmascarar(crudo, creciendo) {
     return `${mes}/${anio}`;
 }
 
-export default function CampoMesAnio({ label, value, onChange, desde = null, placeholder = 'MM/AA' }) {
+// `compact`: el mismo alto, rótulo y letra que `PortalInput compact`, para ir
+// en una fila de campos compactos sin quedar más alto que sus vecinos.
+export default function CampoMesAnio({ label, value, onChange, desde = null, placeholder = 'MM/AA', compact = false }) {
     const esTactil = useCoarsePointer();
     const [texto, setTexto] = useState(() => aTexto(value));
     const [ultimo, setUltimo] = useState(value);
@@ -144,18 +146,18 @@ export default function CampoMesAnio({ label, value, onChange, desde = null, pla
 
     return (
         <div className="flex flex-col">
-            {label && <span className={rotuloCampo()}>{label}</span>}
-            <div ref={cajaRef} data-surface="input" className="relative flex items-center h-[max(40px,var(--tap-min))] rounded-input">
+            {label && <span className={compact ? rotuloCampo('text-content-3', { denso: true }) : rotuloCampo()}>{label}</span>}
+            <div ref={cajaRef} data-surface="input" className={`relative flex items-center ${compact ? 'h-8' : 'h-[max(40px,var(--tap-min))]'} rounded-input`}>
                 <input
                     type="text" inputMode="numeric" autoComplete="off" aria-label={label || 'Mes y año'}
                     value={texto} placeholder={placeholder} maxLength={7}
                     onChange={(e) => emitir(enmascarar(e.target.value, e.target.value.length > texto.length))}
-                    className="flex-1 min-w-0 h-full bg-transparent border-none outline-none pl-4 pr-2 text-body-xl font-bold text-content tabular-nums placeholder:text-content-3"
+                    className={`flex-1 min-w-0 h-full bg-transparent border-none outline-none pl-4 pr-2 ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold text-content tabular-nums placeholder:text-content-3 placeholder:font-medium`}
                 />
                 <button type="button" aria-label="Elegir el mes" aria-haspopup="dialog" aria-expanded={abierto}
                     onClick={() => (abierto ? setAbierto(false) : abrir())}
-                    className="mr-1.5 flex items-center justify-center w-9 h-9 min-w-[var(--tap-min)] min-h-[var(--tap-min)] rounded-full text-content-3 hover:text-brand-text hover:bg-surface-card-hover active:scale-[0.9] transition-all shrink-0">
-                    <CalendarIcon size={16} strokeWidth={2.5} />
+                    className={`mr-1 flex items-center justify-center ${compact ? 'w-7 h-7' : 'w-9 h-9'} min-w-[var(--tap-min)] min-h-[var(--tap-min)] rounded-full text-content-3 hover:text-brand-text hover:bg-surface-card-hover active:scale-[0.9] transition-all shrink-0`}>
+                    <CalendarIcon size={compact ? 14 : 16} strokeWidth={2.5} />
                 </button>
             </div>
             {abierto && (esTactil ? (

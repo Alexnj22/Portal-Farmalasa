@@ -61,7 +61,7 @@ const FECHAS = [
   // BRANDSTAR (2026-11-05): `LOTE:BFB028 FECHA VENC.:2029-02-28` — rótulo
   // abreviado y fecha al revés. Sin esta línea el lote se leía y el
   // vencimiento no, y la carga de un regulado quedaba frenada renglón por renglón.
-  /(?:fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad)\s*[:.]?\s*(\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})/i,
+  /(?:fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|\bv)\s*[:.]?\s*(\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})/i,
   /(?:fecha\s*exp\.?|fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|v)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,
   /\(\s*v\s*-\s*(\d{1,2}\s*-\s*\d{2,4})\s*\)/i,          // VIJOSA: (V-12-27)
   /(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4})/,
@@ -78,6 +78,9 @@ const LOTES = [
   /\bL\s*:\s*([A-Za-z0-9][A-Za-z0-9._\-\/]*)/,
   // FARMEX: `L 25C2703 V 30/3/2027` — rótulos de una letra, sin puntuación.
   /\bL\s+([A-Za-z0-9][A-Za-z0-9._\-\/]{2,})\s+V\s+\d/,
+  // LANCASCO (facturador «Factured»): `L.14360 (6) V.2028-04-30` — lote, las
+  // unidades de ese lote entre paréntesis y el vencimiento (2026-11-05).
+  /\bL\.\s*([A-Za-z0-9][A-Za-z0-9\-\/]{2,})\s*(?:\(\s*\d+\s*\)\s*)?V\.\s*\d/,
 ];
 
 const MESES: Record<string, number> = {

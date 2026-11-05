@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.16 — Cargar compra: lote y vencimiento de LANCASCO, Vence alineado
+
+LANCASCO (facturador Factured) escribe el lote y el vencimiento en el PDF como «L.14360 (6) V.2028-04-30»; el lector no lo conocía y el renglón llegaba sin lote ni vence. Ahora lee ese formato (y la fecha aaaa-mm-dd con rótulo «V.»). En la tarjeta, «Vence» tiene el mismo alto y letra que los demás campos (`CampoMesAnio compact`), y «Es nuevo» pasa a secundario cuando hay un parecido para confirmar.
+
 ## v2.1452.15 — Pedidos: el destrabe de lote no deja productos sin control si la corrida muere
 
 - Una corrida de Salud 4 se quedó sin tiempo justo después de quitarle el

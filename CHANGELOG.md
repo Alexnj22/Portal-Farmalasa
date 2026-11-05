@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1450.4 — App del personal: no gira en iPhone ni iPad
+
+Decisión del usuario: la app del personal queda siempre en vertical. Apple revisó la 1.0.0 en un iPad, donde la app giraba a horizontal porque la plantilla declaraba las cuatro orientaciones para iPad. `apps/mobile/app.json` declara ahora una sola orientación (vertical) para iPhone y para iPad, y `requireFullScreen`, que es lo que Apple exige para que una app de iPad no soporte todas las orientaciones. Verificado en el `Info.plist` generado por `expo prebuild`. Android ya estaba fijo en vertical.
+
 ## v2.1450.3 — Inicio: en una fila, cada widget trae su botón
 
 Paso 2 de «Inicio · Propuesta por widget». Con una fila de alto el widget

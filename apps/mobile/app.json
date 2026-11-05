@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "supportsTablet": true,
+      "requireFullScreen": true,
       "icon": "./assets/icono-ios.png",
       "bundleIdentifier": "lat.farmasalud.portal",
       "config": {
@@ -20,6 +21,12 @@
           "es"
         ],
         "CFBundleAllowMixedLocalizations": true,
+        "UISupportedInterfaceOrientations": [
+          "UIInterfaceOrientationPortrait"
+        ],
+        "UISupportedInterfaceOrientations~ipad": [
+          "UIInterfaceOrientationPortrait"
+        ],
         "NSUserActivityTypes": [
           "INSendMessageIntent"
         ],

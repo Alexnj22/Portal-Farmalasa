@@ -20,7 +20,7 @@ import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { aplicarMovimientoInventarioEnErp } from '@nucleo/data/requests';
 import {
     crearConsultaExistencia, fetchAjusteDeConsulta, fetchConsultasExistencia,
-    agruparPorProducto, enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia, ajusteNecesitaVence,
+    agruparPorProducto, efectoDeCorreccion, enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia, ajusteNecesitaVence,
 } from '@nucleo/data/consultasExistencia';
 
 /**
@@ -205,7 +205,8 @@ export default function TabConsultasExistencia() {
                             const quien = empleado(c.pedido_por);
                             const salas = g.salas;
                             const contestaron = salas.filter(s => !['PENDIENTE', 'RECONTAR'].includes(s.estado)).length;
-                            const descuadres = salas.filter(s => s.estado === 'DESCUADRE').length;
+                            // Un descuadre que la revisión de factor ya cubrió entero no cuenta.
+                            const descuadres = salas.filter(s => s.estado === 'DESCUADRE' && efectoDeCorreccion(s)?.tipo !== 'cubierta').length;
                             return (
                                 <li key={g.erp_product_id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
                                     <div className="flex items-start justify-between gap-2">
@@ -284,10 +285,15 @@ export default function TabConsultasExistencia() {
 }
 
 function FilaDeSala({ sala: s, puedeAjustar, trabajando, onAjustar, onSinAjuste }) {
-    const est = ESTADO[s.estado] ?? ESTADO.PENDIENTE;
+    const corr = efectoDeCorreccion(s);
+    const est = corr?.tipo === 'cubierta' ? { texto: 'Corregida', variant: 'success', icon: Scale }
+        : corr?.tipo === 'parcial' ? { texto: 'Corregida en parte', variant: 'warning', icon: AlertTriangle }
+        : (ESTADO[s.estado] ?? ESTADO.PENDIENTE);
     const final = s.final;
+    const pendienteDeAjuste = s.estado === 'DESCUADRE' && corr?.tipo !== 'cubierta';
+    const unidades = (n) => `${formatQty(Math.abs(n))} ${Math.abs(n) === 1 ? 'unidad' : 'unidades'}`;
     return (
-        <li className={`py-2 border-b border-divider flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 ${s.estado === 'DESCUADRE' ? 'sm:col-span-2' : ''}`}>
+        <li className={`py-2 border-b border-divider flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5 ${pendienteDeAjuste ? 'sm:col-span-2' : ''}`}>
             <div className="min-w-0">
                 <p className="text-body-sm font-bold text-content truncate">{s.sala}</p>
                 {final && (
@@ -297,11 +303,18 @@ function FilaDeSala({ sala: s, puedeAjustar, trabajando, onAjustar, onSinAjuste 
                         {s.recontada ? ' · contado dos veces' : ''}
                     </p>
                 )}
+                {corr && (
+                    <p className={`text-label font-bold ${corr.tipo === 'parcial' ? 'text-warning-text' : 'text-success-text'}`}>
+                        {corr.tipo === 'cubierta' && `Se corrigió por el cambio de presentación el ${fechaNumerica(corr.at)}.`}
+                        {corr.tipo === 'parcial' && `El cambio de presentación corrigió ${unidades(corr.unidades)}; ${corr.resto > 0 ? 'sobran' : 'faltan'} ${unidades(corr.resto)} por ajustar.`}
+                        {corr.tipo === 'sin_conteo' && `Ya se corrigió por el cambio de presentación el ${fechaNumerica(corr.at)}; el conteo lo confirma.`}
+                    </p>
+                )}
                 {s.nota && <p className="text-label text-content-3">{s.nota}</p>}
             </div>
             <div className="flex items-center gap-2">
                 <Badge size="sm" uppercase={false} variant={est.variant} icon={est.icon}>{est.texto}</Badge>
-                {s.estado === 'DESCUADRE' && puedeAjustar && (
+                {pendienteDeAjuste && puedeAjustar && (
                     <>
                         <Button variant="primary" size="sm" icon={Scale} disabled={trabajando} onClick={onAjustar}>Ajustar</Button>
                         <Button variant="ghost" size="sm" disabled={trabajando} onClick={onSinAjuste}>Sin ajuste</Button>

@@ -32393,6 +32393,10 @@ export type Database = {
         Args: { p_erp_product_id: number; p_erp_sucursal_id: number }
         Returns: Json
       }
+      correccion_de_factor_despues: {
+        Args: { p_desde: string; p_producto: number; p_sucursal: number }
+        Returns: Json
+      }
       correccion_de_factor_poner_vence: {
         Args: { p_id: string; p_vence: string }
         Returns: undefined

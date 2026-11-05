@@ -111,6 +111,27 @@ export function agruparPorProducto(consultas) {
     }));
 }
 
+/**
+ * Qué hizo «Revisión de factor» con una sala de la consulta (2026-11-05: la
+ * consulta seguía en «Descuadre» con su botón Ajustar sobre una existencia ya
+ * corregida). `sala.correccion` lo trae `consultas_existencia_lista`: la
+ * corrección posterior al conteo, en unidades con signo (carga +, descarte −),
+ * en la misma escala que `diferencia`.
+ *
+ *   'cubierta'   el descuadre se corrigió entero: no hay nada que ajustar.
+ *   'parcial'    se corrigió una parte; `resto` es lo que falta (con signo).
+ *   'sin_conteo' se corrigió antes de que la sala contara; el conteo lo confirma.
+ */
+export function efectoDeCorreccion(sala) {
+    const c = sala?.correccion;
+    if (!c) return null;
+    const unidades = Number(c.unidades) || 0;
+    if (sala.estado === 'PENDIENTE' || sala.estado === 'RECONTAR') return { tipo: 'sin_conteo', at: c.at, unidades };
+    if (sala.estado !== 'DESCUADRE') return null;
+    const resto = (sala.diferencia ?? 0) - unidades;
+    return { tipo: resto === 0 ? 'cubierta' : 'parcial', at: c.at, unidades, resto };
+}
+
 /** «1 caja», «4 blister»; sin nada en el estante, «nada». */
 export function enPresentaciones(texto, unidades) {
     if (texto && texto !== '0') return texto;

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-04T17:56:57.562Z",
+ "generado": "2026-11-05T22:11:55.173Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -314,6 +314,10 @@
   "app_cliente_sesiones_purgar": {
    "area": "app-clientes",
    "por": "cron"
+  },
+  "app_credito_lote_confirmar": {
+   "area": "app-clientes",
+   "por": "código"
   },
   "app_encargos_avisar": {
    "area": "app-clientes",
@@ -1502,6 +1506,11 @@
    "area": "minmax",
    "por": "código"
   },
+  "correccion_de_factor_despues": {
+   "area": "inventario",
+   "por": "código",
+   "manual": true
+  },
   "correccion_de_factor_poner_vence": {
    "area": "productos",
    "por": "código"
@@ -1608,7 +1617,7 @@
   },
   "credito_pago_tomar": {
    "area": "app-clientes",
-   "por": "tablas"
+   "por": "código"
   },
   "creditos_cobro_tomar": {
    "area": "cortes-efectivo",
@@ -3571,6 +3580,10 @@
   },
   "incrementar_reanudacion_traslado": {
    "area": "pedidos",
+   "por": "código"
+  },
+  "inicio_alertas_operativas": {
+   "area": "tablero",
    "por": "código"
   },
   "inicio_bajo_minimo": {

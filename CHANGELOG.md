@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.5 — Consultas de existencia: reflejan las correcciones hechas por cambio de presentación
+
+- Una corrección hecha en Productos → Revisión de factor no se veía en Conteo
+  de inventario → Consultas de existencia: la sala seguía en «Descuadre» con
+  su botón Ajustar (X-Ray Dol, Uro Vaxom, Acetaminofén Forte) o en «Por
+  contar» sin decir que ya se había corregido (Nor Clamida).
+- `consultas_existencia_lista` trae ahora, por sala, la corrección de factor
+  posterior al conteo (`correccion_de_factor_despues`, migración
+  20261105221107). La pantalla muestra «Corregida» cuando la corrección cubre
+  el descuadre entero, «Corregida en parte» con lo que falta (X-Ray Dol Salud
+  2: sobran 4) y, si la sala no ha contado, que ya se corrigió y el conteo lo
+  confirma. Un descuadre cubierto entero ya no cuenta en «N con descuadre» ni
+  mantiene la consulta a la vista para siempre.
+
 ## v2.1453.4 — Revisar y cargar compra más rápido; costos sin esperar a resolver todo
 
 - **Revisar carga**: las fichas de los productos se leían del sistema una por una, y cada presentación también. Ahora se leen todas a la vez (de a 6 productos). Medido contra el sistema con la misma sesión: 10 productos y 24 pedidos, **2,316 ms en serie y 402 ms en paralelo**.

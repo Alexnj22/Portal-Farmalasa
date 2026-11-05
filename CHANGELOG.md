@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.18 — Lote y vencimiento: ROWALT, FARMEX y sin lotes basura
+
+Revisión de las 173 compras en cola (904 renglones), comparando el lector viejo contra el nuevo sobre los PDF y JSON reales: cambian 18, todos a mejor.
+
+- **ROWALT** (8 renglones): escribe `L: 28H26  V: 08/29`; el mes/año corto con rótulo no se leía y llegaban sin vencimiento.
+- **FARMEX**: el JSON dice «GOTAS SOLUCION OTICA» y el PDF «CETRAXAL PLUS 10ML L X577 V 30/9/2027 11.96»; ahora se ancla en el precio unitario, sólo si la fecha queda pegada a él y el precio aparece una vez (sin esto el FLETE de GAMMA se llevaba el lote del producto anterior).
+- **Lotes basura** (Gatorade, ferretería): cuando la columna venía vacía se tomaba lo que hubiera en medio (`0.4817 0.00 2.8902 2`) como número de lote. Un lote es un solo token.
+
 ## v2.1452.17 — Solicitudes: el destrabe de lote no deja productos sin control si la llamada muere
 
 - El mismo freno de v2.1452.15 ahora en `aplicar-traslado-inventario`

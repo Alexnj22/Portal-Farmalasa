@@ -265,3 +265,28 @@ describe('LANCASCO: L.lote (unidades) V.aaaa-mm-dd', () => {
         expect(deTextoLibre('ALGO X 30 L.AB123 V.2027-11-15', 2026)).toEqual({ lote: 'AB123', vence: '2027-11-01' });
     });
 });
+
+// Revisión de toda la cola, 2026-11-05: tres formas que no se leían o se leían mal.
+describe('cola del 2026-11-05', () => {
+    it('ROWALT: V: mm/aa con rótulo', () => {
+        expect(deTextoLibre('BUCLORHEX SOL X 120 ML L: 28H26  V: 08/29', 2026)).toEqual({ lote: '28H26', vence: '2029-08-01' });
+        expect(deTextoLibre('DENTALGESIC X 100 TAB L: 21J26  V:09/29', 2026)).toEqual({ lote: '21J26', vence: '2029-09-01' });
+    });
+    it('Gatorade: los importes de la columna no son un lote', () => {
+        const pdf = 'Ventas gravadas 1 6.00 Unidad AA027020 - Gatorade Lima Limon 24/350Ml Pad 0.4817 0.00 2.8902 2 6.00 Unidad';
+        const r = loteYVence(pdf, { descripcion: 'Gatorade Lima Limon 24/350Ml Pad', cantidad: 6 }, 2026);
+        expect(r.lote).toBeNull();
+    });
+    it('FARMEX: la descripción del JSON no está en el PDF, el precio sí', () => {
+        const pdf = 'SV28 SUPLEX TRI SOL INY VIAL 10ML L 25C2703 V 30/3/2027 10.58 0.006.00 63.50 SV38 CETRAXAL PLUS 10ML L X577 V 30/9/2027 11.96 0.008.00 95.65 CIENTO';
+        const r = loteYVence(pdf, { descripcion: 'GOTAS SOLUCION OTICA', cantidad: 8, precioUni: 11.96 }, 2026);
+        expect(r).toEqual({ lote: 'X577', vence: '2027-09-01', de: 'pdf/precio' });
+    });
+});
+
+describe('ancla por precio: la fecha pegada al precio', () => {
+    it('el flete no se lleva el lote del producto de antes', () => {
+        const pdf = '11FG FOLHEM 5mg. Tab. C X 30 K26064 09/2029 15.00 1.938053 29.07 FLE ZX FLETE 1.00 1.132743 1.13 Valor en letras';
+        expect(loteYVence(pdf, { descripcion: 'ZX FLETE X', cantidad: 1, precioUni: 1.132743 }, 2026).lote).toBeNull();
+    });
+});

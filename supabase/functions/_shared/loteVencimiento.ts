@@ -64,6 +64,8 @@ const FECHAS = [
   /(?:fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|\bv)\s*[:.]?\s*(\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})/i,
   /(?:fecha\s*exp\.?|fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|v)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,
   /\(\s*v\s*-\s*(\d{1,2}\s*-\s*\d{2,4})\s*\)/i,          // VIJOSA: (V-12-27)
+  // ROWALT: `L: 28H26  V: 08/29` — mes/año corto con rótulo (2026-11-05).
+  /(?:fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|\bv)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{2}(?:\d{2})?)(?![\/\-.\d])/i,
   /(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4})/,
   // GAMMA: 04/2028. Sin `\b` al final: INCOFA pega el rótulo a la fecha
   // («05/2029Lote Vence») y entre `9` y `L` no hay límite de palabra.
@@ -267,7 +269,11 @@ export function loteYVence(textoPdf: string, item: any, anioRef?: number): Leido
     if (rot.lote && rot.vence) return { ...rot, de: "pdf/columnas" };
     const f = medio.match(/(\d{1,2}[\/\-.]\d{2,4}(?:[\/\-.]\d{2,4})?)\s*$/);
     const vence = f ? aMesYAnio(f[1], anioRef) : null;
-    const lote = loteValido(norm(f ? medio.slice(0, f.index) : medio) || null);
+    // Un lote es UN token. Sin esto, cuando la columna no traía nada se
+    // tomaba lo que hubiera en medio: `0.4817 0.00 2.8902 2` (Gatorade) o
+    // `UN 5.31 0.00 …` (ferretería) entraban como número de lote (2026-11-05).
+    const cand = norm(f ? medio.slice(0, f.index) : medio);
+    const lote = /\s/.test(cand) || /^\d+\.\d+$/.test(cand) ? null : loteValido(cand || null);
     if (lote || vence) return { lote, vence, de: "pdf/columnas" };
   }
 
@@ -278,6 +284,30 @@ export function loteYVence(textoPdf: string, item: any, anioRef?: number): Leido
     const ventana = t.slice(i + desc.length, i + desc.length + 120);
     const r = deTextoLibre(ventana, anioRef);
     if (r.lote || r.vence) return { ...r, de: "pdf/rotulos" };
+  }
+
+  // (C) Anclado en el PRECIO — FARMEX: el JSON dice «GOTAS SOLUCION OTICA» y
+  //     el PDF «CETRAXAL PLUS 10ML L X577 V 30/9/2027 11.96»: la descripción no
+  //     aparece, pero el precio unitario sí, pegado después de la fecha. Sólo
+  //     si ese precio sale UNA vez y lo de antes trae lote Y vencimiento.
+  const pu = Number(item?.precioUni ?? item?.precio_unitario);
+  if (Number.isFinite(pu) && pu > 0) {
+    const candidatos = new Set([pu.toFixed(2), pu.toFixed(4), String(pu)]);
+    const hallados: Leido[] = [];
+    for (const p of candidatos) {
+      for (const m of t.matchAll(new RegExp("(?<![\\d.])" + escapar(p) + "(?![\\d])", "g"))) {
+        const antes = t.slice(Math.max(0, (m.index ?? 0) - 70), m.index);
+        // La fecha tiene que quedar PEGADA al precio. Sin esto el FLETE de
+        // GAMMA ($1.13) se llevaba el lote del producto de antes, porque el
+        // precio caía 20 caracteres después de su fecha.
+        // Sin el punto como separador: «1.00» (una cantidad) pasaba por mes.año.
+        if (!/(?:\d{1,2}[\/\-]\d{1,2}[\/\-]\d{2,4}|\d{1,2}[\/\-]\d{2,4}|\d{4}-\d{2}-\d{2})\s*$/.test(antes)) continue;
+        const r = deTextoLibre(antes, anioRef);
+        if (r.lote && r.vence) hallados.push({ ...r, de: "pdf/precio" });
+      }
+    }
+    const unicos = new Map(hallados.map((h) => [`${h.lote}|${h.vence}`, h]));
+    if (unicos.size === 1) return [...unicos.values()][0];
   }
 
   return { lote: null, vence: null, de: "no encontrado" };

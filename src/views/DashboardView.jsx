@@ -85,6 +85,7 @@ import { useSolicitudEnInicio } from './dashboard/useSolicitudEnInicio';
 import { tieneSelloMh } from '@nucleo/data/facturacion';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { MODULE_MAP } from '../components/common/catalogos/modulos';
+import LiquidTooltip from '../components/common/LiquidTooltip';
 import LiquidSelect from '../components/common/LiquidSelect';
 import ViewTabBar from '../components/common/ViewTabBar';
 import FilterBar from '../components/common/FilterBar';
@@ -3660,13 +3661,16 @@ const DashboardView = ({ openModal }) => {
                         const b = bajoMinimo[p.erp_product_id];
                         // Va en el renglón de la barra y no junto al nombre: en 1 columna
                         // se comía el nombre («GLIME…»). Acá encoge la barra. En una sala: «6/9». En la red: en cuántas salas.
+                        // Texto chico y no `Badge`: la pastilla en mayúsculas no
+                        // cabía en una columna y cortaba el monto. El detalle de
+                        // las salas va en el tooltip.
                         const texto = topBranch || getScope('dash_top_productos') !== 'ALL'
-                          ? `bajo mín. ${b.existencia}/${b.minimo}`
-                          : `bajo mín. · ${b.salas_bajo} sala${b.salas_bajo === 1 ? '' : 's'}`;
+                          ? `mín. ${b.existencia}/${b.minimo}`
+                          : `bajo mín. (${b.salas_bajo})`;
                         return (
-                          <span title={`Bajo el mínimo en: ${(b.salas || []).join(', ')}`} className="shrink-0">
-                            <Badge variant="warning" size="sm">{texto}</Badge>
-                          </span>
+                          <LiquidTooltip content={`Bajo el mínimo en: ${(b.salas || []).join(', ')} · existencia ${b.existencia} de ${b.minimo}`}>
+                            <span className="shrink-0 text-micro font-bold text-warning-text whitespace-nowrap cursor-help">{texto}</span>
+                          </LiquidTooltip>
                         );
                       })()}
                       <span className="text-micro font-black text-content-3 shrink-0">{fmt(p.neto)}</span>

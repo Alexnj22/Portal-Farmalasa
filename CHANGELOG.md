@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.29 — Inicio: la marca de bajo mínimo cabe en una columna
+
+- En Top productos, la marca de bajo mínimo es ahora un texto chico («mín. 6/9» en una sala, «bajo mín. (4)» en la red) en vez de una pastilla: en una columna la pastilla cortaba el monto. Al pasar el puntero, un tooltip dice en qué salas y cuánto hay contra el mínimo.
+
 ## v2.1451.28 — Pagar varios créditos en un solo cobro
 
 - **App de clientes, Mis créditos:** cada crédito tiene su casilla y todos vienen marcados. Un solo botón abajo dice «Pagar 2 créditos · $28.15» y paga lo elegido, con «Quitar todos / Elegir todos». Pedido del usuario: «que haya una opción de pagar todos o seleccionar para pagar unos».

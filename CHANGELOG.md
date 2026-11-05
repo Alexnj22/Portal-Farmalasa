@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.31 — Cargar compra: vencimiento de BRANDSTAR y la caja por precio
+
+- **El vencimiento de BRANDSTAR no se leía.** Su renglón dice `LOTE:BFB028 FECHA VENC.:2029-02-28`: el lote salía, pero ni el rótulo `FECHA VENC.` ni la fecha año-mes-día estaban entre las formas conocidas. Como todo medicamento ya es regulado, la carga se frenaba en los 12 renglones. `loteVencimiento.ts` ahora lee los dos.
+- **La cantidad por caja se confirma con el precio.** «MELOFLEX RELAX X 10» × 15 a $4.90 neto, con la unidad a $0.49 en el catálogo, son 15 cajas de 10 (150 unidades). La carga proponía 15 porque el diccionario tenía «aprendido» un 1 de agosto, de cuando no se guardaba el factor, y lo aprendido le ganaba al precio. Ahora lo aprendido sólo manda si el precio no lo contradice. El precio que se compara es el NETO: antes no se le restaba el descuento del renglón, que en BRANDSTAR es de 17 a 21 %. Con eso, ANARA (que había aprendido 237) da 200, que es su presentación. Ver `elegirFactor` en `compraSobre.ts` y `tests/unit/elegirFactor.test.js`.
+
 ## v2.1451.30 — Tienda Salud: vitrina con ofertas, categorías en píldoras y «+»
 
 - **App de clientes: la Tienda pasa a llamarse «Tienda Salud»**, con el ícono de tienda en la barra de abajo. Pedido del usuario: «y si a la tienda le llamamos Tienda Salud… y en el menú usamos el ícono?».

@@ -286,6 +286,40 @@ export function factorEnLaDescripcion(t: string): number | null {
   return Number.isInteger(n) && n >= 2 && n <= 500 ? n : null;
 }
 
+/**
+ * Cuántas unidades trae cada una que factura el proveedor, con el PRECIO como
+ * juez (2026-11-05).
+ *
+ * BRANDSTAR factura «CAJA MELOFLEX RELAX 15 MG X 10 COMP» × 15 a $4.90 neto,
+ * y la unidad cuesta $0.49 en el catálogo: son 15 cajas de 10. Pero el
+ * diccionario tenía «aprendido» factor 1 —de agosto, cuando todavía no se
+ * guardaba el factor y todo quedaba en 1— y lo aprendido le ganaba al costo,
+ * así que proponía 15 unidades. Lo mismo ANARA: aprendió 237 (474 ÷ 2, a mano)
+ * cuando el precio dice 200.
+ *
+ * Orden: lo que dice el documento; después lo aprendido, SÓLO si el precio no
+ * lo contradice; después el precio. El precio que se compara es NETO: con el
+ * descuento del renglón (BRANDSTAR da 17–21 %) y el del pie de factura.
+ * Dentro de la tolerancia gana una presentación que exista en el catálogo.
+ */
+export function elegirFactor(x: {
+  delDoc: number | null; aprendido: number | null; costoNeto: number;
+  costoUnidad: number | null | undefined; presentaciones: number[];
+}): { factor: number; origen: "documento" | "aprendido" | "costo" | null; corrige?: number } {
+  if (x.delDoc) return { factor: x.delDoc, origen: "documento" };
+  const cu = Number(x.costoUnidad);
+  const razon = cu > 0 && x.costoNeto > 0 ? x.costoNeto / cu : null;
+  const cuadra = (f: number) => razon != null && Math.abs(razon / f - 1) <= 0.08;
+  let porCosto: number | null = null;
+  if (razon != null) {
+    porCosto = x.presentaciones.filter((f) => f >= 2 && cuadra(f)).sort((a, b) => Math.abs(razon / a - 1) - Math.abs(razon / b - 1))[0] ?? null;
+    if (!porCosto) { const n = Math.round(razon); if (n >= 2 && cuadra(n)) porCosto = n; }
+  }
+  if (x.aprendido && (razon == null || cuadra(x.aprendido) || !porCosto)) return { factor: x.aprendido, origen: "aprendido" };
+  if (porCosto) return x.aprendido ? { factor: porCosto, origen: "costo", corrige: x.aprendido } : { factor: porCosto, origen: "costo" };
+  return { factor: 1, origen: null };
+}
+
 /** El tipo de documento del sistema a partir del `tipoDte` del estándar. */
 export function tipoDocDe(tipoDte: string | null | undefined): "CCF" | "COF" | "FSE" | null {
   return tipoDte === "03" ? "CCF" : tipoDte === "01" ? "COF" : tipoDte === "14" ? "FSE" : null;

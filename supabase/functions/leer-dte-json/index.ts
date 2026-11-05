@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { factorEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
+import { elegirFactor, factorEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -478,17 +478,18 @@ Deno.serve(async (req: Request) => {
         const dsc = factorDescuentoDeFactura(dte?.resumen);
         for (const r of renglones) {
           (r as any).vinetas = r.producto_id ? (vinetas.get(r.producto_id) ?? []) : [];
-          const del_doc = factorEnLaDescripcion(String(r.descripcion ?? ""));
-          const cu = r.producto_id ? costoUnidad.get(r.producto_id) : undefined;
-          const neto = Number(r.costo) * (r.exento ? dsc.exenta : dsc.gravada);
-          let por_costo: number | null = null;
-          if (cu && neto > 0) {
-            const n = Math.round(neto / cu);
-            if (n >= 2 && Math.abs(neto / cu - n) / n <= 0.08) por_costo = n;
-          }
-          if (del_doc) { r.factor_proveedor = del_doc; r.factor_origen = "documento"; }
-          else if (r.factor_aprendido) { r.factor_proveedor = r.factor_aprendido; r.factor_origen = "aprendido"; }
-          else if (por_costo) { r.factor_proveedor = por_costo; r.factor_origen = "costo"; }
+          const cant = Number(r.cantidad);
+          const descUnidad = cant > 0 ? Number(r.descuento ?? 0) / cant : 0;
+          const neto = (Number(r.costo) - descUnidad) * (r.exento ? dsc.exenta : dsc.gravada);
+          const f = elegirFactor({
+            delDoc: factorEnLaDescripcion(String(r.descripcion ?? "")),
+            aprendido: r.factor_aprendido ? Number(r.factor_aprendido) : null,
+            costoNeto: neto,
+            costoUnidad: r.producto_id ? costoUnidad.get(r.producto_id) : null,
+            presentaciones: ((r as any).vinetas ?? []).map((v: { factor: number }) => v.factor),
+          });
+          r.factor_proveedor = f.factor; r.factor_origen = f.origen;
+          if (f.corrige) (r as any).factor_corrige = f.corrige;
         }
 
         salida.push({

@@ -194,3 +194,18 @@ describe('nombreLimpio — lo que se busca en el catálogo', () => {
         expect(nombreLimpio(null)).toBe('');
     });
 });
+
+// BRANDSTAR, 2026-11-05: rótulo «FECHA VENC.» y fecha aaaa-mm-dd.
+import { deTextoLibre as _deTextoLibre, nombreLimpio as _nombreLimpio } from '../../supabase/functions/_shared/loteVencimiento.ts';
+describe('BRANDSTAR — FECHA VENC.: aaaa-mm-dd', () => {
+    it('lee lote y vencimiento', () => {
+        expect(_deTextoLibre('CAJA ALIN DEPOT AMPOLLA  X 2ML, 4MG/ML LOTE:BFB028 FECHA VENC.:2029-02-28 DESC.: 21.00', 2026))
+            .toEqual({ lote: 'BFB028', vence: '2029-02-01' });
+        expect(_deTextoLibre('CAJA MELOFLEX RELAX 15 MG X 10 COMP LOTE:2619194 FECHA VENC.:2028-03-31 DESC.: 17.00', 2026))
+            .toEqual({ lote: '2619194', vence: '2028-03-01' });
+    });
+    it('el nombre queda limpio', () => {
+        expect(_nombreLimpio('CAJA MELOFLEX RELAX 15 MG X 10 COMP LOTE:2619194 FECHA VENC.:2028-03-31 DESC.: 17.00'))
+            .toBe('CAJA MELOFLEX RELAX 15 MG X 10 COMP');
+    });
+});

@@ -33,7 +33,9 @@ export function aMesYAnio(bruto: string | null, anioRef = new Date().getUTCFullY
   const p = String(bruto).trim().split(/[\/\-.]/).filter(Boolean);
   let mes: string, anio: string;
 
-  if (p.length === 3) {            // dd/mm/aaaa — el día se descarta
+  if (p.length === 3 && /^\d{4}$/.test(p[0])) {   // aaaa-mm-dd (BRANDSTAR) — el día se descarta
+    [anio, mes] = p;
+  } else if (p.length === 3) {     // dd/mm/aaaa — el día se descarta
     [, mes, anio] = p;
   } else if (p.length === 2) {     // mm/aaaa  o  mm/aa
     [mes, anio] = p;
@@ -56,7 +58,11 @@ export function aMesYAnio(bruto: string | null, anioRef = new Date().getUTCFullY
 // De la más específica a la más suelta. El orden importa: `dd/mm/aaaa` tiene
 // que probarse antes que `mm/aaaa`, o la primera mitad se leería como mes y año.
 const FECHAS = [
-  /(?:fecha\s*exp\.?|vence|vencimiento|caducidad|v)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,
+  // BRANDSTAR (2026-11-05): `LOTE:BFB028 FECHA VENC.:2029-02-28` — rótulo
+  // abreviado y fecha al revés. Sin esta línea el lote se leía y el
+  // vencimiento no, y la carga de un regulado quedaba frenada renglón por renglón.
+  /(?:fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad)\s*[:.]?\s*(\d{4}[\/\-.]\d{1,2}[\/\-.]\d{1,2})/i,
+  /(?:fecha\s*exp\.?|fecha\s*venc\.?|venc\.?|vence|vencimiento|caducidad|v)\s*[:.]?\s*(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{2,4})/i,
   /\(\s*v\s*-\s*(\d{1,2}\s*-\s*\d{2,4})\s*\)/i,          // VIJOSA: (V-12-27)
   /(\d{1,2}[\/\-.]\d{1,2}[\/\-.]\d{4})/,
   /(\d{1,2}[\/\-.]\d{4})\b/,                              // GAMMA: 04/2028
@@ -155,7 +161,7 @@ export function nombreLimpio(descripcion: string): string {
   return norm(
     tramo
       .replace(/(?:^|\s)(?:lote|l0te)\s*[:.].*$/i, "")
-      .replace(/(?:^|\s)(?:vence|vencimiento|fecha\s*exp\.?|caducidad)\s*[:.].*$/i, "")
+      .replace(/(?:^|\s)(?:vence|vencimiento|fecha\s*exp\.?|fecha\s*venc\.?|caducidad)\s*[:.].*$/i, "")
       .replace(/(?:^|\s)cant(?:idad)?\s*[:.].*$/i, "")
       .replace(/\s*cantidad\s*-\s*lote.*$/i, "")
       .replace(/\s*\(\s*v\s*-\s*\d{1,2}\s*-\s*\d{2,4}\s*\).*$/i, "")

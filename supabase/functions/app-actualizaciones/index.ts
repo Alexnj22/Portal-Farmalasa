@@ -23,7 +23,7 @@ const nada = () => new Response(null, { status: 204, headers: { "expo-protocol-v
 const mal = (mensaje: string, status = 400) => new Response(mensaje, { status });
 
 type Archivo = { path: string; hash: string; key: string; contentType: string; fileExtension: string };
-type Manifiesto = { launchAsset: Archivo; assets: Archivo[] };
+type Manifiesto = { launchAsset: Archivo; assets: Archivo[]; expoClient?: Record<string, unknown> };
 
 Deno.serve(async (req) => {
   if (req.method !== "GET") return mal("Método no permitido", 405);
@@ -58,7 +58,14 @@ Deno.serve(async (req) => {
     launchAsset: conUrl(m.launchAsset),
     assets: (m.assets ?? []).map(conUrl),
     metadata: {},
-    extra: {},
+    // La configuración de la app (2026-11-05). Sin `expoClient`, en la app
+    // `Constants.expoConfig` queda vacío al correr el paquete bajado — esquema
+    // de enlaces, nombre, projectId — y el arranque falla: expo-updates lo da
+    // por roto, vuelve en silencio al de la compilación y la actualización
+    // «nunca llega». Medido: la build 98 bajó el paquete, arrancó con él
+    // (15:18) y a las 15:40 ya corría el de fábrica. El servidor de ejemplo de
+    // Expo la manda siempre; ésta no la mandaba.
+    extra: m.expoClient ? { expoClient: m.expoClient } : {},
   };
   const limite = `actualizacion-${crypto.randomUUID()}`;
   const parte = (nombre: string, cuerpo: unknown) =>

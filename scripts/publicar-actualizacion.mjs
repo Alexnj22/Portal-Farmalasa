@@ -117,6 +117,13 @@ try {
   execFileSync('npx', ['expo', 'export', ...plataformas.flatMap((p) => ['--platform', p]), '--output-dir', salida],
     { cwd: CARPETA, env: conEnv, stdio: 'inherit' });
   const meta = JSON.parse(readFileSync(join(salida, 'metadata.json'), 'utf8'));
+  // La configuración pública de la app viaja en el manifiesto como
+  // `extra.expoClient` (2026-11-05): sin ella `Constants.expoConfig` queda
+  // vacío en el paquete bajado, el arranque falla y expo-updates vuelve solo al
+  // de la compilación. Era por qué ninguna actualización por aire se veía.
+  const expoClient = JSON.parse(execFileSync('npx', ['expo', 'config', '--type', 'public', '--json'],
+    { cwd: CARPETA, env: conEnv, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'], maxBuffer: 64 * 1024 * 1024 }));
+  if (!expoClient?.slug) throw new Error('no se pudo leer la configuración de la app (expo config)');
 
   for (const p of plataformas) {
     const previa = await ultimaHuella(p);
@@ -143,7 +150,7 @@ try {
     const r = await fetch(`${URL_BASE}/rest/v1/app_actualizaciones`, {
       method: 'POST',
       headers: cab({ 'Content-Type': 'application/json', Prefer: 'return=representation' }),
-      body: JSON.stringify({ app: 'clientes', plataforma: p, runtime_version: huellas[p], manifiesto: { launchAsset, assets }, mensaje, commit_git: commit }),
+      body: JSON.stringify({ app: 'clientes', plataforma: p, runtime_version: huellas[p], manifiesto: { launchAsset, assets, expoClient }, mensaje, commit_git: commit }),
     });
     if (!r.ok) throw new Error(`registrar ${p}: ${r.status} ${await r.text()}`);
     const [fila] = await r.json();

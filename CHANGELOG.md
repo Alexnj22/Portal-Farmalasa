@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.6 — Actualizaciones por aire: el manifiesto lleva la configuración de la app
+
+App de clientes · actualizaciones por aire. El usuario: «¿por qué las
+actualizaciones por aire nunca me funcionan?». Medido en el registro del
+servidor: la build 98 bajó el paquete completo (15:08), arrancó con él (15:18)
+y a las 15:40 ya corría otra vez el de la compilación. expo-updates lo daba por
+roto y volvía en silencio, antes de que el reporte de errores de la app
+existiera. Causa: el manifiesto no llevaba `extra.expoClient`, así que en el
+paquete bajado `Constants.expoConfig` quedaba vacío (sin esquema de enlaces,
+nombre ni projectId). `publicar-actualizacion.mjs` ahora guarda la
+configuración pública (`expo config --type public`) y `app-actualizaciones` la
+entrega, como el servidor de ejemplo de Expo.
+
 ## v2.1451.5 — App del personal: «Yo» pasa a «Cuenta», con vidrio como el resto
 
 Decisión del usuario (2026-11-05): la pestaña «Yo» se llama **Cuenta**, y su pantalla deja de ser la única sin vidrio. En iPhone usaba la lista de SwiftUI, cuyas filas son opacas; ahora iPhone y Android usan las mismas piezas que el Menú (`Vidrio`, que es el Liquid Glass del sistema y respeta el estilo «Sólido» de Apariencia, y sus renglones). iPhone conserva la fila «Estilo» y el interruptor de Face ID es el del sistema en los dos (`Interruptor`).

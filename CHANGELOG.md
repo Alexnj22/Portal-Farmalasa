@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.35 — Cargar compra: el tamaño por precio no se hereda al elegir otro producto
+
+- **El tamaño «por precio» ya no se queda pegado a otro producto.** De los 51 renglones de la cola con tamaño calculado por precio, 41 se calcularon contra un producto propuesto **por parecido**, sin confirmar. Algunos están mal: GARRAFÓN DE AGUA contra «AGUA CRISTAL 355 ML» daba ×12, y VITAMINA E de INCOFA contra la de otra marca, ×18. Antes, al elegir el producto correcto con «Es otro», el portal mantenía ese ×12 y además lo guardaba para las próximas facturas del proveedor. Ahora, si el producto elegido es otro y nadie tocó la cantidad, vuelve a 1.
+
 ## v2.1451.34 — Traslados: la recepción destraba sola el control de lote activado después del despacho
 
 - **Un traslado despachado antes de activar el lote ya se puede recibir.** Desde el 05-nov los medicamentos

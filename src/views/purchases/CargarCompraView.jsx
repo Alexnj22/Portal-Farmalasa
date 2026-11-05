@@ -548,16 +548,24 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const confirmar = async (renglon, i, producto) => {
         const k = claveDe(renglon, i);
         const llave = renglon.llave || renglon.codigo_proveedor;
+        // El tamaño «por costo» se calculó contra el producto PROPUESTO. Si se
+        // elige otro y nadie tocó la cantidad, ese número no le corresponde:
+        // GARRAFÓN DE AGUA emparejado con «AGUA CRISTAL 355 ML» salía ×12 y,
+        // al elegir el garrafón, se cargaba ×12 y se aprendía (2026-11-05).
+        const intacto = ajustes[i]?.cargar == null && String(ajustes[i]?.factor) === String(renglon.factor_proveedor ?? 1);
+        const factor = producto.id !== renglon.producto_id && renglon.factor_origen === 'costo' && intacto
+            ? '1' : ajustes[i]?.factor;
+        if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
         if (llave && p.documento.emisor_nit) {
             setG(k);
             const { error: e } = await confirmarProducto(
                 p.documento.emisor_nit, llave, producto.id,
                 { proveedor: p.documento.emisor, producto: producto.nombre },
-                ajustes[i]?.factor);
+                factor);
             setG(null);
             if (e) { setError(e); return; }
         }
-        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor: ajustes[i]?.factor } }));
+        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor } }));
         setBusc(null);
         setRes(null);
     };

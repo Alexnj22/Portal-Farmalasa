@@ -178,7 +178,7 @@ function autoPlaceOrder(order, sizes, gridCols = GRID_COLS, anchoDe = null) {
 // minRows: minimum allowed row span
 const WIDGET_SIZES = {
   trend:         { minCols: 2, minRows: 2, label: 'Tendencia'    },
-  shifts:        { minCols: 1, minRows: 2, label: 'Turnos'       },
+  shifts:        { minCols: 1, minRows: 2, label: 'Quién está hoy' },
   sales:         { minCols: 3, minRows: 2, label: 'Ventas'       },
   absences:      { minCols: 1, minRows: 2, label: 'Ausencias'    },
   requests:      { minCols: 1, minRows: 2, label: 'Solicitudes'  },
@@ -630,7 +630,7 @@ const WIDGET_DEFS = [
   { id: 'kpi',           label: 'Estadísticas clave',     permission: 'dash_kpi',           icon: TrendingUp,   category: 'personal'  },
   { id: 'trend',         label: 'Tendencia de asistencia', permission: 'dash_trend',         icon: Activity,     category: 'personal'  },
   { id: 'requests',      label: 'Solicitudes pendientes',  permission: 'dash_requests',      icon: ClipboardList,category: 'personal'  },
-  { id: 'shifts',        label: 'Estado de turnos',        permission: 'dash_shifts',        icon: Users,        category: 'personal'  },
+  { id: 'shifts',        label: 'Quién está hoy',          permission: 'dash_shifts',        icon: Users,        category: 'personal'  },
   { id: 'absences',      label: 'Ausencias activas',       permission: 'dash_absences',      icon: UserX,        category: 'personal'  },
   { id: 'sales',         label: 'Ventas por día/hora',     permission: 'dash_sales',         icon: BarChart2,    category: 'ventas'    },
   { id: 'branches',      label: 'Alertas de sucursales',    permission: 'dash_branches',      icon: Building2,    category: 'general'   },
@@ -1261,9 +1261,15 @@ const DashboardView = ({ openModal }) => {
   // reales el 2026-08-16 — lo tienen con `can_view` Gerente General,
   // Administrador, Jefe/a de Talento Humano y Supervisor/a de Ventas, y nadie
   // más salvo la cuenta de QA. Que es exactamente a quiénes se les debe mostrar.
+  // «Quién está hoy» (2026-11-05, pedido del usuario): las ausencias van
+  // DENTRO del widget de turnos cuando la persona ve los dos — eran dos
+  // tarjetas contestando la misma pregunta. Quien no ve los turnos conserva
+  // el widget de ausencias suelto, que es lo único que tenía.
+  const ausenciasEnTurnos = showWidget('shifts', 'dash_shifts') && canSee('dash_absences');
   const esVisibleEnTablero = useCallback((id) => (id.startsWith('sales_branch_')
     ? showWidget('sales', 'dash_sales')
-    : showWidget(id, PERMISO_DE[id])), [showWidget]);
+    : id === 'absences' && ausenciasEnTurnos ? false
+    : showWidget(id, PERMISO_DE[id])), [showWidget, ausenciasEnTurnos]);
 
   // ── El acomodo adaptado: la pestaña temática vista por quien no la acomoda ─
   //
@@ -2029,6 +2035,32 @@ const DashboardView = ({ openModal }) => {
       setSemanaPasada(m);
     }).catch(e => console.error('[dash] ventas de la semana pasada', e));
   }, [branches.length]);
+
+  // Las ventas de hoy para la tira de números de arriba (2026-11-05): lo que
+  // repetía a un widget de la misma pestaña se cambió por esto, que no lo dice
+  // ningún otro. Con alcance de sala, la propia; si no, todas.
+  const ventasKpi = useMemo(() => {
+    const ahora = new Date();
+    const ids = getScope('dash_sales') !== 'ALL' && userBranchStr
+      ? [userBranchStr]
+      : [...new Set([...Object.keys(todaySales), ...Object.keys(semanaPasada)])];
+    let total = 0, tickets = 0, hoy = 0, antes = 0, mejor = null;
+    for (const id of ids) {
+      const d = todaySales[id];
+      const t = d?.totalSales || 0;
+      total += t;
+      tickets += Object.values(d?.hours || {}).reduce((a, b) => a + b, 0);
+      const r = contraSemanaPasada(d?.hourSales, semanaPasada[id], ahora.getHours(), ahora.getMinutes());
+      hoy += r.hoy; antes += r.antes;
+      if (t > 0 && (!mejor || t > mejor.total)) mejor = { id, total: t };
+    }
+    return {
+      total, tickets, promedio: tickets ? total / tickets : 0,
+      pct: antes > 0 ? Math.round(((hoy - antes) / antes) * 100) : null,
+      dia: ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][ahora.getDay()],
+      mejor: ids.length > 1 ? mejor : null,
+    };
+  }, [todaySales, semanaPasada, getScope, userBranchStr]);
   useEffect(() => {
     if (!branches.length) return;
     cargarHoy(true);
@@ -2725,11 +2757,24 @@ const DashboardView = ({ openModal }) => {
     /* ── SHIFTS ── */
     if (wid === 'shifts') {
       if (!showWidget('shifts','dash_shifts')) return null;
+      // Las ausencias (vacación, incapacidad, permiso) de ESTA sala, arriba y
+      // con su tipo. Quien tiene una sale de los grupos de marcación para no
+      // aparecer dos veces — su «ausente» ya está explicado.
+      const ausHoy = ausenciasEnTurnos
+        ? absences.filter(r => {
+            const emp = employees.find(e => String(e.id) === String(r.employee_id));
+            return emp && String(emp.branchId ?? emp.branch_id ?? '') === String(currentShiftBranch);
+          })
+        : [];
+      const conAusencia = new Set(ausHoy.map(r => String(r.employee_id)));
+      const grupos = Object.fromEntries(Object.entries(shiftGroups).map(([k, g]) => [k, g.filter(e => !conAusencia.has(String(e.id)))]));
+      const sinGrupos = Object.keys(STATUS_CONFIG).every(k => !(grupos[k] || []).length);
+      const colaAus = ausHoy.length ? ` · ${ausHoy.length} con ausencia` : '';
       return wrapWidget('shifts',
-        <WidgetCard title="Estado de turnos" icon={Clock} category="personal"
+        <WidgetCard title="Quién está hoy" icon={Clock} category="personal"
           resumen={attError ? { texto: 'No se pudo leer', tono: 'danger' }
-            : !hayMarcaciones ? { valor: (shiftGroups.OFF || []).length, texto: 'de día libre · aún sin marcaciones' }
-            : { valor: (shiftGroups.WORKING || []).length, texto: 'en labores' }}
+            : !hayMarcaciones ? { valor: (grupos.OFF || []).length, texto: `de día libre${colaAus} · aún sin marcaciones` }
+            : { valor: (grupos.WORKING || []).length, texto: `en labores${colaAus}` }}
           action={getScope('dash_shifts') === 'ALL' && activeBranches.length>1&&(<LiquidSelect value={currentShiftBranch} onChange={setShiftBranch} options={activeBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>)}>
           <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] h-full divide-y divide-divider">
             {attError ? (
@@ -2755,11 +2800,29 @@ const DashboardView = ({ openModal }) => {
             // ningún grupo con gente, los `return null` de adentro dejaban la
             // tarjeta EN BLANCO — ni dato, ni vacío, ni carga. Un widget que no
             // dice nada se lee como roto (auditoría del 2026-08-10).
-            ):Object.values(STATUS_CONFIG).every((_,i)=>!(shiftGroups[Object.keys(STATUS_CONFIG)[i]]||[]).length)?(
+            ):sinGrupos && !ausHoy.length?(
               <EmptyState linea icon={Clock} title="Sin turnos hoy" />
             ):(
-              Object.entries(STATUS_CONFIG).map(([status,cfgBase])=>{
-                const group=shiftGroups[status]||[]; if(!group.length) return null;
+              <>
+              {ausHoy.length > 0 && (
+                <div className="px-4 py-3">
+                  <div className="flex items-center gap-2 mb-2"><span className="w-2 h-2 rounded-full bg-danger"/><span className="text-caption font-black uppercase tracking-wide text-content-2">Con ausencia</span><Badge variant="danger" size="sm">{ausHoy.length}</Badge></div>
+                  <div className="space-y-1">
+                    {ausHoy.map(r => {
+                      const cfgA = ABSENCE_COLORS[r.clave] || ABSENCE_COLORS.PERMIT;
+                      return (
+                        <div key={r.id} className="flex items-center gap-2 min-w-0">
+                          <Badge variant={cfgA.variante} size="sm">{nombreCorto(r.clave)}</Badge>
+                          <span className="text-label font-semibold text-content truncate">{getEmpName(r.employee_id)}</span>
+                          {r.hasta && <span className="text-caption text-content-3 shrink-0">hasta {fechaTexto(r.hasta, {day:'2-digit',month:'short'})}</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+              {Object.entries(STATUS_CONFIG).map(([status,cfgBase])=>{
+                const group=grupos[status]||[]; if(!group.length) return null;
                 const cfg = status==='ABSENT' && !hayMarcaciones ? SIN_MARCACIONES_AUN : cfgBase;
                 return (
                   <div key={status} className="px-4 py-3">
@@ -2767,11 +2830,12 @@ const DashboardView = ({ openModal }) => {
                     <div className="flex flex-wrap gap-1">{group.map(e=><Badge key={e.id} variant={cfg.variante} size="sm" uppercase={false}>{shortEmployeeName(e)}</Badge>)}</div>
                   </div>
                 );
-              })
+              })}
+              </>
             )}
           </div>
         </WidgetCard>
-      , staggerIdx, attendanceLoaded && !attError && employees.length > 0 && Object.keys(STATUS_CONFIG).every(k => !(shiftGroups[k]||[]).length));
+      , staggerIdx, attendanceLoaded && !attError && employees.length > 0 && sinGrupos && !ausHoy.length);
     }
 
     /* ── SALES ── */
@@ -4170,16 +4234,34 @@ const DashboardView = ({ openModal }) => {
                     cálculo que falló, no como la hora del día. Un cero con
                     motivo tiene que decir el motivo. */}
                 <KpiCard icon={UserCheck}     label="Presentes hoy"         value={hayMarcaciones?kpiPresent:'—'}              color="var(--success)" sub={!hayMarcaciones?'Aún sin marcaciones':kpiPresent===0?'Sin marcaciones hoy':(kpiEmps.length>0?`${Math.round(kpiPresent/kpiEmps.length*100)}% del total`:undefined)}/>
+                {/* Solicitudes y Sucursales tienen su widget en esta misma
+                    pestaña: acá se decía lo mismo dos veces. Quien ve ventas
+                    tiene en su lugar lo que ningún widget dice de un vistazo;
+                    quien no, conserva las dos de antes. */}
+                {canSee('dash_sales') ? (<>
+                  <KpiCard icon={BarChart2}    label="Vendido hoy"           value={formatMoney(ventasKpi.total, { decimales: 0 })} color={ventasKpi.pct!=null&&ventasKpi.pct<0?'var(--warning)':'var(--success)'} sub={ventasKpi.pct==null?'sin comparación':`${ventasKpi.pct>0?'+':''}${ventasKpi.pct}% vs. el ${ventasKpi.dia} pasado`}/>
+                  <KpiCard icon={Receipt}      label="Ticket promedio"       value={formatMoney(ventasKpi.promedio)} color="var(--brand-purple)" sub={`${ventasKpi.tickets} ticket${ventasKpi.tickets===1?'':'s'} hoy`}/>
+                </>) : (<>
                 <KpiCard icon={ClipboardList} label="Solicitudes pendientes" value={kpiPending}              color="var(--warning)" pide={kpiPending>0} sub={kpiPending===0?'Al día':undefined} onClick={puedeAbrir('/solicitudes')?()=>navigate('/solicitudes'):undefined}/>
                 <KpiCard icon={Building2}     label="Sucursales"            value={kpiBranches.length}      color={kpiBranchAlerts.length>0?'var(--danger)':'var(--success)'} pide={kpiBranchAlerts.length>0} sub={kpiBranchAlerts.length>0?`${kpiBranchAlerts.length} alerta${kpiBranchAlerts.length>1?'s':''}`:'Sin alertas'} onClick={puedeAbrir('/sucursales')?()=>navigate('/sucursales'):undefined}/>
+                </>)}
               </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'comercial' && (
           <div key="kpi-comercial" className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Cotizaciones y Facturación ya son widgets de esta pestaña. La
+                tira dice ahora cómo va el día: cuánto, contra qué, y dónde. */}
+            {canSee('dash_sales') ? (<>
+            <KpiCard icon={BarChart2}     label="Vendido hoy"           value={formatMoney(ventasKpi.total, { decimales: 0 })} color={ventasKpi.pct!=null&&ventasKpi.pct<0?'var(--warning)':'var(--success)'} pide={ventasKpi.pct!=null&&ventasKpi.pct<0} sub={ventasKpi.pct==null?'sin comparación':`${ventasKpi.pct>0?'+':''}${ventasKpi.pct}% vs. el ${ventasKpi.dia} pasado`}/>
+            <KpiCard icon={FileText}      label="Tickets hoy"           value={ventasKpi.tickets}       color="var(--brand)" sub="transacciones"/>
+            <KpiCard icon={Receipt}       label="Ticket promedio"       value={formatMoney(ventasKpi.promedio)} color="var(--brand-purple)" sub="por venta"/>
+            <KpiCard icon={TrendingUp}    label={ventasKpi.mejor?'Mejor sala hoy':'Facturado hoy'} value={ventasKpi.mejor ? (salesBranches.find(b=>String(b.id)===ventasKpi.mejor.id)?.name ?? '—') : formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub={ventasKpi.mejor ? formatMoney(ventasKpi.mejor.total, { decimales: 0 }) : 'total del día'}/>
+            </>) : (<>
             <KpiCard icon={Receipt}       label="Cotizaciones activas"  value={cotizStats.activas}      color="var(--brand)" sub="vigentes" onClick={puedeAbrir('/cotizaciones')?()=>navigate('/cotizaciones'):undefined}/>
             <KpiCard icon={TrendingUp}    label="Monto cotizado"        value={formatMoney(cotizStats.total, { decimales: 0 })} color="var(--success)" sub="en cotizaciones"/>
             <KpiCard icon={FileText}      label="Documentos hoy"        value={factStats.count}         color="var(--brand-purple)" sub={factStats.count===1?'documento':'documentos'} onClick={puedeAbrir('/facturacion')?()=>navigate('/facturacion'):undefined}/>
             <KpiCard icon={BarChart2}     label="Facturado hoy"         value={formatMoney(factStats.total, { decimales: 0 })} color="var(--warning)" sub="total del día"/>
+            </>)}
           </div>
         )}
         {showWidget('kpi','dash_kpi') && activeTab === 'rrhh' && (

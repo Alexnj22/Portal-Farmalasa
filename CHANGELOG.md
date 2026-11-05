@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.20 — Inicio: «Quién está hoy» y una tira de números que no se repite
+
+- **Turnos y Ausencias son ahora un solo widget: «Quién está hoy».** Arriba van las personas **con ausencia** (vacación, incapacidad, permiso) con su tipo y hasta cuándo; debajo, los grupos de siempre (en labores, almuerzo, día libre…). Quien tiene una ausencia ya no sale además como «Ausente». Si tu cargo ve las ausencias pero no los turnos, conservas el widget de ausencias suelto.
+- **La tira de números de arriba ya no repite a los widgets.**
+  - En **General**, «Solicitudes pendientes» y «Sucursales» —que tienen su widget en la misma pestaña— se cambian por **Vendido hoy** (contra el mismo día de la semana pasada a esta hora) y **Ticket promedio**. Sin permiso de ventas se ven las de antes.
+  - En **Comercial**, cotizaciones y facturación —también widgets de la pestaña— se cambian por **Vendido hoy**, **Tickets hoy**, **Ticket promedio** y **Mejor sala hoy**.
+- Si tenías Turnos y Ausencias acomodados a mano, donde estaba Ausencias puede quedar un hueco: se llena moviendo cualquier widget ahí.
+
 ## v2.1451.19 — Puntos: la ficha que recibe su DUI tarde recupera los del sistema anterior
 
 - **Los puntos del sistema anterior se unían con la ficha por el DUI, y una sola vez.** Si la ficha no tenía DUI el día de la migración (1-oct) —o todavía no existía—, la cuenta vieja se quedaba sin pasar, y cuando alguien le agregaba el DUI después nada la volvía a mirar: el cliente veía solo los puntos nuevos. Pasó con DAVID ALEXANDER SERRANO GUARDADO: 203 puntos en 17 compras, el DUI se lo escribieron el 1-nov y el portal le mostraba 8. Se le pasaron a mano (hoy tiene 211).

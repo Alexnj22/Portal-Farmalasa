@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.2 — Las facturas de compra se traen del correo cada 10 minutos
+
+- **Las facturas de compra se traen del correo cada 10 minutos.** Antes era una vez al día (3:00 a. m.): una factura que llegaba en la mañana no se podía cargar en Bodega hasta el día siguiente sin apretar «Buscar nuevas». El cron `sync-purchase-emails-daily` pasa a `*/10 * * * *` (pedido del usuario). No toca el sistema de origen: lee el buzón y salta los mensajes ya procesados. Queda declarado en `gate:eficiencia` con 144 corridas al día.
+
 ## v2.1452.1 — Cargar compra: al elegir el producto a mano, la caja se recalcula
 
 - **Al elegir el producto a mano, las unidades por caja se recalculan.** Caso de Bodega: el renglón de MONTREAL «GRIPE-MED … DISP. X 50 TAB.» llegó sin producto propuesto. Al elegirlo a mano quedaba «1 SOBRE X 2» cuando eran 50 a $10.91. Ahora el servidor aplica la misma regla de la propuesta al producto elegido (modo `factor` de `leer-dte-json`): primero lo que dice el documento y después el precio. Una descripción como «DISP. X 50» solo cuenta si el producto ya tiene una presentación de 50. El costo del catálogo sigue sin salir al navegador: el servidor devuelve solo el número.

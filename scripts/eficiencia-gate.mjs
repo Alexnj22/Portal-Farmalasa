@@ -799,7 +799,7 @@ const CRONS = [
   { job: 'check-purchases-reconciliation-daily', slug: 'check-purchases-reconciliation', cadencia: '20 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de compras.' },
   { job: 'check-sales-reconciliation-daily',    slug: 'check-sales-reconciliation',  cadencia: '30 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de ventas.' },
   { job: 'consolidate-timesheets-daily',        slug: 'consolidate-timesheets',      cadencia: '0 8 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
-  { job: 'sync-purchase-emails-daily',          slug: 'sync-purchase-emails',        cadencia: '0 9 * * *',  corridasDia: 1, sistema: 0, motivo: 'Lee correo, no el sistema.' },
+  { job: 'sync-purchase-emails-daily',          slug: 'sync-purchase-emails',        cadencia: '*/10 * * * *', corridasDia: 144, sistema: 0, motivo: 'Lee correo, no el sistema. Cada 10 min desde 2026-11-05 (pedido del usuario): Bodega carga las compras el mismo día. El nombre «daily» quedó por compatibilidad.' },
   { job: 'apply-scheduled-employee-events-daily', slug: 'apply-scheduled-employee-events', cadencia: '0 11 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'check-doc-expiry-daily',              slug: 'check-doc-expiry',            cadencia: '0 13 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'check-employee-doc-expiry-daily',     slug: 'check-employee-doc-expiry',   cadencia: '30 13 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },

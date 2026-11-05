@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.23 — La preventa de una reserva reparte entre lotes
+
+- **Enviar una reserva a la caja ya no falla cuando la cantidad está repartida en dos lotes.** Desde que todo medicamento lleva lote, la existencia vieja vive en GENERICO y lo que entra por compra en su lote real. `preventaCaja.ts` pedía que **un solo** lote alcanzara, y además comparaba contra la existencia del lote que la caja propone, no contra la del producto. Con 2 en GENERICO y 3 en un lote real, una reserva de 4 daba «en la caja hay 2». Ahora reparte en el mismo orden en que la caja ofrece los lotes, un renglón por lote, sin partir una presentación (`repartirEnLotesDeVenta`, con pruebas en `tests/unit/preventaEnLotes.test.js`).
+- Se revisó la venta de mostrador: un producto recién marcado se vende normal. La caja propone el lote GENERICO primero y lo limita a lo que tiene ese lote. Hubo ventas FINALIZADAS de productos marcados minutos antes, en 4 salas.
+
 ## v2.1451.22 — Inicio: el número de cada atajo lleva a su lista
 
 - Los atajos del Inicio abren el formulario para **pedir**; lo pendiente se resuelve en su lista. Ahora, cuando hay algo pendiente, al lado del número aparece **«Ver lista»**:

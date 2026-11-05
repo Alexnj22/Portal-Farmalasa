@@ -126,6 +126,35 @@ export function leerReferencias(respuesta: string) {
   });
 }
 
+/**
+ * De qué lotes sale una reserva, en presentaciones ENTERAS (2026-11-05).
+ *
+ * Desde ese día todo medicamento es «regulado» (lleva lote) y su existencia
+ * vieja vive en el lote GENERICO. Antes esta función pedía UN lote que
+ * alcanzara solo, y la existencia que comparaba era la del lote que la caja
+ * preselecciona (`cant_stock`), no la del producto: con 2 en GENERICO y 3 en
+ * un lote real, una reserva de 4 fallaba con «en la caja hay 2». Ahora se
+ * reparte en el MISMO orden en que la caja ofrece los lotes (primero el que
+ * vence antes; GENERICO va primero porque su fecha es 0000-00-00), y cada lote
+ * es un renglón, como lo haría quien vende a mano.
+ *
+ * Una presentación no se parte entre lotes (una caja es de un lote). Si con
+ * presentaciones enteras no se completa, devuelve lo que falta y no inventa.
+ */
+export function repartirEnLotesDeVenta(
+  lotes: { id: string; stock: number }[], cantidad: number, unidades: number,
+): { partes: { id: string; cantidad: number }[]; faltan: number } {
+  const partes: { id: string; cantidad: number }[] = [];
+  let faltan = cantidad;
+  for (const l of lotes) {
+    if (faltan <= 0) break;
+    const caben = Math.floor((l.stock + 1e-9) / unidades);
+    const toma = Math.min(caben, faltan);
+    if (toma > 0) { partes.push({ id: l.id, cantidad: toma }); faltan -= toma; }
+  }
+  return { partes, faltan };
+}
+
 export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<ResultadoCaja> {
   const avisos: string[] = [];
   const pagina = await http.get("venta.php?preventa=1");
@@ -162,24 +191,35 @@ export async function enviarPreventaALaCaja(http: Http, venta: Venta): Promise<R
     }
 
     const necesarias = r.cantidad * unidades;
-    if (fila.stock + 1e-9 < necesarias) {
-      throw new Error(`En la caja hay ${fila.stock} de «${r.nombre}» y la reserva pide ${necesarias}.`);
+    // En un regulado `cant_stock` es la existencia del lote preseleccionado, no
+    // la del producto: la de verdad es la suma de sus lotes.
+    const hay = fila.regulado ? fila.lotes.reduce((t, l) => t + l.stock, 0) : fila.stock;
+    if (hay + 1e-9 < necesarias) {
+      throw new Error(`En la caja hay ${hay} de «${r.nombre}» y la reserva pide ${necesarias}.`);
     }
-    const lote = fila.regulado ? fila.lotes.find((l) => l.stock + 1e-9 >= necesarias) : { id: "0" };
-    if (!lote) throw new Error(`Ningún lote de «${r.nombre}» alcanza para ${necesarias}.`);
+    let partes: { id: string; cantidad: number }[] = [{ id: "0", cantidad: r.cantidad }];
+    if (fila.regulado) {
+      const rep = repartirEnLotesDeVenta(fila.lotes, r.cantidad, unidades);
+      if (rep.faltan > 0) {
+        throw new Error(`«${r.nombre}»: hay ${hay} unidades, pero repartidas en lotes no completan ${r.cantidad} de ${unidades} sin partir una presentación.`);
+      }
+      partes = rep.partes;
+    }
 
     const precio = elegirPrecio(precios, r);
     if (!precio) throw new Error(`«${r.nombre}» no tiene precio en la caja.`);
     if (!igual(precio.valor, r.precio)) {
       avisos.push(`«${r.nombre}»: la caja lo tiene a $${precio.valor.toFixed(2)} y la reserva es a $${r.precio.toFixed(2)}.`);
     }
-    const sub = Math.round(r.cantidad * precio.valor * 100) / 100;
-    if (fila.exento === "0") gravado += sub; else exenta += sub;
-    renglonesCaja.push({
-      id_detalle: "", id: String(r.producto_id), precio: precio.valor.toFixed(2), cantidad: String(r.cantidad),
-      unidades: String(unidades), subtotal: sub.toFixed(2), id_presentacion: pres.id, exento: fila.exento,
-      id_lote: Number(lote.id), precio_seleccionado: precio.clave,
-    });
+    for (const parte of partes) {
+      const sub = Math.round(parte.cantidad * precio.valor * 100) / 100;
+      if (fila.exento === "0") gravado += sub; else exenta += sub;
+      renglonesCaja.push({
+        id_detalle: "", id: String(r.producto_id), precio: precio.valor.toFixed(2), cantidad: String(parte.cantidad),
+        unidades: String(unidades), subtotal: sub.toFixed(2), id_presentacion: pres.id, exento: fila.exento,
+        id_lote: Number(parte.id), precio_seleccionado: precio.clave,
+      });
+    }
   }
 
   const total = Math.round((gravado + exenta) * 100) / 100;

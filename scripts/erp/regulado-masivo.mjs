@@ -236,9 +236,17 @@ if (modo === 'leer') {
     ids = ids.filter(id => !hechos.has(id)).slice(0, max);
     console.log(`${EJECUTAR ? 'MARCANDO' : 'SIMULANDO'} ${ids.length} producto(s) · categorías ${cats.join(',')}`);
     await login();
-    let ok = 0;
+    let ok = 0, seguidos = 0;
     for (const id of ids) {
-        const antes = await ficha(id);
+        await new Promise(r => setTimeout(r, 250));   // no apurar al sistema
+        let antes;
+        try { antes = await ficha(id); }
+        catch (e) {
+            console.log(`! ${id}: no se pudo leer (${e?.cause?.code ?? e.message})`);
+            if (++seguidos >= 5) { console.log('5 errores seguidos: el sistema no está respondiendo. FRENO.'); process.exit(1); }
+            await new Promise(r => setTimeout(r, 10000)); await login().catch(() => {});
+            continue;
+        }
         const anotar = (resultado, extra = {}) => appendFileSync(bitacora,
             JSON.stringify({ id, nombre: antes.nombre, categoria: antes.categoria.label, resultado, ...extra, at: new Date().toISOString() }) + '\n');
         if (antes.regulado) {
@@ -261,7 +269,21 @@ if (modo === 'leer') {
         const cuerpo = sobreDeEdicion(antes, true);
         if (!EJECUTAR) { console.log(`· ${id} ${antes.nombre} [${antes.categoria.label}] → ${cuerpo.length} bytes`); continue; }
 
-        const resp = await pedir(`${BASE}/editar_producto.php`, cuerpo);
+        let resp;
+        try { resp = await pedir(`${BASE}/editar_producto.php`, cuerpo); }
+        catch (e) {
+            // La conexión se cayó con el guardado en vuelo: pudo haber entrado.
+            // No se reenvía: se averigua releyendo, después de una pausa.
+            await new Promise(r => setTimeout(r, 10000));
+            await login();
+            const ahora = await ficha(id);
+            if (ahora.regulado && huella(ahora) === huella(antes)) { anotar('marcado', { nota: 'entró pese al corte' }); ok++; seguidos = 0; console.log(`✓ ${id} ${antes.nombre} (tras corte)`); continue; }
+            if (ahora.regulado) { console.log(`✗ ${id} ${antes.nombre}: quedó distinta tras un corte. FRENO.`); anotar('diferencia', { antes, despues: ahora }); process.exit(1); }
+            anotar('error', { error: String(e?.cause?.code ?? e.message) });
+            console.log(`! ${id} ${antes.nombre}: no entró (${e?.cause?.code ?? e.message}); se reintenta en otra corrida`);
+            if (++seguidos >= 5) { console.log('5 errores seguidos: el sistema no está respondiendo. FRENO.'); process.exit(1); }
+            continue;
+        }
         let j = null; try { j = JSON.parse(resp); } catch { /* abajo */ }
         if (!j || !/success/i.test(j.typeinfo ?? '')) {
             console.log(`✗ ${id} ${antes.nombre}: el sistema no lo aceptó — ${j?.msg ?? resp.slice(0, 200)}. FRENO.`);
@@ -275,7 +297,7 @@ if (modo === 'leer') {
             process.exit(1);
         }
         anotar('marcado');
-        ok++;
+        ok++; seguidos = 0;
         console.log(`✓ ${id} ${antes.nombre} [${antes.categoria.label}]`);
     }
     console.log(`${ok} marcado(s). Bitácora: ${bitacora}`);

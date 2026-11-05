@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.17 — El marcador de lotes aguanta los cortes de red del sistema
+
+- `scripts/erp/regulado-masivo.mjs` se cortaba con la conexión al sistema (dos veces en 1,554 fichas). Ahora reintenta las **lecturas**, pero nunca reenvía un guardado: si la conexión se cae con el guardado en curso, relee la ficha para saber si entró. Se detiene después de 5 errores seguidos o ante cualquier diferencia en la ficha. Con eso se terminaron de marcar los **1,554 medicamentos**, todos verificados contra su ficha anterior.
+
 ## v2.1451.16 — App: el aviso de build nueva revisa cada vez que se abre
 
 App de clientes. El aviso «Hay una versión nueva» revisaba como mucho cada 6

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.3 — Publicar espera si Vercel ya está armando producción
+
+- **`npm run publicar` ya no amontona despliegues.** Si Vercel está armando uno de producción, espera a que termine
+  (consulta con la CLI de Vercel, hasta 15 minutos) y publica `origin/main` releído en ese momento. El 2026-11-05
+  varias sesiones publicaron en minutos: ~20 despliegues en fila, el mismo commit armado hasta tres veces, y uno viejo
+  (v2.1451.38) terminó último y dejó el portal atrás un rato. Sin la CLI o sin sesión, avisa y publica como antes;
+  `--no-esperar` lo saltea.
+
 ## v2.1452.2 — Las facturas de compra se traen del correo cada 10 minutos
 
 - **Las facturas de compra se traen del correo cada 10 minutos.** Antes era una vez al día (3:00 a. m.): una factura que llegaba en la mañana no se podía cargar en Bodega hasta el día siguiente sin apretar «Buscar nuevas». El cron `sync-purchase-emails-daily` pasa a `*/10 * * * *` (pedido del usuario). No toca el sistema de origen: lee el buzón y salta los mensajes ya procesados. Queda declarado en `gate:eficiencia` con 144 corridas al día.

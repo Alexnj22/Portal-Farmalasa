@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1454.0 — Cargar compra: «A vencidos» con motivo
+
+Nuevo botón **«A vencidos»** en cada producto de la compra (Bodega: «puede ser un producto que se va a devolver, viene corto vence, etc. Que se manden todos o unas unidades. Que pregunte motivo»).
+
+- El producto entra con **su nombre real** (no como PRODUCTO ERRONEO DE PROVEEDOR) y, al cargar, **todas o algunas** unidades pasan al área de vencidos de Bodega con un traslado dentro de Bodega que se comprueba en vencidos. Es el mismo camino del producto erróneo (`apartarErroneos`), que ahora mueve las unidades marcadas y no la línea entera.
+- **Motivo obligatorio**: Se devuelve al proveedor, Corto vencimiento, Dañado u Otro (con texto). Se guarda en `compra_renglon_erroneo.motivo` y la pestaña «Productos erróneos» lo muestra con su insignia y las unidades.
+- La revisión frena si faltan motivo o texto, si las unidades no son enteras, si pasan de las que entran (o de las que llegaron) o no son paquetes completos, y si lo que va a salas más lo que va a vencidos supera lo que entra.
+- Vencidos y salas salen del mismo estante: ahora el traslado a vencidos y el reparto van **uno detrás del otro** y no a la vez, porque cada uno reconoce su traslado comparando los pendientes del estante antes y después.
+
 ## v2.1453.11 — Traslados: el lote de la caja se elige de los ya registrados
 
 Al copiar el lote de la caja (lo que sale sin lote asignado), el campo ahora es el mismo de las inyecciones: al entrar despliega los lotes ya registrados de ese producto **en todas las salas**, y elegir uno llena también el vencimiento. El vencimiento se escribe MM/AAAA.

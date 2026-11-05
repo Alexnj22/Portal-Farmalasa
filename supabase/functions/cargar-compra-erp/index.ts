@@ -313,20 +313,26 @@ async function enviarCompra(admin: any, x: {
   // `compra_renglon_erroneo` (pestaña «Por error»).
   let vencidos: unknown = null;
   const errs: Erroneo[] = x.revision.erroneos ?? [];
-  if (errs.length) {
-    vencidos = { en_curso: verif.ok, cuantos: errs.length };
-    EdgeRuntime.waitUntil(apartarErroneos(admin, x.cookie, errs, {
-      cargaId: x.cargaId, documentId: x.documentId, manualId: x.manualId, quien: x.quien, emisor: x.emisor,
-      erpCompra: verif.compra, lineas: x.lineas, mover: verif.ok, estante,
-    }).catch((e) => console.error("[cargar-compra-erp] erróneos:", e?.message ?? e)));
-  }
-  // El reparto a salas, en background: son varios viajes al sistema por sala y
-  // la respuesta no los espera. El rastro queda en `compra_reparto`.
   const repartoPedido: LineaReparto[] = x.revision.reparto ?? [];
-  if (repartoPedido.length) {
-    EdgeRuntime.waitUntil(repartirASalas(admin, x.cookie, repartoPedido, {
-      cargaId: x.cargaId, quien: x.quien, emisor: x.emisor.nombre, erpCompra: verif.compra, mover: verif.ok, estante,
-    }).catch((e) => console.error("[cargar-compra-erp] reparto:", e?.message ?? e)));
+  if (errs.length) vencidos = { en_curso: verif.ok, cuantos: errs.length };
+  // Vencidos y salas salen del MISMO estante, y cada uno reconoce su traslado
+  // comparando los pendientes de ese origen antes y después: a la vez, uno
+  // podía tomar el traslado del otro. Desde «A vencidos» (2026-11-05) un mismo
+  // producto puede ir a las dos cosas, así que van uno detrás del otro.
+  if (errs.length || repartoPedido.length) {
+    EdgeRuntime.waitUntil((async () => {
+      if (errs.length) {
+        await apartarErroneos(admin, x.cookie, errs, {
+          cargaId: x.cargaId, documentId: x.documentId, manualId: x.manualId, quien: x.quien, emisor: x.emisor,
+          erpCompra: verif.compra, lineas: x.lineas, mover: verif.ok, estante,
+        }).catch((e) => console.error("[cargar-compra-erp] erróneos:", e?.message ?? e));
+      }
+      if (repartoPedido.length) {
+        await repartirASalas(admin, x.cookie, repartoPedido, {
+          cargaId: x.cargaId, quien: x.quien, emisor: x.emisor.nombre, erpCompra: verif.compra, mover: verif.ok, estante,
+        }).catch((e) => console.error("[cargar-compra-erp] reparto:", e?.message ?? e));
+      }
+    })());
   }
   return {
     enviada: true, verificada: verif.ok, erp_compra_id: verif.compra, notas: verif.notas, msg: j.msg ?? null, vencidos,
@@ -1059,6 +1065,14 @@ type Erroneo = {
   product_id: number; es_generico: boolean; unidades: number; costo_unitario: number;
   /** Posición de su línea en el sobre: el renglón exacto, no «el primero con ese producto». */
   linea_idx?: number; numero_lote?: string | null;
+  /** Producto BUENO que se manda a vencidos al cargar (devolución, corto
+   *  vencimiento, dañado…), con su motivo. Null en un erróneo. */
+  motivo?: string | null;
+};
+
+/** Motivos de «A vencidos». La pantalla los ofrece; «otro» exige texto. */
+const MOTIVOS_VENCIDOS: Record<string, string> = {
+  devolucion: "Se devuelve al proveedor", corto_vencimiento: "Corto vencimiento", danado: "Dañado", otro: "Otro",
 };
 
 /**
@@ -1080,6 +1094,7 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     emisor_nit: x.emisor.nit, emisor_nombre: x.emisor.nombre, descripcion: e.descripcion,
     codigo_proveedor: e.codigo_proveedor, product_id: e.product_id, es_generico: e.es_generico,
     unidades: e.unidades, costo_unitario: e.costo_unitario, erp_compra_id: x.erpCompra, numero_lote: e.numero_lote ?? null,
+    motivo: e.motivo ?? null,
     marcado_por: x.quien, estado: "por_mover",
     nota: x.mover ? null : "La compra no se pudo comprobar en el estante: pasarlo a vencidos a mano.",
   })), { onConflict: "compra_carga_id,renglon" });
@@ -1112,8 +1127,12 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
       if (!lote) { await nota(`Lote ${l.numero_lote} no encontrado en el estante.`); return { movidos: 0, error: "Lote no encontrado." }; }
       idLote = lote.id;
     }
-    partes.push([e.product_id, l.compra, l.venta, l.cant, l.unidad, l.vence === "NULL" ? (f.vence || "") : l.vence, l.id_presentacion, idLote].join("|"));
-    total += Number(l.compra) * Number(l.cant);
+    // Se mueven las unidades MARCADAS, no la línea entera: en «A vencidos»
+    // pueden ser sólo algunas. En la presentación con que entró (la revisión
+    // ya exigió paquetes completos).
+    const paquetes = Math.round((e.unidades / (Number(l.unidad) || 1)) * 1e6) / 1e6;
+    partes.push([e.product_id, l.compra, l.venta, paquetes, l.unidad, l.vence === "NULL" ? (f.vence || "") : l.vence, l.id_presentacion, idLote].join("|"));
+    total += Number(l.compra) * paquetes;
     esperado.set(e.product_id, (esperado.get(e.product_id) ?? 0) + e.unidades);
   }
 
@@ -1125,7 +1144,7 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
   const r = await pedir(cookie, TRASLADO, new URLSearchParams({
     process: "insert", datos: partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(partes.length),
     total: total.toFixed(4), fecha: hoySV(),
-    concepto: armarConcepto(`PORTAL ERROR DEL PROVEEDOR COMPRA ${x.erpCompra ?? ""} ${x.emisor.nombre ?? ""} A VENCIDOS`).concepto,
+    concepto: armarConcepto(`PORTAL ${errs.every((e) => e.motivo) ? "" : "ERROR DEL PROVEEDOR "}COMPRA ${x.erpCompra ?? ""} ${x.emisor.nombre ?? ""} A VENCIDOS`).concepto,
     origen: String(x.estante), id_suc_destino: String(ERP_BODEGA), id_ubicacion_destino: "0", numero_vale: vale,
   }), { extra: { Referer: TRASLADO }, reintentos: 1 });
   let ok = false;
@@ -2090,6 +2109,38 @@ Deno.serve(async (req: Request) => {
           linea_idx: lineas.length, numero_lote: res.linea.numero_lote || null,
         });
       }
+      // «A vencidos»: el producto BUENO entra con su nombre y algunas o todas
+      // sus unidades pasan al área de vencidos (devolución, corto vencimiento,
+      // dañado). Mismo camino que el erróneo — `apartarErroneos` — con motivo.
+      const pideVencidos = (decisiones[String(i)] as any)?.vencidos;
+      let aVencidos = 0;
+      if (res.linea && dec.tipo === "producto" && pideVencidos && typeof pideVencidos === "object") {
+        const unidad = Number(res.linea.unidad) || 1;
+        const entran = Number(res.linea.cant) * unidad;
+        const tope = llegaron ?? entran;
+        const n = pideVencidos.unidades == null || pideVencidos.unidades === "" ? tope : Number(pideVencidos.unidades);
+        const motivo = String(pideVencidos.motivo ?? "");
+        const detalleMotivo = String(pideVencidos.detalle ?? "").trim();
+        if ((decisiones[String(i)] as any)?.erroneo === true) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}» ya es un producto erróneo: va a vencidos entero, no lleva «A vencidos».` });
+        } else if (!MOTIVOS_VENCIDOS[motivo]) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: falta el motivo por el que va a vencidos.` });
+        } else if (motivo === "otro" && !detalleMotivo) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: escribe el motivo por el que va a vencidos.` });
+        } else if (!Number.isInteger(n) || n <= 0 || n > tope) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: a vencidos van ${pideVencidos.unidades}, y tiene que ser un número entero entre 1 y ${tope}${llegaron != null ? " (las que llegaron)" : ""}.` });
+        } else if (Math.abs(n / unidad - Math.round(n / unidad)) > 1e-9) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}»: entra en paquetes de ${unidad}; a vencidos tienen que ir ${unidad}, ${unidad * 2}… (van ${n}).` });
+        } else {
+          aVencidos = n;
+          erroneos.push({
+            renglon: i, descripcion: r.descripcion, codigo_proveedor: String(it?.codigo ?? "") || null,
+            product_id: Number(res.linea.id_producto), es_generico: false, unidades: n, costo_unitario: 0,
+            linea_idx: lineas.length, numero_lote: res.linea.numero_lote || null,
+            motivo: motivo === "otro" ? `Otro: ${detalleMotivo.slice(0, 200)}` : MOTIVOS_VENCIDOS[motivo],
+          });
+        }
+      }
       // Lo que va a cada sala: en paquetes de la presentación con que entra, y
       // nunca más de lo que entra. Lo que sobra queda en Bodega.
       const pedidoReparto = (decisiones[String(i)] as any)?.reparto;
@@ -2121,9 +2172,10 @@ Deno.serve(async (req: Request) => {
               vence_pendiente: Boolean((res.detalle as any)?.vence_pendiente), numero_lote: res.linea.numero_lote || null,
             });
           }
-          if (suma > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas y entran ${entran}.` });
-          else if (llegaron != null && suma > llegaron + 1e-9) {
-            problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas y sólo llegaron ${llegaron}.` });
+          const extra = aVencidos ? ` y ${aVencidos} a vencidos` : "";
+          if (suma + aVencidos > entran + 1e-9) problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas${extra}, y entran ${entran}.` });
+          else if (llegaron != null && suma + aVencidos > llegaron + 1e-9) {
+            problemas.push({ renglon: i, texto: `«${r.descripcion}»: se envían ${suma} a salas${extra}, y sólo llegaron ${llegaron}.` });
           }
         }
       }

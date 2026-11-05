@@ -7488,6 +7488,7 @@ export type Database = {
           id: number
           manual_id: number | null
           marcado_por: string | null
+          motivo: string | null
           nota: string | null
           nota_credito_document_id: number | null
           nota_papel_id: number | null
@@ -7515,6 +7516,7 @@ export type Database = {
           id?: never
           manual_id?: number | null
           marcado_por?: string | null
+          motivo?: string | null
           nota?: string | null
           nota_credito_document_id?: number | null
           nota_papel_id?: number | null
@@ -7542,6 +7544,7 @@ export type Database = {
           id?: never
           manual_id?: number | null
           marcado_por?: string | null
+          motivo?: string | null
           nota?: string | null
           nota_credito_document_id?: number | null
           nota_papel_id?: number | null

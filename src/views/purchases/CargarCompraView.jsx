@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, Suspense, laz
 import {
     PackagePlus, AlertTriangle, CheckCircle2, ScanBarcode, BookMarked,
     Search, HelpCircle, CalendarRange, ListChecks, RefreshCw, EyeOff, Layers, Truck,
-    FileText, Plus, Trash2,
+    FileText, Plus, Trash2, Archive,
 } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -643,6 +643,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         venta: Number(ajustes[i]?.venta) > 0 ? Number(ajustes[i].venta) : null,
         llegaron: ajustes[i]?.llegaron !== '' && ajustes[i]?.llegaron != null ? Number(ajustes[i].llegaron) : null,
         erroneo: ajustes[i]?.erroneo === true,
+        vencidos: ajustes[i]?.vencidos ? {
+            unidades: ajustes[i].vencidos.modo === 'algunas' ? (Number(ajustes[i].vencidos.unidades) || 0) : null,
+            motivo: ajustes[i].vencidos.motivo || null,
+            detalle: ajustes[i].vencidos.motivo === 'otro' ? (ajustes[i].vencidos.detalle || '').trim() : null,
+        } : null,
         reparto: aRepartir(ajustes[i]?.reparto),
     }]));
 
@@ -1102,6 +1107,13 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             )}
                                         </div>
                                     )}
+                                    {uso === 'venta' && conProducto && !aj.erroneo && !aj.servicio && aj.vencidos && (
+                                        <AVencidos valor={aj.vencidos} puedeEditar={puedeEditar}
+                                            total={aj.llegaron !== '' && aj.llegaron != null
+                                                ? Math.min(Number(aj.llegaron), Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0)
+                                                : Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
+                                            onChange={v => ajustar(i, 'vencidos', v)} />
+                                    )}
                                     {uso === 'venta' && conProducto && !aj.erroneo && !aj.servicio && (
                                         <RepartoASalas salas={salasReparto} puedeEditar={puedeEditar}
                                             total={aj.llegaron !== '' && aj.llegaron != null
@@ -1147,6 +1159,12 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             {conProducto && !aj.erroneo && !aj.servicio && !aj.reparto && salasReparto.length > 0 && (
                                                 <Button size="xs" variant="ghost" icon={Truck} onClick={() => ajustar(i, 'reparto', {})}>
                                                     Enviar a sucursales
+                                                </Button>
+                                            )}
+                                            {conProducto && !aj.erroneo && !aj.servicio && !aj.vencidos && (
+                                                <Button size="xs" variant="ghost" icon={Archive}
+                                                    onClick={() => ajustar(i, 'vencidos', { modo: 'todo', unidades: '', motivo: '', detalle: '' })}>
+                                                    A vencidos
                                                 </Button>
                                             )}
                                             <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
@@ -1443,6 +1461,63 @@ function aRepartir(reparto) {
  * cantidad va en UNIDADES, igual que «Cantidad a cargar»; nunca más de lo que
  * entra, y si se envía menos se dice cuánto queda en Bodega.
  */
+/**
+ * «A vencidos» (Bodega, 2026-11-05): el producto es el correcto, entra con su
+ * nombre, y todas o algunas unidades pasan al área de vencidos de Bodega al
+ * cargar — se devuelve, viene corto de vencimiento, llegó dañado. El motivo es
+ * obligatorio: es lo que después decide qué se hace con esas unidades.
+ */
+const MOTIVOS_VENCIDOS = [
+    { value: 'devolucion', label: 'Se devuelve al proveedor' },
+    { value: 'corto_vencimiento', label: 'Corto vencimiento' },
+    { value: 'danado', label: 'Dañado' },
+    { value: 'otro', label: 'Otro' },
+];
+function AVencidos({ valor, total, onChange, puedeEditar }) {
+    const poner = (k, v) => onChange({ ...valor, [k]: v });
+    const n = Number(valor.unidades);
+    const algunas = valor.modo === 'algunas';
+    const aviso = algunas && valor.unidades !== '' && (!Number.isInteger(n) || n < 1 || n > total)
+        ? `Tiene que ser un número entero entre 1 y ${total}.` : null;
+    return (
+        <div className="mt-3 pt-3 border-t border-divider">
+            <div className="flex items-center justify-between gap-2 mb-2">
+                <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1">
+                    <Archive size={12} /> A vencidos de Bodega
+                </p>
+                {puedeEditar && (
+                    <Button size="xs" variant="ghost" onClick={() => onChange(null)}>Quitar</Button>
+                )}
+            </div>
+            <div className="grid gap-3 sm:grid-cols-[auto_minmax(0,10rem)_minmax(0,1fr)] items-end">
+                <SegmentedControl size="sm" label="¿Cuántas?" value={valor.modo}
+                    onChange={(v) => poner('modo', v)}
+                    options={[{ value: 'todo', label: `Todas (${total})` }, { value: 'algunas', label: 'Algunas' }]} />
+                {algunas ? (
+                    <PortalInput compact label="Unidades" type="number" min="1" max={total} value={valor.unidades}
+                        placeholder={`de ${total}`} onChange={(e) => poner('unidades', e.target.value)} />
+                ) : <span className="hidden sm:block" />}
+                <div className="flex flex-col">
+                    <span className={rotuloCampo('text-content-3', { denso: true })}>Motivo</span>
+                    <LiquidSelect compact placeholder="¿Por qué va a vencidos?" value={valor.motivo || ''} clearable={false}
+                        options={MOTIVOS_VENCIDOS} onChange={(v) => poner('motivo', v || '')} />
+                </div>
+            </div>
+            {valor.motivo === 'otro' && (
+                <div className="mt-2">
+                    <PortalInput compact label="¿Cuál?" value={valor.detalle} maxLength={200}
+                        placeholder="Escribe el motivo" onChange={(e) => poner('detalle', e.target.value)} />
+                </div>
+            )}
+            {aviso && <p className="mt-1 text-caption font-bold text-danger-text">{aviso}</p>}
+            <p className="mt-2 text-caption text-content-3">
+                Se carga con su nombre y, al terminar, {algunas && n > 0 ? `${n} ${n === 1 ? 'unidad pasa' : 'unidades pasan'}` : 'todas pasan'} al
+                área de vencidos de Bodega. Queda en «Productos erróneos» con su motivo.
+            </p>
+        </div>
+    );
+}
+
 function RepartoASalas({ salas, total, valor, onChange, puedeEditar }) {
     // El botón para abrirlo vive al pie de la tarjeta, con las demás acciones.
     if (!valor) return null;
@@ -2130,9 +2205,14 @@ function TabErroneos({ puedeEditar }) {
                     <div key={f.id} data-surface="card" className="px-3 py-2.5">
                         <div className="flex items-start gap-3 flex-wrap">
                             <div className="flex-1 min-w-[14rem]">
-                                <p className="text-label font-black text-content">{f.descripcion}</p>
+                                <p className="text-label font-black text-content flex items-center gap-2 flex-wrap">
+                                    {f.descripcion}
+                                    <Badge variant={f.motivo ? 'info' : 'warning'} size="sm">
+                                        {f.motivo ? `A vencidos · ${f.motivo}` : 'Error del proveedor'}
+                                    </Badge>
+                                </p>
                                 <p className="text-micro text-content-3">
-                                    {f.emisor_nombre} · factura {f.factura} ({fechaNumerica(f.factura_fecha)})
+                                    {Number(f.unidades)} {Number(f.unidades) === 1 ? 'unidad' : 'unidades'} · {f.emisor_nombre} · factura {f.factura} ({fechaNumerica(f.factura_fecha)})
                                     {f.erp_compra_id ? ` · compra ${f.erp_compra_id}` : ''}
                                     {f.es_generico ? ' · en Bodega como PRODUCTO ERRONEO DE PROVEEDOR' : ''}
                                 </p>

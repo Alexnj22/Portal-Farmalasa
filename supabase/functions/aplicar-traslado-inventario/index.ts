@@ -210,7 +210,10 @@ Deno.serve(async (req) => {
     // `lotes_de_generico`: el lote que trae la caja, para lo que sale de
     // existencia sin lote asignado. `[{ posicion, lote, vence }]`, posición en
     // `metadata.items` como `lineas_aceptadas`. Ver `_shared/erp-asignar-lote.ts`.
-    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico } =
+    // `lotes_elegidos` (2026-11-05): el lote que quien despacha eligió EN LUGAR
+    // del que pidió la solicitud, porque el pedido no está. `[{ posicion, lote,
+    // vence }]`, un lote por renglón.
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico, lotes_elegidos } =
       await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
@@ -979,6 +982,23 @@ Deno.serve(async (req) => {
         }, 422);
       loteEscrito.set(pos, { lote: v.lote, vence: v.vence });
     }
+    // ── El lote que se manda EN LUGAR del pedido (2026-11-05) ─────────────
+    // Hasta hoy, si el lote que reservó la solicitud ya no estaba, el reparto
+    // completaba con el que vence primero y lo decía en un aviso: salía OTRO
+    // lote sin que nadie lo eligiera. Ahora eso frena (`LOTE_PEDIDO_NO_ESTA`)
+    // y quien despacha elige cuál manda; el elegido tiene que cubrir el
+    // renglón entero, para que no se complete con otro por la espalda.
+    const loteElegido = new Map<number, { lote: string; vence: string }>();
+    for (const x of Array.isArray(lotes_elegidos) ? lotes_elegidos : []) {
+      const pos = Number(x?.posicion);
+      const lote = String(x?.lote ?? "").trim().toUpperCase();
+      if (!Number.isInteger(pos) || !lineas[pos] || !lote || lote.length > 40) continue;
+      loteElegido.set(pos, { lote, vence: String(x?.vence ?? "").slice(0, 10) });
+    }
+    const loteNoEsta: {
+      posicion: number; producto: string; presentacion: string; paquetes: number;
+      pedidos: string[]; disponibles: { lote: string; vence: string; paquetes: number }[];
+    }[] = [];
     const yaAsignados: Record<string, { lote: string; vence: string; paquetes: number; id_lote_erp: string }> =
       { ...(meta.lotes_asignados ?? {}) };
     const faltaLote: { posicion: number; producto: string; presentacion: string; paquetes: number; unidades: number }[] = [];
@@ -1133,7 +1153,11 @@ Deno.serve(async (req) => {
       // ESE lote: GENERICO ya no lo tiene.
       const pos = posDe[i];
       const previa = yaAsignados[String(pos)];
-      const reservas = reservadosDe(l, Number(unidad)).map((r) =>
+      const elegidoAqui = loteElegido.get(pos);
+      const reservas = (elegidoAqui
+        ? [{ numero: elegidoAqui.lote, vence: elegidoAqui.vence, paquetes: Number(l.cantidad) }]
+        : reservadosDe(l, Number(unidad))
+      ).map((r) =>
         previa && esLoteGenerico(r.numero) ? { ...r, numero: previa.lote, vence: previa.vence } : r);
       const reparto = f.regulado
         ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(unidad), reservas)
@@ -1148,6 +1172,49 @@ Deno.serve(async (req) => {
                + `completar ${l.cantidad}: los lotes de la sala de origen no alcanzan. `
                + `Hay: ${f.lotes.map((x) => `${x.numero} (${x.stock})`).join(", ") || "ninguno"}.`,
         }, 409);
+
+      // ── ¿Sale lo que se pidió? ─────────────────────────────────────────
+      // Con lote elegido: todo de ése. Sin elegir: cada lote REAL reservado
+      // tiene que dar lo que reservó; si no, se pregunta cuál mandar en vez de
+      // completar con otro. (GENERICO reservado no cuenta: no es un lote.)
+      if (f.regulado) {
+        const salioDe = (numero: string) => reparto.renglones
+          .filter((r) => String(r.lote ?? "").trim().toUpperCase() === numero.trim().toUpperCase())
+          .reduce((n, r) => n + r.cantidad, 0);
+        const u = Number(unidad) || 1;
+        const disponibles = () => [
+          ...f.lotes.filter((x) => !esLoteGenerico(x.numero) && Math.floor(x.stock / u) >= Number(l.cantidad))
+            .sort((x, y) => (x.vence || "9999").localeCompare(y.vence || "9999"))
+            .map((x) => ({ lote: x.numero, vence: String(x.vence ?? "").slice(0, 10), paquetes: Math.floor(x.stock / u) })),
+          ...(Math.max(0, ...f.lotes.filter((x) => esLoteGenerico(x.numero)).map((x) => Math.floor(x.stock / u)))
+              >= Number(l.cantidad)
+            ? [{ lote: "GENERICO", vence: "", paquetes: Math.max(...f.lotes.filter((x) => esLoteGenerico(x.numero)).map((x) => Math.floor(x.stock / u))) }]
+            : []),
+        ];
+        if (elegidoAqui) {
+          const numero = reservas[0].numero;
+          if (salioDe(numero) < Number(l.cantidad))
+            return json({
+              ok: false, codigo: "LOTE_ELEGIDO_NO_ALCANZA", posicion: pos,
+              error: `${nombre}: del lote ${esLoteGenerico(numero) ? "sin asignar" : numero} no alcanza para `
+                + `${l.cantidad} de ${l.presentacion_tipo}. Elige otro lote.`,
+            }, 409);
+        } else {
+          // Lo que se ESPERA de cada reservado es lo que le toca en orden: con
+          // un despacho parcial, el último reservado da menos sin faltar nada.
+          let porCubrir = Number(l.cantidad);
+          const faltan = reservas.filter((r) => {
+            const espera = Math.min(r.paquetes, Math.max(0, porCubrir));
+            porCubrir -= espera;
+            return !esLoteGenerico(r.numero) && espera > 0 && salioDe(r.numero) < espera;
+          });
+          if (faltan.length)
+            loteNoEsta.push({
+              posicion: pos, producto: nombre, presentacion: l.presentacion_tipo, paquetes: Number(l.cantidad),
+              pedidos: faltan.map((r) => r.numero), disponibles: disponibles(),
+            });
+        }
+      }
 
       // El aviso nombra el producto: en un traslado de varias líneas, «el lote
       // X ya no está» sin decir de qué no se puede leer.
@@ -1176,6 +1243,17 @@ Deno.serve(async (req) => {
 
       msPorRenglon.push(Date.now() - arranqueRenglon);
     }
+
+    // El lote pedido que no está va ANTES que el de la caja: elegir otro lote
+    // puede cambiar si hace falta escribir uno.
+    if (cortadoEn < 0 && loteNoEsta.length)
+      return json({
+        ok: false, codigo: "LOTE_PEDIDO_NO_ESTA", lineas: loteNoEsta,
+        error: loteNoEsta.length === 1
+          ? `${loteNoEsta[0].producto}: el lote pedido (${loteNoEsta[0].pedidos.join(", ")}) no está o no alcanza. `
+            + `Elige cuál lote mandas.`
+          : `${loteNoEsta.length} productos no tienen el lote pedido. Elige cuál lote mandas en cada uno.`,
+      }, 409);
 
     // Todos los que faltan juntos, para que la pantalla los pida de una vez.
     if (cortadoEn < 0 && faltaLote.length)

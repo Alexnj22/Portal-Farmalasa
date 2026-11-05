@@ -3,6 +3,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 import { conBitacora } from './audit';
 import { rangoDeSemana } from '../utils/semana';
 import { lotesConocidosDeInventario } from '../utils/loteDeCaja';
+import { lotesEnUnidades } from '../utils/unidadesInventario';
 
 // Datos del traslado entre salas.
 //
@@ -301,6 +302,24 @@ export async function fetchReguladosDe(erpProductIds) {
 }
 
 /**
+ * Los lotes que tiene UNA sala de un producto, sumados en unidades base
+ * (2026-11-05): lo que se le ofrece a quien despacha cuando el lote pedido no
+ * está. Acotada por el dato (un producto, una sala). Nunca lanza: `null` =
+ * no se sabe, y entonces decide el servidor, que lee el sistema.
+ */
+export async function fetchLotesDeSalaEnUnidades(erpProductId, erpSucursalId) {
+    const id = Number(erpProductId), sala = Number(erpSucursalId);
+    if (!id || !sala) return null;
+    const { data, error } = await supabase.from('v_inventario_lotes')
+        .select('presentacion, detalle, factor, lote, fecha_vencimiento, cantidad')
+        .eq('erp_product_id', id).eq('erp_sucursal_id', sala)
+        .eq('is_vencidos', false).gt('cantidad', 0)
+        .limit(500);
+    if (error) { console.error('fetchLotesDeSalaEnUnidades:', error.message); return null; }
+    return lotesEnUnidades(data);
+}
+
+/**
  * Los lotes ya registrados de un producto, en TODAS las salas y sin los
  * vencidos (2026-11-05): lo que se le ofrece a quien copia el lote de la caja,
  * para elegirlo de un toque con su vencimiento. Acotada por el dato: un solo
@@ -347,13 +366,14 @@ export async function fetchLotesConocidosDeProducto(erpProductId) {
  * y no vinieron; con ellos, les asigna ese lote a esas unidades antes de
  * despachar. Ver `supabase/functions/_shared/erp-asignar-lote.ts`.
  */
-export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, lotesDeGenerico = null) =>
+export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, lotesDeGenerico = null, lotesElegidos = null) =>
     invocar({
         request_id: requestId,
         approver_note: nota,
         accion: 'enviar',
         ...(lineasAceptadas ? { lineas_aceptadas: lineasAceptadas } : {}),
         ...(lotesDeGenerico?.length ? { lotes_de_generico: lotesDeGenerico } : {}),
+        ...(lotesElegidos?.length ? { lotes_elegidos: lotesElegidos } : {}),
     });
 
 /**

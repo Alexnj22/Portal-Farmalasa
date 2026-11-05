@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1454.1 — Traslados: si el lote pedido no está, se elige cuál sale
+
+Hasta hoy, si la solicitud pedía un lote que la sala ya no tenía (vendido, o el sistema lo marcaba y no estaba en el estante), el despacho completaba con el que vence primero y lo dejaba en un aviso: salía OTRO lote sin que nadie lo eligiera.
+
+- **La tarjeta de despacho compara lo pedido con los lotes de la sala.** Si no está o no alcanza, el despacho espera a que se elija cuál sale.
+- **Se ofrecen solo los lotes que cubren el renglón entero** (uno por renglón, para que no se complete con otro por la espalda), y «sin lote asignado» al final si alcanza; ése después pide el lote de la caja.
+- **Con una sola opción viene elegida; con varias, ninguna**: hay que tocar cuál se manda.
+- **«Cambiar lote»** en cada renglón regulado abre lo mismo a mano, y «Dejar el lote pedido» lo cierra.
+- **El servidor no cambia el lote solo**: sin elección, un lote pedido que falta responde `LOTE_PEDIDO_NO_ESTA` con las opciones que da el sistema. El elegido tiene que cubrir el renglón (`LOTE_ELEGIDO_NO_ALCANZA`). Con despacho parcial, el último reservado puede dar menos sin contar como faltante.
+- Piezas: `src/utils/loteDeEnvio.js`, `src/views/traslados/ElegirLoteDeEnvio.jsx`, `lotes_elegidos` en `aplicar-traslado-inventario`.
+
 ## v2.1454.0 — Cargar compra: «A vencidos» con motivo
 
 Nuevo botón **«A vencidos»** en cada producto de la compra (Bodega: «puede ser un producto que se va a devolver, viene corto vence, etc. Que se manden todos o unas unidades. Que pregunte motivo»).

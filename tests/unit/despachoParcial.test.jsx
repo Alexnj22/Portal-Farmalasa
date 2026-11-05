@@ -30,6 +30,7 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 const despacharTraslado = vi.fn(async () => ({ ok: true }));
 const rechazarTraslado = vi.fn(async () => ({ error: null }));
 const fetchReguladosDe = vi.fn(async () => new Set());
+const fetchLotesDeSalaEnUnidades = vi.fn(async () => null);
 let disponibilidad = null;
 
 vi.mock('@nucleo/data/traslados', () => ({
@@ -38,6 +39,7 @@ vi.mock('@nucleo/data/traslados', () => ({
     despacharTraslado: (...a) => despacharTraslado(...a),
     recibirTraslado: vi.fn(),
     fetchReguladosDe: (...a) => fetchReguladosDe(...a),
+    fetchLotesDeSalaEnUnidades: (...a) => fetchLotesDeSalaEnUnidades(...a),
     fetchLotesConocidosDeProducto: vi.fn(async () => [
         { lote: 'K221', vence: '2031-02', fecha: '2031-02-01', veces: 2 },
     ]),
@@ -130,7 +132,7 @@ describe('cuando alcanza todo', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
-        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, []);
+        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, [], []);
     });
 });
 
@@ -166,7 +168,7 @@ describe('cuando alcanza menos de lo que piden', () => {
             fireEvent.click(screen.getByRole('button', { name: /Enviar lo que hay/i }));
         });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', 'Se vendió una hace un rato', [{ i: 0, cantidad: 2 }], [],
+            'sol-1', 'Se vendió una hace un rato', [{ i: 0, cantidad: 2 }], [], [],
         );
     });
 
@@ -213,7 +215,7 @@ describe('el tope es lo pedido', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
-        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, []);
+        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, [], []);
     });
 });
 
@@ -313,7 +315,7 @@ describe('cuando sale existencia sin lote asignado', () => {
         expect(boton).not.toBeDisabled();
         await act(async () => { fireEvent.click(boton); });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', '', null, [{ posicion: 0, lote: 'ABC123', vence: '2030-05-01' }],
+            'sol-1', '', null, [{ posicion: 0, lote: 'ABC123', vence: '2030-05-01' }], [],
         );
     });
 
@@ -353,7 +355,68 @@ describe('el lote de la caja contra los ya registrados', () => {
         expect(boton).not.toBeDisabled();
         await act(async () => { fireEvent.click(boton); });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', '', null, [{ posicion: 0, lote: 'K221', vence: '2031-02-01' }],
+            'sol-1', '', null, [{ posicion: 0, lote: 'K221', vence: '2031-02-01' }], [],
         );
+    });
+});
+
+// ── El lote pedido que no está (2026-11-05) ─────────────────────────────────
+// Antes el servidor completaba con el que vence primero sin preguntar. Ahora
+// la tarjeta frena y hay que elegir; con varias opciones, tocando una.
+describe('cuando el lote pedido no está en la sala', () => {
+    const PIDE_L1 = {
+        id: 'sol-1',
+        metadata: { items: [{ ...FILA.metadata.items[0], lotes: [{ lote: 'L1', vence: '2027-01-01', unidades: 30 }] }] },
+    };
+    beforeEach(() => {
+        disponibilidad = conExistencia(50);
+        fetchReguladosDe.mockImplementation(async () => new Set([2724]));
+    });
+    afterEach(() => {
+        fetchReguladosDe.mockImplementation(async () => new Set());
+        fetchLotesDeSalaEnUnidades.mockImplementation(async () => null);
+    });
+    const pintarCon = async (lotes) => {
+        fetchLotesDeSalaEnUnidades.mockImplementation(async () => lotes);
+        await act(async () => { render(<DecisionTraslado fila={PIDE_L1} onHecho={vi.fn()} />); });
+    };
+
+    it('con varios lotes, ninguno viene elegido y no deja enviar hasta tocar uno', async () => {
+        await pintarCon([
+            { lote: 'L2', vence: '2026-12-01', unidades: 40 },
+            { lote: 'L3', vence: '2028-06-01', unidades: 40 },
+        ]);
+        expect(screen.getByText(/el lote L1 que pidieron no está/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).toBeDisabled();
+        await act(async () => { fireEvent.click(screen.getByRole('radio', { name: /L3/ })); });
+        const boton = screen.getByRole('button', { name: /Confirmar y enviar/i });
+        expect(boton).not.toBeDisabled();
+        await act(async () => { fireEvent.click(boton); });
+        expect(despacharTraslado).toHaveBeenCalledWith(
+            'sol-1', '', null, [], [{ posicion: 0, lote: 'L3', vence: '2028-06-01' }],
+        );
+    });
+
+    it('con un solo lote que alcanza, viene elegido', async () => {
+        await pintarCon([
+            { lote: 'L2', vence: '2026-12-01', unidades: 40 },
+            { lote: 'L9', vence: '2029-01-01', unidades: 5 },     // no alcanza: no se ofrece
+        ]);
+        expect(screen.getByText(/Sale el lote L2/)).toBeInTheDocument();
+        expect(screen.queryByRole('radio', { name: /L9/ })).toBeNull();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).not.toBeDisabled();
+    });
+
+    it('si el lote pedido está, sale ése, y «Cambiar lote» abre la elección', async () => {
+        await pintarCon([
+            { lote: 'L1', vence: '2027-01-01', unidades: 40 },
+            { lote: 'L3', vence: '2028-06-01', unidades: 40 },
+        ]);
+        expect(screen.queryByText(/que pidieron no está/i)).toBeNull();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).not.toBeDisabled();
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Cambiar lote/i })); });
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).toBeDisabled();
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Dejar el lote pedido/i })); });
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).not.toBeDisabled();
     });
 });

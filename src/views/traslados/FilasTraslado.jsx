@@ -8,7 +8,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
-    fetchDisponibilidadTraslado, fetchReguladosDe,
+    fetchDisponibilidadTraslado, fetchReguladosDe, fetchLotesDeSalaEnUnidades,
 } from '@nucleo/data/traslados';
 import { esLoteGenerico, rotuloDeLote } from '@nucleo/utils/unidadesInventario';
 import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
@@ -24,6 +24,8 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '@nucleo/utils/imprimirTraslado';
 import LoteDeLaCaja from './LoteDeLaCaja';
+import ElegirLoteDeEnvio from './ElegirLoteDeEnvio';
+import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva } from '@nucleo/utils/loteDeEnvio';
 import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
@@ -279,14 +281,33 @@ export function DecisionTraslado({ fila, onHecho }) {
     const [regulados,       setRegulados]       = useState(null);   // Set de erp_product_id
     const [sinLoteServidor, setSinLoteServidor] = useState(null);   // la lista del servidor, si la dio
     const [loteCaja,        setLoteCaja]        = useState({});     // { [posicion]: valor de LoteDeLaCaja }
+    // Regulados de TODA la solicitud: también hacen falta para saber si el
+    // lote pedido está en la sala (ver «el lote que sale», abajo).
+    const erpsDeItems = useMemo(
+        () => [...new Set(items.map(it => Number(it?.erp_product_id)).filter(Boolean))], [items]);
     useEffect(() => {
-        if (conGenerico.length === 0) return undefined;
+        if (erpsDeItems.length === 0) return undefined;
         let cancelado = false;
-        fetchReguladosDe(conGenerico.map(x => x.erp)).then(reg => { if (!cancelado) setRegulados(reg); });
+        fetchReguladosDe(erpsDeItems).then(reg => { if (!cancelado) setRegulados(reg); });
         return () => { cancelado = true; };
-    }, [conGenerico]);
+    }, [erpsDeItems]);
     // [{ posicion, producto, unidades }]
     const sinLote = sinLoteServidor ?? (regulados ? conGenerico.filter(x => regulados.has(x.erp)) : []);
+
+    const [lotesSala,      setLotesSala]      = useState({});          // { [erp]: lotesEnUnidades | null }
+    const [eleccion,       setEleccion]       = useState({});          // { [posicion]: { lote, vence, sinAsignar } }
+    const [cambiando,      setCambiando]      = useState(() => new Set());
+    const [noEstaServidor, setNoEstaServidor] = useState(null);        // { [posicion]: { pedidos, opciones } }
+    const origenErp = Number(disp?.origen?.erp_sucursal_id) || null;
+    useEffect(() => {
+        if (!origenErp || !regulados?.size) return undefined;
+        let cancelado = false;
+        [...regulados].forEach(erp => {
+            fetchLotesDeSalaEnUnidades(erp, origenErp)
+                .then(l => { if (!cancelado) setLotesSala(m => ({ ...m, [erp]: l })); });
+        });
+        return () => { cancelado = true; };
+    }, [origenErp, regulados]);
 
     /* Todavía no se sabe qué hay: o está viajando la respuesta, o no se pudo
      * preguntar. En los dos casos la tarjeta se comporta como antes de que esto
@@ -305,10 +326,45 @@ export function DecisionTraslado({ fila, onHecho }) {
     // Lo que va a viajar. Índices con su cantidad, nunca los renglones.
     const { aceptadas, hayQueMandar, recortado, nadaEnFisico } = loQueSeManda(lineas, items, cuantos);
 
+    /* ── El lote que sale, cuando el pedido no está (2026-11-05) ─────────────
+     * «Si me solicitan un producto con un lote/vence y no lo tengo, que lo
+     * pueda modificar, pero confirmando que no envíe otro sólo por enviar».
+     * Cada renglón regulado compara lo pedido contra los lotes de ESTA sala;
+     * si no está, el despacho espera a que se elija cuál sale. Con una sola
+     * opción viene elegida; con varias, hay que tocarla. «Cambiar lote» abre
+     * lo mismo a mano (el sistema lo marca pero no está en el estante). Si el
+     * servidor —que lee el sistema y no el espejo— dice otra cosa, manda él. */
+    const lineasLote = items.map((it, pos) => {
+        const erp = Number(it?.erp_product_id);
+        if (!regulados?.has(erp)) return null;
+        const factor = Number(it?.factor) || 1;
+        const paquetes = sinDatos ? pedidoDe(pos) : (aceptadas.find(a => a.i === pos)?.cantidad ?? 0);
+        if (!paquetes) return null;
+        const sala = lotesSala[erp];            // undefined = leyendo · null = no se pudo
+        const srv = noEstaServidor?.[pos];
+        const opciones = srv?.opciones ?? (sala ? opcionesDeLote(sala, paquetes, factor) : null);
+        const pedidosNo = srv?.pedidos ?? (sala ? pedidosQueNoEstan(it, sala, paquetes, factor) : []);
+        const abierto = pedidosNo.length > 0 || cambiando.has(pos);
+        return {
+            pos, erp, factor, paquetes, opciones, pedidosNo, abierto,
+            producto: it?.descripcion ?? `Producto ${erp}`,
+            valor: abierto ? eleccionEfectiva(eleccion[pos], opciones) : null,
+        };
+    }).filter(Boolean);
+    const conEleccion = new Map(lineasLote.filter(x => x.abierto && x.valor).map(x => [x.pos, x]));
+    const lotesElegidosOk = lineasLote.every(x => !x.abierto || x.valor);
+
     // El lote de la caja sólo para los renglones que salen: uno recortado a
-    // cero no lleva caja.
-    const pidenLote = sinLote.filter(x => sinDatos || !recortado || aceptadas.some(a => a.i === x.posicion));
-    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.envio);
+    // cero no lleva caja. Y si se eligió un lote para el renglón, manda esa
+    // elección: un lote real no pide caja; «sin lote asignado», sí.
+    const pidenLote = [
+        ...sinLote.filter(x => !conEleccion.has(x.posicion)
+            && (sinDatos || !recortado || aceptadas.some(a => a.i === x.posicion))),
+        ...[...conEleccion.values()].filter(x => x.valor.sinAsignar).map(x => ({
+            posicion: x.pos, producto: x.producto, unidades: x.paquetes * x.factor, erp: x.erp,
+        })),
+    ];
+    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.envio) && lotesElegidosOk;
 
     // A quién más pedirle: la cuenta vive en `utils/decisionTraslado`.
     const sugerencia = sugerenciaDeRechazo(lineas, items);
@@ -322,6 +378,7 @@ export function DecisionTraslado({ fila, onHecho }) {
             // el mismo viaje que antes de que existiera el despacho parcial.
             recortado ? aceptadas : null,
             pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion].envio })),
+            [...conEleccion.values()].map(x => ({ posicion: x.pos, lote: x.valor.lote, vence: x.valor.vence })),
         );
         setOcupado(false);
         if (!r?.ok) {
@@ -331,6 +388,20 @@ export function DecisionTraslado({ fila, onHecho }) {
                 setSinLoteServidor(r.lineas.map(x => ({
                     posicion: x.posicion, producto: x.producto, unidades: x.unidades,
                     erp: Number(items[x.posicion]?.erp_product_id),
+                })));
+            }
+            // El lote pedido no está según el SISTEMA (el espejo pudo decir que
+            // sí): se pregunta con las opciones que da el servidor.
+            if (r?.codigo === 'LOTE_PEDIDO_NO_ESTA' && Array.isArray(r.lineas)) {
+                setNoEstaServidor(Object.fromEntries(r.lineas.map(x => {
+                    const f = Number(items[x.posicion]?.factor) || 1;
+                    return [x.posicion, {
+                        pedidos: x.pedidos ?? [],
+                        opciones: (x.disponibles ?? []).map(d => ({
+                            lote: d.lote, vence: d.vence, unidades: Number(d.paquetes) * f,
+                            sinAsignar: esLoteGenerico(d.lote),
+                        })),
+                    }];
                 })));
             }
             setError(r?.error ?? 'No se pudo despachar.');
@@ -483,12 +554,34 @@ export function DecisionTraslado({ fila, onHecho }) {
                                             Te quedas en {queda} y tu mínimo es {l.minimo}.
                                         </p>
                                     )}
+                                    {/* A mano: el sistema dice que el lote está y
+                                        en el estante no. Abre la misma elección. */}
+                                    {modo !== 'rechazo' && lineasLote.some(x => x.pos === l.idx && !x.abierto) && (
+                                        <Button size="sm" variant="ghost"
+                                            onClick={() => setCambiando(c => new Set(c).add(l.idx))}>
+                                            Cambiar lote
+                                        </Button>
+                                    )}
                                 </div>
                             </li>
                         );
                     })}
                 </ul>
             )}
+
+            {/* ── El lote que sale, cuando el pedido no está o se cambia ──── */}
+            {modo !== 'rechazo' && lineasLote.filter(x => x.abierto).map(x => (
+                <ElegirLoteDeEnvio
+                    key={x.pos}
+                    producto={lineasLote.length > 1 || items.length > 1 ? x.producto : null}
+                    pedidos={x.pedidosNo} opciones={x.opciones} valor={x.valor}
+                    onElegir={v => setEleccion(e => ({ ...e, [x.pos]: v }))}
+                    onCerrar={x.pedidosNo.length ? null : () => {
+                        setCambiando(c => { const n = new Set(c); n.delete(x.pos); return n; });
+                        setEleccion(e => { const n = { ...e }; delete n[x.pos]; return n; });
+                    }}
+                />
+            ))}
 
             {/* ── Sin lote asignado: el lote lo dice la caja ──────────────────
                 Ámbar y con borde: es lo único de la tarjeta que hay que leer EN

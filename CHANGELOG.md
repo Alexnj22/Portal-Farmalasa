@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.3 — App del personal: se quita «Facturas de mi sala», igual que en el portal
+
+La v2.1432.0 quitó del portal la vista y el widget «Facturas de mi sala» y borró `src/data/facturasSala.js`, pero la app del personal todavía lo importaba: desde ese commit ninguna build de la app compilaba (`Unable to resolve module @nucleo/data/facturasSala`). Se quitan también de la app las pantallas `/facturas-sala` y `/facturas-sala-panel`, el widget del Inicio y su registro en `pantallas.js`. Verificado con `expo export -p ios`.
+
 ## v2.1451.2 — Inicio: el editor deja elegir cualquier tamaño
 
 «Acomodar» apagaba los anchos y altos por debajo del mínimo de cada widget

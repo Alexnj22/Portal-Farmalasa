@@ -310,5 +310,4 @@ export const SECCIONES = [
   { id: 'traslados', pestanas: ['general', 'operacion'], permiso: 'dash_traslados', Componente: O.Traslados },
   { id: 'bitacoras', pestanas: ['general', 'operacion'], permiso: 'dash_bitacoras', Componente: O.Bitacoras },
   { id: 'recetas', pestanas: ['general', 'operacion'], permiso: 'dash_recetas_pendientes', Componente: O.RecetasPendientes },
-  { id: 'facturas_sala', pestanas: ['general', 'operacion'], permiso: 'dash_facturas_sala', Componente: O.FacturasSala },
 ];

@@ -80,7 +80,6 @@ export const PANTALLAS_DE_LA_APP = {
   '/inventario': true,     // lo de una sala producto por producto; tocar uno abre su ficha nativa
   '/personal': true,       // el directorio por sala; la ficha de una persona es /empleado/[id]
   '/solicitudes': true,
-  '/facturas-sala': true,
   // Los dos ámbitos del portal son una sola bandeja en la app.
   '/solicitudes-personales': '/solicitudes',
 };

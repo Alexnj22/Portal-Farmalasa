@@ -88,6 +88,55 @@ const GERMEN_CRECE = 8;
 const GERMEN_CONTAGIA = 9;
 const MAX_GERMENES = 7;
 
+// ── La dificultad, por partida ───────────────────────────────────────────────
+// `germ`: desde qué pieza salen gérmenes, con qué probabilidad empiezan, su
+// tope y cuánto sube por pieza (null = sin gérmenes). `crece`/`contagia`:
+// segundos hasta que un germen sin tocar crece o contagia. `maxG`: cuántos
+// caben a la vez. Sin conf, la de siempre (las pruebas la usan).
+const GERM = (desde, base, max, paso) => ({ desde, base, max, paso });
+export const CONF_BASE = { germ: GERM(6, 0.12, 0.4, 0.008), crece: GERMEN_CRECE, contagia: GERMEN_CONTAGIA, maxG: MAX_GERMENES };
+/** El juego libre: los gérmenes salen antes, más seguido y crecen más rápido. */
+export const CONF_LIBRE = { germ: GERM(4, 0.15, 0.45, 0.01), crece: 7, contagia: 7, maxG: 8 };
+
+/**
+ * Los niveles (usuario, 2026-11-04: «agrega niveles… y más dificultad»). Cada
+ * uno pide algo distinto y da piezas CONTADAS: si se acaban antes de cumplir
+ * la meta, se pierde. `tope`: piezas para 2 y 3 estrellas.
+ * Metas: `pieza` (formar el medicamento n), `limpiar` (eliminar n gérmenes),
+ * `cadena` (una cadena de n uniones seguidas), `puntos`.
+ */
+export const NIVELES = [
+  { meta: { tipo: 'pieza', n: 5 }, germ: null, limite: 45, tope: [35, 26] },
+  { meta: { tipo: 'limpiar', n: 4 }, germ: GERM(2, 0.28, 0.32, 0), limite: 40, tope: [32, 24], crece: 8 },
+  { meta: { tipo: 'pieza', n: 6 }, germ: GERM(6, 0.12, 0.25, 0.004), limite: 75, tope: [60, 48] },
+  { meta: { tipo: 'cadena', n: 3 }, germ: GERM(5, 0.12, 0.28, 0.004), limite: 60, tope: [45, 32] },
+  { meta: { tipo: 'pieza', n: 7 }, germ: GERM(5, 0.14, 0.32, 0.006), limite: 120, tope: [100, 80], crece: 7 },
+  { meta: { tipo: 'limpiar', n: 12 }, germ: GERM(2, 0.32, 0.4, 0.002), limite: 90, tope: [75, 60], crece: 6, contagia: 7, maxG: 8 },
+  { meta: { tipo: 'puntos', n: 2500 }, germ: GERM(4, 0.16, 0.4, 0.008), limite: 140, tope: [115, 95], crece: 7 },
+  { meta: { tipo: 'cadena', n: 4 }, germ: GERM(4, 0.16, 0.38, 0.008), limite: 110, tope: [85, 65], crece: 7 },
+  { meta: { tipo: 'pieza', n: 8 }, germ: GERM(4, 0.18, 0.42, 0.008), limite: 190, tope: [160, 130], crece: 6, contagia: 7, maxG: 8 },
+  { meta: { tipo: 'puntos', n: 6000 }, germ: GERM(3, 0.2, 0.45, 0.01), limite: 230, tope: [195, 165], crece: 6, contagia: 6, maxG: 9 },
+  { meta: { tipo: 'pieza', n: 9 }, germ: GERM(3, 0.2, 0.45, 0.01), limite: 300, tope: [260, 220], crece: 5.5, contagia: 6, maxG: 9 },
+  { meta: { tipo: 'pieza', n: 10 }, germ: GERM(3, 0.22, 0.48, 0.01), limite: 480, tope: [420, 360], crece: 5, contagia: 5.5, maxG: 10 },
+];
+/** La conf de un nivel (1..N). */
+export function confDeNivel(n) {
+  const nv = NIVELES[n - 1];
+  return { germ: nv.germ, crece: nv.crece || 9, contagia: nv.contagia || 10, maxG: nv.maxG || MAX_GERMENES };
+}
+/** Cuánto de la meta lleva, de 0 a 1. */
+export function avance(m, meta) {
+  if (meta.tipo === 'pieza') return m.mayor >= meta.n ? 1 : m.mayor / meta.n;
+  if (meta.tipo === 'limpiar') return Math.min(1, m.limpiados / meta.n);
+  if (meta.tipo === 'cadena') return Math.min(1, m.rachaMax / meta.n);
+  return Math.min(1, m.puntos / meta.n);
+}
+/** Estrellas al superar el nivel n con tantas piezas. */
+export function estrellasDe(n, soltadas) {
+  const t = NIVELES[n - 1].tope;
+  return soltadas <= t[1] ? 3 : soltadas <= t[0] ? 2 : 1;
+}
+
 /** Puntos por formar el nivel n: 1, 3, 6, 10, 15… */
 export function puntosDe(n) {
   return ((n + 1) * (n + 2)) / 2;
@@ -108,8 +157,9 @@ function azar(m) {
 export function elegir(m) {
   const s = m.soltadas;
   const germenes = m.germenesVivos || 0;
-  if (s >= 10 && germenes >= 3 && s - m.ultimoGel >= 14 && azar(m) < 0.35) { m.ultimoGel = s; return { tipo: 'gel', n: 0 }; }
-  const pGermen = s < 6 ? 0 : Math.min(0.4, 0.12 + (s - 6) * 0.008);
+  const g = m.conf.germ;
+  if (g && s >= g.desde + 4 && germenes >= 3 && s - m.ultimoGel >= 14 && azar(m) < 0.35) { m.ultimoGel = s; return { tipo: 'gel', n: 0 }; }
+  const pGermen = !g || s < g.desde ? 0 : Math.min(g.max, g.base + (s - g.desde) * g.paso);
   if (!m.ultimaFueGermen && azar(m) < pGermen) { m.ultimaFueGermen = true; return { tipo: 'germen', n: 0 }; }
   m.ultimaFueGermen = false;
   const pesos = [5, 5, 4, 3, 2];
@@ -132,7 +182,7 @@ function cuerpo(f, x, y, opciones) {
   return Bodies.rectangle(x, y, f.w, f.h, { ...opciones, chamfer: { radius: radio, quality: 8 } });
 }
 
-export function crearMundo(semilla = 1) {
+export function crearMundo(semilla = 1, conf = CONF_BASE) {
   const engine = Engine.create({
     gravity: { x: 0, y: 1, scale: 0.0019 },
     positionIterations: 10,
@@ -149,7 +199,7 @@ export function crearMundo(semilla = 1) {
     Bodies.rectangle(ANCHO / 2, ALTO + G / 2, ANCHO + G * 2, G, fijo),
   ]);
   const m = {
-    engine, t: 0, acum: 0, puntos: 0, mayor: 0, uniones: 0, soltadas: 0, limpiados: 0,
+    engine, conf, t: 0, acum: 0, puntos: 0, mayor: 0, uniones: 0, soltadas: 0, limpiados: 0, rachaMax: 0,
     eventos: [], anillos: [], contactos: [], peligro: 0, perdio: false, ultimaSoltada: -10,
     racha: 0, ultimaUnion: -10, ultimoGel: -100, ultimaFueGermen: false, germenesVivos: 0,
     semilla: Math.max(1, Math.floor(semilla) % 2147483646), actual: null, siguiente: null,
@@ -169,7 +219,13 @@ export function crearMundo(semilla = 1) {
           const g = Math.min(1, (dv - 2) / 7);
           if (pa.tipo) pa.golpe = Math.max(pa.golpe, g);
           if (pb.tipo) pb.golpe = Math.max(pb.golpe, g);
-          if (dv > 4 && m.t - (m.ultimoGolpe || 0) > 0.08) { m.ultimoGolpe = m.t; m.eventos.push({ tipo: 'golpe', fuerza: g }); }
+          if (dv > 3.2 && m.t - (m.ultimoGolpe || 0) > 0.05) {
+            m.ultimoGolpe = m.t;
+            // Dónde chocaron y quién: la pantalla salpica ahí y del color de la pieza.
+            const sp = p.collision && p.collision.supports && p.collision.supports[0];
+            const q = pa.tipo ? a : b;
+            m.eventos.push({ tipo: 'golpe', fuerza: g, x: sp ? sp.x : q.position.x, y: sp ? sp.y : q.position.y, img: q.plugin.tipo ? imagenDe(q.plugin) : 0 });
+          }
         }
       }
       if (pa.tipo === 'gel' || pb.tipo === 'gel') { m.contactos.push(pa.tipo === 'gel' ? a : b, null); continue; }
@@ -187,7 +243,8 @@ function crear(m, pieza, x, y, escala = 1) {
   const f = formaDe(pieza);
   const b = cuerpo(f, x, y, { ...MATERIAL[pieza.tipo], label: pieza.tipo });
   b.plugin = { tipo: pieza.tipo, n: pieza.n, nace: m.t, toco: false, arriba: 0, fuera: false, junta: false, esc: 1, golpe: 0, madura: 0 };
-  if (pieza.tipo === 'germen') b.plugin.madura = m.t + (pieza.n === GERMENES.length - 1 ? GERMEN_CONTAGIA : GERMEN_CRECE) + azar(m) * 4;
+  if (pieza.tipo === 'germen') b.plugin.madura = m.t + (pieza.n === GERMENES.length - 1 ? m.conf.contagia : m.conf.crece) + azar(m) * 4;
+  b.plugin.id = azar(m) * 100; // fase propia de su respiración en pantalla
   if (escala !== 1) { Body.scale(b, escala, escala); b.plugin.esc = escala; }
   Composite.add(m.engine.world, b);
   if (pieza.tipo === 'germen') m.germenesVivos++;
@@ -269,6 +326,9 @@ function unir(m) {
     }
     const tipo = a.plugin.tipo; const n = a.plugin.n;
     if (tipo === 'germen' && n + 1 >= GERMENES.length) continue; // los más grandes ya no crecen
+    // Dónde estaban las dos: la pantalla las acerca y las funde antes de la nueva.
+    const fa = [imagenDe(a.plugin), a.position.x, a.position.y, a.angle, a.plugin.esc];
+    const fb = [imagenDe(b.plugin), b.position.x, b.position.y, b.angle, b.plugin.esc];
     quitar(m, a); quitar(m, b);
     const x = (a.position.x + b.position.x) / 2;
     const y = Math.max(a.position.y, b.position.y) * 0.6 + Math.min(a.position.y, b.position.y) * 0.4;
@@ -277,17 +337,18 @@ function unir(m) {
       // Lo malo: dos gérmenes iguales se juntan en uno más grande.
       const c = crear(m, { tipo: 'germen', n: n + 1 }, x, y, 0.6);
       c.plugin.junta = true; c.plugin.toco = true;
-      m.eventos.push({ tipo: 'germen', x, y, n: n + 1 });
+      m.eventos.push({ tipo: 'germen', x, y, n: n + 1, a: fa, b: fb });
       continue;
     }
     m.uniones++;
     m.racha = m.t - m.ultimaUnion < RACHA ? m.racha + 1 : 1;
     m.ultimaUnion = m.t;
+    if (m.racha > m.rachaMax) m.rachaMax = m.racha;
     const mult = Math.min(3, 1 + (m.racha - 1) * 0.5);
     if (n === MAX) {
       const p = Math.round(PREMIO_CUMBRE * mult);
       m.puntos += p;
-      m.eventos.push({ tipo: 'cumbre', n, x, y, puntos: p, racha: m.racha });
+      m.eventos.push({ tipo: 'cumbre', n, x, y, puntos: p, racha: m.racha, mult, radio: FORMAS[MAX].r, a: fa, b: fb });
       m.anillos.push({ x, y, r: 110, t: m.t, n });
       limpiarCerca(m, x, y, 200, 'cumbre');
       empujar(m, x, y, 260, 6);
@@ -305,7 +366,7 @@ function unir(m) {
     Body.setVelocity(c, { x: (a.velocity.x + b.velocity.x) / 2, y: Math.min(a.velocity.y, b.velocity.y) / 2 });
     const { w, h } = medidas(FORMAS[nuevo]);
     const radio = Math.max(w, h) / 2;
-    m.eventos.push({ tipo: 'junta', n: nuevo, x, y, puntos: p, racha: m.racha });
+    m.eventos.push({ tipo: 'junta', n: nuevo, x, y, puntos: p, racha: m.racha, mult, radio, a: fa, b: fb });
     m.anillos.push({ x, y, r: radio, t: m.t, n: nuevo });
     // Una unión barre los gérmenes que la rozan y sacude a las vecinas.
     // Cuenta desde las DOS piezas que se unieron, no sólo desde el centro: con
@@ -356,14 +417,14 @@ function infectar(m, lista) {
       Body.setAngle(c, b.angle);
       m.eventos.push({ tipo: 'germen', x: b.position.x, y: b.position.y, n: p.n + 1, solo: true });
     } else {
-      p.madura = m.t + GERMEN_CONTAGIA + azar(m) * 4;
-      if (m.germenesVivos >= MAX_GERMENES) continue;
+      p.madura = m.t + m.conf.contagia + azar(m) * 4;
+      if (m.germenesVivos >= m.conf.maxG) continue;
       const r = GERMENES[p.n].r + GERMENES[0].r + 2;
       const a = -Math.PI / 2 + (azar(m) - 0.5) * 1.6;
       const x = Math.min(CAJA.ANCHO - 20, Math.max(20, b.position.x + Math.cos(a) * r));
       const c = crear(m, { tipo: 'germen', n: 0 }, x, b.position.y + Math.sin(a) * r, 0.5);
       c.plugin.toco = true; c.plugin.junta = true;
-      m.eventos.push({ tipo: 'contagio', x, y: b.position.y + Math.sin(a) * r, n: 0 });
+      m.eventos.push({ tipo: 'contagio', x, y: b.position.y + Math.sin(a) * r, n: 0, desde: { x: b.position.x, y: b.position.y } });
     }
   }
 }

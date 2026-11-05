@@ -21,6 +21,32 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.0 — Botiquín premium: arte aprobado, efectos por pieza, tema y 12 niveles
+
+App de clientes · Bienestar · Botiquín, quinta versión. Sale de un prototipo
+HTML que el usuario aprobó antes de construirla («visualmente me gusta más… sólo
+necesita más efectos de cada elemento, y más dificultad… wow sin afectar el
+rendimiento»).
+
+- **Arte**: el del prototipo, con el logo ORIGINAL de la casa (arcos y cruz
+  medidos sobre el ícono de la app) en el frasco, la caja, el botiquín, el
+  sello y como marca de agua del estuche.
+- **Efectos por pieza** (`lib/botiquinEfectos.js`, JavaScript puro y probado):
+  destello y estela propios al lanzar; cada medicamento tiene su estallido al
+  nacer de una unión (gotas doradas de la perla, burbujas de la efervescente,
+  confeti de los microgránulos, rayos del frasco al sello); las dos piezas se
+  funden antes de la nueva, que rebota; polvo en los golpes fuertes; brillos
+  sobre los medicamentos; gérmenes que respiran, sueltan esporas, tienen halo
+  tóxico y laten en rojo antes de crecer; el marco se enciende con las cadenas,
+  el gel y los gérmenes.
+- **Tema**: claro u oscuro según el teléfono.
+- **12 niveles** con metas distintas (formar una pieza, eliminar gérmenes,
+  hacer una cadena, llegar a un puntaje) y piezas CONTADAS; estrellas por
+  piezas usadas. El juego libre conserva el récord y es más difícil: gérmenes
+  antes, más seguido y más rápidos.
+- **Rendimiento**: el estuche se pinta una vez por tamaño y tema, y las
+  partículas tienen tope (320): el costo por cuadro no crece con la partida.
+
 ## v2.1450.4 — App del personal: no gira en iPhone ni iPad
 
 Decisión del usuario: la app del personal queda siempre en vertical. Apple revisó la 1.0.0 en un iPad, donde la app giraba a horizontal porque la plantilla declaraba las cuatro orientaciones para iPad. `apps/mobile/app.json` declara ahora una sola orientación (vertical) para iPhone y para iPad, y `requireFullScreen`, que es lo que Apple exige para que una app de iPad no soporte todas las orientaciones. Verificado en el `Info.plist` generado por `expo prebuild`. Android ya estaba fijo en vertical.

@@ -2,352 +2,94 @@
 // PNG por render.mjs. Vive como código para que un cambio de color sea una
 // línea y se regenere todo igual.
 //
-// Cada pieza se dibuja en SU forma física (lib/botiquinMotor.js → FORMAS): un
-// círculo, una cápsula o una caja de esquinas redondeadas, en unidades del
-// mundo. El dibujo llena exactamente esa forma, así lo que se ve es lo que
-// choca.
+// Quinta versión (2026-11-04). El usuario rechazó la cuarta («se ve low cost…
+// hasta pena me da») y aprobó ESTE arte primero en un prototipo HTML: el logo es
+// el ORIGINAL de la casa (los dos arcos y la cruz, medidos sobre
+// assets/icono-adaptativo.png — «respeta el icono original de la farmacia»), no
+// una aproximación.
 //
-// Usuario, 2026-11-04: «mejora los iconos a que parezcan pastillas, puedes
-// agregar el icono de la empresa». Por eso son medicamentos de verdad —tableta,
-// gragea, cápsula, perla, efervescente, cápsula de microgránulos, blíster,
-// frasco, caja, botiquín— y el logo de Farmasalud aparece en el frasco, la caja,
-// el botiquín y la pieza final. Sin caras: la cara la tienen los gérmenes, que
-// son lo malo.
-import { FORMAS, GERMENES, GEL } from '../../lib/botiquinMotor.js';
+// Cada dibujo tiene su propia caja (`vb`) y se estira a la medida de su forma
+// física (DIBUJO, más abajo): lo que se ve es lo que choca. Los gérmenes asoman
+// las púas, por eso su dibujo mide 2.5 radios y no 2.
+import { FORMAS, GERMENES, medidas } from '../../lib/botiquinMotor.js';
 
-const VERDE = '#8EC30F';
-const MAGENTA = '#981D97';
+const LOGO = '<g transform="translate(50 50) scale(0.198) translate(-420 -421)">'
+  + '<path d="M186,465 A231,231 0 1 1 632,465 L630.1,465 A221.6,221.6 0 1 0 187.9,465 Z" fill="#8DC311"/>'
+  + '<path d="M211,366 A231,231 0 1 0 651,366 A221.6,221.6 0 1 1 211,366 Z" fill="#9A1D96"/>'
+  + '<rect x="364" y="313" width="90" height="215" fill="#9A1D96"/><rect x="298" y="377" width="222" height="87" fill="#9A1D96"/></g>';
+const usaLogo = (x, y, s) => `<use href="#logo" transform="translate(${x} ${y}) scale(${s / 100})"/>`;
 
-// ── utilidades ────────────────────────────────────────────────────────────────
-let nGrad = 0;
-const id = (p) => `${p}${nGrad++}`;
-const paradas = (l) => l.map(([o, c, a = 1]) => `<stop offset="${o}" stop-color="${c}" stop-opacity="${a}"/>`).join('');
-function lin(defs, l, x1 = 0, y1 = 0, x2 = 0, y2 = 1) { const i = id('l'); defs.push(`<linearGradient id="${i}" x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}">${paradas(l)}</linearGradient>`); return `url(#${i})`; }
-function rad(defs, l, cx = 0.4, cy = 0.35, r = 0.75) { const i = id('r'); defs.push(`<radialGradient id="${i}" cx="${cx}" cy="${cy}" r="${r}">${paradas(l)}</radialGradient>`); return `url(#${i})`; }
-function recorte(defs, forma) { const i = id('c'); defs.push(`<clipPath id="${i}">${forma}</clipPath>`); return `url(#${i})`; }
-const rr = (x, y, w, h, r, extra = '') => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${r}" ${extra}/>`;
+const DEFS = `
+<linearGradient id="hiV" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+<linearGradient id="sombraAbajo" x1="0" y1="0" x2="0" y2="1"><stop offset=".5" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".2"/></linearGradient>
+<radialGradient id="tabCuerpo" cx=".4" cy=".35" r=".7"><stop offset="0" stop-color="#fff"/><stop offset=".75" stop-color="#e9eef6"/><stop offset="1" stop-color="#c4cfdf"/></radialGradient>
+<linearGradient id="tabCara" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e6ebf3"/></linearGradient>
+<radialGradient id="graCuerpo" cx=".38" cy=".3" r=".85"><stop offset="0" stop-color="#ffd3e8"/><stop offset=".45" stop-color="#ff6fae"/><stop offset="1" stop-color="#b8216a"/></radialGradient>
+<linearGradient id="capRojo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ff6b6b"/><stop offset=".22" stop-color="#ffa0a0"/><stop offset=".55" stop-color="#e5262d"/><stop offset="1" stop-color="#8f0f14"/></linearGradient>
+<linearGradient id="capBlanco" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e9eef5"/><stop offset=".22" stop-color="#fff"/><stop offset=".6" stop-color="#e8edf4"/><stop offset="1" stop-color="#a9b5c6"/></linearGradient>
+<radialGradient id="perlaCuerpo" cx=".42" cy=".35" r=".75"><stop offset="0" stop-color="#fff6c9"/><stop offset=".5" stop-color="#ffc534"/><stop offset="1" stop-color="#c77e00"/></radialGradient>
+<radialGradient id="perlaNucleo" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff" stop-opacity=".7"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></radialGradient>
+<linearGradient id="efeBorde" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc98a"/><stop offset="1" stop-color="#d9580a"/></linearGradient>
+<radialGradient id="efeCara" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#ffd8a8"/><stop offset=".6" stop-color="#ff9d42"/><stop offset="1" stop-color="#f07a1a"/></radialGradient>
+<linearGradient id="microClaro" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#dff3ff" stop-opacity=".55"/><stop offset=".25" stop-color="#fff" stop-opacity=".75"/><stop offset=".7" stop-color="#cfe9f7" stop-opacity=".35"/><stop offset="1" stop-color="#8fb8d4" stop-opacity=".7"/></linearGradient>
+<linearGradient id="microTeal" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2fb8ad"/><stop offset=".22" stop-color="#86eee4"/><stop offset=".6" stop-color="#12a39a"/><stop offset="1" stop-color="#07534d"/></linearGradient>
+<linearGradient id="plata" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fbfcfe"/><stop offset=".35" stop-color="#d9e0ea"/><stop offset=".5" stop-color="#f6f8fb"/><stop offset=".7" stop-color="#cdd5e1"/><stop offset="1" stop-color="#aeb9c9"/></linearGradient>
+<radialGradient id="domo" cx=".4" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".7" stop-color="#e4f1ff" stop-opacity=".6"/><stop offset="1" stop-color="#a9c0dc" stop-opacity=".9"/></radialGradient>
+<linearGradient id="ambar" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#7a3804"/><stop offset=".15" stop-color="#c46b17"/><stop offset=".38" stop-color="#f3a64c"/><stop offset=".55" stop-color="#d9822b"/><stop offset="1" stop-color="#6a3003"/></linearGradient>
+<linearGradient id="tapa" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#c9d2de"/><stop offset=".3" stop-color="#fff"/><stop offset=".7" stop-color="#e6ebf2"/><stop offset="1" stop-color="#aab6c6"/></linearGradient>
+<linearGradient id="carton" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e7ecf3"/></linearGradient>
+<linearGradient id="botiCuerpo" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".6" stop-color="#eef2f7"/><stop offset="1" stop-color="#c9d3e0"/></linearGradient>
+<linearGradient id="cruz" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#b42fb2"/><stop offset="1" stop-color="#7e1580"/></linearGradient>
+<linearGradient id="oro" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff1a8"/><stop offset=".3" stop-color="#f5c542"/><stop offset=".55" stop-color="#c98a00"/><stop offset=".8" stop-color="#ffdf6e"/><stop offset="1" stop-color="#b77900"/></linearGradient>
+<radialGradient id="discoBlanco" cx=".45" cy=".4" r=".7"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#e1e7f0"/></radialGradient>
+<radialGradient id="g0" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#d4ff7a"/><stop offset=".55" stop-color="#79c21f"/><stop offset="1" stop-color="#3a730a"/></radialGradient>
+<radialGradient id="g1" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#efc0ff"/><stop offset=".55" stop-color="#a046df"/><stop offset="1" stop-color="#571584"/></radialGradient>
+<radialGradient id="g2" cx=".4" cy=".35" r=".75"><stop offset="0" stop-color="#ffb3a3"/><stop offset=".55" stop-color="#ea4a31"/><stop offset="1" stop-color="#8e1a0c"/></radialGradient>
+<radialGradient id="gelCuerpo" cx=".38" cy=".3" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".95"/><stop offset=".5" stop-color="#a8ecff" stop-opacity=".9"/><stop offset="1" stop-color="#1f9fd8"/></radialGradient>
+<clipPath id="clipCap"><rect width="220" height="80" rx="40"/></clipPath>
+<clipPath id="clipMicro"><rect width="230" height="100" rx="50"/></clipPath>
+<clipPath id="clipFrasco"><rect width="100" height="150" rx="18"/></clipPath>
+<clipPath id="clipCaja"><rect width="150" height="100" rx="10"/></clipPath>
+<g id="logo">${LOGO}</g>
+<g id="pua"><line x1="50" y1="20" x2="50" y2="8" stroke="currentColor" stroke-width="5" stroke-linecap="round"/><circle cx="50" cy="7" r="5.5" fill="currentColor"/></g>
+<g id="cara"><ellipse cx="38" cy="49" rx="7" ry="8" fill="#fff"/><ellipse cx="62" cy="49" rx="7" ry="8" fill="#fff"/><circle cx="40" cy="51" r="4" fill="#1b1030"/><circle cx="60" cy="51" r="4" fill="#1b1030"/><path d="M29,37 L46,43" stroke="#1b1030" stroke-width="4.5" stroke-linecap="round"/><path d="M71,37 L54,43" stroke="#1b1030" stroke-width="4.5" stroke-linecap="round"/><path d="M40,67 Q50,60 60,67" stroke="#1b1030" stroke-width="3.5" fill="none" stroke-linecap="round"/><path d="M45.5,64.2 L48,69 L50.5,63.2 Z" fill="#fff"/></g>`;
 
-// El logo de Farmasalud: arco verde arriba, arco magenta abajo, cruz magenta.
-// Mide ~90 unidades de lado con s = 1.
-function logo(cx, cy, s) {
-  const R = 40 * s; const g = 7 * s;
-  const arco = (a0, a1, r, color) => {
-    const p = (a, r2) => `${cx + Math.cos(a) * r2},${cy + Math.sin(a) * r2}`;
-    return `<path d="M${p(a0, r)} A${r},${r} 0 0 1 ${p(a1, r)} L${p(a1, r - g * 0.25)} A${r - g},${r - g} 0 0 0 ${p(a0, r - g * 0.25)} Z" fill="${color}"/>`;
-  };
-  const L = 18 * s; const t = 6.5 * s;
-  return `<g>${arco(Math.PI * 0.94, Math.PI * 2.06, R, VERDE)}${arco(Math.PI * -0.06, Math.PI * 1.06, R * 1.04, MAGENTA)}
-    <rect x="${cx - t}" y="${cy - L}" width="${t * 2}" height="${L * 2}" fill="${MAGENTA}"/><rect x="${cx - L}" y="${cy - t}" width="${L * 2}" height="${t * 2}" fill="${MAGENTA}"/></g>`;
-}
+const domos = [[25,25],[75,25],[125,25],[25,75],[75,75]].map(([x,y]) => `<rect x="${x-19}" y="${y-14}" width="38" height="28" rx="14" fill="url(#domo)" stroke="#a9bbd3"/><rect x="${x-13}" y="${y-8}" width="26" height="16" rx="8" fill="url(#graCuerpo)"/><rect x="${x-14}" y="${y-11}" width="16" height="4" rx="2" fill="#fff" opacity=".9"/>`).join('');
+const puas = (n, color) => `<g style="color:${color}">` + Array.from({ length: n }, (_, i) => `<use href="#pua" transform="rotate(${(360 / n) * i} 50 50)"/>`).join('') + '</g>';
+const germen = (g, color, n) => `${puas(n, color)}<circle cx="50" cy="50" r="32" fill="url(#${g})" stroke="${color}" stroke-width="2"/><circle cx="30" cy="62" r="3.5" fill="${color}" opacity=".25"/><circle cx="70" cy="64" r="2.6" fill="${color}" opacity=".25"/><circle cx="62" cy="30" r="2.4" fill="${color}" opacity=".25"/><use href="#cara"/><ellipse cx="38" cy="30" rx="10" ry="4.5" fill="#fff" opacity=".45" transform="rotate(-25 38 30)"/>`;
 
-// Un brillo de esmalte a lo largo de la parte de arriba de una forma redondeada.
-const reflejo = (x, y, w, h, op = 0.6) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${h / 2}" fill="#fff" opacity="${op}"/>`;
-
-// ── las piezas ────────────────────────────────────────────────────────────────
-function tableta({ r }) { // 0 · comprimido blanco visto de arriba, con su ranura
-  const D = r * 2; const d = [];
-  const cuerpo = rad(d, [[0, '#FFFFFF'], [0.7, '#EEF3FB'], [1, '#C3CFE2']], 0.42, 0.38, 0.7);
-  const cara = lin(d, [[0, '#FFFFFF'], [1, '#E3E9F3']]);
-  return { w: D, h: D, defs: d, svg: `
-    <circle cx="${r}" cy="${r}" r="${r}" fill="${cuerpo}"/>
-    <circle cx="${r}" cy="${r}" r="${r * 0.78}" fill="${cara}" stroke="#D0D9E7" stroke-width="${r * 0.05}"/>
-    <path d="M${r * 0.38},${r} H${r * 1.62}" stroke="#B5C2D6" stroke-width="${r * 0.1}" stroke-linecap="round"/>
-    <path d="M${r * 0.38},${r * 0.94} H${r * 1.62}" stroke="#fff" stroke-width="${r * 0.04}" stroke-linecap="round"/>
-    <circle cx="${r}" cy="${r}" r="${r - 0.6}" fill="none" stroke="#A9B7CE" stroke-width="1.1"/>` };
-}
-
-function gragea({ w, h }) { // 1 · ovalada, recubierta y brillante
-  const d = []; const k = h / 2;
-  const base = lin(d, [[0, '#FFB5D6'], [0.45, '#FF6FAE'], [1, '#C8327A']]);
-  return { w, h, defs: d, svg: `
-    ${rr(0, 0, w, h, k, `fill="${base}"`)}
-    ${rr(w * 0.08, h * 0.55, w * 0.84, h * 0.32, h * 0.16, 'fill="#8E1452" opacity="0.18"')}
-    ${reflejo(w * 0.18, h * 0.14, w * 0.5, h * 0.2, 0.75)}
-    <circle cx="${w * 0.78}" cy="${h * 0.3}" r="${h * 0.06}" fill="#fff" opacity="0.8"/>
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, k - 0.6, 'fill="none" stroke="#A62466" stroke-width="1.2" opacity="0.7"')}` };
-}
-
-function capsula({ w, h }, c1, c2, opciones = {}) { // dos mitades encajadas
-  const d = []; const k = h / 2;
-  const izq = lin(d, c1); const der = lin(d, c2);
-  const clip = recorte(d, rr(0, 0, w, h, k));
-  const corte = w * (opciones.corte || 0.47);
-  let dentro = '';
-  if (opciones.granulos) {
-    // mitad transparente con microgránulos de colores
-    const cols = ['#FFD166', '#FF8FB1', '#7BDFF2', '#B2F7EF', '#FFFFFF', '#F7A072'];
-    let s = 3;
-    const r2 = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-    for (let i = 0; i < 46; i++) {
-      const x = 4 + r2() * (corte - 6); const y = 4 + r2() * (h - 8); const rg = h * (0.07 + r2() * 0.05);
-      dentro += `<circle cx="${x}" cy="${y}" r="${rg}" fill="${cols[i % cols.length]}"/><circle cx="${x - rg * 0.3}" cy="${y - rg * 0.3}" r="${rg * 0.35}" fill="#fff" opacity="0.7"/>`;
-    }
-  }
-  return { w, h, defs: d, svg: `
-    <g clip-path="${clip}">
-      <rect x="0" y="0" width="${corte + 3}" height="${h}" fill="${izq}"/>
-      ${dentro}
-      <rect x="${corte}" y="0" width="${w - corte}" height="${h}" fill="${der}"/>
-      ${rr(corte - 1.5, 0, 4, h, 1.5, 'fill="#000" opacity="0.16"')}
-      ${rr(corte + 1.5, 0, 1.6, h, 0.8, 'fill="#fff" opacity="0.45"')}
-      <rect x="0" y="${h * 0.62}" width="${w}" height="${h * 0.38}" fill="#000" opacity="0.1"/>
-    </g>
-    ${reflejo(w * 0.1, h * 0.13, w * 0.8, h * 0.18, opciones.granulos ? 0.75 : 0.6)}
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, k - 0.6, 'fill="none" stroke="#000" stroke-opacity="0.18" stroke-width="1.1"')}` };
-}
-
-function perla({ w, h }) { // 3 · cápsula blanda dorada, traslúcida, con su costura
-  const d = []; const k = h / 2;
-  const base = rad(d, [[0, '#FFF3B8'], [0.45, '#FFC83D'], [1, '#C98200']], 0.45, 0.4, 0.75);
-  const nucleo = rad(d, [[0, '#FFFFFF', 0.75], [1, '#FFFFFF', 0]], 0.5, 0.5, 0.5);
-  return { w, h, defs: d, svg: `
-    ${rr(0, 0, w, h, k, `fill="${base}"`)}
-    <ellipse cx="${w * 0.52}" cy="${h * 0.6}" rx="${w * 0.32}" ry="${h * 0.26}" fill="${nucleo}"/>
-    <path d="M${k * 0.5},${h * 0.5} Q${w / 2},${h * 0.62} ${w - k * 0.5},${h * 0.5}" fill="none" stroke="#B87400" stroke-width="1.4" opacity="0.45"/>
-    ${reflejo(w * 0.16, h * 0.12, w * 0.46, h * 0.18, 0.8)}
-    <circle cx="${w * 0.8}" cy="${h * 0.32}" r="${h * 0.05}" fill="#fff" opacity="0.85"/>
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, k - 0.6, 'fill="none" stroke="#A86A00" stroke-width="1.2" opacity="0.6"')}` };
-}
-
-function efervescente({ r }) { // 4 · tableta grande naranja, con burbujitas y bisel
-  const D = r * 2; const d = [];
-  const borde = rad(d, [[0, '#FFD29A'], [0.75, '#FF9A3D'], [1, '#D9620A']], 0.42, 0.38, 0.72);
-  const cara = rad(d, [[0, '#FFC077'], [1, '#FF8F2E']], 0.4, 0.35, 0.8);
-  let motas = ''; let s = 11;
-  const r2 = () => { s = (s * 16807) % 2147483647; return s / 2147483647; };
-  for (let i = 0; i < 60; i++) {
-    const a = r2() * Math.PI * 2; const dd = Math.sqrt(r2()) * r * 0.74;
-    motas += `<circle cx="${r + Math.cos(a) * dd}" cy="${r + Math.sin(a) * dd}" r="${0.5 + r2() * 0.9}" fill="${i % 3 ? '#FFE3BF' : '#E86F12'}" opacity="0.8"/>`;
-  }
-  let burbujas = '';
-  for (let i = 0; i < 9; i++) {
-    const a = r2() * Math.PI * 2; const dd = r * (0.3 + r2() * 0.45); const rb = 1.5 + r2() * 2.6;
-    burbujas += `<circle cx="${r + Math.cos(a) * dd}" cy="${r + Math.sin(a) * dd}" r="${rb}" fill="#fff" fill-opacity="0.15" stroke="#fff" stroke-width="0.9" opacity="0.9"/>`;
-  }
-  return { w: D, h: D, defs: d, svg: `
-    <circle cx="${r}" cy="${r}" r="${r}" fill="${borde}"/>
-    <circle cx="${r}" cy="${r}" r="${r * 0.82}" fill="${cara}"/>
-    ${motas}
-    <path d="M${r * 1.22},${r * 0.72} A${r * 0.32},${r * 0.32} 0 1 0 ${r * 1.22},${r * 1.28}" fill="none" stroke="#D96A0F" stroke-width="${r * 0.11}" stroke-linecap="round" opacity="0.55"/>
-    ${burbujas}
-    <ellipse cx="${r * 0.7}" cy="${r * 0.55}" rx="${r * 0.36}" ry="${r * 0.16}" fill="#fff" opacity="0.4" transform="rotate(-30 ${r * 0.7} ${r * 0.55})"/>
-    <circle cx="${r}" cy="${r}" r="${r - 0.6}" fill="none" stroke="#B9500A" stroke-width="1.2" opacity="0.6"/>` };
-}
-
-function blister({ w, h, cr }) { // 6 · lámina de aluminio con seis burbujas y sus pastillas
-  const d = [];
-  const papel = lin(d, [[0, '#FBFCFE'], [0.4, '#DCE3EC'], [0.55, '#F4F7FA'], [1, '#B8C3D2']], 0, 0, 1, 1);
-  const domo = rad(d, [[0, '#FFFFFF', 0.95], [0.7, '#EAF4FF', 0.55], [1, '#B9CCE4', 0.75]], 0.4, 0.35, 0.7);
-  const pild = lin(d, [[0, '#FFFFFF'], [1, '#FFD8EA']]);
-  let celdas = '';
-  const cw = w / 3; const ch = h / 2;
-  for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) {
-    const x = i * cw + cw / 2; const y = j * ch + ch / 2; const pw = cw * 0.7; const ph = ch * 0.56;
-    celdas += `${rr(x - pw / 2 - 2, y - ph / 2 - 2, pw + 4, ph + 4, ph / 2 + 2, `fill="${domo}" stroke="#AFC0D6" stroke-width="0.9"`)}
-      ${rr(x - pw * 0.36, y - ph * 0.3, pw * 0.72, ph * 0.6, ph * 0.3, `fill="${pild}" stroke="#E7A9C8" stroke-width="0.8"`)}
-      ${reflejo(x - pw * 0.3, y - ph * 0.42, pw * 0.42, ph * 0.16, 0.9)}`;
-  }
-  return { w, h, defs: d, svg: `
-    ${rr(0, 0, w, h, cr, `fill="${papel}"`)}
-    <path d="M${cw},4 V${h - 4} M${cw * 2},4 V${h - 4} M4,${ch} H${w - 4}" stroke="#9DAABB" stroke-width="1" stroke-dasharray="2 2.5" opacity="0.8"/>
-    ${celdas}
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, cr, 'fill="none" stroke="#8D9AAD" stroke-width="1.2"')}` };
-}
-
-function frasco({ w, h, cr }) { // 7 · frasco ámbar con tapa blanca y etiqueta de la casa
-  const d = [];
-  const tapaH = h * 0.24;
-  const vidrio = lin(d, [[0, '#9A4A06'], [0.22, '#D9822B'], [0.5, '#F2A34A'], [0.8, '#C46B17'], [1, '#7A3804']], 0, 0, 1, 0);
-  const tapa = lin(d, [[0, '#E3E8EF'], [0.3, '#FFFFFF'], [1, '#C7D0DC']], 0, 0, 1, 0);
-  const clip = recorte(d, rr(0, 0, w, h, cr));
-  let estrias = '';
-  for (let x = 4; x < w - 2; x += 4.2) estrias += `<rect x="${x}" y="2" width="1.6" height="${tapaH - 5}" rx="0.8" fill="#AEB9C8" opacity="0.6"/>`;
-  const ey = tapaH + (h - tapaH) * 0.2; const eh = (h - tapaH) * 0.56;
-  return { w, h, defs: d, svg: `
-    <g clip-path="${clip}">
-      <rect x="0" y="${tapaH - 4}" width="${w}" height="${h - tapaH + 4}" fill="${vidrio}"/>
-      <rect x="0" y="0" width="${w}" height="${tapaH}" fill="${tapa}"/>
-      ${estrias}
-      <rect x="0" y="${tapaH - 3}" width="${w}" height="3" fill="#8D99AA" opacity="0.5"/>
-      <rect x="4" y="${ey}" width="${w - 8}" height="${eh}" rx="4" fill="#FFFFFF"/>
-      <rect x="4" y="${ey}" width="${w - 8}" height="${eh * 0.16}" fill="${VERDE}"/>
-      <rect x="4" y="${ey + eh * 0.86}" width="${w - 8}" height="${eh * 0.14}" fill="${MAGENTA}"/>
-      ${logo(w / 2, ey + eh * 0.52, (eh * 0.62) / 90)}
-      <rect x="${w * 0.12}" y="${tapaH + 2}" width="${w * 0.1}" height="${h - tapaH - 8}" rx="${w * 0.05}" fill="#fff" opacity="0.28"/>
-    </g>
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, cr, 'fill="none" stroke="#5E2C04" stroke-opacity="0.45" stroke-width="1.2"')}` };
-}
-
-function caja({ w, h, cr }) { // 8 · caja de medicamento de la casa
-  const d = [];
-  const carton = lin(d, [[0, '#FFFFFF'], [1, '#E9EEF5']]);
-  const clip = recorte(d, rr(0, 0, w, h, cr));
-  return { w, h, defs: d, svg: `
-    <g clip-path="${clip}">
-      <rect x="0" y="0" width="${w}" height="${h}" fill="${carton}"/>
-      <path d="M0,${h * 0.72} C${w * 0.35},${h * 0.58} ${w * 0.6},${h * 0.92} ${w},${h * 0.7} V${h} H0 Z" fill="${VERDE}"/>
-      <path d="M0,${h * 0.84} C${w * 0.4},${h * 0.72} ${w * 0.66},${h} ${w},${h * 0.84} V${h} H0 Z" fill="${MAGENTA}"/>
-      <rect x="${w * 0.08}" y="${h * 0.16}" width="${w * 0.42}" height="${h * 0.09}" rx="${h * 0.045}" fill="#33415C"/>
-      <rect x="${w * 0.08}" y="${h * 0.32}" width="${w * 0.3}" height="${h * 0.06}" rx="${h * 0.03}" fill="#97A3B6"/>
-      <rect x="${w * 0.08}" y="${h * 0.44}" width="${w * 0.22}" height="${h * 0.06}" rx="${h * 0.03}" fill="#C0C9D6"/>
-      ${logo(w * 0.75, h * 0.34, (h * 0.5) / 90)}
-      <rect x="0" y="0" width="${w}" height="${h * 0.06}" fill="#fff" opacity="0.9"/>
-    </g>
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, cr, 'fill="none" stroke="#9AA7B9" stroke-width="1.3"')}` };
-}
-
-function botiquin({ w, h, cr }) { // 9 · botiquín blanco con la cruz de la casa
-  const d = [];
-  const cuerpo = lin(d, [[0, '#FFFFFF'], [0.6, '#F1F4F9'], [1, '#CDD6E3']]);
-  const tapa = lin(d, [[0, '#FFFFFF'], [1, '#E6EBF2']]);
-  const cruzF = lin(d, [[0, '#C04BC0'], [1, '#7E1580']]);
-  const L = h * 0.26; const t = h * 0.09; const cx = w / 2; const cy = h * 0.62;
-  return { w, h, defs: d, svg: `
-    ${rr(0, 0, w, h, cr, `fill="${cuerpo}"`)}
-    ${rr(3, 3, w - 6, h * 0.3, cr - 2, `fill="${tapa}"`)}
-    ${rr(w * 0.36, h * 0.07, w * 0.28, h * 0.09, h * 0.045, 'fill="#B6C1D0"')}
-    ${rr(w * 0.38, h * 0.085, w * 0.24, h * 0.04, h * 0.02, 'fill="#8995A8"')}
-    <rect x="3" y="${h * 0.33}" width="${w - 6}" height="2" fill="#AEB9C9"/>
-    ${rr(w * 0.04, h * 0.27, w * 0.07, h * 0.14, 3, `fill="${VERDE}"`)}
-    ${rr(w * 0.89, h * 0.27, w * 0.07, h * 0.14, 3, `fill="${VERDE}"`)}
-    <circle cx="${cx}" cy="${cy}" r="${L * 1.35}" fill="#fff" stroke="#E5E9F0" stroke-width="2"/>
-    <rect x="${cx - t}" y="${cy - L}" width="${t * 2}" height="${L * 2}" rx="${t * 0.35}" fill="${cruzF}"/>
-    <rect x="${cx - L}" y="${cy - t}" width="${L * 2}" height="${t * 2}" rx="${t * 0.35}" fill="${cruzF}"/>
-    ${reflejo(w * 0.07, h * 0.06, w * 0.24, h * 0.06, 0.9)}
-    ${rr(0.6, 0.6, w - 1.2, h - 1.2, cr, 'fill="none" stroke="#9AA6B8" stroke-width="1.4"')}` };
-}
-
-function emblema({ r }) { // 10 · el sello de la casa: la meta
-  const D = r * 2; const d = [];
-  const oro = lin(d, [[0, '#FFF3B0'], [0.35, '#F7C948'], [0.7, '#D99A00'], [1, '#FFE17A']], 0, 0, 1, 1);
-  const disco = rad(d, [[0, '#FFFFFF'], [0.8, '#F4F6FA'], [1, '#DDE3EC']], 0.45, 0.4, 0.7);
-  let rayos = '';
-  for (let i = 0; i < 24; i++) rayos += `<rect x="${r - 1.6}" y="${r * 0.09}" width="3.2" height="${r * 0.08}" rx="1.6" fill="#fff" opacity="0.75" transform="rotate(${i * 15} ${r} ${r})"/>`;
-  return { w: D, h: D, defs: d, svg: `
-    <circle cx="${r}" cy="${r}" r="${r}" fill="${oro}"/>
-    ${rayos}
-    <circle cx="${r}" cy="${r}" r="${r * 0.78}" fill="${MAGENTA}"/>
-    <circle cx="${r}" cy="${r}" r="${r * 0.72}" fill="${disco}"/>
-    ${logo(r, r, (r * 1.12) / 90)}
-    <path d="M${r * 0.42},${r * 0.62} A${r * 0.62},${r * 0.62} 0 0 1 ${r * 1.1},${r * 0.32}" fill="none" stroke="#fff" stroke-width="${r * 0.06}" stroke-linecap="round" opacity="0.7"/>
-    <circle cx="${r}" cy="${r}" r="${r - 0.8}" fill="none" stroke="#A87400" stroke-width="1.6"/>` };
-}
-
-export const PIEZAS = [
-  { nombre: 'Tableta', hacer: (f) => tableta(f) },
-  { nombre: 'Gragea', hacer: (f) => gragea(f) },
-  { nombre: 'Cápsula', hacer: (f) => capsula(f, [[0, '#FF8A8A'], [0.5, '#E53935'], [1, '#A31515']], [[0, '#FFFFFF'], [0.5, '#F2F4F8'], [1, '#C9D1DE']]) },
-  { nombre: 'Perla', hacer: (f) => perla(f) },
-  { nombre: 'Efervescente', hacer: (f) => efervescente(f) },
-  { nombre: 'Microgránulos', hacer: (f) => capsula(f, [[0, '#FFFFFF', 0.55], [0.5, '#E8F6FF', 0.35], [1, '#B8D7EE', 0.6]], [[0, '#6FE3D8'], [0.5, '#12A39A'], [1, '#08665F']], { granulos: true, corte: 0.5 }) },
-  { nombre: 'Blíster', hacer: (f) => blister(f) },
-  { nombre: 'Frasco', hacer: (f) => frasco(f) },
-  { nombre: 'Caja', hacer: (f) => caja(f) },
-  { nombre: 'Botiquín', hacer: (f) => botiquin(f) },
-  { nombre: 'Sello Farmasalud', hacer: (f) => emblema(f) },
+// Cada dibujo, en su caja: medicamentos 0-10, gérmenes 11-13, gel 14.
+const ARTE = [
+  { vb: [100, 100], c: `<circle cx="50" cy="50" r="49" fill="url(#tabCuerpo)"/><circle cx="50" cy="50" r="39" fill="url(#tabCara)" stroke="#d3dbe7" stroke-width="1.5"/><rect x="17" y="46" width="66" height="7" rx="3.5" fill="#c2ccda"/><rect x="19" y="52" width="62" height="1.6" rx=".8" fill="#fff" opacity=".9"/><ellipse cx="38" cy="27" rx="22" ry="8" fill="url(#hiV)" transform="rotate(-18 38 27)"/><circle cx="50" cy="50" r="48.5" fill="none" stroke="#9eadc3" stroke-width="1" opacity=".7"/>` },
+  { vb: [160, 100], c: `<rect x="1" y="1" width="158" height="98" rx="49" fill="url(#graCuerpo)"/><rect x="1" y="1" width="158" height="98" rx="49" fill="url(#sombraAbajo)"/><rect x="30" y="12" width="82" height="22" rx="11" fill="url(#hiV)"/><circle cx="128" cy="30" r="5" fill="#fff" opacity=".85"/><rect x="1" y="1" width="158" height="98" rx="49" fill="none" stroke="#a11b5c" stroke-width="1.5" opacity=".5"/>` },
+  { vb: [220, 80], c: `<g clip-path="url(#clipCap)"><rect width="112" height="80" fill="url(#capRojo)"/><rect x="108" width="112" height="80" fill="url(#capBlanco)"/><rect x="106" width="4" height="80" fill="#000" opacity=".18"/><rect x="110" width="2" height="80" fill="#fff" opacity=".6"/></g><rect x="22" y="10" width="176" height="14" rx="7" fill="url(#hiV)"/><rect x=".75" y=".75" width="218.5" height="78.5" rx="39.25" fill="none" stroke="#000" stroke-opacity=".15" stroke-width="1.5"/>` },
+  { vb: [150, 100], c: `<rect x="1" y="1" width="148" height="98" rx="49" fill="url(#perlaCuerpo)"/><ellipse cx="77" cy="64" rx="44" ry="22" fill="url(#perlaNucleo)"/><path d="M22,52 Q75,64 128,52" fill="none" stroke="#a66a00" stroke-width="2" opacity=".35"/><rect x="26" y="12" width="66" height="18" rx="9" fill="url(#hiV)"/><circle cx="120" cy="28" r="4.5" fill="#fff" opacity=".9"/><rect x="1" y="1" width="148" height="98" rx="49" fill="none" stroke="#a46b00" stroke-width="1.5" opacity=".5"/>` },
+  { vb: [100, 100], c: `<circle cx="50" cy="50" r="49" fill="url(#efeBorde)"/><circle cx="50" cy="50" r="42" fill="url(#efeCara)"/><circle cx="30" cy="40" r="1.4" fill="#fff3e0" opacity=".8"/><circle cx="66" cy="30" r="1.2" fill="#fff3e0" opacity=".8"/><circle cx="72" cy="62" r="1.5" fill="#d4600c" opacity=".5"/><circle cx="34" cy="68" r="1.3" fill="#d4600c" opacity=".5"/><circle cx="56" cy="76" r="1.2" fill="#fff3e0" opacity=".8"/><g transform="translate(1.4 1.4)" opacity=".6"><rect x="44" y="31" width="12" height="38" rx="3" fill="#d2600e"/><rect x="31" y="44" width="38" height="12" rx="3" fill="#d2600e"/></g><g transform="translate(-1.2 -1.2)" opacity=".7"><rect x="44" y="31" width="12" height="38" rx="3" fill="#ffe0bd"/><rect x="31" y="44" width="38" height="12" rx="3" fill="#ffe0bd"/></g><rect x="44" y="31" width="12" height="38" rx="3" fill="#ffa24d"/><rect x="31" y="44" width="38" height="12" rx="3" fill="#ffa24d"/><circle cx="70" cy="34" r="3.2" fill="#fff" fill-opacity=".2" stroke="#fff" stroke-width="1"/><circle cx="28" cy="62" r="2.4" fill="#fff" fill-opacity=".2" stroke="#fff" stroke-width="1"/><ellipse cx="34" cy="26" rx="18" ry="7" fill="url(#hiV)" transform="rotate(-28 34 26)"/><circle cx="50" cy="50" r="48.5" fill="none" stroke="#b9500a" stroke-width="1.2" opacity=".55"/>` },
+  { vb: [230, 100], c: `<g clip-path="url(#clipMicro)"><rect width="118" height="100" fill="#e6f6ff" opacity=".55"/><circle cx="22" cy="44" r="8" fill="#ffd166"/><circle cx="40" cy="64" r="7" fill="#ff8fb1"/><circle cx="58" cy="40" r="8" fill="#7bdff2"/><circle cx="34" cy="28" r="6" fill="#fff"/><circle cx="76" cy="62" r="8" fill="#f7a072"/><circle cx="92" cy="38" r="7" fill="#ffd166"/><circle cx="64" cy="78" r="6" fill="#b2f7ef"/><circle cx="20" cy="70" r="6" fill="#7bdff2"/><circle cx="102" cy="66" r="7" fill="#ff8fb1"/><circle cx="80" cy="22" r="6" fill="#b2f7ef"/><circle cx="48" cy="84" r="5" fill="#ffd166"/><circle cx="104" cy="22" r="5" fill="#f7a072"/><rect width="118" height="100" fill="url(#microClaro)"/><rect x="112" width="118" height="100" fill="url(#microTeal)"/><rect x="110" width="4" height="100" fill="#000" opacity=".16"/><rect x="114" width="2" height="100" fill="#fff" opacity=".55"/></g><rect x="24" y="12" width="182" height="16" rx="8" fill="url(#hiV)"/><rect x=".75" y=".75" width="228.5" height="98.5" rx="49.25" fill="none" stroke="#06433e" stroke-opacity=".3" stroke-width="1.5"/>` },
+  { vb: [150, 100], c: `<rect x="1" y="1" width="148" height="98" rx="12" fill="url(#plata)" stroke="#8e9bb0" stroke-width="1.5"/><path d="M50,6 V94 M100,6 V94 M6,50 H144" stroke="#95a3b7" stroke-width="1.2" stroke-dasharray="2 3" fill="none"/>${domos}<rect x="106" y="61" width="38" height="28" rx="14" fill="#c3ccd8" stroke="#a9b4c4"/><path d="M110,66 L122,80 L128,70 L140,84" stroke="#8d99ab" stroke-width="1.4" fill="none"/>` },
+  { vb: [100, 150], c: `<g clip-path="url(#clipFrasco)"><rect y="30" width="100" height="120" fill="url(#ambar)"/><rect width="100" height="34" fill="url(#tapa)"/><line x1="4" y1="17" x2="96" y2="17" stroke="#aeb9c9" stroke-width="24" stroke-dasharray="2 4" opacity=".55"/><rect y="31" width="100" height="4" fill="#000" opacity=".25"/><rect x="8" y="54" width="84" height="70" rx="5" fill="#fff"/><rect x="8" y="54" width="84" height="11" fill="#8DC311"/><rect x="8" y="114" width="84" height="10" fill="#9A1D96"/>${usaLogo(30, 68, 42)}<rect x="11" y="40" width="9" height="104" rx="4.5" fill="#fff" opacity=".3"/><rect x="84" y="36" width="16" height="114" fill="#000" opacity=".12"/></g><rect x=".75" y=".75" width="98.5" height="148.5" rx="17.5" fill="none" stroke="#4e2403" stroke-opacity=".45" stroke-width="1.5"/>` },
+  { vb: [150, 100], c: `<g clip-path="url(#clipCaja)"><rect width="150" height="100" fill="url(#carton)"/><path d="M0,72 C52,58 90,92 150,70 V100 H0 Z" fill="#8DC311"/><path d="M0,84 C60,72 99,100 150,84 V100 H0 Z" fill="#9A1D96"/><rect x="12" y="16" width="64" height="9" rx="4.5" fill="#2e3a55"/><rect x="12" y="32" width="46" height="6" rx="3" fill="#97a3b6"/><rect x="12" y="44" width="32" height="6" rx="3" fill="#c0c9d6"/>${usaLogo(92, 8, 52)}<rect width="150" height="5" fill="#fff"/><rect width="150" height="100" fill="url(#sombraAbajo)" opacity=".6"/></g><rect x=".75" y=".75" width="148.5" height="98.5" rx="9.5" fill="none" stroke="#8d9bb0" stroke-width="1.5"/>` },
+  { vb: [140, 104], c: `<rect x="47" y="2" width="46" height="20" rx="9" fill="none" stroke="#9aa7b9" stroke-width="6"/><rect x="1" y="12" width="138" height="91" rx="16" fill="url(#botiCuerpo)" stroke="#9aa6b8" stroke-width="1.5"/><rect x="2" y="40" width="136" height="2" fill="#b5c0cf"/><rect x="10" y="33" width="12" height="15" rx="3" fill="#8DC311"/><rect x="118" y="33" width="12" height="15" rx="3" fill="#8DC311"/><circle cx="70" cy="72" r="25" fill="#fff" stroke="#e3e8ef" stroke-width="2"/>${usaLogo(46, 48, 48)}<rect x="12" y="17" width="54" height="6" rx="3" fill="#fff" opacity=".95"/><rect x="1" y="12" width="138" height="91" rx="16" fill="url(#sombraAbajo)" opacity=".5"/>` },
+  { vb: [100, 100], c: `<circle cx="50" cy="50" r="49" fill="url(#oro)"/><circle cx="50" cy="50" r="45.5" fill="none" stroke="#a87400" stroke-width="5" stroke-dasharray="1.6 2.2" opacity=".5"/><circle cx="50" cy="50" r="39" fill="#9A1D96"/><circle cx="50" cy="50" r="35.5" fill="url(#discoBlanco)"/>${usaLogo(21, 21, 58)}<path d="M19,40 A33,33 0 0 1 60,15" stroke="#fff" stroke-width="4" stroke-linecap="round" fill="none" opacity=".75"/><circle cx="50" cy="50" r="48.5" fill="none" stroke="#9a6a00" stroke-width="1.2"/>` },
+  { vb: [100, 100], c: germen('g0', '#3a730a', 8) },
+  { vb: [100, 100], c: germen('g1', '#571584', 10) },
+  { vb: [100, 100], c: germen('g2', '#8e1a0c', 12) },
+  { vb: [100, 100], c: `<circle cx="50" cy="50" r="48" fill="url(#gelCuerpo)"/><path d="M50,22 C62,40 68,50 68,60 A18,18 0 0 1 32,60 C32,50 38,40 50,22 Z" fill="#fff"/><path d="M41,60 A9,9 0 0 0 50,69" stroke="#2ba8e0" stroke-width="3.5" stroke-linecap="round" fill="none"/><path d="M78,18 L81,25 L88,28 L81,31 L78,38 L75,31 L68,28 L75,25 Z" fill="#fff"/><ellipse cx="31" cy="27" rx="13" ry="5.5" fill="#fff" opacity=".8" transform="rotate(-35 31 27)"/><circle cx="50" cy="50" r="47.3" fill="none" stroke="#1c87bc" stroke-width="1.4" opacity=".6"/>` },
 ];
 
-// ── lo malo: los gérmenes ─────────────────────────────────────────────────────
-// Bolitas con púas y cara de pocos amigos. Dos iguales se juntan en uno más
-// grande (es lo malo: crecen solos). Una unión de medicamentos cerca los elimina.
-const TONO_GERMEN = [
-  ['#C8F56A', '#6FB51C', '#3F7A0A'],
-  ['#E3A6FF', '#9B3FD6', '#5A178A'],
-  ['#FF9C8A', '#E0412B', '#8E1A0C'],
-];
-export function germen(nivel) {
-  const { r } = GERMENES[nivel]; const D = r * 2; const d = [];
-  const [cl, md, os] = TONO_GERMEN[nivel];
-  const cuerpo = rad(d, [[0, cl], [0.6, md], [1, os]], 0.4, 0.35, 0.75);
-  const nucleo = r * 0.74;
-  let puas = '';
-  const n = 10 + nivel * 2;
-  for (let i = 0; i < n; i++) {
-    const a = (i / n) * Math.PI * 2 + 0.2;
-    const x1 = r + Math.cos(a) * nucleo * 0.9; const y1 = r + Math.sin(a) * nucleo * 0.9;
-    const x2 = r + Math.cos(a) * (r - 2.2); const y2 = r + Math.sin(a) * (r - 2.2);
-    puas += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${os}" stroke-width="${r * 0.09}" stroke-linecap="round"/><circle cx="${x2}" cy="${y2}" r="${r * 0.085}" fill="${md}" stroke="${os}" stroke-width="0.8"/>`;
-  }
-  let motas = '';
-  for (let i = 0; i < 5; i++) { const a = i * 1.7; motas += `<circle cx="${r + Math.cos(a) * nucleo * 0.55}" cy="${r + Math.sin(a) * nucleo * 0.6 + nucleo * 0.25}" r="${nucleo * (0.08 + (i % 2) * 0.05)}" fill="${os}" opacity="0.35"/>`; }
-  const e = nucleo * 0.17; const ox = nucleo * 0.33; const ey = r - nucleo * 0.08;
-  const ojo = (x, lado) => `<ellipse cx="${x}" cy="${ey}" rx="${e}" ry="${e * 1.1}" fill="#fff"/><circle cx="${x + lado * e * 0.25}" cy="${ey + e * 0.2}" r="${e * 0.55}" fill="#1B1030"/>
-    <path d="M${x - e * 1.3},${ey - e * (lado > 0 ? 0.8 : 1.9)} L${x + e * 1.3},${ey - e * (lado > 0 ? 1.9 : 0.8)}" stroke="#1B1030" stroke-width="${e * 0.55}" stroke-linecap="round"/>`;
-  return { w: D, h: D, defs: d, svg: `
-    ${puas}
-    <circle cx="${r}" cy="${r}" r="${nucleo}" fill="${cuerpo}" stroke="${os}" stroke-width="1.4"/>
-    ${motas}
-    ${ojo(r - ox, -1)}${ojo(r + ox, 1)}
-    <path d="M${r - nucleo * 0.24},${r + nucleo * 0.36} Q${r},${r + nucleo * 0.2} ${r + nucleo * 0.24},${r + nucleo * 0.36}" fill="none" stroke="#1B1030" stroke-width="${e * 0.5}" stroke-linecap="round"/>
-    <path d="M${r - nucleo * 0.1},${r + nucleo * 0.3} l${e * 0.35},${e * 0.6} l${e * 0.35},${-e * 0.6}" fill="#fff"/>
-    <ellipse cx="${r - nucleo * 0.35}" cy="${r - nucleo * 0.5}" rx="${nucleo * 0.25}" ry="${nucleo * 0.12}" fill="#fff" opacity="0.45" transform="rotate(-30 ${r - nucleo * 0.35} ${r - nucleo * 0.5})"/>` };
+export const NOMBRES = ['Tableta', 'Gragea', 'Cápsula', 'Perla', 'Efervescente', 'Microgránulos', 'Blíster', 'Frasco', 'Caja', 'Botiquín', 'Sello Farmasalud'];
+const ARCHIVOS = [...FORMAS.map((_, n) => `pieza-${n}`), ...GERMENES.map((_, n) => `germen-${n}`), 'gel'];
+
+/** Medida del dibujo en el mundo, en el orden de imagenDe (la pantalla usa la misma regla). */
+export function dibujo(i) {
+  if (i < FORMAS.length) return medidas(FORMAS[i]);
+  if (i < FORMAS.length + GERMENES.length) { const d = GERMENES[i - FORMAS.length].r * 2.5; return { w: d, h: d }; }
+  return { w: 40, h: 40 };
 }
 
-// ── lo bueno: el gel antibacterial ────────────────────────────────────────────
-// Sale de vez en cuando como la próxima pieza: al tocar algo estalla y limpia
-// los gérmenes que tiene cerca.
-export function gel() {
-  const { r } = GEL; const D = r * 2; const d = [];
-  const burbuja = rad(d, [[0, '#FFFFFF', 0.95], [0.55, '#9FE7FF', 0.85], [1, '#2BA8E0', 0.95]], 0.38, 0.32, 0.75);
-  return { w: D, h: D, defs: d, svg: `
-    <circle cx="${r}" cy="${r}" r="${r}" fill="${burbuja}"/>
-    <path d="M${r},${r * 0.42} C${r * 1.35},${r * 0.9} ${r * 1.4},${r * 1.15} ${r * 1.4},${r * 1.25} A${r * 0.4},${r * 0.4} 0 0 1 ${r * 0.6},${r * 1.25} C${r * 0.6},${r * 1.15} ${r * 0.65},${r * 0.9} ${r},${r * 0.42} Z" fill="#fff"/>
-    <path d="M${r * 0.82},${r * 1.18} A${r * 0.2},${r * 0.2} 0 0 0 ${r},${r * 1.38}" fill="none" stroke="#2BA8E0" stroke-width="${r * 0.08}" stroke-linecap="round"/>
-    <path d="M${r * 1.55},${r * 0.45} l${r * 0.08},${r * 0.2} l${r * 0.2},${r * 0.08} l${-r * 0.2},${r * 0.08} l${-r * 0.08},${r * 0.2} l${-r * 0.08},${-r * 0.2} l${-r * 0.2},${-r * 0.08} l${r * 0.2},${-r * 0.08} Z" fill="#fff"/>
-    <ellipse cx="${r * 0.62}" cy="${r * 0.5}" rx="${r * 0.3}" ry="${r * 0.14}" fill="#fff" opacity="0.8" transform="rotate(-35 ${r * 0.62} ${r * 0.5})"/>
-    <circle cx="${r}" cy="${r}" r="${r - 0.6}" fill="none" stroke="#1C87BC" stroke-width="1.2" opacity="0.7"/>` };
-}
-
-/** Todas las piezas a dibujar: { archivo, w, h, svg } en unidades del mundo. */
+/** Todas las figuras: { archivo, w, h (mundo), vb, svg (sin envoltorio) }. Más el logo solo. */
 export function catalogo() {
-  const sale = [];
-  const meter = (archivo, p) => sale.push({ archivo, w: p.w, h: p.h, svg: `<defs>${p.defs.join('')}</defs>${p.svg}` });
-  PIEZAS.forEach((p, n) => meter(`pieza-${n}`, p.hacer(FORMAS[n])));
-  GERMENES.forEach((_, n) => meter(`germen-${n}`, germen(n)));
-  meter('gel', gel());
+  const sale = ARTE.map((a, i) => ({ archivo: ARCHIVOS[i], ...dibujo(i), vb: a.vb, svg: `<defs>${DEFS}</defs>${a.c}` }));
+  sale.push({ archivo: 'logo', w: 100, h: 100, vb: [100, 100], svg: LOGO, sinSombra: true });
   return sale;
-}
-
-// ── el botiquín que hace de tablero ───────────────────────────────────────────
-// En unidades del mundo: el hueco mide ANCHO × ALTO y su esquina de arriba a la
-// izquierda es (0, 0). `fondo` va detrás de las piezas y `frente` delante.
-export function estuche({ ANCHO, ALTO, PARED, ARRIBA }) {
-  const W = ANCHO + PARED * 2; const H = ARRIBA + ALTO + PARED;
-  const x0 = PARED; const y0 = ARRIBA; const r = 16;
-  const d = [];
-  const hueco = `M${x0},${y0} L${x0},${y0 + ALTO - r} Q${x0},${y0 + ALTO} ${x0 + r},${y0 + ALTO} L${x0 + ANCHO - r},${y0 + ALTO} Q${x0 + ANCHO},${y0 + ALTO} ${x0 + ANCHO},${y0 + ALTO - r} L${x0 + ANCHO},${y0} Z`;
-  const exterior = `M0,${y0 - 10} Q0,${y0 - 22} 12,${y0 - 22} L${PARED + 4},${y0 - 22} L${PARED + 4},${y0} L${x0 + ANCHO - 4},${y0} L${x0 + ANCHO - 4},${y0 - 22} L${W - 12},${y0 - 22} Q${W},${y0 - 22} ${W},${y0 - 10} L${W},${H - 22} Q${W},${H} ${W - 22},${H} L22,${H} Q0,${H} 0,${H - 22} Z`;
-  const pared = lin(d, [[0, '#FFFFFF'], [0.5, '#F1F5FA'], [1, '#D3DCE8']], 0, 0, 1, 0);
-  const interior = lin(d, [[0, '#15414C'], [1, '#0B2830']]);
-  const brillo = rad(d, [[0, '#FFFFFF', 0.16], [1, '#FFFFFF', 0]], 0.5, 0.25, 0.7);
-  const clip = recorte(d, `<path d="${hueco}"/>`);
-  let estantes = '';
-  for (let i = 1; i < 4; i++) estantes += `<rect x="${x0}" y="${y0 + (ALTO / 4) * i}" width="${ANCHO}" height="1.2" fill="#fff" opacity="0.05"/>`;
-  const fondo = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
-    <defs>${d.join('')}<filter id="desenfoque" x="-20%" y="-50%" width="140%" height="200%"><feGaussianBlur stdDeviation="10"/></filter></defs>
-    <ellipse cx="${W / 2}" cy="${H - 4}" rx="${W * 0.47}" ry="14" fill="#000" opacity="0.5" filter="url(#desenfoque)"/>
-    <path d="${exterior}" fill="${pared}"/>
-    <path d="${hueco}" fill="${interior}"/>
-    <g clip-path="${clip}">
-      <ellipse cx="${W / 2}" cy="${y0 + ALTO * 0.3}" rx="${ANCHO * 0.9}" ry="${ALTO * 0.7}" fill="${brillo}"/>
-      ${estantes}
-      <g opacity="0.08">${logo(W / 2, y0 + ALTO * 0.55, ANCHO / 150).replace(/fill="#[0-9A-Fa-f]+"/g, 'fill="#FFFFFF"')}</g>
-    </g>
-    <rect x="${PARED * 0.15}" y="${y0 - 34}" width="${PARED * 1.5}" height="20" rx="7" fill="${VERDE}"/>
-    <rect x="${W - PARED * 1.65}" y="${y0 - 34}" width="${PARED * 1.5}" height="20" rx="7" fill="${MAGENTA}"/>
-  </svg>`;
-  const d2 = [];
-  const sIn = lin(d2, [[0, '#000', 0.3], [1, '#000', 0]], 0, 0, 1, 0);
-  const sDer = lin(d2, [[0, '#000', 0], [1, '#000', 0.24]], 0, 0, 1, 0);
-  const vidrio = lin(d2, [[0, '#FFFFFF', 0.2], [1, '#FFFFFF', 0]], 0, 0, 1, 0);
-  const frente = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">
-    <defs>${d2.join('')}</defs>
-    <rect x="${x0}" y="${y0}" width="12" height="${ALTO - r}" fill="${sIn}"/>
-    <rect x="${x0 + ANCHO - 12}" y="${y0}" width="12" height="${ALTO - r}" fill="${sDer}"/>
-    <path d="M${x0 + 16},${y0 + 8} L${x0 + 34},${y0 + 8} L${x0 + 26},${y0 + ALTO - 36} L${x0 + 12},${y0 + ALTO - 36} Z" fill="${vidrio}"/>
-    <rect x="0" y="${y0 - 22}" width="${PARED + 4}" height="10" rx="5" fill="#FFFFFF"/>
-    <rect x="${W - PARED - 4}" y="${y0 - 22}" width="${PARED + 4}" height="10" rx="5" fill="#FFFFFF"/>
-    ${logo(W / 2, y0 + ALTO + PARED / 2, PARED / 110)}
-  </svg>`;
-  return { fondo, frente, W, H };
 }

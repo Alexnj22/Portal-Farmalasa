@@ -193,3 +193,73 @@ describe2('la pila', () => {
     expect(m.perdio).toBe(true);
   });
 });
+
+// ── Niveles y efectos (v5, 2026-11-04) ───────────────────────────────────────
+const FX = hay ? await import('../../apps/clientes/lib/botiquinEfectos.js') : {};
+const { CONF_LIBRE, NIVELES = [], avance, confDeNivel, elegir, estrellasDe } = M;
+const { DIBUJO, TOPE_PARTICULAS, ambiente, avanzarEfectos, chispas, crearEfectos, efectoDe, fotoEfectos, fotoPiezas } = FX;
+
+describe2('Botiquín — niveles', () => {
+  it('cada nivel deja margen: límite > 2 estrellas > 3 estrellas', () => {
+    for (const nv of NIVELES) { expect(nv.limite).toBeGreaterThan(nv.tope[0]); expect(nv.tope[0]).toBeGreaterThan(nv.tope[1]); }
+  });
+  it('estrellas según piezas usadas', () => {
+    const t = NIVELES[0].tope;
+    expect(estrellasDe(1, t[1])).toBe(3);
+    expect(estrellasDe(1, t[1] + 1)).toBe(2);
+    expect(estrellasDe(1, t[0] + 1)).toBe(1);
+  });
+  it('un nivel sin gérmenes nunca da un germen ni un gel', () => {
+    const m = crearMundo(3, confDeNivel(1));
+    for (let i = 0; i < 300; i++) { m.soltadas = i; const p = elegir(m); expect(p.tipo).toBe('med'); }
+  });
+  it('el juego libre trae gérmenes antes que la conf de siempre', () => {
+    const cuenta = (conf, semilla) => { const m = crearMundo(semilla, conf); let n = 0; for (let i = 0; i < 12; i++) { m.soltadas = i; if (elegir(m).tipo === 'germen') n++; } return n; };
+    let libre = 0; let base = 0;
+    for (let s = 1; s <= 200; s++) { libre += cuenta(CONF_LIBRE, s * 7919); base += cuenta(undefined, s * 7919); }
+    expect(libre).toBeGreaterThan(base);
+  });
+  it('avance de cada tipo de meta', () => {
+    const m = crearMundo(1);
+    m.mayor = 3; m.limpiados = 2; m.rachaMax = 2; m.puntos = 500;
+    expect(avance(m, { tipo: 'pieza', n: 6 })).toBeCloseTo(0.5);
+    expect(avance(m, { tipo: 'limpiar', n: 4 })).toBeCloseTo(0.5);
+    expect(avance(m, { tipo: 'cadena', n: 4 })).toBeCloseTo(0.5);
+    expect(avance(m, { tipo: 'puntos', n: 1000 })).toBeCloseTo(0.5);
+    m.mayor = 6;
+    expect(avance(m, { tipo: 'pieza', n: 6 })).toBe(1);
+  });
+});
+
+describe2('Botiquín — efectos', () => {
+  it('nunca pasa del tope de partículas', () => {
+    const fx = crearEfectos();
+    for (let i = 0; i < 50; i++) chispas(fx, 100, 100, i % 15, 40, 1);
+    expect(fx.parts.length).toBe(TOPE_PARTICULAS);
+    expect(fotoEfectos(fx).p.length).toBe(TOPE_PARTICULAS * 8);
+  });
+  it('todo efecto se apaga solo', () => {
+    const fx = crearEfectos();
+    for (const tipo of ['junta', 'cumbre']) efectoDe(fx, { tipo, n: 7, x: 100, y: 100, radio: 60, racha: 3, a: [6, 90, 100, 0, 1], b: [6, 110, 100, 0, 1] });
+    efectoDe(fx, { tipo: 'gel', x: 100, y: 100 });
+    efectoDe(fx, { tipo: 'contagio', x: 100, y: 100, desde: { x: 120, y: 140 } });
+    efectoDe(fx, { tipo: 'golpe', fuerza: 0.9, x: 10, y: 10, img: 2 });
+    expect(fx.parts.length + fx.ondas.length + fx.rayos.length + fx.fantasmas.length).toBeGreaterThan(0);
+    for (let i = 0; i < 400; i++) avanzarEfectos(fx, 1 / 60);
+    expect(fx.parts.length + fx.ondas.length + fx.rayos.length + fx.destellos.length + fx.fantasmas.length).toBe(0);
+    expect(fx.temblor).toBe(0);
+  });
+  it('con movimiento reducido no hay ambiente ni ondas', () => {
+    const fx = crearEfectos({ quieto: true });
+    const m = crearMundo(2); agregar(m, { tipo: 'germen', n: 0 }, 100, 300);
+    for (let i = 0; i < 120; i++) ambiente(fx, m, 1 / 60);
+    efectoDe(fx, { tipo: 'gel', x: 100, y: 100 });
+    expect(fx.ondas.length).toBe(0);
+    expect(fx.parts.length).toBeLessThan(20);
+  });
+  it('la foto de las piezas: 8 números por pieza y un dibujo por imagen', () => {
+    const m = crearMundo(2); agregar(m, 3, 100, 300); agregar(m, { tipo: 'germen', n: 1 }, 200, 300);
+    expect(fotoPiezas(m, crearEfectos(), true)).toHaveLength(16);
+    expect(DIBUJO).toHaveLength(15);
+  });
+});

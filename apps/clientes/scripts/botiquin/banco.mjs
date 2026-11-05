@@ -21,7 +21,7 @@ window.M = M;
 const bundle = await build({ stdin: { contents: codigo, resolveDir: join(aqui, '../..') }, bundle: true, write: false, format: 'iife' });
 const js = bundle.outputFiles[0].text;
 
-const imgs = { fondo: b64('caja-fondo.png'), frente: b64('caja-frente.png') };
+const imgs = {};
 const archivos = [...Array(11).keys()].map((n) => `pieza-${n}`).concat(['germen-0', 'germen-1', 'germen-2', 'gel']);
 archivos.forEach((f, i) => { imgs[i] = b64(`${f}.png`); imgs[`s${i}`] = b64(`${f}-sombra.png`); });
 
@@ -42,17 +42,17 @@ const resultado = await pagina.evaluate(async ({ imgs, semilla, PAUSA_BOT, PUNTE
   window.m = m;
   const dibujar = () => {
     c.clearRect(0, 0, 860, 1400);
-    c.drawImage(I.fondo, ox - CAJA.PARED * k, oy - CAJA.ARRIBA * k, W * k, (CAJA.ARRIBA + CAJA.ALTO + CAJA.PARED) * k);
+    c.fillStyle = '#12494F'; c.fillRect(ox, oy - 36 * k, CAJA.ANCHO * k, (CAJA.ALTO + 36) * k);
     const lista = M.piezas(m);
     for (const pase of ['s', '']) for (const b of lista) {
-      const f = M.formaDe(b.plugin); const { w, h } = M.medidas(f); const e = b.plugin.esc; const g = b.plugin.golpe;
-      const i = M.imagenDe(b.plugin); const x = ox + b.position.x * k; const y = oy + b.position.y * k;
+      const i = M.imagenDe(b.plugin); const dg = b.plugin.tipo === 'germen' ? M.GERMENES[b.plugin.n].r * 2.5 : 0;
+      const { w, h } = dg ? { w: dg, h: dg } : M.medidas(M.formaDe(b.plugin)); const e = b.plugin.esc; const g = b.plugin.golpe;
+      const x = ox + b.position.x * k; const y = oy + b.position.y * k;
       c.save(); c.translate(x, y + (pase ? 3 * k : 0)); c.scale(1 + 0.1 * g, 1 - 0.1 * g); c.rotate(b.angle);
       if (pase) c.drawImage(I[`s${i}`], (-w / 2 - 7) * e * k, (-h / 2 - 7) * e * k, (w + 14) * e * k, (h + 14) * e * k);
       else c.drawImage(I[i], -w / 2 * e * k, -h / 2 * e * k, w * e * k, h * e * k);
       c.restore();
     }
-    c.drawImage(I.frente, ox - CAJA.PARED * k, oy - CAJA.ARRIBA * k, W * k, (CAJA.ARRIBA + CAJA.ALTO + CAJA.PARED) * k);
     c.strokeStyle = m.peligro > 0 ? '#FF6B7E' : 'rgba(255,255,255,0.35)'; c.setLineDash([8, 8]); c.lineWidth = 3;
     c.beginPath(); c.moveTo(ox, oy); c.lineTo(ox + CAJA.ANCHO * k, oy); c.stroke(); c.setLineDash([]);
     c.fillStyle = '#fff'; c.font = '700 40px -apple-system'; c.fillText(`${m.puntos}  germ:${m.germenesVivos} limp:${m.limpiados}`, 30, 50);

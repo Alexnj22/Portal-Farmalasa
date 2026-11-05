@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.9 — Cargar compra: freno de precio para un tamaño que el catálogo no vende
+
+- **Freno de precio para un tamaño que el catálogo no vende.** Ese tamaño entra en la presentación de 1. Si así cada unidad costaría menos de un quinto de su precio de venta, la de 1 es en realidad la caja entera y el tamaño no se propone. Caso: en Bodega, la «CAJA» de 1 de NOR-CLAMIDA quedó con costo de tableta ($0.087), y el precio pedía 30. Habrían entrado 30 cajas a $0.096.
+
 ## v2.1452.8 — Cargar compra: el tamaño de la factura le gana a un redondeo cercano
 
 - **El tamaño que nombra la factura le gana a un redondeo del precio**, aunque el catálogo no venda ese tamaño. «ATROLIP … X 28 TABL» daba 26 por precio; ahora sale 28. Aplica si el precio queda a ±12 % de ese tamaño. Comparado sobre toda la cola de compras: los cambios son AMPICILINA 54→50, DESLORATADINA 11→10, ATENUA 1→10, QUINOEFEX 1→14 y GRIPE-MED 1→50.

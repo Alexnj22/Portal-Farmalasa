@@ -137,6 +137,7 @@ Deno.serve(async (req: Request) => {
       const cu = uno ? Number(uno.costo) : otra ? Number(otra.costo) / Number(otra.factor) : null;
       const f = elegirFactor({
         delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), pistas: tamanosEnLaDescripcion(desc), aprendido: null,
+        vinetaUno: Number((pp ?? []).find((x) => Number(x.factor) === 1)?.vineta) || null,
         costoNeto: Number(body?.costo_neto) || 0, costoUnidad: cu != null ? Number(cu) : null,
         presentaciones: (pp ?? []).map((x) => Number(x.factor)),
       });
@@ -531,6 +532,7 @@ Deno.serve(async (req: Request) => {
             delDoc: factorEnLaDescripcion(String(r.descripcion ?? "")),
             debil: factorDebilEnLaDescripcion(String(r.descripcion ?? "")),
             pistas: tamanosEnLaDescripcion(String(r.descripcion ?? "")),
+            vinetaUno: ((r as any).vinetas ?? []).find((v: { factor: number }) => v.factor === 1)?.vineta ?? null,
             aprendido: r.factor_aprendido ? Number(r.factor_aprendido) : null,
             costoNeto: neto,
             costoUnidad: r.producto_id ? costoUnidad.get(r.producto_id) : null,

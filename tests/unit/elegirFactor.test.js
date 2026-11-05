@@ -50,4 +50,12 @@ describe('elegirFactor', () => {
         expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [28], costoNeto: 22.18, costoUnidad: 12.04 / 14, presentaciones: [14] }))
             .toEqual({ factor: 28, origen: 'costo' });
     });
+    it('NOR-CLAMIDA con su «CAJA» de 1 a costo de tableta: no se inventan 30 cajas', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: 1, pistas: [30], costoNeto: 2.87, costoUnidad: 0.0873, presentaciones: [1], vinetaUno: 4.78 }))
+            .toEqual({ factor: 1, origen: 'aprendido' });
+    });
+    it('el freno no toca una caja que el catálogo sí vende', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [30], costoNeto: 2.88, costoUnidad: 2.62 / 30, presentaciones: [30], vinetaUno: 9 }))
+            .toEqual({ factor: 30, origen: 'costo' });
+    });
 });

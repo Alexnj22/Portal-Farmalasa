@@ -336,7 +336,7 @@ export function factorDebilEnLaDescripcion(t: string): number | null {
 export function elegirFactor(x: {
   delDoc: number | null; aprendido: number | null; costoNeto: number;
   costoUnidad: number | null | undefined; presentaciones: number[];
-  debil?: number | null; pistas?: number[];
+  debil?: number | null; pistas?: number[]; vinetaUno?: number | null;
 }): { factor: number; origen: "documento" | "aprendido" | "costo" | null; corrige?: number } {
   if (x.delDoc) return { factor: x.delDoc, origen: "documento" };
   // Lo que el papel dice a medias («DISP. X 50 TAB.») sólo vale si el catálogo
@@ -363,6 +363,13 @@ export function elegirFactor(x: {
         .sort((a, b) => Math.abs(razon / a - 1) - Math.abs(razon / b - 1))[0] ?? null;
     }
     if (!porCosto) { const n = Math.round(razon); if (n >= 2 && cuadra(n)) porCosto = n; }
+    // Un tamaño que el catálogo NO vende entra en la presentación de 1. Si con
+    // él cada unidad costaría menos de un quinto de lo que se vende esa
+    // presentación, la de 1 no es una unidad suelta: es la caja entera.
+    // NOR-CLAMIDA (2026-11-05): su «CAJA» de 1 quedó con costo de tableta
+    // ($0.087) y el precio pedía 30 — habrían entrado 30 cajas a $0.096.
+    const v1 = Number(x.vinetaUno);
+    if (porCosto && !x.presentaciones.includes(porCosto) && v1 > 0 && v1 / (x.costoNeto / porCosto) > 5) porCosto = null;
   }
   if (x.aprendido && (razon == null || cuadra(x.aprendido) || !porCosto)) return { factor: x.aprendido, origen: "aprendido" };
   if (porCosto) return x.aprendido ? { factor: porCosto, origen: "costo", corrige: x.aprendido } : { factor: porCosto, origen: "costo" };

@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.8 — Despacho: el traslado que quedó sin anotar se busca y enlaza solo
+
+Pedido 239, Salud 1: «No entró al inventario — LEVOFLOXACINA · 10 u. La
+corrida anterior se cortó…». El despacho real cayó en el MISMO worker que había
+corrido el simulacro 3 minutos antes, y la plataforma lo mató a los 400 s de su
+arranque (`WallClockTime`, 16:02:15,5) con la corrida en el segundo 226 de un
+presupuesto de 240. El sistema creó el traslado 60385; el portal no anotó su
+número. La línea quedó en error pidiendo «buscar la clave en el concepto», que
+ninguna pantalla del sistema muestra, y «Reintentar» la excluye a propósito.
+Se enlazó a mano (60385) y ahora:
+
+- **El presupuesto mira también la edad del worker** (`_shared/relojDelWorker.ts`):
+  deja de tomar productos 120 s antes de los 400 s desde el arranque. Una corrida
+  cortada por eso no se marca «no despachó ni uno»: sigue en curso.
+- **La línea a medio despachar se resuelve sola** (`buscarTrasladoHuerfano`):
+  recorre los traslados desde el último anotado antes de tomarla y busca el que
+  va a esa sala con ese producto. Uno → se enlaza y la sala lo recibe. Ninguno,
+  con el tramo leído entero → vuelve a la cola. Si no se puede saber (página
+  ilegible, varios candidatos), queda como antes para mirarlo a mano. Pruebas
+  sobre las páginas reales de los traslados 60383–60394.
+
 ## v2.1451.7 — Las solicitudes se deciden desde el Inicio
 
 - Al tocar una solicitud en el widget **Solicitudes pendientes** se abre ahí mismo, con su detalle y —si tu permiso alcanza— **Aprobar** y **Rechazar**. Es el mismo diálogo que usan la campana y la pantalla de Solicitudes, así que se decide igual en los tres lados.

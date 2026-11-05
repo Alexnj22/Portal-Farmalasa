@@ -18,13 +18,17 @@ import {
   pendientesDeOrigen,
   repartirEnLotes,
   armarEnSuelto,
+  buscarTrasladoHuerfano,
+  direccionesPorSucursal,
   resolverPresentacion,
   sesionEn,
   traerFila,
   RECIBIR,
   TRASLADO,
   trasladoQueSalioPeseAlFallo,
+  VER,
 } from "../_shared/erp-traslado.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
 // Mueve al sistema de origen el pedido de reposición que Bodega ya terminó de
 // preparar. Hasta hoy ese movimiento se tecleaba a mano: el portal solo dejaba
@@ -70,6 +74,20 @@ import {
 // tiene: hay endpoints suyos medidos en 167 s.
 const PRESUPUESTO_FG_MS = 110_000; // respuesta directa: hay que alcanzar a contestar
 const PRESUPUESTO_BG_MS = 240_000; // background: corto y se retoma, nunca una corrida larga
+
+// Y ninguno de los dos vale si el WORKER ya viene viejo: el reloj de 400 s
+// corre desde que arrancó, y la plataforma lo reusa para el pedido siguiente
+// (el despacho del 2026-11-04 cayó en el worker del simulacro y murió en el
+// segundo 226 de 240). Se deja de tomar productos con este margen antes de los
+// 400 s — el paso más lento, un producto con dos esperas de 45 s, más holgura.
+// Ver `_shared/relojDelWorker.ts`.
+const MARGEN_DEL_WORKER_MS = 120_000;
+
+// Cuánto tiene que llevar tomada una línea de DESPACHO para buscar su traslado.
+// La corrida que la tomó ya murió (si no, la fila no se habría adoptado), y el
+// `insert` del sistema termina en segundos aunque nadie espere la respuesta:
+// un minuto alcanza para que, si iba a existir, ya exista.
+const HUERFANA_DESPACHO_MS = 60_000;
 
 // Cuánto tiene que llevar tomada una línea de recepción para darla por huérfana.
 // Una viva tarda como mucho ~90 s (dos pedidos al sistema, 45 s de espera cada
@@ -552,7 +570,9 @@ Deno.serve(async (req) => {
       // acá es ESPERAR. Un llamador viejo que no sabe de esto sigue recibiendo
       // la respuesta completa que espera.
       const enSegundoPlano = cuerpo.background === true;
-      const presupuesto = enSegundoPlano ? PRESUPUESTO_BG_MS : PRESUPUESTO_FG_MS;
+      const presupuesto = presupuestoDelWorker(
+        arranque, enSegundoPlano ? PRESUPUESTO_BG_MS : PRESUPUESTO_FG_MS, MARGEN_DEL_WORKER_MS,
+      ).ms;
 
       let recibidas = 0;
       const fallos: { clave: string; error: string }[] = [];
@@ -974,6 +994,108 @@ Deno.serve(async (req) => {
     // todo» de «despachar todo» haría que retomar tuviera que reconstruir en
     // qué punto quedó; así cada producto se resuelve entero antes de pasar al
     // siguiente y el estado vive en su propia fila.
+    // ── Las líneas que una corrida muerta dejó a medio despachar ──────────
+    // Se busca su traslado en el sistema en vez de mandarlas a mirar a mano:
+    // la instrucción vieja («buscar la clave en el concepto») no se podía
+    // cumplir —ninguna pantalla del sistema muestra ni filtra el concepto— y el
+    // «Reintentar» las excluye a propósito, así que quedaban trabadas para
+    // siempre con el producto fuera de Bodega. Ver `buscarTrasladoHuerfano`.
+    //
+    // Nunca lanza: lo que no se pudo decidir sigue en 'enviando' y el paso de
+    // después lo marca como error, que es exactamente el comportamiento viejo.
+    const rescatarHuerfanas = async (cookie: string) => {
+      const { dato: huerfanas, roto } = await leerBien<Record<string, unknown>[]>(
+        admin.from("pedido_traslado_linea")
+          .select("id, pedido_item_id, clave, cantidad, updated_at")
+          .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId)
+          .eq("estado", "enviando")
+          .limit(50),   // una corrida muere con UNA tomada; 50 es holgura, no un techo real
+        "las líneas que quedaron a medio despachar",
+      );
+      if (roto || !huerfanas?.length) return;
+
+      // Si la toma es muy reciente, se espera a que el `insert` que quedó en
+      // vuelo termine: buscar antes daría «no salió» sobre uno que está naciendo.
+      const masReciente = Math.max(...huerfanas.map((h) => Date.parse(String(h.updated_at)) || 0));
+      const falta = masReciente + HUERFANA_DESPACHO_MS - Date.now();
+      if (falta > 0) await new Promise((r) => setTimeout(r, Math.min(falta, HUERFANA_DESPACHO_MS)));
+
+      let dirDestino: string | null = null;
+      try {
+        const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
+        dirDestino = direccionesPorSucursal(pagina).get(String(sucId)) ?? null;
+      } catch (e) {
+        console.error(`[trasladar] no se pudo leer la dirección de la sala ${sucId}: ${(e as Error).message}`);
+      }
+      if (!dirDestino) return;
+
+      for (const h of huerfanas) {
+        const tomada = String(h.updated_at);
+        const it = items.find((i) => i.id === Number(h.pedido_item_id));
+        if (!it) continue;
+
+        // El último número anotado ANTES de tomarla: el propio nace después.
+        const { dato: previo } = await leerBien<Record<string, unknown>[]>(
+          admin.from("pedido_traslado_linea")
+            .select("id_traslado")
+            .not("id_traslado", "is", null).lte("enviado_at", tomada)
+            .order("enviado_at", { ascending: false }).limit(1),
+          "el último traslado anterior a la línea trabada",
+        );
+        const desde = Number(previo?.[0]?.id_traslado ?? 0);
+        if (!desde) continue;
+
+        const r = await buscarTrasladoHuerfano({
+          desde,
+          producto: it.nombre,
+          dirDestino,
+          // Los que ya tienen dueño en el portal no pueden ser éste. Se pregunta
+          // sólo por los candidatos, uno por uno: casi siempre es uno.
+          yaUsados: async (ids) => {
+            const usados = new Set<string>();
+            for (const id of ids) {
+              const { data, error } = await admin.from("pedido_traslado_linea")
+                .select("id").eq("id_traslado", id).limit(1);
+              if (error) throw new Error(error.message);
+              if (data?.length) usados.add(id);
+            }
+            return usados;
+          },
+          leer: (id) => pedir(cookie, `${VER}?id_traslado=${id}`, undefined, {
+            extra: { Referer: `${BASE}/admin_traslados.php` },
+          }),
+        });
+        console.log(`[trasladar] línea a medio despachar ${h.clave}: ${JSON.stringify(r)}`);
+
+        if (r.estado === "encontrado") {
+          await anotar(
+            admin.from("pedido_traslado_linea").update({
+              estado: "enviada",
+              id_traslado: r.id,
+              enviado_at: tomada,
+              error_msg: null,
+              aviso: `La corrida que lo despachó se cortó antes de anotar el traslado; `
+                + `se encontró en el sistema (${r.id}) y se enlazó solo.`,
+              detalle: { producto: it.nombre, rescatado: true },
+              updated_at: new Date().toISOString(),
+            }).eq("id", h.id).eq("estado", "enviando"),
+            `el traslado encontrado (${r.id}) de ${h.clave}`,
+          );
+        } else if (r.estado === "no_salio") {
+          await anotar(
+            admin.from("pedido_traslado_linea").update({
+              estado: "planificada",
+              aviso: `Una corrida se cortó al despacharlo y no llegó a salir (se revisaron ${r.leidos} `
+                + `traslados en el sistema): se volvió a despachar.`,
+              updated_at: new Date().toISOString(),
+            }).eq("id", h.id).eq("estado", "enviando"),
+            `la vuelta a la cola de ${h.clave}`,
+          );
+        }
+      }
+    };
+
+    let workerViejo = false;
     const despachar = async (cookie: string, presupuesto: number) => {
       // El plan se arma en la base y es idempotente. Se NIEGA si las hojas
       // guardadas no son las del PDF impreso: el traslado lleva el número de
@@ -1001,8 +1123,15 @@ Deno.serve(async (req) => {
       // Una línea en 'enviando' es residuo de una corrida que murió justo entre
       // que el sistema creó el traslado y que alcanzamos a anotarlo. NO se
       // reintenta a ciegas: reintentar movería el inventario dos veces y eso no
-      // se deshace solo. Se marca para que alguien la mire con la clave en la
-      // mano, que es lo que permite encontrarla en el sistema.
+      // se deshace solo.
+      //
+      // Primero se BUSCA en el sistema (ver `buscarTrasladoHuerfano`): si está,
+      // se anota y la sala lo recibe como cualquier otro; si se comprueba que
+      // no salió, vuelve a la cola y sale en esta misma corrida. Sólo lo que no
+      // se puede decidir con certeza queda marcado para mirarlo a mano.
+      await rescatarHuerfanas(cookie);
+
+      // Lo que la búsqueda no pudo decidir:
       // Si esta marca no se escribe, las líneas siguen en 'enviando' y la
       // próxima corrida las ve como tomadas por otra: nadie las mira nunca, y el
       // producto que quizá salió del estante no aparece en ninguna lista.
@@ -1010,9 +1139,11 @@ Deno.serve(async (req) => {
         admin.from("pedido_traslado_linea")
           .update({
             estado: "error",
-            error_msg: "La corrida anterior se cortó mientras se despachaba este producto. "
-              + "Hay que verificar en el sistema si el traslado entró (buscar la clave en el concepto) "
-              + "antes de reintentarlo — reintentar a ciegas lo movería dos veces.",
+            // El prefijo «La corrida anterior se cortó» lo usa `reenviar` para
+            // NO tocarla: no cambiarlo.
+            error_msg: "La corrida anterior se cortó mientras se despachaba este producto y no se pudo "
+              + "comprobar solo si el traslado entró. Hay que buscarlo en los traslados del sistema de esa "
+              + "hora (mismo producto y sala) antes de reintentarlo — reintentar a ciegas lo movería dos veces.",
             updated_at: new Date().toISOString(),
           })
           .eq("pedido_id", pedidoId).eq("erp_sucursal_id", sucId).eq("estado", "enviando"),
@@ -1370,7 +1501,10 @@ Deno.serve(async (req) => {
       //
       // Y si una corrida avanza CERO, se corta la cadena: sin ese freno, un
       // sistema caído genera reintentos para siempre.
-      if (sinTiempo && quedan > 0 && hechas === 0) {
+      // Salvo que el corte haya sido el reloj del WORKER: ahí no despachó nada
+      // porque llegó viejo, no porque el sistema esté caído, y la próxima
+      // vuelta del cron cae en uno nuevo.
+      if (sinTiempo && quedan > 0 && hechas === 0 && !workerViejo) {
         await cerrar({
           estado: "error",
           error_msg: `La corrida no pudo despachar ni un producto y quedan ${quedan}. `
@@ -1393,7 +1527,11 @@ Deno.serve(async (req) => {
     // El trabajo
     // ══════════════════════════════════════════════════════════════════════
     const correr = async () => {
-      const presupuesto = background ? PRESUPUESTO_BG_MS : PRESUPUESTO_FG_MS;
+      const reloj = presupuestoDelWorker(
+        arranque, background ? PRESUPUESTO_BG_MS : PRESUPUESTO_FG_MS, MARGEN_DEL_WORKER_MS,
+      );
+      workerViejo = reloj.recortado;
+      const presupuesto = reloj.ms;
       const cookie = await sesionEn(erpOrigen, login);
 
       if (!simulacro) return await despachar(cookie, presupuesto);

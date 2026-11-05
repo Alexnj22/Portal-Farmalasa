@@ -1297,3 +1297,116 @@ export async function leerBien<T = Record<string, unknown>>(
   }
   return { dato: (data ?? null) as T | null, roto: null };
 }
+
+/* ── El traslado que quedó sin anotar ─────────────────────────────────────────
+ *
+ * Una corrida que muere entre «el sistema creó el traslado» y «el portal anotó
+ * su número» deja la línea en 'enviando'. Hasta el 2026-11-05 eso se marcaba
+ * como error y le pedía a una persona «buscar la clave en el concepto» — pero
+ * `ver_traslado.php` NO muestra el concepto y el listado tampoco lo filtra, así
+ * que en la práctica nadie podía hacerlo, y el botón «Reintentar» lo excluye a
+ * propósito (repetirlo a ciegas mueve el inventario dos veces). Resultado: la
+ * LEVOFLOXACINA del pedido 239 salió de Bodega (traslado 60385) y Salud 1 no la
+ * pudo recibir.
+ *
+ * Los números de traslado son correlativos y globales, y el propio nace DESPUÉS
+ * de que se tomó la línea. Así que se recorre desde el último número conocido
+ * antes de tomarla, hacia adelante, hasta `vaciosSeguidos` números sin
+ * renglones —que es como el sistema contesta a uno que no existe todavía—, y
+ * se buscan los que van a ESA sala y llevan ESE producto.
+ *
+ * Tres respuestas, y la tercera es la falla segura:
+ *  - `encontrado`: exactamente uno coincide → se anota y la sala lo recibe.
+ *  - `no_salio`:   se leyó todo el tramo, se vieron traslados de verdad (la
+ *                  sesión leía) y ninguno es éste → el producto sigue en el
+ *                  estante y se puede volver a despachar.
+ *  - `no_se_sabe`: una página no se pudo leer, o coinciden varios, o no se vio
+ *                  ni un traslado (no hay prueba de que la sesión leyera) →
+ *                  queda como antes, para mirarlo a mano.
+ *
+ * Una página vacía sólo cuenta como «no existe» si es la página de detalle de
+ * verdad (trae `id="tableview"`): medido el 2026-11-05, un número inexistente
+ * devuelve esa misma tabla sin filas, y una sesión caída devuelve el login —
+ * que `pedir` ya convierte en excepción, y acá cualquier excepción es
+ * `no_se_sabe`. Confundir «no pude leer» con «no existe» volvería a despachar
+ * un producto que ya salió.
+ */
+export type TrasladoHuerfano =
+  | { estado: "encontrado"; id: string; leidos: number }
+  | { estado: "no_salio"; leidos: number }
+  | { estado: "no_se_sabe"; motivo: string; candidatos: string[]; leidos: number };
+
+export async function buscarTrasladoHuerfano(opts: {
+  /** Último número de traslado que se sabe anterior a la toma (se excluye). */
+  desde: number;
+  /** Descripción del producto como la pinta el sistema. */
+  producto: string;
+  /** Dirección normalizada de la sala que recibe (`direccionesPorSucursal`). */
+  dirDestino: string;
+  /**
+   * De estos números, cuáles ya están anotados en otra línea del portal (no
+   * pueden ser éste). Se pregunta UNA vez, sólo por los que coinciden —son
+   * pocos—, en vez de bajar todo lo anotado. Puede lanzar.
+   */
+  yaUsados: (ids: string[]) => Promise<Set<string>>;
+  /** Trae el HTML de `ver_traslado.php`; puede lanzar. */
+  leer: (id: number) => Promise<string>;
+  vaciosSeguidos?: number;
+  tope?: number;
+}): Promise<TrasladoHuerfano> {
+  const { desde, dirDestino, yaUsados, leer } = opts;
+  const vaciosSeguidos = opts.vaciosSeguidos ?? 10;
+  const tope = opts.tope ?? 80;
+  const producto = norm(opts.producto);
+  if (!desde || !producto || !dirDestino) {
+    return { estado: "no_se_sabe", motivo: "faltan datos para buscarlo", candidatos: [], leidos: 0 };
+  }
+
+  const coinciden: string[] = [];
+  let leidos = 0, vacios = 0, existentes = 0;
+  for (let id = desde + 1; vacios < vaciosSeguidos; id++) {
+    if (leidos >= tope) {
+      return { estado: "no_se_sabe", motivo: `el tramo pasa de ${tope} traslados`, candidatos: coinciden, leidos };
+    }
+    let html: string;
+    try {
+      html = await leer(id);
+    } catch (e) {
+      return { estado: "no_se_sabe", motivo: `no se pudo leer el ${id}: ${(e as Error).message}`, candidatos: coinciden, leidos };
+    }
+    leidos++;
+    const { renglones, destino } = renglonesDeTraslado(html);
+    if (renglones.length === 0) {
+      if (!/id=["']tableview["']/.test(html)) {
+        return { estado: "no_se_sabe", motivo: `el ${id} no devolvió la página del traslado`, candidatos: coinciden, leidos };
+      }
+      vacios++;
+      continue;
+    }
+    vacios = 0;
+    existentes++;
+    if (destino !== dirDestino) continue;
+    if (renglones.some((r) => norm(r.descripcion).includes(producto))) coinciden.push(String(id));
+  }
+
+  if (coinciden.length) {
+    let usados: Set<string>;
+    try {
+      usados = await yaUsados(coinciden);
+    } catch (e) {
+      return { estado: "no_se_sabe", motivo: `no se pudo ver cuáles ya tienen dueño: ${(e as Error).message}`, candidatos: coinciden, leidos };
+    }
+    const libres = coinciden.filter((id) => !usados.has(id));
+    coinciden.length = 0;
+    coinciden.push(...libres);
+  }
+
+  if (coinciden.length === 1) return { estado: "encontrado", id: coinciden[0], leidos };
+  if (coinciden.length > 1) {
+    return { estado: "no_se_sabe", motivo: "más de un traslado coincide", candidatos: coinciden, leidos };
+  }
+  if (existentes === 0) {
+    return { estado: "no_se_sabe", motivo: "no apareció ningún traslado en el tramo", candidatos: [], leidos };
+  }
+  return { estado: "no_salio", leidos };
+}

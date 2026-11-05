@@ -23,7 +23,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1451.34 — Traslados: la recepción destraba sola el control de lote activado después del despacho
 
-_(pendiente de redactar)_
+- **Un traslado despachado antes de activar el lote ya se puede recibir.** Desde el 05-nov los medicamentos
+  llevan lote, y un traslado que salió antes viaja con renglones SIN lote de productos que hoy son regulados:
+  la recepción no entraba (Salud 4, traslado 60970, doce intentos — UROGESIC, COLITRAN GX, ENANTYUM).
+- Si la recepción falla y hay renglones sin lote cuyo producto hoy es regulado, `aplicar-traslado-inventario`
+  le quita el control de lote a esos productos, vuelve a recibir y se lo activa de nuevo (en `finally`, con
+  un reintento). Cada cambio se verifica releyendo la ficha completa; lo hecho queda en
+  `erp_recibido.lote_destrabado`, y uno que no se pudo reactivar sale en la respuesta y en el log.
+- La edición de la ficha vive en `_shared/erp-regulado.ts`, traducción de `scripts/erp/regulado-masivo.mjs`.
 
 ## v2.1451.33 — Cargar compra: el flete entra como servicio
 

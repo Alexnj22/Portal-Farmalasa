@@ -134,7 +134,7 @@ export function lineaDelSobre(
     const hay = p.presentaciones.map((x) => `${x.nombre ?? "presentación"} de ${x.unidad}`).join(", ");
     const tam = p.presentaciones.filter((x) => x.unidad > 1).map((x) => x.unidad);
     const sugerencia = tam.length
-      ? ` Si cada una de la factura es una ${p.presentaciones.find((x) => x.unidad === tam[0])?.nombre ?? "caja"} de ${tam[0]}, escribe ${r4(r.cantidad * tam[0])} en «Total en unidades».`
+      ? ` Si cada una de la factura es una ${p.presentaciones.find((x) => x.unidad === tam[0])?.nombre ?? "caja"} de ${tam[0]}, elígela en «Se carga como» (entran ${r4(r.cantidad * tam[0])} unidades).`
       : "";
     problemas.push({
       renglon: i,

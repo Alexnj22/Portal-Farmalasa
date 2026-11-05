@@ -960,45 +960,17 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                 && Number(aj.factor) !== Number(elegido?.factor ?? r.factor_proveedor ?? 1);
                             const sim = entraComo.get(i);
                             return (
-                                <div key={`${r.codigo_proveedor}-${i}`} data-surface="card" className="px-3 py-2.5">
-                                    <div className="flex items-start gap-3 flex-wrap">
-                                        <div className="flex-1 min-w-[14rem]">
-                                            <p className="text-label font-black text-content">
-                                                {uso === 'consumo' || aj.servicio ? r.descripcion
-                                                    : aj.erroneo && !conProducto ? 'PRODUCTO ERRONEO DE PROVEEDOR'
-                                                    : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
-                                            </p>
-                                            {uso === 'venta' && aj.servicio && (
-                                                <p className="text-micro text-content-3 font-bold">
-                                                    Flete / servicio: suma al costo de la compra y a su total. No entra al inventario.
+                                <div key={`${r.codigo_proveedor}-${i}`} data-surface="card" className="p-4">
+                                    {/* Encabezado: qué producto es y cuánto factura el proveedor. */}
+                                    <div className="flex items-start gap-4">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2 flex-wrap">
+                                                <p className="text-body font-black text-content">
+                                                    {uso === 'consumo' || aj.servicio ? r.descripcion
+                                                        : aj.erroneo && !conProducto ? 'PRODUCTO ERRONEO DE PROVEEDOR'
+                                                        : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
                                                 </p>
-                                            )}
-                                            {uso === 'venta' && !aj.servicio && <p className="text-micro text-content-3">{r.descripcion}</p>}
-                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && !conProducto && !r.producto_id && (
-                                                <p className="text-micro text-warning font-bold">
-                                                    No está en Bodega: ¿es nuevo, o es uno que ya tenemos con otro nombre? ¿O vino por error?
-                                                </p>
-                                            )}
-                                            {uso === 'venta' && aj.erroneo && (
-                                                <p className="text-micro text-danger font-bold">
-                                                    Error del proveedor: entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito.
-                                                </p>
-                                            )}
-                                        </div>
-                                        <div className="text-right shrink-0">
-                                            <p className="text-label font-black text-content tabular-nums">
-                                                {r.cantidad} × {formatMoney(r.costo)}
-                                            </p>
-                                        </div>
-                                        {uso === 'venta' && (
-                                            <div className="shrink-0 flex items-center gap-2">
-                                                {puedeEditar && !aj.erroneo && (
-                                                    <Button size="xs" variant={aj.servicio ? 'secondary' : 'ghost'}
-                                                        onClick={() => ajustar(i, 'servicio', !aj.servicio)}>
-                                                        {aj.servicio ? 'Es un producto' : 'Es flete / servicio'}
-                                                    </Button>
-                                                )}
-                                                {!aj.servicio && o && (
+                                                {uso === 'venta' && !aj.servicio && o && (
                                                     <Badge variant={elegido ? 'success' : o.variant} size="sm">
                                                         <Icono size={11} className="mr-1 inline" />
                                                         {elegido ? 'Confirmado' : o.label}
@@ -1006,76 +978,44 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                             && ` · ${Math.round(r.match_similitud * 100)}%`}
                                                     </Badge>
                                                 )}
-                                                {puedeEditar && !aj.servicio && !conProducto && !aj.erroneo && (
-                                                    <Button size="xs" onClick={() => setCreando(i)} icon={PackagePlus}>
-                                                        Es nuevo
-                                                    </Button>
-                                                )}
-                                                {puedeEditar && !aj.servicio && (
-                                                    <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
-                                                        onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
-                                                        {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
-                                                    </Button>
-                                                )}
-                                                {puedeEditar && !aj.servicio && (
-                                                    <Button size="xs" variant="ghost"
-                                                        loading={guardando === k}
-                                                        onClick={() => setBusc(buscando === k ? null : k)}>
-                                                        {conProducto || r.producto_id ? 'Es otro' : 'Elegir'}
-                                                    </Button>
-                                                )}
-                                                {puedeEditar && !aj.servicio && r.producto_id && !elegido && r.match_origen === 'parecido' && (
-                                                    <Button size="xs"
-                                                        loading={guardando === k}
-                                                        onClick={() => confirmar(r, i, { id: r.producto_id, nombre: r.producto })}>
-                                                        Es correcto
-                                                    </Button>
-                                                )}
                                             </div>
-                                        )}
+                                            {uso === 'venta' && !aj.servicio && (
+                                                <p className="mt-0.5 text-caption text-content-3">En la factura: {r.descripcion}</p>
+                                            )}
+                                            {uso === 'venta' && aj.servicio && (
+                                                <p className="mt-0.5 text-caption text-content-2 font-bold">
+                                                    Flete / servicio: suma al costo de la compra y a su total. No entra al inventario.
+                                                </p>
+                                            )}
+                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && !conProducto && !r.producto_id && (
+                                                <p className="mt-1 text-caption text-warning-text font-bold">
+                                                    No está en Bodega: ¿es nuevo, o es uno que ya tenemos con otro nombre? ¿O vino por error?
+                                                </p>
+                                            )}
+                                            {uso === 'venta' && aj.erroneo && (
+                                                <p className="mt-1 text-caption text-danger-text font-bold">
+                                                    Error del proveedor: entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito.
+                                                </p>
+                                            )}
+                                        </div>
+                                        <div className="text-right shrink-0">
+                                            <p className="text-body font-black text-content tabular-nums">
+                                                {r.cantidad} × {formatMoney(r.costo)}
+                                            </p>
+                                            <p className="text-caption text-content-3 tabular-nums">
+                                                {formatMoney(Number(r.cantidad) * Number(r.costo))}
+                                            </p>
+                                        </div>
                                     </div>
                                     {uso === 'venta' && !aj.servicio && (
-                                        <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
-                                            {(() => {
-                                                // En qué presentación entra: la de su tamaño. Elegirla pone la
-                                                // cantidad (factura × tamaño); sólo con el producto propuesto,
-                                                // que es del que se conocen las presentaciones.
-                                                const pres = [...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]
-                                                    .sort((a, b) => a.factor - b.factor);
-                                                // «1 × CAJA (50)» y no sólo «CAJA (50)»: al lado de «50» en
-                                                // unidades se leía «50 cajas» (Bodega, GRIPE-MED, 2026-11-05).
-                                                const f = Number(aj.factor) || 1;
-                                                const cuantas = (x) => Math.round(Number(r.cantidad) * f / x * 1000) / 1000;
-                                                if (pres.length < 2) {
-                                                    const nombre = pres.find(x => x.factor === f)?.nombre ?? null;
-                                                    return (
-                                                        <div className="min-w-0">
-                                                            <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
-                                                            <p className="text-label font-bold text-content tabular-nums truncate min-h-[var(--tap-min)] flex items-center">
-                                                                {f > 1 ? `${cuantas(f)} × ${nombre ?? 'CAJA'} (${f})` : `${cuantas(1)} × UNIDAD`}
-                                                            </p>
-                                                        </div>
-                                                    );
-                                                }
-                                                return (
-                                                    <div className="min-w-0">
-                                                        <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
-                                                        <LiquidSelect compact clearable={false} disabled={!puedeEditar} ariaLabel="Se carga como"
-                                                            value={pres.some(x => x.factor === f) ? String(f) : ''}
-                                                            placeholder={`${f} por cada una`}
-                                                            options={pres.map(x => ({ value: String(x.factor), label: `${Math.round(Number(r.cantidad) * 1000) / 1000} × ${x.nombre ?? 'Presentación'} (${x.factor})` }))}
-                                                            onChange={v => v && ajustarCarga(i, r, String(Number(r.cantidad) * Number(v)))} />
-                                                    </div>
-                                                );
-                                            })()}
-                                            <PortalInput compact labelDenso label="Total en unidades" inputMode="numeric"
-                                                helperText={cargarAyuda(r, aj)}
-                                                value={aj.cargar ?? cargarDe(r, aj.factor)}
-                                                onChange={e => ajustarCarga(i, r, e.target.value)}
-                                                labelAction={factorCambio && puedeEditar ? (
+                                        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)] gap-3 items-start">
+                                            <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar}
+                                                presentaciones={[...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]}
+                                                onCargar={v => ajustarCarga(i, r, v)}
+                                                recordar={factorCambio && puedeEditar ? (
                                                     <Button size="xs" variant="ghost" loading={guardando === k}
                                                         onClick={() => confirmar(r, i, { id: productoDe(r, i), nombre: elegido?.nombre ?? r.producto })}>
-                                                        Recordar
+                                                        Recordar para la próxima
                                                     </Button>
                                                 ) : null} />
                                             <PortalInput compact labelDenso label="Lote" value={aj.lote}
@@ -1086,27 +1026,26 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 const nueva = Number(aj.venta);
                                                 const cambia = nueva > 0 && actual != null && Math.abs(nueva - actual) >= 0.005;
                                                 return (
-                                                    <PortalInput compact labelDenso label="Regular" inputMode="decimal"
-                                                        readOnly={!puedeEditar || aj.erroneo}
-                                                        placeholder={actual != null ? actual.toFixed(2) : 'sin cambio'}
-                                                        value={aj.venta ?? ''}
-                                                        onChange={e => ajustar(i, 'venta', e.target.value.replace(/[^\d.]/g, ''))}
-                                                        helperText={cambia
-                                                            ? `${nueva > actual ? 'Sube' : 'Baja'} ${Math.abs((nueva - actual) / actual * 100).toFixed(1)} % · antes ${formatMoney(actual)}`
-                                                            : null} />
+                                                    <div className="min-w-0">
+                                                        <PortalInput compact labelDenso label="Regular" inputMode="decimal" prefix="$"
+                                                            readOnly={!puedeEditar || aj.erroneo}
+                                                            placeholder={actual != null ? actual.toFixed(2) : 'sin cambio'}
+                                                            value={aj.venta ?? ''}
+                                                            onChange={e => ajustar(i, 'venta', e.target.value.replace(/[^\d.]/g, ''))} />
+                                                        {cambia && (
+                                                            <p className={`mt-1 text-caption font-bold tabular-nums ${nueva > actual ? 'text-warning-text' : 'text-success-text'}`}>
+                                                                {nueva > actual ? 'Sube' : 'Baja'} {Math.abs((nueva - actual) / actual * 100).toFixed(1)} % · antes {formatMoney(actual)}
+                                                            </p>
+                                                        )}
+                                                    </div>
                                                 );
                                             })()}
-                                            {!aj.erroneo && (() => {
-                                                const total = Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0;
-                                                const n = aj.llegaron === '' || aj.llegaron == null ? null : Number(aj.llegaron);
-                                                return (
-                                                    <PortalInput compact labelDenso label="Llegaron" inputMode="numeric"
-                                                        readOnly={!puedeEditar} placeholder={total ? `todas (${total})` : 'todas'}
-                                                        value={aj.llegaron ?? ''}
-                                                        onChange={e => ajustar(i, 'llegaron', e.target.value.replace(/[^\d]/g, ''))}
-                                                        helperText={n != null && n < total ? `Faltan ${total - n}: quedan «por llegar»` : null} />
-                                                );
-                                            })()}
+                                            {!aj.erroneo && (
+                                                <Llegaron puedeEditar={puedeEditar}
+                                                    total={Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
+                                                    valor={aj.llegaron}
+                                                    onChange={v => ajustar(i, 'llegaron', v)} />
+                                            )}
                                         </div>
                                     )}
                                     {uso === 'venta' && conProducto && !aj.erroneo && !aj.servicio && (
@@ -1147,6 +1086,48 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             </Notice>
                                         );
                                     })()}
+                                    {/* Acciones al pie, en una sola fila: antes competían con el
+                                        nombre y el precio en el encabezado. */}
+                                    {uso === 'venta' && puedeEditar && (
+                                        <div className="mt-3 pt-3 border-t border-divider flex items-center gap-2 flex-wrap">
+                                            {conProducto && !aj.erroneo && !aj.servicio && !aj.reparto && salasReparto.length > 0 && (
+                                                <Button size="xs" variant="ghost" icon={Truck} onClick={() => ajustar(i, 'reparto', {})}>
+                                                    Enviar a sucursales
+                                                </Button>
+                                            )}
+                                            <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
+                                                {!aj.servicio && r.producto_id && !elegido && r.match_origen === 'parecido' && (
+                                                    <Button size="xs" loading={guardando === k}
+                                                        onClick={() => confirmar(r, i, { id: r.producto_id, nombre: r.producto })}>
+                                                        Es correcto
+                                                    </Button>
+                                                )}
+                                                {!aj.servicio && !conProducto && !aj.erroneo && (
+                                                    <Button size="xs" onClick={() => setCreando(i)} icon={PackagePlus}>
+                                                        Es nuevo
+                                                    </Button>
+                                                )}
+                                                {!aj.servicio && (
+                                                    <Button size="xs" variant="ghost" icon={Search} loading={guardando === k}
+                                                        onClick={() => setBusc(buscando === k ? null : k)}>
+                                                        {conProducto || r.producto_id ? 'Es otro producto' : 'Elegir producto'}
+                                                    </Button>
+                                                )}
+                                                {!aj.servicio && (
+                                                    <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
+                                                        onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
+                                                        {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
+                                                    </Button>
+                                                )}
+                                                {!aj.erroneo && (
+                                                    <Button size="xs" variant={aj.servicio ? 'secondary' : 'ghost'}
+                                                        onClick={() => ajustar(i, 'servicio', !aj.servicio)}>
+                                                        {aj.servicio ? 'Es un producto' : 'Es flete / servicio'}
+                                                    </Button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                     {buscando === k && (
                                         <BuscadorProducto
                                             onElegir={(prod) => confirmar(r, i, prod)}
@@ -1398,19 +1379,12 @@ function aRepartir(reparto) {
  * entra, y si se envía menos se dice cuánto queda en Bodega.
  */
 function RepartoASalas({ salas, total, valor, onChange, puedeEditar }) {
-    if (!valor) {
-        return puedeEditar && salas.length > 0 ? (
-            <div className="mt-2">
-                <Button size="xs" variant="ghost" icon={Truck} onClick={() => onChange({})}>
-                    Enviar a sucursales
-                </Button>
-            </div>
-        ) : null;
-    }
+    // El botón para abrirlo vive al pie de la tarjeta, con las demás acciones.
+    if (!valor) return null;
     const suma = Object.values(valor).reduce((t, v) => t + (Number(v) || 0), 0);
     const quedan = total - suma;
     return (
-        <div className="mt-2 pt-2 border-t border-divider">
+        <div className="mt-3 pt-3 border-t border-divider">
             <div className="flex items-center justify-between gap-2">
                 <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1">
                     <Truck size={12} /> Enviar a sucursales
@@ -1452,40 +1426,124 @@ function cantidadSospechosa(sim, costo) {
     return Number.isInteger(unidades) && unidades > 0 ? { veces, sube, unidades } : null;
 }
 
+/**
+ * Cómo entra el renglón: «5 × CAJA (5)». Reemplaza al par «Se carga como» +
+ * «Total en unidades», que decían lo mismo dos veces y se leían como dos
+ * preguntas distintas (Bodega, 2026-11-05). Las unidades se dicen debajo; si
+ * ninguna presentación sirve, «Otra cantidad…» abre el campo de unidades.
+ */
+const OTRA = 'otra';
+function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar }) {
+    const cant = Number(r.cantidad) || 0;
+    const f = Number(aj.factor) || 0;
+    const unidades = aj.cargar ?? cargarDe(r, aj.factor);
+    const pres = [...presentaciones].sort((a, b) => a.factor - b.factor);
+    const coincide = pres.some(x => x.factor === f);
+    const [otra, setOtra] = useState(false);
+    const abierta = otra || !coincide || pres.length === 0;
+    const r3 = (n) => Math.round(n * 1000) / 1000;
+    const nombreDe = (x) => x.nombre ?? (x.factor > 1 ? 'CAJA' : 'UNIDAD');
+    const aviso = cargarAyuda(r, aj);
+    return (
+        <div className="min-w-0">
+            <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
+            {pres.length > 0 && (
+                <LiquidSelect compact clearable={false} disabled={!puedeEditar} ariaLabel="Se carga como"
+                    value={abierta ? OTRA : String(f)}
+                    options={[
+                        ...pres.map(x => ({ value: String(x.factor), label: `${r3(cant)} × ${nombreDe(x)} (${x.factor})` })),
+                        { value: OTRA, label: 'Otra cantidad de unidades…' },
+                    ]}
+                    onChange={v => {
+                        if (!v) return;
+                        if (v === OTRA) { setOtra(true); return; }
+                        setOtra(false);
+                        onCargar(String(cant * Number(v)));
+                    }} />
+            )}
+            {abierta && (
+                <div className={pres.length > 0 ? 'mt-2' : ''}>
+                    <PortalInput compact inputMode="numeric" readOnly={!puedeEditar}
+                        aria-label="Unidades que entran" placeholder="Unidades que entran"
+                        value={unidades} onChange={e => onCargar(e.target.value)} />
+                </div>
+            )}
+            <p className="mt-1 text-caption text-content-2 tabular-nums">
+                Entran <b className="text-content">{Number(unidades) || 0}</b> unidades
+                {f > 1 && Number.isInteger(r3(f)) ? ` · ${r3(f)} por cada una` : ''}
+            </p>
+            {aviso && <p className="mt-0.5 text-caption font-bold text-warning-text">{aviso}</p>}
+            {recordar && <div className="mt-1">{recordar}</div>}
+        </div>
+    );
+}
+
+/**
+ * ¿Llegó todo lo facturado? Lo normal es que sí, así que es un interruptor y
+ * no un número en blanco: sólo al marcar «Faltó» se pide cuántas llegaron.
+ * Vacío sigue significando «todo» para quien guarda.
+ */
+function Llegaron({ total, valor, onChange, puedeEditar }) {
+    const conNumero = valor !== '' && valor != null;
+    const [falto, setFalto] = useState(conNumero);
+    const n = conNumero ? Number(valor) : null;
+    return (
+        <div className="min-w-0">
+            <p className={rotuloCampo('text-content-3', { denso: true })}>¿Llegó todo?</p>
+            <SegmentedControl size="sm" label="¿Llegó todo?" disabled={!puedeEditar}
+                value={falto ? 'falto' : 'todo'}
+                options={[{ value: 'todo', label: 'Sí, todo' }, { value: 'falto', label: 'Faltó' }]}
+                onChange={v => { setFalto(v === 'falto'); if (v === 'todo') onChange(''); }} />
+            {falto && (
+                <div className="mt-2 flex items-center gap-2">
+                    <div className="w-24 shrink-0">
+                        <PortalInput compact inputMode="numeric" readOnly={!puedeEditar} aria-label="Unidades que llegaron"
+                            placeholder="0" value={valor ?? ''}
+                            onChange={e => onChange(e.target.value.replace(/[^\d]/g, ''))} />
+                    </div>
+                    <span className="text-caption text-content-2 tabular-nums">de {total} llegaron</span>
+                </div>
+            )}
+            {falto && n != null && n < total && (
+                <p className="mt-1 text-caption font-bold text-warning-text tabular-nums">
+                    Faltan {total - n}: quedan «por llegar».
+                </p>
+            )}
+        </div>
+    );
+}
+
 function ComoEntra({ sim, costo }) {
-    const nombre = sim.presentacion_nombre || (sim.presentacion > 1 ? `Caja de ${sim.presentacion}` : 'Unidad');
     const cambio = costo?.cambio;
     const parejo = cambio == null || Math.abs(cambio) < 0.5;
     const notaCosto = costo?.antes == null ? 'sin costo anterior'
         : parejo ? 'igual que antes'
         : `${cambio > 0 ? 'sube' : 'baja'} ${Math.abs(cambio).toFixed(1)} % · antes ${formatMoney(costo.antes, { decimales: 4 })}`;
+    // Sin «Se carga como»: ya lo dice el campo de arriba. Acá va lo que resulta
+    // de cargar: cuánto entra, a qué costo y con qué margen.
     return (
-        <div className="mt-2 pt-2 border-t border-divider grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-2">
-            {/* «15 × CAJA (10)», no «CAJA (10)» junto a un 150: así se leía
-                «150 cajas» cuando eran 15 (BRANDSTAR, 2026-11-05). */}
-            <Dato titulo="Se carga como" valor={sim.presentacion > 1 ? `${Math.round(sim.existencias / sim.presentacion * 1000) / 1000} × ${nombre}` : nombre}
-                nota={sim.presentacion > 1 ? `${sim.presentacion} unidades c/u` : '1 unidad c/u'} />
-            <Dato titulo="Entran" valor={`${sim.existencias} unid.`}
+        <div className="mt-3 pt-3 border-t border-divider grid grid-cols-2 sm:grid-cols-3 gap-x-6 gap-y-3">
+            <Dato titulo="Entran al inventario" valor={`${sim.existencias} unidades`}
                 nota={sim.vence_pendiente ? 'el vencimiento lo pone la sala' : null} />
             {costo && (
                 <div className="min-w-0">
-                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Costo</p>
-                    <p className="text-label font-bold text-content tabular-nums">{formatMoney(costo.nuevo, { decimales: 4 })}</p>
-                    <p className={`text-micro tabular-nums truncate ${parejo ? 'text-content-3' : cambio > 0 ? 'text-warning-text' : 'text-success-text'}`}>
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Costo por unidad</p>
+                    <p className="text-body font-bold text-content tabular-nums">{formatMoney(costo.nuevo, { decimales: 4 })}</p>
+                    <p className={`text-caption tabular-nums truncate ${parejo ? 'text-content-3' : cambio > 0 ? 'text-warning-text' : 'text-success-text'}`}>
                         {notaCosto}
                     </p>
                 </div>
             )}
             {costo && (
                 <div className="min-w-0">
-                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Regular</p>
-                    <p className="text-label font-bold text-content tabular-nums">
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Precio regular</p>
+                    <p className="text-body font-bold text-content tabular-nums">
                         {formatMoney(costo.venta)}
                         {costo.ventaAntes > 0 && Math.abs(costo.venta - costo.ventaAntes) >= 0.005 && (
-                            <span className="ml-1 text-micro font-bold text-warning-text">antes {formatMoney(costo.ventaAntes)}</span>
+                            <span className="ml-1 text-caption font-bold text-warning-text">antes {formatMoney(costo.ventaAntes)}</span>
                         )}
                     </p>
-                    <p className="text-micro text-content-3 tabular-nums flex items-center gap-1">
+                    <p className="text-caption text-content-3 tabular-nums flex items-center gap-1">
                         {costo.margen != null ? `margen ${Math.round(costo.margen)} %` : 'sin margen'}
                         {costo.alerta && <Badge variant={costo.alerta.variante} size="sm">{costo.alerta.label}</Badge>}
                     </p>
@@ -1499,10 +1557,10 @@ function Dato({ titulo, valor, nota, mono }) {
     return (
         <div className="min-w-0">
             <p className="text-caption font-black text-content-3 uppercase tracking-widest">{titulo}</p>
-            <p className={`text-label text-content truncate ${mono ? 'font-mono text-micro' : 'font-bold'}`}>
+            <p className={`text-content truncate ${mono ? 'font-mono text-micro' : 'text-body font-bold'}`}>
                 {valor ?? '—'}
             </p>
-            {nota && <p className="text-micro text-content-3 truncate">{nota}</p>}
+            {nota && <p className="text-caption text-content-3 truncate">{nota}</p>}
         </div>
     );
 }

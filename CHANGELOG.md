@@ -21,6 +21,30 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1449.0 — App clientes: Botiquín rehecho — física de verdad y arte nuevo
+
+Pedido del usuario: «el juego está horrible, es injugable, hazlo bien, que
+parezca y sea profesional, muy visual, bonito, completo».
+
+- **Física: Matter.js** (`lib/botiquinMotor.js`) en vez del motor propio. Las
+  piezas ruedan, giran, tienen fricción y se acomodan; pasos fijos de 1/120 s
+  (0.05 ms por paso medido en Chromium). Una pieza recién unida nace chica y
+  crece en 0.12 s para que la pila no «explote». Paredes invisibles altas: nada
+  se sale por los costados, sólo se puede asomar por arriba.
+- **Arte nuevo**, escrito como SVG en `scripts/botiquin/arte.mjs` y convertido a
+  PNG (`render.mjs`): once piezas con cara —Pastilla, Gragea, Perla, Gomita,
+  Efervescente, Algodón, Tapa, Crema, Pastillero, Estetoscopio y Cruz de
+  farmacia—, un estuche de vidrio en dos capas (fondo y frente) y una luz que no
+  gira con la pieza al rodar.
+- **Pantalla**: puntos grandes, «Sigue» con la próxima pieza, la cadena completa
+  abajo (lo que falta, apagado), puntos que flotan en cada unión, chispas del
+  color de la pieza, anillo, aviso de desborde y cierre con récord.
+- **Banco de pruebas** (`scripts/botiquin/banco.mjs`): corre el mismo motor con
+  el arte real en Chromium, juega solo y saca capturas. Pruebas del motor en
+  `tests/unit/botiquinMotorClientes.test.js` (se saltan en la CI, que no instala
+  las dependencias de la app).
+- El récord empieza de cero: la puntuación no es comparable con la anterior.
+
 ## v2.1448.11 — Inicio: con selector, el título se lee entero
 
 En una tarjeta angosta con selector de sala (Top productos, Estado de turnos)

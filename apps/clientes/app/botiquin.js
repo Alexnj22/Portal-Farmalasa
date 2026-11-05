@@ -1,306 +1,147 @@
-// Botiquín (Bienestar, 2026-11-04) — reemplaza al «Botiquín» anterior, el de
-// unir piezas en un tablero (usuario: «debía quitar el juego anterior, no era
-// uno más»). Nació como «Pastillero»; las claves del récord conservan ese
-// nombre para no perder lo ya jugado en la 94.
-// Pedido del usuario: un juego de «juntar
-// al caer» —caen medicamentos dentro de un botiquín abierto arriba; dos iguales
-// que se tocan se vuelven el siguiente— con nombre, dibujos, colores y sonidos
-// propios, de farmacia. No es copia de ningún juego: la cadena, el arte y las
-// reglas finas son nuestras.
+// Botiquín (Bienestar). Medicamentos que caen en un botiquín: dos iguales que se
+// tocan se juntan en el siguiente de la cadena, de la Pastilla a la Cruz de
+// farmacia. Si algo queda asomado sobre el borde, se acaba.
 //
-// La cadena (diez, de la más chica a la más grande):
-//   Pastilla → Gragea → Cápsula → Perla → Sobre → Pomada → Jarabe → Frasco
-//   → Caja → Cruz de farmacia.
-// Sólo las cinco primeras caen al azar; el resto se gana juntando. Dos cruces
-// juntas se van con un premio y dejan espacio. Se pierde si algo que ya cayó
-// queda por encima del borde del botiquín DOS segundos seguidos (el que viene
-// cayendo no cuenta): así una pila que asoma un instante no castiga.
+// Tercera versión (2026-11-04). La primera se cerraba al iniciar (la física
+// corría en el hilo de la interfaz) y la segunda, con un motor propio, el
+// usuario la encontró «horrible, injugable». Ésta separa las tres cosas:
+//   · la física es Matter.js (lib/botiquinMotor.js): las piezas ruedan, giran
+//     y se acomodan como objetos de verdad;
+//   · el arte es dibujo de verdad (scripts/botiquin/arte.mjs → PNG): once
+//     piezas con cara, el estuche y una luz que no gira con la pieza;
+//   · el cuadro lo pinta Skia en el hilo de la interfaz desde una foto de
+//     números que JavaScript le pasa en cada cuadro.
+// Antes de tocar la física o el arte, correr el banco de pruebas
+// (scripts/botiquin/banco.mjs): juega solo en Chromium y saca capturas.
 //
-// Rendimiento: la física (lib/caida.js) corre en JavaScript con
-// `requestAnimationFrame`, en pasos fijos de 1/120 s (0.03 ms por paso), y le
-// pasa al hilo de la interfaz una foto de puros números. Allá un solo `Picture`
-// estampa cada pieza, que se dibujó UNA vez como imagen al medir la pantalla
-// (nada de rearmar formas en cada cuadro). Una falla del motor termina la
-// partida y se reporta; nunca cierra la app. Con la pantalla fuera de vista o
-// la app en segundo plano el reloj se para (`useVisible`) y al volver queda en
-// pausa hasta que se toque «Seguir».
+// Una falla del motor termina la partida y se reporta: nunca cierra la app.
+// Con la pantalla fuera de vista o la app en segundo plano el reloj se para y
+// al volver queda en pausa.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { PixelRatio, StyleSheet, Text, View } from 'react-native';
+import { Image, StyleSheet, Text, View } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
-import { BlurStyle, Canvas, ClipOp, FilterMode, Image as ImagenSkia, MipmapMode, PaintStyle, Picture, Skia, StrokeCap, StrokeJoin, TileMode } from '@shopify/react-native-skia';
+import { Canvas, PaintStyle, Picture, Skia, useImage } from '@shopify/react-native-skia';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { FadeIn, FadeOut, runOnJS, useDerivedValue, useSharedValue } from 'react-native-reanimated';
-import tokens from '@nucleo/constants/tokens.json';
+import Animated, { Easing, FadeIn, FadeOut, runOnJS, useAnimatedStyle, useDerivedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Confeti, Tocable, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
 import { AvisoJuego, BLANCO, BLANCO_2, BotonJuego, ControlesSensaciones, ESCENAS, Escena, Marcador, PanelVidrio, VIDRIO, VIDRIO_BORDE, textoAyuda } from '../componentes/juegos/Escena';
 import { ORO, TarjetaNivel } from '../componentes/juegos/Niveles';
-import { ALTURA_SOLTAR, MAX, PAUSA_SOLTAR, PREMIO_CUMBRE, RADIOS, avanzar, crearMundo, soltar } from '../lib/caida';
 import { entero } from '../lib/formato';
 import { callar, precargar, sonar, tacto } from '../lib/sensaciones';
 import { useVisible } from '../lib/visible';
 import { reportarError } from '../lib/errores';
+import {
+  AVISO_PELIGRO, CAJA, MAX, PREMIO_CUMBRE, RADIOS, Y_SOLTAR, ZONA_ARRIBA,
+  avanzar, crearMundo, destruir, piezas, puedeSoltar, soltar,
+} from '../lib/botiquinMotor';
 
-const CLAVE_RECORD = 'puntos_salud_pastillero_record';
-const CLAVE_MAYOR = 'puntos_salud_pastillero_mayor'; // la pieza más grande que se llegó a hacer
+const CLAVE_RECORD = 'puntos_salud_botiquin_caida_record';
+const CLAVE_MAYOR = 'puntos_salud_botiquin_caida_mayor';
 const SONIDOS = ['gota', 'pop-1', 'pop-2', 'pop-3', 'pop-4', 'pop-5', 'pop-6', 'par', 'ganar', 'fallo', 'derrumbe'];
 
-const ALTO = 1.3; // el botiquín, en anchos: un poco más alto que ancho
-const ZONA = 0.36; // el aire de arriba, donde cuelga la pieza que se va a soltar
-const PARED = 0.045; // grosor de las paredes, en anchos
-
-export const NOMBRES = ['Pastilla', 'Gragea', 'Cápsula', 'Perla', 'Sobre', 'Pomada', 'Jarabe', 'Frasco', 'Caja', 'Cruz de farmacia'];
-const ARTICULO = ['la', 'la', 'la', 'la', 'el', 'la', 'el', 'el', 'la', 'la'];
-
-// Los colores de la marca salen de los tokens (la escena es la misma en tema
-// claro y oscuro, como en todos los juegos: oscura a propósito, con todo
-// blanco encima). Los demás tonos son de esta cadena; cada pieza tiene forma
-// Y color propios, para distinguirlas también sin ver colores.
-const T = tokens.temas.solid;
-const COLORES = [
-  ['#E4EEFF', '#6F95D6'], // pastilla · celeste
-  ['#F6C9EF', T['logo-magenta']], // gragea · magenta del logo
-  ['#FFD0AC', '#E66A2C'], // cápsula · naranja
-  ['#FFF0B0', '#D59E00'], // perla · miel
-  ['#C8F3DB', '#1E9E68'], // sobre · menta
-  ['#FFC0CB', '#D8405A'], // pomada · coral
-  ['#D8C9FF', T['brand-purple']], // jarabe · violeta
-  ['#B4D6FF', T.brand], // frasco · azul de la marca
-  ['#A8ECE6', '#0F8C88'], // caja · turquesa
-  ['#E2F7A8', T['logo-green-solid']], // cruz · verde del logo
-];
-const VERDE = T['logo-green'];
+export const NOMBRES = ['Pastilla', 'Gragea', 'Perla', 'Gomita', 'Efervescente', 'Algodón', 'Tapa', 'Crema', 'Pastillero', 'Estetoscopio', 'Cruz de farmacia'];
+const ARTICULO = ['la', 'la', 'la', 'la', 'la', 'el', 'la', 'la', 'el', 'el', 'la'];
+// El color dominante de cada pieza: las chispas de una unión salen de ese color.
+const TONOS = ['#BFD8FA', '#FF7DB5', '#FFD34F', '#A877FF', '#FFA04A', '#FFFFFF', '#4E93FF', '#5FE0B6', '#FFC66B', '#E3E8EF', '#9BE15D'];
 const PELIGRO = '#FF6B7E';
 
-// ── Pinceles para el horneado (corren en JavaScript, una vez) ────────────────
-const pincel = (color) => { const p = Skia.Paint(); p.setAntiAlias(true); p.setColor(Skia.Color(color)); return p; };
-const trazo = (color, ancho) => {
-  const p = pincel(color); p.setStyle(PaintStyle.Stroke); p.setStrokeWidth(ancho); p.setStrokeCap(StrokeCap.Round); p.setStrokeJoin(StrokeJoin.Round); return p;
-};
-const degradado = (x0, y0, x1, y1, colores) => {
-  const p = Skia.Paint(); p.setAntiAlias(true);
-  p.setShader(Skia.Shader.MakeLinearGradient(Skia.Point(x0, y0), Skia.Point(x1, y1), colores.map((c) => Skia.Color(c)), null, TileMode.Clamp));
-  return p;
-};
-const radial = (x, y, r, colores) => {
-  const p = Skia.Paint(); p.setAntiAlias(true);
-  p.setShader(Skia.Shader.MakeRadialGradient(Skia.Point(x, y), r, colores.map((c) => Skia.Color(c)), null, TileMode.Clamp));
-  return p;
-};
-const rr = (x, y, w, h, r) => Skia.RRectXY(Skia.XYWHRect(x, y, w, h), r, r);
+const ARTE = [
+  require('../assets/juegos/botiquin/pieza-0.png'),
+  require('../assets/juegos/botiquin/pieza-1.png'),
+  require('../assets/juegos/botiquin/pieza-2.png'),
+  require('../assets/juegos/botiquin/pieza-3.png'),
+  require('../assets/juegos/botiquin/pieza-4.png'),
+  require('../assets/juegos/botiquin/pieza-5.png'),
+  require('../assets/juegos/botiquin/pieza-6.png'),
+  require('../assets/juegos/botiquin/pieza-7.png'),
+  require('../assets/juegos/botiquin/pieza-8.png'),
+  require('../assets/juegos/botiquin/pieza-9.png'),
+  require('../assets/juegos/botiquin/pieza-10.png'),
+];
+const ARTE_BRILLO = require('../assets/juegos/botiquin/brillo.png');
+const ARTE_FONDO = require('../assets/juegos/botiquin/caja-fondo.png');
+const ARTE_FRENTE = require('../assets/juegos/botiquin/caja-frente.png');
 
-function cruz(c, m, n, L, g, p) {
-  c.drawRRect(rr(m - g, n - L, g * 2, L * 2, g * 0.45), p);
-  c.drawRRect(rr(m - L, n - g, L * 2, g * 2, g * 0.45), p);
+// El mundo entero (estuche + aire de arriba) en unidades del motor.
+const ANCHO_TOTAL = CAJA.ANCHO + CAJA.PARED * 2;
+const ALTO_TOTAL = ZONA_ARRIBA + CAJA.ALTO + CAJA.PARED;
+
+function medir(w, h) {
+  if (!w || !h) return null;
+  const k = Math.min(w / ANCHO_TOTAL, h / ALTO_TOTAL);
+  return { w, h, k, ox: (w - ANCHO_TOTAL * k) / 2 + CAJA.PARED * k, oy: (h - ALTO_TOTAL * k) / 2 + ZONA_ARRIBA * k };
 }
 
-// El dibujo de cada pieza, centrado en (m, n), en una caja de lado ~k.
-function icono(c, nivel, m, n, k, claro, fuerte) {
-  const sombra = pincel('rgba(10,20,50,0.22)');
-  switch (nivel) {
-    case 0: { // Pastilla: un disco blanco con su ranura
-      c.drawCircle(m, n + k * 0.04, k * 0.4, sombra);
-      c.drawCircle(m, n, k * 0.4, degradado(m, n - k * 0.4, m, n + k * 0.4, ['#FFFFFF', '#E1E9F5']));
-      c.drawCircle(m, n, k * 0.4, trazo('rgba(60,90,150,0.28)', k * 0.03));
-      c.drawLine(m - k * 0.26, n, m + k * 0.26, n, trazo('rgba(60,90,150,0.45)', k * 0.06));
-      break;
-    }
-    case 1: { // Gragea: un óvalo brillante, inclinado
-      c.save(); c.rotate(-30, m, n);
-      c.drawOval(Skia.XYWHRect(m - k * 0.44, n - k * 0.26 + k * 0.04, k * 0.88, k * 0.52), sombra);
-      c.drawOval(Skia.XYWHRect(m - k * 0.44, n - k * 0.26, k * 0.88, k * 0.52), degradado(m, n - k * 0.26, m, n + k * 0.26, ['#FFE2F8', fuerte]));
-      c.drawOval(Skia.XYWHRect(m - k * 0.28, n - k * 0.2, k * 0.34, k * 0.12), pincel('rgba(255,255,255,0.75)'));
-      c.restore();
-      break;
-    }
-    case 2: { // Cápsula: dos mitades, blanca y de color
-      c.save(); c.rotate(-40, m, n);
-      const L = k * 0.5; const A = k * 0.21;
-      c.drawRRect(rr(m - L, n - A + k * 0.04, L * 2, A * 2, A), sombra);
-      c.drawRRect(rr(m - L, n - A, L * 2, A * 2, A), degradado(m, n - A, m, n + A, ['#FFFFFF', '#E6ECF5']));
-      c.save(); c.clipRect(Skia.XYWHRect(m, n - A - 1, L + 1, A * 2 + 2), ClipOp.Intersect, true);
-      c.drawRRect(rr(m - L, n - A, L * 2, A * 2, A), degradado(m, n - A, m, n + A, [claro, fuerte]));
-      c.restore();
-      c.drawLine(m, n - A, m, n + A, trazo('rgba(0,0,0,0.15)', k * 0.025));
-      c.drawRRect(rr(m - L * 0.8, n - A * 0.65, L * 1.6, A * 0.42, A * 0.2), pincel('rgba(255,255,255,0.55)'));
-      c.restore();
-      break;
-    }
-    case 3: { // Perla: la cápsula blanda, dorada y translúcida
-      c.drawOval(Skia.XYWHRect(m - k * 0.36, n - k * 0.3 + k * 0.05, k * 0.72, k * 0.6), sombra);
-      c.drawOval(Skia.XYWHRect(m - k * 0.36, n - k * 0.3, k * 0.72, k * 0.6), radial(m - k * 0.1, n - k * 0.12, k * 0.5, ['#FFF7D0', '#F5BF1C', '#B07C00']));
-      c.drawLine(m - k * 0.36, n, m + k * 0.36, n, trazo('rgba(140,90,0,0.3)', k * 0.02));
-      c.drawOval(Skia.XYWHRect(m - k * 0.22, n - k * 0.22, k * 0.22, k * 0.13), pincel('rgba(255,255,255,0.85)'));
-      break;
-    }
-    case 4: { // Sobre: un sachet con bordes en zigzag y su cruz
-      const w = k * 0.42; const h = k * 0.4; const z = k * 0.06;
-      const p = Skia.Path.Make();
-      p.moveTo(m - w, n - h);
-      for (let i = 0; i < 6; i++) { p.lineTo(m - w + ((i + 0.5) * 2 * w) / 6, n - h - z); p.lineTo(m - w + ((i + 1) * 2 * w) / 6, n - h); }
-      p.lineTo(m + w, n + h);
-      for (let i = 0; i < 6; i++) { p.lineTo(m + w - ((i + 0.5) * 2 * w) / 6, n + h + z); p.lineTo(m + w - ((i + 1) * 2 * w) / 6, n + h); }
-      p.close();
-      c.save(); c.translate(0, k * 0.04); c.drawPath(p, sombra); c.restore();
-      c.drawPath(p, degradado(m, n - h, m, n + h, ['#FFFFFF', '#E7EEF6']));
-      c.drawLine(m - w, n - h * 0.55, m + w, n - h * 0.55, trazo('rgba(0,0,0,0.12)', k * 0.025));
-      cruz(c, m, n + h * 0.15, k * 0.17, k * 0.06, pincel(fuerte));
-      break;
-    }
-    case 5: { // Pomada: el tubo con su tapa
-      c.save(); c.rotate(-35, m, n);
-      const L = k * 0.52; const A = k * 0.2;
-      const p = Skia.Path.Make();
-      p.moveTo(m - L, n - A * 1.15); p.lineTo(m + L * 0.55, n - A); p.lineTo(m + L * 0.55, n + A); p.lineTo(m - L, n + A * 1.15); p.close();
-      c.save(); c.translate(0, k * 0.04); c.drawPath(p, sombra); c.restore();
-      c.drawPath(p, degradado(m, n - A, m, n + A, ['#FFFFFF', '#E3EAF3']));
-      c.drawRect(Skia.XYWHRect(m - L * 0.35, n - A, L * 0.5, A * 2), pincel(fuerte));
-      for (let i = 0; i < 3; i++) c.drawLine(m - L + k * 0.04 + i * k * 0.04, n - A * 1.1, m - L + k * 0.04 + i * k * 0.04, n + A * 1.1, trazo('rgba(0,0,0,0.14)', k * 0.018));
-      c.drawRRect(rr(m + L * 0.55, n - A * 0.7, L * 0.45, A * 1.4, A * 0.3), degradado(m, n - A, m, n + A, [claro, fuerte]));
-      c.restore();
-      break;
-    }
-    case 6: { // Jarabe: el frasco ámbar con su etiqueta
-      const w = k * 0.3; const top = n - k * 0.08; const h = k * 0.5;
-      c.drawRRect(rr(m - w, top + k * 0.04, w * 2, h, k * 0.1), sombra);
-      c.drawRect(Skia.XYWHRect(m - k * 0.1, n - k * 0.3, k * 0.2, k * 0.24), degradado(m, 0, m + 1, 0, ['#E59A4E', '#A4501A']));
-      c.drawRRect(rr(m - k * 0.14, n - k * 0.44, k * 0.28, k * 0.15, k * 0.04), degradado(m, n - k * 0.44, m, n - k * 0.29, [claro, fuerte]));
-      c.drawRRect(rr(m - w, top, w * 2, h, k * 0.1), degradado(m - w, top, m + w, top, ['#F0A85A', '#A4501A']));
-      c.drawRRect(rr(m - w * 0.78, top + h * 0.28, w * 1.56, h * 0.46, k * 0.04), pincel('#FFFFFF'));
-      c.drawLine(m - w * 0.5, top + h * 0.44, m + w * 0.5, top + h * 0.44, trazo(fuerte, k * 0.04));
-      c.drawLine(m - w * 0.5, top + h * 0.58, m + w * 0.2, top + h * 0.58, trazo('rgba(0,0,0,0.2)', k * 0.03));
-      c.drawRect(Skia.XYWHRect(m - w * 0.75, top + k * 0.04, w * 0.18, h * 0.8), pincel('rgba(255,255,255,0.35)'));
-      break;
-    }
-    case 7: { // Frasco de pastillas: tapa con estrías y etiqueta
-      const w = k * 0.32; const top = n - k * 0.2; const h = k * 0.56;
-      c.drawRRect(rr(m - w, top + k * 0.04, w * 2, h, k * 0.08), sombra);
-      c.drawRRect(rr(m - w, top, w * 2, h, k * 0.08), degradado(m - w, 0, m + w, 0, ['#FFFFFF', '#DCE5F0']));
-      c.drawRect(Skia.XYWHRect(m - w, top + h * 0.3, w * 2, h * 0.42), pincel(fuerte));
-      c.drawCircle(m, top + h * 0.51, k * 0.1, pincel('#FFFFFF'));
-      c.drawLine(m - k * 0.06, top + h * 0.51, m + k * 0.06, top + h * 0.51, trazo(fuerte, k * 0.03));
-      c.drawRRect(rr(m - w * 1.08, n - k * 0.4, w * 2.16, k * 0.2, k * 0.05), degradado(m, n - k * 0.4, m, n - k * 0.2, ['#FFFFFF', '#C9D4E2']));
-      for (let i = 1; i < 6; i++) c.drawLine(m - w * 1.08 + (i * w * 2.16) / 6, n - k * 0.37, m - w * 1.08 + (i * w * 2.16) / 6, n - k * 0.23, trazo('rgba(0,0,0,0.13)', k * 0.02));
-      break;
-    }
-    case 8: { // Caja de medicina: frente, tapa en perspectiva, franja y cruz
-      const w = k * 0.42; const top = n - k * 0.12; const h = k * 0.44; const d = k * 0.14;
-      c.drawRect(Skia.XYWHRect(m - w, top + k * 0.05, w * 2, h), sombra);
-      const tapa = Skia.Path.Make();
-      tapa.moveTo(m - w, top); tapa.lineTo(m - w + d, top - d); tapa.lineTo(m + w + d * 0.4, top - d); tapa.lineTo(m + w, top); tapa.close();
-      c.drawPath(tapa, pincel('#F4F8FC'));
-      c.drawRect(Skia.XYWHRect(m - w, top, w * 2, h), degradado(m, top, m, top + h, ['#FFFFFF', '#E2E9F2']));
-      c.drawRect(Skia.XYWHRect(m - w, top + h * 0.62, w * 2, h * 0.2), pincel(fuerte));
-      cruz(c, m - w * 0.45, top + h * 0.32, k * 0.1, k * 0.035, pincel(fuerte));
-      c.drawLine(m - w * 0.05, top + h * 0.26, m + w * 0.7, top + h * 0.26, trazo('rgba(0,0,0,0.25)', k * 0.03));
-      c.drawLine(m - w * 0.05, top + h * 0.42, m + w * 0.45, top + h * 0.42, trazo('rgba(0,0,0,0.15)', k * 0.025));
-      break;
-    }
-    default: { // Cruz de farmacia: la cruz verde, con su luz
-      const L = k * 0.46; const g = k * 0.16;
-      const luz = pincel('rgba(200,255,120,0.55)');
-      luz.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, k * 0.08, true));
-      cruz(c, m, n, L, g, luz);
-      cruz(c, m, n, L, g, degradado(m, n - L, m, n + L, ['#D4F57A', VERDE, fuerte]));
-      const borde = trazo('rgba(255,255,255,0.85)', k * 0.03);
-      c.drawRRect(rr(m - g, n - L, g * 2, L * 2, g * 0.45), borde);
-      c.drawRRect(rr(m - L, n - g, L * 2, g * 2, g * 0.45), borde);
-      cruz(c, m, n, L - k * 0.05, g - k * 0.05, degradado(m, n - L, m, n + L, ['#D4F57A', VERDE, fuerte]));
-      c.drawRRect(rr(m - g * 0.6, n - L * 0.85, g * 1.2, L * 0.4, g * 0.3), pincel('rgba(255,255,255,0.4)'));
-    }
+// Las imágenes de Skia: una por pieza, más la luz y las dos capas del estuche.
+// Explícitas y no en un bucle: son hooks.
+function useArte() {
+  const p0 = useImage(ARTE[0]); const p1 = useImage(ARTE[1]); const p2 = useImage(ARTE[2]); const p3 = useImage(ARTE[3]);
+  const p4 = useImage(ARTE[4]); const p5 = useImage(ARTE[5]); const p6 = useImage(ARTE[6]); const p7 = useImage(ARTE[7]);
+  const p8 = useImage(ARTE[8]); const p9 = useImage(ARTE[9]); const p10 = useImage(ARTE[10]);
+  const brillo = useImage(ARTE_BRILLO); const fondo = useImage(ARTE_FONDO); const frente = useImage(ARTE_FRENTE);
+  return useMemo(() => {
+    const lista = [p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10];
+    if (lista.some((x) => !x) || !brillo || !fondo || !frente) return null;
+    const src = (i) => Skia.XYWHRect(0, 0, i.width(), i.height());
+    return { piezas: lista, src: lista.map(src), brillo, srcBrillo: src(brillo), fondo, frente, srcCaja: src(fondo) };
+  }, [p0, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, brillo, fondo, frente]);
+}
+
+// La foto que cruza al hilo de la interfaz: sólo números. 5 por pieza (nivel,
+// x, y, giro, radio), 5 por anillo (x, y, radio, nivel, avance) y 5 por chispa
+// (x, y, radio, nivel, vida).
+function fotografiar(m, chispas, mov, cuelga) {
+  const lista = piezas(m);
+  const c = new Array(lista.length * 5); let k = 0;
+  for (const b of lista) {
+    let r = b.circleRadius;
+    // Un saltito al nacer de una unión (además de crecer en el motor).
+    if (mov && b.plugin.junta) { const q = (m.t - b.plugin.nace) / 0.3; if (q > 0.35 && q < 1) r *= 1 + 0.08 * Math.sin(((q - 0.35) / 0.65) * Math.PI); }
+    c[k++] = b.plugin.n; c[k++] = b.position.x; c[k++] = b.position.y; c[k++] = b.angle; c[k++] = r;
   }
-}
-
-// Una pieza como imagen de diámetro D (a la densidad del teléfono): el disco
-// de su color con el borde de vidrio, el dibujo adentro y un brillo arriba.
-function hornearPieza(nivel, D) {
-  const d = PixelRatio.get();
-  const lado = Math.max(4, Math.ceil(D * d));
-  const sup = Skia.Surface.Make(lado, lado);
-  if (!sup) return null;
-  const c = sup.getCanvas();
-  c.scale(lado / D, lado / D);
-  const R = D / 2; const m = R;
-  const [claro, fuerte] = COLORES[nivel];
-  c.drawCircle(m, m, R - 0.4, radial(m - R * 0.3, m - R * 0.4, R * 1.5, [claro, fuerte]));
-  c.drawCircle(m, m, R - Math.max(1, R * 0.06), trazo('rgba(0,0,0,0.14)', Math.max(1, R * 0.05)));
-  c.drawCircle(m, m, R - 0.8, trazo(nivel === MAX ? '#FFFFFF' : 'rgba(255,255,255,0.6)', Math.max(1, R * (nivel === MAX ? 0.07 : 0.04))));
-  icono(c, nivel, m, m + R * 0.02, R * 1.3, claro, fuerte);
-  c.drawOval(Skia.XYWHRect(m - R * 0.55, m - R * 0.82, R * 0.75, R * 0.32), pincel('rgba(255,255,255,0.28)'));
-  sup.flush();
-  return sup.makeImageSnapshot();
-}
-function hornearPiezas(escala) {
-  const piezas = []; const src = [];
-  for (let n = 0; n <= MAX; n++) {
-    const img = hornearPieza(n, RADIOS[n] * 2 * escala);
-    if (!img) return null;
-    piezas.push(img); src.push(Skia.XYWHRect(0, 0, img.width(), img.height()));
+  const a = [];
+  if (mov) {
+    for (const r of m.anillos) { const q = (m.t - r.t) / 0.55; if (q >= 0 && q < 1) a.push(r.x, r.y, r.r, r.n, q); }
   }
-  return { piezas, src };
+  const p = [];
+  for (const s of chispas) p.push(s.x, s.y, s.r, s.n, s.vida);
+  return { t: m.t, peligro: m.peligro, actual: m.actual, c, a, p, cuelga: cuelga && !m.perdio, lista: puedeSoltar(m) };
 }
 
-// El botiquín: fondo de vidrio con una cruz grande y tenue, paredes blancas
-// de estuche y la cruz verde en la base. Se graba una vez por medida.
-function grabarBotiquin(g) {
-  const rec = Skia.PictureRecorder();
-  const c = rec.beginRecording(Skia.XYWHRect(0, 0, g.W, g.H));
-  const { ox, oy, S } = g; const P = PARED * S; const H = ALTO * S;
-  c.drawRRect(rr(ox, oy - P * 0.4, S, H + P * 0.4, P * 0.6), degradado(0, oy, 0, oy + H, ['rgba(255,255,255,0.07)', 'rgba(255,255,255,0.15)']));
-  cruz(c, ox + S / 2, oy + H * 0.58, S * 0.26, S * 0.085, pincel('rgba(255,255,255,0.06)'));
-  const sombra = pincel('rgba(0,10,20,0.35)');
-  sombra.setMaskFilter(Skia.MaskFilter.MakeBlur(BlurStyle.Normal, P * 0.8, true));
-  c.drawRRect(rr(ox - P, oy + H + P * 0.6, S + P * 2, P, P * 0.5), sombra);
-  const pared = degradado(0, oy, 0, oy + H, ['#FFFFFF', '#D9E2EE']);
-  c.drawRRect(rr(ox - P, oy - P * 0.6, P, H + P * 1.6, P * 0.5), pared);
-  c.drawRRect(rr(ox + S, oy - P * 0.6, P, H + P * 1.6, P * 0.5), pared);
-  c.drawRRect(rr(ox - P, oy + H, S + P * 2, P, P * 0.5), degradado(0, oy + H, 0, oy + H + P, ['#E9EFF6', '#C9D4E2']));
-  // Los broches de arriba y la cruz de la base.
-  c.drawRRect(rr(ox - P * 1.25, oy - P * 0.2, P * 1.5, P * 0.9, P * 0.3), pincel(VERDE));
-  c.drawRRect(rr(ox + S - P * 0.25, oy - P * 0.2, P * 1.5, P * 0.9, P * 0.3), pincel(VERDE));
-  cruz(c, ox + S / 2, oy + H + P / 2, P * 0.36, P * 0.13, pincel(T['logo-green-solid']));
-  return rec.finishRecordingAsPicture();
+// ── Piezas sueltas de la interfaz (imágenes normales, nítidas) ────────────────
+function PiezaImg({ n, tam, apagada = false }) {
+  return <Image source={ARTE[n]} style={{ width: tam, height: tam, opacity: apagada ? 0.28 : 1 }} />;
 }
 
-function medir(W, H) {
-  if (!W || !H) return null;
-  const S = Math.floor(Math.min(W / (1 + PARED * 2 + 0.04), H / (ZONA + ALTO + PARED + 0.04)));
-  const usado = S * (ZONA + ALTO + PARED);
-  return { W, H, S, ox: (W - S) / 2, oy: (H - usado) / 2 + S * ZONA };
-}
-
-// La cadena de la portada y del final: las diez en una sola imagen.
-function Cadena({ chicas, mayor }) {
-  const [w, setW] = useState(0);
-  const gap = 4;
-  const s = w ? Math.min(44, (w - gap * 4) / 5) : 0;
-  const pic = useMemo(() => {
-    if (!w || !chicas) return null;
-    const rec = Skia.PictureRecorder();
-    const c = rec.beginRecording(Skia.XYWHRect(0, 0, w, s * 2 + gap));
-    const x0 = (w - (s * 5 + gap * 4)) / 2;
-    const p = Skia.Paint();
-    for (let i = 0; i <= MAX; i++) {
-      const x = x0 + (i % 5) * (s + gap); const y = Math.floor(i / 5) * (s + gap);
-      p.setAlphaf(mayor == null || i <= mayor ? 1 : 0.3);
-      c.drawImageRectOptions(chicas.piezas[i], chicas.src[i], Skia.XYWHRect(x, y, s, s), FilterMode.Linear, MipmapMode.Linear, p);
-    }
-    return rec.finishRecordingAsPicture();
-  }, [w, s, chicas, mayor]);
+// La cadena completa, de la más chica a la más grande: lo que falta, apagado.
+function Cadena({ mayor, tam = 26 }) {
   return (
-    <View onLayout={(e) => setW(e.nativeEvent.layout.width)} style={{ height: (s || 40) * 2 + gap }} accessible
-      accessibilityLabel={`La cadena: ${NOMBRES.join(', ')}.${mayor != null ? ` Tu pieza más grande: ${NOMBRES[mayor]}.` : ''}`}>
-      {pic ? <Canvas style={{ flex: 1 }}><Picture picture={pic} /></Canvas> : null}
+    <View style={estilos.cadena} accessible
+      accessibilityLabel={`La cadena: ${NOMBRES.join(', ')}.${mayor != null ? ` Lo más grande que hiciste: ${NOMBRES[mayor]}.` : ''}`}>
+      {NOMBRES.map((nombre, i) => (
+        <View key={nombre} style={{ alignItems: 'center', justifyContent: 'center', width: tam, height: tam }}>
+          <PiezaImg n={i} tam={tam * (0.62 + (i / MAX) * 0.38)} apagada={mayor != null && i > mayor} />
+        </View>
+      ))}
     </View>
   );
 }
 
-function PiezaChica({ chicas, nivel, tam = 34 }) {
-  if (!chicas) return <View style={{ width: tam, height: tam }} />;
+// Los puntos que flotan donde se hizo la unión.
+function Flotante({ x, y, texto, grande, alTerminar }) {
+  const v = useSharedValue(0);
+  useEffect(() => {
+    v.value = withTiming(1, { duration: grande ? 1100 : 750, easing: Easing.out(Easing.cubic) }, (ok) => { if (ok) runOnJS(alTerminar)(); });
+  }, [v, grande, alTerminar]);
+  const estilo = useAnimatedStyle(() => ({
+    opacity: v.value < 0.7 ? 1 : 1 - (v.value - 0.7) / 0.3,
+    transform: [{ translateY: -v.value * (grande ? 70 : 44) }, { scale: 0.7 + Math.min(1, v.value * 4) * 0.3 }],
+  }));
   return (
-    <Canvas style={{ width: tam, height: tam }}>
-      <ImagenSkia image={chicas.piezas[nivel]} x={0} y={0} width={tam} height={tam} fit="contain" />
-    </Canvas>
+    <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: x - 70, top: y - 18, width: 140, alignItems: 'center' }, estilo]}>
+      <Text maxFontSizeMultiplier={1.2} style={[estilos.flotante, grande && { fontSize: 26, color: ORO }]}>{texto}</Text>
+    </Animated.View>
   );
 }
 
@@ -312,141 +153,131 @@ function BotonChico({ sf, etiqueta, alTocar }) {
   );
 }
 
-// La foto que cruza al hilo de la interfaz en cada cuadro: sólo números, 5 por
-// pieza (nivel, x, y, giro, escala) y 5 por anillo (x, y, radio, nivel, avance).
-// El saltito de una pieza recién unida y el avance de los anillos se calculan
-// acá, así el dibujo no recorre nada que no vaya a pintar.
-function fotografiar(m, mov, cuelga) {
-  const cs = m.cuerpos; const c = new Array(cs.length * 5); let k = 0;
-  for (let i = 0; i < cs.length; i++) {
-    const b = cs[i]; let esc = 1;
-    if (b.junta && mov) { const q = (m.t - b.nace) / 0.28; if (q < 1) esc = 1 + 0.18 * Math.sin(q * Math.PI); }
-    c[k++] = b.n; c[k++] = b.x; c[k++] = b.y; c[k++] = b.ang; c[k++] = esc;
-  }
-  const a = [];
-  if (mov) {
-    for (let i = 0; i < m.anillos.length; i++) {
-      const r = m.anillos[i]; const q = (m.t - r.t) / 0.5;
-      if (q >= 0 && q < 1) a.push(r.x, r.y, r.r, r.n, q);
-    }
-  }
-  return {
-    t: m.t, peligro: m.peligro, actual: m.actual, c, a,
-    cuelga: cuelga && !m.perdio,
-    lista: m.t - m.ultimaSoltada >= PAUSA_SOLTAR,
-  };
-}
-
 export default function Botiquin() {
   const quieta = useSinMovimiento();
   const visible = useVisible();
+  const arte = useArte();
   const [fase, setFase] = useState('portada'); // portada · jugando · fin
   const [pausa, setPausa] = useState(false);
   const [puntos, setPuntos] = useState(0);
   const [record, setRecord] = useState(0);
   const [mayorHistorico, setMayorHistorico] = useState(null);
   const [nuevoRecord, setNuevoRecord] = useState(false);
-  const [actual, setActual] = useState(0);
   const [siguiente, setSiguiente] = useState(0);
+  const [actual, setActual] = useState(0);
   const [mayor, setMayor] = useState(0);
-  const [cuantas, setCuantas] = useState(0);
   const [aviso, setAviso] = useState(null);
   const [festejo, setFestejo] = useState(0);
   const [caja, setCaja] = useState(null);
+  const [flotantes, setFlotantes] = useState([]);
   const recordRef = useRef(0);
   const mayorHistRef = useRef(-1);
-  const racha = useRef({ n: 0, t: 0 });
   const mayorRef = useRef(0);
-
-  // El mundo vive en JavaScript (lib/caida.js) y el hilo de la interfaz sólo
-  // DIBUJA una foto compacta que se le pasa en cada cuadro. Hasta la build 94
-  // la física corría en el hilo de la interfaz (`mundo.modify` dentro de
-  // `useFrameCallback`) y el juego se cerraba al iniciarlo: un error ahí no se
-  // puede atrapar y tumba la app entera. Éste es el patrón del Botiquín
-  // anterior —lógica en JavaScript, sólo el cuadro en el otro hilo—, que nunca
-  // se cayó. El costo de cruzar la foto es chico: 5 números por pieza.
+  const racha = useRef({ n: 0, t: 0 });
   const mundo = useRef(null);
+  const chispas = useRef([]);
+  const idFlotante = useRef(0);
+
+  // Lo que lee el dibujo, en el hilo de la interfaz.
   const foto = useSharedValue(null);
   const geoV = useSharedValue(null);
-  const imgs = useSharedValue(null);
-  const apunta = useSharedValue(0.5); // dónde se va a soltar, en anchos
+  const arteV = useSharedValue(null);
+  const apunta = useSharedValue(CAJA.ANCHO / 2); // dónde se va a soltar, en unidades del mundo
   const enJuego = useSharedValue(false);
   const enJuegoRef = useRef(false);
   const animar = useSharedValue(!quieta);
   const animarRef = useRef(!quieta);
   useEffect(() => { animar.value = !quieta; animarRef.current = !quieta; }, [quieta, animar]);
+  useEffect(() => { arteV.value = arte; }, [arte, arteV]);
+
+  const geo = useMemo(() => (caja ? medir(caja.w, caja.h) : null), [caja]);
+  useEffect(() => { geoV.value = geo; }, [geo, geoV]);
 
   useEffect(() => {
     precargar(SONIDOS);
     SecureStore.getItemAsync(CLAVE_RECORD).then((v) => { const n = Number(v) || 0; recordRef.current = n; setRecord(n); }).catch(() => {});
     SecureStore.getItemAsync(CLAVE_MAYOR).then((v) => { if (v != null && v !== '') { const n = Number(v); if (Number.isFinite(n)) { mayorHistRef.current = n; setMayorHistorico(n); } } }).catch(() => {});
-    return () => callar(SONIDOS);
+    return () => { callar(SONIDOS); destruir(mundo.current); mundo.current = null; };
   }, []);
 
-  const chicas = useMemo(() => hornearPiezas(22), []); // diámetro ~44 para la portada
-  const geo = useMemo(() => (caja ? medir(caja.w, caja.h) : null), [caja]);
-  useEffect(() => {
-    if (!geo) return;
-    const s = hornearPiezas(geo.S);
-    if (!s) return;
-    geoV.value = geo;
-    imgs.value = { ...s, caja: grabarBotiquin(geo) };
-  }, [geo, geoV, imgs]);
+  const quitarFlotante = useCallback((id) => setFlotantes((l) => l.filter((f) => f.id !== id)), []);
 
-  // ── Lo que JavaScript hace cuando el mundo avisa (sonido, vibración, marcador)
+  // ── Lo que pasa cuando el mundo avisa: sonido, vibración, marcador ──────────
   const js = useRef({});
-  js.current.soltada = (n, a, s, total) => {
-    setActual(a); setSiguiente(s); setCuantas(total);
-    sonar('gota', { volumen: 0.45, tono: 1.25 - n * 0.06 });
-    tacto.roce();
-  };
-  js.current.eventos = (evs, pts, total) => {
-    setPuntos(pts); setCuantas(total);
+  js.current.eventos = (evs, m) => {
+    setPuntos(m.puntos);
     const ahora = Date.now();
+    const g = geo;
+    const nuevos = [];
     for (const e of evs) {
-      racha.current = ahora - racha.current.t < 900 ? { n: racha.current.n + 1, t: ahora } : { n: 1, t: ahora };
+      racha.current = ahora - racha.current.t < 1100 ? { n: racha.current.n + 1, t: ahora } : { n: 1, t: ahora };
+      if (animarRef.current) {
+        // Chispas del color de la pieza nueva.
+        const cuantas = e.tipo === 'cumbre' ? 26 : Math.round(8 + Math.min(10, e.n * 1.5));
+        for (let i = 0; i < cuantas; i++) {
+          const a = Math.random() * Math.PI * 2; const v = 90 + Math.random() * 160 + e.n * 12;
+          chispas.current.push({ x: e.x, y: e.y, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 60, r: 2.5 + Math.random() * 3 + e.n * 0.35, n: e.n, vida: 1 });
+        }
+      }
+      if (g) nuevos.push({ id: idFlotante.current++, x: g.ox + e.x * g.k, y: g.oy + e.y * g.k, texto: `+${e.puntos}`, grande: e.tipo === 'cumbre' || e.n >= 7 });
       if (e.tipo === 'cumbre') {
         sonar('ganar'); tacto.exito(); setFestejo((k) => k + 1);
-        setAviso({ k: ahora, texto: `¡Dos cruces! +${PREMIO_CUMBRE}` });
+        setAviso({ k: ahora, texto: `¡Dos cruces de farmacia! +${PREMIO_CUMBRE}` });
         continue;
       }
-      sonar(`pop-${1 + (e.n % 6)}`, { tono: Math.max(0.7, 1.2 - e.n * 0.05), volumen: 0.8 });
-      if (e.n >= 5) tacto.golpe(); else tacto.toque();
+      sonar(`pop-${1 + (e.n % 6)}`, { tono: Math.max(0.62, 1.25 - e.n * 0.06), volumen: 0.85 });
+      if (e.n >= 6) tacto.golpe(); else tacto.toque();
       if (e.n > mayorRef.current) {
         mayorRef.current = e.n; setMayor(e.n);
-        if (e.n >= 4) { sonar('par', { volumen: 0.6 }); setAviso({ k: ahora, texto: `¡Hiciste ${ARTICULO[e.n] === 'el' ? 'tu primer' : 'tu primera'} ${NOMBRES[e.n]}!` }); }
+        if (e.n >= 5) {
+          sonar('par', { volumen: 0.6 });
+          setAviso({ k: ahora, texto: `¡${ARTICULO[e.n] === 'el' ? 'Tu primer' : 'Tu primera'} ${NOMBRES[e.n]}!` });
+          if (e.n >= 8) setFestejo((k) => k + 1);
+        }
       }
       if (racha.current.n >= 3) setAviso({ k: ahora + 1, texto: `¡Cadena ×${racha.current.n}!` });
     }
+    if (nuevos.length) setFlotantes((l) => [...l.slice(-8), ...nuevos]);
   };
   js.current.peligro = (si) => {
-    if (si) { sonar('fallo', { volumen: 0.5 }); tacto.aviso(); setAviso({ k: Date.now(), texto: '¡Se desborda!' }); } else setAviso(null);
+    if (si) { sonar('fallo', { volumen: 0.5 }); tacto.aviso(); setAviso({ k: Date.now(), texto: '¡Cuidado, se desborda!' }); } else setAviso(null);
   };
-  js.current.perder = (pts, may) => {
-    enJuego.value = false;
-    setPuntos(pts); setFase('fin'); setAviso(null);
+  js.current.perder = (m) => {
+    enJuegoRef.current = false; enJuego.value = false;
+    setPuntos(m.puntos); setFase('fin'); setAviso(null);
     sonar('derrumbe'); tacto.aviso();
-    if (may > mayorHistRef.current) { mayorHistRef.current = may; setMayorHistorico(may); SecureStore.setItemAsync(CLAVE_MAYOR, String(may)).catch(() => {}); }
-    if (pts > recordRef.current) {
-      recordRef.current = pts; setRecord(pts); setNuevoRecord(true);
-      SecureStore.setItemAsync(CLAVE_RECORD, String(pts)).catch(() => {});
-      setTimeout(() => { sonar('ganar'); tacto.exito(); setFestejo((k) => k + 1); }, 600);
+    if (m.mayor > mayorHistRef.current) { mayorHistRef.current = m.mayor; setMayorHistorico(m.mayor); SecureStore.setItemAsync(CLAVE_MAYOR, String(m.mayor)).catch(() => {}); }
+    if (m.puntos > recordRef.current) {
+      recordRef.current = m.puntos; setRecord(m.puntos); setNuevoRecord(true);
+      SecureStore.setItemAsync(CLAVE_RECORD, String(m.puntos)).catch(() => {});
+      setTimeout(() => { sonar('ganar'); tacto.exito(); setFestejo((k) => k + 1); }, 700);
     }
   };
-  const mostrar = (cuelga) => { if (mundo.current) foto.value = fotografiar(mundo.current, animarRef.current, cuelga); };
 
-  // ── El reloj: requestAnimationFrame, pasos fijos (lib/caida.js) ─────────────
+  const mostrar = (cuelga) => {
+    if (mundo.current) foto.value = fotografiar(mundo.current, chispas.current, animarRef.current, cuelga);
+  };
+
+  // ── El reloj: requestAnimationFrame; el motor da pasos fijos de 1/120 s ─────
   const cuadroJs = useRef(null);
   cuadroJs.current = (dt) => {
     const m = mundo.current;
     if (!m || m.perdio) return;
     avanzar(m, dt);
-    if (m.eventos.length) { const evs = m.eventos; m.eventos = []; js.current.eventos(evs, m.puntos, m.cuerpos.length); }
-    if (!m.alerta && m.peligro > 0.4) { m.alerta = true; js.current.peligro(true); } else if (m.alerta && m.peligro === 0) { m.alerta = false; js.current.peligro(false); }
-    mostrar(!m.perdio);
-    if (m.perdio) js.current.perder(m.puntos, m.mayor);
+    // Las chispas: caen y se apagan en ~0.6 s.
+    if (chispas.current.length) {
+      const d = Math.min(dt, 0.05);
+      chispas.current = chispas.current.filter((s) => {
+        s.vy += 600 * d; s.vx *= 0.985; s.x += s.vx * d; s.y += s.vy * d; s.vida -= d / 0.6;
+        return s.vida > 0;
+      });
+    }
+    if (m.eventos.length) { const evs = m.eventos; m.eventos = []; js.current.eventos(evs, m); }
+    if (!m.alerta && m.peligro > AVISO_PELIGRO) { m.alerta = true; js.current.peligro(true); } else if (m.alerta && m.peligro === 0) { m.alerta = false; js.current.peligro(false); }
+    mostrar(true);
+    if (m.perdio) { mostrar(false); js.current.perder(m); }
   };
-  const corriendo = fase === 'jugando' && !pausa && visible && !!geo;
+  const corriendo = fase === 'jugando' && !pausa && visible && !!geo && !!arte;
   useEffect(() => {
     enJuegoRef.current = corriendo; enJuego.value = corriendo;
     if (!corriendo) return undefined;
@@ -456,7 +287,6 @@ export default function Botiquin() {
       const dt = antes ? (ahora - antes) / 1000 : 1 / 60;
       antes = ahora;
       try { cuadroJs.current(dt); } catch (err) {
-        // Una falla del motor termina la partida; nunca cierra la app.
         reportarError(err, { pantalla: 'botiquin' });
         enJuegoRef.current = false; enJuego.value = false;
         setFase('fin');
@@ -467,97 +297,109 @@ export default function Botiquin() {
     id = requestAnimationFrame(tic);
     return () => { vivo = false; cancelAnimationFrame(id); };
   }, [corriendo, enJuego]);
-  // Si la pantalla deja de verse a media partida, queda en pausa al volver.
   useEffect(() => { if (!visible && fase === 'jugando') setPausa(true); }, [visible, fase]);
 
   const empezar = useCallback(() => {
-    const semilla = (Date.now() % 2147483000) + 1;
-    setPuntos(0); setMayor(0); mayorRef.current = 0; setCuantas(0); setNuevoRecord(false); setAviso(null); setPausa(false);
-    racha.current = { n: 0, t: 0 };
-    const m = crearMundo(ALTO, semilla);
+    destruir(mundo.current);
+    const m = crearMundo((Date.now() % 2147483000) + 1);
     m.alerta = false;
     mundo.current = m;
-    apunta.value = 0.5;
-    foto.value = fotografiar(m, animarRef.current, true);
+    chispas.current = [];
+    setPuntos(0); setMayor(0); mayorRef.current = 0; setNuevoRecord(false); setAviso(null); setPausa(false); setFlotantes([]);
+    racha.current = { n: 0, t: 0 };
+    apunta.value = CAJA.ANCHO / 2;
+    foto.value = fotografiar(m, [], animarRef.current, true);
     setActual(m.actual); setSiguiente(m.siguiente);
     setFase('jugando');
   }, [apunta, foto]);
 
-  // Soltar: el dedo se lee en el hilo de la interfaz; la pieza la suelta el mundo.
   js.current.soltarEn = (x) => {
     const m = mundo.current;
     if (!enJuegoRef.current || !m) return;
+    const n = m.actual;
     const b = soltar(m, x);
-    if (b) { js.current.soltada(b.n, m.actual, m.siguiente, m.cuerpos.length); mostrar(true); }
+    if (!b) return;
+    setActual(m.actual); setSiguiente(m.siguiente);
+    sonar('gota', { volumen: 0.45, tono: 1.3 - n * 0.07 });
+    tacto.roce();
+    mostrar(true);
   };
   const alSoltarEn = useCallback((x) => js.current.soltarEn(x), []);
 
-  const aAnchos = (px) => { 'worklet'; const g = geoV.value; return g ? Math.min(1, Math.max(0, (px - g.ox) / g.S)) : 0.5; };
-  const gesto = useMemo(() => Gesture.Pan().minDistance(0).maxPointers(1)
-    .onBegin((e) => { apunta.value = aAnchos(e.x); })
-    .onUpdate((e) => { apunta.value = aAnchos(e.x); })
-    // Se suelta al levantar el dedo, haya arrastrado o sólo tocado (un toque
-    // corto puede no llegar a «activar» el arrastre: por eso no se mira `ok`).
-    .onFinalize((e) => { const v = aAnchos(e.x); apunta.value = v; runOnJS(alSoltarEn)(v); }), [apunta, alSoltarEn]); // eslint-disable-line react-hooks/exhaustive-deps
+  // El dedo se lee en el hilo de la interfaz: la pieza que cuelga lo sigue sin
+  // esperar a JavaScript. Se suelta al levantar el dedo (arrastre o toque).
+  const gesto = useMemo(() => {
+    const aMundo = (px) => { 'worklet'; const g = geoV.value; return g ? Math.min(CAJA.ANCHO, Math.max(0, (px - g.ox) / g.k)) : CAJA.ANCHO / 2; };
+    return Gesture.Pan().minDistance(0).maxPointers(1)
+      .onBegin((e) => { apunta.value = aMundo(e.x); })
+      .onUpdate((e) => { apunta.value = aMundo(e.x); })
+      .onFinalize((e) => { const v = aMundo(e.x); apunta.value = v; runOnJS(alSoltarEn)(v); });
+  }, [apunta, geoV, alSoltarEn]);
 
   // ── El cuadro: un solo Picture con todo ─────────────────────────────────────
   const cuadro = useDerivedValue(() => {
-    const g = geoV.value; const im = imgs.value; const f = foto.value;
+    const g = geoV.value; const im = arteV.value; const f = foto.value;
     const rec = Skia.PictureRecorder();
-    const c = rec.beginRecording(Skia.XYWHRect(0, 0, g ? g.W : 1, g ? g.H : 1));
+    const c = rec.beginRecording(Skia.XYWHRect(0, 0, g ? g.w : 1, g ? g.h : 1));
     if (!g || !im) return rec.finishRecordingAsPicture();
-    c.drawPicture(im.caja);
-    if (!f) return rec.finishRecordingAsPicture();
-    const S = g.S; const t = f.t; const mov = animar.value;
+    const k = g.k; const mov = animar.value;
+    const X = (x) => g.ox + x * k; const Y = (y) => g.oy + y * k;
     const p = Skia.Paint(); p.setAntiAlias(true);
-    const X = (x) => g.ox + x * S; const Y = (y) => g.oy + y * S;
-    const estampa = (n, x, y, ang, esc) => {
-      const r = RADIOS[n] * S * esc;
-      c.save(); c.translate(X(x), Y(y));
+    const cajaRect = Skia.XYWHRect(X(-CAJA.PARED), Y(-CAJA.ARRIBA), ANCHO_TOTAL * k, (CAJA.ARRIBA + CAJA.ALTO + CAJA.PARED) * k);
+    c.drawImageRect(im.fondo, im.srcCaja, cajaRect, p);
+    const pieza = (n, x, y, ang, r) => {
+      const R = r * k; const cx = X(x); const cy = Y(y);
+      c.save(); c.translate(cx, cy);
       if (ang) c.rotate((ang * 180) / Math.PI, 0, 0);
-      c.drawImageRect(im.piezas[n], im.src[n], Skia.XYWHRect(-r, -r, r * 2, r * 2), p);
+      c.drawImageRect(im.piezas[n], im.src[n], Skia.XYWHRect(-R, -R, R * 2, R * 2), p);
       c.restore();
+      // La luz no gira: queda arriba a la izquierda aunque la pieza ruede.
+      c.drawImageRect(im.brillo, im.srcBrillo, Skia.XYWHRect(cx - R, cy - R, R * 2, R * 2), p);
     };
 
-    // El borde: punteado, y en rojo que late mientras algo se desborda.
-    const linea = Skia.Paint(); linea.setAntiAlias(true);
-    if (f.peligro > 0) {
-      linea.setColor(Skia.Color(PELIGRO));
-      linea.setAlphaf(mov ? 0.55 + 0.45 * Math.sin(t * 14) : 1);
-    } else { linea.setColor(Skia.Color('#FFFFFF')); linea.setAlphaf(0.32); }
-    const seg = S * 0.035;
-    for (let x = 0; x < S; x += seg * 2) c.drawRect(Skia.XYWHRect(g.ox + x, g.oy - 1, Math.min(seg, S - x), 2), linea);
+    if (f) {
+      // La pieza que cuelga y su guía hasta el fondo.
+      if (enJuego.value && f.cuelga) {
+        const n = f.actual; const r = RADIOS[n];
+        const x = Math.min(CAJA.ANCHO - r, Math.max(r, apunta.value));
+        const guia = Skia.Paint(); guia.setColor(Skia.Color('#FFFFFF')); guia.setAlphaf(f.lista ? 0.22 : 0.08);
+        const top = Y(Y_SOLTAR + r); const fin = Y(CAJA.ALTO);
+        for (let y = top; y < fin; y += 14 * k) c.drawRect(Skia.XYWHRect(X(x) - 1, y, 2, Math.min(7 * k, fin - y)), guia);
+        if (f.lista) pieza(n, x, Y_SOLTAR, 0, r);
+      }
+      const cs = f.c;
+      for (let i = 0; i < cs.length; i += 5) pieza(cs[i], cs[i + 1], cs[i + 2], cs[i + 3], cs[i + 4]);
 
-    // La pieza que cuelga y su guía hasta el fondo.
-    if (enJuego.value && f.cuelga) {
-      const n = f.actual; const r = RADIOS[n];
-      const x = Math.min(1 - r, Math.max(r, apunta.value));
-      const guia = Skia.Paint(); guia.setColor(Skia.Color('#FFFFFF')); guia.setAlphaf(f.lista ? 0.2 : 0.08);
-      c.drawRect(Skia.XYWHRect(X(x) - 0.75, Y(ALTURA_SOLTAR + r), 1.5, Y(ALTO) - Y(ALTURA_SOLTAR + r)), guia);
-      if (f.lista) estampa(n, x, ALTURA_SOLTAR, 0, 1);
-    }
-
-    const cs = f.c;
-    for (let i = 0; i < cs.length; i += 5) estampa(cs[i], cs[i + 1], cs[i + 2], cs[i + 3], cs[i + 4]);
-
-    // El anillo de cada unión: se abre y se apaga (no llega con «reducir movimiento»).
-    const an = f.a;
-    if (an.length) {
-      const aro = Skia.Paint(); aro.setAntiAlias(true); aro.setStyle(PaintStyle.Stroke);
-      for (let i = 0; i < an.length; i += 5) {
-        const ax = an[i]; const ay = an[i + 1]; const ar = an[i + 2]; const nn = an[i + 3]; const q = an[i + 4];
-        aro.setColor(Skia.Color(nn === MAX ? ORO : '#FFFFFF'));
-        aro.setAlphaf((1 - q) * 0.85);
-        aro.setStrokeWidth(1 + 3 * (1 - q));
-        c.drawCircle(X(ax), Y(ay), ar * S * (1 + 0.55 * q), aro);
-        aro.setStrokeWidth(2.5 * (1 - q));
-        for (let k = 0; k < 6; k++) {
-          const ang = (k / 6) * Math.PI * 2 + nn;
-          const d = ar * S * (1.05 + 0.9 * q);
-          c.drawPoint(X(ax) + Math.cos(ang) * d, Y(ay) + Math.sin(ang) * d, aro);
+      if (mov) {
+        // Anillo y chispas de cada unión.
+        const aro = Skia.Paint(); aro.setAntiAlias(true); aro.setStyle(PaintStyle.Stroke);
+        const an = f.a;
+        for (let i = 0; i < an.length; i += 5) {
+          const q = an[i + 4]; const nn = an[i + 3];
+          aro.setColor(Skia.Color(nn === MAX ? ORO : '#FFFFFF'));
+          aro.setAlphaf((1 - q) * 0.9);
+          aro.setStrokeWidth((1.5 + 4 * (1 - q)) * k);
+          c.drawCircle(X(an[i]), Y(an[i + 1]), an[i + 2] * k * (1 + 0.6 * q), aro);
+        }
+        const ch = Skia.Paint(); ch.setAntiAlias(true);
+        const pp = f.p;
+        for (let i = 0; i < pp.length; i += 5) {
+          ch.setColor(Skia.Color(TONOS[pp[i + 3]]));
+          ch.setAlphaf(Math.max(0, pp[i + 4]));
+          c.drawCircle(X(pp[i]), Y(pp[i + 1]), pp[i + 2] * k * (0.5 + 0.5 * pp[i + 4]), ch);
         }
       }
     }
+    c.drawImageRect(im.frente, im.srcCaja, cajaRect, p);
+
+    // El borde: punteado; en rojo que late mientras algo se desborda.
+    const linea = Skia.Paint(); linea.setAntiAlias(true);
+    if (f && f.peligro > 0) {
+      linea.setColor(Skia.Color(PELIGRO));
+      linea.setAlphaf(mov ? 0.6 + 0.4 * Math.sin(f.t * 14) : 1);
+    } else { linea.setColor(Skia.Color('#FFFFFF')); linea.setAlphaf(0.4); }
+    const seg = 10 * k;
+    for (let x = 0; x < CAJA.ANCHO * k; x += seg * 2) c.drawRect(Skia.XYWHRect(g.ox + x, g.oy - 1.5, Math.min(seg, CAJA.ANCHO * k - x), 3), linea);
     return rec.finishRecordingAsPicture();
   });
 
@@ -570,36 +412,39 @@ export default function Botiquin() {
   const alAccion = (e) => {
     const x = { izquierda: 0.15, centro: 0.5, derecha: 0.85, activate: 0.5 }[e.nativeEvent.actionName];
     if (x == null) return;
-    apunta.value = x;
-    js.current.soltarEn(x);
+    apunta.value = x * CAJA.ANCHO;
+    js.current.soltarEn(x * CAJA.ANCHO);
   };
 
   return (
-    <Escena colores={ESCENAS.botiquin} fijo estilo={{ gap: 10 }}>
+    <Escena colores={ESCENAS.botiquin} fijo estilo={{ gap: 8 }}>
       <ControlesSensaciones izquierda={<>
-        <Marcador sf="star.fill" texto={entero(puntos)} etiqueta={`${entero(puntos)} puntos`} />
         <Marcador sf="trophy.fill" texto={entero(record)} etiqueta={`Récord: ${entero(record)} puntos`} />
         {jugando && !pausa ? <BotonChico sf="pause.fill" etiqueta="Pausar" alTocar={() => setPausa(true)} /> : null}
       </>} />
 
-      {jugando ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, minHeight: 40 }}>
-          <View style={{ flexShrink: 1 }}>
+      {fase !== 'portada' ? (
+        <View style={estilos.tablero}>
+          <View accessible accessibilityLabel={`${entero(puntos)} puntos`}>
+            <Text maxFontSizeMultiplier={1.2} style={estilos.rotulo}>PUNTOS</Text>
+            <Text maxFontSizeMultiplier={1.2} style={estilos.puntos}>{entero(puntos)}</Text>
+          </View>
+          <View style={{ flex: 1, alignItems: 'center', paddingHorizontal: 6 }}>
             <AvisoJuego clave={aviso?.k} texto={aviso?.texto} />
           </View>
           <View style={estilos.sigue} accessible accessibilityLabel={`Ahora cae: ${NOMBRES[actual]}. Después: ${NOMBRES[siguiente]}.`}>
-            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 13, fontWeight: '800', color: BLANCO_2 }}>Sigue</Text>
-            <PiezaChica chicas={chicas} nivel={siguiente} tam={30} />
+            <Text maxFontSizeMultiplier={1.2} style={estilos.rotulo}>SIGUE</Text>
+            <PiezaImg n={siguiente} tam={34} />
           </View>
         </View>
       ) : null}
 
       <View style={{ flex: 1 }}
         onLayout={(e) => { const { width: w, height: h } = e.nativeEvent.layout; if (!caja || caja.w !== w || caja.h !== h) setCaja({ w, h }); }}>
-        {geo && fase !== 'portada' ? (
+        {geo && arte && fase !== 'portada' ? (
           <GestureDetector gesture={gesto}>
             <View style={{ flex: 1 }} accessible
-              accessibilityLabel={`Botiquín con ${cuantas} ${cuantas === 1 ? 'pieza' : 'piezas'}. ${entero(puntos)} puntos. Ahora cae: ${NOMBRES[actual]}. Arrastra a los lados y suelta para dejarla caer.`}
+              accessibilityLabel={`Botiquín. ${entero(puntos)} puntos. Ahora cae: ${NOMBRES[actual]}. Arrastra a los lados y suelta para dejarla caer.`}
               accessibilityActions={jugando && !pausa ? acciones : []} onAccessibilityAction={alAccion}>
               <Canvas style={{ flex: 1 }}>
                 <Picture picture={cuadro} />
@@ -608,14 +453,22 @@ export default function Botiquin() {
           </GestureDetector>
         ) : null}
 
+        {flotantes.map((f) => <Flotante key={f.id} {...f} alTerminar={() => quitarFlotante(f.id)} />)}
+
         {fase === 'portada' ? (
-          <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1, justifyContent: 'center', gap: 14 }}>
+          <Animated.View entering={FadeIn.duration(300)} style={{ flex: 1, justifyContent: 'center', gap: 16 }}>
+            <View style={{ alignItems: 'center', gap: 6 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 6 }}>
+                <PiezaImg n={1} tam={46} /><PiezaImg n={10} tam={96} /><PiezaImg n={4} tam={60} />
+              </View>
+              <Text maxFontSizeMultiplier={1.3} style={estilos.titulo}>Botiquín</Text>
+            </View>
             <PanelVidrio estilo={{ gap: 12 }}>
-              <Text style={{ fontSize: 24, fontWeight: '900', color: BLANCO, textAlign: 'center' }}>Botiquín</Text>
               <Text style={{ ...textoAyuda, textAlign: 'center' }}>
-                Arrastra a los lados y suelta: el medicamento cae al botiquín. Dos iguales que se tocan se juntan en el siguiente. ¡Llega a la cruz de farmacia! Si algo se queda asomado sobre el borde, se acaba.
+                Arrastra y suelta: el medicamento cae al botiquín. Dos iguales que se tocan se juntan en el siguiente. ¡Llega a la cruz de farmacia! Si algo se queda asomado sobre el borde, se acaba.
               </Text>
-              <Cadena chicas={chicas} mayor={mayorHistorico} />
+              <Cadena mayor={mayorHistorico} />
+              {record ? <Text maxFontSizeMultiplier={1.3} style={{ ...textoAyuda, textAlign: 'center', fontWeight: '700' }}>Tu récord: {entero(record)} puntos</Text> : null}
             </PanelVidrio>
             <BotonJuego sf="play.fill" alTocar={empezar}>Jugar</BotonJuego>
           </Animated.View>
@@ -631,23 +484,31 @@ export default function Botiquin() {
         ) : null}
 
         {fase === 'fin' ? (
-          <Animated.View entering={FadeIn.delay(500).duration(400)} style={estilos.encima}>
+          <Animated.View entering={FadeIn.delay(600).duration(400)} style={estilos.encima}>
             <TarjetaNivel insignia={nuevoRecord ? '¡NUEVO RÉCORD!' : null} titulo={`${entero(puntos)} puntos`}
-              texto={`${nuevoRecord ? 'Tu mejor partida hasta ahora.' : `Tu récord es de ${entero(record)}.`} Tu pieza más grande: ${NOMBRES[mayor]}.`}>
-              <Cadena chicas={chicas} mayor={mayor} />
+              texto={`${nuevoRecord ? 'Tu mejor partida hasta ahora.' : `Tu récord es de ${entero(record)}.`} Lo más grande que hiciste: ${NOMBRES[mayor]}.`}>
+              <Cadena mayor={mayor} tam={24} />
               <BotonJuego sf="arrow.clockwise" alTocar={empezar}>Jugar otra vez</BotonJuego>
             </TarjetaNivel>
           </Animated.View>
         ) : null}
 
-        {festejo ? <Confeti key={festejo} colores={['#FFFFFF', ORO, VERDE, '#F6C9EF']} alTerminar={() => {}} /> : null}
+        {festejo ? <Confeti key={festejo} colores={['#FFFFFF', ORO, '#9BE15D', '#FF7DB5', '#4E93FF']} alTerminar={() => {}} /> : null}
       </View>
+
+      {jugando ? <Cadena mayor={mayor} tam={24} /> : null}
     </Escena>
   );
 }
 
 const estilos = StyleSheet.create({
   redondo: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
-  sigue: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 12, paddingRight: 5, minHeight: 40, borderRadius: 20, backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
+  tablero: { flexDirection: 'row', alignItems: 'center', minHeight: 52 },
+  rotulo: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, color: BLANCO_2 },
+  puntos: { fontSize: 30, fontWeight: '900', color: BLANCO, fontVariant: ['tabular-nums'], marginTop: -2 },
+  sigue: { alignItems: 'center', gap: 2, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 18, backgroundColor: VIDRIO, borderWidth: 1, borderColor: VIDRIO_BORDE },
+  cadena: { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 2, paddingVertical: 6, paddingHorizontal: 8, borderRadius: 18, backgroundColor: 'rgba(0,0,0,0.18)', alignSelf: 'center' },
+  flotante: { fontSize: 19, fontWeight: '900', color: BLANCO, textShadowColor: 'rgba(0,0,0,0.45)', textShadowOffset: { width: 0, height: 1 }, textShadowRadius: 3 },
+  titulo: { fontSize: 30, fontWeight: '900', color: BLANCO, textAlign: 'center' },
   encima: { position: 'absolute', left: 0, right: 0, bottom: 8 },
 });

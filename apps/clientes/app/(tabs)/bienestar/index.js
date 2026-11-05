@@ -20,7 +20,7 @@ import { navegar } from '../../../lib/navegar';
 
 // Botiquín (2026-11-04): el de juntar al caer, con física. Reemplazó al de
 // unir piezas en tablero, que tenía el mismo nombre y ruta.
-const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Suelta medicamentos en el botiquín: dos iguales se juntan y suben de nivel.', escena: 'botiquin', nuevo: true };
+const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín', detalle: 'Suelta medicamentos: dos iguales se juntan y crecen. ¡Llega a la cruz!', escena: 'botiquin', nuevo: true };
 const EJERCICIOS = [
   { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },

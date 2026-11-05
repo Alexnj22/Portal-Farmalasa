@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.14 — Cargar compra: textos de la tarjeta
+
+«Entran 1 unidad» en singular y «llegaron, de N» en el campo de faltantes.
+
 ## v2.1452.13 — Cargar compra: tarjeta de renglón más ordenada
 
 Rediseño de la tarjeta de cada renglón en Cargar compra (pedido de Bodega). Encabezado limpio: nombre del producto con su estado al lado, «En la factura: …» legible, y a la derecha cantidad × costo con el subtotal. Se quitó «Total en unidades»: «Se carga como» es el único campo y dice debajo cuántas unidades entran; si ninguna presentación sirve, «Otra cantidad de unidades…» abre el campo. «Llegaron» pasa a ser «¿Llegó todo? Sí, todo | Faltó» y sólo con «Faltó» pide cuántas. Las acciones (Es otro producto, Producto erróneo, Es flete, Enviar a sucursales) bajan a una fila al pie. El resumen de abajo ya no repite «Se carga como»: entran, costo por unidad y precio regular con margen. El aviso de presentación faltante ahora manda a «Se carga como».

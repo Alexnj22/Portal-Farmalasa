@@ -1469,7 +1469,7 @@ function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar })
                 </div>
             )}
             <p className="mt-1 text-caption text-content-2 tabular-nums">
-                Entran <b className="text-content">{Number(unidades) || 0}</b> unidades
+                Entran <b className="text-content">{Number(unidades) || 0}</b> {Number(unidades) === 1 ? 'unidad' : 'unidades'}
                 {f > 1 && Number.isInteger(r3(f)) ? ` · ${r3(f)} por cada una` : ''}
             </p>
             {aviso && <p className="mt-0.5 text-caption font-bold text-warning-text">{aviso}</p>}
@@ -1501,7 +1501,7 @@ function Llegaron({ total, valor, onChange, puedeEditar }) {
                             placeholder="0" value={valor ?? ''}
                             onChange={e => onChange(e.target.value.replace(/[^\d]/g, ''))} />
                     </div>
-                    <span className="text-caption text-content-2 tabular-nums">de {total} llegaron</span>
+                    <span className="text-caption text-content-2 tabular-nums">llegaron, de {total}</span>
                 </div>
             )}
             {falto && n != null && n < total && (

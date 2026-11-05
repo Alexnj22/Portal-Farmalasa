@@ -1109,7 +1109,9 @@ export const AREAS = [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'avisar-faltantes-sin-resolver',
                 'barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
-                'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily'],
+                'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily',
+                // Contrapropuesta de lote por vencimiento corto (2026-11-05).
+                'traslados-propuestas-al-dia'],
         docs: ['docs/planes-cerrados/RETOMAR-TRASLADOS-2026-08-06.md',
                'docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md'],
     },

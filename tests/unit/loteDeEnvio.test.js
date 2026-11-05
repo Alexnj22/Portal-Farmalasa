@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva } from '@nucleo/utils/loteDeEnvio';
+import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva, venceMasCortoQueLoPedido, seisMesesDesde } from '@nucleo/utils/loteDeEnvio';
 
 const SALA = [
     { lote: 'A', vence: '2027-01-01', unidades: 30 },
@@ -36,5 +36,22 @@ describe('qué vale como elegido', () => {
         expect(eleccionEfectiva(null, [{ lote: 'A' }])).toEqual({ lote: 'A' });
         expect(eleccionEfectiva(null, [{ lote: 'A' }, { lote: 'B' }])).toBeNull();
         expect(eleccionEfectiva({ lote: 'B' }, [{ lote: 'A' }, { lote: 'B' }])).toEqual({ lote: 'B' });
+    });
+});
+
+describe('venceMasCortoQueLoPedido', () => {
+    const item = { lotes: [{ lote: 'L1', vence: '2028-01-01', unidades: 10 }] };
+    it('seis meses desde hoy', () => {
+        expect(seisMesesDesde('2026-11-05')).toBe('2027-05-05');
+    });
+    it('cuenta sólo si vence antes que lo pedido Y dentro de 6 meses', () => {
+        expect(venceMasCortoQueLoPedido('2027-02-01', item, '2026-11-05')).toBe(true);
+        expect(venceMasCortoQueLoPedido('2027-05-05', item, '2026-11-05')).toBe(true);
+        expect(venceMasCortoQueLoPedido('2027-06-01', item, '2026-11-05')).toBe(false);
+        expect(venceMasCortoQueLoPedido('2028-02-01', item, '2026-11-05')).toBe(false);
+    });
+    it('sin lote real pedido, o sin fecha, no pregunta', () => {
+        expect(venceMasCortoQueLoPedido('2027-01-01', { lotes: [] }, '2026-11-05')).toBe(false);
+        expect(venceMasCortoQueLoPedido('', item, '2026-11-05')).toBe(false);
     });
 });

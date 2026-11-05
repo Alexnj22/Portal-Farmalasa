@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.0 — Traslados: lote que vence antes se le pregunta a la sala que pidió
+
+Cuando la sala no tiene el lote pedido y el que puede mandar vence ANTES que el pedido y dentro de 6 meses, ya no se despacha sólo por mandar: se le pregunta a la sala que pidió.
+
+- **Al confirmar, el despacho no sale**: queda la propuesta en la solicitud y la sala que pidió recibe el aviso (campana y teléfono). La tarjeta de quien envía dice «Le preguntamos a … si acepta» y a qué hora se acepta sola.
+- **Contesta cualquiera de la sala que pidió**, desde Traslados: «Aceptar ese lote» o «No lo acepto». La otra sala recibe la respuesta.
+- **A la hora se le recuerda; a las 3 horas se acepta sola**, avisando a las dos salas (cron `traslados-propuestas-al-dia`, cada 5 min, sólo base propia).
+- **Aceptada, la tarjeta vuelve con ESE lote elegido** y se envía. Si quien despacha cambia el lote, se vuelve a preguntar; si la sala no aceptó, elige otro o rechaza.
+- Vale también para «sin lote asignado»: cuenta el vencimiento escrito de la caja.
+- La regla vive en el servidor (`aplicar-traslado-inventario`), que es quien decide; la pantalla avisa antes de apretar con la misma cuenta (`venceMasCortoQueLoPedido`).
+
 ## v2.1454.1 — Traslados: si el lote pedido no está, se elige cuál sale
 
 Hasta hoy, si la solicitud pedía un lote que la sala ya no tenía (vendido, o el sistema lo marcaba y no estaba en el estante), el despacho completaba con el que vence primero y lo dejaba en un aviso: salía OTRO lote sin que nadie lo eligiera.

@@ -67,3 +67,22 @@ export function eleccionEfectiva(tocada, opciones) {
     if (tocada) return tocada;
     return Array.isArray(opciones) && opciones.length === 1 ? opciones[0] : null;
 }
+
+/** 'AAAA-MM-DD' de dentro de 6 meses, contando desde `hoy`. */
+export function seisMesesDesde(hoy) {
+    const [a, m, d] = String(hoy).split('-').map(Number);
+    const f = new Date(Date.UTC(a, m - 1 + 6, d));
+    return f.toISOString().slice(0, 10);
+}
+
+/**
+ * ¿El lote que sale vence ANTES que lo pedido y dentro de 6 meses? Entonces
+ * no se despacha: se le propone a la sala que pidió (usuario, 2026-11-05).
+ * Misma regla que `aplicar-traslado-inventario`, que es la autoridad.
+ */
+export function venceMasCortoQueLoPedido(vence, item, hoy) {
+    const v = String(vence || '').slice(0, 10);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+    const pedido = lotesRealesPedidos(item).map((p) => p.vence).filter(Boolean).sort()[0];
+    return Boolean(pedido) && v < pedido && v <= seisMesesDesde(hoy);
+}

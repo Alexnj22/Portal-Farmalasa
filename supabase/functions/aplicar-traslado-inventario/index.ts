@@ -995,6 +995,20 @@ Deno.serve(async (req) => {
       if (!Number.isInteger(pos) || !lineas[pos] || !lote || lote.length > 40) continue;
       loteElegido.set(pos, { lote, vence: String(x?.vence ?? "").slice(0, 10) });
     }
+    // ── Vencimiento más corto que el pedido = lo decide quien pidió ────────
+    // (2026-11-05, usuario): si el lote que sale vence ANTES que el pedido y
+    // dentro de 6 meses, no se despacha: se le propone a la sala que pidió
+    // (`traslado_proponer_lote`), que acepta o no; a la hora se le recuerda y
+    // a las 3 horas se acepta solo (cron `traslados-propuestas-al-dia`).
+    const seisMeses = (() => {
+      const d = new Date(Date.now() - 6 * 3600_000);
+      d.setUTCMonth(d.getUTCMonth() + 6);
+      return d.toISOString().slice(0, 10);
+    })();
+    const cortos: {
+      posicion: number; producto: string; lote: string; vence: string; sin_asignar: boolean;
+      pedido: { lote: string; vence: string }[];
+    }[] = [];
     const loteNoEsta: {
       posicion: number; producto: string; presentacion: string; paquetes: number;
       pedidos: string[]; disponibles: { lote: string; vence: string; paquetes: number }[];
@@ -1199,6 +1213,24 @@ Deno.serve(async (req) => {
               error: `${nombre}: del lote ${esLoteGenerico(numero) ? "sin asignar" : numero} no alcanza para `
                 + `${l.cantidad} de ${l.presentacion_tipo}. Elige otro lote.`,
             }, 409);
+          // ¿Vence antes que lo pedido, y dentro de 6 meses?
+          const pedidosReales = (Array.isArray(l.lotes) ? l.lotes : [])
+            .filter((r) => r?.lote && !esLoteGenerico(r.lote) && r?.vence)
+            .map((r) => ({ lote: String(r.lote).trim().toUpperCase(), vence: String(r.vence).slice(0, 10) }));
+          const vencePedido = pedidosReales.map((p) => p.vence).sort()[0];
+          const sinAsignar = esLoteGenerico(numero);
+          const escrito = loteEscrito.get(pos);
+          const venceSale = sinAsignar
+            ? escrito?.vence
+            : String(f.lotes.filter((x) => x.numero.trim().toUpperCase() === numero.trim().toUpperCase() && x.vence)
+                .map((x) => String(x.vence).slice(0, 10)).sort()[0] ?? elegidoAqui.vence ?? "").slice(0, 10);
+          const loteSale = sinAsignar ? escrito?.lote : numero;
+          if (vencePedido && venceSale && loteSale && /^\d{4}-\d{2}-\d{2}$/.test(venceSale)
+              && venceSale < vencePedido && venceSale <= seisMeses)
+            cortos.push({
+              posicion: pos, producto: nombre, lote: loteSale, vence: venceSale,
+              sin_asignar: sinAsignar, pedido: pedidosReales,
+            });
         } else {
           // Lo que se ESPERA de cada reservado es lo que le toca en orden: con
           // un despacho parcial, el último reservado da menos sin faltar nada.
@@ -1264,6 +1296,45 @@ Deno.serve(async (req) => {
             + `Escribe el lote y el vencimiento que trae la caja.`
           : `${faltaLote.length} productos salen sin lote asignado. Escribe el lote y el vencimiento que trae cada caja.`,
       }, 422);
+
+    // ── La propuesta por vencimiento corto ───────────────────────────────
+    // Sale sólo si la sala que pidió ya ACEPTÓ exactamente esto (o se aceptó
+    // solo). Si cambió el lote, se vuelve a proponer.
+    if (cortadoEn < 0 && cortos.length) {
+      const prop = meta.propuesta_lote as
+        | { estado?: string; lineas?: { posicion: number; lote: string; vence: string }[]; propuesta_at?: string }
+        | undefined;
+      const coincide = Boolean(prop && Array.isArray(prop.lineas) && cortos.every((c) =>
+        prop.lineas!.some((p) => Number(p.posicion) === c.posicion
+          && String(p.lote).trim().toUpperCase() === c.lote.trim().toUpperCase()
+          && String(p.vence).slice(0, 10) === c.vence)));
+      const sala = meta.branch_name ?? "la sala que pidió";
+      if (!(prop?.estado === "aceptada" && coincide)) {
+        if (prop?.estado === "pendiente" && coincide)
+          return json({
+            ok: false, codigo: "PROPUESTA_PENDIENTE", propuesta: prop,
+            error: `Esperando que ${sala} acepte el lote que vence antes. Si nadie contesta, se acepta solo a las 3 horas.`,
+          }, 409);
+        if (prop?.estado === "rechazada" && coincide)
+          return json({
+            ok: false, codigo: "PROPUESTA_RECHAZADA", propuesta: prop,
+            error: `${sala} no aceptó ese lote. Elige otro o rechaza la solicitud.`,
+          }, 409);
+        const { data: pr, error: errProp } = await admin.rpc("traslado_proponer_lote", {
+          p_request_id: request_id, p_lineas: cortos, p_actor: quien.id,
+        });
+        if (errProp || !(pr as { ok?: boolean })?.ok)
+          return json({
+            ok: false, codigo: "PROPUESTA_FALLO",
+            error: `No se pudo enviar la propuesta: ${errProp?.message ?? (pr as { error?: string })?.error ?? "sin detalle"}`,
+          }, 500);
+        return json({
+          ok: false, codigo: "PROPUESTA_ENVIADA", propuesta: (pr as { propuesta?: unknown }).propuesta,
+          error: `El lote que sale vence antes que el pedido: se le preguntó a ${sala}. `
+            + `Cuando acepte (o a las 3 horas, si nadie contesta), lo envías.`,
+        }, 200);
+      }
+    }
 
     // Un tope que no se anuncia es un truncamiento silencioso: si el presupuesto
     // cortó, no se manda NADA y se dice dónde quedó. Medio traslado es peor que

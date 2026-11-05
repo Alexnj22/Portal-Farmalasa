@@ -420,3 +420,63 @@ describe('cuando el lote pedido no está en la sala', () => {
         expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).not.toBeDisabled();
     });
 });
+
+describe('cuando el lote que sale vence antes que el pedido (≤ 6 meses)', () => {
+    const PIDE_L1 = {
+        id: 'sol-1',
+        metadata: {
+            branch_name: 'Salud 2',
+            items: [{ ...FILA.metadata.items[0], lotes: [{ lote: 'L1', vence: '2028-01-01', unidades: 30 }] }],
+        },
+    };
+    beforeEach(() => {
+        vi.useFakeTimers({ toFake: ['Date'] });
+        vi.setSystemTime(new Date('2026-11-05T15:00:00Z'));
+        disponibilidad = conExistencia(50);
+        fetchReguladosDe.mockImplementation(async () => new Set([2724]));
+        fetchLotesDeSalaEnUnidades.mockImplementation(async () => [
+            { lote: 'L2', vence: '2027-02-01', unidades: 40 },   // corto: dentro de 6 meses
+            { lote: 'L3', vence: '2027-12-01', unidades: 40 },   // antes que L1, pero a más de 6 meses
+        ]);
+    });
+    afterEach(() => {
+        vi.useRealTimers();
+        fetchReguladosDe.mockImplementation(async () => new Set());
+        fetchLotesDeSalaEnUnidades.mockImplementation(async () => null);
+    });
+
+    it('avisa antes de apretar, y sólo con el corto', async () => {
+        await act(async () => { render(<DecisionTraslado fila={PIDE_L1} onHecho={vi.fn()} />); });
+        await act(async () => { fireEvent.click(screen.getByRole('radio', { name: /L3/ })); });
+        expect(screen.queryByText(/se le pregunta a Salud 2/)).toBeNull();
+        await act(async () => { fireEvent.click(screen.getByRole('radio', { name: /L2/ })); });
+        expect(screen.getByText(/se le pregunta a Salud 2/)).toBeInTheDocument();
+    });
+
+    it('si el servidor manda la propuesta, la tarjeta queda esperando', async () => {
+        despacharTraslado.mockResolvedValueOnce({
+            ok: false, codigo: 'PROPUESTA_ENVIADA',
+            propuesta: { estado: 'pendiente', propuesta_at: '2026-11-05T15:00:00Z', lineas: [{ posicion: 0, lote: 'L2', vence: '2027-02-01' }] },
+        });
+        await act(async () => { render(<DecisionTraslado fila={PIDE_L1} onHecho={vi.fn()} />); });
+        await act(async () => { fireEvent.click(screen.getByRole('radio', { name: /L2/ })); });
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i })); });
+        expect(screen.getByText(/Le preguntamos a Salud 2/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).toBeDisabled();
+    });
+
+    it('aceptada, vuelve con ESE lote elegido y deja enviar', async () => {
+        const fila = { ...PIDE_L1, metadata: { ...PIDE_L1.metadata, propuesta_lote: {
+            estado: 'aceptada', auto: true, propuesta_at: '2026-11-05T10:00:00Z',
+            lineas: [{ posicion: 0, lote: 'L2', vence: '2027-02-01', sin_asignar: false }],
+        } } };
+        await act(async () => { render(<DecisionTraslado fila={fila} onHecho={vi.fn()} />); });
+        expect(screen.getByText(/se aceptó solo/)).toBeInTheDocument();
+        const boton = screen.getByRole('button', { name: /Confirmar y enviar/i });
+        expect(boton).not.toBeDisabled();
+        await act(async () => { fireEvent.click(boton); });
+        expect(despacharTraslado).toHaveBeenLastCalledWith(
+            'sol-1', '', null, [], [{ posicion: 0, lote: 'L2', vence: '2027-02-01' }],
+        );
+    });
+});

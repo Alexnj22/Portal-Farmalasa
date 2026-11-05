@@ -37,6 +37,7 @@ import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos 
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo/data/envios';
 import { fetchFaltantes } from '@nucleo/data/faltantes';
 import RepartosDeCompra from './traslados/RepartosDeCompra';
+import PropuestasDeLote from './traslados/PropuestasDeLote';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
 // El historial es la pestaña que menos se abre, y trae sus tarjetas propias.
 const HistorialTraslados = lazy(() => import('./traslados/HistorialTraslados'));
@@ -492,6 +493,7 @@ export default function TrasladosView() {
 
     return (
         <GlassViewLayout icon={ArrowLeftRight} title="Traslados entre salas" filtersContent={filtersContent}>
+            <PropuestasDeLote />
             {/* La píldora §17: TODO el filtro de la vista en un solo lugar. El
                 tipo sólo se ofrece en Historial —en las otras dos pestañas no
                 hay dos desenlaces que separar— y ofrecerlo igual sería un

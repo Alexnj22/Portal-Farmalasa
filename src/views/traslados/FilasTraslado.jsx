@@ -25,7 +25,10 @@ import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '@nucleo/utils/imprimirTraslado';
 import LoteDeLaCaja from './LoteDeLaCaja';
 import ElegirLoteDeEnvio from './ElegirLoteDeEnvio';
-import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva } from '@nucleo/utils/loteDeEnvio';
+import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva, venceMasCortoQueLoPedido } from '@nucleo/utils/loteDeEnvio';
+import Notice from '../../components/common/Notice';
+import { hoySV } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
 import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
 
 /* Cuántos lotes entran en la TARJETA. El resto se lee en el detalle: con la
@@ -299,6 +302,20 @@ export function DecisionTraslado({ fila, onHecho }) {
     const [cambiando,      setCambiando]      = useState(() => new Set());
     const [noEstaServidor, setNoEstaServidor] = useState(null);        // { [posicion]: { pedidos, opciones } }
     const origenErp = Number(disp?.origen?.erp_sucursal_id) || null;
+
+    /* La propuesta por vencimiento corto (2026-11-05): si el lote que sale
+     * vence antes que el pedido y dentro de 6 meses, el servidor no despacha:
+     * se lo pregunta a la sala que pidió. Mientras está pendiente o después de
+     * aceptada, la tarjeta vuelve a mostrar ESE lote elegido, para que lo que
+     * se envíe sea exactamente lo que se aceptó. */
+    const [propuestaLocal, setPropuestaLocal] = useState(null);
+    const propuesta = propuestaLocal ?? fila?.metadata?.propuesta_lote ?? null;
+    const propVigente = propuesta && ['pendiente', 'aceptada'].includes(propuesta.estado) ? propuesta : null;
+    const dePropuesta = (pos) => propVigente?.lineas?.find(p => Number(p.posicion) === pos) ?? null;
+    const salaQuePide = fila?.metadata?.branch_name ?? 'la sala que pidió';
+    const horaSola = propuesta?.propuesta_at
+        ? hora12(new Date(new Date(propuesta.propuesta_at).getTime() + 3 * 3600_000))
+        : null;
     useEffect(() => {
         if (!origenErp || !regulados?.size) return undefined;
         let cancelado = false;
@@ -344,15 +361,27 @@ export function DecisionTraslado({ fila, onHecho }) {
         const srv = noEstaServidor?.[pos];
         const opciones = srv?.opciones ?? (sala ? opcionesDeLote(sala, paquetes, factor) : null);
         const pedidosNo = srv?.pedidos ?? (sala ? pedidosQueNoEstan(it, sala, paquetes, factor) : []);
-        const abierto = pedidosNo.length > 0 || cambiando.has(pos);
+        const dp = dePropuesta(pos);
+        const abierto = pedidosNo.length > 0 || cambiando.has(pos) || Boolean(dp);
+        const desdePropuesta = dp
+            ? (dp.sin_asignar ? { lote: 'GENERICO', vence: '', sinAsignar: true }
+                              : { lote: dp.lote, vence: dp.vence, sinAsignar: false })
+            : null;
         return {
-            pos, erp, factor, paquetes, opciones, pedidosNo, abierto,
+            pos, erp, factor, paquetes, opciones, pedidosNo, abierto, dp,
             producto: it?.descripcion ?? `Producto ${erp}`,
-            valor: abierto ? eleccionEfectiva(eleccion[pos], opciones) : null,
+            valor: abierto ? eleccionEfectiva(eleccion[pos] ?? desdePropuesta, opciones) : null,
         };
     }).filter(Boolean);
     const conEleccion = new Map(lineasLote.filter(x => x.abierto && x.valor).map(x => [x.pos, x]));
     const lotesElegidosOk = lineasLote.every(x => !x.abierto || x.valor);
+    // ¿Lo elegido vence antes que lo pedido? Se avisa ANTES de apretar.
+    const hoy = hoySV();
+    const venceDeEleccion = (x) => (x.valor?.sinAsignar ? loteCaja[x.pos]?.envio?.vence : x.valor?.vence);
+    const cortosAhora = lineasLote.filter(x => x.abierto && x.valor
+        && venceMasCortoQueLoPedido(venceDeEleccion(x), items[x.pos], hoy));
+    // Esperando respuesta y sin haber cambiado nada: apretar sólo repetiría la pregunta.
+    const esperandoRespuesta = propuesta?.estado === 'pendiente' && Object.keys(eleccion).length === 0;
 
     // El lote de la caja sólo para los renglones que salen: uno recortado a
     // cero no lleva caja. Y si se eligió un lote para el renglón, manda esa
@@ -389,6 +418,13 @@ export function DecisionTraslado({ fila, onHecho }) {
                     posicion: x.posicion, producto: x.producto, unidades: x.unidades,
                     erp: Number(items[x.posicion]?.erp_product_id),
                 })));
+            }
+            // Vence antes que lo pedido: se le preguntó a la sala que pidió.
+            if (['PROPUESTA_ENVIADA', 'PROPUESTA_PENDIENTE', 'PROPUESTA_RECHAZADA'].includes(r?.codigo) && r.propuesta) {
+                setPropuestaLocal(r.propuesta);
+                setEleccion({});
+                setError(r.codigo === 'PROPUESTA_RECHAZADA' ? r.error : '');
+                return;
             }
             // El lote pedido no está según el SISTEMA (el espejo pudo decir que
             // sí): se pregunta con las opciones que da el servidor.
@@ -466,7 +502,7 @@ export function DecisionTraslado({ fila, onHecho }) {
 
     // Y la misma regla del otro lado: mandar de menos también hay que explicarlo.
     // El servidor lo exige igual; acá se avisa para no gastar el viaje.
-    const puedeConfirmar = lotesCompletos
+    const puedeConfirmar = lotesCompletos && !esperandoRespuesta
         && (sinDatos || (hayQueMandar && (!recortado || porQue.trim().length > 0)));
 
     return (
@@ -569,6 +605,33 @@ export function DecisionTraslado({ fila, onHecho }) {
                 </ul>
             )}
 
+            {/* ── La propuesta a la sala que pidió ──────────────────────────── */}
+            {modo !== 'rechazo' && propuesta?.estado === 'pendiente' && (
+                <Notice variant="warning">
+                    Le preguntamos a {salaQuePide} si acepta el lote que vence antes.
+                    {horaSola && ` Si nadie contesta, se acepta solo a las ${horaSola}.`}
+                    {' '}Si cambias el lote, se le vuelve a preguntar.
+                </Notice>
+            )}
+            {modo !== 'rechazo' && propuesta?.estado === 'aceptada' && (
+                <Notice variant="success">
+                    {propuesta.auto
+                        ? `${salaQuePide} no contestó en 3 horas: el lote se aceptó solo. Ya puedes enviarlo.`
+                        : `${salaQuePide} aceptó el lote. Ya puedes enviarlo.`}
+                </Notice>
+            )}
+            {modo !== 'rechazo' && propuesta?.estado === 'rechazada' && (
+                <Notice variant="danger">
+                    {salaQuePide} no aceptó el lote que vence antes. Elige otro o rechaza la solicitud.
+                </Notice>
+            )}
+            {modo !== 'rechazo' && cortosAhora.length > 0 && propuesta?.estado !== 'aceptada' && (
+                <p className="text-micro font-semibold text-warning-text leading-snug">
+                    {cortosAhora.length === 1 ? 'El lote elegido vence' : 'Los lotes elegidos vencen'} antes que
+                    lo pedido y dentro de 6 meses: al confirmar se le pregunta a {salaQuePide} antes de enviarlo.
+                </p>
+            )}
+
             {/* ── El lote que sale, cuando el pedido no está o se cambia ──── */}
             {modo !== 'rechazo' && lineasLote.filter(x => x.abierto).map(x => (
                 <ElegirLoteDeEnvio
@@ -601,7 +664,10 @@ export function DecisionTraslado({ fila, onHecho }) {
                             </p>
                             <LoteDeLaCaja
                                 erpProductId={x.erp} producto={x.producto}
-                                valor={loteCaja[x.posicion] ?? LOTE_DE_CAJA_VACIO}
+                                valor={loteCaja[x.posicion]
+                                    ?? (dePropuesta(x.posicion)?.sin_asignar
+                                        ? { lote: dePropuesta(x.posicion).lote, vence: String(dePropuesta(x.posicion).vence).slice(0, 7) }
+                                        : LOTE_DE_CAJA_VACIO)}
                                 onChange={v => setLoteCaja(c => ({ ...c, [x.posicion]: v }))}
                             />
                         </div>

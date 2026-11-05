@@ -342,6 +342,26 @@ export async function fetchLotesConocidosDeProducto(erpProductId) {
 }
 
 /**
+ * Las propuestas de lote que la sala de quien mira tiene por contestar
+ * (2026-11-05): el lote que la otra sala puede mandar vence antes que el
+ * pedido. Nunca lanza: sin la lista, el aviso de la campana sigue llegando.
+ */
+export async function fetchPropuestasDeMiSala() {
+    const { data, error } = await supabase.rpc('traslado_propuestas_de_mi_sala');
+    if (error) { console.error('fetchPropuestasDeMiSala:', error.message); return []; }
+    return Array.isArray(data) ? data : [];
+}
+
+/** Acepta (o no) el lote propuesto. Contesta cualquiera de la sala que pidió. */
+export async function responderPropuestaDeLote(requestId, acepta) {
+    const { data, error } = await supabase.rpc('traslado_responder_propuesta', {
+        p_request_id: requestId, p_acepta: Boolean(acepta),
+    });
+    if (error) return { ok: false, error: error.message };
+    return data ?? { ok: false, error: 'Sin respuesta.' };
+}
+
+/**
  * Despacha el traslado. `lineasAceptadas` es lo que sale cuando NO sale todo.
  *
  * Viaja como ÍNDICES con su cantidad —`[{ i, cantidad }]`— y nunca como los

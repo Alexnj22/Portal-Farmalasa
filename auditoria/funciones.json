@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-05T22:56:00.226Z",
+ "generado": "2026-11-05T23:35:03.130Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -5843,11 +5843,28 @@
    "area": "plataforma",
    "por": "código"
   },
+  "traslado_avisar_propuesta": {
+   "area": "traslados",
+   "por": "a mano",
+   "manual": true
+  },
   "traslado_enviada_del_renglon": {
    "area": "solicitudes",
    "por": "llamada"
   },
   "traslado_por_codigo": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "traslado_proponer_lote": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "traslado_propuestas_de_mi_sala": {
+   "area": "traslados",
+   "por": "código"
+  },
+  "traslado_responder_propuesta": {
    "area": "traslados",
    "por": "código"
   },
@@ -5866,6 +5883,10 @@
   "traslados_por_barrer": {
    "area": "traslados",
    "por": "código"
+  },
+  "traslados_propuestas_al_dia": {
+   "area": "traslados",
+   "por": "cron"
   },
   "tratamiento_ajusta_dosis": {
    "area": "productos",

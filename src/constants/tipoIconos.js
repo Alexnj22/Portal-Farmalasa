@@ -46,6 +46,8 @@ export const NOMBRE_DE_ICONO_POR_TIPO = {
     INVENTORY_LOAD_REQUEST:     'PackagePlus',
     INVENTORY_DISCARD_REQUEST:  'Trash2',
     INVENTORY_TRANSFER_REQUEST: 'ArrowLeftRight',
+    // La sala que pidió decide si acepta un lote que vence antes (2026-11-05).
+    TRASLADO_PROPUESTA:         'CalendarClock',
     // Min/Max vive en otra tabla pero se muestra en el mismo centro, así que
     // necesita su ícono acá igual que los demás.
     MINMAX_CHANGE_REQUEST:      'BarChart2',

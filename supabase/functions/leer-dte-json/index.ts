@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { elegirFactor, factorEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
+import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -373,6 +373,12 @@ Deno.serve(async (req: Request) => {
         }
 
         if (errA) throw errA;
+        // Lo que alguien ya apartó como «no es un producto» de este proveedor
+        // (flete, servicio): se propone como servicio en la carga.
+        const { data: aparts, error: errAp } = await admin.from("compra_renglon_pendiente")
+          .select("llave").eq("emisor_nit", d.emisor_nit).eq("ignorado", true);
+        if (errAp) throw errAp;
+        const apartados = new Set((aparts ?? []).map((a: any) => a.llave));
         // Por código del proveedor; si no manda código, la llave es `#`+nombre
         // normalizado en SQL (`norm_search`), que acá no se reproduce: se va
         // por el producto, que es lo que el diccionario ya resolvió.
@@ -434,6 +440,7 @@ Deno.serve(async (req: Request) => {
             match_origen: match?.origen ?? "sin candidato",
             match_similitud: match?.similitud ?? null,
             lote: lv.lote, vence: lv.vence, lote_origen: lv.de,
+            servicio_sugerido: esFleteOServicio(String(it?.descripcion ?? "")) || (llave != null && apartados.has(llave)),
             // `seguro` es sobre el PRODUCTO y nada más. Va aparte de `listo`
             // porque son dos preguntas distintas y confundirlas hacía que el
             // aviso dijera «a confirmar» de un renglón cuyo producto estaba

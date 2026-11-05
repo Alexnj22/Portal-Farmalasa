@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.33 — Cargar compra: el flete entra como servicio
+
+- **El flete entra como servicio, en la misma compra.** Decisión del usuario: «no se registra como producto, solo como costo». Hoy aparece en 9 facturas de la cola (INCOFA, MEDIDENT, PHARMALAND, MONTREAL, DROGUERÍA CENTROAMERICANA y COFARSAL), y la carga se frenaba porque el renglón no tenía producto.
+  - Cada renglón tiene ahora el botón **«Es flete / servicio»**. Viaja como el «+ Servicio» del sistema (`SERV`, bandera SERVICIO, sin lote ni vencimiento): suma al total y al libro, y no toca el inventario. Así lo cargaba Bodega a mano; en la compra 6348 de INCOFA el subtotal lleva sus $0.88 de flete.
+  - Viene marcado solo cuando la descripción dice flete, transporte, envío, acarreo o encomienda (`esFleteOServicio`), o cuando ese renglón del proveedor ya se apartó como «no es un producto». Se puede desmarcar.
+  - Pruebas en `tests/unit/compraServicio.test.js`.
+
 ## v2.1451.32 — Cargar compra: lote y vencimiento de seis proveedores más
 
 - **Lote y vencimiento de seis proveedores más.** Se leyeron las 147 facturas en cola y se probó cada formato con su texto literal:

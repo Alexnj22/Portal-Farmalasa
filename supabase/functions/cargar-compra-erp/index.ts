@@ -2007,7 +2007,13 @@ Deno.serve(async (req: Request) => {
       };
       let dec: Decision;
       if (uso === "consumo") dec = { tipo: "consumo" };
-      else {
+      else if ((decisiones[String(i)] as any)?.servicio === true) {
+        // Flete / servicio: entra en la misma compra como SERVICIO, sin producto.
+        if ((decisiones[String(i)] as any)?.erroneo === true) {
+          problemas.push({ renglon: i, texto: `«${r.descripcion}» no puede ser servicio y producto erróneo a la vez.` });
+        }
+        dec = { tipo: "servicio" };
+      } else {
         const x = decisiones[String(i)] ?? {};
         // Error del proveedor: entra igual (la factura lo cobra) y después se
         // pasa a vencidos. Sin producto propio, como el genérico.

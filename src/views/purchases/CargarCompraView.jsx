@@ -218,6 +218,9 @@ const ajusteInicial = (r) => ({
     vence: r.vence ? r.vence.slice(0, 7) : '',
     venta: '',   // viñeta nueva leída en la caja; vacío = la que ya tiene Bodega
     llegaron: '', // «Llegaron menos»: vacío = llegó todo
+    // Flete / servicio: entra en la misma compra como servicio, sin producto
+    // ni inventario. Viene marcado si la descripción lo dice o ya se apartó.
+    servicio: r.servicio_sugerido === true,
 });
 
 // La viñeta que tiene hoy Bodega para la presentación con que entraría: la de
@@ -490,7 +493,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // una factura en papel corregida puede haber cambiado el orden.
         const guardado = loadDraft(claveBorrador);
         const b = guardado?.huella === huellaDe(propuesta.renglones) ? guardado : null;
-        setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, b?.ajustes?.[i] ?? ajusteInicial(r)])));
+        setAjustes(Object.fromEntries(propuesta.renglones.map((r, i) => [i, b?.ajustes?.[i] ? { ...ajusteInicial(r), ...b.ajustes[i] } : ajusteInicial(r)])));
         setUso(b?.uso ?? 'venta');
         setDias(b?.dias ?? (propuesta.encabezado.dias_credito != null ? String(propuesta.encabezado.dias_credito) : ''));
     }, [doc.document_id, doc.manual_id, claveBorrador]);
@@ -567,7 +570,8 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) ? r.producto_id : null);
 
     const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, {
-        product_id: productoDe(r, i),
+        product_id: ajustes[i]?.servicio ? null : productoDe(r, i),
+        servicio: ajustes[i]?.servicio === true,
         factor: Number(ajustes[i]?.factor) || 1,
         lote: ajustes[i]?.lote || null,
         // El campo de mes emite el texto mientras no está completo: eso no viaja.
@@ -625,6 +629,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     // confirmados seguían saliendo «por confirmar» junto a su sello verde.
     const estado = (p?.renglones ?? []).map((r, i) => {
         const confirmado = !!elegidos[claveDe(r, i)];
+        if (ajustes[i]?.servicio) return { sin_producto: false, a_confirmar: false, sin_lote: false, sin_vencimiento: false };
         return {
             sin_producto: !r.producto_id && !confirmado,
             a_confirmar: !!r.producto_id && !r.seguro && !confirmado,
@@ -885,7 +890,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                     {uso === 'venta' && !papel && (
                         <PedirFechas documentId={doc.document_id} salas={salasReparto} puedeEditar={puedeEditar}
                             sinFecha={p.renglones.map((r, i) => ({ renglon: i, descripcion: r.descripcion, cantidad: r.cantidad }))
-                                .filter(x => !ajustes[x.renglon]?.vence && !ajustes[x.renglon]?.erroneo)}
+                                .filter(x => !ajustes[x.renglon]?.vence && !ajustes[x.renglon]?.erroneo && !ajustes[x.renglon]?.servicio)}
                             onFechas={usarFechas} />
                     )}
                     {!revision && uso === 'venta' && faltan === 0 && (
@@ -910,12 +915,17 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                     <div className="flex items-start gap-3 flex-wrap">
                                         <div className="flex-1 min-w-[14rem]">
                                             <p className="text-label font-black text-content">
-                                                {uso === 'consumo' ? r.descripcion
+                                                {uso === 'consumo' || aj.servicio ? r.descripcion
                                                     : aj.erroneo && !conProducto ? 'PRODUCTO ERRONEO DE PROVEEDOR'
                                                     : (elegido?.nombre ?? r.producto ?? '— sin producto —')}
                                             </p>
-                                            {uso === 'venta' && <p className="text-micro text-content-3">{r.descripcion}</p>}
-                                            {uso === 'venta' && !aj.erroneo && !conProducto && !r.producto_id && (
+                                            {uso === 'venta' && aj.servicio && (
+                                                <p className="text-micro text-content-3 font-bold">
+                                                    Flete / servicio: suma al costo de la compra y a su total. No entra al inventario.
+                                                </p>
+                                            )}
+                                            {uso === 'venta' && !aj.servicio && <p className="text-micro text-content-3">{r.descripcion}</p>}
+                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && !conProducto && !r.producto_id && (
                                                 <p className="text-micro text-warning font-bold">
                                                     No está en Bodega: ¿es nuevo, o es uno que ya tenemos con otro nombre? ¿O vino por error?
                                                 </p>
@@ -933,7 +943,13 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                         </div>
                                         {uso === 'venta' && (
                                             <div className="shrink-0 flex items-center gap-2">
-                                                {o && (
+                                                {puedeEditar && !aj.erroneo && (
+                                                    <Button size="xs" variant={aj.servicio ? 'secondary' : 'ghost'}
+                                                        onClick={() => ajustar(i, 'servicio', !aj.servicio)}>
+                                                        {aj.servicio ? 'Es un producto' : 'Es flete / servicio'}
+                                                    </Button>
+                                                )}
+                                                {!aj.servicio && o && (
                                                     <Badge variant={elegido ? 'success' : o.variant} size="sm">
                                                         <Icono size={11} className="mr-1 inline" />
                                                         {elegido ? 'Confirmado' : o.label}
@@ -941,25 +957,25 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                             && ` · ${Math.round(r.match_similitud * 100)}%`}
                                                     </Badge>
                                                 )}
-                                                {puedeEditar && !conProducto && !aj.erroneo && (
+                                                {puedeEditar && !aj.servicio && !conProducto && !aj.erroneo && (
                                                     <Button size="xs" onClick={() => setCreando(i)} icon={PackagePlus}>
                                                         Es nuevo
                                                     </Button>
                                                 )}
-                                                {puedeEditar && (
+                                                {puedeEditar && !aj.servicio && (
                                                     <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
                                                         onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
                                                         {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
                                                     </Button>
                                                 )}
-                                                {puedeEditar && (
+                                                {puedeEditar && !aj.servicio && (
                                                     <Button size="xs" variant="ghost"
                                                         loading={guardando === k}
                                                         onClick={() => setBusc(buscando === k ? null : k)}>
                                                         {conProducto || r.producto_id ? 'Es otro' : 'Elegir'}
                                                     </Button>
                                                 )}
-                                                {puedeEditar && r.producto_id && !elegido && r.match_origen === 'parecido' && (
+                                                {puedeEditar && !aj.servicio && r.producto_id && !elegido && r.match_origen === 'parecido' && (
                                                     <Button size="xs"
                                                         loading={guardando === k}
                                                         onClick={() => confirmar(r, i, { id: r.producto_id, nombre: r.producto })}>
@@ -969,7 +985,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             </div>
                                         )}
                                     </div>
-                                    {uso === 'venta' && (
+                                    {uso === 'venta' && !aj.servicio && (
                                         <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                                             {(() => {
                                                 // En qué presentación entra: la de su tamaño. Elegirla pone la
@@ -1031,15 +1047,15 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             })()}
                                         </div>
                                     )}
-                                    {uso === 'venta' && conProducto && !aj.erroneo && (
+                                    {uso === 'venta' && conProducto && !aj.erroneo && !aj.servicio && (
                                         <RepartoASalas salas={salasReparto} puedeEditar={puedeEditar}
                                             total={aj.llegaron !== '' && aj.llegaron != null
                                                 ? Math.min(Number(aj.llegaron), Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0)
                                                 : Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
                                             valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
                                     )}
-                                    {sim?.linea && <ComoEntra sim={sim} costo={costos.get(i)} />}
-                                    {sim?.linea && puedeEditar && !aj.erroneo && costos.get(i)?.sugerida && !cantidadSospechosa(sim, costos.get(i)) && (
+                                    {sim?.linea && !aj.servicio && <ComoEntra sim={sim} costo={costos.get(i)} />}
+                                    {sim?.linea && puedeEditar && !aj.erroneo && !aj.servicio && costos.get(i)?.sugerida && !cantidadSospechosa(sim, costos.get(i)) && (
                                         <Notice variant="warning" icon={HelpCircle} className="mt-2">
                                             <span className="flex items-center gap-2 flex-wrap">
                                                 <span className="flex-1 min-w-[14rem]">
@@ -1053,7 +1069,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             </span>
                                         </Notice>
                                     )}
-                                    {sim?.linea && puedeEditar && (() => {
+                                    {sim?.linea && puedeEditar && !aj.servicio && (() => {
                                         const sug = cantidadSospechosa(sim, costos.get(i));
                                         return sug && (
                                             <Notice variant="danger" icon={AlertTriangle} className="mt-2">

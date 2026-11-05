@@ -45,7 +45,11 @@ export type RenglonDoc = {
 
 export type Decision =
   | { tipo: "producto"; producto: ProductoDelSistema; factor: number; lote: string | null; vence: string | null; venta?: number | null }
-  | { tipo: "consumo" };
+  | { tipo: "consumo" }
+  // Un renglón que no es mercadería dentro de una compra que sí lo es: el
+  // flete (2026-11-05). Entra como SERVICIO en la MISMA compra —el botón
+  // «+ Servicio» del sistema—: suma al total y al libro, no toca inventario.
+  | { tipo: "servicio" };
 
 export type LineaSobre = {
   id_producto: string;
@@ -89,7 +93,7 @@ export function lineaDelSobre(
   const costo = costoNeto(r);
   if (!(r.cantidad > 0)) problemas.push({ renglon: i, texto: "La cantidad del documento no es válida." });
 
-  if (d.tipo === "consumo") {
+  if (d.tipo === "consumo" || d.tipo === "servicio") {
     return {
       linea: {
         id_producto: "SERV", compra: costo.toFixed(4), venta: "0", cant: String(r.cantidad),
@@ -318,6 +322,16 @@ export function elegirFactor(x: {
   if (x.aprendido && (razon == null || cuadra(x.aprendido) || !porCosto)) return { factor: x.aprendido, origen: "aprendido" };
   if (porCosto) return x.aprendido ? { factor: porCosto, origen: "costo", corrige: x.aprendido } : { factor: porCosto, origen: "costo" };
   return { factor: 1, origen: null };
+}
+
+/**
+ * ¿El renglón es un flete o un servicio y no mercadería? Sólo SUGIERE: la
+ * pantalla lo marca y la persona lo puede deshacer. Medido en la cola del
+ * 2026-11-05: «FLETE», «Flete», «PAGO DE 50% DE FLETE AEROFLASH»,
+ * «NA|SERVICIO DE TRANSPORTE».
+ */
+export function esFleteOServicio(descripcion: string): boolean {
+  return /\b(fletes?|transporte|acarreo|encomienda|env[ií]o)\b/i.test(String(descripcion ?? ""));
 }
 
 /** El tipo de documento del sistema a partir del `tipoDte` del estándar. */

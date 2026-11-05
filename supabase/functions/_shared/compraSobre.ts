@@ -66,7 +66,7 @@ export type LineaSobre = {
   numero_lote: string;
 };
 
-export type Problema = { renglon: number | null; texto: string };
+export type Problema = { renglon: number | null; texto: string; pistas?: string[] };
 
 const r4 = (n: number) => Math.round(n * 1e4) / 1e4;
 const r2 = (n: number) => Math.round(n * 100) / 100;
@@ -514,4 +514,92 @@ export function sobreDeProductoNuevo(
   };
   for (let i = 0; i < 7; i++) sobre[`desc${i}`] = "0";
   return sobre;
+}
+
+/**
+ * Qué revisar cuando el total armado no cuadra con el de la factura (Bodega,
+ * 2026-11-05: «que dé más info de qué puede ser»). Compara pieza por pieza
+ * —gravado, exento, IVA, percepción, otros impuestos, cada renglón— y sólo
+ * nombra las que explican la diferencia. Lo que no se pueda atribuir lo dice
+ * como tal en vez de inventar una causa.
+ *
+ * `diferencia` = total armado − total de la factura.
+ */
+export function pistasDeDiferencia(x: {
+  diferencia: number;
+  carga: { gravada: number; exenta: number; iva: number; percepcion: number };
+  resumen: any;
+  tasaPercepcion: number;
+  tipoDoc: "CCF" | "COF" | "FSE";
+  renglones: { renglon: number; descripcion: string; armado: number; cobrado: number }[];
+  hayRegalos: boolean;
+}): string[] {
+  const $ = (n: number) => `$${Math.abs(n).toFixed(2)}`;
+  const num = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? 0 : Number(v));
+  const cerca = (a: number, b: number, tol = 0.03) => Math.abs(a - b) <= tol;
+  const res = x.resumen ?? {};
+  const d = x.diferencia;
+  const pistas: string[] = [];
+  const tributos: any[] = Array.isArray(res.tributos) ? res.tributos : [];
+
+  // 1. Renglón por renglón (sin IVA). Con regalos no sirve: el reparto mueve
+  //    costo de los pagados a los de $0 a propósito y todos «diferirían».
+  if (!x.hayRegalos) {
+    for (const r of x.renglones) {
+      const dif = r2(r.armado - r.cobrado);
+      if (Math.abs(dif) > 0.05) {
+        pistas.push(`Renglón ${r.renglon + 1} «${r.descripcion.slice(0, 60)}»: la factura lo cobra ${$(r.cobrado)} y se carga como ${$(r.armado)} (${dif > 0 ? "sobran" : "faltan"} ${$(dif)}). Revisa «Se carga como», la cantidad y si trae descuento.`);
+      }
+    }
+  }
+
+  // 2. Gravado y exento: un renglón marcado al revés cambia el IVA.
+  const gravDoc = num(res.totalGravada) - num(res.descuGravada);
+  const exeDoc = num(res.totalExenta) + num(res.totalNoSuj) - num(res.descuExenta) - num(res.descuNoSuj);
+  if (!cerca(gravDoc, x.carga.gravada, 0.05) && !cerca(exeDoc, x.carga.exenta, 0.05) && cerca(gravDoc + exeDoc, x.carga.gravada + x.carga.exenta, 0.10)) {
+    pistas.push(`Gravado y exento están cruzados: la factura dice gravado ${$(gravDoc)} y exento ${$(exeDoc)}; la carga, ${$(x.carga.gravada)} y ${$(x.carga.exenta)}. Algún producto está marcado exento (o gravado) distinto a como lo factura el proveedor.`);
+  }
+
+  // 3. IVA.
+  const ivaDoc = tributos.filter((t) => String(t?.codigo) === "20").reduce((a, t) => a + num(t?.valor), 0) || num(res.totalIva);
+  if (ivaDoc > 0 && x.tipoDoc !== "CCF") {
+    pistas.push(`La factura trae IVA (${$(ivaDoc)}) pero se está cargando como ${x.tipoDoc}, que no lo suma.`);
+  } else if (x.tipoDoc === "CCF" && !cerca(ivaDoc, x.carga.iva, 0.05) && ivaDoc > 0) {
+    pistas.push(`IVA: la factura dice ${$(ivaDoc)} y la carga calcula ${$(x.carga.iva)} (13 % de lo gravado).`);
+  }
+
+  // 4. Percepción: la diferencia más común, y no se ve en los renglones.
+  const percDoc = num(res.ivaPerci1);
+  const sinPercepcion = cerca(Math.abs(d), x.carga.percepcion) && x.carga.percepcion > 0;
+  const percDe1 = r2(x.carga.gravada * 0.01);
+  if (!cerca(percDoc, x.carga.percepcion) && (percDoc > 0 || x.carga.percepcion > 0)) {
+    pistas.push(`Percepción: la factura trae ${$(percDoc)} y la carga calcula ${$(x.carga.percepcion)}${x.tasaPercepcion ? ` (${(x.tasaPercepcion * 100).toFixed(0)} % del proveedor)` : " (el proveedor está sin percepción)"}. Revisa si el proveedor es agente de percepción en su ficha.`);
+  } else if (!sinPercepcion && x.carga.percepcion === 0 && d < 0 && cerca(-d, percDe1) && x.carga.gravada >= 100) {
+    pistas.push(`La diferencia (${$(d)}) es el 1 % de lo gravado: parece una percepción que la factura cobra y el proveedor no tiene en su ficha.`);
+  }
+
+  // 5. Impuestos que la carga no suma (FOVIAL, COTRANS, turismo…).
+  const otros = tributos.filter((t) => String(t?.codigo) !== "20" && num(t?.valor) > 0);
+  if (otros.length) {
+    const suma = otros.reduce((a, t) => a + num(t.valor), 0);
+    pistas.push(`La factura trae otros impuestos que la carga no suma: ${otros.map((t) => `${String(t.descripcion ?? t.codigo).trim()} ${$(num(t.valor))}`).join(", ")}${cerca(-d, suma) ? " — y son exactamente la diferencia" : ""}.`);
+  }
+
+  // 6. Coincide con un renglón entero: falta, sobra o está repetido.
+  for (const r of x.renglones) {
+    const conIva = r2(r.cobrado * (x.tipoDoc === "CCF" ? 1.13 : 1));
+    if (r.cobrado > 0.5 && (cerca(Math.abs(d), r.cobrado) || cerca(Math.abs(d), conIva))) {
+      pistas.push(`La diferencia es lo que vale el renglón ${r.renglon + 1} «${r.descripcion.slice(0, 60)}»: revisa que no esté de más o que no falte.`);
+      break;
+    }
+  }
+
+  // 7. Centavos: el costo por unidad viaja con 4 decimales.
+  if (!pistas.length && Math.abs(d) <= 0.5) {
+    pistas.push(`Son ${$(d)}: parece redondeo del costo por unidad (va con 4 decimales). Revisa el renglón con más unidades o el que se partió en presentaciones.`);
+  }
+  if (!pistas.length) {
+    pistas.push(`No se encontró una causa en los totales ni en los renglones. Compara la factura (vista «Documento») con «Totales» de abajo, pieza por pieza.`);
+  }
+  return pistas;
 }

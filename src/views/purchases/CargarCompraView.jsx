@@ -951,7 +951,17 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                             <b>Antes de cargarla hay que resolver {revision.problemas.length === 1 ? 'esto' : `${revision.problemas.length} cosas`}:</b>
                             <ul className="list-disc pl-5 mt-1">
                                 {revision.problemas.map((x, k) => (
-                                    <li key={k}>{x.renglon != null ? `Renglón ${x.renglon + 1}: ` : ''}{x.texto}</li>
+                                    <li key={k}>
+                                        {x.renglon != null ? `Renglón ${x.renglon + 1}: ` : ''}{x.texto}
+                                        {x.pistas?.length > 0 && (
+                                            <>
+                                                <span className="block mt-1 font-bold">Qué revisar:</span>
+                                                <ul className="list-[circle] pl-5">
+                                                    {x.pistas.map((t, j) => <li key={j}>{t}</li>)}
+                                                </ul>
+                                            </>
+                                        )}
+                                    </li>
                                 ))}
                             </ul>
                         </Notice>

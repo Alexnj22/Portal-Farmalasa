@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.6 — Cargar compra: qué revisar cuando el total no cuadra
+
+«El total armado no cuadra con el del documento» sólo daba los dos números. Ahora dice cuánto sobra o falta y, debajo, **qué revisar**, calculado pieza por pieza (`pistasDeDiferencia` en `compraSobre.ts`): el renglón que la factura cobra distinto a como se carga (presentación, cantidad, descuento); gravado y exento cruzados; IVA que no corresponde al tipo de documento; la percepción que la factura trae y el proveedor no tiene en su ficha (el caso de IMBERTON); otros impuestos que la carga no suma (FOVIAL, COTRANS), y si la diferencia es justo un renglón entero. Si no encuentra causa, lo dice; si son centavos, lo atribuye al redondeo del costo por unidad. Con regalos no acusa renglones, porque el reparto mueve costo a propósito.
+
 ## v2.1453.5 — Consultas de existencia: reflejan las correcciones hechas por cambio de presentación
 
 - Una corrección hecha en Productos → Revisión de factor no se veía en Conteo

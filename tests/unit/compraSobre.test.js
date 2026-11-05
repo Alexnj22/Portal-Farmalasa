@@ -248,3 +248,60 @@ describe('factor en la descripción: empaque nombrado', () => {
         expect(factorEnLaDescripcion('AMOXICILINA X 30 UNIDADES')).toBe(null);
     });
 });
+
+import { pistasDeDiferencia } from '../../supabase/functions/_shared/compraSobre.ts';
+
+describe('pistasDeDiferencia: qué revisar cuando el total no cuadra', () => {
+    const base = { tasaPercepcion: 0, tipoDoc: 'CCF', hayRegalos: false };
+    it('nombra el renglón que se cargó con otra presentación', () => {
+        const p = pistasDeDiferencia({
+            ...base, diferencia: 111.33,
+            resumen: { totalGravada: 182.98, tributos: [{ codigo: '20', valor: 23.79 }] },
+            carga: { gravada: 281.50, exenta: 0, iva: 36.60, percepcion: 0 },
+            renglones: [
+                { renglon: 0, descripcion: 'ACETAMINOFEN X 100', armado: 30, cobrado: 30 },
+                { renglon: 1, descripcion: 'IBUPROFENO CAJA X 10', armado: 251.50, cobrado: 152.98 },
+            ],
+        });
+        expect(p.some(t => t.startsWith('Renglón 2 «IBUPROFENO CAJA X 10»') && t.includes('sobran $98.52'))).toBe(true);
+        expect(p.some(t => t.startsWith('Renglón 1'))).toBe(false);
+    });
+    it('la percepción que el proveedor no tiene en su ficha (IMBERTON)', () => {
+        const p = pistasDeDiferencia({
+            ...base, diferencia: -6.67,
+            resumen: { totalGravada: 666.72, ivaPerci1: 6.67, tributos: [{ codigo: '20', valor: 86.67 }] },
+            carga: { gravada: 666.72, exenta: 0, iva: 86.67, percepcion: 0 },
+            renglones: [{ renglon: 0, descripcion: 'X', armado: 666.72, cobrado: 666.72 }],
+        });
+        expect(p).toHaveLength(1);
+        expect(p[0]).toMatch(/^Percepción: la factura trae \$6\.67 y la carga calcula \$0\.00/);
+    });
+    it('otros impuestos que son exactamente la diferencia', () => {
+        const p = pistasDeDiferencia({
+            ...base, diferencia: -2.4,
+            resumen: { totalGravada: 100, tributos: [{ codigo: '20', valor: 13 }, { codigo: 'D1', descripcion: 'FOVIAL', valor: 2.4 }] },
+            carga: { gravada: 100, exenta: 0, iva: 13, percepcion: 0 },
+            renglones: [{ renglon: 0, descripcion: 'X', armado: 100, cobrado: 100 }],
+        });
+        expect(p).toEqual(['La factura trae otros impuestos que la carga no suma: FOVIAL $2.40 — y son exactamente la diferencia.']);
+    });
+    it('centavos sin causa visible = redondeo', () => {
+        const p = pistasDeDiferencia({
+            ...base, diferencia: 0.08,
+            resumen: { totalGravada: 100, tributos: [{ codigo: '20', valor: 13 }] },
+            carga: { gravada: 100.04, exenta: 0, iva: 13.01, percepcion: 0 },
+            renglones: [{ renglon: 0, descripcion: 'X', armado: 100.04, cobrado: 100 }],
+        });
+        expect(p).toHaveLength(1);
+        expect(p[0]).toMatch(/redondeo/);
+    });
+    it('con regalos no acusa renglones: el reparto mueve el costo a propósito', () => {
+        const p = pistasDeDiferencia({
+            ...base, hayRegalos: true, diferencia: 3,
+            resumen: { totalGravada: 100, tributos: [{ codigo: '20', valor: 13 }] },
+            carga: { gravada: 100, exenta: 0, iva: 13, percepcion: 0 },
+            renglones: [{ renglon: 0, descripcion: 'X', armado: 80, cobrado: 100 }, { renglon: 1, descripcion: 'REGALO', armado: 20, cobrado: 0 }],
+        });
+        expect(p.some(t => t.startsWith('Renglón'))).toBe(false);
+    });
+});

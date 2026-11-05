@@ -29,7 +29,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
+  lineaDelSobre, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 
@@ -2003,6 +2003,7 @@ Deno.serve(async (req: Request) => {
     const lineas: LineaSobre[] = [];
     const detalle: unknown[] = [];
     const cobrado: number[] = [];
+    const deLinea: { renglon: number; descripcion: string }[] = [];   // qué renglón es cada línea
     const erroneos: Erroneo[] = [];
     const reparto: LineaReparto[] = [];
     const salas = uso === "venta" ? await salasDeReparto(admin) : new Map<number, Sala>();
@@ -2126,7 +2127,7 @@ Deno.serve(async (req: Request) => {
           }
         }
       }
-      if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); }
+      if (res.linea) { lineas.push(res.linea); cobrado.push(Number(r.subtotal) || 0); deLinea.push({ renglon: i, descripcion: r.descripcion }); }
       // Lo que el registro de compras necesita y la línea del sistema no dice:
       // el precio de lista, los dos descuentos y si el renglón venía de regalo
       // (se mira ANTES de repartirle costo, que es cuando todavía vale $0).
@@ -2158,7 +2159,24 @@ Deno.serve(async (req: Request) => {
     // Sólo con TODOS los renglones armados: con uno sin producto el total
     // sale corto por construcción, y decirlo repite el problema de arriba.
     else if (lineas.length === items.length && Math.abs(diferencia) > TOLERANCIA) {
-      problemas.push({ renglon: null, texto: `El total armado ($${tot.total}) no cuadra con el del documento ($${totalDoc.toFixed(2)}).` });
+      problemas.push({
+        renglon: null,
+        texto: `El total armado ($${tot.total}) no cuadra con el de la factura ($${totalDoc.toFixed(2)}): ${diferencia > 0 ? "sobran" : "faltan"} $${Math.abs(diferencia).toFixed(2)}.`,
+        // Qué puede ser: la persona no tiene cómo saberlo mirando dos totales.
+        pistas: pistasDeDiferencia({
+          diferencia, tasaPercepcion: tasa, tipoDoc, resumen: dte?.resumen,
+          hayRegalos: regalos > 0,
+          carga: {
+            gravada: Number(tot.sumas_sin_iva), exenta: Number(tot.venta_exenta),
+            iva: Number(tot.iva), percepcion: Number(tot.total_percepcion),
+          },
+          renglones: lineas.map((l, k) => ({
+            ...deLinea[k],
+            armado: Math.round(Number(l.compra_fin) * Number(l.cant) * 100) / 100,
+            cobrado: Math.round((cobrado[k] ?? 0) * 100) / 100,
+          })),
+        }),
+      });
     }
 
     // Cargada a mano con el NÚMERO DE CONTROL (65 de 1,013 desde agosto) o

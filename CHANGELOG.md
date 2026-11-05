@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.23 — Cargar compra abre sin esperar al catálogo; textos de «Otra cantidad»
+
+- **Abrir una compra tardaba ~4 s de más**: antes de pedir la propuesta se esperaba la actualización de productos del sistema (4.1 s medido cuando de verdad corre). Ahora las dos van en paralelo: la compra se ve en ~1–2 s y, si la actualización trajo cambios, la propuesta se vuelve a pedir y se reemplaza conservando lo que se haya tocado.
+- **«Otra cantidad de unidades»**: el aviso «No da parejo: 5 de la factura no se reparten en 9 unidades» no se entendía. Ahora dice cuánto saldría por cada una y qué números sí sirven («Tiene que ser múltiplo de 5: 5 o 10»). «Recordar para la próxima» pasa a «Siempre así: N por cada una» y sólo aparece con un número parejo.
+
 ## v2.1452.22 — Revisión de factor: se ve claro qué salas no han contado
 
 - Se corrigieron tres salas creyendo que ya habían contado: el aviso «la sala

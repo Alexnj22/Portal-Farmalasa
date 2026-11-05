@@ -261,9 +261,11 @@ const cargarDe = (r, factor) => {
 };
 const cargarAyuda = (r, aj) => {
     const cant = Number(r.cantidad), f = Number(aj.factor);
-    if (!(f > 0)) return 'Escribe cuántas unidades entran.';
+    if (!(f > 0)) return 'Escribe cuántas unidades entran en total.';
     if (!Number.isInteger(Math.round(f * 1000) / 1000)) {
-        return `No da parejo: ${cant} de la factura no se reparten en ${aj.cargar ?? cargarDe(r, f)} unidades.`;
+        const abajo = Math.floor(f) * cant, arriba = Math.ceil(f) * cant;
+        return `${aj.cargar ?? cargarDe(r, f)} no se reparte entre las ${cant} de la factura (saldrían ${Math.round(f * 100) / 100} por cada una). `
+            + `Tiene que ser múltiplo de ${cant}: ${abajo > 0 ? `${abajo} o ` : ''}${arriba}.`;
     }
     // Lo normal no se dice: con el rótulo denso la ayuda va al lado del título
     // y se cortaba («60 DE LA I»). Cómo entra lo dice la fila de abajo.
@@ -500,13 +502,21 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const claveBorrador = `cargar-compra:${papel ? `m${doc.manual_id}` : doc.document_id}`;
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
-        // Los productos al día ANTES de proponer: una ficha corregida en el
-        // sistema hace un minuto ya cuenta (NOR-CLAMIDA, 2026-11-05). Si no se
-        // pudo, se sigue con lo que hay.
-        await refrescarCatalogo();
+        // Los productos se actualizan EN PARALELO, no antes (2026-11-05):
+        // esperarlos sumaba ~4 s a cada apertura. La propuesta se muestra ya, y
+        // si la actualización trajo cambios se vuelve a pedir y se reemplaza
+        // conservando lo que la persona haya tocado.
+        const refresco = refrescarCatalogo();
         const { propuesta, error: e } = await fetchPropuesta(doc.document_id, doc.manual_id ?? null);
         if (e) { setError(e); return; }
         setP(propuesta);
+        refresco.then(async (rf) => {
+            if (!rf.refrescado || !(rf.cambios > 0)) return;
+            const { propuesta: nueva, error: e2 } = await fetchPropuesta(doc.document_id, doc.manual_id ?? null);
+            if (e2 || huellaDe(nueva.renglones) !== huellaDe(propuesta.renglones)) return;
+            setP(nueva);
+            setAjustes(a => Object.fromEntries(nueva.renglones.map((r, i) => [i, conBorrador(ajusteInicial(r), a[i])])));
+        });
         // Lo que la persona ya había ajustado sobre ESTE documento vuelve: la
         // sesión se cierra sola a los pocos minutos y una factura de 30
         // renglones no se vuelve a teclear.
@@ -1012,10 +1022,12 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar}
                                                 presentaciones={[...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]}
                                                 onCargar={v => ajustarCarga(i, r, v)}
-                                                recordar={factorCambio && puedeEditar ? (
-                                                    <Button size="xs" variant="ghost" loading={guardando === k}
+                                                recordar={factorCambio && puedeEditar && Number.isInteger(Number(aj.factor)) ? (
+                                                    // Guarda «cada una de este proveedor trae N» para que la
+                                                    // próxima factura ya venga así. Sólo con un número parejo.
+                                                    <Button size="xs" variant="ghost" icon={BookMarked} loading={guardando === k}
                                                         onClick={() => confirmar(r, i, { id: productoDe(r, i), nombre: elegido?.nombre ?? r.producto })}>
-                                                        Recordar para la próxima
+                                                        Siempre así: {Number(aj.factor)} por cada una
                                                     </Button>
                                                 ) : null} />
                                             <PortalInput compact labelDenso label="Lote" value={aj.lote}

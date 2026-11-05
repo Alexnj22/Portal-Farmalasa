@@ -194,7 +194,7 @@ export async function fetchProductosPorConfirmar(estado = 'pendientes', limite =
 export async function refrescarCatalogo() {
     const { data, error } = await supabase.functions.invoke('leer-dte-json', { body: { modo: 'refrescar_catalogo' } });
     if (error) return { refrescado: false, error: error.message ?? 'No se pudo actualizar.' };
-    return { refrescado: !!data?.refrescado, error: data?.error ?? null };
+    return { refrescado: !!data?.refrescado, cambios: Number(data?.cambios ?? 0), error: data?.error ?? null };
 }
 
 /**

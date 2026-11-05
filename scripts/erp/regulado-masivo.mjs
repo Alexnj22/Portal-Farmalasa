@@ -243,7 +243,9 @@ if (modo === 'leer') {
     const bitacora = `${SALIDA}/marcar-${new Date().toISOString().slice(0, 10)}.jsonl`;
     const hechos = new Set(existsSync(bitacora) ? readFileSync(bitacora, 'utf8').split('\n').filter(Boolean)
         .map(l => JSON.parse(l)).filter(x => x.resultado === 'marcado').map(x => x.id) : []);
-    ids = ids.filter(id => !hechos.has(id)).slice(0, max);
+    // «marcado» hoy no es motivo para saltear una QUITA: es justo el caso de
+    // deshacer lo que la corrida marcó de más (rodillera, 2026-11-05).
+    ids = ids.filter(id => QUITAR || !hechos.has(id)).slice(0, max);
     console.log(`${EJECUTAR ? 'MARCANDO' : 'SIMULANDO'} ${ids.length} producto(s) · categorías ${cats.join(',')}`);
     await login();
     let ok = 0, seguidos = 0;

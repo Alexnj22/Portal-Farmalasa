@@ -138,7 +138,7 @@ export async function subirArchivo(bucket, path, archivo, { upsert = false, cont
         if (intento < SUBIDA.intentos) await esperar(SUBIDA.pausaAntesDeReintentar);
     }
     if (esPasajero(ultimo)) reportarFallaDeServicio({ operacion: `subir:${bucket}`, error: ultimo, rescatada: false });
-    const e = new Error(mensajeDeSubida(ultimo), { cause: ultimo });
+    const e = /** @type {Error & { pasajero?: boolean }} */ (new Error(mensajeDeSubida(ultimo), { cause: ultimo }));
     e.pasajero = esPasajero(ultimo);            // quien llama puede guardar el archivo para después
     throw e;
 }

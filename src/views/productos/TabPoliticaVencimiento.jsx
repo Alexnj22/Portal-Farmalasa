@@ -507,12 +507,10 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                 <div className="flex items-center gap-1 shrink-0">
                     <PortalInput
                         aria-label="Precio regular del proveedor"
-                        type="number"
+                        inputMode="decimal" maskType="DECIMAL"
                         value={draft.vineta}
                         onChange={e => setF('vineta', e.target.value)}
                         placeholder="—"
-                        min="0"
-                        step="0.01"
                         title="Precio regular: identifica a este proveedor específico cuando el laboratorio tiene varios — se cruza con el precio regular vigente del producto para resolver la política automáticamente"
                         tono="chart-9"
                         compact

@@ -61,7 +61,7 @@ export async function fetchPistasSinCargar(documentIds = []) {
     if (!ids.length) return { pistas: {}, error: null };
     const { data, error } = await supabase.rpc('get_pistas_documentos_sin_cargar', { p_ids: ids });
     if (error) return { pistas: {}, error };
-    return { pistas: Object.fromEntries((data ?? []).map(r => [r.document_id, r])), error: null };
+    return { pistas: Object.fromEntries((/** @type {any[]} */ (data) ?? []).map(r => [r.document_id, r])), error: null };
 }
 
 /**
@@ -82,7 +82,7 @@ export async function devolverDocumento(documentId, proveedor = false) {
     const { data, error } = await supabase.rpc('compra_devolver_documento', {
         p_document_id: documentId, p_proveedor: !!proveedor,
     });
-    return { ok: !!data?.ok, error: error?.message ?? null };
+    return { ok: !!/** @type {any} */ (data)?.ok, error: error?.message ?? null };
 }
 
 /**
@@ -231,7 +231,7 @@ export async function buscarProductos(texto, limite = 12) {
     const q = String(texto ?? '').trim();
     if (q.length < 3) return { filas: [], error: null };
     const { data, error, aproximado } = await buscarPorRegla(q, {
-        select: 'id, nombre, codigo_barras', limite,
+        select: 'id, nombre, codigo_barras', limite, armar: null,
     });
     if (error) return { filas: [], error };
     return { filas: data ?? [], error: null, aproximado };

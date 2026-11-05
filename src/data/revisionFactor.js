@@ -21,7 +21,7 @@ export async function fetchRevisionDePresentaciones() {
     ]);
     if (error) return { data: null, error };
     // La función devuelve `json`: para los tipos es un `Json` sin forma.
-    /** @type {{ cambios: any[], existencias: any[], sospechosos: any[] }} */
+    /** @type {{ cambios: any[], existencias: any[], sospechosos: any[], corregidas?: any[] }} */
     const datos = /** @type {any} */ (data) ?? { cambios: [], existencias: [], sospechosos: [] };
     // La presentación que CAMBIÓ vive en el cambio, no en la fila: la fila
     // lleva la de la existencia (en X-Ray Dol, el blíster nuevo; cambió la caja).

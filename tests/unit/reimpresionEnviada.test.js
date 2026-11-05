@@ -7,10 +7,13 @@ let documento = null;
 vi.mock('pdfmake/build/pdfmake', () => ({
     default: {
         addVirtualFileSystem: () => {},
-        createPdf: (doc) => { documento = doc; return { download: () => {} }; },
+        createPdf: (doc) => { documento = doc; return { download: () => {}, getBlob: async () => new Blob([]) }; },
     },
 }));
 vi.mock('pdfmake/build/vfs_fonts', () => ({ default: {} }));
+// Desde v2.1451.15 el PDF baja por `descargarPdf` (getBlob + enlace); acá sólo
+// importa el documento que se armó, no la descarga.
+vi.mock('@plataforma/descargas', () => ({ descargarPdf: async () => {} }));
 vi.mock('@nucleo/data/pedidos', () => ({
     fetchErpSucursalAddressMap: async () => ({ data: [], error: null }),
     leerDireccionesDeSalas: async () => ({}),

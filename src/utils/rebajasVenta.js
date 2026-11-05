@@ -9,7 +9,13 @@ export function comoDescuenta(c) {
     return c?.tipo === '%' ? `${Number(c.monto)} %` : `${formatMoney(c.monto)} por unidad`;
 }
 
-/** El CSV de lo que se mira: las campañas o las rebajas a mano. */
+/**
+ * El CSV de lo que se mira: las campañas o las rebajas a mano.
+ * @param {string} vista
+ * @param {{ porCampana: any[], aMano: any[] }} filas
+ * @param {string} periodo
+ * @param {(branchId: any) => string} [salaDe]
+ */
 export function csvRebajas(vista, { porCampana, aMano }, periodo, salaDe = () => '') {
     if (vista === 'campana') {
         return {

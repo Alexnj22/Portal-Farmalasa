@@ -90,6 +90,7 @@ export function validarPiezas(lista) {
 /* ── Datos personales: se tapan ANTES de que salgan hacia la IA ────────────
  * Decisión del usuario (2026-11-04). DUI, NIT, teléfono, correo y salario. Un
  * nombre de producto o de sala sí viaja: sin él no hay respuesta. */
+/** @type {[RegExp, string][]} */
 const PATRONES = [
     [/[\w.+-]+@[\w-]+\.[\w.-]+/g, '[correo oculto]'],
     [/\b\d{4}-?\d{6}-?\d{3}-?\d\b/g, '[NIT oculto]'],
@@ -152,6 +153,7 @@ export function avisoDeFaltante(c, { umbral = 1, enMiCaja = false } = {}) {
 }
 
 /** Entró dinero después del último corte confirmado: el cierre no va a pasar. */
+/** @param {any} falta @param {{ sala?: string }} [opciones] */
 export function avisoDeFaltaPorContar(falta, { sala } = {}) {
     if (!falta) return null;
     if (falta.medido === false) {
@@ -422,6 +424,7 @@ export function crearMascaraDeNombres(nombres) {
         if (corto !== completo) formas.push({ forma: corto, id });
     }
     formas.sort((a, b) => b.forma.length - a.forma.length);
+    /** @type {[RegExp, string][]} */
     const reglas = formas.map((f) => [new RegExp(`\\b${escapar(f.forma).replace(/ /g, '\\s+')}\\b`, 'gi'), f.id]);
     return {
         tapar: (texto) => {

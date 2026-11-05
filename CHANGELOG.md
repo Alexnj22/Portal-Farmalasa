@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.37 — Gates y pruebas en verde: tipos, diseño y pruebas de tickets al día
+
+Sin cambios para quien usa el portal salvo el primero. Era lo que estaba en rojo:
+
+- **Política de vencimiento:** el campo «precio regular del proveedor» usaba un campo numérico nativo, cuyo separador decimal depende del idioma de cada computadora. Ahora usa el canónico de dinero (`maskType="DECIMAL"`). `gate:design` vuelve a cero.
+- **`gate:tipos`:** 17 avisos nuevos en 8 archivos, acumulados en una semana. Todos de forma (anotaciones JSDoc), ninguno contra la base; se corrigieron sin tocar lógica y el baseline bajó de 401 a 397.
+- **Pruebas de tickets:** fallaban porque el limpiador de las pruebas no conocía `ESC 3 n` (el avance por renglón, v2.1450) ni el logo completo (`GS v 0`): contaba 3 columnas de más y leía los bytes de la imagen como tildes. El papel estaba bien — el logo se concatena fuera de `apretarRenglones`, así que la imagen no se toca.
+- **Reimpresión de pedidos:** la prueba simulaba la descarga vieja; desde v2.1451.15 el PDF baja por `descargarPdf`.
+- Se borra `facturasSala.test.js`: probaba un módulo que se quitó en v2.1432.0.
+
 ## v2.1451.36 — Tienda Salud: laboratorios, promociones y volver arriba
 
 Pedido del usuario: «¿y lo que hablamos de promociones? ¿laboratorios? en la tienda? que sea una lista interminable se me hace mucho, no tengo opción de volver arriba de forma fácil».

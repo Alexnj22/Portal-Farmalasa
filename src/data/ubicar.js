@@ -8,13 +8,14 @@ import { supabase } from '../supabaseClient';
 // Lanza con `codigo` (ENLACE_INVALIDO · NO_ES_DE_MAPS · SIN_COORDENADAS ·
 // DOMINIO_NO_PERMITIDO) cuando el enlace no sirve, para que la pantalla diga
 // qué pasó en vez de un error genérico.
+/** @param {{ enlace?: string, lat?: number, lng?: number }} [donde] */
 export async function ubicarEnMapa({ enlace, lat, lng } = {}) {
     const { data, error } = await supabase.functions.invoke('maps-proxy', {
         body: { type: 'ubicar', params: enlace ? { enlace } : { lat, lng } },
     });
     if (error) throw error;
     if (data?.error) {
-        const e = new Error(data.error);
+        const e = /** @type {Error & { codigo?: string }} */ (new Error(data.error));
         e.codigo = data.error;
         throw e;
     }

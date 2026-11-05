@@ -58,7 +58,9 @@ const pie = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).pie;
 // columnas. Van ENTEROS: `ESC a n` mide tres bytes y sacarle dos deja el tercero
 // contando como una columna que en el papel no existe.
 // eslint-disable-next-line no-control-regex
-const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt].|@)/g, '');
+// `ESC 3 n` (2026-11-04) fija el avance de cada renglón: tres bytes, cero
+// columnas de papel.
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3].|@)/g, '');
 const renglones = (t) => cuerpo(t).split('\n').map(sinCodigos);
 
 // El vale de una salida que tomo cuatro bolsas. Va a las reglas del rollo

@@ -129,6 +129,7 @@ export function textoDePrincipios(principios) {
 // ponía primero el INYECTABLE (0.50) sobre las cápsulas (0.33), porque las
 // cápsulas traen más palabras de dosis. La forma decide el ORDEN; el puntaje
 // que se muestra y el umbral de «auto» siguen siendo el parecido sin tocar.
+/** @type {[string, RegExp][]} */
 const FORMAS = [
     ['iny', /\b(INY|INYECTABLE|INYECCION|AMP|AMPOLLA|AMPOLLAS|VIAL|VIALES|LIOFILIZADO)\b/],
     ['liquido', /\b(JARABE|JAR|SUSP|SUSPENSION|SOL|SOLUCION|GOTAS|GTS|ELIXIR|EMULSION)\b/],

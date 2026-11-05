@@ -207,9 +207,10 @@ export async function fetchRebajasEnVentas({ desde, hasta, branchId = null }) {
         p_desde: desde, p_hasta: hasta, p_branch_id: branchId ? Number(branchId) : null,
     });
     if (error) throw error;
+    const d = /** @type {any} */ (data);
     return {
-        resumen: data?.resumen ?? { campana: { renglones: 0, monto: 0 }, a_mano: { renglones: 0, monto: 0 } },
-        porCampana: data?.por_campana ?? [],
-        aMano: data?.a_mano ?? [],
+        resumen: d?.resumen ?? { campana: { renglones: 0, monto: 0 }, a_mano: { renglones: 0, monto: 0 } },
+        porCampana: d?.por_campana ?? [],
+        aMano: d?.a_mano ?? [],
     };
 }

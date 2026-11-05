@@ -31,6 +31,7 @@ import NovedadesHoja from '../componentes/NovedadesHoja';
 import { guiaVista, revisarAlAbrir, usePresentacion } from '../lib/novedades';
 import { revisarAceptacion, useAceptacion } from '../lib/aceptacion';
 import { revisarActualizacion } from '../lib/actualizacion';
+import { vigilarActualizacionesPorAire } from '../lib/actualizacionAire';
 
 // La hoja de opciones y el prompt de iOS, en Android (componentes/HojasAndroid).
 instalarHojasAndroid();
@@ -305,6 +306,8 @@ function Bloqueo() {
   // En Android, con `blur` (Recientes), y sin tapar lo que la app abrió a propósito (lib/bloqueo, 2026-10-14).
   const cubierta = useCubierta(activo);
   useEffect(() => { cargar(); return vigilarCicloDeVida(); }, [cargar]);
+  // Un paquete por aire se aplica al bajarlo, no al arranque siguiente (lib/actualizacionAire).
+  useEffect(() => vigilarActualizacionesPorAire(), []);
   if (!token) return null;
   if (bloqueada) return <PantallaBloqueo />;
   // Con sesión y el bloqueo todavía sin leer del llavero no se sabe si hay que

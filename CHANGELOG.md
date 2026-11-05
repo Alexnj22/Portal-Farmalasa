@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.9 — App: la actualización por aire se aplica al abrir, sin segundo arranque
+
+App de clientes. Pedido del usuario después de arreglar las actualizaciones
+por aire: que no haya que abrir la app dos veces. `lib/actualizacionAire.js`
+pregunta al abrir y al volver a primer plano (como mucho cada 15 min); si baja
+un paquete nuevo hasta 12 s después de abrir o volver, recarga en ese momento
+tapando con el color de fondo de la app. Si tardó más, se aplica al próximo
+regreso: nunca recarga a alguien en medio de un juego o un formulario.
+
 ## v2.1451.8 — Despacho: el traslado que quedó sin anotar se busca y enlaza solo
 
 Pedido 239, Salud 1: «No entró al inventario — LEVOFLOXACINA · 10 u. La

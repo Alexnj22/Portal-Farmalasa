@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.11 — Ventas en el Inicio: el código que faltó en v2.1451.10
+
+- v2.1451.10 se publicó con su nota pero **sin el código**: lo que describe esa entrada (ventas contra la semana pasada, meta por día, documentos sin sello, cotizaciones más viejas primero, top productos que se actualiza) llega recién con esta versión.
+
 ## v2.1451.10 — Ventas en el Inicio: contra la semana pasada y lo que hay que hacer
 
 - **Ventas por día**: arriba dice cuánto lleva hoy la sala y si va **por encima o por debajo del mismo día de la semana pasada a esta hora** (la hora en curso se compara en proporción, para no salir «abajo» cada vez que empieza una hora). En chico (una fila) se ve el total de hoy con ese porcentaje, en amarillo si va abajo.

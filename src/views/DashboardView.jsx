@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback, lazy, Suspense } from 'react';
-import { nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas } from '@nucleo/utils/inicio';
+import { nivelDeVolumen, presentesEl, problemaDeSucursal, promediosDeVentas, contraSemanaPasada } from '@nucleo/utils/inicio';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import Button from '../components/common/Button';
 import PeriodStepper from '../components/common/PeriodStepper';
@@ -82,6 +82,7 @@ import WidgetVendedores from './dashboard/WidgetVendedores';
 import { TamanoWidgetCtx, useTamanoWidget } from './dashboard/tamanoWidget';
 import VistazoWidget from './dashboard/VistazoWidget';
 import { useSolicitudEnInicio } from './dashboard/useSolicitudEnInicio';
+import { tieneSelloMh } from '@nucleo/data/facturacion';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { MODULE_MAP } from '../components/common/catalogos/modulos';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -109,7 +110,7 @@ import {
     catalogoDePestana, pestanasVisibles, ordenDeLaPestana, widgetsSinUbicar,
     hospedaBaldosasDeSucursal,
 } from '@nucleo/constants/dashboardTabs';
-import { fechaTexto, diaSV } from '@nucleo/utils/fecha';
+import { fechaTexto, diaSV, diasDesde } from '@nucleo/utils/fecha';
 import { fetchTopProductosDelMes } from '@nucleo/data/ventas';
 import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
@@ -1875,6 +1876,8 @@ const DashboardView = ({ openModal }) => {
   const [absLoading,     setAbsLoading]     = useState(true);
   const [absError,       setAbsError]       = useState(false);
   const [todaySales,     setTodaySales]     = useState({});
+  // El mismo día de la semana pasada, por sala y hora: `{ sala: { hora: monto } }`.
+  const [semanaPasada,   setSemanaPasada]   = useState({});
   const [todayLoading,   setTodayLoading]   = useState(false);
   const [todayError,     setTodayError]     = useState(false);
   const [salesError,     setSalesError]     = useState(false);
@@ -2011,6 +2014,21 @@ const DashboardView = ({ openModal }) => {
         setTodaySales(map); setTodayLoading(false);
       });
   }, []);
+  // La semana pasada no cambia en el día: se lee una vez. Si falla, la
+  // comparación simplemente no se muestra — el widget no depende de ella.
+  useEffect(() => {
+    if (!branches.length) return;
+    const hace7 = new Date(); hace7.setDate(hace7.getDate() - 7);
+    fetchTodayHourlySales(localDateStr(hace7)).then(({ data, error }) => {
+      if (error) { console.error('[dash] ventas de la semana pasada', error); return; }
+      const m = {};
+      (data || []).forEach(r => {
+        const bid = String(r.branch_id), h = Number(r.sale_hour);
+        (m[bid] ??= {})[h] = (m[bid][h] || 0) + Number(r.total_sales || 0);
+      });
+      setSemanaPasada(m);
+    }).catch(e => console.error('[dash] ventas de la semana pasada', e));
+  }, [branches.length]);
   useEffect(() => {
     if (!branches.length) return;
     cargarHoy(true);
@@ -2054,8 +2072,8 @@ const DashboardView = ({ openModal }) => {
   }, [salesBranch, branches]);
 
   // ── Comercial data effects ─────────────────────────────────────────────────
-  useEffect(() => {
-    fetchCotizacionesActivas()
+  const cargarCotizaciones = useCallback(() => {
+    return fetchCotizacionesActivas()
       .then(({ data, count, error }) => {
         if (error) console.error('[dash cotizaciones]', error);
         setCotizError(!!error);
@@ -2068,6 +2086,10 @@ const DashboardView = ({ openModal }) => {
         setCotizLoading(false);
       });
   }, []);
+  useEffect(() => { cargarCotizaciones(); }, [cargarCotizaciones]);
+  // Se cargaban una sola vez: una cotización cerrada en otra pestaña seguía
+  // en el Inicio hasta recargar.
+  useRefrescoEnVivo(cargarCotizaciones, { ms: 5 * 60 * 1000 });
 
   const cargarFacturacion = useCallback(() => {
     // `fetchAllRows` devuelve el array directo (o null si fallo la primera
@@ -2083,6 +2105,8 @@ const DashboardView = ({ openModal }) => {
           total: filas.reduce((s, r) => s + (parseFloat(r.total) || 0), 0),
           ccf:   filas.filter(r => r.tipo_documento === 'CCF').length,
           fcf:   filas.filter(r => r.tipo_documento !== 'CCF').length,
+          // Sin sello VÁLIDO (el canónico de Facturación, no `!recibido_mh`).
+          sinSello: filas.filter(r => !tieneSelloMh(r.recibido_mh)).length,
         });
         setFactLoading(false);
       })
@@ -2115,25 +2139,34 @@ const DashboardView = ({ openModal }) => {
   // el widget se va a pintar. El `ref` —y no `topProductos.length`— es lo que
   // garantiza una sola vuelta: un mes sin ventas devuelve `[]`, y con la
   // guarda por longitud volvería a pedirlo en cada cambio de pestaña.
+  const cargarTop = useCallback((primera = false) => {
+    const now  = new Date();
+    const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
+    const ffin = localDateStr();
+    if (primera) setTopProdLoading(true);
+    // Sólo por sala (decisión del usuario, 2026-11-04): sin alcance ALL la
+    // base pone la sala propia e ignora este parámetro.
+    return fetchTopProductosDelMes({ p_fini: fini, p_ffin: ffin, p_limite: 10, p_branch_id: topBranch ? Number(topBranch) : null })
+      .then(({ data, error }) => {
+        if (error) console.error('[top_productos]', error);
+        // Un refresco que falla no borra la lista que ya se veía.
+        if (error && !primera) return;
+        setTopProdError(!!error);
+        setTopProductos(data || []);
+        setTopProdLoading(false);
+      });
+  }, [topBranch]);
   const topProdPedido = useRef(null);
   useEffect(() => {
     if (topProdPedido.current === topBranch) return;
     if (!showWidget('top_productos', 'dash_top_productos')) return;
     topProdPedido.current = topBranch;
-    const now  = new Date();
-    const fini = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-    const ffin = localDateStr();
-    setTopProdLoading(true);
-    // Sólo por sala (decisión del usuario, 2026-11-04): sin alcance ALL la
-    // base pone la sala propia e ignora este parámetro.
-    fetchTopProductosDelMes({ p_fini: fini, p_ffin: ffin, p_limite: 10, p_branch_id: topBranch ? Number(topBranch) : null })
-      .then(({ data, error }) => {
-        if (error) console.error('[top_productos]', error);
-        setTopProdError(!!error);
-        setTopProductos(data || []);
-        setTopProdLoading(false);
-      });
-  }, [showWidget, topBranch]);
+    cargarTop(true);
+  }, [showWidget, topBranch, cargarTop]);
+  // Se cargaba una sola vez (2026-11-05): con la pestaña abierta todo el día,
+  // el top de la mañana seguía ahí en la tarde. El del mes cambia despacio:
+  // cada 15 minutos alcanza.
+  useRefrescoEnVivo(() => cargarTop(false), { ms: 15 * 60 * 1000, activo: showWidget('top_productos', 'dash_top_productos') });
 
   // Los helpers de visibilidad (`isWidgetOn`, `canSee`, `canManage`,
   // `showWidget`) viven arriba, junto al canon: `activeLayout` los necesita
@@ -2746,9 +2779,28 @@ const DashboardView = ({ openModal }) => {
       if (!showWidget('sales','dash_sales')) return null;
       const isSalesLocked = getScope('dash_sales') !== 'ALL';
       const effectiveSalesBranch = isSalesLocked && userBranchStr ? userBranchStr : salesBranch;
+      // ¿Vamos mejor o peor que lo normal? Hoy contra el mismo día de la
+      // semana pasada, a esta hora (`contraSemanaPasada`). El total del
+      // resumen es el de las salas que uno ve: con alcance de sala, la suya.
+      const ahoraV = new Date();
+      const diaPasado = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'][ahoraV.getDay()];
+      const compararSalas = (ids) => ids.reduce((acc, id) => {
+        const r = contraSemanaPasada(todaySales[id]?.hourSales, semanaPasada[id], ahoraV.getHours(), ahoraV.getMinutes());
+        return { hoy: acc.hoy + r.hoy, antes: acc.antes + r.antes };
+      }, { hoy: 0, antes: 0 });
+      const pctDe = ({ hoy, antes }) => (antes > 0 ? Math.round(((hoy - antes) / antes) * 100) : null);
+      const idsVisibles = isSalesLocked && userBranchStr ? [userBranchStr] : [...new Set([...Object.keys(todaySales), ...Object.keys(semanaPasada)])];
+      const totalHoyV = idsVisibles.reduce((t, id) => t + (todaySales[id]?.totalSales || 0), 0);
+      const pctTotal = pctDe(compararSalas(idsVisibles));
+      const compSala = effectiveSalesBranch ? compararSalas([String(effectiveSalesBranch)]) : null;
+      const pctSala = compSala ? pctDe(compSala) : null;
+      const nombreSalaV = salesBranches.find(b => String(b.id) === String(effectiveSalesBranch))?.name;
+      const textoPct = (p) => `${p > 0 ? '+' : ''}${p}%`;
       return wrapWidget('sales',
         <WidgetCard noClip icon={BarChart2} category="ventas"
-          resumen={{ valor: formatMoney(Object.values(todaySales).reduce((t, b) => t + (b?.totalSales || 0), 0)), texto: 'vendido hoy' }}
+          resumen={{ valor: formatMoney(totalHoyV),
+            texto: pctTotal == null ? 'vendido hoy' : `hoy · ${textoPct(pctTotal)} vs. el ${diaPasado} pasado`,
+            tono: pctTotal != null && pctTotal < 0 ? 'warning' : undefined }}
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
             <div className="flex flex-wrap items-center justify-end gap-2">
@@ -2779,6 +2831,12 @@ const DashboardView = ({ openModal }) => {
             {/* La leyenda va ARRIBA de las barras. Estaba debajo, y el color es
                 lo que codifica el estado del día: se llegaba a los datos sin
                 saber qué significaba el naranja, y había que volver a subir. */}
+            {compSala && !todayError && (
+              <p className="text-caption text-content-2 mb-2 shrink-0">
+                Hoy{nombreSalaV ? ` en ${nombreSalaV}` : ''}: <span className="font-black text-content tabular-nums">{formatMoney(compSala.hoy)}</span>
+                {pctSala != null && <> · <span className={`font-black tabular-nums ${pctSala < 0 ? 'text-warning-text' : 'text-success-text'}`}>{textoPct(pctSala)}</span> vs. el {diaPasado} pasado a esta hora</>}
+              </p>
+            )}
             <div className="flex flex-wrap gap-3 mb-3 shrink-0">
               {[['var(--txvol-muerta)','Muerta'],['var(--txvol-normal)','Normal'],['var(--txvol-pico)','Pico'],['var(--txvol-critica)','Crítica']].map(([c,l])=>(
                 <div key={l} className="flex items-center gap-1 text-micro font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
@@ -3302,7 +3360,11 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('cotizaciones',
         <WidgetCard title="Cotizaciones activas" icon={Receipt} category="ventas"
-          resumen={cotizLoading ? null : cotizError ? { texto: 'No se pudo leer', tono: 'danger' } : { valor: cotizStats.activas, texto: cotizStats.activas===1?'cotización activa':'cotizaciones activas' }}
+          resumen={cotizLoading ? null : cotizError ? { texto: 'No se pudo leer', tono: 'danger' }
+            : !cotizStats.activas ? { texto: 'Sin cotizaciones activas' }
+            : { valor: cotizStats.activas,
+                texto: (() => { const d = diasDesde(cotizStats.recent[0]?.fecha); return d > 0 ? `activas · la más vieja, hace ${d} día${d===1?'':'s'}` : (cotizStats.activas===1?'cotización activa':'cotizaciones activas'); })(),
+                tono: diasDesde(cotizStats.recent[0]?.fecha) >= 15 ? 'warning' : undefined }}
           action={puedeAbrir('/cotizaciones')&&<Button variant="ghost" size="xs" onClick={() => navigate('/cotizaciones')}>Ver <ChevronRight size={11}/></Button>}>
           {cotizLoading ? (
             <div className="flex flex-col h-full">
@@ -3353,7 +3415,7 @@ const DashboardView = ({ openModal }) => {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-label font-semibold text-content truncate">{c.customer_name || '—'}</p>
-                    <p className="text-micro text-content-3">{c.numero} · {fechaTexto(c.fecha, {day:'2-digit',month:'short'})}</p>
+                    <p className="text-micro text-content-3">{c.numero} · {fechaTexto(c.fecha, {day:'2-digit',month:'short'})}{(() => { const d = diasDesde(c.fecha); return d > 0 ? <span className={d >= 15 ? 'text-warning-text font-bold' : ''}> · hace {d} día{d===1?'':'s'}</span> : null; })()}</p>
                   </div>
                   <span className="text-label font-black text-content-2 shrink-0">{fmt(c.total)}</span>
                 </div>
@@ -3371,7 +3433,10 @@ const DashboardView = ({ openModal }) => {
       const fmt = v => formatMoney(v);
       return wrapWidget('facturacion',
         <WidgetCard title="Facturación hoy" icon={FileText} category="ventas"
-          resumen={factLoading ? null : factError ? { texto: 'No se pudo leer', tono: 'danger' } : { valor: factStats.count, texto: `${factStats.count===1?'documento':'documentos'} · ${formatMoney(factStats.total)}` }}
+          resumen={factLoading ? null : factError ? { texto: 'No se pudo leer', tono: 'danger' }
+            : { valor: factStats.count, texto: `${factStats.count===1?'documento':'documentos'} · ${formatMoney(factStats.total)}${factStats.sinSello ? ` · ${factStats.sinSello} sin sello` : ''}`,
+                tono: factStats.sinSello ? 'warning' : undefined,
+                accion: factStats.sinSello && puedeAbrir('/facturacion') ? { texto: 'Revisar', ir: '/facturacion?tab=pendiente_mh' } : undefined }}
           action={puedeAbrir('/facturacion')&&<Button variant="ghost" size="xs" onClick={() => navigate('/facturacion')}>Ver <ChevronRight size={11}/></Button>}>
           {factError && !factLoading ? (
             <div className="h-full grid place-items-center p-3"><EmptyState linea icon={AlertTriangle} title="No se pudo leer la facturación de hoy" /></div>
@@ -3400,6 +3465,16 @@ const DashboardView = ({ openModal }) => {
             </div>
           ) : (
           <div className="flex flex-col h-full px-4 py-3 gap-3 overflow-y-auto overscroll-contain">
+            {/* Lo que NO salió bien, arriba: un documento sin sello de Hacienda
+                todavía no es una venta fiscal cerrada. El sello suele llegar en
+                minutos; si se queda, se resuelve en «Pendiente MH». */}
+            {factStats.sinSello > 0 && (
+              <div className="flex items-center gap-2 rounded-xl border border-warning/30 bg-warning/10 px-3 py-2">
+                <AlertTriangle size={14} className="text-warning-text shrink-0" />
+                <p className="flex-1 min-w-0 text-label font-bold text-warning-text">{factStats.sinSello} {factStats.sinSello===1?'documento':'documentos'} de hoy sin sello de Hacienda</p>
+                {puedeAbrir('/facturacion') && <Button size="xs" variant="secondary" className="shrink-0" onClick={() => navigate('/facturacion?tab=pendiente_mh')}>Revisar</Button>}
+              </div>
+            )}
             {/* Una columna en una tarjeta angosta: el total en dinero no cabe
                 en media tarjeta de 210px (2026-11-04). */}
             <div className="grid grid-cols-1 @[18rem]/cuerpo:grid-cols-2 gap-3">

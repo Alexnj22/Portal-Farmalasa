@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { conTodasLasSalas, nivelDeVolumen, presentesEl, problemaDeSucursal, saludoDeLaHora, promediosDeVentas, ventasPorSala } from '@nucleo/utils/inicio';
+import { contraSemanaPasada, conTodasLasSalas, nivelDeVolumen, presentesEl, problemaDeSucursal, saludoDeLaHora, promediosDeVentas, ventasPorSala } from '@nucleo/utils/inicio';
 
 describe('inicio', () => {
     it('cuenta presentes una vez por persona y por sala', () => {
@@ -71,5 +71,20 @@ describe('promediosDeVentas', () => {
         const sala = { weekly_hours: { mon: { isOpen: true, start: '08:00', end: '20:00' } } };
         const p = promediosDeVentas([], sala);
         expect([p.openH, p.closeH]).toEqual([8, 19]);
+    });
+});
+
+describe('contraSemanaPasada', () => {
+    it('compara a esta hora, no contra el día entero', () => {
+        const r = contraSemanaPasada({ 8: 100, 9: 100 }, { 8: 100, 9: 100, 15: 900 }, 9, 60);
+        expect(r).toEqual({ hoy: 200, antes: 200, pct: 0 });
+    });
+    it('prorratea la hora en curso de la semana pasada', () => {
+        const r = contraSemanaPasada({ 8: 100, 9: 50 }, { 8: 100, 9: 100 }, 9, 30);
+        expect(r.antes).toBe(150);
+        expect(r.pct).toBe(0);
+    });
+    it('sin venta la semana pasada no hay porcentaje', () => {
+        expect(contraSemanaPasada({ 8: 10 }, {}, 9).pct).toBeNull();
     });
 });

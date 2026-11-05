@@ -182,7 +182,10 @@ export function fetchCotizacionesActivas() {
     return supabase.from('cotizaciones')
         .select('id, numero, fecha, customer_name, total, status', { count: 'exact' })
         .eq('status', 'ACTIVA')
-        .order('fecha', { ascending: false })
+        // Las más VIEJAS primero (2026-11-05): una cotización no tiene fecha de
+        // vencimiento en la base, así que la que más tiempo lleva abierta es la
+        // que más pide seguimiento. El conteo sale de `count` y no depende del tope.
+        .order('fecha', { ascending: true })
         .limit(200);
 }
 
@@ -206,7 +209,8 @@ export function fetchRecentCotizaciones(sinceDateStr) {
 // El `order('id')` hace estable la paginación de `fetchAllRows`.
 export function fetchTodayInvoicesSummary(dateStr) {
     return fetchAllRows(() => supabase.from('sales_invoices')
-        .select('id, tipo_documento, total')
+        // `recibido_mh` para contar lo que salió sin sello (Inicio, 2026-11-05).
+        .select('id, tipo_documento, total, recibido_mh')
         .eq('fecha', dateStr)
         .eq('estado', 'FINALIZADA')
         .order('id'));

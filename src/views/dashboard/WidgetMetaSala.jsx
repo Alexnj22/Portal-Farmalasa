@@ -90,6 +90,12 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
         : error ? { texto: 'No se pudo cargar', tono: 'danger' }
         : !row ? { texto: 'Sin sala asignada' }
         : row.monto_meta == null ? { texto: 'Sin meta asignada' }
+        // En chico, lo que hay que HACER: cuánto vender por día para llegar
+        // (`ritmo_necesario`, el mismo número del pie). Ese ritmo es una
+        // instrucción y no el resultado de nadie, así que va también sin la
+        // vista completa — igual que en el cuerpo.
+        : Number(row.falta) <= 0 ? { valor: formatPct(row.pct_cumplimiento), texto: 'meta alcanzada', tono: 'success' }
+        : row.ritmo_necesario != null ? { valor: formatPct(row.pct_cumplimiento), texto: `faltan ${formatMoney(row.ritmo_necesario)} por día`, tono: 'brand' }
         : { valor: formatPct(row.pct_cumplimiento), texto: `de la meta · día ${row.dias_transcurridos} de ${row.dias_mes}`, tono: 'brand' });
 
     if (loading) {

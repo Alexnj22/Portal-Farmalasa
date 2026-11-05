@@ -182,3 +182,30 @@ export function promediosDeVentas(filas = [], sucursal = null) {
         diasConDatos: fechas.size,
     };
 }
+
+/**
+ * Hoy contra el MISMO día de la semana pasada, a esta misma hora (2026-11-05).
+ *
+ * Contra el día entero de la semana pasada, a media mañana hoy siempre saldría
+ * «abajo». Y la hora en curso va PRORRATEADA: hoy lleva `minuto` minutos de
+ * esa hora y la semana pasada la tiene completa — sumarla entera haría que
+ * cada hora empezara 100% «abajo» y subiera sola hasta las :59.
+ *
+ * Los mapas son `{ hora: monto }` (la forma de `todaySales[sala].hourSales`).
+ * `pct` es `null` cuando no hay contra qué comparar: un 0 de la semana pasada
+ * no hace infinito a hoy.
+ *
+ * @returns {{ hoy: number, antes: number, pct: number|null }}
+ */
+export function contraSemanaPasada(hoyPorHora = {}, antesPorHora = {}, hora, minuto = 60) {
+    const fraccion = Math.min(1, Math.max(0, minuto / 60));
+    const sumar = (m, prorratear) => Object.entries(m || {}).reduce((t, [h, v]) => {
+        const n = Number(h), monto = Number(v) || 0;
+        if (n < hora) return t + monto;
+        if (n === hora) return t + (prorratear ? monto * fraccion : monto);
+        return t;
+    }, 0);
+    const hoy = sumar(hoyPorHora, false);
+    const antes = sumar(antesPorHora, true);
+    return { hoy, antes, pct: antes > 0 ? Math.round(((hoy - antes) / antes) * 100) : null };
+}

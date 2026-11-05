@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.28 — Pagar varios créditos en un solo cobro
+
+- **App de clientes, Mis créditos:** cada crédito tiene su casilla y todos vienen marcados. Un solo botón abajo dice «Pagar 2 créditos · $28.15» y paga lo elegido, con «Quitar todos / Elegir todos». Pedido del usuario: «que haya una opción de pagar todos o seleccionar para pagar unos».
+- **Un cobro de tarjeta, un abono por crédito.** `pagar_creditos` (app-clientes) crea una fila lote (`es_lote`, identificador `CL-…`) por la suma y una hija por crédito con su saldo releído en la caja. `wompi-pagos` confirma los `CL-` con `app_credito_lote_confirmar` (migración `20261105170725`), que aprueba las hijas con abono `pendiente`. Cada hija se abona con la maquinaria de un pago suelto, y `sync-creditos` reintenta las que fallen. La transacción de la hija lleva `/n` porque `id_transaccion` es única. Si las hijas no suman el total cobrado, no se abona nada (`lote_descuadrado`).
+- Un solo crédito elegido sigue yendo por `pagar_credito`, sin cambios.
+- Probado en el entorno de pruebas: confirmación, repetición, monto distinto, transacción usada y lote descuadrado.
+
 ## v2.1451.27 — Inicio: la marca de bajo mínimo ya no tapa el nombre
 
 - En Top productos, la marca «bajo mín.» pasa al renglón de la barra: junto al nombre, en el widget de una columna, lo cortaba a «GLIME…». En toda la red dice «bajo mín. · 4 salas» en vez de «en 4».

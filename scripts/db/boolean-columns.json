@@ -56,6 +56,7 @@
       "toco_boton"
     ],
     "app_reservas_pagos": [
+      "es_lote",
       "es_real"
     ],
     "avisos_diferidos": [

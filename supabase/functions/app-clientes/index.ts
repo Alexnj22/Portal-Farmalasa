@@ -2972,6 +2972,94 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       }
     }
 
+    // ── Pagar VARIOS créditos con un solo cobro (2026-11-05) ────────────
+    // Usuario: «que haya una opción de pagar todos o seleccionar para pagar
+    // unos». Un enlace de Wompi por la SUMA; en la base, una fila lote
+    // (`es_lote`, identificador «CL-…») y una hija por crédito con su saldo.
+    // Las hijas son las que se abonan en la caja, cada una con la maquinaria
+    // de un pago suelto (ver la migración 20261105170725). Las mismas reglas
+    // que `pagar_credito`: créditos de la ficha de la SESIÓN, ninguno con un
+    // pago esperando abono, y el saldo releído de la caja antes de cobrar.
+    if (accion === "pagar_creditos") {
+      if (!customerId) return json({ ok: false, mensaje: "Para pagar, entra con tu DUI y teléfono." });
+      const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0))];
+      if (ids.length < 2 || ids.length > 30) return json({ ok: false, mensaje: "Elige los créditos que quieres pagar." });
+      const { data: lista, error } = await admin.from("creditos_de_clientes")
+        .select("id, branch_id, credito_erp, numero_doc, fecha, saldo")
+        .in("id", ids).eq("customer_id", customerId).gt("saldo", 0.004);
+      if (error) throw error;
+      if ((lista ?? []).length !== ids.length) return json({ ok: false, mensaje: "Uno de esos créditos ya no tiene saldo. Tu lista se actualiza en unos minutos." });
+      const { data: enCurso, error: eC } = await admin.from("app_reservas_pagos").select("id")
+        .in("credito_id", ids).eq("estado", "aprobado").in("abono_estado", ["pendiente", "aplicando", "fallo"]).limit(1);
+      if (eC) throw eC;
+      if (enCurso?.length) return json({ ok: false, mensaje: "Ya recibimos el pago de uno de esos créditos; se está aplicando. En unos minutos se actualiza." });
+
+      // El saldo de cada uno, releído en la caja (en serie: la sala vive en la
+      // sesión). Si la caja no responde, el del espejo; si resultara de más,
+      // el abono lo detecta y la diferencia se devuelve en caja.
+      const saldos = new Map<number, number>((lista ?? []).map((c: any) => [Number(c.id), Number(c.saldo)]));
+      try {
+        const { username, password } = getCortesCreds();
+        const cookie = await getSessionCookie(username, password);
+        for (const c of lista as any[]) {
+          const entrada = getErpBranchMap().find((e) => e.branchId === Number(c.branch_id));
+          if (!entrada) continue;
+          const vivo = (await creditosDeLaSala(cookie, entrada.erpId, String(c.fecha), String(c.fecha)))
+            .find((x) => x.credito === String(c.credito_erp));
+          if (vivo) saldos.set(Number(c.id), vivo.saldo);
+        }
+      } catch (e) {
+        console.error("pagar_creditos: no se releyeron los saldos:", (e as Error)?.message ?? e);
+      }
+      if ([...saldos.values()].some((v) => !(v > 0.004))) {
+        return json({ ok: false, mensaje: "Uno de esos créditos ya está pagado. Tu lista se actualiza en unos minutos." });
+      }
+      const partes = (lista as any[]).map((c) => ({ c, monto: Math.round(saldos.get(Number(c.id))! * 100) / 100 }))
+        .sort((a, b) => Number(a.c.id) - Number(b.c.id));
+      const total = Math.round(partes.reduce((s, x) => s + Math.round(x.monto * 100), 0)) / 100;
+
+      // ¿Un enlace de hace menos de 25 minutos por estos mismos créditos y
+      // este mismo total? Se reusa: dos enlaces vivos son dos cobros posibles.
+      const { data: previos, error: eV } = await admin.from("app_reservas_pagos")
+        .select("id, monto, enlace_url, enlace_prueba").eq("customer_id", customerId).eq("es_lote", true).eq("estado", "creado")
+        .not("enlace_url", "is", null).gte("created_at", new Date(Date.now() - 25 * 60_000).toISOString())
+        .order("created_at", { ascending: false }).limit(5);
+      if (eV) throw eV;
+      const clave = ids.slice().sort((a, b) => a - b).join(",");
+      for (const v of previos ?? []) {
+        if (Math.abs(Number(v.monto) - total) >= 0.005) continue;
+        const { data: hijas, error: eH } = await admin.from("app_reservas_pagos").select("credito_id").eq("lote_de", v.id);
+        if (eH) throw eH;
+        if ((hijas ?? []).map((h: any) => Number(h.credito_id)).sort((a: number, b: number) => a - b).join(",") === clave) {
+          return json({ ok: true, url: String(v.enlace_url), total, prueba: v.enlace_prueba === true, reutilizado: true });
+        }
+      }
+
+      const identificador = `CL-${customerId}-${Date.now().toString(36)}`;
+      const { data: lote, error: eL } = await admin.from("app_reservas_pagos")
+        .insert({ identificador, monto: total, es_lote: true, customer_id: customerId }).select("id").single();
+      if (eL) throw eL;
+      const { error: eHi } = await admin.from("app_reservas_pagos").insert(partes.map((x, i) => ({
+        identificador: `${identificador}-${i + 1}`, monto: x.monto, lote_de: lote.id, customer_id: customerId,
+        credito_id: x.c.id, credito_branch_id: x.c.branch_id, credito_erp: String(x.c.credito_erp),
+      })));
+      if (eHi) throw eHi;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      try {
+        const enlace = await crearEnlace({
+          identificador, monto: total, producto: `Pago de ${partes.length} créditos`,
+          descripcion: `Pago total de ${partes.length} créditos`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+        });
+        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("id", lote.id);
+        if (eU) console.error("app-clientes: no se guardó el enlace del lote:", eU.message);
+        return json({ ok: true, url, total, prueba: !enlace.estaProductivo });
+      } catch (err) {
+        console.error("app-clientes: wompi no creó el enlace del lote:", (err as Error)?.message ?? err);
+        return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato." });
+      }
+    }
+
     // ── Mis créditos (2026-10-15): sólo LECTURA, sin pagos ──────────────
     // (Desde el 2026-10-20 cada crédito trae su pago en curso, y la lista de
     // los pagos hechos en la app con su comprobante.)

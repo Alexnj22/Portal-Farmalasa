@@ -24,6 +24,19 @@ import { aplicarPagoDeCredito } from "../_shared/creditoEnLinea.ts";
 // deno-lint-ignore no-explicit-any
 function abonarSiEsCredito(admin: any, r: any) {
   if (!r?.ok || !r?.credito || r?.prueba || !r?.pago_id) return;
+  // Un lote (2026-11-05): se abonan sus hijas, en serie (la caja vive en una
+  // sesión por sala). `credito_pago_tomar` no deja tomar dos veces la misma.
+  if (r.lote) {
+    const ids: number[] = Array.isArray(r.pagos) ? r.pagos.map(Number) : [];
+    const tarea = (async () => {
+      for (const id of ids) {
+        await aplicarPagoDeCredito(admin, id).catch((e) => console.error("[wompi] abono del lote:", (e as Error)?.message ?? e));
+      }
+    })();
+    // deno-lint-ignore no-explicit-any
+    try { (globalThis as any).EdgeRuntime?.waitUntil(tarea); } catch { /* sin waitUntil, lo toma sync-creditos */ }
+    return;
+  }
   if (r.ya && !["pendiente", "fallo"].includes(String(r.abono_estado))) return;
   const tarea = aplicarPagoDeCredito(admin, Number(r.pago_id))
     .catch((e) => console.error("[wompi] abono del crédito:", (e as Error)?.message ?? e));
@@ -77,7 +90,10 @@ async function confirmar(admin: any, identificador: string, idTransaccion: strin
     }
   }
 
-  const { data, error } = await admin.rpc("app_reserva_pago_confirmar", {
+  // Varios créditos en un cobro (identificador «CL-…», 2026-11-05) tienen su
+  // propia función; todo lo demás, la de siempre.
+  const funcion = identificador.startsWith("CL-") ? "app_credito_lote_confirmar" : "app_reserva_pago_confirmar";
+  const { data, error } = await admin.rpc(funcion, {
     p_identificador: identificador,
     p_id_transaccion: tx.idTransaccion ?? idTransaccion,
     p_monto: Number(tx.monto),
@@ -130,7 +146,7 @@ Deno.serve(async (req) => {
     // El identificador de un crédito empieza con «CR-» (ver `pagar_credito`);
     // el enlace que mandó la sala, con «AP-» (2026-10-22). Un cobro de PRUEBA
     // (2026-10-19) no es dinero: se dice, y la sala lo cobra en caja.
-    const para = r?.credito || identificador.startsWith("CR-") ? "credito"
+    const para = r?.credito || identificador.startsWith("CR-") || identificador.startsWith("CL-") ? "credito"
       : identificador.startsWith("AP-") ? "sala" : "reserva";
     return irA(r?.ok && r?.prueba ? "prueba" : r?.ok ? "recibido" : "pendiente", para);
   }

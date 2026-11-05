@@ -52,22 +52,38 @@ export default function Creditos() {
   useFocusEffect(useCallback(() => { cargar(); pedir('pago_preparar'); }, [cargar, pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
-  // Pagar el saldo total con Wompi. La hoja vuelve sola a
-  // `puntossalud://creditos`; después se relee un par de veces porque el
-  // abono en la caja tarda unos segundos.
+  // Pagar con Wompi. La hoja vuelve sola a `puntossalud://creditos`; después
+  // se relee un par de veces porque el abono en la caja tarda unos segundos.
+  //
+  // Elegir cuáles (2026-11-05, «que haya una opción de pagar todos o
+  // seleccionar para pagar unos»): todos vienen marcados y el botón de abajo
+  // suma lo elegido. Uno solo va por `pagar_credito`, como siempre; varios,
+  // por `pagar_creditos`: UN cobro de tarjeta, y cada crédito se abona por
+  // separado en la caja. `fuera` guarda los DESmarcados, así un crédito nuevo
+  // que aparece al refrescar viene marcado.
   const pagandoYa = useRef(false);
-  const [pagando, setPagando] = useState(null);
-  const pagar = (c) => {
-    if (pagandoYa.current) return;
-    Alert.alert(`Pagar ${dolares(c.saldo)}`,
-      `Pagas el saldo completo de ${ROTULO_DOC[c.tipo] ?? 'la factura'}${c.numero ? ` N.° ${c.numero}` : ''} con tarjeta. Se abona solo apenas se apruebe.`,
-      [{ text: 'Cancelar', style: 'cancel' }, { text: 'Pagar', onPress: () => cobrar(c) }]);
+  const [pagando, setPagando] = useState(false);
+  const [fuera, setFuera] = useState(() => new Set());
+  const alternar = (id) => {
+    Haptics.selectionAsync().catch(() => {});
+    setFuera((ant) => { const n = new Set(ant); if (n.has(id)) n.delete(id); else n.add(id); return n; });
   };
-  const cobrar = async (c) => {
+  const pagar = (lista) => {
+    if (pagandoYa.current || !lista.length) return;
+    const total = lista.reduce((s, c) => s + Math.round(Number(c.saldo) * 100), 0) / 100;
+    const que = lista.length === 1
+      ? `el saldo completo de ${ROTULO_DOC[lista[0].tipo] ?? 'la factura'}${lista[0].numero ? ` N.° ${lista[0].numero}` : ''}`
+      : `el saldo completo de ${lista.length} créditos en un solo cobro`;
+    Alert.alert(`Pagar ${dolares(total)}`, `Pagas ${que} con tarjeta. Se abona solo apenas se apruebe.`,
+      [{ text: 'Cancelar', style: 'cancel' }, { text: 'Pagar', onPress: () => cobrar(lista) }]);
+  };
+  const cobrar = async (lista) => {
     pagandoYa.current = true;
-    setPagando(c.id);
+    setPagando(true);
     try {
-      const res = await pedir('pagar_credito', { id: c.id });
+      const res = lista.length === 1
+        ? await pedir('pagar_credito', { id: lista[0].id })
+        : await pedir('pagar_creditos', { ids: lista.map((c) => c.id) });
       if (!res?.ok) { Alert.alert('No se pudo abrir el pago', res?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.'); await cargar(); return; }
       try {
         await sinBloquear(() => WebBrowser.openAuthSessionAsync(res.url, 'puntossalud://creditos'));
@@ -75,20 +91,21 @@ export default function Creditos() {
         Alert.alert('No se pudo abrir el pago', 'Intenta de nuevo en un momento.');
         return;
       }
-      if (res.prueba) Alert.alert('Cobro de prueba', 'Este cobro fue de prueba: no se cargó dinero y tu crédito sigue igual.');
-      for (let i = 0; i < 5; i++) {
+      if (res.prueba) Alert.alert('Cobro de prueba', 'Este cobro fue de prueba: no se cargó dinero y tus créditos siguen igual.');
+      const ids = new Set(lista.map((c) => c.id));
+      for (let i = 0; i < 6; i++) {
         const r = await pedir('mis_creditos');
         if (r?.ok) setDatos(r);
-        const suyo = r?.pagos?.find((p) => p.credito_id === c.id);
-        if (suyo && suyo.estado !== 'en_proceso') {
-          if (suyo.estado === 'aplicado') Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+        const suyos = (r?.pagos ?? []).filter((p) => ids.has(p.credito_id));
+        if (suyos.length >= ids.size && suyos.every((p) => p.estado !== 'en_proceso')) {
+          if (suyos.every((p) => p.estado === 'aplicado')) Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
           break;
         }
-        await new Promise((ok) => setTimeout(ok, 2000));
+        await new Promise((ok) => setTimeout(ok, 2500));
       }
     } finally {
       pagandoYa.current = false;
-      setPagando(null);
+      setPagando(false);
     }
   };
 
@@ -109,6 +126,11 @@ export default function Creditos() {
   const creditos = Array.isArray(datos.creditos) ? datos.creditos : [];
   const pagos = Array.isArray(datos.pagos) ? datos.pagos : [];
   const vencidos = Number(datos.vencidos) || 0;
+  // Lo que se puede pagar ahora (sin un pago ya aplicándose) y lo elegido.
+  const pagables = datos.pagar_en_linea ? creditos.filter((c) => !c.pago_en_proceso) : [];
+  const elegidos = pagables.filter((c) => !fuera.has(c.id));
+  const totalElegido = elegidos.reduce((s, c) => s + Math.round(Number(c.saldo) * 100), 0) / 100;
+  const todosElegidos = elegidos.length === pagables.length;
 
   if (!creditos.length) {
     return (
@@ -146,13 +168,24 @@ export default function Creditos() {
       {creditos.map((c, i) => {
         const color = colorDe(c.estado);
         const pagado = Math.max(0, Number(c.total) - Number(c.saldo));
+        const puede = pagables.includes(c);
+        const marcado = puede && !fuera.has(c.id);
         return (
           <Entrada key={c.id} indice={Math.min(i + 1, 6)}>
             <Tarjeta estilo={{ flexDirection: 'row', gap: 14, padding: 0 }}>
               {/* La barra de acento: el color del estado. */}
               <View style={{ width: 6, backgroundColor: color }} />
               <View style={{ flex: 1, paddingVertical: 16, paddingRight: 16, gap: 8 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <Presionable disabled={!puede} onPress={() => alternar(c.id)} accessibilityRole="checkbox"
+                  accessibilityState={{ checked: marcado, disabled: !puede }}
+                  accessibilityLabel={`${ROTULO_DOC[c.tipo] ?? 'Factura'}${c.numero ? ` ${c.numero}` : ''}, saldo ${dolares(c.saldo)}`}
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, opacity: pressed ? 0.7 : 1 })}>
+                  {puede ? (
+                    <View style={{ width: 26, height: 26, borderRadius: 13, alignItems: 'center', justifyContent: 'center',
+                      borderWidth: 2, borderColor: marcado ? t.color.magenta : colorSistema.texto3, backgroundColor: marcado ? t.color.magenta : 'transparent' }}>
+                      {marcado ? <Icono sf="checkmark" respaldo="✓" tam={13} color="#FFFFFF" /> : null}
+                    </View>
+                  ) : null}
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ fontSize: 17, fontWeight: '700', color: colorSistema.texto }}>
                       {ROTULO_DOC[c.tipo] ?? 'Factura'}{c.numero ? ` N.° ${c.numero}` : ''}
@@ -164,7 +197,7 @@ export default function Creditos() {
                   <View style={{ borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4, borderWidth: 1, borderColor: color }}>
                     <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 12, fontWeight: '800', color: textoDe(c.estado) }}>{ROTULO_ESTADO[c.estado] ?? ''}</Text>
                   </View>
-                </View>
+                </Presionable>
 
                 <Dato rotulo="Monto original" valor={dolares(c.total)} />
                 {pagado > 0.004 ? <Dato rotulo="Abonado" valor={dolares(pagado)} /> : null}
@@ -176,20 +209,38 @@ export default function Creditos() {
                     <ActivityIndicator size="small" color={t.color.verdeTexto} />
                     <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: t.color.verdeTexto }}>Pago recibido. Se está aplicando a tu crédito.</Text>
                   </View>
-                ) : datos.pagar_en_linea ? (
-                  <Presionable onPress={() => pagar(c)} disabled={pagando != null} accessibilityRole="button"
-                    accessibilityLabel={`Pagar ${dolares(c.saldo)} en línea`}
-                    style={({ pressed }) => ({ marginTop: 6, minHeight: 46, borderRadius: 14, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8,
-                      backgroundColor: t.color.magenta, opacity: pagando != null && pagando !== c.id ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                    {pagando === c.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Icono sf="creditcard.fill" respaldo="$" tam={16} color="#FFFFFF" />}
-                    <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 16, fontWeight: '800', color: '#FFFFFF' }}>{pagando === c.id ? 'Abriendo el pago…' : `Pagar ${dolares(c.saldo)}`}</Text>
-                  </Presionable>
                 ) : null}
               </View>
             </Tarjeta>
           </Entrada>
         );
       })}
+
+      {pagables.length ? (
+        <Entrada indice={6}>
+          <View style={{ gap: 8 }}>
+            {pagables.length > 1 ? (
+              <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setFuera(todosElegidos ? new Set(pagables.map((c) => c.id)) : new Set()); }}
+                accessibilityRole="button" hitSlop={8}
+                style={({ pressed }) => ({ alignSelf: 'flex-end', minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>{todosElegidos ? 'Quitar todos' : 'Elegir todos'}</Text>
+              </Presionable>
+            ) : null}
+            <Presionable onPress={() => pagar(elegidos)} disabled={pagando || !elegidos.length} accessibilityRole="button"
+              accessibilityLabel={elegidos.length ? `Pagar ${elegidos.length === 1 ? 'un crédito' : `${elegidos.length} créditos`}, ${dolares(totalElegido)}, en línea` : 'Elige qué créditos pagar'}
+              style={({ pressed }) => ({ minHeight: 52, borderRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 16,
+                backgroundColor: t.color.magenta, opacity: !elegidos.length ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              {pagando ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Icono sf="creditcard.fill" respaldo="$" tam={17} color="#FFFFFF" />}
+              <Text style={{ flexShrink: 1, textAlign: 'center', fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>
+                {pagando ? 'Abriendo el pago…'
+                  : !elegidos.length ? 'Elige qué créditos pagar'
+                    : elegidos.length === 1 ? `Pagar ${dolares(totalElegido)}` : `Pagar ${elegidos.length} créditos · ${dolares(totalElegido)}`}
+              </Text>
+            </Presionable>
+            <Texto nivel={3} estilo={{ fontSize: 13, textAlign: 'center' }}>Con tarjeta, en un solo cobro. Cada crédito se abona solo al aprobarse.</Texto>
+          </View>
+        </Entrada>
+      ) : null}
 
       <PagosEnLaApp pagos={pagos} t={t} />
 

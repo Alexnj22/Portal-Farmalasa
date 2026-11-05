@@ -152,6 +152,10 @@ export default function CampoMesAnio({ label, value, onChange, desde = null, pla
                     type="text" inputMode="numeric" autoComplete="off" aria-label={label || 'Mes y año'}
                     value={texto} placeholder={placeholder} maxLength={7}
                     onChange={(e) => emitir(enmascarar(e.target.value, e.target.value.length > texto.length))}
+                    // Al salir del campo, «04/28» se muestra «04/2028»: el valor ya era
+                    // el mismo, pero la pantalla mezclaba las dos formas (Bodega,
+                    // 2026-11-05: «unos con 2026, otros con 26»).
+                    onBlur={() => { const v = aValor(texto); if (/^\d{4}-\d{2}$/.test(v) && aTexto(v) !== texto) setTexto(aTexto(v)); }}
                     className={`flex-1 min-w-0 h-full bg-transparent border-none outline-none pl-4 pr-2 ${compact ? 'text-body-sm' : 'text-body-xl'} font-bold text-content tabular-nums placeholder:text-content-3 placeholder:font-medium`}
                 />
                 <button type="button" aria-label="Elegir el mes" aria-haspopup="dialog" aria-expanded={abierto}

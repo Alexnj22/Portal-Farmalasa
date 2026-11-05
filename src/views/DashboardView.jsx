@@ -2735,7 +2735,7 @@ const DashboardView = ({ openModal }) => {
           resumen={{ valor: formatMoney(Object.values(todaySales).reduce((t, b) => t + (b?.totalSales || 0), 0)), texto: 'vendido hoy' }}
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center justify-end gap-2">
               {/* `shrink-0`: en la cabecera del widget compite con un select
                   y un segmentado, y en un teléfono el flex se lo comía hasta
                   20px de ancho (medido en iPhone 13) aunque su alto fuera 44. */}
@@ -3194,20 +3194,21 @@ const DashboardView = ({ openModal }) => {
           <div className="absolute inset-0 pointer-events-none rounded-card" style={{ background: 'linear-gradient(to bottom, var(--card-sheen), transparent)' }} />
           {/* Header */}
           <div className="relative px-4 py-3 border-b border-border-card shrink-0">
-            <div className="relative flex items-center justify-between">
+            {/* Envuelve en angosto: el mes se salía de la tarjeta («Novie»). */}
+            <div className="relative flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
               <div className="flex items-center gap-2">
                 <div className="w-7 h-7 rounded-lg bg-brand/10 border border-brand/15 flex items-center justify-center">
                   <Gift size={13} className="text-brand-text" strokeWidth={2}/>
                 </div>
                 <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
               </div>
-              <PeriodStepper
+              <div className="ml-auto"><PeriodStepper
                 size="sm"
                 unit="mes"
                 label={MONTH_ES[bdMonth.getMonth()]}
                 onPrev={() => setBdMonth(m => new Date(m.getFullYear(), m.getMonth() - 1, 1))}
                 onNext={() => setBdMonth(m => new Date(m.getFullYear(), m.getMonth() + 1, 1))}
-              />
+              /></div>
             </div>
           </div>
           {/* Content */}

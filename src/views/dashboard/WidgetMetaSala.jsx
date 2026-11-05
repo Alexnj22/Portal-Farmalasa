@@ -118,7 +118,7 @@ export default function WidgetMetaSala({ selectedBranchId = null, conSelector = 
     const oficial = row.estado === 'oficial';
 
     return (
-        <div className="h-full flex flex-col px-4 pb-4 pt-3">
+        <div className="h-full flex flex-col px-4 pb-4 pt-3 overflow-y-auto overscroll-contain">
             <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                     {/* Con selector arriba el nombre de la sala ya está dicho:

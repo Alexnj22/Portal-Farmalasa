@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1450.2 — Inicio: en una columna nada se sale de la tarjeta
+
+Barrido de los 31 widgets del tablero a 1×2 en producción, después de que
+achicar dejara de borrar el contenido:
+- Ventas por día: los botones Horas/Días se salían de la tarjeta; ahora bajan.
+- Cumpleaños: el mes se salía («Novie»); ahora baja de renglón.
+- Meta del mes: lo de abajo quedaba cortado; ahora se desplaza.
+- Recetas pendientes: el botón «Completar» dejaba dos letras del producto; en
+  una columna queda sólo el lápiz.
+
 ## v2.1450.1 — Inicio: achicar un widget ya no borra su contenido
 
 «Veo algunos widgets que al ponerlos pequeños se borra el contenido.» Bastaba

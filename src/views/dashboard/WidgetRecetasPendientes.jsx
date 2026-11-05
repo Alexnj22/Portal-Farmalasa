@@ -10,7 +10,7 @@ import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { faltantesDelRenglon, fetchLibro } from '@nucleo/data/bitacoras';
-import { useResumenWidget } from './tamanoWidget';
+import { useResumenWidget, useTamanoWidget } from './tamanoWidget';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { diasEntre, fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { BRANCH_A_ERP, ERP_ORDEN } from '@nucleo/constants/erp';
@@ -139,6 +139,9 @@ export default function WidgetRecetasPendientes({ onVacio } = {}) {
     };
 
     const viejasVistazo = filas.filter(r => diasDesde(r.fecha) >= 2).length;
+    // En una columna el botón con texto le dejaba al producto dos letras
+    // («UN…»): ahí va sólo el lápiz, con su rótulo en `title`.
+    const angosto = (useTamanoWidget()?.cols ?? 2) < 2;
     useResumenWidget(cargando ? null
         : !sala ? { texto: 'Sin sala asignada' }
         : !dispensa ? { texto: 'Aquí no se dispensa' }
@@ -219,10 +222,15 @@ export default function WidgetRecetasPendientes({ onVacio } = {}) {
                                         title={r.producto_nombre}
                                         subtitle={`${r.folio_txt} · ${fmtFecha(r.fecha)} · ${r.cliente || 'sin cliente'}`}
                                         trailing={puedeCompletar ? (
-                                            <Button variant="primary" size="xs" icon={PenLine}
-                                                onClick={() => setCompletando(r)}>
-                                                Completar
-                                            </Button>
+                                            angosto ? (
+                                                <Button variant="primary" size="xs" icon={PenLine} iconOnly
+                                                    title="Completar" onClick={() => setCompletando(r)} />
+                                            ) : (
+                                                <Button variant="primary" size="xs" icon={PenLine}
+                                                    onClick={() => setCompletando(r)}>
+                                                    Completar
+                                                </Button>
+                                            )
                                         ) : (
                                             <Badge variant="warning" size="sm" uppercase={false}>
                                                 faltan {faltan.length}

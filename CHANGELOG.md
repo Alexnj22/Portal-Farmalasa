@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.10 — Cargar compra: saldo Tigo
+
+RECARGA SALDO TIGO no se podía cargar bien. En el sistema tiene dos presentaciones, «UNIDAD (1)» a $1.00 y «UNIDAD (0.25)», y la copia del catálogo del portal guarda una sola fila por tipo con el tamaño entero: quedó «UNIDAD» con factor **0**. La tarjeta ofrecía esa opción y la validación nueva decía «no se puede cargar así». Ahora una presentación con factor 0 no se ofrece ni se usa para juzgar (la revisión lee las reales del sistema). Además, el factor aprendido de COFARSAL (código 2218, «RECARGA TIGO $ 25.00») estaba en 1 y se corrigió a **25**: 12 recargas entran como 300 unidades de $1 a $0.8448, que es como Bodega las venía cargando a mano.
+
 ## v2.1453.9 — Puntos: fichas sueltas se unen solas y vigilante de clientes sin reconocer
 
 Juan Serrano tenía 136 puntos en su ficha y 22 en una ficha suelta creada por la venta del 5-nov. Al revisar aparecieron **47 clientes más con el saldo partido** (1,488 puntos), algunos desde hacía un mes: la corrida nocturna los encontraba, pero con puntos no unía y los dejaba en «Por revisar», y nadie miraba esa cola. Se unieron a mano el mismo día.

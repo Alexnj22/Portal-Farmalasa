@@ -1502,7 +1502,11 @@ function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar })
     const cant = Number(r.cantidad) || 0;
     const f = Number(aj.factor) || 0;
     const unidades = aj.cargar ?? cargarDe(r, aj.factor);
-    const pres = [...presentaciones].sort((a, b) => a.factor - b.factor);
+    // Una presentación con factor 0 es la copia del catálogo que no pudo
+    // guardar el tamaño (saldo Tigo: «UNIDAD (0.25)» en una columna entera, y
+    // la de 1 pisada por tener el mismo tipo). No se ofrece ni se juzga con
+    // ella: la revisión lee las presentaciones reales del sistema.
+    const pres = [...presentaciones].filter(x => x.factor > 0).sort((a, b) => a.factor - b.factor);
     const coincide = pres.some(x => x.factor === f);
     const [otra, setOtra] = useState(false);
     const abierta = otra || !coincide || pres.length === 0;

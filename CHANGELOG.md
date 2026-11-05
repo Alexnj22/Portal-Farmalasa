@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.21 — Fórmulas, sueros y cosméticos también llevan lote
+
+- Por decisión del usuario, también llevan lote **Fórmulas (86), Cosméticos (45), Sueros (29) y Suero IV (21)**. A los **24 medicamentos que no tenían vencimiento** (entre ellos PREDNICORT 15 jarabe) se les activaron las dos casillas: «los productos sí llevan vencimiento, sólo los insumos no». En total, hoy se marcaron 1,759 fichas, todas verificadas contra su estado anterior.
+- `regulado-masivo.mjs --perecedero` activa además el vencimiento. `leer --ids` ya no pisa la foto general: la sobrescribía, y `marcar` la usa como lista de trabajo.
+
 ## v2.1451.20 — Inicio: «Quién está hoy» y una tira de números que no se repite
 
 - **Turnos y Ausencias son ahora un solo widget: «Quién está hoy».** Arriba van las personas **con ausencia** (vacación, incapacidad, permiso) con su tipo y hasta cuándo; debajo, los grupos de siempre (en labores, almuerzo, día libre…). Quien tiene una ausencia ya no sale además como «Ausente». Si tu cargo ve las ausencias pero no los turnos, conservas el widget de ausencias suelto.

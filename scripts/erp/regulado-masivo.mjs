@@ -48,6 +48,9 @@ const args = process.argv.slice(2);
 const modo = args[0];
 const opt = (k) => args.find(a => a.startsWith(`--${k}=`))?.slice(k.length + 3);
 const EJECUTAR = args.includes('--ejecutar');
+// «Los productos sí llevan vencimiento, sólo los insumos no» (usuario, 2026-11-05):
+// con esta opción también se activa «perecedero» al que no la tenga.
+const CON_VENCE = args.includes('--perecedero');
 
 // ── Sesión en el ERP ─────────────────────────────────────────────────────────
 let cookie = null;
@@ -137,7 +140,7 @@ export function leerFicha(id, html) {
 }
 
 /** El mismo sobre que arma `senddata()` con process=edited. */
-function sobreDeEdicion(f, regulado) {
+function sobreDeEdicion(f, regulado, perecedero = f.perecedero) {
     const casilla = (b) => (b ? '1' : 'undefined');
     const num = (t) => { const n = parseFloat(t); return Number.isNaN(n) ? 0 : t; };
     const lista = f.presentaciones.map(p =>
@@ -146,7 +149,7 @@ function sobreDeEdicion(f, regulado) {
     const s = new URLSearchParams({
         process: 'edited', id_producto: String(f.id), barcode: f.barcode, descripcion: f.nombre,
         exento: casilla(f.exento), proveedor: f.proveedor.value, id_categoria: f.categoria.value,
-        perecedero: casilla(f.perecedero), lista,
+        perecedero: casilla(perecedero), lista,
         marca: f.marca, minimo: 'undefined', cuantos: String(f.presentaciones.length),
         estado: f.activo ? '1' : '0', decimals: casilla(f.decimal), composicion: f.composicion,
         id_laboratorio: f.laboratorio.value, json_arr: '[]',
@@ -157,7 +160,7 @@ function sobreDeEdicion(f, regulado) {
 }
 
 /** Todo lo que NO debe cambiar, en texto comparable. */
-const huella = (f) => JSON.stringify({ ...f, regulado: undefined });
+const huella = (f) => JSON.stringify({ ...f, regulado: undefined, perecedero: CON_VENCE ? undefined : f.perecedero });
 
 async function ficha(id) {
     // Leer sí se reintenta (no cambia nada); escribir NO: un POST que se cortó
@@ -208,7 +211,10 @@ if (modo === 'leer') {
         if (++hechas % 200 === 0) console.log(`  ${hechas}/${ids.length}`);
     });
     fichas.sort((a, b) => a.id - b.id);
-    writeFileSync(`${SALIDA}/fichas.json`, JSON.stringify(fichas, null, 1));
+    // Con --ids es una consulta puntual: NO pisa la foto general, que `marcar`
+    // usa como lista de trabajo y como referencia tras un corte.
+    const destino = opt('ids') ? `${SALIDA}/fichas-consulta.json` : `${SALIDA}/fichas.json`;
+    writeFileSync(destino, JSON.stringify(fichas, null, 1));
     const porCat = {};
     for (const f of fichas) {
         const k = `${f.categoria.value} ${f.categoria.label}`;
@@ -221,7 +227,7 @@ if (modo === 'leer') {
     console.table(Object.fromEntries(Object.entries(porCat).map(([k, v]) => [k, { total: v.total, ya_regulado: v.regulado_en_erp, inactivo: v.inactivo_en_erp }])));
     for (const [k, v] of Object.entries(porCat)) console.log(`${k}: ${v.ejemplos.join(' · ')}`);
     if (fallos.length) console.log('FALLOS', fallos);
-    console.log(`foto en ${SALIDA}/fichas.json`);
+    console.log(`foto en ${destino}`);
 } else if (modo === 'marcar') {
     const cats = (opt('categorias') ?? '').split(',').filter(Boolean);
     if (!cats.length) throw new Error('Falta --categorias=… (ids de categoría del sistema).');
@@ -229,7 +235,7 @@ if (modo === 'leer') {
     const fotos = existsSync(`${SALIDA}/fichas.json`) ? JSON.parse(readFileSync(`${SALIDA}/fichas.json`, 'utf8')) : [];
     let ids = opt('ids') ? opt('ids').split(',').map(Number)
         : fotos.filter(f => cats.includes(f.categoria.value) && !f.regulado && f.activo
-            && (f.perecedero || args.includes('--con-no-perecederos'))).map(f => f.id);
+            && (f.perecedero || CON_VENCE || args.includes('--con-no-perecederos'))).map(f => f.id);
     const bitacora = `${SALIDA}/marcar-${new Date().toISOString().slice(0, 10)}.jsonl`;
     const hechos = new Set(existsSync(bitacora) ? readFileSync(bitacora, 'utf8').split('\n').filter(Boolean)
         .map(l => JSON.parse(l)).filter(x => x.resultado === 'marcado').map(x => x.id) : []);
@@ -249,7 +255,7 @@ if (modo === 'leer') {
         }
         const anotar = (resultado, extra = {}) => appendFileSync(bitacora,
             JSON.stringify({ id, nombre: antes.nombre, categoria: antes.categoria.label, resultado, ...extra, at: new Date().toISOString() }) + '\n');
-        if (antes.regulado) {
+        if (antes.regulado && (antes.perecedero || !CON_VENCE)) {
             // ¿Lo marcó una corrida que se cortó entre el guardado y la relectura?
             // Se compara contra la foto de `leer` para no dejarlo sin verificar.
             const foto = fotos.find(f => f.id === id);
@@ -263,10 +269,10 @@ if (modo === 'leer') {
         if (!antes.activo) { console.log(`- ${id} ${antes.nombre}: inactivo en el sistema, no se toca`); continue; }
         // Sin vencimiento no hay lote que controlar: en «MEDICAMENTOS» así caen
         // cremas, cepillos y colorantes mal categorizados. Se listan aparte.
-        if (!antes.perecedero && !args.includes('--con-no-perecederos')) { console.log(`- ${id} ${antes.nombre}: no perecedero, se deja para revisar`); anotar('omitido', { motivo: 'no perecedero' }); continue; }
+        if (!antes.perecedero && !CON_VENCE && !args.includes('--con-no-perecederos')) { console.log(`- ${id} ${antes.nombre}: no perecedero, se deja para revisar`); anotar('omitido', { motivo: 'no perecedero' }); continue; }
         if (antes.conUbi) { console.log(`✗ ${id}: la pantalla trae campos que el sobre no conoce. FRENO.`); anotar('freno', { motivo: 'campos nuevos' }); process.exit(1); }
         if (!antes.presentaciones.length) { console.log(`- ${id} ${antes.nombre}: sin presentaciones, el formulario no guarda`); continue; }
-        const cuerpo = sobreDeEdicion(antes, true);
+        const cuerpo = sobreDeEdicion(antes, true, antes.perecedero || CON_VENCE);
         if (!EJECUTAR) { console.log(`· ${id} ${antes.nombre} [${antes.categoria.label}] → ${cuerpo.length} bytes`); continue; }
 
         let resp;
@@ -291,7 +297,7 @@ if (modo === 'leer') {
             process.exit(1);
         }
         const despues = await ficha(id);
-        if (!despues.regulado || huella(despues) !== huella(antes)) {
+        if (!despues.regulado || (CON_VENCE && !despues.perecedero) || huella(despues) !== huella(antes)) {
             console.log(`✗ ${id} ${antes.nombre}: la ficha quedó distinta. FRENO.`);
             anotar('diferencia', { antes, despues });
             process.exit(1);

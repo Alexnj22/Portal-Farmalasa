@@ -2,8 +2,8 @@
 // a qué precio se vende cada producto y si puede ir a una tienda.
 //
 // «Venta libre» la marca una PERSONA contra el listado de la SRS; lo que el
-// portal sí sabe es lo que NUNCA puede ir a una tienda —antibiótico, con receta
-// o regulado— y eso la base lo bloquea aunque se marque. Las tarjetas filtran
+// portal sí sabe es lo que NUNCA puede ir a una tienda —antibiótico o con
+// receta— y eso la base lo bloquea aunque se marque. Las tarjetas filtran
 // (venta libre, sólo farmacias, con descuento hoy) y el menú agrega «Fuera de
 // los pedidos». Quien configura toca un producto para cambiar su precio y su
 // descuento, o agrega uno nuevo.
@@ -128,7 +128,7 @@ export default function CatalogoTorogoz() {
         </FilaDeKpis>
         <FilaDeKpis>
           <Kpi icono="Ban" rotulo="Sólo farmacias" valor={String(stats.farmacia)} color={MARCA.azulClaro} pide={canal === 'farmacia'}
-            apoyo="receta, regulado o sin marcar" onPress={() => alternar('farmacia')} />
+            apoyo="receta o sin marcar" onPress={() => alternar('farmacia')} />
           <Kpi icono="Percent" rotulo="Con descuento" valor={String(stats.descuento)} color={MARCA.ambar} pide={canal === 'descuento'}
             apoyo="vigente hoy" onPress={() => alternar('descuento')} />
         </FilaDeKpis>

@@ -569,7 +569,7 @@ function opcionesDe(html: string, id: string): { value: string; label: string }[
  *   guarda su mismo margen;
  * - nombre y código de barras salen del renglón.
  * Todo se puede cambiar. Con `crear` lo da de alta; sin él sólo revisa.
- * Un producto regulado o antibiótico no se da de alta desde acá.
+ * Un antibiótico no se da de alta desde acá (un regulado sí: ver abajo).
  */
 /** Margen bajo: la MISMA regla del catálogo (`marginLabel`): menos de 15 %. */
 const MARGEN_MINIMO = 15;
@@ -1679,9 +1679,13 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
   if (!en(catalogos.proveedores, valores.proveedor)) problemas.push("Elige el proveedor.");
   if (!en(catalogos.categorias, valores.categoria)) problemas.push("Elige la categoría.");
   if (!en(catalogos.laboratorios, valores.laboratorio)) problemas.push("Elige el laboratorio.");
-  // Un producto controlado no se da de alta copiando: lo que lo hace
-  // controlado es justo lo que hay que decidir con cuidado.
-  if (m && (m.regulado || m.antibiotico)) problemas.push(`«${m.nombre}» es regulado o antibiótico: un producto así se da de alta a mano.`);
+  // Un antibiótico no se da de alta copiando: lo que lo hace controlado es
+  // justo lo que hay que decidir con cuidado. «Regulado» YA NO frena
+  // (2026-11-05): desde ese día significa «lleva lote» —lo tienen todos los
+  // medicamentos, para trazabilidad— y no «controlado». Frenarlo dejaba sin
+  // alta desde la compra a cualquier medicamento nuevo. El nuevo HEREDA la
+  // casilla del modelo (`sobreDeProductoNuevo`), así que nace con lote.
+  if (m && m.antibiotico) problemas.push(`«${m.nombre}» es antibiótico: un producto así se da de alta a mano.`);
 
   // Al CREAR (no al revisar): traer el catálogo del sistema al día antes de
   // comparar. La copia del portal se refresca cada 10 min, y un producto que

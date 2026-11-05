@@ -111,7 +111,7 @@ export async function guardarCliente(cliente) {
 export async function fetchCatalogo() {
     const rows = await fetchAllRows(() => supabase
         .from('dist_catalogo')
-        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, costo_promedio, descuento_pct, descuento_desde, descuento_hasta, descuento_max_pct, products(nombre, codigo_barras, es_antibiotico, requiere_receta, regulado)')
+        .select('emisor_id, product_id, precio_con_iva, venta_libre, activo, costo_promedio, descuento_pct, descuento_desde, descuento_hasta, descuento_max_pct, products(nombre, codigo_barras, es_antibiotico, requiere_receta)')
         .order('product_id'));
     if (rows === null) throw new Error('No se pudo cargar el catálogo.');
     return rows.map(r => ({
@@ -119,7 +119,9 @@ export async function fetchCatalogo() {
         nombre: r.products?.nombre ?? `Producto ${r.product_id}`,
         codigo_barras: r.products?.codigo_barras ?? null,
         // Lo que la base NO dejaría vender a una tienda aunque se marque venta libre.
-        controlado: !!(r.products?.es_antibiotico || r.products?.requiere_receta || r.products?.regulado),
+        // «Regulado» no entra desde el 2026-11-05: significa «lleva lote», no
+        // «controlado» (gemelo: `dist_validar_item`).
+        controlado: !!(r.products?.es_antibiotico || r.products?.requiere_receta),
     }));
 }
 

@@ -86,7 +86,7 @@ export default function PrecioTorogoz() {
     if (!nuevo || buscado.trim().length < 2) { setOpciones([]); return undefined; }
     let vivo = true;
     setBuscando(true);
-    buscarProductos(buscado, { select: 'id, nombre, es_antibiotico, requiere_receta, regulado', limite: 30 })
+    buscarProductos(buscado, { select: 'id, nombre, es_antibiotico, requiere_receta', limite: 30 })
       .then(({ data, error: e }) => {
         if (!vivo) return;
         if (e) { setError('No se pudo buscar el producto.'); return; }
@@ -123,7 +123,7 @@ export default function PrecioTorogoz() {
   }
 
   const controlado = nuevo
-    ? !!(producto && (producto.es_antibiotico || producto.requiere_receta || producto.regulado))
+    ? !!(producto && (producto.es_antibiotico || producto.requiere_receta))
     : item.controlado;
   const costo = nuevo ? null : Number(item.costo_promedio ?? 0) || null;
   const l = leerFormularioDePrecio({ precio, descPct, tope, descDesde, descHasta, costo });
@@ -198,7 +198,7 @@ export default function PrecioTorogoz() {
           ) : null}
           <Interruptor rotulo="Venta libre" ayuda="Se puede vender a tiendas y supermercados." valor={libre && !controlado}
             deshabilitado={!puede || controlado} onCambiar={setLibre} />
-          {controlado ? <Nota texto="Es antibiótico, con receta o regulado: sólo se le vende a farmacias." /> : null}
+          {controlado ? <Nota texto="Es antibiótico o con receta: sólo se le vende a farmacias." /> : null}
           {!nuevo ? <Interruptor rotulo="Se ofrece en los pedidos" valor={activo} deshabilitado={!puede} onCambiar={setActivo} /> : null}
         </Seccion>
 

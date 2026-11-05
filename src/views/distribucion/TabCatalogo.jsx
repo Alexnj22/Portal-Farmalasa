@@ -31,7 +31,7 @@ import { hoySV, fechaNumerica } from '@nucleo/utils/fecha';
 // «Venta libre» es una casilla que marca una PERSONA contra el listado de
 // venta sin receta de la SRS (acuerdo SI.2026.02.06-01): el portal no tiene
 // ese listado cargado, así que no puede marcarla solo. Lo que sí sabe es lo que
-// NUNCA puede ir a una tienda —antibiótico, con receta o regulado—, y eso la
+// NUNCA puede ir a una tienda —antibiótico o con receta—, y eso la
 // base lo bloquea aunque alguien marque la casilla por error. La columna
 // «Controlado» lo muestra para que nadie se confunda.
 
@@ -64,7 +64,7 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
     useEffect(() => {
         if (!nuevo || buscado.trim().length < 2) { setOpciones([]); return; }
         let vivo = true;
-        buscarProductos(buscado, { select: 'id, nombre, es_antibiotico, requiere_receta, regulado', limite: 30 })
+        buscarProductos(buscado, { select: 'id, nombre, es_antibiotico, requiere_receta', limite: 30 })
             .then(({ data, error: e }) => {
                 if (!vivo) return;
                 if (e) { setError('No se pudo buscar el producto.'); return; }
@@ -74,7 +74,7 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
     }, [buscado, nuevo]);
 
     const controlado = nuevo
-        ? !!(producto && (producto.es_antibiotico || producto.requiere_receta || producto.regulado))
+        ? !!(producto && (producto.es_antibiotico || producto.requiere_receta))
         : item.controlado;
     // ¿Con el descuento queda bajo el costo? El costo es sin IVA y por unidad
     // (0015). Las cuentas viven en el núcleo, las mismas de la app.
@@ -141,7 +141,7 @@ function PrecioModal({ item, emisorId, emisorTope, onClose, onGuardado }) {
                         label="Venta libre (se puede vender a tiendas y supermercados)" />
                     {controlado && (
                         <Notice variant="info" icon={Ban} compact>
-                            Es antibiótico, con receta o regulado: sólo se le vende a farmacias.
+                            Es antibiótico o con receta: sólo se le vende a farmacias.
                         </Notice>
                     )}
                     {!nuevo && <Interruptor checked={activo} onChange={setActivo} label="Se ofrece en los pedidos" />}
@@ -235,7 +235,7 @@ export default function TabCatalogo({ emisor, puedeConfigurar, buscar }) {
                     <StatCard icon={ShieldCheck} label="Venta libre" value={stats.libre} loading={cargando}
                         iconBg="bg-success/10" iconCls="text-success" sub="Tiendas y supermercados"
                         active={canal === 'libre'} tono="success" onClick={() => setCanal(v => (v === 'libre' ? '' : 'libre'))} />
-                    <StatCard icon={Ban} label="Sólo farmacias" value={stats.farmacia} loading={cargando} sub="Con receta, regulado o sin marcar"
+                    <StatCard icon={Ban} label="Sólo farmacias" value={stats.farmacia} loading={cargando} sub="Con receta o sin marcar"
                         active={canal === 'farmacia'} tono="brand" onClick={() => setCanal(v => (v === 'farmacia' ? '' : 'farmacia'))} />
                     <StatCard icon={Percent} label="Con descuento" value={stats.descuento} loading={cargando} sub="Vigente hoy en el catálogo"
                         iconBg="bg-warning/10" iconCls="text-warning" active={canal === 'descuento'} tono="warning"

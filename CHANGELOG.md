@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.13 — Todo medicamento lleva lote: «regulado» deja de significar «controlado»
+
+- **Todo medicamento lleva lote desde hoy.** En el sistema la casilla «regulado» es la que obliga a manejar lote: sin ella el producto vive en el lote GENERICO y ni la compra, ni el traslado, ni la recepción pueden decir qué lote es. Antes de hoy la tenían 2,124 productos; los ~1,550 medicamentos que faltaban se marcan con `scripts/erp/regulado-masivo.mjs`. Ese script lee la ficha, la guarda con un único cambio y la vuelve a leer: si cualquier otro campo cambió, se detiene. Lo que ya estaba en GENERICO se queda así (decisión del usuario); lo que entra de aquí en adelante entra con su lote.
+- **«Regulado» ya no significa «controlado».** La distribuidora frenaba la venta a tiendas y supermercados de todo producto regulado (`dist_validar_item`, pantalla y app). Con todos los medicamentos marcados, el acetaminofén habría quedado como «sólo farmacias». Lo controlado lo siguen diciendo el antibiótico, «con receta» y la casilla de venta libre del catálogo.
+- **El alta de un producto nuevo desde la compra** ya no frena cuando el modelo es regulado; sólo frena si es antibiótico. El producto nuevo hereda la casilla del modelo, así que nace con lote. (Requiere desplegar `cargar-compra-erp`.)
+
 ## v2.1451.12 — Venta por vendedor: en chico, tu puesto
 
 - En **Venta por vendedor** en tamaño chico, si tú vendes ves **tu puesto** («#3 · tu puesto de 9 · va primero Ana López»), y si vas primero lo dice. Quien no vende sigue viendo al líder.

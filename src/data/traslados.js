@@ -303,12 +303,34 @@ async function invocar(body) {
  * `items[].cantidad`. El servidor la topa contra lo pedido de nuevo: esto es una
  * sugerencia, no la autoridad.
  */
-export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null) =>
+/*
+ * `lotesDeGenerico` (2026-11-05): `[{ posicion, lote, vence }]`, el lote que
+ * trae la caja para lo que sale de existencia SIN lote asignado. El servidor
+ * los pide con `codigo: 'FALTA_LOTE_DE_GENERICO'` y `lineas` cuando hacen falta
+ * y no vinieron; con ellos, les asigna ese lote a esas unidades antes de
+ * despachar. Ver `supabase/functions/_shared/erp-asignar-lote.ts`.
+ */
+/**
+ * Cuáles de estos productos llevan lote («regulado» en la ficha). Sirve para
+ * pedir el lote de la caja ANTES del primer intento de despacho; si falla, el
+ * servidor igual lo pide (`FALTA_LOTE_DE_GENERICO`), así que nunca lanza:
+ * devuelve un `Set` vacío.
+ */
+export async function fetchReguladosDe(erpProductIds) {
+    const ids = [...new Set((erpProductIds ?? []).map(Number).filter(Boolean))];
+    if (ids.length === 0) return new Set();
+    const { data, error } = await supabase.from('products').select('id, regulado').in('id', ids);
+    if (error) { console.error('fetchReguladosDe:', error.message); return new Set(); }
+    return new Set((data ?? []).filter(p => p.regulado === true).map(p => Number(p.id)));
+}
+
+export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, lotesDeGenerico = null) =>
     invocar({
         request_id: requestId,
         approver_note: nota,
         accion: 'enviar',
         ...(lineasAceptadas ? { lineas_aceptadas: lineasAceptadas } : {}),
+        ...(lotesDeGenerico?.length ? { lotes_de_generico: lotesDeGenerico } : {}),
     });
 
 /**

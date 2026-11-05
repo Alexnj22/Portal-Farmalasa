@@ -70,6 +70,7 @@ import {
   pendientesDeOrigen,
   RECIBIR,
   repartirEnLotes,
+  esLoteGenerico,
   sesionEn as abrirSesionEn,
   TRASLADO,
   leerFila,
@@ -87,6 +88,7 @@ import {
 // decide es cuánto medicamento sale de una sala.
 import { elegirLineasAceptadas, loQueNoEntro } from "../_shared/lineasAceptadas.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { asignarLoteAGenerico, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
 
 // `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
 // proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
@@ -205,7 +207,11 @@ Deno.serve(async (req) => {
   try {
     // `approver_note` es contenido, no identidad: se acepta del cliente. Quién
     // decide sale del JWT y no se recibe nunca por parámetro.
-    const { request_id, approver_note, accion, lineas_aceptadas, faltantes } = await req.json().catch(() => ({}));
+    // `lotes_de_generico`: el lote que trae la caja, para lo que sale de
+    // existencia sin lote asignado. `[{ posicion, lote, vence }]`, posición en
+    // `metadata.items` como `lineas_aceptadas`. Ver `_shared/erp-asignar-lote.ts`.
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico } =
+      await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
 
@@ -939,6 +945,65 @@ Deno.serve(async (req) => {
     // número se elige con datos en vez de inventarlo.
     const msPorRenglon: number[] = [];
 
+    // ── Lo que sale de existencia SIN lote asignado (2026-11-05) ─────────────
+    // En un regulado, lo que el reparto toma de «GENERICO» no sale como
+    // GENERICO: quien despacha escribe el lote y el vencimiento que trae la
+    // caja, y antes del traslado se le asigna ese lote a ESAS unidades —carga
+    // con el lote, descargo de GENERICO, nada más—. Ver `_shared/erp-asignar-lote.ts`.
+    //
+    // `meta.lotes_asignados` guarda lo que ya se asignó, por posición, ANTES de
+    // escribir el traslado: si el traslado falla y se reintenta, esas unidades
+    // ya tienen su lote y volver a asignarlas convertiría otras que no son.
+    const posDe = aceptadas.map((a) => a.i);
+    const loteEscrito = new Map<number, { lote: string; vence: string }>();
+    for (const x of Array.isArray(lotes_de_generico) ? lotes_de_generico : []) {
+      const pos = Number(x?.posicion);
+      if (!Number.isInteger(pos) || !lineas[pos]) continue;
+      const v = validarLoteEscrito(x?.lote, x?.vence);
+      if (!v.ok)
+        return json({
+          ok: false, codigo: "LOTE_INVALIDO", posicion: pos,
+          error: `${lineas[pos].descripcion ?? lineas[pos].erp_product_id}: ${v.error}`,
+        }, 422);
+      loteEscrito.set(pos, { lote: v.lote, vence: v.vence });
+    }
+    const yaAsignados: Record<string, { lote: string; vence: string; paquetes: number; id_lote_erp: string }> =
+      { ...(meta.lotes_asignados ?? {}) };
+    const faltaLote: { posicion: number; producto: string; presentacion: string; paquetes: number; unidades: number }[] = [];
+    type PorAsignar = {
+      pos: number; l: Linea; nombre: string; f: ReturnType<typeof leerFila>;
+      elegida: string; costo: string; precio: string; unidad: string;
+      paquetes: number; lote: string; vence: string;
+      resto: { cantidad: number; idLote: string; lote: string | null }[];
+    };
+    const porAsignar: PorAsignar[] = [];
+
+    // Cada renglón del envío, con su detalle. Aparte del bucle porque lo que
+    // sale de GENERICO se anota DESPUÉS de asignarle el lote.
+    const anotarRenglones = (
+      l: Linea, f: ReturnType<typeof leerFila>, elegida: string, costo: string, precio: string, unidad: string,
+      renglones: { cantidad: number; idLote: string; lote: string | null }[],
+    ) => {
+      for (const r of renglones) {
+        partes.push([
+          l.erp_product_id, costo, precio, r.cantidad, unidad, f.vence || "", elegida, r.idLote,
+        ].join("|"));
+
+        total    += Number(costo || 0) * r.cantidad;
+        unidades += r.cantidad;
+        detalle.push({
+          erp_product_id: l.erp_product_id, descripcion: l.descripcion,
+          presentacion: `${l.presentacion_tipo} (${l.factor})`,
+          id_presentacion_erp: elegida,
+          cantidad: r.cantidad, unidad, costo, precio,
+          existencia_previa: f.existencia,
+          regulado: f.regulado,
+          id_lote_erp: r.idLote !== "0" ? r.idLote : null,
+          numero_lote: r.lote,
+        });
+      }
+    };
+
     for (let i = 0; i < envio.length; i++) {
       if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
       const arranqueRenglon = Date.now();
@@ -1052,8 +1117,14 @@ Deno.serve(async (req) => {
       // pura y vive en `_shared` porque lo que produce entra al inventario de
       // una sala — está anclada en `tests/unit/repartirEnLotes.test.js`.
       const noRegulado = [{ cantidad: Number(l.cantidad), idLote: "0", lote: null as string | null }];
+      // Lo que un intento anterior ya pasó de GENERICO a su lote se reserva con
+      // ESE lote: GENERICO ya no lo tiene.
+      const pos = posDe[i];
+      const previa = yaAsignados[String(pos)];
+      const reservas = reservadosDe(l, Number(unidad)).map((r) =>
+        previa && esLoteGenerico(r.numero) ? { ...r, numero: previa.lote, vence: previa.vence } : r);
       const reparto = f.regulado
-        ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(unidad), reservadosDe(l, Number(unidad)))
+        ? repartirEnLotes(f.lotes, Number(l.cantidad), Number(unidad), reservas)
         : { renglones: noRegulado, faltan: 0, avisos: [] as string[] };
 
       // Acá sí se corta: no hay de dónde sacar el resto. Se dice cuánto falta y
@@ -1071,27 +1142,38 @@ Deno.serve(async (req) => {
       if (reparto.avisos.length)
         avisosTraslado.push(...reparto.avisos.map((a) => `${nombre}: ${a}`));
 
-      for (const r of reparto.renglones) {
-        partes.push([
-          l.erp_product_id, costo, precio, r.cantidad, unidad, f.vence || "", elegida, r.idLote,
-        ].join("|"));
-
-        total    += Number(costo || 0) * r.cantidad;
-        unidades += r.cantidad;
-        detalle.push({
-          erp_product_id: l.erp_product_id, descripcion: l.descripcion,
-          presentacion: `${l.presentacion_tipo} (${l.factor})`,
-          id_presentacion_erp: elegida,
-          cantidad: r.cantidad, unidad, costo, precio,
-          existencia_previa: f.existencia,
-          regulado: f.regulado,
-          id_lote_erp: r.idLote !== "0" ? r.idLote : null,
-          numero_lote: r.lote,
-        });
+      // Lo que sale de GENERICO en un regulado espera su lote: sin él no sale.
+      const deGenerico = f.regulado
+        ? reparto.renglones.filter((r) => esLoteGenerico(r.lote)).reduce((n, r) => n + r.cantidad, 0)
+        : 0;
+      if (deGenerico > 0) {
+        const escrito = loteEscrito.get(pos);
+        if (!escrito)
+          faltaLote.push({
+            posicion: pos, producto: nombre, presentacion: String(l.presentacion_tipo ?? ""),
+            paquetes: deGenerico, unidades: deGenerico * Number(unidad),
+          });
+        else
+          porAsignar.push({
+            pos, l, nombre, f, elegida, costo, precio, unidad, paquetes: deGenerico, ...escrito,
+            resto: reparto.renglones.filter((r) => !esLoteGenerico(r.lote)).map((r) => ({ ...r })),
+          });
+      } else {
+        anotarRenglones(l, f, elegida, costo, precio, unidad, reparto.renglones);
       }
 
       msPorRenglon.push(Date.now() - arranqueRenglon);
     }
+
+    // Todos los que faltan juntos, para que la pantalla los pida de una vez.
+    if (cortadoEn < 0 && faltaLote.length)
+      return json({
+        ok: false, codigo: "FALTA_LOTE_DE_GENERICO", lineas: faltaLote,
+        error: faltaLote.length === 1
+          ? `${faltaLote[0].producto}: ${faltaLote[0].unidades} unidades no tienen lote asignado. `
+            + `Escribe el lote y el vencimiento que trae la caja.`
+          : `${faltaLote.length} productos salen sin lote asignado. Escribe el lote y el vencimiento que trae cada caja.`,
+      }, 422);
 
     // Un tope que no se anuncia es un truncamiento silencioso: si el presupuesto
     // cortó, no se manda NADA y se dice dónde quedó. Medio traslado es peor que
@@ -1133,6 +1215,55 @@ Deno.serve(async (req) => {
         ok: false, codigo: "YA_EN_CURSO",
         error: "Alguien más de tu sala está despachando este traslado en este momento.",
       }, 409);
+
+    // ── El lote de la caja, para lo que salía de GENERICO ────────────────
+    // Recién con el candado tomado: son escrituras en el inventario, y dos
+    // personas confirmando a la vez las harían dos veces. Cada una se anota en
+    // la solicitud en cuanto entra (ver `yaAsignados`), y `meta` es el mismo
+    // objeto que las salidas de error escriben al soltar el candado, así que
+    // un reintento siempre sabe lo que ya se asignó.
+    for (const p of porAsignar) {
+      const r = await asignarLoteAGenerico({
+        cookie, erpSucursal: erpOrigen, erpUbicacion: ubicOrigen,
+        erpProductId: Number(p.l.erp_product_id), descripcion: p.nombre,
+        presentacionTipo: String(p.l.presentacion_tipo ?? ""), factor: Number(p.l.factor),
+        idPresentacion: p.elegida, costo: p.costo, precio: p.precio, unidad: p.unidad,
+        paquetes: p.paquetes, lote: p.lote, vence: p.vence,
+        referencia: `TRASLADO VALE ${vale} - ${conSala({ ...emp, name: quien.name }, codigoDespacha)}`,
+      });
+      if (!r.ok) {
+        // Lo que quedó a medias se guarda en la solicitud: es lo que alguien
+        // tiene que ir a mirar al kardex, y no puede vivir sólo en un toast.
+        if (r.descuadre)
+          meta.lote_descuadre = [...(meta.lote_descuadre ?? []), {
+            at: new Date().toISOString(), by: quien.id, posicion: p.pos, detalle: r.descuadre,
+          }];
+        const { error: errSoltar } = await admin.from("approval_requests")
+          .update({ metadata: meta }).eq("id", sol.id).eq("status", "PENDING");
+        if (errSoltar) console.error("[aplicar-traslado-inventario] soltar el candado:", errSoltar.message);
+        return json({
+          ok: false, codigo: r.codigo,
+          error: r.descuadre ? `${r.error} ${r.descuadre}` : r.error,
+        }, 502);
+      }
+      yaAsignados[String(p.pos)] = {
+        lote: r.lote, vence: r.vence, paquetes: r.paquetes, id_lote_erp: r.idLote,
+      };
+      meta.lotes_asignados = yaAsignados;
+      const { error: errAnotar } = await admin.from("approval_requests")
+        .update({ metadata: { ...meta, despachando_at: ahora.toISOString(), despachando_by: quien.id } })
+        .eq("id", sol.id);
+      if (errAnotar) console.error("[aplicar-traslado-inventario] anotar el lote asignado:", errAnotar.message);
+
+      // Lo que salía de GENERICO sale ahora de su lote. Si ese lote ya estaba
+      // en el reparto (la carga se SUMA al lote de igual número y fecha), es un
+      // solo renglón: dos del mismo lote son la misma existencia contada dos veces.
+      const renglones = p.resto;
+      const ya = renglones.find((x) => x.idLote === r.idLote);
+      if (ya) ya.cantidad += r.paquetes;
+      else renglones.push({ cantidad: r.paquetes, idLote: r.idLote, lote: r.lote });
+      anotarRenglones(p.l, p.f, p.elegida, p.costo, p.precio, p.unidad, renglones);
+    }
 
     // ── El envío ─────────────────────────────────────────────────────────
     // La foto de ANTES: el id del traslado nuevo es el que no estaba. Es la

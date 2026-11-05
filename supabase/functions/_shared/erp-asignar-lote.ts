@@ -1,0 +1,193 @@
+// Asignarle su lote real a existencia que el sistema guarda como «GENERICO»,
+// SOLO por las unidades que van a salir en un traslado (2026-11-05).
+//
+// ── Por qué existe ────────────────────────────────────────────────────────
+// Desde el 05-nov los medicamentos llevan lote («regulado» en la ficha), pero
+// la existencia que ya estaba quedó bajo «GENERICO»: medido ese día, 6,456 de
+// 11,872 pares producto·sala de regulados SÓLO tenían GENERICO (65% de las
+// unidades). Un traslado de esa existencia salía como GENERICO mientras de la
+// sala salía una caja con su lote impreso: la sala que recibe no tiene el
+// lote, y el control por lote no cuadra en ningún lado.
+//
+// ── Por qué NO es un ajuste ───────────────────────────────────────────────
+// `ajuste_inventario.php` lo permite, pero es una FOTO: se declara la cantidad
+// real de cada lote del producto y el que no se llena queda en 0 (su propio
+// cuadro lo dice). Habría que reescribir TODOS los lotes para mover unos pocos,
+// y una venta en el medio quedaría deshecha. Decisión del usuario, 2026-11-05:
+// mover sólo lo que viaja.
+//
+// ── Cómo: dos movimientos por diferencia ──────────────────────────────────
+//   1. CARGA  de N paquetes con el lote y vencimiento que trae la caja
+//      (`ingreso_inventario.php`: el lote viaja como TEXTO; si ya existe con
+//      ese número y fecha, se SUMA a él — verificado el 2026-08-06).
+//   2. DESCARGO de los mismos N paquetes del lote GENERICO
+//      (`descargo_inventario.php`, por `descartarUnaLinea`).
+// El total de la sala no cambia y ningún otro lote se toca.
+//
+// El ORDEN es a propósito: si algo se corta en el medio, es mejor que sobre
+// mercadería (una carga sin su descargo) que que falte. Y si el descargo falla
+// con un rechazo claro, se DESHACE la carga descargando ese mismo lote.
+import { BASE, pedir, leerRespuesta } from "./erp-dte.ts";
+import { descartarUnaLinea, conceptoDe } from "./erp-descarte.ts";
+import { esLoteGenerico, traerFila, type LoteErp } from "./erp-traslado.ts";
+
+const INGRESO = `${BASE}/ingreso_inventario.php`;
+
+const norm = (s: string) => String(s ?? "").replace(/\s+/g, " ").trim().toUpperCase();
+const dia = (s: string) => String(s ?? "").slice(0, 10);
+
+/** La fecha de El Salvador (UTC-6 todo el año), en yyyy-mm-dd. */
+function hoySV(): string {
+  return new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+}
+
+/**
+ * Lo que la persona escribió, revisado. El lote va en ASCII y mayúsculas —el
+ * sistema relee los bytes como Latin-1— y no puede ser «GENERICO», que es
+ * justamente lo que se está reemplazando. El vencimiento tiene que ser una
+ * fecha real y FUTURA: la pantalla del sistema tampoco acepta hoy ni antes.
+ */
+export function validarLoteEscrito(
+  lote: unknown, vence: unknown,
+): { ok: true; lote: string; vence: string } | { ok: false; error: string } {
+  const l = String(lote ?? "").normalize("NFD").replace(/[̀-ͯ]/g, "")
+    .replace(/[^\x20-\x7E]/g, "").replace(/\s+/g, " ").trim().toUpperCase();
+  if (!l) return { ok: false, error: "Falta el número de lote." };
+  if (l.length > 40) return { ok: false, error: "El número de lote es demasiado largo." };
+  if (esLoteGenerico(l)) return { ok: false, error: "«GENERICO» no es un lote: escribe el que trae la caja." };
+  const v = dia(String(vence ?? ""));
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(v) || Number.isNaN(Date.parse(`${v}T12:00:00Z`)))
+    return { ok: false, error: "Falta el vencimiento, o no es una fecha." };
+  if (v <= hoySV()) return { ok: false, error: `El vencimiento ${v} ya pasó: esa caja no puede salir.` };
+  return { ok: true, lote: l, vence: v };
+}
+
+export type ResultadoAsignacion =
+  | {
+    ok: true;
+    /** El id del lote real en el sistema, para despachar de él. */
+    idLote: string;
+    lote: string;
+    vence: string;
+    paquetes: number;
+    concepto: string;
+  }
+  | {
+    ok: false;
+    codigo: string;
+    error: string;
+    /** Algo quedó a medias en el inventario y hay que mirarlo a mano. */
+    descuadre?: string;
+  };
+
+export async function asignarLoteAGenerico(opc: {
+  /** Sesión YA abierta en la sucursal de origen. */
+  cookie: string;
+  erpSucursal: number;
+  erpUbicacion: number;
+  erpProductId: number;
+  descripcion: string;
+  presentacionTipo: string;
+  factor: number;
+  /** De `getpresentacion`: la presentación con la que sale el traslado. */
+  idPresentacion: string;
+  costo: string;
+  precio: string;
+  unidad: string;
+  paquetes: number;
+  lote: string;
+  vence: string;
+  /** Lo que identifica el movimiento en el kardex (traslado, vale, quién). */
+  referencia: string;
+}): Promise<ResultadoAsignacion> {
+  const o = opc;
+  const nombre = o.descripcion || `el producto ${o.erpProductId}`;
+  const enUnidades = Number(o.paquetes) * Number(o.unidad);
+  const concepto = conceptoDe([`ASIGNA LOTE ${o.lote} A GENERICO`, o.referencia]);
+  const delLote = (lotes: LoteErp[]) => lotes.find((x) =>
+    norm(x.numero) === norm(o.lote) && dia(x.vence) === o.vence);
+
+  // ── La foto de antes ────────────────────────────────────────────────────
+  // Para saber DESPUÉS que la carga entró: el lote puede existir ya con ese
+  // número y fecha (la carga se le suma), así que lo que se compara es su
+  // stock, no su aparición.
+  const antes = await traerFila(o.cookie, o.erpProductId, o.erpUbicacion);
+  // El MAYOR de los GENERICO y no la suma: el descargo sale de UNO
+  // (`descartarUnaLinea` busca uno que alcance), así que con dos de 5 una
+  // salida de 8 se rechazaría DESPUÉS de haber cargado.
+  const gen = Math.max(0, ...antes.lotes.filter((x) => esLoteGenerico(x.numero)).map((x) => x.stock));
+  if (gen < enUnidades)
+    return {
+      ok: false, codigo: "GENERICO_NO_ALCANZA",
+      error: `${nombre}: sin lote asignado hay ${gen} unidades juntas y salen ${enUnidades}.`,
+    };
+  const previo = delLote(antes.lotes)?.stock ?? 0;
+
+  // ── 1. La carga, con el lote de la caja ─────────────────────────────────
+  const vence = o.vence;
+  const crudo = await pedir(o.cookie, INGRESO, new URLSearchParams({
+    process: "insert",
+    datos: [o.erpProductId, o.costo, o.precio, o.paquetes, o.unidad, vence, o.idPresentacion, o.lote].join("|") + "#",
+    cuantos: "1",
+    total: (Number(o.costo || 0) * Number(o.paquetes)).toFixed(4),
+    fecha: hoySV(),
+    concepto,
+    destino: String(o.erpUbicacion),
+    // Una sola vez: una carga reenviada tras un corte carga dos veces.
+  }), { extra: { Referer: INGRESO }, reintentos: 1 });
+  const carga = leerRespuesta(crudo);
+
+  // El sistema contesta 200 aunque rechace, y a veces algo ilegible aunque
+  // haya entrado: lo que manda es el lote releído.
+  const despues = await traerFila(o.cookie, o.erpProductId, o.erpUbicacion);
+  const nuevo = delLote(despues.lotes);
+  const entro = nuevo != null && nuevo.stock - previo >= enUnidades;
+  if (!entro) {
+    if (nuevo && nuevo.stock > previo)
+      return {
+        ok: false, codigo: "CARGA_INCOMPLETA",
+        error: `${nombre}: la carga del lote ${o.lote} no entró completa.`,
+        descuadre: `El lote ${o.lote} (vence ${o.vence}) de ${nombre} subió ${nuevo.stock - previo} `
+          + `unidades y se esperaban ${enUnidades}. GENERICO no se tocó.`,
+      };
+    return {
+      ok: false, codigo: "CARGA_RECHAZADA",
+      error: `${nombre}: el sistema no aceptó el lote ${o.lote}: ${carga.msg || "sin detalle"}`,
+    };
+  }
+
+  // ── 2. El descargo de GENERICO, por lo mismo ────────────────────────────
+  const linea = {
+    erp_product_id: o.erpProductId, presentacion_tipo: o.presentacionTipo,
+    factor: Number(o.factor), cantidad: Number(o.paquetes), descripcion: o.descripcion,
+  };
+  const desc = await descartarUnaLinea({
+    erpSucursal: o.erpSucursal, erpUbicacion: o.erpUbicacion,
+    linea: { ...linea, lote: "GENERICO" }, concepto, iden: "DESCARTE",
+  });
+  if (desc.ok)
+    return { ok: true, idLote: nuevo!.id, lote: o.lote, vence: o.vence, paquetes: o.paquetes, concepto };
+
+  // Ilegible: pudo haber entrado. Deshacer la carga ahí podría dejar la sala
+  // con de MENOS, que es peor; se dice exactamente qué mirar.
+  if (desc.codigo === "INCIERTO")
+    return {
+      ok: false, codigo: "DESCARGO_INCIERTO", error: `${nombre}: ${desc.error}`,
+      descuadre: `Se cargaron ${enUnidades} unidades al lote ${o.lote} de ${nombre} y no se sabe `
+        + `si salieron de GENERICO. Revisar el kardex antes de volver a intentar.`,
+    };
+
+  // Rechazo claro: se deshace la carga para que la sala quede como estaba.
+  const deshacer = await descartarUnaLinea({
+    erpSucursal: o.erpSucursal, erpUbicacion: o.erpUbicacion,
+    linea: { ...linea, lote: o.lote },
+    concepto: conceptoDe([`DESHACE ASIGNACION LOTE ${o.lote}`, o.referencia]), iden: "DESCARTE",
+  });
+  if (deshacer.ok)
+    return { ok: false, codigo: "DESCARGO_RECHAZADO", error: `${nombre}: ${desc.error} (no se cambió nada).` };
+  return {
+    ok: false, codigo: "DESCARGO_RECHAZADO", error: `${nombre}: ${desc.error}`,
+    descuadre: `Quedaron ${enUnidades} unidades DE MÁS en el lote ${o.lote} (vence ${o.vence}) de `
+      + `${nombre}: entró la carga y no salieron de GENERICO, y deshacerla falló (${deshacer.error}).`,
+  };
+}

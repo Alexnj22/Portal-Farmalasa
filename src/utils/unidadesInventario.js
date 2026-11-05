@@ -96,10 +96,30 @@ export function lotesEnUnidades(filas) {
         m.get(clave).unidades += unidadesDe(r);
     }
     // Sin fecha va al final: no se puede prometer que salga primero algo cuyo
-    // vencimiento no se conoce.
+    // vencimiento no se conoce. Y GENERICO va detrás de todo lote real, con la
+    // fecha que tenga (hay filas GENERICO con «0005-01-01»): no es un lote, es
+    // existencia sin lote asignado, y reservarla primero mandaba a la sala a
+    // sacar una caja con lote real mientras el sistema descontaba GENERICO.
     return [...m.values()]
         .filter(l => l.unidades > 0)
-        .sort((a, b) => String(a.vence ?? '9999-12-31').localeCompare(String(b.vence ?? '9999-12-31')));
+        .sort((a, b) =>
+            Number(esLoteGenerico(a.lote)) - Number(esLoteGenerico(b.lote))
+            || String(a.vence ?? '9999-12-31').localeCompare(String(b.vence ?? '9999-12-31')));
+}
+
+/**
+ * «GENERICO» no es un lote: es como el sistema guarda la existencia que todavía
+ * no tiene lote asignado. En pantalla se dice «Sin lote asignado», nunca el
+ * rótulo crudo. Gemelo: `esLoteGenerico` de `supabase/functions/_shared/erp-traslado.ts`.
+ */
+export function esLoteGenerico(lote) {
+    return String(lote ?? '').trim().toUpperCase() === 'GENERICO';
+}
+
+/** El lote como se lee en pantalla: el número, o lo que significa su ausencia. */
+export function rotuloDeLote(lote) {
+    if (esLoteGenerico(lote)) return 'Sin lote asignado';
+    return String(lote ?? '').trim() || 'sin lote';
 }
 
 /**

@@ -195,6 +195,15 @@ export interface Fila {
 }
 
 /** Los lotes que el sistema ofrece, con su número y su fecha. */
+/**
+ * «GENERICO» no es un lote: es como el sistema guarda la existencia de un
+ * producto que todavía no tiene lote asignado. Gemelo: `esLoteGenerico` de
+ * `src/utils/unidadesInventario.js`.
+ */
+export function esLoteGenerico(numero: string | null | undefined): boolean {
+  return String(numero ?? "").trim().toUpperCase() === "GENERICO";
+}
+
 export function leerLotes(html: string) {
   return [...html.matchAll(/<option([^>]*)>([^<]*)</g)].map((m) => {
     const attrs = m[1];
@@ -708,7 +717,15 @@ export function repartirEnLotes(
     const disponibles = [...lotes]
       // Sin fecha va al final y no al principio: un lote sin vencimiento no es
       // el más urgente, es el que no se sabe.
-      .sort((a, b) => (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
+      //
+      // Y GENERICO va detrás de TODO lote real, tenga la fecha que tenga
+      // (2026-11-05). No es un lote: es existencia sin lote asignado, y su
+      // fecha en el sistema es «0000-00-00» —o sea, la PRIMERA del orden—. Así
+      // el despacho completaba con GENERICO mientras de la sala salía una caja
+      // con lote real: el lote real quedaba con existencia que ya no estaba.
+      .sort((a, b) =>
+        Number(esLoteGenerico(a.numero)) - Number(esLoteGenerico(b.numero))
+        || (a.vence || "9999-99-99").localeCompare(b.vence || "9999-99-99"));
     for (const lote of disponibles) {
       if (resto <= 0) break;
       const cabe = cabeEn(lote);

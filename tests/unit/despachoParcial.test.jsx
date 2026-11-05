@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import React from 'react';
 import { render, screen, act, fireEvent } from '@testing-library/react';
 
@@ -29,6 +29,7 @@ import { render, screen, act, fireEvent } from '@testing-library/react';
 
 const despacharTraslado = vi.fn(async () => ({ ok: true }));
 const rechazarTraslado = vi.fn(async () => ({ error: null }));
+const fetchReguladosDe = vi.fn(async () => new Set());
 let disponibilidad = null;
 
 vi.mock('@nucleo/data/traslados', () => ({
@@ -36,6 +37,7 @@ vi.mock('@nucleo/data/traslados', () => ({
     fetchDisponibilidadTraslado: vi.fn(async () => ({ disponibilidad, error: null })),
     despacharTraslado: (...a) => despacharTraslado(...a),
     recibirTraslado: vi.fn(),
+    fetchReguladosDe: (...a) => fetchReguladosDe(...a),
     rechazarTraslado: (...a) => rechazarTraslado(...a),
 }));
 
@@ -125,7 +127,7 @@ describe('cuando alcanza todo', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
-        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null);
+        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, []);
     });
 });
 
@@ -161,7 +163,7 @@ describe('cuando alcanza menos de lo que piden', () => {
             fireEvent.click(screen.getByRole('button', { name: /Enviar lo que hay/i }));
         });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', 'Se vendió una hace un rato', [{ i: 0, cantidad: 2 }],
+            'sol-1', 'Se vendió una hace un rato', [{ i: 0, cantidad: 2 }], [],
         );
     });
 
@@ -208,7 +210,7 @@ describe('el tope es lo pedido', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
-        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null);
+        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, []);
     });
 });
 
@@ -277,5 +279,45 @@ describe('el ticket de la bolsa', () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
         expect(onHecho).toHaveBeenCalledWith('APPROVED');
+    });
+});
+
+// ── Lo que sale SIN lote asignado (2026-11-05) ──────────────────────────────
+// En un regulado, la existencia «GENERICO» no puede viajar así: la caja que sale
+// trae su lote impreso, y quien despacha lo copia para que el servidor se lo
+// asigne a esas unidades. Sin el lote y el vencimiento, no se despacha.
+describe('cuando sale existencia sin lote asignado', () => {
+    const CON_GENERICO = {
+        id: 'sol-1',
+        metadata: { items: [{ ...FILA.metadata.items[0], lotes: [{ lote: 'GENERICO', vence: null, unidades: 30 }] }] },
+    };
+    beforeEach(() => {
+        disponibilidad = conExistencia(50);
+        fetchReguladosDe.mockImplementation(async () => new Set([2724]));
+    });
+    afterEach(() => { fetchReguladosDe.mockImplementation(async () => new Set()); });
+
+    it('pide lote y vencimiento, y sin ellos no deja enviar', async () => {
+        await act(async () => { render(<DecisionTraslado fila={CON_GENERICO} onHecho={vi.fn()} />); });
+        expect(screen.getByText(/no tiene lote asignado/i)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).toBeDisabled();
+
+        await act(async () => {
+            fireEvent.change(screen.getByLabelText(/Lote de ALOPURINOL/i), { target: { value: 'abc123' } });
+            fireEvent.change(screen.getByLabelText(/Vencimiento de ALOPURINOL/i), { target: { value: '2030-05-01' } });
+        });
+        const boton = screen.getByRole('button', { name: /Confirmar y enviar/i });
+        expect(boton).not.toBeDisabled();
+        await act(async () => { fireEvent.click(boton); });
+        expect(despacharTraslado).toHaveBeenCalledWith(
+            'sol-1', '', null, [{ posicion: 0, lote: 'ABC123', vence: '2030-05-01' }],
+        );
+    });
+
+    it('un producto sin control de lote no pide nada', async () => {
+        fetchReguladosDe.mockImplementation(async () => new Set());
+        await act(async () => { render(<DecisionTraslado fila={CON_GENERICO} onHecho={vi.fn()} />); });
+        expect(screen.queryByText(/no tiene lote asignado/i)).toBeNull();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).not.toBeDisabled();
     });
 });

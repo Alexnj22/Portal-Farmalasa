@@ -14,14 +14,15 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
 import { renglonCompleto, nombreDeDespacho } from '@nucleo/utils/unidadDeDespacho';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
+import { fetchReguladosDe } from '@nucleo/data/traslados';
 import { enviarAOtraSala, renglonesQueSalieron, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '@nucleo/data/envios';
-import { lotesEnUnidades, repartirPedido, sumaUnidades } from '@nucleo/utils/unidadesInventario';
+import { esLoteGenerico, lotesEnUnidades, repartirPedido, rotuloDeLote, sumaUnidades } from '@nucleo/utils/unidadesInventario';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { renglonesDeEnvioSugerido } from '@nucleo/utils/gestionDeStock';
 import { clickable } from '@nucleo/utils/clickable';
 import { imprimirTicketDeTraslado } from '@nucleo/utils/imprimirTraslado';
-import { fechaTexto } from '@nucleo/utils/fecha';
+import { diaSV, fechaTexto } from '@nucleo/utils/fecha';
 import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '@nucleo/constants/erp';
 
 // Mandarle producto a otra sala sin que te lo pidan.
@@ -367,6 +368,34 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         [origen, unidadesPedidas],
     );
 
+    /* ── Sin lote asignado: el lote lo dice la caja (2026-11-05) ──────────
+     * En un producto regulado, lo que sale de la existencia sin lote asignado
+     * («GENERICO» en el sistema) no puede viajar así: de la sala sale una caja
+     * con su lote impreso. Quien arma el envío es quien la tiene en la mano, así
+     * que escribe su lote y vencimiento, y al despachar se le asignan a ESAS
+     * unidades —sin tocar ningún otro lote—. */
+    const [regulado, setRegulado] = useState(false);
+    const [cajaLote,  setCajaLote]  = useState('');
+    const [cajaVence, setCajaVence] = useState('');
+    useEffect(() => {
+        let cancelado = false;
+        setRegulado(false);
+        if (!elegido?.erp_product_id) return undefined;
+        fetchReguladosDe([elegido.erp_product_id]).then(s => {
+            if (!cancelado) setRegulado(s.has(Number(elegido.erp_product_id)));
+        });
+        return () => { cancelado = true; };
+    }, [elegido?.erp_product_id]);
+    const sinLoteEnReparto = regulado
+        ? reparto.reparto.filter(l => esLoteGenerico(l.lote)).reduce((s, l) => s + l.toma, 0)
+        : 0;
+    const hoy = diaSV();
+    const faltaCaja = sinLoteEnReparto > 0 && (!cajaLote.trim() || !cajaVence)
+        ? 'Escribe el lote y el vencimiento que trae la caja.'
+        : sinLoteEnReparto > 0 && cajaVence <= hoy
+            ? 'Ese vencimiento ya pasó: esa caja no puede salir.'
+            : null;
+
     /* ── El tope, dicho ANTES ─────────────────────────────────────────────
      * Existía desde el primer día —el despacho vive 110 s— y se descubría a
      * mitad de camino, con parte de la caja ya fuera de la sala. El número sale
@@ -399,6 +428,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         : unidadesPedidas > (origen.unidades ?? 0)
             ? `${origen.nombre} tiene ${origen.unidades} ${origen.unidades === 1 ? 'unidad' : 'unidades'}.`
         : reparto.faltan > 0 ? `Faltan ${reparto.faltan} en los lotes.`
+        : faltaCaja ? faltaCaja
         // El origen y el destino se eligen en dos momentos distintos y nada los
         // ata: sin esto, un renglón podía salir de la misma sala a la que va —y
         // eso el servidor lo rebota recién al apretar «Transferir».
@@ -450,7 +480,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             // despacha elegiría el lote por su cuenta — y un envío por «próximo
             // a vencer» sin decir cuál lote es exactamente lo contrario de lo
             // que se quiso hacer.
-            lotes: reparto.reparto.map(l => ({ lote: l.lote, vence: l.vence, unidades: l.toma })),
+            // Lo que sale sin lote asignado lleva el de la caja en `caja`: el
+            // despacho se lo asigna a esas unidades (ver `faltaCaja`).
+            lotes: reparto.reparto.map(l => ({
+                lote: l.lote, vence: l.vence, unidades: l.toma,
+                ...(sinLoteEnReparto > 0 && esLoteGenerico(l.lote)
+                    ? { caja: { lote: cajaLote.trim().toUpperCase(), vence: cajaVence } } : {}),
+            })),
             // Cuántas tiene ESA sala AHORA. Es lo que deja avisar en la lista
             // si se agregó dos veces el mismo producto y entre los dos se pasan.
             existencia: origen.unidades,
@@ -460,8 +496,11 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         setTermino('');
         setResultados(null);
         setCantidad('1');
+        setCajaLote('');
+        setCajaVence('');
         setPestana('lista');
-    }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length]);
+    }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length,
+        sinLoteEnReparto, cajaLote, cajaVence]);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -1079,9 +1118,33 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 {reparto.reparto.length > 0 && (
                                     <p className="text-micro font-semibold text-content-2 leading-snug">
                                         Sale de: {reparto.reparto.map(l =>
-                                            `${l.lote || 'sin lote'} ×${l.toma}`
-                                            + (l.vence ? ` (vence ${fmtVence(l.vence)})` : '')).join(' · ')}
+                                            `${rotuloDeLote(l.lote)} ×${l.toma}`
+                                            + (l.vence && !esLoteGenerico(l.lote) ? ` (vence ${fmtVence(l.vence)})` : '')).join(' · ')}
                                     </p>
+                                )}
+
+                                {/* Lo que sale sin lote asignado: el lote lo dice la caja. */}
+                                {sinLoteEnReparto > 0 && (
+                                    <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
+                                        <p className="text-micro font-bold text-warning-text leading-snug">
+                                            {sinLoteEnReparto} {sinLoteEnReparto === 1 ? 'unidad no tiene' : 'unidades no tienen'} lote
+                                            asignado. Copia el lote y el vencimiento que trae la caja:
+                                        </p>
+                                        <div className="flex flex-wrap gap-2">
+                                            <PortalInput
+                                                value={cajaLote}
+                                                onChange={e => setCajaLote(e.target.value.toUpperCase())}
+                                                aria-label="Lote de la caja"
+                                                placeholder="N.º de lote" className="w-36"
+                                            />
+                                            <PortalInput
+                                                type="date" value={cajaVence}
+                                                onChange={e => setCajaVence(e.target.value)}
+                                                aria-label="Vencimiento de la caja"
+                                                className="w-40"
+                                            />
+                                        </div>
+                                    </div>
                                 )}
 
                                 {problemaDelPaso ? (

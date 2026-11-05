@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import { claveOrigen, diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
+import { esLoteGenerico, rotuloDeLote } from '@nucleo/utils/unidadesInventario';
 import { ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
@@ -426,16 +427,24 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                     const enviado = reparto.find(r => r.clave === l.clave);
                                     const dias = diasHasta(l.vence);
                                     const corto = dias != null && dias <= 180;
+                                    // Existencia sin lote asignado: se dice como tal y sin
+                                    // su fecha, que no es la de ninguna caja. Al despachar,
+                                    // quien tiene la caja escribe su lote.
+                                    const generico = esLoteGenerico(l.lote);
                                     return (
                                         <div key={l.clave}
                                             className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-border-card ${fuera ? 'opacity-45' : ''}`}
                                             style={{ background: 'var(--surface-card-hover)' }}>
-                                            <span className="text-micro font-mono text-content-3 truncate min-w-0 flex-1">
-                                                {l.lote || 'sin lote'}
+                                            <span className={`text-caption font-bold truncate min-w-0 flex-1 ${
+                                                generico ? 'text-warning-text' : 'font-mono text-content'
+                                            }`}>
+                                                {rotuloDeLote(l.lote)}
                                             </span>
-                                            <span className={`text-micro font-semibold shrink-0 ${corto ? 'text-warning-text' : 'text-content-3'}`}>
-                                                {l.vence ? fmtVence(l.vence) : 'sin fecha'}
-                                            </span>
+                                            {!generico && (
+                                                <span className={`text-micro font-semibold shrink-0 ${corto ? 'text-warning-text' : 'text-content-2'}`}>
+                                                    {l.vence ? fmtVence(l.vence) : 'sin fecha'}
+                                                </span>
+                                            )}
                                             {/* El número que se lleva de ESE lote, no lo que
                                                 el lote tiene: es lo que hay que poder revisar. */}
                                             <span className="text-caption font-black text-content shrink-0 tabular-nums w-16 text-right">

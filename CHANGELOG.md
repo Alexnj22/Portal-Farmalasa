@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1453.8 — Traslados: lo que sale sin lote asignado lleva el lote de la caja
+
+Desde el 5-nov los medicamentos llevan lote, pero la existencia que ya estaba quedó como «GENERICO» (medido: 54% de los pares producto·sala de regulados, 65% de las unidades). Un traslado de esa existencia salía como GENERICO mientras de la sala salía una caja con su lote impreso, y los lotes se descuadraban en las dos salas.
+
+- **El reparto deja GENERICO para el final**, al pedir y al despachar. Su fecha en el sistema es «0000-00-00» y por eso salía PRIMERO, antes que un lote real.
+- **En pantalla dice «Sin lote asignado»**, en ámbar y sin fecha. El número de un lote real va en tinta principal (al pedir, al enviar, en la tarjeta de despacho y en la de recepción).
+- **Al despachar una solicitud o armar un envío**, si un regulado sale de GENERICO se pide el lote y el vencimiento que trae la caja. Antes del traslado, el servidor le asigna ese lote SOLO a esas unidades: carga con el lote real y descargo del GENERICO por la misma cantidad. Ningún otro lote se toca y el total de la sala no cambia. No es un ajuste: el ajuste del sistema reescribe todos los lotes del producto.
+- Si la carga entra y el descargo no, se deshace la carga; lo que quede a medias se anota en la solicitud (`lote_descuadre`). Lo asignado se guarda antes de escribir el traslado, para que un reintento no vuelva a convertir unidades.
+- Pieza nueva: `supabase/functions/_shared/erp-asignar-lote.ts`. Pruebas: `tests/unit/loteGenerico.test.js` y el bloque nuevo de `despachoParcial.test.jsx`.
+
 ## v2.1453.7 — Vence siempre con el año en 4 cifras
 
 En «Cargar compra» unos vencimientos se veían «04/2028» y otros «04/28». El dato guardado era el mismo (`2028-04`): lo que leyó el portal se mostraba con 4 cifras y lo tecleado se quedaba como se escribió. Ahora `CampoMesAnio` lo reescribe a `MM/AAAA` al salir del campo, en todo el portal.

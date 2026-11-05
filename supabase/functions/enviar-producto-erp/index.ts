@@ -18,6 +18,7 @@ import {
   leerBien,
   pendientesDeOrigen,
   repartirEnLotes,
+  esLoteGenerico,
   resolverPresentacion,
   sesionEn as abrirSesionEn,
   traerFila,
@@ -26,6 +27,7 @@ import {
   TRASLADO,
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { asignarLoteAGenerico, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
 
 // Empujar producto a otra sala: el traslado al REVÉS.
 //
@@ -82,7 +84,9 @@ interface Linea {
   factor: number;
   cantidad: number;
   unidades: number;
-  lotes: { lote?: string; vence?: string; unidades?: number }[] | null;
+  /** `caja`, sólo en el renglón GENERICO de un regulado: el lote y vencimiento
+   *  que trae la caja, escritos al armar el envío (2026-11-05). */
+  lotes: { lote?: string; vence?: string; unidades?: number; caja?: { lote?: string; vence?: string } }[] | null;
   estado: string;
   id_traslado: string | null;
   id_traslado_devolucion: string | null;
@@ -558,6 +562,57 @@ Deno.serve(async (req) => {
         }
 
         const avisos = [...reparto.avisos];
+
+        /* ── Lo que sale SIN lote asignado lleva el lote de la caja ─────────
+         * (2026-11-05) En un regulado, lo que el reparto toma de «GENERICO» no
+         * viaja así: quien armó el envío escribió el lote y el vencimiento que
+         * trae la caja, y antes del traslado se le asigna a ESAS unidades
+         * —carga con el lote, descargo de GENERICO, ningún otro lote se toca—.
+         * Ver `_shared/erp-asignar-lote.ts`.
+         *
+         * Lo asignado se reescribe en `envio_linea.lotes` en cuanto entra: si
+         * el traslado falla y se reintenta, la reserva ya es el lote real y
+         * GENERICO no se vuelve a tocar. */
+        const deGenerico = f.regulado
+          ? reparto.renglones.filter((r) => esLoteGenerico(r.lote)).reduce((n, r) => n + r.cantidad, 0)
+          : 0;
+        if (deGenerico > 0) {
+          const caja = (l.lotes ?? []).find((r) => esLoteGenerico(r?.lote) && r?.caja)?.caja;
+          if (!caja) {
+            await fallar(
+              `${nombre}: ${deGenerico * Number(pres.unidad)} unidades no tienen lote asignado. `
+              + `Hay que armar el envío de nuevo y escribir el lote y el vencimiento que trae la caja.`,
+            );
+            continue;
+          }
+          const v = validarLoteEscrito(caja.lote, caja.vence);
+          if (!v.ok) { await fallar(`${nombre}: ${v.error}`); continue; }
+          const asig = await asignarLoteAGenerico({
+            cookie, erpSucursal: erpOrigen, erpUbicacion: ubicOrigen,
+            erpProductId: Number(l.erp_product_id), descripcion: nombre,
+            presentacionTipo: l.presentacion_tipo, factor: Number(l.factor),
+            idPresentacion: pres.id, costo: String(pres.costo), precio: String(pres.precio),
+            unidad: String(pres.unidad), paquetes: deGenerico, lote: v.lote, vence: v.vence,
+            referencia: `${clave} ENVIA ${yo}`,
+          });
+          if (!asig.ok) {
+            await fallar(asig.descuadre ? `${asig.error} ${asig.descuadre}` : asig.error);
+            continue;
+          }
+          const lotesNuevos = (l.lotes ?? []).map((r) => esLoteGenerico(r?.lote)
+            ? { lote: asig.lote, vence: asig.vence, unidades: r.unidades, asignado_de_generico: true }
+            : r);
+          await anotar(
+            admin.from("envio_linea").update({ lotes: lotesNuevos, updated_at: new Date().toISOString() }).eq("id", l.id),
+            `el lote asignado de ${nombre}`,
+          );
+          const resto = reparto.renglones.filter((r) => !esLoteGenerico(r.lote));
+          const ya = resto.find((r) => r.idLote === asig.idLote);
+          if (ya) ya.cantidad += asig.paquetes;
+          else resto.push({ cantidad: asig.paquetes, idLote: asig.idLote, lote: asig.lote });
+          reparto.renglones = resto;
+          avisos.push(`${asig.paquetes} sin lote asignado salieron con el lote ${asig.lote} (vence ${asig.vence})`);
+        }
 
         // El vale se LEE de la página y no se inventa: es un `uniqid()` que el
         // servidor pre-rellena en cada carga. Uno por movimiento.

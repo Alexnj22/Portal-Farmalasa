@@ -8,8 +8,9 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
-    fetchDisponibilidadTraslado,
+    fetchDisponibilidadTraslado, fetchReguladosDe,
 } from '@nucleo/data/traslados';
+import { esLoteGenerico, rotuloDeLote } from '@nucleo/utils/unidadesInventario';
 import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
 import { fmtCuando, fmtFechaLarga, resumenItems, lotesPedidos, loQueLlego, loQueNoSalio, metaDelEnvio, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import DeclararFaltantes from './DeclararFaltantes';
@@ -51,13 +52,17 @@ export function Recorrido({ meta, className = '' }) {
  * el vencimiento y cuántas unidades. Antes era «GENERICO · 01 feb 29 — 30
  * unidades» en tinta terciaria de 9 px. */
 function ChipsDeLote({ lote: l }) {
+    const generico = esLoteGenerico(l.lote);
     return (
         <span className="flex flex-wrap items-center gap-1 text-micro font-bold text-content-2">
-            <span className="inline-flex items-center gap-1 rounded-md bg-surface-input px-1.5 py-0.5 ring-1 ring-inset ring-divider">
+            <span className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 ring-1 ring-inset ${
+                generico ? 'bg-warning/10 ring-warning/30 text-warning-text' : 'bg-surface-input ring-divider text-content'
+            }`}>
                 <Hash size={10} strokeWidth={2.5} className="shrink-0 text-content-3" />
-                <span className="font-mono">{l.lote || 'sin lote'}</span>
+                <span className={generico ? '' : 'font-mono'}>{rotuloDeLote(l.lote)}</span>
             </span>
-            {l.vence && (
+            {/* La fecha de un GENERICO no es de ninguna caja: no se muestra. */}
+            {l.vence && !generico && (
                 <span className="inline-flex items-center gap-1 rounded-md bg-surface-input px-1.5 py-0.5 ring-1 ring-inset ring-divider">
                     <CalendarClock size={10} strokeWidth={2.5} className="shrink-0 text-content-3" />
                     {fmtFechaLarga(l.vence)}
@@ -66,6 +71,21 @@ function ChipsDeLote({ lote: l }) {
             <span className="tabular-nums text-content-3">
                 {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
             </span>
+        </span>
+    );
+}
+
+/* El lote dentro de un renglón de texto. El número es lo que se coteja contra
+ * la caja, así que va en tinta principal y no en la terciaria del resto; y la
+ * existencia sin lote asignado se dice como tal, en ámbar, sin su fecha —la de
+ * un GENERICO no es de ninguna caja—. */
+function LoteEnLinea({ lote, vence }) {
+    if (esLoteGenerico(lote))
+        return <span className="min-w-0 truncate font-bold text-warning-text">{rotuloDeLote(lote)}</span>;
+    return (
+        <span className="min-w-0 truncate">
+            <span className="font-mono font-bold text-content">{rotuloDeLote(lote)}</span>
+            {vence && <span className="text-content-2"> · vence {fmtFechaLarga(vence)}</span>}
         </span>
     );
 }
@@ -107,10 +127,7 @@ function ListaRenglones({ renglones, tope = null }) {
                         de arriba y no como un renglón más de la lista. */}
                     {r.lotes.map((l, i) => (
                         <p key={i} className="pl-3 flex items-baseline justify-between gap-2 text-micro font-semibold text-content-3">
-                            <span className="min-w-0 truncate">
-                                <span className="font-mono">{l.lote || 'sin lote'}</span>
-                                {l.vence && <span> · vence {fmtFechaLarga(l.vence)}</span>}
-                            </span>
+                            <LoteEnLinea lote={l.lote} vence={l.vence} />
                             <span className="shrink-0 tabular-nums">
                                 {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
                             </span>
@@ -237,6 +254,38 @@ export function DecisionTraslado({ fila, onHecho }) {
 
     const lineas = useMemo(() => (Array.isArray(disp?.lineas) ? disp.lineas : []), [disp]);
 
+    /* ── El lote de la caja, para lo que sale SIN lote asignado (2026-11-05) ──
+     *
+     * En un producto regulado, la existencia sin lote asignado («GENERICO» en
+     * el sistema) no puede viajar así: de la sala sale una caja con su lote
+     * impreso, y quien despacha es quien la tiene en la mano. Se le pide el
+     * lote y el vencimiento, y el servidor se los asigna a ESAS unidades antes
+     * de despachar — sin tocar ningún otro lote.
+     *
+     * Se pregunta ANTES cuando la solicitud ya reservó existencia sin lote; y
+     * si el servidor descubre otra (`FALTA_LOTE_DE_GENERICO`), la lista se
+     * reemplaza por la suya, que es la autoridad. */
+    const conGenerico = useMemo(() => items
+        .map((it, posicion) => ({
+            posicion, producto: it?.descripcion ?? `Producto ${it?.erp_product_id}`,
+            erp: Number(it?.erp_product_id),
+            unidades: (Array.isArray(it?.lotes) ? it.lotes : [])
+                .filter(l => esLoteGenerico(l?.lote))
+                .reduce((s, l) => s + (Number(l?.unidades) || 0), 0),
+        }))
+        .filter(x => x.unidades > 0), [items]);
+    const [regulados,       setRegulados]       = useState(null);   // Set de erp_product_id
+    const [sinLoteServidor, setSinLoteServidor] = useState(null);   // la lista del servidor, si la dio
+    const [loteCaja,        setLoteCaja]        = useState({});     // { [posicion]: { lote, vence } }
+    useEffect(() => {
+        if (conGenerico.length === 0) return undefined;
+        let cancelado = false;
+        fetchReguladosDe(conGenerico.map(x => x.erp)).then(reg => { if (!cancelado) setRegulados(reg); });
+        return () => { cancelado = true; };
+    }, [conGenerico]);
+    // [{ posicion, producto, unidades }]
+    const sinLote = sinLoteServidor ?? (regulados ? conGenerico.filter(x => regulados.has(x.erp)) : []);
+
     /* Todavía no se sabe qué hay: o está viajando la respuesta, o no se pudo
      * preguntar. En los dos casos la tarjeta se comporta como antes de que esto
      * existiera —se manda lo pedido y decide el servidor—, que es lo único
@@ -254,6 +303,11 @@ export function DecisionTraslado({ fila, onHecho }) {
     // Lo que va a viajar. Índices con su cantidad, nunca los renglones.
     const { aceptadas, hayQueMandar, recortado, nadaEnFisico } = loQueSeManda(lineas, items, cuantos);
 
+    // El lote de la caja sólo para los renglones que salen: uno recortado a
+    // cero no lleva caja.
+    const pidenLote = sinLote.filter(x => sinDatos || !recortado || aceptadas.some(a => a.i === x.posicion));
+    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.lote?.trim() && loteCaja[x.posicion]?.vence);
+
     // A quién más pedirle: la cuenta vive en `utils/decisionTraslado`.
     const sugerencia = sugerenciaDeRechazo(lineas, items);
 
@@ -265,9 +319,20 @@ export function DecisionTraslado({ fila, onHecho }) {
             // `null` es «sale todo lo pedido»: el camino normal hace exactamente
             // el mismo viaje que antes de que existiera el despacho parcial.
             recortado ? aceptadas : null,
+            pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion] })),
         );
         setOcupado(false);
-        if (!r?.ok) { setError(r?.error ?? 'No se pudo despachar.'); return; }
+        if (!r?.ok) {
+            // El servidor encontró existencia sin lote que la pantalla no
+            // conocía: se piden ésos, con lo que ya se haya escrito.
+            if (r?.codigo === 'FALTA_LOTE_DE_GENERICO' && Array.isArray(r.lineas)) {
+                setSinLoteServidor(r.lineas.map(x => ({
+                    posicion: x.posicion, producto: x.producto, unidades: x.unidades,
+                })));
+            }
+            setError(r?.error ?? 'No se pudo despachar.');
+            return;
+        }
 
         /* El ticket que va pegado a la bolsa, y que reemplaza al tirro escrito a
          * mano. Sale DESPUÉS del despacho y no antes, por dos motivos: lleva el
@@ -327,7 +392,8 @@ export function DecisionTraslado({ fila, onHecho }) {
 
     // Y la misma regla del otro lado: mandar de menos también hay que explicarlo.
     // El servidor lo exige igual; acá se avisa para no gastar el viaje.
-    const puedeConfirmar = sinDatos || (hayQueMandar && (!recortado || porQue.trim().length > 0));
+    const puedeConfirmar = lotesCompletos
+        && (sinDatos || (hayQueMandar && (!recortado || porQue.trim().length > 0)));
 
     return (
         <div className="flex flex-col gap-2">
@@ -419,6 +485,46 @@ export function DecisionTraslado({ fila, onHecho }) {
                         );
                     })}
                 </ul>
+            )}
+
+            {/* ── Sin lote asignado: el lote lo dice la caja ──────────────────
+                Ámbar y con borde: es lo único de la tarjeta que hay que leer EN
+                la caja y no en la pantalla. */}
+            {modo !== 'rechazo' && pidenLote.length > 0 && (
+                <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
+                    <p className="text-micro font-bold text-warning-text leading-snug">
+                        {pidenLote.length === 1
+                            ? 'Esto no tiene lote asignado. Copia el lote y el vencimiento que trae la caja:'
+                            : 'Estos productos no tienen lote asignado. Copia el lote y el vencimiento de cada caja:'}
+                    </p>
+                    {pidenLote.map(x => (
+                        <div key={x.posicion} className="flex flex-col gap-1">
+                            <p className="text-micro font-semibold text-content leading-snug">
+                                {x.producto}
+                                <span className="text-content-3"> · {x.unidades} {x.unidades === 1 ? 'unidad' : 'unidades'}</span>
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                                <PortalInput
+                                    value={loteCaja[x.posicion]?.lote ?? ''}
+                                    onChange={e => setLoteCaja(c => ({
+                                        ...c, [x.posicion]: { ...c[x.posicion], lote: e.target.value.toUpperCase() },
+                                    }))}
+                                    aria-label={`Lote de ${x.producto}`}
+                                    placeholder="N.º de lote" className="w-36"
+                                />
+                                <PortalInput
+                                    type="date"
+                                    value={loteCaja[x.posicion]?.vence ?? ''}
+                                    onChange={e => setLoteCaja(c => ({
+                                        ...c, [x.posicion]: { ...c[x.posicion], vence: e.target.value },
+                                    }))}
+                                    aria-label={`Vencimiento de ${x.producto}`}
+                                    className="w-40"
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
             )}
 
             {/* Mandar de menos hay que explicarlo: es lo único que va a llegarle
@@ -548,10 +654,11 @@ export function FilaPorConfirmar({ fila, nombrePor, onHecho, miBranch = null }) 
                     ) : lotesPedidos(meta).length > 0 && (
                         <div className="mt-1 flex flex-col gap-0.5">
                             {lotesPedidos(meta).map((l, i) => (
-                                <p key={i} className="text-micro text-content-2 font-semibold">
-                                    <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
-                                    {l.vence && <span className="text-content-3"> · {fmtFechaLarga(l.vence)}</span>}
-                                    {' — '}{l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                <p key={i} className="flex items-baseline justify-between gap-2 text-micro text-content-2 font-semibold">
+                                    <LoteEnLinea lote={l.lote} vence={l.vence} />
+                                    <span className="shrink-0 tabular-nums">
+                                        {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
+                                    </span>
                                 </p>
                             ))}
                         </div>
@@ -941,10 +1048,7 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                             <div className="flex flex-col gap-1">
                                 {lotes.map((l, i) => (
                                     <p key={i} className="flex items-baseline justify-between gap-2 text-label text-content-2 font-semibold">
-                                        <span className="min-w-0 truncate">
-                                            <span className="font-mono text-content-3">{l.lote || 'sin lote'}</span>
-                                            {l.vence && <span className="text-content-3"> · vence {fmtFechaLarga(l.vence)}</span>}
-                                        </span>
+                                        <LoteEnLinea lote={l.lote} vence={l.vence} />
                                         <span className="shrink-0 tabular-nums">
                                             {l.unidades} {l.unidades === 1 ? 'unidad' : 'unidades'}
                                         </span>

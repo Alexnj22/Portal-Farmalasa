@@ -243,10 +243,10 @@ const conBorrador = (inicial, guardado) => {
 // La viñeta que tiene hoy Bodega para la presentación con que entraría: la de
 // la revisión si ya se revisó, si no la de la propuesta (misma regla que el
 // servidor: la presentación del tamaño del factor, si no la de 1).
-const vinetaActual = (r, aj, sim) => {
+const vinetaActual = (r, aj, sim, lista) => {
     if (sim?.venta_anterior > 0) return Number(sim.venta_anterior);
     const f = Number(aj?.factor) || 1;
-    const l = r.vinetas ?? [];
+    const l = lista ?? r.vinetas ?? [];
     const v = (l.find(x => x.factor === f) ?? l.find(x => x.factor === 1))?.vineta;
     return Number(v) > 0 ? Number(v) : null;
 };
@@ -573,10 +573,17 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // X 2» por una caja de 50), el tamaño nunca se había calculado: se
         // calcula ahora contra el elegido, con la misma regla del servidor.
         const intacto = ajustes[i]?.cargar == null && String(ajustes[i]?.factor) === String(renglon.factor_proveedor ?? 1);
+        // Con otro producto también se traen SUS presentaciones (nombre y
+        // viñeta): sin ellas «Se carga como» no aparecía y «Regular» quedaba
+        // vacío (Bodega, AMLO-DENK, 2026-11-05).
         let factor = ajustes[i]?.factor;
-        if (producto.id !== renglon.producto_id && intacto && !['documento', 'aprendido'].includes(renglon.factor_origen)) {
+        let vinetas = null;
+        if (producto.id !== renglon.producto_id) {
+            setG(k);
             const r = await factorParaProducto({ productId: producto.id, costoNeto: renglon.costo_neto, descripcion: renglon.descripcion });
-            factor = r.factor ? String(r.factor) : '1';
+            setG(null);
+            vinetas = r.presentaciones;
+            if (intacto && !['documento', 'aprendido'].includes(renglon.factor_origen)) factor = r.factor ? String(r.factor) : '1';
         }
         if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
         if (llave && p.documento.emisor_nit) {
@@ -588,7 +595,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             setG(null);
             if (e) { setError(e); return; }
         }
-        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor } }));
+        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}) } }));
         setBusc(null);
         setRes(null);
     };
@@ -597,6 +604,13 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     // de barras o por el diccionario. Un parecido NUNCA viaja sin confirmar,
     // por alto que sea: acierta 91.5 % y un inventario mal cargado no avisa.
     // La revisión lo devuelve como «sin producto elegido», que es lo que es.
+    // Las presentaciones del producto que se va a cargar: las del ELEGIDO si
+    // se eligió otro, si no las del propuesto.
+    const vinetasDe = (r, i) => {
+        const e = elegidos[claveDe(r, i)];
+        if (e?.vinetas) return e.vinetas;
+        return !e || e.product_id === r.producto_id ? (r.vinetas ?? []) : [];
+    };
     const productoDe = (r, i) => elegidos[claveDe(r, i)]?.product_id
         ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) ? r.producto_id : null);
 
@@ -1022,14 +1036,14 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 // En qué presentación entra: la de su tamaño. Elegirla pone la
                                                 // cantidad (factura × tamaño); sólo con el producto propuesto,
                                                 // que es del que se conocen las presentaciones.
-                                                const pres = [...new Map((r.vinetas ?? []).map(x => [x.factor, x])).values()]
+                                                const pres = [...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]
                                                     .sort((a, b) => a.factor - b.factor);
                                                 // «1 × CAJA (50)» y no sólo «CAJA (50)»: al lado de «50» en
                                                 // unidades se leía «50 cajas» (Bodega, GRIPE-MED, 2026-11-05).
                                                 const f = Number(aj.factor) || 1;
                                                 const cuantas = (x) => Math.round(Number(r.cantidad) * f / x * 1000) / 1000;
-                                                if (pres.length < 2 || productoDe(r, i) !== r.producto_id) {
-                                                    const nombre = productoDe(r, i) === r.producto_id ? pres.find(x => x.factor === f)?.nombre : null;
+                                                if (pres.length < 2) {
+                                                    const nombre = pres.find(x => x.factor === f)?.nombre ?? null;
                                                     return (
                                                         <div className="min-w-0">
                                                             <p className={rotuloCampo('text-content-3', { denso: true })}>Se carga como</p>
@@ -1064,13 +1078,13 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 onChange={e => ajustar(i, 'lote', e.target.value)} />
                                             <CampoMesAnio label="Vence" value={aj.vence} onChange={v => ajustar(i, 'vence', v)} />
                                             {(() => {
-                                                const actual = vinetaActual(r, aj, sim);
+                                                const actual = vinetaActual(r, aj, sim, vinetasDe(r, i));
                                                 const nueva = Number(aj.venta);
                                                 const cambia = nueva > 0 && actual != null && Math.abs(nueva - actual) >= 0.005;
                                                 return (
                                                     <PortalInput compact labelDenso label="Regular" inputMode="decimal"
                                                         readOnly={!puedeEditar || aj.erroneo}
-                                                        placeholder={actual != null ? actual.toFixed(2) : 'la de Bodega'}
+                                                        placeholder={actual != null ? actual.toFixed(2) : 'sin cambio'}
                                                         value={aj.venta ?? ''}
                                                         onChange={e => ajustar(i, 'venta', e.target.value.replace(/[^\d.]/g, ''))}
                                                         helperText={cambia

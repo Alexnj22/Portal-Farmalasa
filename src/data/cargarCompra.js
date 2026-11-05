@@ -195,8 +195,8 @@ export async function factorParaProducto({ productId, costoNeto, descripcion }) 
     const { data, error } = await supabase.functions.invoke('leer-dte-json', {
         body: { modo: 'factor', product_id: productId, costo_neto: costoNeto ?? null, descripcion: descripcion ?? '' },
     });
-    if (error || !data?.factor) return { factor: null, origen: null, error: error?.message ?? 'sin respuesta' };
-    return { factor: Number(data.factor), origen: data.origen ?? null, error: null };
+    if (error || !data?.factor) return { factor: null, origen: null, presentaciones: null, error: error?.message ?? 'sin respuesta' };
+    return { factor: Number(data.factor), origen: data.origen ?? null, presentaciones: data.presentaciones ?? null, error: null };
 }
 
 /**

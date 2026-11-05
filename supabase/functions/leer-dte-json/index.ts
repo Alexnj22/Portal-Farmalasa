@@ -129,7 +129,7 @@ Deno.serve(async (req: Request) => {
         return new Response(JSON.stringify({ error: "product_id inválido" }), { status: 400, headers: cors });
       }
       const { data: pp, error: errF } = await admin.from("product_precios")
-        .select("factor, costo").eq("product_id", pid).eq("activo", true);
+        .select("factor, costo, vineta, presentaciones(tipo)").eq("product_id", pid).eq("activo", true);
       if (errF) throw errF;
       const desc = String(body?.descripcion ?? "");
       const uno = (pp ?? []).find((x) => Number(x.factor) === 1 && Number(x.costo) > 0);
@@ -140,7 +140,13 @@ Deno.serve(async (req: Request) => {
         costoNeto: Number(body?.costo_neto) || 0, costoUnidad: cu != null ? Number(cu) : null,
         presentaciones: (pp ?? []).map((x) => Number(x.factor)),
       });
-      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen }), { headers: cors });
+      // Las presentaciones van con su viñeta y su nombre —lo mismo que la
+      // propuesta trae del producto propuesto— para que la pantalla pinte
+      // «Se carga como» y el precio Regular del ELEGIDO. Sin el costo.
+      const presentaciones = (pp ?? []).map((x) => ({
+        factor: Number(x.factor), vineta: Number(x.vineta), nombre: (x as any).presentaciones?.tipo ?? null,
+      }));
+      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones }), { headers: cors });
     }
 
     // ── `barrido`: armar la lista de preguntas distintas ────────────────────

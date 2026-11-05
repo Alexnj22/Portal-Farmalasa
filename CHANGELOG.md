@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.6 — Cargar compra: el producto elegido trae sus presentaciones y su precio
+
+- **Al elegir otro producto, la pantalla trae sus presentaciones y su precio.** Reporte de Bodega con AMLO-DENK 5 MG. La carga estaba bien: 5 cajas de 5 blísteres son 25 unidades. Pero «Se carga como» no aparecía y «Regular» decía «la de Bodega», porque la pantalla solo conocía las presentaciones del producto PROPUESTO. Ahora el modo `factor` de `leer-dte-json` devuelve también las presentaciones del elegido (nombre y viñeta, sin costo), y «Se carga como» y «Regular» las usan. Si no hay precio, el campo dice «sin cambio».
+
 ## v2.1452.5 — Cargar compra: cajas a la vista y la falta de presentación explicada
 
 Reportes de Bodega con MONTREAL.

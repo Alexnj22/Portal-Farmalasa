@@ -5,6 +5,7 @@ import { FlatList, Text, View } from 'react-native';
 import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
 import FotoProducto from './FotoProducto';
+import BotonAgregar from './BotonAgregar';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
 import { navegar } from '../lib/navegar';
@@ -51,6 +52,7 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
                     <Text style={{ color: '#1A2600', fontSize: 12, fontWeight: '900' }}>−{ahorro}%</Text>
                   </View>
                 ) : null}
+                <BotonAgregar p={p} />
               </View>
               <Text style={{ fontSize: 13, fontWeight: '700', lineHeight: 17, color: colorSistema.texto, minHeight: 34 }}>{nombreProducto(p.nombre)}</Text>
               {p.precio != null ? (

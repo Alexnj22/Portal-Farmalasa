@@ -15,19 +15,20 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
-import { useFocusEffect, Stack } from 'expo-router';
+import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
-import { ESPACIO_BURBUJA, RADIO, Seccion, Vacio } from '../../../componentes/ui';
+import { ESPACIO_BURBUJA, Seccion, Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
 import { useOfertas } from '../../../lib/ofertas';
 import FilaProductos from '../../../componentes/FilaProductos';
+import BotonAgregar from '../../../componentes/BotonAgregar';
+import { PortadaOferta } from '../../../componentes/TarjetaOferta';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
-import { BUSQUEDAS, alCambiarVistos, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos, tonoDe } from '../../../lib/catalogo';
-import { LinearGradient } from 'expo-linear-gradient';
+import { BUSQUEDAS, alCambiarVistos, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 // Precio de mayoreo (2026-10-12): el catálogo se pide con la sesión, y a quien
@@ -122,49 +123,26 @@ export default function Catalogo() {
   // marca de activa), así que el carrusel y las filas no se rehacen.
   const filas = useMemo(() => (q ? null : (
     <>
-      <FilaProductos titulo="Mayor ahorro con tu tarjeta de Puntos Salud" sf="tag.fill" productos={ahorro} />
+      <FilaProductos titulo="Precio Preferente" sf="tag.fill" productos={ahorro} />
       <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
         accion={{ texto: 'Limpiar', alTocar: olvidarVistos }} />
     </>
   )), [q, ahorro, vistos]);
+  // Categorías en píldoras (2026-11-05, Tienda «Vitrina»): una fila baja en
+  // vez de los mosaicos de 60 px. Tocar una busca; tocarla otra vez la quita.
   const categorias = useMemo(() => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2, paddingVertical: 2 }}>
-      {/* «Todo»: quita la categoría o la búsqueda y vuelve a lo más vendido. */}
-      {(() => {
-        const activa = !texto;
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2, paddingVertical: 2 }}>
+      {[{ q: '', texto: 'Todo', sf: 'square.grid.2x2.fill' }, ...BUSQUEDAS].map((b) => {
+        const activa = b.q ? q === b.q && texto === b.q : !texto;
         return (
-          <Presionable key="todo" onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }}
-            accessibilityRole="button" accessibilityLabel="Todo, quitar el filtro" accessibilityState={{ selected: activa }}
-            style={({ pressed }) => ({ width: 86, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-            <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
-              <View style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center',
-                backgroundColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.07)' }}>
-                <Icono sf={activa ? 'square.grid.2x2.fill' : 'xmark'} respaldo="" tam={24} color={colorSistema.texto} />
-              </View>
-            </View>
-            <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
-              {activa ? 'Todo' : 'Quitar filtro'}
-            </Text>
-          </Presionable>
-        );
-      })()}
-      {BUSQUEDAS.map((b, i) => {
-        const activa = q === b.q && texto === b.q;
-        const [c1, c2] = tonoDe(i);
-        return (
-          <Presionable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
+          <Presionable key={b.q || 'todo'} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa && b.q ? '' : b.q); }}
             accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
-            style={({ pressed }) => ({ width: 86, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-            <View style={{ padding: 2.5, borderRadius: 22, borderWidth: 2, borderColor: activa ? t.color.magenta : 'transparent' }}>
-              <LinearGradient colors={[c1, c2]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-                style={{ width: 60, height: 60, borderRadius: RADIO.medio, alignItems: 'center', justifyContent: 'center' }}>
-                <Icono sf={b.sf} respaldo="" tam={26} color="#FFFFFF" />
-              </LinearGradient>
-            </View>
-            <Text numberOfLines={2} maxFontSizeMultiplier={1.2}
-              style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '600', textAlign: 'center', color: activa ? colorSistema.texto : colorSistema.texto2 }}>
-              {b.texto}
-            </Text>
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 14, borderRadius: 999,
+              backgroundColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)'),
+              borderWidth: 0.5, borderColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)'),
+              transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+            <Icono sf={b.sf} respaldo="" tam={13} color={activa ? '#FFFFFF' : t.color.magentaTexto} />
+            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 14, fontWeight: '700', color: activa ? '#FFFFFF' : colorSistema.texto }}>{b.texto}</Text>
           </Presionable>
         );
       })}
@@ -174,12 +152,11 @@ export default function Catalogo() {
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos /> : null}
-      {/* Ofertas vive acá desde el 2026-11-03 (antes, una pestaña). */}
-      {!q ? <AccesoOfertas /> : null}
-      {/* Categorías: mosaicos con su color y su ícono; tocar uno busca y
-          tocarlo otra vez lo quita. */}
+      {/* Debajo del banner (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
       {categorias}
-      {/* Debajo de las categorías (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
+      {/* Las ofertas en un carril (2026-11-05, «así ahí aparecen las ofertas,
+          más práctico»): antes era una tarjeta que llevaba a otra pantalla. */}
+      {!q ? <CarrilOfertas /> : null}
       {filas}
       <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>
     </View>
@@ -263,6 +240,7 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
         opacity: p.disponible ? 1 : 0.6, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <View>
         <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={sola ? 160 : 118} />
+        <BotonAgregar p={p} />
         {p.bajo_receta ? (
           <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
             <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>Bajo Receta</Text>
@@ -321,34 +299,35 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
   );
 });
 
-// La entrada a todas las ofertas (2026-11-03): cuántas hay vigentes y, si
-// alguna es exclusiva para socios, cuántas. Los datos son los mismos que ya
-// pidió el banner de arriba (lib/ofertas), así que no cuesta otra consulta.
-const AccesoOfertas = memo(function AccesoOfertas() {
+// Las ofertas vigentes en un carril (2026-11-05, Tienda «Vitrina»): cada una
+// con su portada chica y, a la derecha del título, «Ver todas». Los datos son
+// los mismos que ya pidió el banner (lib/ofertas): no cuesta otra consulta.
+const CarrilOfertas = memo(function CarrilOfertas() {
   const t = useTema();
   const datos = useOfertas((s) => s.datos);
-  const lista = datos?.ok ? (datos.ofertas ?? []) : [];
-  const exclusivas = lista.filter((o) => o.exclusiva).length;
-  const detalle = !datos ? 'Las promociones de la semana'
-    : !lista.length ? 'Pronto habrá nuevas'
-      : `${lista.length} vigente${lista.length === 1 ? '' : 's'}${exclusivas ? ` · ${exclusivas} solo para socios` : ''}`;
+  const lista = datos?.ok ? (datos.ofertas ?? []).filter((o) => o.disponible !== false) : [];
+  if (!lista.length) return null;
   return (
-    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/ofertas'); }}
-      accessibilityRole="button" accessibilityLabel={`Todas las ofertas. ${detalle}`}
-      style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <LinearGradient colors={[t.acentos.violeta.fuerte, t.color.magenta]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
-        style={{ borderRadius: RADIO.tarjeta, paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 12, overflow: 'hidden' }}>
-        <Text style={{ position: 'absolute', right: 34, top: -26, fontSize: 96, fontWeight: '900', color: 'rgba(255,255,255,0.1)' }}>%</Text>
-        <View style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.2)', alignItems: 'center', justifyContent: 'center' }}>
-          <Icono sf="tag.fill" respaldo="%" tam={20} color="#FFFFFF" />
-        </View>
-        <View style={{ flex: 1, gap: 1 }}>
-          <Text style={{ fontSize: 17, fontWeight: '800', color: '#FFFFFF' }}>Todas las ofertas</Text>
-          <Text style={{ fontSize: 13, color: 'rgba(255,255,255,0.9)' }}>{detalle}</Text>
-        </View>
-        <Icono sf="chevron.right" respaldo="›" tam={15} color="#FFFFFF" />
-      </LinearGradient>
-    </Presionable>
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 4 }}>
+        <Icono sf="flame.fill" respaldo="" tam={14} color={t.color.magentaTexto} />
+        <Text accessibilityRole="header" style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>Ofertas de la semana</Text>
+        <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/ofertas'); }} hitSlop={10} accessibilityRole="button"
+          accessibilityLabel={`Ver las ${lista.length} ofertas`} style={({ pressed }) => ({ minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Ver {lista.length > 1 ? `las ${lista.length}` : 'todo'}</Text>
+          <Icono sf="chevron.right" respaldo="›" tam={11} color={t.color.magentaTexto} />
+        </Presionable>
+      </View>
+      <FlatList horizontal data={lista.slice(0, 10)} keyExtractor={(o) => String(o.id)} showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}
+        renderItem={({ item: o }) => (
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/oferta/${o.id}`); }}
+            accessibilityRole="button" accessibilityLabel={`Oferta: ${o.titulo}${o.exclusiva ? ', sólo para socios' : ''}`}
+            style={({ pressed }) => ({ width: 230, borderRadius: 20, overflow: 'hidden', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <PortadaOferta oferta={o} alto={150} compartible={false} />
+          </Presionable>
+        )} />
+    </View>
   );
 });
 

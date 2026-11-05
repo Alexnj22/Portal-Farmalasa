@@ -46,8 +46,10 @@ export default function Pestanas() {
       {/* Ofertas dejó de ser pestaña (2026-11-03): se abre desde la Tienda.
           Su lugar es para Bienestar: la frase del día y la zona anti estrés. */}
       <NativeTabs.Trigger contentStyle={contenido} name="catalogo">
-        <NativeTabs.Trigger.Icon sf={{ default: 'pills', selected: 'pills.fill' }} md="medication" />
-        <NativeTabs.Trigger.Label>Tienda</NativeTabs.Trigger.Label>
+        {/* «Tienda Salud» con el ícono de tienda (2026-11-05, «y si a la tienda
+            le llamamos Tienda Salud… y en el menú usamos el ícono?»). */}
+        <NativeTabs.Trigger.Icon sf={{ default: 'storefront', selected: 'storefront.fill' }} md="storefront" />
+        <NativeTabs.Trigger.Label>Tienda Salud</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={contenido} name="bienestar">
         <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="spa" />

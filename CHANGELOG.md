@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1451.30 — Tienda Salud: vitrina con ofertas, categorías en píldoras y «+»
+
+- **App de clientes: la Tienda pasa a llamarse «Tienda Salud»**, con el ícono de tienda en la barra de abajo. Pedido del usuario: «y si a la tienda le llamamos Tienda Salud… y en el menú usamos el ícono?».
+- **Rediseño «Vitrina»** (opción B de la maqueta):
+  - El banner sigue arriba.
+  - Debajo, las categorías en píldoras bajas en lugar de mosaicos de 60 px.
+  - Luego **«Ofertas de la semana» en un carril** con su portada y «Ver las N», en lugar de la tarjeta que llevaba a otra pantalla («así ahí aparecen las ofertas, más práctico»).
+  - Después, «Precio Preferente» (antes «Mayor ahorro con tu tarjeta de Puntos Salud»), «Vistos recientemente» y «Lo más vendido».
+- **Botón «+» sobre la foto** de cada producto (cuadrícula y carriles): agrega al carrito sin abrir la ficha (`lib/agregarRapido.js`). Pide la ficha. Si el producto tiene **una** presentación, la agrega con los mismos datos que pone la ficha y con el mismo aviso de reserva repetida. Si tiene varias, abre la ficha para elegir, porque adivinar caja o unidad sería reservar algo que no se pidió.
+
 ## v2.1451.29 — Inicio: la marca de bajo mínimo cabe en una columna
 
 - En Top productos, la marca de bajo mínimo es ahora un texto chico («mín. 6/9» en una sala, «bajo mín. (4)» en la red) en vez de una pastilla: en una columna la pastilla cortaba el monto. Al pasar el puntero, un tooltip dice en qué salas y cuánto hay contra el mínimo.

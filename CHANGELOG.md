@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1452.10 — Cargar compra: los productos se actualizan al abrir la factura
+
+- **Los productos se actualizan al abrir la factura y con un botón.** Antes la carga juzgaba con la copia de productos de hasta 10 minutos atrás. Una ficha corregida en el sistema (un costo, una presentación) no contaba: NOR-CLAMIDA siguió con costo de tableta después de arreglarla. Ahora, al abrir una factura, el portal corre la misma sincronización del cron (una petición al sistema, ~5 s, no más de una por minuto) y después arma la propuesta. El botón «Actualizar productos» la repite sin perder lo ajustado. Si la sincronización falla, la carga sigue con lo que hay.
+
 ## v2.1452.9 — Cargar compra: freno de precio para un tamaño que el catálogo no vende
 
 - **Freno de precio para un tamaño que el catálogo no vende.** Ese tamaño entra en la presentación de 1. Si así cada unidad costaría menos de un quinto de su precio de venta, la de 1 es en realidad la caja entera y el tamaño no se propone. Caso: en Bodega, la «CAJA» de 1 de NOR-CLAMIDA quedó con costo de tableta ($0.087), y el precio pedía 30. Habrían entrado 30 cajas a $0.096.

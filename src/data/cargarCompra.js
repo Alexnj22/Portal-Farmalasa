@@ -186,6 +186,18 @@ export async function fetchProductosPorConfirmar(estado = 'pendientes', limite =
 }
 
 /**
+ * Traer los productos del sistema ahora, sin esperar la sincronización de cada
+ * 10 minutos: así una ficha recién corregida (costo, presentación) ya cuenta en
+ * la propuesta. El servidor no lo repite más de una vez por minuto. Nunca
+ * lanza: si no se pudo, la carga sigue con lo que hay.
+ */
+export async function refrescarCatalogo() {
+    const { data, error } = await supabase.functions.invoke('leer-dte-json', { body: { modo: 'refrescar_catalogo' } });
+    if (error) return { refrescado: false, error: error.message ?? 'No se pudo actualizar.' };
+    return { refrescado: !!data?.refrescado, error: data?.error ?? null };
+}
+
+/**
  * Cuántas unidades trae cada una del proveedor, contra el producto que Bodega
  * eligió a mano. Misma regla que la propuesta (documento → precio), corrida en
  * el servidor porque el costo del catálogo no se lee desde el navegador.

@@ -116,6 +116,33 @@ Deno.serve(async (req: Request) => {
       desde = null,
     } = body ?? {};
 
+    // ── `refrescar_catalogo`: traer los productos del sistema AHORA ─────────
+    //
+    // Bodega corrige una ficha en el sistema (un costo, una presentación) y la
+    // carga la juzgaba con la copia de hasta 10 minutos atrás: NOR-CLAMIDA
+    // seguía con costo de tableta después de corregirlo (2026-11-05). Corre la
+    // MISMA sincronización del cron —una sola petición al sistema, ~5 s—, y no
+    // más de una vez por minuto aunque varias pantallas la pidan.
+    if (modo === "refrescar_catalogo") {
+      const { data: ult, error: errU } = await admin.from("products_sync_log")
+        .select("checked_at").eq("success", true).order("checked_at", { ascending: false }).limit(1).maybeSingle();
+      if (errU) throw errU;
+      const hace = ult ? (Date.now() - new Date(ult.checked_at).getTime()) / 1000 : Infinity;
+      if (hace < 60) {
+        return new Response(JSON.stringify({ refrescado: false, hace_segundos: Math.round(hace) }), { headers: cors });
+      }
+      const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-products`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET")}` },
+        body: "{}", signal: AbortSignal.timeout(90_000),
+      });
+      const j = await r.json().catch(() => null);
+      if (!r.ok || !j?.success) {
+        return new Response(JSON.stringify({ refrescado: false, error: j?.error ?? `HTTP ${r.status}` }), { status: 502, headers: cors });
+      }
+      return new Response(JSON.stringify({ refrescado: true, cambios: j.product_changes ?? 0 }), { headers: cors });
+    }
+
     // ── `factor`: el tamaño contra el producto que Bodega eligió a mano ─────
     //
     // La propuesta lo calcula sólo contra el producto que ELLA encontró. Un

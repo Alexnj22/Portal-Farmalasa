@@ -29,7 +29,7 @@ import {
     fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos,
     fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence,
     fetchProveedoresParaPapel, fetchFacturasEnPapel, guardarFacturaEnPapel, descartarFacturaEnPapel,
-    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta, fetchPorLlegar, marcarPorLlegar, adjuntarNotaAFaltante, adjuntarNotaEnPapelAFaltante, darSalidaFaltante, comprobarSalidaFaltante,
+    fetchRegistroDeCompras, fetchPausaDeCompras, adelantarPropuesta, fetchPorLlegar, marcarPorLlegar, adjuntarNotaAFaltante, adjuntarNotaEnPapelAFaltante, darSalidaFaltante, comprobarSalidaFaltante, refrescarCatalogo,
 } from '@nucleo/data/cargarCompra';
 import PausaDeEscrituras from './PausaDeEscrituras';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
@@ -500,6 +500,10 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const claveBorrador = `cargar-compra:${papel ? `m${doc.manual_id}` : doc.document_id}`;
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
+        // Los productos al día ANTES de proponer: una ficha corregida en el
+        // sistema hace un minuto ya cuenta (NOR-CLAMIDA, 2026-11-05). Si no se
+        // pudo, se sigue con lo que hay.
+        await refrescarCatalogo();
         const { propuesta, error: e } = await fetchPropuesta(doc.document_id, doc.manual_id ?? null);
         if (e) { setError(e); return; }
         setP(propuesta);
@@ -1203,6 +1207,11 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                         <Button size="sm" variant="ghost" onClick={() => { clearDraft(claveBorrador); onCorregirPapel(); }}>Corregir factura</Button>
                     )}
                     <Button size="sm" variant="ghost" disabled={enviando} onClick={onCerrar}>Cerrar</Button>
+                    {p && !yaMandada && (
+                        <Button size="sm" variant="ghost" disabled={enviando || revisando}
+                            title="Vuelve a traer los productos (costos y presentaciones) y rearma la propuesta. Lo que ya ajustaste se conserva."
+                            onClick={cargar}>Actualizar productos</Button>
+                    )}
                     {puedeEditar && p && !yaMandada && (
                         <Button size="sm" variant={revision?.listo && revisionVigente ? 'ghost' : 'primary'} loading={revisando}
                             disabled={enviando} onClick={revisar}>Revisar carga</Button>

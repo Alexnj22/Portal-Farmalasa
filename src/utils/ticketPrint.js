@@ -631,7 +631,9 @@ const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 // títulos de sección. Tres escalones, todos con el MISMO `ESC ! n` ya medido en
 // estas impresoras (0x08 negrita, 0x01 letra chica, 0x10 doble alto):
 //
-//   · el título del papel  → `DESTACADO` (negrita, doble alto, letra normal)
+//   · el título del papel  → `SUBTITULO` (negrita, letra normal). Fue doble
+//                            alto unas horas: «hay textos muy grandes,
+//                            disminuye un poco» (usuario, 2026-11-06).
 //   · título de sección    → `SUBTITULO` (negrita en letra normal: más grande
 //                            que el cuerpo, sin cambiar de ancho de renglón)
 //   · los datos y las filas con monto → letra NORMAL, uno por renglón.
@@ -1053,7 +1055,7 @@ function filasEnLetraNormal(filas) {
 /** El título del papel —qué es este ticket—: lo primero que se lee. */
 function tituloDelPapel(titulo) {
     if (!titulo) return '';
-    return AIRE + DESTACADO
+    return AIRE + SUBTITULO
         + enRenglones(soloASCII(titulo).toUpperCase(), COLUMNAS_TICKET.normal).join('\n')
         + LETRA_CHICA;
 }
@@ -1166,7 +1168,7 @@ export function seccionesParaElPrograma(ticket) {
             // El reset va al final del MISMO renglón, no en el siguiente: un
             // código solo se lleva un renglón de rollo.
             ...totales.map(([r, v, destacado], i) => (i === 0 ? AIRE + DERECHA + LETRA_NORMAL : '')
-                + (destacado ? DESTACADO : '')
+                + (destacado ? SUBTITULO : '')   // 2026-11-06: sin doble alto, era muy grande
                 + dosColumnas(r, v, COLUMNAS_TICKET.normal)
                 + (destacado ? LETRA_NORMAL : '')),
         ] : []),

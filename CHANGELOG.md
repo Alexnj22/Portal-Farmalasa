@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1467.3 — Tickets: título y total sin doble alto
+
+«Me gustan, pero hay textos muy grandes, disminuye un poco» (usuario, con la
+tanda de Salud 4). El título del papel y el total destacado iban en doble alto;
+ahora en negrita de letra normal: siguen un escalón arriba del cuerpo, sin
+ocupar dos renglones.
+
 ## v2.1467.2 — Tickets: datos de a uno, en letra normal, sin negrita chica ni firmas
 
 Segunda vuelta con el papel de Salud 4 en la mano:

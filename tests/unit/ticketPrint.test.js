@@ -96,7 +96,7 @@ describe('el ticket que se manda al programa de impresión', () => {
         expect(s.pie.match(/\n+$/)[0].length).toBe(6);
     });
 
-    it('el total destacado sale en negrita y doble alto, y vuelve a letra normal', () => {
+    it('el total destacado sale en negrita (sin doble alto desde 2026-11-06), y vuelve a letra normal', () => {
         // El HTML lo pinta desde el primer dia (clase `grande`) y el rollo lo
         // ignoraba: los totales salian los tres iguales, asi que la cifra que
         // alguien cuenta con las manos no se distinguia de las que la explican
@@ -105,11 +105,11 @@ describe('el ticket que se manda al programa de impresión', () => {
         t.totales = [['VALES (2)', '-$350.50'], ['EFECTIVO', '$1,328.85', true]];
         const s = seccionesParaElPrograma(t);
 
-        // `ESC ! 0x18` = negrita (0x08) + doble alto (0x10) en UN codigo, el
-        // mismo comando con el que este ticket ya cambia de letra. Doble ANCHO
-        // no: partiria el renglon, que se rellena contando 40 columnas.
-        expect(s.cuerpo).toContain('\x1b!\x18EFECTIVO');
-        expect(s.cuerpo).not.toContain('\x1b!\x18VALES');
+        // `ESC ! 0x08` = negrita en letra normal. Fue negrita + doble alto
+        // (0x18) hasta el 2026-11-06: «hay textos muy grandes, disminuye un
+        // poco». Doble ANCHO nunca: partiria el renglon de 40 columnas.
+        expect(s.cuerpo).toContain('\x1b!\x08EFECTIVO');
+        expect(s.cuerpo).not.toContain('\x1b!\x08VALES');
         expect(s.cuerpo).not.toContain('\x1b!\x20');
 
         // Y se apaga en el MISMO renglon: un codigo suelto se lleva un renglon
@@ -325,11 +325,11 @@ describe('el interlineado de cada renglón', () => {
         pie: ['Gracias'],
     });
 
-    it('la letra chica avanza 31 puntos y el doble alto 62, no lo mismo', () => {
+    it('la letra chica avanza 31 puntos y la normal 38, no lo mismo', () => {
         const s = seccionesParaElPrograma(t());
         expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(31) + '\n');
-        const total = s.cuerpo.split('\n').find(l => l.includes('TOTAL'));
-        expect(total.endsWith('\x1b3' + String.fromCharCode(62))).toBe(true);
+        // Los totales van en letra normal: 24 puntos + el respiro.
+        expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(38) + '\n');
     });
 
     it('no mete nada adentro del código de barras (su largo es un \\n)', () => {

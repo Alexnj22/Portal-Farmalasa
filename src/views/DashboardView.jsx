@@ -119,6 +119,7 @@ import { hora12 } from '@nucleo/utils/hora';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../components/common/PuntoDeEstado';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit
@@ -3385,9 +3386,9 @@ const DashboardView = ({ openModal }) => {
             {/* Envuelve en angosto: el mes se salía de la tarjeta («Novie»). */}
             <div className="relative flex flex-wrap items-center justify-between gap-x-2 gap-y-1.5">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-brand/10 border border-brand/15 flex items-center justify-center">
+                <IconoEnCaja tamano="sm" tono="brand" className="border border-brand/15">
                   <Gift size={13} className="text-brand-text" strokeWidth={2}/>
-                </div>
+                </IconoEnCaja>
                 <TituloDeSeccion nivel="tarjeta">Cumpleaños</TituloDeSeccion>
               </div>
               <div className="ml-auto"><PeriodStepper

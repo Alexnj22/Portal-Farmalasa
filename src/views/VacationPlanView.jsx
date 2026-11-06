@@ -31,6 +31,7 @@ import { diasDeVacacion, diasUsadosPorPersona, elegibilidadDeVacaciones, planesV
 import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // El motivo del rechazo se baja al rechazar, no al entrar (2026-10-24).
 const PromptModal = dialogoDiferido(() => import('../components/common/PromptModal'));
 
@@ -283,9 +284,9 @@ const GanttChart = ({ plans, year }) => {
                                 )}
                                 <div className="flex items-center gap-2 group/row">
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
-                                        <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
+                                        <IconoEnCaja tamano="sm" forma="circulo" className="overflow-hidden border border-surface-card shadow-sm font-black text-label">
                                             <AvatarConEstado emp={emp} px={36} marco="" />
-                                        </div>
+                                        </IconoEnCaja>
                                         <span className="text-label font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors" title={emp?.name}>{shortEmployeeName(emp)}</span>
                                     </div>
                                     <div className="flex-1 h-7 bg-surface-card border border-divider rounded-xl relative overflow-visible">
@@ -1020,9 +1021,9 @@ const VacationPlanView = () => {
                                                         <DataRow key={p.id} className={`group/row ${isEditing ? 'bg-warning/10' : ''}`}>
                                                             <DataCell>
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
-                                                                    <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
+                                                                    <IconoEnCaja tamano="sm" forma="circulo" className="overflow-hidden border border-surface-card shadow-sm font-black text-label">
                                                                         <AvatarConEstado emp={p.employee} px={28} marco="" />
-                                                                    </div>
+                                                                    </IconoEnCaja>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee ? shortEmployeeName(p.employee) : '—'}</p>
                                                                     {p.metadata?.original_start_date && (
                                                                         <Badge variant="warning" size="sm" icon={Pencil} className="group/badge relative">
@@ -1099,9 +1100,9 @@ const VacationPlanView = () => {
                                             <div key={req.id} className="bg-warning/10 border border-warning/30 rounded-2xl p-4">
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
-                                                        <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
+                                                        <IconoEnCaja tamano="sm" forma="circulo" className="overflow-hidden border border-surface-card shadow-sm font-black text-label">
                                                             <AvatarConEstado emp={emp} px={36} marco="" />
-                                                        </div>
+                                                        </IconoEnCaja>
                                                         <div>
                                                             <p className="text-body-sm font-black text-content">{shortEmployeeName(emp)}</p>
                                                             <p className="text-caption text-content-3 font-medium">

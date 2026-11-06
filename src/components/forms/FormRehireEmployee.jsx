@@ -11,6 +11,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { CONTRATOS_DE_RECONTRATACION, TEMPORAL_LEGAL_BASIS_OPTIONS, horasAlCambiarContrato, horasValidas, sucursalesPorArea } from '@nucleo/utils/reingresoYRecontratacion';
 import { contratoConPlazo } from '@nucleo/utils/contrato';
 
+import IconoEnCaja from '../common/IconoEnCaja';
 // Los contratos, las áreas y las horas salen del núcleo (`reingresoYRecontratacion`).
 const CONTRACT_TYPE_OPTIONS = CONTRATOS_DE_RECONTRATACION;
 const portalProps = {
@@ -43,9 +44,9 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
 
             {/* TARJETA EMPLEADO */}
             <div className={`${island} flex items-center gap-4`}>
-                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-border-card shadow-md shrink-0 bg-surface-card-hover flex items-center justify-center">
+                <IconoEnCaja tamano="lg" className="overflow-hidden border-2 border-border-card shadow-md">
                     <AvatarConEstado emp={formData} px={64} marco="" />
-                </div>
+                </IconoEnCaja>
                 <div className="min-w-0">
                     <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>
                     <p className="font-black text-content text-body-xl leading-tight truncate">{formData.name}</p>

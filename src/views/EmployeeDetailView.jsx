@@ -59,6 +59,7 @@ import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../components/common/PuntoDeEstado';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
     const employees = useStaffStore(s => s.employees);
@@ -1037,9 +1038,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             </div>
                                         ) : (
                                             <div className="flex flex-col items-center justify-center py-16 opacity-50">
-                                                <div className="w-14 h-14 bg-surface-card-hover rounded-2xl flex items-center justify-center mb-3 border border-divider">
+                                                <IconoEnCaja tamano="lg" className="mb-3 border border-divider">
                                                     <Stethoscope size={24} className="text-content-3" strokeWidth={1.5}/>
-                                                </div>
+                                                </IconoEnCaja>
                                                 <p className="font-black uppercase tracking-widest text-label text-content-3">
                                                     {ausenciasSelectedDay ? `Sin ausencias el ${ausenciasSelectedDay}` : 'Sin Ausencias este Mes'}
                                                 </p>

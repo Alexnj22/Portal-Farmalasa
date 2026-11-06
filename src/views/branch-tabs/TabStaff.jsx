@@ -28,6 +28,7 @@ import { sincronizarVentasDeSucursal } from '@nucleo/data/branches';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
 // ============================================================================
@@ -747,9 +748,9 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {isFarmacia && (wfmApplied || isNewBranch) && (
                                 <div data-surface="card" data-tono="brand" className="p-5 relative z-base mb-8 animate-in slide-in-from-bottom-4 duration-[var(--dur-lento)]">
                                     <div className="flex items-center gap-3 mb-4">
-                                        <div className="w-10 h-10 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shadow-sm">
+                                        <IconoEnCaja forma="circulo" tono="chart-1" className="shadow-sm">
                                             <BarChart3 size={20} strokeWidth={2.5} />
-                                        </div>
+                                        </IconoEnCaja>
                                         <div>
                                             <h4 className="text-body font-black uppercase tracking-widest text-brand-text leading-none">Análisis en vivo</h4>
                                             <p className="text-caption font-black text-content-3 mt-1 uppercase tracking-widest">Las horas de la sala, al momento</p>

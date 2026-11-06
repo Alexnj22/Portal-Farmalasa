@@ -44,6 +44,7 @@ import { descargarArchivo } from '../plataforma/descargas';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { auditarDia, marcasEsperadas, resumenDeQuincena, RESUMEN_VACIO, ROTULO_MARCA, tiposDeMarcaParaCorregir, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/auditoriaDeTiempos';
 
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // ── Constants ─────────────────────────────────────────────────────────────────
 const EMPTY_ARRAY = [];
 const PUNCH_TYPE_LABELS = ROTULO_MARCA;   // núcleo (`auditoriaDeTiempos`)
@@ -1207,9 +1208,9 @@ const AttendanceAuditView = () => {
                   return (
                     <div key={branchId} className="space-y-2">
                       <div className="flex items-center gap-3 px-1 pt-1">
-                        <div className="w-7 h-7 rounded-xl bg-brand/10 flex items-center justify-center shrink-0">
+                        <IconoEnCaja tamano="sm" tono="brand">
                           <Building2 size={13} className="text-brand-text" strokeWidth={2.5} />
-                        </div>
+                        </IconoEnCaja>
                         <div className="min-w-0">
                           <p className="text-body-sm font-black text-content-2 leading-none">{bName}</p>
                           <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">

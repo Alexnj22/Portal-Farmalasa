@@ -20,6 +20,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { datosDelDiaParaGuardar, limitesDeLaSalaElDia, turnosQueCabenElDia } from '@nucleo/utils/edicionDeHorario';
 
+import IconoEnCaja from '../../../components/common/IconoEnCaja';
 // «16:00» → «4:00 p. m.», del canónico.
 const formatTime12hStr = (time24) => hora12(time24);
 
@@ -237,9 +238,9 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
 
     const encabezado = (
         <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
+            <IconoEnCaja className="overflow-hidden border border-border-card shadow-sm">
                 <AvatarConEstado emp={employee} px={28} marco="" />
-            </div>
+            </IconoEnCaja>
             <div className="min-w-0">
                 <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>
                 <p className="text-caption font-black text-brand-text uppercase tracking-widest leading-none mt-0.5 capitalize">

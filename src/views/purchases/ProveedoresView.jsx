@@ -24,6 +24,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 const SIN_CATEGORIA = '__sin_categoria__';
 
 const TABS = [
@@ -580,9 +581,9 @@ export default function ProveedoresView({ openModal }) {
                             </DataCell>
                             <DataCell>
                                 <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-8 h-8 rounded-xl bg-surface-card-hover/80 border border-divider flex items-center justify-center shrink-0">
+                                    <IconoEnCaja tamano="sm" className="border border-divider">
                                         <Building2 size={14} className="text-content-3" strokeWidth={2} />
-                                    </div>
+                                    </IconoEnCaja>
                                     <div className="min-w-0 max-w-[168px]">
                                         <p className="text-body-sm font-bold text-content-2 truncate" title={row.nombre}>{row.nombre}</p>
                                         {row.alias && (

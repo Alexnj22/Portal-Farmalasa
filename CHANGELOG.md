@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.9 — Íconos en caja
+
+- **El ícono en una caja de color sale de un solo componente, `IconoEnCaja`**: tres tamaños (32, 40 y 48px), cuadro o círculo, y fondo neutro o teñido al 10% con el ícono en el color de su tono. Había 78 cajas en 12 tamaños; se pasaron 37 en 24 archivos.
+- Las cajas neutras cuyo ícono tenía un color con significado (verde, rojo, de marca) se dejaron como estaban: la primera pasada les quitaba ese color, se vio en el diff y se rehízo.
+- Revisado en el navegador, en escritorio: Cargos, Cotizaciones y Ventas.
+- Gate nuevo `icono-en-caja-a-mano` (trinquete en 16). No cuenta los degradados, los fondos sólidos ni las fotos.
+
 ## v2.1461.8 — Anular o cambiar una venta la refresca en el momento
 
 Al aprobar una solicitud de facturación (anulación o cambio), `aplicar-solicitud-facturacion`

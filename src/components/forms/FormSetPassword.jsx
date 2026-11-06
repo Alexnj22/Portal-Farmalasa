@@ -8,6 +8,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
+import IconoEnCaja from '../common/IconoEnCaja';
 const FormSetPassword = ({ formData, onClose }) => {
     const [password, setPassword] = useState('');
     const [confirm, setConfirm] = useState('');
@@ -51,9 +52,9 @@ const FormSetPassword = ({ formData, onClose }) => {
     if (done) {
         return (
             <div className="flex flex-col items-center justify-center gap-3 py-10 animate-in fade-in duration-[var(--dur-slow)]">
-                <div className="w-14 h-14 rounded-full bg-success/10 border border-success/30 flex items-center justify-center">
+                <IconoEnCaja tamano="lg" forma="circulo" tono="success" className="border border-success/30">
                     <CheckCircle2 size={28} className="text-success" strokeWidth={2} />
-                </div>
+                </IconoEnCaja>
                 <p className="text-label font-black uppercase tracking-widest text-success">Contraseña establecida</p>
             </div>
         );

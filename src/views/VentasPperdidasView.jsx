@@ -18,6 +18,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { hoySV } from '@nucleo/utils/fecha';
 import { masSolicitados } from '@nucleo/utils/ventasPerdidas';
 
+import IconoEnCaja from '../components/common/IconoEnCaja';
 const TABS = [
     { key: 'pendiente', label: 'Pendiente' },
     { key: 'procesado', label: 'Procesado' },
@@ -154,9 +155,9 @@ export default function VentasPperdidasView() {
                     <div className="py-8"><SkeletonText lines={6} /></div>
                 ) : rows.length === 0 ? (
                     <div className="flex flex-col items-center gap-3 py-16">
-                        <div className="w-12 h-12 rounded-2xl bg-surface-card-hover border border-divider flex items-center justify-center">
+                        <IconoEnCaja tamano="lg" className="border border-divider">
                             <CheckCircle2 size={22} strokeWidth={1.5} className="text-content-3" />
-                        </div>
+                        </IconoEnCaja>
                         <p className="text-body-sm text-content-3 font-semibold">
                             {activeTab === 'pendiente'
                                 ? 'Sin ventas perdidas pendientes'

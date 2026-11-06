@@ -25,6 +25,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { evaluarCoberturaDelDia } from '@nucleo/utils/coberturaDelDia';
 import { descansosCortos } from '@nucleo/utils/reparosDeLaSemana';
 
+import IconoEnCaja from '../../../components/common/IconoEnCaja';
 // ============================================================================
 // 🛠️ ICONOS CUSTOM
 // ============================================================================
@@ -369,9 +370,9 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
         <tr className="group/row relative transition-[z-index] duration-[var(--dur-fast)] hover:z-sidebar">
             <td className="p-0 sticky left-0 z-tabs align-top h-px group-hover/row:z-sidebar min-w-[156px] max-w-[156px] 2xl:min-w-[172px] 2xl:max-w-[172px]">
                 <div className="min-h-[72px] h-full bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glass-2)] rounded-modal p-2.5 mx-1 flex items-center gap-2 transition-transform duration-[var(--dur-fast)] group-hover/row:scale-[1.01] overflow-hidden">
-                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-chart-3/30 overflow-hidden flex items-center justify-center shrink-0">
+                    <IconoEnCaja className="border border-chart-3/30 overflow-hidden">
                         <AvatarConEstado emp={emp} px={28} marco="" />
-                    </div>
+                    </IconoEnCaja>
                     <div className="min-w-0 flex-1 flex flex-col justify-center overflow-hidden gap-0.5">
                         <h4 className="font-black text-content text-body-sm truncate leading-tight" title={emp.name}>{shortName}</h4>
                         <div className="flex items-center gap-1">
@@ -773,9 +774,9 @@ const ScheduleCalendar = memo(({
                                                             <button key={e.id}
                                                                 onClick={() => { onAddCoverageEmployee?.(e.id); setShowCoverageSearch(false); setCoverageSearchTerm(''); }}
                                                                 className="flex items-center gap-2.5 p-2 rounded-xl hover:bg-chart-3/10 transition-colors text-left w-full">
-                                                                <div className="w-8 h-8 rounded-xl bg-surface-card-hover overflow-hidden shrink-0 flex items-center justify-center">
+                                                                <IconoEnCaja tamano="sm" className="overflow-hidden">
                                                                     <AvatarConEstado emp={e} px={28} marco="" />
-                                                                </div>
+                                                                </IconoEnCaja>
                                                                 <div className="min-w-0">
                                                                     <p className="text-body-sm font-black text-content truncate" title={e.name}>{shortEmployeeName(e)}</p>
                                                                     <p className="text-caption text-chart-3-text font-bold truncate">{br?.name || 'Sin sucursal'}</p>

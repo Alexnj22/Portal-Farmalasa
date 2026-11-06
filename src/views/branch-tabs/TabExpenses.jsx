@@ -10,6 +10,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { esInmuebleAlquilado, estadoDeServicio, gastosPorMes, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 // El dibujo arrastra `recharts` (95 kB gzip) y estaba en el cierre estático de
 // `BranchDetailView`: se bajaba al abrir cualquier sucursal para una gráfica de
 // una sola pestaña. Leer el encabezado de `GraficaGastos.jsx` antes de tocarlo.
@@ -298,9 +299,9 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                         {/* Tarjeta de Servicio Más Caro */}
                         <div data-surface="card" data-tono="warning" className="p-6 flex-1 flex flex-col justify-center relative overflow-hidden">
                             <div className="flex items-center gap-2 mb-2 relative z-base">
-                                <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center border border-warning/30">
+                                <IconoEnCaja tamano="sm" tono="warning" className="border border-warning/30">
                                     <Zap size={16} className="text-warning-text" strokeWidth={2.5}/>
-                                </div>
+                                </IconoEnCaja>
                                 <h5 className="text-caption font-black uppercase tracking-widest text-warning-text">Mayor Gasto Externo</h5>
                             </div>
                             <p className="text-title-sm font-black text-warning-text leading-tight relative z-base tracking-tight mt-1">

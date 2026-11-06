@@ -7,6 +7,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
+import IconoEnCaja from '../common/IconoEnCaja';
 const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
     const legalData = formData?.settings?.legal || {};
@@ -66,9 +67,9 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                 
                 {/* CABECERA DE LA TARJETA */}
                 <div className="flex items-center gap-3 mb-2 border-b border-border-card pb-4">
-                    <div className="w-10 h-10 rounded-xl bg-chart-1/10 text-brand-text border border-chart-1/30 flex items-center justify-center shadow-sm">
+                    <IconoEnCaja tono="chart-1" className="border border-chart-1/30 shadow-sm">
                         <Award size={20} strokeWidth={2.5}/>
-                    </div>
+                    </IconoEnCaja>
                     <div>
                         <h4 className="text-body font-black uppercase tracking-widest text-content leading-none mb-1">
                             Regencia Farmacéutica

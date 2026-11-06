@@ -26,6 +26,7 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { AMBITOS_DE_CARGO, bloqueoParaEliminarCargo, errorDeCargo, esCargoExterno, nombreDelSuperior, ocupantesDelCargo, ordenarPorJerarquia } from '@nucleo/utils/jerarquiaDeCargos';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección.
 const ROLE_TABS = [
@@ -497,9 +498,9 @@ const RolesView = ({ openModal }) => {
                                             Nombre del Cargo
                                         </label>
                                         <div className="relative group">
-                                            <div className="absolute left-4 top-1/2 -translate-y-1/2 w-8 h-8 bg-surface-card rounded-xl flex items-center justify-center text-content-3 shadow-sm transition-colors group-focus-within:text-brand-text group-focus-within:bg-brand/10">
+                                            <IconoEnCaja tamano="sm" className="absolute left-4 top-1/2 -translate-y-1/2 shadow-sm transition-colors group-focus-within:text-brand-text group-focus-within:bg-brand/10">
                                                 <Award size={16} />
-                                            </div>
+                                            </IconoEnCaja>
                                             <PortalInput
                                                 aria-label="Nombre del rol nuevo"
                                                 type="text"
@@ -684,9 +685,9 @@ const RolesView = ({ openModal }) => {
                                                 isEditingThis ? 'bg-warning/10 border-warning/30' : 'bg-surface-card-hover border-divider'
                                             }`}>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-xl bg-surface-card border border-border-card flex items-center justify-center text-content-3 shadow-sm">
+                                                    <IconoEnCaja tamano="sm" className="border border-border-card shadow-sm">
                                                         <Users size={14} strokeWidth={2.5} />
-                                                    </div>
+                                                    </IconoEnCaja>
                                                     <div>
                                                         <p className="text-micro text-content-2 font-black uppercase tracking-widest leading-none mb-0.5">Fuerza Laboral</p>
                                                         <p className="text-body-xl font-black tracking-tight text-content leading-none">

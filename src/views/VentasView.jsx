@@ -45,6 +45,7 @@ const DocumentoParaCliente = lazy(() => import('../components/facturacion/Docume
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
@@ -1423,9 +1424,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                         {r.emp ? (
                                             <AvatarConEstado emp={r.emp} px={36} marco="" />
                                         ) : (
-                                            <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
+                                            <IconoEnCaja tamano="sm" forma="circulo">
                                                 <Users size={14} className="text-content-3" />
-                                            </div>
+                                            </IconoEnCaja>
                                         )}
                                         <div>
                                             <p className="font-semibold text-body">{displayName}</p>
@@ -1472,9 +1473,9 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                         <DataCell><span className="text-caption text-warning-text/60 font-bold">—</span></DataCell>
                         <DataCell>
                             <div className="flex items-center gap-2.5">
-                                <div className="w-8 h-8 rounded-full bg-warning/10 flex items-center justify-center shrink-0">
+                                <IconoEnCaja tamano="sm" forma="circulo" tono="warning">
                                     <Users size={14} className="text-warning-text" />
-                                </div>
+                                </IconoEnCaja>
                                 <p className="font-semibold text-warning-text text-body">Cód. Incorrecto — {getBranchName(u.branch_id)}</p>
                             </div>
                         </DataCell>

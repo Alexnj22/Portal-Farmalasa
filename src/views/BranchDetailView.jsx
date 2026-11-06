@@ -26,6 +26,7 @@ import { sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 import { alertaDelExpediente, personalNormativoDeSucursal } from '@nucleo/utils/expedienteDeSucursal';
 import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
 
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
 // ============================================================================
@@ -240,7 +241,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                 {showProfile ? (
                     <div className="flex items-center gap-3 md:gap-4 px-2 md:px-4 h-full animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] w-max" onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-chart-1/10 text-brand-text flex items-center justify-center shrink-0"><MapPin size={14} strokeWidth={2.5} /></div>
+                            <IconoEnCaja tamano="sm" forma="circulo" tono="chart-1"><MapPin size={14} strokeWidth={2.5} /></IconoEnCaja>
                             <div className="flex flex-col">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest">Ubicación</span>
                                 <span className="text-label font-bold text-content-2 truncate max-w-[150px]">{liveBranch.address || "No registrada"}</span>
@@ -250,7 +251,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         {hasPhone && (
                             <>
                                 <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-full bg-success/10 text-success flex items-center justify-center shrink-0"><Phone size={14} strokeWidth={2.5} /></div>
+                                    <IconoEnCaja tamano="sm" forma="circulo" tono="success"><Phone size={14} strokeWidth={2.5} /></IconoEnCaja>
                                     <div className="flex flex-col">
                                         <span className="text-micro font-black text-content-2 uppercase tracking-widest">Contacto</span>
                                         <span className="text-label font-bold text-content-2 truncate max-w-[100px]">{liveBranch.phone || liveBranch.cell || "N/A"}</span>
@@ -260,7 +261,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                             </>
                         )}
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-warning/10 text-warning flex items-center justify-center shrink-0"><CalendarClock size={14} strokeWidth={2.5} /></div>
+                            <IconoEnCaja tamano="sm" forma="circulo" tono="warning"><CalendarClock size={14} strokeWidth={2.5} /></IconoEnCaja>
                             <div className="flex flex-col">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest">Horario ({todaySchedule.label})</span>
                                 <span className="text-label font-bold text-content-2 truncate max-w-[120px]">{todaySchedule.timeStr}</span>
@@ -268,7 +269,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                         </div>
                         <div className="w-px h-6 bg-divider shrink-0"></div>
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-full bg-chart-3/10 text-chart-3-text flex items-center justify-center shrink-0"><CircleUserRound size={14} strokeWidth={2.5} /></div>
+                            <IconoEnCaja tamano="sm" forma="circulo" tono="chart-3"><CircleUserRound size={14} strokeWidth={2.5} /></IconoEnCaja>
                             <div className="flex flex-col">
                                 <span className="text-micro font-black text-content-2 uppercase tracking-widest">Personal</span>
                                 <span className="text-label font-bold text-content-2 truncate max-w-[150px]">{currentStaff.length} Activos</span>

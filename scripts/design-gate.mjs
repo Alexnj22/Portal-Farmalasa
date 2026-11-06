@@ -1653,6 +1653,32 @@ function scanFile(path) {
     });
   }
 
+  // ── `icono-en-caja-a-mano` (2026-11-06, TRINQUETE) ────────────────────
+  // Un ícono en un cuadro o círculo con fondo neutro o teñido de un tono,
+  // escrito a mano en vez de `IconoEnCaja` (sm 32 · md 40 · lg 48px). Mira
+  // sólo lo que SÍ cabe en el componente: degradados, fondos sólidos y cajas
+  // neutras con un ícono de color con significado no cuentan. Había 78 cajas
+  // en 12 tamaños; se pasaron 37.
+  if (!path.includes('components/common/') && !hasException(path, 'icono-en-caja-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const m of line.matchAll(/className="([^"]*)"/g)) {
+        const t = m[1].split(/\s+/);
+        const w = t.find(c => /^w-(7|8|9|10|12|14)$/.test(c));
+        if (!w || !t.includes(`h-${w.slice(2)}`) || !t.includes('items-center') || !t.includes('justify-center')) continue;
+        if (t.some(c => /^(sm|md|lg|xl|2xl):(w|h)-/.test(c))) continue;
+        if (!t.some(c => /^rounded-(full|lg|xl|2xl|3xl|card|btn)$/.test(c))) continue;
+        const bgs = t.filter(c => /^bg-/.test(c));
+        if (bgs.length !== 1) continue;
+        const neutro = /^bg-surface-[\w-]+(\/\d+)?$/.test(bgs[0]);
+        const tinte = /^bg-(brand|success|warning|danger|chart-[134689])\/(5|8|10|12|15|20)$/.test(bgs[0]);
+        if (!neutro && !tinte) continue;
+        if (neutro && t.some(c => /^text-(brand|success|warning|danger|chart-\d)(-text)?$/.test(c))) continue;
+        findings.push({ line: i + 1, label: 'ícono en caja a mano — usar `<IconoEnCaja tamano="sm|md|lg" forma="cuadro|circulo" tono="…">`', category: 'icono-en-caja-a-mano', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
   // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
   // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
   // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y

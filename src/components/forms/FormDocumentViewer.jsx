@@ -4,6 +4,7 @@ import { Download, FileText, Loader2 } from 'lucide-react';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
+import IconoEnCaja from '../common/IconoEnCaja';
 const FormDocumentViewer = ({ formData }) => {
     const { url: storedUrl, title } = formData || {};
 
@@ -26,9 +27,9 @@ const FormDocumentViewer = ({ formData }) => {
         <div className="flex-1 min-h-0 flex flex-col bg-surface-card-hover/50">
             <div className="flex items-center justify-between p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-base">
                 <div className="flex items-center gap-4 min-w-0">
-                    <div className="w-12 h-12 rounded-2xl bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
+                    <IconoEnCaja tamano="lg" tono="chart-1" className="shadow-inner">
                         <FileText size={24} strokeWidth={1.5} />
-                    </div>
+                    </IconoEnCaja>
                     <div className="min-w-0">
                         <TituloDeSeccion nivel="modal" className="truncate">{title || 'Documento Adjunto'}</TituloDeSeccion>
                         <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>

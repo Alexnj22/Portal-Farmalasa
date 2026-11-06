@@ -6,6 +6,7 @@ import { CheckCircle2, ChevronRight, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useTamanoWidget } from './tamanoWidget';
 
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 // La baldosa que abre una solicitud, y el modal donde se arma.
 //
 // Los widgets de solicitudes —Ajuste de Inventario, Modificación a Facturación,
@@ -319,9 +320,9 @@ export default function LanzadorSolicitud({
                 <button type="button" aria-label={label} onClick={() => setAbierto(true)}
                     className="absolute inset-0 w-full h-full rounded-[inherit] cursor-pointer" />
                 <div className="w-full flex items-center gap-2.5 min-w-0 pointer-events-none">
-                    <div className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 bg-surface-card-hover">
+                    <IconoEnCaja tamano="sm">
                         <Icon size={15} strokeWidth={2} className="text-content-2" />
-                    </div>
+                    </IconoEnCaja>
                     <div className="flex-1 min-w-0">
                         <p className="text-body-sm font-black text-content leading-tight truncate">{label}</p>
                         {alto && descripcion && (

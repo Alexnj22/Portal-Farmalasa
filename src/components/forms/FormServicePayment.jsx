@@ -6,6 +6,7 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { diaDePago } from '@nucleo/utils/edicionDeSucursal';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
+import IconoEnCaja from '../common/IconoEnCaja';
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
  light: { title: 'Energía eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4', providerLabel: 'Compañía Eléctrica' },
@@ -80,9 +81,9 @@ const FormServicePayment = ({ formData, setFormData }) => {
         <div className="space-y-6">
             <div className={`p-6 rounded-modal border flex items-center justify-between shadow-sm ${config.color}`}>
                 <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 rounded-xl bg-surface-card flex items-center justify-center shadow-sm">
+                    <IconoEnCaja tamano="lg" className="shadow-sm">
                         <Icon size={24} />
-                    </div>
+                    </IconoEnCaja>
                     <div>
                         <TituloDeSeccion nivel="modal">{config.title}</TituloDeSeccion>
                         <p className="text-caption font-black uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>

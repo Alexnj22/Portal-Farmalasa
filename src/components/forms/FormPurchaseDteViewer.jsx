@@ -14,6 +14,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ivaDelDte } from '@nucleo/utils/dteIva';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
+import IconoEnCaja from '../common/IconoEnCaja';
 const fmt$ = (n) => formatMoney(n || 0);
 
 // Detalle de un DTE de compra: parsea el JSON crudo (esquema del Ministerio de
@@ -140,9 +141,9 @@ const FormPurchaseDteViewer = ({ formData }) => {
                     quiebre, los controles bajan a su propio renglón. */}
                 <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="flex items-center gap-3 md:gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
+                        <IconoEnCaja tamano="lg" tono="chart-1" className="shadow-inner">
                             <Receipt size={24} strokeWidth={1.5} />
-                        </div>
+                        </IconoEnCaja>
                         <div className="min-w-0">
                             <TituloDeSeccion nivel="modal" className="truncate">
                                 {document?.supplier_nombre || document?.emisor_nombre || 'Documento'}

@@ -12,6 +12,7 @@ import { ivaDelDte } from '@nucleo/utils/dteIva';
 import Notice from '../common/Notice';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
+import IconoEnCaja from '../common/IconoEnCaja';
 const fmt$ = (n) => formatMoney(n || 0);
 
 // Detalle de un DTE de VENTA. Es el espejo del de compras y comparte con él el
@@ -93,9 +94,9 @@ const FormSalesDteViewer = ({ formData }) => {
             <div className="p-6 border-b border-divider bg-surface-card shrink-0 shadow-sm z-base">
                 <div className="flex items-center justify-between gap-4">
                     <div className="flex items-center gap-4 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-chart-1/10 text-brand-text flex items-center justify-center shadow-inner shrink-0">
+                        <IconoEnCaja tamano="lg" tono="chart-1" className="shadow-inner">
                             <Receipt size={24} strokeWidth={1.5} />
-                        </div>
+                        </IconoEnCaja>
                         <div className="min-w-0">
                             {/* El receptor, no el emisor: en una venta el emisor
                                 somos nosotros y sería el mismo nombre siempre. */}

@@ -14,6 +14,7 @@ import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../components/common/PuntoDeEstado';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
 const SCAN_MIN_LENGTH = 3;
@@ -1123,9 +1124,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 <div className="lgn-entra relative z-base w-full max-w-[420px] my-auto">
                     <div className="rounded-header p-8 [@media(max-height:820px)]:p-6 bg-[var(--lgn-tarjeta)] border border-[var(--lgn-borde)] shadow-[var(--shadow-glass-5)] flex flex-col gap-6 [@media(max-height:820px)]:gap-4">
                         <div className="relative flex flex-col items-center gap-3">
-                            <div className="w-14 h-14 rounded-card bg-warning/10 border border-warning/40 flex items-center justify-center">
+                            <IconoEnCaja tamano="lg" tono="warning" className="border border-warning/40">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
-                            </div>
+                            </IconoEnCaja>
                             <TituloDeSeccion nivel="modal" className="text-center">Cambia tu contraseña</TituloDeSeccion>
                             <p className="text-caption font-black text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
                         </div>
@@ -1173,17 +1174,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             <button type="button" onClick={goToKiosko}
                                 className="group w-full p-3 [@media(max-height:700px)]:p-2 rounded-card bg-[var(--lgn-boton)] border border-[var(--lgn-borde)] flex items-center justify-between transition-[background-color,transform] duration-[var(--dur-fast)] active:scale-[0.98] hover:bg-[var(--lgn-boton-hover)]">
                                 <div className="flex items-center gap-3">
-                                    <div className="w-9 h-9 rounded-xl bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-surface-card-hover transition-colors shadow-sm">
+                                    <IconoEnCaja className="border border-border-card group-hover:bg-surface-card-hover transition-colors shadow-sm">
                                         <Clock size={15} className="text-content-3 group-hover:text-brand-text transition-colors" strokeWidth={2} />
-                                    </div>
+                                    </IconoEnCaja>
                                     <div className="text-left">
                                         <p className="text-caption font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
                                         <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
-                                <div className="w-7 h-7 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-[var(--dur-base)]">
+                                <IconoEnCaja tamano="sm" forma="circulo" className="border border-border-card group-hover:bg-brand group-hover:border-transparent transition-all duration-[var(--dur-base)]">
                                     <ArrowRight size={12} className="text-content-3 group-hover:text-white transition-colors" strokeWidth={2.5} />
-                                </div>
+                                </IconoEnCaja>
                             </button>
                         </>
                     )}
@@ -1261,9 +1262,9 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                         <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
-                                <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-[background-color,border-color] duration-[var(--dur-fast)]">
+                                <IconoEnCaja tamano="sm" forma="circulo" className="border border-border-card group-hover:bg-brand group-hover:border-transparent transition-[background-color,border-color] duration-[var(--dur-fast)]">
                                     <ArrowRight size={14} className="text-content-3 group-hover:text-white transition-colors" strokeWidth={2.5} />
-                                </div>
+                                </IconoEnCaja>
                             </button>
                         </div>
                     )}

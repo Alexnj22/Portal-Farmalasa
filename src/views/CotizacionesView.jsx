@@ -34,6 +34,7 @@ import {
 } from '@nucleo/utils/cotizacion';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 // ─── Constantes ───────────────────────────────────────────────────────────────
 // Las tasas y la aritmética: `cotizacion` (núcleo, la misma de la app).
 const RETENTION_THRESHOLD = UMBRAL_RETENCION;
@@ -460,9 +461,9 @@ export default function CotizacionesView() {
                 {/* ── Cabecera ─────────────────────────────────────────────── */}
                 <div data-surface="card" className="p-5 space-y-4">
                     <div className="flex items-center gap-2.5 pb-3 border-b border-border-card">
-                        <div className="w-8 h-8 rounded-xl bg-chart-1/10 text-chart-1-text border border-chart-1/30 flex items-center justify-center">
+                        <IconoEnCaja tamano="sm" tono="chart-1" className="border border-chart-1/30">
                             <FileText size={16} strokeWidth={2.5} />
-                        </div>
+                        </IconoEnCaja>
                         <TituloDeSeccion nivel="seccion">Datos Generales</TituloDeSeccion>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -541,9 +542,9 @@ export default function CotizacionesView() {
                 <div data-surface="card" className="p-5 space-y-3">
                     <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2.5">
-                            <div className="w-8 h-8 rounded-xl bg-success/10 text-success border border-success/30 flex items-center justify-center">
+                            <IconoEnCaja tamano="sm" tono="success" className="border border-success/30">
                                 <ShoppingCart size={16} strokeWidth={2.5} />
-                            </div>
+                            </IconoEnCaja>
                             <TituloDeSeccion nivel="seccion">
                                 Productos
                                 {items.length > 0 && <Badge variant="success" uppercase={false}>{items.length}</Badge>}
@@ -565,7 +566,7 @@ export default function CotizacionesView() {
 
                     {items.length === 0 ? (
                         <div className="flex flex-col items-center justify-center py-10 gap-3 text-content-3">
-                            <div className="w-12 h-12 rounded-2xl bg-surface-card-hover flex items-center justify-center border border-divider"><Package size={22} strokeWidth={1.5} /></div>
+                            <IconoEnCaja tamano="lg" className="border border-divider"><Package size={22} strokeWidth={1.5} /></IconoEnCaja>
                             <p className="text-body-sm font-bold">Busca y selecciona productos</p>
                         </div>
                     ) : (

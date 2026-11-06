@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.7 — El detalle del traslado dice qué lote viajó
+
+**Trazabilidad en el detalle de la solicitud.** Cada renglón de un traslado muestra ahora su lote y vencimiento (MM/AAAA). El dato ya estaba guardado y ninguna pantalla de Solicitudes lo leía. Se toma el más firme que haya: **Salió** (el lote que movió el despacho), **Apartado** (el que se asignó antes de salir, incluido el de la caja) o **Pidió** (el que eligió quien pidió). Un genérico se dice «Sin lote asignado» y sin fecha. Una línea que salió sin número no hereda el lote ni el vencimiento de otra. Helper `lotesPorRenglon` en `trasladoTexto.js`, con sus pruebas.
+
 ## v2.1455.6 — Cargar compra: la sugerencia de saldo también al elegir el producto a mano
 
 La sugerencia de saldo no aparecía al elegir RECARGA SALDO MOVISTAR a mano: el tamaño «por costo» proponía 195 y la regla «ya viene en dólares» lo comparaba contra eso. Ahora se compara contra la cantidad del papel, y no se repite cuando lo que se va a cargar ya coincide (Tigo con su 25 aprendido). Además, MOVIKAL «EPIN» deja de estar apartado como servicio y queda aprendido como RECARGA SALDO TIGO (las 5 compras cargadas de ese proveedor son Tigo, 212 × $0.8407).

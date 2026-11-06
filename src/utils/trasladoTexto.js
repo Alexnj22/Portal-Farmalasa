@@ -155,6 +155,75 @@ function lineasDelRenglon(items, idx, detalle) {
 }
 
 /**
+ * El lote de cada renglón de un traslado, para la trazabilidad: idx → lista de
+ * `{ lote, vence, unidades, fuente }`.
+ *
+ * Reportado con captura (2026-11-05): el detalle de la solicitud mostraba
+ * producto y cantidad pero NO el lote, aunque estaba guardado. Vive en tres
+ * sitios de la `metadata`, y se toma el más fuerte que haya:
+ *
+ *   1. `salio`    — `erp_traslado.detalle[].numero_lote`: lo que el sistema
+ *                   movió de verdad. Es la respuesta a «¿qué lote viajó?».
+ *   2. `apartado` — `lotes_asignados[idx]`: el que quien despacha apartó
+ *                   (o el de la caja, cuando salió sin lote).
+ *   3. `pedido`   — `items[idx].lotes`: el que eligió quien pidió.
+ *
+ * El detalle no guarda el vencimiento: se cruza con el apartado por
+ * `id_lote_erp` o por número, y si no coincide se deja en `null` — un
+ * vencimiento de OTRO lote al lado de éste sería un dato falso de trazabilidad.
+ * Una línea que salió sin número dice `lote: null` («sin lote»), no hereda el
+ * del pedido: el pedido pudo ser un genérico con otro vencimiento.
+ */
+export function lotesPorRenglon(meta) {
+    const items = Array.isArray(meta?.items) ? meta.items : [];
+    const detalle = Array.isArray(meta?.erp_traslado?.detalle) ? meta.erp_traslado.detalle : [];
+    const asignados = (meta?.lotes_asignados && typeof meta.lotes_asignados === 'object')
+        ? meta.lotes_asignados : {};
+    const out = new Map();
+
+    items.forEach((item, idx) => {
+        const asignado = asignados[idx] ?? asignados[String(idx)] ?? null;
+        const pedidos = (Array.isArray(item?.lotes) ? item.lotes : []).filter(l => l && (l.lote || l.vence));
+
+        const suyas = detalle.length > 0 ? lineasDelRenglon(items, idx, detalle) : null;
+        if (suyas && suyas.length > 0) {
+            out.set(idx, suyas.map(d => {
+                const lote = d?.numero_lote ? String(d.numero_lote) : null;
+                const coincide = asignado && (
+                    (d?.id_lote_erp && String(asignado.id_lote_erp ?? '') === String(d.id_lote_erp))
+                    || (lote && String(asignado.lote ?? '') === lote));
+                const pedido = lote ? pedidos.find(l => String(l.lote ?? '') === lote) : null;
+                return {
+                    lote,
+                    vence: (coincide ? asignado.vence : null) ?? pedido?.vence ?? null,
+                    unidades: Number(d?.cantidad) || 0,
+                    fuente: 'salio',
+                };
+            }));
+            return;
+        }
+        if (asignado && (asignado.lote || asignado.vence)) {
+            out.set(idx, [{
+                lote: asignado.lote ? String(asignado.lote) : null,
+                vence: asignado.vence ?? null,
+                unidades: Number(asignado.paquetes) || null,
+                fuente: 'apartado',
+            }]);
+            return;
+        }
+        if (pedidos.length > 0) {
+            out.set(idx, pedidos.map(l => ({
+                lote: l.lote ? String(l.lote) : null,
+                vence: l.vence ?? null,
+                unidades: Number(l.unidades) || null,
+                fuente: 'pedido',
+            })));
+        }
+    });
+    return out;
+}
+
+/**
  * La `metadata` vista desde lo que SALIÓ y no desde lo que se pidió.
  *
  * `metadata.items` es el pedido, y un despacho puede salir incompleto —«enviar

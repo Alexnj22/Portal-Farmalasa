@@ -129,7 +129,7 @@ const Badge = memo(({
 }) => {
     const palette = onDark ? ON_DARK : (tone === 'solid' ? SOLID : SOFT);
     return (
-        <span className={`inline-flex items-center rounded-badge border font-black leading-none
+        <span className={`inline-flex items-center whitespace-nowrap rounded-badge border font-black leading-none
             ${uppercase ? 'uppercase tracking-widest' : 'tracking-[-0.005em]'}
             ${SIZE[size] || SIZE.md}
             ${palette[variant] || palette.neutral}

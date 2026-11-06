@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.2 — Insignias en un renglón
+
+- **Una insignia ya no se parte en renglones.** En los pedidos de la distribuidora, «Descuento por aprobar» salía en tres renglones dentro de la columna de estado. `Badge` lleva `whitespace-nowrap`: una píldora es una sola línea. Verificado en el navegador contra el entorno de pruebas.
+
 ## v2.1461.1 — Errores que faltaban y entorno de pruebas
 
 - Tres errores que seguían escritos a mano (Traslados: «No se pudo cargar lo que viene de Bodega», la cartera de un cliente y el correo de un documento) pasan a `Notice`; los delató el navegador, al lado de uno ya migrado. `aviso-a-mano` ahora también ve el mensaje con texto delante y condiciones encadenadas.

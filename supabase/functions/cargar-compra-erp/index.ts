@@ -36,6 +36,10 @@ import {
   lineaDelSobre, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
+import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import {
+  devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
+} from "../_shared/erp-destrabe.ts";
 
 const COMPRAS = `${BASE}/compras.php`;
 const ERP_BODEGA = 6;
@@ -806,6 +810,11 @@ async function repartirASalas(admin: any, cookie: string, lineas: LineaReparto[]
  */
 async function recibirReparto(admin: any, id: number, vences: Record<string, string>, quien: { id: string; name: string }) {
   if (!Number.isFinite(id)) return { error: "Falta el envío." };
+  // Destrabar una ficha sólo se empieza si alcanza para terminar y devolverla
+  // (ver `_shared/erp-destrabe.ts`). Esta acción no tenía reloj propio.
+  const inicio = Date.now();
+  const presupuesto = presupuestoDelWorker(inicio, 100_000, 100_000).ms;
+  const hayTiempoParaDestrabar = () => Date.now() - inicio < presupuesto - MARGEN_DESTRABE_MS;
   const permiso = await permisoDeModulo(admin, quien.id, "traslados", "can_edit");
   if (permiso.roto) return { error: permiso.roto };
   const { data: r, error: eR } = await admin.from("compra_reparto").select("*").eq("id", id).maybeSingle();
@@ -843,6 +852,8 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
 
   try {
     const cookie = await sesionEn(sala.erp, login);
+    // Fichas que una llamada muerta dejó destrabadas: se devuelven primero.
+    await devolverFichasHuerfanas(admin, "compra_reparto", cookie);
     const estado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
     // La pantalla de recepción sigue pintando un traslado ya recibido: sin
     // saber en qué está, no se recibe (sería recibirlo dos veces).
@@ -881,13 +892,38 @@ async function recibirReparto(admin: any, id: number, vences: Record<string, str
     }
     const antes = await existenciasDeUbicacion(cookie, sala.erp, sala.ubic);
     mandado = true;
-    const resp = await pedir(cookie, RECIBIR, new URLSearchParams({
-      process: "insert", datos: partes.join("#") + "#", cuantos: String(partes.length), total: total.toFixed(4), fecha: hoySV(),
-      concepto: armarConcepto(`PORTAL REC ${quien.name} COMPRA ${r.erp_compra_id ?? ""} ${r.emisor_nombre ?? ""}`).concepto,
-      destino: String(sala.ubic), id_traslado: String(r.erp_traslado_id),
-    }), { extra: { Referer: RECIBIR }, reintentos: 1 });
-    let ok = false;
-    try { ok = String(JSON.parse(resp)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+    /* Si la ficha cambió después del despacho (control de lote activado,
+     * presentación oculta), se destraba, se recibe y se deja como estaba: ver
+     * `_shared/erp-destrabe.ts`. Este camino no lo tenía (2026-11-06). El sobre
+     * es el que ya se armó y validó arriba, salvo que haya habido que mostrar
+     * una presentación: entonces se rearma con los renglones nuevos. */
+    const filasHtml = filasDeRecibir(html);
+    const concepto = armarConcepto(`PORTAL REC ${quien.name} COMPRA ${r.erp_compra_id ?? ""} ${r.emisor_nombre ?? ""}`).concepto;
+    const { resp: rr } = await recibirConDestrabe({
+      cookie, idMov: String(r.erp_traslado_id), filas: filasHtml,
+      trabas: trabasEnDetalle(admin, "compra_reparto", r, hayTiempoParaDestrabar),
+      recibir: async (fs) => {
+        let ps = partes, tot = total;
+        if (fs !== filasHtml) {
+          const nuevas = filasDeRecepcion(fs.join(""));
+          if (nuevas.length !== filas.length) return { ok: false, enviado: false, msg: "La recepción cambió al mostrar la presentación." };
+          tot = 0;
+          ps = nuevas.map((f) => {
+            tot += Number(f.compra) * Number(f.esp);
+            return [f.idProd, f.compra, f.venta, f.esp, f.unidad, fechas[f.idProd] ?? f.vence, f.idPres, f.esp].join("|");
+          });
+        }
+        const texto = await pedir(cookie, RECIBIR, new URLSearchParams({
+          process: "insert", datos: ps.join("#") + "#", cuantos: String(ps.length), total: tot.toFixed(4), fecha: hoySV(),
+          concepto, destino: String(sala.ubic), id_traslado: String(r.erp_traslado_id),
+        }), { extra: { Referer: RECIBIR }, reintentos: 1 });
+        let ok = false, msg = texto.slice(0, 200);
+        try { const j = JSON.parse(texto); ok = String(j?.typeinfo).toLowerCase() === "success"; msg = String(j?.msg ?? msg); } catch { /* abajo */ }
+        return { ok, msg };
+      },
+    });
+    const ok = rr.ok;
+    const resp = rr.msg;
     if (!ok) {
       const despuesEstado = await estadoDeRecepcion(cookie, String(r.erp_traslado_id));
       if (despuesEstado === "pendiente") {

@@ -3726,6 +3726,110 @@ export type Database = {
           },
         ]
       }
+      bodega_a_vencidos: {
+        Row: {
+          cantidad: number
+          created_at: string
+          descripcion: string
+          detalle: string | null
+          devuelto_at: string | null
+          devuelto_por: string | null
+          devuelto_traslado_id: string | null
+          erp_product_id: number
+          erp_traslado_id: string | null
+          estado: string
+          factor: number
+          fotos: string[]
+          hecho_por: string
+          id: number
+          lote: string | null
+          motivo: string
+          nota: string | null
+          presentacion: string
+          sentido: string
+          unidades: number
+          updated_at: string
+          vence: string | null
+        }
+        Insert: {
+          cantidad: number
+          created_at?: string
+          descripcion: string
+          detalle?: string | null
+          devuelto_at?: string | null
+          devuelto_por?: string | null
+          devuelto_traslado_id?: string | null
+          erp_product_id: number
+          erp_traslado_id?: string | null
+          estado?: string
+          factor: number
+          fotos?: string[]
+          hecho_por: string
+          id?: never
+          lote?: string | null
+          motivo: string
+          nota?: string | null
+          presentacion: string
+          sentido?: string
+          unidades: number
+          updated_at?: string
+          vence?: string | null
+        }
+        Update: {
+          cantidad?: number
+          created_at?: string
+          descripcion?: string
+          detalle?: string | null
+          devuelto_at?: string | null
+          devuelto_por?: string | null
+          devuelto_traslado_id?: string | null
+          erp_product_id?: number
+          erp_traslado_id?: string | null
+          estado?: string
+          factor?: number
+          fotos?: string[]
+          hecho_por?: string
+          id?: never
+          lote?: string | null
+          motivo?: string
+          nota?: string | null
+          presentacion?: string
+          sentido?: string
+          unidades?: number
+          updated_at?: string
+          vence?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bodega_a_vencidos_devuelto_por_fkey"
+            columns: ["devuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bodega_a_vencidos_devuelto_por_fkey"
+            columns: ["devuelto_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bodega_a_vencidos_hecho_por_fkey"
+            columns: ["hecho_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bodega_a_vencidos_hecho_por_fkey"
+            columns: ["hecho_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bolsa_faltante: {
         Row: {
           cantidad: number
@@ -7718,6 +7822,7 @@ export type Database = {
           branch_id: number
           compra_carga_id: number
           created_at: string
+          detalle: Json | null
           emisor_nombre: string | null
           enviado_at: string | null
           enviado_por: string | null
@@ -7737,6 +7842,7 @@ export type Database = {
           branch_id: number
           compra_carga_id: number
           created_at?: string
+          detalle?: Json | null
           emisor_nombre?: string | null
           enviado_at?: string | null
           enviado_por?: string | null
@@ -7756,6 +7862,7 @@ export type Database = {
           branch_id?: number
           compra_carga_id?: number
           created_at?: string
+          detalle?: Json | null
           emisor_nombre?: string | null
           enviado_at?: string | null
           enviado_por?: string | null

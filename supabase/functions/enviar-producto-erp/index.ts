@@ -31,10 +31,8 @@ import {
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
-import { cambiarRegulado, leerFichaDe } from "../_shared/erp-regulado.ts";
 import {
-  type Destrabe, deshacerDestrabe, destrabeVacio, filasSinPresentacion, hayDestrabe, mostrarPresentacion,
-  presentacionesParaMostrar,
+  type Trabas, devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
 } from "../_shared/erp-destrabe.ts";
 
 // Empujar producto a otra sala: el traslado al REVÉS.
@@ -135,70 +133,9 @@ function lotesDeIda(l: Linea): { numero: string; vence?: string; paquetes: numbe
     .filter((x) => x.paquetes > 0);
 }
 
-/** Dónde guarda una recepción lo que le cambió a las fichas, y cuánto tiempo le queda. */
-interface Trabas {
-  /** Anota la marca ANTES de tocar una ficha (vacía = borrarla). `false` = no se pudo, y no se toca nada. */
-  anotar: (d: Destrabe) => Promise<boolean>;
-  /** ¿Alcanza el tiempo para quitar, recibir y devolver antes de que corten la llamada? */
-  hayTiempo: () => boolean;
-}
-
-// Lo que tarda el destrabe de punta a punta (leer, quitar, recibir, devolver,
-// verificar): mismo margen que los otros dos caminos que lo usan.
-const MARGEN_DESTRABE_MS = 45_000;
-
-/**
- * La marca de un renglón vive en `envio_linea.detalle.destrabe` y no en
- * `aviso`, que ya trae el texto del despacho (lote, área de vencidos) y que la
- * pantalla muestra. Ver `_shared/erp-destrabe.ts`.
- */
-function trabasDe(
-  admin: ClienteAdmin,
-  l: { id: string; detalle: Record<string, unknown> | null },
-  hayTiempo: () => boolean,
-): Trabas {
-  return {
-    hayTiempo,
-    anotar: async (d) => {
-      const { destrabe: _vieja, ...resto } = (l.detalle ?? {}) as Record<string, unknown>;
-      const detalle = hayDestrabe(d) ? { ...resto, destrabe: { ...d, at: new Date().toISOString() } } : resto;
-      const { error } = await admin.from("envio_linea")
-        .update({ detalle, updated_at: new Date().toISOString() }).eq("id", l.id);
-      if (error) {
-        console.error(`[enviar-producto-erp] marca de destrabe de ${l.id}: ${error.message}`);
-        return false;
-      }
-      l.detalle = detalle;
-      return true;
-    },
-  };
-}
-
-/**
- * Fichas que una llamada muerta dejó cambiadas (sin control de lote, o con una
- * presentación a la vista que estaba oculta): se devuelven y se borra la
- * marca. Sólo marcas de hace más de 3 minutos, para no pisar un destrabe que
- * otra llamada está haciendo ahora. La ficha es una para todas las salas, así
- * que cualquier sesión sirve.
- */
-async function devolverFichasHuerfanas(admin: ClienteAdmin, cookie: string): Promise<void> {
-  const { data, error } = await admin.from("envio_linea")
-    .select("id, detalle")
-    .not("detalle->destrabe", "is", null)
-    .lt("updated_at", new Date(Date.now() - 3 * 60_000).toISOString())
-    .limit(50);
-  if (error) { console.error(`[enviar-producto-erp] no se pudieron leer las marcas de destrabe: ${error.message}`); return; }
-  for (const fila of (data ?? []) as { id: string; detalle: Record<string, unknown> | null }[]) {
-    const m = (fila.detalle?.destrabe ?? {}) as { lote?: unknown[]; pres?: { prod?: number; pres?: string }[] };
-    const marca: Destrabe = {
-      lote: (m.lote ?? []).map(Number).filter(Boolean),
-      pres: (m.pres ?? []).filter((p) => p?.prod && p?.pres) as { prod: number; pres: string }[],
-    };
-    const { pendiente, errores } = await deshacerDestrabe(cookie, marca);
-    if (errores.length) console.error(`[enviar-producto-erp] ${fila.id}: ficha sin devolver: ${errores.join("; ")}`);
-    await trabasDe(admin, fila, () => true).anotar(pendiente);
-  }
-}
+/** La marca de un renglón: `envio_linea.detalle.destrabe` (ver `_shared/erp-destrabe.ts`). */
+const trabasDe = (admin: ClienteAdmin, l: { id: string; detalle: Record<string, unknown> | null }, hayTiempo: () => boolean) =>
+  trabasEnDetalle(admin, "envio_linea", l, hayTiempo);
 
 /**
  * Recibir UN movimiento en la sala que lo espera.
@@ -240,143 +177,49 @@ async function recibirIda(
     return { ok: false, anulado: true, error: `${nombre}: el movimiento ${idIda} está anulado, así que el producto no entró.` };
   if (antes === "recibido") return { ok: true, ya: true };
 
-  const leerFilas = async () => {
-    const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idIda)}`,
-      undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
-    return [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
-      .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
-  };
-  const filas = await leerFilas();
+  const filas = filasDeRecibir(await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idIda)}`,
+    undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } }));
   if (filas.length === 0) return { ok: false, error: `El movimiento ${idIda} de ${nombre} no muestra líneas para recibir.` };
 
-  const destrabe = destrabeVacio();
-  const nombres = new Map<number, string>();
-  // Con esto puesto no se envía nada: se va al camino del fallo, que devuelve
-  // las fichas antes de contestar.
-  let noEnviar: string | null = null;
-
-  /* La presentación con que salió ya no está a la vista: la pantalla pinta el
-   * `<select>` vacío y el renglón no se puede recibir ni a mano. Se muestra, se
-   * relee la pantalla, se recibe y se vuelve a ocultar. */
-  let filasR = filas;
-  const sinPres = filasSinPresentacion(filas);
-  if (sinPres.length) {
-    for (const s of sinPres) nombres.set(s.prod, s.nombre);
-    if (!trabas.hayTiempo()) {
-      noEnviar = "Una presentación del producto está oculta en la ficha y no quedaba tiempo para destrabarla. Vuelve a intentarlo.";
-    } else {
-      const r = await presentacionesParaMostrar(cookie, sinPres)
-        .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
-      if (!r.ok) noEnviar = r.motivo;
-      else {
-        destrabe.pres = r.pres;
-        if (!(await trabas.anotar(destrabe))) {
-          destrabe.pres = [];
-          noEnviar = "No se pudo anotar el destrabe de la presentación. Vuelve a intentarlo.";
-        } else {
-          try {
-            for (const p of r.pres) await mostrarPresentacion(cookie, p.prod, p.pres, true);
-            filasR = await leerFilas();
-          } catch (e) {
-            noEnviar = `No se pudo mostrar la presentación oculta: ${(e as Error).message}`;
-          }
-        }
+  const { resp, destrabado } = await recibirConDestrabe({
+    cookie, idMov: idIda, filas, trabas,
+    recibir: async (fs) => {
+      const partes: string[] = [];
+      let total = 0;
+      for (const tr of fs) {
+        const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
+        const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+        const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+        const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+        const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+        const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+        const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+        if (!idProd || !idPres) continue;
+        // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. Mismo lugar
+        // del string que en la salida, otro significado.
+        partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+        total += Number(compra) * Number(esp);
       }
-    }
-  }
-
-  const partes: string[] = [];
-  // Los renglones que llegan SIN lote, por producto: candidatos a la trampa del
-  // control de lote activado después del despacho.
-  const sinLote = new Map<number, string>();
-  let sinPresentacion = 0;
-  let total = 0;
-  for (const tr of filasR) {
-    const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
-    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
-    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
-    const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
-    if (idProd && !idPres) sinPresentacion++;
-    if (!idProd || !idPres) continue;
-    // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. Mismo lugar
-    // del string que en la salida, otro significado.
-    partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
-    // La 9.ª celda es «Lote» (encabezado: … Esperado · Recibido · Lote · Vence).
-    const celdas = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
-    if (!(celdas[8] ?? "").replace(/<[^>]+>/g, "").trim())
-      sinLote.set(Number(idProd), (celdas[1] ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
-    total += Number(compra) * Number(esp);
-  }
-  // Con un renglón sin presentación NO se envía: mandar el resto sería recibir
-  // de menos sin que nadie lo diga.
-  if (!noEnviar && sinPresentacion > 0)
-    noEnviar = `${nombre}: la presentación con que salió no está en su ficha; no se recibe a medias.`;
-  if (!noEnviar && partes.length === 0) noEnviar = `No se pudo leer ni una línea del movimiento ${idIda}.`;
-
-  const enviarRecepcion = async () => leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
-    process: "insert",
-    datos: partes.join("#") + "#",
-    cuantos: String(partes.length),
-    total: total.toFixed(4),
-    fecha: hoySV(),
-    concepto,
-    destino: String(destino),
-    id_traslado: idIda,
-  }), { extra: { Referer: RECIBIR } }));
-  let resp = noEnviar ? { ok: false, msg: noEnviar } : await enviarRecepcion();
-
-  /* El control de lote se activó DESPUÉS de despachar: el renglón salió sin
-   * lote y el sistema no recibe un regulado sin lote. Se le quita el control,
-   * se recibe y se le vuelve a activar. Sólo si la recepción falló, no quedó
-   * recibida igual, y el producto sin lote HOY es regulado. */
-  if (!noEnviar && !resp.ok && sinLote.size > 0 && !trabas.hayTiempo()) {
-    resp = { ok: false, msg: `${resp.msg || "No se proporcionó un lote"} (vuelve a intentarlo: no quedaba tiempo para destrabar el lote)` };
-  }
-  if (!noEnviar && !resp.ok && sinLote.size > 0 && trabas.hayTiempo()
-      && await estadoDeRecepcion(cookie, idIda) !== "recibido") {
-    const regulados: number[] = [];
-    for (const id of sinLote.keys()) {
-      try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
-      catch { /* sin ficha legible no se toca */ }
-    }
-    if (regulados.length) {
-      for (const id of regulados) nombres.set(id, sinLote.get(id) ?? String(id));
-      destrabe.lote = regulados;
-      // Sin la marca escrita no se quita nada: es la única red si la llamada
-      // muere entre quitar y volver a activar.
-      if (!(await trabas.anotar(destrabe))) {
-        destrabe.lote = [];
-        resp = { ok: false, msg: "No se pudo anotar el destrabe del lote. Vuelve a intentarlo." };
-      } else {
-        try {
-          for (const id of regulados) await cambiarRegulado(cookie, id, false);
-          resp = await enviarRecepcion();
-        } catch (e) {
-          resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
-        }
-      }
-    }
-  }
-
-  // Se devuelven las fichas. Lo que no se pueda queda en la marca para
-  // `devolverFichasHuerfanas`; si todo volvió, la marca se borra.
-  let destrabado: string | undefined;
-  if (hayDestrabe(destrabe)) {
-    const { pendiente, errores } = await deshacerDestrabe(cookie, destrabe);
-    if (errores.length) console.error(`[enviar-producto-erp] ${idIda}: ficha sin devolver: ${errores.join("; ")}`);
-    await trabas.anotar(pendiente);
-    const n = (id: number) => nombres.get(id) ?? String(id);
-    destrabado = [
-      destrabe.lote.length ? `control de lote de ${destrabe.lote.map(n).join(", ")}` : "",
-      destrabe.pres.length ? `presentación oculta de ${destrabe.pres.map((p) => n(p.prod)).join(", ")}` : "",
-    ].filter(Boolean).join("; ");
-  }
+      if (partes.length === 0)
+        return { ok: false, enviado: false, msg: `No se pudo leer ni una línea del movimiento ${idIda}.` };
+      return leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+        process: "insert",
+        datos: partes.join("#") + "#",
+        cuantos: String(partes.length),
+        total: total.toFixed(4),
+        fecha: hoySV(),
+        concepto,
+        destino: String(destino),
+        id_traslado: idIda,
+      }), { extra: { Referer: RECIBIR } }));
+    },
+  });
 
   if (!resp.ok && await estadoDeRecepcion(cookie, idIda) !== "recibido")
-    return { ok: false, error: noEnviar ?? `El sistema no aceptó la entrada de ${nombre}: ${resp.msg || "sin detalle"}` };
+    return {
+      ok: false,
+      error: resp.enviado === false ? resp.msg : `El sistema no aceptó la entrada de ${nombre}: ${resp.msg || "sin detalle"}`,
+    };
   return { ok: true, ya: false, ...(destrabado ? { destrabado } : {}) };
 }
 
@@ -1130,7 +973,7 @@ Deno.serve(async (req) => {
 
       const cookie = await sesionEn(erpDestino);
       // Fichas que una llamada muerta dejó destrabadas: se devuelven primero.
-      await devolverFichasHuerfanas(admin, cookie);
+      await devolverFichasHuerfanas(admin, "envio_linea", cookie);
       /* La cola de recepción se lee UNA vez y se reusa 20 s: preguntar por
        * renglón cuesta 250-880 ms y una guarda que hace lenta la operación es
        * una guarda que alguien quita. El caso que decide —«no está en la
@@ -1536,7 +1379,7 @@ Deno.serve(async (req) => {
 
       try {
         const cookie = await sesionEn(erpDestino);
-        await devolverFichasHuerfanas(admin, cookie);
+        await devolverFichasHuerfanas(admin, "envio_linea", cookie);
         const entrada = await recibirIda(
           cookie, lectorDeRecepcion(cookie), idIda, nombre,
           armarConcepto(`${claveDe(sol.id, l.posicion)} REC ${yo}`).concepto,
@@ -1608,7 +1451,7 @@ Deno.serve(async (req) => {
       }, 409);
 
     const cookie = await sesionEn(erpOrigen);
-    await devolverFichasHuerfanas(admin, cookie);
+    await devolverFichasHuerfanas(admin, "envio_linea", cookie);
     const estadoDe = lectorDeRecepcion(cookie);
     const hechas: Record<string, unknown>[] = [];
     const fallos: { producto: string; error: string }[] = [];

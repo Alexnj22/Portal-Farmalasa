@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.5 — Devoluciones y repartos de compra también destraban la ficha al recibir
+
+El destrabe (control de lote activado o presentación oculta después del despacho)
+vivía copiado en pedidos y solicitudes, y faltaba en envíos (v2.1466.3),
+devoluciones de pedido y repartos de compra. Ahora es UNA función,
+`recibirConDestrabe` en `_shared/erp-destrabe.ts`, con la marca en
+`detalle.destrabe` (`trabasEnDetalle`) y el barrido `devolverFichasHuerfanas`.
+
+- `enviar-producto-erp` pasa a usarla (mismo comportamiento que v2.1466.3).
+- `devolver-pedido-erp`: la recepción en Bodega (o en la sala, si es sobrante) la usa.
+- `cargar-compra-erp`: la recepción del reparto en la sala la usa para el control
+  de lote. Una presentación oculta sigue frenando antes, en la comprobación de que
+  el traslado trae lo mismo que el envío.
+- Migración `20261106201627`: `compra_reparto.detalle jsonb`, para la marca.
+
 ## v2.1466.4 — Tickets con un poco más de aire entre renglones
 
 El apretado del 2026-11-04 dejó los renglones pegados y difíciles de leer. Se

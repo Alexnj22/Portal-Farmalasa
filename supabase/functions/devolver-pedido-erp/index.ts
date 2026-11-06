@@ -29,6 +29,9 @@ import {
   trasladoQueSalioPeseAlFallo,
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import {
+  devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
+} from "../_shared/erp-destrabe.ts";
 
 // Cuadra en el sistema lo que la sala contó distinto de lo que salió de Bodega.
 //
@@ -160,6 +163,8 @@ Deno.serve(async (req) => {
   // El presupuesto también mira la edad del WORKER: el reloj de 400 s corre
   // desde que arrancó, no desde este pedido. Ver `_shared/relojDelWorker.ts`.
   const PRESUPUESTO = presupuestoDelWorker(arranque, PRESUPUESTO_MS, 100_000).ms;
+  // Destrabar una ficha sólo se empieza si alcanza para terminar y devolverla.
+  const hayTiempoParaDestrabar = () => Date.now() - arranque < PRESUPUESTO - MARGEN_DESTRABE_MS;
 
   try {
     const cuerpo = await req.json().catch(() => ({}));
@@ -374,6 +379,8 @@ Deno.serve(async (req) => {
         const ubic = ubicacionDeTrabajo(mapaDestino);
         if (!ubic) throw new Error(`No se conoce la ubicación de trabajo de la sala ${erpDestino}.`);
         const c = await sesionEn(erpDestino, login);
+        // Fichas que una llamada muerta dejó destrabadas: se devuelven primero.
+        if (!simulacro) await devolverFichasHuerfanas(admin, "pedido_devolucion", c);
         // Con qué se comprueba, antes de cargar, si el movimiento ya entró.
         // Lee la cola una vez por sala — ver `lectorDeRecepcion`.
         const nueva = { cookie: c, comoVaLaEntrada: lectorDeRecepcion(c), ubic };
@@ -473,11 +480,9 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const pagina = await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(String(d.id_traslado))}`,
-          undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
-
-        const filas = [...pagina.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)]
-          .map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+        const filas = filasDeRecibir(await pedir(cookie,
+          `${RECIBIR}?id_movimiento=${encodeURIComponent(String(d.id_traslado))}`,
+          undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } }));
 
         if (filas.length === 0) {
           // Queda como red, no como detector: el listado ya se consultó arriba y
@@ -503,58 +508,55 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Se recibe COMPLETO lo que se despachó: la devolución ya salió de la
-        // sala con la cantidad acordada, y recibir de menos volvería a partir en
-        // dos el mismo producto.
-        const partes: string[] = [];
-        let total = 0;
-        for (const tr of filas) {
-          const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
-          const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
-          const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-          const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-          const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
-          const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-          const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
-          if (!idProd || !idPres) continue;
-          // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. El encabezado
-          // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
-          // RECIBIDO. Mismo lugar del string que en la salida, otro significado.
-          partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
-          total += Number(compra) * Number(esp);
-        }
-
-        if (partes.length === 0) {
-          if (!simulacro) {
-            // Devolverla a 'enviada' es lo que permite reintentarla. Si falla, se
-            // queda en 'recibiendo' y nadie la vuelve a tomar hasta el rescate.
-            await noCallar(
-              admin.from("pedido_devolucion")
-                .update({ estado: "enviada", updated_at: new Date().toISOString() }).eq("id", d.id),
-              `la devuelta a la cola de ${d.clave}`,
-              (m) => fallos.push({ clave: d.clave, error: m }),
-            );
-          }
-          fallos.push({ clave: d.clave, error: "No se pudo leer ni una línea del movimiento." });
-          continue;
-        }
-
         if (simulacro) {
-          hechas.push({ clave: d.clave, lineas: partes.length, simulacro: true });
+          hechas.push({ clave: d.clave, lineas: filas.length, simulacro: true });
           continue;
         }
 
+        /* Se recibe COMPLETO lo que se despachó: la devolución ya salió de la
+         * sala con la cantidad acordada, y recibir de menos volvería a partir en
+         * dos el mismo producto.
+         *
+         * Y destrabando la ficha si cambió después del despacho (control de
+         * lote activado, presentación oculta): ver `_shared/erp-destrabe.ts`.
+         * Este camino no lo tenía y el 2026-11-06 se encontró el hueco en los
+         * envíos; las devoluciones tenían el mismo. */
         const { concepto } = armarConcepto(`${d.clave} REC ${yo}`);
-        const resp = leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
-          process: "insert",
-          datos: partes.join("#") + "#",
-          cuantos: String(partes.length),
-          total: total.toFixed(4),
-          fecha: hoySV(),
-          concepto,
-          destino: String(ubicDestino),
-          id_traslado: String(d.id_traslado),
-        }), { extra: { Referer: RECIBIR } }));
+        const { resp, destrabado } = await recibirConDestrabe({
+          cookie, idMov: String(d.id_traslado), filas,
+          trabas: trabasEnDetalle(admin, "pedido_devolucion", d, hayTiempoParaDestrabar),
+          recibir: async (fs) => {
+            const partes: string[] = [];
+            let total = 0;
+            for (const tr of fs) {
+              const idProd = tr.match(/class="id_p">\s*([\d]+)/)?.[1] ?? "";
+              const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+              const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+              const venta  = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+              const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+              const esp    = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+              const vence  = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+              if (!idProd || !idPres) continue;
+              // ⚠️ El octavo campo acá NO es el lote: es lo ESPERADO. El encabezado
+              // lo dice —Esperado · Recibido · Lote · Vence— y `cant` es lo
+              // RECIBIDO. Mismo lugar del string que en la salida, otro significado.
+              partes.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+              total += Number(compra) * Number(esp);
+            }
+            if (partes.length === 0)
+              return { ok: false, enviado: false, msg: "No se pudo leer ni una línea del movimiento." };
+            return leerRespuesta(await pedir(cookie, RECIBIR, new URLSearchParams({
+              process: "insert",
+              datos: partes.join("#") + "#",
+              cuantos: String(partes.length),
+              total: total.toFixed(4),
+              fecha: hoySV(),
+              concepto,
+              destino: String(ubicDestino),
+              id_traslado: String(d.id_traslado),
+            }), { extra: { Referer: RECIBIR } }));
+          },
+        });
 
         if (!resp.ok) {
           // Un fallo NO prueba que no entró: el sistema contesta cosas que no se
@@ -603,6 +605,7 @@ Deno.serve(async (req) => {
             recibido_at: new Date().toISOString(),
             recibido_por: quien.id,
             error_msg: null,
+            ...(destrabado ? { aviso: `Se recibió destrabando la ficha y dejándola como estaba: ${destrabado}` } : {}),
             updated_at: new Date().toISOString(),
           }).eq("id", d.id),
           `la entrada de ${d.clave} a Bodega (el producto YA entró)`,
@@ -626,7 +629,7 @@ Deno.serve(async (req) => {
           );
         }
 
-        hechas.push({ clave: d.clave, lineas: partes.length, msg: resp.msg });
+        hechas.push({ clave: d.clave, lineas: filas.length, msg: resp.msg, ...(destrabado ? { destrabado } : {}) });
       }
 
       return json({

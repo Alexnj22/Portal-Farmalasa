@@ -25,6 +25,7 @@
 
 import { BASE, pedir } from "./erp-dte.ts";
 import { cambiarRegulado, leerFichaDe } from "./erp-regulado.ts";
+import { estadoDeRecepcion, RECIBIR } from "./erp-traslado.ts";
 
 const EDITAR = `${BASE}/editar_producto.php`;
 
@@ -116,4 +117,200 @@ export async function deshacerDestrabe(cookie: string, d: Destrabe): Promise<{ p
     if (e) { pendiente.pres.push(p); errores.push(`presentación ${p.pres} de ${p.prod}: ${e}`); }
   }
   return { pendiente, errores };
+}
+
+// ── El destrabe entero, para quien recibe ───────────────────────────────────
+//
+// Pedidos y solicitudes lo escribieron cada uno en su archivo, y los envíos de
+// producto, las devoluciones de pedido y los repartos de compra se quedaron sin
+// él: el 2026-11-06 FOSKROL TRANQUILO no se pudo aceptar en Salud 4 ni en La
+// Popular («No se proporcionó un lote») tres días después de que se dijera que
+// el arreglo estaba en todos lados. Los tres caminos que faltaban usan esto.
+
+/** Dónde guarda quien recibe la marca del destrabe, y cuánto tiempo le queda. */
+export interface Trabas {
+  /** Anota la marca ANTES de tocar una ficha (vacía = borrarla). `false` = no se pudo, y no se toca nada. */
+  anotar: (d: Destrabe) => Promise<boolean>;
+  /** ¿Alcanza para quitar, recibir y devolver antes de que corten la llamada? */
+  hayTiempo: () => boolean;
+}
+
+/** Lo que tarda el destrabe de punta a punta (leer, quitar, recibir, devolver, verificar). */
+export const MARGEN_DESTRABE_MS = 45_000;
+
+/** Los renglones (`<tr>` con `id_p`) de la pantalla de recibir. */
+export function filasDeRecibir(html: string): string[] {
+  return [...html.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((tr) => /class="id_p"/.test(tr));
+}
+
+/** Productos de los renglones que llegan SIN lote (9.ª celda: … Esperado · Recibido · Lote · Vence). */
+function productosSinLote(filas: string[]): Map<number, string> {
+  const out = new Map<number, string>();
+  for (const tr of filas) {
+    const prod = Number(tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? 0);
+    if (!prod) continue;
+    const celdas = [...tr.matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((m) => m[1]);
+    if (!(celdas[8] ?? "").replace(/<[^>]+>/g, "").trim())
+      out.set(prod, (celdas[1] ?? "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim());
+  }
+  return out;
+}
+
+export type Respuesta = { ok: boolean; msg: string; /** `false` = quien llama no mandó nada (validación propia). */ enviado?: boolean };
+
+/**
+ * Recibe un movimiento destrabando la ficha si hace falta.
+ *
+ * `recibir(filas)` es la parte de cada llamador: arma el sobre con SUS reglas
+ * (qué vencimiento, qué validar) a partir de los renglones que se le pasan, y
+ * lo manda. Se llama una vez, y otra más si hubo que quitar el control de lote.
+ *
+ * 1. Presentación oculta (el `<select>` vino vacío): se muestra, se relee la
+ *    pantalla y recién ahí se recibe.
+ * 2. Control de lote activado después del despacho: si la recepción falló, no
+ *    quedó recibida igual y el producto sin lote HOY es regulado, se le quita,
+ *    se vuelve a recibir y se le devuelve.
+ *
+ * Los frenos son los de siempre: sin tiempo no se empieza, la marca va ANTES
+ * de tocar la ficha, cada cambio se verifica releyendo, y lo que no se pudo
+ * devolver queda en la marca para el barrido de quien llama.
+ */
+export async function recibirConDestrabe(o: {
+  cookie: string;
+  idMov: string;
+  filas: string[];
+  trabas: Trabas;
+  recibir: (filas: string[]) => Promise<Respuesta>;
+}): Promise<{ resp: Respuesta; destrabado: string | null }> {
+  const { cookie, idMov, trabas } = o;
+  const destrabe = destrabeVacio();
+  const nombres = new Map<number, string>();
+  let filas = o.filas;
+  let resp: Respuesta | null = null;
+
+  const sinPres = filasSinPresentacion(filas);
+  if (sinPres.length) {
+    for (const s of sinPres) nombres.set(s.prod, s.nombre);
+    if (!trabas.hayTiempo()) {
+      resp = { ok: false, enviado: false, msg: "Una presentación del producto está oculta en la ficha y no quedaba tiempo para destrabarla. Vuelve a intentarlo." };
+    } else {
+      const r = await presentacionesParaMostrar(cookie, sinPres)
+        .catch((e) => ({ ok: false as const, motivo: `No se pudo leer la ficha: ${(e as Error).message}` }));
+      if (!r.ok) resp = { ok: false, enviado: false, msg: r.motivo };
+      else {
+        destrabe.pres = r.pres;
+        if (!(await trabas.anotar(destrabe))) {
+          destrabe.pres = [];
+          resp = { ok: false, enviado: false, msg: "No se pudo anotar el destrabe de la presentación. Vuelve a intentarlo." };
+        } else {
+          try {
+            for (const p of r.pres) await mostrarPresentacion(cookie, p.prod, p.pres, true);
+            filas = filasDeRecibir(await pedir(cookie, `${RECIBIR}?id_movimiento=${encodeURIComponent(idMov)}`,
+              undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } }));
+            // Si sigue sin presentación, no se recibe a medias.
+            if (filasSinPresentacion(filas).length)
+              resp = { ok: false, enviado: false, msg: "La presentación con que salió sigue sin aparecer en la ficha; no se recibe a medias." };
+          } catch (e) {
+            resp = { ok: false, enviado: false, msg: `No se pudo mostrar la presentación oculta: ${(e as Error).message}` };
+          }
+        }
+      }
+    }
+  }
+
+  if (!resp) resp = await o.recibir(filas);
+
+  const sinLote = productosSinLote(filas);
+  if (!resp.ok && resp.enviado !== false && sinLote.size > 0) {
+    if (!trabas.hayTiempo()) {
+      resp = { ...resp, msg: `${resp.msg || "No se proporcionó un lote"} (vuelve a intentarlo: no quedaba tiempo para destrabar el lote)` };
+    } else if (await estadoDeRecepcion(cookie, idMov) !== "recibido") {
+      const regulados: number[] = [];
+      for (const id of sinLote.keys()) {
+        try { if ((await leerFichaDe(cookie, id)).regulado) regulados.push(id); }
+        catch { /* sin ficha legible no se toca */ }
+      }
+      if (regulados.length) {
+        for (const id of regulados) nombres.set(id, sinLote.get(id) ?? String(id));
+        destrabe.lote = regulados;
+        if (!(await trabas.anotar(destrabe))) {
+          destrabe.lote = [];
+          resp = { ok: false, msg: "No se pudo anotar el destrabe del lote. Vuelve a intentarlo." };
+        } else {
+          try {
+            for (const id of regulados) await cambiarRegulado(cookie, id, false);
+            resp = await o.recibir(filas);
+          } catch (e) {
+            resp = { ok: false, msg: `No se pudo destrabar el control de lote: ${(e as Error).message}` };
+          }
+        }
+      }
+    }
+  }
+
+  // Se devuelven las fichas; lo que no se pueda queda en la marca.
+  let destrabado: string | null = null;
+  if (hayDestrabe(destrabe)) {
+    const { pendiente, errores } = await deshacerDestrabe(cookie, destrabe);
+    if (errores.length) console.error(`[destrabe] ${idMov}: ficha sin devolver: ${errores.join("; ")}`);
+    await trabas.anotar(pendiente);
+    const n = (id: number) => nombres.get(id) ?? String(id);
+    destrabado = [
+      destrabe.lote.length ? `control de lote de ${destrabe.lote.map(n).join(", ")}` : "",
+      destrabe.pres.length ? `presentación oculta de ${destrabe.pres.map((p) => n(p.prod)).join(", ")}` : "",
+    ].filter(Boolean).join("; ") || null;
+  }
+  return { resp, destrabado };
+}
+
+// ── La marca en `detalle.destrabe` de la fila que se recibe ─────────────────
+// `envio_linea` y `pedido_devolucion` tienen `detalle` (jsonb) y su `aviso` ya
+// lleva texto que la pantalla muestra, así que la marca no va ahí (en pedidos
+// sí va en `aviso`, que es anterior a esto).
+
+// deno-lint-ignore no-explicit-any
+type ConTablas = { from: (relacion: string) => any };
+type FilaConDetalle = { id: string; detalle: Record<string, unknown> | null };
+
+/** Las trabas de una fila: la marca en `detalle.destrabe` de `tabla`. */
+export function trabasEnDetalle(admin: ConTablas, tabla: string, fila: FilaConDetalle, hayTiempo: () => boolean): Trabas {
+  return {
+    hayTiempo,
+    anotar: async (d) => {
+      const { destrabe: _vieja, ...resto } = (fila.detalle ?? {}) as Record<string, unknown>;
+      const detalle = hayDestrabe(d) ? { ...resto, destrabe: { ...d, at: new Date().toISOString() } } : resto;
+      const { error } = await admin.from(tabla).update({ detalle, updated_at: new Date().toISOString() }).eq("id", fila.id);
+      if (error) {
+        console.error(`[destrabe] marca de ${tabla} ${fila.id}: ${error.message}`);
+        return false;
+      }
+      fila.detalle = detalle;
+      return true;
+    },
+  };
+}
+
+/**
+ * Fichas que una llamada muerta dejó cambiadas: se devuelven y se borra la
+ * marca. Sólo marcas de hace más de 3 minutos, para no pisar un destrabe que
+ * otra llamada está haciendo ahora. La ficha es una para todas las salas, así
+ * que cualquier sesión sirve.
+ */
+export async function devolverFichasHuerfanas(admin: ConTablas, tabla: string, cookie: string): Promise<void> {
+  const { data, error } = await admin.from(tabla)
+    .select("id, detalle")
+    .not("detalle->destrabe", "is", null)
+    .lt("updated_at", new Date(Date.now() - 3 * 60_000).toISOString())
+    .limit(50);
+  if (error) { console.error(`[destrabe] no se pudieron leer las marcas de ${tabla}: ${error.message}`); return; }
+  for (const fila of (data ?? []) as FilaConDetalle[]) {
+    const m = (fila.detalle?.destrabe ?? {}) as { lote?: unknown[]; pres?: { prod?: number; pres?: string }[] };
+    const marca: Destrabe = {
+      lote: (m.lote ?? []).map(Number).filter(Boolean),
+      pres: (m.pres ?? []).filter((p) => p?.prod && p?.pres) as { prod: number; pres: string }[],
+    };
+    const { pendiente, errores } = await deshacerDestrabe(cookie, marca);
+    if (errores.length) console.error(`[destrabe] ${tabla} ${fila.id}: ficha sin devolver: ${errores.join("; ")}`);
+    await trabasEnDetalle(admin, tabla, fila, () => true).anotar(pendiente);
+  }
 }

@@ -600,7 +600,7 @@ function FichasMovil({ columns, movil, toolbar, footer, descartadas, children })
           burbuja: se lee una vez, no tapa nada y no hay que descartarla. */}
       {movil?.acciones === 'mantener' && (
         <p className="px-2 pt-1 text-caption text-content-3">
-          Mantené presionada una tarjeta para ver sus opciones.
+          Mantén presionada una tarjeta para ver sus opciones.
         </p>
       )}
       {footer && <div className="px-1 pt-1">{footer}</div>}

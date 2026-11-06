@@ -96,6 +96,11 @@ const RE_BORRADOR = /\bfrom\s+['"][^'"]*(draftUtils|useBorrador)['"]|\b(saveDraf
  * una excepción: es deuda, y va al baseline.
  */
 const EXCEPCIONES = {
+    // El widget de reservas no es UN formulario: son cinco diálogos chicos
+    // (mensaje, usar saldo, devolver, motivo) de uno o dos campos cada uno, que
+    // se llenan con el cliente enfrente y se mandan al momento. El gate suma
+    // los campos del archivo entero (2026-11-06).
+    'src/views/dashboard/WidgetReservas.jsx': 'cinco diálogos de 1-2 campos que se mandan al momento, no un formulario largo',
     // La pasantía del practicante (2026-11-03) no es un formulario propio: es
     // una sección del alta de empleado y escribe en su `formData`, que ya se
     // guarda solo con la clave `alta_empleado`.

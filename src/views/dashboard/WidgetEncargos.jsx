@@ -369,7 +369,7 @@ function Rechazar({ encargo, enviando = false, onClose, onRechazar }) {
             </LiquidModal.Body>
             <LiquidModal.Footer>
                 <Button variant="secondary" onClick={onClose}>Volver</Button>
-                <Button variant="danger" icon={X} loading={enviando} disabled={(exigeMotivo && !nota.trim()) || enviando} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
+                <Button variant="destructive" icon={X} loading={enviando} disabled={(exigeMotivo && !nota.trim()) || enviando} onClick={() => onRechazar(nota.trim() || null)}>Avisar al cliente</Button>
             </LiquidModal.Footer>
         </LiquidModal>
     );

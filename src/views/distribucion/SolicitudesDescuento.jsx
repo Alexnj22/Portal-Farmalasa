@@ -213,7 +213,7 @@ export default function SolicitudesDescuento() {
                                 {f.status === 'PENDING' && puedeDecidir && !mia && (rechazando === f.id ? (
                                     <>
                                         <Button size="sm" variant="ghost" onClick={() => { setRechazando(null); setMotivo(''); }}>Cancelar</Button>
-                                        <Button size="sm" variant="danger" icon={ocupado === `${f.id}-r` ? Loader2 : XCircle}
+                                        <Button size="sm" variant="destructive" icon={ocupado === `${f.id}-r` ? Loader2 : XCircle}
                                             disabled={!motivo.trim() || !!ocupado} onClick={() => decidir(f, false)}>Rechazar</Button>
                                     </>
                                 ) : (

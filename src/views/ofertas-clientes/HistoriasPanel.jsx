@@ -19,6 +19,7 @@ import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { borrarHistoria, fetchHistorias, fetchOfertasParaHistoria, fetchQuienesVieron, fetchVistasHistorias, guardarHistoria, publicarHistoria, subirImagen } from '@nucleo/data/ofertasClientes';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import { hora12 } from '@nucleo/utils/hora';
+import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import FormatoImagen from './FormatoImagen';
 
 /**
@@ -177,7 +178,10 @@ export default function HistoriasPanel({ busqueda, puedeEditar, showToast }) {
 
 function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const nueva = !historia.id;
-    const [f, setF] = useState({
+    // Borrador por historia (o «nueva»): la sesión se cierra sola y lo escrito
+    // vivía sólo en memoria. La imagen no entra: un archivo no se guarda.
+    const claveBorrador = `historia_${historia.id ?? 'nueva'}`;
+    const [f, setF] = useState(() => loadDraft(claveBorrador) ?? {
         titulo: historia.titulo ?? '', rotulo: historia.rotulo ?? '', texto: historia.texto ?? '', enlace: historia.enlace ?? '',
         fin: historia.fin ?? '', publicada: historia.publicada ?? false, oferta_id: historia.oferta_id ?? '',
     });
@@ -189,6 +193,7 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
     const [archivo, setArchivo] = useState(null);
     const [guardando, setGuardando] = useState(false);
     const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
+    useEffect(() => { saveDraft(claveBorrador, f); }, [claveBorrador, f]);
     const valido = historiaValida(f, archivo || historia.imagen_path);
 
     const guardar = async () => {
@@ -196,6 +201,7 @@ function HistoriaModal({ historia, onClose, onGuardada, onError }) {
         try {
             const imagen_path = archivo ? await subirImagen(archivo) : historia.imagen_path;
             await guardarHistoria(historia.id, filaDeHistoria(f, imagen_path, hoySV(), sumarDias(hoySV(), 1)));
+            clearDraft(claveBorrador);
             onGuardada();
         } catch (err) {
             onError(err);

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.2 — Botones que salían azules, voseo y borradores
+
+- **Siete botones salían azules** en vez de rojo o ámbar: pedían una variante que el botón no tiene (`danger`, `warning`) y caían a la primaria. «Poner en cero» de Mín·Máx, rechazar descuento, guardar promoción o descuento «de todos modos», encargos y «no apareció» de un traslado.
+- `gate:design` suma `valor-inexistente`: un `<Button variant|tone|size>` con un valor que el botón no conoce falla el gate. Los valores válidos se leen del propio `Button`.
+- «Mantené presionada…» pasa a «Mantén presionada…» (tabla del teléfono y conteo), y la lista de voseo del gate suma ese verbo y otros ocho.
+- La historia de Ofertas guarda borrador: si la sesión se cierra, lo escrito vuelve. El widget de reservas queda declarado como excepción (son diálogos de uno o dos campos).
+- Bajan los baselines de `gate:tdz` (62 → 49) y `gate:ux`, que habían mejorado sin registrarse.
+
 ## v2.1459.1 — Anular con tarjeta o transferencia también quita la salida falsa de caja
 
 Decisión del usuario (2026-11-06): «también para tarjeta y transferencia, solo

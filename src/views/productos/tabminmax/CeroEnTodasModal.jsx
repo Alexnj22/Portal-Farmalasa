@@ -57,7 +57,7 @@ export default function CeroEnTodasModal({ open, row, puedeYaNoRota, onConfirmar
                 pie={
                     <>
                         <Button variant="secondary" onClick={onClose} disabled={guardando}>Cancelar</Button>
-                        <Button variant="danger" onClick={confirmar} disabled={!!falta || guardando} loading={guardando}>
+                        <Button variant="destructive" onClick={confirmar} disabled={!!falta || guardando} loading={guardando}>
                             Poner 0 en todas
                         </Button>
                     </>

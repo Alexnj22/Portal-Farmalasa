@@ -846,6 +846,16 @@ function tagsJsx(txt, nombre) {
 // propósito.
 const RESERVADAS_JSX = new Set(['key', 'ref', 'children', 'dangerouslySetInnerHTML']);
 
+// Los valores que `Button` sabe pintar, leídos de sus mapas (ver `valor-inexistente`).
+const VALORES_DE_BUTTON = (() => {
+  const txt = readFileSync(new URL('../src/components/common/Button.jsx', import.meta.url), 'utf8');
+  const claves = (nombre) => {
+    const m = new RegExp(`const ${nombre} = \\{([\\s\\S]*?)\\n\\};`).exec(txt);
+    return new Set(m ? [...m[1].matchAll(/^\s*'?([\w-]+)'?\s*:/gm)].map((x) => x[1]).filter((k) => k !== 'hover') : []);
+  };
+  return { variant: claves('VARIANT_CLASSES'), tone: claves('TONE_CLASSES'), size: claves('SIZE_CLASSES') };
+})();
+
 /** Los props destructurados de `nombre` en `txt`. `null` = no se puede saber. */
 function firmaDeComponente(txtRaw, nombre) {
   const txt = sinComentarios(txtRaw);
@@ -1302,7 +1312,11 @@ const VOSEO = ['Creá','Presioná','Usá','Buscá','Probá','Hacé','Revisá','E
   // `revisará`), que es correcto y suena igual de agudo — el mismo tipo de
   // falso positivo que ya se documenta arriba con `Pedí`.
   'Actualizá','Completá','Contá','Dejá','Descargá','Confirmá','Tocá','Pausás',
-  'Aplicá','Registrá','Anotá','Cargá','Sacá','Meté','Contás','Dejás','Tocás'];
+  'Aplicá','Registrá','Anotá','Cargá','Sacá','Meté','Contás','Dejás','Tocás',
+  // ── 2026-11-06 ──────────────────────────────────────────────────────────
+  // «Mantené presionada una tarjeta» vivía en la hoja de la tabla del teléfono
+  // y en el conteo, en verde: el verbo no estaba en la lista.
+  'Mantené','Mantenés','Sostené','Hacés','Ponés','Elegís','Revisás','Mirás','Escribís'];
 
 // ── `copy-anaquel` — el portal dice «vitrina» o «estante», nunca «anaquel» ──
 //
@@ -2349,6 +2363,30 @@ function scanFile(path) {
           label: 'persona sin `id` — sin él no hay aro de estado, y se ve igual que estar presente (DESIGN.md §5.4)',
           category: 'foto-sin-identidad',
           text: `${mi4[1]}={{ ${cuerpo.replace(/\s+/g, ' ').trim().slice(0, 90)} }}`,
+        });
+      }
+    }
+
+    // ── `valor-inexistente` (2026-11-06, CERO ABSOLUTO) ─────────────────
+    //
+    // La hermana de `prop-inexistente`: el prop existe pero el VALOR no.
+    // `Button` resuelve `VARIANT_CLASSES[variant] || VARIANT_CLASSES.primary`,
+    // así que `variant="danger"` no falla: sale AZUL. Medido ese día: seis
+    // botones de «poner en cero», «rechazar» y «guardar de todos modos» se
+    // pintaban como la acción primaria. Los valores válidos salen del propio
+    // `Button.jsx` (sus mapas), no de una lista escrita acá.
+    if (!path.endsWith('components/common/Button.jsx')) {
+      // Cada etiqueta entera (`=>` adentro de un prop no la cierra) y TODOS sus
+      // props: con un solo regex perezoso, `size="sm"` tapaba al `variant` de al lado.
+      const TAG_BTN = /<Button\b(?:=>|[^>])*>/g;
+      let tag;
+      while ((tag = TAG_BTN.exec(sinComentarios2))) for (const mv of tag[0].matchAll(/\b(variant|tone|size)="([^"]+)"/g)) {
+        const validos = VALORES_DE_BUTTON[mv[1]];
+        if (!validos || validos.has(mv[2])) continue;
+        findings.push({
+          line: sinComentarios2.slice(0, tag.index + mv.index).split('\n').length,
+          label: `\`<Button ${mv[1]}="${mv[2]}">\` no existe — se pinta con el valor por defecto (válidos: ${[...validos].join(', ')})`,
+          category: 'valor-inexistente', text: mv[0].replace(/\s+/g, ' ').slice(0, 120),
         });
       }
     }

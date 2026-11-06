@@ -324,7 +324,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                 <Button variant="secondary" onClick={onClose}>Cancelar</Button>
                 {avisos.length > 0 ? (
                     <Button
-                        variant="danger"
+                        variant="destructive"
                         icon={Check}
                         loading={guardando}
                         onClick={() => enviar(true)}

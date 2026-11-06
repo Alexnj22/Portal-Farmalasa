@@ -604,7 +604,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     {promoCreada ? 'Dejarlo así' : 'Cancelar'}
                 </Button>
                 {avisosDesc.length > 0 ? (
-                    <Button variant="danger" icon={Check} loading={guardando}
+                    <Button variant="destructive" icon={Check} loading={guardando}
                         onClick={() => guardar(true)}>
                         Guardar de todos modos
                     </Button>

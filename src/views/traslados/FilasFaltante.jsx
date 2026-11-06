@@ -223,7 +223,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null }) {
                                 disabled={ocupado} onClick={() => { setCerrando(null); setNota(''); }}>
                                 Volver
                             </Button>
-                            <Button size="sm" variant="warning" className="min-h-[var(--tap-min)] flex-1"
+                            <Button size="sm" tone="warning" className="min-h-[var(--tap-min)] flex-1"
                                 loading={ocupado}
                                 disabled={ocupado || !nota.trim()} onClick={() => cerrar('no_aparecio')}>
                                 {ocupado ? 'Cerrando…' : 'Cerrar el faltante'}

@@ -428,7 +428,7 @@ export default function ConteoInventarioView() {
                     aparece si hay filas y el gesto está de verdad disponible. */}
                 {!loading && filtered.length > 0 && canEdit && (
                     <p className="text-caption text-content-3 text-center pt-1">
-                        Mantené presionada una fila para ver sus opciones
+                        Mantén presionada una fila para ver sus opciones
                     </p>
                 )}
             </div>

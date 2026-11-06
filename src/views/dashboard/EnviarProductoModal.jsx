@@ -387,6 +387,26 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         });
         return () => { cancelado = true; };
     }, [elegido?.erp_product_id]);
+    /* ── Una caja que ningún lote completa (2026-11-05) ────────────────────
+     * El reparto de arriba cuenta UNIDADES, pero al salir cada presentación
+     * sale entera de un lote: 1 caja ×4 con 3 blísteres de un lote y 1 de otro
+     * pasaba acá y fallaba al despachar. Se dice ANTES y se ofrece mandarla en
+     * la presentación de una unidad, con el reparto a la vista. Lo sin lote
+     * asignado cuenta junto (`juntarSinLote` en el servidor). */
+    const cajasPorLote = useMemo(() => {
+        const f = Number(pres?.factor) || 1;
+        const lotes = origen?.lotes ?? [];
+        const gen = lotes.filter(l => esLoteGenerico(l.lote)).reduce((n, l) => n + Number(l.unidades || 0), 0);
+        return lotes.filter(l => !esLoteGenerico(l.lote)).reduce((n, l) => n + Math.floor(Number(l.unidades || 0) / f), 0)
+            + Math.floor(gen / f);
+    }, [origen, pres]);
+    const presBase = presentaciones.findIndex(p => Number(p.factor) === 1);
+    const ningunLoteCompleta = regulado && Number(pres?.factor) > 1 && reparto.faltan === 0
+        && (Number(cantidad) || 0) > cajasPorLote;
+    const mandarEnUnidades = () => {
+        setPresIdx(String(presBase));
+        setCantidad(String(unidadesPedidas));
+    };
     const sinLoteEnReparto = regulado
         ? reparto.reparto.filter(l => esLoteGenerico(l.lote)).reduce((s, l) => s + l.toma, 0)
         : 0;
@@ -427,6 +447,10 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         : unidadesPedidas > (origen.unidades ?? 0)
             ? `${origen.nombre} tiene ${origen.unidades} ${origen.unidades === 1 ? 'unidad' : 'unidades'}.`
         : reparto.faltan > 0 ? `Faltan ${reparto.faltan} en los lotes.`
+        : ningunLoteCompleta
+            ? (presBase >= 0
+                ? `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}: confirma mandarla en unidades.`
+                : `Ningún lote completa ${Number(cantidad) === 1 ? 'la' : 'cada'} ${String(pres.tipo).toLowerCase()}, y el producto no tiene presentación de una unidad.`)
         : faltaCaja ? faltaCaja
         // El origen y el destino se eligen en dos momentos distintos y nada los
         // ata: sin esto, un renglón podía salir de la misma sala a la que va —y
@@ -1119,6 +1143,21 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                             `${rotuloDeLote(l.lote)} ×${l.toma}`
                                             + (l.vence && !esLoteGenerico(l.lote) ? ` (vence ${fmtVence(l.vence)})` : '')).join(' · ')}
                                     </p>
+                                )}
+
+                                {/* Ningún lote completa la presentación: se ofrece en unidades. */}
+                                {ningunLoteCompleta && presBase >= 0 && (
+                                    <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
+                                        <p className="text-micro font-bold text-warning-text leading-snug">
+                                            Ningún lote completa {Number(cantidad) === 1 ? 'la' : `las ${cantidad}`} {String(pres.tipo).toLowerCase()}.
+                                            Puede salir como {unidadesPedidas} {String(presentaciones[presBase].tipo).toLowerCase()}, del reparto de arriba.
+                                        </p>
+                                        <div>
+                                            <Button size="sm" variant="secondary" onClick={mandarEnUnidades}>
+                                                Mandarla en {unidadesPedidas} {String(presentaciones[presBase].tipo).toLowerCase()}
+                                            </Button>
+                                        </div>
+                                    </div>
                                 )}
 
                                 {/* Lo que sale sin lote asignado: el lote lo dice la caja. */}

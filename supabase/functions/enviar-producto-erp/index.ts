@@ -18,6 +18,7 @@ import {
   leerBien,
   pendientesDeOrigen,
   repartirEnLotes,
+  juntarSinLote,
   esLoteGenerico,
   resolverPresentacion,
   sesionEn as abrirSesionEn,
@@ -508,6 +509,9 @@ Deno.serve(async (req) => {
 
         const f = await traerFila(cookie, l.erp_product_id, ubicOrigen);
         if (!f.encontrado) { await fallar(`${nombre} no tiene existencia en tu sala.`); continue; }
+        // Lo sin lote asignado partido en varios renglones cuenta junto: se le
+        // asigna el lote de la caja antes de salir (ver `juntarSinLote`).
+        if (f.regulado) f.lotes = juntarSinLote(f.lotes);
 
         const pres = await resolverPresentacion(cookie, f, l.presentacion_tipo, l.factor);
         if (!pres) {

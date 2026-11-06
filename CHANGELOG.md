@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.3 — Envío directo: lo sin lote partido sale junto y la caja que ningún lote completa se ofrece en unidades
+
+Lo mismo que en las solicitudes de traslado, ahora en el envío directo de producto.
+
+- **Lo sin lote asignado partido en varios renglones cuenta junto** (`juntarSinLote` en `enviar-producto-erp`), y la asignación del lote de la caja descuenta en trozos.
+- **Una caja que ningún lote completa se dice ANTES de agregar el renglón.** El modal contaba unidades y dejaba pasar 1 caja ×4 con 3 blísteres de un lote y 1 de otro, que después fallaba al despachar. Ahora frena y ofrece «Mandarla en 4 blister x 25», con el reparto por lote a la vista; tocarlo cambia la presentación y la cantidad.
+
 ## v2.1455.2 — Traslados: la caja que ningún lote completa sale en unidades, confirmándolo
 
 Piden 1 caja (×4) y en la sala hay 3 blísteres de un lote y 1 de otro: ningún lote arma la caja y el despacho frenaba aunque las unidades alcanzaban.

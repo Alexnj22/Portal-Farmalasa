@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
     aMesYAnio, loteValido, loteSinRotulo, deTextoLibre, loteYVence,
-    nombreLimpio,
+    nombreLimpio, sinSufijoDeFecha,
 } from '../../supabase/functions/_shared/loteVencimiento.ts';
 
 // Lote y vencimiento de una compra, leídos del texto del proveedor.
@@ -288,5 +288,51 @@ describe('ancla por precio: la fecha pegada al precio', () => {
     it('el flete no se lleva el lote del producto de antes', () => {
         const pdf = '11FG FOLHEM 5mg. Tab. C X 30 K26064 09/2029 15.00 1.938053 29.07 FLE ZX FLETE 1.00 1.132743 1.13 Valor en letras';
         expect(loteYVence(pdf, { descripcion: 'ZX FLETE X', cantidad: 1, precioUni: 1.132743 }, 2026).lote).toBeNull();
+    });
+});
+
+describe('formatos medidos contra lo cargado en octubre (2026-11-05)', () => {
+    it('RODIM: «CLOTEN» no es el rótulo «lote»', () => {
+        expect(deTextoLibre('RODIM|CLOTEN UÑAS X 1 CAPSULA RODIM \rLote: 39A Cant.: 4. Fecha Exp.: 01/07/2027', 2026))
+            .toEqual({ lote: '39A', vence: '2027-07-01' });
+        expect(deTextoLibre('RODIM|CLOTEN UÑA CREMA CAJA x TUBO x 15g. + 3 LIMAS RODIM \rLote: F05 Cant.: 1. Fecha Exp.: 01/03/2027', 2026).lote).toBe('F05');
+    });
+    it('LETERAGO: «Lotesoft» es el nombre, el lote va entre barras', () => {
+        expect(deTextoLibre('false|1.00|00249|31/05/2028|18.00| | | |Lotesoft 0.5%mg / 5ml susp oft esté', 2026))
+            .toEqual({ lote: '00249', vence: '2028-05-01' });
+        expect(deTextoLibre('false|1.00|L 5099S1|30/04/2028|10.00| | | |Enterex total fresa 400gr x 1 lat polvo', 2026).lote).toBe('L5099S1');
+    });
+    it('OVIDIO VIDES: prefijo con espacio entre barras', () => {
+        expect(deTextoLibre('EDYSVEN 2 MG X 28 COMPRIMIDOS|F 250593|19/05/2027|10.00', 2026))
+            .toEqual({ lote: 'F250593', vence: '2027-05-01' });
+    });
+    it('FARNET: @@lote - Vence', () => {
+        expect(deTextoLibre('CEFACTAL 250 MG / 5 ML FCO. 60 ML.@@DX612 - Vence: 30/05/2028', 2026))
+            .toEqual({ lote: 'DX612', vence: '2028-05-01' });
+        expect(deTextoLibre('PERINEURAL 500 MCG X 30 TABS..@@GT526 - Vence: 31/05/2029', 2026).lote).toBe('GT526');
+    });
+});
+
+describe('PDF: la ventana de rótulos no se lleva el renglón vecino (2026-11-05)', () => {
+    const ronasa = '010504 2 Unidad ENPRIL 5 MG CAJA X 50 TABLETAS LOTE: 260217 VENCE: 28/02/2029 $8.07 $0.00 $0.00 $0.00 $16.14 180501 2 Unidad ESOMEPRAKEM 40 MG CAJA X 10 CAP OFERTA (1+1) $11.86 $0.00 $0.00 $0.00 $23.72 010618 4 Unidad FURONTAL 40 MG CAJA X 10 TABLETAS LOTE: 260602 VENCE: 30/06/2029 $0.88';
+    const otras = ['ENPRIL 5 MG CAJA X 50 TABLETAS', 'ESOMEPRAKEM 40 MG CAJA X 10 CAP OFERTA (1+1)', 'FURONTAL 40 MG CAJA X 10 TABLETAS'];
+    it('RONASA: la oferta sin lote no toma el de FURONTAL', () => {
+        expect(loteYVence(ronasa, { descripcion: otras[1], cantidad: 2, precioUni: 11.86 }, 2026, otras).lote).toBeNull();
+        expect(loteYVence(ronasa, { descripcion: otras[2], cantidad: 4, precioUni: 0.88 }, 2026, otras))
+            .toMatchObject({ lote: '260602', vence: '2029-06-01' });
+    });
+    it('GUARDADO: mayúsculas distintas y el -MMAA pegado al lote', () => {
+        const t = 'ALCON ALC-11042 [ALC-11042] SYSTANE COMPLETE SP FCO X 10 ML LOTE: 139H6-0128 - VENCE: 30/01/2028 - CANT: (1.0) 1.0 $ 16.8500';
+        expect(loteYVence(t, { descripcion: '[ALC-11042] SYSTANE COMPLETE SP Fco x 10 ml', cantidad: 1, precioUni: 16.85 }, 2026))
+            .toMatchObject({ lote: '139H6', vence: '2028-01-01', de: 'pdf/rotulos' });
+    });
+    it('MEDICAL PHARMA: una fecha suelta después del producto no es su vencimiento', () => {
+        const t = 'Unidad Lote Vence 31/03/2030 3.3375T0391 VASOTRATE 75MG X 20 TABLETAS -T7.000 23.36261 PRODUCTO TERMINADO 0.00000.000%2612 31/05/2029 11.5752T0395 VITANERAL';
+        expect(loteYVence(t, { descripcion: 'VASOTRATE 75MG X 20 TABLETAS -T', cantidad: 7, precioUni: 3.337522 }, 2026).vence).toBeNull();
+    });
+    it('sinSufijoDeFecha sólo quita lo que coincide con el vencimiento', () => {
+        expect(sinSufijoDeFecha('B726-0628', '2028-06-01')).toBe('B726');
+        expect(sinSufijoDeFecha('B726-0628', '2028-07-01')).toBe('B726-0628');
+        expect(sinSufijoDeFecha('2-290526-1', '2031-05-01')).toBe('2-290526-1');
     });
 });

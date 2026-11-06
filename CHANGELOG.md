@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.5 — Cargar compra: saldo sugerido y lote/vence validados contra octubre
+
+**Saldo de recargas: sugerencia de cuántos dólares trae.** Movistar («RECARGA ELECTRONICA» 1 × $176.99) y BOXFUL («SERVICIO DE RECARGA» 1 × $30) no dicen cuánto saldo traen. Ahora la tarjeta muestra un aviso rotulado **«Sugerencia — revisa que cuadre con la factura»**: lo pagado ÷ el costo por dólar de la última compra de ese producto (del mismo proveedor si la hay), con botón «Usar N». Medido: $176.99 ÷ $0.8428 = 210, lo que Bodega cargó a mano las últimas cuatro veces. También aparece al elegir el producto a mano. No sugiere nada si el renglón ya viene en dólares (Claro, Tigo con su factor aprendido).
+
+**Lote y vencimiento validados contra lo cargado.** Se leyeron los 495 DTE de octubre (82 proveedores) y se cruzaron con el lote y el vencimiento con que el sistema registró las 258 compras que ya estaban cargadas (2,008 renglones). Corregido:
+- «CLOTEN» (RODIM) y «Lotesoft» (LETERAGO) se tomaban como el rótulo «lote»: ahora se exige la palabra entera.
+- FARNET `…@@DX612 - Vence: 30/05/2028`, OVIDIO VIDES `|F 250593|` y LETERAGO `|L 5099S1|`: el lote no se leía.
+- GUARDADO: el PDF escribe la descripción en mayúsculas y no se encontraba; ahora se leen sus lotes (`LOTE: 139H6-0128` → `139H6`, quitando el mes/año pegado).
+- RONASA: un producto sin lote en el PDF se llevaba el lote y el vencimiento del renglón de abajo. La ventana termina donde empieza otro renglón del documento.
+- MEDICAL PHARMA: una fecha suelta sin rótulo ya no se toma como vencimiento (era la del producto siguiente). Fletes y servicios dejan de recibir lotes inventados.
+
+Lo que sigue sin leerse (Farmacias Europeas, Farmacia San Nicolas, LANCASCO, RANIER) no trae lote ni en el DTE ni en el PDF. Las diferencias restantes contra el sistema son de tipeo al cargar a mano (`B22625K` contra `B226525K`) o del mismo producto con dos lotes.
+
 ## v2.1455.4 — Descartes, premios, salidas de compras y devoluciones: varios lotes en un movimiento y caja en unidades
 
 Auditoría de todo lo que saca producto de un lote, después de la FOLIMEN de Bodega (4 blísteres en dos registros «sin lote asignado» de 2).

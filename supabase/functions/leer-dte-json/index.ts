@@ -85,6 +85,43 @@ async function tienePermiso(admin: any, emp: any): Promise<boolean> {
 const norm20 = (s: string) =>
   s.replace(/\s/g, "").replace(/\./g, "").replace(/O/gi, "0").toUpperCase();
 
+// ── Saldo de recargas: cuántos dólares trae ─────────────────────────────
+//
+// Bodega carga el saldo en unidades de $1 (Movistar: 210 a $0.8428).
+// Movistar factura «RECARGA ELECTRONICA» 1 × $176.99 y BOXFUL «SERVICIO DE
+// RECARGA» 1 × $30: el papel no dice cuántos dólares son. Lo que sí se sabe es
+// el costo por dólar de la última compra, así que se SUGIERE pagado ÷ ese
+// costo — medido: $176.99 ÷ $0.8428 = 210.0, lo que Bodega cargó a mano las
+// últimas cuatro veces. Es una sugerencia y la pantalla lo dice: el descuento
+// del proveedor puede cambiar. Un saldo es un producto cuyas presentaciones
+// valen 0 en el catálogo (Tigo, Movistar, Digicel) o se llama RECARGA SALDO
+// (Claro). Si ya viene en dólares (Claro: 300 × $0.81), no sugiere nada.
+async function saldoSugerido(admin: any, x: {
+  productId: number; nombre: string | null; factores: number[]; pagado: number; entra: number; emisor: string;
+}) {
+  const esSaldo = /^RECARGA\s+SALDO/i.test(String(x.nombre ?? "")) || (x.factores.length > 0 && x.factores.every((f) => !(f > 0)));
+  if (!esSaldo || !(x.pagado > 0)) return null;
+  const { data: hist, error } = await admin.from("purchase_receipt_items")
+    .select("precio_unitario, cantidad, purchase_receipts!inner(fecha, proveedor)")
+    .eq("erp_product_id", x.productId).gt("cantidad", 1)
+    .order("receipt_id", { ascending: false }).limit(30);
+  if (error) { console.error("[leer-dte-json] saldo:", error.message); return null; }
+  const filas = ((hist ?? []) as any[]).filter((h) => Number(h.precio_unitario) > 0 && Number(h.precio_unitario) < 1.5)
+    .sort((a, b) => String(b.purchase_receipts.fecha).localeCompare(String(a.purchase_receipts.fecha)));
+  const palabra = (t: string) => String(t ?? "").toUpperCase().replace(/[^A-Z0-9 ]/g, " ").trim().split(/\s+/)[0] ?? "";
+  const delMismo = filas.find((h) => palabra(h.purchase_receipts.proveedor) === palabra(x.emisor));
+  const ref = delMismo ?? filas[0];
+  if (!ref) return null;
+  const costo = Number(ref.precio_unitario);
+  const n = x.pagado / costo;
+  if (n < x.entra * 2) return null;
+  return {
+    unidades: Math.round(n), pagado: Math.round(x.pagado * 100) / 100, costo_referencia: costo,
+    de: { proveedor: ref.purchase_receipts.proveedor, fecha: ref.purchase_receipts.fecha, mismo_proveedor: !!delMismo },
+    exacto: Math.abs(n - Math.round(n)) < 0.05,
+  };
+}
+
 Deno.serve(async (req: Request) => {
   const cors = { ...getCorsHeaders(req), "Content-Type": "application/json" };
   if (req.method === "OPTIONS") return new Response(null, { headers: getCorsHeaders(req) });
@@ -174,7 +211,14 @@ Deno.serve(async (req: Request) => {
       const presentaciones = (pp ?? []).map((x) => ({
         factor: Number(x.factor), vineta: Number(x.vineta), nombre: (x as any).presentaciones?.tipo ?? null,
       }));
-      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones }), { headers: cors });
+      const { data: prod, error: errProd } = await admin.from("products").select("nombre").eq("id", pid).maybeSingle();
+      if (errProd) console.error("[leer-dte-json] producto:", errProd.message);
+      const cant = Number(body?.cantidad) || 0;
+      const saldo = cant > 0 ? await saldoSugerido(admin, {
+        productId: pid, nombre: prod?.nombre ?? null, factores: presentaciones.map((x) => x.factor),
+        pagado: (Number(body?.costo_neto) || 0) * cant, entra: cant * f.factor, emisor: String(body?.emisor ?? ""),
+      }) : null;
+      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones, saldo_sugerido: saldo }), { headers: cors });
     }
 
     // ── `barrido`: armar la lista de preguntas distintas ────────────────────
@@ -331,7 +375,7 @@ Deno.serve(async (req: Request) => {
       }
 
       const leidos = items.map((it) => {
-        const r = loteYVence(txtPdf, it);
+        const r = loteYVence(txtPdf, it, undefined, items.map((x: any) => String(x?.descripcion ?? "")));
         return {
           codigo: it?.codigo ?? null, descripcion: it?.descripcion ?? null,
           cantidad: it?.cantidad ?? null, precioUni: it?.precioUni ?? null,
@@ -478,7 +522,7 @@ Deno.serve(async (req: Request) => {
         const txtPdfP = await pdfP;
         const renglones = [];
         for (const { it, llave, match } of pares) {
-          const lv = loteYVence(txtPdfP, it);
+          const lv = loteYVence(txtPdfP, it, undefined, items.map((x: any) => String(x?.descripcion ?? "")));
           const sim = Number(match?.similitud ?? 0);
           const seguro = match?.origen === "codigo_barras" || match?.origen === "aprendido" || sim >= 0.75;
 
@@ -570,6 +614,16 @@ Deno.serve(async (req: Request) => {
           // (modo «factor»): el tamaño se recalcula contra ESE producto.
           (r as any).costo_neto = Math.round(neto * 10000) / 10000;
           if (f.corrige) (r as any).factor_corrige = f.corrige;
+        }
+
+        for (const r of renglones as any[]) {
+          if (!r.producto_id) continue;
+          const sug = await saldoSugerido(admin, {
+            productId: r.producto_id, nombre: r.producto, factores: ((r.vinetas ?? []) as { factor: number }[]).map((v) => v.factor),
+            pagado: Number(r.costo_neto) * (Number(r.cantidad) || 0),
+            entra: (Number(r.cantidad) || 0) * (Number(r.factor_proveedor) || 1), emisor: d.emisor_nombre,
+          });
+          if (sug) r.saldo_sugerido = sug;
         }
 
         salida.push({

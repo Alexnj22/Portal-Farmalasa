@@ -203,12 +203,12 @@ export async function refrescarCatalogo() {
  * el servidor porque el costo del catálogo no se lee desde el navegador.
  * Devuelve `{ factor: null }` si no se pudo: quien llama decide el respaldo.
  */
-export async function factorParaProducto({ productId, costoNeto, descripcion }) {
+export async function factorParaProducto({ productId, costoNeto, descripcion, cantidad, emisor }) {
     const { data, error } = await supabase.functions.invoke('leer-dte-json', {
-        body: { modo: 'factor', product_id: productId, costo_neto: costoNeto ?? null, descripcion: descripcion ?? '' },
+        body: { modo: 'factor', product_id: productId, costo_neto: costoNeto ?? null, descripcion: descripcion ?? '', cantidad: cantidad ?? null, emisor: emisor ?? '' },
     });
-    if (error || !data?.factor) return { factor: null, origen: null, presentaciones: null, error: error?.message ?? 'sin respuesta' };
-    return { factor: Number(data.factor), origen: data.origen ?? null, presentaciones: data.presentaciones ?? null, error: null };
+    if (error || !data?.factor) return { factor: null, origen: null, presentaciones: null, saldo: null, error: error?.message ?? 'sin respuesta' };
+    return { factor: Number(data.factor), origen: data.origen ?? null, presentaciones: data.presentaciones ?? null, saldo: data.saldo_sugerido ?? null, error: null };
 }
 
 /**

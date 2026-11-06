@@ -597,11 +597,16 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         // vacío (Bodega, AMLO-DENK, 2026-11-05).
         let factor = ajustes[i]?.factor;
         let vinetas = null;
+        let saldo;
         if (producto.id !== renglon.producto_id) {
             setG(k);
-            const r = await factorParaProducto({ productId: producto.id, costoNeto: renglon.costo_neto, descripcion: renglon.descripcion });
+            const r = await factorParaProducto({
+                productId: producto.id, costoNeto: renglon.costo_neto, descripcion: renglon.descripcion,
+                cantidad: renglon.cantidad, emisor: p.documento.emisor,
+            });
             setG(null);
             vinetas = r.presentaciones;
+            saldo = r.saldo;
             if (intacto && !['documento', 'aprendido'].includes(renglon.factor_origen)) factor = r.factor ? String(r.factor) : '1';
         }
         if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
@@ -614,7 +619,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             setG(null);
             if (e) { setError(e); return; }
         }
-        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}) } }));
+        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}), ...(saldo !== undefined ? { saldo } : {}) } }));
         setBusc(null);
         setRes(null);
     };
@@ -1136,6 +1141,29 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             </span>
                                         </Notice>
                                     )}
+                                    {uso === 'venta' && puedeEditar && conProducto && !aj.servicio && !aj.erroneo && (() => {
+                                        // Saldo de recargas: el papel no dice cuántos dólares trae.
+                                        const e = elegidos[k];
+                                        const s = e && 'saldo' in e ? e.saldo : (e && e.product_id !== r.producto_id ? null : r.saldo_sugerido);
+                                        if (!s || String(aj.cargar ?? '') === String(s.unidades)) return null;
+                                        return (
+                                            <Notice variant="info" icon={HelpCircle} className="mt-2">
+                                                <span className="flex items-center gap-2 flex-wrap">
+                                                    <span className="flex-1 min-w-[14rem]">
+                                                        <b>Sugerencia</b> — revisa que cuadre con la factura: el saldo se carga
+                                                        en unidades de $1, y la factura no dice cuántos dólares trae.
+                                                        Con lo pagado ({formatMoney(s.pagado)}) y el costo de la última compra
+                                                        {s.de?.mismo_proveedor ? ' a este proveedor' : ` (${s.de?.proveedor ?? 'otro proveedor'})`}
+                                                        {' '}({formatMoney(s.costo_referencia, { decimales: 4 })} por cada $1, {fmtFecha(s.de?.fecha)}),
+                                                        serían <b>{s.unidades}</b>{s.exacto ? '' : ' aproximadamente'}.
+                                                    </span>
+                                                    <Button size="xs" onClick={() => ajustarCarga(i, r, String(s.unidades))}>
+                                                        Usar {s.unidades}
+                                                    </Button>
+                                                </span>
+                                            </Notice>
+                                        );
+                                    })()}
                                     {sim?.linea && puedeEditar && !aj.servicio && (() => {
                                         const sug = cantidadSospechosa(sim, costos.get(i));
                                         return sug && (

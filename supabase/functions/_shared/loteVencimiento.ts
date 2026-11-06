@@ -73,7 +73,12 @@ const FECHAS = [
 ];
 
 const LOTES = [
-  /(?:n[uú]mero\s+de\s+)?lote\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
+  // `\blote\b`: la palabra entera. Sin los límites, «CLOTEN UÑAS» (RODIM) y
+  // «Lotesoft» (LETERAGO) se leían como rótulo y devolvían «N» y «soft»
+  // (cruce contra lo cargado en octubre, 2026-11-05).
+  /(?:n[uú]mero\s+de\s+)?\blote\b\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
+  // FARNET: `CEFACTAL … 60 ML.@@DX612 - Vence: 30/05/2028`.
+  /@@\s*([A-Za-z0-9][A-Za-z0-9._\-\/]*)\s*-\s*venc/i,
   /\bl0te\s*[:.]?\s*([A-Za-z0-9._\-\/]+)/i,
   // DROMEDIC y REDIFAR: `L: 6E004 V:05/2030`. Con los dos puntos: una `L`
   // suelta sin ellos es demasiado común en un nombre.
@@ -136,7 +141,11 @@ export function loteSinRotulo(t: string, anioRef?: number): string | null {
   if (partes.length >= 3) {
     for (let i = 1; i < partes.length; i++) {
       if (aMesYAnio(partes[i], anioRef) && partes[i].split(/[\/\-.]/).length >= 2) {
-        const cand = loteValido(partes[i - 1]);
+        // Un prefijo corto separado del número (OVIDIO VIDES `|F 250593|`,
+        // LETERAGO `|L 5099S1|`) es el lote con un espacio de más: en el
+        // sistema quedó `F250593`.
+        const campo = /^[A-Za-z]{1,2}\s+[A-Za-z0-9]*\d[A-Za-z0-9]{2,}$/.test(partes[i - 1]) ? partes[i - 1].replace(/\s+/, "") : partes[i - 1];
+        const cand = loteValido(campo);
         // El nombre del producto también va entre `|`, pero lleva espacios;
         // un número de lote no.
         if (cand && !/\s/.test(cand)) return cand;
@@ -183,9 +192,12 @@ export function deTextoLibre(s: string, anioRef?: number): { lote: string | null
     }
   }
   let lote: string | null = null;
-  for (const re of LOTES) {
-    const m = t.match(re);
-    if (m) { lote = loteValido(m[1]); if (lote) break; }
+  // Todas las coincidencias de cada patrón: la primera puede ser un rótulo
+  // falso que `loteValido` descarta, y detrás venir el de verdad.
+  buscarLote: for (const re of LOTES) {
+    for (const m of t.matchAll(new RegExp(re.source, re.flags.includes("g") ? re.flags : re.flags + "g"))) {
+      lote = loteValido(m[1]); if (lote) break buscarLote;
+    }
   }
   if (!lote) lote = loteSinRotulo(t, anioRef);
   if (!lote && vence) lote = tokenAntesDeLaFecha(antesDeLaFecha);
@@ -243,7 +255,24 @@ export type Leido = { lote: string | null; vence: string | null; de: string };
  * Devuelve nulo cuando ninguna ancla aparece. **Que la pantalla lo pida es
  * preferible a inventar un vencimiento**, que es un dato sanitario.
  */
-export function loteYVence(textoPdf: string, item: any, anioRef?: number): Leido {
+/** ¿La fecha viene con su rótulo (Vence, Venc., Exp., V:)? */
+function venceRotulado(s: string): boolean {
+  return /(?:fecha\s*venc|fecha\s*exp|\bvenc|vencimiento|caducidad|\bv)\s*[:.]?\s*\d/i.test(s);
+}
+
+/**
+ * GUARDADO (ALCON) escribe `LOTE: 139H6-0128 - VENCE: 30/01/2028`: el
+ * `-0128` es el vencimiento (mes y año) pegado al lote, y en el sistema el
+ * lote es `139H6`. Se quita sólo si coincide con el vencimiento leído.
+ */
+export function sinSufijoDeFecha(lote: string | null, vence: string | null): string | null {
+  if (!lote || !vence) return lote;
+  const m = lote.match(/^(.+?)-(\d{2})(\d{2})$/);
+  if (m && vence.slice(5, 7) === m[2] && vence.slice(2, 4) === m[3]) return m[1];
+  return lote;
+}
+
+export function loteYVence(textoPdf: string, item: any, anioRef?: number, otras: string[] = []): Leido {
   const desc = norm(String(item?.descripcion ?? ""));
   if (!desc) return { lote: null, vence: null, de: "sin descripción" };
 
@@ -279,11 +308,28 @@ export function loteYVence(textoPdf: string, item: any, anioRef?: number): Leido
 
   // (B) Rótulos explícitos — MENFAR: `descripción Lote: X Vencimiento: Y`.
   //     Ventana corta para no traerse el lote del renglón siguiente.
-  const i = t.indexOf(desc);
+  //     Sin distinguir mayúsculas: GUARDADO escribe «Fco x 10 ml» en el JSON
+  //     y «FCO X 10 ML» en el PDF, y no se encontraba (2026-11-05).
+  const i = t.toUpperCase().indexOf(desc.toUpperCase());
   if (i >= 0) {
-    const ventana = t.slice(i + desc.length, i + desc.length + 120);
+    let ventana = t.slice(i + desc.length, i + desc.length + 120);
+    // La ventana termina donde empieza OTRO renglón del documento. RONASA no
+    // rotula el lote de una oferta y la ventana se traía el «LOTE: 260602» de
+    // FURONTAL, el producto de abajo (cruce de octubre). No se corta en el
+    // primer importe: DROMEDIC y REDIFAR ponen el lote DESPUÉS del precio.
+    const VU = ventana.toUpperCase();
+    for (const o of otras) {
+      const on = norm(String(o ?? "")).toUpperCase();
+      if (!on || on === desc.toUpperCase() || on.length < 6) continue;
+      const k = VU.indexOf(on);
+      if (k >= 0 && k < ventana.length) ventana = ventana.slice(0, k);
+    }
     const r = deTextoLibre(ventana, anioRef);
-    if (r.lote || r.vence) return { ...r, de: "pdf/rotulos" };
+    // Un vencimiento suelto (sin rótulo y sin lote al lado) en la ventana es
+    // casi siempre la fecha del renglón siguiente: MEDICAL PHARMA pone la
+    // fecha ANTES de cada producto, y VASOTRATE se llevaba la de VITANERAL.
+    if (r.vence && !r.lote && !venceRotulado(ventana)) r.vence = null;
+    if (r.lote || r.vence) return { ...r, lote: sinSufijoDeFecha(r.lote, r.vence), de: "pdf/rotulos" };
   }
 
   // (C) Anclado en el PRECIO — FARMEX: el JSON dice «GOTAS SOLUCION OTICA» y

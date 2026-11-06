@@ -128,7 +128,7 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
-    job: 'traslados-propuestas-al-dia', slug: null, cadencia: '*/5 * * * *',
+    job: 'traslados-propuestas-al-dia', slug: null, cadencia: '1-59/5 * * * *',
     corridasDia: 288, sistema: 0,
     motivo: 'Traslados (2026-11-05): a la hora le recuerda a la sala que pidió la propuesta de un lote '
           + 'que vence antes, y a las 3 horas la acepta sola avisando a las dos salas. Un SELECT de las '
@@ -141,7 +141,7 @@ const CRONS = [
           + 'mandaron ni tienen reparto o erróneo colgado. Un DELETE sobre decenas de filas. Sólo la base propia.',
   },
   {
-    job: 'compra-soltar-trabados', slug: null, cadencia: '*/10 * * * *',
+    job: 'compra-soltar-trabados', slug: null, cadencia: '7-59/10 * * * *',
     corridasDia: 144, sistema: 0,
     motivo: 'Cargar compra (auditoría 2026-10-30): pasa a «sin verificar» lo que quedó más de 15 min a '
           + 'medio camino (envío, reparto, recepción, salida, nota en el libro) porque la función se '
@@ -155,7 +155,7 @@ const CRONS = [
           + '`auth.users`/`auth.sessions` (~130 filas) y `employees`. Sólo la base propia.',
   },
   {
-    job: 'impresion-vencer-2min', slug: null, cadencia: '*/2 * * * *',
+    job: 'impresion-vencer-2min', slug: null, cadencia: '1-59/2 * * * *',
     corridasDia: 720, sistema: 0,
     motivo: 'Vence el ticket que esperó más de 10 min en la cola aunque la caja siga apagada, y le avisa '
           + 'a quien lo mandó con «Reimprimir» (2026-10-28). Un UPDATE sobre `cola_impresion`, que se '
@@ -180,13 +180,13 @@ const CRONS = [
           + 'para no sumar ~70,000 renglones cada vez que alguien abre la pestaña. Sólo la base propia.',
   },
   {
-    job: 'reservas-vencer-15min', slug: null, cadencia: '*/15 * * * *',
+    job: 'reservas-vencer-15min', slug: null, cadencia: '4-59/15 * * * *',
     corridasDia: 96, sistema: 0,
     motivo: 'Vence las reservas de la app: «lista» con el plazo de 24 h cumplido, o «pendiente» cuya '
           + 'oferta ya terminó. Un UPDATE sobre la propia tabla (decenas de filas a lo sumo).',
   },
   {
-    job: 'reservas-vigilar-15min', slug: null, cadencia: '*/15 13-23,0-3 * * *',
+    job: 'reservas-vigilar-15min', slug: null, cadencia: '7-59/15 13-23,0-3 * * *',
     corridasDia: 60, sistema: 0,
     motivo: 'Dos vigías de reservas (2026-10-21): apaga el saldo a favor vencido (lo deja en su libro) '
           + 'y avisa a la sala si la existencia cae bajo lo apartado. Sólo mira los productos con una '
@@ -209,7 +209,7 @@ const CRONS = [
           + 'Sólo la base propia.',
   },
   {
-    job: 'recetas-escalar-15min', slug: null, cadencia: '*/15 * * * *',
+    job: 'recetas-escalar-15min', slug: null, cadencia: '2-59/15 * * * *',
     corridasDia: 96, sistema: 0,
     motivo: 'Avisa a supervisión de las recetas de la app que llevan más de 4 h sin que la sala las '
           + 'revise (una vez por foto). SQL puro sobre `app_reservas` por el índice parcial de '
@@ -350,7 +350,7 @@ const CRONS = [
   },
   // ── Los que hablan con el sistema en cada corrida ──────────────────────────
   {
-    job: 'creditos-cada-10min', slug: 'sync-creditos', cadencia: '*/10 13-23,0-4 * * *',
+    job: 'creditos-cada-10min', slug: 'sync-creditos', cadencia: '9-59/10 13-23,0-4 * * *',
     corridasDia: 102, sistema: 6,
     motivo: 'Trae al portal las cuentas por cobrar de las seis salas. Son 6 listados, uno por '
           + 'sala y EN SERIE: la sucursal vive en la sesión del origen, así que dos a la vez se '
@@ -421,7 +421,7 @@ const CRONS = [
 
 
   {
-    job: 'avisos-diferidos-5min', slug: null, cadencia: '*/5 * * * *',
+    job: 'avisos-diferidos-5min', slug: null, cadencia: '4-59/5 * * * *',
     corridasDia: 288, sistema: 0,
     motivo: 'Entrega los avisos que nacieron fuera del horario laboral de quien los recibe '
           + '(regla del usuario 2026-09-25). SQL puro sobre la cola; casi siempre vacía. '
@@ -437,14 +437,14 @@ const CRONS = [
           + 'del mostrador: el saldo tiene que estar al día cuando el cliente vuelve a la caja.',
   },
   {
-    job: 'puntos-vigilar-motor', slug: null, cadencia: '*/15 * * * *',
+    job: 'puntos-vigilar-motor', slug: null, cadencia: '1-59/15 * * * *',
     corridasDia: 96, sistema: 0,
     motivo: 'Avisa si en horario de ventas hubo ventas con cliente y ninguna acumuló puntos en '
           + 'la última hora (el motor detenido no da error visible). SQL puro; no hace nada '
           + 'mientras el programa siga en el sistema anterior ni fuera de 8:00–21:00.',
   },
   {
-    job: 'puntos-vigilar-irregularidades', slug: null, cadencia: '*/5 12-23,0-5 * * *',
+    job: 'puntos-vigilar-irregularidades', slug: null, cadencia: '1-59/5 12-23,0-5 * * *',
     corridasDia: 216, sistema: 0,
     motivo: 'Avisa al momento de los movimientos de puntos fuera de lo normal (una ficha con '
           + '4+ vendedores en un día, ajustes a mano, canjes grandes…; pedido del usuario '
@@ -473,7 +473,7 @@ const CRONS = [
 
 
   {
-    job: 'vigilar-reinicio-de-la-base', slug: null, cadencia: '*/5 * * * *',
+    job: 'vigilar-reinicio-de-la-base', slug: null, cadencia: '2-59/5 * * * *',
     corridasDia: 288, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: SQL puro, compara `pg_postmaster_start_time()` '
           + 'contra el último arranque anotado y avisa al rol de alertas técnicas si cambió. Nació '
@@ -484,7 +484,7 @@ const CRONS = [
           + 'evitarlo, y la consulta es una inserción que casi siempre no inserta nada.',
   },
   {
-    job: 'vigilar-servicios', slug: null, cadencia: '*/5 * * * *',
+    job: 'vigilar-servicios', slug: null, cadencia: '3-59/5 * * * *',
     corridasDia: 288, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: SQL puro. Desmarca las fotos de caja que ya '
           + 'llegaron a storage, abre y cierra un aviso a Alertas Técnicas cuando el portal anota '
@@ -563,7 +563,7 @@ const CRONS = [
           + 'el aviso vuelve una vez por día que pasa en vez de sonar una sola vez y callarse.',
   },
   {
-    job: 'barrer-traslados-recibidos', slug: 'barrer-traslados-recibidos', cadencia: '0 12-23,0-3 * * *',
+    job: 'barrer-traslados-recibidos', slug: 'barrer-traslados-recibidos', cadencia: '11 12-23,0-3 * * *',
     corridasDia: 16, sistema: 13,
     motivo: 'Un ingreso + un cambio de sala y una lectura de cola por cada sala con tarjetas '
           + 'abiertas (6 hoy). Cada hora y no más seguido: lo único que cubre —que alguien reciba '
@@ -592,13 +592,13 @@ const CRONS = [
           + 'trabaja —y es exactamente cuando tiene que hacerlo—.',
   },
   {
-    job: 'reintentar-ingreso-pedido', slug: 'trasladar-pedido-erp', cadencia: '*/10 * * * *',
+    job: 'reintentar-ingreso-pedido', slug: 'trasladar-pedido-erp', cadencia: '4-59/10 * * * *',
     corridasDia: 144, sistema: 0,
     motivo: 'Igual: `recepciones_por_reintentar` es una consulta a la base y devuelve vacío casi '
           + 'siempre. Sólo toca el sistema cuando hay una recepción que se cortó.',
   },
   {
-    job: 'continuar-envios', slug: 'enviar-producto-erp', cadencia: '*/10 * * * *',
+    job: 'continuar-envios', slug: 'enviar-producto-erp', cadencia: '3-59/10 * * * *',
     corridasDia: 144, sistema: 0,
     motivo: 'Retoma un envío cuyo despacho se cortó por tiempo. NO toca el sistema de origen en '
           + 'la corrida normal: `envios_por_continuar` es una consulta a la base y devuelve vacío '
@@ -619,7 +619,7 @@ const CRONS = [
           + 'completo de ventas (00:20) y dentro de la ventana sin sincronizaciones.',
   },
   {
-    job: 'avisar-bitacora-por-vencer-30min', slug: 'avisar-bitacora-por-vencer', cadencia: '*/30 13-23,0-1 * * *',
+    job: 'avisar-bitacora-por-vencer-30min', slug: 'avisar-bitacora-por-vencer', cadencia: '9-59/30 13-23,0-1 * * *',
     corridasDia: 26, sistema: 0,
     motivo: 'CERO peticiones al sistema de origen: una consulta a la base y, cuando hay algo por '
           + 'vencerse, un aviso. Cada media hora de 07:00 a 19:30 SV —la ventana en que hay '
@@ -781,29 +781,29 @@ const CRONS = [
     corridasDia: 540, sistema: null, motivo: 'SIN MEDIR.',
   },
   {
-    job: 'dte-resync-mes-hora', slug: 'sync-dte-sales', cadencia: '0 12-23,0-5 * * *',
+    job: 'dte-resync-mes-hora', slug: 'sync-dte-sales', cadencia: '7 12-23,0-5 * * *',
     corridasDia: 18, sistema: null, motivo: 'SIN MEDIR.',
   },
   {
-    job: 'sync-products-10min', slug: 'sync-products', cadencia: '*/10 * * * *',
+    job: 'sync-products-10min', slug: 'sync-products', cadencia: '6-59/10 * * * *',
     corridasDia: 144, sistema: null, motivo: 'SIN MEDIR.',
   },
   {
-    job: 'sync-purchases-10min', slug: 'sync-erp-purchases', cadencia: '*/10 * * * *',
+    job: 'sync-purchases-10min', slug: 'sync-erp-purchases', cadencia: '1-59/10 * * * *',
     corridasDia: 144, sistema: null, motivo: 'SIN MEDIR.',
   },
   {
-    job: 'check-sales-alerts-5min', slug: 'check-sales-alerts', cadencia: '*/5 12-23,0-5 * * *',
+    job: 'check-sales-alerts-5min', slug: 'check-sales-alerts', cadencia: '2-59/5 12-23,0-5 * * *',
     corridasDia: 216, sistema: 0, motivo: 'Mira la base, no el sistema.',
   },
   {
-    job: 'check-sync-health-alerts-20min', slug: 'check-sync-health-alerts', cadencia: '*/20 12-23,0-5 * * *',
+    job: 'check-sync-health-alerts-20min', slug: 'check-sync-health-alerts', cadencia: '3-59/20 12-23,0-5 * * *',
     corridasDia: 54, sistema: 0, motivo: 'Mira la base, no el sistema.',
   },
   {
     // 7:00–21:59 SV: la corrida de las 22:30 cubre lo que queda, y correr las
     // dos a la vez pondría dos envíos sobre la misma sesión del sistema.
-    job: 'reenviar-ccf-10min', slug: 'regularizar-dte', cadencia: '*/10 13-23,0-3 * * *',
+    job: 'reenviar-ccf-10min', slug: 'regularizar-dte', cadencia: '8-59/10 13-23,0-3 * * *',
     corridasDia: 90, sistema: 0,
     motivo: 'Sin un CCF sin sello de más de 5 min no toca el sistema: no inicia sesión, es una consulta a la base. Con uno, ~5 peticiones al sistema por CCF, y es el caso que se quiere.',
   },
@@ -815,7 +815,7 @@ const CRONS = [
   // Está declarado igual para que el cruce contra producción avise si alguien lo
   // apaga — y apagarlo sería justamente perder el recordatorio.
   { job: 'avisar-cambios-que-no-se-quedaron',    slug: null,                          cadencia: '20 12-23,0-5 * * *', corridasDia: 18, sistema: 0, motivo: 'Compara el portal contra lo aprobado y avisa. No toca el sistema de origen.' },
-  { job: 'avisar-pedidos-sin-recibir',           slug: null,                          cadencia: '*/30 12-23,0-5 * * *', corridasDia: 36, sistema: 0, motivo: 'Pedidos que llegaron a la sala y no se recibieron: a la sala a las 2 h, a supervisión a las 6 h, una sola vez por umbral (avisos_emitidos). Pura base: no toca el sistema de origen. Borrador 12 de Pedidos (2026-10-08).' },
+  { job: 'avisar-pedidos-sin-recibir',           slug: null,                          cadencia: '8-59/30 12-23,0-5 * * *', corridasDia: 36, sistema: 0, motivo: 'Pedidos que llegaron a la sala y no se recibieron: a la sala a las 2 h, a supervisión a las 6 h, una sola vez por umbral (avisos_emitidos). Pura base: no toca el sistema de origen. Borrador 12 de Pedidos (2026-10-08).' },
   { job: 'avisar-pago-seguro-vida',              slug: null,                          cadencia: '0 13 1 11 *', corridasDia: 0.003, sistema: 0, motivo: 'Una vez al año (1 de noviembre, 7:00 SV): avisa que toca pagar el seguro de vida colectivo. SQL puro, freno en el metadata del aviso (fuente + año).' },
   { job: 'sincronizar-fichas-clientes-2130-sv', slug: 'sincronizar-fichas-clientes', cadencia: '30 3 * * *', corridasDia: 1, sistema: null, motivo: 'Corrida nocturna de fichas.' },
   { job: 'regularizar-dte-2230-sv',             slug: 'regularizar-dte',             cadencia: '30 4 * * *', corridasDia: 1, sistema: null, motivo: 'Envío nocturno a Hacienda.' },
@@ -824,13 +824,13 @@ const CRONS = [
   { job: 'check-purchases-reconciliation-daily', slug: 'check-purchases-reconciliation', cadencia: '20 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de compras.' },
   { job: 'check-sales-reconciliation-daily',    slug: 'check-sales-reconciliation',  cadencia: '30 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de ventas.' },
   { job: 'consolidate-timesheets-daily',        slug: 'consolidate-timesheets',      cadencia: '0 8 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
-  { job: 'sync-purchase-emails-daily',          slug: 'sync-purchase-emails',        cadencia: '*/10 * * * *', corridasDia: 144, sistema: 0, motivo: 'Lee correo, no el sistema. Cada 10 min desde 2026-11-05 (pedido del usuario): Bodega carga las compras el mismo día. El nombre «daily» quedó por compatibilidad.' },
+  { job: 'sync-purchase-emails-daily',          slug: 'sync-purchase-emails',        cadencia: '2-59/10 * * * *', corridasDia: 144, sistema: 0, motivo: 'Lee correo, no el sistema. Cada 10 min desde 2026-11-05 (pedido del usuario): Bodega carga las compras el mismo día. El nombre «daily» quedó por compatibilidad.' },
   { job: 'apply-scheduled-employee-events-daily', slug: 'apply-scheduled-employee-events', cadencia: '0 11 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'check-doc-expiry-daily',              slug: 'check-doc-expiry',            cadencia: '0 13 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'check-employee-doc-expiry-daily',     slug: 'check-employee-doc-expiry',   cadencia: '30 13 * * *', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'notify-new-products-daily',           slug: 'notify-new-products-daily',   cadencia: '0 14 * * 1-6', corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
   { job: 'ccf-repaso-22h-sv',                   slug: 'check-sales-alerts',          cadencia: '0 4 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },
-  { job: 'heal-dte-sync',                       slug: 'heal-dte-sync',               cadencia: '0 */2 * * *', corridasDia: 12, sistema: null, motivo: 'SIN MEDIR. Repara huecos del sync.' },
+  { job: 'heal-dte-sync',                       slug: 'heal-dte-sync',               cadencia: '13 */2 * * *', corridasDia: 12, sistema: null, motivo: 'SIN MEDIR. Repara huecos del sync.' },
   { job: 'backup-critical-tables-weekly',       slug: 'backup-critical-tables',      cadencia: '0 8 * * 0',  corridasDia: 0, sistema: 0, motivo: 'Semanal. Ya estuvo 17 días muerto sin que nadie lo viera.' },
   // Eran DOS sobre la misma función. El de las 06:00 UTC (sábado a medianoche
   // en El Salvador) copiaba, y éste de las 16:00 encontraba todo hecho y salía
@@ -857,7 +857,7 @@ const CRONS = [
   { job: 'dte-resync-month-salud5',  slug: 'backfill-dte-sales', cadencia: '0 5 1 * *', corridasDia: 0, sistema: null, motivo: 'SIN MEDIR. Mensual, una sala.' },
   // La distribuidora (Torogoz), en producción desde el 2026-10-01.
   {
-    job: 'dist-vencer-reservas', slug: null, cadencia: '*/15 * * * *',
+    job: 'dist-vencer-reservas', slug: null, cadencia: '3-59/15 * * * *',
     corridasDia: 96, sistema: 0,
     motivo: 'Suelta las reservas de una venta en ruta que pasaron sus 30 minutos y le avisa al vendedor '
           + '(borrador 0012). SQL puro sobre dist_reservas, casi siempre vacía: no toca el sistema de origen '

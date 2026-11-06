@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.5 — Las tareas programadas dejan de arrancar todas en el mismo minuto
+
+- **27 tareas recurrentes pasan a minutos impares** (`20261106164644_crones_recurrentes_a_minutos_impares`). `gate:eficiencia` marcaba tres crons con «job startup timeout». No era un error de esos crons: en ciertos momentos la base entera se frena (hoy a las 16:34 UTC una consulta trivial tardó 80 s y se cortaron conexiones de clientes), y todo lo que arranca justo ahí falla junto. En la última semana esos episodios cayeron casi siempre en minutos redondos, y en el minuto :00 arrancaban 63 tareas distintas. Las tareas de cada 2, 5, 10, 15, 20 y 30 minutos, y las de cada hora, quedan repartidas en los minutos 1–9, 11 y 13. **La frecuencia no cambia, sólo el minuto.** No se tocan los avisos diarios que salen a una hora pactada ni los de caja. La migración sólo mueve un cron que existe y que todavía tiene su cadencia vieja.
+- El manifiesto `CRONS` de `gate:eficiencia` acompaña las nuevas cadencias. El gate seguirá en rojo hasta que las fallas de antes del cambio salgan de su ventana de 24 h.
+- Para tener en cuenta: la base se reinició sola el 2026-11-06 a las 00:06 UTC. La causa de fondo sigue siendo la capacidad de la instancia (`docs/INCIDENTE-CAIDA-2026-09-14.md`).
+
 ## v2.1461.4 — Títulos en tres niveles
 
 - **Los títulos de bloque salen de un solo componente, `TituloDeSeccion`, en tres niveles** (decisión del usuario): `modal` (18px, el de un modal o un panel), `tarjeta` (14px, el de una tarjeta) y `seccion` (el rótulo en mayúsculas). Había 211 `<h3>` con 34 estilos distintos; se pasaron 181 en 114 archivos.

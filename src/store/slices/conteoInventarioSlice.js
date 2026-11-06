@@ -426,7 +426,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             for (const n of plan.nuevos) {
                 const alta = await get().agregarProductoManualConteo(conteoId, {
                     erpProductId: item.erp_product_id,
-                    presentacion: item.presentacion,
+                    presentacion: plan.presentacion || item.presentacion,
                     lote: n.lote,
                     fechaVencimiento: n.vence,
                 });
@@ -462,11 +462,24 @@ export const createConteoInventarioSlice = (set, get) => ({
         const regla = reglaDeLoteYVence(prod || { regulado: true, perecedero: true });
         const pres = (r) => String(r?.presentacion ?? '').trim().toUpperCase();
         const filas = await get().fetchConteoProductItems(conteoId, item.erp_product_id);
-        const actual = filas.find((r) => r.id === item.id) || item;
-        const hermanos = filas.filter((r) => pres(r) === pres(actual) && !r.is_vencidos);
+        const delRenglon = filas.find((r) => r.id === item.id) || item;
+        // La presentación la elige quien cuenta (Salud 4: «¿y dónde se
+        // selecciona la presentación?»). Si es otra que la del renglón, el lote
+        // va a ESA presentación, y lo que baja es su «Sin lote» —si existe—;
+        // si no hay, el lote sólo se agrega.
+        const destino = linea.presentacion ? pres(linea) : pres(delRenglon);
+        let actual = delRenglon;
+        if (destino !== pres(delRenglon)) {
+            actual = filas.find((r) => pres(r) === destino && esLoteGenerico(r.lote) && !r.is_vencidos && !r.es_agregado_manual)
+                || { erp_product_id: item.erp_product_id, presentacion: linea.presentacion, lote: '\u0000ninguno', fecha_vencimiento: null, soloAgrega: true };
+        }
+        const hermanos = filas.filter((r) => pres(r) === destino && !r.is_vencidos);
         const plan = planDeLotesReales({ item: actual, lotes: [linea], sinLote: 0, hermanos, regla });
         if (plan.error) throw new Error(plan.error);
-        if (esLoteGenerico(actual.lote)) {
+        plan.presentacion = actual.presentacion;
+        if (actual.soloAgrega) {
+            plan.original = null;
+        } else if (esLoteGenerico(actual.lote)) {
             const destino = new Set(plan.aHermanos.map((h) => h.id));
             const yaAnotado = hermanos
                 .filter((h) => h.es_agregado_manual && !destino.has(h.id))

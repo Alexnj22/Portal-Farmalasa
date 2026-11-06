@@ -7,6 +7,12 @@ import { render, cleanup, waitFor, fireEvent, screen } from '@testing-library/re
 // la fila se limpia para la caja siguiente y nada más se mueve.
 const showToast = vi.fn();
 vi.mock('@nucleo/store/toastStore', () => ({ useToastStore: () => ({ showToast }) }));
+vi.mock('@nucleo/data/conteoInventario', () => ({
+    fetchProductPresentacionesForConteo: vi.fn(async () => ({ data: [
+        { factor: 10, presentaciones: { tipo: 'CAJA' } },
+        { factor: 1, presentaciones: { tipo: 'UNIDAD' } },
+    ], error: null })),
+}));
 
 import LotesEnLinea from '../../src/views/inventario/LotesEnLinea';
 
@@ -28,7 +34,8 @@ describe('LotesEnLinea', () => {
         escribir(cant, '3');
         fireEvent.submit(cant.closest('form'));
         await waitFor(() => expect(onGuardar).toHaveBeenCalledTimes(1));
-        expect(onGuardar.mock.calls[0][1]).toEqual({ lote: '260412', vence: '2028-04-01', cantidad: '3' });
+        // Sin elegir otra, la presentación es la del renglón.
+        expect(onGuardar.mock.calls[0][1]).toEqual({ lote: '260412', vence: '2028-04-01', cantidad: '3', presentacion: 'CAJA' });
         // Queda una fila vacía para el lote siguiente.
         await waitFor(() => expect(screen.getByLabelText('Lote').value).toBe(''));
     });
@@ -40,6 +47,11 @@ describe('LotesEnLinea', () => {
         expect(screen.getAllByLabelText('Lote')).toHaveLength(1);
         fireEvent.click(screen.getByRole('button', { name: /^Lote$/ }));
         expect(screen.getAllByLabelText('Lote')).toHaveLength(2);
+    });
+
+    it('con más de una presentación, la fila deja elegirla', async () => {
+        render(<LotesEnLinea item={sinLote} onGuardar={vi.fn()} />);
+        await waitFor(() => expect(screen.getByLabelText('Presentación')).toBeTruthy());
     });
 
     it('si falla, la fila se queda como estaba y lo dice', async () => {

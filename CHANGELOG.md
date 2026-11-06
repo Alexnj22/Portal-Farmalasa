@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1470.1 — Conteo: el total del producto en una sola unidad y la presentación en la fila del lote
+
+Tras la prueba de Salud 4 («¿−45? no entiendo» y «¿dónde se selecciona la
+presentación?»).
+
+- **El total del producto mezclaba unidades.** Alerkem 10 mg x 10 decía
+  Sistema 50 u · Físico 5 u · Dif. −45 u, cuando era 50 contra 50: el «Sin
+  lote» tiene cajas y sueltas (suma en unidades: 5 cajas = 50) y los lotes
+  nuevos sumaban en cajas (3 + 2 = 5). Ahora, si cualquier grupo del producto
+  mezcla presentaciones, todos sus renglones suman en unidades
+  (`get_conteo_products_page`, migración `20261106214740`). Sólo era la cifra
+  del encabezado: los renglones y el ajuste ya estaban bien.
+- **La presentación se elige en la fila del lote** cuando el producto tiene más
+  de una (p. ej. cajas de 10 o unidades). Por defecto, la del renglón. Si se
+  elige otra, el lote va a esa presentación y lo que baja es su «Sin lote».
+
+
 ## v2.1470.0 — El lote y el vence se anotan en el mismo renglón
 
 Pedido tras la prueba de Salud 4: «al ingresar un lote se actualiza, así que

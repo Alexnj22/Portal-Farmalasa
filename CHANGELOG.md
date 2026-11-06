@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.16 — Corte Z sin «Ver el cotejo completo»: se muestra según lo enviado
+
+_(pendiente de redactar)_
+
 ## v2.1461.15 — Citas de diseño al día
 
 - Comentarios del código que citaban secciones retiradas de DESIGN.md (§22 y §23 viven ahora en `docs/design/historia/18-23-estados-y-retirados.md`; §19.1 nunca existió y lo que describe es la regla de §2.1, un token de color en los cuatro temas). TablePagination citaba una regla de §11 que ya cambió.

@@ -459,9 +459,13 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 aire sobrante queda repartido y las dos filas de botones se leen
                 alineadas. */}
             <div className="mt-auto flex flex-wrap items-center gap-2 pt-1">
-                <Button size="sm" variant="secondary" icon={FileText} onClick={() => onVerTicket(fila)}>
-                    {verTicket ? 'Ocultar el original' : 'Ver el original'}
-                </Button>
+                {/* El original sólo viaja con «Ver el cotejo completo»: trae las
+                    cifras sin ajustar a lo enviado (20261106174248). */}
+                {fila.ticket && (
+                    <Button size="sm" variant="secondary" icon={FileText} onClick={() => onVerTicket(fila)}>
+                        {verTicket ? 'Ocultar el original' : 'Ver el original'}
+                    </Button>
+                )}
                 {/* Sin `corte_z_descargar` el llamador no pasa `onPdf` — el botón
                     no existe en vez de existir y fallar. */}
                 {onPdf && (
@@ -471,7 +475,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                 )}
             </div>
 
-            {verTicket && (
+            {verTicket && fila.ticket && (
                 // El texto tal cual lo emitió el origen. Es la prueba: el día que
                 // haya que defender una cifra, esto es lo que se muestra.
                 <pre className="rounded-card bg-surface-card-hover border border-divider p-3 overflow-x-auto font-mono text-micro leading-tight text-content-2">

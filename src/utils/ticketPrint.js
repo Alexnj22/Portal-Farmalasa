@@ -644,7 +644,20 @@ const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 // El margen de corte NO se toca: antes de los saltos del final se vuelve al
 // interlineado de fábrica (`ESC 2`), que es con el que se midieron los
 // ~17 mm de SALTOS_DE_CORTE.
-const RESPIRO = 8;                              // puntos entre renglones (2026-11-06: 4 quedaba pegado)
+const RESPIRO = 12;                             // puntos entre renglones (2026-11-06: 4 y 8 salían pegados en Salud 4)
+
+// ── El aire entre secciones (2026-11-06) ─────────────────────────────────────
+//
+// Usuario, con el papel de Salud 4 en la mano: «aun todo esta pegado, no tiene
+// separaciones por sectores». El interlineado parejo no separa nada: el título,
+// los datos, cada bloque, la tabla y los totales salían como un solo párrafo.
+//
+// `ESC J n` avanza n puntos SIN gastar un renglón entero (un `\n` vacío son 29
+// puntos de letra chica). Va al COMIENZO del primer renglón de cada sección,
+// cuando el búfer de la impresora está vacío, así que sólo avanza papel. Es
+// medio renglón: separa sin volver al papel largo de antes del 2026-11-04.
+const AIRE = `${ESC}J` + String.fromCharCode(14);
+const conAire = (renglones) => (renglones.length ? [AIRE + renglones[0], ...renglones.slice(1)] : renglones);
 const ALTO_DE_LETRA = { chica: 17, normal: 24 }; // fuente B / fuente A, en puntos
 const INTERLINEADO_DE_FABRICA = `${ESC}2`;
 
@@ -719,6 +732,9 @@ export function apretarRenglones(texto, modoInicial = 0) {
 // la cola de la sala (el agente escribe con `lp -o raw`, sin el programa ajeno
 // en el medio) y después se comprueba que el sistema de facturación siga
 // imprimiendo. Ver [[project_impresion_en_ticketera_2026_08_13]].
+// **Contestado en Salud 4 (2026-11-06)**: el lector reconoce el CODE128. Es la
+// que llevan por defecto todos los tickets; el CODE39 queda sólo en la hoja de
+// prueba, para preguntarle lo mismo a la caja de otra sala.
 export const SIMBOLOGIAS = ['CODE128', 'CODE39'];
 
 // Alto en puntos (~10 mm a 203 ppp) y ancho de módulo. Con 2 puntos por módulo
@@ -1035,20 +1051,20 @@ export function seccionesParaElPrograma(ticket) {
     const cabeza = (marca
         ? [
             JUEGO_DE_CARACTERES + CENTRO + LETRA_CHICA + [...lineasDeEncabezado, regla()].join('\n'),
-            (ticket.titulo ?? '').toUpperCase(),
+            ticket.titulo ? AIRE + ticket.titulo.toUpperCase() : '',
         ]
         : [
             JUEGO_DE_CARACTERES + CENTRO + DOBLE_ALTO + (encabezado.titulo ?? ''),
             ...(lineasDeEncabezado.length ? [LETRA_CHICA + lineasDeEncabezado.join('\n')] : []),
             LETRA_CHICA + regla(),
-            (ticket.titulo ?? '').toUpperCase(),
+            ticket.titulo ? AIRE + ticket.titulo.toUpperCase() : '',
         ]).filter(Boolean).join('\n') + '\n';
 
     const medio = [
         // El centrado y la letra chica ya vienen puestos del encabezado.
-        ...renglonesDeDatos(datos),
-        regla(),
-        ...bloques.flatMap(b => [
+        ...conAire(renglonesDeDatos(datos)),
+        AIRE + regla(),
+        ...bloques.flatMap(b => conAire([
             b.titulo ?? '',
             // La prosa se parte ACÁ, en palabras. Si se manda entera, la parte la
             // impresora en la columna donde se le acaba el papel y corta a mitad
@@ -1066,9 +1082,9 @@ export function seccionesParaElPrograma(ticket) {
                 : []),
             b.monoespaciado ?? '',
             ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
-        ].filter(Boolean)),
+        ].filter(Boolean))),
         ...(items ? [
-            IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
+            AIRE + IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
             regla(),
             // La nota va bajo su producto, sangrada dos columnas: se lee como
             // parte de esa fila y no como un producto más.
@@ -1099,7 +1115,7 @@ export function seccionesParaElPrograma(ticket) {
             //
             // El reset va al final del MISMO renglón, no en el siguiente: un
             // código solo se lleva un renglón de rollo.
-            ...totales.map(([r, v, destacado], i) => (i === 0 ? DERECHA + LETRA_NORMAL : '')
+            ...totales.map(([r, v, destacado], i) => (i === 0 ? AIRE + DERECHA + LETRA_NORMAL : '')
                 + (destacado ? DESTACADO : '')
                 + dosColumnas(r, v, COLUMNAS_TICKET.normal)
                 + (destacado ? LETRA_NORMAL : '')),

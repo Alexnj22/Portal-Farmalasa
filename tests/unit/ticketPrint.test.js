@@ -39,7 +39,7 @@ const renglones = (t) => seccionesParaElPrograma(t).cuerpo.split('\n');
 // manda (para no gastar un renglón en blanco por cada uno), ese byte de más era
 // la diferencia entre 54 y «55, no cabe».
 // eslint-disable-next-line no-control-regex
-const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3].|[@2])/g, '');
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3J].|[@2])/g, '');
 
 describe('el ticket que se manda al programa de impresión', () => {
     it('pone cantidad, precio e importe en las columnas del ticket real', () => {
@@ -325,11 +325,11 @@ describe('el interlineado de cada renglón', () => {
         pie: ['Gracias'],
     });
 
-    it('la letra chica avanza 25 puntos y el doble alto 56, no lo mismo', () => {
+    it('la letra chica avanza 29 puntos y el doble alto 60, no lo mismo', () => {
         const s = seccionesParaElPrograma(t());
-        expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(25) + '\n');
+        expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(29) + '\n');
         const total = s.cuerpo.split('\n').find(l => l.includes('TOTAL'));
-        expect(total.endsWith('\x1b3' + String.fromCharCode(56))).toBe(true);
+        expect(total.endsWith('\x1b3' + String.fromCharCode(60))).toBe(true);
     });
 
     it('no mete nada adentro del código de barras (su largo es un \\n)', () => {

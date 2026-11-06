@@ -45,7 +45,7 @@ const todoElTexto = (t) => JSON.stringify(seccionesParaElPrograma({ ancho: 80, .
 // eslint-disable-next-line no-control-regex
 // `ESC 3 n` (2026-11-04) fija el avance de cada renglón: tres bytes, cero
 // columnas de papel.
-const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3].|@)/g, '');
+const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3J].|@)/g, '');
 
 describe('el comprobante de una diferencia de caja', () => {
     it('no manda un solo caracter que el rollo no sepa imprimir', () => {

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.6 — Tickets: aire entre secciones y renglones menos pegados
+
+Con el papel de Salud 4 en la mano: «aun todo esta pegado, no tiene separaciones
+por sectores». Dos cambios en el ticket del rollo:
+
+- Cada sección —título, datos, cada bloque, la tabla, los totales— arranca con
+  medio renglón de aire (`ESC J 14`), sin gastar un renglón entero.
+- El respiro entre renglones sube de 8 a 12 puntos (letra chica 25 → 29, doble
+  alto 56 → 60): casi el interlineado de fábrica, pero cada renglón sigue
+  avanzando sólo lo que necesita.
+
+Y queda anotado que el lector de Salud 4 lee el CODE128, que es el que llevan
+todos los tickets.
+
 ## v2.1466.5 — Devoluciones y repartos de compra también destraban la ficha al recibir
 
 El destrabe (control de lote activado o presentación oculta después del despacho)

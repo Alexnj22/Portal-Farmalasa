@@ -38,7 +38,7 @@ const base = (extra = {}) => construirTicketDeTraslado({
 // `ticketPrint.test.js`, por el mismo motivo.
 /* eslint-disable no-control-regex -- los códigos ESC/GS SON lo que se busca */
 const sinCodigos = (s) => s
-    .replace(/\x1b[@REa!3][\s\S]/g, '')   // `ESC 3 n`: el avance del renglón (2026-11-04)
+    .replace(/\x1b[@REa!3J][\s\S]/g, '')   // `ESC 3 n`: el avance del renglón (2026-11-04); `ESC J n`: el aire entre secciones
     .replace(/\x1d[hwHV][\s\S]/g, '')
     .replace(/\x1dk[\s\S]*?(?=\n|$)/g, '');
 /* eslint-enable no-control-regex */

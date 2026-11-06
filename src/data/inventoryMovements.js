@@ -127,7 +127,7 @@ export async function buscarEnCatalogo({ erpSucursalId, texto }) {
 }
 
 /** Busca por nombre dentro de lo que esa sucursal tiene con existencia. */
-export async function buscarConExistencia({ erpSucursalId, texto }) {
+export async function buscarConExistencia({ erpSucursalId, texto, vencidos = false }) {
     const q = String(texto ?? '').trim();
     if (q.length < 2) return { filas: [], error: null };
 
@@ -146,7 +146,7 @@ export async function buscarConExistencia({ erpSucursalId, texto }) {
         .from('v_inventario_lotes')
         .select('erp_product_id, descripcion, presentacion, detalle, factor, lote, fecha_vencimiento, cantidad')
         .eq('erp_sucursal_id', Number(erpSucursalId))
-        .eq('is_vencidos', false)
+        .eq('is_vencidos', vencidos === true)
         .gt('cantidad', 0)
         .in('erp_product_id', ids)
         .order('id'), { completo: true });

@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.0 — Bodega: volver de vencidos al estante y devolver lo pasado por error
+
+- **Nueva opción «Volver al estante»** en Ajuste de inventario de Bodega:
+  se busca el producto en el área de vencidos y vuelve al estante para
+  venderse. Motivos: «Se mandó por error», «Revisado: está en buen estado» u
+  «Otro» (con detalle obligatorio). Directo, sin aprobación, y comprobado en el
+  estante. El pedido del usuario: «si hay algún producto enviado por error, y
+  debe volver para venderla».
+- **«Pasados desde el portal»**: en «Pasar a vencidos», lo que se mandó desde
+  el portal en los últimos 30 días y sigue en vencidos tiene un botón
+  **Devolver** que lo regresa al estante con un toque.
+- `bodega_a_vencidos` gana `sentido` (`a_vencidos` / `al_estante`); los
+  motivos de cada sentido los fija la base.
+
 ## v2.1465.2 — Compras: la caja y el frasco abreviados con una letra
 
 - Gamma escribe «AZTHOMAC 500mg. Caps. C X 25» y «F X 15ml.»: la «C» es la

@@ -1270,18 +1270,24 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
  * escriben ANTES de mandar (`enviando`): un corte a medio camino queda escrito.
  */
 const MOTIVOS_A_VENCIDOS = ["proximo_a_vencer", "vencido", "danado", "devolucion", "retiro", "otro"] as const;
+// El camino inverso (2026-11-06): lo que está en vencidos y se puede vender
+// vuelve al estante. Mismo mecanismo con origen y destino cambiados.
+const MOTIVOS_AL_ESTANTE = ["error", "buen_estado", "otro"] as const;
 const ROTULO_MOTIVO: Record<string, string> = {
   proximo_a_vencer: "PROXIMO A VENCER", vencido: "VENCIDO", danado: "DANADO",
   devolucion: "DEVOLUCION", retiro: "RETIRO DEL MERCADO", otro: "OTRO",
+  error: "ENVIADO POR ERROR", buen_estado: "REVISADO EN BUEN ESTADO",
 };
 
 async function estanteAVencidos(admin: any, body: any, quien: string) {
+  const alEstante = body?.sentido === "al_estante";
   const motivo = String(body?.motivo ?? "");
-  if (!(MOTIVOS_A_VENCIDOS as readonly string[]).includes(motivo)) return { error: "Elige el motivo." };
+  const validos: readonly string[] = alEstante ? MOTIVOS_AL_ESTANTE : MOTIVOS_A_VENCIDOS;
+  if (!validos.includes(motivo)) return { error: "Elige el motivo." };
   const detalle = String(body?.detalle ?? "").trim() || null;
   const fotos = (Array.isArray(body?.fotos) ? body.fotos : []).map(String).filter(Boolean).slice(0, 3);
   if (motivo === "danado" && !fotos.length) return { error: "Por daño hace falta al menos una foto." };
-  if (motivo === "otro" && (detalle ?? "").length < 4) return { error: "Escribe por qué va a vencidos." };
+  if (motivo === "otro" && (detalle ?? "").length < 4) return { error: alEstante ? "Escribe por qué vuelve al estante." : "Escribe por qué va a vencidos." };
   type Pedido = {
     erp_product_id: number; descripcion: string; presentacion: string; factor: number; cantidad: number;
     lote: string | null; vence: string | null;
@@ -1305,6 +1311,9 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
   const estante = await ubicacionDeBodega(admin, false);
   const vencidosUbic = await ubicacionDeBodega(admin, true);
   if (!estante || !vencidosUbic) return { error: "No se conoce el estante o el área de vencidos de Bodega." };
+  const origen = alEstante ? vencidosUbic : estante;
+  const destino = alEstante ? estante : vencidosUbic;
+  const dondeSale = alEstante ? "el área de vencidos" : "el estante";
 
   const cookie = await sesionEn(ERP_BODEGA, login);
   // Todo se valida contra lo que el sistema ofrece AHORA, antes de escribir
@@ -1313,21 +1322,21 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
   let total = 0;
   const esperado = new Map<number, number>();
   for (const r of pedidos) {
-    const f = await traerFila(cookie, r.erp_product_id, estante);
-    if (!f.encontrado) return { error: `${r.descripcion} no está en el estante de Bodega.` };
+    const f = await traerFila(cookie, r.erp_product_id, origen);
+    if (!f.encontrado) return { error: `${r.descripcion} no está en ${dondeSale} de Bodega.` };
     const pres = await resolverPresentacion(cookie, f, r.presentacion, r.factor, { porFactor: true });
-    if (!pres) return { error: `${r.descripcion}: su presentación ya no está en el estante.` };
+    if (!pres) return { error: `${r.descripcion}: su presentación ya no está en ${dondeSale}.` };
     const unidades = r.cantidad * r.factor;
     let idLote = "0";
     let vence = r.vence ?? f.vence ?? "";
     if (f.regulado) {
       const lote = f.lotes.find((z) => z.numero === r.lote);
-      if (!lote) return { error: `${r.descripcion}: el lote ${r.lote ?? "(sin lote)"} ya no está en el estante.` };
+      if (!lote) return { error: `${r.descripcion}: el lote ${r.lote ?? "(sin lote)"} ya no está en ${dondeSale}.` };
       if (lote.stock < unidades - 1e-6) return { error: `${r.descripcion}: del lote ${lote.numero} quedan ${lote.stock} unidades.` };
       idLote = lote.id;
       vence = lote.vence || vence;
     } else if (f.existencia < unidades - 1e-6) {
-      return { error: `${r.descripcion}: quedan ${f.existencia} unidades en el estante.` };
+      return { error: `${r.descripcion}: quedan ${f.existencia} unidades en ${dondeSale}.` };
     }
     partes.push([r.erp_product_id, pres.costo, pres.precio, r.cantidad, pres.unidad, vence, pres.id, idLote].join("|"));
     total += Number(pres.costo) * r.cantidad;
@@ -1337,7 +1346,7 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
   const { data: filas, error: eI } = await admin.from("bodega_a_vencidos").insert(pedidos.map((r) => ({
     erp_product_id: r.erp_product_id, descripcion: r.descripcion || String(r.erp_product_id), presentacion: r.presentacion,
     factor: r.factor, cantidad: r.cantidad, unidades: r.cantidad * r.factor, lote: r.lote, vence: r.vence,
-    motivo, detalle, fotos, hecho_por: quien,
+    motivo, detalle, fotos, hecho_por: quien, sentido: alEstante ? "al_estante" : "a_vencidos",
   }))).select("id");
   if (eI) throw eI;
   const ids = (filas ?? []).map((f: any) => f.id);
@@ -1348,10 +1357,12 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
 
   let mov;
   try {
+    // El ayudante lleva los nombres del camino de ida; al estante van al revés.
+    const rumbo = alEstante ? "AL ESTANTE" : "A VENCIDOS";
     mov = await moverAlAreaDeVencidos(cookie, {
-      partes, total, esperado, estante, vencidosUbic,
-      concepto: armarConcepto(`PORTAL A VENCIDOS ${ROTULO_MOTIVO[motivo]}${detalle ? ` ${detalle}` : ""}`).concepto,
-      conceptoRecibir: (idT) => `PORTAL A VENCIDOS (TRASLADO ${idT})`,
+      partes, total, esperado, estante: origen, vencidosUbic: destino,
+      concepto: armarConcepto(`PORTAL ${rumbo} ${ROTULO_MOTIVO[motivo]}${detalle ? ` ${detalle}` : ""}`).concepto,
+      conceptoRecibir: (idT) => `PORTAL ${rumbo} (TRASLADO ${idT})`,
     });
   } catch (e: any) {
     // No se sabe si salió: queda para revisar, nunca para reintentar a ciegas.
@@ -1359,10 +1370,17 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
     return { error: "Se cortó a medio camino. Quedó anotado para revisarlo; no lo vuelvas a mandar." };
   }
   if (!mov.ok) {
-    await cerrar({ estado: mov.salio ? "sin_verificar" : "fallido", erp_traslado_id: mov.traslado, nota: mov.nota });
-    return { error: mov.salio ? `${mov.nota} No lo vuelvas a mandar.` : mov.error, traslado: mov.traslado };
+    await cerrar({ estado: mov.salio ? "sin_verificar" : "fallido", erp_traslado_id: mov.traslado,
+      nota: alEstante ? mov.nota.replaceAll("en vencidos", "en el estante") : mov.nota });
+    const nota = alEstante ? mov.nota.replaceAll("en vencidos", "en el estante") : mov.nota;
+    return { error: mov.salio ? `${nota} No lo vuelvas a mandar.` : mov.error, traslado: mov.traslado };
   }
-  await cerrar({ estado: "en_vencidos", erp_traslado_id: mov.traslado, nota: null });
+  // La vuelta al estante termina «devuelto» (con su traslado en los dos
+  // campos): así no se ofrece «Devolver» sobre algo que ya está en el estante.
+  await cerrar(alEstante
+    ? { estado: "devuelto", erp_traslado_id: mov.traslado, devuelto_traslado_id: mov.traslado,
+        devuelto_at: new Date().toISOString(), devuelto_por: quien, nota: null }
+    : { estado: "en_vencidos", erp_traslado_id: mov.traslado, nota: null });
   return { ok: true, traslado: mov.traslado, renglones: ids.length };
 }
 

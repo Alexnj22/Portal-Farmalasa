@@ -408,6 +408,33 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data;
     },
 
+    // «Lote y vence» de un renglón del sistema en un conteo que ajusta (ver
+    // `planDeLoteReal`). CONFIRMAR guarda la cantidad en el mismo renglón; MOVER
+    // da de alta el renglón del lote real, le guarda la cantidad y deja en el
+    // original lo que sigue ahí. Si un paso falla después del alta, el error
+    // lo dice: el renglón nuevo ya existe y se puede contar a mano. El original
+    // queda CONTADO (en 0 si nada), no «No ubicado»: no se perdió nada, se
+    // supo su lote.
+    anotarLoteRealConteo: async (conteoId, item, plan) => {
+        const guardar = get().guardarConteoItem;
+        if (plan.tipo === 'CONFIRMAR') {
+            return guardar(item.id, { fisicoCantidad: plan.cantidad, nota: item.nota ?? null, estadoItem: 'CONTADO' });
+        }
+        const alta = await get().agregarProductoManualConteo(conteoId, {
+            erpProductId: item.erp_product_id,
+            presentacion: item.presentacion,
+            lote: plan.lote,
+            fechaVencimiento: plan.vence,
+        });
+        try {
+            await guardar(alta.id, { fisicoCantidad: plan.cantidad, nota: null, estadoItem: 'CONTADO' });
+            await guardar(item.id, { fisicoCantidad: plan.quedan, nota: item.nota ?? null, estadoItem: 'CONTADO' });
+        } catch (err) {
+            throw new Error(`El lote quedó agregado, pero no se guardaron las cantidades: ${err?.message || 'error'}. Cuéntalas en sus renglones.`);
+        }
+        return alta;
+    },
+
     finalizarConteoInventario: async (conteoId, pendientesComoCero = false) => {
         const { data, error } = await supabase.rpc('finalizar_conteo_inventario', {
             p_conteo_id: conteoId,

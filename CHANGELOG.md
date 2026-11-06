@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1468.0 — El conteo que ajusta pide el lote y vence en cada renglón
+
+En un conteo que ajusta el inventario, un renglón «Sin lote» sólo dejaba poner
+cantidad: contado así, al aprobar no cambiaba nada y el lote seguía sin
+existir. Pedido del usuario: «si no tiene lote deben salir los campos a
+llenar; si tiene, deben salir para confirmar o editarlos».
+
+- Cada renglón «Sin lote» trae **Anotar lote**: lote, vencimiento y cantidad.
+  Las unidades pasan a un renglón con el lote real y en «Sin lote» queda lo que
+  se indique (0 por defecto). Al aprobar, salen de «sin lote» y entran al lote.
+- Los renglones con lote traen el lápiz para **confirmar o corregir**: sin
+  cambios, sólo guarda la cantidad; con otro lote o vence, mueve igual.
+- La etiqueta del renglón del sistema no se reescribe (la base lo sigue
+  rechazando); la regla vive en `planDeLoteReal` y los pasos en
+  `anotarLoteRealConteo`. El área de vencidos queda fuera.
+- Probado en la base sobre un conteo real y deshecho: «Sin lote» 5 → 0 y el
+  lote nuevo 0 → 5, diferencias −5 / +5.
+
 ## v2.1467.3 — Tickets: título y total sin doble alto
 
 «Me gustan, pero hay textos muy grandes, disminuye un poco» (usuario, con la

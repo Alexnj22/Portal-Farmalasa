@@ -217,3 +217,44 @@ export function avanceSinLote(sucursales, branchId = null) {
     const limpios = regulados ? Math.floor(((regulados - sinLote) / regulados) * 100) : 100;
     return { regulados, sinLote, limpios, sucursal: filas.length === 1 ? filas[0].sucursal : null };
 }
+
+/**
+ * Qué hace «Lote y vence» sobre un renglón del sistema en un conteo que ajusta
+ * el inventario (2026-11-06). Pedido del usuario: «si no tiene lote deben salir
+ * los campos a llenar; si tiene, deben salir para confirmar o editarlos».
+ *
+ * La etiqueta de un renglón del sistema no se reescribe —es una existencia de
+ * la caja y el ajuste se mide contra ella (`editar_lote_conteo_item` lo
+ * rechaza)—, así que «editar» es MOVER: las unidades se cuentan en un renglón
+ * nuevo con el lote real, y en el original queda lo que de verdad sigue ahí
+ * (`quedan`, 0 si nada). Al aprobar, sale del lote viejo y entra al real.
+ *
+ * - `CONFIRMAR`: el renglón ya tenía lote y no cambió ni el lote ni el vence →
+ *   sólo se guarda la cantidad en el mismo renglón.
+ * - `MOVER`: renglón sin lote, o lote/vence distintos → alta + cantidad + resto.
+ *
+ * Devuelve `{ error }` con el texto para la persona si algo falta.
+ */
+export function planDeLoteReal({ item, lote, vence, cantidad, quedan = 0, regla = { pideLote: true, pideVence: true } }) {
+    const loteLimpio = String(lote ?? '').trim().toUpperCase();
+    const venceLimpio = vence || null;
+    const entero = (v) => {
+        if (v === '' || v === null || v === undefined) return null;
+        const n = Number(v);
+        return Number.isInteger(n) && n >= 0 ? n : null;
+    };
+    const cant = entero(cantidad);
+    if (cant == null) return { error: 'Escribe cuántas hay con ese lote (0 o más).' };
+    const resto = entero(quedan);
+    if (resto == null) return { error: 'Escribe cuántas quedan en el renglón original (0 si ninguna).' };
+    if (regla.pideLote && (!loteLimpio || esLoteGenerico(loteLimpio))) return { error: 'Escribe el lote impreso en la caja.' };
+    if (regla.pideVence && !venceLimpio) return { error: 'Pon la fecha de vencimiento.' };
+
+    const teniaLote = !esLoteGenerico(item?.lote);
+    const mismoLote = teniaLote && loteLimpio === String(item.lote).trim().toUpperCase();
+    const mismoVence = (item?.fecha_vencimiento || null) === venceLimpio;
+    // Sin lote propio (producto que no lo lleva) sólo cambia el vencimiento.
+    const igual = regla.pideLote ? (mismoLote && mismoVence) : mismoVence;
+    if (igual) return { tipo: 'CONFIRMAR', cantidad: cant };
+    return { tipo: 'MOVER', lote: loteLimpio || null, vence: venceLimpio, cantidad: cant, quedan: resto };
+}

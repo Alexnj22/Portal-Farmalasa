@@ -175,3 +175,12 @@ export function lotesDistintos(filas) {
     });
     return [...vistos.values()];
 }
+
+/**
+ * Si el producto lleva lote y vencimiento (`reglaDeLoteYVence`). Lo pide «Lote
+ * y vence» de un renglón del conteo: el renglón no trae esas dos marcas. Un
+ * producto inactivo devuelve null y se pide todo: la base decide igual.
+ */
+export async function fetchReglaDeLoteDelProducto(erpProductId) {
+    return supabase.from('products').select('regulado, perecedero').eq('id', erpProductId).maybeSingle();
+}

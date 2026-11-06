@@ -3134,7 +3134,7 @@ function scanFile(path) {
   //    que sabe que en Solid la capa NO EXISTE; un literal la enciende en los
   //    cuatro temas.
   //  · un realce interior a mano (`inset … rgba(255,255,255,…)`) en vez de
-  //    `--lente-*` o `--shadow-*`. Éste es exactamente el fallo de §19.1
+  //    `--lente-*` o `--shadow-*`. Éste es exactamente el fallo de §2.1
   //    escrito en JSX: un blanco calibrado en claro que ningún tema apaga.
   //
   // NO se mira `filter: blur()` a secas: un blob decorativo desenfocado no es
@@ -3147,7 +3147,7 @@ function scanFile(path) {
       [/backdrop-?[Ff]ilter[^;'"`]{0,30}blur\(\s*[\d.]+px\s*\)/g,
        '`backdrop-filter` literal en estilo inline — sale de su token'],
       [/inset[^;'"`)]{0,40}rgba?\(\s*255\s*[,\s]\s*255\s*[,\s]\s*255/g,
-       'realce interior a mano — sale de `--lente-*` / `--shadow-*` (§19.1: un blanco calibrado en claro que ningún tema apaga)'],
+       'realce interior a mano — sale de `--lente-*` / `--shadow-*` (§2.1: un blanco calibrado en claro que ningún tema apaga)'],
     ]) {
       let m;
       while ((m = re.exec(limpioMat))) {
@@ -3720,7 +3720,7 @@ function loadBaseline() {
 }
 
 /**
- * Categoría `tema-incompleto` (PLAN-MATERIALES §19.1).
+ * Categoría `tema-incompleto` (PLAN-MATERIALES §2.1).
  *
  * Un token con COLOR FUERTE definido en `:root`, redefinido en algún bloque
  * Solid, y **ausente de `[data-theme="dark"]`** — o sea que Liquid oscuro
@@ -3787,7 +3787,7 @@ function temaIncompleto() {
     out.push({
       line: linea, category: 'tema-incompleto',
       label: `\`${tok}\` tiene color fuerte, Solid lo redefine y \`[data-theme="dark"]\` no — `
-           + 'Liquid oscuro hereda un valor calibrado en claro (§19.1)',
+           + 'Liquid oscuro hereda un valor calibrado en claro (§2.1)',
       text: valor.slice(0, 60),
     });
   }

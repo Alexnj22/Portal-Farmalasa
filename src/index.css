@@ -804,7 +804,7 @@ thead.sticky,
 
   /* Tab activo en ViewTabBar (net-new, Fase T2) — no es --surface-card:
      hoy es bg-white opaco liso, regardless of theme (bug de dark mode
-     documentado en DESIGN.md §22, corregido de paso al migrar el componente). */
+     documentado en docs/design/historia/18-23-estados-y-retirados.md §22, corregido de paso al migrar el componente). */
   --surface-tab-active: #ffffff;
   /* La pestaña ACTIVA tiene sus propios tokens desde el 2026-09-24: el mismo
      `--surface-tab-active` pinta también el realce al pasar el puntero, y en
@@ -1091,7 +1091,7 @@ thead.sticky,
 
 /* ─── Dark LiquidGlass ─── */
 [data-theme="dark"] {
-  /* §19.1 · el hover del ítem: sin realce blanco y con la sombra más honda.
+  /* §2.1 (un token de color en los cuatro temas) · el hover del ítem: sin realce blanco y con la sombra más honda.
      Lo encontró el gate `tema-incompleto` — era el último que quedaba. */
   --sidebar-item-hover-shadow: 0 6px 18px rgb(0 0 0 / .50);
 
@@ -1262,7 +1262,7 @@ thead.sticky,
   --shimmer-sweep:        rgba(255,255,255,0.14);
   --shimmer-sweep-strong: rgba(255,255,255,0.28);
 
-  /* fix blindspot §22: ya no pill blanco puro sobre glass oscuro. Y tampoco
+  /* fix blindspot §22 (docs/design/historia/18-23-estados-y-retirados.md): ya no pill blanco puro sobre glass oscuro. Y tampoco
      blanco al 14% (usuario, 2026-09-24: «el activo se ve blanco, se pierde el
      modo oscuro»): sobre el vidrio azul noche se leía como una píldora gris
      clara. Es el `--brand-text` de este tema (#60A5FA) al 18%: la pestaña

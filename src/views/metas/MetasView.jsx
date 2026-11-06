@@ -138,7 +138,7 @@ export default function MetasView() {
         // Tablero y Confirmación son grillas de `data-surface="card"`, y el
         // Histórico monta un `DataTable`, que trae su card adentro. Sin esto la
         // card del cuerpo envuelve otra card: el doble borde y doble radio que
-        // este proyecto llama «una isla dentro de otra isla» (DESIGN.md §22), y
+        // este proyecto llama «una isla dentro de otra isla» (docs/design/historia/18-23-estados-y-retirados.md §22), y
         // las tarjetas quedan pegadas contra su marco porque esa card no lleva
         // padding. Mismo criterio que Inicio, Sucursales y Roles.
         <GlassViewLayout icon={Target} title="Metas" filtersContent={filtersContent} transparentBody>

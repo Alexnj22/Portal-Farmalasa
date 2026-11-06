@@ -741,6 +741,8 @@ es el tamaño por defecto de un KPI — ése sigue siendo `text-display-lg`.
 - Contraste mínimo sobre vidrio: `text-content-2` para etiquetas, `text-content-3`
   para texto secundario. Nunca por debajo.
 
+**Una cifra se formatea con `formatMoney`/`formatNumber`** (`utils/formatNumber`), o con `toLocaleString('es-SV')`. Nunca `toLocaleString()` sin locale (toma el del navegador) ni un `toFixed(2)` pegado a un `$` (sale sin separador de miles) — gate `formato-cifra`.
+
 ## 8. Escala de radios
 
 **Ésta es la fuente única de los radios de todos los temas.** Cualquier otra
@@ -1003,6 +1005,8 @@ squircle, el título y la ranura de filtros; el contenedor de scroll interno
 inicio / al final» (también en teléfono, con `--tap-min`); y el respaldo de
 `BarraFlotante` cuando una vista publica un buscador y ningún `FilterBar` reclamó
 el clúster (§14, ViewTabBar).
+
+**Un scroller dentro de un widget lleva `overscroll-contain`.** Sin él, al llegar al final sigue desplazando el tablero de atrás (gate `scroll-encadenado`).
 
 ## 14. Components
 
@@ -1279,6 +1283,8 @@ su click-afuera cuando usa la hoja (va por portal fuera de `selectRef`) — Esca
 y el fondo ya los da `ModalShell`.
 
 Por qué: ver `docs/design/historia/14-componentes.md`.
+
+**El editor de foto se abre mirando `yaPreparado`.** La foto que viene del teléfono ya llega cuadrada; abrir el editor sin preguntarlo la recorta dos veces (gate `editor-dos-veces`).
 
 ## 15. Controles canónicos
 
@@ -2751,6 +2757,10 @@ Una capa que cubre la pantalla, atrapa el clic de afuera y contiene controles **
 
 No es diálogo un `LiquidSelect` abierto: es `role="listbox"` con `role="option"`.
 
+**Lo que está plegado no se tabula.** Una región colapsada lleva `inert`: si no, el tabulador entra a botones que no se ven y el foco desaparece de la pantalla (gate `inert`).
+
+**El aro de foco o de borde tiene dos alfas**: `/30` en 1px y `/45` en 2px. Otro valor se lee más fuerte o más débil que el resto de la pantalla (gate `ring`).
+
 ## 26. Performance
 
 Historia y mediciones: `docs/design/historia/26-performance.md`.
@@ -2786,6 +2796,8 @@ Un `will-change` de `transform`/`opacity`/`filter` o un `transform-gpu` vuelven 
 - Las fotos de persona se cargan diferidas dentro de `AvatarConEstado` (§5.4).
 - `BranchesView`: `contentVisibility: 'auto'` + `containIntrinsicSize` en las tarjetas fuera de pantalla.
 - Las librerías pesadas, sólo por `await import()` (regla de `CLAUDE.md`, gate `gate:bundle`).
+
+**Un handler de puntero no recorre listas ni mide el layout en cada evento.** `pointermove` dispara decenas de veces por segundo: el trabajo va dentro de un `requestAnimationFrame` (gate `puntero-lista`).
 
 ## 27. Cross-Browser
 
@@ -2876,6 +2888,8 @@ El **indicador de requerido** y el **error de envío** no compiten: son dos prob
 {globalError && <Notice variant="danger">{globalError}</Notice>}
 ```
 
+**Una acción con `try/finally` lleva también `catch`.** Sin él, si falla, el botón vuelve a su estado y nadie se entera del error (gate `try-finally-mudo`).
+
 ## 30. Governance
 
 ### 30.1 Extender, no crear
@@ -2908,6 +2922,8 @@ Crear un componente paralelo está prohibido: se extiende el existente o se disc
 ### 30.2 Changelog
 
 El historial de cambios del portal vive en `CHANGELOG.md`; el de este documento, en git. La tabla de versiones que vivía acá está archivada en `docs/design/historia/30-gobierno.md`.
+
+**`window.open(…, '_blank')` lleva `noopener`.** Sin él, la página abierta puede manejar la pestaña del portal (gate `ventana-noopener`).
 
 ## 31. Anti-Patterns (Never Do)
 
@@ -3437,9 +3453,9 @@ canónico (`data-surface`) y la sombra no.
 
 Cada categoría de `scripts/design-gate.mjs` con la regla que vigila y la
 sección donde está explicada. **Ninguna regla vive sólo en el gate**:
-`npm run gate:doc` falla si aparece una categoría que no tenga fila aquí. Todas
-están en cero y son bloqueantes salvo `tarjeta-a-mano`, que conserva deuda vieja
-en `scripts/design-gate-baseline.json` (el número sólo baja). Las excepciones
+`npm run gate:doc` falla si aparece una categoría que no tenga fila aquí. Las que
+están en `scripts/design-gate-baseline.json` son trinquetes: guardan deuda
+contada y el número sólo baja. Todas las demás están en cero y son bloqueantes. Las excepciones
 por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 
 | categoría | qué prohíbe (o exige) | § |
@@ -3455,8 +3471,8 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `button-name` | botón de sólo ícono sin `aria-label` | §25.1 |
 | `title-redundante` | un `title=` que repite el `aria-label` | §15.10 |
 | `tooltip-no-control` | `title=` sobre un elemento no interactivo: gráfico → `role="img"`, prosa → `LiquidTooltip` | §15.10 |
-| `inert` | región colapsada sin `inert`: el tabulador entra a lo invisible | — (esta fila) |
-| `ring` | aro de foco o de borde con un alfa fuera del canon (`/30` en 1px, `/45` en 2px) | — (esta fila) |
+| `inert` | región colapsada sin `inert`: el tabulador entra a lo invisible | §25 |
+| `ring` | aro de foco o de borde con un alfa fuera del canon (`/30` en 1px, `/45` en 2px) | §25 |
 | `scale-tap` | `active:scale-90`/`95` — el mínimo es `active:scale-[0.97]` | §31 |
 | `left-border` | `border-l-*` decorativo como indicador de color | §31 |
 | `color` | grises crudos de Tailwind (`slate`/`gray`/`zinc`/`neutral`/`stone`) | §6 |
@@ -3479,8 +3495,8 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `reloj-a-mano` | duraciones de transición literales — salen de los tokens de tiempo | §11 |
 | `motion` | `motion.*` de framer-motion decorativo; sólo `AnimatePresence`, `layout`/`layoutId` y `drag` | §11 |
 | `capa-flotante` | un flotante anclado sin `useCapaFlotante`: lo de atrás sigue reaccionando al puntero | §5.2 |
-| `puntero-lista` | un handler de puntero que recorre una lista o lee el layout por evento sin `requestAnimationFrame` | — (esta fila) |
-| `scroll-encadenado` | un scroller de widget sin `overscroll-contain`: al terminar mueve el tablero | — (esta fila) |
+| `puntero-lista` | un handler de puntero que recorre una lista o lee el layout por evento sin `requestAnimationFrame` | §26 |
+| `scroll-encadenado` | un scroller de widget sin `overscroll-contain`: al terminar mueve el tablero | §13 |
 | `icono-semantico` | un ícono retirado — un concepto, un ícono | §12 |
 | `icono-rampa` | `size={N}` fuera de la rampa | §12 |
 | `icono-stroke` | `strokeWidth` fuera de la escala 1 · 1.5 · 2 · 2.5 · 3 | §12 |
@@ -3511,13 +3527,13 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion` (trinquete; quedan colores con significado y clases dinámicas) | §7 |
 | `rotulo-a-mano` | rótulo en mayúsculas chico con un peso o espaciado que no es `font-black tracking-widest` (cero absoluto) | §7 |
 | `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |
-| `editor-dos-veces` | abrir el editor de foto sin mirar `yaPreparado`: la foto del teléfono se cuadra dos veces | — (esta fila) |
+| `editor-dos-veces` | abrir el editor de foto sin mirar `yaPreparado`: la foto del teléfono se cuadra dos veces | §14 |
 | `copy-vacio` | un vacío que no dice `Sin <sustantivo>`, Title Case o punto final en una etiqueta | §34.1, §34.4, §34.5 |
 | `copy-trato` | voseo — el portal tutea | §34.7 |
 | `copy-anaquel` | «anaquel» — se dice «vitrina» o «estante» | §34.7 |
 | `copy-aqui` | «acá» — se dice «aquí» | §34.7 |
 | `error-crudo` | `error.message` crudo a la pantalla — va `mensajeAmigable()` | §34.8 |
-| `try-finally-mudo` | `try/finally` sin `catch` en una acción: si falla, nadie se entera | — (esta fila) |
-| `formato-cifra` | un `toLocaleString` con locale ajeno o `$${x.toFixed(2)}` — va `formatMoney`/`formatNumber` de `utils/formatNumber` | — (esta fila) |
-| `ventana-noopener` | `window.open(…, '_blank')` sin `noopener` | — (esta fila) |
+| `try-finally-mudo` | `try/finally` sin `catch` en una acción: si falla, nadie se entera | §29 |
+| `formato-cifra` | un `toLocaleString` con locale ajeno o `$${x.toFixed(2)}` — va `formatMoney`/`formatNumber` de `utils/formatNumber` | §7 |
+| `ventana-noopener` | `window.open(…, '_blank')` sin `noopener` | §30 |
 

@@ -67,7 +67,7 @@ const HIDE_BELOW = {
 };
 
 // ── Tokens (Fase T3, AUDITORIA-TEMA-2026-07.md — cierra el blindspot de dark
-// mode de DESIGN.md §22: este hook nunca leía el tema, siempre devolvía los
+// mode de docs/design/historia/18-23-estados-y-retirados.md §22: este hook nunca leía el tema, siempre devolvía los
 // mismos valores hardcodeados sin importar liquid/dark/solid/solid-dark).
 // El contenedor usa data-surface="card" (fondo/borde/sombra/radio ya
 // reactivos, igual que GlassViewLayout — T1/T2 confirmaron que gana la

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.15 — Citas de diseño al día
+
+- Comentarios del código que citaban secciones retiradas de DESIGN.md (§22 y §23 viven ahora en `docs/design/historia/18-23-estados-y-retirados.md`; §19.1 nunca existió y lo que describe es la regla de §2.1, un token de color en los cuatro temas). TablePagination citaba una regla de §11 que ya cambió.
+- Ocho categorías del gate de diseño tenían su regla sólo en la tabla del anexo §35: `inert`, `ring`, `puntero-lista`, `scroll-encadenado`, `editor-dos-veces`, `try-finally-mudo`, `formato-cifra` y `ventana-noopener`. Ahora cada una está escrita en su sección (§7, §13, §14, §25, §26, §29, §30). La introducción del anexo decía que sólo `tarjeta-a-mano` tenía trinquete; ya son varias.
+- `gate:design` vuelve a verde: el último hallazgo venía de una copia vieja sin trackear de la pestaña de inyecciones, que en v2.1162.0 se mudó a su propia vista. Se sacó del árbol.
+
 ## v2.1461.14 — Corte Z y Libros IVA cotejan sólo lo enviado; «Ver el cotejo completo» agrega el detalle de la noche
 
 Pedido del usuario: los jefes ven el Corte Z «según lo reportado y enviado», así

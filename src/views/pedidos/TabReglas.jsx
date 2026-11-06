@@ -523,7 +523,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 // El tinte y el borde estaban copiados acá como dos constantes con el mismo
 // texto que los tokens del canónico. Copiadas, sobreviven a que el canónico
 // cambie: es la forma exacta en que una vista se despega del tema sin que nada
-// falle (§22 y el blindspot de dark mode que la fase T3 cerró en `useTokens`).
+// falle (docs/design/historia/18-23-estados-y-retirados.md §22 y el blindspot de dark mode que la fase T3 cerró en `useTokens`).
 function FilaEdicion({ colSpan, children }) {
     const tk = useExpandStyle();
     return (

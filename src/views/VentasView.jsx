@@ -2784,7 +2784,7 @@ export default function VentasView() {
         activeTab === 'vendedores' ? 'Buscar vendedor...' :
                                      'Buscar producto...';
 
-    // Antes: copia hand-rolled del pill de ViewTabBar (DESIGN.md §32/§23,
+    // Antes: copia hand-rolled del pill de ViewTabBar (docs/design/historia/18-23-estados-y-retirados.md §23,
     // "duplicado conocido") — consolidado al componente compartido real.
     const filtersContent = (
         <ViewTabBar

@@ -19,7 +19,7 @@ export const PAGE_SIZE_OPTIONS = [25, 50, 100];
  *   3 · El tamaño de página y la página activa usaban el MISMO `bg-brand` con
  *       glow, así que competían por significar "activo".
  *   4 · 13 paradas de tabulación para pasar de página.
- *   5 · `framer-motion`, que DESIGN.md §11 marca como "no agregar más" — y su
+ *   5 · `framer-motion`, que DESIGN.md §11 marcaba entonces como "no agregar más" (hoy la regla es la del gate: docs/design/historia/11-movimiento.md) — y su
  *       `layoutId="activePage"` hacía que la píldora azul VOLARA entre dos
  *       paginaciones si había dos en pantalla.
  *   6 · Sin semántica: ni `<nav>` ni `aria-current`. Un lector de pantalla oía

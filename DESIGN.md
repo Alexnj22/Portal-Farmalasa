@@ -1717,8 +1717,8 @@ de **foto** (avatar de empleado, foto de producto que abre el recortador).
 ### 15.10 `LiquidTooltip` — nota al pasar el puntero
 
 ```jsx
-<LiquidTooltip content="Se sincronizó hace 3 minutos" side="top">
-    <span>Sincronizado</span>
+<LiquidTooltip content="Actualizado hace 3 minutos" side="top">
+    <span>Al día</span>
 </LiquidTooltip>
 ```
 

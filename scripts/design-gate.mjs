@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Gate mecánico de estandarización visual (DESIGN.md §9.0, §6).
+// Gate mecánico de estandarización visual (DESIGN.md §35, §6).
 //
 // Corre seis familias de chequeo sobre src/:
 //   1. Elementos nativos del navegador prohibidos (alert/confirm/prompt,
@@ -152,13 +152,13 @@ const EXCEPTIONS = {
   // decidir su escalera. No hay un número: hay 144, 176, 128 y 96 según el
   // monitor. Y el aro no aportaría: la pantalla aparece justo después de que
   // esa persona marcó, así que su presencia es el hecho que se está mostrando.
-  // «No le debemos nada a nadie en este período» es un VACÍO FELIZ (§26.3), no
-  // una lista vacía. La prueba de §26.3: ¿quien abre Cuentas por Pagar quería
+  // «No le debemos nada a nadie en este período» es un VACÍO FELIZ (§34.3), no
+  // una lista vacía. La prueba de §34.3: ¿quien abre Cuentas por Pagar quería
   // encontrar algo, o quería que estuviera vacío? Quería que estuviera vacío —
   // y `Sin cuentas por pagar` diría lo mismo tirando la buena noticia al piso.
   // El arranque `No ` lo caza el detector ensanchado el 2026-08-26; acá el
   // patrón se confunde y el texto está bien, que es exactamente el uso sin
-  // culpa de EXCEPTIONS que documenta §26.9.
+  // culpa de EXCEPTIONS que documenta §34.9.
   'src/views/purchases/CuentasPorPagarView.jsx': ['copy-vacio'],
   // Acá es donde los cuatro retirados se DEFINEN como alias — es la solución,
   // no la deuda. Y los canónicos los siguen aceptando a propósito para que las
@@ -1196,7 +1196,7 @@ const RIGHT_BORDER_RE = /\bborder-r(-[248])?\b/;
 // mañana uno formatea un monto mal, el gate lo ve igual.
 const LOCALE_AJENO_RE = /toLocale(?:Date|Time)?String\(\s*['"](?!es-SV|en-CA)[a-z]{2}(?:-[A-Z]{2})?['"]/g;
 
-// ── Categorías `copy-vacio` y `copy-trato` (F2, DESIGN.md §26) ──────────────
+// ── Categorías `copy-vacio` y `copy-trato` (F2, DESIGN.md §34) ──────────────
 // Miran SOLO los slots enumerados, no todo string del proyecto: un gate de
 // redacción tiene falsos positivos por naturaleza y limitarlo a los huecos donde
 // la regla es inequívoca es lo que lo hace confiable.
@@ -1205,7 +1205,7 @@ const LOCALE_AJENO_RE = /toLocale(?:Date|Time)?String\(\s*['"](?!es-SV|en-CA)[a-
 // La primera versión miraba todo `title=` y marcó 123 hallazgos, casi todos
 // falsos: `<GlassViewLayout title="Facturas de Compra">` es el NOMBRE de un
 // módulo, y ahí el Title Case es correcto porque es un nombre propio. Lo mismo
-// `title="Volver a Personal"` (Personal es un módulo). El Title Case que §26.4
+// `title="Volver a Personal"` (Personal es un módulo). El Title Case que §34.4
 // prohíbe es el de una etiqueta que debería leerse como oración —`Sin Horarios`—,
 // no el del nombre de una pantalla.
 //   1. el `message:` de un objeto (`empty={{…}}`, AlertModal, ConfirmModal)
@@ -1224,7 +1224,7 @@ const SLOT_ES_ATTR_RE = /\b(?:title|subtitle)=(?:\{\s*)?(['"])([^'"]{3,120})\1/g
 //
 // Por eso ahora entra cualquier arranque `No <algo>`, **menos los que son un
 // ERROR y no un vacío**. Medido antes de excluirlos: `^No\s` a secas acusaba a
-// 13, y ONCE eran «No se pudo cargar el libro» y familia — que §26.8 manda
+// 13, y ONCE eran «No se pudo cargar el libro» y familia — que §34.8 manda
 // escribir exactamente así, porque un error sí dice qué pasó. Un gate que
 // acusa al que hizo bien el trabajo es un gate que se termina desactivando.
 const ARRANQUE_MALO_RE = /^(?!No\s+(?:se\s+pud|puedes|podés|pudimos))(No\s|Aún no|Aun no|Ningún|Ninguna|Nada )/;
@@ -1301,7 +1301,7 @@ const ANAQUEL_RE = /\b[Aa]naquel(?:es)?\b/g;
 // verificarla vuelve sola. Y acá la deriva ya había GANADO — medido antes de
 // barrer, el portal decía **«acá» 40 veces y «aquí» 22** en texto de pantalla.
 // O sea que la forma que el usuario no quiere era la mayoritaria, y ninguna de
-// las dos estaba decidida en ninguna parte: §26 no las mencionaba.
+// las dos estaba decidida en ninguna parte: §34 no las mencionaba.
 //
 // `\b` no sirve con `á` —es ASCII, así que `á` cuenta como NO-palabra y la
 // frontera cae en cualquier parte—; es el mismo tropiezo que documenta VOSEO
@@ -3091,8 +3091,8 @@ function scanFile(path) {
   if (!hasException(path, 'copy-vacio')) {
     // Se recorre el texto completo, no línea por línea: un `<EmptyState>` suele
     // venir partido en varias líneas y los atributos hay que leerlos del bloque.
-    // `kind` importa: §26.5 pide punto en un SUBTÍTULO (es oración completa) y
-    // lo prohíbe en un título o mensaje (es una etiqueta). Y §26.1 habla del
+    // `kind` importa: §34.5 pide punto en un SUBTÍTULO (es oración completa) y
+    // lo prohíbe en un título o mensaje (es una etiqueta). Y §34.1 habla del
     // título del vacío: "No hay alertas ni documentos pendientes." como
     // subtítulo es español correcto, no una violación.
     const slots = []; // { texto, pos, kind }
@@ -3114,7 +3114,7 @@ function scanFile(path) {
       if (isComment[linea - 1]) continue;
       const palabras = texto.split(/\s+/).length;
       if (kind === 'titulo') {
-        // §26.5 no distingue por cantidad de oraciones sino por ETIQUETA vs
+        // §34.5 no distingue por cantidad de oraciones sino por ETIQUETA vs
         // PROSA: `Sin facturas en el período.` es una etiqueta y el punto sobra;
         // `Alguien ya leyó este aviso. Por seguridad no puedes eliminarlo.` es
         // prosa y lo lleva. El proxy es corto + una sola oración, porque una
@@ -3124,17 +3124,17 @@ function scanFile(path) {
         // estado en curso, no una oración cerrada.
         const suspensivos = texto.endsWith('...') || texto.endsWith('…');
         if (texto.endsWith('.') && !suspensivos && unaOracion && palabras <= 6) {
-          findings.push({ line: linea, label: `punto final en una etiqueta: "${texto}" (§26.5)`,
+          findings.push({ line: linea, label: `punto final en una etiqueta: "${texto}" (§34.5)`,
             category: 'copy-vacio', text: texto.slice(0, 110) });
         }
         if (ARRANQUE_MALO_RE.test(texto)) {
-          findings.push({ line: linea, label: `"${texto}" — el vacío se escribe \`Sin <sustantivo>\` (§26.1)`,
+          findings.push({ line: linea, label: `"${texto}" — el vacío se escribe \`Sin <sustantivo>\` (§34.1)`,
             category: 'copy-vacio', text: texto.slice(0, 110) });
         }
       }
       // Title Case solo en etiquetas cortas: ver el comentario de TITLE_CASE_RE.
       if (palabras <= 4 && TITLE_CASE_RE.test(texto)) {
-        findings.push({ line: linea, label: `Title Case en una etiqueta: "${texto}" — sentence case (§26.4)`,
+        findings.push({ line: linea, label: `Title Case en una etiqueta: "${texto}" — sentence case (§34.4)`,
           category: 'copy-vacio', text: texto.slice(0, 110) });
       }
     }
@@ -3223,7 +3223,7 @@ function scanFile(path) {
       VOSEO_RE.lastIndex = 0;
       let m;
       while ((m = VOSEO_RE.exec(line))) {
-        findings.push({ line: i + 1, label: `voseo "${m[1]}" — el portal usa tuteo (§26.7)`,
+        findings.push({ line: i + 1, label: `voseo "${m[1]}" — el portal usa tuteo (§34.7)`,
           category: 'copy-trato', text: line.trim().slice(0, 120) });
       }
     });

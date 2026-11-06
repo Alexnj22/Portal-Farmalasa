@@ -36,7 +36,7 @@
  *
  * C · **La ruta va en español y nombra lo que abre.** Es la misma regla que ya
  *     rige el texto de pantalla —el portal no le habla al usuario en la jerga de
- *     adentro (§26 de DESIGN.md, y la regla del ERP en CLAUDE.md)—; la barra de
+ *     adentro (§34 de DESIGN.md, y la regla del ERP en CLAUDE.md)—; la barra de
  *     direcciones es texto de pantalla como cualquier otro, sólo que nadie la
  *     había mirado.
  *

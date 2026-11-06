@@ -34,11 +34,47 @@ export function nombreCorto(e) {
 
 const vendedor = (nombre, codigo) => (nombre ? nombreCorto({ name: nombre }) : `Cód. ${codigo ?? '?'}`);
 
+/* El lote de un renglón de traslado, en texto corto: «Lote 25009 · 10/2028».
+ * Versión mínima de `lotesPorRenglon` (trasladoTexto.js) y de
+ * `lotes_de_renglon_de_traslado` (base) — este archivo no puede importar,
+ * así que la regla se repite acá y se mueve con ellas: lo que salió, si no lo
+ * apartado, si no lo pedido. Un genérico no dice nada: no hay número que
+ * cotejar. (2026-11-05, «debe salir el lote, por trazabilidad».) */
+const esGenerico = (l) => !l || String(l).trim().toUpperCase() === 'GENERICO';
+const mesAnio = (f) => (f ? `${String(f).slice(5, 7)}/${String(f).slice(0, 4)}` : '');
+export function loteCortoDeRenglon(m, idx) {
+    const items = Array.isArray(m?.items) ? m.items : [];
+    const item = items[idx];
+    if (!item) return '';
+    const det = Array.isArray(m?.erp_traslado?.detalle) ? m.erp_traslado.detalle : [];
+    const asig = m?.lotes_asignados?.[idx] ?? m?.lotes_asignados?.[String(idx)] ?? null;
+    const pedidos = Array.isArray(item.lotes) ? item.lotes : [];
+    const prod = String(item.erp_product_id);
+    let lista = [];
+    if (det.length && items.filter((i) => String(i?.erp_product_id) === prod).length === 1) {
+        lista = det.filter((d) => String(d?.erp_product_id) === prod).map((d) => {
+            const lote = d?.numero_lote ? String(d.numero_lote) : null;
+            const coincide = asig && ((d?.id_lote_erp && String(asig.id_lote_erp ?? '') === String(d.id_lote_erp))
+                || (lote && String(asig.lote ?? '') === lote));
+            return { lote, vence: coincide ? asig.vence : (pedidos.find((p) => lote && String(p?.lote) === lote)?.vence ?? null) };
+        });
+    }
+    if (!lista.length && asig && asig.lote) lista = [{ lote: String(asig.lote), vence: asig.vence ?? null }];
+    if (!lista.length) lista = pedidos.map((p) => ({ lote: p?.lote ? String(p.lote) : null, vence: p?.vence ?? null }));
+    const textos = [...new Set(lista.filter((l) => !esGenerico(l.lote))
+        .map((l) => `${l.lote}${l.vence ? ` · ${mesAnio(l.vence)}` : ''}`))];
+    if (!textos.length) return '';
+    return `${textos.length === 1 ? 'Lote' : 'Lotes'} ${textos.join(', ')}`;
+}
+
 /** @returns {[string, string][]} */
-const renglonesDeItems = (items) => (Array.isArray(items) ? items : []).map((it) => [
-    String(it?.descripcion ?? 'Producto'),
-    `${it?.cantidad ?? '?'} ${String(it?.presentacion_tipo ?? '').toLowerCase()}`.trim(),
-]);
+const renglonesDeItems = (items, m = null) => (Array.isArray(items) ? items : []).map((it, i) => {
+    const lote = m ? loteCortoDeRenglon(m, i) : '';
+    return [
+        `${String(it?.descripcion ?? 'Producto')}${lote ? ` (${lote})` : ''}`,
+        `${it?.cantidad ?? '?'} ${String(it?.presentacion_tipo ?? '').toLowerCase()}`.trim(),
+    ];
+});
 
 // «0000065777_COF» → «COF 65 777». Sin los ceros ni el sufijo repetido, y en
 // grupos: diez dígitos seguidos el teléfono los toma por un número de teléfono
@@ -60,9 +96,9 @@ export function detalleDeSolicitud(s) {
     const sala = m.branch_name ?? '';
     switch (s?.type) {
         case 'INVENTORY_TRANSFER_REQUEST':
-            return { contexto: `Pide ${sala} a ${m.origen_branch_name ?? 'tu sala'}`, renglones: renglonesDeItems(m.items), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
+            return { contexto: `Pide ${sala} a ${m.origen_branch_name ?? 'tu sala'}`, renglones: renglonesDeItems(m.items, m), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
         case 'INVENTORY_TRANSFER_PUSH':
-            return { contexto: `${m.origen_branch_name ?? 'Otra sala'} envía a ${sala}`, renglones: renglonesDeItems(m.items), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
+            return { contexto: `${m.origen_branch_name ?? 'Otra sala'} envía a ${sala}`, renglones: renglonesDeItems(m.items, m), pie: m.reason ? `Motivo: ${m.reason}` : undefined };
         case 'INVENTORY_DISCARD_REQUEST':
             return { contexto: `Descarte en ${sala}`, renglones: renglonesDeItems(m.items), pie: m.motivo_label ?? m.reason };
         case 'INVENTORY_LOAD_REQUEST':

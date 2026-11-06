@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.2 — El lote del traslado también en la lista y en los avisos
+
+**El lote viaja también fuera del detalle.** Sigue a v2.1455.7 (el lote en el detalle de la solicitud), pedido del usuario: «hazlo, en las notificaciones también».
+
+- **Campana:** «te pide un traslado» muestra el lote que se pidió, y «te lo envía» el que salió, con su vencimiento (MM/AAAA). Lo escribe la base al crear el aviso: función nueva `lotes_de_renglon_de_traslado`, gemela de `lotesPorRenglon`, usada por `notificar_solicitud_creada` y `notificar_resolucion_traslado` (migración `20261106031522`, que reemplaza sólo ese fragmento sobre la definición viva). Los avisos viejos no traen el dato y se ven como antes.
+- **Lista de solicitudes:** con un solo producto, su lote va debajo del resumen. Con varios, el detalle los muestra uno por uno.
+- **Push y app:** el renglón dice «FOLIMEN (Lote 25009 · 10/2028)». Un genérico no agrega nada.
+- Las fichas de lote quedan en un solo componente, `components/common/LotesConFuente.jsx`.
+
 ## v2.1456.1 — Compras: aviso si la concentración o el tamaño no coinciden, y revisión semanal de la lectura
 
 - **Cargar compra avisa cuando la factura y el producto dicen números distintos** (mg, mcg, g, ml, UI, %): «Olexa 10 mg» propuesto como OLEXA 5 MG, «Algodón 10 g» como el de 100 g. El producto deja de darse por seguro y pide confirmación, también cuando venía del diccionario aprendido. La cantidad por caja no se compara (la factura cuenta tabletas y el catálogo sobres); «75 MG» del catálogo contra 75 mcg se acepta, y una combinación vale por sus partes y por su suma (625 = 500/125). Medido contra octubre: 0 avisos falsos sobre 977 renglones seguros.

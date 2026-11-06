@@ -12,11 +12,13 @@ import { ICONO_POR_TIPO } from '../../components/common/catalogos/tiposDeAviso';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { CaraPersona, ChipPersona } from './PersonasSolicitud';
 import {
-    resumenMovimiento, esMovimiento, esParcial,
+    resumenMovimiento, esMovimiento, esParcial, lineasDe,
     fmtDiaMes as fmtDate, fmtHora, fmtFechaHora, desdeHace,
     personasDe, cuandoSeDecidio, salaQueEspera, areaQueDecide, motivoDeRechazoCorto,
 } from '@nucleo/utils/movimientoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { lotesPorRenglon } from '@nucleo/utils/trasladoTexto';
+import LotesConFuente from '../../components/common/LotesConFuente';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import {
     acotarCantidad, ajustesPosibles, cantidadesIniciales, esAbonoPorConfirmar as esAbono,
@@ -96,8 +98,23 @@ export const CompactSummary = ({ req }) => {
     // Los tres que mueven producto. Sin esta rama caían al `req.note`, o sea que
     // un descarte se resumía con el texto libre de quien lo pidió —«inyectorio»—
     // y el producto, que es lo que se está por sacar de la sala, no aparecía.
-    if (esMovimiento(req.type))
-        return <span className="text-caption text-content-3 truncate max-w-[220px]">{resumenMovimiento(meta)}</span>;
+    if (esMovimiento(req.type)) {
+        /* Con un solo producto, su lote debajo — trazabilidad (2026-11-05).
+           Con varios no: la tarjeta dice cuántos, y los lotes de cada uno
+           viven en el detalle. */
+        const unica = lineasDe(meta).length === 1 ? lineasDe(meta)[0] : null;
+        const lotes = !unica ? null
+            : (lotesPorRenglon(meta).get(0)
+               // Una carga o un descarte guardan el lote en la línea misma.
+               ?? ((unica.lote || unica.numero_lote)
+                   ? [{ lote: unica.lote || unica.numero_lote, vence: unica.vence ?? null, fuente: 'linea' }] : null));
+        return (
+            <>
+                <span className="text-caption text-content-3 truncate max-w-[220px]">{resumenMovimiento(meta)}</span>
+                {lotes && <LotesConFuente lotes={lotes} className="mt-1" />}
+            </>
+        );
+    }
     if (req.type === 'MINMAX_CHANGE_REQUEST')
         return <span className="text-caption text-content-3 truncate max-w-[220px]">{meta.producto ?? `#${meta.erp_product_id}`} · MIN {meta.min_actual ?? '—'}→{meta.min_pedido ?? '—'}</span>;
     if (req.note) return <span className="text-caption text-content-3 italic truncate max-w-[160px]">&ldquo;{req.note}&rdquo;</span>;

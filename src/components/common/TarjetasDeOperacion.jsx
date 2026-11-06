@@ -20,6 +20,7 @@ import Button from './Button';
 import PortalInput from './PortalInput';
 import { VENTANA_BITACORA_MIN, TRASLADOS_VISIBLES, ETAPAS_DE_PEDIDO, maxNoAlcanzaParaDespachar } from '@nucleo/utils/avisosDeOperacion';
 import { porQueDesde } from '@nucleo/utils/productosParados';
+import LotesConFuente from './LotesConFuente';
 import { diasEntre, hoySV } from '@nucleo/utils/fecha';
 
 /* Tres tarjetas de la campana para avisos de la operación del día: el corte de
@@ -983,6 +984,8 @@ function ProductosDeTraslado({ productos, mas, sala, claseTenue, azul, expandida
                                 </span>
                             )}
                         </div>
+                        {/* El lote, por trazabilidad (2026-11-05). */}
+                        {p.lotes?.length > 0 && <LotesConFuente lotes={p.lotes} />}
                     </li>
                 ))}
                 {!expandida && ocultos > 0 && (
@@ -1154,6 +1157,8 @@ export function CuerpoDeRespuesta({ datos, claseTenue, isDark, buscarEmpleado })
                             <li key={`${p.nombre}-${i}`} className="px-2.5 py-2">
                                 <p className="text-body-sm font-black break-words leading-snug">{p.nombre}</p>
                                 {pildora(p) && <div className="mt-1 text-caption">{pildora(p)}</div>}
+                                {/* El lote que salió, por trazabilidad (2026-11-05). */}
+                                {p.lotes?.length > 0 && <LotesConFuente lotes={p.lotes} />}
                             </li>
                         ))}
                         {datos.mas > 0 && (

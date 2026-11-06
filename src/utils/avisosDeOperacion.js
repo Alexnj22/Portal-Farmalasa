@@ -17,6 +17,18 @@ const num = (v) => {
     return Number.isFinite(n) ? n : null;
 };
 
+/* El lote de cada producto de un traslado (2026-11-05, trazabilidad): lo que
+ * escribe `lotes_de_renglon_de_traslado` en la base. Un aviso viejo no lo trae
+ * y queda en lista vacía — sin chip, no un «sin lote» que no se sabe. */
+const lotesDeAviso = (v) => (Array.isArray(v) ? v : [])
+    .filter((l) => l && (l.lote || l.vence || l.fuente))
+    .map((l) => ({
+        lote: l.lote ? String(l.lote) : null,
+        vence: l.vence ? String(l.vence) : null,
+        unidades: num(l.unidades),
+        fuente: l.fuente ? String(l.fuente) : null,
+    }));
+
 /* ── El corte de caja ─────────────────────────────────────────────────────
  * `tramo` es la diferencia del corte que el aviso anunció. `null` NO es cero:
  * es que el corte salió sin contar el efectivo — por eso se mira si la CLAVE
@@ -343,6 +355,7 @@ export function datosDeSolicitud(n) {
                 cantidad: num(p.cantidad),
                 // En un traslado: cuántas tiene la sala a la que se lo piden.
                 existencia: num(p.existencia),
+                lotes: lotesDeAviso(p.lotes),
             })),
         mas: num(s.mas) ?? 0,
         unidades: num(s.unidades),
@@ -374,6 +387,7 @@ export function datosDeRespuesta(n) {
         sala: r.sala ? String(r.sala) : null,
         productos: lista(r.productos).map((p) => ({
             nombre: String(p.nombre), pedida: num(p.pedida), enviada: num(p.enviada),
+            lotes: lotesDeAviso(p.lotes),
         })),
         mas: num(r.mas) ?? 0,
         motivo: r.motivo ? String(r.motivo) : null,

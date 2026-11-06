@@ -156,8 +156,8 @@ function SelectorOperacion({ onSelect, onAVencidos, onAlEstante }) {
                             <Archive size={15} strokeWidth={2} />
                         </IconoEnCaja>
                         <div className="flex-1 min-w-0">
-                            <p className="text-body-sm font-black text-danger-text">Pasar a vencidos</p>
-                            <p className="text-caption text-content-3 mt-0.5">Del estante al área de vencidos de Bodega, sin aprobación</p>
+                            <p className="text-body-sm font-black text-danger-text">Enviar a bodega de vencidos</p>
+                            <p className="text-caption text-content-3 mt-0.5">Lo que no se puede vender, sin aprobación</p>
                         </div>
                         <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
                     </button>
@@ -172,8 +172,8 @@ function SelectorOperacion({ onSelect, onAVencidos, onAlEstante }) {
                             <ArchiveRestore size={15} strokeWidth={2} />
                         </IconoEnCaja>
                         <div className="flex-1 min-w-0">
-                            <p className="text-body-sm font-black text-success-text">Volver al estante</p>
-                            <p className="text-caption text-content-3 mt-0.5">De vencidos al estante de Bodega, para venderlo</p>
+                            <p className="text-body-sm font-black text-success-text">Devolver a bodega</p>
+                            <p className="text-caption text-content-3 mt-0.5">De bodega de vencidos, para volver a venderlo</p>
                         </div>
                         <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
                     </button>

@@ -629,26 +629,3 @@ export async function pasarAVencidosEnBodega({ renglones, motivo, detalle, fotos
     });
     return { resultado: msg ? null : data, error: msg };
 }
-
-/** Lo que Bodega pasó a vencidos (o devolvió al estante) en los últimos 30 días. */
-export async function fetchPasadosAVencidos() {
-    const desde = new Date(Date.now() - 30 * 864e5).toISOString();
-    const { data, error } = await supabase.from('bodega_a_vencidos')
-        .select('id, created_at, descripcion, presentacion, cantidad, lote, vence, motivo, estado, nota, hecho_por, sentido, erp_traslado_id')
-        .gte('created_at', desde).order('created_at', { ascending: false }).range(0, 199);
-    return { filas: data ?? [], error: error?.message ?? null };
-}
-
-/** Deshace un paso a vencidos: lo del traslado `traslado` vuelve al estante. */
-export async function devolverDeVencidosAlEstante(traslado) {
-    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { accion: 'vencidos_a_estante', traslado: String(traslado) },
-    });
-    let msg = null;
-    if (error) {
-        msg = error.message;
-        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
-    } else if (data?.error) msg = data.error;
-    anotar('BODEGA_VENCIDOS_DEVUELTO', String(traslado), { ok: !msg, devolucion: data?.traslado ?? null, error: msg });
-    return { resultado: msg ? null : data, error: msg };
-}

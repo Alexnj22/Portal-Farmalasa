@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Archive, ArchiveRestore, CheckCircle2, Minus, Plus, Undo2, X } from 'lucide-react';
+import { Archive, ArchiveRestore, CheckCircle2, Minus, Plus, X } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import Button from '../../components/common/Button';
@@ -13,7 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscarConExistencia } from '@nucleo/data/inventoryMovements';
 import { subirEvidencia, MAX_FOTOS } from '@nucleo/data/evidencia';
 import {
-    MOTIVOS_A_VENCIDOS, MOTIVOS_AL_ESTANTE, pasarAVencidosEnBodega, fetchPasadosAVencidos, devolverDeVencidosAlEstante,
+    MOTIVOS_A_VENCIDOS, MOTIVOS_AL_ESTANTE, pasarAVencidosEnBodega,
 } from '@nucleo/data/cargarCompra';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
@@ -31,8 +31,12 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 //
 // Con `sentido="al_estante"` es el camino inverso (2026-11-06, usuario: «si hay
 // algún producto enviado por error, y debe volver para venderla»): se busca en
-// el ÁREA DE VENCIDOS y vuelve al estante. Y en la ida, lo que se pasó desde el
-// portal en los últimos 30 días se puede «Devolver» con un toque.
+// el ÁREA DE VENCIDOS y vuelve al estante.
+//
+// Un solo camino de vuelta (usuario, 2026-11-06: «¿por qué salen los 2?»):
+// hubo además una lista «Devolver» de lo pasado desde el portal, y hacía lo
+// mismo que esto. Los nombres son los del usuario: «Enviar a bodega de
+// vencidos» y «Devolver a bodega».
 
 const fmtVence = (d) => fechaNumerica(d, { anio: 'corto', vacio: null });
 const clave = (f) => `${f.erp_product_id}|${f.presentacion}|${f.lote ?? ''}|${f.fecha_vencimiento ?? ''}`;
@@ -41,8 +45,6 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
     const { user } = useAuth();
     const alEstante = sentido === 'al_estante';
     const MOTIVOS = alEstante ? MOTIVOS_AL_ESTANTE : MOTIVOS_A_VENCIDOS;
-    const [recientes, setRecientes] = useState(null);
-    const [devolviendo, setDevolviendo] = useState(null);
     const [busqueda, setBusqueda] = useState('');
     const [candidatos, setCandidatos] = useState([]);
     const [cargando, setCargando] = useState(false);
@@ -70,21 +72,6 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
         }, 300);
         return () => { vivo = false; clearTimeout(t); };
     }, [busqueda, alEstante]);
-
-    // Lo que se pasó desde el portal y sigue en vencidos: se puede devolver.
-    const cargarRecientes = async () => {
-        const { filas } = await fetchPasadosAVencidos();
-        setRecientes(filas.filter(f => (f.sentido ?? 'a_vencidos') === 'a_vencidos' && f.estado === 'en_vencidos' && f.erp_traslado_id));
-    };
-    useEffect(() => { if (!alEstante) cargarRecientes(); }, [alEstante]);
-
-    const devolver = async (traslado) => {
-        setError(''); setDevolviendo(traslado);
-        const { error: e } = await devolverDeVencidosAlEstante(traslado);
-        setDevolviendo(null);
-        if (e) { setError(e); return; }
-        await cargarRecientes();
-    };
 
     const m = MOTIVOS.find(x => x.value === motivo) ?? null;
     const faltaFoto = !!m?.foto && fotos.length === 0;
@@ -131,10 +118,10 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
         <div className="flex flex-col items-center justify-center gap-3 flex-1 py-8 text-center">
             <CheckCircle2 size={40} className="text-success-text" />
             <div>
-                <p className="text-body-lg font-black text-content">{alEstante ? 'Ya está en el estante' : 'Ya está en vencidos'}</p>
+                <p className="text-body-lg font-black text-content">{alEstante ? 'Ya está de vuelta en bodega' : 'Ya está en bodega de vencidos'}</p>
                 <p className="text-body-sm text-content-3 mt-1">
                     {hecho.renglones === 1 ? 'El producto se movió' : `Se movieron ${hecho.renglones} productos`}
-                    {alEstante ? ' al estante de Bodega: ya se puede vender.' : ' al área de vencidos de Bodega.'}
+                    {alEstante ? ' a bodega: ya se puede vender.' : ' a bodega de vencidos.'}
                 </p>
             </div>
             <Button variant="secondary" onClick={onHecho}>Cerrar</Button>
@@ -144,23 +131,23 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0 animate-in slide-in-from-right-3 duration-[var(--dur-base)]">
             <EncabezadoModal
-                titulo={alEstante ? 'Volver al estante' : 'Pasar a vencidos'} subtitulo={branchName}
+                titulo={alEstante ? 'Devolver a bodega' : 'Enviar a bodega de vencidos'} subtitulo={branchName}
                 icono={alEstante ? ArchiveRestore : Archive} tono={alEstante ? 'success' : 'danger'} onVolver={onVolver}
             />
 
             <SearchInput
                 accentColor={alEstante ? 'var(--success)' : 'var(--danger)'}
                 value={busqueda} onChange={setBusqueda}
-                placeholder={alEstante ? 'Buscar producto en vencidos…' : 'Buscar producto del estante…'}
-                ariaLabel={alEstante ? 'Buscar producto en vencidos' : 'Buscar producto del estante'}
+                placeholder={alEstante ? 'Buscar en bodega de vencidos…' : 'Buscar en bodega…'}
+                ariaLabel={alEstante ? 'Buscar en bodega de vencidos' : 'Buscar en bodega'}
             />
 
             <div className="flex flex-col gap-2 flex-1 min-h-0 overflow-y-auto overscroll-contain -mx-1 px-1">
                 {busqueda.trim().length >= 2 ? (
                     cargando ? <SkeletonText lines={3} /> :
                     candidatos.length === 0 ? (
-                        <EmptyState compact title={alEstante ? 'No está en vencidos' : 'Sin existencia en el estante'}
-                            subtitle={alEstante ? 'No hay ese producto en el área de vencidos de Bodega.' : 'No hay ese producto en el estante de Bodega.'} />
+                        <EmptyState compact title={alEstante ? 'No está en bodega de vencidos' : 'Sin existencia en bodega'}
+                            subtitle={alEstante ? 'No hay ese producto en bodega de vencidos.' : 'No hay ese producto en bodega.'} />
                     ) : candidatos.map(f => (
                         <ListRow
                             key={clave(f)}
@@ -177,40 +164,11 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
                         </ListRow>
                     ))
                 ) : lineas.length === 0 ? (
-                    <>
-                        <EmptyState compact icon={alEstante ? ArchiveRestore : Archive}
+                    <EmptyState compact icon={alEstante ? ArchiveRestore : Archive}
                             title={alEstante ? 'Busca lo que vuelve a la venta' : 'Busca lo que va a vencidos'}
                             subtitle={alEstante
-                                ? 'Se mueve del área de vencidos al estante de Bodega, sin aprobación. Queda anotado quién lo hizo y por qué.'
-                                : 'Se mueve del estante al área de vencidos de Bodega, sin aprobación. Queda anotado quién lo hizo y por qué.'} />
-                        {!alEstante && recientes?.length > 0 && (
-                            <>
-                                <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 mt-1">
-                                    Pasados desde el portal
-                                </p>
-                                {recientes.map(r => (
-                                    <ListRow
-                                        key={r.id}
-                                        className="border-divider bg-surface-card"
-                                        title={r.descripcion}
-                                        trailing={
-                                            <Button size="sm" variant="secondary" icon={Undo2}
-                                                loading={devolviendo === r.erp_traslado_id}
-                                                disabled={!!devolviendo}
-                                                onClick={() => devolver(r.erp_traslado_id)}>
-                                                Devolver
-                                            </Button>
-                                        }
-                                    >
-                                        <span className="block text-micro text-content-3 truncate">
-                                            {[`${r.cantidad} ${r.presentacion}`, r.lote ? `Lote ${r.lote}` : null,
-                                              fechaNumerica(r.created_at, { anio: 'corto' })].filter(Boolean).join(' · ')}
-                                        </span>
-                                    </ListRow>
-                                ))}
-                            </>
-                        )}
-                    </>
+                                ? 'Vuelve de bodega de vencidos a bodega, para venderse, sin aprobación. Queda anotado quién lo hizo y por qué.'
+                                : 'Se envía de bodega a bodega de vencidos, sin aprobación. Queda anotado quién lo hizo y por qué.'} />
                 ) : (
                     <>
                         {lineas.map(({ k, fila, cantidad }) => (
@@ -243,7 +201,7 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
                             value={motivo || null}
                             onChange={v => setMotivo(v ?? '')}
                             options={MOTIVOS.map(({ value, label }) => ({ value, label }))}
-                            placeholder={alEstante ? '¿Por qué vuelve al estante?' : '¿Por qué va a vencidos?'}
+                            placeholder={alEstante ? '¿Por qué vuelve a bodega?' : '¿Por qué va a vencidos?'}
                             clearable={false}
                         />
                         <PortalTextarea
@@ -271,7 +229,7 @@ export default function PasarAVencidosBodega({ branchName, onVolver, onHecho, se
             <PieModal>
                 <Button variant="secondary" onClick={onVolver}>Volver</Button>
                 <Button disabled={!puedeEnviar} loading={enviando} onClick={enviar}>
-                    {subiendo ? 'Subiendo la foto...' : enviando ? 'Moviendo...' : (alEstante ? 'Volver al estante' : 'Pasar a vencidos')}
+                    {subiendo ? 'Subiendo la foto...' : enviando ? 'Moviendo...' : (alEstante ? 'Devolver a bodega' : 'Enviar a vencidos')}
                 </Button>
             </PieModal>
         </div>

@@ -1381,7 +1381,36 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
     ? { estado: "devuelto", erp_traslado_id: mov.traslado, devuelto_traslado_id: mov.traslado,
         devuelto_at: new Date().toISOString(), devuelto_por: quien, nota: null }
     : { estado: "en_vencidos", erp_traslado_id: mov.traslado, nota: null });
+  if (alEstante) await cerrarEnviosDevueltos(admin, pedidos, mov.traslado, quien);
   return { ok: true, traslado: mov.traslado, renglones: ids.length };
+}
+
+// Lo que vuelve a bodega cierra el envío que lo había mandado a vencidos
+// (usuario, 2026-11-06: un solo camino de vuelta): mismo producto y lote, el
+// más viejo primero, y sólo si lo que volvió lo cubre entero. Si no se puede
+// escribir no frena la devolución — el producto ya está en bodega.
+async function cerrarEnviosDevueltos(admin: any, pedidos: any[], traslado: string, quien: string) {
+  for (const r of pedidos) {
+    let q = admin.from("bodega_a_vencidos").select("id, unidades")
+      .eq("sentido", "a_vencidos").eq("estado", "en_vencidos").eq("erp_product_id", r.erp_product_id)
+      .order("created_at", { ascending: true });
+    q = r.lote ? q.eq("lote", r.lote) : q.is("lote", null);
+    const { data, error } = await q;
+    if (error) { console.error("cerrarEnviosDevueltos", error.message); continue; }
+    let quedan = r.cantidad * r.factor;
+    const cerrar: number[] = [];
+    for (const f of data ?? []) {
+      if (Number(f.unidades) > quedan + 1e-6) break;
+      quedan -= Number(f.unidades);
+      cerrar.push(f.id);
+    }
+    if (!cerrar.length) continue;
+    const { error: eU } = await admin.from("bodega_a_vencidos").update({
+      estado: "devuelto", devuelto_traslado_id: traslado, devuelto_at: new Date().toISOString(),
+      devuelto_por: quien, updated_at: new Date().toISOString(),
+    }).in("id", cerrar).eq("estado", "en_vencidos");
+    if (eU) console.error("cerrarEnviosDevueltos", eU.message);
+  }
 }
 
 async function terminarDevolucion(admin: any, filas: any[], quien: string) {

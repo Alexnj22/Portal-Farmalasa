@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.1 — Bodega: un solo camino de vuelta desde vencidos
+
+- Salían dos formas de regresar lo que estaba en vencidos (la lista
+  «Devolver» y «Volver al estante») y hacían lo mismo. Queda una sola:
+  **«Devolver a bodega»**. La ida se llama **«Enviar a bodega de vencidos»**.
+- Al devolver, el envío que lo había mandado a vencidos (mismo producto y
+  lote) se cierra como devuelto: el registro ya no dice que sigue allá.
+
 ## v2.1466.0 — Bodega: volver de vencidos al estante y devolver lo pasado por error
 
 - **Nueva opción «Volver al estante»** en Ajuste de inventario de Bodega:

@@ -3449,6 +3449,8 @@ estilo, grepear las constantes de clases
 suelto no es deuda: la sombra utilitaria es el idioma aceptado; el vidrio tiene
 canónico (`data-surface`) y la sombra no.
 
+**La pantalla habla del portal, nunca del sistema de origen.** Ni «ERP» ni la jerga de la tubería («sincronizar», «sync») en texto visible, ni en `title`/`aria-label`/`placeholder`, ni en lo que se exporta: «Sin sincronizar» es «Sin número», «Match ERP» es «Registrado como». Los comentarios del código sí guardan la trazabilidad. El gate `texto-de-origen` ve el texto escrito; el armado con variables se verifica barriendo el DOM pintado (CLAUDE.md, «la pantalla habla del PORTAL»).
+
 ## 35. Anexo — categorías del gate
 
 Cada categoría de `scripts/design-gate.mjs` con la regla que vigila y la
@@ -3524,6 +3526,7 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `ancho-de-modal` | `maxWidth` de un modal fuera de la escala sm · md · lg · 2xl · 4xl · 6xl · none (cero absoluto) | §14 · ModalShell |
 | `icono-en-caja-a-mano` | ícono en cuadro o círculo de fondo neutro o teñido escrito a mano en vez de `IconoEnCaja` (trinquete) | §7 |
 | `popover-a-mano` | panel anclado a un botón escrito a mano (`data-panel=`, o una copia del cierre por clic afuera) en vez de `Popover` + `useAnclaje` (cero absoluto) | §14 |
+| `texto-de-origen` | texto visible que nombra el ERP o dice «sincronizar»/«sync» (cero absoluto; lo armado con variables se verifica barriendo el DOM) | §34 |
 | `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion` (trinquete; quedan colores con significado y clases dinámicas) | §7 |
 | `rotulo-a-mano` | rótulo en mayúsculas chico con un peso o espaciado que no es `font-black tracking-widest` (cero absoluto) | §7 |
 | `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |

@@ -1693,6 +1693,38 @@ function scanFile(path) {
     });
   }
 
+  // ── `texto-de-origen` (2026-11-06, CERO ABSOLUTO) ─────────────────────
+  // La pantalla habla del PORTAL (CLAUDE.md, «la pantalla habla del portal»):
+  // ni el ERP ni la jerga de la tubería («sincronizar», «sync») en texto que
+  // ve el usuario. El usuario lo corrigió dos veces, y la verificación era a
+  // mano. Mira lo que se PINTA: el texto de un nodo JSX, los atributos que se
+  // leen o se anuncian (`title`, `aria-label`, `placeholder`, `label`…), los
+  // rótulos en objetos (`label: '…'`) y los `new Error('…')`. Los comentarios
+  // y los identificadores (`erp_id`, `ERP_ORDER`) no cuentan: ahí la
+  // trazabilidad sirve y no la ve nadie.
+  // Lo que no puede ver: un texto armado con variables. Por eso la regla pide
+  // además barrer el DOM pintado al tocar una vista que hable de compras.
+  if (!hasException(path, 'texto-de-origen')) {
+    const PALABRA = /\bERP\b|[Ss]incroniz|\b[Ss]ync\b/;
+    const RE_NODO = />([^<>{}]*)</g;
+    const RE_ATRIB = /\b(?:title|aria-label|placeholder|label|subtitle|description|message|confirmText|emptyText|tooltip)=["']([^"']*)["']/g;
+    const RE_CLAVE = /\b(?:label|title|titulo|mensaje|message|description|descripcion|placeholder|sub|texto|hint|ayuda)\s*:\s*(['"`])((?:(?!\1)[^\\\n])*)\1/g;
+    const RE_ERROR = /new Error\(\s*(['"`])((?:(?!\1)[^\\\n])*)\1/g;
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      const t = line.trim();
+      if (t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('{/*')) return;
+      const vistos = [];
+      for (const m of line.matchAll(RE_NODO)) vistos.push(m[1]);
+      for (const m of line.matchAll(RE_ATRIB)) vistos.push(m[1]);
+      for (const m of line.matchAll(RE_CLAVE)) vistos.push(m[2]);
+      for (const m of line.matchAll(RE_ERROR)) vistos.push(m[2]);
+      if (vistos.some(v => PALABRA.test(v))) {
+        findings.push({ line: i + 1, label: 'la pantalla nombra el sistema de origen o la jerga de la tubería (ERP, sincronizar, sync) — decirlo en términos del negocio', category: 'texto-de-origen', text: t.slice(0, 120) });
+      }
+    });
+  }
+
   // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
   // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
   // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y

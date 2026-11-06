@@ -473,9 +473,9 @@ por lo tanto aro.*
 | px | papel | qué lleva |
 |---|---|---|
 | 20 | **firma** — al lado de un nombre escrito | foto + aro de 1.5px pegado; sin marcas |
-| 28 | persona | aro de 4px separado de la foto por un filo de 2px del color del fondo; torta y «!» |
+| 28 | persona | aro de 2px separado de la foto por un filo de 2px del color del fondo (alcance 4px); torta y «!» |
 | 36 | persona | lo anterior + **chip de estado** |
-| 48 · 64 | persona | aro de 4.5px + chip + **medalla de antigüedad** |
+| 48 · 64 | persona | aro de alcance 4.5px + chip + **medalla de antigüedad** |
 | 104 | **retrato** — sólo la cabecera del perfil de esa persona | todo lo anterior |
 
 **Diseño «cuatro esquinas»** — cada marca tiene su esquina fija:
@@ -501,9 +501,10 @@ por lo tanto aro.*
   juntado por render en `src/data/estadosDePersonas.js`. `leerEstado` (puro, para
   `useSyncExternalStore`) y `pedirEstado` son dos funciones a propósito.
 - **Geometría compartida con la app**: `geometriaDeAvatar(px)` en
-  `src/utils/avatar.js` define aro, filo, chip y medalla; la app
-  (`apps/mobile/componentes/Avatar.js`) la usa tal cual. `AvatarConEstado`
-  repite esos números en línea — si cambian, se cambian en los dos.
+  `src/utils/avatar.js` define aro, filo, chip y medalla, y la usan los dos:
+  `AvatarConEstado` y la app (`apps/mobile/componentes/Avatar.js`). `aro` es
+  hasta dónde llega el aro desde el borde de la foto, con el filo adentro: a
+  28 px, 4 de alcance − 2 de filo = 2 px de trazo.
 - **Envoltorios que ya lo usan** (preferirlos en su contexto):
   `PersonaConFoto` (`components/caja/`), `FirmaConFoto` (`components/cortes/`),
   `CaraPersona` (`views/solicitudes/PersonasSolicitud.jsx`), `FirmaDeAjuste`

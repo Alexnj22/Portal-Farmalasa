@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.6 — Avatar: una sola geometría
+
+- **El avatar usa una sola geometría en el portal y en la app.** `AvatarConEstado` repetía a mano los números de `geometriaDeAvatar`, y la app los leía distinto: pintaba el aro de 4px MÁS el filo, más grueso que el diseño aprobado. Ahora los dos llaman a la misma función y `aro` significa lo mismo en los dos (alcance desde la foto, filo incluido). En el portal no cambia nada a la vista; en la app el aro queda como en el portal (llega con el próximo binario).
+
 ## v2.1459.5 — DESIGN.md al día
 
 - **DESIGN.md alineado con el código** (7,007 → ~3,500 líneas): 17 contradicciones resueltas contra el código y el gate, §5.4 reescrita para el avatar «cuatro esquinas», numeración arreglada (Voz pasa a §34), y un anexo §35 con TODAS las categorías del gate y su sección. Las crónicas se mudaron a `docs/design/historia/`.

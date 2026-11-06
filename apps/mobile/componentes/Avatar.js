@@ -136,7 +136,8 @@ function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
   ].filter(Boolean).join(', ');
 
   const r = px / 2;
-  const fuera = g.filo + g.aro;
+  // `g.aro` incluye el filo (ver `geometriaDeAvatar`): el trazo es la resta.
+  const fuera = g.aro;
   const tamCumple = Math.max(14, g.tamChip);
   return (
     <View accessible accessibilityRole="image" accessibilityLabel={etiqueta}
@@ -144,7 +145,7 @@ function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
       {aro ? (
         <View pointerEvents="none" style={{
           position: 'absolute', top: -fuera, left: -fuera, width: px + 2 * fuera, height: px + 2 * fuera,
-          borderRadius: r + fuera, borderWidth: g.aro, borderColor: aro,
+          borderRadius: r + fuera, borderWidth: g.aro - g.filo, borderColor: aro,
         }} />
       ) : null}
       {foto && rota !== foto ? (

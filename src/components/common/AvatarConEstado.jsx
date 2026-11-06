@@ -14,6 +14,7 @@ import LiquidTooltip from './LiquidTooltip';
 import { esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
 import { esCumpleHoy } from '@nucleo/utils/miPerfil';
 import { useAuthSiHay } from '@nucleo/context/AuthContext';
+import { geometriaDeAvatar } from '@nucleo/utils/avatar';
 
 /* La foto firmada de alguien que NO está en el store, por id. Un pedido por
  * persona y por sesión: `fetchFotoDeEmpleado` ya guarda la cruda, y acá se
@@ -179,8 +180,11 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   // según de qué consulta salga. `normalizarPersona` las acepta todas — ver su
   // nota en `utils/estadoDePersona.js`.
   const emp = useMemo(() => normalizarPersona(crudo), [crudo]);
-  // Papel FIRMA (20 px): sólo foto y aro. Ver `TAMANOS_DE_AVATAR`.
-  const firma = px < 28;
+  // La geometría (aro, filo, qué marca a qué tamaño) es la MISMA función que
+  // usa la app del teléfono: `geometriaDeAvatar`. Papel FIRMA (20 px): sólo
+  // foto y aro.
+  const geo = geometriaDeAvatar(px);
+  const firma = geo.firma;
   // ── El estado se busca en la ficha, aunque quien llame no la tenga ────────
   //
   // La mitad de los sitios donde sale una foto no pasa un empleado completo:
@@ -340,11 +344,11 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   //   arriba-izq  torta · arriba-der «!» · abajo-der estado · abajo-izq años
   const sombraAro = marca
     ? (firma
-        ? `0 0 0 1.5px ${marca.aro}`
-        : `0 0 0 2px var(--av-fondo, var(--color-surface-card)), 0 0 0 ${px >= 48 ? 4.5 : 4}px ${marca.aro}`)
+        ? `0 0 0 ${geo.aro}px ${marca.aro}`
+        : `0 0 0 ${geo.filo}px var(--av-fondo, var(--color-surface-card)), 0 0 0 ${geo.aro}px ${marca.aro}`)
     : undefined;
-  const conChip = mostrarChip && px >= 36;
-  const tamChip = Math.round(px * (px >= 48 ? 0.32 : 0.38));
+  const conChip = mostrarChip && geo.conChip;
+  const tamChip = geo.tamChip;
 
   /* Durante la cuenta regresiva el rótulo YA dice cuándo empieza («Vacaciones
      en 3 días»), así que «vuelve el 21» al lado sería una segunda fecha sobre
@@ -368,7 +372,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const titulo = [deCumple ? '¡Hoy cumple años! 🎂' : '', tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
   const etiqueta = [titulo, tituloPendientes].filter(Boolean).join(' · ') || undefined;
   const marcaPendiente = pendientes.length > 0 && !firma;
-  const tamPendiente = Math.max(13, Math.round(px * 0.26));
+  const tamPendiente = geo.tamPendiente;
 
   return (
     <span
@@ -488,7 +492,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           apagar pasa `antiguedad={null}`. Vive acá y no en la tarjeta porque
           tiene que saber si el chip de estado está, para no taparlo. Su
           significado va en el `title`, que es de la tarjeta entera. */}
-      {antiguedad && px >= 48 && (
+      {antiguedad && geo.conMedalla && (
         <span className="avatar-marca medalla-antiguedad absolute -bottom-0.5 -left-0.5" data-tramo={antiguedad.tramo}
           style={{ width: tamChip, height: tamChip, fontSize: Math.round(tamChip * 0.5) }}
           aria-hidden="true">

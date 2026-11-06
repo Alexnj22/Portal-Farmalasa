@@ -27,8 +27,10 @@ export function geometriaDeAvatar(px) {
   const firma = px < 28;
   return {
     firma,
-    // Grosor del aro y del filo que lo separa de la foto. No es proporcional
-    // a propósito: proporcional es lo que hace desaparecer un aro chico.
+    // `aro`: hasta dónde llega el aro medido desde el borde de la foto, CON el
+    // filo adentro (el trazo visible es `aro - filo`). Es la `spread` del
+    // `box-shadow` del portal; la app lo dibuja igual. No es proporcional a
+    // propósito: proporcional es lo que hace desaparecer un aro chico.
     aro: firma ? 1.5 : (px >= 48 ? 4.5 : 4),
     filo: firma ? 0 : 2,
     conChip: px >= 36,

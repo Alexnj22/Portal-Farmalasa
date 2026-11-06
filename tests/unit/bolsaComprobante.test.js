@@ -48,7 +48,10 @@ const vale = (extra = {}) => construirValeDeSalida({
 });
 
 
-const cuerpo = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).cuerpo;
+// Sin los cambios de letra (`ESC ! n`): desde el 2026-11-06 el valor de cada
+// dato va en negrita, y el código parte «Rótulo: valor» en dos.
+// eslint-disable-next-line no-control-regex
+const cuerpo = (t) => seccionesParaElPrograma({ ancho: 80, ...t }).cuerpo.replace(/\x1b!./g, '');
 const todoElTexto = (t) => JSON.stringify(seccionesParaElPrograma({ ancho: 80, ...t }));
 // El pie es una SECCION aparte del cuerpo: buscar ahi una firma dentro de
 // `cuerpo` no la encuentra nunca, y el test pasaria en verde al reves.

@@ -623,6 +623,22 @@ const DESTACADO = `${ESC}!\x18`;
 const DESTACADO_GRANDE = `${ESC}!\x38`;
 const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 
+// ── La jerarquía del papel (2026-11-06) ──────────────────────────────────────
+//
+// Usuario, con los tickets de Salud 4: «no se entienden los datos, todo se ve
+// igual del mismo tamaño así que no se sabe qué es lo importante». Todo salía
+// en la misma letra chica: el título del papel, los rótulos, los valores y los
+// títulos de sección. Tres escalones, todos con el MISMO `ESC ! n` ya medido en
+// estas impresoras (0x08 negrita, 0x01 letra chica, 0x10 doble alto):
+//
+//   · el título del papel  → `DESTACADO` (negrita, doble alto, letra normal)
+//   · título de sección    → `SUBTITULO` (negrita en letra normal: más grande
+//                            que el cuerpo, sin cambiar de ancho de renglón)
+//   · el VALOR de un dato  → `NEGRITA_CHICA`; el rótulo queda fino. Misma
+//                            letra, mismo ancho: las columnas no se mueven.
+const NEGRITA_CHICA = `${ESC}!\x09`;
+const SUBTITULO = `${ESC}!\x08`;
+
 // ── El interlineado, renglón por renglón (2026-11-04) ────────────────────────
 //
 // Usuario: «haz que los tickets ocupen menos espacio para que no salgan tan
@@ -999,13 +1015,42 @@ function filaDeItem(celdas, cantidadPrimero = false) {
 function renglonesDeDatos(datos, ancho = COLUMNAS_TICKET.chica) {
     const mitad = Math.floor(ancho / 2);
     const texto = ([rot, val]) => `${rot}: ${val}`;
-    return emparejarDatos(datos, ancho).flatMap((fila) => (
-        fila.length === 2
-            ? [(texto(fila[0]).padEnd(mitad) + texto(fila[1])).padEnd(ancho)]
-            // Uno solo y no entra: se parte por palabras, nunca se recorta —
-            // el que se recorta en silencio es un dato perdido.
-            : enRenglones(texto(fila[0]), ancho).map(l => l.padEnd(ancho))
-    ));
+    // El valor en negrita y el rótulo fino (ver «La jerarquía del papel»). El
+    // relleno se cuenta sobre el texto PLANO: los códigos no ocupan columna.
+    const marcado = ([rot, val]) => `${rot}: ` + NEGRITA_CHICA + val + LETRA_CHICA;
+    return emparejarDatos(datos, ancho).flatMap((fila) => {
+        if (fila.length === 2) {
+            const plano = texto(fila[0]).padEnd(mitad) + texto(fila[1]);
+            return [marcado(fila[0]) + ' '.repeat(mitad - texto(fila[0]).length)
+                + marcado(fila[1]) + ' '.repeat(Math.max(0, ancho - plano.length))];
+        }
+        // Uno solo y no entra: se parte por palabras, nunca se recorta —
+        // el que se recorta en silencio es un dato perdido. Lo que sigue al
+        // rótulo es valor, en el primer renglón y en los que siguen.
+        const prefijo = `${fila[0][0]}: `;
+        return enRenglones(texto(fila[0]), ancho).map((l, i) => {
+            const relleno = ' '.repeat(Math.max(0, ancho - l.length));
+            if (i > 0) return NEGRITA_CHICA + l + LETRA_CHICA + relleno;
+            return l.startsWith(prefijo)
+                ? prefijo + NEGRITA_CHICA + l.slice(prefijo.length) + LETRA_CHICA + relleno
+                : l + relleno;
+        });
+    });
+}
+
+/** Un renglón de `dosColumnas` con el valor (lo que queda a la derecha) en negrita. */
+function conValorEnNegrita(renglon, valor) {
+    const v = valor.trim();
+    if (!v || !renglon.endsWith(v)) return renglon;
+    return renglon.slice(0, renglon.length - v.length) + NEGRITA_CHICA + v + LETRA_CHICA;
+}
+
+/** El título del papel —qué es este ticket—: lo primero que se lee. */
+function tituloDelPapel(titulo) {
+    if (!titulo) return '';
+    return AIRE + DESTACADO
+        + enRenglones(soloASCII(titulo).toUpperCase(), COLUMNAS_TICKET.normal).join('\n')
+        + LETRA_CHICA;
 }
 
 /** El encabezado de la tabla, en las mismas posiciones que sus datos. */
@@ -1051,13 +1096,13 @@ export function seccionesParaElPrograma(ticket) {
     const cabeza = (marca
         ? [
             JUEGO_DE_CARACTERES + CENTRO + LETRA_CHICA + [...lineasDeEncabezado, regla()].join('\n'),
-            ticket.titulo ? AIRE + ticket.titulo.toUpperCase() : '',
+            tituloDelPapel(ticket.titulo),
         ]
         : [
             JUEGO_DE_CARACTERES + CENTRO + DOBLE_ALTO + (encabezado.titulo ?? ''),
             ...(lineasDeEncabezado.length ? [LETRA_CHICA + lineasDeEncabezado.join('\n')] : []),
             LETRA_CHICA + regla(),
-            ticket.titulo ? AIRE + ticket.titulo.toUpperCase() : '',
+            tituloDelPapel(ticket.titulo),
         ]).filter(Boolean).join('\n') + '\n';
 
     const medio = [
@@ -1065,7 +1110,7 @@ export function seccionesParaElPrograma(ticket) {
         ...conAire(renglonesDeDatos(datos)),
         AIRE + regla(),
         ...bloques.flatMap(b => conAire([
-            b.titulo ?? '',
+            b.titulo ? SUBTITULO + enRenglones(soloASCII(b.titulo), COLUMNAS_TICKET.normal).join('\n') + LETRA_CHICA : '',
             // La prosa se parte ACÁ, en palabras. Si se manda entera, la parte la
             // impresora en la columna donde se le acaba el papel y corta a mitad
             // de palabra: en el primer ticket real salió «…ES EL ANCHO DE EST /
@@ -1081,10 +1126,10 @@ export function seccionesParaElPrograma(ticket) {
                     : enRenglones(b.texto, COLUMNAS_TICKET.chica))
                 : []),
             b.monoespaciado ?? '',
-            ...(b.filas ?? []).map(([r, v]) => dosColumnas(r, v)),
+            ...(b.filas ?? []).map(([r, v]) => conValorEnNegrita(dosColumnas(r, v), String(v ?? ''))),
         ].filter(Boolean))),
         ...(items ? [
-            AIRE + IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
+            AIRE + IZQUIERDA + NEGRITA_CHICA + encabezadoDeItems(items.columnas, items.cantidadPrimero) + LETRA_CHICA,
             regla(),
             // La nota va bajo su producto, sangrada dos columnas: se lee como
             // parte de esa fila y no como un producto más.

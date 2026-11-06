@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1467.0 — Tickets: lo importante se ve primero
+
+Usuario, con los tickets de Salud 4: «todo se ve igual del mismo tamaño así que
+no se sabe qué es lo importante». En el rollo todo salía en la misma letra chica.
+Ahora hay tres escalones, con el mismo comando de letra ya medido en las cajas:
+
+- **El título del papel** (COMPROBANTE, ENVÍO, RESERVA…) en negrita y doble alto.
+- **Cada título de sección** en negrita y letra normal, un escalón arriba del cuerpo.
+- **El valor de cada dato** en negrita y su rótulo fino; también el encabezado de
+  la tabla de productos. Las columnas no se mueven: misma letra, mismo ancho.
+
+Vale para todos los tickets del rollo, porque todos pasan por el mismo maquetador.
+
 ## v2.1466.6 — Tickets: aire entre secciones y renglones menos pegados
 
 Con el papel de Salud 4 en la mano: «aun todo esta pegado, no tiene separaciones

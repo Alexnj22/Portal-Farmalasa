@@ -87,7 +87,7 @@ describe('ticket de venta', () => {
         // El cuerpo (datos, productos, totales): el que se rellena a mano.
         const renglones = String(secciones.cuerpo).split('\n')
             // eslint-disable-next-line no-control-regex
-            .map(r => r.replace(/\x1b.|\x1d.|\x1b[!-~]./g, ''));
+            .map(r => r.replace(/\x1b(?:[!aRt3J].|[@2E])|\x1d./g, ''));
         expect(renglones.every(r => r.length <= COLUMNAS_TICKET.chica + 2)).toBe(true);
     });
     it('efectivo: lo entregado y el cambio', () => {

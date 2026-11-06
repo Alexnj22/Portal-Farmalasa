@@ -1,7 +1,9 @@
 import { supabase } from '../../supabaseClient';
 import {
     fetchConteosInventario as fetchConteosInventarioData, fetchConteoDetalle as fetchConteoDetalleData,
+    fetchReglaDeLoteDelProducto,
 } from '../../data/conteoInventario';
+import { esLoteGenerico, planDeLotesReales, reglaDeLoteYVence } from '../../utils/conteoDeInventario';
 import { signPhotosDeep } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 
@@ -432,14 +434,50 @@ export const createConteoInventarioSlice = (set, get) => ({
                 hechos += 1;
             }
             // El original queda CONTADO (en 0 si nada), no «No ubicado»: no se
-            // perdió nada, se supo su lote.
-            await guardar(item.id, { fisicoCantidad: plan.original, nota: item.nota ?? null, estadoItem: 'CONTADO' });
+            // perdió nada, se supo su lote. `null` = no se toca.
+            if (plan.original != null) {
+                await guardar(item.id, { fisicoCantidad: plan.original, nota: item.nota ?? null, estadoItem: 'CONTADO' });
+            }
         } catch (err) {
             if (!hechos) throw err;
             const e = new Error(`Se guardaron ${hechos} lote(s), pero no todo: ${err?.message || 'error'}. Revisa los renglones de este producto.`);
             e.cause = err;
             throw e;
         }
+    },
+
+    // Un lote anotado EN el renglón (2026-11-06, tras la prueba de Salud 4:
+    // «al ingresar un lote se actualiza y se pierde tiempo»). Se relee el
+    // producto —sus renglones de ahora, no los de la pantalla— y se arma el
+    // plan con `planDeLotesReales`:
+    // - en un renglón «sin lote», éste queda con lo que no se anotó todavía:
+    //   su sistema menos lo ya anotado en lotes de este producto (nunca < 0);
+    //   se puede corregir a mano después;
+    // - en un renglón con lote, «+ Lote» agrega OTRO lote y el renglón no se
+    //   toca, salvo que lo anotado sea su mismo lote (entonces es su cantidad).
+    // Devuelve los renglones del producto ya releídos, para pintar sólo ése.
+    anotarLoteEnLineaConteo: async (conteoId, item, linea) => {
+        const { data: prod, error: errRegla } = await fetchReglaDeLoteDelProducto(item.erp_product_id);
+        if (errRegla) throw errRegla;
+        const regla = reglaDeLoteYVence(prod || { regulado: true, perecedero: true });
+        const pres = (r) => String(r?.presentacion ?? '').trim().toUpperCase();
+        const filas = await get().fetchConteoProductItems(conteoId, item.erp_product_id);
+        const actual = filas.find((r) => r.id === item.id) || item;
+        const hermanos = filas.filter((r) => pres(r) === pres(actual) && !r.is_vencidos);
+        const plan = planDeLotesReales({ item: actual, lotes: [linea], sinLote: 0, hermanos, regla });
+        if (plan.error) throw new Error(plan.error);
+        if (esLoteGenerico(actual.lote)) {
+            const destino = new Set(plan.aHermanos.map((h) => h.id));
+            const yaAnotado = hermanos
+                .filter((h) => h.es_agregado_manual && !destino.has(h.id))
+                .reduce((t, h) => t + (Number(h.fisico_cantidad) || 0), 0);
+            const nuevo = [...plan.aHermanos, ...plan.nuevos].reduce((t, l) => t + l.cantidad, 0);
+            plan.original = Math.max(0, (Number(actual.sistema_cantidad) || 0) - yaAnotado - nuevo);
+        } else if (plan.nuevos.length || plan.aHermanos.length) {
+            plan.original = null;
+        }
+        await get().anotarLotesRealesConteo(conteoId, actual, plan);
+        return get().fetchConteoProductItems(conteoId, item.erp_product_id);
     },
 
     finalizarConteoInventario: async (conteoId, pendientesComoCero = false) => {

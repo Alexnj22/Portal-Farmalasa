@@ -57,6 +57,7 @@ const nombreDelLote = (lote) => (esLoteGenerico(lote) ? 'Sin lote' : lote);
 const AjusteAntesDeAprobar = lazy(() => import('./AjusteAntesDeAprobar'));
 const ProblemasDelAjuste = lazy(() => import('./AjusteAntesDeAprobar').then((m) => ({ default: m.ProblemasDelAjuste })));
 import AvanceSinLote from './AvanceSinLote';
+import LotesEnLinea from './LotesEnLinea';
 
 // ¿El conteo ajusta el inventario? Lo leen los renglones para decidir si
 // ofrecen el lápiz del lote: en un conteo que ajusta, la etiqueta de un
@@ -72,6 +73,10 @@ const AjustaElInventario = createContext(false);
 // sacaría unidades vencidas al estante.
 const ofreceCorregirLote = (ajusta, item) => !ajusta || !!item?.es_agregado_manual || !item?.is_vencidos;
 const vaPorLoteReal = (ajusta, item) => ajusta && !item?.es_agregado_manual;
+// Las filas de lote en el renglón: conteo que ajusta, renglón del sistema y
+// fuera del área de vencidos (el alta crea existencia buena).
+const llevaLotesEnLinea = (ajusta, item, editable, simple, onLoteEnLinea) =>
+    !!onLoteEnLinea && editable && !simple && vaPorLoteReal(ajusta, item) && !item?.is_vencidos;
 const LoteRealDelRenglon = lazy(() => import('./LoteRealDelRenglon'));
 import { formatMoney, formatQty, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -368,7 +373,7 @@ function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
 
 function ItemRow({
     item, index, editable, recuento, desbloqueada,
-    onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false,
+    onUnlock, onSave, onRecount, onShowHistory, onEditLote, onLoteEnLinea, currentUser, simple = false,
     // Lo decide la cabecera del conteo, no el renglón. Va con default `false`
     // porque el badge que gobierna promete algo concreto —«este número se
     // sigue moviendo»— y prometerlo de más es peor que no decirlo.
@@ -587,10 +592,7 @@ function ItemRow({
                             rechaza también `editar_lote_conteo_item`, porque una
                             restricción que solo vive en el cliente es decorativa. */}
                         {editable && !simple && ofreceCorregirLote(ajusta, item) && (
-                            vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? (
-                                <Button variant="secondary" size="sm" icon={Pencil} disabled={saving} className="shrink-0"
-                                    title="Anotar el lote y vencimiento de la caja" onClick={() => onEditLote(item)}>Anotar lote</Button>
-                            ) : (
+                            vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? null : (
                                 <Button variant="ghost" icon={Pencil} disabled={saving} iconOnly
                                     title={vaPorLoteReal(ajusta, item) ? 'Confirmar o corregir lote/vencimiento' : 'Corregir lote/vencimiento'}
                                     onClick={() => onEditLote(item)} />
@@ -617,6 +619,9 @@ function ItemRow({
                             <span className="truncate">{unidad.texto} · {item.fecha_vencimiento ? `vence ${fmtDate(item.fecha_vencimiento)}` : 'sin vencimiento'}</span>
                             <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
                         </span>
+                    )}
+                    {llevaLotesEnLinea(ajusta, item, editable, simple, onLoteEnLinea) && (
+                        <LotesEnLinea item={item} onGuardar={onLoteEnLinea} />
                     )}
                 </div>
             </DataCell>
@@ -810,7 +815,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
 // pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
-function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false, enVivo = false }) {
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, onLoteEnLinea, currentUser, simple = false, enVivo = false }) {
     const ajusta = useContext(AjustaElInventario);
     const unidad = unidadDeConteo(item);
     const { showToast } = useToastStore();
@@ -924,11 +929,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         acá era pelearle al canónico con una clase que puede perder o
                         ganar según el orden del CSS generado. */}
                     {editable && onEditLote && !simple && ofreceCorregirLote(ajusta, item) && (
-                        vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? (
-                            <Button variant="secondary" size="sm" icon={Pencil} disabled={saving} className="shrink-0"
-                                aria-label={`Anotar el lote de ${item.product_nombre || 'este producto'}`}
-                                onClick={() => onEditLote(item)}>Anotar lote</Button>
-                        ) : (
+                        vaPorLoteReal(ajusta, item) && esLoteGenerico(item.lote) ? null : (
                             <Button variant="ghost" icon={Pencil} iconOnly disabled={saving}
                                 className="shrink-0"
                                 title={vaPorLoteReal(ajusta, item) ? 'Confirmar o corregir lote/vencimiento' : 'Corregir lote/vencimiento'}
@@ -987,6 +988,9 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     </>
                 )}
             </div>
+            {llevaLotesEnLinea(ajusta, item, editable, simple, onLoteEnLinea) && (
+                <LotesEnLinea item={item} onGuardar={onLoteEnLinea} compacto />
+            )}
             {/* La existencia del sistema y la diferencia — el hueco que tenía la
                 tarjeta: la tabla las declara como dos columnas gobernadas por
                 `verSistema`, y en teléfono no las dibujaba nadie. Con el permiso
@@ -1705,6 +1709,16 @@ export default function ConteoDetailView() {
         setResumen(res);
     }, [id, fetchConteoDetalle, fetchConteoResumen]);
 
+    // Lote anotado en el renglón: se relee SÓLO ese producto y la cabecera
+    // (cuánto falta), no la página — releerla entera era lo que hacía perder
+    // tiempo en la prueba de Salud 4.
+    const anotarLoteEnLineaConteo = useStaffStore((s) => s.anotarLoteEnLineaConteo);
+    const anotarLoteEnLinea = useCallback(async (item, linea) => {
+        const filas = await anotarLoteEnLineaConteo(id, item, linea);
+        setItemsByProduct((prev) => ({ ...prev, [item.erp_product_id]: filas }));
+        cargarCabecera().catch((err) => console.error('cabecera del conteo:', err?.message));
+    }, [id, anotarLoteEnLineaConteo, cargarCabecera]);
+
     const cargarPagina = useCallback(async () => {
         setLoading(true);
         try {
@@ -2392,10 +2406,11 @@ export default function ConteoDetailView() {
                         {conteo.aplica_en_caja && conteo.status === 'EN_PROGRESO' && (
                             <div className="mt-4">
                                 <Notice variant="info">
-                                    Este conteo ajusta el inventario. En cada renglón <strong>Sin lote</strong> toca
-                                    {' '}<strong>Anotar lote</strong> y escribe el lote y el vencimiento impresos en la
-                                    caja; en los que ya tienen lote, el lápiz sirve para confirmarlo o corregirlo. Al
-                                    aprobar, la existencia queda en el lote real. Cuenta cada renglón en lo que dice
+                                    Este conteo ajusta el inventario. Debajo de cada renglón <strong>Sin lote</strong>
+                                    escribe el lote, el vencimiento (mes/año) y cuántas, y Enter: el lote queda como
+                                    renglón propio y «Sin lote» baja solo. <strong>+ Lote</strong> agrega otra fila; en
+                                    los que ya tienen lote, el lápiz sirve para confirmarlo o corregirlo. Al aprobar,
+                                    la existencia queda en el lote real. Cuenta cada renglón en lo que dice
                                     debajo del lote: cajas, blísteres o unidades. Cuenta todos los renglones de un
                                     producto: uno a medio contar no se puede ajustar.
                                 </Notice>
@@ -2584,6 +2599,7 @@ export default function ConteoDetailView() {
                             onRecount={handleRecountItem}
                             onShowHistory={abrirHistorial}
                             onEditLote={abrirEditLote}
+                            onLoteEnLinea={anotarLoteEnLinea}
                             currentUser={user}
                             enVivo={conteo?.fuente_sistema === 'VIVO'}
                         />

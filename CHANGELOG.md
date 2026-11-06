@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1470.0 — El lote y el vence se anotan en el mismo renglón
+
+Pedido tras la prueba de Salud 4: «al ingresar un lote se actualiza, así que
+se pierde tiempo; ¿no puede salir el lote y vence ahí mismo? y un botón más
+para agregar otra fila / lote».
+
+- En un conteo que ajusta, cada renglón **Sin lote** trae debajo la fila
+  Lote · Vence (mes/año) · Cantidad. Enter (o ✓) la guarda: el lote queda como
+  renglón propio, «Sin lote» baja solo a lo que falta anotar (su sistema menos
+  lo ya anotado, nunca bajo 0) y queda una fila vacía con el foco en el lote,
+  para la caja siguiente.
+- **+ Lote** agrega otra fila, también en renglones que ya tienen lote (ahí no
+  se toca el renglón, salvo que lo anotado sea su mismo lote).
+- Al guardar se relee **sólo ese producto** y la cabecera, no la página: era lo
+  que hacía perder tiempo (`anotarLoteEnLineaConteo`, `LotesEnLinea`).
+- El lápiz de los renglones con lote sigue abriendo «Confirmar lote».
+- Prueba de componente: `tests/unit/lotesEnLinea.test.jsx`. No se pudo ver en
+  el navegador: el entorno de pruebas no tiene desplegadas las funciones de
+  inicio de sesión («Error de conexión»).
+
+
 ## v2.1469.0 — Anular la parte de una sala del pedido sin afectar las demás
 
 Bodega preguntó cómo quitar Salud 1 del pedido #243 (iba a Salud 1 y Salud 2)

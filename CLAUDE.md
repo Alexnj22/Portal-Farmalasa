@@ -1,5 +1,17 @@
 # Portal Farmalasa — Claude Code Guidelines
 
+**Cómo está hecho este archivo.** Las reglas críticas van acá, cortas e
+imperativas. El detalle de cada dominio —las mediciones, los incidentes, el
+«nació el …»— vive en `docs/reglas/` y se enlaza desde su resumen: leerlo antes
+de tocar ese dominio.
+
+**Un número que vive en un archivo NO se copia acá**: un baseline, el ref de un
+branch, cuántas áreas o tablas hay, qué funciones llevan tal flag. Se nombra el
+archivo o el comando que lo da. Copiado, queda viejo en silencio y este archivo
+empieza a contradecir al repo — pasó con el ref del entorno de pruebas, el
+baseline de diseño, el del núcleo, la cuenta de áreas y la lista de funciones de
+cron.
+
 ## REGLA CRÍTICA: Límite 1000 filas PostgREST
 
 **PostgREST (Supabase) silenciosamente trunca cualquier respuesta a 1000 filas.** Este proyecto tiene `max-rows=1000` configurado. No hay advertencia ni error — simplemente devuelve 1000 filas y para.
@@ -208,192 +220,45 @@ freeze global. Para DDL sobre las tablas calientes listadas arriba, además
 considerar aplicar entre 06:00–11:59 UTC (crons de sync inactivos: corren
 `12-23,0-5`).
 
-**Probar primero en staging.** Existe un branch de Supabase dedicado para esto:
-**`jffhpyutjltvozoyllpj`** (nombre `staging`, persistente, rehecho solo el 2026-09-26). Para DDL sobre las
-tablas calientes listadas arriba, probarlo ahí primero, confirmar que no rompe
-nada, y sólo entonces aplicar a prod. Ya se usó así para 0B.8 (RPC
-`verify_kiosk_device`) y 0B.2 (secretos de Vault en `cron.job.command`) — ambos
-sin incidentes.
+**Probar primero en el entorno de pruebas** el DDL sobre las tablas calientes
+(ver «Entorno de pruebas» al final): confirmar que no rompe nada, y sólo
+entonces aplicar a prod.
 
-🔴 **En el branch se prueba con `execute_sql`, NUNCA con `apply_migration`.** Los
-dos ejecutan el mismo SQL; la diferencia es que `apply_migration` además escribe
-una fila en el `schema_migrations` del branch — y esa fila producción **nunca la
-va a tener con ese número**, porque al aplicarla de verdad `apply_migration`
-genera una versión nueva.
+🔴 **En el branch se prueba con `execute_sql`, NUNCA con `apply_migration`.**
+Los dos ejecutan el mismo SQL, pero `apply_migration` además escribe una fila en
+el `schema_migrations` del branch que producción nunca va a tener con ese
+número: la historia del branch deja de ser un prefijo de la de prod y lo que lo
+mantiene al día se rompe sin decir por qué.
 
-Con nueve de esas filas huérfanas (medido el 2026-08-24) la historia del branch
-deja de ser un prefijo de la de prod y **`rebase_branch` queda muerto para
-siempre**: falla con `MIGRATIONS_FAILED` y no dice por qué. Fue exactamente lo
-que pasó — 130 migraciones de atraso que sólo se pudieron cerrar rehaciendo el
-branch entero.
+**Toda migración nueva que toque un cron lleva la guarda «sólo si existe»** —
+`WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'x')`—: `cron.unschedule('x')`
+lanza si `x` no existe (en prod hay crons creados a mano), y eso rompe la
+construcción del próximo branch.
 
-O sea: **la herramienta que mantiene el branch al día se rompe por usar mal la
-herramienta que lo mantiene útil.** `execute_sql` prueba igual de bien y no deja
-rastro; si la prueba ensucia el esquema, se limpia a mano o se rehace el branch,
-que es barato cuando no hay que rescatar nada.
+### Una función con parámetros se mide SEIS veces, no una
 
-⚠️ **El ref cambia cada vez que se rehace el branch.** Ya van cinco: el de julio
-(`ewcmerxqjvludtgskuin`), el de agosto (`cbnjplmnfmfsambavjce`), el del 24-ago
-(`qvctarsqvlhbzgvwbbbt`) y el del 23-sep (`wqmsadndftaudblohgws`) están borrados —
-si encontrás alguno de esos en un doc, es viejo. El vigente sale de
-`supabase branches list` o del `VITE_SUPABASE_URL` de `.env.staging`. Trae datos
-de muestra, cero PII.
+Lista de chequeo. Mediciones, los cuatro casos y los dos filtros de descarte:
+`docs/reglas/planes-de-funciones.md`.
 
-✅ **Desde el 2026-09-23 se mantiene solo.** `.github/workflows/entorno-pruebas.yml`
-corre `scripts/entorno-pruebas/mantener_al_dia.mjs` todos los días a las 04:30 SV:
-compara la lista de migraciones, hace `push` si le faltan, y si el push falla lo
-**rehace** (quita «permanente», lo borra y lo crea de nuevo). Después apaga los
-crons que llaman a producción, corre las fechas a hoy y los permisos de la cuenta
-de pruebas. Necesita el secreto `SUPABASE_ACCESS_TOKEN` en GitHub. Si lo rehizo,
-el ref cambió: `npm run pruebas:env` reescribe `.env.staging`, y **el script
-apunta solo las variables Preview de Vercel al ref nuevo y recompila
-`dev.farmasalud.lat`** (secretos `VERCEL_TOKEN`, `VERCEL_PROJECT_ID`,
-`VERCEL_TEAM_ID`). Sin eso dev queda contra un branch borrado: pasó el
-2026-09-26 —el push falló en la migración 12 de 47, se rehízo, y la corrida dio
-VERDE con dev roto—. Hoy, sin `VERCEL_TOKEN` la corrida sale en ROJO. A mano:
-«Run workflow» con `solo_vercel`.
-
-Tres cosas medidas ese día que explican el diseño:
-1. **`reset` no sirve**: reconstruye con la historia PROPIA del branch (quedó en
-   546 de 1,001) y deja vivos los objetos creados a mano.
-2. **Probar con `execute_sql` también ensucia**: deja tablas y policies que la
-   migración real después quiere crear («policy … already exists»). El branch se
-   ensucia por usarlo bien; la limpieza completa es rehacerlo, y es barato.
-3. **El registro de producción no se podía reproducir**: siete migraciones
-   borraban o cambiaban crons que en producción se habían creado a mano
-   (`cron.unschedule('x')` lanza si `x` no existe). Un branch nuevo moría en la
-   332. Se les agregó «sólo si existe» en `supabase_migrations.schema_migrations`
-   (con OK del usuario) y en los archivos locales. **Toda migración nueva que
-   toque un cron lleva esa guarda** — `WHERE EXISTS (SELECT 1 FROM cron.job WHERE
-   jobname = 'x')` — o rompe el próximo branch.
-
-⚠️ **Antes de eso, su esquema NO se mantenía solo al día, y creer que sí ya costó
-una tanda de mediciones.** Acá decía «idéntico al de prod, verificado por huella md5 de
-tablas, funciones, policies e índices». Era cierto en julio, el día que se
-verificó, y nada lo volvió a mirar. Medido el 2026-08-24:
-
-| | pruebas | producción |
-|---|---:|---:|
-| migraciones | 413 | **543** |
-| tablas | 172 | 181 |
-| funciones | 497 | 554 |
-
-**130 migraciones de atraso**, y el modo de falla no es un error claro: es en
-pedazos. `/inventario` mostraba «Error al cargar inventario» porque una vista
-materializada del branch nunca se pobló; el tema del teléfono pedía
-`user_dashboard_prefs.mobile_theme`, que existe en prod y todavía no ahí. Las dos
-se leían como defectos del portal y ninguna lo era.
-
-**Antes de creerle a una medición hecha contra el branch, comparar** —
-`node scripts/entorno-pruebas/comparar_con_produccion.mjs` dice cómo y qué
-significa una diferencia.
-
-⚠️ **Y el `rebase` NO lo va a arreglar, por culpa de este mismo flujo de
-trabajo.** Probar el DDL en el branch antes que en prod —que es lo que esta
-sección manda hacer, y con razón— deja en su `schema_migrations` filas que
-producción nunca tuvo con ese número: al reaplicar en prod, `apply_migration`
-genera una versión nueva. Medido el 2026-08-24: **nueve migraciones existen sólo
-en el branch** (ocho del 12-ago y una del 14). Con eso su historia deja de ser un
-prefijo de la de prod, y `rebase_branch` falla con `MIGRATIONS_FAILED` sin decir
-por qué — se probó dos veces y avanzó 8 de 130.
-
-O sea que la deriva **no es un descuido**: es la consecuencia esperable de usar
-el branch para lo que existe. Lo que faltaba era saberlo.
-
-**Ponerlo al día = rehacerlo.** Borrar y crear de nuevo: sale con el esquema
-completo y sembrado por las tres migraciones de semilla. El costo es real y hay
-que tenerlo presente: se pierde la corrida de fechas (se vuelve a correr con
-`correr_fechas.sql`), se pierden los permisos de la cuenta de pruebas (ídem con
-`permisos_de_la_cuenta_de_pruebas.sql`) y **cambia el ref**, así que hay que
-rehacer `.env.staging`. Es una decisión de quien esté trabajando, no algo que
-convenga automatizar.
-
-**Cómo levantar el portal contra ese entorno** (ver §«Entorno de pruebas» al
-final de este archivo): `npm run dev:staging`.
-
-**Una función con parámetros se mide SEIS veces, no una** (2026-08-17). Cuatro
-trampas de planificación, ninguna visible leyendo el SQL — las tres primeras
-midiendo `get_ventas_receta_stats`, la cuarta el 2026-08-25 después de que
-tumbara el portal entero:
-
-1. **`plpgsql` cambia al plan GENÉRICO en la sexta ejecución.** Las cinco
-   primeras llamadas daban 24 ms y la sexta 1,089 ms, con los mismos argumentos.
-   Sin los valores, el planificador no sabe que el rango de fechas filtra, y
-   elige el plan al revés. Cuando el plan bueno depende de los ARGUMENTOS, no
-   hay genérico que sirva: `ALTER FUNCTION … SET plan_cache_mode =
-   'force_custom_plan'`. Cuesta ~3 ms de planificación. Una función que se
-   probó una vez y anda "bien" puede estar degradada en producción desde la
-   sexta llamada de cada conexión.
-2. **`LANGUAGE sql` se INLINEA en quien la llama y aplana sus CTE —
-   *si no tiene cláusula `SET`*.** Mismo cuerpo: 1,011 ms inlineado contra 34 ms
-   con `PREPARE`. `plpgsql` no se inlinea nunca — por eso `get_ventas_con_puntos`
-   y las gemelas de receta lo son. `EXECUTE` dinámico además replanifica siempre,
-   así que tampoco sufre (1). **Esa condición del `SET` es la trampa 4.**
-3. **Un `EXISTS` correlacionado fija la dirección del join.** `EXISTS (… WHERE
-   ii.invoice_id = si.id …)` obliga a entrar por las 180,000 facturas del año;
-   el mismo predicado como `si.id IN (SELECT ii.invoice_id …)` deja al
-   planificador entrar por los 4,013 renglones. 8,471 ms → 31 ms.
-4. **`LANGUAGE sql` CON `SET search_path` es la peor combinación posible, y es
-   la que manda escribir la regla 4 de este archivo.** El `SET` la vuelve
-   opaca —no se inlinea, o sea que (2) no aplica— y además su cuerpo se
-   planifica **una sola vez con los argumentos como `Params`**: nunca ve un
-   valor. No es que caiga al plan genérico en la sexta llamada como (1): **nace
-   genérica y no hay plan personalizado que pedir.**
-
-   Medido en `get_conteo_products_count` el 2026-08-25, intercalado bajo la
-   misma carga: **2,606 ms contra 56 ms** del mismo cuerpo con literales. El
-   planificador estimaba un CTE en ~1 fila y elegía *nested loops sobre CTE
-   scans* — ~21 millones de comparaciones donde el plan bueno hace dos hash
-   joins.
-
-   Dos cosas que **parecen** la corrección y NO lo son, las dos medidas:
-   - **`MATERIALIZED` como cerca no alcanza.** Esa función ya tenía CINCO CTE
-     materializados. La cerca fija el orden de join *a través* de ella; no le
-     arregla la estimación de filas al CTE.
-   - **`plan_cache_mode = 'force_custom_plan'` a secas no hace nada** (2,025 vs
-     1,969 ms). Sin caché de planes, el modo no tiene sobre qué actuar.
-
-   **La corrección es pasarla a `plpgsql`** —que sí entra al caché— y *ahí* sí
-   `SET plan_cache_mode TO 'force_custom_plan'`. El cuerpo no se toca.
-
-   **El tell que ahorra el diagnóstico:** lenta **desde la primera llamada** de
-   toda sesión = es `LANGUAGE sql`, nunca tuvo plan personalizado. Lenta **desde
-   la sexta** = es (1).
-
-   Y el daño no se queda en su pantalla: una lectura de 2.6 s ocupa una ranura
-   del pool de PostgREST 46× más tiempo, así que **dos personas paginando lo
-   llenan** y todo el portal empieza a devolver 504 *Timed out acquiring
-   connection from connection pool* — que nombra conexiones y manda a mirar
-   donde no está el problema. Ver
-   [[feedback_una_consulta_lenta_de_lectura_tumba_el_portal_entero]].
-
-   **La auditoría de las restantes está CERRADA**
-   (`docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md`): **40 funciones medidas, 40
-   sanas, 0 migraciones**. `get_conteo_products_count` era la única de las 69, y
-   eso enseñó la condición que faltaba: no basta con ser `LANGUAGE sql` + `SET`,
-   **hace falta ADEMÁS que el plan bueno dependa de los argumentos**. Si no
-   depende, el genérico es tan bueno como el personalizado — y forzarlo sólo
-   agrega el costo de replanificar (+0.54 ms por llamada), o sea una
-   **regresión** en una función barata y frecuente. Medido: a
-   `get_ccf_con_problema` la deja **6.6× más lenta**.
-
-   Dos filtros de descarte inmediato, los dos medidos:
-   - **Si sus únicos parámetros son un payload `json`/`jsonb`, NO puede tener
-     este defecto**: `jsonb_array_elements` se estima en 100 filas con un
-     literal de 3, uno de 5,000 o un parámetro. Descarta las diez de sync.
-   - **Un promedio de `pg_stat_statements` medido sobre una ventana con
-     saturación dice quién ESPERABA, no quién estaba LENTO.** De 19 «caras», al
-     remedirlas fuera de la ventana sólo tres lo eran.
-
-   Lo vigila la sección E de `npm run gate:perf` contra
-   `scripts/planes-genericos.json`: **producción exponiendo una que no esté
-   declarada FALLA el gate**, y el manifiesto que nombre una que ya no existe,
-   también. Al escribir una función `LANGUAGE sql` con parámetros y CTEs, se
-   declara ahí — con su medición, o con `ms: null` si es deuda.
-
-Y **medir con `EXPLAIN (ANALYZE, TIMING OFF)`**: con el timing encendido, la
-instrumentación de un nested loop de 3,655 vueltas inventó 1,146 ms sobre un
-trabajo de 31. El número que se reporta tiene que ser el que no miente.
+- **`plpgsql` pasa al plan GENÉRICO en la sexta ejecución.** Si el plan bueno
+  depende de los ARGUMENTOS: `ALTER FUNCTION … SET plan_cache_mode =
+  'force_custom_plan'`. Si no depende, NO forzarlo: replanificar en cada llamada
+  es una regresión en una función barata y frecuente.
+- **`LANGUAGE sql` sin cláusula `SET` se INLINEA** en quien la llama y aplana
+  sus CTE.
+- **`LANGUAGE sql` CON `SET search_path` nace genérica**: nunca ve un valor, y
+  ni `MATERIALIZED` ni `force_custom_plan` a secas lo arreglan. Si el plan
+  depende de los argumentos, **pasarla a `plpgsql`** y ahí sí
+  `force_custom_plan`; el cuerpo no se toca. Lenta desde la primera llamada =
+  esto; lenta desde la sexta = lo anterior.
+- **Un `EXISTS` correlacionado fija la dirección del join**; el mismo predicado
+  como `IN (SELECT …)` deja al planificador elegir.
+- **Medir con `EXPLAIN (ANALYZE, TIMING OFF)`**: con el timing encendido la
+  instrumentación de un nested loop inventa tiempo. Buscar el nodo donde `rows`
+  estimadas y reales se separan.
+- Una función `LANGUAGE sql` con parámetros y CTE se declara en
+  `scripts/planes-genericos.json` (sección E de `gate:perf`), con su medición o
+  `ms: null` si es deuda.
 
 **Todo `apply_migration` necesita su archivo local en el mismo commit, nombrado
 con la versión de 14 dígitos que devolvió el servidor** — `apply_migration` NUNCA
@@ -411,6 +276,17 @@ silencio deja Maps/lookups vacíos y el bug puede vivir semanas sin detectarse
 (pasó con `presentaciones.descripcion`: columna eliminada el 2026-06-08, el
 sync la siguió consultando un mes, error en logs de Postgres cada minuto).
 Al eliminar/renombrar columnas: grep en `supabase/functions/` además de `src/`.
+
+**`--no-verify-jwt` depende de QUIÉN llama a la edge function**, no de a qué
+circuito pertenece. Cron o Postgres → `--no-verify-jwt` (no hay sesión que
+presentar; la función valida por su cuenta). Navegador → JWT. **No hay lista
+fija**: antes de cualquier redeploy, leer el valor VIVO con
+`list_edge_functions` (campo `verify_jwt`). Una que llama un cron, desplegada
+sin el flag, queda en 401 antes de ejecutar una línea (pasó tres veces); una que
+llama el navegador, desplegada con el flag, queda abierta
+(`aplicar-solicitud-facturacion` anula facturas). Y el CLI se traga el `.env`
+del repo: `mv .env .env.bak` primero (memoria
+`reference_edge_function_deploy_workaround`).
 
 **Syncs recurrentes: PROHIBIDO el upsert incondicional de tablas completas.**
 Un `.upsert(todasLasFilas)` en un cron reescribe cada fila aunque nada cambie
@@ -489,79 +365,48 @@ gates no prueba nada sobre lo que se ve.
 
 ## Estructura BD — reglas OBLIGATORIAS al crear tablas/funciones/vistas
 
-Hardening completo aplicado 2026-07-02 (`supabase/migrations/20260702_db_hardening_*`).
-Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo así:
+Hardening aplicado el 2026-07-02 (`supabase/migrations-legacy/20260702_db_hardening_rls_functions_indexes.sql`
+y `…/20260702_granular_write_policies.sql`). Advisor de seguridad en 0 ERRORES —
+toda tabla/función nueva debe mantenerlo así. Versión larga con los incidentes:
+`docs/reglas/estructura-bd.md`.
 
 1. **Toda tabla nueva**: PK + `created_at timestamptz default now()` + **RLS habilitado
    con policy explícita** (mínimo `FOR SELECT TO authenticated`). NUNCA dejar una tabla
-   sin RLS — `anon` no debe ver nada.
-   Las 48 que no tienen `created_at` están declaradas con su motivo en
-   `auditoria/tablas-sin-created-at.json` (2026-10-29); `gate:auditoria` falla si
-   aparece otra sin declarar. Sin motivo, se le agrega la columna.
+   sin RLS — `anon` no debe ver nada. Las que no tienen `created_at` están
+   declaradas con su motivo en `auditoria/tablas-sin-created-at.json`;
+   `gate:auditoria` falla si aparece otra sin declarar. Sin motivo, se le agrega
+   la columna.
 2. **Toda FK**: con índice que la cubra (`CREATE INDEX ... ON tabla(col_fk)`), excepto
    columnas de puro audit (`*_por`, `created_by`) en tablas pequeñas.
-3. **Policies de escritura**: `USING (true)` está prohibido para UPDATE/DELETE
-   **y `WITH CHECK (true)` para INSERT** — el INSERT es el que faltaba en esta
-   regla y por ahí se colaron dos (auditoría 2026-07-30): `attendance` y
-   `audit_logs` aceptaban cualquier fila de cualquier usuario autenticado, o
-   sea que se podía fabricar una marcación y falsificar la bitácora. Una tabla
-   append-only no necesita policy de DELETE, pero **sí** necesita que su INSERT
-   diga quién puede escribir qué.
-
-   ✅ **Los dos están CERRADOS, y este párrafo dijo lo contrario más tiempo del
-   que fue cierto** (remedido el 2026-08-31): `attendance_insert` exige
-   `employee_id = auth_employee_id() OR can_edit('time_audit')` —o marcás por
-   vos, o tenés el permiso— y `audit_logs_insert` exige
-   `user_id = auth_employee_id()`, o sea que nadie firma con el nombre de otro.
-   Un barrido de TODAS las policies de escritura del esquema deja **cuatro** con
-   condición `true`, y las cuatro son `TO service_role`, que salta el RLS de
-   todos modos: son inertes. Es
-   [[feedback_una_afirmacion_que_nadie_verifica_deja_de_ser_cierta]] otra vez —
-   el hallazgo se arregló y la regla que lo denunciaba no se volvió a mirar. Usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
-   (helper que resuelve al empleado por uid/code/username y chequea can_edit en
-   role_permissions) — NUNCA `USING (true)` para UPDATE/DELETE en tablas sensibles.
+3. **Policies de escritura**: prohibido `USING (true)` para UPDATE/DELETE **y
+   `WITH CHECK (true)` para INSERT** (sólo es inerte `TO service_role`, que salta
+   el RLS igual). Una tabla append-only no necesita policy de DELETE, pero su
+   INSERT **sí** dice quién escribe qué: `attendance_insert` exige
+   `employee_id = auth_employee_id() OR can_edit('time_audit')` y
+   `audit_logs_insert` exige `user_id = auth_employee_id()` — nadie fabrica una
+   marcación ni firma con el nombre de otro. Usar `auth_can_edit_any(ARRAY['modulo1','modulo2'])`
+   (resuelve al empleado por uid/code/username y chequea can_edit en
+   role_permissions).
    **CRÍTICO (incidente 2026-07-08): TODA llamada a funciones `auth_*` en una policy
-   debe ir envuelta en `(SELECT ...)`** — ej. `(SELECT auth_has_module_permission('x','can_view'))`,
-   nunca `auth_has_module_permission('x','can_view')` a secas. Sin el wrapper, Postgres
-   la evalúa POR FILA (cada llamada consulta employees+role_permissions): en
-   sales_invoices (548K filas) un count() de 27K filas pasó de 25,000ms a 19ms con el
-   wrapper. Fue la causa del pico de CPU 65→78% del 7-8 jul y del Disk IO budget
-   consumido. El advisor de Supabase NO detecta esto (solo linta auth.uid() directo).
-   Nota: ser STABLE no basta — solo el initplan `(SELECT fn())` garantiza 1 evaluación.
+   va envuelta en `(SELECT ...)`** — `(SELECT auth_has_module_permission('x','can_view'))`,
+   nunca a secas. Sin el wrapper Postgres la evalúa POR FILA (en `sales_invoices`
+   un count() pasó de 25,000 ms a 19 ms con el wrapper; fue el pico de CPU y el
+   Disk IO del 7-8 jul). El advisor NO lo detecta, y ser STABLE no basta: sólo el
+   initplan `(SELECT fn())` garantiza una evaluación.
    Historial (`employee_events`, `timesheets`, etc.) es append-only: sin policy
-   de DELETE (las RPCs DEFINER y service_role no la necesitan). Aplicado a las
-   35 tablas expuestas el 2026-07-02 (`20260702_granular_write_policies.sql`).
+   de DELETE (las RPCs DEFINER y service_role no la necesitan).
 4. **Funciones**: SECURITY DEFINER solo si es necesario, SIEMPRE con
    `SET search_path = public, extensions`, y `REVOKE EXECUTE ... FROM PUBLIC, anon` +
    `GRANT ... TO authenticated, service_role`.
-
-   **Lo que `anon` alcanza vive en `auditoria/superficie-anon.json`, no en este
-   párrafo** — y esa mudanza es en sí misma el hallazgo. Hasta el 2026-08-23 acá
-   decía que las únicas eran las CINCO del pre-login del kiosco y que «ninguna
-   otra función del proyecto es ejecutable por `anon`». La auditoría midió **24
-   funciones y 3 tablas**.
-
-   Se abrieron tres a mano antes de escribir nada y las tres se defienden solas:
-   las del kiosco entran por `kiosco_sucursal(device_id, device_token)`,
-   `update_proveedor_manual` lanza `FORBIDDEN` sin `auth_can_edit_any`, y seis
-   son funciones de TRIGGER —sin `NEW` no se ejecutan—. **No había ningún
-   agujero.** El problema era otro y es peor: la superficie creció sola durante
-   un mes, la regla escrita decía otra cosa, y nada lo miraba. Una afirmación
-   sobre quién puede entrar sin credenciales que nadie verifica deja de ser
-   cierta sin avisar.
-
-   `update_proveedor_manual` muestra cómo se acumula: tiene DOS sobrecargas, y
-   la revocación del 2026-07-29 alcanzó a una sola. Al cambiarle la firma a una
-   función, la vieja se queda con sus permisos.
-
-   Hoy lo vigila `npm run gate:auditoria`: cada entrada va declarada con su
-   guarda y su motivo, y **producción exponiendo algo que no esté ahí FALLA el
-   gate**. Al agregar una función o una policy para `anon`, se declara ahí — y
-   si no tiene motivo, no se declara: se le revoca el EXECUTE.
-
-   (Las 31 de `pg_trgm`/`pg_net` no cuentan: son internas de extensión y
-   revocarles EXECUTE rompe los índices de trigram; salen del namespace público
-   moviendo la extensión, no revocando.)
+   **Lo que `anon` alcanza vive en `auditoria/superficie-anon.json`** y lo vigila
+   `npm run gate:auditoria`: producción exponiendo algo que no esté declarado
+   ahí FALLA. Al agregar una función o policy para `anon`, se declara con su
+   guarda y su motivo; sin motivo, se le revoca el EXECUTE. **Al cambiarle la
+   firma a una función, la sobrecarga vieja se queda con sus permisos**
+   (`update_proveedor_manual` quedó con dos y la revocación alcanzó a una). Las
+   de `pg_trgm`/`pg_net` no cuentan: son internas de extensión, revocarles
+   EXECUTE rompe los índices de trigram, y salen del namespace público moviendo
+   la extensión.
 5. **Vistas**: SIEMPRE `WITH (security_invoker = true)` (o `ALTER VIEW ... SET`).
 6. **Vistas materializadas**: no exponerlas a la API — `REVOKE ALL FROM anon, authenticated`
    y acceso solo vía RPC SECURITY DEFINER. Excepción actual: `mv_product_factor`
@@ -581,449 +426,92 @@ Advisor de seguridad en 0 ERRORES — toda tabla/función nueva debe mantenerlo 
    firmada (se genera en fetchBoot/login), `photo_url` = cruda; todo select directo de
    photo_url debe pasar por `signPhotosDeep()`. Públicos permitidos: solo product-photos/photos.
 
-## Fichas de clientes y envío a Hacienda: un circuito automático (2026-08-09)
+## Fichas de clientes y Hacienda: un circuito automático
 
-Detalle completo en **`docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`** (el del
-07-08 quedó reemplazado). Lo que hay que saber antes de tocar cualquiera de sus
-piezas:
+Detalle: `docs/reglas/fichas-y-hacienda.md` y
+`docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md`. Lo que no se puede romper:
 
-**Dos crons encadenados, y el orden importa.** 21:30 SV
-`sincronizar-fichas-clientes` corrige las fichas; 22:30 SV `regularizar-dte`
-manda a Hacienda. Al revés, el envío recibe rechazos por datos que ya estaban
-arreglados. **Y desde el 09-08 el envío cierra el lazo la MISMA noche**: llama a
-la corrida de fichas en alcance «rechazos» y reenvía, en vez de esperar 24 horas.
+- **El orden de los crons importa**: 21:30 SV `sincronizar-fichas-clientes`
+  corrige fichas; 22:30 SV `regularizar-dte` manda a Hacienda. La segunda vuelta
+  de la misma noche se dispara por «lo puedo escribir»
+  (`fichas_para_corregir_dte()` con `puede_escribir AND NOT ya_corregido`), no
+  por «accionable», y sólo se reenvía si la corrección escribió algo.
+- **La tabla de decisión de `sincronizar-fichas-clientes` y el `campo_ficha IN (...)`
+  de `fichas_para_corregir_dte()` son la misma lista**: se mueven juntas.
+- **«Sin sello» = sin sello VÁLIDO** (`recibido_mh` es `text` de 40), en los tres
+  sitios: barrido, guarda previa al envío y cola de Pendiente MH. Nunca `IS NULL`
+  ni `!!valor`.
+- **La ficha se corrige en el ERP, NO en el portal**; ubicación resuelta por
+  etiqueta y escrita en cascada. El alcance lo decide `alcance_escritura_ficha()`
+  en la base (`todo` / `solo_distrito` / `ninguno`, que es la falla segura). El
+  distrito de un contribuyente se DERIVA con el matcher, nunca con el triple por
+  defecto. Teléfono inválido → el de la empresa; DUI inválido → se borra.
+  `identificacion.fecEmi` no se corrige nunca.
+- **`_shared/distrito.ts` es una traducción verificada de `bloque.py`**: cambiar
+  cualquiera de los dos exige volver a correr `comparar_matcher.mjs`.
+- **El cliente se liga por el número del ERP, nunca por el nombre.** Fusionar
+  BORRA una ficha: si los nombres no se parecen, no se fusiona — va a «Por revisar».
 
-**Esa segunda vuelta se dispara por «lo puedo escribir», NO por «accionable»**
-(corregido el 2026-08-16). `dte_rechazos_vigentes.accionable` significa *Hacienda
-se queja de un dato del receptor* — que no es lo mismo que *esto se arregla
-solo*. Con el disparador viejo, una noche entera de las dos funciones
-encadenadas no cambió un dato: los 4 rechazos eran 3 de contribuyentes (a los
-que no se les escribe la ficha) y uno de un campo sin regla. Hoy se le pregunta
-a `fichas_para_corregir_dte()` —la MISMA lista que usa la corrida— cuántas
-filas hay con `origen='rechazo' AND puede_escribir AND NOT ya_corregido`, y
-además **sólo se reenvía si la corrección escribió algo**. Mandar el mismo
-documento sin cambiarle un dato es pedir el mismo rechazo.
+## REGLA: un número de boleta sólo es único DENTRO de quien lo numera
 
-**La tabla de decisión de `sincronizar-fichas-clientes` y la lista
-`campo_ficha IN (...)` de `fichas_para_corregir_dte()` son la misma lista dicha
-dos veces, y se mueven juntas.** Un campo de más deja fichas dando vueltas sin
-que nadie las escriba; uno de menos las vuelve **invisibles** para el proceso
-hecho para arreglarlas. Pasó con `receptor.telefono`: bien clasificado, marcado
-accionable, y fuera de las dos listas — la corrida informaba «3 candidatos»
-sobre 4 rechazos y nadie notaba la que faltaba. Hoy la lista es distrito,
-municipio, departamento, dui y phone. **Un teléfono que falta o no tiene 8
-dígitos se REEMPLAZA por el de la empresa (`23010013`), no se borra como el
-DUI**: un DUI inventado sería un dato falso de identidad, y Hacienda en cambio
-EXIGE un teléfono con forma — sin él el documento no entra.
+Nunca comparar sólo número y sentido. Quién es la MISMA operación lo decide la
+base, una vez: `caja_misma_operacion_de_boleta` (sobre `caja_familia_de_boleta`),
+y lo leen `operar-caja`, `choqueDeBoleta` en la pantalla y la sección E de
+`gate:cortes`. POS y otros tipos → mismo número **y** mismo monto (y terminales
+distintas → otra operación; cada terminal en `caja_terminales_pos`, reconocida
+por huella); voucher → no se juzga. Detalle:
+`docs/reglas/boleta-unica-por-emisor.md`.
 
-**«Sin sello» significa sin sello VÁLIDO — y hay que decirlo en los TRES
-sitios.** `recibido_mh` es `text` con 40 caracteres: `IS NULL` y `!!valor` dan
-por buena cualquier basura. Estuvo mal en el filtro del barrido, en la guarda
-previa al envío y en la cola de Pendiente MH, y los tres tenían que fallar
-juntos para que una factura del 16-may-2025 pasara **un año** figurando como
-confirmada. Regla del usuario: lo único que NO se manda a Hacienda es lo que ya
-tiene sello y su observación es de otra cosa. Ver
-[[feedback_nombre_de_columna_no_es_su_tipo]] — «el tipo manda» se aplica al
-CONCEPTO, no sólo a la línea donde apareció el bug.
+## Cuentas por cobrar, efectivo del cobro y cierre del día
 
-**Al corregir una ficha se escribe en el ERP, NO en el portal.** `regularizar-dte`
-le pide al ERP que arme el DTE (`creaJsonDTe`), así que el receptor sale de la
-ficha del ERP; un `UPDATE` sobre `customers` es cosmético. Las dos copias
-divergen y el portal a veces muestra la buena. Y los códigos de
-departamento/municipio/distrito del ERP son **por departamento**: resolver por
-etiqueta y escribir en cascada — ver
-[[feedback_los_codigos_de_ubicacion_del_erp_son_por_departamento]].
+Detalle con montos e incidentes: `docs/reglas/caja-creditos-y-cierre.md` (y
+`docs/CAJA-CORTES-Y-BOLSAS.md`). Las reglas que cuestan dinero:
 
-**`_shared/distrito.ts` es una TRADUCCIÓN verificada, no código nuevo.** El
-original es `elegir_distrito` de `scripts/migracion-clientes/bloque.py`, con
-25,946 decisiones reales encima, y tres de sus seis reglas se descubrieron
-corrigiendo errores medidos. Se enfrentaron las dos implementaciones sobre esos
-25,946 casos: **iguales, 0 distintas**. **Cualquier cambio en cualquiera de las
-dos exige volver a correr `comparar_matcher.mjs`** — si no, se pierde justo lo
-que la hace confiable. Y ojo: la traducción reproduce los defectos del original
-a propósito (`norm()` deja espacios dobles donde había una coma, y eso cambia
-qué regla gana). Mejorarlo es otra decisión y va en `bloque.py` primero.
-
-**El cliente se liga por el número del ERP, nunca por el nombre.** El nombre
-sale de cómo se escribió la factura. Medido sobre 68 duplicados reales:
-normalizar acentos evita 0, alfanumérico evita 3 — el 96% son nombres
-genuinamente distintos (`VAQUEZ`/`VASQUEZ`). Cuando `sync-dte-sales` no
-reconoce un nombre, le pregunta al ERP a qué cliente pertenece la factura
-(`reimprimir_factura.php` → `id_cliente`), con tope de 25 lecturas por corrida
-y degradación al comportamiento viejo si el ERP no responde.
-
-**Fusionar clientes BORRA una ficha y mueve su historial.** `fusionar_cliente_
-duplicado` resuelve el destino desde el `erp_id` para que el llamador no pueda
-elegirlo, y quien la llama agrega su propio freno: si los nombres no se parecen,
-no fusiona — publica en «Por revisar» con motivo `fusion_dudosa`. Unir a dos
-personas que no lo son mezcla sus historiales y no se deshace.
-
-**El alcance de la escritura al ERP lo decide `alcance_escritura_ficha()`, en la
-base** — no un `if` en la Edge Function. Tres valores, y ninguno es un booleano
-a propósito: «se puede escribir» resultó ser una pregunta de grado.
-
-| categoría | alcance | qué se le escribe |
-|---|---|---|
-| Consumidor, o ficha sin categoría | `todo` | la tabla de decisión completa |
-| Contribuyente · Gran Contribuyente | `solo_distrito` | **sólo** el distrito, y sólo si falta |
-| Extranjero, o una categoría nueva | `ninguno` | nada: sólo espejo |
-
-La decisión del 2026-08-09 era «a los contribuyentes no se los toca, sus CCF
-pueden trabarse y está aceptado». El usuario la abrió el **2026-08-16**: *«si es
-contribuyente, permite editar el distrito si no está también»*.
-
-**El distrito del contribuyente se DERIVA con el matcher, nunca con el triple
-por defecto.** Es la parte que no se puede improvisar: de las 77 fichas de
-contribuyente sin distrito, **15 viven fuera de Chalatenango** (San Salvador,
-La Libertad, San Miguel, Sonsonate). El default habría mudado de departamento a
-esas 15 — o sea, cambiado el domicilio de un documento fiscal. Las 77 tienen
-departamento y municipio; lo único que falta es el distrito, así que
-`elegirDistrito` lo elige DENTRO de los del municipio propio.
-
-Consecuencia que hay que conocer: cuando la dirección no nombra ningún distrito,
-el matcher elige uno **determinista** entre los del municipio (2 de los 3
-primeros casos reales). Es un distrito del municipio correcto —que es lo que
-Hacienda exige y lo que la ficha no tenía—, pero no es un dato averiguado. Si
-alguna vez se decide que un contribuyente sólo se corrige con evidencia en la
-dirección, el lugar es la rama `solo_distrito` de `sincronizar-fichas-clientes`.
-
-Y `ninguno` es la falla segura: una categoría que nadie decidió NO se escribe.
-Al revés, el día que aparezca una, el circuito le escribiría sin que nadie lo
-haya resuelto.
-
-**`identificacion.fecEmi` no es un dato del cliente** y NO se corrige: aparece
-siempre que se transmite hoy una factura emitida antes, y cambiarla sería
-alterar un dato fiscal. Solo las observaciones `receptor.*` son accionables.
-
-**Las CUATRO funciones que invoca un cron van con `--no-verify-jwt`**
-(`regularizar-dte`, `sincronizar-fichas-clientes`, `push-cliente-erp`,
-`sync-dte-sales`). Un redeploy sin el flag las resetea y el cron empieza a
-fallar con 401 **antes de ejecutar una línea** — ya pasó tres veces. Y el CLI se
-traga el `.env` del repo: `mv .env .env.bak` primero (ver memoria
-`reference_edge_function_deploy_workaround`).
-
-**`aplicar-solicitud-facturacion` NO está en esa lista, aunque hasta el
-2026-08-12 esta regla la incluía.** La llama el navegador con la sesión de quien
-aprueba, no un cron: en producción está con `verify_jwt: true` y así funciona.
-Desplegarla con el flag habría *abierto* una función que anula facturas.
-
-La lección general: **el flag depende de QUIÉN la llama, no de a qué circuito
-pertenece.** Cron o Postgres → `--no-verify-jwt` (no hay sesión que presentar, y
-la función valida por su cuenta). Navegador → JWT. Y antes de cualquier
-redeploy, leer el valor VIVO en vez de confiar en la lista — `list_edge_functions`
-lo trae en `verify_jwt`, y ahí se vio que cuatro de las cinco coincidían y una
-no.
-
-## REGLA: un número de boleta sólo es único DENTRO de quien lo numera (2026-10-28)
-
-El freno de boleta repetida del cajón comparaba número y sentido, nada más. Pero
-cada banco numera por su lado y una factura trae el número de su emisor: en
-Salud 2, la **000956** del POS Promerica ($3.99, ANDA) y la **000956** de la
-terminal de tarjeta Atlántida ($48.00) son dos operaciones reales. Con la regla
-vieja, la segunda —si hubiera sido en efectivo— **no se habría podido
-registrar**, y `gate:cortes` la acusaba de duplicado.
-
-Quién es la MISMA operación lo decide **la base, una sola vez**:
-`caja_misma_operacion_de_boleta` sobre `caja_familia_de_boleta`. POS Promerica
-y cualquier otro tipo (proveedor, compra, otro) → mismo número **y** mismo
-monto; voucher (tarjeta/transferencia) → no se juzga,
-ya tiene su tope de partes en `operar-caja`. `boleta_ya_en_caja` devuelve
-`misma_operacion` por coincidencia, y lo leen el freno de `operar-caja`,
-`choqueDeBoleta` en la pantalla y la sección E de `gate:cortes`. Sin decir qué
-se anota devuelve `null` y frena como antes. Las correcciones de sentido
-contrario cruzan tipos (una entrada del POS contra-anotada como «Otro»), así que
-ese AVISO no mira la familia. Bolsas ya lo hacía bien: su índice único lleva la
-entidad.
-
-**El POS tampoco es uno solo** (2026-11-03): cada sala tiene su terminal
-Promerica y cada una numera por su lado. Cuando la de una sala falla se usa la
-de otra —legítimo: el efectivo queda en la sala que atendió—, y el papel trae la
-terminal ajena. Qué terminal es de qué sala vive en `caja_terminales_pos`, y
-`caja_sala_de_terminal(lectura)` la reconoce en la foto comparando por
-**huella** (`caja_huella_de_terminal`: la lectura confunde 0↔8 y 1↔4). El juez
-recibe la terminal de cada lado: **distintas → otra operación**; misma o alguna
-desconocida → número y monto. «Misma terminal» NO basta sin el monto: en Salud
-4 la boleta «5» mal leída son dos operaciones reales. La pantalla dice «POS de
-Salud 2» (campo calculado `pos_de_otra_sala`, no columna: rellenarla dispararía
-la bitácora de dinero por fila). Una terminal nueva = una fila en esa tabla.
-
-## Cuentas por cobrar: la lista se mira acá, el cobro se decide allá (2026-09-02)
-
-Los créditos de los clientes viven en el sistema de la caja y el portal tiene un
-**espejo** (`creditos_de_clientes`, cron `creditos-cada-hora`). Las dos mitades
-NO son intercambiables y confundirlas cuesta dinero real:
-
-| | de dónde sale | por qué |
-|---|---|---|
-| **la lista** | el espejo del portal | leerla en vivo son **6 peticiones EN SERIE** al origen —la sucursal vive en su sesión, no se pueden hacer a la vez— cada vez que alguien abre la vista |
-| **el cobro** | se relee el ORIGEN | entre la última corrida y el clic pueden haber cobrado en la caja; abonar de más deja el crédito en negativo y al cliente pagando dos veces |
-
-**`id_factura` lleva el ID DEL CRÉDITO.** Es el nombre que usa el formulario del
-origen y su propio campo oculto viaja con el número del crédito — medido: el
-crédito 1912 tiene la factura 299063. Mandar el de la factura abona al crédito
-de otra persona **sin dar error**, y **el origen no tiene forma de deshacer un
-abono**: no hay borrar ni anular. La traducción vive en UNA línea de
-`creditos-erp` y el parámetro se llama `credito` de punta a punta.
-
-**El amarre con la ficha y el vendedor sale de `sales_invoices`.** El origen
-sólo da el NOMBRE escrito en la factura; `factura_erp` → `erp_invoice_id` trae
-`customer_id` y `cod_vendedor`, y `cod_vendedor` → `employees.code`. Medido el
-2-sep: **2,386 de 2,387 créditos con ficha, 2,328 con vendedor**. El `LEFT JOIN`
-es a propósito — un crédito cuya factura todavía no sincronizó entra igual y
-toma el amarre en la corrida siguiente. Perder la deuda por no tener el amarre
-sería el peor de los dos errores.
-
-**El espejo se mantiene con CUATRO piezas, y ninguna sobra** (2026-09-02; la cuarta, 2026-10-02):
-
-| | cada cuánto | qué mira | cuesta |
-|---|---|---|---|
-| pasada frecuente | 10 min, 7am-11pm | **sólo el día de hoy** | 1.8 s · 2 kB |
-| barrido completo | 1 vez, 2am SV | 2024 → hoy | 17.3 s · 1.4 MB |
-| relectura tras abonar | cada abono | esa sala, esa fecha | ~250 ms |
-| pantalla abierta (2-oct) | al abrir, cada minuto a la vista, búsqueda sin resultado | **hoy**, su sala | 1 lectura/sala/min **compartida** |
-
-**La cuarta pieza tiene el tope en la BASE, no en el navegador.**
-`creditos_tomar_lectura(sala, segundos)` reclama la lectura de forma atómica
-(`ON CONFLICT … WHERE leido_el < now() - …`): diez pantallas abiertas en una
-sala cuestan lo mismo que una, y la acción `refrescar_hoy` de `creditos-erp`
-contesta sin iniciar sesión en la caja cuando no le toca. Nació de «se vendió al
-crédito y se quería abonar en el mismo momento»: con el cron de 10 minutos ese
-crédito no estaba en la lista. La búsqueda sin resultado usa tope de 10 s
-porque ése es exactamente el caso «lo acaban de vender».
-
-**El barrido diario NO es redundante y es el que se olvida.** Un abono hecho en
-el ORIGEN sobre un crédito de hace ocho meses **no aparece en la ventana de
-hoy** —lo que cambió es su saldo, no su fecha—, así que sin él el espejo
-mostraría una deuda ya pagada para siempre y el aviso del plazo cobraría lo que
-nadie debe.
-
-**Y la relectura tras abonar no es ceremonia**: sin ella, lo único que dice que
-el abono entró es el «success» del origen y el saldo que se muestra es una
-RESTA hecha acá. Si allá se aplicara distinto —o a otro crédito, que es lo que
-pasa si se manda el número equivocado y no da error—, el portal informaría el
-número bonito. Con ella, el saldo que se guarda es el que el origen dice tener.
-
-**Una ventana de un día en vez del histórico entero también acotó la
-comprobación PREVIA al abono**: 17 s → ~250 ms, y esos 17 s eran con el cliente
-enfrente. La fecha de un crédito no cambia nunca, así que sale del espejo.
-
-**El raspado vive en `_shared/creditos.ts` y no duplicado.** Lo usan la pantalla
-y el cron; escrito dos veces, el día que el origen cambie una columna una copia
-se queda vieja y nadie se entera.
-
-**`vencio_el` y `pagado_el` se OBSERVAN, no se calculan.** Se escriben la
-primera vez que se ven (`COALESCE(viejo, nuevo)`). Derivadas de `fecha + 30`
-cada vez, el aviso no podría saber si ya avisó. Y **vencido exige SALDO**: un
-crédito de hace dos años ya pagado tiene 700 días y no debe nada — el plazo mide
-una deuda, no una fecha.
-
-### El efectivo del cobro entra al cajón y el comprobante NO lo cuenta (2026-09-02)
-
-Cobrar un crédito desde el portal mete efectivo en la caja. El sistema de origen
-lo registra como movimiento del día —`POR ABONO A CREDITO`— y **no lo suma ni a
-INGRESOS ni a la línea COBROS CREDITO**, o sea a ninguno de los dos términos de
-`TOTAL CAJA = INGRESOS + VENTA − VALES + COBROS`. El esperado nace corto y el
-conteo de la sala aparece como un **sobrante que nadie hizo**.
-
-Salud 4, corte de las 13:00 del primer día que hubo cobros desde el portal:
-
-| | |
-|---|---:|
-| esperado del comprobante | $230.85 |
-| cobros en efectivo antes de contar | +$88.25 |
-| esperado real | **$319.10** |
-| se contó | $309.25 |
-
-El portal anunciaba **+$78.40 de sobrante** sobre un **faltante de $9.85**.
-
-**La corrección se sella en la FILA del corte, no se calcula en cada pantalla.**
-`cortes_caja.cobros_portal_efectivo` lo mantienen dos triggers —uno en
-`cortes_caja` y otro en `creditos_abonos_portal`—, y `contraste` se lo suma al
-esperado. Son **ocho** los lugares que leen un corte (la lista, el detalle, la
-tarjeta, el widget del Inicio, el resumen del mes, los avisos, Mi caja y el
-ticket que se imprime): calculado en cada uno, alcanza que uno se olvide para
-que dos pantallas señalen faltantes distintos sobre la misma persona.
-
-**Y el noveno lector NO tiene fila: es el corte RECIÉN HECHO** (2026-09-02). La
-escribe `sync-cortes-caja` medio minuto después, así que el papel que imprime el
-portal se arma antes de que el trigger selle nada. Ahí la respuesta de
-`hacer-corte-caja` se traduce a una fila de `cortes_caja` **a mano**
-(`conLaCuentaBuena`, en `cortesDiagnostico.js`), y esa traducción se había
-quedado con **cinco de las ocho columnas** que `contraste` lee: sin
-`cobros_portal_efectivo` da por cero la corrección, sin error y sin línea
-faltante. El corte 14399 de Salud 4 salió impreso con **+$88.40** mientras su
-tarjeta —ya sellada— decía **+$0.15**.
-
-O sea que **usar el mismo juez no alcanza si no se le dan las mismas piezas**, y
-el objeto armado a mano es la mitad frágil: no falla, se queda corto. Por eso
-vive pegado a `contraste` y no en la vista. Al agregarle una columna al juez, se
-agrega ahí — y el dato que no sale del tiquete se le pregunta al MISMO canónico
-que usa el trigger (`cobros_portal_en_efectivo`), nunca a una suma escrita
-aparte. Ver [[feedback_el_mismo_juez_con_menos_piezas_da_otro_numero]].
-
-**Cuánto contó el comprobante se DERIVA de su propia suma**, no del renglón:
-`cobros = total_caja − subtotal + vales`. `tk_cobros_credito` sale del papel con
-una expresión regular y el papel a veces no imprime la línea — y su ausencia se
-lee igual que un cero. El despeje cierra al centavo en los **493 cortes**
-capturados, y no puede quedar en cero porque el origen le cambie el nombre a la
-línea, que es el modo de falla que importa: un cero de más ahí inventa un
-faltante del tamaño de los cobros del día.
-
-**La lección, que es la cara general:** la medición que sostenía lo contrario
-—«el origen ya distingue, sólo el efectivo llega al esperado»— era **correcta**;
-lo que falló fue el salto de *aparece en la lista de movimientos* a *está en el
-esperado*. Ver
-[[feedback_aparecer_en_la_lista_de_movimientos_no_es_estar_en_el_esperado]]. Y
-sobrevivió medio día porque el único cobro en efectivo de esa mañana era de
-$8.55: **un defecto proporcional al monto se esconde solo mientras los montos
-son chicos.**
-
-Lo vigila **`npm run gate:cortes`**, que compara el efectivo que entró al cajón
-contra el que el esperado cuenta —por sala y por día, contra los movimientos del
-propio origen, o sea también para una fuente que nadie previó—. Dos decisiones
-de medición que ya costaron: los movimientos con `desaparecido_at` **no cuentan**
-(el origen no anula, borra: el 1-sep un abono de $54.99 se borró a las 15:04 y
-el corte de esa hora cerró exacto), y la referencia es el corte que **más llega a
-contar** en el día y no el último (hay cortes de apertura de turno que declaran
-$0.00).
-
-### El cierre del día tiene CUATRO frenos, y ninguno cubre a los otros (2026-09-06 · 2026-10-28)
-
-Cerrar el día emite el Z y **no se deshace**: esa caja no vuelve a abrir. Los
-frenos viven en `hacer-corte-caja` —nunca en `operar-caja`, que llegaría
-con el Z ya emitido— y se repiten en la pantalla para avisar ANTES:
-
-| freno | pregunta | qué costó no tenerlo |
-|---|---|---|
-| corte sin resolver | ¿quedó alguno ni confirmado ni descartado? | Salud 1, 5-sep |
-| sin corte confirmado | ¿hay AL MENOS UNO confirmado hoy? | — |
-| **efectivo sin contar** | **¿entró plata desde el último confirmado?** | **Salud 2, 6-sep** |
-| **preventa sin finalizar** | **¿queda alguna preventa guardada en la caja?** | — (lo hacía la caja, ver abajo) |
-
-**El cuarto vale también para el corte C, no sólo para el Z.** La pantalla de
-corte de la caja pinta «Hay facturas pendientes de cobro» y **deshabilita
-Guardar** cuando la sala tiene preventas guardadas —medido el 2026-10-28 en las
-seis salas: aviso en las 4 con preventas, en ninguna de las 2 sin—. El freno
-vivía sólo en ESE botón: el POST a `corte_caja_diario.php` lo acepta igual, y el
-portal, que nunca aprieta el botón, se lo saltaba desde que corta él. Una
-preventa puede ser dinero que ya entró al cajón y todavía no es venta.
-`hacer-corte-caja` lee la lista (`get_referencias`, `preventasVivas`) **antes
-del vale y de cualquier escritura**; si no la puede leer, frena. Y relee el
-aviso de la pantalla justo antes de enviar, por si entró una en el medio.
-Mi caja la pide al abrir el diálogo (`body.preventas`, sólo lectura, una por
-apertura) para decirlo antes de que alguien cuente el cajón en vano.
-
-Los dos primeros estaban **en verde** cuando Salud 2 cerró el 6-sep a las 17:58
-con su único conteo firmado a las **11:59**: $152.65 de ventas, $5.74 de CAESS y
-$1.00 de una inyección — **$159.39** en el cajón que ya no puede contar nadie.
-«Hay un corte confirmado hoy» y «lo que hay ahora está contado» son preguntas
-distintas, y seis horas separan una respuesta de la otra.
-
-**El juez es `caja_falta_por_contar`, y es UNO solo**: lo llama el candado del
-servidor y viaja dentro de `caja_estado` para el aviso de la pantalla. Si el
-aviso y el candado pudieran contestar distinto, la sala vería «todo bien» y el
-botón la rechazaría — o peor, al revés.
-
-**Compara dos ESPERADOS, nunca un esperado contra un conteo.** Lo que el sistema
-espera en el cajón hoy contra el esperado que el último corte **confirmado** dio
-por medido (los descartados no cuentan, igual que en `corte_tramo`). Restando
-contra lo CONTADO, un faltante firmado de $2.54 se leería como «$2.54 sin
-contar» y trabaría un cierre correcto. Y lo que el corte midió se **despeja del
-canónico** (`declarado − corte_diferencia(...)`), no se copia su fórmula.
-
-**No es un cronómetro.** Salud 4 el 5-sep cerró hora y media después de su corte
-y pasa: lo que frena es que haya entrado plata, no que haya pasado el rato.
-
-⚠️ **La resta obvia es ruido, y está medida.** `entradas_del_día − tk_ingresos`
-parece decir lo mismo y dispara **60 veces sobre 143 cierres, 59 de ellas sin
-una sola venta después del corte**: el tiquete no pone los cobros de crédito en
-INGRESOS sino en su propia línea. `tk_total_caja` sí los incluye.
-
-Lo vigila la **sección D de `npm run gate:cortes`**, que nombra los días ya
-cerrados que se llevaron efectivo sin contar. Su `YA_PASADOS` lleva los dos
-históricos **con su monto escrito**; una entrada nueva ahí es sólo para un día
-cerrado que no se puede reparar, nunca para que el gate calle.
-
-### El día que NADIE cerró lo cierra el portal (2026-09-23)
-
-Una hora después de la hora de cierre, si la caja sigue abierta y hay un corte
-C no descartado desde una hora antes del cierre, `cierre-automatico-caja` (cron
-cada 10 min, 17:00–23:50 SV) emite el Z por `hacer-corte-caja` en modo
-`automatico`. El juez es **`caja_cierre_automatico_decidir`**, uno solo: lo
-consulta el cron y lo vuelve a consultar `hacer-corte-caja` justo antes de
-emitir. A las 7:00, `avisar_dias_sin_cierre` le avisa a la sala y a supervisión.
-
-**El sistema de la caja NO lo hace** (revisado en su configuración el 23-sep):
-lo único automático es un corte **C** a las 21:00:00 sobre la caja abierta.
-Ese C nace PENDIENTE y nadie lo firma, y por eso en el modo automático **no
-frena «corte sin resolver»**: frenaría justo el día que hace falta cerrar.
-«Efectivo sin contar» sí frena, medido contra ese corte cercano al cierre
-(`caja_falta_contra_corte`) aunque no esté confirmado. **«Preventa sin
-finalizar» también frena** (usuario, 2026-10-28: «que frene y notifique
-supervisor»): el día queda abierto, `cierre-automatico-caja` anota el motivo
-`preventas_sin_finalizar` y avisa a Gerente General y Supervisor/a de Ventas
-con la lista — una sola vez por noche, aunque el cron corra cada 10 min. Al
-tocar cualquiera de los frenos de arriba, mirar también la rama `automatico`.
-
-**Sólo cierra si la sala no cerró, y eso se mira tres veces**: el juez exige
-caja abierta y ningún Z en el espejo, `hacer-corte-caja` le vuelve a preguntar
-justo antes de emitir, y además lee los cortes del día EN VIVO en la caja
-(`ya_estaba`) — el espejo puede ir minutos atrás de un Z recién hecho.
-
----
+- **La lista sale del espejo** (`creditos_de_clientes`); **el cobro relee el
+  ORIGEN** antes de abonar, y relee después para guardar el saldo que el origen
+  dice. El origen no tiene forma de deshacer un abono.
+- **`id_factura` lleva el ID DEL CRÉDITO**, no el de la factura. La traducción
+  vive en UNA línea de `creditos-erp` y el parámetro se llama `credito` de punta
+  a punta: el número equivocado abona a otra persona sin error.
+- El espejo se mantiene con cuatro piezas (pasada de hoy, **barrido diario
+  completo** —no es redundante—, relectura tras abonar, y lectura al abrir la
+  pantalla con el tope en la BASE: `creditos_tomar_lectura`). El raspado vive
+  una sola vez en `_shared/creditos.ts`. `vencio_el`/`pagado_el` se OBSERVAN
+  (`COALESCE(viejo, nuevo)`), no se calculan; vencido exige saldo.
+- **El efectivo cobrado desde el portal NO está en el esperado del comprobante**:
+  lo sella `cortes_caja.cobros_portal_efectivo` (dos triggers) y `contraste` lo
+  suma. Nunca calcularlo en cada pantalla. El corte recién hecho se traduce a
+  fila en `conLaCuentaBuena` (`cortesDiagnostico.js`): **al agregarle una
+  columna al juez, se agrega ahí**, preguntándole al mismo canónico
+  (`cobros_portal_en_efectivo`). Lo que contó el comprobante se DERIVA de su
+  suma (`total_caja − subtotal + vales`), no del renglón.
+- **El cierre del día (Z) no se deshace y tiene cuatro frenos**, en
+  `hacer-corte-caja` (nunca en `operar-caja`) y repetidos en la pantalla: corte
+  sin resolver, sin corte confirmado, efectivo sin contar (juez único
+  `caja_falta_por_contar`, que compara dos ESPERADOS, nunca esperado contra
+  conteo) y preventa sin finalizar (vale también para el corte C; si no se
+  puede leer la lista, frena).
+- **El día que nadie cerró lo cierra `cierre-automatico-caja`**, con el juez
+  `caja_cierre_automatico_decidir` consultado por el cron y otra vez antes de
+  emitir, más la lectura en vivo (`ya_estaba`). En modo `automatico` no frena
+  «corte sin resolver»; sí «efectivo sin contar» y «preventa». Al tocar un
+  freno, mirar también la rama `automatico`.
 
 ## MIN·MAX: ABC/XYZ son SOLO clasificación (decisión, no bug)
 
-Confirmado el 2026-07-29 (F4.3 de
-`docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md`): en
-`stock_config`, `reorder_x_days = reorder_y_days = reorder_z_days = 25`,
-`buffer_x/y/z_days = 0`, y `lead_time_days` es NULL en las 18,364 filas de
-`product_stock_params`. Entonces la fórmula real es, para **todo** producto:
+Para todo producto: `MIN = floor(velocidad × 25)`, `MAX = ceil(velocidad × cycle_days)`.
+ABC y XYZ no intervienen en ningún número. **No cambiar la fórmula ni la
+config** — si una auditoría lo levanta como bug, ésta es la respuesta. Cambiar
+`cycle_days` o `reorder_*_days` reescribe el MIN/MAX de todo el catálogo a la
+vez (uno de los motivos del candado de mantenimiento). Detalle:
+`docs/reglas/minmax.md`.
 
-```
-MIN = floor(velocidad × 25)      MAX = ceil(velocidad × cycle_days)
-```
+## REGLA CRÍTICA: el teléfono no es la pantalla chica (canon móvil)
 
-ABC y XYZ **no intervienen en ningún número**. Es intencional: sirven para
-filtrar, para el badge y para la matriz, nada más. **No cambiar la fórmula ni la
-config** — si una auditoría futura lo levanta como bug, esto es la respuesta.
-
-Dos consecuencias que conviene tener presentes:
-
-1. Como el `reorder` es plano, cualquier cambio en `cycle_days` o en
-   `reorder_*_days` reescribe el MIN/MAX de **todo el catálogo a la vez**. Es uno
-   de los motivos por los que existe el candado de mantenimiento por módulo.
-2. `xyz_x_cv_max` / `xyz_y_cv_max` (150/400) son restos muertos de la era
-   pre-percentiles: hoy manda `xyz_x_percentile`/`xyz_y_percentile`. Ya no se
-   editan desde `ConfigPanel` (verificado: no hay ni una referencia a `cv_max` en
-   `src/`), así que no hay riesgo de que alguien toque un número que no hace nada.
-
-Detalle del mismo cálculo, anotado para que no sorprenda: `velocity` usa unidades
-**winsorizadas** al percentil `outlier_percentile`, pero `velocity_30d` usa las
-crudas. Y desde F2.3 el denominador de `velocity` ya no es `analysis_days` fijo:
-es `data_days`, o sea los días desde la **primera venta histórica** del producto
-en esa sucursal (tope `analysis_days`, piso 30 días). Eso solo cambia algo para
-los productos realmente nuevos — medido en Salud 1: 45 de 1,765.
-
-## REGLA CRÍTICA: el teléfono no es la pantalla chica (canon móvil, 2026-08-21)
-
-Nació de un reporte de una línea —*«en facturas de compra cuando abro una card me
-da información, pero muy reducida, no puedo ver los productos, no puedo ver el
-pdf»*— que resultó ser **16 de las 59 tablas del portal, el 27%**. El canon
-completo vive en **DESIGN.md §32.8 y §32.9**; el plan y lo que queda abierto, en
-`docs/planes-cerrados/PLAN-MOVIL-2026-08-20.md`. Acá va lo que hay que saber ANTES de tocar una
-vista.
-
-**El modo de falla es el SILENCIO.** No hay error, no falta ninguna fila, y en
-escritorio todo funciona. Por eso estos defectos viven meses: sólo se ven con el
-teléfono en la mano, y el que lo tiene en la mano no reporta «el `onClick` no se
-declaró», reporta «no me deja ver nada».
-
-### Lo que `DataTable` no puede adivinar, y por eso lo declara la vista
-
-En el teléfono `DataTable` **no pinta una tabla: pinta fichas**. Desde afuera un
-`onClick` es una caja cerrada —no se sabe si navega o si expande un `<tr>`—, así
-que el default es su hoja genérica y la vista declara el resto:
+Canon completo: **DESIGN.md §32** (§32.7–§32.9). Las tres capas de verificación
+y las trampas de medición: `docs/reglas/canon-movil.md`. El modo de falla es el
+SILENCIO: en escritorio todo funciona. En el teléfono `DataTable` pinta fichas,
+y la vista declara lo que no puede adivinar:
 
 | prop | cuándo |
 |---|---|
@@ -1033,338 +521,139 @@ que el default es su hoja genérica y la vista declara el resto:
 | `acciones: true` | igual, pero como tira visible. Sólo con una o dos acciones. |
 | `movil={false}` | **la fila no es un registro** (una matriz, un calendario). Exige motivo escrito arriba. |
 
-**Un detalle que se olvida y rompe:** si el `onClick` expande un `<tr colSpan>`,
-declarar `usarAccionDeFila` no alcanza — ese `<tr>` no se pinta en modo ficha. El
-destino ahí es **`ExpedienteMovil`**, con el cuerpo del detalle escrito UNA vez
-(prop `comoPanel`) y la expansión de escritorio apagada con `!enTelefono`. El
-corte del teléfono sale de `useExpedienteMovil` y **nunca de un `useMediaQuery`
-propio**: si divergen, hay un ancho donde la fila es ficha y el detalle intenta
-expandirse dentro de una tabla que ya no está.
+- Si el `onClick` expande un `<tr colSpan>`, `usarAccionDeFila` no alcanza: el
+  destino es `ExpedienteMovil` (cuerpo escrito una vez, prop `comoPanel`;
+  expansión de escritorio apagada con `!enTelefono`), y el corte sale de
+  `useExpedienteMovil`, nunca de un `useMediaQuery` propio.
+- Blanco de dedo de 44pt (`min-h-[var(--tap-min)]`; `data-medida="dato"` cuando
+  el tamaño ES el dato). El toque acusa recibo (`active:scale-[0.97]` o
+  `data-interactive`). Áreas seguras por `--sa-top/right/bottom/left`, nunca
+  `env()` a mano. Un formulario largo guarda borrador, y si vive en un store,
+  persiste el store.
+- Se verifica con tres capas, porque ninguna ve lo de la otra:
+  `npm run gate:movil`, `tests/e2e/barrido-total-movil.spec.js` (por tandas) y
+  `tests/e2e/dialogos-movil.spec.js` (corre contra producción: abrir no puede
+  escribir).
 
-Y una celda de acciones **cambia de forma sola**: `useEnHojaDeAcciones()`
-(`components/common/hojaDeAcciones.js`) le dice que está en la hoja, y ahí un
-`Button` con `iconOnly` recupera su rótulo desde `title`. Se resolvió con
-contexto y no con una prop porque una prop obligaría a rendir la celda dos veces.
-
-### Las otras cuatro reglas del teléfono
-
-1. **El blanco de dedo son 44pt.** `min-h-[var(--tap-min)]` / `min-w-[...]`, que
-   vale **0 en escritorio** y no cambia nada ahí. Cuando el tamaño **ES el
-   dato** —una barra apilada, donde el ancho codifica la proporción— estirarlo
-   sería mentir: se declara `data-medida="dato"` y el barrido lo saltea.
-2. **El toque tiene que ACUSAR recibo.** No hay cursor ni hover: el acuse es la
-   única señal de que entró. Vale `active:scale-[0.97]` o `data-interactive`,
-   que ya pone `clickable()`.
-3. **Las áreas seguras van por `--sa-top/right/bottom/left`**, nunca `env()`
-   escrito a mano. Con el token, una prueba puede pisarlo y **medir** si el
-   marco se corre; con `env()` a mano no hay forma de distinguir el shell que
-   respeta el notch del que lo ignora, porque en todo emulador vale 0. `max()`
-   sólo si el inset es el ÚNICO relleno.
-4. **Un formulario largo guarda borrador** — ver `gate:borradores` en
-   Estándares. Y si lo que se puede perder vive en un store, **el store es el
-   que tiene que persistir**: componer un traslado a tres salas se perdía entero
-   porque el store era memoria pura y la sesión se cierra sola a los 5 minutos.
-
-### Cómo se verifica, y por qué son TRES capas
-
-- **`npm run gate:movil`** — lee el fuente. Bloqueante en cero.
-- **`tests/e2e/barrido-total-movil.spec.js`** — 54 rutas en WebKit iPhone 13.
-  `ORIENTACION=acostado` para la otra mitad. Correr **por tandas**.
-- **`tests/e2e/dialogos-movil.spec.js`** — abre los diálogos y los mide. Corre
-  contra producción, así que tiene lista de freno: **abrir no puede escribir**.
-
-Las tres, porque **ninguna ve lo que ve la otra**. El gate lee el fuente, y una
-fila envuelta en `memo(EmployeeRow)` es una caja cerrada: quitándole
-`usarAccionDeFila` a Personal el gate da **verde con 0 hallazgos** y el barrido
-dice **25**. Eso lo cierra `data-destino`, que `Ficha` estampa en el DOM porque
-en tiempo de render sí sabe la respuesta.
-
-### La lección que se repitió SEIS veces, y es la más cara
-
-> **En esta tanda, seis de los hallazgos no estaban en el portal sino en cómo se
-> leía la medición.**
-
-El informe parcial se llamaba igual que uno completo. El detector de acuse
-acusaba a 36 tarjetas que hacían lo correcto y tapaba al único botón mudo. La
-regla de tamaño contaba hijos `absolute` como hermanos del flex. El resumen no
-contaba tres dimensiones que sí medía. El detector de desborde miraba la caja
-propia y no el borde visible. Y el barrido de diálogos reportaba «no abrió» sobre
-botones que nunca apretó.
-
-**Antes de creerle un cero a un instrumento, fabricarle la regresión que debería
-cazar.** Y antes de creerle un número grande, abrir tres casos a mano: acusar al
-que hizo bien el trabajo es cómo un gate se termina desactivando.
-
----
-
-## REGLA: un día de horario se resuelve en UN solo sitio (2026-08-27)
+## REGLA: un día de horario se resuelve en UN solo sitio
 
 `src/utils/turnoDelDia.js` y su gemelo `public.turno_del_dia(jsonb, jsonb)`. Si
-estás por escribir `dayData.shiftId ? … : …` o
-`dayData.customStart || shift.start_time`, **ya existe**.
-
-Un día de `employee_rosters.schedule_data` puede traer un turno del catálogo, o
-horas propias, o las dos. Estaba respondido **cuatro veces con cuatro reglas
-distintas**, y ninguna consecuencia se leía como un defecto de horarios:
-
-| quién leía | catálogo | horas propias | `isOff` ausente |
-|---|---|---|---|
-| `consolidate-timesheets` (planilla) | sí | sí | trabaja |
-| las 44 h de la pantalla | sí | sí | trabaja |
-| `getTodayScheduleConfig` (kiosco) | sí | **NO** | trabaja |
-| `empleados_en_turno()` (avisos de sala) | **NO** | sí | **LIBRE** |
-
-El editor **deja guardar un día con horas propias y sin turno** —la pantalla lo
-pinta «Manual» y lo cuenta en las 44 h—, así que para el kiosco esa persona
-estaba libre: pedía autorización de supervisor para marcar y la asistencia la
-daba ausente. Y la función de SQL invertía el default con
-`coalesce((isOff)::boolean, true) = false`: **el día sin la clave contaba como
-libre**, al revés de JavaScript, que es quien escribió el dato. Es exactamente lo
-que ya costó `get_traslados_por_recibir`.
-
-**Y son SEIS las formas de decir «no trabaja»**, no una: `isOff`, `isOffDay`,
-**`shiftId: 'LIBRE'`** (la escriben incapacidad, vacaciones y el regreso
-anticipado, y sólo la planilla la conocía), la clave del día ausente, sin horas,
-y entrada igual a salida.
-
-Los 55 casos de `tests/unit/turnoDelDia.test.js` valen para los dos gemelos, y se
-enfrentaron uno contra otro sobre los 16 que importan — **0 distintas**. Cambiar
-uno exige cambiar el otro y volver a enfrentarlos.
-
-**Dos rastros lo habían anotado sin cerrarlo:** el manifiesto de planes decía
-«DEVUELVE 0 FILAS incluso [en la sala con más gente] — posible defecto aparte,
-verificar», y una migración de agosto, «la cascada NUNCA encontró a nadie en
-turno, ni una vez». Una nota que dice «verificar» y nadie verifica es una nota
-que ya avisó.
-
-**Las constantes del reglamento también viven ahí**, con su artículo: 44 h la
-semana diurna y 39 la nocturna, 8 h la jornada y 7 la nocturna (Art. 16), un
-descanso por semana (Art. 19), ocho horas entre jornadas (Art. 21). Estaban
-escritas a mano en seis sitios, con dos umbrales distintos y un badge que
-rotulaba «+8H» sobre un umbral de 9.
-
-**Guardar una celda NO toca el estado de publicación.** `guardar_dia_de_horario`
-escribe un día con `||` sobre el `jsonb`. Antes mandaba `status: 'DRAFT'` y el
-roster entero: corregir una semana publicada la devolvía a borrador, el botón
-quedaba `disabled`, y como `consolidate-timesheets` sólo lee los `PUBLISHED`,
-**esas horas no llegaban a planilla** mientras la pantalla decía «Publicado».
-
-El detalle —la copia del sábado, el cron duplicado que dejaba muda a su propia
-alarma, y por qué el catálogo del módulo NO son los turnos del reglamento— en
+estás por escribir `dayData.shiftId ? … : …` o `dayData.customStart || shift.start_time`,
+**ya existe**. Son seis las formas de decir «no trabaja» (incluida
+`shiftId: 'LIBRE'`), y el día sin la clave `isOff` **trabaja**. Cambiar un gemelo
+exige cambiar el otro y volver a enfrentarlos con `tests/unit/turnoDelDia.test.js`.
+Las constantes del reglamento (jornadas y descansos, con su artículo) viven ahí.
+**Guardar una celda NO toca el estado de publicación** (`guardar_dia_de_horario`).
+Detalle: `docs/reglas/horario-del-dia.md` y
 `docs/HORARIOS-LA-SEMANA-EL-DIA-Y-LA-COPIA-AUTOMATICA-2026-08-24.md`.
 
----
+## Cuando el portal no responde: `npm run portal:lento`
 
-## Cuando el portal no responde: `npm run portal:lento` (2026-09-01)
+El síntoma nunca nombra la causa («no se puede iniciar sesión», «Timed out
+acquiring connection from connection pool»). En orden:
 
-**El síntoma nunca nombra la causa.** El 01-sep el portal dejó de dejar entrar
-entre las 16:35 y las 16:44 y el reporte fue *«Realtime de Supabase no funciona,
-no se puede iniciar sesión»*. Las dos mitades eran falsas: Realtime devolvía
-**101** y Auth devolvía **200** durante todo el corte. Lo que fallaba era lo que
-el portal lee DESPUÉS de entrar — 19 s, el techo del gateway — así que la
-pantalla quedaba colgada, que es indistinguible de no poder entrar.
-
-Y el log tampoco ayuda: dice `Timed out acquiring connection from connection
-pool`, que manda a mirar las conexiones. No estaba ahí.
-
-**Lo primero es el orden, y por eso hay un comando.** `npm run portal:lento` es
-de sólo lectura y contesta las cuatro preguntas que separan el problema:
-¿está pasando ahora?, ¿hay alguna consulta viva de más de 3 s?, ¿quién cuesta
-más por llamada?, ¿y qué hago con eso?
-
-### La causa fue una consulta de LECTURA, y estaba bien escrita
-
-`puntos_tickets_de_ficha_que_no_acumula` corría cada minuto y devolvía `[]` —
-pero para llegar a esa lista vacía recorría **358,964 filas** con una búsqueda
-por cada una: **1,528,584 bloques (11.7 GB) y hasta 12,963 ms por vuelta**, sobre
-una reserva de 20 conexiones.
-
-El defecto no estaba en el SQL sino en una **ESTIMACIÓN**. `customers` no tenía
-`false` entre los valores comunes de `acumula_puntos`, así que el planificador
-usó la selectividad por defecto de un booleano —**la mitad**, 14,042 de 28,120—
-cuando la respuesta real es **UNA fila**. Creyendo que las coincidencias
-abundaban, eligió recorrer en el orden del `ORDER BY` esperando llenar el
-`LIMIT 500` enseguida. Un `ANALYZE` bastó: **2,868 ms → 13.5 ms**.
-
-**Un booleano casi todo igual es el caso donde el default miente más**, y el
-autovacuum analiza al 20% de cambio, o sea casi nunca en una tabla de 28,120
-filas. Por eso la corrección definitiva es un **índice parcial** sobre la
-condición rara (`ON customers (id) WHERE acumula_puntos = false`): dejarlo en el
-`ANALYZE` es apoyar el portal en que alguien lo repita a tiempo.
-
-### Se mide en BLOQUES, no en milisegundos
-
-Es la decisión que hace útil al listado. Un promedio de milisegundos medido
-durante un corte dice quién **esperó**, no quién estaba lento — bajo saturación
-todo tarda, así que el ranking se llena de víctimas. Los bloques son el TRABAJO
-que la consulta hace: el mismo número con el servidor vacío o saturado.
-
-Lo vigila la **sección F de `npm run gate:perf`** contra
-`scripts/bloques-por-llamada.json`: una función que lee **≥195 MB por llamada** y
-no está declarada **falla el gate**, y una declarada que crece por encima de su
-techo, también. `deuda: true` significa *declarado pero no auditado* — protege
-contra que crezca, no promete que esté bien.
-
-Existe porque **ninguna de las otras cinco secciones podía ver esto**, y la
-ceguera es estructural: la sección C mira la forma del plan, pero `EXPLAIN` de
-una llamada a función devuelve un `Function Scan` y nada más; la sección B tapa
-ese hueco vigilando el código de funciones concretas, escritas a mano, o sea
-sólo lo que alguien ya sufrió. La función culpable era **del día anterior**.
-Y la sección D ya vigilaba el TIEMPO de `get_faltantes_con_stock_en_otra_sala`
-—159 ms contra un techo de 400— sin ver que lee **467 MB cada vez**.
-
-### El instrumento se ensuciaba a sí mismo
-
-Vale escribirlo porque volvió a pasar acá: la primera versión del listado
-acusaba a `get_faltantes_con_stock_en_otra_sala` de **2,720 MB por llamada**
-cuando su caller real lee **467**. La diferencia era que un bloque `DO $$` que
-llama siete veces cuenta como UNA statement en `pg_stat_statements` — y los
-bloques `DO $$` eran **las mediciones propias**, la sección D de este mismo gate
-incluida, que llama cinco veces adentro de un solo statement.
-
-O sea: **la herramienta que mide ensuciaba lo que medía y después culpaba a
-otro.** Hoy el SQL excluye `DO`/`EXPLAIN`/`VACUUM`/`ANALYZE`/`CREATE`. Si un
-número parece absurdo, sospechar del instrumento antes que de la función.
-
-### Si vuelve a pasar
-
-1. `npm run portal:lento`.
+1. `npm run portal:lento` (sólo lectura).
 2. Si hay una consulta viva de más de 3 s, **es ésa** — la más vieja.
-3. Si no, mirar el listado por bloques y cruzarlo con **cuántas veces corre**.
-4. Sobre la candidata: `EXPLAIN (ANALYZE, TIMING OFF, BUFFERS)`, y buscar el
-   nodo donde `rows` estimadas y `actual rows` se separan. Ahí está — casi nunca
-   en el SQL. Con `TIMING OFF` a propósito: la instrumentación del reloj inventó
-   1,146 ms sobre un trabajo de 31 en un nested loop de 3,655 vueltas.
-5. Corregir, y **borrar sólo su estadística** para verificar sin esperar a que el
-   promedio viejo se diluya:
+3. Si no, el listado por BLOQUES (no milisegundos: bajo saturación todo tarda),
+   cruzado con cuántas veces corre.
+4. Sobre la candidata, `EXPLAIN (ANALYZE, TIMING OFF, BUFFERS)` y buscar dónde
+   se separan filas estimadas y reales — casi nunca está en el SQL. Un booleano
+   casi todo igual se arregla con un índice parcial sobre la condición rara, no
+   con un `ANALYZE`.
+5. Corregir, y borrar sólo su estadística para verificar:
    `SELECT extensions.pg_stat_statements_reset(userid, dbid, queryid) FROM extensions.pg_stat_statements WHERE query LIKE '%<funcion>%';`
-6. Para parar la sangre YA, sin haber entendido todavía:
-   `UPDATE cron.job SET active = false WHERE jobname = '<el cron>';` — reversible;
-   un portal caído en horario de sala, no.
+6. Para parar la sangre YA: `UPDATE cron.job SET active = false WHERE jobname = '<el cron>';`
+   — reversible; un portal caído en horario de sala, no.
 
-**Un reinicio de Postgres es CONSECUENCIA, no causa.** El del 01-sep fue a las
-16:41, seis minutos después de que empezara la saturación. Buscarle explicación
-propia es perder el rato.
+Un reinicio de Postgres es consecuencia, no causa. Si un número parece absurdo,
+sospechar del instrumento. Lo vigila la sección F de `gate:perf`
+(`scripts/bloques-por-llamada.json`). Detalle: `docs/reglas/portal-lento.md`.
 
 ---
 
 ## REGLA CRÍTICA: hay OTRAS sesiones trabajando en este mismo árbol
 
-No es hipotético ni excepcional. Medido el 2026-07-29 en una sola sesión: el
-`git status` pasó de 2 a 8 archivos modificados en 40 minutos sin que esta sesión
-tocara ninguno de los 6 nuevos, y otra sesión commiteó **y pusheó** v2.234.0 en el
-medio. El árbol de trabajo es compartido y no avisa.
+El árbol de trabajo es compartido y no avisa: otras sesiones editan, commitean
+y pushean en el medio. Historia y mediciones:
+`docs/reglas/sesiones-ramas-y-publicacion.md`.
 
-**Antes de editar un archivo que no tocaste en esta sesión**: `git status --short`.
-Si aparece modificado y el cambio no es tuyo, es de otra sesión — leerlo antes de
-escribirlo. Un `Write` encima de cambios ajenos los borra sin dejar rastro: no
-están en ningún commit del que recuperarlos.
+- **Antes de editar un archivo que no tocaste en esta sesión**: `git status --short`.
+  Si aparece modificado y no es tuyo, leerlo antes de escribirlo: un `Write`
+  encima borra trabajo ajeno que no está en ningún commit.
+- **Prohibido barrer el árbol.** Nunca `git add -A` / `git add .` / `git commit -a` /
+  `git stash` / `git checkout .` / `git restore .` / `git reset --hard`. Siempre
+  paths explícitos, y **`git status` después del `add`** — un pathspec que falla
+  aborta TODO el add.
+- **Commitear lo propio en cuanto compila**, con paths explícitos. `git fetch`
+  antes de pushear: el remoto puede haberse movido.
+- **El `main` de este árbol se queda atrás solo** (`git pull` se niega con el
+  árbol sucio y `stash`/`reset --hard` están prohibidos). `npm run main:al-dia`
+  (`-- --aplicar` para hacerlo) lo pone al día sin perder nada: se niega si hay
+  algo sin gemelo arriba, respalda en `.git/respaldos-main/` y usa
+  `reset --keep`. El pre-commit bloquea un commit en `main` atrasado respecto de
+  `origin/main`.
+- **Versión: `npm run version:bump -- patch|minor|major "Título"`.** Sube
+  `APP_VERSION`, deja empezada la entrada en `CHANGELOG.md` y relee justo antes
+  de escribir. Nunca "el anterior + 1", nunca editar `src/version.js` a mano, y
+  la entrada va en `CHANGELOG.md`, NUNCA en `src/version.js`: `version-gate`
+  exige que la versión suba y que `## v<versión>` esté preparado en el mismo
+  commit.
+- **Trabajo largo o riesgoso, árbol propio**: `npm run worktree -- <nombre>`
+  crea `../Portal-Farmalasa-<nombre>` en la rama `sesion/<nombre>`, nacida de
+  `origin/main`, con `node_modules` enlazado y `.env` copiado; hay que mergear a
+  `main`. **Al terminar, se borra**: `npm run limpiar:worktrees` (`-- --borrar`)
+  quita los que no tienen nada sin commitear, ni commits fuera de `origin/main`,
+  ni uso reciente, ni un proceso adentro. Un worktree con trabajo sin commitear
+  nunca se borra solo.
+- **`sesion/nucleo` NO es un `sesion/<nombre>` descartable**: es la rama de
+  integración de dev (`dev.farmasalud.lat`), y el usuario une ahí trabajo que
+  todavía no va a producción (la distribuidora). **Nunca `push -f` a
+  `sesion/nucleo`**, nunca `npm run worktree -- nucleo` ni borrarla al limpiar,
+  y **nunca `push HEAD:main` desde ella** (llevaría a producción lo que no va).
+  El trabajo para producción va en una rama sobre `origin/main` y se publica con
+  `git push origin HEAD:main`; después `sesion/nucleo` se pone al día con
+  `git merge origin/main` + push normal.
+- **El preview de QA es uno solo**: las edge functions sólo aceptan CORS de
+  `http://localhost:4173`, y `npm run preview` lleva `--strictPort` para que un
+  puerto ocupado falle claro. Para compilar sin pisar el `dist/` de otra
+  sesión: `OUT_DIR=dist-<nombre> npm run build`. Las `dist-*` viejas las borra
+  el `prebuild` (`npm run limpiar:dist` a mano); nunca `dist`/`dist-staging`, el
+  `OUT_DIR` en curso ni una que nombre un proceso vivo.
+- **El hook de pre-commit** (`.githooks/pre-commit`; `npm run hooks:install` una
+  vez por clon) bloquea si un archivo preparado se modificó después de
+  prepararlo, lista lo que queda fuera y corre los gates locales (tabla en
+  «Estándares»). `git commit --no-verify` es para una emergencia real, no para
+  silenciar un hallazgo.
 
-**Prohibido barrer el árbol.** Nunca `git add -A` / `git add .` / `git commit -a` /
-`git stash` / `git checkout .` / `git restore .` / `git reset --hard`: todos se
-llevan trabajo ajeno sin commitear. Siempre paths explícitos, y **verificar
-`git status` después del `add`** — un pathspec que falla aborta TODO el add.
+## REGLA: pushear a `main` NO publica el portal — `npm run publicar`
 
-**Commitear lo propio en cuanto compila**, con paths explícitos. Es la única
-protección real: lo commiteado se recupera, lo demás no. Y `git fetch` antes de
-pushear — el remoto puede haberse movido.
-
-**El `main` de este árbol se queda atrás solo, y commitear encima lo empeora**
-(2026-10-21). Llevaba seis días sin avanzar: **118 commits atrás y 8 adelante,
-los 8 copias**. `git pull` se niega con el árbol sucio —siempre lo está— y
-`stash`/`reset --hard` están prohibidos, así que nadie lo ponía al día; cada
-sesión commiteaba sobre código viejo, el push rebotaba y repetía el commit
-desde un worktree con otro número. Tres piezas lo cierran:
-- **`npm run main:al-dia`** (`-- --aplicar` para hacerlo) lo pone al día sin
-  perder nada: se niega si un commit local no tiene gemelo arriba o si un
-  archivo sucio tiene una línea que no está en ningún commit de arriba,
-  respalda todo en `.git/respaldos-main/`, y usa `reset --keep`.
-- **El pre-commit bloquea un commit en `main` si está atrás de
-  `origin/main`** (sin red: contra el último fetch).
-- **`npm run worktree` nace de `origin/main`**, no del HEAD local.
-
-**Al bumpear `APP_VERSION`: `npm run version:bump -- patch|minor|major "Título"`.**
-Lee la versión, la sube y deja la entrada empezada en `CHANGELOG.md` de una
-sola pasada, y **relee justo antes de escribir** por si otra sesión se llevó ese
-número en el medio (pasó tres veces en una sola sesión el 2026-08-01). Nunca
-asumir "el anterior + 1", y nunca editar `src/version.js` a mano.
-
-**La entrada del changelog va en `CHANGELOG.md`, NUNCA en `src/version.js`.**
-Ese archivo tiene la constante y nada más. La regla vieja —"las últimas 6
-entradas en `version.js`"— se rompió sola: nada la verificaba, así que 164 de
-268 entradas nunca llegaron a `CHANGELOG.md` y el archivo volvió a 7,330 líneas
-en tres semanas. Pero el motivo de fondo no es el peso: con varias sesiones,
-todas escribían el mismo bloque al tope del mismo archivo y colisionaban
-siempre. Hoy `version-gate` exige las tres cosas — que `version.js` no tenga
-entradas, que la versión suba, y que `## v<versión>` exista en `CHANGELOG.md`
-**y esté preparado en el mismo commit**.
-
-**Para trabajo largo o riesgoso, un árbol propio**: `npm run worktree -- <nombre>`
-crea el worktree en `../Portal-Farmalasa-<nombre>` sobre la rama
-`sesion/<nombre>`, con `node_modules` enlazado y `.env` copiado. Deja de
-compartir archivos, índice y `dist/`. El costo es que hay que mergear a `main`
-en vez de pushear directo, así que para un arreglo corto no vale la pena.
-
-**Y al terminar, el worktree se borra** (2026-10-21): había 22 hermanos y 8 de
-agentes en `.claude/worktrees/` (~2.4 GB, rompían `lint` y `test`). Hoy
-`npm run limpiar:worktrees` hace el inventario y `-- --borrar` quita los que no
-tienen cambios sin commitear, ni commits fuera de `origin/main` (por contenido,
-`git cherry`), ni uso en 3 días, ni un proceso adentro. Corre solo en el
-`prebuild` y al crear uno nuevo. **Un worktree con trabajo sin commitear nunca
-se borra solo**: se commitea o se descarta a propósito.
-
-**El preview de QA es uno solo.** Las edge functions solo aceptan CORS de
-`http://localhost:4173`, así que **una sesión a la vez** puede tenerlo
-levantado; `npm run preview` lleva `--strictPort` para que un puerto ocupado
-falle claro en vez de moverse solo y producir un "error de CORS" que parece otra
-cosa. Para compilar sin pisar el `dist/` de otra sesión: `OUT_DIR=dist-<nombre>
-npm run build`.
-
-**Y esas carpetas se limpian solas.** Una por sesión y nada las borraba: el
-2026-08-23 había **45 carpetas y 1.5 GB**, la más vieja del 1 de agosto. Hoy el
-`prebuild` corre `limpiar-dist.mjs --auto`, que borra las `dist-*` sin tocar
-hace 3+ días. Nunca toca `dist`/`dist-staging`, ni el `OUT_DIR` en curso, ni una
-que nombre un proceso vivo — borrarle el `dist/` a una sesión que está haciendo
-QA le deja la pantalla en 404 sin explicación. La edad sale del **contenido** y
-no del directorio: `vite build` reescribe adentro y el mtime del padre queda
-viejo. A mano: `npm run limpiar:dist` lista, `-- --borrar` borra.
-
-**El hook de pre-commit** (`.githooks/pre-commit`, se habilita una vez por clon con
-`npm run hooks:install`) cubre el caso mecánico: **bloquea el commit si un archivo
-está preparado y además modificado después de prepararlo** — señal de que alguien
-lo siguió editando y el commit se llevaría una foto parcial. Además lista lo que
-queda fuera del commit, corre `version-gate` siempre y `migration-gate` cuando el
-commit toca `supabase/migrations`. `git commit --no-verify` lo saltea: es para una
-emergencia real, no para silenciar un hallazgo.
-
-## REGLA: pushear a `main` NO publica el portal — `npm run publicar` (2026-10-06)
-
-Cada commit a `main` desplegaba portal.farmasalud.lat entero en Vercel: el
-2026-10-06 fueron 24 despliegues, ~20 de cambios que ni tocaban la web (apps,
-funciones de Supabase), y el ciclo llegó a **$22.92 de minutos de compilación**
-con cargos extra. Decisión del usuario: se publica a propósito.
-
-- Producción es la rama **`produccion`**. Se mueve con **`npm run publicar`**
-  (`scripts/publicar.mjs`): la adelanta a `origin/main` sólo si hay cambios de
-  la web, y no toca el árbol de trabajo. `-- --ver` dice qué saldría.
-- **Publicar cuando el cambio de la web tenga que verse** (un arreglo para
-  sala, una pantalla terminada), no después de cada commit. Varios commits de
-  la web se juntan en un solo despliegue.
+- Producción es la rama **`produccion`** (portal.farmasalud.lat). Se mueve con
+  **`npm run publicar`** (`scripts/publicar.mjs`): la adelanta a `origin/main`
+  sólo si hay cambios de la web, sin tocar el árbol. `-- --ver` dice qué saldría.
+- **Después de un arreglo de web verificado, `npm run publicar` sin
+  preguntar; los commits de una misma tarea se juntan en una publicación** (cada
+  despliegue cuesta minutos de compilación: no uno por commit). Avisar después
+  qué se publicó. Si el clasificador de permisos lo bloquea, decirlo en una
+  línea y reintentar en cuanto el usuario confirme.
 - Lo que no es web (`apps/`, `supabase/`, `scripts/`, `docs/`, `auditoria/`,
-  `CHANGELOG.md`, `src/version.js`) no se despliega nunca por Vercel: las
-  funciones van por `supabase functions deploy` y las apps por `subir-ios`.
-- La regla vive en `scripts/vercel-ignorar.sh` (el `ignoreCommand` de
-  `vercel.json` no admite más de 256 caracteres — un despliegue falló por eso).
+  `CHANGELOG.md`, `src/version.js`) no se despliega por Vercel. Las funciones van
+  por `supabase functions deploy`. Las apps se compilan en esta Mac, sin EAS:
+  `node scripts/subir-ios.mjs <carpeta> <perfil>` y
+  `node scripts/subir-android.mjs <carpeta> <perfil>` (p. ej. `apps/mobile interna`,
+  `apps/clientes clientes`); la app de clientes además se actualiza por aire con
+  `npm run app:actualizar -- "Qué cambia"`.
+- `sesion/nucleo` también despliega (es dev). La regla vive en
+  `scripts/vercel-ignorar.sh` (el `ignoreCommand` de `vercel.json` no admite más
+  de 256 caracteres).
 
-## REGLA CRÍTICA: lo que ya se auditó no se toca sin preguntar (2026-08-23)
+## REGLA CRÍTICA: lo que ya se auditó no se toca sin preguntar
 
-El portal está repartido en **25 áreas** (`auditoria/areas.mjs`) y cada una lleva
-un % sobre **12 ejes**. Un área que llega a 100 y tiene su sello de sala queda
-**CONGELADA**: `npm run gate:auditoria --hook` corre en el pre-commit y **falla**
-si el commit la toca.
+El portal está repartido en áreas (`auditoria/areas.mjs`), cada una con un %
+sobre sus ejes. Un área que llega a 100 y tiene su sello de sala queda
+**CONGELADA**: `npm run gate:auditoria -- --hook` corre en el pre-commit y
+**falla** si el commit la toca.
 
-**Antes de tocar un área congelada: preguntarle al usuario.** No es una
-formalidad del gate — es literalmente lo que pidió. Después:
+**Antes de tocar un área congelada: preguntarle al usuario.** Después:
 
 ```bash
 npm run auditoria:desbloquear -- <area> "por qué se toca"
@@ -1373,34 +662,22 @@ npm run auditoria:sellar -- <area> "qué se corrió para verificarlo"
 ```
 
 Mientras el desbloqueo esté abierto, `npm run gate:auditoria` (sin `--hook`)
-**falla**. Ésa es la mitad «verificación después»: el commit puntual pasa, el
-trabajo no se cierra. Son dos chequeos y no uno a propósito — uno que bloquea
-cada commit del trabajo en curso enseña a escribir `--no-verify`, y uno que sólo
-avisa se olvida el día que hay prisa.
+**falla**: el commit puntual pasa, el trabajo no se cierra.
 
-**El % no se escribe a mano.** Sale de `auditoria/puntuar.mjs`, que tiene las
-reglas del cálculo adentro. El gate rechaza un `pct` que no derive de los ejes,
-y rechaza un eje en 90 o más **sin evidencia escrita** — un puntaje sin
-evidencia es una opinión, y una opinión se hereda de la sesión anterior sin que
-nadie pueda volver a mirarla.
+- **El % no se escribe a mano**: sale de `auditoria/puntuar.mjs`. Un eje en 90 o
+  más exige evidencia escrita.
+- **El sello de sala es un TOPE, no un sumando**: sin él, un área no pasa de
+  `TOPE_SIN_SELLO` (`areas.mjs`); el 100 lo da una corrida real con datos de
+  producción.
+- **Un archivo, tabla, función o cron sin área hace fallar el gate.** Al crear
+  una vista o una tabla, agregarla a `areas.mjs`.
 
-**El sello de sala es un TOPE, no un sumando.** Doce ejes en verde topan en 95;
-el 100 lo desbloquea una corrida real con datos de producción. Si fuera un
-sumando, un área podría compensar la falta de prueba real con puntaje de otro
-lado — que es exactamente la confusión entre «construido» y «funciona». Hoy hay
-catorce ítems en memoria que dicen «falta probarlo en sala».
-
-**Un archivo, tabla, función o cron sin área hace fallar el gate.** No es
-contabilidad: lo que no está mapeado no entra en ningún porcentaje, y el día que
-alguien agregue una vista sin mapearla el portal diría «88% auditado» sobre un
-denominador viejo. Al crear una vista o una tabla, agregarla a `areas.mjs`.
-
-El informe completo —los 221 hallazgos, qué está bien, y las tres veces que el
-instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`.
+Informe completo: `docs/AUDITORIA-PORTAL-2026-08-23.md`.
 
 ---
 
 ## Estándares del proyecto
+
 - Ver `DESIGN.md` para patrones de UI (glassmorphism, filter pills, tabs, search)
 - Siempre usar `LiquidSelect` en lugar de `<select>` nativo
   - **El placeholder NUNCA va como opción** (2026-10-08). `{ value: '', label: '¿De qué sucursal?' }`
@@ -1419,383 +696,182 @@ instrumento mintió antes de acertar— en `docs/AUDITORIA-PORTAL-2026-08-23.md`
     el color sea opaco. Verificar con lupa, no con `getComputedStyle`.
 - Badges `es_antibiotico=true` → "Bajo Receta" (NUNCA "Abx")
 - Toda acción de usuario → `appendAuditLog` (staffStore → `audit_logs`)
-- **Impresión en ticketera: `await imprimirDocumento(ticket)` de
-  `src/utils/ticketPrint.js`**, y nada más — intenta el envío sin diálogo y cae al
-  diálogo del navegador si esta computadora no lo tiene. **No elegir el camino a
-  mano ni escribir un segundo maquetador.** El ancho del rollo NO se pasa: es un
-  ajuste de la computadora (`leerAjustesDeImpresion`), porque la ticketera está
-  enchufada a un equipo concreto. `ok: true` significa *recibido*, nunca *salió
-  papel*: la respuesta del programa de la caja es opaca y no se puede prometer en
-  pantalla lo que no se sabe. Cuatro cosas que se rompen solas: **sólo ASCII** (el
-  rollo no lee UTF-8 — «NUÑEZ» salió `NUÆEZ`), **54 columnas** en letra chica y 40
-  en normal, **alinear rellenando y nunca con `ESC a`** (sus códigos no mandan en
-  esa impresora), y **el papel no tiene tema** — sólo negro, sin fondos rellenos,
-  sin tokens ni `rounded-*`. La receta completa, campo por campo, en la §5 de
-  `docs/IMPRESION-EN-TICKETERA-2026-08-13.md`; la geometría está anclada en
-  `tests/unit/ticketPrint.test.js` contra un ticket real. Prueba de papel en
-  Sistema → Prueba de impresión.
-- Bumpar la versión en cada commit con `npm run version:bump` (la entrada del
-  changelog va en `CHANGELOG.md`, nunca en `src/version.js`)
-- **Un formulario largo se guarda solo: `npm run gate:borradores`.** El portal
-  cierra la sesión sola cuando nadie usa la pantalla, y desde v2.647.0 ese plazo
-  se configura por cargo (los de sala están en 5 minutos). Un formulario vive en
-  memoria: cuando la sesión se cierra se pierde todo lo escrito y no queda
-  rastro. El aviso «¿Sigues ahí?» evita la SORPRESA, no la PÉRDIDA — nadie
-  vuelve a tiempo si se fue diez minutos. A partir de **6 controles de captura**,
-  el archivo guarda borrador con `saveDraft`/`loadDraft` de
-  `src/utils/draftUtils.js`, o va a `EXCEPCIONES` de `scripts/draft-gate.mjs`
-  **con su motivo escrito** (el único que hay hoy: el conteo cíclico, que guarda
-  renglón por renglón). El baseline es la deuda del día que se escribió el gate
-  y **sólo baja**: no se regenera para tapar un hallazgo nuevo.
+- **Impresión en ticketera: `imprimirDocumento(ticket)`, y ningún otro camino.**
+  Se importa de `src/utils/imprimirDiferido.js` —desde una pantalla
+  `@nucleo/utils/imprimirDiferido`, desde un hook del núcleo
+  `../utils/imprimirDiferido`—: misma firma, y carga la ticketera recién al
+  imprimir (regla de librerías pesadas). `src/utils/ticketPrint.js` es la
+  implementación: importarlo estático desde una pantalla la mete en el chunk de
+  la vista; directo, sólo desde código que ya se carga diferido o desde las
+  pruebas. Intenta el
+  envío sin diálogo y cae al diálogo del navegador. **No elegir el camino a mano
+  ni escribir un segundo maquetador.** El ancho del rollo NO se pasa: es un
+  ajuste de la computadora (`leerAjustesDeImpresion`). `ok: true` significa
+  *recibido*, nunca *salió papel*. Cuatro cosas que se rompen solas: **sólo
+  ASCII** («NUÑEZ» salió `NUÆEZ`), **54 columnas** en letra chica y 40 en
+  normal, **alinear rellenando y nunca con `ESC a`**, y **el papel no tiene
+  tema** (sólo negro, sin fondos, sin tokens ni `rounded-*`). Receta campo por
+  campo: §5 de `docs/IMPRESION-EN-TICKETERA-2026-08-13.md`; geometría anclada en
+  `tests/unit/ticketPrint.test.js`. Prueba de papel en Sistema → Prueba de
+  impresión.
 - **La pestaña activa de una vista vive en la DIRECCIÓN, nunca en `useState`.**
-  El hook canónico es `usePestanaEnUrl` (`src/plataforma/usePestanaEnUrl.js`) y vale
-  también para las vistas nuevas. Una pestaña en memoria se pierde con cualquier
-  recarga: F5 —o volver por el historial, o abrir el enlace que alguien pasó—
-  devuelve a la primera sin decir nada, y como no falla nada nadie lo reporta
-  como bug sino como «la pantalla se movió sola». Medido el 2026-08-20: de las
-  29 vistas con pestañas, **9 lo hacían bien y 20 no**. Lo vigila la categoría
-  `pestana-fuera-de-la-url` de `npm run gate:design`, bloqueante en cero. El
-  detalle —por qué valida contra las pestañas visibles y no contra la lista
-  entera, y cuándo se REEMPLAZA en vez de empujar al historial— en DESIGN.md
-  §14 · ViewTabBar.
-- **Antes de cerrar trabajo que toque consultas, índices o pantallas de
-  consulta: `npm run gate:perf`.** Mide contra producción. Nació el 2026-08-18,
-  después de que un reporte de sala («al buscar se traba») destapara **siete**
-  problemas de velocidad que llevaban meses vivos: un buscador que salía con la
-  primera tecla y traía 16,722 filas, un `Parallel Seq Scan` de 775,868 filas
-  para devolver 30, una vista que normalizaba fila por fila **dos veces**, la
-  tabla más grande de la base sin VACUUM programado, y tres índices que faltaban.
-  Ninguno dio error, ninguno apareció en un log, ninguno falló un gate — porque
-  no había ninguno que midiera velocidad. **Se enteró un usuario antes que el
-  repo.**
-
-  Tiene cuatro secciones y sólo una mira el reloj: constantes del código,
-  existencia de índices/columnas/crons, **forma del plan** (`EXPLAIN` sin
-  `ANALYZE`, determinista: ¿entra por índice o barre?) y recién después los
-  tiempos. La protección real es la estructural — los tiempos contra producción
-  compartida son ruidosos, así que sus techos están ~5× sobre lo medido a
-  propósito: vigilan que algo no vuelva a costar 700 ms, no que baje de 10 a 8.
-  Un gate que falla al azar se termina ignorando.
-
-  **El presupuesto NO se sube para que calle.** `--update-baseline` sólo BAJA
-  números, después de una mejora medida. En el hook de pre-commit corre sólo la
-  sección local (`--hook`), y únicamente si el commit toca los tres archivos
-  donde viven esas constantes: un gate de commit que necesita red falla sin
-  conexión y enseña a usar `--no-verify`.
-- **Antes de cerrar trabajo que agregue un cron, cambie una cadencia o toque una
-  edge function que habla con el sistema de origen: `npm run gate:eficiencia`.**
-  Nació el 2026-08-20 preguntándose si un barrido nuevo saturaba el sistema:
-  era 1 disparo al día, y el que pedía de verdad era la vigilancia de los cortes
-  —2.863 disparos, 13 peticiones cada uno, ~25.000 al día— que llevaba semanas
-  así sin que nadie lo mirara, porque **la cadencia vive en producción y el
-  costo por corrida vive en el código, y nada los juntaba**.
-
-  No mide velocidad (eso es `gate:perf`): mide **volumen y silencio**. Su
-  manifiesto `CRONS` declara, por cron, cuántas peticiones cuesta una corrida
-  **con su motivo escrito**; el gate suma peticiones/día contra el baseline
-  —que **sólo baja**—, y contra producción comprueba que ningún cron esté sin
-  declarar, que ninguna cadencia se haya apretado, que lo declarado siga vivo
-  (`backup-critical-tables` estuvo 17 días muerto) y que las llamadas salientes
-  contesten 200 (un redeploy sin `--no-verify-jwt` las deja en 401 **antes de
-  ejecutar una línea**, y ya pasó tres veces).
-
-  Un cron que falla se mide por **tasa, no por tropiezo**: un `job startup
-  timeout` suelto es un aviso, el 5% es rojo. Y un cron nuevo se mide antes de
-  entrar: `sistema: null` es deuda declarada, no un número inventado.
-- **Toda salida de datos del portal se ANOTA, y el que exporta no firma.** Desde
-  el 2026-08-24 hay `export_log`, y se escribe por `registrar_egreso(modulo,
-  formato, filas, detalle)` — nunca con un `INSERT` del cliente. El motivo no es
-  estilo: `export_log.employee_id` tiene que ser la **ficha** (`employees.id`) y
-  el navegador conoce la **cuenta** (`auth.users.id`); para **33 de las 42
-  personas** que usan el portal esos dos ids no son el mismo valor, así que un
-  `INSERT` con `session.user.id` lo rechaza la policy **para la mayoría de la
-  gente y en silencio**. La firma sale de `auth_employee_id()` adentro de la
-  función. En el frente, `registrarEgreso` de `src/data/egreso.js`; **nunca
-  lanza** —una descarga no puede fallar porque no se pudo anotar— pero avisa en
-  consola. Y `exportCsv` **exige el módulo**: sin él el archivo baja igual pero
-  el egreso queda como `sin-declarar`, que es un hallazgo visible en la tabla en
-  vez de un hueco. Cuatro salidas no usan el canónico y se armaban el CSV a mano
-  —la planilla del banco, el directorio de personal, asistencia y Mín·Máx—: al
-  agregar una salida nueva, usar `exportCsv`.
-- **Un control de seguridad nuevo se instala UNA vez y se enciende con una fila.**
-  `security_config` tiene tres estados —`observar` → `avisar` → `exigir`— y los
-  helpers `sec_exige(key)` / `sec_avisa(key)`, los dos `STABLE` para envolverlos
-  en `(SELECT …)`. Que el interruptor sea una **fila** y no una policy es el
-  punto: cambiar una policy es DDL sobre tabla caliente, o sea el outage del
-  2026-07-08, así que **la marcha atrás nunca puede ser una migración**. Su
-  default es `false`: si la fila no existe, NO exige — un control mal escrito
-  nunca deja a nadie afuera por accidente. Detalle en
-  `docs/SEGURIDAD-Y-ACCESO.md`.
-- **Antes de cerrar trabajo que toque cortes de caja, cobros de crédito o
-  movimientos de caja: `npm run gate:cortes`.** Mide contra producción y
-  pregunta una sola cosa: ¿el efectivo que entró al cajón está en el esperado
-  de algún corte del día? Nació el 2026-09-02, después de que el portal
-  anunciara +$78.40 de sobrante sobre un faltante de $9.85 — ver la sección de
-  cuentas por cobrar. **No va en el pre-commit**: necesita red, y un gate de
-  commit que falla sin conexión enseña a escribir `--no-verify`.
-- **Antes de cerrar trabajo que toque el libro bajo receta, el catálogo de
-  antibióticos o `dispensacion_clases`: `npm run gate:receta`.** Mide contra
-  producción y pregunta si el libro ve todo lo que la norma manda que vea.
-  Nació el 2026-09-03: el contenido del libro lo decide `products
-  .es_antibiotico`, una casilla que mantiene el ERP **a mano**, y el día que
-  entre una presentación nueva de una molécula controlada sin marcar se
-  despacha en el mostrador y no aparece en el libro — sin error y sin fila de
-  menos visible.
-
-  **La regla NO es «todo antibiótico».** El RTS 6.4.3 remite «al listado
-  emitido oficialmente por SRS», y son **seis moléculas** (cefixima,
-  azitromicina, claritromicina, levofloxacina, moxifloxacina, norfloxacina)
-  **más todo antibiótico inyectable**. Lo demás —amoxicilina, metronidazol,
-  ciprofloxacina oral— es venta libre. Auditar contra ATC J01 da un número
-  grande y falso: pasó, y decía que faltaba el 80%.
-
-  **El gate detecta por PRINCIPIO ACTIVO, nunca por marca.** Su primera versión
-  tenía un mapa de marcas y acusó a `BACTIVANZ 300` de ser claritromicina —su
-  principio activo dice CEFDINIR—. Por eso `products.principio_activo` es
-  deuda declarada en `scripts/receta-baseline.json`, con trinquete que **sólo
-  baja**: cada producto sin él es uno que el gate no puede mirar. **No va en el
-  pre-commit** (necesita red).
-- **Antes de cerrar trabajo que toque una tabla, una ficha o un diálogo:
-  `npm run gate:movil`** (bloqueante en cero) y el barrido de la ruta que
-  tocaste. El canon completo está arriba, en «el teléfono no es la pantalla
-  chica»: lo que hay que recordar acá es que **un gate en verde no dice que la
-  vista se vea bien** — lee el fuente, y hay filas que desde el fuente son una
-  caja cerrada. Eso lo cierra el barrido, y las dos capas juntas no cubren los
-  diálogos: ésos los abre `dialogos-movil`.
-- **`npm run gate:nombre` — el nombre de una persona sale del canónico.** El
-  portal muestra SIEMPRE primer nombre + primer apellido: `shortEmployeeName`
-  de `src/utils/nameUtils.js`. Corre en el pre-commit cuando el commit toca un
-  `.jsx` y **bloquea en cero**.
-
-  Nació el 2026-09-03 de un reporte de una línea —«¿por qué sale el nombre
-  completo? hay reglas ya definidas que lo prohíben»— sobre una tarjeta que
-  decía «EDWIN ALEXANDER NUNEZ JOYA» **junto a un avatar que decía «EN»**. Ahí
-  está el patrón: los componentes le pasan la persona entera a
-  `AvatarConEstado`, que sí llama al canónico para las iniciales, y pintan
-  `persona.name` crudo dos píxeles al lado. Eran **ocho** sitios, más **tres
-  copias de la regla escritas a mano**, dos de ellas mal: `.split(' ')
-  .slice(0, 2)` toma las dos PRIMERAS palabras, o sea dos nombres y ningún
-  apellido.
-
-  **El modo de falla es el silencio.** Todos tenían `truncate`: el nombre largo
-  no desbordaba nada, se cortaba a la mitad. No hay error ni layout roto — se
-  reporta como «se ve raro», meses después.
-
-  Las excepciones son las que `nameUtils` ya declara —Personal, donde el nombre
-  completo ES el dato, y todo lo que SALE del portal: CSV, planilla, papel— más
-  quien no es un empleado (el receptor de un DTE es un cliente). Van en
-  `EXCEPCIONES` de `scripts/nombre-gate.mjs` **con su motivo y su cuenta**: por
-  archivo a secas no alcanza, y se comprobó — al fabricarle la regresión, la
-  excepción legítima de un archivo se tragó un defecto nuevo en ese mismo
-  archivo.
-
-  Tres cosas quedan FUERA a propósito, las tres medidas: `title`/`alt`/
-  `aria-label` (el nombre entero ahí COMPLETA al corto, no lo contradice —
-  contarlos daba 24 hallazgos de los cuales 5 eran texto), las props de
-  componente (el nombre viaja a otro que puede resolverlo, como hace
-  `AutorLinea`) y las condiciones `{x.name && …}`. Pero `{x.name || '—'}` SÍ
-  cuenta: ahí la izquierda es el valor, no un test. Esa distinción faltaba en
-  la primera versión y puso el gate en verde tapando tres sitios reales.
-
-- **«¿Esta factura cuenta como venta?» se contesta con `public.venta_valida(estado)`,
-  y «¿entra al libro?» con `public.venta_fiscal(estado, recibido_mh)`** (U2,
-  2026-09-26). Nunca `estado NOT IN ('NULA','DTE INVALIDADO EN MH')` ni `estado =
-  'FINALIZADA'` a mano: eran tres redacciones en ~100 funciones que coincidían
-  por casualidad. Un estado que nadie conoce NO cuenta (decisión del usuario) y
-  `avisar_estados_de_venta_desconocidos` le avisa al cargo de alertas técnicas.
-  Las dos funciones van **sin `SET search_path` a propósito**: así se inlinean
-  y el planificador sigue usando el índice de `estado` (excepción razonada a la
-  regla 4). **El pre-commit lo vigila**: `migration-gate` rechaza una migración
-  nueva con el filtro a mano, salvo `-- venta-a-mano: <motivo>` (el circuito de
-  Hacienda pregunta otra cosa: «¿está anulada?»). Nació de que, el mismo día que
-  se migró, otra sesión reaplicó su copia vieja de una función de puntos 38
-  segundos después. Al reescribir una función que lee `sales_invoices`, partir
-  de su definición VIVA (`pg_get_functiondef`), no de un archivo viejo.
-- **`npm run gate:tdz` — leer una variable antes de su `const`.** Corre en el
-  pre-commit cuando el commit toca `src/` y **bloquea en cero**. Es hermano de
-  `gate:undefinidos`: aquél caza la variable que NO EXISTE, éste la que existe
-  pero **todavía no**.
-
-  Nació el 2026-09-02 con Efectivo reventando entera al entrar. Un hook leía
-  `nombreSala` **68 líneas antes** de su `const`, y eso **no da `undefined`**
-  —que habría pasado inadvertido—: lanza en CADA render. Lo caro no es el
-  defecto, es el AVISO: `Cannot access 'E' before initialization`, con el
-  nombre **minificado** y la pila apuntando a `react-dom`, porque quien llama
-  al componente es React. O sea que no dice ni qué variable ni qué archivo — se
-  buscó primero en imports circulares, que eran **cero en todo `src/`**.
-
-  **Encender `no-use-before-define` a secas no sirve: denuncia 241 y sólo una
-  puede fallar.** Por eso el gate las separa, y el corte es DECIDIBLE, no una
-  corazonada: si entre la lectura y el ámbito que declara la variable **no hay
-  ninguna función**, las dos corren en la misma pasada y la lectura llega
-  antes — *lanza seguro*. Si hay una función en el medio, lo que corre es su
-  definición y no su cuerpo: cuando alguien la llame, el `const` ya está. Sale
-  del árbol de ámbitos del propio linter.
-
-  El baseline (`scripts/tdz-baseline.json`) lleva SÓLO las diferidas y **sólo
-  baja**. «Diferida» significa *no puede fallar por llegar temprano*, no *está
-  bien escrita*. **Al mover un hook o un `useMemo`, comprobar que todo lo que
-  lee ya esté declarado.**
-- **`npm run gate:nucleo` — la lógica no conoce al navegador.** Corre en el
-  pre-commit cuando el commit toca `src/{data,utils,store,hooks,context,constants}`.
-  Cuenta `window`/`document.`/`navigator.`/`localStorage`/`import.meta.env` y los
-  imports de pantallas o íconos en esa lógica, y **falla si algo sube**. Es la
-  preparación para una app nativa: la lógica tiene que poder correr fuera del
-  navegador para reutilizarse tal cual. El baseline es la deuda del 2026-09-24
-  (359 usos en 64 archivos) y **sólo baja**. Si hace falta el navegador, se
-  pide por el adaptador de la plataforma; si hace falta un ícono, la lógica
-  devuelve su NOMBRE. Plan y fases en `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
-  **Al importar el núcleo desde una pantalla, `@nucleo/utils/…`, nunca
-  `../../utils/…`; desde el núcleo, la plataforma va por `@plataforma/…`.** Lo
-  vigila `npm run gate:alias` en el pre-commit (`--escribir` en
-  `scripts/nucleo-alias.mjs` lo corrige solo). Es lo que deja mudar el núcleo a
-  `packages/core` sin tocar pantallas.
-- **`npm run gate:alcance` — nadie toca lo de otra sucursal cambiando un
-  número.** Las edge functions usan la llave del servidor y las funciones
-  `SECURITY DEFINER` saltan el RLS: el único freno por sucursal está en su
-  código. Nació el 2026-10-02 de `pedir_correccion`, que aceptaba la sala del
-  navegador sin compararla, y al buscar el patrón apareció en recibir pedidos,
-  anotar vales y despachar desde Bodega, más dos funciones abiertas a internet.
-  **Toda edge function nueva, y toda función de la base que reciba una
+  Hook canónico: `usePestanaEnUrl` (`src/plataforma/usePestanaEnUrl.js`), también
+  para vistas nuevas. Detalle en DESIGN.md §14 · ViewTabBar.
+- **Un formulario largo se guarda solo.** La sesión se cierra sola por
+  inactividad (plazo por cargo) y lo escrito se pierde. A partir de 6 controles
+  de captura, el archivo guarda borrador con `saveDraft`/`loadDraft` de
+  `src/utils/draftUtils.js`, o va a `EXCEPCIONES` de `scripts/draft-gate.mjs` con
+  su motivo escrito.
+- **Toda salida de datos se ANOTA, y el que exporta no firma**: por
+  `registrar_egreso(modulo, formato, filas, detalle)` (en el frente,
+  `registrarEgreso` de `src/data/egreso.js`, que nunca lanza), nunca con un
+  `INSERT` del cliente — la firma sale de `auth_employee_id()` y para la mayoría
+  de la gente la ficha y la cuenta son ids distintos. Una salida nueva usa
+  `exportCsv`, y `exportCsv` exige el módulo.
+- **Un control de seguridad nuevo se instala UNA vez y se enciende con una
+  fila** de `security_config` (`observar` → `avisar` → `exigir`; helpers
+  `sec_exige(key)` / `sec_avisa(key)`, envueltos en `(SELECT …)`). La marcha
+  atrás nunca puede ser una migración (DDL sobre tabla caliente). Sin fila, NO
+  exige. Detalle: `docs/SEGURIDAD-Y-ACCESO.md`.
+- **«¿Cuenta como venta?» = `public.venta_valida(estado)`; «¿entra al libro?» =
+  `public.venta_fiscal(estado, recibido_mh)`.** Nunca el filtro de estados a
+  mano: `migration-gate` lo rechaza salvo `-- venta-a-mano: <motivo>`. Las dos
+  van sin `SET search_path` a propósito (se inlinean). Al reescribir una función
+  que lee `sales_invoices`, partir de su definición VIVA (`pg_get_functiondef`).
+- **El nombre de una persona sale de `shortEmployeeName`** (`src/utils/nameUtils.js`):
+  primer nombre + primer apellido. Excepciones —Personal, lo que SALE del portal
+  (CSV, planilla, papel), quien no es empleado— en `EXCEPCIONES` de
+  `scripts/nombre-gate.mjs` con motivo y cuenta.
+- **La lógica no conoce al navegador**: `src/{data,utils,store,hooks,context,constants}`
+  no usa `window`/`document`/`localStorage`/`import.meta.env` ni importa
+  pantallas o íconos (el navegador se pide por `@plataforma/…`; un ícono se
+  devuelve por su NOMBRE). Desde una pantalla, el núcleo se importa como
+  `@nucleo/…`, nunca `../../utils/…` (`node scripts/nucleo-alias.mjs --escribir`
+  lo corrige). Plan: `docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md`.
+- **Un módulo nuevo del portal nace también nativo en la app**: su pantalla en
+  `apps/mobile` (iOS con SwiftUI/`@expo/ui`, Android con las piezas `.android.js`)
+  registrada en `apps/mobile/pantallas.js`, o en `EXCEPCIONES` de
+  `scripts/app-nativa-gate.mjs` con su motivo.
+- **La base es un CONTRATO**: `src/types/database.ts` son los tipos de
+  producción. Al cambiar la base, `npm run tipos:base` y commitear los tipos con
+  la migración.
+- **`src/constants/tokens.json` no se edita a mano**: sale de `src/index.css`
+  con `npm run tokens:exportar`.
+- **El libro bajo receta no es «todo antibiótico»**: son las moléculas del
+  listado de SRS más todo antibiótico inyectable, y el gate detecta por
+  PRINCIPIO ACTIVO, nunca por marca.
+- **Toda edge function nueva, y toda función de la base que reciba una
   sucursal, se declara en `scripts/alcance-manifest.json` con su guarda**
-  (`alcance`, `modulo-de-red`, `sin-sala`, `cron`, `publica`, `solo-servidor`);
-  sin declarar, el gate falla. `modulo-de-red` significa «no compara la sala
-  porque hoy sólo tienen el módulo cargos de toda la red», y el gate lo
-  comprueba contra `role_permissions`: **darle ese módulo a un cargo de sala lo
-  pone en rojo**. Declarar `alcance` es una afirmación sobre CADA acción — el
-  gate lee el archivo entero y no ve una acción sin chequeo al lado de otra que
-  sí lo tiene. Las deudas viven en `scripts/alcance-baseline.json` y **sólo
-  bajan**. Mira también los **buckets**: uno privado cuya policy de lectura sea
-  `bucket_id = '…'` a secas lo lee entero cualquiera con sesión —así estaban los
-  2,035 comprobantes de caja de `payment-proofs`— y tiene que estar en
-  `buckets_abiertos` con su motivo. En el pre-commit corre la parte local cuando
-  el commit toca `supabase/functions/`. Plan:
-  `docs/planes-cerrados/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md`.
-- **`npm run gate:app-nativa` — un módulo nuevo del portal nace también nativo
-  en la app.** Al agregar un módulo o vista al portal (`MODULE_MAP`), en el mismo
-  trabajo se crea su pantalla nativa en `apps/mobile` (iOS con SwiftUI/`@expo/ui`,
-  Android con las piezas Material `.android.js`) y se registra en
-  `PANTALLAS_DE_LA_APP`; si de verdad no corresponde, va a `EXCEPCIONES` de
-  `scripts/app-nativa-gate.mjs` con su motivo. Sin pantalla nativa el módulo no
-  falla: se abre como el portal web dentro de la app, y así entraban las vistas
-  nuevas sin que nadie lo notara (2026-10-12). Corre en el pre-commit cuando el
-  commit toca `moduleMap.js`, `App.jsx` o `pantallas.js`.
-- **`npm run gate:tipos` — la base es un CONTRATO.** `src/types/database.ts`
-  son los tipos de producción y el cliente de Supabase se declara con ellos:
-  una tabla, columna o parámetro de `.rpc()` que no existe da un aviso de `tsc`
-  en vez de un cero en pantalla. Trinquete por archivo del núcleo
-  (`scripts/tipos-baseline.json`, **sólo baja**). **Al cambiar la base, correr
-  `npm run tipos:base`** y commitear los tipos con la migración; `--remoto`
-  compara con producción y falla si quedaron viejos. Tarda ~20 s, así que no va
-  en el pre-commit: se corre al cerrar trabajo que toque el núcleo o la base.
-- **`npm run gate:tokens` — la paleta de la app sale del CSS.**
-  `src/constants/tokens.json` lo genera `npm run tokens:exportar` desde
-  `src/index.css`; **no se edita a mano**. Corre en el pre-commit cuando el
-  commit toca `index.css` y falla si el JSON quedó viejo, si un token apunta a
-  una variable que no existe (el navegador lo calla: así vivió `--chart-8`
-  sin color desde v2.139.0) o si aparece una consulta de medios nueva que el
-  export no clasifica. Al cambiar un token: editar el CSS y regenerar.
-- **Antes de cerrar cualquier trabajo de tema/estandarización visual (colores
-  crudos, elementos nativos del navegador), correr `npm run gate:design`.**
-  Debe pasar en verde — las excepciones legítimas viven en
-  `scripts/design-gate.mjs` (const `EXCEPTIONS`) y en `DESIGN.md` §6/§14. Este
-  gate reemplaza los regex ad-hoc de sesiones anteriores que se perdían y
-  dejaban huecos reales sin detectar (ver
-  `docs/planes-cerrados/AUDITORIA-TEMA-2026-07.md` y memoria
-  `project_theme_audit_2026_07_22`).
+  (`alcance`, `modulo-de-red`, `sin-sala`, `cron`, `publica`, `solo-servidor`).
+  `modulo-de-red` se comprueba contra `role_permissions`: darle ese módulo a un
+  cargo de sala pone el gate en rojo. Declarar `alcance` es una afirmación sobre
+  CADA acción del archivo.
+  Un bucket privado cuya policy de lectura sea `bucket_id = '…'` a secas va en
+  `buckets_abiertos` con su motivo.
+- **Un cron nuevo o una cadencia apretada** se declara en el manifiesto `CRONS`
+  de `gate:eficiencia` con cuántas peticiones cuesta, y su motivo
+  (`sistema: null` es deuda declarada, no un número inventado).
 
-  **Nunca regenerar el baseline para tapar un hallazgo nuevo** — si una
-  categoría subió, es código nuevo que hay que arreglar. El ratchet, el estado
-  de las 47 categorías y cuándo sí se regenera: skill **`design-gate`**.
+### Los gates — una sola tabla
 
-  **El baseline volvió a estar VACÍO el 2026-08-06**: las 47 categorías en cero
-  y bloqueantes. Empezó ese día con tres —`vidrio-a-mano` (135),
-  `material-a-mano` (18), `carril-pildora` (15)— y las tres se bajaron con la
-  receta de §20 de `docs/planes-cerrados/PLAN-MATERIALES-2026-08-02.md`.
-  O sea que hoy **cualquier hallazgo nuevo falla el gate**, no suma al ratchet.
+Dos reglas valen para todos: **un baseline es un trinquete y sólo BAJA** —nunca
+se regenera ni se sube un presupuesto para tapar un hallazgo nuevo—, y **un gate
+que necesita red no va en el pre-commit**: falla sin conexión y enseña a
+escribir `--no-verify`. Esos se corren a mano al cerrar el trabajo que tocan.
+Antes de creerle un cero a un gate, fabricarle la regresión que debería cazar.
+Por qué existe cada uno: `docs/reglas/gates.md` y el encabezado de su script.
+
+| gate | qué vigila | pre-commit | red | detalle |
+|---|---|---|---|---|
+| `gate:version` | `APP_VERSION` sube y `## v<versión>` está en `CHANGELOG.md` | siempre | no | `scripts/version-gate.mjs` |
+| `gate:auditoria` | áreas congeladas; todo mapeado en `areas.mjs`; superficie `anon`; tablas sin `created_at` | `-- --hook`, siempre | completo: sí | `auditoria/` |
+| `gate:migrations` | cada `apply_migration` tiene su archivo con la versión del servidor; `CORTE` no se mueve | si toca `supabase/migrations` | `-- --remote`: sí | skill `migraciones` |
+| `gate:data` | techo de 1000 filas, `.limit(1000)`, `in-columna-repetida`, literales booleanos contra `scripts/db/boolean-columns.json`, errores tragados | si toca `src/` o `supabase/functions/` | no | — |
+| `gate:alcance` | nadie toca otra sucursal cambiando un número; `alcance-manifest.json`; buckets abiertos | si toca `supabase/functions/` | completo: sí | `docs/planes-cerrados/PLAN-ALCANCE-POR-SUCURSAL-2026-10-02.md` |
+| `gate:seguridad` | una edge function no decide permisos con `user_metadata`; policies abiertas | si toca `supabase/functions/` | completo: sí | `docs/SEGURIDAD-Y-ACCESO.md` |
+| `gate:eficiencia` | peticiones/día al sistema de origen por cron (baseline), `fetch` sin plazo, crons vivos, salientes en 200; un cron que falla se mide por tasa, no por tropiezo | si toca funciones o migraciones | completo: sí | `scripts/eficiencia-gate.mjs` |
+| `gate:perf` | constantes del buscador, índices, forma del plan, tiempos (D), planes genéricos (E), bloques por llamada (F) | `--hook` sólo si toca sus 3 archivos | completo: sí | `docs/reglas/portal-lento.md` |
+| `gate:undefinidos` | variable que no existe (`no-undef`) | si toca `src/` | no | — |
+| `gate:tdz` | variable leída antes de su `const` en la misma pasada (lanza en cada render): al mover un hook o un `useMemo`, comprobar que lo que lee ya esté declarado | si toca `src/` | no | `scripts/tdz-baseline.json` |
+| `gate:busqueda` | buscadores fuera de la regla única (`src/utils/busqueda.js` y `busqueda_*`) | si toca `src/` | no | `docs/planes-cerrados/PLAN-BUSQUEDA-UNIFICADA-2026-09-25.md` |
+| `gate:permisos` | registro de permisos contra el código que los consulta | si toca `src/` | no | `scripts/permissions-gate.mjs` |
+| `gate:alias` | el núcleo cruza su borde por `@nucleo/…` / `@plataforma/…` | si toca `src/` o `tests/` | no | `scripts/nucleo-alias.mjs` |
+| `gate:hora` | toda hora visible en 12 horas y desde `src/utils/hora.js` | si toca `src/` o `supabase/functions/` | no | `scripts/hora-gate.mjs` |
+| `gate:nombre` | nombre de persona por `shortEmployeeName` | si toca un `.jsx` | no | `scripts/nombre-gate.mjs` |
+| `gate:nucleo` | la lógica no gana usos del navegador | si toca `src/{data,utils,store,hooks,context,constants}` | no | `scripts/nucleo-baseline.json` |
+| `gate:consultas` | las pantallas no le hablan a la base (va a `src/data` o `src/hooks`) | si toca `src/views` o `src/components` | no | `scripts/consultas-gate.mjs` |
+| `gate:movil` | elementos con variante móvil canónica escritos a mano | si toca `src/views` o `src/components` | no | DESIGN.md §32 |
+| `gate:rutas` | direcciones en español, título de pestaña, ningún ítem del menú al 404 | si toca `App.jsx` o `moduleMap.js` | no | DESIGN.md §33 |
+| `gate:app-nativa` | todo módulo tiene pantalla nativa o excepción | si toca `moduleMap.js`, `App.jsx` o `apps/mobile/pantallas.js` | no | `scripts/app-nativa-gate.mjs` |
+| `gate:tokens` | `tokens.json` igual a lo que dice `index.css`; ningún token a una variable inexistente | si toca `index.css` o `tokens.json` | no | — |
+| `gate:pdf` | el PDF del Corte Z ocupa una hoja por sucursal | si toca `src/utils/corteZPrint.js` | no | — |
+| (vitest `anexoColumnas`) | la forma de los anexos de Hacienda | si toca lo que los produce | no | `docs/ANEXOS-HACIENDA-2026-08-11.md` |
+| `gate:design` | colores crudos, elementos nativos, vidrio y materiales a mano (ratchet contra `scripts/design-gate-baseline.json`) | no | no | skill `design-gate`, DESIGN.md §6/§14 |
+| `gate:doc` | los bloques de código de DESIGN.md pasan el mismo gate que el código | no | no | `scripts/design-doc-gate.mjs` |
+| `gate:borradores` | formularios de 6+ controles sin borrador | no | no | `scripts/draft-gate.mjs` |
+| `gate:bundle` | librerías pesadas fuera del cierre estático de cada ruta (`PESADAS`) | no (necesita `npm run build`) | no | `scripts/bundle-gate.mjs` |
+| `gate:edge` | `deno check` de `supabase/functions/` | no | no | `scripts/edge-gate.mjs` |
+| `gate:ux` | ratchet del barrido de escritorio (lee su informe) | no | no | `scripts/ux-gate.mjs` |
+| `gate:tipos` | consultas contra los tipos de la base; `--remoto` compara con producción | no (~20 s) | `--remoto`: sí | `scripts/tipos-baseline.json` |
+| `gate:cortes` | el efectivo que entró al cajón está en el esperado de algún corte; días cerrados con efectivo sin contar | no | sí | `docs/reglas/caja-creditos-y-cierre.md` |
+| `gate:receta` | el libro bajo receta ve todo lo que la norma manda; `principio_activo` faltante es deuda | no | sí | `scripts/receta-baseline.json` |
+
+**Al cerrar** trabajo que toque consultas, índices o pantallas de consulta →
+`gate:perf`; un cron, una cadencia o una función que habla con el origen →
+`gate:eficiencia`; cortes, cobros o movimientos de caja → `gate:cortes`; el
+libro bajo receta o el catálogo de antibióticos → `gate:receta`; el núcleo o la
+base → `gate:tipos`; tema o estandarización visual → `gate:design`; una tabla,
+ficha o diálogo → `gate:movil` y el barrido de la ruta
+(`docs/CHECKLIST-VISTA-NUEVA.md`); una librería pesada → `npm run build` y
+`gate:bundle`; una edge function → `gate:alcance` y `gate:seguridad` completos;
+migraciones → `gate:migrations -- --remote`.
 
 ---
 
-## Entorno de pruebas — probar sin miedo a producción (2026-08-12)
+## Entorno de pruebas — probar sin miedo a producción
 
-**Por defecto, `npm run dev` y `npm run preview` hablan con PRODUCCIÓN.** El
-`.env` del repo apunta al proyecto real, así que cualquier clic en el navegador
-local escribe en la base de la que vive la empresa. Eso no cambió: lo que se
-agregó es un segundo camino.
+**Por defecto, `npm run dev` y `npm run preview` hablan con PRODUCCIÓN**: un
+clic en el navegador local escribe en la base real. El otro camino:
 
 ```bash
 npm run dev:staging      # el portal contra el branch de pruebas
 npm run build:staging    # compilar apuntando ahí (sale a dist-staging/)
 ```
 
-Usuario **`pruebas`**, contraseña **`pruebas2026`** (rol Gerente General). El
-portal pinta un marco y una píldora «ENTORNO DE PRUEBAS» — **derivados de la URL
-de Supabase**, no de una bandera aparte: una bandera se olvida al armar un
-`.env` nuevo, y olvidarla significa creerse en pruebas mientras se escribe en
-producción. El aviso vive fuera de `<Routes>` para aparecer también en el login,
-antes de que alguien escriba una credencial. Lógica en `src/entorno.js`.
+- Usuario **`pruebas`**, contraseña **`pruebas2026`** (Gerente General). El
+  marco y la píldora «ENTORNO DE PRUEBAS» se derivan de la URL de Supabase
+  (`src/entorno.js`), no de una bandera que se pueda olvidar.
+- **El ref vigente: `.env.staging` (`VITE_SUPABASE_URL`) o `supabase branches list`.**
+  Cambia cada vez que el branch se rehace: nunca copiarlo a un documento.
+  `.env.staging` está en `.gitignore`; `npm run pruebas:env` lo reescribe (en un
+  clon nuevo, además `VITE_VAPID_PUBLIC_KEY` y `VITE_GOOGLE_MAPS_API_KEY` del `.env`).
+- **Se mantiene solo**: `.github/workflows/entorno-pruebas.yml` corre
+  `scripts/entorno-pruebas/mantener_al_dia.mjs` todos los días a las 04:30 SV.
+  Compara migraciones, aplica las que faltan y, si eso falla, lo rehace; después
+  apaga los crons que llaman a producción, corre las fechas a hoy, da los
+  permisos de la cuenta de pruebas y, si el ref cambió, apunta las variables
+  Preview de Vercel al nuevo y recompila `dev.farmasalud.lat` (sin
+  `VERCEL_TOKEN` la corrida sale en ROJO). A mano: `npm run pruebas:al-dia`, o
+  «Run workflow» con `solo_vercel`. No hay que rehacerlo a mano; `reset` no
+  sirve (reconstruye con la historia propia del branch).
+- **Antes de creerle a una medición hecha contra el branch, comparar**:
+  `node scripts/entorno-pruebas/comparar_con_produccion.mjs`.
+- **Lo siembran cuatro migraciones, no-op en producción**: `20260729223031`
+  (roles, sucursales, permisos), `20260729223032` (buckets y sus policies),
+  `20260812160000` (productos de muestra y la cuenta de pruebas) y
+  `20260903185033` (apaga los crons que llaman por HTTP). **La cuenta de pruebas
+  sólo nace si la base no tiene ni un empleado** — no quitar esa guarda; la de
+  los crons exige que falte `admin_invoke_secret` en el vault y ≤2 fichas. Una
+  semilla que nadie necesita temprano va al final: al sembrar, la tabla tiene la
+  forma de ESE punto de la historia.
+- **Las edge functions NO están desplegadas ahí, a propósito**: varias escriben
+  en el ERP real y transmiten a Hacienda. Si hace falta probar una sin efectos
+  externos, se despliega esa sola.
+- **Desde esta Mac sólo se llega por el MCP** (`execute_sql`): los branches son
+  sólo IPv6 y sin pooler, y esta máquina no tiene IPv6, así que `psql`,
+  `supabase db push` y `db dump` no llegan desde acá. El workflow de GitHub sí
+  actualiza el branch porque usa la API de administración de Supabase, no una
+  conexión directa. Memoria `reference_branches_de_supabase_son_solo_ipv6`.
 
-**`.env.staging` está en `.gitignore`** (patrón `.env.*`), así que en un clon
-nuevo hay que crearlo: `VITE_SUPABASE_URL`/`VITE_SUPABASE_ANON_KEY` del branch
-—panel de Supabase, o `supabase branches list`— más `VITE_VAPID_PUBLIC_KEY` y
-`VITE_GOOGLE_MAPS_API_KEY` copiadas del `.env`.
-
-### El branch se construye solo
-
-Para uno limpio: borrarlo y crearlo de nuevo. Sale con el esquema completo,
-sembrado y con la cuenta puesta. Lo hacen tres migraciones, **las tres no-op en
-producción** (verificado ejecutándolas contra prod y comparando conteos):
-
-| migración | qué siembra | por qué en esa posición |
-|---|---|---|
-| `20260729223031` | `roles`, `branches`, `role_permissions` | 25 migraciones insertan permisos con `role_id` fijos; sin las filas, la FK corta el replay |
-| `20260729223032` | los 9 buckets de Storage y sus policies | se crearon desde el panel, no por migración: un `ALTER POLICY` no encontraba qué alterar |
-| `20260812160000` | 300 productos con existencias, precios, MIN·MAX + la cuenta de pruebas | va al final: nada depende de productos, y ahí las tablas ya tienen su forma definitiva |
-| `20260903185033` | apaga los crons que llaman por HTTP | va **después de todos**: apaga lo que las migraciones anteriores crearon |
-
-**La cuenta de pruebas sólo nace si la base no tiene ni un empleado.** Es lo
-único que separa «sembrar un branch» de «abrir un Gerente General en la base
-real». No quitar esa guarda.
-
-**Los crons del branch le disparaban a PRODUCCIÓN, y volvían solos cada vez que
-se rehacía.** La URL del proyecto real está escrita dentro de la migración que
-crea cada cron, así que el replay levanta 13 apuntando allá con la llave del
-branch. Producción los rechaza —el vault del branch está vacío, o sea que el
-`'Bearer ' || secreto` viaja en NULL— pero medido el 2026-09-03 eran **1,258
-llamadas con 401 en un día** sólo de `cortes-caja-30s`, más 111 de
-`drain-cliente-erp-queue`: ~1,400 peticiones basura diarias que entierran en el
-registro justo la señal que `gate:eficiencia` busca, porque un 401 legítimo —un
-redeploy sin `--no-verify-jwt`— se lee igual que estos mil. Los delató el
-`user_agent`: prod corre `pg_net/0.20.0` y el que fallaba llegaba con
-`pg_net/0.20.4`, la versión del branch.
-
-La semilla los apaga sola, y **la guarda es la ausencia de la llave misma** —no
-una bandera de entorno, que se olvida—: sin `admin_invoke_secret` en el vault
-esos crons no pueden servir para nada ahí. Pide además que la base tenga ≤2
-fichas de empleado (prod tiene 48), porque apagarle los crons a producción por
-error la deja sin sincronizar y nadie se entera hasta que falta un dato. Los 17
-crons que trabajan contra su propia base no se tocan.
-
-**Al sembrar temprano, la tabla tiene la forma de ESE punto de la historia, no
-la de hoy.** Sembrar `role_permissions` con `scope='MINE'` abortó el replay
-entero: ese valor lo acepta un CHECK de agosto. Por eso las semillas que nadie
-necesita van al final.
-
-### Las edge functions NO están desplegadas ahí, a propósito
-
-Cinco (`sync-dte-sales`, `regularizar-dte`, `push-cliente-erp`,
-`sincronizar-fichas-clientes`, `aplicar-solicitud-facturacion`) escriben en el
-ERP real y transmiten a Hacienda. Con credenciales de producción convertirían el
-entorno seguro en uno capaz de tocar el sistema real. El login por usuario **no
-las necesita** (verificado). Si hace falta probar una sin efectos externos, se
-despliega esa sola.
-
-### A los branches sólo se llega por el MCP
-
-Sus bases son **solo IPv6 y sin entrada en el pooler**, y esta máquina no tiene
-IPv6: ni `psql`, ni `supabase db push`, ni `db dump` llegan. El único canal es
-`execute_sql`/`apply_migration`. Para mover SQL grande sin gastarlo en contexto:
-generarlo en prod y escribirlo a disco con
-`supabase db query --linked -o json | node -e '...' > archivo`, meterlo en
-`schema_migrations` con SQL server-side, y **crear el branch de nuevo** — lo
-replica solo. Detalle en la memoria `reference_branches_de_supabase_son_solo_ipv6`.
+Historia, mediciones y los refs que ya no existen:
+`docs/reglas/entorno-de-pruebas.md`.

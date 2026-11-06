@@ -83,7 +83,10 @@ describe('ticket de venta', () => {
         const [cant, desc] = ticketDeVenta(factura).items.filas[0];
         // El rollo va en ASCII: se compara sin tildes.
         const primeraPalabra = desc.split(' ')[0].normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-        expect(texto).toMatch(new RegExp(`\\s${cant} ${primeraPalabra}`));
+        // Desde 2026-11-06 en dos pisos: el nombre arriba y la cantidad abajo,
+        // primera de las tres cifras.
+        expect(texto).toContain(primeraPalabra);
+        expect(texto).toMatch(new RegExp(`\\s${cant} {2,}\\$?[\\d.,]+ {2,}\\$?[\\d.,]+`));
         // El cuerpo (datos, productos, totales): el que se rellena a mano.
         const renglones = String(secciones.cuerpo).split('\n')
             // eslint-disable-next-line no-control-regex

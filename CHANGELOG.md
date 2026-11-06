@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1468.1 — Tickets: datos a dos columnas y tablas en dos pisos
+
+Tercera vuelta con el papel de Salud 4: «el encabezado hacelo de 2 columnas, así
+se aprovecha más el espacio» y «quién abona, muy pegado».
+
+- **Los datos de arriba**, de a dos por renglón donde entran, en letra normal
+  («Sala: Salud 4   Caja: 2»). Lo que no entra en media fila va solo.
+- **Las tablas** (productos, quién abona, salidas de una bolsa…) pasan a letra
+  normal y en dos pisos: el nombre arriba, a todo el ancho, y las tres cifras
+  abajo en columnas de 13. En letra chica las cifras salían pegadas.
+
+El papel queda un poco más largo cuando hay muchos renglones; a cambio cada
+cifra se lee sola.
+
 ## v2.1468.0 — El conteo que ajusta pide el lote y vence en cada renglón
 
 En un conteo que ajusta el inventario, un renglón «Sin lote» sólo dejaba poner

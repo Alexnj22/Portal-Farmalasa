@@ -145,12 +145,16 @@ describe.each([
         expect(lineasDelPie.slice(1).filter((l) => l.trim() === '')).toEqual([]);
     });
 
-    it('pone un dato por renglon, en letra normal (2026-11-06)', () => {
-        // De a dos por renglon y en letra chica «no se identifica, muy pegado»
-        // (usuario, con el papel de Salud 4). Ahora cada dato va solo, con su
-        // valor a la derecha, y ningun renglon de datos lleva dos rotulos.
-        const conDos = renglones(armar()).filter((l) => (l.match(/: /g) ?? []).length >= 2);
-        expect(conDos).toEqual([]);
+    it('pone dos datos por renglon donde entran, en letra normal (2026-11-06)', () => {
+        // En letra NORMAL (40 columnas): la segunda columna arranca en la
+        // mitad, y la de la izquierda deja dos espacios libres para no tocarla.
+        const conDos = renglones(armar()).filter((l) => (l.match(/: /g) ?? []).length === 2);
+        expect(conDos.length).toBeGreaterThan(0);
+        for (const l of conDos) {
+            expect(l.length).toBeLessThanOrEqual(COLUMNAS_TICKET.normal);
+            expect(l.slice(0, 20)).toMatch(/ {2}$/);
+            expect(l[20]).not.toBe(' ');
+        }
     });
 });
 
@@ -271,16 +275,20 @@ describe('la etiqueta de una bolsa', () => {
         const grande = etiqueta({
             salidas: [{ fecha: '2026-08-15', hora: '09:40', motivo: 'Pago a proveedor', monto: -1234.56 }],
         });
-        const fila = renglones(grande).find((l) => l.includes('Pago a proveedor'));
+        // Desde 2026-11-06 la tabla va en dos pisos: el motivo arriba y las
+        // cifras en el renglon de abajo.
+        const ls = renglones(grande);
+        const fila = ls[ls.findIndex((l) => l.includes('Pago a proveedor')) + 1];
         expect(fila).toContain('1,234.56');
-        expect(fila.length).toBeLessThanOrEqual(COLUMNAS_TICKET.chica);
+        expect(fila.length).toBeLessThanOrEqual(COLUMNAS_TICKET.normal);
     });
 
     it('cinco cifras entran soltando el separador de miles, no cortando', () => {
         const enorme = etiqueta({
             salidas: [{ fecha: '2026-08-15', hora: '09:40', motivo: 'Envio a otra sala', monto: -12345.67 }],
         });
-        expect(renglones(enorme).find((l) => l.includes('Envio a otra sala'))).toContain('12345.67');
+        const ls = renglones(enorme);
+        expect(ls[ls.findIndex((l) => l.includes('Envio a otra sala')) + 1]).toContain('12345.67');
     });
 });
 
@@ -311,7 +319,7 @@ describe('el vale de una salida', () => {
     it('en una remesa no se nombra a nadie: la recibe el cliente', () => {
         const t = vale();
         expect(pie(t)).not.toContain('Recibe:');
-        expect(cuerpo(t)).toMatch(/No\. de boleta +4477201/);
+        expect(cuerpo(t)).toContain('No. de boleta: 4477201');
     });
 
     it('en otra causa nombra a quien retira, y dice como se comprobo que era el', () => {
@@ -346,7 +354,7 @@ describe('el vale de una salida', () => {
         // salio: un solo numero sin eso se lee como el saldo de una bolsa.
         expect(t.totales).toEqual([['SALE DE 4 BOLSAS', '$2,000.00', true]]);
         // Y sigue siendo UN papel: un solo folio arriba, el de la operacion.
-        expect(cuerpo(t)).toMatch(/Vale +CMB-1032/);
+        expect(cuerpo(t)).toContain('Vale: CMB-1032');
     });
 
     it('una linea anulada no entra ni al detalle ni a la cuenta de bolsas', () => {
@@ -366,13 +374,13 @@ describe('el vale de una salida', () => {
         // El papel decia «Banco» sobre una remesadora. El rotulo viaja desde
         // `bolsas_tipos_salida` —el mismo que rotula el campo del formulario—,
         // asi que los dos cambian juntos y no se puede desincronizar uno.
-        expect(cuerpo(vale())).toMatch(/Remesadora +MONEYGRAM/);
+        expect(cuerpo(vale())).toContain('Remesadora: MONEYGRAM');
         expect(cuerpo(vale({
             operacion: {
                 folio: 'P-260815-7', motivo: 'Pago a proveedor', monto: 200,
                 entidad: 'DROGUERIA SANTA MARIA', entidadEtiqueta: 'Proveedor',
             },
-        }))).toMatch(/Proveedor\s+DROGUERIA SANTA MARIA/);
+        }))).toMatch(/Proveedor:\s+DROGUERIA SANTA MARIA/);
         // Y sin entidad no gasta un renglon en un rotulo vacio.
         expect(cuerpo(vale({
             operacion: { folio: 'A-1', motivo: 'Anticipo a un empleado', monto: 200 },

@@ -1017,19 +1017,60 @@ function filaDeItem(celdas, cantidadPrimero = false) {
  * Es lo mismo que hacen los totales, por lo mismo.
  */
 function renglonesDeDatos(datos, ancho = COLUMNAS_TICKET.normal) {
-    // 2026-11-06, segunda vuelta con el papel de Salud 4 en la mano: de a dos
-    // por renglón y en letra chica «no se identifica, muy pegado», y la negrita
-    // en la letra chica EMPASTA en el térmico («los montos se ven juntos e
-    // ilegibles»). Ahora: letra normal, UN dato por renglón, rótulo a la
-    // izquierda y valor a la derecha — se leen como una lista, no como prosa.
-    // Si no entra en un renglón, el rótulo va solo y el valor abajo, sangrado.
-    const renglones = (datos ?? []).filter(Boolean).flatMap(([rot, val]) => {
-        const r = String(rot ?? ''), v = String(val ?? '');
-        if (r.length + v.length + 2 <= ancho) return [dosColumnas(r, v, ancho).padEnd(ancho)];
-        return [r.padEnd(ancho), ...enRenglones(v, ancho - 2).map(l => ('  ' + l).padEnd(ancho))];
-    });
+    // 2026-11-06, con el papel de Salud 4 en la mano, en tres vueltas:
+    //   1. de a dos y en letra chica con el valor en negrita → «no se
+    //      identifica, muy pegado», y la negrita chica empasta en el térmico;
+    //   2. uno por renglón en letra normal → «está mejor, pero hacelo de 2
+    //      columnas, así se aprovecha más el espacio»;
+    //   3. hoy: letra NORMAL, de a dos donde entran (`emparejarDatos` sobre 40
+    //      columnas), sin negrita. Lo que no entra en media fila va solo.
+    const mitad = Math.floor(ancho / 2);
+    const texto = ([rot, val]) => `${rot}: ${val}`;
+    const renglones = emparejarDatos((datos ?? []).filter(Boolean), ancho).flatMap((fila) => (
+        fila.length === 2
+            ? [(texto(fila[0]).padEnd(mitad) + texto(fila[1])).padEnd(ancho)]
+            // Uno solo y no entra: se parte por palabras, nunca se recorta.
+            : enRenglones(texto(fila[0]), ancho).map(l => l.padEnd(ancho))
+    ));
     if (!renglones.length) return [];
     renglones[0] = LETRA_NORMAL + renglones[0];
+    renglones[renglones.length - 1] += LETRA_CHICA;
+    return renglones;
+}
+
+/**
+ * La tabla de renglones (productos, quién abona…) en letra NORMAL, en dos
+ * pisos: el nombre arriba, a todo el ancho, y las tres cifras abajo en
+ * columnas de 13 (2026-11-06: en letra chica las cifras salían «muy
+ * pegadas»; ver «La jerarquía del papel»). Sirve igual para la tabla de la
+ * caja (nombre, cant, p.unit, total), la de la distribuidora (cant primero) y
+ * la de abonos (quién, debía, abona, queda): los rótulos los pone el ticket.
+ */
+function itemsEnLetraNormal(items) {
+    const ancho = COLUMNAS_TICKET.normal;
+    const raya = '_'.repeat(ancho);
+    const cols = (items.columnas ?? []).map(c => String(c?.label ?? ''));
+    const tres = (vals) => vals.map(v => aDerecha(String(v ?? ''), 13)).join('').slice(-ancho).padStart(ancho);
+    const renglones = [];
+    if (cols.length !== 4) {
+        renglones.push(dosColumnas(cols[0], cols[cols.length - 1], ancho), raya);
+        items.filas.forEach((f, n) => {
+            renglones.push(...filasEnLetraNormal([[f[0], f[f.length - 1]]]).map(l => l.replace(/\x1b!./g, '')));
+            notasDeFila(items, n).forEach(nota => renglones.push(...enRenglones(nota, ancho - 2).map(r => '  ' + r)));
+        });
+    } else {
+        const iNombre = items.cantidadPrimero ? 1 : 0;
+        const otras = [0, 1, 2, 3].filter(i => i !== iNombre);
+        renglones.push(cols[iNombre], tres(otras.map(i => cols[i])), raya);
+        items.filas.forEach((f, n) => {
+            renglones.push(...enRenglones(f[iNombre], ancho));
+            // La nota (lote y vence) va bajo su nombre, sangrada: es parte de él.
+            notasDeFila(items, n).forEach(nota => renglones.push(...enRenglones(nota, ancho - 2).map(r => '  ' + r)));
+            renglones.push(tres(otras.map(i => f[i])));
+        });
+    }
+    renglones.push(raya);
+    renglones[0] = IZQUIERDA + LETRA_NORMAL + renglones[0];
     renglones[renglones.length - 1] += LETRA_CHICA;
     return renglones;
 }
@@ -1135,17 +1176,7 @@ export function seccionesParaElPrograma(ticket) {
             b.monoespaciado ?? '',
             ...filasEnLetraNormal(b.filas),
         ].filter(Boolean))),
-        ...(items ? [
-            AIRE + IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
-            regla(),
-            // La nota va bajo su producto, sangrada dos columnas: se lee como
-            // parte de esa fila y no como un producto más.
-            ...items.filas.flatMap((f, n) => [
-                ...filaDeItem(f, items.cantidadPrimero),
-                ...notasDeFila(items, n).flatMap(nota => enRenglones(nota, COLUMNAS_TICKET.chica - 2).map(r => '  ' + r)),
-            ]),
-            regla(),
-        ] : []),
+        ...(items ? conAire(itemsEnLetraNormal(items)) : []),
         ...(totales.length ? [
             // Rellenados por nosotros, no alineados por el aparato. En el ticket
             // del 14-08 los totales salieron centrados pese al `ESC a 2`, y el

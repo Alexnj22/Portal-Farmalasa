@@ -181,12 +181,14 @@ describe('el comprobante del ingreso o vale acumulado', () => {
         expect(cuerpo(vale)).toContain('TOTAL QUE SALE');
     });
 
-    it('respeta la geometria de cuatro columnas del ticket real', () => {
-        // Las mismas posiciones que ancla `ticketPrint.test.js`: 36, 44 y 52.
-        const linea = cuerpo(asiento()).split('\n').find((l) => l.includes('Cobro de credito'));
-        expect(linea.indexOf('14/08') + '14/08'.length).toBe(36);
-        expect(linea.indexOf('12:40pm') + '12:40pm'.length).toBe(44);
-        expect(linea.indexOf('$1.25') + '$1.25'.length).toBe(52);
+    it('pone las tres cifras bajo el motivo, en columnas de 13 (2026-11-06)', () => {
+        // Las mismas posiciones que ancla `ticketPrint.test.js`: 14, 27 y 40.
+        // eslint-disable-next-line no-control-regex
+        const ls = cuerpo(asiento()).split('\n').map((l) => l.replace(/\x1b(?:[!aRt3J].|[@2])/g, ''));
+        const linea = ls[ls.findIndex((l) => l.includes('Cobro de credito')) + 1];
+        expect(linea.indexOf('14/08') + '14/08'.length).toBe(14);
+        expect(linea.indexOf('12:40pm') + '12:40pm'.length).toBe(27);
+        expect(linea.indexOf('$1.25') + '$1.25'.length).toBe(40);
     });
 
     it('recorta un motivo largo aca y no en la impresora', () => {

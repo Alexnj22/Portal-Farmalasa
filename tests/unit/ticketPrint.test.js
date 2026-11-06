@@ -42,22 +42,25 @@ const renglones = (t) => seccionesParaElPrograma(t).cuerpo.split('\n');
 const sinCodigos = (s) => s.replace(/\x1b(?:[!aRt3J].|[@2])/g, '');
 
 describe('el ticket que se manda al programa de impresión', () => {
-    it('pone cantidad, precio e importe en las columnas del ticket real', () => {
-        const linea = renglones(ticket()).find(l => l.includes('FLUCONAZOL'));
-        expect(linea.indexOf('2.00') + '2.00'.length).toBe(36);
-        expect(linea.indexOf('8.05') + '8.05'.length).toBe(44);
-        expect(linea.indexOf('16.10') + '16.10'.length).toBe(52);
-        // La misma línea del origen, columna por columna.
-        expect(linea.slice(29, 52)).toBe(REAL.slice(29, 52));
+    // 2026-11-06, con el papel de Salud 4: en letra chica (las columnas del
+    // origen, 36/44/52) las cifras salían «muy pegadas». La tabla va ahora en
+    // letra NORMAL y en dos pisos: el nombre arriba, a todo el ancho, y la
+    // cantidad, el precio y el importe abajo, en columnas de 13 (14/27/40).
+    it('pone cantidad, precio e importe bajo el nombre, en columnas de 13', () => {
+        const ls = renglones(ticket()).map(sinCodigos);
+        const linea = ls[ls.findIndex(l => l.includes('FLUCONAZOL')) + 1];
+        expect(linea.indexOf('2.00') + '2.00'.length).toBe(14);
+        expect(linea.indexOf('8.05') + '8.05'.length).toBe(27);
+        expect(linea.indexOf('16.10') + '16.10'.length).toBe(40);
     });
 
-    it('parte el nombre largo en el renglón siguiente en vez de recortarlo', () => {
-        const ls = renglones(ticket());
+    it('parte el nombre largo en palabras en vez de recortarlo', () => {
+        const t = ticket();
+        t.items.filas[0][0] = 'FLUCONAZOL 150MG X 2 CAPSULAS MK CAJA DE CARTON';
+        const ls = renglones(t).map(sinCodigos);
         const i = ls.findIndex(l => l.includes('FLUCONAZOL'));
-        // 'CAJA' no entra en 31 caracteres junto al resto del nombre: baja.
-        expect(ls[i]).toContain('FLUCONAZOL 150MG X 2 CAPS. MK');
-        expect(ls[i]).not.toContain('CAJA');
-        expect(ls[i + 1]).toBe('CAJA');
+        expect(ls[i].trim()).toBe('FLUCONAZOL 150MG X 2 CAPSULAS MK CAJA DE');
+        expect(ls[i + 1]).toBe('CARTON');
     });
 
     it('no pasa de 54 columnas en ninguna línea de datos', () => {
@@ -161,8 +164,8 @@ describe('el ticket que se manda al programa de impresión', () => {
         const t = ticket();
         t.items = { columnas: [{ label: 'Concepto' }, { label: 'Monto' }], filas: [['Efectivo', '$ 20.00']] };
         const linea = renglones(t).find(l => l.includes('Efectivo'));
-        expect(sinCodigos(linea).length).toBe(COLUMNAS_TICKET.chica);
-        expect(linea.endsWith('$ 20.00')).toBe(true);
+        expect(sinCodigos(linea).length).toBe(COLUMNAS_TICKET.normal);
+        expect(sinCodigos(linea).endsWith('$ 20.00')).toBe(true);
     });
     // ── La cola de la sala lleva BYTES ──────────────────────────────────────
     //

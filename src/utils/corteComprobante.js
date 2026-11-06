@@ -70,6 +70,9 @@ const CONCEPTO = {
  * @param {string}  registradoPor  quién lo marcó
  * @param {string}  cuando      ISO del momento en que se registró
  */
+// Sin rayas de firma (usuario, 2026-11-06: «quitar la firma y entrega porque
+// ya se selecciona en el portal»): quién entrega y quién recibe queda en el
+// registro, que es mejor prueba que una firma en papel térmico.
 export function construirComprobanteDeAsiento({
     sala, entra, referencia, filas = [], registradoPor, cuando,
 }) {
@@ -104,8 +107,6 @@ export function construirComprobanteDeAsiento({
         pie: [
             `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
             selloDeTiempo(cuando),
-            '',
-            'Firma ______________________',
             '',
             entra
                 ? 'Anexar al ingreso de caja.'
@@ -173,10 +174,6 @@ export function construirComprobante({ corte, sala, diferencia, personas = [], r
             `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
             selloDeTiempo(diferencia?.registrado_at),
             '',
-            'Entrega ____________________',
-            '',
-            'Recibe   ____________________',
-            '',
             'Anexar este comprobante al corte.',
         ],
     };
@@ -242,10 +239,6 @@ export function construirComprobanteDeAbono({ corte, sala, abonos = [], registra
         pie: [
             `Registro: ${recortar(registradoPor || 'Sin registrar', 40)}`,
             selloDeTiempo(cuando),
-            '',
-            'Entrega ____________________',
-            '',
-            'Recibe   ____________________',
             '',
             'Reposicion voluntaria. No es descuento de salario.',
             'Anexar al ingreso de caja del dia.',

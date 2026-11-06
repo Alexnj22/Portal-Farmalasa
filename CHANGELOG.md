@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1467.2 — Tickets: datos de a uno, en letra normal, sin negrita chica ni firmas
+
+Segunda vuelta con el papel de Salud 4 en la mano:
+
+1. «Los montos se ven juntos e ilegibles»: la negrita en letra chica empasta en
+   el térmico. Se quitó. Los datos y las filas con monto pasan a **letra
+   normal**, que es más grande; la negrita queda sólo en letra normal o mayor
+   (título del papel, títulos de sección, total).
+2. «Los encabezados no se identifican, muy pegado»: los datos de arriba van
+   **uno por renglón**, rótulo a la izquierda y valor a la derecha. Lo que no
+   entra se parte, nunca se recorta.
+3. Más aire: medio renglón → casi un renglón entre secciones; el respiro entre
+   renglones, de 12 a 14 puntos.
+
+Y los comprobantes de caja ya no llevan rayas de «Entrega / Recibe / Firma»:
+quién entrega y quién recibe se elige en el portal y queda en el registro.
+
 ## v2.1467.1 — Crear un conteo volvió a funcionar
 
 Iniciar un conteo fallaba siempre, de cualquier alcance y en cualquier sala, y

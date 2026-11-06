@@ -145,16 +145,12 @@ describe.each([
         expect(lineasDelPie.slice(1).filter((l) => l.trim() === '')).toEqual([]);
     });
 
-    it('pone dos datos por renglon donde entran', () => {
-        // Un renglon con dos rotulos es la prueba de que se armaron las dos
-        // columnas; y la segunda arranca siempre en la mitad del rollo, para
-        // que se lean como tabla y no como texto corrido.
-        const conDos = renglones(armar()).filter((l) => (l.match(/: /g) ?? []).length === 2);
-        expect(conDos.length).toBeGreaterThan(0);
-        for (const l of conDos) {
-            expect(l.slice(0, 27)).toMatch(/ {2}$/);          // dos espacios libres
-            expect(l[27]).not.toBe(' ');                      // y ahi arranca la segunda
-        }
+    it('pone un dato por renglon, en letra normal (2026-11-06)', () => {
+        // De a dos por renglon y en letra chica «no se identifica, muy pegado»
+        // (usuario, con el papel de Salud 4). Ahora cada dato va solo, con su
+        // valor a la derecha, y ningun renglon de datos lleva dos rotulos.
+        const conDos = renglones(armar()).filter((l) => (l.match(/: /g) ?? []).length >= 2);
+        expect(conDos).toEqual([]);
     });
 });
 
@@ -315,7 +311,7 @@ describe('el vale de una salida', () => {
     it('en una remesa no se nombra a nadie: la recibe el cliente', () => {
         const t = vale();
         expect(pie(t)).not.toContain('Recibe:');
-        expect(cuerpo(t)).toContain('No. de boleta: 4477201');
+        expect(cuerpo(t)).toMatch(/No\. de boleta +4477201/);
     });
 
     it('en otra causa nombra a quien retira, y dice como se comprobo que era el', () => {
@@ -350,7 +346,7 @@ describe('el vale de una salida', () => {
         // salio: un solo numero sin eso se lee como el saldo de una bolsa.
         expect(t.totales).toEqual([['SALE DE 4 BOLSAS', '$2,000.00', true]]);
         // Y sigue siendo UN papel: un solo folio arriba, el de la operacion.
-        expect(cuerpo(t)).toContain('Vale: CMB-1032');
+        expect(cuerpo(t)).toMatch(/Vale +CMB-1032/);
     });
 
     it('una linea anulada no entra ni al detalle ni a la cuenta de bolsas', () => {
@@ -370,13 +366,13 @@ describe('el vale de una salida', () => {
         // El papel decia «Banco» sobre una remesadora. El rotulo viaja desde
         // `bolsas_tipos_salida` —el mismo que rotula el campo del formulario—,
         // asi que los dos cambian juntos y no se puede desincronizar uno.
-        expect(cuerpo(vale())).toContain('Remesadora: MONEYGRAM');
+        expect(cuerpo(vale())).toMatch(/Remesadora +MONEYGRAM/);
         expect(cuerpo(vale({
             operacion: {
                 folio: 'P-260815-7', motivo: 'Pago a proveedor', monto: 200,
                 entidad: 'DROGUERIA SANTA MARIA', entidadEtiqueta: 'Proveedor',
             },
-        }))).toContain('Proveedor: DROGUERIA SANTA MARIA');
+        }))).toMatch(/Proveedor\s+DROGUERIA SANTA MARIA/);
         // Y sin entidad no gasta un renglon en un rotulo vacio.
         expect(cuerpo(vale({
             operacion: { folio: 'A-1', motivo: 'Anticipo a un empleado', monto: 200 },

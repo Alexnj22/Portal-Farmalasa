@@ -634,9 +634,11 @@ const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 //   · el título del papel  → `DESTACADO` (negrita, doble alto, letra normal)
 //   · título de sección    → `SUBTITULO` (negrita en letra normal: más grande
 //                            que el cuerpo, sin cambiar de ancho de renglón)
-//   · el VALOR de un dato  → `NEGRITA_CHICA`; el rótulo queda fino. Misma
-//                            letra, mismo ancho: las columnas no se mueven.
-const NEGRITA_CHICA = `${ESC}!\x09`;
+//   · los datos y las filas con monto → letra NORMAL, uno por renglón.
+//
+// La negrita en letra chica se probó y se quitó el mismo día: en el térmico
+// empasta los dígitos («los montos se ven juntos e ilegibles»). La negrita
+// sólo va en letra normal o más grande.
 const SUBTITULO = `${ESC}!\x08`;
 
 // ── El interlineado, renglón por renglón (2026-11-04) ────────────────────────
@@ -660,7 +662,7 @@ const SUBTITULO = `${ESC}!\x08`;
 // El margen de corte NO se toca: antes de los saltos del final se vuelve al
 // interlineado de fábrica (`ESC 2`), que es con el que se midieron los
 // ~17 mm de SALTOS_DE_CORTE.
-const RESPIRO = 12;                             // puntos entre renglones (2026-11-06: 4 y 8 salían pegados en Salud 4)
+const RESPIRO = 14;                             // puntos entre renglones (2026-11-06: 4 y 8 salían pegados en Salud 4)
 
 // ── El aire entre secciones (2026-11-06) ─────────────────────────────────────
 //
@@ -672,7 +674,7 @@ const RESPIRO = 12;                             // puntos entre renglones (2026-
 // puntos de letra chica). Va al COMIENZO del primer renglón de cada sección,
 // cuando el búfer de la impresora está vacío, así que sólo avanza papel. Es
 // medio renglón: separa sin volver al papel largo de antes del 2026-11-04.
-const AIRE = `${ESC}J` + String.fromCharCode(14);
+const AIRE = `${ESC}J` + String.fromCharCode(24);   // 2026-11-06: 14 era poco
 const conAire = (renglones) => (renglones.length ? [AIRE + renglones[0], ...renglones.slice(1)] : renglones);
 const ALTO_DE_LETRA = { chica: 17, normal: 24 }; // fuente B / fuente A, en puntos
 const INTERLINEADO_DE_FABRICA = `${ESC}2`;
@@ -1012,37 +1014,40 @@ function filaDeItem(celdas, cantidadPrimero = false) {
  * el relleno, centrar deja de mover nada y las dos columnas quedan a plomo.
  * Es lo mismo que hacen los totales, por lo mismo.
  */
-function renglonesDeDatos(datos, ancho = COLUMNAS_TICKET.chica) {
-    const mitad = Math.floor(ancho / 2);
-    const texto = ([rot, val]) => `${rot}: ${val}`;
-    // El valor en negrita y el rótulo fino (ver «La jerarquía del papel»). El
-    // relleno se cuenta sobre el texto PLANO: los códigos no ocupan columna.
-    const marcado = ([rot, val]) => `${rot}: ` + NEGRITA_CHICA + val + LETRA_CHICA;
-    return emparejarDatos(datos, ancho).flatMap((fila) => {
-        if (fila.length === 2) {
-            const plano = texto(fila[0]).padEnd(mitad) + texto(fila[1]);
-            return [marcado(fila[0]) + ' '.repeat(mitad - texto(fila[0]).length)
-                + marcado(fila[1]) + ' '.repeat(Math.max(0, ancho - plano.length))];
-        }
-        // Uno solo y no entra: se parte por palabras, nunca se recorta —
-        // el que se recorta en silencio es un dato perdido. Lo que sigue al
-        // rótulo es valor, en el primer renglón y en los que siguen.
-        const prefijo = `${fila[0][0]}: `;
-        return enRenglones(texto(fila[0]), ancho).map((l, i) => {
-            const relleno = ' '.repeat(Math.max(0, ancho - l.length));
-            if (i > 0) return NEGRITA_CHICA + l + LETRA_CHICA + relleno;
-            return l.startsWith(prefijo)
-                ? prefijo + NEGRITA_CHICA + l.slice(prefijo.length) + LETRA_CHICA + relleno
-                : l + relleno;
-        });
+function renglonesDeDatos(datos, ancho = COLUMNAS_TICKET.normal) {
+    // 2026-11-06, segunda vuelta con el papel de Salud 4 en la mano: de a dos
+    // por renglón y en letra chica «no se identifica, muy pegado», y la negrita
+    // en la letra chica EMPASTA en el térmico («los montos se ven juntos e
+    // ilegibles»). Ahora: letra normal, UN dato por renglón, rótulo a la
+    // izquierda y valor a la derecha — se leen como una lista, no como prosa.
+    // Si no entra en un renglón, el rótulo va solo y el valor abajo, sangrado.
+    const renglones = (datos ?? []).filter(Boolean).flatMap(([rot, val]) => {
+        const r = String(rot ?? ''), v = String(val ?? '');
+        if (r.length + v.length + 2 <= ancho) return [dosColumnas(r, v, ancho).padEnd(ancho)];
+        return [r.padEnd(ancho), ...enRenglones(v, ancho - 2).map(l => ('  ' + l).padEnd(ancho))];
     });
+    if (!renglones.length) return [];
+    renglones[0] = LETRA_NORMAL + renglones[0];
+    renglones[renglones.length - 1] += LETRA_CHICA;
+    return renglones;
 }
 
-/** Un renglón de `dosColumnas` con el valor (lo que queda a la derecha) en negrita. */
-function conValorEnNegrita(renglon, valor) {
-    const v = valor.trim();
-    if (!v || !renglon.endsWith(v)) return renglon;
-    return renglon.slice(0, renglon.length - v.length) + NEGRITA_CHICA + v + LETRA_CHICA;
+/** Filas de un bloque (rótulo · monto) en letra normal: los montos se leen. */
+function filasEnLetraNormal(filas) {
+    const ancho = COLUMNAS_TICKET.normal;
+    // Lo que no entra en 40 se PARTE (el rótulo en palabras, el monto en el
+    // último renglón), nunca se recorta: `dosColumnas` corta en silencio.
+    const r = (filas ?? []).flatMap(([a, b]) => {
+        const izq = String(a ?? ''), der = String(b ?? '');
+        if (izq.length + der.length + 1 <= ancho) return [dosColumnas(izq, der, ancho)];
+        const partes = enRenglones(izq, Math.max(10, ancho - der.length - 1));
+        const ultima = partes.pop() ?? '';
+        return [...partes, dosColumnas(ultima, der, ancho)];
+    });
+    if (!r.length) return [];
+    r[0] = LETRA_NORMAL + r[0];
+    r[r.length - 1] += LETRA_CHICA;
+    return r;
 }
 
 /** El título del papel —qué es este ticket—: lo primero que se lee. */
@@ -1123,13 +1128,13 @@ export function seccionesParaElPrograma(ticket) {
             ...(b.texto
                 ? (b.destacado
                     ? [DESTACADO_GRANDE + enRenglones(b.texto, COLUMNAS_TICKET.grande).join('\n') + LETRA_CHICA]
-                    : enRenglones(b.texto, COLUMNAS_TICKET.chica))
+                    : [LETRA_NORMAL + enRenglones(b.texto, COLUMNAS_TICKET.normal).join('\n') + LETRA_CHICA])
                 : []),
             b.monoespaciado ?? '',
-            ...(b.filas ?? []).map(([r, v]) => conValorEnNegrita(dosColumnas(r, v), String(v ?? ''))),
+            ...filasEnLetraNormal(b.filas),
         ].filter(Boolean))),
         ...(items ? [
-            AIRE + IZQUIERDA + NEGRITA_CHICA + encabezadoDeItems(items.columnas, items.cantidadPrimero) + LETRA_CHICA,
+            AIRE + IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
             regla(),
             // La nota va bajo su producto, sangrada dos columnas: se lee como
             // parte de esa fila y no como un producto más.

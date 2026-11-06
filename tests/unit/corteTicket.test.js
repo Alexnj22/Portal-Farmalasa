@@ -166,12 +166,13 @@ describe('comprobante del corte', () => {
 
     it('se mantiene corto', () => {
         const papel = enRollo(armar(CORTE_14323));
-        // Sin los renglones vacíos del avance de papel del final. 20 es lo
-        // MEDIDO el 2026-08-31, no un número redondo: el tope existe para que
-        // el papel no vuelva a crecer, así que un margen holgado no vigila nada.
+        // Sin los renglones vacíos del avance de papel del final. 21 es lo
+        // MEDIDO el 2026-11-06 (era 20 el 2026-08-31; un dato por renglón suma
+        // uno), no un número redondo: el tope existe para que el papel no
+        // vuelva a crecer, así que un margen holgado no vigila nada.
         // El icono es una imagen de puntos: sus bytes 0x0A son datos, no renglones.
         const utiles = papel.replace(logoCompletoParaElRollo(58), '').replace(logoParaElRollo(58), '').split('\n').filter((l) => l.trim()).length;
-        expect(utiles).toBeLessThanOrEqual(20);
+        expect(utiles).toBeLessThanOrEqual(21);
     });
 
     it('es solo ASCII: el rollo no lee UTF-8', () => {

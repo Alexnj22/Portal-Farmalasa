@@ -235,7 +235,8 @@ describe('el ticket del envío', () => {
      * le llegó. Es la diferencia de fondo con la solicitud. */
     it('imprime el motivo del envío', () => {
         const t = construirTicketDeTraslado(datosDelTicketDeEnvio(ENVIO));
-        const texto = renglones(t).join('\n');
+        // La prosa se parte en renglones de letra normal: se compara sin saltos.
+        const texto = renglones(t).join(' ').replace(/\s+/g, ' ');
         expect(texto).toContain('Proximo a vencer');
         expect(texto).toContain('vence en noviembre');
     });

@@ -325,11 +325,11 @@ describe('el interlineado de cada renglón', () => {
         pie: ['Gracias'],
     });
 
-    it('la letra chica avanza 29 puntos y el doble alto 60, no lo mismo', () => {
+    it('la letra chica avanza 31 puntos y el doble alto 62, no lo mismo', () => {
         const s = seccionesParaElPrograma(t());
-        expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(29) + '\n');
+        expect(s.cuerpo).toContain('\x1b3' + String.fromCharCode(31) + '\n');
         const total = s.cuerpo.split('\n').find(l => l.includes('TOTAL'));
-        expect(total.endsWith('\x1b3' + String.fromCharCode(60))).toBe(true);
+        expect(total.endsWith('\x1b3' + String.fromCharCode(62))).toBe(true);
     });
 
     it('no mete nada adentro del código de barras (su largo es un \\n)', () => {

@@ -77,10 +77,9 @@ describe('el comprobante de una diferencia de caja', () => {
         expect(todoElTexto(armar())).toContain('Wendy Martinez');
     });
 
-    it('deja las dos lineas de firma que se llenan a mano al entregar', () => {
+    it('no lleva rayas de firma: quien entrega y quien recibe se elige en el portal (2026-11-06)', () => {
         const t = armar();
-        expect(t.pie.some((l) => l.startsWith('Entrega'))).toBe(true);
-        expect(t.pie.some((l) => l.startsWith('Recibe'))).toBe(true);
+        expect(t.pie.some((l) => /^(Entrega|Recibe|Firma)\b/.test(l))).toBe(false);
     });
 
     it('dice la direccion del dinero, no el signo', () => {

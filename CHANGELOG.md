@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.3 — Revisión semanal de compras en Node 22
+
+- La revisión semanal de compras corre en Node 22: con Node 20 el cliente de Supabase no arranca (falta WebSocket nativo).
+
 ## v2.1456.2 — El lote del traslado también en la lista y en los avisos
 
 **El lote viaja también fuera del detalle.** Sigue a v2.1455.7 (el lote en el detalle de la solicitud), pedido del usuario: «hazlo, en las notificaciones también».

@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
       - run: npm i --no-save --no-package-lock @supabase/supabase-js@2
       - run: node scripts/compras/auditar-lectura.mjs --dias=30
         env:

@@ -34,9 +34,13 @@ jobs:
           node-version: 20
       # Para desplegar las edge functions de la distribuidora cuando se repone
       # (scripts/entorno-pruebas/distribucion.mjs).
+      # Versión FIJA (2026-11-06): con `latest` llegó la v3, que rechaza el
+      # `[inbucket]` de supabase/config.toml, y la corrida moría al desplegar
+      # distribucion-dte con el branch ya rehecho a medias. Subirla es una
+      # decisión, junto con migrar config.toml a `[local_smtp]`.
       - uses: supabase/setup-cli@v1
         with:
-          version: latest
+          version: 2.98.2
       - run: node scripts/entorno-pruebas/mantener_al_dia.mjs ${{ inputs.solo_vercel && '--vercel' || '--aplicar' }}
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

@@ -154,7 +154,7 @@ function FilaDeVendedor({ v, tope, promedio }) {
       {/* La participación es el FONDO de la fila, medida contra el mayor. */}
       <View style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(v.parte / tope) * 100}%`, backgroundColor: `${col}${v.yo ? '40' : '26'}` }} />
       {v.yo ? <View style={{ width: 2, alignSelf: 'stretch', borderRadius: 1, backgroundColor: col }} /> : null}
-      <Avatar empleado={persona} tamano={24} />
+      <Avatar empleado={persona} tamano={28} />
       <Text style={{ flex: 1, color: col, fontSize: 13, fontWeight: peso }}>{shortEmployeeName(persona)}</Text>
       {v.venta != null ? <Text style={{ color: col, fontSize: 13, fontWeight: peso, fontVariant: ['tabular-nums'] }}>{$(v.venta)}</Text> : null}
       <Text style={{ minWidth: 46, textAlign: 'right', color: col, fontSize: 13, fontWeight: peso, fontVariant: ['tabular-nums'] }}>{`${v.parte.toFixed(1)}%`}</Text>
@@ -331,7 +331,7 @@ function CuerpoDeFaltanteDeCaja({ d }) {
       {sala || hora ? <Texto>{`${sala ?? ''}${sala && hora ? ' · ' : ''}${hora ? `corte de las ${hora}` : ''}`}</Texto> : null}
       {confirmoNombre ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Avatar empleado={confirmo ?? { name: confirmoNombre }} tamano={22} />
+          <Avatar empleado={confirmo ?? { name: confirmoNombre }} tamano={20} />
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
             {'Lo confirmó '}
             <Text style={{ color: colorSistema.texto, fontWeight: '700' }}>{shortEmployeeName(confirmo ?? confirmoNombre)}</Text>
@@ -396,7 +396,7 @@ function FilaDeApertura({ s }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 }}>
       <Text style={{ minWidth: 72, color: s.tarde ? MARCA.ambar : MARCA.verde, fontSize: 13, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{hora12(s.hora)}</Text>
-      {s.employeeId ? <Avatar empleado={emp ?? { name: s.quien }} tamano={24} /> : (
+      {s.employeeId ? <Avatar empleado={emp ?? { name: s.quien }} tamano={28} /> : (
         <View style={{ width: 24, height: 24, borderRadius: 12, backgroundColor: FONDO, alignItems: 'center', justifyContent: 'center' }}>
           <Icono nombre="Home" color={colorSistema.texto2} tamano={12} />
         </View>

@@ -166,7 +166,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando
 function Persona({ e, detalle, primero }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador, paddingTop: primero ? 0 : 8 }}>
-      <Avatar empleado={e} tamano={30} />
+      <Avatar empleado={e} tamano={28} />
       <View style={{ flex: 1 }}>
         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[e.role, detalle].filter(Boolean).join(' · ') || '—'}</Text>

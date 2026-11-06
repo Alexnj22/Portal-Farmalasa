@@ -165,7 +165,7 @@ export default function Buscar() {
               <View key={e.id}>
                 {i ? <Separador /> : null}
                 <Renglon titulo={shortEmployeeName(e)} detalle={e.role_name ?? e.roleName ?? e.role ?? null}
-                  izquierda={<Avatar empleado={e} tamano={40} />}
+                  izquierda={<Avatar empleado={e} tamano={36} />}
                   onPress={() => abrirRuta(`/personal/empleado/${e.id}`)} />
               </View>
             ))}
@@ -178,7 +178,7 @@ export default function Buscar() {
               <View key={r.id}>
                 {i ? <Separador /> : null}
                 <Renglon titulo={REQUEST_TYPES[r.type]?.label ?? 'Solicitud'} detalle={shortEmployeeName(r.employee)}
-                  izquierda={<Avatar empleado={r.employee} tamano={40} />}
+                  izquierda={<Avatar empleado={r.employee} tamano={36} />}
                   onPress={() => abrirSolicitud(r.id)} />
               </View>
             ))}

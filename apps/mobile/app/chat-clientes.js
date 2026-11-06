@@ -75,7 +75,7 @@ const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo
               {estrellas(c.calificacion) ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{estrellas(c.calificacion)}</Text> : null}
               {tomadaPor ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Avatar empleado={tomadaPor} tamano={18} />
+                  <Avatar empleado={tomadaPor} tamano={20} />
                   <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '700', flex: 1 }} numberOfLines={1}>{`${shortEmployeeName(tomadaPor)} está respondiendo…`}</Text>
                 </View>
               ) : escribe ? (

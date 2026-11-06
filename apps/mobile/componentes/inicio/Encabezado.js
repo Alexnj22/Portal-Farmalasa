@@ -2,27 +2,24 @@
 // Alex» es el TÍTULO GRANDE de la barra del sistema —se encoge al desplazar—;
 // acá queda la línea de abajo (sala · día) y la foto, que va a la derecha de
 // la barra y lleva a «Yo».
-import { Image, Pressable, Text, View, Platform } from 'react-native';
+import { Pressable, Text, Platform } from 'react-native';
 import { router } from 'expo-router';
 import { saludoDeLaHora } from '@nucleo/utils/inicio';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../Formulario';
+import Avatar from '../Avatar';
 
 export function saludo(user) {
   const nombre = shortEmployeeName(user).split(/\s+/)[0] || '';
   return `${saludoDeLaHora()}, ${nombre.charAt(0) + nombre.slice(1).toLowerCase()}`;
 }
 
-export function FotoDeCuenta({ user, tamano = 34 }) {
-  const foto = user?.photo || user?.photo_url;
-  const letras = shortEmployeeName(user).split(/\s+/).slice(0, 2).map((p) => p.charAt(0).toUpperCase()).join('');
+// La foto canónica (2026-11-06): con su aro, la torta el día del cumpleaños
+// y su medalla, igual que en el portal.
+export function FotoDeCuenta({ user, tamano = 36 }) {
   return (
     <Pressable onPress={() => router.navigate('/yo')} accessibilityRole="button" accessibilityLabel="Mi cuenta" hitSlop={6}>
-      {foto
-        ? <Image source={{ uri: foto }} style={{ width: tamano, height: tamano, borderRadius: tamano / 2 }} />
-        : <View style={{ width: tamano, height: tamano, borderRadius: tamano / 2, backgroundColor: colorSistema.separador, alignItems: 'center', justifyContent: 'center' }}>
-            <Text style={{ color: colorSistema.texto, fontWeight: '700', fontSize: tamano * 0.38 }}>{letras}</Text>
-          </View>}
+      <Avatar empleado={user} tamano={tamano} />
     </Pressable>
   );
 }

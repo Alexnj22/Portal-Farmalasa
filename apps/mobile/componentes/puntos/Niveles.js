@@ -160,7 +160,7 @@ export default function Niveles({ puedeEditar }) {
               </View>
               {h.quien ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                  <Avatar empleado={{ id: h.employee_id, name: h.quien }} tamano={18} />
+                  <Avatar empleado={{ id: h.employee_id, name: h.quien }} tamano={20} />
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{shortEmployeeName({ name: h.quien })}</Text>
                 </View>
               ) : null}

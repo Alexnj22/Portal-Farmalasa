@@ -80,7 +80,7 @@ export default function Boleta() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Vidrio radio={24} tinte="rgba(18,183,106,0.12)">
           <View style={{ padding: 18, gap: 6, alignItems: 'center' }}>
-            <Avatar empleado={e.employee ?? { name: '?' }} tamano={56} />
+            <Avatar empleado={e.employee ?? { name: '?' }} tamano={64} />
             <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{e.employee ? shortEmployeeName(e.employee) : 'Sin ficha'}</Text>
             {empleado.role ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{empleado.role}</Text> : null}
             <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>

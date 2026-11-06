@@ -202,7 +202,7 @@ export default function Traslado() {
 
           {/* Quién pide, de dónde a dónde, y cuándo. */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar empleado={pide} tamano={52} />
+            <Avatar empleado={pide} tamano={48} />
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '700' }}>{shortEmployeeName(pide)}</Text>
               <Ruta desde={m.origen_branch_name} hacia={m.branch_name} />

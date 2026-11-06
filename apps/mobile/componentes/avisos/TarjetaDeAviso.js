@@ -71,7 +71,7 @@ function DeQuien({ id, sala }) {
   if (!quien && !sala) return null;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
-      {quien ? <Avatar empleado={quien} tamano={22} /> : null}
+      {quien ? <Avatar empleado={quien} tamano={20} /> : null}
       <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '700' }}>{quien ? shortEmployeeName(quien) : sala}</Text>
       {quien && sala ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`· ${sala}`}</Text> : null}
     </View>

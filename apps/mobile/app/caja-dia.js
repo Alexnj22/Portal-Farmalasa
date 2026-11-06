@@ -105,7 +105,7 @@ export default function CajaDia() {
                           </Text>
                           {(r.personas || []).length ? (
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                              {r.personas.slice(0, 4).map((p) => <Avatar key={p.employee_id ?? p.nombre} empleado={{ name: p.nombre }} tamano={22} />)}
+                              {r.personas.slice(0, 4).map((p) => <Avatar key={p.employee_id ?? p.nombre} empleado={{ name: p.nombre }} tamano={20} />)}
                               <Text style={{ color: colorSistema.texto2, fontSize: 13, flex: 1 }}>
                                 {r.personas.map((p) => shortEmployeeName({ name: p.nombre })).join(', ')}
                               </Text>

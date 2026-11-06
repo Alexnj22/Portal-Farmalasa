@@ -107,7 +107,7 @@ function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
         <View style={{ padding: 14, gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View>
-              <Avatar empleado={solicitante ?? { name: '?' }} tamano={40} />
+              <Avatar empleado={solicitante ?? { name: '?' }} tamano={36} />
               <View style={{ position: 'absolute', right: -3, bottom: -3, width: 20, height: 20, borderRadius: 10, backgroundColor: `${estado.color}`, alignItems: 'center', justifyContent: 'center' }}>
                 <Host matchContents><Icon name={iconoDe(nombreDelIconoDeTipo(r.type))} size={11} color="#fff" /></Host>
               </View>

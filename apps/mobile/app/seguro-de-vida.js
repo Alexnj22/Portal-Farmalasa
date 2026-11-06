@@ -157,7 +157,7 @@ export default function SeguroDeVida() {
                       const est = estadoEnElSeguro(e.id, pagoVigente);
                       return (
                         <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                          <Avatar empleado={e} tamano={30} />
+                          <Avatar empleado={e} tamano={28} />
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{shortEmployeeName(e)}</Text>
                           {pagoVigente ? <Pildora texto={est.clave === 'solvente' ? 'Solvente' : 'No cubierto'} color={colorDeVariante(est.variant)} /> : null}
                           {!tieneCertificado(e) ? <Pildora texto="Sin certificado" color={MARCA.ambar} /> : null}

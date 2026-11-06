@@ -71,7 +71,7 @@ export default function TarjetaTraslado({ fila, persona, estado, alerta = false,
           ) : null}
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-            <Avatar empleado={persona} tamano={24} />
+            <Avatar empleado={persona} tamano={28} />
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>{shortEmployeeName(persona)}</Text>
             <Text style={{ color: alerta ? MARCA.rojo : colorSistema.texto2, fontSize: 12, fontWeight: alerta ? '700' : '400' }}>
               {desdeHace(desdeCuando ?? fila.created_at, Date.now())}

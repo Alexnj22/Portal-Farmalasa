@@ -28,7 +28,7 @@ function Ficha({ rotulo, persona, sala, vacio, cuando, apunte, tono = 'card', pr
   return (
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 10,
       borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
-      {persona && !sala ? <Avatar empleado={persona} tamano={40} />
+      {persona && !sala ? <Avatar empleado={persona} tamano={36} />
         : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${color}26` }} />}
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text>

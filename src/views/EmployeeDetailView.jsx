@@ -43,7 +43,6 @@ const VisorDeDocumento = lazy(() => import('../components/common/VisorDeDocument
 // Historial. Viajaba en la carga de todos (~5 kB gzip, 2026-10-24).
 const EmployeeDocumentsList = lazy(() => import('../components/common/EmployeeDocumentsList'));
 import AvatarConEstado from '../components/common/AvatarConEstado';
-import useMediaQuery from '../plataforma/useMediaQuery';
 import { tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ConfirmModal from '../components/common/ConfirmModal';
@@ -65,8 +64,6 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
     const shifts = useStaffStore(s => s.shifts);
     const employeesStatus = useStaffStore(s => s.employeesStatus);
     const { user, hasPermission } = useAuth();
-    // 144 y 160 son las dos medidas que ya tenían las clases `h-36 md:h-40`.
-    const fotoPx = useMediaQuery('(min-width: 768px)') ? 160 : 144;
     const canEdit = hasPermission('staff_detail', 'can_edit');
     // La sección de dinero del expediente estaba gateada por `canEdit`, o sea
     // por poder EDITAR la ficha — no por el módulo que existe para eso. Con
@@ -541,13 +538,11 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         escalera de `AvatarConEstado` sí pinta el chip con el
                                         ícono, que es lo que dice QUÉ pasa sin leer.
 
-                                        `px` sale de `useEsAncho` y no de las clases `md:`: el
-                                        componente necesita el número real para decidir el
-                                        escalón, y un breakpoint de Tailwind no se puede leer
-                                        desde JavaScript sin medirlo. */}
+                                        104 es el tamaño de RETRATO de la escala (2026-11-06):
+                                        el mismo en el perfil y acá, en todo ancho. */}
                                     <div className="rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl mb-5 group relative">
                                         <AvatarConEstado
-                                            emp={emp} px={fotoPx} marco=""
+                                            emp={emp} px={104} marco=""
                                             className="group-hover:scale-105 transition-transform duration-[var(--dur-lento)]"
                                         />
                                         {canEdit && (

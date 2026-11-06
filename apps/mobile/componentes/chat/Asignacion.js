@@ -29,7 +29,7 @@ export default function Asignacion({ conversacion: c, equipo, sinAsignar = false
     <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
       {quien ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-          <Avatar empleado={quien} tamano={18} />
+          <Avatar empleado={quien} tamano={20} />
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>
             {'Asignado a '}<Text style={{ fontWeight: '700', color: colorSistema.texto }}>{shortEmployeeName(quien) || 'alguien del equipo'}</Text>
           </Text>

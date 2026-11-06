@@ -94,7 +94,7 @@ const Fila = memo(function Fila({ r, quien, sala, pendiente, ocupado, onMarcar, 
             {buscado ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`buscado: «${buscado}»`}</Text> : null}
             {r.principio_activo || r.laboratorio ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{[r.principio_activo, r.laboratorio].filter(Boolean).join(' · ')}</Text> : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {quien ? <Avatar empleado={quien} tamano={18} /> : null}
+              {quien ? <Avatar empleado={quien} tamano={20} /> : null}
               <Text style={{ color: colorSistema.texto2, fontSize: 12, flex: 1 }} numberOfLines={1}>
                 {[sala, quien ? shortEmployeeName(quien) : null, fechaHora12(r.created_at, { day: '2-digit', month: 'short' })].filter(Boolean).join(' · ')}
               </Text>

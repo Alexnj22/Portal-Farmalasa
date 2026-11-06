@@ -143,11 +143,6 @@ const EXCEPTIONS = {
   // nadie. Los del equipo, en esa misma vista, sí van con `AvatarConEstado`.
   'src/views/chat-clientes/ClienteAvatar.jsx': ['foto-sin-aro'],
 
-  // El RETRATO de la ficha de una persona (104px): es la cabecera de su propio
-  // perfil, no una foto en una lista. Fuera de la escala a propósito hasta que
-  // el usuario decida si los retratos tienen su propio tamaño (2026-11-05).
-  'src/views/employee/EmployeeProfileView.jsx': ['avatar-fuera-de-escala'],
-
   // La torta de cumpleaños es BLANCA en los dos temas (decisión del usuario,
   // 2026-11-05): con el fondo rosa sólido chocaba con el aro de «En
   // inducción». No es una superficie del tema: es la marca, y tiene que verse
@@ -2360,7 +2355,8 @@ function scanFile(path) {
 
     // ── `avatar-fuera-de-escala` (2026-11-05, CERO ABSOLUTO) ─────────────
     //
-    // La foto de una persona tiene CINCO tamaños: 20 · 28 · 36 · 48 · 64
+    // La foto de una persona tiene CINCO tamaños: 20 · 28 · 36 · 48 · 64, más
+    // el RETRATO de 104 para la cabecera de un perfil (usuario, 2026-11-06)
     // (`TAMANOS_DE_AVATAR` en `AvatarConEstado`). Decisión del usuario: «al
     // final definiríamos los tamaños aprobados y el diseño, y se usarían solo
     // esos no más». Había 23 tamaños distintos, y cada uno cambiaba en qué
@@ -2370,14 +2366,14 @@ function scanFile(path) {
     // Sólo mira el número LITERAL —lo único decidible desde el fuente— en los
     // componentes que pintan la foto canónica.
     if (!path.includes('components/common/AvatarConEstado') && !hasException(path, 'avatar-fuera-de-escala')) {
-      const ESCALA = new Set([20, 28, 36, 48, 64]);
+      const ESCALA = new Set([20, 28, 36, 48, 64, 104]);
       const USO = /<(AvatarConEstado|PersonaConFoto|FirmaConFoto|CaraPersona|PersonAvatar|FirmaDeAjuste)\b[^>]*?\bpx=\{(\d+)\}/g;
       let mi5;
       while ((mi5 = USO.exec(sinComentarios2))) {
         if (ESCALA.has(Number(mi5[2]))) continue;
         findings.push({
           line: sinComentarios2.slice(0, mi5.index).split('\n').length,
-          label: `foto de ${mi5[2]}px fuera de la escala — usar 20, 28, 36, 48 o 64 (TAMANOS_DE_AVATAR)`,
+          label: `foto de ${mi5[2]}px fuera de la escala — usar 20, 28, 36, 48, 64 o 104 de retrato (TAMANOS_DE_AVATAR)`,
           category: 'avatar-fuera-de-escala', text: mi5[0].replace(/\s+/g, ' ').slice(0, 120),
         });
       }

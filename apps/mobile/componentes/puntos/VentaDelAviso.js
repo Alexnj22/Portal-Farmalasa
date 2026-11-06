@@ -67,7 +67,7 @@ export default function VentaDelAviso({ aviso }) {
         <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>Vendió</Text>
         {vendedor ? (
           <>
-            <Avatar empleado={vendedor} tamano={22} />
+            <Avatar empleado={vendedor} tamano={20} />
             <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>{shortEmployeeName(vendedor)}</Text>
           </>
         ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin vendedor en la factura</Text>}

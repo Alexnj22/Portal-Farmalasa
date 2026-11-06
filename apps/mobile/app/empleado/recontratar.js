@@ -66,7 +66,7 @@ export default function Recontratar() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Recontratación', headerLargeTitle: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
-          <Avatar empleado={emp} tamano={56} />
+          <Avatar empleado={emp} tamano={64} />
           <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{emp.name}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Última salida: ${emp.contract_end_date ? fechaTexto(emp.contract_end_date, { day: '2-digit', month: 'long', year: 'numeric' }) : 'No registrada'}`}</Text>
           <Seccion titulo="Ingreso y contrato">

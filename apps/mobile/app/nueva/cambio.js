@@ -161,7 +161,7 @@ export default function Cambio() {
               {vendedores.length ? vendedores.map((e, i) => (
                 <Pressable key={e.id} onPress={() => setVendedor(e)}
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                  <Avatar empleado={e} tamano={32} />
+                  <Avatar empleado={e} tamano={36} />
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{shortEmployeeName(e)}</Text>
                   {vendedor?.id === e.id ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
                 </Pressable>

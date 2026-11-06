@@ -128,7 +128,7 @@ export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
       {conFoto
-        ? <Avatar empleado={atiende} tamano={16} />
+        ? <Avatar empleado={atiende} tamano={20} />
         : <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colorDe(estado.variant) }} />}
       <Text numberOfLines={1} style={{ color: '#8E8E93', fontSize: 12, fontWeight: '600', flexShrink: 1 }}>
         {conFoto ? nombreDeCliente(shortEmployeeName(atiende)) : estado.label}

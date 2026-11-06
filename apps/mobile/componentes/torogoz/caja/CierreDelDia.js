@@ -126,7 +126,7 @@ export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recar
                 <Pressable key={v.id} onPress={() => onVendedor(v.id)} accessibilityRole="button" accessibilityLabel={shortEmployeeName(v)}
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, opacity: pressed ? 0.6 : 1,
                     paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador })}>
-                  <Avatar empleado={v} tamano={30} />
+                  <Avatar empleado={v} tamano={28} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(v)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`vendió ${formatMoney(Number(v.ventas))}`}</Text>

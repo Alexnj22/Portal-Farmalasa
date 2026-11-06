@@ -78,7 +78,7 @@ function Tarjeta({ c, sala, vendedor, enAprobacion }) {
             </View>
           ) : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-            {c.vendedor?.name ? <Avatar empleado={vendedor ?? { name: c.vendedor.name }} tamano={22} /> : null}
+            {c.vendedor?.name ? <Avatar empleado={vendedor ?? { name: c.vendedor.name }} tamano={20} /> : null}
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>
               {[vendedor ? shortEmployeeName(vendedor) : c.vendedor?.name ? shortEmployeeName(c.vendedor) : 'Sin vendedor', fecha(c.fecha), c.ultimo_abono_el ? `abonó ${fecha(c.ultimo_abono_el)}` : null].filter(Boolean).join(' · ')}
             </Text>

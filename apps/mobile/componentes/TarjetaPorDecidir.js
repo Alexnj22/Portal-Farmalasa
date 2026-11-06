@@ -100,7 +100,7 @@ export default function TarjetaPorDecidir({ item, persona }) {
           {mas > 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: -4 }}>{`y ${mas} más`}</Text> : null}
           {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }} numberOfLines={2}>{pie}</Text> : null}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-            {d.quien ? <Avatar empleado={d.quien} tamano={24} /> : null}
+            {d.quien ? <Avatar empleado={d.quien} tamano={28} /> : null}
             <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={1}>
               {d.quien ? shortEmployeeName(d.quien) : (d.origen ?? '')}{sala ? <Text style={{ fontWeight: '400' }}>{` · ${sala}`}</Text> : null}
             </Text>

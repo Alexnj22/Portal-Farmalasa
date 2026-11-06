@@ -77,7 +77,7 @@ function Diferencia({ item, eventos, catalogo, quien, actuar, dev }) {
         const opcion = ev.resolucion_tipo ? (opcionElegida(catalogo, item.error_tipo, ev.resolucion_tipo)?.rotulo ?? RESOLUCION_DE_DIFERENCIA[ev.resolucion_tipo]) : null;
         return (
           <View key={ev.id} style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
-            <Avatar empleado={p ?? { name: '?' }} tamano={24} />
+            <Avatar empleado={p ?? { name: '?' }} tamano={28} />
             <View style={{ flex: 1, gap: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 13 }}>
                 <Text style={{ fontWeight: '700' }}>{p ? shortEmployeeName(p) : 'Alguien'}</Text>

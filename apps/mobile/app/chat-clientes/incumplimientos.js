@@ -52,7 +52,7 @@ export default function Incumplimientos() {
               onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(`/chat-clientes/${f.conversacion_id}`); }}>
               <Vidrio radio={18}>
                 <View style={{ flexDirection: 'row', gap: 12, padding: 12 }}>
-                  <Avatar empleado={emp} tamano={34} />
+                  <Avatar empleado={emp} tamano={36} />
                   <View style={{ flex: 1, gap: 4 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>
                       {emp.name || emp.first_names ? shortEmployeeName(emp) : 'Alguien del equipo'}

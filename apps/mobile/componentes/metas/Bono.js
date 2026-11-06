@@ -135,7 +135,7 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
               <View key={p.employee_id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={18}>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                    <Avatar empleado={persona} tamano={38} />
+                    <Avatar empleado={persona} tamano={36} />
                     <View style={{ flex: 1, gap: 3 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{shortEmployeeName(persona)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatMoney(p.venta)} · ${formatPct(p.pct_venta)} de la sala`}</Text>

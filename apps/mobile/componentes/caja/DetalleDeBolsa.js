@@ -175,7 +175,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
               <Seccion titulo="La bitácora">
                 {eventos.map((ev, i) => (
                   <View key={ev.id} style={{ flexDirection: 'row', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                    {ev.nombre ? <Avatar empleado={{ id: ev.employee_id, name: ev.nombre, photo: ev.photo_url }} tamano={26} /> : <View style={{ width: 26 }} />}
+                    {ev.nombre ? <Avatar empleado={{ id: ev.employee_id, name: ev.nombre, photo: ev.photo_url }} tamano={28} /> : <View style={{ width: 26 }} />}
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
                         <Text style={{ fontWeight: '700' }}>{ACCION_DE_BOLSA[ev.accion] || ev.accion}</Text>

@@ -93,7 +93,7 @@ export default function AsignarCobro() {
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${fechaCorta(v.fecha)} · ${hora12(v.hora)}`}</Text>
                   </View>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                    {v.vendedor_nombre ? <Avatar empleado={{ id: v.vendedor_id, name: v.vendedor_nombre }} tamano={18} /> : null}
+                    {v.vendedor_nombre ? <Avatar empleado={{ id: v.vendedor_id, name: v.vendedor_nombre }} tamano={20} /> : null}
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Factura ${String(v.correlativo || '').replace(/^0+/, '')}${v.vendedor_nombre ? ` · ${shortEmployeeName(v.vendedor_nombre)}` : ''}`}</Text>
                   </View>
                   {(v.renglones || []).map((r) => {

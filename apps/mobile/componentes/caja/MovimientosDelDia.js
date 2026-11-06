@@ -97,7 +97,7 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
             </Text>
             {quien ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Avatar empleado={quien} tamano={18} />
+                <Avatar empleado={quien} tamano={20} />
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{shortEmployeeName(quien)}</Text>
               </View>
             ) : null}

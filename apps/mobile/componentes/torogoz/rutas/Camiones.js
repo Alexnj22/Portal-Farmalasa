@@ -129,7 +129,7 @@ export default function Camiones({ puedeConfigurar }) {
             <Vidrio radio={20}>
               <View style={{ padding: 14, gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                  <Avatar empleado={c.vendedor} tamano={38} />
+                  <Avatar empleado={c.vendedor} tamano={36} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{shortEmployeeName(c.vendedor)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>

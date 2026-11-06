@@ -132,7 +132,7 @@ function Detalle({ encuesta, puedeEditar }) {
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setPersona(abiertaEsta ? null : r.id); }}
               style={({ pressed }) => ({ gap: 2, opacity: pressed ? 0.6 : 1, minHeight: 44, justifyContent: 'center' })}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                {encuesta.anonima ? null : <Avatar empleado={emp} tamano={24} />}
+                {encuesta.anonima ? null : <Avatar empleado={emp} tamano={28} />}
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14 }} numberOfLines={1}>
                   {`${encuesta.anonima ? 'Anónimo' : shortEmployeeName(emp)}${r.is_jefe ? ' · jefe' : ''}${r.employee?.branch?.name ? ` · ${r.employee.branch.name}` : ''}`}
                 </Text>

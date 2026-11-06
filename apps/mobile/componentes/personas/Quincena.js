@@ -220,7 +220,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
                     <Vidrio radio={18} tinte="rgba(105,41,196,0.16)">
                       <View style={{ padding: 12, gap: 8 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                          {emp ? <Avatar empleado={emp} tamano={34} /> : null}
+                          {emp ? <Avatar empleado={emp} tamano={36} /> : null}
                           <View style={{ flex: 1 }}>
                             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{emp ? shortEmployeeName(emp) : (m.employeeName || 'Empleado')}</Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
@@ -292,7 +292,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
                         return (
                           <View key={e.id} style={{ gap: 8, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 12 : 0 }}>
                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                              <Avatar empleado={e} tamano={34} />
+                              <Avatar empleado={e} tamano={36} />
                               <View style={{ flex: 1, gap: 2 }}>
                                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{shortEmployeeName(e)}</Text>
                                 <PildoraDeCargo cargo={e.role} />

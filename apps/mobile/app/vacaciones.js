@@ -191,7 +191,7 @@ export default function Vacaciones() {
                 <Pressable key={p.id} onLongPress={() => acciones(p)} delayLongPress={350} style={{ marginHorizontal: 16 }}>
                   <Vidrio radio={20} tinte={ahora ? 'rgba(18,183,106,0.14)' : undefined}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-                      <Avatar empleado={p.employee ?? { name: '?' }} tamano={40} />
+                      <Avatar empleado={p.employee ?? { name: '?' }} tamano={36} />
                       <View style={{ flex: 1, gap: 3 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{p.employee ? shortEmployeeName(p.employee) : 'Sin ficha'}</Text>
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

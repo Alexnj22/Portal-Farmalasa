@@ -45,7 +45,7 @@ export default function Identidad({ identidad, onIdentidad, titulo = 'Escanea el
   if (identidad?.persona) {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-        <Avatar empleado={identidad.persona} tamano={44} />
+        <Avatar empleado={identidad.persona} tamano={48} />
         <View style={{ flex: 1 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Recibe</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{shortEmployeeName(identidad.persona)}</Text>

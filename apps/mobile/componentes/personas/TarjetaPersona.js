@@ -63,7 +63,7 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
       <Vidrio radio={22} interactivo tinte={destacada ? 'rgba(0,82,204,0.16)' : undefined}>
         <View style={{ padding: 14, gap: 8, opacity: inactiva ? 0.6 : 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar empleado={emp} tamano={destacada ? 58 : 46} />
+            <Avatar empleado={emp} tamano={destacada ? 64 : 48} />
             <View style={{ flex: 1, gap: 4 }}>
               <Text style={{ color: ausente ? colorSistema.texto2 : colorSistema.texto, fontSize: destacada ? 17 : 16, fontWeight: '700' }}>{nombre}</Text>
               {estado ? (

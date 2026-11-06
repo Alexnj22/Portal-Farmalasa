@@ -125,7 +125,7 @@ export default function PuntosCliente() {
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[montoDeVenta(m, info), fechaNumerica(m.fecha), d.salas?.[m.sucursal] ?? m.sucursal].filter(Boolean).join(' · ')}</Text>
           {persona ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Avatar empleado={persona} tamano={18} />
+              <Avatar empleado={persona} tamano={20} />
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${ROL[info.rol] ?? ''} ${shortEmployeeName(persona)}`.trim()}</Text>
             </View>
           ) : info.quien === 'Automático' ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Automático</Text> : null}

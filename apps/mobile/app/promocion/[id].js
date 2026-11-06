@@ -101,7 +101,7 @@ function SalaQueVendio({ g, conBono, personaDe }) {
           return (
             <View key={`${v.cod_vendedor}-${i}`} style={{ gap: 5, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                <Avatar empleado={emp ?? { name: v.nombre }} tamano={30} />
+                <Avatar empleado={emp ?? { name: v.nombre }} tamano={28} />
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{shortEmployeeName(emp ?? v.nombre)}</Text>
                   {v.sin_dueno ? <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '600' }}>Sin dueño: este bono no se paga</Text> : null}

@@ -206,7 +206,7 @@ export default function Expediente() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           <View style={{ alignItems: 'center', gap: 8 }}>
-            <Avatar empleado={emp} tamano={96} />
+            <Avatar empleado={emp} tamano={104} />
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{shortEmployeeName(emp)}</Text>
             {puedeEditar ? (
               <Pressable onPress={cambiarFoto} disabled={ocupado} hitSlop={8}>

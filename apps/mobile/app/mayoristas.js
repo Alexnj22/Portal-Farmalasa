@@ -99,7 +99,7 @@ const FilaHistorial = memo(function FilaHistorial({ h, columnas }) {
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{h.customers?.name ?? '—'}</Text>
             <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${textoDeAccion(h)}${h.nota ? ` — «${h.nota}»` : ''}`}</Text>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              {persona ? <Avatar empleado={persona} tamano={18} /> : null}
+              {persona ? <Avatar empleado={persona} tamano={20} /> : null}
               <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                 {`${quien} · ${fechaHora12(h.created_at, { day: 'numeric', month: 'short' })}`}
               </Text>

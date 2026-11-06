@@ -90,7 +90,7 @@ export function Grilla({ celdas }) {
               borderLeftWidth: j ? 0.5 : 0, borderLeftColor: colorSistema.separador, alignItems: j ? 'flex-end' : 'flex-start' }}>
               {c.persona ? (
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 9 }}>
-                  <Avatar empleado={c.persona} tamano={30} />
+                  <Avatar empleado={c.persona} tamano={28} />
                   <View style={{ flexShrink: 1 }}>
                     <Rotulo>{c.rotulo}</Rotulo>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{shortEmployeeName(c.persona) || c.valor}</Text>

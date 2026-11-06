@@ -128,7 +128,7 @@ export function Turnos({ ctx }) {
             ))}
           </View>
           {abierto ? grupos[abierto].map((p, i) => (
-            <Renglon key={p.id} primero={!i} titulo={shortEmployeeName(p)} izquierda={<Avatar empleado={p} tamano={30} />} />
+            <Renglon key={p.id} primero={!i} titulo={shortEmployeeName(p)} izquierda={<Avatar empleado={p} tamano={28} />} />
           )) : <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Toca un estado para ver quiénes</Text>}
         </View>
       ) : <Vacio texto="Nadie en turno hoy" />}
@@ -154,7 +154,7 @@ export function Ausencias({ datos: d, ctx }) {
         const m = a.metadata || {};
         const hasta = m.endDate || (m.permissionDates || []).slice(-1)[0];
         return (
-          <Renglon key={a.id} primero={!i} titulo={shortEmployeeName(e)} izquierda={<Avatar empleado={e} tamano={30} />}
+          <Renglon key={a.id} primero={!i} titulo={shortEmployeeName(e)} izquierda={<Avatar empleado={e} tamano={28} />}
             detalle={`${rotuloDeSolicitud(a.type)}${hasta ? ` · hasta ${fechaTexto(String(hasta).slice(0, 10))}` : ''}`}
             derecha={<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TIPO_AUSENCIA[a.type] ?? '#8E8E93' }} />} />
         );
@@ -179,7 +179,7 @@ export function SolicitudesPendientes({ ctx }) {
         const e = porId.get(String(r.employee_id));
         return (
           <Renglon key={r.id} primero={!i} titulo={shortEmployeeName(e)} detalle={rotuloDeSolicitud(r.type)}
-            izquierda={<Avatar empleado={e} tamano={30} />} derecha={cuandoLlego(r.created_at)}
+            izquierda={<Avatar empleado={e} tamano={28} />} derecha={cuandoLlego(r.created_at)}
             onPress={() => ctx.abrirSolicitud(r.id)} />
         );
       }) : <Vacio texto="Sin solicitudes pendientes" bien />}
@@ -267,7 +267,7 @@ export function Cumpleanos({ ctx }) {
         return (
           <View key={e.id} style={{ opacity: paso ? 0.45 : 1 }}>
             <Renglon primero={!i} titulo={shortEmployeeName(e)} detalle={[nombreSala(e), `día ${dia}`].filter(Boolean).join(' · ')}
-              izquierda={<Avatar empleado={e} tamano={32} />}
+              izquierda={<Avatar empleado={e} tamano={36} />}
               derecha={esHoy ? '🎂 Hoy' : esManana ? 'Mañana' : `${edad} años`}
               colorDerecha={esHoy ? '#E0457B' : esManana ? MARCA.ambar : undefined} />
           </View>

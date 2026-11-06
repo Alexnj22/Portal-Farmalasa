@@ -240,7 +240,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[f?.cliente || 'Sin cliente', nombreSala(h.branch_id), f?.fecha ? fechaTexto(f.fecha, { day: 'numeric', month: 'short', year: 'numeric' }) : null].filter(Boolean).join(' · ')}</Text>
                       <Pildora texto={ROTULO[t] ?? h.tipo_pago ?? '—'} color={MARCA.azulClaro} />
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                        <Avatar empleado={{ name: h.confirmed_by, photo: h.confirmed_by_photo }} tamano={26} />
+                        <Avatar empleado={{ name: h.confirmed_by, photo: h.confirmed_by_photo }} tamano={28} />
                         <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12 }}>
                           {`${h.confirmed_by ? shortEmployeeName({ name: h.confirmed_by }) : '—'}${h.confirmed_at ? ` · ${fechaHora12(h.confirmed_at, { month: 'short', day: '2-digit' })}` : ''}`}
                         </Text>

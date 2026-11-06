@@ -226,7 +226,7 @@ export default function AnotarDiseno() {
                   style={{ gap: 4, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: MARCA.rojo, fontSize: 15, fontWeight: '800', width: 22 }}>{c.numero}</Text>
-                    <Avatar empleado={p || { id: c.autor_id, name: '?' }} tamano={22} />
+                    <Avatar empleado={p || { id: c.autor_id, name: '?' }} tamano={20} />
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{p?.name ? shortEmployeeName(p.name) : '—'}</Text>
                     {c.resuelto ? <Text style={{ color: MARCA.verde, fontSize: 12, fontWeight: '700' }}>Resuelto</Text> : null}
                   </View>

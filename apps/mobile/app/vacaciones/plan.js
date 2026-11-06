@@ -128,7 +128,7 @@ export default function PlanDeVacaciones() {
                 <Pressable key={e.id} disabled={!!motivo} onPress={() => { Haptics.selectionAsync().catch(() => {}); cambiar('empId')(String(e.id)); }}
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, opacity: motivo ? 0.45 : pressed ? 0.7 : 1,
                     borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 8 : 0 })}>
-                  <Avatar empleado={e} tamano={32} />
+                  <Avatar empleado={e} tamano={36} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{motivo ? `${motivo} · ${sala}` : `${e.role || 'Empleado'} · ${sala}`}</Text>

@@ -155,7 +155,7 @@ export default function CajaDiferencias() {
                   <BarraDelDia desglose={desglose} signo={signo} />
                   {signo === 'falta' ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                      {personas.slice(0, 4).map((p) => <Avatar key={p.employee_id} empleado={{ name: p.nombre }} tamano={24} />)}
+                      {personas.slice(0, 4).map((p) => <Avatar key={p.employee_id} empleado={{ name: p.nombre }} tamano={28} />)}
                       <Text style={{ color: colorSistema.texto2, fontSize: 13, flex: 1 }}>
                         {personas.length ? personas.slice(0, 2).map((p) => shortEmployeeName({ name: p.nombre })).join(', ') + (personas.length > 2 ? ` y ${personas.length - 2} más` : '') : 'Sin responsables asignados'}
                       </Text>

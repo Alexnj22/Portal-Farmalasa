@@ -168,7 +168,7 @@ export default function Empleado() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Vidrio radio={24}>
           <View style={{ padding: 18, gap: 10, alignItems: 'center' }}>
-            <Avatar empleado={emp} tamano={84} />
+            <Avatar empleado={emp} tamano={104} />
             <Text style={{ color: colorSistema.texto, fontSize: 21, fontWeight: '800', textAlign: 'center' }}>{emp.name}</Text>
             {estado ? <Pildora texto={`${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`} color={colorDeVariante(estado.variante)} /> : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>

@@ -47,7 +47,7 @@ function Quien({ id, personas }) {
   const p = personas[id];
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <Avatar empleado={p || { id, name: '?' }} tamano={22} />
+      <Avatar empleado={p || { id, name: '?' }} tamano={20} />
       <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{p?.name ? shortEmployeeName(p.name) : '—'}</Text>
     </View>
   );

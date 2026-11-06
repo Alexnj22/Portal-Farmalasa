@@ -171,7 +171,7 @@ export default function TorogozInicio() {
               onPress={() => filtrar('vendedor', vendedor === v.id ? '' : v.id)}
               izquierda={(
                 <View>
-                  <Avatar empleado={v} tamano={34} />
+                  <Avatar empleado={v} tamano={36} />
                   {i === 0 ? <Text style={{ position: 'absolute', top: -6, right: -6, fontSize: 13 }}>🏆</Text> : null}
                 </View>
               )}

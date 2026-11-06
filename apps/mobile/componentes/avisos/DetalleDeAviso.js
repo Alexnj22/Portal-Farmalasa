@@ -725,7 +725,7 @@ export default function DetalleDeAviso({ n }) {
             const quien = ap.approverId ? porId.get(String(ap.approverId)) ?? null : null;
             return (
               <View key={i} style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8, paddingTop: 6, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                {quien ? <Avatar empleado={quien} tamano={26} /> : <Text style={{ color: MARCA.verde, fontSize: 14 }}>✓</Text>}
+                {quien ? <Avatar empleado={quien} tamano={28} /> : <Text style={{ color: MARCA.verde, fontSize: 14 }}>✓</Text>}
                 <View style={{ flex: 1, gap: 1 }}>
                   <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '800' }}>{quien ? `${shortEmployeeName(quien)}${quien.role ? ` · ${quien.role}` : ''}` : `Nivel ${ap.level}`}</Text>
                   <Tenue>{fmtFechaHora(ap.approvedAt)}</Tenue>

@@ -291,7 +291,7 @@ export default function CuentaDelCliente() {
                 <Seccion titulo="Saldo a favor usado">
                   {estado.a_favor_usado.slice(0, 8).map((a, i) => (
                     <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
-                      {a.por ? <Avatar empleado={a.por} tamano={30} /> : null}
+                      {a.por ? <Avatar empleado={a.por} tamano={28} /> : null}
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 13, fontFamily: 'Menlo' }} numberOfLines={1}>{a.numero_control}</Text>
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fechaHora12(a.fecha)} · ${shortEmployeeName(a.por) || '—'}${a.nota ? ` · ${a.nota}` : ''}`}</Text>
@@ -348,7 +348,7 @@ export default function CuentaDelCliente() {
                 {(estado.recibos ?? []).slice(0, 12).map((r, i) => (
                   <View key={r.id} style={{ gap: 6, opacity: r.anulado_at ? 0.55 : 1, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                     <Pressable onPress={() => sacarRecibo(r)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }} accessibilityRole="button" accessibilityLabel={`Recibo ${r.id}`}>
-                      {r.recibido_por ? <Avatar empleado={r.recibido_por} tamano={30} /> : null}
+                      {r.recibido_por ? <Avatar empleado={r.recibido_por} tamano={28} /> : null}
                       <View style={{ flex: 1 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{`Recibo ${r.id} · ${nombreFormaPago(r.forma)}${r.referencia ? ` ${r.referencia}` : ''}`}</Text>
                         <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

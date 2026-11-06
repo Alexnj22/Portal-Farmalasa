@@ -120,7 +120,7 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
             <View style={{ padding: 12, gap: 10 }}>
               {vendedores.map((v) => (
                 <View key={v.cod} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                  {v.nombre ? <Avatar empleado={{ id: v.id, name: v.nombre }} tamano={30} /> : null}
+                  {v.nombre ? <Avatar empleado={{ id: v.id, name: v.nombre }} tamano={28} /> : null}
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{nombreDeCobro(v.nombre)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Cód. ${v.cod} · ${v.ventas} ventas · ${v.con} con cobro · ${v.ventas - v.con} sin cobro`}</Text>

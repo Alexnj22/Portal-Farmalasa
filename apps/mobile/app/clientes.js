@@ -112,7 +112,7 @@ function Fila({ c, verMontos }) {
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
       <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-          <Avatar empleado={{ name: c.name }} tamano={42} />
+          <Avatar empleado={{ name: c.name }} tamano={48} />
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{c.name}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

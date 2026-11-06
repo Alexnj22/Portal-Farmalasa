@@ -50,7 +50,7 @@ function PuntosDeVenta({ emisorId, oficina }) {
       {(puntos ?? []).map((p) => (
         <View key={p.codigo} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 40, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'], minWidth: 52 }}>{p.codigo}</Text>
-          <Avatar empleado={p.empleado} tamano={26} />
+          <Avatar empleado={p.empleado} tamano={28} />
           <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>{shortEmployeeName(p.empleado)}</Text>
         </View>
       ))}

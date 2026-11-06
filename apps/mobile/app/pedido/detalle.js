@@ -64,7 +64,7 @@ function Gente({ rotulo, personas }) {
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
         {personas.map((p) => (
           <View key={p.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-            <Avatar empleado={p} tamano={26} />
+            <Avatar empleado={p} tamano={28} />
             <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{shortEmployeeName(p)}</Text>
           </View>
         ))}

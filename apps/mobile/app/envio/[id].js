@@ -168,7 +168,7 @@ export default function Envio() {
           refreshControl={<RefreshControl refreshing={false} onRefresh={cargar} />}>
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar empleado={quien} tamano={52} />
+            <Avatar empleado={quien} tamano={48} />
             <View style={{ flex: 1, gap: 3 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '700' }}>{shortEmployeeName(quien)}</Text>
               <Ruta desde={envio.origen_branch_name} hacia={envio.branch_name} />

@@ -157,7 +157,7 @@ export default function AuditoriaDeTiempos() {
               <Vidrio radio={18} interactivo tinte={s.some(([, c]) => c === MARCA.rojo) ? 'rgba(240,68,56,0.10)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Avatar empleado={e} tamano={34} />
+                    <Avatar empleado={e} tamano={36} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>

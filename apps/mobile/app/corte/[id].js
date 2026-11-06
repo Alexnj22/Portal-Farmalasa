@@ -290,7 +290,7 @@ export default function Corte() {
           {!pendiente ? (
             <Vidrio radio={20}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14 }}>
-                <Avatar empleado={firmo ?? { name: '?' }} tamano={42} />
+                <Avatar empleado={firmo ?? { name: '?' }} tamano={48} />
                 <View style={{ flex: 1, gap: 3 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <Pildora texto={corte.estado === 'CONFIRMADO' ? 'Confirmado' : 'Descartado'} color={corte.estado === 'CONFIRMADO' ? MARCA.verde : colorSistema.texto2} />

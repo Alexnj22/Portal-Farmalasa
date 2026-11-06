@@ -51,7 +51,7 @@ export default function Vendedor() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, marginHorizontal: 20 }}>
-          <Avatar empleado={emp ?? { name: nombre }} tamano={56} />
+          <Avatar empleado={emp ?? { name: nombre }} tamano={64} />
           <View style={{ flex: 1 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={1}>{nombre}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[sala ? nombreDeSala(sala) : null, rango].filter(Boolean).join(' · ')}</Text>

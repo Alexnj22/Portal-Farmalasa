@@ -57,6 +57,12 @@ export const ICONOS = {
   Search: i('magnifyingglass', require('@expo/material-symbols/search.xml')),
   Archive: i('archivebox', require('@expo/material-symbols/archive.xml')),
   Ban: i('nosign', require('@expo/material-symbols/block.xml')),
+  // Los estados de una persona en el aro de su foto (2026-11-06), los mismos
+  // del portal: apoyo a otra sala, inducción, baja, suspensión sin motivo.
+  Briefcase: i('briefcase', require('@expo/material-symbols/work.xml')),
+  Baby: i('figure.and.child.holdinghands', require('@expo/material-symbols/child_care.xml')),
+  UserMinus: i('person.badge.minus', require('@expo/material-symbols/person_remove.xml')),
+  HelpCircle: i('questionmark.circle', require('@expo/material-symbols/help.xml')),
   CalendarClock: i('calendar.badge.clock', require('@expo/material-symbols/event_upcoming.xml')),
   CalendarX2: i('calendar.badge.exclamationmark', require('@expo/material-symbols/event_busy.xml')),
   Coffee: i('cup.and.saucer', require('@expo/material-symbols/coffee.xml')),

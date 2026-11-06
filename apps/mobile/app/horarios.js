@@ -300,7 +300,7 @@ export default function Horarios() {
                   <Vidrio radio={20} interactivo>
                     <View style={{ padding: 14, gap: 8 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-                        <Avatar empleado={p} tamano={40} />
+                        <Avatar empleado={p} tamano={36} />
                         <View style={{ flex: 1, gap: 2 }}>
                           <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{shortEmployeeName(p)}</Text>
                           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[p.role, r.nombre || (r.esManual ? 'Horario propio' : null)].filter(Boolean).join(' · ')}</Text>
@@ -340,7 +340,7 @@ export default function Horarios() {
                           onPress={() => { Haptics.selectionAsync().catch(() => {}); setEditando({ tipo: 'cobertura', persona: e, dia, actual: coberturaDe(e.id, dia), origen: e.branchId ?? e.branch_id }); }}
                           onLongPress={puedeEditar ? () => quitarCobertura(e) : undefined}
                           style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                          <Avatar empleado={e} tamano={32} />
+                          <Avatar empleado={e} tamano={36} />
                           <View style={{ flex: 1 }}>
                             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
                             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`De ${nombreSala(e.branchId ?? e.branch_id)}`}</Text>
@@ -363,7 +363,7 @@ export default function Horarios() {
                     <View style={{ padding: 14, gap: 10 }}>
                       {descansan.map(({ p, tieneHorario, conflicto, apoyo }) => (
                         <Pressable key={p.id} onPress={() => setHoja(p)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                          <Avatar empleado={p} tamano={30} />
+                          <Avatar empleado={p} tamano={28} />
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{shortEmployeeName(p)}</Text>
                           {conflicto ? <Pildora texto={conflicto.label} color={COLOR_CONFLICTO[conflicto.label] ?? MARCA.azulClaro} />
                             : apoyo ? <Pildora texto={`Apoya en ${apoyo}`} color={MARCA.azulClaro} />
@@ -430,7 +430,7 @@ export default function Horarios() {
         ) : hoja ? (
           <ConAurora>
             <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-              <Avatar empleado={hoja} tamano={44} />
+              <Avatar empleado={hoja} tamano={48} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{shortEmployeeName(hoja)}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${HORAS_SEMANA_DIURNA}`}</Text>
@@ -487,7 +487,7 @@ export default function Horarios() {
               }}>
                 <Vidrio radio={16} interactivo>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Avatar empleado={e} tamano={34} />
+                    <Avatar empleado={e} tamano={36} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[e.role, nombreSala(e.branchId ?? e.branch_id)].filter(Boolean).join(' · ')}</Text>

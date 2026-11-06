@@ -103,7 +103,7 @@ export default function Cotizaciones() {
                   <View style={{ flex: 1 }} />
                   {c.created_by_name ? (
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                      <Avatar empleado={{ id: c.created_by, name: c.created_by_name, photo: c.created_by_photo }} tamano={18} />
+                      <Avatar empleado={{ id: c.created_by, name: c.created_by_name, photo: c.created_by_photo }} tamano={20} />
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{shortEmployeeName({ name: c.created_by_name })}</Text>
                     </View>
                   ) : null}

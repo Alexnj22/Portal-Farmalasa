@@ -39,7 +39,7 @@ export default function EntregaDelTurno({ entregas, personas }) {
               </View>
             ) : (
               <View style={{ borderRadius: 17, borderWidth: n === ultimo ? 2 : 0, borderColor: `${MARCA.verde}AA`, padding: n === ultimo ? 1 : 0 }}>
-                <Avatar empleado={ficha(n)} tamano={30} />
+                <Avatar empleado={ficha(n)} tamano={28} />
               </View>
             )}
           </View>

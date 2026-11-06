@@ -60,7 +60,7 @@ function Persona({ nombre, id, rol }) {
   if (!nombre) return null;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-      <Avatar empleado={{ id, name: nombre }} tamano={18} />
+      <Avatar empleado={{ id, name: nombre }} tamano={20} />
       <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>{`${rol} ${shortEmployeeName({ name: nombre })}`}</Text>
     </View>
   );

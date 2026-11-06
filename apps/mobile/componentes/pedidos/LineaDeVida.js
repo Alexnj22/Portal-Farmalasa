@@ -102,7 +102,7 @@ export default function LineaDeVida({ row, etapa, quien, entrega = null, conduct
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700' }}>APOYÓ AL RECIBIR</Text>
           {apoyoRecepcion.map((a) => (
             <View key={a.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-              <Avatar empleado={a} tamano={22} />
+              <Avatar empleado={a} tamano={20} />
               <Text style={{ color: colorSistema.texto, fontSize: 13 }}>{shortEmployeeName(a)}</Text>
             </View>
           ))}

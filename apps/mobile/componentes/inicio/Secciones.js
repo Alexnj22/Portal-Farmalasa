@@ -3,7 +3,7 @@
 // (`ordenPorUso`) dentro de cada pestaña. «Hoy» va siempre primero: son los
 // números del día y no compiten.
 import { useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import Svg, { Circle } from 'react-native-svg';
 import { Host, Icon } from '@expo/ui';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
@@ -25,6 +25,7 @@ import { VentasPorHora } from './widgets/ventasPorHora';
 import { Reservas } from './widgets/reservas';
 import Kpi, { Avance, Curva, FilaDeKpis } from './Kpi';
 import { colorSistema } from '../Formulario';
+import Avatar from '../Avatar';
 import { iconoDe } from '../../tema/iconos';
 
 import { MARCA } from './marca';
@@ -223,12 +224,8 @@ export function Equipo({ datos, ctx }) {
     <Widget titulo="Equipo hoy" icono="Users" color={MARCA.azul} cuenta={presentes.length} onAbrir={ctx.puede('monitor') ? () => ctx.abrir('/monitor') : null}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
         {presentes.slice(0, 6).map((e, i) => (
-          <View key={e.id} style={{ marginLeft: i ? -10 : 0, borderRadius: 20, borderWidth: 2, borderColor: 'rgba(255,255,255,0.7)' }}>
-            {e.photo
-              ? <Image source={{ uri: e.photo }} style={{ width: 36, height: 36, borderRadius: 18 }} />
-              : <View style={{ width: 36, height: 36, borderRadius: 18, backgroundColor: colorSistema.separador, alignItems: 'center', justifyContent: 'center' }}>
-                  <Text style={{ color: colorSistema.texto, fontSize: 12, fontWeight: '700' }}>{shortEmployeeName(e).split(' ').map((p) => p[0]).join('').slice(0, 2)}</Text>
-                </View>}
+          <View key={e.id} style={{ marginLeft: i ? -6 : 0 }}>
+            <Avatar empleado={e} tamano={36} />
           </View>
         ))}
         <Text style={{ marginLeft: presentes.length ? 12 : 0, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>

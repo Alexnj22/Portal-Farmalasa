@@ -36,7 +36,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
           <Pildora texto={abierta ? `abierta · ${hora12(apertura.abierta_a) || '—'}` : `cerró · ${hora12(apertura.cerrada_at) || '—'}`} color={abierta ? MARCA.verde : colorSistema.texto2} />
         </View>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          {quien ? <Avatar empleado={{ id: apertura.employee_id, name: quien }} tamano={32} /> : (
+          {quien ? <Avatar empleado={{ id: apertura.employee_id, name: quien }} tamano={36} /> : (
             <View style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: `${MARCA.ambar}26`, alignItems: 'center', justifyContent: 'center' }}>
               <Text style={{ color: MARCA.ambar, fontSize: 15, fontWeight: '800' }}>?</Text>
             </View>

@@ -90,7 +90,7 @@ export default function Jefatura() {
               return (
                 <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setElegidoId(e.id); }} accessibilityRole="button" accessibilityState={{ selected: sel }}
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 52, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
-                  <Avatar empleado={e} tamano={34} />
+                  <Avatar empleado={e} tamano={36} />
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: sel ? '800' : '600' }}>{shortEmployeeName(e)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[e.role, salaDe(e)].filter(Boolean).join(' · ')}</Text>

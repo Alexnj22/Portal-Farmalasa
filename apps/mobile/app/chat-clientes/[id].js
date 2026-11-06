@@ -110,7 +110,7 @@ const Burbuja = memo(function Burbuja({ m, nuevaTanda, finDeTanda, autor, onFoto
           ) : (
             <>
               <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '600' }}>{nombreDeCliente(shortEmployeeName(autor))}</Text>
-              <Avatar empleado={autor} tamano={16} />
+              <Avatar empleado={autor} tamano={20} />
             </>
           )}
         </View>

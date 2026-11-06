@@ -120,7 +120,7 @@ export default function MiPerfil() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Vidrio radio={26}>
           <View style={{ padding: 20, alignItems: 'center', gap: 8 }}>
-            <Avatar empleado={emp} tamano={88} />
+            <Avatar empleado={emp} tamano={104} />
             <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800', textAlign: 'center' }}>{shortEmployeeName(emp)}</Text>
             {cargos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>{cargos.join(' · ')}</Text> : null}
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', justifyContent: 'center' }}>

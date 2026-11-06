@@ -147,7 +147,7 @@ function Resumen({ b, gente, kioscos, puedeEditar }) {
         {gente.length ? gente.map((e, i) => (
           <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/[id]', params: { id: String(e.id) } }); }}
             style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 8 : 0, opacity: pressed ? 0.6 : 1 })}>
-            <Avatar empleado={e} tamano={32} />
+            <Avatar empleado={e} tamano={36} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{shortEmployeeName(e)}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[e.role, e.secondary_role].filter(Boolean).join(' · ') || '—'}</Text>
@@ -314,7 +314,7 @@ function Historial({ b, empleados }) {
             {l.antes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, textDecorationLine: 'line-through' }}>{`Antes: ${l.antes}`}</Text> : null}
             {l.nuevo ? <Text style={{ color: l.critico ? MARCA.rojo : MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>{`Nuevo: ${l.nuevo}`}</Text> : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-              {persona ? <Avatar empleado={persona} tamano={22} /> : null}
+              {persona ? <Avatar empleado={persona} tamano={20} /> : null}
               <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{persona ? shortEmployeeName(persona) : 'Sistema'}</Text>
               {l.archivo ? <Boton texto="Ver documento" onPress={() => Linking.openURL(l.archivo).catch(() => {})} /> : null}
             </View>

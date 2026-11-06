@@ -132,7 +132,7 @@ export default function VentasPerdidas() {
                       <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatQty(Number(f.cantidad), { decimalesMax: 2 })}</Text>
                       {f.employees ? (
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <Avatar empleado={{ id: f.employees.id, name: f.employees.name, photo: fotos.get(String(f.employees.id)) }} tamano={22} />
+                          <Avatar empleado={{ id: f.employees.id, name: f.employees.name, photo: fotos.get(String(f.employees.id)) }} tamano={20} />
                           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{shortEmployeeName(f.employees)}</Text>
                         </View>
                       ) : null}

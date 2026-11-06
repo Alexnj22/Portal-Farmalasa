@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1458.0 — Avatar: retrato de 104 y el mismo diseño en la app
+
+- **Retrato de 104**: la foto de la cabecera del perfil de una persona tiene su propio tamaño en la escala (20 · 28 · 36 · 48 · 64 · 104). El detalle de Personal bajó de 144/160 a 104, igual que el perfil.
+- **La app usa el mismo diseño que el portal**: aro de estado separado de la foto, chip con el ícono o la cuenta regresiva, la torta blanca el día del cumpleaños, el «!» de expediente (sólo para quien puede corregirlo) y la medalla de antigüedad. Antes la app pintaba sólo la foto.
+- Los ~120 usos de la foto en la app pasan a la escala; un tamaño fuera de ella se lleva al más cercano. La foto de la cuenta en Inicio y el «Equipo hoy» usan la canónica.
+- La escala y en qué tamaño aparece cada marca viven en el núcleo (`utils/avatar.js`), compartidas por el portal y la app.
+
 ## v2.1457.1 — Avatar: las fotos hechas a mano pasan a la canónica
 
 - Ocho fotos que se armaban a mano pasan a la canónica, con su aro y en la escala: Encuestas (resultados y administración), los selectores de persona (Vacaciones, Encuestas), Bitácora, el cambio de vendedor de una solicitud, la salida anticipada del kiosco y el conductor de una ruta.

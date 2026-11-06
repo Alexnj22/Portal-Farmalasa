@@ -84,7 +84,7 @@ export default function CarnesDelDia() {
               <View key={c.id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={18}>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Avatar empleado={c.empleado ?? { name: c.nombre }} tamano={38} />
+                    <Avatar empleado={c.empleado ?? { name: c.nombre }} tamano={36} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{c.nombre}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{[c.cargo, `lo entregó ${c.loEntrego}`].filter(Boolean).join(' · ')}</Text>
@@ -108,7 +108,7 @@ export default function CarnesDelDia() {
               <View key={e.id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={18}>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Avatar empleado={e} tamano={38} />
+                    <Avatar empleado={e} tamano={36} />
                     <View style={{ flex: 1, gap: 2 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>{shortEmployeeName(e)}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{[e.role || 'Sin cargo', nombreDeSala.get(String(e.branchId))].filter(Boolean).join(' · ')}</Text>

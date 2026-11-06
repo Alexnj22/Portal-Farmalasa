@@ -111,12 +111,13 @@ const MARCA = {
  *   28 · 36   PERSONA  — aro de estado separado de la foto, torta, «!».
  *   36        + el chip con el ícono del estado.
  *   48 · 64   + la medalla de antigüedad.
+ *   104       RETRATO  — la cabecera del perfil de esa persona, y nada más.
  *
  * Antes eran 23 tamaños (de 14 a 64) y las marcas cambiaban según el
  * escalón, así que la misma persona se veía distinta de una pantalla a otra.
  * `gate:design` (categoría `avatar-fuera-de-escala`) rechaza cualquier otro.
  */
-export const TAMANOS_DE_AVATAR = Object.freeze([20, 28, 36, 48, 64]);
+export { TAMANOS_DE_AVATAR } from '@nucleo/utils/avatar';
 
 // Escritas LITERALES y no armadas con plantilla: Tailwind escanea strings del
 // fuente, y con `ring-${variante}` no ve nada y no emite la clase — el aro

@@ -96,7 +96,7 @@ export default function Credito() {
             <Dato rotulo="Documento" valor={`${c.tipo_doc || ''} ${p.documento || ''}`.trim()} />
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
               <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>Vendió</Text>
-              {c.vendedor ? <Avatar empleado={vendedor ?? { name: c.vendedor }} tamano={24} /> : null}
+              {c.vendedor ? <Avatar empleado={vendedor ?? { name: c.vendedor }} tamano={28} /> : null}
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '500' }}>{vendedor ? shortEmployeeName(vendedor) : (c.vendedor || 'sin registrar')}</Text>
             </View>
           </Seccion>

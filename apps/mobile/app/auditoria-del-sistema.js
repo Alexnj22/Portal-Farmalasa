@@ -66,7 +66,7 @@ function Ficha({ l, quien, onCerrar }) {
             <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Pressable>
           </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar empleado={quien ?? { name: l.user_name || 'Sistema' }} tamano={44} />
+            <Avatar empleado={quien ?? { name: l.user_name || 'Sistema' }} tamano={48} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{quien ? shortEmployeeName(quien) : (l.user_name || 'Sistema')}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{fechaHora12(l.created_at, { day: 'numeric', month: 'long', year: 'numeric' })}</Text>
@@ -195,7 +195,7 @@ export default function AuditoriaDelSistema() {
               <Vidrio radio={16} interactivo>
                 <View style={{ padding: 12, gap: 5 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-                    <Avatar empleado={quien ?? { name: l.user_name || 'Sistema' }} tamano={30} />
+                    <Avatar empleado={quien ?? { name: l.user_name || 'Sistema' }} tamano={28} />
                     <View style={{ flex: 1 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{quien ? shortEmployeeName(quien) : (l.user_name || 'Sistema')}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{fechaHora12(l.created_at)}</Text>

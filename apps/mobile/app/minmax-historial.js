@@ -45,7 +45,7 @@ function Firma({ rotulo, persona, crudo }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
       <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{rotulo}</Text>
-      <Avatar empleado={persona ?? { name: nombre }} tamano={22} />
+      <Avatar empleado={persona ?? { name: nombre }} tamano={20} />
       <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{nombre}</Text>
     </View>
   );
@@ -120,7 +120,7 @@ export default function MinMaxHistorial() {
     return (
       <Vidrio key={log.id} radio={16}>
         <View style={{ padding: 12, flexDirection: 'row', gap: 10 }}>
-          <Avatar empleado={persona ?? { name: log.user_name || '?' }} tamano={32} />
+          <Avatar empleado={persona ?? { name: log.user_name || '?' }} tamano={36} />
           <View style={{ flex: 1, gap: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, fontWeight: '700' }} numberOfLines={1}>

@@ -95,7 +95,7 @@ export default function Cargos() {
                 </Text>
                 {gente.length ? gente.map((e) => (
                   <View key={e.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Avatar empleado={e} tamano={24} />
+                    <Avatar empleado={e} tamano={28} />
                     <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{shortEmployeeName(e)}</Text>
                   </View>
                 )) : <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nadie ocupa este cargo.</Text>}

@@ -96,7 +96,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
                     <Text style={{ color: puesto <= 3 ? MARCA.ambar : colorSistema.texto2, fontSize: 17, fontWeight: '800' }}>{puesto}</Text>
                     <Movimiento antes={puestos.get(v.cod_vendedor)} ahora={puesto} />
                   </View>
-                  <Avatar empleado={v.emp ?? { name: v.especial }} tamano={42} />
+                  <Avatar empleado={v.emp ?? { name: v.especial }} tamano={48} />
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{nombreDeVendedor(v)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }} numberOfLines={1}>

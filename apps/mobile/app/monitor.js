@@ -136,7 +136,7 @@ export default function Monitor() {
                         onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/[id]', params: { id: String(f.e.id) } }); }}
                         style={({ pressed }) => ({ flexDirection: 'row', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 12 : 0, opacity: pressed ? 0.7 : 1 })}>
                         <View>
-                          <Avatar empleado={f.e} tamano={40} />
+                          <Avatar empleado={f.e} tamano={36} />
                           {f.e.hasLactation || d.lactation ? (
                             <View style={{ position: 'absolute', right: -3, bottom: -3, width: 16, height: 16, borderRadius: 8, backgroundColor: '#F472B6', alignItems: 'center', justifyContent: 'center' }}>
                               <Text style={{ color: '#fff', fontSize: 9, fontWeight: '800' }}>L</Text>

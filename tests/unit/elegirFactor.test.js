@@ -1,6 +1,6 @@
 // Cuántas unidades trae cada una del proveedor, con el precio como juez (2026-11-05).
 import { describe, it, expect } from 'vitest';
-import { elegirFactor, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
+import { elegirFactor, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
 
 describe('elegirFactor', () => {
     it('MELOFLEX: lo aprendido (1, de agosto) pierde contra el precio: caja de 10', () => {
@@ -82,5 +82,14 @@ describe('elegirFactor', () => {
         expect(envaseUnitarioEnLaDescripcion('ACETAMINOFEN 500 MG FCO X 100 TAB')).toBe(false);
         expect(envaseUnitarioEnLaDescripcion('JARABE X 120 ML CAJA X 12 FCO')).toBe(false);
         expect(envaseUnitarioEnLaDescripcion('SUPLEFERR GOTAS FRASCO X 30 ML')).toBe(true);
+    });
+    it('el tamaño de la caja según la factura', () => {
+        expect(tamanoDeCajaEnLaDescripcion('RINOKEM PLUS CAJA X 100 CAPS LOTE: 260265')).toBe(100);
+        expect(tamanoDeCajaEnLaDescripcion('XEROGEN SOLUCION ORAL CAJA X 10 SACHETS')).toBe(10);
+        expect(tamanoDeCajaEnLaDescripcion('MEBEZOL SUSPENSION FCO X 30 ML')).toBe(null);
+        expect(tamanoDeCajaEnLaDescripcion('JARABE CAJA X 120 ML')).toBe(null);
+        expect(tamanoDeCajaEnLaDescripcion('JARABE X 120 ML CAJA X 12 FCO')).toBe(12);
+        expect(tamanoDeCajaEnLaDescripcion('NOR-CLAMIDA 5 MG X 30 TAB')).toBe(null);
+        expect(tamanoDeCajaEnLaDescripcion('Barrita Fresa Sarita|7401090800083|25.000 |Caja')).toBe(25);
     });
 });

@@ -80,6 +80,28 @@ const vinetaActual = (r, aj, sim, lista) => {
     const v = (l.find(x => x.factor === f) ?? l.find(x => x.factor === 1))?.vineta;
     return Number(v) > 0 ? Number(v) : null;
 };
+// Las presentaciones del catálogo, sin la copia de factor 0, de menor a mayor.
+const presDelCatalogo = (lista) => [...new Map((lista ?? []).filter(x => Number(x.factor) > 0).map(x => [Number(x.factor), x])).values()]
+    .sort((a, b) => a.factor - b.factor);
+const nombrePres = (x) => `${x.nombre ?? (x.factor > 1 ? 'CAJA' : 'UNIDAD')} (${x.factor})`;
+// El nombre del producto con el tamaño nuevo, si lo nombra una sola vez
+// («RINOKEM PLUS X 100 CAPSULAS» → «… X 120 CAPSULAS»). Una medida no cuenta.
+const MEDIDA = String.raw`(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|%|UI)\b)`;
+const nombreConTamano = (nombre, tam) => {
+    const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
+    const m = [...String(nombre ?? '').matchAll(re)];
+    if (m.length !== 1 || Number(m[0][1]) === tam) return null;
+    return String(nombre).replace(m[0][0], `X ${tam}`).replace(/\s+/g, ' ').trim();
+};
+// ¿Este tamaño se puede aprender sin preguntar? Si Bodega vende esa
+// presentación, o si es lo que dice la factura. Si no —140 en RINOKEM, 2 en
+// MEBEZOL (2026-11-06)—, una confirmación de pasada no lo vuelve regla.
+const tamanoAprendible = (factor, lista, r) => {
+    const f = Number(factor);
+    if (!(f > 1)) return true;
+    return presDelCatalogo(lista).some(x => x.factor === f) || f === Number(r?.tamano_factura);
+};
+
 // Al múltiplo de 5 centavos de arriba: así se ponen las viñetas.
 const subirA5 = (n) => Math.ceil(Math.round(n * 100) / 5) * 5 / 100;
 
@@ -295,6 +317,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [elegidos, setEleg] = useState({});
     const [buscando, setBusc] = useState(null);
     const [guardando, setG]   = useState(null);
+    // El renglón cuyo «Siempre así» pide la segunda confirmación.
+    const [duda, setDuda]     = useState(null);
     // ── Para armar la carga ──
     const [uso, setUso]         = useState('venta');
     const [ajustes, setAjustes] = useState({});   // {índice: ajusteInicial}
@@ -406,7 +430,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     // Se aprende por la llave del diccionario: el código del proveedor, o si
     // no trae (papel, algunos DTE), su nombre. La próxima factura de ese
     // proveedor con ese renglón sale ya confirmada.
-    const confirmar = async (renglon, i, producto) => {
+    const confirmar = async (renglon, i, producto, { explicito = false } = {}) => {
         const k = claveDe(renglon, i);
         const llave = renglon.llave || renglon.codigo_proveedor;
         // El tamaño «por costo» se calculó contra el producto PROPUESTO. Si se
@@ -438,11 +462,17 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         }
         if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
         if (llave && p.documento.emisor_nit) {
+            // Confirmar el PRODUCTO no confirma un tamaño raro: se aprende el
+            // producto y el tamaño queda en 1, para que la próxima factura lo
+            // vuelva a calcular. Sólo «Siempre así» —con su segunda pregunta—
+            // guarda un tamaño que Bodega no vende.
+            const lista = vinetas ?? (producto.id === renglon.producto_id ? (renglon.vinetas ?? []) : []);
+            const aprender = explicito || tamanoAprendible(factor, lista, renglon) ? factor : '1';
             setG(k);
             const { error: e } = await confirmarProducto(
                 p.documento.emisor_nit, llave, producto.id,
                 { proveedor: p.documento.emisor, producto: producto.nombre },
-                factor);
+                aprender);
             setG(null);
             if (e) { setError(e); return; }
         }
@@ -873,6 +903,10 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                             {uso === 'venta' && !aj.servicio && (
                                                 <p className="mt-0.5 text-caption text-content-3">En la factura: {r.descripcion}</p>
                                             )}
+                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && conProducto && (
+                                                <PresentacionComparada tam={Number(r.tamano_factura) || null}
+                                                    presentaciones={vinetasDe(r, i)} nombre={elegido?.nombre ?? r.producto} />
+                                            )}
                                             {uso === 'venta' && !aj.servicio && !aj.erroneo && (() => {
                                                 // Concentración o tamaño distinto entre la factura y el producto.
                                                 const difs = elegido ? elegido.numeros : r.numeros_distintos;
@@ -913,14 +947,28 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                             <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar}
                                                 presentaciones={[...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]}
                                                 onCargar={v => ajustarCarga(i, r, v)}
-                                                recordar={factorCambio && puedeEditar && Number.isInteger(Number(aj.factor)) ? (
+                                                recordar={factorCambio && puedeEditar && Number.isInteger(Number(aj.factor)) ? (() => {
                                                     // Guarda «cada una de este proveedor trae N» para que la
-                                                    // próxima factura ya venga así. Sólo con un número parejo.
-                                                    <Button size="xs" variant="ghost" icon={BookMarked} loading={guardando === k}
-                                                        onClick={() => confirmar(r, i, { id: productoDe(r, i), nombre: elegido?.nombre ?? r.producto })}>
-                                                        Siempre así: {Number(aj.factor)} por cada una
-                                                    </Button>
-                                                ) : null} />
+                                                    // próxima factura ya venga así. Sólo con un número parejo,
+                                                    // y si Bodega no vende de a N, pregunta dos veces.
+                                                    const raro = !tamanoAprendible(aj.factor, vinetasDe(r, i), r);
+                                                    const guardar = () => { setDuda(null); confirmar(r, i, { id: productoDe(r, i), nombre: elegido?.nombre ?? r.producto }, { explicito: true }); };
+                                                    if (duda === k) return (
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <span className="text-caption font-bold text-warning-text">
+                                                                Bodega no vende de a {Number(aj.factor)}. ¿Seguro que cada una trae {Number(aj.factor)}?
+                                                            </span>
+                                                            <Button size="xs" variant="secondary" tone="warning" loading={guardando === k} onClick={guardar}>Sí, guardar</Button>
+                                                            <Button size="xs" variant="ghost" onClick={() => setDuda(null)}>No</Button>
+                                                        </div>
+                                                    );
+                                                    return (
+                                                        <Button size="xs" variant="ghost" icon={BookMarked} loading={guardando === k}
+                                                            onClick={() => (raro ? setDuda(k) : guardar())}>
+                                                            Siempre así: {Number(aj.factor)} por cada una
+                                                        </Button>
+                                                    );
+                                                })() : null} />
                                             <PortalInput compact labelDenso label="Lote" value={aj.lote}
                                                 onChange={e => ajustar(i, 'lote', e.target.value)} />
                                             <CampoMesAnio compact label="Vence" value={aj.vence} onChange={v => ajustar(i, 'vence', v)} />
@@ -1529,8 +1577,47 @@ function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar })
                     </p>
                 );
             })()}
+            {(() => {
+                // El tamaño elegido contra lo que dice la factura y lo que vende
+                // Bodega: 140 por caja cuando la factura dice 100 (RINOKEM).
+                const tam = Number(r.tamano_factura) || null;
+                const fr = r3(f);
+                if (!(fr > 1)) return null;
+                if (tam && fr !== tam) {
+                    return <p className="mt-0.5 text-caption font-bold text-warning-text">Ojo: la factura dice caja de {tam}, y aquí van {fr} por cada una.</p>;
+                }
+                if (!tam && pres.length > 0 && !pres.some(x => x.factor === fr)) {
+                    return <p className="mt-0.5 text-caption font-bold text-warning-text">Ojo: Bodega no vende de a {fr}. Revisa que cada una de la factura traiga {fr}.</p>;
+                }
+                return null;
+            })()}
             {recordar && <div className="mt-1">{recordar}</div>}
         </div>
+    );
+}
+
+/* Lo que dice la factura de la presentación, al lado de lo que vende Bodega.
+ * Si la caja cambió de tamaño, lo dice y sugiere qué crear (2026-11-06). */
+function PresentacionComparada({ tam, presentaciones, nombre }) {
+    const pres = presDelCatalogo(presentaciones);
+    if (!pres.length) return null;
+    const cambio = tam && !pres.some(x => x.factor === tam);
+    const nuevo = cambio ? nombreConTamano(nombre, tam) : null;
+    return (
+        <>
+            <p className="mt-0.5 text-caption text-content-3">
+                {tam ? <>La factura trae <b className="text-content-2">caja de {tam}</b> · </> : null}
+                En Bodega: {pres.map(nombrePres).join(', ')}
+            </p>
+            {cambio && (
+                <Notice variant="warning" icon={AlertTriangle} className="mt-2">
+                    <b>¿Cambió la presentación?</b> La factura trae caja de {tam} y Bodega no la tiene.
+                    {' '}Si es así, hay que crear la presentación de {tam}
+                    {nuevo ? <> y cambiar el nombre del producto a <b>«{nuevo}»</b></> : null}.
+                    {pres.some(x => x.factor === 1) ? ' Mientras tanto entra en unidades.' : ''}
+                </Notice>
+            )}
+        </>
     );
 }
 

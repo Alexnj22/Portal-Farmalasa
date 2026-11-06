@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
+import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 import { diferenciasDeNumeros } from "../_shared/numerosDelNombre.ts";
 
@@ -619,6 +619,9 @@ Deno.serve(async (req: Request) => {
             presentaciones: ((r as any).vinetas ?? []).map((v: { factor: number }) => v.factor),
           });
           r.factor_proveedor = f.factor; r.factor_origen = f.origen;
+          // Cuántas trae la caja según la factura: la pantalla lo pone al lado
+          // de las presentaciones del catálogo para ver si cambió.
+          (r as any).tamano_factura = tamanoDeCajaEnLaDescripcion(String(r.descripcion ?? ""));
           // La pantalla lo manda de vuelta cuando Bodega elige otro producto
           // (modo «factor»): el tamaño se recalcula contra ESE producto.
           (r as any).costo_neto = Math.round(neto * 10000) / 10000;

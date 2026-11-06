@@ -376,6 +376,22 @@ export function envaseUnitarioEnLaDescripcion(t: string): boolean {
   return !/\bX\s*\d+\s*(TAB|TABS|TABL|TABLETAS?|CAP|CAPS|CAPSULAS?|COMP|COMPRIMIDOS?|GRAG|GRAGEAS?|SOBRES?|AMP|AMPOLLAS?|UND|UNDS|UNIDADES|U|PZ|PIEZAS?|PERLAS?)\b/i.test(s);
 }
 
+/**
+ * Cuántas piezas dice la factura que trae su caja, para compararlo con las
+ * presentaciones del catálogo (2026-11-06): «CAJA X 100 CAPS» → 100. Sólo con
+ * un empaque nombrado y UN tamaño que no sea una medida («X 120 ML» no cuenta).
+ * Con dos tamaños o ninguno, null: la pantalla no adivina.
+ */
+export function tamanoDeCajaEnLaDescripcion(t: string): number | null {
+  const s = String(t ?? "");
+  const doc = factorEnLaDescripcion(s) ?? factorDebilEnLaDescripcion(s);
+  if (doc) return doc;
+  if (!empaqueEnLaDescripcion(s)) return null;
+  const n = [...new Set([...s.matchAll(/\bX\s*(\d{1,3})\b(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|GRAMOS|MG|MCG|KG|OZ|%|UI)\b)/gi)]
+    .map((m) => Number(m[1])).filter((x) => x >= 2 && x <= 500))];
+  return n.length === 1 ? n[0] : null;
+}
+
 export function factorDebilEnLaDescripcion(t: string): number | null {
   const m = /\bDISP(?:LAY)?\.?\s*(?:X|DE|CON)\s*(\d+)\b/i.exec(String(t ?? ""));
   const n = m ? Number(m[1]) : NaN;

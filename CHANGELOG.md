@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1465.0 — Compras: la presentación de la factura al lado de la de Bodega, y un tamaño raro no se aprende de pasada
+
+- **Cada renglón dice qué caja trae la factura y qué presentaciones tiene
+  Bodega**: «La factura trae caja de 100 · En Bodega: UNIDAD (1), BLISTER (10),
+  CAJA (100)». Si la factura trae un tamaño que Bodega no tiene, avisa
+  «¿Cambió la presentación?», dice qué presentación crear y, si el nombre del
+  producto lleva el tamaño viejo, el nombre nuevo («RINOKEM PLUS X 120
+  CAPSULAS»).
+- **«Se carga como» avisa cuando el tamaño no cuadra**: si la factura dice caja
+  de 100 y van 140 por cada una, o si Bodega no vende de a ese número.
+- **Un tamaño raro ya no se aprende de pasada.** Confirmar el producto guarda
+  el tamaño sólo si Bodega vende esa presentación o es lo que dice la factura;
+  si no, aprende el producto y deja que la próxima factura lo calcule.
+  «Siempre así» con un tamaño que Bodega no vende pregunta dos veces. Hoy se
+  habían aprendido así 140 (RINOKEM), 2 (MEBEZOL), 42 (BROXOTAN) y 11 (RUPAX);
+  los cuatro se corrigieron.
+
 ## v2.1464.2 — Bodega: deshacer un paso a vencidos
 
 - **Lo que se pasó a vencidos por error puede volver al estante** (acción

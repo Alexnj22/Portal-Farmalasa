@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.8 — Anular o cambiar una venta la refresca en el momento
+
+Al aprobar una solicitud de facturación (anulación o cambio), `aplicar-solicitud-facturacion`
+vuelve a leer del origen **esa sala y ese día** (`sync-dte-sales` con `fini`/`ffin`/`branchId`),
+en segundo plano. Antes una venta de días anteriores seguía «FINALIZADA» en Ventas hasta la
+resincronización horaria (minuto :07): la 0000079471_COF de Salud 4 se anuló a las 10:53 y
+cambió a las 11:07. Si la relectura falla, sólo se anota: la pasada de la hora lo cubre igual.
+
 ## v2.1461.7 — Anchos de modal en una escala
 
 - **El ancho de un modal sale de una escala de seis**: sm 24 · md 28 · lg 32 · 2xl 42 · 4xl 56 · 6xl 72rem, más `none` para hojas y barras. Había 12 valores distintos. Los que caían entre dos escalones (xs, xl, 3xl, 5xl) subieron al de arriba en 34 archivos, así que ningún modal quedó más angosto. En el teléfono todos siguen siendo hoja de ancho completo.

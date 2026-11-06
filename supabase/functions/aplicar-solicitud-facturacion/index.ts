@@ -83,6 +83,35 @@ const ERP_A_PAGO: Record<string, string> = Object.fromEntries(
 /** El día de El Salvador (UTC−6, sin horario de verano). */
 const hoySV = () => new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
+
+/**
+ * Vuelve a leer del origen la sala y el DÍA de la venta recién cambiada
+ * (2026-11-06). El sync de cada minuto sólo mira HOY y la resincronización del
+ * mes corre a los :07 de cada hora, así que una venta de ayer anulada a las
+ * 10:53 seguía «FINALIZADA» en Ventas hasta las 11:07. Una sala y un día son
+ * unos segundos de trabajo, contra el mes entero de la pasada horaria.
+ *
+ * Va en `waitUntil`: la aprobación ya está hecha y escrita, y la respuesta no
+ * espera a esto. Si falla no pasa nada que la pasada de la hora no arregle —
+ * por eso sólo se anota, no se avisa.
+ */
+function refrescarVentaDelDia(branchId: number | null, fecha: unknown): void {
+  const dia = String(fecha ?? "").slice(0, 10);
+  const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+  if (!branchId || !/^\d{4}-\d{2}-\d{2}$/.test(dia) || !secreto) return;
+  EdgeRuntime.waitUntil(
+    fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-dte-sales`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` },
+      body: JSON.stringify({ fini: dia, ffin: dia, branchId: Number(branchId) }),
+      signal: AbortSignal.timeout(60_000),
+    })
+      .then(async (r) => { if (!r.ok) console.error(`refrescando ${branchId}/${dia}: HTTP ${r.status} ${(await r.text()).slice(0, 200)}`); })
+      .catch((e) => console.error(`refrescando ${branchId}/${dia}:`, e)),
+  );
+}
+
 const MOV_URL    = `${BASE}/admin_movimiento_caja_dt.php`;
 const BORRAR_MOV = `${BASE}/borrar_movimiento_caja.php`;
 
@@ -757,6 +786,7 @@ Deno.serve(async (req) => {
         .eq("status", "PENDING");
       if (updAnuErr) throw updAnuErr;
 
+      refrescarVentaDelDia(factura.branch_id, factura.fecha);
       return json({ ok: true, aplicado: aplicadoAnu });
     }
 
@@ -944,6 +974,7 @@ Deno.serve(async (req) => {
       .eq("status", "PENDING");          // no pisar si otro la resolvió en el medio
     if (updErr) throw updErr;
 
+    refrescarVentaDelDia(factura.branch_id, factura.fecha);
     return json({ ok: true, aplicado });
 
   } catch (e) {

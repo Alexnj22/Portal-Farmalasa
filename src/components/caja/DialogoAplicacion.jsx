@@ -543,11 +543,22 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                         {saldo == null
                                                             ? `${fmtMl(r.contenido_ml)} ml por unidad · elige cuánto se pone`
                                                             : <>
-                                                                {saldo.total} {saldo.total === 1 ? 'aplicación' : 'aplicaciones'} en la venta
-                                                                {porMl && ` · ${fmtMl(saldo.dosis)} ml cada una`}
+                                                                {/* «8 aplicaciones» a secas confundía (2026-11-06): con el
+                                                                    contador en 1 se leía como que iba a cobrar 8. Por ml se
+                                                                    dice de dónde sale el número; abajo, qué se cobra hoy. */}
+                                                                {porMl
+                                                                    ? `Se vendieron ${fmtMl(r.unidades)} de ${fmtMl(r.contenido_ml)} ml: a ${fmtMl(saldo.dosis)} ml rinden ${saldo.total} ${saldo.total === 1 ? 'aplicación' : 'aplicaciones'}`
+                                                                    : `${saldo.total} ${saldo.total === 1 ? 'aplicación' : 'aplicaciones'} en la venta`}
+                                                                {saldo.total > saldo.disponibles && ` · ya se cobraron ${saldo.total - saldo.disponibles}`}
                                                                 {!porMl && !r.confirmado && r.por_unidad > 1 && ` (${r.por_unidad} por unidad, sin confirmar)`}
                                                             </>}
                                                     </p>
+                                                    {!mezcla && saldo && (cuantas[r.linea_num] || 0) > 0 && saldo.disponibles > (cuantas[r.linea_num] || 0) && (
+                                                        <p className="text-caption text-content-2">
+                                                            Hoy se {cuantas[r.linea_num] === 1 ? 'cobra' : 'cobran'} <b className="text-content">{cuantas[r.linea_num]}</b>
+                                                            {' '}· las otras {saldo.disponibles - cuantas[r.linea_num]} quedan en la venta para cobrarlas otro día.
+                                                        </p>
+                                                    )}
                                                 </div>
                                                 {mezcla ? (
                                                     <Checkbox size="sm" checked={enMezcla.has(r.linea_num)}
@@ -577,7 +588,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                     value={dosis[r.linea_num] != null ? String(dosis[r.linea_num]) : null}
                                                     options={(r.opciones_ml || []).map((d) => {
                                                         const n = Math.floor(Number(r.unidades) * aplicacionesPorDosis(r.contenido_ml, d));
-                                                        return { value: String(Number(d)), label: `${fmtMl(d)} ml · ${n} aplic.` };
+                                                        return { value: String(Number(d)), label: `${fmtMl(d)} ml · rinde ${n}` };
                                                     })}
                                                     onChange={(v) => {
                                                         const d = Number(v);

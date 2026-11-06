@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.2 — Inyecciones: el saldo por ml dice de dónde sale y qué se cobra hoy
+
+- Al cobrar una aplicación de una venta por ml (2 viales de tiamina de 10 ml
+  a 2.5 ml) la pantalla decía «8 aplicaciones en la venta» con el contador en
+  1, y se leía como que iba a cobrar 8. Ahora dice «Se vendieron 2 de 10 ml:
+  a 2.5 ml rinden 8 aplicaciones» y, debajo, «Hoy se cobra 1 · las otras 7
+  quedan en la venta para cobrarlas otro día». La opción de dosis dice
+  «2.5 ml · rinde 8».
+
 ## v2.1466.1 — Bodega: un solo camino de vuelta desde vencidos
 
 - Salían dos formas de regresar lo que estaba en vencidos (la lista

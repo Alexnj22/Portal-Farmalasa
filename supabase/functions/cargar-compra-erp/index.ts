@@ -2331,6 +2331,19 @@ Deno.serve(async (req: Request) => {
     return responder({ simulacro: true, carga_id: fila.id, sobre, revision });
   } catch (e: any) {
     console.error("[cargar-compra-erp]", e?.message ?? e);
+    // Un envío que falla ANTES de tomar la carga (típico: el inicio de sesión
+    // del sistema se corta, 2026-11-06 doc 7364) no mandó nada. Decirlo como
+    // «no se sabe si entró» asustaba sin motivo y además pintaba la dirección
+    // del sistema en pantalla. Lo que decide es la fila: si sigue `simulada`,
+    // nadie la tomó y no salió nada.
+    if (cuerpo?.enviar === true && Number(cuerpo?.carga_id) > 0) {
+      const { data: c, error: eC } = await admin.from("compra_carga").select("estado").eq("id", Number(cuerpo.carga_id)).maybeSingle();
+      if (eC) console.error("[cargar-compra-erp] leer la carga tras el fallo:", eC.message);
+      if (!eC && c?.estado === "simulada") {
+        return responder({ enviada: false, error: "No se pudo conectar con Bodega y no se mandó nada. Inténtalo de nuevo en un momento." });
+      }
+      return responder({ enviada: null, error: "Se cortó la conexión con Bodega a medio envío." }, 500);
+    }
     return responder({ error: e?.message ?? String(e) }, 500);
   }
 });

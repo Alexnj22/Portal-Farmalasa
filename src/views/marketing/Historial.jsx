@@ -24,7 +24,7 @@ export function Quien({ id, personas, px = 20 }) {
     const p = personas?.[id];
     return (
         <span className="flex items-center gap-1.5 min-w-0">
-            <AvatarConEstado emp={p || { id }} px={px} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={p || { id }} px={px} marco="" />
             <span className="text-label font-semibold text-content truncate">{shortEmployeeName(p?.name)}</span>
         </span>
     );
@@ -37,7 +37,7 @@ export function UltimoCambio({ cambio, personas }) {
         // Nombre y hora en líneas distintas: en una columna angosta del flujo,
         // juntos cortaban el nombre a una letra, y el nombre va siempre.
         <div className="flex flex-col gap-0.5 min-w-0 text-micro text-content-3">
-            <Quien id={cambio.actor} personas={personas} px={16} />
+            <Quien id={cambio.actor} personas={personas} px={20} />
             <span className="pl-[22px]">{fechaHora12(cambio.created_at, { day: 'numeric', month: 'short' })}</span>
         </div>
     );

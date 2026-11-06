@@ -1451,7 +1451,7 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
                 <b>Fechas pedidas a {vivo.sala}</b> ({(vivo.renglones ?? []).length} productos), esperando respuesta.
                 Cuando conteste, se llenan solas.
                 <span className="flex items-center gap-2 mt-1 text-micro">
-                    <AvatarConEstado emp={{ id: vivo.pedido_por, name: vivo.pedido_nombre }} px={16} radio="rounded-full" marco="" />
+                    <AvatarConEstado emp={{ id: vivo.pedido_por, name: vivo.pedido_nombre }} px={20} marco="" />
                     {shortEmployeeName(vivo.pedido_nombre)}
                     {puedeEditar && <Button size="xs" variant="ghost" loading={ocupado} onClick={cancelar}>Cancelar pedido</Button>}
                 </span>
@@ -1465,7 +1465,7 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
                 <Notice variant="success" icon={CheckCircle2}>
                     <b>{contestado.sala} contestó las fechas</b> y ya están puestas en los renglones.
                     <span className="flex items-center gap-2 mt-1 text-micro">
-                        <AvatarConEstado emp={{ id: contestado.respondido_por, name: contestado.respondido_nombre }} px={16} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={{ id: contestado.respondido_por, name: contestado.respondido_nombre }} px={20} marco="" />
                         {shortEmployeeName(contestado.respondido_nombre)}
                     </span>
                 </Notice>
@@ -2005,7 +2005,7 @@ function TabRegistro({ busca }) {
                             <DataCell>
                                 {f.cargado_por && (
                                     <span className="inline-flex items-center gap-1">
-                                        <AvatarConEstado emp={{ id: f.cargado_por, name: f.cargado_por_nombre }} px={16} radio="rounded-full" marco="" />
+                                        <AvatarConEstado emp={{ id: f.cargado_por, name: f.cargado_por_nombre }} px={20} marco="" />
                                         {shortEmployeeName(f.cargado_por_nombre ?? '')}
                                     </span>
                                 )}
@@ -2102,7 +2102,7 @@ function TabPorLlegar({ puedeEditar, busca }) {
                                 {f.nota && <p className="text-micro text-warning-text font-bold mt-0.5">{f.nota}</p>}
                                 {f.cambiado_por && !f.abierto && (
                                     <p className="text-micro text-content-3 inline-flex items-center gap-1">
-                                        <AvatarConEstado emp={{ id: f.cambiado_por, name: f.cambiado_por_nombre }} px={14} radio="rounded-full" marco="" />
+                                        <AvatarConEstado emp={{ id: f.cambiado_por, name: f.cambiado_por_nombre }} px={20} marco="" />
                                         {shortEmployeeName(f.cambiado_por_nombre ?? '')} · {fechaNumerica(String(f.cambiado_at).slice(0, 10))}
                                     </p>
                                 )}
@@ -2259,7 +2259,7 @@ function TabErroneos({ puedeEditar }) {
                                     {f.es_generico ? ' · en Bodega como PRODUCTO ERRONEO DE PROVEEDOR' : ''}
                                 </p>
                                 <p className="text-micro text-content-3 flex items-center gap-1 mt-0.5">
-                                    <AvatarConEstado emp={{ id: f.marcado_por, name: f.marcado_nombre }} px={16} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={{ id: f.marcado_por, name: f.marcado_nombre }} px={20} marco="" />
                                     {shortEmployeeName(f.marcado_nombre ?? '')} · {fechaNumerica(f.created_at)}
                                     {f.erp_traslado_id ? ` · traslado ${f.erp_traslado_id}` : ''}
                                 </p>

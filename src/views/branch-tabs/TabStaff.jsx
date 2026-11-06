@@ -110,7 +110,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                 <div className="relative">
                     <div className={`w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr ${theme.gradient} shadow-sm group-hover:scale-105 transition-transform`}>
                         <div className="w-full h-full rounded-full border-2 border-surface-card overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-xl">
-                            <AvatarConEstado emp={employee} px={40} radio="rounded-full" marco="" />
+                            <AvatarConEstado emp={employee} px={36} marco="" />
                         </div>
                     </div>
                     <div className={`absolute -bottom-1 -right-1 w-6 h-6 rounded-full border-2 border-surface-card flex items-center justify-center text-white shadow-sm ${theme.badge}`}>

@@ -79,7 +79,7 @@ export default function TarjetaDeDocumento({ categoria, titulo, doc, conVencimie
                 <div className="flex items-center gap-2 pt-2 border-t border-divider min-w-0">
                     {doc.subido_por_id && (
                         <AvatarConEstado emp={{ id: doc.subido_por_id, name: doc.subido_por }} px={20}
-                            mostrarChip={false} radio="rounded-full" marco="border border-border-card" />
+                            mostrarChip={false} marco="border border-border-card" />
                     )}
                     <p className="text-micro text-content-3 font-medium truncate">
                         Subido por <span className="font-bold text-content-2">{shortEmployeeName(doc.subido_por)}</span>

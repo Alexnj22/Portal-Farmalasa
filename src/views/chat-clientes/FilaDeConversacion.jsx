@@ -40,7 +40,7 @@ export default function FilaDeConversacion({ conversacion: c, activa, tomadaPor,
     // como chips: el nivel ya lo dice el anillo de la foto.
     const vistaPrevia = tomadaPor ? (
         <span className="flex items-center gap-1.5 text-label text-brand-text font-semibold min-w-0">
-            <AvatarConEstado emp={tomadaPor} px={16} mostrarChip={false} />
+            <AvatarConEstado emp={tomadaPor} px={20} mostrarChip={false} />
             <span className="truncate">{shortEmployeeName(tomadaPor)} está respondiendo…</span>
         </span>
     ) : escribe ? (

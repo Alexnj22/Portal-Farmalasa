@@ -28,7 +28,7 @@ const PaginationControls = ({ currentPage, totalPages, setPage }) => {
 // justamente el defecto — el envoltorio se quedaba con la foto y tiraba a la
 // persona.
 const EmployeeAvatar = ({ emp, className = '' }) => (
-  <AvatarConEstado emp={emp} px={40} className={className} />
+  <AvatarConEstado emp={emp} px={36} className={className} />
 );
 
 const FormAnnouncements = ({ data }) => {

@@ -296,7 +296,7 @@ export default function FotosProductosView() {
                             <p className="text-caption text-content-3">Nadie ha completado productos en los últimos 7 días.</p>
                         ) : mias.map((p) => (
                             <div key={p.employee_id} className="flex items-center gap-2.5">
-                                <AvatarConEstado emp={{ id: p.employee_id, name: p.name, nombre_corto: p.nombre_corto, photo_url: p.photo_url }} px={32} mostrarChip={false} />
+                                <AvatarConEstado emp={{ id: p.employee_id, name: p.name, nombre_corto: p.nombre_corto, photo_url: p.photo_url }} px={36} mostrarChip={false} />
                                 <div className="min-w-0 flex-1">
                                     <p className="text-label font-semibold text-content truncate">{shortEmployeeName(p)}</p>
                                     <p className="text-micro text-content-3">

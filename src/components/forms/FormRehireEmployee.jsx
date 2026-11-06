@@ -44,7 +44,7 @@ const FormRehireEmployee = ({ formData, setFormData, branches, roles }) => {
             {/* TARJETA EMPLEADO */}
             <div className={`${island} flex items-center gap-4`}>
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-border-card shadow-md shrink-0 bg-surface-card-hover flex items-center justify-center">
-                    <AvatarConEstado emp={formData} px={56} radio="rounded-full" marco="" />
+                    <AvatarConEstado emp={formData} px={64} marco="" />
                 </div>
                 <div className="min-w-0">
                     <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-0.5">Recontratando a</p>

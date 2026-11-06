@@ -131,7 +131,7 @@ function Pasos({ pasos, ahora }) {
                             <p className={`text-body-sm ${p.hecho ? 'text-content font-semibold' : 'text-content-3'}`}>{p.titulo}</p>
                             {p.hecho && (p.persona || p.quien || p.at) && (
                                 <p className="flex items-center gap-1.5 text-caption text-content-3 min-w-0">
-                                    {p.persona && <AvatarConEstado emp={p.persona} px={18} mostrarChip={false} />}
+                                    {p.persona && <AvatarConEstado emp={p.persona} px={20} mostrarChip={false} />}
                                     <span className="truncate">
                                         {[p.persona ? shortEmployeeName(p.persona) : p.quien, p.at ? cuando(p.at) : null].filter(Boolean).join(' · ')}
                                     </span>

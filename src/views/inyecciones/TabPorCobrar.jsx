@@ -222,7 +222,7 @@ export default function TabPorCobrar({
                     <DataRow key={r.cod} index={i}>
                         <DataCell>
                             <div className="flex items-center gap-2.5">
-                                {r.nombre && <AvatarConEstado emp={{ id: r.id, name: r.nombre }} px={32} radio="rounded-full" marco="" />}
+                                {r.nombre && <AvatarConEstado emp={{ id: r.id, name: r.nombre }} px={36} marco="" />}
                                 <div>
                                     <p className="font-semibold text-body">{nombre(r.nombre)}</p>
                                     <p className="text-caption text-content-3">Cód. {r.cod}</p>
@@ -271,7 +271,7 @@ export default function TabPorCobrar({
                         <DataCell hideBelow="md" className="text-body-sm">
                             {v.vendedor_nombre ? (
                                 <span className="inline-flex items-center gap-2">
-                                    <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={24} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={20} marco="" />
                                     {nombre(v.vendedor_nombre)}
                                 </span>
                             ) : '—'}

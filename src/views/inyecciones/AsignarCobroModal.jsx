@@ -91,7 +91,7 @@ export default function AsignarCobroModal({ cobro, onClose, onHecho }) {
                                     <span>Factura {String(v.correlativo || '').replace(/^0+/, '')} ·</span>
                                     {v.vendedor_nombre ? (
                                         <span className="inline-flex items-center gap-1.5">
-                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={18} radio="rounded-full" marco="" />
+                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={20} marco="" />
                                             {shortEmployeeName(v.vendedor_nombre)}
                                         </span>
                                     ) : '—'}

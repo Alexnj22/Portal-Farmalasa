@@ -784,7 +784,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                                 return (
                                     <li key={cb.id} className="relative flex items-start gap-2.5">
                                         {cb.actor ? (
-                                            <AvatarConEstado emp={emp || { id: cb.actor, name: 'Alguien' }} px={28} radio="rounded-full" marco="" />
+                                            <AvatarConEstado emp={emp || { id: cb.actor, name: 'Alguien' }} px={28} marco="" />
                                         ) : (
                                             <span className="relative size-7 shrink-0 rounded-full bg-surface-card-hover text-chart-1-text grid place-items-center">
                                                 <Sparkles size={14} aria-hidden />

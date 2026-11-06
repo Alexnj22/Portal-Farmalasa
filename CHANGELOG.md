@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1457.0 — Avatar: un solo diseño redondo, cinco tamaños y la torta blanca
+
+- La foto de las personas es **siempre redonda** y tiene un solo diseño en todo el portal: cada marca en su esquina fija. Arriba a la izquierda la torta de cumpleaños, arriba a la derecha el «!» de expediente incompleto, abajo a la derecha el estado y abajo a la izquierda una medalla con los años en la empresa (bronce, plata, oro, platino). El aro de estado se separa de la foto con un filo.
+- Cinco tamaños aprobados: 20 (firma: sólo foto y aro), 28, 36 (desde acá el chip del estado), 48 y 64 (desde acá la medalla). Antes eran 23 tamaños; se migraron 73 usos.
+- La torta de cumpleaños es blanca con la torta rosa: el rosa sólido chocaba con «En inducción».
+- «No está hoy» lleva una luna: compartía el reloj con «Con permiso».
+- El menú lateral y la barra del teléfono usan la misma foto que el resto, con su torta; se retiró la que se dibujaba aparte.
+
 ## v2.1456.6 — Cumpleaños: toda la sala ve los de su sucursal, y la torta en la foto para todos
 
 - El widget Cumpleaños del Inicio: el personal de sala sólo veía el suyo, porque la fecha de nacimiento de los demás se esconde sin permiso de Personal. Ahora todos ven el día y el mes de los de su sucursal; la edad sigue visible sólo para quien tiene ese permiso.

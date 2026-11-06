@@ -323,7 +323,7 @@ function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
                 {/* El id lo devuelve `get_conteo_items_search` desde la migración
                     20260827185952 — antes resolvía el nombre en SQL y el aro no
                     tenía a quién preguntarle por. */}
-                <AvatarConEstado emp={{ id, name: nombre, photo: fotoUrl }} px={20} radio="rounded-full" marco="" />
+                <AvatarConEstado emp={{ id, name: nombre, photo: fotoUrl }} px={20} marco="" />
                 <span className="text-label font-bold text-content-2 truncate">{corto || 'Desconocido'}</span>
                 <span className="text-micro text-content-3 tabular-nums shrink-0">{fmtHora(cuando)}</span>
                 {/* `Contador`, no `Badge`. Su propia documentación lo dice: un chip
@@ -1320,7 +1320,7 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
                                 <div key={h.id} className="bg-surface-card-hover rounded-xl p-3 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-2 min-w-0">
                                         <AvatarConEstado emp={{ id: h.contado_por, name: h.contado_por_nombre, photo: h.contado_por_photo_url }}
-                                            px={36} radio="rounded-full" marco="" />
+                                            px={36} marco="" />
                                         <div className="min-w-0">
                                             <div className="flex items-center gap-1.5 flex-wrap">
                                                 <p className="text-label font-bold text-content-2 truncate" title={h.contado_por_nombre}>{h.contado_por_nombre ? shortEmployeeName(h.contado_por_nombre) : 'Desconocido'}</p>

@@ -149,8 +149,7 @@ export default function AbonosDeDiferencia({
                     return (
                         <div key={p.persona_id} className="flex items-center gap-2 flex-wrap">
                             <AvatarConEstado
-                                emp={{ id: p.employee_id, name: p.nombre }} px={36}
-                                radio="rounded-full" mostrarChip={false}
+                                emp={{ id: p.employee_id, name: p.nombre }} px={36} mostrarChip={false}
                                 marco={pagado ? 'border-2 border-success' : 'border border-border-card'}
                             />
                             <div className="min-w-0 flex-1 space-y-1">
@@ -227,8 +226,7 @@ export default function AbonosDeDiferencia({
                         <div key={a.id} className="space-y-2">
                             <div className="flex items-center gap-2 flex-wrap">
                                 <AvatarConEstado
-                                    emp={{ id: a.employee_id, name: a.nombre }} px={32}
-                                    radio="rounded-full" mostrarChip={false}
+                                    emp={{ id: a.employee_id, name: a.nombre }} px={36} mostrarChip={false}
                                     className={a.anulada_at ? 'opacity-50' : ''}
                                 />
                                 <div className="min-w-0 flex-1 space-y-1">

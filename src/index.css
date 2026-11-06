@@ -4256,23 +4256,24 @@ html[data-en-pestana] #main-scroll {
   [data-resaltado] { animation: none; box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-warning) 70%, transparent); }
 }
 
-.liston-antiguedad {
-  position: absolute; left: 50%; bottom: -6px; transform: translateX(-50%); z-index: 1;
-  height: 13px; padding: 0 5px; border-radius: 4px; display: flex; align-items: center;
-  font-size: 8px; font-weight: 900; letter-spacing: 0.06em; line-height: 1; white-space: nowrap;
-  font-variant-numeric: tabular-nums; color: var(--lis-tinta);
-  background: linear-gradient(180deg, var(--lis-brillo), var(--lis-tono) 60%, var(--lis-hondo));
-  box-shadow: 0 0 0 1.5px var(--color-surface-card, #fff), 0 1px 2px rgb(0 0 0 / 0.35),
-              inset 0 1px 0 rgb(255 255 255 / 0.5);
-  pointer-events: none;
+/* Las marcas de las esquinas de `AvatarConEstado` (diseño «cuatro
+   esquinas», 2026-11-05). El filo es una sombra y no un `border`: no le come
+   espacio al ícono de adentro, y su color sale de `--av-fondo` para que en
+   una superficie propia (el menú lateral) recorte contra SU fondo. */
+.avatar-marca {
+  box-shadow: 0 0 0 2px var(--av-fondo, var(--color-surface-card)), 0 1px 2px rgb(0 0 0 / 0.3);
 }
-/* Con el chip de estado en la esquina derecha, el listón se corre a la
-   izquierda para no taparlo. */
-.liston-antiguedad[data-con-chip] { left: -3px; transform: none; }
-.liston-antiguedad[data-tramo="bronce"]  { --lis-hondo: #7a4521; --lis-tono: #c08050; --lis-brillo: #f2c196; --lis-tinta: #341703; }
-.liston-antiguedad[data-tramo="plata"]   { --lis-hondo: #8a95a4; --lis-tono: #c9d1dc; --lis-brillo: #ffffff; --lis-tinta: #232b38; }
-.liston-antiguedad[data-tramo="oro"]     { --lis-hondo: #b0820a; --lis-tono: #ecbd34; --lis-brillo: #fff1b0; --lis-tinta: #3f2a00; }
-.liston-antiguedad[data-tramo="platino"] { --lis-hondo: #8f7ade; --lis-tono: #d6caff; --lis-brillo: #ffffff; --lis-tinta: #241858; }
+/* La medalla de antigüedad: el número de años en metal, abajo a la izquierda.
+   Reemplaza al listón centrado, que chocaba con el chip de estado. */
+.medalla-antiguedad {
+  display: flex; align-items: center; justify-content: center; border-radius: 9999px; z-index: 1;
+  font-weight: 900; line-height: 1; font-variant-numeric: tabular-nums; pointer-events: none;
+  color: var(--med-tinta); background: linear-gradient(160deg, var(--med-brillo), var(--med-tono) 55%, var(--med-hondo));
+}
+.medalla-antiguedad[data-tramo="bronce"]  { --med-hondo: #7a4521; --med-tono: #c08050; --med-brillo: #f2c196; --med-tinta: #341703; }
+.medalla-antiguedad[data-tramo="plata"]   { --med-hondo: #8a95a4; --med-tono: #c9d1dc; --med-brillo: #ffffff; --med-tinta: #232b38; }
+.medalla-antiguedad[data-tramo="oro"]     { --med-hondo: #b0820a; --med-tono: #ecbd34; --med-brillo: #fff1b0; --med-tinta: #3f2a00; }
+.medalla-antiguedad[data-tramo="platino"] { --med-hondo: #8f7ade; --med-tono: #d6caff; --med-brillo: #ffffff; --med-tinta: #241858; }
 
 .aro-cliente[data-nivel="bronce"]   { --aro-hondo: #3a1a08; --aro-tono: #9a5a2c; --aro-brillo: #f2b07a; }
 .aro-cliente[data-nivel="plata"]    { --aro-hondo: #4a525e; --aro-tono: #a9b2be; --aro-brillo: #f4f7fb; }

@@ -151,7 +151,7 @@ export default function TabCierreDia({ emisor }) {
                             <ul className="divide-y divide-divider">
                                 {d.vendedores.map(v => (
                                     <li key={v.id} className="py-2 flex items-center gap-3">
-                                        <AvatarConEstado emp={{ id: v.id, name: v.name }} px={28} radio="rounded-full" marco="" />
+                                        <AvatarConEstado emp={{ id: v.id, name: v.name }} px={28} marco="" />
                                         <a href={rutaSeccion('liquidacion', `vendedor=${v.id}${fecha !== hoySV() ? `&fecha=${fecha}` : ''}`)}
                                             className="flex-1 min-w-0 text-body-sm font-bold text-content-2 truncate hover:underline">{shortEmployeeName(v.name)}</a>
                                         <span className="text-caption text-content-3 tabular-nums hidden sm:inline">vendió {formatMoney(Number(v.ventas))}</span>

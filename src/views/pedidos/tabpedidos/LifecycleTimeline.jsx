@@ -199,7 +199,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             {/* Responsible person mini-avatar */}
                             {node.emp && (
                                 <div className="flex flex-col items-center gap-0.5 mt-1">
-                                    <AvatarConEstado emp={node.emp} px={28} radio="rounded-full"
+                                    <AvatarConEstado emp={node.emp} px={28}
                                         marco="border-2 border-surface-card" className="shadow-md" />
                                     <span className="w-full text-micro text-content-2 leading-tight font-medium text-center">{shortEmployeeName(node.emp)}</span>
                                 </div>
@@ -269,7 +269,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                             privado, y la firmada vive en `photo` — `photo_url` es la
                             cruda que se guarda en la base. Es el mismo orden que usa
                             el resto del portal. */}
-                        <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={a} px={20} marco="" />
                         {shortEmployeeName(a)}
                     </Badge>
                 ))}

@@ -88,7 +88,7 @@ export default function EntregaDelTurno({ entregas, personas }) {
                                                    border-2 border-dashed border-warning/60">
                                         <UserX size={13} strokeWidth={2} className="text-warning-text" />
                                     </span>
-                                    : <AvatarConEstado emp={ficha(n)} px={28} radio="rounded-full"
+                                    : <AvatarConEstado emp={ficha(n)} px={28}
                                         marco="border-2 border-border-card"
                                         className={`shrink-0 ${n === ultimo ? 'ring-2 ring-success/45' : ''}`} />}
                         </React.Fragment>

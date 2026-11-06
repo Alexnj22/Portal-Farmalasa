@@ -66,7 +66,7 @@ export default function TabSolicitudes({ solicitudes, marcas, personas, busqueda
                         <DataCell><Badge variant={est.variant} size="sm">{est.label}</Badge></DataCell>
                         <DataCell hideBelow="lg">
                             <span className="flex items-center gap-1.5 min-w-0">
-                                <AvatarConEstado emp={quien || { id: s.solicitado_por }} px={20} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={quien || { id: s.solicitado_por }} px={20} marco="" />
                                 <span className="truncate">{shortEmployeeName(quien?.name)}</span>
                             </span>
                         </DataCell>

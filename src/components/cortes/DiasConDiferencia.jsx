@@ -150,7 +150,7 @@ function CarasResponsables({ personas }) {
                     <AvatarConEstado
                         key={p.employee_id}
                         emp={{ id: p.employee_id, name: p.nombre }}
-                        px={28} radio="rounded-full" mostrarChip={false}
+                        px={28} mostrarChip={false}
                         marco="border-2 border-surface"
                     />
                 ))}

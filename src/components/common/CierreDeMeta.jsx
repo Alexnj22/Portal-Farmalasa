@@ -166,7 +166,7 @@ function TablaDeVendedores({ tabla, promedio, isDark, buscarEmpleado }) {
                               style={{ width: `${(v.parte / tope) * 100}%` }} />
                         {v.yo && <span aria-hidden="true" className={`relative w-0.5 self-stretch rounded-full ${t.fondo}`} />}
                         <span className="relative flex-shrink-0">
-                            <AvatarConEstado emp={emp} px={22} radio="rounded-full" marco="" mostrarChip={false} />
+                            <AvatarConEstado emp={emp} px={20} marco="" mostrarChip={false} />
                         </span>
                         <span className={`relative flex-1 min-w-0 break-words leading-tight text-caption ${t.texto} ${v.yo ? 'font-black' : 'font-semibold'}`}>
                             {shortEmployeeName(emp)}
@@ -268,7 +268,7 @@ function PodioDeLaEmpresa({ top3, buscarEmpleado, claseTenue }) {
                         <span className={`text-caption font-black w-4 flex-shrink-0 tabular-nums ${MEDALLA[i] || ''}`}>
                             {i + 1}º
                         </span>
-                        <AvatarConEstado emp={emp} px={26} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={emp} px={28} marco="" />
                         <span className="flex-1 min-w-0">
                             <span className="block text-caption font-black break-words leading-tight">{shortEmployeeName(emp)}</span>
                             <span className={`block text-micro font-semibold break-words ${claseTenue}`}>{v.sala}</span>

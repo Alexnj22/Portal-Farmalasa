@@ -323,7 +323,7 @@ export default function PuntosView({ openModal }) {
                                     {a.nota && <div className="text-xs text-content-2 mt-1">{a.nota}</div>}
                                     {a.quien_id && (
                                         <div className="flex items-center gap-1.5 mt-1 text-xs text-content-2">
-                                            <AvatarConEstado emp={{ id: a.quien_id, name: a.quien }} px={18} radio="rounded-full" marco="" />
+                                            <AvatarConEstado emp={{ id: a.quien_id, name: a.quien }} px={20} marco="" />
                                             <span>{shortEmployeeName({ name: a.quien })}</span>
                                         </div>
                                     )}
@@ -333,7 +333,7 @@ export default function PuntosView({ openModal }) {
                                 <DataCell>
                                     {a.vendedor ? (
                                         <span className="flex items-center gap-1.5 min-w-0">
-                                            <AvatarConEstado emp={{ id: a.vendedor_id, name: a.vendedor }} px={20} radio="rounded-full" marco="" />
+                                            <AvatarConEstado emp={{ id: a.vendedor_id, name: a.vendedor }} px={20} marco="" />
                                             <span className="truncate">{shortEmployeeName({ name: a.vendedor })}</span>
                                         </span>
                                     ) : <span className="text-content-3">—</span>}

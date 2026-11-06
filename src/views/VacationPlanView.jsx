@@ -283,7 +283,7 @@ const GanttChart = ({ plans, year }) => {
                                 <div className="flex items-center gap-2 group/row">
                                     <div className="w-[160px] shrink-0 flex items-center gap-2 pr-2">
                                         <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
-                                            <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
+                                            <AvatarConEstado emp={emp} px={36} marco="" />
                                         </div>
                                         <span className="text-label font-bold text-content-2 truncate group-hover/row:text-brand-text transition-colors" title={emp?.name}>{shortEmployeeName(emp)}</span>
                                     </div>
@@ -1020,7 +1020,7 @@ const VacationPlanView = () => {
                                                             <DataCell>
                                                                 <div className="flex items-center gap-2.5 flex-wrap">
                                                                     <div className="w-7 h-7 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm shrink-0 flex items-center justify-center text-content-3 font-black text-label">
-                                                                        <AvatarConEstado emp={p.employee} px={28} radio="rounded-full" marco="" />
+                                                                        <AvatarConEstado emp={p.employee} px={28} marco="" />
                                                                     </div>
                                                                     <p className="font-bold text-content-2 group-hover/row:text-brand-text transition-colors">{p.employee ? shortEmployeeName(p.employee) : '—'}</p>
                                                                     {p.metadata?.original_start_date && (
@@ -1099,7 +1099,7 @@ const VacationPlanView = () => {
                                                 <div className="flex flex-wrap items-start gap-3 justify-between">
                                                     <div className="flex items-center gap-2.5">
                                                         <div className="w-8 h-8 rounded-full overflow-hidden bg-surface-card-hover border border-surface-card shadow-sm flex-shrink-0 flex items-center justify-center text-content-3 font-black text-label">
-                                                            <AvatarConEstado emp={emp} px={36} radio="rounded-full" marco="" />
+                                                            <AvatarConEstado emp={emp} px={36} marco="" />
                                                         </div>
                                                         <div>
                                                             <p className="text-body-sm font-black text-content">{shortEmployeeName(emp)}</p>

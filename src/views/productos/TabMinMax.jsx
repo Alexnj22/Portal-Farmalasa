@@ -217,7 +217,7 @@ function FirmaDeAjuste({ rotulo, quien, persona, px = 20, clase = 'text-micro fo
                 {/* El canónico y no un `<img>`: trae el aro de estado. Se le pasa la
                     FICHA entera cuando se la pudo resolver — sin `id` el aro no sale
                     nunca, y una firma sin aro se ve igual que la de alguien presente. */}
-                <AvatarConEstado emp={persona ?? { name: visible }} px={px} radio="rounded-full" mostrarChip={false} />
+                <AvatarConEstado emp={persona ?? { name: visible }} px={px} mostrarChip={false} />
                 <span className={`${clase} truncate`}>{visible}</span>
             </span>
         </LiquidTooltip>
@@ -1448,7 +1448,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                         pinta su inicial, y preguntar por `photo_url` cambiaba la
                         cara por un ícono genérico a quien no la tuviera cargada. */}
                     {currentEmployee
-                        ? <AvatarConEstado emp={currentEmployee} px={24} radio="rounded-full" marco="" />
+                        ? <AvatarConEstado emp={currentEmployee} px={20} marco="" />
                         : <Info size={15} className="shrink-0" />}
                     <span>{toast.message}</span>
                     {toast.action && (
@@ -1623,7 +1623,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             estado, y desde que el mapa guarda la FICHA (y no
                                             una URL suelta) hay `id` con qué resolverlo. */}
                                         <div className="shrink-0 mt-0.5">
-                                            <AvatarConEstado emp={empPhoto ?? { name: log.user_name || '?' }} px={32} radio="rounded-full" mostrarChip={false} />
+                                            <AvatarConEstado emp={empPhoto ?? { name: log.user_name || '?' }} px={36} mostrarChip={false} />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             {/* El rótulo del acto, no sólo el nombre. En una

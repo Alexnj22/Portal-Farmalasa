@@ -22,7 +22,7 @@ export default function AsignadoA({ conversacion: c, equipo, className = '' }) {
     return (
         <span className={`flex flex-wrap items-center gap-1.5 min-w-0 ${className}`}>
             <span className="inline-flex items-center gap-1.5 min-w-0 text-label text-content-2">
-                <AvatarConEstado emp={emp} px={18} mostrarChip={false} />
+                <AvatarConEstado emp={emp} px={20} mostrarChip={false} />
                 <span className="truncate">Asignado a <span className="font-semibold text-content">{nombre}</span></span>
             </span>
             {c.escalada_supervision_at ? (

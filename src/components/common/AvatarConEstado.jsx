@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useSyncExternalStore } from 'react';
-import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban, Cake } from 'lucide-react';
+import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban, Cake, Moon } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { estadoDePersona, normalizarPersona } from '@nucleo/utils/estadoDePersona';
@@ -77,29 +77,46 @@ function fotoFirmadaDe(id) {
  * se decidió. El `title` es hoy la red que lo cubre.
  *
  * ── Uso ───────────────────────────────────────────────────────────────────
- *     <AvatarConEstado emp={emp} px={52} />
+ *     <AvatarConEstado emp={emp} px={48} />
  *
  * `px` es OBLIGATORIO y es un número, no una clase: la escalera necesita el
  * tamaño real y desde una clase de Tailwind no se puede leer. Es la misma razón
  * por la que `data-lugar` existe — en tiempo de render se sabe, desde afuera no.
  *
- * `radio` y `marco` existen para el sidebar y el kiosco, que son superficies
- * BESPOKE (§25.4): tienen sus propios tokens de borde y sus propios radios, y
- * meterles la caja de una tarjeta sería una regresión visual en el único sitio
- * del portal que a propósito no usa los tokens de superficie. Cuando hay
- * estado, el aro reemplaza al marco: dos bordes concéntricos leen como un
+ * Siempre REDONDA (decisión del usuario, 2026-11-05): ya no hay `radio`.
+ * `marco` queda para las superficies BESPOKE (§25.4, el menú lateral y el
+ * kiosco), que tienen sus propios tokens de borde; ahí además se define
+ * `--av-fondo` para que el filo de las marcas recorte contra SU fondo. Cuando
+ * hay estado, el aro reemplaza al marco: dos bordes concéntricos leen como un
  * defecto de render, no como una marca.
  */
 
 const MARCA = {
-  warning:   { anillo: 'ring-warning',   chip: 'bg-warning-solid' },
-  danger:    { anillo: 'ring-danger',    chip: 'bg-danger-solid' },
-  neutral:   { anillo: 'ring-chart-8',   chip: 'bg-chart-8-solid' },
-  'chart-9': { anillo: 'ring-chart-9',   chip: 'bg-chart-9-solid' },
-  'chart-6': { anillo: 'ring-chart-6',   chip: 'bg-chart-6-solid' },
-  'chart-3': { anillo: 'ring-chart-3',   chip: 'bg-chart-3-solid' },
-  'chart-1': { anillo: 'ring-chart-1',   chip: 'bg-chart-1-solid' },
+  warning:   { aro: 'var(--color-warning)', chip: 'bg-warning-solid' },
+  danger:    { aro: 'var(--color-danger)',  chip: 'bg-danger-solid' },
+  neutral:   { aro: 'var(--color-chart-8)', chip: 'bg-chart-8-solid' },
+  'chart-9': { aro: 'var(--color-chart-9)', chip: 'bg-chart-9-solid' },
+  'chart-6': { aro: 'var(--color-chart-6)', chip: 'bg-chart-6-solid' },
+  'chart-3': { aro: 'var(--color-chart-3)', chip: 'bg-chart-3-solid' },
+  'chart-1': { aro: 'var(--color-chart-1)', chip: 'bg-chart-1-solid' },
 };
+
+/**
+ * La escala APROBADA (decisión del usuario, 2026-11-05). Ningún otro tamaño:
+ * cinco medidas y dos papeles.
+ *
+ *   20        FIRMA    — la foto al lado de un nombre escrito («Aprobó», la
+ *                        bitácora, los chips). Sólo foto y aro de estado: lo
+ *                        demás lo dice el nombre y el globo.
+ *   28 · 36   PERSONA  — aro de estado separado de la foto, torta, «!».
+ *   36        + el chip con el ícono del estado.
+ *   48 · 64   + la medalla de antigüedad.
+ *
+ * Antes eran 23 tamaños (de 14 a 64) y las marcas cambiaban según el
+ * escalón, así que la misma persona se veía distinta de una pantalla a otra.
+ * `gate:design` (categoría `avatar-fuera-de-escala`) rechaza cualquier otro.
+ */
+export const TAMANOS_DE_AVATAR = Object.freeze([20, 28, 36, 48, 64]);
 
 // Escritas LITERALES y no armadas con plantilla: Tailwind escanea strings del
 // fuente, y con `ring-${variante}` no ve nada y no emite la clase — el aro
@@ -121,7 +138,9 @@ const ICONO = {
   SUSPENSION: Ban,
   // «No está hoy», sin motivo: el reloj es lo más neutro que hay para decir
   // «ahora no» sin insinuar por qué.
-  AUSENTE:    Clock,
+  // La luna y no el reloj: el reloj ya es «Con permiso», y los dos estados
+  // sólo se distinguían por el color (violeta / azul).
+  AUSENTE:    Moon,
 };
 
 /* El globo del «!»: cuántos datos faltan y cuáles, por tramo del expediente.
@@ -147,13 +166,14 @@ function GloboDePendientes({ pendientes }) {
 }
 
 export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
-                                          radio = 'rounded-xl', marco = 'border border-border-card',
-                                          antiguedad: antiguedadDada, pendientes: conPendientes = true,
-                                          cumple: marcarCumple = true }) {
+                                          marco = 'border border-border-card',
+                                          antiguedad: antiguedadDada, pendientes: conPendientes = true }) {
   // El portal muestra a la misma gente con seis formas de objeto distintas
   // según de qué consulta salga. `normalizarPersona` las acepta todas — ver su
   // nota en `utils/estadoDePersona.js`.
   const emp = useMemo(() => normalizarPersona(crudo), [crudo]);
+  // Papel FIRMA (20 px): sólo foto y aro. Ver `TAMANOS_DE_AVATAR`.
+  const firma = px < 28;
   // ── El estado se busca en la ficha, aunque quien llame no la tenga ────────
   //
   // La mitad de los sitios donde sale una foto no pasa un empleado completo:
@@ -300,17 +320,24 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
 
   /* La torta de cumpleaños, para TODOS y en cualquier foto (2026-11-05). Antes
      sólo existía en el menú lateral y para uno mismo: el día del cumpleaños de
-     una compañera nadie más lo veía. Debajo de 28 px no entra; el menú lateral
-     dibuja la suya por fuera del recorte y pasa `cumple={false}`. */
-  const deCumple = marcarCumple && px >= 28 && empleado && !deBaja && esCumpleHoy(persona);
+     una compañera nadie más lo veía. En la firma (20 px) no entra. */
+  const deCumple = !firma && empleado && !deBaja && esCumpleHoy(persona);
 
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;
 
   // Los tres escalones. `ring-[Npx]` con el número escrito: el grosor no puede
   // ser proporcional, porque eso es justo lo que hace desaparecer a un ícono.
-  const grosor = px >= 28 ? 'ring-[2.5px]' : 'ring-2';
-  const conChip = mostrarChip && px >= 48;
+  // Diseño «cuatro esquinas» (2026-11-05): cada marca tiene su esquina fija y
+  // el aro se separa de la foto con un filo del color del fondo.
+  //   arriba-izq  torta · arriba-der «!» · abajo-der estado · abajo-izq años
+  const sombraAro = marca
+    ? (firma
+        ? `0 0 0 1.5px ${marca.aro}`
+        : `0 0 0 2px var(--av-fondo, var(--color-surface-card)), 0 0 0 ${px >= 48 ? 4.5 : 4}px ${marca.aro}`)
+    : undefined;
+  const conChip = mostrarChip && px >= 36;
+  const tamChip = Math.round(px * (px >= 48 ? 0.32 : 0.38));
 
   /* Durante la cuenta regresiva el rótulo YA dice cuándo empieza («Vacaciones
      en 3 días»), así que «vuelve el 21» al lado sería una segunda fecha sobre
@@ -333,8 +360,8 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
     : '';
   const titulo = [deCumple ? '¡Hoy cumple años! 🎂' : '', tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
   const etiqueta = [titulo, tituloPendientes].filter(Boolean).join(' · ') || undefined;
-  const marcaPendiente = pendientes.length > 0;
-  const tamPendiente = px >= 28 ? Math.max(12, Math.round(px * 0.28)) : 8;
+  const marcaPendiente = pendientes.length > 0 && !firma;
+  const tamPendiente = Math.max(13, Math.round(px * 0.26));
 
   return (
     <span
@@ -363,8 +390,8 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           el usuario antes que cualquier gate: «¿y el aro de vacaciones?».
           Por fuera no ocupa espacio (una sombra nunca lo hace) y no lo recorta
           el `overflow-hidden`, que sólo recorta hijos. */}
-      <span className={`block h-full w-full overflow-hidden ${radio}
-        ${marca ? `${grosor} ${marca.anillo}` : marco}`}>
+      <span className={`block h-full w-full overflow-hidden rounded-full ${marca ? '' : marco}`}
+        style={sombraAro ? { boxShadow: sombraAro } : undefined}>
         <LiquidAvatar
           src={ficha?.photo || ficha?.photo_url || emp?.photo || emp?.photo_url || (faltaEnTodo ? fotoRemota : null)}
           alt={emp?.name || 'Empleado'}
@@ -394,9 +421,8 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           que no comparten nada salvo esta foto. */}
       {conChip && estado && (estado.faltan > 0 || Icono) && (
         <span
-          className={`absolute -bottom-1 -right-1 flex items-center justify-center rounded-full
-            border-2 border-surface-card shadow-sm ${marca.chip}`}
-          style={{ width: Math.round(px * 0.34), height: Math.round(px * 0.34) }}
+          className={`avatar-marca absolute -bottom-0.5 -right-0.5 flex items-center justify-center rounded-full ${marca.chip}`}
+          style={{ width: tamChip, height: tamChip }}
           /* Decorativo: su significado ya lo lleva el `aria-label` del
              conjunto, y anunciarlo aparte sería decir «palmera» después de
              decir «en vacaciones». */
@@ -406,12 +432,12 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           {estado.faltan > 0 ? (
             <span
               className="font-black leading-none text-white tabular-nums"
-              style={{ fontSize: Math.round(px * 0.17) }}
+              style={{ fontSize: Math.round(tamChip * 0.5) }}
             >
               −{estado.faltan}
             </span>
           ) : (
-            <Icono size={Math.round(px * 0.19)} strokeWidth={2.5} className="text-white" />
+            <Icono size={Math.round(tamChip * 0.56)} strokeWidth={2.5} className="text-white" />
           )}
         </span>
       )}
@@ -424,29 +450,28 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           es un punto sin texto. */}
       {deCumple && (
         <span
-          className="absolute -top-1 -left-1 flex items-center justify-center rounded-full border-2 border-surface-card shadow-sm bg-chart-6-solid z-base pointer-events-none"
-          style={{ width: Math.max(16, Math.round(px * 0.3)), height: Math.max(16, Math.round(px * 0.3)) }}
+          /* Blanca con la torta rosa (decisión del usuario, 2026-11-05): el
+             fondo rosa sólido chocaba con el aro de «En inducción». */
+          className="avatar-marca absolute -top-0.5 -left-0.5 flex items-center justify-center rounded-full bg-white z-base pointer-events-none"
+          style={{ width: Math.max(14, tamChip), height: Math.max(14, tamChip) }}
           aria-hidden="true" data-cumple="hoy"
         >
-          <Cake size={Math.max(9, Math.round(px * 0.17))} className="text-white" strokeWidth={2.5} />
+          <Cake size={Math.round(Math.max(14, tamChip) * 0.58)} className="text-chart-6-solid" strokeWidth={2.5} />
         </span>
       )}
       {marcaPendiente && (
-        <LiquidTooltip variant="rich" side="bottom" className="absolute -top-1 -right-1 z-base"
+        <LiquidTooltip variant="rich" side="bottom" className="absolute -top-0.5 -right-0.5 z-base"
           content={<GloboDePendientes pendientes={pendientes} />}>
           {/* `title=""` corta el globo nativo de la foto: sin él, sobre el «!»
               salían los dos globos a la vez, uno encima del otro. */}
           <span
             role="img" aria-label={tituloPendientes} title=""
-            className="flex items-center justify-center rounded-full border-2 border-surface-card
-              bg-warning-solid shadow-sm cursor-help"
+            className="avatar-marca flex items-center justify-center rounded-full bg-warning-solid cursor-help"
             style={{ width: tamPendiente, height: tamPendiente }}
             data-marca-pendiente=""
           >
-            {px >= 28 && (
-              <span aria-hidden="true" className="font-black leading-none text-white"
-                style={{ fontSize: Math.round(tamPendiente * 0.62) }}>!</span>
-            )}
+            <span aria-hidden="true" className="font-black leading-none text-white"
+              style={{ fontSize: Math.round(tamPendiente * 0.62) }}>!</span>
           </span>
         </LiquidTooltip>
       )}
@@ -456,11 +481,11 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           apagar pasa `antiguedad={null}`. Vive acá y no en la tarjeta porque
           tiene que saber si el chip de estado está, para no taparlo. Su
           significado va en el `title`, que es de la tarjeta entera. */}
-      {antiguedad && px >= 40 && (
-        <span className="liston-antiguedad" data-tramo={antiguedad.tramo}
-          data-con-chip={conChip && estado && (estado.faltan > 0 || Icono) ? '' : undefined}
+      {antiguedad && px >= 48 && (
+        <span className="avatar-marca medalla-antiguedad absolute -bottom-0.5 -left-0.5" data-tramo={antiguedad.tramo}
+          style={{ width: tamChip, height: tamChip, fontSize: Math.round(tamChip * 0.5) }}
           aria-hidden="true">
-          {antiguedad.anios} {antiguedad.anios === 1 ? 'AÑO' : 'AÑOS'}
+          {antiguedad.anios}
         </span>
       )}
     </span>

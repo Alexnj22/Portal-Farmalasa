@@ -175,7 +175,7 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
             bg-surface-card-hover divide-x divide-border-card">
             <div className="flex items-center gap-2 px-2.5 py-2 min-w-0">
                 {emp ? (
-                    <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" mostrarChip={false} />
+                    <AvatarConEstado emp={emp} px={28} marco="" mostrarChip={false} />
                 ) : (
                     <span aria-hidden="true" className={`w-7 h-7 rounded-full grid place-items-center flex-shrink-0
                         bg-surface-card ${claseTenue}`}>
@@ -323,7 +323,7 @@ function FilaDeTraslado({ t, claseTenue, naranja, buscarEmpleado }) {
     return (
         <li className="flex items-center gap-2 px-2.5 py-2 min-w-0">
             {emp ? (
-                <AvatarConEstado emp={emp} px={24} radio="rounded-full" marco="" mostrarChip={false} />
+                <AvatarConEstado emp={emp} px={20} marco="" mostrarChip={false} />
             ) : (
                 <span aria-hidden="true" className={`w-6 h-6 rounded-full grid place-items-center flex-shrink-0
                     ${naranja.disco} ${naranja.texto}`}>
@@ -421,7 +421,7 @@ const Celda = ({ rotulo, children, clase = '', claseTenue, derecha = false, apil
 const CeldaPersona = ({ emp, rotulo, respaldo, claseTenue }) => (
     <div className="bg-surface-card-hover flex items-center gap-2 px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
         {emp ? (
-            <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" mostrarChip={false} />
+            <AvatarConEstado emp={emp} px={28} marco="" mostrarChip={false} />
         ) : (
             <span aria-hidden="true" className={`w-7 h-7 rounded-full grid place-items-center flex-shrink-0
                 bg-surface-card ${claseTenue}`}>
@@ -804,7 +804,7 @@ function FilaDeCortePendiente({ c, claseTenue, isDark, buscarEmpleado }) {
     return (
         <li className="flex items-center gap-2 px-2.5 py-2 min-w-0">
             {emp ? (
-                <AvatarConEstado emp={emp} px={28} radio="rounded-full" marco="" mostrarChip={false} />
+                <AvatarConEstado emp={emp} px={28} marco="" mostrarChip={false} />
             ) : (
                 <span aria-hidden="true" className={`w-7 h-7 rounded-full grid place-items-center flex-shrink-0
                     bg-surface-card ${claseTenue}`}>

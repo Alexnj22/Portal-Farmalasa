@@ -374,7 +374,7 @@ export default function DetalleDeBolsa({ bolsa, sala, cerradaPor, onClose, onCam
                                     <span className="text-caption text-content-2 min-w-0 flex items-start gap-1.5 flex-wrap">
                                         {ev.nombre && (
                                             <AvatarConEstado emp={{ id: ev.employee_id, name: ev.nombre, photo: ev.photo_url }}
-                                                px={20} radio="rounded-full" marco="" />
+                                                px={20} marco="" />
                                         )}
                                         <span className="min-w-0">
                                             <b className="font-bold text-content">{ACCION[ev.accion] || ev.accion}</b>

@@ -118,7 +118,7 @@ export default function TabVentasPerdidas({ emisor, puedeVender, puedeConfigurar
                             </DataCell>
                             <DataCell hideBelow="lg">
                                 <div className="flex items-center gap-2 min-w-0">
-                                    {f.employees && <AvatarConEstado emp={f.employees} px={28} radio="rounded-full" marco="" />}
+                                    {f.employees && <AvatarConEstado emp={f.employees} px={28} marco="" />}
                                     <span className="text-caption text-content-2 truncate">{shortEmployeeName(f.employees) || '—'}</span>
                                 </div>
                             </DataCell>

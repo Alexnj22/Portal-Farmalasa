@@ -645,7 +645,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                         <Badge variant="warning" uppercase={false}
                                             title={`Sin anticipo: responde ${shortEmployeeName(responsableDe)}. Se cobra ${formatMoney(totalDe)} al retirar.`}>
                                             <span className="inline-flex items-center gap-1">
-                                                Sin anticipo · <AvatarConEstado emp={responsableDe} px={14} mostrarChip={false} />{shortEmployeeName(responsableDe)}
+                                                Sin anticipo · <AvatarConEstado emp={responsableDe} px={20} mostrarChip={false} />{shortEmployeeName(responsableDe)}
                                             </span>
                                         </Badge>
                                     )}

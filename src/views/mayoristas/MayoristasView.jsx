@@ -307,7 +307,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                     {cliente.resuelto_por && est && est !== 'solicitado' && (
                         <div className="flex flex-wrap items-center gap-2 text-body-sm text-content-2">
                             <span>{est === 'aprobado' ? 'Última decisión' : ESTADOS[est]?.label}:</span>
-                            <PersonaConFoto id={cliente.resuelto_por_id} nombre={cliente.resuelto_por} px={22}
+                            <PersonaConFoto id={cliente.resuelto_por_id} nombre={cliente.resuelto_por} px={20}
                                 detalle={cliente.resuelto_at ? fechaTexto(cliente.resuelto_at, { day: 'numeric', month: 'short', year: 'numeric' }) : null} />
                             {cliente.motivo && est !== 'aprobado' ? <span className="text-content-3">— «{cliente.motivo}»</span> : null}
                         </div>
@@ -374,7 +374,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                                     <li key={i} className="text-body-sm text-content-2">
                                         <span className="text-content-3">{fechaTexto(h.cuando, { day: 'numeric', month: 'short', year: 'numeric' })} · </span>
                                         {textoDeAccion(h)}{h.nota ? ` — «${h.nota}»` : ''}
-                                        {h.por ? <span className="ml-2 inline-flex align-middle"><PersonaConFoto id={h.por_id} nombre={h.por} px={18} /></span> : null}
+                                        {h.por ? <span className="ml-2 inline-flex align-middle"><PersonaConFoto id={h.por_id} nombre={h.por} px={20} /></span> : null}
                                     </li>
                                 ))}
                             </ul>

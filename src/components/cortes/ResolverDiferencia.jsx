@@ -584,7 +584,7 @@ export default function ResolverDiferencia({
                             return (
                                 <div key={c.id} className="flex items-center gap-2">
                                     <AvatarConEstado
-                                        emp={c} px={36} radio="rounded-full" mostrarChip={false}
+                                        emp={c} px={36} mostrarChip={false}
                                         className={`transition-opacity ${marcada ? '' : 'opacity-50'}`}
                                         marco={marcada ? 'border-2 border-danger' : 'border border-border-card'}
                                     />

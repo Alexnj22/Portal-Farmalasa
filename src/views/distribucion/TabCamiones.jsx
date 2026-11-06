@@ -314,7 +314,7 @@ export default function TabCamiones({ puedeConfigurar, buscar }) {
                     <section key={c.vendedor_id} data-surface="card" className="p-4 flex flex-col gap-3" aria-label={`Camión de ${shortEmployeeName(c.vendedor)}`} data-camion={c.vendedor_id}>
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0">
-                                <AvatarConEstado emp={c.vendedor} px={36} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={c.vendedor} px={36} marco="" />
                                 <div className="min-w-0">
                                     <p className="text-body font-black text-content truncate">{shortEmployeeName(c.vendedor)}</p>
                                     <p className="text-caption text-content-3">

@@ -50,7 +50,7 @@ const Puesto = ({ slot, onAbrir, grande = false }) => {
     return (
         <div data-surface="card" {...clickable(() => onAbrir(emp), { label: `Ver la ficha de ${shortEmployeeName(emp)}` })}
             className={`relative flex items-center gap-3 cursor-pointer ${grande ? 'p-4' : 'p-3'}`}>
-            <AvatarConEstado emp={emp} px={grande ? 48 : 36} radio={grande ? 'rounded-2xl' : 'rounded-lg'} />
+            <AvatarConEstado emp={emp} px={grande ? 48 : 36} />
             <div className="flex-1 min-w-0">
                 <p className={`font-black text-content truncate leading-tight ${grande ? 'text-body' : 'text-body-sm'}`}>{shortEmployeeName(emp)}</p>
                 <p className="mt-0.5 text-micro font-black uppercase tracking-widest text-content-3 truncate">{slot.roleName}</p>

@@ -582,7 +582,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         {/* Avatar + alert dot */}
         <div className="relative shrink-0">
           <div className="w-11 h-11 rounded-full bg-surface-card border-2 border-surface-card shadow-sm flex items-center justify-center font-black text-content-3 text-body-lg overflow-hidden">
-            <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={emp} px={36} marco="" />
           </div>
           {alertColor ? (
             <div className={`absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full ${alertColor} flex items-center justify-center text-white text-micro font-black shadow-sm`}>

@@ -47,7 +47,7 @@ function PuntosDeVenta({ emisorId, oficina }) {
                 </li>
                 {(puntos ?? []).map(p => (
                     <li key={p.codigo} className="flex items-center gap-2 rounded-full border border-divider px-2 py-1 text-caption">
-                        <AvatarConEstado emp={p.empleado} px={22} radio="rounded-full" marco="" mostrarChip={false} />
+                        <AvatarConEstado emp={p.empleado} px={20} marco="" mostrarChip={false} />
                         <span className="font-mono font-bold text-content">{p.codigo}</span>
                         <span className="text-content-3">{shortEmployeeName(p.empleado)}</span>
                     </li>

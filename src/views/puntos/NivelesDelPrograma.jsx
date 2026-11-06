@@ -550,7 +550,7 @@ function Historial({ filas, niveles, mayoreo }) {
                         <DataCell>
                             {h.quien ? (
                                 <span className="flex items-center gap-1.5 min-w-0">
-                                    <AvatarConEstado emp={{ id: h.employee_id, name: h.quien }} px={20} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={{ id: h.employee_id, name: h.quien }} px={20} marco="" />
                                     <span className="truncate">{shortEmployeeName({ name: h.quien })}</span>
                                 </span>
                             ) : <span className="text-content-3">—</span>}

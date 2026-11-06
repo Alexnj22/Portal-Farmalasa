@@ -218,7 +218,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                             <button key={v.id} type="button" aria-pressed={activo} data-vendedor={v.id}
                                 onClick={() => cambiar('vendedor', v.id)}
                                 className={`flex items-center gap-2.5 rounded-xl border px-3 py-2 min-h-[var(--tap-min)] text-left transition-colors active:scale-[0.98] ${activo ? 'border-brand bg-brand/10' : 'border-divider hover:bg-surface-card-hover'}`}>
-                                <AvatarConEstado emp={{ id: v.id, name: v.name, photo_url: v.photo_url }} px={28} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={{ id: v.id, name: v.name, photo_url: v.photo_url }} px={28} marco="" />
                                 <span className="min-w-0">
                                     <span className="block text-body-sm font-bold text-content-2 truncate">{shortEmployeeName(v.name)}</span>
                                     <span className="block text-caption text-content-3 tabular-nums">{formatMoney(Number(v.esperado))} en efectivo</span>

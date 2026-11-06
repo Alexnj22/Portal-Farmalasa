@@ -352,7 +352,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                 {estado.a_favor_usado.slice(0, 8).map(a => (
                                     <div key={a.id} data-surface="card" className="px-3 py-2 flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            {a.por && <AvatarConEstado emp={a.por} px={28} radio="rounded-full" marco="" />}
+                                            {a.por && <AvatarConEstado emp={a.por} px={28} marco="" />}
                                             <div className="min-w-0">
                                                 <p className="text-body-sm font-bold text-content-2 font-mono truncate">{a.numero_control}</p>
                                                 <p className="text-caption text-content-3">{fechaHora12(a.fecha)} · {shortEmployeeName(a.por) || '—'}{a.nota ? ` · ${a.nota}` : ''}</p>
@@ -372,7 +372,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                 <div key={r.id} data-surface="card" className={`px-3 py-2 flex flex-col gap-2 ${r.anulado_at ? 'opacity-60' : ''}`} data-recibo={r.id}>
                                     <div className="flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2.5 min-w-0">
-                                            {r.recibido_por && <AvatarConEstado emp={r.recibido_por} px={28} radio="rounded-full" marco="" />}
+                                            {r.recibido_por && <AvatarConEstado emp={r.recibido_por} px={28} marco="" />}
                                             <div className="min-w-0">
                                                 <p className="text-body-sm font-bold text-content-2">
                                                     Recibo {r.id} · {nombreForma(r.forma)}{r.referencia ? ` ${r.referencia}` : ''}

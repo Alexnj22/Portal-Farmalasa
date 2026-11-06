@@ -213,7 +213,7 @@ export default function TabConsultasExistencia() {
                                         <div className="min-w-0">
                                             <p className="text-body-sm font-black text-content truncate" title={c.nombre}>{c.nombre}</p>
                                             <p className="text-label font-bold text-content-3 flex items-center gap-1.5 min-w-0">
-                                                {quien && <AvatarConEstado emp={quien} px={18} radio="rounded-full" marco="" />}
+                                                {quien && <AvatarConEstado emp={quien} px={20} marco="" />}
                                                 <span className="truncate">
                                                     {quien ? shortEmployeeName(quien) : 'Sistema'}
                                                     {c.pedido_desde ? ` · ${c.pedido_desde}` : ''} · {fechaNumerica(c.created_at)}

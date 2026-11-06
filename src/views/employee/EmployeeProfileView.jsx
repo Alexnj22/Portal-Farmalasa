@@ -271,7 +271,7 @@ const EmployeeProfileView = ({ openModal }) => {
                     <div className="absolute inset-x-0 top-0 h-32 bg-gradient-to-b from-brand/15 to-transparent pointer-events-none" />
                     <div className="relative z-base p-5 md:p-7 flex flex-col md:flex-row md:items-center gap-5 md:gap-7">
                         <div className="rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl shrink-0 self-center md:self-auto">
-                            <AvatarConEstado emp={emp} px={104} radio="rounded-full" marco="" />
+                            <AvatarConEstado emp={emp} px={104} marco="" />
                         </div>
                         <div className="min-w-0 flex-1 text-center md:text-left">
                             <h2 className="text-title md:text-display font-black text-content leading-tight tracking-tight">{emp.name}</h2>

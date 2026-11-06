@@ -54,7 +54,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
     // renglones más arriba, en la línea de tiempo, se veía bien.
     const empChip = (emp) => emp ? (
         <span className="flex items-center gap-1 text-caption text-content-3">
-            <AvatarConEstado emp={emp} px={16} radio="rounded-full" className="shadow-sm" />
+            <AvatarConEstado emp={emp} px={20} className="shadow-sm" />
             <span className="whitespace-nowrap">{shortEmployeeName(emp)}</span>
         </span>
     ) : null;

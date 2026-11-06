@@ -650,7 +650,7 @@ export default function CuentasPorCobrarView() {
                                                 <AvatarConEstado
                                                     emp={vendedores.get(String(c.vendedor_id))
                                                          || { id: c.vendedor_id, name: c.vendedor.name }}
-                                                    px={22} mostrarChip={false} radio="rounded-full" />
+                                                    px={20} mostrarChip={false} />
                                             )}
                                             <span className="truncate">
                                                 {c.vendedor?.name ? shortEmployeeName(c.vendedor) : 'Sin vendedor'} · {fechaCorta(c.fecha)}
@@ -835,7 +835,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
                                 <dd className="flex items-center gap-2 min-w-0">
                                     {c?.vendedor && (
                                         <AvatarConEstado emp={vendedor || { id: c.vendedor_id, name: c.vendedor }}
-                                            px={26} mostrarChip={false} radio="rounded-full" />
+                                            px={28} mostrarChip={false} />
                                     )}
                                     <span className="text-content font-medium truncate">
                                         {c?.vendedor || 'sin registrar'}
@@ -923,7 +923,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
                                                 {a.abonado_por && (
                                                     <AvatarConEstado
                                                         emp={{ id: a.abonado_por, name: a.cobrado_por }}
-                                                        px={26} mostrarChip={false} radio="rounded-full" />
+                                                        px={28} mostrarChip={false} />
                                                 )}
                                                 <span className="min-w-0">
                                                     <span className="block text-body-sm text-content">

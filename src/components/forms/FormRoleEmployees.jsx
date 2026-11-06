@@ -49,7 +49,7 @@ const FormRoleEmployees = ({ formData }) => {
                             data-surface="card" className="flex items-center justify-between p-4 group hover:border-brand/30 transition-all"
                         >
                             <div className="flex items-center gap-4">
-                                <AvatarConEstado emp={emp} px={48} radio="rounded-2xl" marco="border-2 border-border-card" className="shadow-sm" />
+                                <AvatarConEstado emp={emp} px={48} marco="border-2 border-border-card" className="shadow-sm" />
                                 <div>
                                     <p className="font-bold text-content text-body-lg md:text-subtitle leading-tight group-hover:text-brand-text transition-colors">
                                         {shortEmployeeName(emp)}

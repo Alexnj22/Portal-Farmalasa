@@ -79,7 +79,7 @@ export default function IncentivosEncuesta({ encuesta, puedeEditar }) {
                                     </p>
                                     <p className="text-micro text-content-3 flex items-center gap-1 flex-wrap">
                                         {i.sucursal} · {canalDe(i.canal).label} · {fechaTexto(i.created_at, { day: 'numeric', month: 'short' })}
-                                        {quien && <><span>·</span><AvatarConEstado emp={quien} px={16} radio="rounded-full" marco="" />{shortEmployeeName(quien.name)}</>}
+                                        {quien && <><span>·</span><AvatarConEstado emp={quien} px={20} marco="" />{shortEmployeeName(quien.name)}</>}
                                     </p>
                                     {i.estado === 'pendiente' && i.motivo && <p className="text-micro text-warning-text">{i.motivo}</p>}
                                 </div>

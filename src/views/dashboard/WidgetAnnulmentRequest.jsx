@@ -93,7 +93,7 @@ function VendorAvatar({ employee, size = 6 }) {
     // `AvatarConEstado` conserva las dos optimizaciones medidas acá: envuelve a
     // `LiquidAvatar`, que ya pide la foto en WEBP y ya lleva `loading="lazy"`.
     // Lo que agrega es el aro — quien pidió la anulación puede no estar hoy.
-    return <AvatarConEstado emp={employee} px={20} radio="rounded-full" marco="" />;
+    return <AvatarConEstado emp={employee} px={20} marco="" />;
   return (
     <div className={`${base} bg-surface-card-hover`}>
       <span className="text-content-2 font-black text-caption leading-none">{employeeInitials(employee)}</span>

@@ -263,7 +263,7 @@ const SesionesView = () => {
                                     acceso el aro no resolvía nunca. */}
                                 <AvatarConEstado
                                     emp={{ id: p.ficha_id, name: p.empleado, photo: p.foto }}
-                                    px={48} radio="rounded-2xl" marco=""
+                                    px={48} marco=""
                                 />
                                 <div className="min-w-0 flex-1">
                                     <div className="text-label font-bold text-content-2 truncate">{p.empleado}</div>
@@ -314,7 +314,7 @@ const SesionesView = () => {
                     avatar={(
                         <AvatarConEstado
                             emp={{ id: detalleVisible?.ficha_id, name: detalleVisible?.empleado, photo: detalleVisible?.foto }}
-                            px={44} radio="rounded-2xl" marco=""
+                            px={48} marco=""
                         />
                     )}
                     titulo={detalleVisible?.empleado}

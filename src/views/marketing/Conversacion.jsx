@@ -170,7 +170,7 @@ function Mensaje({ c, personas, yoId, chico = false, puedeResolver, onResolver, 
 
     return (
         <div className="flex gap-2.5 min-w-0">
-            <AvatarConEstado emp={quien || { id: c.autor_id }} px={chico ? 26 : 32} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={quien || { id: c.autor_id }} px={chico ? 28 : 36} marco="" />
             <div className="min-w-0 flex-1">
                 <div className={`rounded-2xl rounded-tl-md border px-3.5 py-2.5
                     ${mio ? 'bg-brand/10 border-brand/20' : 'bg-surface-card-hover border-border-card'}`}>

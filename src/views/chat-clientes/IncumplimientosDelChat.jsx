@@ -62,7 +62,7 @@ export default function IncumplimientosDelChat({ abierto, onClose, equipo, asegu
                                 const cliente = f.conversacion?.cliente?.name ?? clientes?.get?.(f.conversacion_id) ?? null;
                                 return (
                                     <li key={f.id} data-surface="card" className="rounded-card px-3 py-2.5 flex items-start gap-3">
-                                        <AvatarConEstado emp={emp} px={32} mostrarChip={false} />
+                                        <AvatarConEstado emp={emp} px={36} mostrarChip={false} />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-body-sm font-semibold text-content truncate">
                                                 {emp.name || emp.first_names ? shortEmployeeName(emp) : 'Alguien del equipo'}

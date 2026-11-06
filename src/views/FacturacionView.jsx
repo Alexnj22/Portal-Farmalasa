@@ -275,7 +275,7 @@ function SeccionHistorial({ refSeccion, titulo, subtitulo, abierta, onToggle, ch
 function FilaHistorial({ quien, nombre, sinNombre = '—', cuando, cuandoTexto, comentario, primera, children, pie }) {
     return (
         <div className={`flex items-start gap-3 px-5 py-4 hover:bg-surface-card-hover/40 transition-colors ${primera ? '' : 'border-t border-divider'}`}>
-            <AvatarConEstado emp={quien} px={32} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={quien} px={36} marco="" />
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap mb-1 min-w-0">{children}</div>
                 {pie}
@@ -2309,7 +2309,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                             <DataCell className="font-bold whitespace-nowrap">{<Monto v={inv?.total} />}</DataCell>
                                             <DataCell>
                                                 <div className="flex items-center gap-2">
-                                                    <AvatarConEstado emp={empPorNombre[r.confirmed_by] || null} px={28} radio="rounded-full" marco="" />
+                                                    <AvatarConEstado emp={empPorNombre[r.confirmed_by] || null} px={28} marco="" />
                                                     <span className="text-body-sm font-semibold text-content-2 whitespace-nowrap">
                                                         {r.confirmed_by ? shortEmployeeName(empPorNombre[r.confirmed_by] || r.confirmed_by) : '—'}
                                                     </span>

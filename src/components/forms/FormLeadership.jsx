@@ -134,7 +134,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                             >
                                 <div className="flex items-center gap-3">
                                     <div data-surface={isSelected ? undefined : 'card'} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'text-content-3'}`}>
-                                        <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
+                                        <AvatarConEstado emp={emp} px={36} marco="" />
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`} title={emp.name}>{shortEmployeeName(emp)}</p>
@@ -170,7 +170,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                         <div data-surface="card" className="p-5 relative overflow-hidden">
                             <div className="flex items-center gap-4 relative z-base">
                                 <div className="w-16 h-16 rounded-full border-[3px] border-border-card shadow-md overflow-hidden bg-surface-card-hover shrink-0">
-                                    <AvatarConEstado emp={selectedEmp} px={64} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={selectedEmp} px={64} marco="" />
                                 </div>
                                 <div className="flex-1">
                                     <h3 className="text-lg font-black text-content leading-tight">{shortEmployeeName(selectedEmp)}</h3>

@@ -579,7 +579,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                                                                                     {actor.sistema ? (
                                                                                         <img src="/Logo192.png" alt="" className="w-5 h-5 rounded-full object-contain" />
                                                                                     ) : actor.nombre ? (
-                                                                                        <AvatarConEstado emp={actor.emp || { id: item.user_id ?? null, name: actor.nombre }} px={20} radio="rounded-full" marco="" />
+                                                                                        <AvatarConEstado emp={actor.emp || { id: item.user_id ?? null, name: actor.nombre }} px={20} marco="" />
                                                                                     ) : null}
                                                                                     <span className="truncate max-w-[180px]">{actorName}</span>
                                                                                 </span>

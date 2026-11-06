@@ -62,7 +62,7 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
                     igual, pinta las iniciales en vez de un hueco. */}
                 {llegadaEmp && (
                     <span className="flex items-center gap-1.5 text-caption text-content-3">
-                        <AvatarConEstado emp={llegadaEmp} px={16} radio="rounded-full" className="shadow-sm" />
+                        <AvatarConEstado emp={llegadaEmp} px={20} className="shadow-sm" />
                         <span className="whitespace-nowrap">{shortEmployeeName(llegadaEmp)}</span>
                     </span>
                 )}

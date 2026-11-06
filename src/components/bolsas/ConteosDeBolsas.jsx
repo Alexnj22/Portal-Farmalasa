@@ -284,7 +284,7 @@ function Persona({ persona, className = '' }) {
                 resuelve por id, y el envoltorio que se quedaba con la foto y
                 tiraba a la persona era justo lo que lo impedía. El id lo devuelve
                 `get_conteos` desde la migración 20260827185652. */}
-            <AvatarConEstado emp={persona} px={20} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={persona} px={20} marco="" />
             <span className="text-caption text-content-2 whitespace-nowrap">{nombre}</span>
         </span>
     );

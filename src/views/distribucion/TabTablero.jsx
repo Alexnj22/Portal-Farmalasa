@@ -246,7 +246,7 @@ export default function TabTablero({ periodo = '30d' }) {
                             <FilaRanking key={v.id} activo={vendedor === v.id}
                                 onClick={() => filtrar('vendedor', vendedor === v.id ? '' : v.id)}
                                 izquierda={<span className="relative shrink-0">
-                                    <AvatarConEstado emp={{ id: v.id, name: v.name, photo_url: v.photo_url }} px={32} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={{ id: v.id, name: v.name, photo_url: v.photo_url }} px={36} marco="" />
                                     {i === 0 && <Trophy size={11} className="absolute -top-1 -right-1 text-warning-text" aria-hidden="true" />}
                                 </span>}
                                 titulo={shortEmployeeName(v) || nombreVendedor(v.id)} valor={formatMoneyCorto(num(v.ventas))}

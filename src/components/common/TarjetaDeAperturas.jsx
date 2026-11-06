@@ -124,7 +124,7 @@ export function CuerpoDeAperturas({ datos, claseTenue, isDark, buscarEmpleado })
                                 </span>
                                 {emp ? (
                                     <span className="flex-shrink-0">
-                                        <AvatarConEstado emp={emp} px={22} radio="rounded-full"
+                                        <AvatarConEstado emp={emp} px={20}
                                             marco="" mostrarChip={false} />
                                     </span>
                                 ) : (

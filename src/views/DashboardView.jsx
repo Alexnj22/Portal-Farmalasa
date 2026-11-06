@@ -3435,7 +3435,7 @@ const DashboardView = ({ openModal }) => {
                     <div key={e.id||i} className={`flex items-center gap-2.5 p-2.5 rounded-2xl border transition-[background-color,border-color,box-shadow] duration-[var(--dur-base)] ${cardCls}`}>
                       {/* Avatar */}
                       <div className="relative flex-shrink-0">
-                        <AvatarConEstado emp={e} px={36} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={e} px={36} marco="" />
                         {e.isToday&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-brand flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Gift size={8} className="text-white" strokeWidth={3}/></div>}
                         {e.isTomorrow&&<div className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-warning flex items-center justify-center ring-2 ring-surface-card shadow-sm"><Clock size={8} className="text-white" strokeWidth={3}/></div>}
                       </div>

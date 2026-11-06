@@ -318,7 +318,7 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                         </Button>
                                     )}
                                     {f.enfermeria === 'NO' && <Badge variant="neutral" size="sm">Sin enfermería · no va en la bitácora</Badge>}
-                                    <PersonaConFoto id={f.aplicada_por_id} nombre={f.aplicada_por} px={22}
+                                    <PersonaConFoto id={f.aplicada_por_id} nombre={f.aplicada_por} px={20}
                                         detalle={`${horaDe(f.aplicada_at)}${f.aplicada_en && f.aplicada_en !== f.sala ? ` · en ${f.aplicada_en}` : ''}`} />
                                 </div>
                             ) : (

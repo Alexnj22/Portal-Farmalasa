@@ -329,7 +329,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 : "border-border-card bg-surface-card text-content-3",
             ].join(" ")}
           >
-            <AvatarConEstado emp={emp} px={40} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={emp} px={36} marco="" />
           </div>
           {emp.hasLactation && (
             <div

@@ -43,7 +43,7 @@ export default function Firma({ quien, hora, tarde }) {
     };
     return (
         <span className="flex items-center gap-1.5 min-w-0">
-            <AvatarConEstado emp={emp} px={20} radio="rounded-full" />
+            <AvatarConEstado emp={emp} px={20} />
             <span className="text-micro text-content-3 truncate">
                 {shortEmployeeName(emp)}
                 {hora && <> · <span className="tabular-nums">{hora}</span></>}

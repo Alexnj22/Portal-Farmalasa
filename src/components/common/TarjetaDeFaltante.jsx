@@ -163,8 +163,7 @@ export function CuerpoDeFaltanteDeCaja({ datos, claseTenue, isDark }) {
 
             {confirmoNombre && (
                 <span className={`inline-flex items-center gap-1.5 text-caption ${claseTenue}`}>
-                    <AvatarConEstado emp={{ id: confirmoId, name: confirmoNombre }} px={20}
-                        radio="rounded-full" mostrarChip={false} />
+                    <AvatarConEstado emp={{ id: confirmoId, name: confirmoNombre }} px={20} mostrarChip={false} />
                     <span>Lo confirmó <span className="font-bold">{shortEmployeeName(confirmoNombre)}</span></span>
                 </span>
             )}

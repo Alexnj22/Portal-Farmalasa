@@ -47,7 +47,7 @@ const FormVacationRecall = ({ formData, setFormData }) => {
             {emp && (
                 <div data-surface="card" className="p-4 flex items-center gap-3">
                     <div className="w-11 h-11 rounded-xl overflow-hidden shrink-0">
-                        <AvatarConEstado emp={emp} px={56} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={emp} px={64} marco="" />
                     </div>
                     <div>
                         <p className="text-body font-black text-content">{shortEmployeeName(emp)}</p>

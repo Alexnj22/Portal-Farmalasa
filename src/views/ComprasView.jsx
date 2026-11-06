@@ -104,7 +104,7 @@ function CargadaDesdePortal({ carga }) {
         <div className="flex items-center gap-2 flex-wrap text-label text-content-2 mb-2">
             <MonitorCheck size={14} className="text-info-text shrink-0" />
             <span>Cargada desde el portal por</span>
-            <AvatarConEstado emp={{ id: carga.employee_id, name: carga.empleado }} px={18} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={{ id: carga.employee_id, name: carga.empleado }} px={20} marco="" />
             <span className="font-semibold text-content">{shortEmployeeName(carga.empleado)}</span>
             <span className="text-content-3 tabular-nums">· {cuando}</span>
             {carga.estado === 'sin_verificar' && (

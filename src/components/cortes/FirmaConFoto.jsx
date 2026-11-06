@@ -14,7 +14,7 @@ export default function FirmaConFoto({ id, nombre, accion = '', px = 20, classNa
     if (!nombre && !id) return null;
     return (
         <span className={`inline-flex items-center gap-1.5 min-w-0 ${className}`}>
-            <AvatarConEstado emp={{ id, name: nombre }} px={px} radio="rounded-full" mostrarChip={false} />
+            <AvatarConEstado emp={{ id, name: nombre }} px={px} mostrarChip={false} />
             <span className="truncate">
                 {accion && <span className="text-content-3">{accion} </span>}
                 <span className="text-content-2 font-bold">{nombre ? shortEmployeeName(nombre) : 'sin nombre'}</span>

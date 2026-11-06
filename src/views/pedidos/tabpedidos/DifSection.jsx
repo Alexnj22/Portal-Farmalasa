@@ -308,7 +308,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
 
                     {row?.confirmado_correccion_at ? (
                         <Notice variant="success" icon={CheckCircle2}
-                            action={<EmpChip emp={corrConfEmp} size="xs" tono="success-text" />}>
+                            action={<EmpChip emp={corrConfEmp} tono="success-text" />}>
                             Cerrado. La sala confirmó que recibió la corrección
                             {' · '}{fmtDia(row.confirmado_correccion_at)} {fmtHM(row.confirmado_correccion_at)}
                         </Notice>
@@ -326,7 +326,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                             </Notice>
                         ) : (
                             <Notice variant="warning" icon={Clock}
-                                action={<EmpChip emp={corrBodegaEmp} size="xs" tono="warning-text" />}>
+                                action={<EmpChip emp={corrBodegaEmp} tono="warning-text" />}>
                                 Falta que <strong>{nombreSala}</strong> confirme que recibió la corrección.
                                 {' '}Bodega la marcó el {fmtDia(row.corregido_bodega_at)} a las {fmtHM(row.corregido_bodega_at)}
                             </Notice>
@@ -377,7 +377,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                         return (
                             <div key={ev.id} className="flex items-start gap-2 text-caption text-content-2 flex-wrap">
                                 <span className="text-content-3 shrink-0 tabular-nums">{fmtRelative(ev.created_at)}</span>
-                                {emp ? <EmpChip emp={emp} size="xs" /> : <strong className="text-content-2">—</strong>}
+                                {emp ? <EmpChip emp={emp} /> : <strong className="text-content-2">—</strong>}
                                 <span>
                                     {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
                                     {ev.resolucion_tipo && <em className="text-content-3"> ({RESOLUCION_LABEL[ev.resolucion_tipo] ?? ev.resolucion_tipo})</em>}
@@ -557,7 +557,7 @@ function ProcesoDeLaDiferencia({ item, eventos = [], empMap, catalogo, dev }) {
                             )}
                             <span className="text-label font-semibold text-content-2 min-w-0">
                                 {EVENTO_LABEL[ev.tipo] ?? ev.tipo}
-                                {emp && <span className="ms-1.5"><EmpChip emp={emp} size="xs" /></span>}
+                                {emp && <span className="ms-1.5"><EmpChip emp={emp} /></span>}
                             </span>
                             {/* Fecha Y hora, en dos renglones. Sólo la hora se
                                 lee bien el mismo día y deja de decir nada la

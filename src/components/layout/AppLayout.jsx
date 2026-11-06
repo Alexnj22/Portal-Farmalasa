@@ -4,7 +4,7 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Badge from '../common/Badge';
 import { LayoutGroup } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
-import { LogOut, Menu, ChevronLeft, ChevronRight, ChevronDown, X, Cake, Search, ArrowUpRight } from 'lucide-react';
+import { LogOut, Menu, ChevronLeft, ChevronRight, ChevronDown, X, Search, ArrowUpRight } from 'lucide-react';
 import { MARCA_DISTRIBUIDORA } from '../../views/distribucion/marca';
 import { rutaInicio } from '../../views/distribucion/rutas';
 import { fetchVentasPerdidasPendingCount } from '@nucleo/data/ventasPerdidas';
@@ -1186,24 +1186,17 @@ const AppLayout = ({ children, handleLogout }) => {
                                             recorta el texto, no devuelve el espacio del contenedor. */}
                                         <Link to="/mi-perfil"
                                             className={`flex-1 min-w-0 flex items-center gap-3 p-2 -mx-1 rounded-2xl text-left transition duration-[var(--dur-base)] active:scale-[0.98] hover:bg-[rgb(var(--sidebar-realce)/0.06)] hover:shadow-[var(--shadow-shine)] ${focusRing}`}>
-                                            <div className="relative h-9 w-9 flex-shrink-0">
-                                                {/* `AvatarConEstado` y no un `<img>` a mano: el usuario
-                                                    pidió el aro «en todos lados que salga la foto», y acá
-                                                    es donde se ve la propia. A 36 px no lleva chip —la
-                                                    escalera lo saca antes de que sea una mancha— así que
-                                                    tampoco choca con la torta de cumpleaños de al lado.
-                                                    El radio y el marco se le pasan porque el sidebar es
-                                                    una superficie bespoke con sus propios tokens. */}
+                                            {/* La foto propia con el MISMO diseño que en todo el
+                                                portal (2026-11-05): su torta, su aro y su «!». La torta
+                                                aparte que se dibujaba acá se retiró — eran dos dibujos
+                                                del mismo dato. `--av-fondo` es el fondo del menú, para
+                                                que el filo de las marcas recorte contra él. */}
+                                            <div className="relative h-9 w-9 flex-shrink-0 [--av-fondo:#07031a]">
                                                 <AvatarConEstado
-                                                    emp={user} px={36} cumple={false}
+                                                    emp={user} px={36}
                                                     className="shadow-[var(--shadow-elevation-xl)]"
                                                     marco="border border-[rgb(var(--sidebar-ink)/0.12)] bg-[rgb(var(--sidebar-realce)/0.08)]"
                                                 />
-                                                {myBirthday && (
-                                                    <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
-                                                        <Cake size={9} className="text-[rgb(var(--sidebar-ink))]" />
-                                                    </span>
-                                                )}
                                             </div>
                                             <div className="flex-1 min-w-0 overflow-hidden">
                                                 <p className="text-body font-semibold truncate transition-colors leading-tight text-[rgb(var(--sidebar-ink)/0.8)] group-hover/user:text-[rgb(var(--sidebar-ink))]" title={user?.name || 'Usuario'}>{myShortName}{myBirthday ? ' 🎂' : ''}</p>
@@ -1235,7 +1228,10 @@ const AppLayout = ({ children, handleLogout }) => {
                                         onCopyPin={handleCopyPin}
                                         onCopySuPin={handleCopySuPin}
                                     />
-                                    <div className="relative w-11 h-11">
+                                    {/* 44 px de blanco de dedo y la foto en 36, que es de la
+                                        escala aprobada: el botón ya no es una baldosa cuadrada
+                                        con la foto adentro, es la foto. */}
+                                    <div className="relative w-11 h-11 [--av-fondo:#07031a]">
                                         <Link to="/mi-perfil"
                                             onMouseEnter={(e) => {
                                                 const rect = e.currentTarget.getBoundingClientRect();
@@ -1243,17 +1239,10 @@ const AppLayout = ({ children, handleLogout }) => {
                                                 openFlyout({ type: 'user', x, y: rect.top + rect.height / 2 });
                                             }}
                                             onMouseLeave={closeFlyout} aria-label="Mi perfil"
-                                            className={`w-11 h-11 rounded-2xl overflow-hidden flex items-center justify-center transition hover:translate-y-[var(--lift-hover)] active:scale-[0.97]
-                                                bg-[rgb(var(--sidebar-realce)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
-                                                shadow-[var(--shadow-glass-1)]
-                                                hover:bg-[rgb(var(--sidebar-realce)/0.14)] hover:border-[rgb(var(--sidebar-ink)/0.20)] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
-                                            <AvatarConEstado emp={user} px={44} radio="rounded-2xl" marco="" cumple={false} />
+                                            className={`w-11 h-11 rounded-full flex items-center justify-center transition hover:translate-y-[var(--lift-hover)] active:scale-[0.97] ${focusRing}`}>
+                                            <AvatarConEstado emp={user} px={36}
+                                                marco="border border-[rgb(var(--sidebar-ink)/0.12)] bg-[rgb(var(--sidebar-realce)/0.08)]" />
                                         </Link>
-                                        {myBirthday && (
-                                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
-                                                <Cake size={9} className="text-[rgb(var(--sidebar-ink))]" />
-                                            </span>
-                                        )}
                                     </div>
                                     <Button variant="destructive" icon={LogOut} title="Cerrar sesión" iconOnly className={focusRing} onClick={handleLogout} />
                                     <span className="text-micro font-medium text-[rgb(var(--sidebar-ink)/0.55)] tracking-wider">v{APP_VERSION}</span>
@@ -1333,17 +1322,12 @@ const AppLayout = ({ children, handleLogout }) => {
                                 <React.Suspense fallback={<HuecoDeCampana />}>
                                     <NotificationBell variant="mobile" />
                                 </React.Suspense>
+                                {/* 44 px de blanco de dedo, la foto en 36 (escala aprobada). */}
                                 <div className="relative w-11 h-11">
                                     <Link to="/mi-perfil" aria-label="Mi perfil"
- className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
-                                        <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-base" />
-                                        <AvatarConEstado emp={user} px={44} radio="rounded-3xl" marco="" cumple={false} />
+                                        className="w-11 h-11 rounded-full active:scale-[0.97] transition flex items-center justify-center">
+                                        <AvatarConEstado emp={user} px={36} />
                                     </Link>
-                                    {myBirthday && (
-                                        <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[rgb(var(--sidebar-ink))] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
-                                            <Cake size={9} className="text-[rgb(var(--sidebar-ink))]" />
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                         </div>

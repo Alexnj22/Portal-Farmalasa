@@ -138,7 +138,7 @@ export default function IdentidadDeQuienRetira({
         return (
             <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
                 animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
-                <AvatarConEstado emp={persona} px={48} radio="rounded-full"
+                <AvatarConEstado emp={persona} px={48}
                     marco="border-2 border-border-card" className="shadow" />
                 <div className="min-w-0 flex-1">
                     <p className="font-bold text-success-text text-body-lg truncate">{shortEmployeeName(persona)}</p>

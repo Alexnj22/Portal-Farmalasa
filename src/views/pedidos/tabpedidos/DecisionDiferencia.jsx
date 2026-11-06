@@ -192,7 +192,7 @@ export default function DecisionDiferencia({
                     <p className="text-label font-bold text-content leading-snug">{rotulo ?? '—'}</p>
                     <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
                         <span className="text-caption text-content-3">{TITULO[estado] ?? estado}</span>
-                        <EmpChip emp={quienPropuso} size="xs" tono="content-3" />
+                        <EmpChip emp={quienPropuso} tono="content-3" />
                     </div>
                 </div>
             </div>
@@ -208,7 +208,7 @@ export default function DecisionDiferencia({
 
             {estado === 'escalada' && item.nota_rechazo && (
                 <Notice variant="danger" icon={X} compact
-                    action={<EmpChip emp={quienRechazo} size="xs" tono="danger-text" />}>
+                    action={<EmpChip emp={quienRechazo} tono="danger-text" />}>
                     «{item.nota_rechazo}»
                 </Notice>
             )}
@@ -293,7 +293,7 @@ export default function DecisionDiferencia({
             </>)}
 
             {estado === 'confirmada' && quienAcepto && (
-                <EmpChip emp={quienAcepto} prefijo="Cerrado por" size="xs" tono="success-text" />
+                <EmpChip emp={quienAcepto} prefijo="Cerrado por" tono="success-text" />
             )}
         </Marco>
     );

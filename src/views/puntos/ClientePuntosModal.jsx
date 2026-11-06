@@ -746,7 +746,7 @@ function Movimiento({ m, sala, info = {} }) {
                 </p>
                 {persona ? (
                     <p className="text-caption text-content-3 flex items-center gap-1.5 mt-1 min-w-0">
-                        <AvatarConEstado emp={persona} px={18} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={persona} px={20} marco="" />
                         <span className="truncate">
                             {ROL[info.rol] ?? ''} <span className="font-bold text-content-2">{shortEmployeeName(persona)}</span>
                         </span>

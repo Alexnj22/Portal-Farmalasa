@@ -119,7 +119,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                     {reconocido && (
                         <div className="flex items-center gap-3 p-3.5 rounded-xl bg-success/10 border border-success/30
                             animate-in fade-in slide-in-from-bottom-2 duration-[var(--dur-base)]">
-                            <AvatarConEstado emp={reconocido} px={48} radio="rounded-full" marco="" />
+                            <AvatarConEstado emp={reconocido} px={48} marco="" />
                             <div>
                                 <p className="font-bold text-success-text text-body-lg">{shortEmployeeName(reconocido)}</p>
                                 <p className="text-label text-success-text mt-0.5">Confirma para registrar como apoyo</p>
@@ -141,7 +141,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             </span>
                             {anotados.map(a => (
                                 <Badge key={a.id} variant="success" uppercase={false} className="pl-1">
-                                    <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={a} px={20} marco="" />
                                     {shortEmployeeName(a)}
                                 </Badge>
                             ))}

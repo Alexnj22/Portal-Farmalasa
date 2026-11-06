@@ -143,6 +143,12 @@ const EXCEPTIONS = {
   // nadie. Los del equipo, en esa misma vista, sí van con `AvatarConEstado`.
   'src/views/chat-clientes/ClienteAvatar.jsx': ['foto-sin-aro'],
 
+  // La torta de cumpleaños es BLANCA en los dos temas (decisión del usuario,
+  // 2026-11-05): con el fondo rosa sólido chocaba con el aro de «En
+  // inducción». No es una superficie del tema: es la marca, y tiene que verse
+  // igual sobre una tarjeta clara que sobre una oscura.
+  'src/components/common/AvatarConEstado.jsx': ['white'],
+
   // La encuesta ya usa el ARO para decir otra cosa: `isJefe` pinta un
   // `ring-warning` alrededor de la cara para marcar a quien jefea. Dos aros
   // concéntricos con dos significados distintos no se pueden leer — uno diría

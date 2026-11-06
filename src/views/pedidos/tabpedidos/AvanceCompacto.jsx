@@ -173,7 +173,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                     // columna de la fila los pasos van a ~65px y foto+nombre en
                     // una línea se pisaban con el vecino.
                     <span className={`mt-1 flex flex-col gap-0.5 ${alineaDe(i, lista.length) === 'fin' ? 'items-end' : alineaDe(i, lista.length) === 'inicio' ? 'items-start' : 'items-center'}`}>
-                        <AvatarConEstado emp={e.paso.emp} px={20} radio="rounded-full" marco="" mostrarChip={false} />
+                        <AvatarConEstado emp={e.paso.emp} px={20} marco="" mostrarChip={false} />
                         <span className="text-micro text-content-2 leading-tight max-w-[4.5rem] whitespace-normal">{shortEmployeeName(e.paso.emp)}</span>
                     </span>
                 )}
@@ -208,7 +208,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                                     <span className="text-micro text-content-3 uppercase tracking-wider">Apoyo</span>
                                     {apoyo[lado].map(a => (
                                         <span key={a.id ?? a.employee_id} className="flex items-center gap-1">
-                                            <AvatarConEstado emp={a} px={20} radio="rounded-full" marco="" mostrarChip={false} />
+                                            <AvatarConEstado emp={a} px={20} marco="" mostrarChip={false} />
                                             <span className="text-micro text-content-2">{shortEmployeeName(a)}</span>
                                         </span>
                                     ))}
@@ -235,7 +235,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                             <span className="text-content-3 tabular-nums">{[diaSiNoEsHoy(x.time), fmtHM(x.time)].filter(Boolean).join(' ')}</span>
                             {x.emp && (
                                 <>
-                                    <AvatarConEstado emp={x.emp} px={18} radio="rounded-full" marco="" mostrarChip={false} />
+                                    <AvatarConEstado emp={x.emp} px={20} marco="" mostrarChip={false} />
                                     <span className="text-content-2">{shortEmployeeName(x.emp)}</span>
                                 </>
                             )}

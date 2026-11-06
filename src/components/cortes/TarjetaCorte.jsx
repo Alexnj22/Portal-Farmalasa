@@ -302,7 +302,7 @@ const TarjetaCorte = memo(function TarjetaCorte({
                 reclamar. */}
             {!pendiente && !sinDecision && (
                 <div className="flex items-center gap-2 pt-2 border-t border-divider">
-                    <AvatarConEstado emp={persona} px={24} radio="rounded-full" marco="" />
+                    <AvatarConEstado emp={persona} px={20} marco="" />
                     <div className="min-w-0 flex-1">
                         <div className="text-caption font-semibold text-content-2 truncate">
                             {persona?.name ? shortEmployeeName(persona) : 'Sin registrar quién'}

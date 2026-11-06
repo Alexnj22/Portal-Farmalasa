@@ -102,7 +102,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
                     que hay que ver. */}
                 {quien ? (
                     <AvatarConEstado emp={{ id: apertura.employee_id, name: quien }}
-                        px={32} radio="rounded-full" marco="" />
+                        px={36} marco="" />
                 ) : (
                     <span className="shrink-0 w-8 h-8 rounded-full grid place-items-center bg-warning/10 text-warning-text"
                         aria-hidden="true">

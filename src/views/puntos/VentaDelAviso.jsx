@@ -89,7 +89,7 @@ export default function VentaDelAviso({ aviso, rotulo, variante, puntosTexto }) 
                 <span className="text-caption font-bold text-content-3">Vendió</span>
                 {vendedor ? (
                     <>
-                        <AvatarConEstado emp={vendedor} px={24} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={vendedor} px={20} marco="" />
                         <span className="text-body-sm font-bold text-content truncate">{shortEmployeeName(vendedor)}</span>
                     </>
                 ) : (

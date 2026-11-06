@@ -224,7 +224,7 @@ function Detalle({ r, puedeResponder, onClose, onListo }) {
                     <p className="text-body text-content whitespace-pre-line">{r.tema}</p>
                     <div className="flex flex-wrap items-center gap-2 text-body-sm text-content-2">
                         <span>Lo recibió</span>
-                        <PersonaConFoto id={r.recibido_por} nombre={r.recibio ? shortEmployeeName(r.recibio) : null} px={22}
+                        <PersonaConFoto id={r.recibido_por} nombre={r.recibio ? shortEmployeeName(r.recibio) : null} px={20}
                             detalle={dia(r.recibido_at)} />
                     </div>
                     {r.respondido_at ? (

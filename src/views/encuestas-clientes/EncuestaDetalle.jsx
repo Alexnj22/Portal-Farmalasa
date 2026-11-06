@@ -374,7 +374,7 @@ function Historial({ eventos, personas }) {
                 const quien = personas[e.autor_id];
                 return (
                     <li key={e.id} className="flex items-start gap-2.5">
-                        <AvatarConEstado emp={quien || { id: e.autor_id }} px={28} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={quien || { id: e.autor_id }} px={28} marco="" />
                         <div className="min-w-0">
                             <p className="text-body-sm text-content">
                                 <span className="font-semibold">{quien ? shortEmployeeName(quien.name) : 'Sistema'}</span>{' '}

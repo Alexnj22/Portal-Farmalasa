@@ -149,7 +149,7 @@ function PedidoDeVence({ pedido, puedeResponder, onHecho }) {
             <div className="mt-auto flex items-center justify-between gap-2">
                 {pedido.pedido_por ? (
                     <span className="flex items-center gap-1.5 text-micro text-content-3 min-w-0">
-                        <AvatarConEstado emp={{ id: pedido.pedido_por, name: pedido.pedido_nombre }} px={16} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={{ id: pedido.pedido_por, name: pedido.pedido_nombre }} px={20} marco="" />
                         <span className="truncate">{shortEmployeeName(pedido.pedido_nombre)}</span>
                     </span>
                 ) : <span />}
@@ -248,7 +248,7 @@ function Envio({ fila, puedeRecibir, puedeReintentar, onHecho, onAviso }) {
             <div className="mt-auto flex items-center justify-between gap-2">
                 {fila.enviado_por ? (
                     <span className="flex items-center gap-1.5 text-micro text-content-3 min-w-0">
-                        <AvatarConEstado emp={{ id: fila.enviado_por, name: fila.enviado_nombre }} px={16} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={{ id: fila.enviado_por, name: fila.enviado_nombre }} px={20} marco="" />
                         <span className="truncate">{shortEmployeeName(fila.enviado_nombre)}</span>
                     </span>
                 ) : <span />}

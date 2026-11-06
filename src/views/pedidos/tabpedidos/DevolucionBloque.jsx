@@ -86,7 +86,7 @@ export default function DevolucionBloque({
                     : aLaSala
                         ? 'No viaja nada: el producto ya está en la sala.'
                         : 'No viaja nada: quedó en bodega desde el principio.'}</span>
-                <EmpChip emp={quienPidio} prefijo="Pedida por" size="xs" />
+                <EmpChip emp={quienPidio} prefijo="Pedida por" />
             </div>
 
             {dev.nota && <p className="text-caption text-content-2 italic">«{dev.nota}»</p>}
@@ -111,7 +111,7 @@ export default function DevolucionBloque({
             {dev.motivo_rechazo && (
                 <div className="flex items-center gap-2 flex-wrap text-caption text-danger">
                     <span><strong>Bodega dijo que no:</strong> {dev.motivo_rechazo}</span>
-                    <EmpChip emp={quienDecidio} size="xs" tono="danger-text" />
+                    <EmpChip emp={quienDecidio} tono="danger-text" />
                 </div>
             )}
 

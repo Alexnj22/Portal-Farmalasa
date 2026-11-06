@@ -238,7 +238,7 @@ const InlineDayEditor = memo(({ employee, dateStr, dayId, currentData, shifts, f
     const encabezado = (
         <div className="flex items-center gap-2.5 min-w-0">
             <div className="w-9 h-9 rounded-xl bg-surface-card overflow-hidden border border-border-card shadow-sm flex items-center justify-center shrink-0">
-                <AvatarConEstado emp={employee} px={28} radio="rounded-full" marco="" />
+                <AvatarConEstado emp={employee} px={28} marco="" />
             </div>
             <div className="min-w-0">
                 <p className="text-body font-black text-content truncate leading-tight" title={employee?.name}>{shortEmployeeName(employee)}</p>

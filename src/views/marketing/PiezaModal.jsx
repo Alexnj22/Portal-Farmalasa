@@ -409,7 +409,7 @@ export default function PiezaModal({
                                 <>
                                     <span aria-hidden>·</span>
                                     <span className="shrink-0">creada por</span>
-                                    <Quien id={pieza.created_by} personas={personas} px={18} />
+                                    <Quien id={pieza.created_by} personas={personas} px={20} />
                                 </>
                             )}
                         </span>

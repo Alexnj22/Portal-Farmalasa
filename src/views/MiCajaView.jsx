@@ -2022,7 +2022,7 @@ function Firmita({ persona, rotulo, cuando }) {
     if (!persona?.id) return null;
     return (
         <span className="flex items-center gap-1.5 min-w-0">
-            <AvatarConEstado emp={persona} px={18} radio="rounded-full" marco="" />
+            <AvatarConEstado emp={persona} px={20} marco="" />
             <span className="text-caption text-content-3 truncate">
                 {rotulo} {shortEmployeeName(persona)}
                 {cuando ? <span className="tabular-nums"> · {horaLegible(cuando)}</span> : null}
@@ -2111,7 +2111,7 @@ function Movimiento({ l, corte, saly, abierto, onAlternar, quien, puedeOperar, o
                         {quien && (
                             <span className="hidden sm:flex items-center gap-1 shrink-0">
                                 <span aria-hidden>·</span>
-                                <AvatarConEstado emp={quien} px={16} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={quien} px={20} marco="" />
                                 {shortEmployeeName(quien)}
                             </span>
                         )}
@@ -2184,7 +2184,7 @@ function Movimiento({ l, corte, saly, abierto, onAlternar, quien, puedeOperar, o
                             <div className="min-w-0">
                                 <dt className="text-micro font-bold uppercase tracking-wider text-content-3">Lo anotó</dt>
                                 <dd className="flex items-center gap-1.5 text-body-sm text-content">
-                                    <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
+                                    <AvatarConEstado emp={quien} px={20} marco="" />
                                     <span className="truncate">{shortEmployeeName(quien)}</span>
                                 </dd>
                             </div>

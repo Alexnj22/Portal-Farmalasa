@@ -1014,7 +1014,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
     const avatarDelModal = esFichaDeEmpleado && (type === 'editEmployee' || fotoRecienElegida) ? (
         <AvatarConEstado emp={{ id: formData.id, name: formData.name, status: formData.status,
                 hire_date: formData.hire_date, photo: fotoRecienElegida || null, photo_url: null }}
-            px={48} radio="rounded-2xl" pendientes={false} />
+            px={48} pendientes={false} />
     ) : undefined;
 
     return (

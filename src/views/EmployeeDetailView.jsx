@@ -547,7 +547,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         desde JavaScript sin medirlo. */}
                                     <div className="rounded-full p-1.5 bg-surface-card border border-border-card shadow-xl mb-5 group relative">
                                         <AvatarConEstado
-                                            emp={emp} px={fotoPx} radio="rounded-full" marco=""
+                                            emp={emp} px={fotoPx} marco=""
                                             className="group-hover:scale-105 transition-transform duration-[var(--dur-lento)]"
                                         />
                                         {canEdit && (

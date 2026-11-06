@@ -663,7 +663,7 @@ export default function CotizacionesView() {
                     {cot.created_by_name && (
                         <div data-surface="card" className="flex items-center gap-3 px-4 py-3">
                             <AvatarConEstado emp={{ id: cot.created_by, name: cot.created_by_name, photo: cot.created_by_photo }}
-                                px={32} radio="rounded-full" />
+                                px={36} />
                             <div>
                                 <p className="text-micro font-black text-content-2 uppercase tracking-widest">Preparada por</p>
                                 <p className="text-body font-black text-content-2">{cot.created_by_name}</p>
@@ -863,7 +863,7 @@ export default function CotizacionesView() {
                             <DataCell hideBelow="2xl">
                                 {cot.created_by_name ? (
                                     <div className="flex items-center gap-2">
-                                        <AvatarConEstado emp={{ id: cot.created_by, name: cot.created_by_name, photo: cot.created_by_photo }} px={24} radio="rounded-full" />
+                                        <AvatarConEstado emp={{ id: cot.created_by, name: cot.created_by_name, photo: cot.created_by_photo }} px={20} />
                                         <span className="text-label text-content-2 truncate max-w-[100px]">{cot.created_by_name}</span>
                                     </div>
                                 ) : <span className="text-content-3">—</span>}

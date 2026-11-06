@@ -1225,7 +1225,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                                                         {ruta ? (
                                                             <>
                                                                 <span className="font-bold text-content">Ruta #{ruta.numero}</span>
-                                                                {conductor && <AvatarConEstado emp={conductor} px={18} radio="rounded-full" marco="" mostrarChip={false} />}
+                                                                {conductor && <AvatarConEstado emp={conductor} px={20} marco="" mostrarChip={false} />}
                                                                 <span className="truncate min-w-0">{shortEmployeeName(conductor || ruta.conductor_nombre)}</span>
                                                                 <span className="text-content-3 tabular-nums whitespace-nowrap">· {entregadas}/{total} entregadas</span>
                                                                 {/* El punto verde de las tarjetas, dicho: el

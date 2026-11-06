@@ -394,7 +394,7 @@ function Bolsa({ bolsa, sala, rotuloMonto = 'En la bolsa', personas, seleccionad
                 )}
                 {quien && (
                     <span className="flex items-center gap-1.5 min-w-0">
-                        <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={quien} px={20} marco="" />
                         <span className="text-caption text-content-3 truncate">
                             {firma.verbo} {shortEmployeeName(quien)}
                         </span>

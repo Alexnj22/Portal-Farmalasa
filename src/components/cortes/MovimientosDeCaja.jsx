@@ -738,7 +738,7 @@ function FilaDeMovimiento({ ficha: f, onAbrir }) {
                     </span>
                     {f.quien && (
                         <span className="flex items-center gap-1 min-w-0">
-                            <AvatarConEstado emp={f.quien} px={16} radio="rounded-full" marco="" />
+                            <AvatarConEstado emp={f.quien} px={20} marco="" />
                             <span className="truncate">{shortEmployeeName(f.quien)}</span>
                         </span>
                     )}
@@ -825,7 +825,7 @@ function DetalleDelMovimiento({ ficha: f, historia, sala, onClose }) {
 
                 {f.quien && (
                     <div className="flex items-center gap-3 rounded-xl bg-surface-input/40 px-3 py-2.5">
-                        <AvatarConEstado emp={f.quien} px={36} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={f.quien} px={36} marco="" />
                         <div className="min-w-0">
                             <p className="text-micro font-bold uppercase tracking-wider text-content-3">{f.rotuloQuien}</p>
                             <p className="text-body-sm font-semibold text-content truncate">{shortEmployeeName(f.quien)}</p>

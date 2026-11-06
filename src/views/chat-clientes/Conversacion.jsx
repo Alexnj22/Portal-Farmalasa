@@ -798,7 +798,7 @@ function QuienEscribe({ conversacion: c, cliente, yo, equipo, asegurarEquipo }) 
             )}
             {escribeOtro && (
                 <span className="flex items-center gap-1.5 py-1 text-label font-semibold text-brand-text min-w-0">
-                    <AvatarConEstado emp={companero ?? { id: otroId }} px={18} mostrarChip={false} />
+                    <AvatarConEstado emp={companero ?? { id: otroId }} px={20} mostrarChip={false} />
                     <span className="truncate">{companero ? shortEmployeeName(companero) : 'Alguien del equipo'} está escribiendo…</span>
                     <Puntos />
                 </span>

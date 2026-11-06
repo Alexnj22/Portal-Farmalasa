@@ -33,8 +33,8 @@ import { fmtFechaHora, desdeHace, cuantoTardo, personasDe, cuandoSeDecidio, sala
  * firma de alguien que está de vacaciones es exactamente lo que hay que ver
  * antes de preguntarse por qué no avanza.
  */
-export const CaraPersona = ({ persona, px = 40, className = '' }) => (
-    <AvatarConEstado emp={persona} px={px} radio="rounded-full" className={className} />
+export const CaraPersona = ({ persona, px = 36, className = '' }) => (
+    <AvatarConEstado emp={persona} px={px} className={className} />
 );
 
 /**

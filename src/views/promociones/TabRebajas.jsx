@@ -187,7 +187,7 @@ export default function TabRebajas({ periodo, salaId = '', vista = 'campana', on
                         </DataCell>
                         <DataCell>
                             <span className="flex items-center gap-2 min-w-0">
-                                <AvatarConEstado emp={{ id: r.vendedor_id, name: r.vendedor }} px={20} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={{ id: r.vendedor_id, name: r.vendedor }} px={20} marco="" />
                                 <span className="text-body-sm text-content-2 truncate">
                                     {r.vendedor ? shortEmployeeName({ name: r.vendedor }) : 'Sin ficha'}
                                 </span>

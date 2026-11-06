@@ -372,7 +372,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                     <span>Factura {factura(v.correlativo)} ·</span>
                                                     {v.vendedor_nombre ? (
                                                         <span className="inline-flex items-center gap-1.5">
-                                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={18} radio="rounded-full" marco="" />
+                                                            <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={20} marco="" />
                                                             {shortEmployeeName(v.vendedor_nombre)}
                                                         </span>
                                                     ) : '—'}
@@ -392,7 +392,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                     <div className="mt-2 flex flex-wrap items-center gap-2">
                                                         <Badge variant="success" size="sm" dot>Ya cobrada</Badge>
                                                         {v.ultimo_cobro?.por && (
-                                                            <PersonaConFoto id={v.ultimo_cobro.por_id} nombre={v.ultimo_cobro.por} px={18}
+                                                            <PersonaConFoto id={v.ultimo_cobro.por_id} nombre={v.ultimo_cobro.por} px={20}
                                                                 detalle={fechaHora12(v.ultimo_cobro.at)} />
                                                         )}
                                                     </div>

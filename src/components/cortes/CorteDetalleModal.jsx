@@ -652,7 +652,7 @@ export default function CorteDetalleModal({
                             dinero de alguien y merece saber quién dio el visto. */}
                         {!pendiente && (
                             <div data-surface="card" className="p-3 flex items-center gap-3">
-                                <AvatarConEstado emp={persona} px={40} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={persona} px={36} marco="" />
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {visible.estado === 'CONFIRMADO'

@@ -78,28 +78,33 @@ describe('AvatarConEstado — el aro sobrevive al achique, el chip no', () => {
         expect(marco(c).getAttribute('aria-label')).toBe('En vacaciones · vuelve el 3 de septiembre');
     });
 
-    it('a 40 px el chip se va, y el aro se queda', () => {
-        // 40 px es el tamaño de una fila de listado. Un chip ahí mediría 13 px y
-        // su ícono 7: una mancha dice menos que nada, porque invita a acercarse
-        // para no encontrar nada.
-        const c = montar(DE_VACACIONES, 40);
+    // Diseño «cuatro esquinas» (2026-11-05): el aro es una sombra INLINE —el
+    // filo del fondo y después el color—, así que se lee del `style`.
+    const aro = (c) => c.querySelector('[data-estado] > span').style.boxShadow;
+
+    it('a 28 px el chip se va, y el aro se queda', () => {
+        // El chip arranca en 36. A 28 mediría 11 px y su ícono 6: una mancha.
+        const c = montar(DE_VACACIONES, 28);
         expect(chip(c)).toBeNull();
         expect(marco(c).dataset.estado).toBe('VACATION');
-        expect(c.querySelector('.ring-warning')).toBeTruthy();
+        expect(aro(c)).toContain('var(--color-warning)');
     });
 
-    it('a 20 px —el tamaño más chico del portal— el aro sigue estando', () => {
+    it('a 36 px ya lleva chip', () => {
+        expect(chip(montar(DE_VACACIONES, 36))).toBeTruthy();
+    });
+
+    it('a 20 px —la FIRMA— el aro sigue estando, fino y sin filo', () => {
         const c = montar(DE_VACACIONES, 20);
         expect(marco(c).dataset.estado).toBe('VACATION');
-        expect(c.querySelector('.ring-warning')).toBeTruthy();
+        expect(aro(c)).toBe('0 0 0 1.5px var(--color-warning)');
     });
 
     // La red que cubre lo que el color solo no puede decir: a cualquier tamaño,
     // y para cualquiera que no distinga ámbar de rojo, la frase completa está
-    // en el `title`. Se le propuso al usuario codificar además la FORMA del aro
-    // y eligió el aro a secas — ver la nota del componente.
+    // en el `title`.
     it('el título lleva la frase completa a CUALQUIER tamaño', () => {
-        [160, 64, 40, 20].forEach(px => {
+        [64, 48, 36, 28, 20].forEach(px => {
             cleanup();
             const c = montar(DE_VACACIONES, px);
             expect(marco(c).getAttribute('title')).toBe('En vacaciones · vuelve el 3 de septiembre');
@@ -107,37 +112,24 @@ describe('AvatarConEstado — el aro sobrevive al achique, el chip no', () => {
     });
 
     it('el grosor del aro es ABSOLUTO, no proporcional al tamaño', () => {
-        // Es literalmente el motivo por el que se eligió este tratamiento. Si
-        // algún día alguien lo hace proporcional, el aro desaparece igual que
-        // desaparecía el ícono, y el componente deja de resolver el problema
-        // que vino a resolver.
-        // Se lee la clase ANTES de limpiar: `cleanup()` desmonta el árbol, y
-        // consultar el contenedor viejo después devuelve null por eso y no por
-        // el grosor — un falso hallazgo que ya se cobró una corrida.
-        const clases = (px) => {
-            const c = montar(DE_VACACIONES, px);
-            const cls = c.querySelector('[data-estado] > span').className;
-            cleanup();
-            return cls;
-        };
-        expect(clases(160)).toContain('ring-[2.5px]');
-        expect(clases(32)).toContain('ring-[2.5px]');
+        // Es el motivo por el que se eligió el aro: no se encoge como un ícono.
+        // Se lee ANTES de limpiar: `cleanup()` desmonta el árbol.
+        const leer = (px) => { const c = montar(DE_VACACIONES, px); const v = aro(c); cleanup(); return v; };
+        expect(leer(64)).toContain('0 0 0 4.5px');
+        expect(leer(48)).toContain('0 0 0 4.5px');
+        expect(leer(36)).toContain('0 0 0 4px');
+        expect(leer(28)).toContain('0 0 0 4px');
     });
 
     // ── La regresión que jsdom casi no puede ver ─────────────────────────
-    // La primera versión dibujaba el aro con `ring-inset`. Una sombra interior
-    // se pinta encima del fondo del elemento pero DEBAJO de sus hijos, y el
-    // hijo acá es una foto que ocupa el 100% de la caja: el aro existía en el
-    // DOM, tenía su color, pasaba todas las pruebas de arriba — y era invisible
-    // en pantalla. Lo vio el usuario antes que cualquier gate.
-    //
-    // jsdom no compone capas, así que no se puede afirmar «se ve». Lo que SÍ se
-    // puede afirmar es la causa: que la clase que lo escondía no vuelva.
+    // La primera versión dibujaba el aro con `ring-inset`: una sombra interior
+    // se pinta DEBAJO de los hijos, y el hijo es una foto que ocupa el 100% de
+    // la caja — el aro existía en el DOM y era invisible. Lo que se ancla es la
+    // causa: que la sombra no sea `inset`.
     it('el aro NO es `inset` — ahí es donde la foto se lo comía', () => {
         const c = montar(DE_VACACIONES, 64);
-        const aro = c.querySelector('[data-estado] > span');
-        expect(aro.className).toContain('ring-warning');
-        expect(aro.className).not.toContain('ring-inset');
+        expect(aro(c)).toContain('var(--color-warning)');
+        expect(aro(c)).not.toContain('inset');
     });
 
     it('el estado se resuelve por id cuando el llamador no trae historial', () => {

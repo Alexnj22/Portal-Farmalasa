@@ -122,7 +122,7 @@ export default function AnotadorModal({ archivo, src, mesId, piezaId, comentario
                                         <span className="flex gap-2 items-start min-w-0">
                                             <span className="text-label font-bold text-danger shrink-0 w-5">{c.numero}</span>
                                             <span className="min-w-0 space-y-0.5">
-                                                <Quien id={c.autor_id} personas={personas} px={18} />
+                                                <Quien id={c.autor_id} personas={personas} px={20} />
                                                 <span className={`block text-body-sm whitespace-pre-wrap ${c.resuelto ? 'line-through text-content-3' : 'text-content-2'}`}>
                                                     {c.texto}
                                                 </span>

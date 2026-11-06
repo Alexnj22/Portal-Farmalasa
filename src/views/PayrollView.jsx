@@ -169,7 +169,7 @@ function BranchGroupedTable({ entries, branches, isPaid, period, onPrint, onEdit
                                     <DataRow key={e.id} index={ei} className={edited ? 'bg-warning/10' : ''}>
                                         <DataCell className="whitespace-nowrap">
                                             <div className="flex items-center gap-3">
-                                                <AvatarConEstado emp={emp} px={32} />
+                                                <AvatarConEstado emp={emp} px={36} />
                                                 <div>
                                                     <p className="font-black text-content text-label leading-tight">{shortEmployeeName(emp)}</p>
                                                     {emp.role && <p className="text-micro text-content-3 font-medium leading-tight">{emp.role}</p>}

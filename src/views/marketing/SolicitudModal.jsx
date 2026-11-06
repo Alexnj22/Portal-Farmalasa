@@ -145,7 +145,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
             <LiquidModal.Body>
                 <div className="space-y-4">
                     <div className="flex items-center gap-2">
-                        <AvatarConEstado emp={quien || { id: solicitud.solicitado_por }} px={28} radio="rounded-full" marco="" />
+                        <AvatarConEstado emp={quien || { id: solicitud.solicitado_por }} px={28} marco="" />
                         <span className="text-body-sm text-content-2">
                             {shortEmployeeName(quien?.name)} · {fechaTexto(solicitud.created_at, { day: 'numeric', month: 'short' })}
                         </span>

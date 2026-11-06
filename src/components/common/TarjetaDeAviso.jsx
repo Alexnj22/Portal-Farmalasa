@@ -438,7 +438,7 @@ const TarjetaDeAviso = ({
                     {(quien || sucursal) && !conPersona && !salaEnTitulo && (
                         <div className="flex items-center flex-wrap gap-x-1.5 gap-y-0.5 mt-1.5 min-w-0">
                             {quien && (
-                                <AvatarConEstado emp={quien} px={20} radio="rounded-full" marco="" />
+                                <AvatarConEstado emp={quien} px={20} marco="" />
                             )}
                             <span className={`text-caption font-bold break-words min-w-0 ${cx.rowTitleRead}`}>
                                 {quien ? shortEmployeeName(quien) : sucursal}

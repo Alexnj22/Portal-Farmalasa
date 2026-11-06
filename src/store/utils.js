@@ -111,10 +111,25 @@ export const COLUMNAS_DE_EMPLOYEES = new Set([
     'weekly_schedule',
 ]);
 
+// ── Las que escribe SÓLO una función, nunca el formulario ───────────────────
+//
+// El nombre con que la persona aparece en el portal lo elige ELLA, por
+// `elegir_nombre_en_el_portal` (DEFINER). `authenticated` no tiene UPDATE sobre
+// estas cuatro columnas —se agregaron con `ADD COLUMN` después de que la tabla
+// pasó a permisos por columna, y no se le dio GRANT a propósito—, pero
+// `employees_safe` sí las expone, así que la ficha del store las trae y la
+// edición las mandaba de vuelta. Resultado: `permission denied for table
+// employees` en CADA edición de una ficha existente, del 2026-10-30 (v2.1400.0)
+// al 2026-11-06 — Talento Humano no pudo actualizar una licencia de conducir y
+// la fecha de vencimiento leída del papel se perdió con el guardado.
+export const SOLO_POR_FUNCION = new Set([
+    'nombre_preferido', 'apellido_preferido', 'nombre_corto', 'nombre_elegido_el',
+]);
+
 export const partirPorLlave = (payload) => {
     const dbPayload = {};
     for (const [campo, valor] of Object.entries(payload || {})) {
-        if (COLUMNAS_DE_EMPLOYEES.has(campo)) dbPayload[campo] = valor;
+        if (COLUMNAS_DE_EMPLOYEES.has(campo) && !SOLO_POR_FUNCION.has(campo)) dbPayload[campo] = valor;
     }
     const protegido = {};
     for (const campo of CAMPOS_TRAS_LLAVE) {

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1463.1 — Editar una ficha existente vuelve a guardar
+
+- Desde v2.1400.0 (30-oct) guardar cambios en la ficha de cualquier persona ya
+  existente fallaba con «permission denied for table employees»: la edición
+  mandaba de vuelta el nombre elegido en el portal (`nombre_preferido`,
+  `apellido_preferido`, `nombre_corto`, `nombre_elegido_el`), que sólo puede
+  escribir `elegir_nombre_en_el_portal`. Lo reportó Talento Humano al no poder
+  actualizar una licencia de conducir: la foto subía y la fecha de vencimiento
+  se leía, pero el guardado se rechazaba y no quedaba nada.
+- `partirPorLlave` deja fuera esas cuatro columnas (`SOLO_POR_FUNCION`); cubre
+  alta, edición, recontratación y novedades.
+
 ## v2.1463.0 — Todos los tickets con el logo completo; el de traslado con lote y vence
 
 Usuario: «confirma que en todos los vauchers que imprime el portal tenga el logo

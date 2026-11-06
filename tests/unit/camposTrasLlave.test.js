@@ -159,4 +159,16 @@ describe('partirPorLlave — sólo viajan columnas de employees', () => {
         expect(dbPayload).toEqual({ phone: '7000-0000', lugar_nacimiento: 'CHALATENANGO' });
         expect(protegido).toEqual({ dui: '01234567-8' });
     });
+
+    it('el nombre elegido NO viaja: lo escribe sólo `elegir_nombre_en_el_portal`', () => {
+        // Sin GRANT de UPDATE para `authenticated`: con una sola de estas en el
+        // `update`, la base rechaza el guardado ENTERO (2026-10-30 → 2026-11-06,
+        // ninguna ficha existente se pudo editar).
+        const { dbPayload, protegido } = partirPorLlave({
+            phone: '7000-0000', nombre_preferido: 'WILLIAN', apellido_preferido: 'HERRERA',
+            nombre_corto: 'WILLIAN HERRERA', nombre_elegido_el: '2026-10-30T18:15:17Z',
+        });
+        expect(dbPayload).toEqual({ phone: '7000-0000' });
+        expect(protegido).toBeNull();
+    });
 });

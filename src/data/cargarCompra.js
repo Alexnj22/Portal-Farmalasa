@@ -628,3 +628,17 @@ export async function fetchPasadosAVencidos() {
         .gte('created_at', desde).order('created_at', { ascending: false }).range(0, 199);
     return { filas: data ?? [], error: error?.message ?? null };
 }
+
+/** Deshace un paso a vencidos: lo del traslado `traslado` vuelve al estante. */
+export async function devolverDeVencidosAlEstante(traslado) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
+        body: { accion: 'vencidos_a_estante', traslado: String(traslado) },
+    });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('BODEGA_VENCIDOS_DEVUELTO', String(traslado), { ok: !msg, devolucion: data?.traslado ?? null, error: msg });
+    return { resultado: msg ? null : data, error: msg };
+}

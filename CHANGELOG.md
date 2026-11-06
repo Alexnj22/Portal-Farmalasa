@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1464.2 — Bodega: deshacer un paso a vencidos
+
+- **Lo que se pasó a vencidos por error puede volver al estante** (acción
+  `vencidos_a_estante` de `cargar-compra-erp`, `devolverDeVencidosAlEstante`).
+  Mismo mecanismo al revés, comprobado en el estante; la fila queda
+  `devuelto` con quién y el traslado de vuelta. Todavía sin botón en pantalla.
+
 ## v2.1464.1 — Compras: un frasco suelto entra como una unidad
 
 - **«MEBEZOL SUSPENSION FCO X 30 ML» × 6 proponía 12 frascos.** Con el 35 %

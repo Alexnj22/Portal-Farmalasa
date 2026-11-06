@@ -339,7 +339,7 @@ export default function DocumentoModal({ id, puedeVender, imprimirAlAbrir = fals
     const freno = avisoDeFreno({ pedida, conNota });
 
     return (
-        <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Documento">
+        <LiquidModal open onClose={ocupado ? undefined : onClose} maxWidth="max-w-4xl" ariaLabel="Documento">
             <LiquidModal.Header icono={FileCheck2} tono="brand" onClose={ocupado ? undefined : onClose}
                 titulo={<>
                     {d ? TIPO_DOCUMENTO[d.tipo]?.largo : 'Documento'}

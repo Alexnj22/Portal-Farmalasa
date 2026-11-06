@@ -174,7 +174,7 @@ function Registrar({ deTodaLaRed, salaPropia, onClose, onListo }) {
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel="Registrar reclamo">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Registrar reclamo">
             <LiquidModal.Header titulo="Registrar reclamo" onClose={onClose} />
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4">
@@ -215,7 +215,7 @@ function Detalle({ r, puedeResponder, onClose, onListo }) {
     };
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel={`Reclamo ${r.folio}`}>
+        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel={`Reclamo ${r.folio}`}>
             <LiquidModal.Header titulo={<>Reclamo {r.folio} · {r.cliente_nombre}</>}
                 subtitulo={[ROTULO_PROGRAMA[r.programa], r.sala?.name, r.cliente_telefono].filter(Boolean).join(' · ')}
                 acciones={<EstadoDelPlazo r={r} />} onClose={onClose} />

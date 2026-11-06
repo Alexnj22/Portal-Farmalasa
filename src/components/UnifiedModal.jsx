@@ -352,9 +352,9 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "viewAuditDetail": return "max-w-4xl";
             case "viewRoleEmployees":
             case "viewBranchEmployees": return "max-w-2xl";
-            case "viewDocument": return "max-w-5xl";
-            case "viewPurchaseDte": return "max-w-5xl";
-            case "viewSalesDte": return "max-w-5xl";
+            case "viewDocument": return "max-w-6xl";
+            case "viewPurchaseDte": return "max-w-6xl";
+            case "viewSalesDte": return "max-w-6xl";
             case "newEmployee":
             case "editEmployee": return "max-w-4xl";
             case "rehireEmployee": return "max-w-2xl";
@@ -363,13 +363,13 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editBranch":
             case "editBranchLegal":
             case "editBranchInmueble":
-            case "editBranchServicios": return "max-w-3xl";
+            case "editBranchServicios": return "max-w-4xl";
             case "editBranchHorarios": return "max-w-4xl";
             case "editSrsPermit":
             case "editPharmacyRegent":
             case "editPharmacovigilance":
-            case "editNursingRegents": return "max-w-xl";
-            case "manageService": return "max-w-xl";
+            case "editNursingRegents": return "max-w-2xl";
+            case "manageService": return "max-w-2xl";
             case "registerPayment": return "max-w-lg";
             case "editBranchLeadership": return "max-w-4xl";
             case "addCustomDocument":
@@ -379,8 +379,8 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
             case "editContact": return "max-w-sm";
             case "newPayrollPeriod": return "max-w-md";
             case "editPayrollEntry": return "max-w-2xl";
-            case "editProveedor": return "max-w-3xl";
-            case "editCliente": return "max-w-3xl";
+            case "editProveedor": return "max-w-4xl";
+            case "editCliente": return "max-w-4xl";
             default: return "max-w-lg";
         }
     };

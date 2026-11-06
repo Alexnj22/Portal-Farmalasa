@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.7 — Anchos de modal en una escala
+
+- **El ancho de un modal sale de una escala de seis**: sm 24 · md 28 · lg 32 · 2xl 42 · 4xl 56 · 6xl 72rem, más `none` para hojas y barras. Había 12 valores distintos. Los que caían entre dos escalones (xs, xl, 3xl, 5xl) subieron al de arriba en 34 archivos, así que ningún modal quedó más angosto. En el teléfono todos siguen siendo hoja de ancho completo.
+- Revisado en el navegador, en escritorio: el buscador ⌘K (de 36 a 42rem) y la ficha de un cliente de la distribuidora (de 48 a 56rem).
+- Gate nuevo `ancho-de-modal` (cero absoluto). Se probó con una regresión fabricada. El editor de documentos queda como excepción con motivo: es una pantalla de trabajo, no un diálogo.
+
 ## v2.1461.6 — Puntos de estado en dos tamaños
 
 - **El punto de estado sale de un solo componente, `PuntoDeEstado`, en dos tamaños**: 8px (el de una fila o una leyenda) y 6px (pegado a un texto chico). Había 10 tamaños; se pasaron 63 puntos en 27 archivos. Los de 4px suben a 6 y los de 10px bajan a 8.

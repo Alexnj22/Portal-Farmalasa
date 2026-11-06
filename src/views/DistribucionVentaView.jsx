@@ -1373,7 +1373,7 @@ export default function DistribucionVentaView() {
             {/* ── La ventana de cobro (F2) ──
                 Todo lo demás queda detrás: sólo el monto, y Enter procesa. */}
             {verCobro && cliente && lineas.length > 0 && (
-                <LiquidModal open onClose={guardando ? undefined : () => setVerCobro(false)} maxWidth="max-w-3xl" ariaLabel="Cobrar">
+                <LiquidModal open onClose={guardando ? undefined : () => setVerCobro(false)} maxWidth="max-w-4xl" ariaLabel="Cobrar">
                     <LiquidModal.Header icono={Wallet} tono="brand"
                         titulo={<>{porAprobar.length ? 'Enviar a aprobación' : 'Cobrar'} · {cliente.nombre}</>}
                         acciones={<p className="text-display font-black text-brand-text tabular-nums">{formatMoney(estimado.total)}</p>}
@@ -1507,7 +1507,7 @@ export default function DistribucionVentaView() {
                 </Suspense>
             )}
             {verPendientes && (
-                <LiquidModal open onClose={() => setVerPendientes(false)} maxWidth="max-w-xl" ariaLabel="Pendientes de finalizar">
+                <LiquidModal open onClose={() => setVerPendientes(false)} maxWidth="max-w-2xl" ariaLabel="Pendientes de finalizar">
                     <LiquidModal.Header icono={ListChecks} tono="brand" titulo="Pendientes de finalizar"
                         acciones={<Badge size="sm" variant="warning" uppercase={false}>{pendientes?.length ?? 0}</Badge>}
                         onClose={() => setVerPendientes(false)} />

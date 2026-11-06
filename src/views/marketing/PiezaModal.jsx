@@ -391,7 +391,7 @@ export default function PiezaModal({
 
     return (
         <>
-            <LiquidModal open={open} onClose={onClose} maxWidth="max-w-5xl"
+            <LiquidModal open={open} onClose={onClose} maxWidth="max-w-6xl"
                 ariaLabel={esNueva ? 'Nueva pieza' : `Pieza ${pieza.titulo}`}>
                 {/* Cuándo sale y en qué va, arriba y siempre a la vista
                     (pedido del usuario): el camino de la pieza es el

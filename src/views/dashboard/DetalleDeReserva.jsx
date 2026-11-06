@@ -43,7 +43,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
     ].filter(([, v]) => v);
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-xl" ariaLabel={`Reserva ${codigo}`}>
+        <LiquidModal open onClose={onClose} maxWidth="max-w-2xl" ariaLabel={`Reserva ${codigo}`}>
             <LiquidModal.Header
                 titulo={<span className="tabular-nums">{codigo}</span>}
                 subtitulo={`${r.origen === 'app' ? 'Reservada desde la app' : 'Hecha en la sala'}${r.sala ? ` · ${r.sala}` : ''}`}

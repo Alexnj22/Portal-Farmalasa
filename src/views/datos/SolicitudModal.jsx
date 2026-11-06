@@ -68,7 +68,7 @@ const DOCUMENTOS = DOCUMENTOS_DE_IDENTIDAD;
 export default function SolicitudModal({ open, solicitud, onClose, onGuardada }) {
     if (!open || !solicitud) return null;
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl"
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl"
             ariaLabel={`Solicitud ${solicitud.folio_txt}`}>
             <Cuerpo key={solicitud.id} solicitud={solicitud}
                 onClose={onClose} onGuardada={onGuardada} />

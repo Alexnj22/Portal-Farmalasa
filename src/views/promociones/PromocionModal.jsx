@@ -393,7 +393,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const vencidos = renglones.filter((r) => r.fin && r.fin < hoySV());
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Nueva promoción">
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Nueva promoción">
             <LiquidModal.Header titulo="Nueva promoción" onClose={onClose} />
 
             <LiquidModal.Body>

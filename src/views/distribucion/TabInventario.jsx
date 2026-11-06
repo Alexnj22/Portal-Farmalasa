@@ -181,7 +181,7 @@ function LoteModal({ lote, puedeAjustar, onClose, onGuardado }) {
     };
 
     return (
-        <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel={`Lote ${lote.lote}`}>
+        <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel={`Lote ${lote.lote}`}>
             <LiquidModal.Header titulo={lote.nombre}
                 subtitulo={`Lote ${lote.lote} · vence ${lote.vence ? fechaNumerica(lote.vence) : 'sin fecha'}`}
                 onClose={guardando ? undefined : onClose} />

@@ -197,13 +197,13 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
     if (!montadoParaSalida) return null;
 
     return (
-        // `max-w-xl` y no `max-w-sm`: en 384px la fila de cada caja tenía que
+        // `max-w-2xl` (antes `max-w-xl`) y no `max-w-sm`: en 384px la fila de cada caja tenía que
         // meter el número, el rótulo y un segmentado de TRES opciones con ícono
         // y texto. Lo que cedía era el rótulo, que quedaba en una columna de
         // ~50px y se partía en cuatro renglones —«Caja / 1 / pág. / 1»—.
         // El paso siguiente de esta misma recepción (`RecepcionModal`) ya era
         // `max-w-2xl`, así que el angosto era este.
-        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-xl">
+        <PedidoModal open={open} onClose={handleClose} maxWidth="max-w-2xl">
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">

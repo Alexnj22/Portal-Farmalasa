@@ -118,7 +118,7 @@ export default function WidgetInventorySearch() {
       sinDato={miErp ? null : 'Buscar en las salas'}
       vacio="Buscar producto"
       tono="warning"
-      maxWidth="max-w-3xl"
+      maxWidth="max-w-4xl"
       descripcion="En qué sala hay un producto, y cómo solicitarlo"
     >
       {() => <FormularioPedirASala query={q} onQueryChange={setQ} />}

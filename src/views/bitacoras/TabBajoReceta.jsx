@@ -335,7 +335,7 @@ export default function TabBajoReceta({
 
             {abierto && (
                 <LiquidModal open onClose={() => setAbiertoId(null)}
-                    maxWidth="max-w-3xl" ariaLabel={`Folio ${abierto.folio_txt}`}>
+                    maxWidth="max-w-4xl" ariaLabel={`Folio ${abierto.folio_txt}`}>
                     <LiquidModal.Header titulo={`Folio ${abierto.folio_txt}`}
                         subtitulo={`${sucursalNombre} · ${fmtFecha(abierto.fecha)}`} onClose={() => setAbiertoId(null)} />
                     <LiquidModal.Body>

@@ -169,7 +169,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
     const titulo = 'Corregir descuento';
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel={titulo}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel={titulo}>
             <LiquidModal.Header titulo={titulo} onClose={onClose} />
 
             <LiquidModal.Body>

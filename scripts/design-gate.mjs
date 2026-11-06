@@ -122,6 +122,9 @@ const EXCEPTIONS = {
   //
   // Documentado en DESIGN.md §6 junto al resto de las excepciones de color.
   'src/components/common/LectorDeCodigo.jsx': ['white', 'shadow-literal'],
+  // El editor de documentos es una pantalla de trabajo, no un diálogo: pide el
+  // ancho de la ventana hasta 1600px. Ningún escalón de `ancho-de-modal` lo es.
+  'src/components/common/EditorDeDocumento.jsx': ['ancho-de-modal'],
 
   // ── Las fotos que NO llevan aro, y por qué ───────────────────────────────
   // (`LiquidSelect` salió de esta lista el 2026-11-05: una opción que es una
@@ -1627,6 +1630,24 @@ function scanFile(path) {
         const t = m[2];
         if (/(?<![\w:-])rounded-full(?![\w-])/.test(t) && (/(?<![\w:-])w-(1|1\.5|2|2\.5)(?![\w./-])/.test(t) && /(?<![\w:-])h-(1|1\.5|2|2\.5)(?![\w./-])/.test(t) || /(?<![\w:-])size-(1|1\.5|2|2\.5)(?![\w.-])/.test(t)) && /(?<![\w:-])bg-/.test(t)) {
           findings.push({ line: i + 1, label: 'punto de estado a mano — usar `<PuntoDeEstado tamano="sm|md" className="bg-…">`', category: 'punto-a-mano', text: line.trim().slice(0, 120) });
+        }
+      }
+    });
+  }
+
+  // ── `ancho-de-modal` (2026-11-06, CERO ABSOLUTO) ──────────────────────
+  // El ancho de un modal sale de una escala de seis: sm 24 · md 28 · lg 32 ·
+  // 2xl 42 · 4xl 56 · 6xl 72rem (y `max-w-none` para una hoja o una barra).
+  // Había 12 valores; xs, xl, 3xl y 5xl se llevaron al escalón de ARRIBA, para
+  // que ningún modal quedara más angosto que antes.
+  if (!hasException(path, 'ancho-de-modal')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const m of line.matchAll(/maxWidth(?:Class)?=["'`]([^"'`]*)["'`]|return ["'](max-w-[^"']*)["']/g)) {
+        const v = (m[1] ?? m[2]).trim();
+        if (!/^max-w-/.test(v) && m[2] === undefined && !v.includes('max-w-')) continue;
+        if (!/^max-w-(sm|md|lg|2xl|4xl|6xl|none)$/.test(v)) {
+          findings.push({ line: i + 1, label: `ancho de modal fuera de la escala (${v}) — sm · md · lg · 2xl · 4xl · 6xl · none`, category: 'ancho-de-modal', text: line.trim().slice(0, 120) });
         }
       }
     });

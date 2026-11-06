@@ -598,7 +598,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
   if (!montadoParaSalida) return null;
 
   return (
-    <PedidoModal open={open} onClose={onClose} maxWidth="max-w-3xl">
+    <PedidoModal open={open} onClose={onClose} maxWidth="max-w-4xl">
       <PedidoModal.Header className="px-5 pt-5 pb-4">
         <div className="flex items-start justify-between gap-3">
           <div className="flex items-center gap-2.5">

@@ -465,7 +465,7 @@ export const ModalSolicitud = ({ req, canApprove, employeesById, onCerrar, onDec
     const TypeIcon = TYPE_ICONS[req.type] || FileText;
 
     return (
-        <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-xl" zClass="z-toast"
+        <ModalShell open onClose={() => !ocupado && onCerrar()} maxWidthClass="max-w-2xl" zClass="z-toast"
             closeOnEsc={!ocupado} surface={null}
             ariaLabel={`Solicitud de ${rotuloDeSolicitud(req.type)}`}>
             <CuerpoDialogo

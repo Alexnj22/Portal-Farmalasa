@@ -270,7 +270,7 @@ function CorregirLote({ revision, onCerrar }) {
 
     return (
         <LiquidModal open onClose={guardando ? undefined : () => onCerrar(false)}
-            maxWidth="max-w-xl" ariaLabel="Escribir el lote real">
+            maxWidth="max-w-2xl" ariaLabel="Escribir el lote real">
             <LiquidModal.Header titulo={revision.producto_nombre}
                 onClose={guardando ? undefined : () => onCerrar(false)}
                 subtitulo={`${revision.folio_txt} · ${fmt(revision.fecha)} · ${num(cantidad)} ${cantidad === 1 ? 'entregada' : 'entregadas'}`}>

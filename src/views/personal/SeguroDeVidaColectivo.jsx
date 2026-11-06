@@ -89,7 +89,7 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
     const sinCertificado = activos.filter(e => !tieneCertificado(e)).length;
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Seguro de vida colectivo">
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Seguro de vida colectivo">
             <LiquidModal.Header icono={ShieldCheck} tono="neutral" titulo="Seguro de vida colectivo"
                 subtitulo={poliza ? `${poliza.aseguradora} · se paga cada ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][mes - 1]}` : 'Cargando…'}
                 // El foco al abrir va a la ✕ y no al primer campo (que es el de la

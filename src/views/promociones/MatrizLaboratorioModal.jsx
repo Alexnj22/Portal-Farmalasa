@@ -21,7 +21,7 @@ export default function MatrizLaboratorioModal({ open, promocionId, onClose }) {
         <LiquidModal
             open={open}
             onClose={onClose}
-            maxWidth="max-w-3xl"
+            maxWidth="max-w-4xl"
             ariaLabel="Avance de la promoción por laboratorio"
         >
             <LiquidModal.Header titulo={cab?.nombre || 'Promoción por laboratorio'}

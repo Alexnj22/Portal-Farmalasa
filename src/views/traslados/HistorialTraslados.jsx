@@ -317,7 +317,7 @@ export function TarjetaEnvioCerrado({ envio, onAbrir }) {
 function DialogoTraslado({ fila, empleadosPorId, onCerrar }) {
     const rechazado = esRechazado(fila);
     return (
-        <ModalShell open onClose={onCerrar} maxWidthClass="max-w-xl" zClass="z-toast"
+        <ModalShell open onClose={onCerrar} maxWidthClass="max-w-2xl" zClass="z-toast"
             surface={null} ariaLabel="Detalle del traslado">
             <CuerpoDialogo
                 titulo="Traslado entre salas"
@@ -355,7 +355,7 @@ function DialogoEnvio({ envio, personaPor, onCerrar }) {
     const fotos = Array.isArray(envio.evidencia_urls) ? envio.evidencia_urls : [];
 
     return (
-        <ModalShell open onClose={onCerrar} maxWidthClass="max-w-xl" zClass="z-toast"
+        <ModalShell open onClose={onCerrar} maxWidthClass="max-w-2xl" zClass="z-toast"
             surface={null} ariaLabel="Detalle del envío">
             <CuerpoDialogo
                 titulo="Envío a otra sala"

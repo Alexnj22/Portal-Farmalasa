@@ -94,7 +94,7 @@ export default function VentaPerdidaModal({ emisorId, cliente, pedidoId = null, 
     };
 
     return (
-        <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel="Venta perdida">
+        <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Venta perdida">
             <LiquidModal.Header icono={PackageX} tono="warning"
                 titulo={`Venta perdida${cliente ? ` · ${cliente.nombre}` : ''}`}
                 onClose={guardando ? undefined : onClose} />

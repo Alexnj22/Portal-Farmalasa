@@ -290,7 +290,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
     const meses = d?.meses ?? [];
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Detalle del cliente mayorista">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Detalle del cliente mayorista">
             <LiquidModal.Header
                 titulo={cliente.nombre ?? 'Cliente'}
                 subtitulo={[cliente.documento, cliente.telefono, est ? ESTADOS[est]?.label : null,

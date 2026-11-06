@@ -392,7 +392,7 @@ function Detalle({ conteo, onClose }) {
     const pendiente = Number(c.pendiente || 0);
     return (
         <LiquidModal open={!!c} onClose={onClose}
-            maxWidth="max-w-5xl" className="h-fit" ariaLabel={`Conteo ${c.folio}`}>
+            maxWidth="max-w-6xl" className="h-fit" ariaLabel={`Conteo ${c.folio}`}>
             <LiquidModal.Header titulo={c.folio} onClose={onClose}
                 subtitulo={<>
                     {rangoDeDias(c.dia_desde, c.dia_hasta)} · {c.cuantas} {Number(c.cuantas) === 1 ? 'bolsa' : 'bolsas'}

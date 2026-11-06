@@ -798,7 +798,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
     const conMargenMalo = [...costos.values()].filter(c => c.alerta).length;
 
     return (
-        <LiquidModal open onClose={() => !enviando && onCerrar()} maxWidth="max-w-5xl"
+        <LiquidModal open onClose={() => !enviando && onCerrar()} maxWidth="max-w-6xl"
             ariaLabel={`Compra propuesta de ${doc.emisor_nombre}`}>
             <LiquidModal.Header icono={PackagePlus} tono="brand" titulo={doc.emisor_nombre} onClose={() => !enviando && onCerrar()}
                 subtitulo={<>

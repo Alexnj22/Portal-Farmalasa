@@ -80,7 +80,7 @@ export default function HojaCuadreAntibioticos({ cuadre, onClose }) {
     const nDif = filas.filter(filaConDiferencia).length;
 
     return (
-        <LiquidModal open onClose={onClose} maxWidth="max-w-5xl" ariaLabel="Hoja de movimientos de antibióticos">
+        <LiquidModal open onClose={onClose} maxWidth="max-w-6xl" ariaLabel="Hoja de movimientos de antibióticos">
             <LiquidModal.Header titulo="Hoja de movimientos de antibióticos" onClose={onClose}
                 subtitulo={cuadre.sin_saldo_inicial
                     ? `Movimientos del ${fmtDia(cuadre.desde)} al ${fmtDia(cuadre.hasta)}`

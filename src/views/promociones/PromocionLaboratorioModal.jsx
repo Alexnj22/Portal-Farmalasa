@@ -192,7 +192,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
         <LiquidModal
             open={open}
             onClose={onClose}
-            maxWidth="max-w-3xl"
+            maxWidth="max-w-4xl"
             ariaLabel={editando ? 'Editar promoción por laboratorio' : 'Nueva promoción por laboratorio'}
         >
             <LiquidModal.Header

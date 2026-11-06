@@ -69,7 +69,7 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
 
     const doc = datos?.documento;
     return (
-        <LiquidModal open onClose={emitiendo ? undefined : onClose} maxWidth="max-w-3xl" ariaLabel="Devolución">
+        <LiquidModal open onClose={emitiendo ? undefined : onClose} maxWidth="max-w-4xl" ariaLabel="Devolución">
             <LiquidModal.Header icono={Undo2} tono="brand" titulo="Devolución con nota de crédito"
                 subtitulo={doc ? `${doc.cliente} · ${doc.numero_control} · ${fechaNumerica(doc.fec_emi)}` : undefined}
                 onClose={emitiendo ? undefined : onClose} />

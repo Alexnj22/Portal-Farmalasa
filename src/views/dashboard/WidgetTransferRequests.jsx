@@ -512,7 +512,7 @@ export default function WidgetTransferRequests({ irA = null } = {}) {
             // ocupaba el modal entero y la lista se leía como una tira infinita
             // —reportado con una captura de cuatro traslados en camino, que ya
             // no entraban en la pantalla—.
-            maxWidth="max-w-3xl"
+            maxWidth="max-w-4xl"
             descripcion="Pedir y enviar producto entre salas, y contestar lo que te llega"
             // Las dos mitades del mismo movimiento. La baldosa ya traía las dos
             // listas al montarse y pintaba SÓLO la primera: lo que uno está

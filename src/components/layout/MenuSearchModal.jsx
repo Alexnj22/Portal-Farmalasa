@@ -90,7 +90,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
         <ModalShell
             open={isOpen}
             onClose={onClose}
-            maxWidthClass="max-w-xl"
+            maxWidthClass="max-w-2xl"
             zClass="z-confirm"
             align="top"
             surface="dropdown"

@@ -1209,6 +1209,8 @@ ahí el flujo se rehace — un paso dentro del mismo diálogo, o cerrar el prime
 excepción: en táctil, `LiquidDatePicker` y `SelectorTactil` salen como hoja desde
 un formulario que ya es hoja.
 
+**El ancho de un modal sale de una escala de seis**: `max-w-sm` (24rem, confirmar o avisar), `max-w-md` (28), `max-w-lg` (32), `max-w-2xl` (42), `max-w-4xl` (56) y `max-w-6xl` (72), más `max-w-none` para una hoja o una barra. En el teléfono todos son hoja y ocupan el ancho completo. Gate `ancho-de-modal`.
+
 ### LiquidModal
 
 Archivo: `src/components/common/LiquidModal.jsx`. Envuelve `ModalShell` con
@@ -3495,6 +3497,7 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `aviso-a-mano` | `{error && <p className="…text-danger…">{error}</p>}` en vez de `<Notice variant="danger">` (cero absoluto) | §29 |
 | `radio-a-mano` | `rounded-[Npx]`/`rounded-[Nrem]` en vez de los radios del tema (trinquete) | §8 |
 | `punto-a-mano` | punto de estado `w-2 h-2 rounded-full bg-…` a mano en vez de `PuntoDeEstado` (trinquete) | §7 |
+| `ancho-de-modal` | `maxWidth` de un modal fuera de la escala sm · md · lg · 2xl · 4xl · 6xl · none (cero absoluto) | §14 · ModalShell |
 | `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion` (trinquete; quedan colores con significado y clases dinámicas) | §7 |
 | `rotulo-a-mano` | rótulo en mayúsculas chico con un peso o espaciado que no es `font-black tracking-widest` (cero absoluto) | §7 |
 | `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |

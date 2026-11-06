@@ -218,7 +218,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
         // cuerpo que desplaza el panel se salía por ARRIBA — los peldaños
         // quedaban a y=−464, fuera de alcance (prueba en vivo, 2026-10-22).
         // El pie con los botones queda fijo; lo que se desplaza es el cuerpo.
-        <LiquidModal open={open} onClose={guardando ? undefined : onClose} maxWidth="max-w-xl" ariaLabel="Registrar una sanción">
+        <LiquidModal open={open} onClose={guardando ? undefined : onClose} maxWidth="max-w-2xl" ariaLabel="Registrar una sanción">
             <LiquidModal.Header icono={ShieldAlert} tono="warning" titulo="Registrar una sanción"
                 subtitulo={<>{empleado?.name} · RIT Art. 83</>}
                 onClose={guardando ? undefined : onClose} />

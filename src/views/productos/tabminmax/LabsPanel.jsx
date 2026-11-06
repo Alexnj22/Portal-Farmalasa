@@ -99,7 +99,7 @@ export default function LabsPanel({ onClose, onChanged }) {
         // flotando a 10vh del borde de arriba, que es exactamente el
         // antipatrón que el paso a hojas vino a quitar. Este no es una paleta
         // de comandos, es un formulario.
-        <ModalShell open onClose={onClose} maxWidthClass="max-w-xs"
+        <ModalShell open onClose={onClose} maxWidthClass="max-w-sm"
             zClass="z-modal" ariaLabel="Laboratorios ocultos en Min/Max"
             surface={enTactil ? null : undefined}
             // SIN `animacionPropia`: significa "el hijo se anima solo", y este

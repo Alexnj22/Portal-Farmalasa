@@ -264,7 +264,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     };
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-3xl" ariaLabel="Editar promoción">
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Editar promoción">
             <LiquidModal.Header titulo={promo?.nombre || 'Editar promoción'} onClose={onClose}
                 subtitulo={promo ? `${fmtVigencia(promo.inicio, promo.fin)} · ${estadoVisible(promo).rotulo}` : undefined} />
 

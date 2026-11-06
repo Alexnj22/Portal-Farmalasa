@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1463.2 — La ficha nunca manda el nombre generado
+
+- `partirPorLlave` también deja fuera `name` (columna generada: Postgres
+  rechaza cualquier valor que no sea DEFAULT). Hoy sólo la quitaba
+  `UnifiedModal`; ahora la red cubre todos los caminos que guardan una ficha.
+- Verificado contra producción, en transacción revertida y con la sesión de
+  Talento Humano: la edición completa de una ficha guarda (1 fila) y la RPC de
+  datos protegidos responde bien.
+
 ## v2.1463.1 — Editar una ficha existente vuelve a guardar
 
 - Desde v2.1400.0 (30-oct) guardar cambios en la ficha de cualquier persona ya

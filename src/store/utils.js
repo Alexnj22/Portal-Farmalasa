@@ -122,8 +122,13 @@ export const COLUMNAS_DE_EMPLOYEES = new Set([
 // employees` en CADA edición de una ficha existente, del 2026-10-30 (v2.1400.0)
 // al 2026-11-06 — Talento Humano no pudo actualizar una licencia de conducir y
 // la fecha de vencimiento leída del papel se perdió con el guardado.
+//
+// `name` va en el mismo saco por otra razón: es GENERADA (nombres + apellidos)
+// y Postgres rechaza cualquier valor que no sea DEFAULT —«column "name" can
+// only be updated to DEFAULT»—, aunque sea el mismo. `UnifiedModal` la borra a
+// mano antes de guardar; acá queda la red para los otros caminos.
 export const SOLO_POR_FUNCION = new Set([
-    'nombre_preferido', 'apellido_preferido', 'nombre_corto', 'nombre_elegido_el',
+    'nombre_preferido', 'apellido_preferido', 'nombre_corto', 'nombre_elegido_el', 'name',
 ]);
 
 export const partirPorLlave = (payload) => {

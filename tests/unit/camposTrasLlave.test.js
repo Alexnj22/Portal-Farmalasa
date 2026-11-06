@@ -167,6 +167,7 @@ describe('partirPorLlave — sólo viajan columnas de employees', () => {
         const { dbPayload, protegido } = partirPorLlave({
             phone: '7000-0000', nombre_preferido: 'WILLIAN', apellido_preferido: 'HERRERA',
             nombre_corto: 'WILLIAN HERRERA', nombre_elegido_el: '2026-10-30T18:15:17Z',
+            name: 'WILLIAN ALEXANDER HERRERA ALVARADO', // generada: sólo admite DEFAULT
         });
         expect(dbPayload).toEqual({ phone: '7000-0000' });
         expect(protegido).toBeNull();

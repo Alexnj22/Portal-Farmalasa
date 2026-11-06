@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.3 — Envíos: la recepción destraba el lote y la presentación cambiados después de despachar
+
+El destrabe del 2026-11-05 (`_shared/erp-destrabe.ts`) se había puesto en pedidos y
+en solicitudes, y no en los envíos de producto. FOSKROL TRANQUILO salió de Bodega el
+3-nov sin lote a las cinco salas; después se le activó el control de lote, y Salud 4
+y La Popular no lo podían aceptar: el sistema contestaba «No se proporcionó un lote»
+y la pantalla sólo decía «el sistema no aceptó la entrada». Los dos se recibieron a
+mano (destrabando y volviendo a activar el lote, verificado).
+
+- `enviar-producto-erp`: `recibirIda` hace el mismo destrabe que pedidos (control de
+  lote y presentación oculta), con la marca en `envio_linea.detalle.destrabe` antes
+  de tocar la ficha y `devolverFichasHuerfanas` al empezar cada recepción.
+- La vuelta de lo devuelto usaba su propia copia del recibir; ahora pasa por
+  `recibirIda` y tiene el mismo destrabe.
+
 ## v2.1466.2 — Inyecciones: el saldo por ml dice de dónde sale y qué se cobra hoy
 
 - Al cobrar una aplicación de una venta por ml (2 viales de tiamina de 10 ml

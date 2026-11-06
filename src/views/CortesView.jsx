@@ -1093,9 +1093,9 @@ const CortesView = () => {
 
                 {enCortes && cargando && <LoadingState label="Buscando los cortes" />}
 
-                {/* Dos vacíos distintos (§26.2): el del filtro se arregla
+                {/* Dos vacíos distintos (§34.2): el del filtro se arregla
                     borrándolo y el de verdad no. Y el de «Sin confirmar» vacío
-                    es un vacío FELIZ (§26.3) — la sala quería que no hubiera
+                    es un vacío FELIZ (§34.3) — la sala quería que no hubiera
                     nada. Los tres llevan su salida (§18.1). */}
                 {enCortes && !cargando && filtrados.length === 0 && (
                     busqueda ? (

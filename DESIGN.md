@@ -703,6 +703,8 @@ una de las superficies con tratamiento propio de §25.4.
 
 ## 7. Tipografía
 
+**Una sola escala**: `text-micro` … `text-display`. Ni `text-[Npx]` (tampoco decimales ni `rem`) ni la escala de Tailwind `text-xs`…`text-xl` (gates `typography` y `texto-tailwind`). `text-2xl` y mayores quedan para cifras de despliegue.
+
 Fuente: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`.
 Sin webfonts.
 
@@ -2375,6 +2377,8 @@ import { Skeleton, SkeletonText } from '../common/StateViews';
 
 ### 18.3 `LoadingState` y `AiThinkingState`
 
+**Una vista no escribe su spinner.** Sección → `LoadingState`, dentro de una línea → `variant="inline"`, botón → `Button loading`. `animate-spin` sólo vive en `components/common/` (gate `cargando-a-mano`, trinquete).
+
 `LoadingState` cubre tres escalas —`route`, `content`, `inline`— para cuando
 todavía no se sabe la forma del contenido. `AiThinkingState` es el estado de las
 vistas con resumen generado.
@@ -3443,7 +3447,8 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `chart-retirado` | `chart-2`/`5`/`7`/`8`, retirados — el gate dice cuál usar | §6.0 |
 | `relleno-sin-solid` | `text-white` sobre un relleno de severidad sin la variante `-solid` | §6 |
 | `tema-incompleto` | un token de color fuerte que Solid redefine y `[data-theme="dark"]` no | §2.1 |
-| `typography` | tamaño de letra a mano (`text-[Npx]`) o bajo el piso legible | §7 |
+| `typography` | tamaño de letra a mano (`text-[Npx]`, decimales o `rem`) o bajo el piso legible | §7 |
+| `texto-tailwind` | `text-xs`…`text-xl` de Tailwind en vez de la escala del portal (cero absoluto) | §7 |
 | `z-index` | `z-[N]`, `z-50` sin nombre o `zIndex` inline fijo — van los `z-*` con nombre | §9 |
 | `shadow-literal` | una sombra literal fuera de la escala `--shadow-*` | §3 |
 | `tarjeta-a-mano` | una tarjeta armada con clases sueltas — va `data-surface="card"` | §5 |
@@ -3477,6 +3482,7 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `foto-condicionada` | `photo ? <Avatar/> : …` — se condiciona sobre la persona, no sobre la foto | §5.4 |
 | `foto-sin-identidad` | `AvatarConEstado` sin `id`: sin él no hay estado | §5.4 |
 | `avatar-fuera-de-escala` | un tamaño de foto fuera de `TAMANOS_DE_AVATAR` (20, 28, 36, 48, 64, 104) | §5.4 |
+| `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |
 | `editor-dos-veces` | abrir el editor de foto sin mirar `yaPreparado`: la foto del teléfono se cuadra dos veces | — (esta fila) |
 | `copy-vacio` | un vacío que no dice `Sin <sustantivo>`, Title Case o punto final en una etiqueta | §34.1, §34.4, §34.5 |
 | `copy-trato` | voseo — el portal tutea | §34.7 |

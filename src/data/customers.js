@@ -76,7 +76,7 @@ export async function fetchCustomerDetail(id) {
 }
 
 // El servidor devuelve códigos, no prosa, para que el mensaje se escriba una
-// sola vez y del lado que sabe redactarlo (§26.8: qué pasó y qué hacer).
+// sola vez y del lado que sabe redactarlo (§34.8: qué pasó y qué hacer).
 const ERRORES = {
     FORBIDDEN:                    'No tienes permiso para editar clientes.',
     NO_EXISTE:                    'Esa ficha ya no existe. Recarga la lista.',

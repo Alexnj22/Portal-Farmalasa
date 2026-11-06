@@ -187,7 +187,7 @@ export default function TabMetricas({ searchTerm = '' }) {
                         porque acá no hay ninguna columna alineada a la
                         derecha, y sin eso la inferencia tomaría la última,
                         que es el conteo de pausas. */}
-                    {/* §26.2 — el vacío por búsqueda se arregla borrando el
+                    {/* §34.2 — el vacío por búsqueda se arregla borrando el
                         término; el vacío de verdad, despachando pedidos. */}
                     <DataTable
                         columns={COLS_SUCURSAL}

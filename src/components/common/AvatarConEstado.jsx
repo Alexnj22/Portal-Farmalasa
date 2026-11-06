@@ -50,17 +50,23 @@ function fotoFirmadaDe(id) {
  * Se eligió sobre otros cuatro tratamientos (halo, corona, arco inferior, foto
  * teñida) por una razón medible: **el aro no se encoge como un ícono.** En el
  * portal la foto va de 20 px —las firmas de bitácoras, los chips de pedidos, la
- * campana— a 160 px en la ficha del empleado, o sea ocho veces. Un ícono de 20
+ * campana— a 104 px en el retrato del perfil, o sea cinco veces. Un ícono de 20
  * px en el escalón chico pasa a 7 y se vuelve una mancha; el aro sigue siendo
  * un círculo entero de color y su grosor es ABSOLUTO, no proporcional.
  *
- * Lo que se pierde al achicar no es el aro: es el chip. Por eso la escalera:
+ * Lo que se pierde al achicar no es el aro: son las marcas. Por eso la
+ * escalera (la escala completa está en `TAMANOS_DE_AVATAR`, más abajo):
  *
- *   ≥ 48 px   aro + chip con ícono   → dice QUÉ pasa
- *   28–47 px  aro solo (2.5 px)      → dice QUE pasa algo
- *   < 28 px   aro de 2 px            → igual, y la palabra la pone el texto
+ *   ≥ 48 px   aro de 4.5 px + chip + medalla de antigüedad → dice QUÉ pasa
+ *   36 px     aro de 4 px + chip con ícono                 → dice QUÉ pasa
+ *   28 px     aro de 4 px, sin chip                        → dice QUE pasa algo
+ *   20 px     FIRMA: aro de 1.5 px pegado a la foto, sin marcas; la palabra
+ *             la pone el nombre escrito al lado
  *
- * Ese último escalón no es una concesión: **en todos los sitios donde la foto
+ * Desde 28 px el aro va separado de la foto por un filo de 2 px del color del
+ * fondo (`--av-fondo`).
+ *
+ * El escalón de 20 px no es una concesión: **en todos los sitios donde la foto
  * es chica, el nombre de la persona está escrito al lado**. Ahí el aro no
  * necesita explicar nada — alcanza con que llame la atención para ir a mirar. Y
  * el `title` lleva la frase completa a CUALQUIER tamaño, así que el dato nunca
@@ -70,7 +76,7 @@ function fotoFirmadaDe(id) {
  * Los estados se distinguen sólo por COLOR: ámbar (vacaciones), rojo
  * (incapacidad), violeta (permiso), verde azulado (apoyo). Con daltonismo
  * rojo-verde —alrededor de 1 de cada 12 hombres— ámbar, rojo y verde azulado
- * dejan de ser tres colores distintos, y eso pasa igual a 160 px que a 20. Se
+ * dejan de ser tres colores distintos, y eso pasa igual a 104 px que a 20. Se
  * le propuso al usuario codificar también la FORMA del aro (continuo,
  * punteado, doble) y eligió el aro a secas. Queda anotado acá porque el día que
  * alguien lo levante como hallazgo, ésta es la respuesta: se midió, se mostró y
@@ -408,7 +414,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           tres avisos— y no como una cuenta regresiva.
 
           Cabe porque son dos caracteres como máximo (el aviso arranca en −5) y
-          se dibuja con el mismo ancho que el ícono. Debajo de 48 px no hay
+          se dibuja con el mismo ancho que el ícono. Debajo de 36 px no hay
           chip y queda sólo el aro, igual que siempre: ahí la frase completa la
           lleva el `title`, que existe a cualquier tamaño. */}
       {/* `estado` va PRIMERO en la cadena, y esa posición es el arreglo: la

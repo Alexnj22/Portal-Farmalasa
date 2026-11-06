@@ -27,7 +27,7 @@ export default function TabActivas({
 }) {
     if (!promos.length) {
         // Buscar o filtrar sin resultados NO es un vacío: uno se arregla
-        // soltando el filtro y el otro no tiene arreglo (§26.2).
+        // soltando el filtro y el otro no tiene arreglo (§34.2).
         if (busqueda.trim() || filtrando) {
             return (
                 <EmptyState

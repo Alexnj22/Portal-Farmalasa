@@ -1053,7 +1053,7 @@ export default function TabPedidos({ searchTerm = '' }) {
 
             {/* `Notice` y no una caja con su propio par bg/borde/texto: es el
                 canónico del aviso inline (§15.6), y el botón de descarte va en
-                su ranura `action`. La exclamación se va por §26.7 — el portal no
+                su ranura `action`. La exclamación se va por §34.7 — el portal no
                 festeja en el feedback del sistema; la lista de los tres sitios
                 donde sí va es cerrada y esto no está en ella. */}
             <AnimatePresence>
@@ -1105,7 +1105,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     </div>
                 </div>
 
-                {/* §26.2 — «Sin pedidos activos» también salía cuando el
+                {/* §34.2 — «Sin pedidos activos» también salía cuando el
                     buscador o un filtro no encontraban nada, que es otro estado
                     y se arregla de otra forma: borrando el filtro, no
                     despachando un pedido. */}

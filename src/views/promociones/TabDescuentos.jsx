@@ -86,7 +86,7 @@ export default function TabDescuentos({
 
     if (!descuentos.length) {
         // Buscar sin resultados NO es un vacío: uno se arregla borrando el
-        // filtro y el otro no tiene arreglo (§26.2).
+        // filtro y el otro no tiene arreglo (§34.2).
         return busqueda.trim() || filtrando
             ? (
                 <EmptyState

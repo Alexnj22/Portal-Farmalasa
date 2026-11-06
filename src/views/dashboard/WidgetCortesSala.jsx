@@ -262,7 +262,7 @@ export default function WidgetCortesSala({ soloMiSala = true, salaElegida = null
                     <EmptyState linea icon={Wallet} title="No se pudieron cargar" subtitle={error} />
                 )}
 
-                {/* Vacío FELIZ (§26.3): acá no hay nada porque no quedó nada
+                {/* Vacío FELIZ (§34.3): acá no hay nada porque no quedó nada
                     pendiente, y eso es la buena noticia. Forzar «Sin cortes
                     pendientes» tiraría al piso justo lo que la sala quiere leer. */}
                 {!error && !pendientes.length && (

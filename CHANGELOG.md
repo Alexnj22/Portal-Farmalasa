@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.5 — DESIGN.md al día
+
+- **DESIGN.md alineado con el código** (7,007 → ~3,500 líneas): 17 contradicciones resueltas contra el código y el gate, §5.4 reescrita para el avatar «cuatro esquinas», numeración arreglada (Voz pasa a §34), y un anexo §35 con TODAS las categorías del gate y su sección. Las crónicas se mudaron a `docs/design/historia/`.
+- `gate:doc` ahora revisa todos los bloques de código del documento (antes 16 de 92), falla si cita una «§N» que no existe y si una categoría del gate no está en §35.
+- **CLAUDE.md** (1,801 → 877 líneas): sin contradicciones ni cifras viejas, los gates en una sola tabla, el detalle por tema en `docs/reglas/`. La guía de la app del personal (`apps/mobile/AGENTS.md`) reescrita para esta app.
+- Comentarios del código que citaban §26 (Voz) pasan a §34; el JSDoc de `AvatarConEstado` describe la escala nueva.
+
 ## v2.1459.4 — Una sola carga
 
 - **Una sola forma de «cargando».** Nueve pantallas (Pedidos, Gestión de stock, Distribución, Promociones, Marketing, la solicitud operativa y tres baldosas del Inicio) tenían su propia copia del spinner; ahora usan `LoadingState`, y el tablero de Distribución usa `Skeleton`.

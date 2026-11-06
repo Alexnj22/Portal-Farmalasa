@@ -281,7 +281,7 @@ LiquidModal.Header = function LiquidModalHeader({
                     {onVolver && <Button variant="ghost" icon={ArrowLeft} iconOnly aria-label="Volver" onClick={onVolver} />}
                     {marca && <div className={compacto ? 'hidden sm:flex' : 'flex'}>{marca}</div>}
                     <div className="min-w-0">
-                        {/* `text-title-sm` y sentence case (§7, §26.4): las
+                        {/* `text-title-sm` y sentence case (§7, §34.4): las
                             mayúsculas espaciadas son de los rótulos, no de los
                             títulos. */}
                         <h3 className={`text-title-sm font-black text-content tracking-tight leading-snug ${compacto ? 'truncate' : ''}`}>{titulo}</h3>

@@ -625,7 +625,7 @@ async function fetchPresOpts(productId) {
  * px en un teléfono de 390, 18 en escritorio.
  *
  * Por eso «¿Llegó un producto extra?» pasó a **«Anotar un extra»**: el ancho de
- * la columna es el que manda, y de paso el rótulo cumple §26.6 (los botones son
+ * la columna es el que manda, y de paso el rótulo cumple §34.6 (los botones son
  * verbos en infinitivo), que la pregunta no cumplía.
  *
  * Los dos pies son `px-4`. El de la pantalla de ítems era `px-5`, y esos 4 px

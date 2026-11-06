@@ -441,7 +441,7 @@ export default function TabRutas({ searchTerm = '' }) {
       {loading ? (
         <div className="flex items-center justify-center py-16"><SkeletonText lines={4} className="w-full max-w-md" /></div>
       ) : (verActivas ? active.length : 0) + (verCompletadas ? completed.length : 0) === 0 ? (
-        /* §18.1 · §26.2 — el canónico, y los dos vacíos separados. Estaba
+        /* §18.1 · §34.2 — el canónico, y los dos vacíos separados. Estaba
            escrito a mano y decía «Sin rutas activas» también cuando el
            buscador no encontraba nada: dos estados que se arreglan de forma
            distinta contados como uno solo. */

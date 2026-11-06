@@ -316,7 +316,7 @@ export default function TabTablero({ salaNombre, canEdit, onAgregarMeta, reloadK
 
                                 {sinMeta ? (
                                     <div className="flex-1 flex flex-col items-center justify-center text-center gap-2.5 py-4">
-                                        {/* §26.1 — «todavía» promete algo que la app
+                                        {/* §34.1 — «todavía» promete algo que la app
                                             no sabe; el vacío se dice y ya. */}
                                         <p className="text-label font-semibold text-content-3 max-w-[240px]">
                                             Sin meta para {ymLabel(ym).toLowerCase()}

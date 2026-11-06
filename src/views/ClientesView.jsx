@@ -504,7 +504,7 @@ export default function ClientesView({ openModal }) {
                        vacío al que se podía scrollear (el marco a 390px mide 332). En escritorio
                        no cambia nada: manda el `w-full` de la tabla. */
                     minWidth="320px"
-                    /* Buscar sin resultados NO es un vacío (§26.2): uno se
+                    /* Buscar sin resultados NO es un vacío (§34.2): uno se
                        arregla borrando el filtro y el otro no tiene arreglo.
                        Confundirlos manda a alguien a buscar el botón de crear
                        un cliente, que en este módulo no existe — las fichas las

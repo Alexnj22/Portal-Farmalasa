@@ -23,7 +23,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1461.16 — Corte Z sin «Ver el cotejo completo»: se muestra según lo enviado
 
-_(pendiente de redactar)_
+Sin «Ver el cotejo completo», el Corte Z se muestra según lo enviado a Hacienda:
+el total general, las ventas con factura y la sección «con factura» llevan ya
+restado el consumidor final de la noche que no se envía. Así cuadra con el libro
+(octubre, Salud 1: $45,720.52 contra $45,720.52) y la comprobación del sello no
+lo menciona; cualquier otra diferencia se sigue viendo. El texto original del
+ticket sólo viaja con el permiso. Con el permiso, el Z tal cual con su detalle.
+Migración `20261106174248_corte_z_sin_permiso_se_muestra_segun_lo_enviado`.
 
 ## v2.1461.15 — Citas de diseño al día
 

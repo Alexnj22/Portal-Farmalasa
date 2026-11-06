@@ -920,14 +920,34 @@ export async function armarEnSuelto(
 export async function pendientesDeOrigen(
   cookie: string, ubicacionOrigen: number,
 ): Promise<Map<string, string>> {
+  return (await pendientesDeOrigenONulo(cookie, ubicacionOrigen)) ?? new Map();
+}
+
+/**
+ * Lo mismo, pero distingue «no hay ninguno» (mapa vacío) de «no se pudo leer»
+ * (`null`). `pendientesDeOrigen` devuelve vacío en los dos casos, y quien lo usa
+ * como foto de ANTES no puede tratar un vacío como válido — salvo que sepa que
+ * es de verdad. El área de vencidos casi nunca tiene traslados pendientes: con
+ * la versión ambigua, todo traslado que sale de ahí quedaba sin número
+ * (medido el 2026-11-06 al devolver la prueba de `vencidos_a_estante`).
+ *
+ * Cero filtradas con un total mayor que cero es un vacío de verdad: si el
+ * filtro no se hubiera aplicado, vendrían todas.
+ */
+export async function pendientesDeOrigenONulo(
+  cookie: string, ubicacionOrigen: number,
+): Promise<Map<string, string> | null> {
   try {
     const cuerpo = await pedir(cookie, LISTADO, new URLSearchParams({
       draw: "0", start: "0", length: "5000",
       origen: String(ubicacionOrigen), pro: "env", estado: "pe",
     }), { extra: { Referer: `${BASE}/admin_traslados.php` } });
     const j = JSON.parse(cuerpo);
-    if (!Array.isArray(j?.data) || j.recordsFiltered === j.recordsTotal) return new Map();
-    if (j.data.length < Number(j.recordsFiltered ?? 0)) return new Map();
+    if (!Array.isArray(j?.data)) return null;
+    const filtradas = Number(j.recordsFiltered ?? NaN);
+    if (!Number.isFinite(filtradas)) return null;
+    if (filtradas === Number(j.recordsTotal) && filtradas > 0) return null;
+    if (j.data.length < filtradas) return null;
     // id → destino. El destino es la quinta columna y viene como la dirección
     // completa de la sucursal, que es lo que después permite desempatar.
     return new Map(
@@ -936,7 +956,7 @@ export async function pendientesDeOrigen(
         .filter(([id]) => id),
     );
   } catch {
-    return new Map();
+    return null;
   }
 }
 

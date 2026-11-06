@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1465.1 — Bodega: la devolución desde vencidos se identifica y se puede terminar
+
+- **Un traslado que sale del área de vencidos quedaba sin número.** La foto de
+  «pendientes antes» devolvía vacío tanto si no había ninguno como si no se
+  pudo leer, y un vacío se descartaba por las dudas. Vencidos casi nunca tiene
+  pendientes, así que la devolución de la prueba del 6-nov salió y quedó sin
+  recibir. `pendientesDeOrigenONulo` distingue los dos casos (`null` = no se
+  pudo leer) y el paso a vencidos y su devolución la usan.
+- **Una devolución que salió sin número se termina** volviendo a llamar
+  `vencidos_a_estante`: busca entre los pendientes de vencidos el único que
+  lleva esos productos, lo recibe en el estante y lo comprueba. Nunca manda
+  otro.
+
 ## v2.1465.0 — Compras: la presentación de la factura al lado de la de Bodega, y un tamaño raro no se aprende de pasada
 
 - **Cada renglón dice qué caja trae la factura y qué presentaciones tiene

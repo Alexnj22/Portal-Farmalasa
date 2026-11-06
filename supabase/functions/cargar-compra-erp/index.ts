@@ -28,7 +28,7 @@ import { dteDeManual, validarManual } from "../_shared/compraManual.ts";
 // Declarado acá para que `deno check` lo conozca (antes, `Cannot find name`).
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 import {
-  sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, resolverPresentacion, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
+  sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, resolverPresentacion, pendientesDeOrigen, pendientesDeOrigenONulo, contenidoDeTraslado, norm, identificarTrasladoNuevo, armarConcepto, hoySV,
   TRASLADO, RECIBIR, VER, buscarTrasladoHuerfano, direccionesPorSucursal,
 } from "../_shared/erp-traslado.ts";
 import {
@@ -1090,6 +1090,50 @@ const MOTIVOS_VENCIDOS: Record<string, string> = {
  * comprueba leyendo la existencia de vencidos antes y después.
  */
 /**
+ * Recibe un traslado de Bodega a Bodega en la ubicación `destino` con lo que
+ * la propia pantalla de recepción muestra, y lo comprueba leyendo esa
+ * ubicación: cada producto tiene que haber subido lo esperado respecto de
+ * `antesDestino`. La otra mitad de `moverAlAreaDeVencidos`, aparte para poder
+ * terminar un traslado que salió y quedó sin recibir.
+ */
+async function recibirYComprobar(cookie: string, x: {
+  idT: string; renglones: number; destino: number; concepto: string;
+  esperado: Map<number, number>; antesDestino: Map<number, number> | null;
+}): Promise<{ ok: true } | { ok: false; error: string; nota: string }> {
+  const idT = x.idT;
+  const rec = await pedir(cookie, `${RECIBIR}?id_movimiento=${idT}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+  const filas: string[] = []; let tot = 0;
+  for (const tr of [...rec.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((t) => /class="id_p"/.test(t))) {
+    const idProd = tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? "";
+    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const venta = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+    const esp = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const vence = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+    if (!idProd || !idPres) continue;
+    filas.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+    tot += Number(compra) * Number(esp);
+  }
+  if (filas.length !== x.renglones) {
+    return { ok: false, error: "No se pudo leer la recepción.", nota: `El traslado ${idT} quedó sin recibir: recibirlo a mano.` };
+  }
+  const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
+    process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
+    fecha: hoySV(), concepto: x.concepto, destino: String(x.destino), id_traslado: idT,
+  }), { extra: { Referer: RECIBIR }, reintentos: 1 });
+  let ok2 = false;
+  try { ok2 = String(JSON.parse(r2)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+
+  const despues = await existenciasDeUbicacion(cookie, ERP_BODEGA, x.destino);
+  const antes = x.antesDestino;
+  const entro = ok2 && antes && despues && [...x.esperado].every(([id, u]) =>
+    (despues.get(id) ?? 0) - (antes.get(id) ?? 0) >= u - 1e-6);
+  if (!entro) return { ok: false, error: "No se comprobó en el destino.", nota: `El traslado ${idT} no se pudo comprobar donde se recibió: revisarlo.` };
+  return { ok: true };
+}
+
+/**
  * Pasa renglones del estante de Bodega a su área de vencidos y lo COMPRUEBA:
  * un traslado de Bodega a Bodega (sale del estante) que se recibe en la
  * ubicación de vencidos, y después se lee la existencia de vencidos antes y
@@ -1114,7 +1158,7 @@ async function moverAlAreaDeVencidos(cookie: string, x: {
   const vale = pagina.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
   if (!vale) return falla(false, null, "Sin vale.", "El sistema no entregó el número de vale.");
   const antesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, x.vencidosUbic);
-  const antes = await pendientesDeOrigen(cookie, x.estante);
+  const antes = await pendientesDeOrigenONulo(cookie, x.estante);
   const r = await pedir(cookie, TRASLADO, new URLSearchParams({
     process: "insert", datos: x.partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(x.partes.length),
     total: x.total.toFixed(4), fecha: hoySV(), concepto: x.concepto,
@@ -1123,44 +1167,19 @@ async function moverAlAreaDeVencidos(cookie: string, x: {
   let ok = false;
   try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
   if (!ok) return falla(false, null, "El traslado a vencidos no entró.", `El sistema no aceptó el traslado: ${r.slice(0, 300)}`);
-  const despues = await pendientesDeOrigen(cookie, x.estante);
+  const despues = await pendientesDeOrigenONulo(cookie, x.estante);
   // Sin la foto de antes, cualquier traslado viejo a Bodega parecería el nuevo.
-  const idT = antes.size > 0 ? (await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, [])).id : null;
+  // Un ANTES vacío vale (el área de vencidos casi nunca tiene pendientes); uno
+  // que no se pudo leer, no.
+  const idT = antes && despues ? (await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, [])).id : null;
   if (!idT) {
     return falla(true, null, "Traslado sin identificar: recibirlo a mano.",
       "Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
   }
 
-  // Recibirlo en vencidos, con lo que la propia pantalla de recepción muestra.
-  const rec = await pedir(cookie, `${RECIBIR}?id_movimiento=${idT}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
-  const filas: string[] = []; let tot = 0;
-  for (const tr of [...rec.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((t) => /class="id_p"/.test(t))) {
-    const idProd = tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? "";
-    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
-    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const venta = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
-    const esp = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const vence = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
-    if (!idProd || !idPres) continue;
-    filas.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
-    tot += Number(compra) * Number(esp);
-  }
-  if (filas.length !== x.partes.length) {
-    return falla(true, idT, "No se pudo leer la recepción.", `El traslado ${idT} quedó sin recibir: recibirlo a mano en vencidos.`);
-  }
-  const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
-    process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
-    fecha: hoySV(), concepto: x.conceptoRecibir(idT), destino: String(x.vencidosUbic), id_traslado: idT,
-  }), { extra: { Referer: RECIBIR }, reintentos: 1 });
-  let ok2 = false;
-  try { ok2 = String(JSON.parse(r2)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
-
-  // Comprobarlo en vencidos: cada producto tiene que haber subido lo marcado.
-  const despuesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, x.vencidosUbic);
-  const entro = ok2 && antesVenc && despuesVenc && [...x.esperado].every(([id, u]) =>
-    (despuesVenc.get(id) ?? 0) - (antesVenc.get(id) ?? 0) >= u - 1e-6);
-  if (!entro) return falla(true, idT, "No se comprobó en vencidos.", `El traslado ${idT} no se pudo comprobar en vencidos: revisarlo.`);
+  const rec = await recibirYComprobar(cookie, { idT, renglones: x.partes.length, destino: x.vencidosUbic,
+    concepto: x.conceptoRecibir(idT), esperado: x.esperado, antesDestino: antesVenc });
+  if (!rec.ok) return falla(true, idT, rec.error, rec.nota);
   return { ok: true, traslado: idT };
 }
 
@@ -1347,6 +1366,42 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
   return { ok: true, traslado: mov.traslado, renglones: ids.length };
 }
 
+async function terminarDevolucion(admin: any, filas: any[], quien: string) {
+  const ids = filas.map((f: any) => f.id);
+  const estante = await ubicacionDeBodega(admin, false);
+  const vencidosUbic = await ubicacionDeBodega(admin, true);
+  if (!estante || !vencidosUbic) return { error: "No se conoce el estante o el área de vencidos." };
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  const pendientes = await pendientesDeOrigenONulo(cookie, vencidosUbic);
+  if (!pendientes) return { error: "No se pudieron leer los traslados pendientes de vencidos." };
+  const buscados = filas.map((f: any) => norm(f.descripcion));
+  const candidatos: string[] = [];
+  for (const id of pendientes.keys()) {
+    const texto = await contenidoDeTraslado(cookie, id);
+    if (texto && buscados.every((d) => texto.includes(d))) candidatos.push(id);
+  }
+  if (candidatos.length !== 1) {
+    return { error: candidatos.length ? `Hay ${candidatos.length} traslados pendientes con esos productos: recibirlo a mano.` : "No hay ningún traslado pendiente con esos productos desde vencidos." };
+  }
+  const idT = candidatos[0];
+  const esperado = new Map<number, number>();
+  for (const f of filas) esperado.set(f.erp_product_id, (esperado.get(f.erp_product_id) ?? 0) + Number(f.unidades));
+  const antes = await existenciasDeUbicacion(cookie, ERP_BODEGA, estante);
+  const rec = await recibirYComprobar(cookie, { idT, renglones: filas.length, destino: estante,
+    concepto: `PORTAL DEVUELVE AL ESTANTE (TRASLADO ${idT})`, esperado, antesDestino: antes });
+  const ahora = new Date().toISOString();
+  if (!rec.ok) {
+    const { error } = await admin.from("bodega_a_vencidos").update({ devuelto_traslado_id: idT, nota: `Devolución: ${rec.nota}`, updated_at: ahora }).in("id", ids);
+    if (error) throw error;
+    return { error: rec.error, traslado: idT };
+  }
+  const { error } = await admin.from("bodega_a_vencidos").update({
+    estado: "devuelto", devuelto_at: ahora, devuelto_por: quien, devuelto_traslado_id: idT, nota: null, updated_at: ahora,
+  }).in("id", ids);
+  if (error) throw error;
+  return { ok: true, traslado: idT, renglones: ids.length, terminada: true };
+}
+
 /**
  * Deshace un paso a vencidos: lo que entró a vencidos con el traslado
  * `traslado` vuelve al estante, con el mismo mecanismo al revés (origen =
@@ -1357,6 +1412,13 @@ async function estanteAVencidos(admin: any, body: any, quien: string) {
  */
 async function vencidosAEstante(admin: any, traslado: string, quien: string) {
   if (!traslado) return { error: "Falta el traslado." };
+  // Una devolución que SALIÓ y quedó sin número (sin recibir): se termina, no
+  // se manda otra. Se busca entre los pendientes que salen de vencidos el que
+  // lleva estos productos, y tiene que ser uno solo.
+  const { data: atascadas, error: eA } = await admin.from("bodega_a_vencidos").select("*")
+    .eq("erp_traslado_id", traslado).eq("estado", "devolviendo").is("devuelto_traslado_id", null);
+  if (eA) throw eA;
+  if (atascadas?.length) return await terminarDevolucion(admin, atascadas, quien);
   const { data: filas, error: eT } = await admin.from("bodega_a_vencidos")
     .update({ estado: "devolviendo", updated_at: new Date().toISOString() })
     .eq("erp_traslado_id", traslado).eq("estado", "en_vencidos").select("*");

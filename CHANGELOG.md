@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.7 — Botón grande: ícono en la rampa
+
+- El ícono del `Button size="lg"` pasa de 17 a 16px: 17 estaba fuera de la rampa de íconos (§12). Los demás tamaños (11·12·14·15) ya estaban en la rampa y no cambian.
+
 ## v2.1459.6 — Avatar: una sola geometría
 
 - **El avatar usa una sola geometría en el portal y en la app.** `AvatarConEstado` repetía a mano los números de `geometriaDeAvatar`, y la app los leía distinto: pintaba el aro de 4px MÁS el filo, más grueso que el diseño aprobado. Ahora los dos llaman a la misma función y `aro` significa lo mismo en los dos (alcance desde la foto, filo incluido). En el portal no cambia nada a la vista; en la app el aro queda como en el portal (llega con el próximo binario).

@@ -177,7 +177,9 @@ const ICON_ONLY_SIZE = {
     lg: 'w-[max(48px,calc(var(--control-h)+8px))] h-[max(48px,calc(var(--control-h)+8px))] px-0',
 };
 
-const ICON_PX = { rotulo: 11, xs: 12, sm: 14, md: 15, lg: 17 };
+// Los íconos van en la rampa de §12 (gate `icono-rampa`). `lg` era 17, fuera
+// de la rampa (2026-11-06): pasa a 16, que acompaña al rótulo de 14px.
+const ICON_PX = { rotulo: 11, xs: 12, sm: 14, md: 15, lg: 16 };
 
 
 const Button = memo(({

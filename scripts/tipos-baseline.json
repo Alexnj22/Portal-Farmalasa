@@ -37,7 +37,7 @@
   "src/hooks/useTimeClockEngine.js": 13,
   "src/store/slices/conteoInventarioSlice.js": 14,
   "src/store/slices/employeeSlice.js": 12,
-  "src/store/slices/requestsSlice.js": 1,
+  "src/store/slices/requestsAcciones.js": 1,
   "src/store/slices/systemSlice.js": 17,
   "src/store/slices/vacationPlanSlice.js": 4,
   "src/store/staffStore.js": 10,

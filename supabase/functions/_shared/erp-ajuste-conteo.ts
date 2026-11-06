@@ -44,17 +44,50 @@ export interface LineaDeAjuste {
 }
 
 export interface Plan {
-  cargas: { i: number; lote: string; vence: string; unidades: number }[];
-  descargos: { i: number; lote: string; unidades: number }[];
+  /** `is`: las líneas que ese movimiento salda (sin lote pueden ser varias). */
+  cargas: { is: number[]; lote: string; vence: string; unidades: number }[];
+  descargos: { is: number[]; lote: string; unidades: number }[];
   rechazos: { i: number; error: string }[];
+  /** Líneas que se compensan entre sí: no hay nada que mover. */
+  saldadas: number[];
 }
 
 /**
  * Qué se hace con cada línea, sin tocar nada. Puro, para poder anclarlo.
  * `regulado`: el producto lleva lote; si no, todo va sin lote.
+ * `exigeVence`: el producto es perecedero —una carga sin fecha la rechaza la
+ * caja—.
+ *
+ * Sin lote, las líneas (que sólo se distinguen por la fecha) se SUMAN en un
+ * movimiento (2026-11-06): con una carga por línea, la relectura no podía
+ * repartir lo que subió entre dos cargas iguales y el producto quedaba en
+ * «revisar» aunque hubiera entrado bien; y +3 en una fecha con −3 en otra
+ * cargaba y descargaba lo mismo.
  */
-export function planDelAjuste(lineas: LineaDeAjuste[], regulado: boolean): Plan {
-  const plan: Plan = { cargas: [], descargos: [], rechazos: [] };
+export function planDelAjuste(lineas: LineaDeAjuste[], regulado: boolean, exigeVence = false): Plan {
+  const plan: Plan = { cargas: [], descargos: [], rechazos: [], saldadas: [] };
+  if (!regulado) {
+    const vivas = lineas.map((l, i) => ({ l, i })).filter(({ l }) => !l.hecho && Number(l.unidades));
+    if (!vivas.length) return plan;
+    // Una presentación sin contenido conocido arruina la suma entera.
+    if (vivas.some(({ l }) => l.factor_desconocido)) {
+      for (const { i } of vivas) plan.rechazos.push({ i, error: "No se sabe cuántas unidades trae una de sus presentaciones: se ajusta a mano." });
+      return plan;
+    }
+    const is = vivas.map(({ i }) => i);
+    const neto = vivas.reduce((n, { l }) => n + Number(l.unidades), 0);
+    if (neto === 0) { plan.saldadas.push(...is); return plan; }
+    if (neto < 0) { plan.descargos.push({ is, lote: "", unidades: -neto }); return plan; }
+    // La fecha de lo que entra: la de la línea que más sobra.
+    const vence = vivas.filter(({ l }) => Number(l.unidades) > 0 && dia(l.vence))
+      .sort((a, b) => Number(b.l.unidades) - Number(a.l.unidades))[0]?.l.vence;
+    if (exigeVence && !dia(vence)) {
+      for (const i of is) plan.rechazos.push({ i, error: `Sobran ${neto} unidades sin vencimiento: no se pueden cargar.` });
+      return plan;
+    }
+    plan.cargas.push({ is, lote: "", vence: dia(vence), unidades: neto });
+    return plan;
+  }
   lineas.forEach((l, i) => {
     if (l.hecho || !Number(l.unidades)) return;
     if (l.factor_desconocido) {
@@ -67,18 +100,18 @@ export function planDelAjuste(lineas: LineaDeAjuste[], regulado: boolean): Plan 
       // Un regulado sin número no se puede descargar: sin lote, el descargo
       // elegiría cualquiera.
       if (regulado && !lote) { plan.rechazos.push({ i, error: `Faltan ${-u} unidades de una línea sin lote: se ajusta a mano.` }); return; }
-      plan.descargos.push({ i, lote, unidades: -u });
+      plan.descargos.push({ is: [i], lote, unidades: -u });
       return;
     }
-    if (regulado && (!lote || esLoteGenerico(lote))) {
+    if (!lote || esLoteGenerico(lote)) {
       plan.rechazos.push({ i, error: `Hay ${u} unidades sin lote de más: no se cargan sin lote. Cuéntalas en su lote.` });
       return;
     }
-    if (regulado && !dia(l.vence)) {
+    if (!dia(l.vence)) {
       plan.rechazos.push({ i, error: `El lote ${lote} no tiene vencimiento: no se puede cargar.` });
       return;
     }
-    plan.cargas.push({ i, lote, vence: dia(l.vence), unidades: u });
+    plan.cargas.push({ is: [i], lote, vence: dia(l.vence), unidades: u });
   });
   return plan;
 }
@@ -92,6 +125,8 @@ export interface Movimiento {
   producto: string | null;
   sala: string | null;
   erp_sucursal_id: number | null;
+  /** El producto exige fecha de vencimiento (perecedero o con lote). */
+  perecedero?: boolean;
   ubicaciones: { id: number; isVencidos?: boolean }[] | null;
 }
 
@@ -107,7 +142,7 @@ export async function aplicarAjusteDeConteo(
   // deno-lint-ignore no-explicit-any
   sb: any, cookie: string, m: Movimiento,
 ): Promise<ResultadoAjuste> {
-  const lineas = m.lineas.map((l) => ({ ...l, error: null }));
+  const lineas: LineaDeAjuste[] = m.lineas.map((l) => ({ ...l, error: null }));
   const nombre = m.producto || `el producto ${m.erp_product_id}`;
   const fallo = (error: string): ResultadoAjuste =>
     ({ estado: "ERROR", lineas, error, resultado: { at: new Date().toISOString() } });
@@ -120,15 +155,17 @@ export async function aplicarAjusteDeConteo(
   try { f = await traerFila(cookie, m.erp_product_id, ubic); }
   catch (e) { return fallo(`No se pudo leer ${nombre}: ${(e as Error).message}`); }
 
-  const plan = planDelAjuste(lineas, f.regulado);
+  const plan = planDelAjuste(lineas, f.regulado, Boolean(m.perecedero));
   for (const r of plan.rechazos) lineas[r.i].error = r.error;
+  for (const i of plan.saldadas) lineas[i].hecho = true;
+  const marcar = (is: number[], cambio: Partial<LineaDeAjuste>) => { for (const i of is) Object.assign(lineas[i], cambio); };
   const resultado: Record<string, unknown> = { at: new Date().toISOString(), concepto, regulado: f.regulado };
 
   // ── 1. Cargas ──────────────────────────────────────────────────────────
   if (plan.cargas.length) {
     const base = await resolverPresentacion(cookie, f, "UNIDAD", 1, { porFactor: true });
     if (!base) {
-      for (const c of plan.cargas) lineas[c.i].error = `${nombre} no tiene presentación de una unidad: no se puede cargar.`;
+      for (const c of plan.cargas) marcar(c.is, { error: `${nombre} no tiene presentación de una unidad: no se puede cargar.` });
     } else {
       const validas: typeof plan.cargas = [];
       for (const c of plan.cargas) {
@@ -136,11 +173,11 @@ export async function aplicarAjusteDeConteo(
           const existe = f.lotes.some((x) => norm(x.numero) === c.lote && dia(x.vence) === c.vence);
           if (!existe) {
             const v = validarLoteEscrito(c.lote, c.vence);
-            if (!v.ok) { lineas[c.i].error = v.error; continue; }
+            if (!v.ok) { marcar(c.is, { error: v.error }); continue; }
             let choca: string | null = null;
             try { choca = await fechaRegistradaQueChoca(sb, m.erp_product_id, v.lote, v.vence); }
-            catch (e) { lineas[c.i].error = (e as Error).message; continue; }
-            if (choca) { lineas[c.i].error = `El lote ${c.lote} ya está registrado con vencimiento ${choca}.`; continue; }
+            catch (e) { marcar(c.is, { error: (e as Error).message }); continue; }
+            if (choca) { marcar(c.is, { error: `El lote ${c.lote} ya está registrado con vencimiento ${choca}.` }); continue; }
           }
         }
         validas.push(c);
@@ -166,17 +203,17 @@ export async function aplicarAjusteDeConteo(
         // rechace, y a veces algo ilegible aunque haya entrado.
         let despues: Fila | null = null;
         try { despues = await traerFila(cookie, m.erp_product_id, ubic); } catch { despues = null; }
-        const sinRegulado = !f.regulado && validas.length > 1;
+        // Sin lote hay a lo sumo UNA carga (el plan las suma), así que la
+        // existencia releída siempre se le puede atribuir entera.
         validas.forEach((c, k) => {
-          if (!despues) { lineas[c.i].incierto = true; lineas[c.i].error = "No se pudo releer la existencia: revisar."; return; }
+          if (!despues) { marcar(c.is, { incierto: true, error: "No se pudo releer la existencia: revisar." }); return; }
           const subio = previo(c, despues) - antes[k];
-          if (!sinRegulado && subio >= c.unidades) { lineas[c.i].hecho = true; return; }
-          if (subio > 0 || (!resp.ok && sinRegulado)) {
-            lineas[c.i].incierto = true;
-            lineas[c.i].error = `La carga del lote ${c.lote || "—"} no se pudo comprobar completa (subió ${subio} de ${c.unidades}).`;
+          if (subio >= c.unidades) { marcar(c.is, { hecho: true }); return; }
+          if (subio > 0) {
+            marcar(c.is, { incierto: true, error: `La carga del lote ${c.lote || "—"} no se pudo comprobar completa (subió ${subio} de ${c.unidades}).` });
             return;
           }
-          lineas[c.i].error = `El sistema no aceptó la carga: ${resp.msg || "sin detalle"}`;
+          marcar(c.is, { error: `El sistema no aceptó la carga: ${resp.msg || "sin detalle"}` });
         });
         resultado.carga = { msg: resp.msg, renglones: validas.length };
       }
@@ -192,9 +229,8 @@ export async function aplicarAjusteDeConteo(
                descripcion: nombre, lote: f.regulado ? (d.lote || null) : null },
       concepto, iden: "DESCARTE",
     });
-    if (r.ok) { lineas[d.i].hecho = true; descargos.push(r.aplicado); continue; }
-    if (r.codigo === "INCIERTO") lineas[d.i].incierto = true;
-    lineas[d.i].error = r.error;
+    if (r.ok) { marcar(d.is, { hecho: true }); descargos.push(r.aplicado); continue; }
+    marcar(d.is, { error: r.error, ...(r.codigo === "INCIERTO" ? { incierto: true } : {}) });
   }
   if (descargos.length) resultado.descargos = descargos;
 

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-06T03:00:08.764Z",
+ "generado": "2026-11-06T15:13:05.596Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -99,7 +99,7 @@
    "por": "código"
   },
   "anular_creditos_ausentes": {
-   "area": "cortes-efectivo",
+   "area": "facturacion-dte",
    "por": "código"
   },
   "anular_deposito": {
@@ -1490,6 +1490,14 @@
    "area": "inventario",
    "por": "tablas"
   },
+  "conteo_caja_plan": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "conteo_caja_problemas_de": {
+   "area": "inventario",
+   "por": "tablas"
+  },
   "conteo_caja_recalcular": {
    "area": "inventario",
    "por": "código"
@@ -1517,6 +1525,10 @@
   "conteo_lineas_netas": {
    "area": "inventario",
    "por": "código"
+  },
+  "conteo_lote_es_generico": {
+   "area": "inventario",
+   "por": "llamada"
   },
   "conteo_puede_ver_sistema": {
    "area": "permisos",
@@ -2878,6 +2890,10 @@
    "area": "inventario",
    "por": "código"
   },
+  "get_conteo_caja_plan": {
+   "area": "inventario",
+   "por": "código"
+  },
   "get_conteo_item_history": {
    "area": "inventario",
    "por": "código"
@@ -3876,6 +3892,10 @@
   },
   "lock_module": {
    "area": "permisos",
+   "por": "código"
+  },
+  "lotes_de_renglon_de_traslado": {
+   "area": "plataforma",
    "por": "código"
   },
   "mantener_nombre_corto": {

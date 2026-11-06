@@ -48,7 +48,14 @@ export const noUbicado = (nota = '') => ({ fisicoCantidad: 0, nota: String(nota 
  * medias: la diferencia está medida y firmada, pero el stock del sistema sigue
  * mintiendo.
  */
-export const faltaAjusteDelConteo = (c) => !!c && c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado;
+export const faltaAjusteDelConteo = (c) => {
+    if (!c || c.status !== 'CERRADO') return false;
+    // El que ajusta el inventario se aplica solo: le falta ajuste sólo si algún
+    // producto no se pudo aplicar (2026-11-06). Sin esto figuraba «sin ajustar»
+    // para siempre, porque nadie registra a mano un ajuste que ya hizo el portal.
+    if (c.aplica_en_caja) return c.caja_estado === 'CON_PENDIENTES';
+    return c.total_diferencias > 0 && !c.ajuste_erp_aplicado;
+};
 
 /** Los focos de la lista (las tarjetas que filtran). */
 export const FOCOS_CONTEO = {
@@ -123,3 +130,76 @@ export function pedidoDeConteo({ scopeType, laboratorioId, tamano, productos = [
         erpProductIds: scopeType === 'MANUAL' ? productos.map((p) => p.id) : null,
     };
 }
+
+// ── En qué se cuenta un renglón, y qué pide cada producto (2026-11-06) ──────
+// Auditoría del conteo que ajusta el inventario: el renglón decía «CAJA» y
+// nada más, y en el inventario conviven 3,258 «CAJA 1x1» con 273 «CAJA 1x100».
+// Contar pastillas donde se esperaban cajas se multiplica por 100 al ajustar.
+
+const PLURAL_DE = { UNIDAD: 'unidades', BLISTER: 'blísteres', SOBRE: 'sobres', LATA: 'latas' };
+
+/** Cuántas unidades trae la presentación del renglón (`factor`, o el «1xN» del detalle). */
+export function factorDelRenglon(item) {
+    const f = Number(item?.factor);
+    if (Number.isInteger(f) && f > 0) return f;
+    const m = String(item?.detalle ?? '').match(/^\s*1\s*[xX]\s*(\d+)\s*$/);
+    return m ? Number(m[1]) : null;
+}
+
+/** «CAJA», «BLISTER X 10» → «cajas», «blísteres». */
+export function pluralDePresentacion(presentacion) {
+    const base = String(presentacion ?? '').trim().toUpperCase().replace(/\s*X\s*\d+.*$/, '').trim();
+    if (!base) return 'unidades';
+    if (PLURAL_DE[base]) return PLURAL_DE[base];
+    const minus = base.toLowerCase();
+    if (/[aeiouáéíóú]$/.test(minus)) return `${minus}s`;
+    if (minus.endsWith('z')) return `${minus.slice(0, -1)}ces`;
+    return `${minus}es`;
+}
+
+/**
+ * En qué se cuenta un renglón, dicho para quien está frente al estante:
+ * «Cajas de 100», «Blísteres de 10», «Unidades». `nombre` es el plural suelto,
+ * para el campo («¿cuántas cajas?»).
+ */
+export function unidadDeConteo(item) {
+    const nombre = pluralDePresentacion(item?.presentacion);
+    const factor = factorDelRenglon(item);
+    const Nombre = nombre.charAt(0).toUpperCase() + nombre.slice(1);
+    const texto = factor && factor > 1 && nombre !== 'unidades' ? `${Nombre} de ${factor}` : Nombre;
+    return { nombre, factor, texto };
+}
+
+/** «Sin lote asignado»: vacío o GENERICO. */
+export const esLoteGenerico = (lote) => {
+    const t = String(lote ?? '').trim();
+    return !t || /^gen[eé]rico$/i.test(t);
+};
+
+/**
+ * Qué pide el producto al agregarlo o corregirlo en un conteo por lote. La
+ * misma regla la aplica la base (`agregar_item_conteo`): el lote sólo si el
+ * producto lo lleva, y el vencimiento si lo lleva o si es perecedero.
+ */
+export const reglaDeLoteYVence = (producto) => ({
+    pideLote: !!producto?.regulado,
+    pideVence: !!producto?.regulado || !!producto?.perecedero,
+});
+
+/** Una línea del plan de ajuste, en palabras: «+10 lote L1 (vence 02/2028)». */
+export function rotuloDeAjuste(linea) {
+    const u = Number(linea?.unidades) || 0;
+    const lote = esLoteGenerico(linea?.lote) ? 'sin lote asignado' : `lote ${linea.lote}`;
+    const [a, m] = String(linea?.vence ?? '').split('-');
+    const vence = a && m ? ` (vence ${m}/${a})` : '';
+    return `${u > 0 ? '+' : '−'}${Math.abs(u)} ${u === 1 || u === -1 ? 'unidad' : 'unidades'} · ${lote}${vence}`;
+}
+
+/** Los motivos por los que un producto no se puede ajustar, en el orden en que se resuelven. */
+export const PROBLEMA_DE_AJUSTE = {
+    A_MEDIO_CONTAR: 'A medio contar',
+    SOBRA_SIN_LOTE: 'Sobra sin lote',
+    FALTA_VENCE: 'Falta vencimiento',
+    SIN_FACTOR: 'Presentación sin contenido',
+    VENTA_CERCA: 'Venta al contar',
+};

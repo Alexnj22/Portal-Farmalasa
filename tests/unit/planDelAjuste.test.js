@@ -9,8 +9,8 @@ describe('planDelAjuste', () => {
             { lote: 'L1', vence: '2028-10-01', unidades: 3 },
             { lote: 'GENERICO', vence: null, unidades: -3 },
         ], true);
-        expect(p.cargas).toEqual([{ i: 0, lote: 'L1', vence: '2028-10-01', unidades: 3 }]);
-        expect(p.descargos).toEqual([{ i: 1, lote: 'GENERICO', unidades: 3 }]);
+        expect(p.cargas).toEqual([{ is: [0], lote: 'L1', vence: '2028-10-01', unidades: 3 }]);
+        expect(p.descargos).toEqual([{ is: [1], lote: 'GENERICO', unidades: 3 }]);
         expect(p.rechazos).toEqual([]);
     });
     it('no carga unidades sin lote de más en un producto con lote', () => {
@@ -32,9 +32,49 @@ describe('planDelAjuste', () => {
     });
     it('sin control de lote, todo va sin lote', () => {
         const p = planDelAjuste([{ lote: 'GENERICO', vence: null, unidades: 5 }], false);
-        expect(p.cargas).toEqual([{ i: 0, lote: '', vence: '', unidades: 5 }]);
+        expect(p.cargas).toEqual([{ is: [0], lote: '', vence: '', unidades: 5 }]);
     });
     it('normaliza el número del lote', () => {
         expect(planDelAjuste([{ lote: ' l1  a ', vence: '2028-01-01', unidades: 1 }], true).cargas[0].lote).toBe('L1 A');
+    });
+
+    // 2026-11-06: sin lote, las líneas sólo se distinguen por la fecha y se
+    // aplican como UN movimiento.
+    it('sin lote, dos sobrantes son una sola carga con la fecha de la que más sobra', () => {
+        const p = planDelAjuste([
+            { lote: 'GENERICO', vence: '2027-01-01', unidades: 2 },
+            { lote: 'GENERICO', vence: '2028-06-01', unidades: 5 },
+        ], false);
+        expect(p.cargas).toEqual([{ is: [0, 1], lote: '', vence: '2028-06-01', unidades: 7 }]);
+        expect(p.descargos).toEqual([]);
+    });
+    it('sin lote, lo que se compensa no mueve nada', () => {
+        const p = planDelAjuste([
+            { lote: 'GENERICO', vence: '2027-01-01', unidades: 3 },
+            { lote: 'GENERICO', vence: '2028-01-01', unidades: -3 },
+        ], false);
+        expect(p.cargas).toEqual([]);
+        expect(p.descargos).toEqual([]);
+        expect(p.saldadas).toEqual([0, 1]);
+    });
+    it('sin lote, el neto negativo es un solo descargo', () => {
+        const p = planDelAjuste([
+            { lote: 'GENERICO', vence: '2027-01-01', unidades: 1 },
+            { lote: 'GENERICO', vence: null, unidades: -4 },
+        ], false);
+        expect(p.descargos).toEqual([{ is: [0, 1], lote: '', unidades: 3 }]);
+    });
+    it('un perecedero sin lote no se carga sin fecha', () => {
+        const p = planDelAjuste([{ lote: 'GENERICO', vence: null, unidades: 2 }], false, true);
+        expect(p.cargas).toEqual([]);
+        expect(p.rechazos[0].error).toMatch(/sin vencimiento/);
+    });
+    it('sin lote, una presentación sin factor rechaza la suma entera', () => {
+        const p = planDelAjuste([
+            { lote: 'GENERICO', vence: null, unidades: 2 },
+            { lote: 'GENERICO', vence: null, unidades: -1, factor_desconocido: true },
+        ], false);
+        expect(p.cargas).toEqual([]);
+        expect(p.rechazos).toHaveLength(2);
     });
 });

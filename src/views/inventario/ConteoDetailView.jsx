@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
+import React, { useEffect, useState, useCallback, useRef, lazy, Suspense, createContext, useContext } from 'react';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import HojaMovil from '../../components/common/HojaMovil';
 import AsaHoja from '../../components/common/AsaHoja';
@@ -47,6 +47,21 @@ import useLayoutCompacto, { useFichasEnVezDeTabla, useAltoEscaso } from '@nucleo
 import usePaginaEnUrl from '../../plataforma/usePaginaEnUrl';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
 import { CajaFecha } from './camposDeConteo';
+import { unidadDeConteo, esLoteGenerico } from '@nucleo/utils/conteoDeInventario';
+
+// «GENERICO» es como la caja guarda lo que no tiene lote; quien cuenta lee
+// «Sin lote».
+const nombreDelLote = (lote) => (esLoteGenerico(lote) ? 'Sin lote' : lote);
+import AjusteAntesDeAprobar, { ProblemasDelAjuste } from './AjusteAntesDeAprobar';
+
+// ¿El conteo ajusta el inventario? Lo leen los renglones para decidir si
+// ofrecen el lápiz del lote: en un conteo que ajusta, la etiqueta de un
+// renglón del sistema no se corrige —la base lo rechaza—, porque lo dejaría
+// comparado contra el lote viejo y el ajuste saldría en cero o descontaría sin
+// cargar (auditoría 2026-11-06). Contexto y no prop: los renglones viven dos
+// niveles abajo, en tabla y en fichas.
+const AjustaElInventario = createContext(false);
+const ofreceCorregirLote = (ajusta, item) => !ajusta || !!item?.es_agregado_manual;
 import { formatMoney, formatQty, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -354,6 +369,8 @@ function ItemRow({
     producto = null,
 }) {
     const { showToast } = useToastStore();
+    const ajusta = useContext(AjustaElInventario);
+    const unidad = unidadDeConteo(item);
     const verSistema = !!item.ver_sistema;
     // En recuento el campo arranca VACÍO: precargarlo con el primer conteo
     // sería mostrarle al supervisor justo el número que viene a verificar.
@@ -552,12 +569,12 @@ function ItemRow({
                         indicara a qué lote pertenecía. */}
                     <span className="flex items-center gap-1 min-w-0">
                         <span className="text-label font-bold text-content-2 tabular-nums truncate">
-                            {simple ? (item.presentacion || '—') : (item.lote || '—')}
+                            {simple ? (item.presentacion || '—') : nombreDelLote(item.lote)}
                         </span>
                         {/* Sin lote no hay etiqueta que corregir: el lápiz sale. Lo
                             rechaza también `editar_lote_conteo_item`, porque una
                             restricción que solo vive en el cliente es decorativa. */}
-                        {editable && !simple && (
+                        {editable && !simple && ofreceCorregirLote(ajusta, item) && (
                             <Button variant="ghost" icon={Pencil} disabled={saving} title="Corregir lote/vencimiento" iconOnly onClick={() => onEditLote(item)} />
                         )}
                         {/* El ERP separa el stock vencido en su propia área. Sin esta
@@ -571,13 +588,14 @@ function ItemRow({
                         esta segunda línea solo repetiría el mismo texto seguido de un
                         vencimiento que no existe. Queda el detalle (ej. "1x12") si lo
                         hay, que es lo único que agrega. */}
+                    {/* En qué se cuenta, dicho entero: «Cajas de 100». Con la
+                        presentación a secas, una caja de 100 pastillas se
+                        podía anotar como 100 cajas, y el ajuste lo multiplica. */}
                     {simple ? (
-                        item.detalle && (
-                            <span className="text-micro text-content-3 tabular-nums truncate">{item.detalle}</span>
-                        )
+                        <span className="text-micro text-content-3 tabular-nums truncate">Se cuentan {unidad.texto.toLowerCase()}</span>
                     ) : (
                         <span className="flex items-center gap-1 min-w-0 text-micro text-content-3 tabular-nums">
-                            <span className="truncate">{item.presentacion || '—'} · {fmtDate(item.fecha_vencimiento)}</span>
+                            <span className="truncate">{unidad.texto} · {item.fecha_vencimiento ? `vence ${fmtDate(item.fecha_vencimiento)}` : 'sin vencimiento'}</span>
                             <VencimientoBadge status={vencimientoStatus(item.fecha_vencimiento)} />
                         </span>
                     )}
@@ -626,7 +644,7 @@ function ItemRow({
                                     step="1"
                                     value={fisico}
                                     onChange={(e) => setFisico(e.target.value)}
-                                    placeholder={recuento && !revelado ? 'Recontar' : '—'}
+                                    placeholder={recuento && !revelado ? 'Recontar' : unidad.nombre}
                                     onKeyDown={alTeclearEnCaptura}
                                     enterKeyHint="next"
                                     onBlur={commit}
@@ -774,6 +792,8 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
 function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, currentUser, simple = false, enVivo = false }) {
+    const ajusta = useContext(AjustaElInventario);
+    const unidad = unidadDeConteo(item);
     const { showToast } = useToastStore();
     // La existencia del sistema la decide la RPC renglón por renglón, igual que
     // en la tabla: viene NULL y con el flag apagado cuando el conteo es ciego.
@@ -872,7 +892,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
             <div className="flex items-center justify-between gap-2 flex-wrap mb-1.5">
                 <span className="flex items-center gap-1 min-w-0">
                     <span className={`text-label font-bold tabular-nums ${bloqueada ? 'text-success' : 'text-content-2'}`}>
-                        {simple ? (item.presentacion || '—') : `Lote ${item.lote || '—'}`}
+                        {simple ? (item.presentacion || '—') : (esLoteGenerico(item.lote) ? 'Sin lote' : `Lote ${item.lote}`)}
                     </span>
                     {/* Corregir el lote solo existía en la tabla, o sea solo en
                         escritorio (`hidden md:block`). Y el caso que lo necesita
@@ -884,7 +904,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         `max(…, var(--tap-min))`, que en un dedo son 44px. Escribirlo
                         acá era pelearle al canónico con una clase que puede perder o
                         ganar según el orden del CSS generado. */}
-                    {editable && onEditLote && !simple && (
+                    {editable && onEditLote && !simple && ofreceCorregirLote(ajusta, item) && (
                         <Button variant="ghost" icon={Pencil} iconOnly disabled={saving}
                             className="shrink-0"
                             title="Corregir lote/vencimiento"
@@ -893,7 +913,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     )}
                 </span>
                 <span className="text-caption text-content-3 tabular-nums">
-                    {simple ? (item.detalle || '') : `${item.presentacion || '—'} · vence ${fmtDate(item.fecha_vencimiento)}`}
+                    {simple ? unidad.texto : `${unidad.texto} · ${item.fecha_vencimiento ? `vence ${fmtDate(item.fecha_vencimiento)}` : 'sin vencimiento'}`}
                 </span>
             </div>
             <div className="flex items-center gap-2 min-w-0">
@@ -925,7 +945,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                             // y hace lo que dice: salta al próximo renglón sin
                             // contar sin cerrar el teclado.
                             enterKeyHint="next"
-                            placeholder={recuento ? 'Recontar' : '—'}
+                            placeholder={recuento ? 'Recontar' : unidad.nombre}
                             readOnly={!editable && !recuento}
                             data-fisico-input="true"
                             alto
@@ -1607,6 +1627,11 @@ export default function ConteoDetailView() {
     const [confirmFinalizarOpen, setConfirmFinalizarOpen] = useState(false);
     const [pendientesAlFinalizar, setPendientesAlFinalizar] = useState(0);
     const [promptAprobarOpen, setPromptAprobarOpen] = useState(false);
+    // El conteo que ajusta el inventario: qué frena el finalizar y qué se
+    // aplica al aprobar (2026-11-06).
+    const [problemasAjuste, setProblemasAjuste] = useState(null);
+    const [vistaAjusteOpen, setVistaAjusteOpen] = useState(false);
+    const fetchConteoCajaPlan = useStaffStore((s) => s.fetchConteoCajaPlan);
     const [promptAjusteOpen, setPromptAjusteOpen] = useState(false);
     const [confirmEliminarOpen, setConfirmEliminarOpen] = useState(false);
     // Qué líneas se desbloquearon con el lápiz. Es por LÍNEA y no un modo de la
@@ -1940,7 +1965,25 @@ export default function ConteoDetailView() {
         showToast('Lote corregido', 'Se actualizó la etiqueta del renglón', 'success');
     };
 
+    // Lo que impide ajustar se pregunta ANTES de abrir el diálogo de finalizar:
+    // así se resuelve con quien contó todavía frente al estante. La base lo
+    // vuelve a mirar al finalizar —esto avisa, aquello frena—.
+    const problemasQueFrenan = async () => {
+        const plan = await fetchConteoCajaPlan(id);
+        const frenan = (plan?.problemas ?? []).filter((p) => p.bloquea);
+        if (frenan.length) { setProblemasAjuste(frenan); return true; }
+        return false;
+    };
+
     const handleFinalizar = async () => {
+        if (conteo?.aplica_en_caja) {
+            try {
+                if (await problemasQueFrenan()) return;
+            } catch (err) {
+                showToast('Error', mensajeAmigable(err), 'error');
+                return;
+            }
+        }
         try {
             setPendientesAlFinalizar(await fetchConteoPendientesCount(id));
         } catch {
@@ -1963,6 +2006,11 @@ export default function ConteoDetailView() {
             );
             await load();
         } catch (err) {
+            // Entre abrir el diálogo y confirmar alguien pudo dejar un producto
+            // a medias: la lista sale de nuevo, no un mensaje con un número.
+            if (/AJUSTE_CON_PRODUCTOS_POR_RESOLVER/.test(err?.codigo || err?.message || '')) {
+                await problemasQueFrenan().catch(() => {});
+            }
             showToast('Error', mensajeAmigable(err), 'error');
         } finally {
             setBusy(false);
@@ -1970,7 +2018,8 @@ export default function ConteoDetailView() {
         }
     };
 
-    const handleAprobar = () => setPromptAprobarOpen(true);
+    // El que ajusta se aprueba mirando lo que va a mover; el resto, con la nota.
+    const handleAprobar = () => (conteo?.aplica_en_caja ? setVistaAjusteOpen(true) : setPromptAprobarOpen(true));
 
     const confirmAprobar = async (nota) => {
         setBusy(true);
@@ -1983,6 +2032,7 @@ export default function ConteoDetailView() {
         } finally {
             setBusy(false);
             setPromptAprobarOpen(false);
+            setVistaAjusteOpen(false);
         }
     };
 
@@ -2200,6 +2250,7 @@ export default function ConteoDetailView() {
     );
 
     return (
+        <AjustaElInventario.Provider value={!!conteo?.aplica_en_caja}>
         <GlassViewLayout icon={ClipboardCheck} title="Conteo de inventario" filtersContent={filtersContent}>
             <div className="px-2 py-4 pb-28 md:p-6 md:pb-6 lg:p-8 space-y-6">
                 {/* ── Con el teléfono acostado, el encabezado se pliega ──────
@@ -2311,17 +2362,21 @@ export default function ConteoDetailView() {
                         {conteo.aplica_en_caja && conteo.status === 'EN_PROGRESO' && (
                             <div className="mt-4">
                                 <Notice variant="info">
-                                    Este conteo ajusta el inventario. Donde dice <strong>GENERICO</strong> es existencia sin
-                                    lote asignado: agrega cada lote que encuentres en el estante con su vencimiento, y en
-                                    GENERICO cuenta sólo lo que no traiga lote impreso.
+                                    Este conteo ajusta el inventario. <strong>Sin lote</strong> es existencia que el sistema
+                                    tiene sin lote asignado. Si en el estante esas unidades traen lote impreso, toca
+                                    {' '}<strong>Agregar</strong> y anota ese lote con su vencimiento; en «Sin lote» cuenta
+                                    sólo lo que de verdad no traiga lote (0 si no hay). Cuenta cada renglón en lo que
+                                    dice debajo del lote: cajas, blísteres o unidades. Cuenta todos los renglones de un
+                                    producto: uno a medio contar no se puede ajustar.
                                 </Notice>
                             </div>
                         )}
                         {conteo.aplica_en_caja && conteo.status === 'FINALIZADO' && (
                             <div className="mt-4">
                                 <Notice variant="warning">
-                                    Al aprobarlo, el inventario queda como se contó, lote por lote. Lo que quedó sin
-                                    contar no se toca.
+                                    Al aprobarlo, el inventario queda como se contó, lote por lote: antes de firmar se ve
+                                    exactamente qué entra y qué sale. Lo que quedó sin contar no se toca. Si quieres
+                                    revisar un renglón, recuéntalo ahora.
                                 </Notice>
                             </div>
                         )}
@@ -2634,6 +2689,20 @@ export default function ConteoDetailView() {
                 isProcessing={busy}
             />
 
+            {vistaAjusteOpen && <AjusteAntesDeAprobar
+                open
+                conteoId={id}
+                busy={busy}
+                onClose={() => setVistaAjusteOpen(false)}
+                onConfirm={confirmAprobar}
+            />}
+            <ProblemasDelAjuste
+                open={!!problemasAjuste}
+                problemas={problemasAjuste}
+                onClose={() => setProblemasAjuste(null)}
+                onIr={(p) => { setProblemasAjuste(null); cambiarBusqueda(p.producto || ''); }}
+            />
+
             <PromptModal
                 isOpen={promptAprobarOpen}
                 onClose={() => setPromptAprobarOpen(false)}
@@ -2658,6 +2727,7 @@ export default function ConteoDetailView() {
                 isProcessing={busy}
             />
         </GlassViewLayout>
+        </AjustaElInventario.Provider>
     );
 }
 

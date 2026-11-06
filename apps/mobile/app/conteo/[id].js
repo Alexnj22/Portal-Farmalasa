@@ -24,7 +24,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO, cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO, cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado, unidadDeConteo, esLoteGenerico, rotuloDeAjuste, PROBLEMA_DE_AJUSTE } from '@nucleo/utils/conteoDeInventario';
 import { avisoDeConteoParcial } from '@nucleo/utils/conteoPapel';
 import Interruptor from '../../componentes/Interruptor';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -95,10 +95,12 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>
-            {`${it.presentacion || 'Presentación'}${it.detalle ? ` · ${it.detalle}` : ''}`}
+            {/* En qué se cuenta, entero: «Cajas de 100». Con la presentación a
+                secas, una caja de 100 pastillas se anotaba como 100 cajas. */}
+            {`Se cuentan ${unidadDeConteo(it).texto.toLowerCase()}`}
           </Text>
           <Text style={{ color: it.is_vencidos ? MARCA.rojo : colorSistema.texto2, fontSize: 13 }}>
-            {[it.lote ? `Lote ${it.lote}` : 'Sin lote', `vence ${vence(it.fecha_vencimiento)}`, it.is_vencidos ? 'área de vencidos' : null].filter(Boolean).join(' · ')}
+            {[esLoteGenerico(it.lote) ? 'Sin lote' : `Lote ${it.lote}`, it.fecha_vencimiento ? `vence ${vence(it.fecha_vencimiento)}` : 'sin vencimiento', it.is_vencidos ? 'área de vencidos' : null].filter(Boolean).join(' · ')}
           </Text>
           {it.ver_sistema && it.sistema_cantidad != null && !tapado ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Sistema: ${it.sistema_cantidad}`}</Text> : null}
         </View>
@@ -333,8 +335,24 @@ export default function Conteo() {
     cargarConteo();
   };
 
-  const aprobar = () => {
-    Alert.prompt('Aprobar conteo', 'Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo.', [
+  const fetchConteoCajaPlan = useStaffStore((s) => s.fetchConteoCajaPlan);
+
+  // El que ajusta el inventario se aprueba leyendo lo que va a mover (2026-11-06).
+  const aprobar = async () => {
+    let mensaje = 'Queda cerrado y con firma auditable. No puedes aprobar un conteo que finalizaste tú mismo.';
+    if (conteo?.aplica_en_caja) {
+      try {
+        const plan = await fetchConteoCajaPlan(id);
+        const productos = plan?.productos ?? [];
+        const avisos = (plan?.problemas ?? []).filter((p) => !p.bloquea);
+        const lineas = productos.slice(0, 12).map((p) => `${p.producto ?? p.erp_product_id}${p.a_medio_contar ? ' (no se ajusta: a medio contar)' : ''}\n${(p.lineas ?? []).map((l) => `  ${rotuloDeAjuste(l)}`).join('\n')}`);
+        mensaje = productos.length
+          ? `Se ajustan ${productos.length} ${productos.length === 1 ? 'producto' : 'productos'}:\n\n${lineas.join('\n')}${productos.length > 12 ? `\n…y ${productos.length - 12} más` : ''}`
+          : 'Sin diferencias: el inventario no cambia.';
+        if (avisos.length) mensaje += `\n\nPara mirar antes:\n${avisos.map((a) => `• ${a.producto ?? a.erp_product_id}: ${PROBLEMA_DE_AJUSTE[a.tipo] ?? a.tipo}`).join('\n')}`;
+      } catch (e) { fallo('No se pudo leer el ajuste', mensajeAmigable(e)); return; }
+    }
+    Alert.prompt(conteo?.aplica_en_caja ? 'Aprobar y ajustar' : 'Aprobar conteo', mensaje, [
       { text: 'Cancelar', style: 'cancel' },
       {
         text: 'Aprobar', onPress: async (nota) => {
@@ -365,7 +383,18 @@ export default function Conteo() {
     ], 'plain-text', '', 'default');
   };
 
-  const finalizar = () => {
+  const finalizar = async () => {
+    // Lo que impide ajustar, antes de cerrar: se resuelve frente al estante.
+    if (conteo?.aplica_en_caja) {
+      try {
+        const plan = await fetchConteoCajaPlan(id);
+        const frenan = (plan?.problemas ?? []).filter((p) => p.bloquea);
+        if (frenan.length) {
+          Alert.alert('Antes de finalizar', frenan.slice(0, 10).map((p) => `• ${p.producto ?? p.erp_product_id} — ${PROBLEMA_DE_AJUSTE[p.tipo] ?? p.tipo}: ${p.detalle}`).join('\n\n'));
+          return;
+        }
+      } catch (e) { fallo('No se pudo revisar el conteo', mensajeAmigable(e)); return; }
+    }
     const pendientes = Math.max(0, total - contados);
     const enviar = async (comoCero) => {
       trabajando('Finalizando el conteo…');
@@ -451,12 +480,12 @@ export default function Conteo() {
               alguien registre que lo aplicó, tiene que estar a la vista. */}
           {conteo?.aplica_en_caja && editable ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Aviso tono="nota" texto="Este conteo ajusta el inventario. GENERICO es existencia sin lote asignado: agrega cada lote que encuentres con su vencimiento, y en GENERICO cuenta sólo lo que no traiga lote impreso." />
+              <Aviso tono="nota" texto="Este conteo ajusta el inventario. «Sin lote» es existencia que el sistema tiene sin lote asignado: si esas unidades traen lote impreso, agrega ese lote con su vencimiento y en «Sin lote» cuenta sólo lo que no lo traiga (0 si no hay). Cuenta cada renglón en lo que dice: cajas, blísteres o unidades. Un producto a medio contar no se puede ajustar." />
             </View>
           ) : null}
           {conteo?.aplica_en_caja && conteo.status === 'FINALIZADO' ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Aviso tono="cuidado" texto="Al aprobarlo, el inventario queda como se contó, lote por lote. Lo que quedó sin contar no se toca." />
+              <Aviso tono="cuidado" texto="Al aprobarlo, el inventario queda como se contó, lote por lote: antes de firmar se ve qué entra y qué sale. Lo que quedó sin contar no se toca." />
             </View>
           ) : null}
           {conteo?.aplica_en_caja && conteo.status === 'CERRADO' ? (
@@ -513,7 +542,9 @@ export default function Conteo() {
                     <View style={{ paddingHorizontal: 14, paddingBottom: 12 }}>
                       {!items[p.erp_product_id] ? <ActivityIndicator style={{ marginVertical: 10 }} />
                         : items[p.erp_product_id].map((it) => <Renglon key={it.id} it={it} editable={editable} aCiegas={recuento} onGuardado={alGuardar(p.erp_product_id)} onHistorial={setHistorial}
-                          onLote={editable && !simple ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
+                          // En un conteo que ajusta, el lote de un renglón del sistema no se
+                          // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.
+                          onLote={editable && !simple && (!conteo?.aplica_en_caja || it.es_agregado_manual) ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
                           onRecontar={puedeAprobar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                     </View>
                   ) : null}

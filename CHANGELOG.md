@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1460.0 — Conteo que ajusta el inventario: a prueba de errores, lote y vencimiento según el producto
+
+Auditoría del conteo que ajusta el inventario, antes de su primer uso. Cuatro defectos movían existencias de más o de menos sin dar error:
+
+- **El lápiz del lote en un renglón del sistema rompía el ajuste** (salía en cero o descontaba sin cargar). En un conteo que ajusta, el lote del sistema ya no se corrige: se agrega el lote real y en «Sin lote» se cuenta lo que de verdad no lo traiga.
+- **Un producto a medio contar cargaba lo de más y no descontaba lo de menos.** Ya no se puede finalizar así: antes de finalizar se listan los productos por resolver, con su motivo y un botón para ir a cada uno.
+- **Dos conteos podían aplicar la misma diferencia dos veces.** No se puede crear ni aprobar uno que ajusta mientras otro de la misma sucursal está sin aprobar o aplicándose.
+- **No se decía en qué se cuenta.** Cada renglón dice «Cajas de 100», «Blísteres de 10» o «Unidades», y el campo pregunta en esa unidad. «GENERICO» se lee «Sin lote».
+- **Lote y vencimiento según el producto**, en el portal, en la app y en la base: el lote sólo si el producto lo lleva; el vencimiento si lo lleva o es perecedero. Las presentaciones dicen cuántas unidades traen.
+- **Antes de aprobar se ve qué entra y qué sale**, producto por producto y lote por lote, con los avisos que conviene mirar (una venta justo cuando se contó, una presentación sin contenido conocido).
+- Lo que no lleva lote se aplica como un solo movimiento (antes, varias fechas quedaban siempre «Revisar»), y un perecedero no se carga sin fecha.
+
 ## v2.1459.10 — Un solo rótulo en mayúsculas
 
 - **Un solo rótulo en mayúsculas.** Los rótulos chicos en mayúsculas (encabezados de columna, títulos de tarjeta, etiquetas) tenían 80 combinaciones de peso y espaciado. 409 renglones en 151 archivos pasan al estilo que ya usaba la mayoría: `font-black uppercase tracking-widest`. Cambian el tamaño y el color según el lugar, nunca el peso ni el espaciado.

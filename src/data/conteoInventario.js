@@ -75,7 +75,9 @@ export function searchActiveProductsForConteo(term) {
         // la tarjeta del producto elegido. Cuando el escaneo eligió solo, esa
         // línea es la única oportunidad de ver que eligió BIEN — comparar el
         // código de la pantalla contra el de la caja que se tiene en la mano.
-        select: 'id, nombre, codigo_barras, laboratorios(nombre)',
+        // `regulado`/`perecedero` (2026-11-06): deciden si el alta pide lote y
+        // vencimiento — la misma regla que aplica `agregar_item_conteo`.
+        select: 'id, nombre, codigo_barras, regulado, perecedero, laboratorios(nombre)',
         limite: 30,
         // El laboratorio se pinta junto al nombre: se busca lo que se ve.
         conLaboratorio: true,
@@ -84,7 +86,7 @@ export function searchActiveProductsForConteo(term) {
 
 export function fetchProductPresentacionesForConteo(productId) {
     return supabase.from('product_precios')
-        .select('id_presentacion, presentaciones(tipo)')
+        .select('id_presentacion, factor, presentaciones(tipo)')
         .eq('product_id', productId)
         .eq('activo', true);
 }
@@ -122,7 +124,7 @@ export function fetchInventoryLotesForProduct(productId, erpSucursalIds) {
  * (los TIPOS, que es lo que guarda el renglón) y —si el conteo es por lote—
  * los lotes que la sala tiene de él, cada uno con su vencimiento. Lo usan el
  * alta manual del portal (`AddManualItemForm`) y la de la app.
- * Devuelve `{ presentaciones: string[], lotes: [{ lote, fecha }] }`.
+ * Devuelve `{ presentaciones: string[], factores: { [tipo]: número }, lotes: [{ lote, fecha }] }`.
  */
 export async function opcionesParaAgregarAlConteo(productId, branchId, simple = false) {
     const [{ data: precios, error: e1 }, { data: mapa, error: e2 }] = await Promise.all([
@@ -132,6 +134,14 @@ export async function opcionesParaAgregarAlConteo(productId, branchId, simple = 
     if (e1) console.error('opcionesParaAgregarAlConteo: product_precios', e1.message);
     if (e2) console.error('opcionesParaAgregarAlConteo: erp_sucursal_map', e2.message);
     const presentaciones = [...new Set((precios || []).map((p) => p.presentaciones?.tipo).filter(Boolean))];
+    // Cuántas unidades trae cada tipo, para que la lista diga «CAJA · 100 u.»
+    // y no «CAJA» a secas. Si un tipo tuviera dos factores, se queda el mayor.
+    const factores = {};
+    (precios || []).forEach((p) => {
+        const t = p.presentaciones?.tipo;
+        const f = Number(p.factor);
+        if (t && f > 0) factores[t] = Math.max(factores[t] || 0, f);
+    });
     const erpIds = (mapa || []).map((m) => m.erp_sucursal_id);
     let lotes = [];
     if (erpIds.length && !simple) {
@@ -139,7 +149,7 @@ export async function opcionesParaAgregarAlConteo(productId, branchId, simple = 
         if (error) console.error('opcionesParaAgregarAlConteo: lotes', error.message);
         lotes = lotesDistintos(data);
     }
-    return { presentaciones, lotes };
+    return { presentaciones, factores, lotes };
 }
 
 /**

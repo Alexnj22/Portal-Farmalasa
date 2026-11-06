@@ -50,13 +50,28 @@ const ERRORES = {
     RECUENTO_MISMO_CONTADOR: 'No puedes recontar una línea que contaste tú mismo: el recuento lo hace otra persona.',
     CANTIDAD_INVALIDA: 'La cantidad del recuento debe ser un número entero de 0 o más.',
     CAJA_REQUIERE_LOTE_EN_VIVO: 'Un conteo que ajusta el inventario se hace por lote y en vivo.',
+    // Conteo que ajusta el inventario + lote y vencimiento según el producto
+    // (2026-11-06). Ninguno es prefijo de otro.
+    CONTEO_POR_APLICAR_EN_SUCURSAL: 'En esta sucursal hay otro conteo que ajusta el inventario sin aprobar o todavía aplicándose. Espera a que termine: los dos medirían contra la misma existencia y la diferencia entraría dos veces.',
+    AJUSTE_NO_CORRIGE_LOTE_DEL_SISTEMA: 'En un conteo que ajusta el inventario, el lote del sistema no se corrige: toca «Agregar», anota el lote real con su vencimiento y cuenta 0 en este renglón.',
+    AJUSTE_CON_PRODUCTOS_POR_RESOLVER: 'Hay productos que no se podrían ajustar así como están. Resuélvelos antes de finalizar.',
+    LOTE_GENERICO_NO_VALE: 'Este producto lleva lote: escribe el número impreso en la caja, no «sin lote».',
+    LOTE_REQUERIDO: 'Este producto lleva lote: elige o escribe el lote.',
+    VENCE_REQUERIDO: 'Este producto necesita la fecha de vencimiento.',
+    VENCE_FUERA_DE_RANGO: 'Esa fecha de vencimiento no parece correcta. Revísala.',
     NO_SE_PUEDE_REINTENTAR: 'Ese producto ya no tiene nada pendiente que reintentar.',
 };
 
 function traducirError(err) {
     if (!err) return err;
     for (const [code, msg] of Object.entries(ERRORES)) {
-        if (err.message?.includes(code)) return new Error(msg);
+        if (err.message?.includes(code)) {
+            // El código viaja con el error: la pantalla decide qué mostrar por
+            // él (la lista de productos por resolver), no por el texto.
+            const e = new Error(msg);
+            e.codigo = code;
+            return e;
+        }
     }
     return err;
 }
@@ -437,6 +452,14 @@ export const createConteoInventarioSlice = (set, get) => ({
     // Lo que se aplicó en la caja de un conteo que la corrige, producto por producto.
     fetchConteoCaja: async (conteoId) => {
         const { data, error } = await supabase.rpc('get_conteo_caja', { p_conteo_id: conteoId });
+        if (error) throw traducirError(error);
+        return data;
+    },
+
+    // Qué se va a aplicar y qué lo impide (2026-11-06). Antes de finalizar trae
+    // sólo los problemas; ya finalizado, el plan completo.
+    fetchConteoCajaPlan: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_caja_plan', { p_conteo_id: conteoId });
         if (error) throw traducirError(error);
         return data;
     },

@@ -11,6 +11,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { Campo, CajaFecha } from './camposDeConteo';
 import { searchActiveProductsForConteo, opcionesParaAgregarAlConteo } from '@nucleo/data/conteoInventario';
+import { esLoteGenerico, reglaDeLoteYVence, pluralDePresentacion } from '@nucleo/utils/conteoDeInventario';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
 // Mismo motivo que en la vista: `@zxing` sólo hace falta al tocar «Escanear», y
@@ -117,12 +118,23 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
 
         // Presentaciones y lotes de la sala: núcleo (`opcionesParaAgregarAlConteo`),
         // lo mismo que usa la app.
-        const { presentaciones, lotes } = await opcionesParaAgregarAlConteo(found.id, branchId, simple);
-        setPresentacionOpts(presentaciones.map((t) => ({ value: t, label: t })));
+        const { presentaciones, factores, lotes } = await opcionesParaAgregarAlConteo(found.id, branchId, simple);
+        // La opción dice en qué se cuenta: «CAJA · se cuentan cajas de 100».
+        // Con «CAJA» a secas, quien tiene una caja de 100 pastillas en la mano
+        // no sabe si teclear 1 o 100, y el ajuste lo multiplica.
+        setPresentacionOpts(presentaciones.map((t) => {
+            const f = factores?.[t];
+            const nombre = pluralDePresentacion(t);
+            const cuenta = f > 1 && nombre !== 'unidades' ? `se cuentan ${nombre} de ${f}` : `se cuentan ${nombre}`;
+            return { value: t, label: `${t} · ${cuenta}` };
+        }));
         // El valor de la opción es la CLAVE (número + vencimiento): hay lotes
         // con el mismo número y dos fechas, y con el número como valor el
-        // segundo no se podía elegir.
-        setLoteOpts(lotes.map((l) => ({ value: l.clave, lote: l.lote, fecha: l.fecha })));
+        // segundo no se podía elegir. «Sin lote asignado» no es un lote que
+        // se pueda elegir: si el producto lo lleva, la base lo rechaza, y si
+        // no lo lleva, el campo ni se muestra.
+        setLoteOpts(lotes.filter((l) => !esLoteGenerico(l.lote))
+            .map((l) => ({ value: l.clave, lote: l.lote, fecha: l.fecha })));
     }, [branchId, simple]);
 
     const handleSelectProduct = (val) => {
@@ -173,6 +185,13 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
     // vuelva a teclear.
     const { manual: escaneoTecleado } = useCapturaDeCarne(true, resolverCodigo, { sinEnter: true });
 
+    // Qué pide ESTE producto (2026-11-06): el lote sólo si lo lleva, el
+    // vencimiento si lo lleva o es perecedero. La base aplica la misma regla.
+    const { pideLote, pideVence } = reglaDeLoteYVence(selected);
+    const loteElegido = loteOpts.find((l) => l.value === lote);
+    // Un lote del sistema sin fecha se completa acá; con fecha, la trae él.
+    const venceInerte = pideLote && lote !== '__OTRO__' && !!loteElegido?.fecha;
+
     const handleSelectLote = (val) => {
         setLote(val);
         if (val === '__OTRO__') { setFechaVencimiento(''); return; }
@@ -181,9 +200,16 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
     };
 
     const finalLote = lote === '__OTRO__'
-        ? loteOtro.trim()
-        : (loteOpts.find((l) => l.value === lote)?.lote || '');
-    const canSubmit = selected && presentacion && (simple || finalLote);
+        ? loteOtro.trim().toUpperCase()
+        : (loteElegido?.lote || '');
+    const loteInvalido = pideLote && esLoteGenerico(finalLote) && !!finalLote;
+    const faltaLote = !simple && pideLote && (!finalLote || loteInvalido);
+    const faltaVence = !simple && pideVence && !fechaVencimiento;
+    const canSubmit = selected && presentacion && !faltaLote && !faltaVence;
+    const queFalta = !presentacion ? 'Falta elegir la presentación.'
+        : loteInvalido ? 'Escribe el número de lote impreso en la caja.'
+        : faltaLote ? 'Falta el lote.'
+        : faltaVence ? 'Falta el vencimiento.' : null;
 
     // El costo ya no lo manda el cliente: lo pone agregar_item_conteo con el
     // mismo criterio que el snapshot (costo de la presentación de la línea).
@@ -194,7 +220,8 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
             await onAdd({
                 erpProductId: selected.id,
                 presentacion,
-                lote: simple ? null : finalLote,
+                // Sin lote, la base lo guarda como «sin lote asignado».
+                lote: simple || !pideLote ? null : finalLote,
                 fechaVencimiento: simple ? null : (fechaVencimiento || null),
             });
             showToast('Producto agregado', selected.nombre, 'success');
@@ -338,8 +365,19 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                 no existiría en el CSS. */}
             {selected && (
                 <div className="flex flex-col gap-2">
-                    <Paso numero={2} titulo={simple ? 'Cómo viene' : 'Presentación, lote y vencimiento'} />
-                    <div className={`grid grid-cols-1 gap-2 ${simple ? 'md:grid-cols-2' : lote === '__OTRO__' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
+                    <Paso numero={2} titulo={simple ? 'Cómo viene'
+                        : pideLote ? 'Presentación, lote y vencimiento'
+                        : pideVence ? 'Presentación y vencimiento' : 'Presentación'} />
+                    {!simple && (
+                        <p className="text-micro text-content-3">
+                            {pideLote
+                                ? 'Este producto lleva lote: elige el impreso en la caja o escribe uno nuevo, con su vencimiento.'
+                                : pideVence
+                                    ? 'Este producto no lleva lote, pero sí vencimiento: anota la fecha de lo que estás contando.'
+                                    : 'Este producto no lleva lote ni vencimiento.'}
+                        </p>
+                    )}
+                    <div className={`grid grid-cols-1 gap-2 ${simple || (!pideLote && !pideVence) ? 'md:grid-cols-2' : !pideLote ? 'md:grid-cols-2' : lote === '__OTRO__' ? 'md:grid-cols-4' : 'md:grid-cols-3'}`}>
                         <Campo label="Presentación">
                             <LiquidSelect
                                 value={presentacion || null}
@@ -351,7 +389,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                                 ariaLabel="Presentación"
                             />
                         </Campo>
-                        {!simple && (
+                        {!simple && pideLote && (
                             <Campo label="Lote">
                                 <LiquidSelect
                                     value={lote || null}
@@ -363,7 +401,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                                 />
                             </Campo>
                         )}
-                        {!simple && lote === '__OTRO__' && (
+                        {!simple && pideLote && lote === '__OTRO__' && (
                             <Campo label="Número de lote">
                                 <PortalInput
                                     aria-label="Número de lote nuevo"
@@ -377,11 +415,11 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                         {/* Un lote que ya existe en el ERP trae su vencimiento: se muestra
                             pero no se edita, porque cambiarlo acá no cambiaría el del ERP.
                             `aria-disabled` + `title` para que no sea solo un gris. */}
-                        {!simple && (
-                            <Campo label={lote === '__OTRO__' ? 'Vencimiento' : 'Vencimiento (del lote)'}>
+                        {!simple && pideVence && (
+                            <Campo label={venceInerte ? 'Vencimiento (del lote)' : 'Vencimiento'}>
                                 <CajaFecha
-                                    inerte={lote !== '__OTRO__'}
-                                    titulo={lote !== '__OTRO__' ? 'El vencimiento lo trae el lote' : undefined}
+                                    inerte={venceInerte}
+                                    titulo={venceInerte ? 'El vencimiento lo trae el lote' : undefined}
                                 >
                                     <LiquidDatePicker value={fechaVencimiento} onChange={setFechaVencimiento} />
                                 </CajaFecha>
@@ -399,10 +437,8 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                 Qué falta se dice al LADO del botón y no deshabilitándolo a secas:
                 un botón gris no explica por qué, y acá hay dos motivos posibles. */}
             <div className="flex flex-wrap items-center justify-end gap-3 pt-1">
-                {selected && !canSubmit && (
-                    <span className="text-micro text-content-3 mr-auto">
-                        {!presentacion ? 'Falta elegir la presentación.' : 'Falta el lote.'}
-                    </span>
+                {selected && !canSubmit && queFalta && (
+                    <span className="text-micro text-content-3 mr-auto">{queFalta}</span>
                 )}
                 <Button variant="ghost" onClick={onCancel}>Cancelar</Button>
                 <Button tone="chart-9" icon={Plus} loading={saving} disabled={!canSubmit || saving} onClick={handleSubmit}>

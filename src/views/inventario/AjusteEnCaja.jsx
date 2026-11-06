@@ -5,21 +5,19 @@ import Badge from '../../components/common/Badge';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { rotuloDeAjuste } from '@nucleo/utils/conteoDeInventario';
 
-const mesAnio = (v) => { const [a, m] = String(v || '').split('-'); return a && m ? `${m}/${a}` : ''; };
 const ESTADO = {
     PENDIENTE: { label: 'En cola', variant: 'neutral' },
     APLICANDO: { label: 'Aplicando', variant: 'info' },
     HECHO: { label: 'Aplicado', variant: 'success' },
     ERROR: { label: 'No se aplicó', variant: 'danger' },
     INCIERTO: { label: 'Revisar', variant: 'warning' },
+    // Quedó a medio contar (2026-11-06): no se aplica nada, para no ajustar
+    // sólo una parte. La base ya no deja finalizar así; esto es la red.
+    OMITIDO: { label: 'No se ajustó', variant: 'danger' },
 };
 
-function rotuloLinea(l) {
-    const lote = !l.lote || /^gen[eé]rico$/i.test(l.lote) ? 'sin lote asignado' : `lote ${l.lote}`;
-    const u = Number(l.unidades);
-    return `${u > 0 ? '+' : '−'}${Math.abs(u)} ${lote}${l.vence ? ` (vence ${mesAnio(l.vence)})` : ''}`;
-}
 
 /**
  * Lo que un conteo que corrige la caja aplicó, producto por producto
@@ -47,7 +45,7 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
     }, [enCola, cargar]);
 
     if (!datos) return null;
-    const problemas = movs.filter((m) => m.estado === 'ERROR' || m.estado === 'INCIERTO');
+    const problemas = movs.filter((m) => m.estado === 'ERROR' || m.estado === 'INCIERTO' || m.estado === 'OMITIDO');
 
     const otraVez = async (id) => {
         setOcupado(id);
@@ -88,7 +86,7 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
                             <ul className="text-caption text-content-2">
                                 {(m.lineas ?? []).filter((l) => Number(l.unidades)).map((l) => (
                                     <li key={`${l.lote}|${l.vence}`}>
-                                        {rotuloLinea(l)} — {l.hecho ? 'aplicado' : (l.error ?? 'pendiente')}
+                                        {rotuloDeAjuste(l)} — {l.hecho ? 'aplicado' : (l.error ?? 'pendiente')}
                                     </li>
                                 ))}
                             </ul>
@@ -97,7 +95,10 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
                                     Puede haber entrado una parte. Revisa los movimientos del producto antes de reintentar.
                                 </p>
                             )}
-                            {puedeReintentar && (
+                            {m.estado === 'OMITIDO' && m.error && (
+                                <p className="text-caption text-content-2">{m.error}</p>
+                            )}
+                            {puedeReintentar && m.estado !== 'OMITIDO' && (
                                 <div>
                                     <Button size="sm" variant="secondary" disabled={ocupado === m.id}
                                         loading={ocupado === m.id} onClick={() => otraVez(m.id)}>

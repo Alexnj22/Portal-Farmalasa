@@ -32433,6 +32433,27 @@ export type Database = {
         Returns: number[]
       }
       conteo_caja_encolar: { Args: { p_conteo_id: string }; Returns: number }
+      conteo_caja_plan: {
+        Args: { p_conteo_id: string }
+        Returns: {
+          a_medio_contar: boolean
+          contado_desde: string
+          contado_hasta: string
+          erp_product_id: number
+          is_vencidos: boolean
+          lineas: Json
+        }[]
+      }
+      conteo_caja_problemas_de: {
+        Args: { p_conteo_id: string }
+        Returns: {
+          bloquea: boolean
+          detalle: string
+          erp_product_id: number
+          is_vencidos: boolean
+          tipo: string
+        }[]
+      }
       conteo_caja_recalcular: { Args: { p_conteo_id: string }; Returns: string }
       conteo_caja_reintentar: {
         Args: { p_movimiento_id: string }
@@ -32459,6 +32480,7 @@ export type Database = {
           neto_grupo: number
         }[]
       }
+      conteo_lote_es_generico: { Args: { p_lote: string }; Returns: boolean }
       conteo_puede_ver_sistema: {
         Args: { p_conteo_id: string }
         Returns: boolean
@@ -34056,6 +34078,7 @@ export type Database = {
         }[]
       }
       get_conteo_caja: { Args: { p_conteo_id: string }; Returns: Json }
+      get_conteo_caja_plan: { Args: { p_conteo_id: string }; Returns: Json }
       get_conteo_item_history: {
         Args: { p_item_id: string }
         Returns: {

@@ -15,6 +15,7 @@ import { opcionesParaAgregarAlConteo, searchActiveProductsForConteo } from '@nuc
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { esLoteGenerico, pluralDePresentacion, reglaDeLoteYVence } from '@nucleo/utils/conteoDeInventario';
 import ConAurora from '../ConAurora';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
@@ -97,8 +98,21 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
   // `lote` guarda la CLAVE de la opción (número + vencimiento): hay lotes con
   // el mismo número y dos fechas. Lo que se guarda es el número.
   const loteElegido = opciones?.lotes?.find((l) => l.clave === lote) || null;
-  const loteFinal = lote === OTRO ? loteOtro.trim() : (loteElegido?.lote || '');
-  const puede = producto && presentacion && (simple || loteFinal);
+  const loteFinal = lote === OTRO ? loteOtro.trim().toUpperCase() : (loteElegido?.lote || '');
+  // Qué pide ESTE producto (2026-11-06), la misma regla que aplica la base:
+  // lote si lo lleva; vencimiento si lo lleva o es perecedero.
+  const { pideLote, pideVence } = reglaDeLoteYVence(producto);
+  const lotesElegibles = (opciones?.lotes ?? []).filter((l) => !esLoteGenerico(l.lote));
+  const faltaLote = !simple && pideLote && (!loteFinal || esLoteGenerico(loteFinal));
+  const faltaVence = !simple && pideVence && !vence;
+  const puede = producto && presentacion && !faltaLote && !faltaVence;
+  const queFalta = !presentacion ? 'Falta elegir la presentación.' : faltaLote ? 'Falta el lote impreso en la caja.' : faltaVence ? 'Falta el vencimiento.' : null;
+  // «CAJA · se cuentan cajas de 100»: con «CAJA» a secas no se sabe si teclear 1 o 100.
+  const rotuloPres = (t) => {
+    const f = opciones?.factores?.[t];
+    const nombre = pluralDePresentacion(t);
+    return `${t} · se cuentan ${f > 1 && nombre !== 'unidades' ? `${nombre} de ${f}` : nombre}`;
+  };
 
   const guardar = async () => {
     if (!puede || guardando) return;
@@ -106,7 +120,7 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
     try {
       await agregar(conteoId, {
         erpProductId: producto.id, presentacion,
-        lote: simple ? null : loteFinal, fechaVencimiento: simple ? null : (vence || null),
+        lote: simple || !pideLote ? null : loteFinal, fechaVencimiento: simple ? null : (vence || null),
       });
       listo('Producto agregado', producto.nombre);
       onAgregado?.(producto);
@@ -162,20 +176,25 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
 
             {producto ? (
               opciones == null ? <ActivityIndicator /> : (
-                <Seccion titulo={simple ? 'Cómo viene' : 'Presentación, lote y vencimiento'}>
+                <Seccion titulo={simple ? 'Cómo viene' : pideLote ? 'Presentación, lote y vencimiento' : pideVence ? 'Presentación y vencimiento' : 'Presentación'}>
                   {opciones.presentaciones.length ? (
                     <Fila rotulo="Presentación" valor={presentacion || null}
-                      onPress={() => hoja('Presentación', opciones.presentaciones.map((t) => ({ label: t, value: t })), (o) => setPresentacion(o.value))} />
+                      onPress={() => hoja('Presentación', opciones.presentaciones.map((t) => ({ label: rotuloPres(t), value: t })), (o) => setPresentacion(o.value))} />
                   ) : <Aviso tono="freno" texto="Este producto no tiene ninguna presentación activa." />}
-                  {!simple ? (
+                  {!simple && pideLote ? (
                     <>
                       <View style={{ borderTopWidth: 0.5, borderTopColor: colorSistema.separador }} />
                       <Fila rotulo="Lote" valor={lote === OTRO ? 'Otro' : (loteElegido?.lote || null)}
                         onPress={() => hoja('Lote', [
-                          ...opciones.lotes.map((l) => ({ label: `${l.lote}${l.fecha ? ` · vence ${fechaTexto(l.fecha, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`, value: l.clave, fecha: l.fecha })),
+                          ...lotesElegibles.map((l) => ({ label: `${l.lote}${l.fecha ? ` · vence ${fechaTexto(l.fecha, { day: 'numeric', month: 'short', year: 'numeric' })}` : ''}`, value: l.clave, fecha: l.fecha })),
                           { label: 'Otro lote…', value: OTRO },
                         ], (o) => { setLote(o.value); setVence(o.value === OTRO ? '' : (o.fecha || '')); })} />
                       {lote === OTRO ? <Campo multiline={false} value={loteOtro} onChangeText={setLoteOtro} placeholder="Número de lote" autoCapitalize="characters" autoCorrect={false} /> : null}
+                    </>
+                  ) : null}
+                  {!simple && pideVence ? (
+                    <>
+                      <View style={{ borderTopWidth: 0.5, borderTopColor: colorSistema.separador }} />
                       <View style={{ flexDirection: 'row', alignItems: 'center', minHeight: 44 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>Vence</Text>
                         {vence ? <Fecha valor={vence} onCambiar={setVence} /> : null}
@@ -189,7 +208,7 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
               )
             ) : null}
 
-            {producto && opciones && !puede ? <Aviso texto={!presentacion ? 'Falta elegir la presentación.' : 'Falta el lote.'} /> : null}
+            {producto && opciones && !puede && queFalta ? <Aviso texto={queFalta} /> : null}
             <BotonGrande texto={guardando ? 'Agregando…' : 'Agregar al conteo'} onPress={guardar} deshabilitado={!puede || guardando} />
           </ScrollView>
         </KeyboardAvoidingView>

@@ -92,4 +92,14 @@ describe('elegirFactor', () => {
         expect(tamanoDeCajaEnLaDescripcion('NOR-CLAMIDA 5 MG X 30 TAB')).toBe(null);
         expect(tamanoDeCajaEnLaDescripcion('Barrita Fresa Sarita|7401090800083|25.000 |Caja')).toBe(25);
     });
+    it('Gamma abrevia: «C X 25» es caja de 25 y «F X 15ml.» es un frasco', () => {
+        const caja = 'AZTHOMAC 500mg. Caps. C X 25';
+        expect(empaqueEnLaDescripcion(caja)).toBe(true);
+        expect(tamanoDeCajaEnLaDescripcion(caja)).toBe(25);
+        // Vino 33 % más barata: el precio daba 17, la caja sigue siendo de 25.
+        expect(elegirFactor({ delDoc: null, aprendido: 1, empaque: true, pistas: [25], costoNeto: 13.27, costoUnidad: 0.7965, presentaciones: [1, 25] }))
+            .toEqual({ factor: 25, origen: 'documento' });
+        expect(envaseUnitarioEnLaDescripcion('AZTHOMAC 200mg/5ml. Polv. P/S. F X 15ml.')).toBe(true);
+        expect(tamanoDeCajaEnLaDescripcion('AZTHOMAC 200mg/5ml. Polv. P/S. F X 15ml.')).toBe(null);
+    });
 });

@@ -360,7 +360,10 @@ export function tamanosEnLaDescripcion(t: string): number[] {
  * dice — siempre que el catálogo ya venda ese tamaño (`elegirFactor`).
  */
 export function empaqueEnLaDescripcion(t: string): boolean {
-  return /\b(CAJA|CAJ|CJA|CJ|DISPLAY|DISP|PAQUETE|PAQ|FARDO|BULTO)\b/i.test(String(t ?? ""));
+  const s = String(t ?? "");
+  // Gamma abrevia la caja con una letra: «AZTHOMAC 500mg. Caps. C X 25»
+  // (2026-11-06). Sólo pegada a «X N», para no confundirla con nada más.
+  return /\b(CAJA|CAJ|CJA|CJ|DISPLAY|DISP|PAQUETE|PAQ|FARDO|BULTO)\b/i.test(s) || /\bC\.?\s*X\s*\d/i.test(s);
 }
 
 /**
@@ -371,7 +374,8 @@ export function empaqueEnLaDescripcion(t: string): boolean {
  */
 export function envaseUnitarioEnLaDescripcion(t: string): boolean {
   const s = String(t ?? "");
-  if (!/\b(FCO|FRASCO|TUBO|BOTE|BOTELLA|GOTERO|SPRAY|LATA)\b/i.test(s)) return false;
+  // «F X 15ml.» es el frasco de Gamma, con la misma letra suelta.
+  if (!/\b(FCO|FRASCO|TUBO|BOTE|BOTELLA|GOTERO|SPRAY|LATA)\b/i.test(s) && !/\bF\.?\s*X\s*\d/i.test(s)) return false;
   if (empaqueEnLaDescripcion(s)) return false;
   return !/\bX\s*\d+\s*(TAB|TABS|TABL|TABLETAS?|CAP|CAPS|CAPSULAS?|COMP|COMPRIMIDOS?|GRAG|GRAGEAS?|SOBRES?|AMP|AMPOLLAS?|UND|UNDS|UNIDADES|U|PZ|PIEZAS?|PERLAS?)\b/i.test(s);
 }

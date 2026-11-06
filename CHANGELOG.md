@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1465.2 — Compras: la caja y el frasco abreviados con una letra
+
+- Gamma escribe «AZTHOMAC 500mg. Caps. C X 25» y «F X 15ml.»: la «C» es la
+  caja y la «F» el frasco. Vino 33 % más barata que el costo de Bodega, el
+  precio daba 17 por caja y la pantalla (ya con el aviso nuevo) decía «Bodega
+  no vende de a 17». Ahora «C X 25» es caja de 25 y «F X …ml» un frasco, sólo
+  cuando la letra va pegada a «X N».
+
 ## v2.1465.1 — Bodega: la devolución desde vencidos se identifica y se puede terminar
 
 - **Un traslado que sale del área de vencidos quedaba sin número.** La foto de

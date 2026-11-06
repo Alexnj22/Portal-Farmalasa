@@ -598,6 +598,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         let factor = ajustes[i]?.factor;
         let vinetas = null;
         let saldo;
+        let numeros;
         if (producto.id !== renglon.producto_id) {
             setG(k);
             const r = await factorParaProducto({
@@ -607,6 +608,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             setG(null);
             vinetas = r.presentaciones;
             saldo = r.saldo;
+            numeros = r.numeros;
             if (intacto && !['documento', 'aprendido'].includes(renglon.factor_origen)) factor = r.factor ? String(r.factor) : '1';
         }
         if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
@@ -619,7 +621,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
             setG(null);
             if (e) { setError(e); return; }
         }
-        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}), ...(saldo !== undefined ? { saldo } : {}) } }));
+        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}), ...(saldo !== undefined ? { saldo } : {}), ...(numeros?.length ? { numeros } : {}) } }));
         setBusc(null);
         setRes(null);
     };
@@ -635,8 +637,10 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
         if (e?.vinetas) return e.vinetas;
         return !e || e.product_id === r.producto_id ? (r.vinetas ?? []) : [];
     };
+    // Un aprendido cuya concentración o tamaño no coincide con la factura
+    // (`numeros_distintos`) tampoco viaja solo: hay que confirmarlo.
     const productoDe = (r, i) => elegidos[claveDe(r, i)]?.product_id
-        ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) ? r.producto_id : null);
+        ?? (['codigo_barras', 'aprendido'].includes(r.match_origen) && !r.numeros_distintos?.length ? r.producto_id : null);
 
     const decisiones = () => Object.fromEntries(p.renglones.map((r, i) => [i, {
         product_id: ajustes[i]?.servicio ? null : productoDe(r, i),
@@ -1044,6 +1048,16 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                             {uso === 'venta' && !aj.servicio && (
                                                 <p className="mt-0.5 text-caption text-content-3">En la factura: {r.descripcion}</p>
                                             )}
+                                            {uso === 'venta' && !aj.servicio && !aj.erroneo && (() => {
+                                                // Concentración o tamaño distinto entre la factura y el producto.
+                                                const difs = elegido ? elegido.numeros : r.numeros_distintos;
+                                                return difs?.length > 0 && (
+                                                    <Notice variant="warning" icon={AlertTriangle} className="mt-2">
+                                                        <b>¿Es el mismo producto?</b> {difs.join(' · ')}.
+                                                        {!elegido && ' Confírmalo o elige el correcto.'}
+                                                    </Notice>
+                                                );
+                                            })()}
                                             {uso === 'venta' && aj.servicio && (
                                                 <p className="mt-0.5 text-caption text-content-2 font-bold">
                                                     Flete / servicio: suma al costo de la compra y a su total. No entra al inventario.
@@ -1196,7 +1210,7 @@ function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerrar, onCorregirP
                                                 </Button>
                                             )}
                                             <div className="ml-auto flex items-center gap-2 flex-wrap justify-end">
-                                                {!aj.servicio && r.producto_id && !elegido && r.match_origen === 'parecido' && (
+                                                {!aj.servicio && r.producto_id && !elegido && (r.match_origen === 'parecido' || r.numeros_distintos?.length > 0) && (
                                                     <Button size="xs" loading={guardando === k}
                                                         onClick={() => confirmar(r, i, { id: r.producto_id, nombre: r.producto })}>
                                                         Es correcto

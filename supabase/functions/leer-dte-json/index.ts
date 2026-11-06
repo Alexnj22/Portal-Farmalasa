@@ -4,6 +4,7 @@ import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
 import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
+import { diferenciasDeNumeros } from "../_shared/numerosDelNombre.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
 //
@@ -223,7 +224,8 @@ Deno.serve(async (req: Request) => {
         productId: pid, nombre: prod?.nombre ?? null, factores: presentaciones.map((x) => x.factor),
         pagado: (Number(body?.costo_neto) || 0) * cant, cantidad: cant, entra: cant * f.factor, emisor: String(body?.emisor ?? ""),
       }) : null;
-      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones, saldo_sugerido: saldo }), { headers: cors });
+      const numeros = prod?.nombre ? diferenciasDeNumeros(nombreLimpio(desc), prod.nombre) : [];
+      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones, saldo_sugerido: saldo, numeros_distintos: numeros }), { headers: cors });
     }
 
     // ── `barrido`: armar la lista de preguntas distintas ────────────────────
@@ -630,6 +632,21 @@ Deno.serve(async (req: Request) => {
             entra: (Number(r.cantidad) || 0) * (Number(r.factor_proveedor) || 1), emisor: d.emisor_nombre,
           });
           if (sug) r.saldo_sugerido = sug;
+        }
+
+        // ── Concentración y tamaño: ¿la factura y el producto dicen lo mismo?
+        //
+        // «Olexa 10 mg» emparejado (y dado por seguro) con OLEXA 5 MG; ALGODÓN
+        // 10 g con el de 100 g (cruce de octubre, 2026-11-05). Si los números
+        // no coinciden, el producto deja de ser «seguro» y hay que confirmarlo.
+        // El código de barras no se discute: ahí lo que miente es el nombre.
+        for (const r of renglones as any[]) {
+          if (!r.producto_id || !r.producto || r.match_origen === "codigo_barras") continue;
+          const d = diferenciasDeNumeros(nombreLimpio(String(r.descripcion ?? "")), String(r.producto));
+          if (!d.length) continue;
+          r.numeros_distintos = d;
+          r.seguro = false; r.listo = false;
+          r.falta = ["confirmar producto", ...(r.falta as string[]).filter((f) => f !== "confirmar producto")];
         }
 
         salida.push({

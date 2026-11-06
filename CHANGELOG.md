@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.1 — Compras: aviso si la concentración o el tamaño no coinciden, y revisión semanal de la lectura
+
+- **Cargar compra avisa cuando la factura y el producto dicen números distintos** (mg, mcg, g, ml, UI, %): «Olexa 10 mg» propuesto como OLEXA 5 MG, «Algodón 10 g» como el de 100 g. El producto deja de darse por seguro y pide confirmación, también cuando venía del diccionario aprendido. La cantidad por caja no se compara (la factura cuenta tabletas y el catálogo sobres); «75 MG» del catálogo contra 75 mcg se acepta, y una combinación vale por sus partes y por su suma (625 = 500/125). Medido contra octubre: 0 avisos falsos sobre 977 renglones seguros.
+- **Diccionario aprendido corregido**: DEXLANZOPRAL 30 mg (estaba en el de 60), DAFLON 500 x 60 (estaba en el de x 30) y ANARA a 200 tabletas por caja (estaba en 237).
+- **Revisión semanal** (`npm run auditar:compras`, lunes en GitHub Actions): relee los DTE de 30 días ya cargados y compara lote, vencimiento y producto con lo registrado; falla si sube la tasa de diferencias o un proveedor deja de leerse.
+
 ## v2.1456.0 — Conteo que ajusta el inventario: al aprobarlo, la existencia queda como se contó, lote por lote
 
 El 55% de la existencia de Bodega (1,451 productos) y ~60% de la de cada sala no tenía lote asignado, y de ahí salía el 68% de los renglones de pedido. La raíz se arregla contando, no despacho por despacho.

@@ -1,0 +1,34 @@
+name: Lectura de compras al día
+
+# Cada lunes relee con «Cargar compra» los DTE de los últimos 30 días que ya
+# están registrados en el sistema y compara lote, vencimiento y producto con lo
+# que quedó cargado (scripts/compras/auditar-lectura.mjs).
+#
+# Nació el 2026-11-05 del cruce a mano de octubre: formatos de proveedor que no
+# se leían, un lote tomado del renglón de abajo y productos «seguros» de otra
+# concentración — ninguno daba error. Si sale en ROJO, GitHub avisa por correo
+# y el resumen de la corrida dice qué proveedor o qué producto mirar.
+#
+# Sólo lee: la cuenta de pruebas E2E pide propuestas, no carga nada.
+
+on:
+  schedule:
+    - cron: '0 14 * * 1'   # lunes 08:00 SV
+  workflow_dispatch:
+
+jobs:
+  lectura:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm i --no-save --no-package-lock @supabase/supabase-js@2
+      - run: node scripts/compras/auditar-lectura.mjs --dias=30
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          E2E_USER: ${{ secrets.E2E_USER }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}

@@ -208,7 +208,7 @@ export async function factorParaProducto({ productId, costoNeto, descripcion, ca
         body: { modo: 'factor', product_id: productId, costo_neto: costoNeto ?? null, descripcion: descripcion ?? '', cantidad: cantidad ?? null, emisor: emisor ?? '' },
     });
     if (error || !data?.factor) return { factor: null, origen: null, presentaciones: null, saldo: null, error: error?.message ?? 'sin respuesta' };
-    return { factor: Number(data.factor), origen: data.origen ?? null, presentaciones: data.presentaciones ?? null, saldo: data.saldo_sugerido ?? null, error: null };
+    return { factor: Number(data.factor), origen: data.origen ?? null, presentaciones: data.presentaciones ?? null, saldo: data.saldo_sugerido ?? null, numeros: data.numeros_distintos ?? [], error: null };
 }
 
 /**

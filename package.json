@@ -83,6 +83,7 @@
     "medir:como-usuario": "node scripts/medir-como-usuario.mjs",
     "gate:cortes": "node scripts/cortes-gate.mjs",
     "gate:receta": "node scripts/receta-gate.mjs",
+    "auditar:compras": "node scripts/compras/auditar-lectura.mjs",
     "comparar:diferencia-de-corte": "npx --yes vite-node scripts/comparar-diferencia-de-corte.mjs",
     "gate:tipos": "node scripts/tipos-gate.mjs",
     "gate:alcance": "node scripts/alcance-gate.mjs",

@@ -68,7 +68,7 @@ describe('el ticket que se vuelve a armar', () => {
         };
         const d = datosDelTicketGuardado(recortado, {});
 
-        expect(d.items).toEqual([{ nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2 }]);
+        expect(d.items).toEqual([{ nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2, lotes: [{ lote: '24462', vence: '2029-01-01', cantidad: 2 }] }]);
     });
 
     it('cae a lo pedido sólo cuando la fila vieja no trae detalle', () => {
@@ -78,7 +78,7 @@ describe('el ticket que se vuelve a armar', () => {
         };
         const d = datosDelTicketGuardado(sinDetalle, {});
 
-        expect(d.items).toEqual([{ nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2 }]);
+        expect(d.items).toEqual([{ nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2, lotes: [{ lote: '24462', vence: '2029-01-01', cantidad: 2 }] }]);
     });
 
     it('sin número devuelve null — ese papel no se puede rehacer', () => {
@@ -103,13 +103,47 @@ describe('el ticket que se vuelve a armar', () => {
             origen: 'Bodega',
             destino: 'Salud 3',
             pide: 'Amadeo Clemente',
-            items: [{ nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2 }],
+            items: [{ nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2, lotes: [{ lote: '24462', vence: '2029-01-01', cantidad: 2 }] }],
         });
         const alReimprimir = construirTicketDeTraslado(
             datosDelTicketGuardado(META_REAL, { pide: 'Amadeo Clemente' }),
         );
 
         expect(alReimprimir).toEqual(alDespachar);
+    });
+
+    // Usuario, 2026-11-06: «que aparezca el lote vence ahí (el correcto)».
+    it('el lote es el que SALIÓ, con su vence; para filas viejas, el vence del mismo lote pedido', () => {
+        const otroLote = {
+            ...META_REAL,
+            erp_traslado: {
+                ...META_REAL.erp_traslado,
+                detalle: [
+                    { ...META_REAL.erp_traslado.detalle[0], cantidad: 1, numero_lote: '24462' },
+                    { ...META_REAL.erp_traslado.detalle[0], cantidad: 1, numero_lote: 'X99', vence: '2027-03-01' },
+                ],
+            },
+        };
+        const d = datosDelTicketGuardado(otroLote, {});
+        // Un producto con dos lotes es UNA fila, con los dos lotes debajo.
+        expect(d.items).toEqual([{
+            nombre: 'COLPOSAN CREMA VAGINAL 50 GR', cantidad: 2,
+            lotes: [
+                { lote: '24462', vence: '2029-01-01', cantidad: 1 },
+                { lote: 'X99', vence: '2027-03-01', cantidad: 1 },
+            ],
+        }]);
+        const t = construirTicketDeTraslado(d);
+        expect(t.items.notas).toEqual([['Lote 24462 - Vence 01/2029 - (1)', 'Lote X99 - Vence 03/2027 - (1)']]);
+    });
+
+    it('un lote que no está en lo pedido y sin vence guardado sale sin vence, nunca con uno inventado', () => {
+        const meta = {
+            ...META_REAL,
+            erp_traslado: { ...META_REAL.erp_traslado, detalle: [{ ...META_REAL.erp_traslado.detalle[0], numero_lote: 'OTRO' }] },
+        };
+        const t = construirTicketDeTraslado(datosDelTicketGuardado(meta, {}));
+        expect(t.items.notas).toEqual([['Lote OTRO']]);
     });
 
     it('un envío se rearma como ENVIO y conserva su motivo', () => {

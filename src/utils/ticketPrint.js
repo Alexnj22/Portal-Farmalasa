@@ -258,12 +258,40 @@ export function emparejarDatos(datos = [], ancho = COLUMNAS_TICKET.chica) {
  *   titulo       — qué es este papel ('PRUEBA DE IMPRESIÓN', 'PEDIDO', …)
  *   datos        — [[rótulo, valor], …]   los pares de arriba
  *   bloques      — [{ titulo, filas[]|texto|monoespaciado }, …]  el cuerpo
- *   items        — { columnas: [{label, ancho, alinear}], filas: [[…]], cantidadPrimero? }
+ *   items        — { columnas: [{label, ancho, alinear}], filas: [[…]], cantidadPrimero?,
+ *                    notas?: [[renglón, …] | null, …] }  renglones bajo cada fila (lote y vence)
+ *   logo         — 'icono' para el icono chico en vez del logo completo (ver `logoDelTicket`)
  *   codigos      — [{ valor, simbologia, texto?, svg? }, …]  códigos de barras
  *   totales      — [[rótulo, valor, destacado?], …]
  *   pie          — [líneas]
  *   barraPrueba  — true para imprimir la barra de control del cabezal
  */
+/**
+ * Qué logo lleva el ticket arriba.
+ *
+ * Usuario, 2026-11-06: «en todos los vauchers que imprime el portal tenga el
+ * logo completo arriba. los de solicitudes, etc». Hasta entonces el completo
+ * sólo salía cuando el título ERA la marca, y una solicitud, un envío, una
+ * reserva o un código de puntos llevaban el icono chico. Ahora:
+ *   · 'marca'    — el título es el nombre de la farmacia: el logo lo dice todo
+ *                  y el nombre no se escribe otra vez.
+ *   · 'completo' — cualquier otro título: logo completo arriba y el título
+ *                  (SOLICITUD, ENVIO, RESERVA…) debajo, en grande.
+ *   · 'icono'    — el ticket lo pide (`logo: 'icono'`): el carné de papel,
+ *                  cuyo título es una persona, y los documentos de la
+ *                  distribuidora, que no son de la farmacia.
+ *   · null       — sin título no hay cabecera (la etiqueta de una bolsa).
+ */
+export function logoDelTicket(ticket) {
+    const titulo = ticket?.encabezado?.titulo;
+    if (!titulo) return null;
+    if (tituloEsLaMarca(titulo)) return 'marca';
+    return ticket?.logo === 'icono' ? 'icono' : 'completo';
+}
+
+/** Los renglones de nota bajo la fila `i` de la tabla (lote y vence), o []. */
+const notasDeFila = (items, i) => (Array.isArray(items?.notas?.[i]) ? items.notas[i].filter(Boolean) : []);
+
 export function construirTicketHtml(ticket) {
     const cfg = ANCHOS_ROLLO.find(a => a.mm === ticket.ancho) ?? ANCHOS_ROLLO[0];
     const { encabezado = {}, datos = [], bloques = [], items, totales = [], pie = [], codigos = [] } = ticket;
@@ -308,8 +336,10 @@ export function construirTicketHtml(ticket) {
         <colgroup>${items.columnas.map(c => `<col style="width:${c.ancho}"/>`).join('')}</colgroup>
         <thead><tr>${items.columnas.map(c => `<th class="a-${c.alinear || 'izq'}">${esc(c.label)}</th>`).join('')}</tr></thead>
         <tbody>
-          ${items.filas.map(f => `<tr>${f.map((celda, i) =>
-              `<td class="a-${items.columnas[i]?.alinear || 'izq'}">${esc(celda)}</td>`).join('')}</tr>`).join('')}
+          ${items.filas.map((f, n) => `<tr>${f.map((celda, i) =>
+              `<td class="a-${items.columnas[i]?.alinear || 'izq'}">${esc(celda)}</td>`).join('')}</tr>`
+              + notasDeFila(items, n).map(nota =>
+                  `<tr class="nota"><td colspan="${f.length}">${esc(nota)}</td></tr>`).join('')).join('')}
         </tbody>
       </table>`;
 
@@ -389,6 +419,9 @@ export function construirTicketHtml(ticket) {
                    border-bottom: 1px solid #000; padding-bottom: .5mm; }
   table.items td { padding: .6mm 0; vertical-align: top; overflow-wrap: anywhere; }
   table.items tbody tr + tr td { border-top: 1px dotted #000; }
+  /* La nota (lote y vence) es parte de la fila de arriba: sin la raya que
+     separa un producto del siguiente, y en letra chica. */
+  table.items tbody tr.nota td { border-top: 0; padding: 0 0 .6mm 2mm; font-size: 7.5pt; }
   .a-izq { text-align: left; } .a-der { text-align: right; } .a-cen { text-align: center; }
   .totales { margin-top: 1.5mm; padding-top: 1mm; border-top: 1px solid #000; }
   .totales .grande { font-size: 11pt; font-weight: 700; margin-top: .8mm; }
@@ -415,10 +448,13 @@ export function construirTicketHtml(ticket) {
 </head>
 <body>
   <div class="centro">
-    ${tituloEsLaMarca(encabezado.titulo)
-        ? `<img class="logo-completo" src="${LOGO_COMPLETO_PNG}" alt="${esc(encabezado.titulo)}"/>`
-        : `${encabezado.titulo ? `<img class="logo" src="${LOGO_TICKET_PNG}" alt=""/>` : ''}
-           ${encabezado.titulo ? `<div class="marca">${esc(encabezado.titulo)}</div>` : ''}`}
+    ${{
+        marca: `<img class="logo-completo" src="${LOGO_COMPLETO_PNG}" alt="${esc(encabezado.titulo)}"/>`,
+        completo: `<img class="logo-completo" src="${LOGO_COMPLETO_PNG}" alt=""/>
+           <div class="marca">${esc(encabezado.titulo)}</div>`,
+        icono: `<img class="logo" src="${LOGO_TICKET_PNG}" alt=""/>
+           <div class="marca">${esc(encabezado.titulo)}</div>`,
+    }[logoDelTicket(ticket)] ?? ''}
     ${(encabezado.lineas ?? []).map(l => `<div class="sub">${esc(l)}</div>`).join('')}
   </div>
   ${ticket.titulo ? `<div class="titulo">${esc(ticket.titulo)}</div>` : ''}
@@ -994,7 +1030,8 @@ export function seccionesParaElPrograma(ticket) {
     // completo (logoTicket.js): escribirlo otra vez en doble alto es el
     // renglón que se quería ahorrar. Los códigos de juego y centrado viajan
     // pegados al primer renglón que queda, para no gastar uno vacío.
-    const marca = tituloEsLaMarca(encabezado.titulo);
+    const logo = logoDelTicket(ticket);
+    const marca = logo === 'marca';
     const cabeza = (marca
         ? [
             JUEGO_DE_CARACTERES + CENTRO + LETRA_CHICA + [...lineasDeEncabezado, regla()].join('\n'),
@@ -1033,7 +1070,12 @@ export function seccionesParaElPrograma(ticket) {
         ...(items ? [
             IZQUIERDA + encabezadoDeItems(items.columnas, items.cantidadPrimero),
             regla(),
-            ...items.filas.flatMap(f => filaDeItem(f, items.cantidadPrimero)),
+            // La nota va bajo su producto, sangrada dos columnas: se lee como
+            // parte de esa fila y no como un producto más.
+            ...items.filas.flatMap((f, n) => [
+                ...filaDeItem(f, items.cantidadPrimero),
+                ...notasDeFila(items, n).flatMap(nota => enRenglones(nota, COLUMNAS_TICKET.chica - 2).map(r => '  ' + r)),
+            ]),
             regla(),
         ] : []),
         ...(totales.length ? [
@@ -1110,9 +1152,10 @@ export function seccionesParaElPrograma(ticket) {
         // no lleva pie: era un renglón en blanco de más en cada papel.
         pie: apretarRenglones(soloASCII(LETRA_CHICA + CENTRO + (pie.length ? '\n' + pie.join('\n') : '')), 0x01)
             + INTERLINEADO_DE_FABRICA + '\n'.repeat(SALTOS_DE_CORTE),
-        // El icono, sólo si el ticket lleva la marca arriba (una etiqueta de
-        // bolsa no la lleva). Ver logoTicket.js.
-        img: marca ? LOGO_COMPLETO_URL : (encabezado.titulo ? LOGO_TICKET_URL : ''),
+        // El logo, sólo si el ticket lleva cabecera (una etiqueta de bolsa no
+        // la lleva): el completo, salvo que el ticket pida el icono. Ver
+        // `logoDelTicket` y logoTicket.js.
+        img: logo === 'icono' ? LOGO_TICKET_URL : (logo ? LOGO_COMPLETO_URL : ''),
         // Por ESTE camino el QR va como URL: el programa de la caja lo dibuja,
         // que es lo que el sistema de facturación ya hace. Los bytes ESC/POS
         // NO pueden ir acá — llevan NUL y el NUL se pierde en el trayecto.
@@ -1147,10 +1190,9 @@ export function textoParaElRollo(ticket) {
     // El QR va acá y no dentro de las secciones, por lo mismo que el corte: es
     // lo ÚNICO que se emite distinto según el camino. Entre el cuerpo y el pie,
     // que es donde el programa de la caja pone el suyo.
-    const titulo = ticket?.encabezado?.titulo;
-    const logo = tituloEsLaMarca(titulo)
-        ? logoCompletoParaElRollo(ticket?.ancho)
-        : (titulo ? logoParaElRollo(ticket?.ancho) : '');
+    const modo = logoDelTicket(ticket);
+    const logo = modo === 'icono' ? logoParaElRollo(ticket?.ancho)
+        : (modo ? logoCompletoParaElRollo(ticket?.ancho) : '');
     return `${ESC}@` + logo + s.encabezado + s.cuerpo + qrParaElRollo(ticket?.qr) + s.pie + CORTAR_PAPEL;
 }
 

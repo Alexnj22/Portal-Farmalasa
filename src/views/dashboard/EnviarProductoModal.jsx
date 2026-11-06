@@ -857,7 +857,8 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             destino: NOMBRE_SALA[erpDestino] ?? '',
                             // Un envío no lo pidió nadie: ése es su significado.
                             pide: '',
-                            items: (r.hechas ?? []).map(h => ({ nombre: h?.producto, cantidad: h?.cantidad })),
+                            // Con el lote y el vence de lo que salió (`h.lotes`).
+                            items: (r.hechas ?? []).map(h => ({ nombre: h?.producto, cantidad: h?.cantidad, lotes: h?.lotes })),
                             // El motivo ES lo que explica la caja, y el usuario lo
                             // pidió en el papel: sin él, quien la abre no sabe por
                             // qué le llegó.

@@ -18,6 +18,58 @@
 
 import { construirTicketDeTraslado } from './trasladoTicket';
 
+const normLote = (s) => String(s ?? '').trim().toUpperCase();
+
+/**
+ * El vence de un lote cuando el despacho no lo guardó (filas anteriores al
+ * 2026-11-06): se busca ESE número de lote entre los que reservó la solicitud.
+ * Medido sobre 30 días: coincide en el 97% de los renglones con lote. Si el
+ * despacho mandó otro lote, no se inventa uno: el papel dice el lote sin vence.
+ */
+function venceDelPedido(lotesPedidos, lote) {
+    const n = normLote(lote);
+    if (!n) return null;
+    return (Array.isArray(lotesPedidos) ? lotesPedidos : [])
+        .find((l) => normLote(l?.lote) === n && l?.vence)?.vence ?? null;
+}
+
+/**
+ * Lo que VIAJÓ, con el lote y el vence de cada producto, a partir del detalle
+ * del despacho (`erp_traslado.detalle`: un renglón por lote).
+ *
+ * Los renglones de un mismo producto y presentación se juntan en una fila: la
+ * cantidad es la suma y cada lote queda debajo con la suya. El lote es el que
+ * SALIÓ (`numero_lote`) — ése es «el correcto» —, y su vence el que guardó el
+ * despacho; para las filas viejas, el del mismo lote en la solicitud.
+ *
+ * @param detalle       `erp_traslado.detalle`
+ * @param itemsPedidos  `metadata.items` (de ahí sale el vence de respaldo)
+ */
+export function loQueViajo(detalle = [], itemsPedidos = []) {
+    const filas = [];
+    const porClave = new Map();
+    for (const d of Array.isArray(detalle) ? detalle : []) {
+        const clave = `${d?.erp_product_id ?? d?.descripcion}|${d?.presentacion ?? ''}`;
+        let fila = porClave.get(clave);
+        if (!fila) {
+            fila = { nombre: d?.descripcion, cantidad: 0, lotes: [] };
+            porClave.set(clave, fila);
+            filas.push(fila);
+        }
+        const cantidad = Number(d?.cantidad) || 0;
+        fila.cantidad += cantidad;
+        if (d?.numero_lote) {
+            const pedido = (itemsPedidos ?? []).find((it) => Number(it?.erp_product_id) === Number(d?.erp_product_id));
+            fila.lotes.push({
+                lote: d.numero_lote,
+                vence: d?.vence || venceDelPedido(pedido?.lotes, d.numero_lote),
+                cantidad,
+            });
+        }
+    }
+    return filas;
+}
+
 /**
  * Imprime el ticket del traslado recién despachado.
  *
@@ -67,9 +119,13 @@ export async function imprimirTicketDeTraslado({ sala, ...datos }) {
  * @param aceptadas `[{ i, cantidad }]` — vacío cuando sale todo lo pedido
  */
 export function loQueVaEnLaBolsa(items = [], aceptadas = []) {
-    const renglon = (nombre, cantidad) => ({ nombre, cantidad });
+    // Sin el detalle del despacho, el lote que se sabe es el que se RESERVÓ:
+    // sólo se pone cuando el renglón sale entero (recortado, no se sabe de cuál).
+    const renglon = (nombre, cantidad, lotes, factor) => (lotes?.length
+        ? { nombre, cantidad, lotes: lotes.map((l) => ({ lote: l?.lote, vence: l?.vence, cantidad: Number(l?.unidades) / (Number(factor) || 1) })) }
+        : { nombre, cantidad });
     if (!aceptadas.length) {
-        return items.map(it => renglon(it?.descripcion, it?.cantidad));
+        return items.map(it => renglon(it?.descripcion, it?.cantidad, it?.lotes, it?.factor));
     }
     return aceptadas.map(a => renglon(items[a.i]?.descripcion, a.cantidad));
 }
@@ -116,9 +172,7 @@ export function datosDelTicketGuardado(metadata, { pide = null, familia = 'solic
      * la bolsa — y como quien la abre le cree al papel, la diferencia se
      * reporta como faltante. `loQueVaEnLaBolsa` queda de respaldo para las
      * filas viejas que no traen `detalle`. */
-    const deDetalle = Array.isArray(erp.detalle)
-        ? erp.detalle.map(d => ({ nombre: d?.descripcion, cantidad: d?.cantidad }))
-        : [];
+    const deDetalle = loQueViajo(erp.detalle, metadata?.items ?? []);
 
     return {
         familia,
@@ -177,10 +231,19 @@ export function datosDelTicketDeEnvio(envio, { quien = null } = {}) {
         // Un envío no lo pidió nadie — ése es su significado — así que el
         // renglón «Pide» no se imprime.
         pide: '',
-        items: cuales.map(l => ({
-            nombre: l?.descripcion,
-            cantidad: l?.cantidad,
-        })),
+        // El lote que SALIÓ (`detalle.renglones`) con el vence que guardó el
+        // despacho; para las filas viejas, el del mismo lote en la composición.
+        items: cuales.map(l => {
+            const renglones = Array.isArray(l?.detalle?.renglones) ? l.detalle.renglones : [];
+            const lotes = renglones.length
+                ? renglones.filter(r => r?.lote).map(r => ({
+                    lote: r.lote,
+                    vence: r?.vence || venceDelPedido(l?.lotes, r.lote),
+                    cantidad: r?.cantidad,
+                }))
+                : (l?.lotes ?? []).map(r => ({ lote: r?.lote, vence: r?.vence, cantidad: Number(r?.unidades) / (Number(l?.factor) || 1) }));
+            return { nombre: l?.descripcion, cantidad: l?.cantidad, lotes };
+        }),
         motivo: envio?.motivo_tipo
             ? [envio.motivo_tipo, envio.reason && envio.reason !== envio.motivo_tipo ? envio.reason : null]
                 .filter(Boolean).join(' — ')

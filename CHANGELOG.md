@@ -21,6 +21,31 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1463.0 — Todos los tickets con el logo completo; el de traslado con lote y vence
+
+Usuario: «confirma que en todos los vauchers que imprime el portal tenga el logo
+completo arriba. los de solicitudes, etc, y que aparezca el lote vence ahí (el
+correcto)».
+
+- **Logo.** El logo completo sólo salía cuando el título del ticket ERA la
+  marca; solicitudes, envíos, reservas, encargos y el código de puntos llevaban
+  el icono chico. Ahora todo ticket con cabecera lleva el logo completo arriba y
+  su título (SOLICITUD, ENVIO, RESERVA…) debajo. Lo decide `logoDelTicket`
+  (`ticketPrint.js`) en los tres caminos: diálogo, programa de la caja y cola.
+  Siguen con el icono, por pedido explícito (`logo: 'icono'`), el carné de papel
+  (su título es una persona) y los documentos de la distribuidora (no son de la
+  farmacia).
+- **Lote y vence en el ticket de traslado** (solicitud y envío), debajo de cada
+  producto: `Lote 102218 - Vence 10/2027`, y con varios lotes cada uno con su
+  cantidad. Es el lote que SALIÓ, no el pedido: el despacho puede cambiarlo.
+  `aplicar-traslado-inventario` y `enviar-producto-erp` ahora guardan el
+  `vence` de cada lote despachado (antes sólo el número). Para las filas
+  viejas, el vence se toma del mismo lote en la solicitud — coincide en el 97%
+  de los renglones de 30 días —; si el lote despachado no estaba pedido, el
+  papel dice el lote sin vence, nunca uno inventado.
+- Un producto que salió en dos lotes es ahora una sola fila con los dos lotes
+  debajo (antes, dos filas iguales).
+
 ## v2.1462.0 — Un apoyo temporal mueve la sala de la persona mientras dura
 
 Fernando Oliva (ficha en Bodega) apoya como vendedor en Salud 4 hasta el 15-nov

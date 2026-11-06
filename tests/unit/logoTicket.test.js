@@ -25,11 +25,16 @@ describe('logo del ticket', () => {
     it('sale sólo si el ticket lleva la marca arriba', () => {
         const conMarca = { ancho: 80, encabezado: { titulo: 'FARMACIA LA SALUD' }, titulo: 'X' };
         const sinMarca = { ancho: 80, titulo: 'X' };
-        expect(textoParaElRollo(conMarca)).toContain(logoParaElRollo(80));
+        // Desde el 2026-11-06 el logo de cualquier ticket con cabecera es el
+        // COMPLETO; el icono queda para quien lo pide (`logo: 'icono'`).
+        const conIcono = { ...conMarca, logo: 'icono' };
+        expect(textoParaElRollo(conIcono)).toContain(logoParaElRollo(80));
         expect(textoParaElRollo(sinMarca)).not.toContain('\x1dv0');
-        expect(seccionesParaElPrograma(conMarca).img).toMatch(/logo-ticket\.png$/);
+        expect(seccionesParaElPrograma(conIcono).img).toMatch(/logo-ticket\.png$/);
+        expect(seccionesParaElPrograma(conMarca).img).toMatch(/logo-ticket-completo\.png$/);
         expect(seccionesParaElPrograma(sinMarca).img).toBe('');
-        expect(construirTicketHtml(conMarca)).toContain('class="logo"');
-        expect(construirTicketHtml(sinMarca)).not.toContain('class="logo"');
+        expect(construirTicketHtml(conIcono)).toContain('class="logo"');
+        expect(construirTicketHtml(conMarca)).toContain('class="logo-completo"');
+        expect(construirTicketHtml(sinMarca)).not.toContain('class="logo');
     });
 });

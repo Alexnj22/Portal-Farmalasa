@@ -227,6 +227,9 @@ export function ticketDeVenta(dte, marca = null, { pagos = [] } = {}) {
         // debajo su documento—, en vez de un valor largo pegado a la derecha que
         // se partía en «S.A. DE / C.V.»; y en el pie, cada rótulo arriba y su
         // dato abajo, para que un código de 36 caracteres no se corte a la mitad.
+        // La distribuidora no es la farmacia: su papel no lleva el logo
+        // completo de la farmacia (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: {
             titulo: (marca?.nombre ?? d.emisor.comercial ?? d.emisor.nombre).toUpperCase(),
             lineas: [
@@ -686,6 +689,9 @@ export function ticketProvisional({ marca = null, emisor = {}, tipoNombre = 'FAC
     return {
         titulo: 'COMPROBANTE PROVISIONAL',
         tituloDeCola: `Provisional ${codigoGeneracion.slice(0, 8)}`,
+        // La distribuidora no es la farmacia: su papel no lleva el logo
+        // completo de la farmacia (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: {
             titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
             lineas: [emisor.nombre, emisor.nit ? `NIT ${formatoNit(emisor.nit)}${emisor.nrc ? `  NRC ${formatoNrc(emisor.nrc)}` : ''}` : null].filter(Boolean),
@@ -736,6 +742,9 @@ export function ticketDeRecibo(recibo, marca = null, emisor = {}) {
     return {
         titulo: recibo.anulado_at ? 'RECIBO ANULADO' : 'RECIBO DE ABONO',
         tituloDeCola: `Recibo ${recibo.id}`,
+        // La distribuidora no es la farmacia: su papel no lleva el logo
+        // completo de la farmacia (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: {
             titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
             lineas: [emisor.nombre, emisor.nit ? `NIT ${formatoNit(emisor.nit)}` : null].filter(Boolean),
@@ -793,6 +802,9 @@ export function ticketDeLiquidacion(liq, marca = null, emisor = {}) {
     return {
         titulo: c ? 'LIQUIDACION CERRADA' : 'LIQUIDACION (SIN CERRAR)',
         tituloDeCola: `Liquidacion ${liq.fecha}`,
+        // La distribuidora no es la farmacia: su papel no lleva el logo
+        // completo de la farmacia (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: {
             titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
             lineas: [emisor.nombre].filter(Boolean),
@@ -822,6 +834,9 @@ export function ticketDeCierreDia(d, marca = null, emisor = {}) {
     return {
         titulo: d.cierre ? 'CIERRE DEL DIA' : 'CIERRE DEL DIA (SIN CERRAR)',
         tituloDeCola: `Cierre ${d.fecha}`,
+        // La distribuidora no es la farmacia: su papel no lleva el logo
+        // completo de la farmacia (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: {
             titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
             lineas: [emisor.nombre].filter(Boolean),
@@ -857,6 +872,9 @@ export function ticketDeEstadoDeCuenta({ cliente, estado, marca = null, emisor =
     return {
         titulo: 'ESTADO DE CUENTA',
         tituloDeCola: `Estado de cuenta ${cliente}`,
+        // La distribuidora no es la farmacia: su papel no lleva el logo
+        // completo de la farmacia (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: {
             titulo: (marca?.nombre ?? emisor.nombre_comercial ?? emisor.nombre ?? '').toUpperCase(),
             lineas: [emisor.nombre].filter(Boolean),

@@ -37,6 +37,9 @@ export function construirCarneDePapel({
     const valor = limpiarValorDeBarras(secreto);
     return {
         titulo: 'Carné del día',
+        // El título es la persona, no un papel de la farmacia: el carné sigue
+        // con el icono chico (ver `logoDelTicket`).
+        logo: 'icono',
         encabezado: { titulo: nombre || 'Sin nombre', lineas: [cargo, sala].filter(Boolean) },
         datos: [
             ['Vale hasta', hastaCuando(venceEl)],

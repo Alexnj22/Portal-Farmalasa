@@ -1036,6 +1036,13 @@ Deno.serve(async (req) => {
     };
     const porAsignar: PorAsignar[] = [];
 
+    // El vence del lote que se le asigna a lo que salía de GENERICO: ese lote
+    // nace en el despacho y no está en la fila leída (`f.lotes`).
+    const venceAsignado = new Map<string, string>();
+    for (const v of Object.values(yaAsignados)) {
+      if (v?.id_lote_erp) venceAsignado.set(String(v.id_lote_erp), String(v.vence ?? "").slice(0, 10));
+    }
+
     // Cada renglón del envío, con su detalle. Aparte del bucle porque lo que
     // sale de GENERICO se anota DESPUÉS de asignarle el lote.
     const anotarRenglones = (
@@ -1058,6 +1065,11 @@ Deno.serve(async (req) => {
           regulado: f.regulado,
           id_lote_erp: r.idLote !== "0" ? r.idLote : null,
           numero_lote: r.lote,
+          // El vence del lote que SALIÓ (2026-11-06): el ticket de la bolsa lo
+          // imprime, y el lote que sale puede no ser el pedido.
+          vence: r.idLote !== "0"
+            ? (String(f.lotes.find((x) => x.id === r.idLote)?.vence ?? venceAsignado.get(r.idLote) ?? "").slice(0, 10) || null)
+            : null,
         });
       }
     };
@@ -1471,6 +1483,7 @@ Deno.serve(async (req) => {
       yaAsignados[String(p.pos)] = {
         lote: r.lote, vence: r.vence, paquetes: r.paquetes, id_lote_erp: r.idLote,
       };
+      venceAsignado.set(String(r.idLote), String(r.vence ?? "").slice(0, 10));
       meta.lotes_asignados = yaAsignados;
       const { error: errAnotar } = await admin.from("approval_requests")
         .update({ metadata: { ...meta, despachando_at: ahora.toISOString(), despachando_by: quien.id } })

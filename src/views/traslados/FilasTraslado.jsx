@@ -22,7 +22,7 @@ import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
-import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '@nucleo/utils/imprimirTraslado';
+import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa, loQueViajo } from '@nucleo/utils/imprimirTraslado';
 import LoteDeLaCaja from './LoteDeLaCaja';
 import ElegirLoteDeEnvio from './ElegirLoteDeEnvio';
 import CajaEnUnidades from './CajaEnUnidades';
@@ -477,7 +477,11 @@ export function DecisionTraslado({ fila, onHecho }) {
             origen: meta.origen_branch_name,
             destino: meta.branch_name,
             pide: quienPide,
-            items: loQueVaEnLaBolsa(items, recortado ? aceptadas : []),
+            // Lo que SALIÓ, con el lote y el vence que de verdad viajan (el
+            // despacho puede cambiar el lote pedido). Sin detalle, lo pedido.
+            items: r.aplicado?.detalle?.length
+                ? loQueViajo(r.aplicado.detalle, items)
+                : loQueVaEnLaBolsa(items, recortado ? aceptadas : []),
         }).then((res) => {
             if (!res?.ok) setError(`Se envió, pero el ticket no salió: ${res?.detalle ?? 'sin detalle'}`);
         // El `catch` NO sobra aunque `imprimirTicketDeTraslado` prometa no

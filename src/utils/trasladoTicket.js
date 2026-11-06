@@ -28,6 +28,7 @@
 // patrón equivocado. `soloAscii` se usa sólo donde no hay recorte — la prosa de
 // los bloques y el título.
 import { soloAscii, recortar, selloCorto } from './ticketCampos';
+import { esLoteGenerico } from './unidadesInventario';
 
 /**
  * La simbología del código de barras del traslado.
@@ -108,6 +109,37 @@ export const FAMILIAS = {
  */
 const ANCHO_PRODUCTO = 48;
 
+/** «2027-10-01» → «10/2027». Sin conversión de fecha: el vence es un día del calendario, no un instante. */
+export function venceEnPapel(iso) {
+    const [y, m] = String(iso ?? '').slice(0, 10).split('-');
+    return y && m ? `${m}/${y}` : '';
+}
+
+/**
+ * El lote y el vence bajo cada producto (usuario, 2026-11-06: «que aparezca el
+ * lote vence ahí (el correcto)»).
+ *
+ * «El correcto» es el lote que SALIÓ, no el que se pidió: un despacho puede
+ * cambiarlo (el lote pedido ya no estaba, o salía de «sin lote asignado» y se
+ * le puso el de la caja). Por eso `lotes` llega armado desde lo despachado
+ * (`loQueViajo`, `datosDelTicketDeEnvio`) y acá sólo se escribe. «GENERICO»
+ * no es un lote: no se imprime. Con un solo lote no se repite la cantidad; con
+ * varios, cada uno dice cuántos lleva.
+ *
+ * @returns {string[] | null}
+ */
+export function notasDeLote(lotes) {
+    const reales = (Array.isArray(lotes) ? lotes : [])
+        .filter((l) => String(l?.lote ?? '').trim() && !esLoteGenerico(l.lote));
+    if (!reales.length) return null;
+    return reales.map((l) => [
+        `Lote ${soloAscii(String(l.lote).trim())}`,
+        venceEnPapel(l.vence) ? `Vence ${venceEnPapel(l.vence)}` : null,
+        reales.length > 1 && l.cantidad != null ? `(${l.cantidad})` : null,
+    // Con guion y no con dos espacios: el rollo junta los espacios seguidos.
+    ].filter(Boolean).join(' - '));
+}
+
 /**
  * De qué sala sale la bolsa **físicamente**, que no siempre es la que la pidió.
  *
@@ -136,7 +168,8 @@ export function salaQueDespacha({ aplicado, origen, respaldo }) {
  * @param {string} t.origen      la sala donde está la bolsa (ver `salaQueDespacha`)
  * @param {string} t.destino     a qué sala va
  * @param {string} [t.pide]      quién la pidió — vacío en un envío, que nadie pidió
- * @param {any[]}  [t.items]     `[{ nombre, cantidad, presentacion }]`
+ * @param {any[]}  [t.items]     `[{ nombre, cantidad, lotes?: [{ lote, vence, cantidad }] }]`
+ *                               — `lotes` es lo que SALIÓ (ver `notasDeLote`)
  * @param {string} [t.motivo]    por qué se manda (sólo los envíos tienen uno)
  * @param {string} [t.codigo]    el número de las barras, cuando NO es el del
  *                               traslado. Es el caso del envío: ver abajo.
@@ -234,6 +267,7 @@ export function construirTicketDeTraslado({
                 recortar(it?.nombre || 'Sin nombre', ANCHO_PRODUCTO),
                 String(it?.cantidad ?? ''),
             ]),
+            notas: items.map((it) => notasDeLote(it?.lotes)),
         } : undefined,
         /* **Sin renglón para firmar** (pedido del usuario, 2026-08-24). Lo que
          * confirma que la bolsa llegó es ESCANEARLA, no una firma a lápiz: la

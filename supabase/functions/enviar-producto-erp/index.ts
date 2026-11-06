@@ -471,6 +471,10 @@ Deno.serve(async (req) => {
       let conocidos = await pendientesDeOrigen(cookie, ubicOrigen);
 
       const hechas: Record<string, unknown>[] = [];
+      // El vence del lote que se le asignó a lo que salía de «sin lote
+      // asignado»: ese lote nace en el despacho y no está en la fila leída
+      // antes (`f.lotes`). Clave `<id de la línea>:<id del lote>`.
+      const venceAsignado = new Map<string, string>();
       const fallos: { producto: string; error: string }[] = [];
       // Los renglones que salieron de un producto con existencia apartada
       // INDISTINGUIBLE. Al terminar se relee el área de vencidos y se comprueba
@@ -623,6 +627,7 @@ Deno.serve(async (req) => {
           if (ya) ya.cantidad += asig.paquetes;
           else resto.push({ cantidad: asig.paquetes, idLote: asig.idLote, lote: asig.lote });
           reparto.renglones = resto;
+          venceAsignado.set(`${l.id}:${asig.idLote}`, String(asig.vence ?? "").slice(0, 10));
           avisos.push(`${asig.paquetes} sin lote asignado salieron con el lote ${asig.lote} (vence ${asig.vence})`);
         }
 
@@ -705,6 +710,16 @@ Deno.serve(async (req) => {
           conocidos = despues;
         }
 
+        // Cada renglón con su VENCE (2026-11-06): el ticket de la bolsa imprime
+        // el lote y el vence de lo que salió, y el lote que sale puede no ser
+        // el que se compuso. Sale de la fila leída (`f.lotes`, por id) o, si el
+        // lote nació en este despacho, de la asignación.
+        const renglonesConVence = reparto.renglones.map((r) => ({
+          ...r,
+          vence: String(f.lotes.find((x) => x.id === r.idLote)?.vence
+            ?? venceAsignado.get(`${l.id}:${r.idLote}`) ?? "").slice(0, 10) || null,
+        }));
+
         // El producto YA SALIÓ. Esta fila es la única prueba de que salió y del
         // número con el que la otra sala puede recibirlo: sin ella el traslado
         // existe en el sistema y no existe para el portal.
@@ -721,7 +736,7 @@ Deno.serve(async (req) => {
               producto: nombre,
               presentacion: `${l.presentacion_tipo} (${pres.unidad})`,
               id_presentacion_erp: pres.id,
-              renglones: reparto.renglones,
+              renglones: renglonesConVence,
               concepto, numero_vale: vale,
               existencia_previa: f.existencia,
               regulado: f.regulado,
@@ -739,7 +754,10 @@ Deno.serve(async (req) => {
         );
 
         msPorRenglon.push(Date.now() - arranqueRenglon);
-        hechas.push({ producto: nombre, cantidad: l.cantidad, id_traslado: idTraslado, avisos });
+        hechas.push({
+          producto: nombre, cantidad: l.cantidad, id_traslado: idTraslado, avisos,
+          lotes: renglonesConVence.map((r) => ({ lote: r.lote, vence: r.vence, cantidad: r.cantidad })),
+        });
         if (hay.desdeVencidos > 0) {
           enRiesgo.push({
             id: String(l.id), pid: Number(l.erp_product_id), producto: nombre,

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { seccionesParaElPrograma, COLUMNAS_TICKET, textoParaElRollo, ticketEnBase64 }
+import { seccionesParaElPrograma, construirTicketHtml, COLUMNAS_TICKET, textoParaElRollo, ticketEnBase64 }
     from '@nucleo/utils/ticketPrint';
 
 // El ancla de estos tests es un ticket REAL del sistema de facturación —factura
@@ -278,10 +278,35 @@ describe('el logo completo en el encabezado', () => {
             .toContain('\x1dv0\x00' + String.fromCharCode(72, 0, 68, 0));
     });
 
-    it('con otro título, sigue el icono y el título escrito', () => {
-        const s = seccionesParaElPrograma(conTitulo('PUNTOS SALUD'));
-        expect(s.encabezado).toContain('PUNTOS SALUD');
-        expect(s.img).toContain('logo-ticket.png');
+    // Usuario, 2026-11-06: «en todos los vauchers que imprime el portal tenga
+    // el logo completo arriba. los de solicitudes, etc».
+    it('con otro título, el logo completo arriba y el título escrito debajo', () => {
+        const s = seccionesParaElPrograma(conTitulo('SOLICITUD'));
+        expect(s.encabezado).toContain('SOLICITUD');
+        expect(s.img).toContain('logo-ticket-completo.png');
+        expect(textoParaElRollo(conTitulo('PUNTOS SALUD')))
+            .toContain('\x1dv0\x00' + String.fromCharCode(72, 0, 68, 0));
+        expect(construirTicketHtml(conTitulo('RESERVA 12'))).toContain('class="logo-completo"');
+    });
+
+    it('el ticket que lo pide (carné, distribuidora) sigue con el icono', () => {
+        const t = { ...conTitulo('ANA PEREZ'), logo: 'icono' };
+        expect(seccionesParaElPrograma(t).img).toMatch(/logo-ticket\.png$/);
+        expect(textoParaElRollo(t)).toContain('\x1dv0\x00' + String.fromCharCode(72, 0, 128, 0));
+    });
+
+    it('sin título no hay logo (la etiqueta de una bolsa)', () => {
+        expect(seccionesParaElPrograma({ ancho: 80, encabezado: {}, datos: [], pie: [] }).img).toBe('');
+    });
+
+    it('las notas de una fila (lote y vence) salen debajo de su producto', () => {
+        const t = {
+            ...conTitulo('SOLICITUD'),
+            items: { columnas: [{ label: 'PRODUCTO' }, { label: 'CANT' }], filas: [['ZOLTUM 40MG', '2']], notas: [['Lote 102218 - Vence 10/2027']] },
+        };
+        const cuerpo = seccionesParaElPrograma(t).cuerpo;
+        expect(cuerpo.indexOf('  Lote 102218 - Vence 10/2027')).toBeGreaterThan(cuerpo.indexOf('ZOLTUM 40MG'));
+        expect(construirTicketHtml(t)).toContain('Lote 102218 - Vence 10/2027');
     });
 
     it('en 58 mm el logo baja a 384 puntos para caber', () => {

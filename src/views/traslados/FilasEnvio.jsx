@@ -458,11 +458,16 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
             imprimirTicketDeEnvio({
                 envio: {
                     ...envio,
-                    lineas: (envio.lineas ?? []).map(l => (
-                        (r.hechas ?? []).some(h => h?.producto === l.descripcion)
-                            ? { ...l, enviado_at: l.enviado_at ?? new Date().toISOString() }
-                            : l
-                    )),
+                    lineas: (envio.lineas ?? []).map(l => {
+                        const hecha = (r.hechas ?? []).find(h => h?.producto === l.descripcion);
+                        if (!hecha) return l;
+                        // Los lotes que SALIERON (con su vence) van al papel,
+                        // no los que se compusieron.
+                        return {
+                            ...l, enviado_at: l.enviado_at ?? new Date().toISOString(),
+                            ...(hecha.lotes?.length ? { detalle: { ...(l.detalle ?? {}), renglones: hecha.lotes } } : {}),
+                        };
+                    }),
                 },
                 sala: user?.branchId ?? user?.branch_id ?? null,
                 quien: user?.name ?? user?.nombre ?? null,

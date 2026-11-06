@@ -2878,7 +2878,13 @@ const DashboardView = ({ openModal }) => {
             tono: pctTotal != null && pctTotal < 0 ? 'warning' : undefined }}
           title={typeof salesView==='number'?`Horas · ${DAY_NAMES[salesView]}`:salesView==='HOURS'?'Promedio por hora':'Ventas por día'}
           action={
-            <div className="flex flex-wrap items-center justify-end gap-2">
+            // SIN `flex-wrap` y con el select envuelto (2026-11-05). El
+            // `LiquidSelect` es `w-full`: dentro de un flex que envuelve se
+            // quedaba con el renglón entero, así que el botón, el select y el
+            // segmentado caían en TRES renglones (~200px de cabecera) y las
+            // barras quedaban aplastadas en 50px. Envuelto, mide su texto —
+            // igual que en los demás widgets, donde el select ES la acción.
+            <div className="flex items-center justify-end gap-2">
               {/* `shrink-0`: en la cabecera del widget compite con un select
                   y un segmentado, y en un teléfono el flex se lo comía hasta
                   20px de ancho (medido en iPhone 13) aunque su alto fuera 44. */}
@@ -2891,8 +2897,8 @@ const DashboardView = ({ openModal }) => {
                               onClick={()=>openModal('viewWfmAnalytics')}
                               title="Ver análisis de ventas"
                           />}
-              {!isSalesLocked && <LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/>}
-              <div className="flex items-center gap-1">
+              {!isSalesLocked && <div className="shrink-0"><LiquidSelect value={effectiveSalesBranch} onChange={setSalesBranch} options={salesBranches.map(b=>({value:String(b.id),label:b.name}))} placeholder="Sucursal..." icon={Building2} clearable={false} compact bare/></div>}
+              <div className="flex items-center gap-1 shrink-0">
                 {typeof salesView==='number'&&<Button variant="secondary" size="xs" icon={ChevronLeft} onClick={()=>setSalesView('DAYS')}>Días</Button>}
                 {/* Horas · Días es un uno-de-N, no dos botones sueltos. */}
                 <SegmentedControl size="sm" label="Escala del gráfico"

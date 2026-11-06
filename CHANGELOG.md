@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.5 — Ventas por día: la cabecera vuelve a un renglón
+
+- El selector de sucursal ocupaba el renglón entero de la cabecera: el botón de ampliar, la sucursal y Horas/Días caían en tres renglones (~200px) y las barras quedaban aplastadas. Ahora van en una sola línea y el gráfico recupera ese alto.
+
 ## v2.1456.4 — Revisión semanal: instalar sólo el cliente de Supabase
 
 - La revisión semanal de compras instala sólo el cliente de Supabase en una carpeta aparte: un `npm i` dentro del repo fallaba con Node 22.

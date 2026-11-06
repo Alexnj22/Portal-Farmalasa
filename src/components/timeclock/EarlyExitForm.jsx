@@ -3,8 +3,9 @@ import Button from '../common/Button';
 import { FileText, XCircle, CheckCircle2 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import PortalTextarea from '../common/PortalTextarea';
-import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import AvatarConEstado from '../common/AvatarConEstado';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',
@@ -29,7 +30,6 @@ function EarlyExitForm({
   if (!employee) return null;
 
   // 🚨 HOMOLOGADO: Extrae la foto sea como photo_url (Supabase) o photo local
-  const photoUrl = employee?.photo || employee?.photo_url;
 
   return (
     // El relleno del envoltorio se va en pantalla baja: son 24px arriba y
@@ -57,14 +57,8 @@ function EarlyExitForm({
         <form onSubmit={onSubmit} className="relative z-content w-full flex-1 flex flex-col justify-start min-h-0 shrink-0 gap-3 sm:gap-4 [@media(max-height:800px)]:gap-2 overflow-y-auto scrollbar-hide py-1">
 
           <div className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl p-2.5 [@media(max-height:800px)]:p-2 shadow-[var(--shadow-shine-lg)] shrink-0">
-            <div className="h-10 w-10 sm:h-12 sm:w-12 [@media(max-height:800px)]:!h-9 [@media(max-height:800px)]:!w-9 rounded-full bg-black/40 border border-chart-4/40 overflow-hidden flex items-center justify-center text-body-xl sm:text-lg font-bold text-white shadow-[var(--shadow-glow-chart-4-md)] shrink-0">
-              {/* 🚨 Implementado el photoUrl correcto aquí */}
-              {photoUrl ? (
-                <img src={photoUrl} alt={employee.name} className="w-full h-full object-cover" />
-              ) : (
-                employeeInitials(employee)
-              )}
-            </div>
+            {/* La foto canónica (2026-11-05), a 48: uno de los cinco tamaños. */}
+            <AvatarConEstado emp={employee} px={48} />
             <div className="text-left flex-1 overflow-hidden">
               <h3 className="text-white font-semibold text-sm sm:text-body-xl leading-tight truncate" title={employee.name}>{shortEmployeeName(employee)}</h3>
               <p className="text-white/40 text-micro sm:text-micro uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">

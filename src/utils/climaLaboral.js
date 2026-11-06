@@ -66,6 +66,9 @@ export function respuestaDeLaBase(r) {
     const ln = (r.employee?.last_names || '').split(' ')[0];
     return {
         nombre: `${fn} ${ln}`.trim() || r.display_name || '',
+        // `employeeId` para la foto: con él `AvatarConEstado` toma la FIRMADA del
+        // store; `photo_url` sola es la cruda de un bucket privado y no carga.
+        employeeId: r.employee_id ?? null,
         isJefe: r.is_jefe, sucursal: r.employee?.branch?.name || '', photo: r.employee?.photo_url || null,
         r: r.responses, comentario: r.comentario,
     };

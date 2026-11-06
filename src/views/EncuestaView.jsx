@@ -27,6 +27,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { seccionesDelResumen } from '@nucleo/utils/resumenDeComentarios';
 import SalyAvatar from '../components/common/SalyAvatar';
 import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, personasPorOpcion, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase, SUPERVISOR_DE_JEFE } from '@nucleo/utils/climaLaboral';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 
 // Jefe inmediato de cada sucursal: `SUPERVISOR_DE_JEFE` vive en el núcleo
 // (`climaLaboral`), el mismo que lee la app.
@@ -65,30 +66,12 @@ function scoreLabel(pct) {
 }
 
 
-// ─── Employee avatar with photo fallback ─────────────────────────────────────
-function PersonAvatar({ nombre, photo = null, isJefe = false, size = 32 }) {
-    const [failed, setFailed] = useState(false);
-    const initials = nombre.charAt(0).toUpperCase();
-    return (
-        <div className="relative shrink-0" style={{ width: size, height: size }}>
-            {photo && !failed ? (
-                <img
-                    src={photo}
-                    alt={nombre}
-                    onError={() => setFailed(true)}
-                    className={`w-full h-full rounded-full object-cover object-top ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`}
-                />
-            ) : (
-                <div className={`w-full h-full rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`}
-                    style={{ fontSize: size * 0.38 }}>
-                    {initials}
-                </div>
-            )}
-            {isJefe && (
-                <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-warning border-[1.5px] border-border-card" />
-            )}
-        </div>
-    );
+// ─── La foto de quien respondió ───────────────────────────────────────────────
+// La canónica (2026-11-05). Antes era un componente propio con un aro ámbar
+// para el jefe —el mismo color que «En vacaciones»—; el cargo ya está escrito
+// al lado de cada nombre («·J», «Jefe/a»), así que el aro sólo confundía.
+function PersonAvatar({ nombre, photo = null, id = null, px }) {
+    return <AvatarConEstado emp={{ id, name: nombre, photo }} px={px} />;
 }
 
 // ─── Mini bar chart for A/B/C/D distribution ─────────────────────────────────
@@ -161,9 +144,9 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
                                 <div className="text-micro leading-tight mt-1 mb-2 opacity-80">{label}</div>
                                 {namesByOption[k].length > 0 && (
                                     <div className="flex flex-wrap gap-1.5 mt-1 border-t border-current/10 pt-1.5">
-                                        {namesByOption[k].map(({ nombre, isJefe, sucursal, photo }) => (
+                                        {namesByOption[k].map(({ nombre, isJefe, sucursal, photo, employeeId }) => (
                                             <div key={nombre} className="flex items-center gap-2 pl-1 pr-2.5 py-1 rounded-full bg-surface-card border border-divider">
-                                                <PersonAvatar nombre={nombre} photo={photo} isJefe={isJefe} size={24} />
+                                                <PersonAvatar nombre={nombre} photo={photo} id={employeeId} px={20} />
                                                 <div className="flex flex-col leading-tight">
                                                     <span className="text-caption font-black leading-none text-content">
                                                         {nombre.split(' ').map((w, i) => i === 0 ? w : w.charAt(0) + '.').join(' ')}
@@ -884,7 +867,7 @@ export default function EncuestaView() {
                                                                                 return (
                                                                                     <div key={jefe.nombre} className="flex items-center gap-3">
                                                                                         <div className="flex items-center gap-2 w-32 shrink-0">
-                                                                                            <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} isJefe size={22} />
+                                                                                            <PersonAvatar nombre={jefe.nombre} photo={jefe.photo} id={jefe.employeeId} px={20} />
                                                                                             <div>
                                                                                                 <div className="text-caption font-black text-content-2 leading-tight">
                                                                                                     {shortEmployeeName(jefe.nombre)}
@@ -1121,7 +1104,7 @@ export default function EncuestaView() {
                                                         {...clickable(() => setExpandedPersonIdx(isExpanded ? null : i))}>
                                                         <td className="px-4 py-2.5">
                                                             <div className="flex items-center gap-2.5">
-                                                                <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={30} />
+                                                                <PersonAvatar nombre={row.nombre} photo={row.photo} id={row.employeeId} px={28} />
                                                                 <div className="font-black text-body-sm text-content leading-tight">{row.nombre}</div>
                                                             </div>
                                                         </td>
@@ -1350,7 +1333,7 @@ export default function EncuestaView() {
                         {withComment.map((row, i) => (
                             <div key={i} data-surface="card" className="p-4">
                                 <div className="flex items-center gap-2.5 mb-2">
-                                    <PersonAvatar nombre={row.nombre} photo={row.photo} isJefe={row.isJefe} size={34} />
+                                    <PersonAvatar nombre={row.nombre} photo={row.photo} id={row.employeeId} px={36} />
                                     <div>
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-body-sm font-black text-content-2">{row.nombre}</span>

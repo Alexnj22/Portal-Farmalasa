@@ -33,6 +33,7 @@ import SearchInput from '../components/common/SearchInput';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Puntaje por persona y su promedio: `climaLaboral` (núcleo, lo mismo de la app).
@@ -117,15 +118,11 @@ const TIPO_STYLE = {
 const TIPO_LABEL = { clima: 'Clima', satisfaccion: 'Satisfacción', desempeno: 'Desempeño', adhoc: 'Personalizada' };
 
 // ─── Avatar ───────────────────────────────────────────────────────────────────
-function PersonAvatar({ src, name, isJefe, size = 28 }) {
-    const cls = `rounded-full object-cover object-top shrink-0 ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`;
-    if (src) return <img src={src} alt={name} className={cls} style={{ width: size, height: size }} />;
-    return (
-        <div className={`rounded-full bg-gradient-to-br from-chart-1 to-brand flex items-center justify-center text-white font-black shrink-0 ${isJefe ? 'ring-2 ring-warning/45 ring-offset-1' : ''}`}
-            style={{ width: size, height: size, fontSize: size * 0.38 }}>
-            {name?.charAt(0) || '?'}
-        </div>
-    );
+// La foto canónica (2026-11-05). La de antes pintaba `photo_url` CRUDA —de un
+// bucket privado, o sea una imagen rota— y un aro ámbar para el jefe, el mismo
+// color que «En vacaciones». Con el id, `AvatarConEstado` toma la firmada.
+function PersonAvatar({ emp, px }) {
+    return <AvatarConEstado emp={emp} px={px} />;
 }
 
 // `SegmentControl` vivía acá: el canónico `SegmentedControl` reescrito a mano
@@ -449,7 +446,7 @@ export default function EncuestaAdminView() {
             value: e.id,
             label: shortEmployeeName(e),
             sublabel: e.branch?.name || '',
-            avatar: e.photo_url || '',
+            persona: e,
         })),
     [employees, respondedIds]);
 
@@ -660,7 +657,7 @@ export default function EncuestaAdminView() {
                                                             const fn = shortEmployeeName(e);
                                                             return (
                                                                 <div key={e.id} className="flex items-center gap-1.5 bg-brand/10 text-brand-text px-2.5 py-1 rounded-lg text-label font-bold border border-brand/20">
-                                                                    <PersonAvatar src={e.photo_url} name={fn} size={16} />
+                                                                    <PersonAvatar emp={e} px={20} />
                                                                     <span>{fn}</span>
                                                                     <Button variant="ghost" icon={X} iconOnly onClick={() => toggleScopeId(e.id)} />
                                                                 </div>
@@ -684,7 +681,7 @@ export default function EncuestaAdminView() {
                                                                     aria-pressed={sfScopeIds.includes(e.id)}
                                                                     onClick={() => { toggleScopeId(e.id); setSfEmpSearch(''); }}
                                                                     className="w-full px-4 py-2.5 hover:bg-brand/10 text-left flex items-center gap-3 transition-colors border-b border-divider last:border-0">
-                                                                    <PersonAvatar src={e.photo_url} name={fn} size={24} />
+                                                                    <PersonAvatar emp={e} px={20} />
                                                                     <div className="flex-1 min-w-0">
                                                                         <p className="text-body-sm font-bold text-content-2">{fn}</p>
                                                                         <p className="text-caption text-content-3">{e.branch?.name}</p>
@@ -751,9 +748,8 @@ export default function EncuestaAdminView() {
                                     {editingResponse ? (
                                         <div data-surface="card" className="flex items-center gap-2.5 py-3 px-4">
                                             <PersonAvatar
-                                                src={editingResponse.employee?.photo_url}
-                                                name={shortEmployeeName(editingResponse.employee)}
-                                                size={24} />
+                                                emp={editingResponse.employee}
+                                                px={20} />
                                             <div>
                                                 <div className="text-body font-bold text-content-2">
                                                     {shortEmployeeName(editingResponse.employee)}
@@ -1081,7 +1077,7 @@ export default function EncuestaAdminView() {
                                                             const fn = shortEmployeeName(e);
                                                             return (
                                                                 <div key={e.id} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
-                                                                    <PersonAvatar src={e.photo_url} name={fn} size={16} />
+                                                                    <PersonAvatar emp={e} px={20} />
                                                                     <span className="text-caption font-black text-warning-text">{fn}</span>
                                                                 </div>
                                                             );
@@ -1127,7 +1123,7 @@ export default function EncuestaAdminView() {
                                                                                 <React.Fragment key={row.id}>
                                                                                     <tr className={`border-b border-border-card last:border-0 transition-colors group/row ${isRowExp ? 'bg-brand/5' : 'hover:bg-surface-card'}`}>
                                                                                         <td className="py-2.5 pl-5 pr-3">
-                                                                                            <Button variant="ghost" onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}><PersonAvatar src={row.employee?.photo_url} name={nombre} isJefe={row.is_jefe} size={26} />
+                                                                                            <Button variant="ghost" onClick={() => setExpandedResponseId(isRowExp ? null : row.id)}><PersonAvatar emp={row.employee} px={28} />
                                                                                                 <span className="text-body-sm font-black text-content">{nombre}</span>
                                                                                                 {isRowExp
                                                                                                     ? <ChevronUp size={10} className="text-brand-text ml-1 shrink-0" strokeWidth={2.5} />

@@ -10,7 +10,6 @@ import Checkbox from '../../components/common/Checkbox';
 // avería necesita las mismas, y una segunda copia se habría separado de ésta.
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import {
     lineasDe, rechazadasDe, ajustadasDe, esDespachoDeTraslado, unidadesDe, contextoMovimiento, fmtFechaHora,
     motivoDeRechazo, cuantoTardo,
@@ -24,6 +23,8 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { lotesPorRenglon } from '@nucleo/utils/trasladoTexto';
 import LotesConFuente from '../../components/common/LotesConFuente';
 import { fetchContextoDeSolicitudMinMax } from '@nucleo/data/minmaxRequests';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
+import { useStaffStore } from '@nucleo/store/staffStore';
 import {
     leerMeses, leerPresentaciones, leerDespacho, maxNoAlcanzaParaDespachar,
 } from '@nucleo/utils/avisosDeOperacion';
@@ -69,51 +70,30 @@ const IdVenta = ({ meta }) => {
 /**
  * Foto y nombre. **El código no se muestra** — decisión del usuario, 2026-08-10:
  * «con el cambio de vendedor no quiero el código, quiero las fotos y nombre».
- * Un `#140` no le dice a nadie quién atendió; la cara sí.
  *
- * La URL guardada es `photo_url`, o sea la CRUDA de un bucket privado, así que
- * hay que firmarla — pintarla directo daba una imagen rota, que es exactamente
- * lo que hacía este bloque hasta hoy. Sin foto se cae a la inicial, nunca a un
- * hueco.
+ * La persona se resuelve en el store por id (el vendedor nuevo lo trae) o por
+ * código (el actual sólo trae el código): así la foto sale FIRMADA y con su aro,
+ * como en todo el portal (2026-11-05). La `photo_url` guardada es la cruda de un
+ * bucket privado y sólo sirve de respaldo si la persona ya no está en el store.
  */
-const Avatar = memo(({ photo, nombre, size = 40 }) => {
-    // Se guarda la foto JUNTO a su firma, no la firma sola: si el componente se
-    // reusa para otra persona, una firma suelta pintaría la cara anterior hasta
-    // que llegue la nueva. Comparar contra `photo` hace imposible ese cruce.
-    const [firmada, setFirmada] = useState({ photo: null, url: null });
-
-    useEffect(() => {
-        if (!photo) return;
-        let vivo = true;
-        getSignedFileUrl(photo)
-            .then(url => { if (vivo) setFirmada({ photo, url }); })
-            .catch(() => {});
-        return () => { vivo = false; };
-    }, [photo]);
-
-    const src = firmada.photo === photo ? firmada.url : null;
-    const inicial = (nombre || '?').trim().charAt(0).toUpperCase();
-    return (
-        <div className="rounded-full overflow-hidden border border-border-card bg-surface-card-hover
-                        flex items-center justify-center shrink-0"
-            style={{ width: size, height: size }}>
-            {src
-                ? <img src={src} alt="" className="w-full h-full object-cover" />
-                : <span className="text-content-2 font-black text-body">{inicial}</span>}
-        </div>
-    );
-});
-Avatar.displayName = 'Avatar';
+function usePersonaDeSolicitud({ id, code, photo, nombre }) {
+    const emp = useStaffStore(s => (s.employees || []).find(e =>
+        (id != null && String(e.id) === String(id)) || (code != null && String(e.code) === String(code))));
+    return emp || { id: id ?? null, name: nombre, photo_url: photo };
+}
 
 /** Una persona en una tarjeta de «antes → después». */
-const Persona = ({ photo, nombre, vacio = 'Sin asignar' }) => (
+const Persona = ({ id, code, photo, nombre, vacio = 'Sin asignar' }) => {
+    const emp = usePersonaDeSolicitud({ id, code, photo, nombre });
+    return (
     <div className="flex items-center gap-2 mt-1">
-        <Avatar photo={photo} nombre={nombre} size={36} />
+        <AvatarConEstado emp={emp} px={36} />
         <p className="text-label font-black text-content-2 leading-tight min-w-0 break-words">
             {nombre || vacio}
         </p>
     </div>
-);
+    );
+};
 
 /* ─── Rótulo de sección ───────────────────────────────────────────────────── */
 const Rotulo = ({ children }) => (
@@ -939,12 +919,12 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                 <div className="grid grid-cols-2 gap-2">
                     <Caja>
                         <Rotulo>Atendió</Rotulo>
-                        <Persona photo={meta.current_vendor_photo} nombre={meta.current_vendor_name}
+                        <Persona code={meta.current_vendor_code} photo={meta.current_vendor_photo} nombre={meta.current_vendor_name}
                             vacio="Sin vendedor" />
                     </Caja>
                     <Caja tono="hover">
                         <Rotulo>Pasa a</Rotulo>
-                        <Persona photo={meta.new_vendor_photo} nombre={meta.new_vendor_name} />
+                        <Persona id={meta.new_vendor_id} photo={meta.new_vendor_photo} nombre={meta.new_vendor_name} />
                     </Caja>
                 </div>
                 <IdVenta meta={meta} />

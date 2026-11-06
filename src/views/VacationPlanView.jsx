@@ -445,7 +445,7 @@ const VacationPlanView = () => {
                     value: String(e.id),
                     label: e.name,
                     sublabel: `✓ Vacaciones asignadas ${year} · ${branch?.name || '—'}`,
-                    avatar: e.photo || e.photo_url || null,
+                    persona: e,
                     disabled: true,
                 };
             }
@@ -454,7 +454,7 @@ const VacationPlanView = () => {
                     value: String(e.id),
                     label: e.name,
                     sublabel: '⚠ Sin fecha de ingreso — Actualizar datos',
-                    avatar: e.photo || e.photo_url || null,
+                    persona: e,
                     disabled: true,
                 };
             }
@@ -468,7 +468,7 @@ const VacationPlanView = () => {
                 sublabel: isEligible
                     ? `${e.role || e.position || 'Empleado'} · ${branch?.name || '—'}`
                     : `⏳ ${monthsWorked} mes${monthsWorked !== 1 ? 'es' : ''} · Falta ${12 - monthsWorked} mes(es) · ${branch?.name || '—'}`,
-                avatar: e.photo || e.photo_url || null,
+                persona: e,
                 disabled: !isEligible,
             };
         });
@@ -784,7 +784,7 @@ const VacationPlanView = () => {
                                         value={empId}
                                         onChange={val => { if (!editingPlan) setEmpId(val); }}
                                         options={editingPlan
-                                            ? [{ value: String(editingPlan.employee_id), label: editingPlan.employee?.name || '—', avatar: editingPlan.employee?.photo || null }]
+                                            ? [{ value: String(editingPlan.employee_id), label: editingPlan.employee?.name || '—', persona: { id: editingPlan.employee_id, name: editingPlan.employee?.name, photo: editingPlan.employee?.photo } }]
                                             : groupedOptions
                                         }
                                         placeholder="Seleccionar empleado…"

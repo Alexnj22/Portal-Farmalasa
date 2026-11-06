@@ -7,6 +7,7 @@ import SelectorTactil from './SelectorTactil';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import { msDelTema } from './gotaApertura';
 import { filtrar } from '@nucleo/utils/busqueda';
+import AvatarConEstado from './AvatarConEstado';
 
 
 const LiquidSelect = ({
@@ -609,14 +610,12 @@ const LiquidSelect = ({
                                                 : 'bg-transparent text-content-2 hover:bg-surface-card-hover hover:text-content'
                                 }`}
                             >
-                                {opt.avatar !== undefined && (
-                                    <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-micro font-black text-content-3">
-                                        {opt.avatar
-                                            ? <img src={opt.avatar} alt={opt.label} className="w-full h-full object-cover" />
-                                            : (opt.label || '?').charAt(0).toUpperCase()
-                                        }
-                                    </div>
-                                )}
+                                {/* Una opción que ES una persona trae `persona` ({id, name,
+                                    photo…}) y se pinta con la foto canónica: con su aro, así
+                                    se ve quién está de vacaciones ANTES de elegirlo. Antes
+                                    era un `<img>` a mano con la URL cruda —en un bucket
+                                    privado, una imagen rota— (2026-11-05). */}
+                                {opt.persona && <AvatarConEstado emp={opt.persona} px={20} />}
                                 <span className="flex-1 min-w-0">
                                     <span className="block leading-tight">{opt.label}</span>
                                     {opt.sublabel && (
@@ -736,14 +735,7 @@ const LiquidSelect = ({
                     ${!selectedOption && (!isOpen || sinBuscador) ? 'text-content-3' : ''}`}>
                     {selectedOption ? (
                         <>
-                            {selectedOption.avatar !== undefined && (
-                                <div className="w-6 h-6 rounded-full overflow-hidden bg-surface-card-hover border border-border-card shrink-0 flex items-center justify-center text-micro font-black text-content-3">
-                                    {selectedOption.avatar
-                                        ? <img src={selectedOption.avatar} alt={selectedOption.label} className="w-full h-full object-cover" />
-                                        : (selectedOption.label || '?').charAt(0).toUpperCase()
-                                    }
-                                </div>
-                            )}
+                            {selectedOption.persona && <AvatarConEstado emp={selectedOption.persona} px={20} />}
                             <span className="flex-1 min-w-0">
                                 <span className="block leading-tight truncate" title={selectedOption.label}>{selectedOption.label}</span>
                                 {selectedOption.sublabel && !sublabelSoloEnMenu && (

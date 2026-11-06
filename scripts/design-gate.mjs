@@ -143,18 +143,16 @@ const EXCEPTIONS = {
   // nadie. Los del equipo, en esa misma vista, sí van con `AvatarConEstado`.
   'src/views/chat-clientes/ClienteAvatar.jsx': ['foto-sin-aro'],
 
+  // El RETRATO de la ficha de una persona (104px): es la cabecera de su propio
+  // perfil, no una foto en una lista. Fuera de la escala a propósito hasta que
+  // el usuario decida si los retratos tienen su propio tamaño (2026-11-05).
+  'src/views/employee/EmployeeProfileView.jsx': ['avatar-fuera-de-escala'],
+
   // La torta de cumpleaños es BLANCA en los dos temas (decisión del usuario,
   // 2026-11-05): con el fondo rosa sólido chocaba con el aro de «En
   // inducción». No es una superficie del tema: es la marca, y tiene que verse
   // igual sobre una tarjeta clara que sobre una oscura.
   'src/components/common/AvatarConEstado.jsx': ['white'],
-
-  // La encuesta ya usa el ARO para decir otra cosa: `isJefe` pinta un
-  // `ring-warning` alrededor de la cara para marcar a quien jefea. Dos aros
-  // concéntricos con dos significados distintos no se pueden leer — uno diría
-  // «es jefe» y el otro «está de vacaciones», y quien mire vería un color.
-  // Además sus filas llegan con nombre y foto y sin id, que en una encuesta es
-  // deliberado.
 
   // El kiosco dimensiona su foto con CUATRO consultas de medio —dos de ellas
   // por ALTO de pantalla— y `AvatarConEstado` necesita un `px` en número para
@@ -376,7 +374,7 @@ const EXCEPTIONS = {
   'src/components/common/BannerPortal.jsx': ['color', 'hex', 'inline-color'],
   // Los componentes canónicos SON la implementación del select/date-picker/
   // modal — su interior legítimamente toca lo nativo que envuelven.
-  'src/components/common/LiquidSelect.jsx': ['native', 'foto-sin-aro'],
+  'src/components/common/LiquidSelect.jsx': ['native'],
   'src/components/common/LiquidDatePicker.jsx': ['native'],
   'src/components/common/RangeDatePicker.jsx': ['native'],
   'src/components/common/TimePicker12.jsx': ['native'],
@@ -480,7 +478,7 @@ const EXCEPTIONS = {
   // son puntos de un timeline/paso sobre una línea de color.
   'src/components/common/ErrorBoundary.jsx': ['white', 'z-index'],
   'src/views/RequestsView.jsx': ['white'],
-  'src/views/EncuestaView.jsx': ['white', 'foto-sin-aro'],
+  'src/views/EncuestaView.jsx': ['white'],
   'src/components/forms/FormNursingRegents.jsx': ['white'],
   'src/views/productos/TabMinMax.jsx': ['white', 'z-index'],
   // ── Superficies siempre-oscuras, agregadas al cerrar D3.8 (2026-07-27) ──
@@ -2356,6 +2354,31 @@ function scanFile(path) {
           label: 'persona sin `id` — sin él no hay aro de estado, y se ve igual que estar presente (DESIGN.md §5.4)',
           category: 'foto-sin-identidad',
           text: `${mi4[1]}={{ ${cuerpo.replace(/\s+/g, ' ').trim().slice(0, 90)} }}`,
+        });
+      }
+    }
+
+    // ── `avatar-fuera-de-escala` (2026-11-05, CERO ABSOLUTO) ─────────────
+    //
+    // La foto de una persona tiene CINCO tamaños: 20 · 28 · 36 · 48 · 64
+    // (`TAMANOS_DE_AVATAR` en `AvatarConEstado`). Decisión del usuario: «al
+    // final definiríamos los tamaños aprobados y el diseño, y se usarían solo
+    // esos no más». Había 23 tamaños distintos, y cada uno cambiaba en qué
+    // punto aparecía el chip, la torta o la medalla: la misma persona se veía
+    // con marcas distintas según la pantalla, sin que nada fallara.
+    //
+    // Sólo mira el número LITERAL —lo único decidible desde el fuente— en los
+    // componentes que pintan la foto canónica.
+    if (!path.includes('components/common/AvatarConEstado') && !hasException(path, 'avatar-fuera-de-escala')) {
+      const ESCALA = new Set([20, 28, 36, 48, 64]);
+      const USO = /<(AvatarConEstado|PersonaConFoto|FirmaConFoto|CaraPersona|PersonAvatar|FirmaDeAjuste)\b[^>]*?\bpx=\{(\d+)\}/g;
+      let mi5;
+      while ((mi5 = USO.exec(sinComentarios2))) {
+        if (ESCALA.has(Number(mi5[2]))) continue;
+        findings.push({
+          line: sinComentarios2.slice(0, mi5.index).split('\n').length,
+          label: `foto de ${mi5[2]}px fuera de la escala — usar 20, 28, 36, 48 o 64 (TAMANOS_DE_AVATAR)`,
+          category: 'avatar-fuera-de-escala', text: mi5[0].replace(/\s+/g, ' ').slice(0, 120),
         });
       }
     }

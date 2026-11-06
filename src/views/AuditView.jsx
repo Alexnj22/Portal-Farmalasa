@@ -25,6 +25,7 @@ import { fetchBitacoraPagina } from '@nucleo/data/audit';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import AvatarConEstado from '../components/common/AvatarConEstado';
 
 // Cuántas entradas trae como mucho un rango pedido a la base. El día más
 // cargado ronda las 700; 20,000 son semanas. Si se llega, se avisa.
@@ -82,13 +83,9 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
             </DataCell>
             <DataCell>
                 <div className="flex items-center gap-2 md:gap-3">
-                    <div className="h-7 w-7 md:h-9 md:w-9 rounded-full bg-surface-card shadow-[var(--shadow-elevation-xs)] flex items-center justify-center text-content-2 font-black text-caption md:text-label uppercase border border-border-card shrink-0 group-hover:shadow-md transition-all overflow-visible">
-                        {userPhoto ? (
-                            <img src={userPhoto} alt={log.user_name} className="w-full h-full object-cover" />
-                        ) : (
-                            log.user_name?.charAt(0) || '?'
-                        )}
-                    </div>
+                    {/* La foto canónica (2026-11-05): con el id resuelve la firmada
+                        del store y trae el aro de estado. */}
+                    <AvatarConEstado emp={{ id: log.user_id, name: log.user_name, photo: userPhoto }} px={28} />
                     <div className="flex flex-col">
                         <span className="text-label md:text-body font-bold text-content-2 truncate max-w-[120px] md:max-w-none leading-tight">
                             {log.user_name || 'Sistema/Anónimo'}

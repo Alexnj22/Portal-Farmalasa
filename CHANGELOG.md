@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1457.1 — Avatar: las fotos hechas a mano pasan a la canónica
+
+- Ocho fotos que se armaban a mano pasan a la canónica, con su aro y en la escala: Encuestas (resultados y administración), los selectores de persona (Vacaciones, Encuestas), Bitácora, el cambio de vendedor de una solicitud, la salida anticipada del kiosco y el conductor de una ruta.
+- Arregla dos fotos rotas: Encuestas (administración) y el conductor de la ruta pintaban la dirección cruda de un archivo privado.
+- En Encuestas el jefe ya no lleva aro ámbar —el mismo color que «En vacaciones»—: su cargo ya está escrito al lado del nombre.
+- `gate:design` suma `avatar-fuera-de-escala`: una foto con un tamaño que no sea 20, 28, 36, 48 o 64 hace fallar el gate.
+
 ## v2.1457.0 — Avatar: un solo diseño redondo, cinco tamaños y la torta blanca
 
 - La foto de las personas es **siempre redonda** y tiene un solo diseño en todo el portal: cada marca en su esquina fija. Arriba a la izquierda la torta de cumpleaños, arriba a la derecha el «!» de expediente incompleto, abajo a la derecha el estado y abajo a la izquierda una medalla con los años en la empresa (bronce, plata, oro, platino). El aro de estado se separa de la foto con un filo.

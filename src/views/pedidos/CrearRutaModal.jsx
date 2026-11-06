@@ -21,6 +21,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import AvatarConEstado from '../../components/common/AvatarConEstado';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -633,10 +634,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
             {/* Conductor: por defecto quien arma la ruta, pero se puede elegir
                 a otra persona que pueda mover rutas. */}
             <div className="flex flex-wrap items-center gap-2.5 px-3 py-2.5 bg-chart-3/10 rounded-xl border border-chart-3/30">
-              {conductorPhoto
-                ? <img src={conductorPhoto} alt="" className="w-7 h-7 rounded-full object-cover border-2 border-chart-3/30 shrink-0" />
-                : <div className="w-7 h-7 rounded-full bg-chart-3-solid flex items-center justify-center shrink-0"><User size={13} className="text-white" /></div>
-              }
+              {/* La foto canónica (2026-11-05). Antes era `photo_url` CRUDA, de un
+                  bucket privado: una imagen rota. Con el id toma la firmada. */}
+              <AvatarConEstado emp={{ id: conductorElegido.id, name: conductorNombre, photo_url: conductorPhoto }} px={28} />
               <div className="min-w-0 flex-1">
                 <p className="text-micro font-semibold text-chart-3-text uppercase tracking-wider">{esUnoMismo ? 'Conductor (tú)' : 'Conductor'}</p>
                 {opcionesConductor.length > 1 ? (
@@ -755,10 +755,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
 
             {/* ── Conductor ─────────────────────────────────────────────── */}
             <div data-surface="card" className="flex items-center gap-2 px-3 py-2">
-              {conductorPhoto
-                ? <img src={conductorPhoto} className="w-6 h-6 rounded-full object-cover border border-divider shrink-0" />
-                : <div className="w-6 h-6 rounded-full bg-chart-3-solid flex items-center justify-center shrink-0"><User size={11} className="text-white" /></div>
-              }
+              <AvatarConEstado emp={{ id: conductorElegido.id, name: conductorNombre, photo_url: conductorPhoto }} px={20} />
               <span className="text-body-sm text-content-2 font-medium">Conductor:</span>
               <span className="text-body-sm font-bold text-content">{conductorCorto}{esUnoMismo ? ' (tú)' : ''}</span>
             </div>

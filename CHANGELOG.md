@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.4 — Revisión semanal: instalar sólo el cliente de Supabase
+
+- La revisión semanal de compras instala sólo el cliente de Supabase en una carpeta aparte: un `npm i` dentro del repo fallaba con Node 22.
+
 ## v2.1456.3 — Revisión semanal de compras en Node 22
 
 - La revisión semanal de compras corre en Node 22: con Node 20 el cliente de Supabase no arranca (falta WebSocket nativo).

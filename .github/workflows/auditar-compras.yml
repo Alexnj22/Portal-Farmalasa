@@ -25,7 +25,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm i --no-save --no-package-lock @supabase/supabase-js@2
+      # Sólo el cliente de Supabase, fuera del package.json del portal (un
+      # `npm i` adentro intenta resolver el árbol entero y revienta).
+      - run: |
+          npm i --prefix "$RUNNER_TEMP/deps" --no-audit --no-fund @supabase/supabase-js@2
+          ln -s "$RUNNER_TEMP/deps/node_modules" node_modules
       - run: node scripts/compras/auditar-lectura.mjs --dias=30
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}

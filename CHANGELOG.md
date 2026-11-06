@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.9 — Cifras con locale fijo
+
+- **Las cifras ya no dependen del idioma del navegador.** 184 `toLocaleString()` sin locale (27 archivos) tomaban el idioma de cada computadora: la misma cantidad salía `1,234`, `1.234` o `1234` según quién la mirara. Ahora todas usan `es-SV`, como el resto del portal.
+- `gate:design`: `formato-cifra` también rechaza `toLocaleString()` sin locale.
+
 ## v2.1459.8 — Errores con Notice
 
 - **Un solo aspecto para los mensajes de error.** 60 errores escritos a mano en 34 archivos (cinco tamaños de letra, dos rojos distintos, algunos sin ícono) pasan a `<Notice variant="danger">`: el mismo recuadro con ícono en todo el portal.

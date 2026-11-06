@@ -90,12 +90,12 @@ export default function TabPendientes({ filterBranch, setFilterBranch, branchOpt
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de pendientes">
                     <StatCard icon={Hourglass} label="Aplicaciones pendientes"
-                        value={filas == null ? '—' : filas.length.toLocaleString()}
+                        value={filas == null ? '—' : filas.length.toLocaleString('es-SV')}
                         sub={filas == null ? undefined : `${formatMoney(total)} cobrados`} loading={filas == null} />
-                    <StatCard icon={Users} label="Clientes" value={filas == null ? '—' : clientes.toLocaleString()}
+                    <StatCard icon={Users} label="Clientes" value={filas == null ? '—' : clientes.toLocaleString('es-SV')}
                         sub="Con algo pagado sin aplicar" loading={filas == null} />
                     <StatCard icon={Hourglass} label="Con 7 días o más"
-                        value={filas == null ? '—' : viejas.toLocaleString()}
+                        value={filas == null ? '—' : viejas.toLocaleString('es-SV')}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
                         sub="Revisar: ¿volvió el cliente?" loading={filas == null} />
                 </CarrilCards>

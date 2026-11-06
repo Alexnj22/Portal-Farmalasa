@@ -1083,7 +1083,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
         {!loading && hasResults && hayRecorte && (
           <div className="mb-2 px-3 py-2 rounded-xl bg-surface-card-hover border border-divider">
             <p className="text-caption font-bold text-content-2 leading-snug">
-              Mostrando {MAX_PRODUCTOS_BUSQUEDA} de {totalProductos.toLocaleString()} productos
+              Mostrando {MAX_PRODUCTOS_BUSQUEDA} de {totalProductos.toLocaleString('es-SV')} productos
             </p>
             <p className="text-micro text-content-3 mt-0.5">
               Escribe el nombre más completo para afinar la búsqueda

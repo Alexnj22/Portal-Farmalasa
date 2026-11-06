@@ -66,21 +66,21 @@ export function formatUnits(units, presentations) {
     const n = Number(units);
     if (n === 0) return '0';
     const pres = sortedPres(presentations);
-    if (!pres.length) return `${n.toLocaleString()} und`;
+    if (!pres.length) return `${n.toLocaleString('es-SV')} und`;
     let rem = n;
     const parts = [];
     for (const { tipo, factor } of pres) {
         if (rem >= factor) { parts.push(`${Math.floor(rem / factor)} ${tipo.trim()}`); rem %= factor; }
     }
     if (rem > 0) parts.push(`${rem} und`);
-    return parts.length ? parts.join(' + ') : `${n.toLocaleString()} und`;
+    return parts.length ? parts.join(' + ') : `${n.toLocaleString('es-SV')} und`;
 }
 
 export function formatDominant(units, presentations) {
     const n = Number(units);
     if (!n) return '0';
     const pres = sortedPres(presentations);
-    if (!pres.length) return `${n.toLocaleString()} und`;
+    if (!pres.length) return `${n.toLocaleString('es-SV')} und`;
     const { tipo, factor } = pres[0];
     // ceil: boxes are indivisible — always round up so the displayed quantity covers the unit threshold
     return `≥${Math.ceil(n / factor)} ${tipo.trim()}`;

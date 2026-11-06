@@ -292,7 +292,7 @@ export default function BitacorasView() {
                         <CarrilCards className="flex-1" ariaLabel="Resumen del registro por lote">
                             {METRICAS_LOTES.map((m) => (
                                 <StatCard key={m.clave} icon={m.icon} iconBg={m.iconBg} iconCls={m.iconCls}
-                                    label={m.label} value={cargandoLotes ? '—' : cuentaLotes[m.clave].toLocaleString()}
+                                    label={m.label} value={cargandoLotes ? '—' : cuentaLotes[m.clave].toLocaleString('es-SV')}
                                     valueCls={m.valueCls} loading={cargandoLotes}
                                     active={filtroLotes === m.clave}
                                     onClick={() => setFiltroLotes(f => (f === m.clave || m.clave === 'todos' ? 'todos' : m.clave))} />

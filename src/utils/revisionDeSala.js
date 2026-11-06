@@ -104,10 +104,10 @@ export function motivoDeSaltoDelCalculo(res) {
 export function mensajeDePublicacion(res, dejadasAparte = 0) {
     const n = res?.published ?? 0;
     const frenadas = res?.omitidas_por_ajuste_manual ?? 0;
-    const label = `${n.toLocaleString()} borrador${n !== 1 ? 'es' : ''}`;
+    const label = `${n.toLocaleString('es-SV')} borrador${n !== 1 ? 'es' : ''}`;
     const cola = dejadasAparte > 0
-        ? ` · ${dejadasAparte.toLocaleString()} quedaron igual, como elegiste`
-        : frenadas > 0 ? ` · ${frenadas.toLocaleString()} no, vienen de una solicitud` : '';
+        ? ` · ${dejadasAparte.toLocaleString('es-SV')} quedaron igual, como elegiste`
+        : frenadas > 0 ? ` · ${frenadas.toLocaleString('es-SV')} no, vienen de una solicitud` : '';
     return { texto: `Se publicaron ${label}${cola}`, aviso: frenadas > 0 || dejadasAparte > 0 };
 }
 

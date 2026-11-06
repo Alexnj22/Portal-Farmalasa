@@ -487,7 +487,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                     <span className="text-body-sm text-content-3">
                         {selected.size === 0
                             ? 'Elige al menos una sucursal para generar el pedido.'
-                            : `${selected.size} sucursal${selected.size > 1 ? 'es' : ''} · ${productosElegidos.toLocaleString()} producto${productosElegidos === 1 ? '' : 's'} con stock en Bodega`}
+                            : `${selected.size} sucursal${selected.size > 1 ? 'es' : ''} · ${productosElegidos.toLocaleString('es-SV')} producto${productosElegidos === 1 ? '' : 's'} con stock en Bodega`}
                     </span>
                     <Button tone="success" size="lg" onClick={handlePrepararResumen} icon={ClipboardList}
                         className="w-full sm:w-auto"
@@ -527,7 +527,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         <TriangleAlert size={15} className="text-danger shrink-0" aria-hidden="true" />
                         <span className="font-semibold text-content text-body-lg">Productos sin stock en Bodega</span>
                         {sinBodega.length > 0 && (
-                            <Badge variant="danger" size="sm" uppercase={false}>{sinBodega.length.toLocaleString()}</Badge>
+                            <Badge variant="danger" size="sm" uppercase={false}>{sinBodega.length.toLocaleString('es-SV')}</Badge>
                         )}
                         <span className="basis-full text-label text-content-3">
                             Lo que piden las sucursales y Bodega no tiene para despachar.
@@ -566,7 +566,7 @@ export default function TabGenerar({ searchTerm = '' }) {
                         <DataCell align="center" hideBelow="sm">
                             {row.total_ventas_6m > 0 ? (
                                 <span className="text-body-sm text-content-2 font-semibold tabular-nums">
-                                    {Math.round(row.total_ventas_6m).toLocaleString()}
+                                    {Math.round(row.total_ventas_6m).toLocaleString('es-SV')}
                                 </span>
                             ) : (
                                 <span className="text-label text-content-3">—</span>
@@ -630,7 +630,7 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
                         </h3>
                         <p className="text-label text-content-3 mt-0.5">
                             {esResumen
-                                ? `${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString()} renglones · ${tot.unidades.toLocaleString()} unidades`
+                                ? `${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades`
                                 : (flujo?.sucIds?.length ?? 0) > 1
                                     ? 'Descarga el PDF de cada sala. El navegador deja pasar una descarga por clic.'
                                     : 'El PDF de la sala se está descargando.'}
@@ -646,8 +646,8 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
                             <li key={s.erp_sucursal_id} data-surface="card" className="px-3 py-2.5">
                                 <p className="text-body font-bold text-content">{ERP_NAMES[s.erp_sucursal_id] ?? `Sucursal ${s.erp_sucursal_id}`}</p>
                                 <p className="text-caption text-content-3 tabular-nums mt-0.5">
-                                    {s.renglones.toLocaleString()} {s.renglones === 1 ? 'renglón' : 'renglones'}
-                                    {' · '}{s.unidades.toLocaleString()} unidad{s.unidades !== 1 ? 'es' : ''}
+                                    {s.renglones.toLocaleString('es-SV')} {s.renglones === 1 ? 'renglón' : 'renglones'}
+                                    {' · '}{s.unidades.toLocaleString('es-SV')} unidad{s.unidades !== 1 ? 'es' : ''}
                                 </p>
                                 {(s.revision > 0 || s.sinStock > 0 || s.agotamiento > 0) && (
                                     <span className="mt-1.5 flex flex-wrap gap-1.5">

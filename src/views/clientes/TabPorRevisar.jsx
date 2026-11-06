@@ -98,14 +98,14 @@ export default function TabPorRevisar({ openModal }) {
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de fichas por revisar">
                     <StatCard icon={FileWarning} label="Por revisar"
-                        value={(datos.congelado + datos.repetido).toLocaleString()}
+                        value={(datos.congelado + datos.repetido).toLocaleString('es-SV')}
                         iconBg="bg-warning/10" iconCls="text-warning"
                         sub="Necesitan una decisión" loading={loading} />
                     <StatCard icon={Snowflake} label="Fiscales congelados"
-                        value={datos.congelado.toLocaleString()}
+                        value={datos.congelado.toLocaleString('es-SV')}
                         sub="Se completan a mano" loading={loading} />
                     <StatCard icon={CopyX} label="Posible repetido"
-                        value={datos.repetido.toLocaleString()}
+                        value={datos.repetido.toLocaleString('es-SV')}
                         sub="Nombre, DUI o NIT ya usado" loading={loading} />
                 </CarrilCards>
                 <div className="flex justify-end min-w-0">{pildora}</div>

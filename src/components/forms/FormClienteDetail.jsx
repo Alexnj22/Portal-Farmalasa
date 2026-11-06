@@ -83,11 +83,11 @@ function PanelActividad({ actividad, facturas, bitacora }) {
     return (
         <div className="space-y-5">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                <Dato label="Facturas" value={(actividad?.facturas ?? 0).toLocaleString()} />
+                <Dato label="Facturas" value={(actividad?.facturas ?? 0).toLocaleString('es-SV')} />
                 <Dato label="Facturado" value={formatMoney(actividad?.total ?? 0)} />
-                <Dato label="CCF" value={(actividad?.facturas_ccf ?? 0).toLocaleString()} />
+                <Dato label="CCF" value={(actividad?.facturas_ccf ?? 0).toLocaleString('es-SV')} />
                 <Dato label="Anuladas"
-                    value={(actividad?.facturas_anuladas ?? 0).toLocaleString()}
+                    value={(actividad?.facturas_anuladas ?? 0).toLocaleString('es-SV')}
                     valueCls={actividad?.facturas_anuladas ? 'text-danger-text' : 'text-content-2'} />
             </div>
             <div className="grid grid-cols-2 gap-3">

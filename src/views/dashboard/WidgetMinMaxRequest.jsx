@@ -223,13 +223,13 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                     <span className="text-micro text-content-3 font-semibold">este mes</span>
                     <span className="text-label font-bold text-content-2 tabular-nums">
                       {ventas === null ? <Loader2 size={11} className="animate-spin text-content-3" />
-                        : ventas.unidadesMes != null ? Number(ventas.unidadesMes).toLocaleString() : '—'}
+                        : ventas.unidadesMes != null ? Number(ventas.unidadesMes).toLocaleString('es-SV') : '—'}
                     </span>
                   </div>
                   <div className="flex flex-col items-end leading-tight">
                     <span className="text-micro text-content-3 font-semibold">6 meses</span>
                     <span className="text-label font-bold text-content-2 tabular-nums">
-                      {current?.sales6m != null ? Number(current.sales6m).toLocaleString() : '—'}
+                      {current?.sales6m != null ? Number(current.sales6m).toLocaleString('es-SV') : '—'}
                     </span>
                   </div>
                 </div>
@@ -255,14 +255,14 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                   : (
                     <div className="text-right">
                       <span className="text-label font-bold text-content-2 tabular-nums">
-                        {ventas.existencia != null ? `${Number(ventas.existencia).toLocaleString()} und` : '—'}
+                        {ventas.existencia != null ? `${Number(ventas.existencia).toLocaleString('es-SV')} und` : '—'}
                       </span>
                       {fmtEquiv(ventas.existencia, pres) && (
                         <div className="text-micro text-content-3 font-semibold">{fmtEquiv(ventas.existencia, pres)}</div>
                       )}
                       {Number(ventas.existenciaVencida) > 0 && (
                         <div className="text-micro text-danger-text font-semibold">
-                          + {Number(ventas.existenciaVencida).toLocaleString()} vencidas
+                          + {Number(ventas.existenciaVencida).toLocaleString('es-SV')} vencidas
                         </div>
                       )}
                     </div>

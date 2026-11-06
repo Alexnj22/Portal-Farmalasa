@@ -832,8 +832,8 @@ function TabDocumentos({
             useToastStore.getState().showToast(
                 fallidos > 0 ? 'Descarga completa, con faltantes' : 'Descarga completa',
                 fallidos > 0
-                    ? `${incluidos.toLocaleString()} de ${total.toLocaleString()} archivos. Los ${fallidos.toLocaleString()} que faltan están listados en manifest-errores.txt.`
-                    : `${filtered.length.toLocaleString()} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`,
+                    ? `${incluidos.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} archivos. Los ${fallidos.toLocaleString('es-SV')} que faltan están listados en manifest-errores.txt.`
+                    : `${filtered.length.toLocaleString('es-SV')} documento${filtered.length !== 1 ? 's' : ''} en el ZIP.`,
                 fallidos > 0 ? 'warning' : 'success',
             );
         } catch (e) {
@@ -860,7 +860,7 @@ function TabDocumentos({
                 <CarrilCards className="flex-1" ariaLabel="Resumen de facturas">
                     <StatCard
                         icon={FileText} label="Total Compras" value={fmt$(cardStats.totalCompras)}
-                        sub={`${rows.length.toLocaleString()} documento${rows.length !== 1 ? 's' : ''}`}
+                        sub={`${rows.length.toLocaleString('es-SV')} documento${rows.length !== 1 ? 's' : ''}`}
                         iconBg="bg-chart-1/10" iconCls="text-chart-1-text" valueCls="text-chart-1-text"
                         loading={loading}
                     />
@@ -1008,7 +1008,7 @@ function TabDocumentos({
                     <div className="flex items-baseline justify-between gap-3 text-caption">
                         <span className="text-content-2 font-semibold">
                             {bulkProgress?.total > 0
-                                ? <>Descargando <span className="tabular-nums">{bulkProgress.hechos.toLocaleString()}</span> de <span className="tabular-nums">{bulkProgress.total.toLocaleString()}</span> archivos</>
+                                ? <>Descargando <span className="tabular-nums">{bulkProgress.hechos.toLocaleString('es-SV')}</span> de <span className="tabular-nums">{bulkProgress.total.toLocaleString('es-SV')}</span> archivos</>
                                 : 'Preparando la descarga…'}
                         </span>
                         <span className="text-content-3 tabular-nums">
@@ -1029,7 +1029,7 @@ function TabDocumentos({
                     </div>
                     {bulkProgress?.fallidos > 0 && (
                         <div className="text-caption text-warning-text tabular-nums">
-                            {bulkProgress.fallidos.toLocaleString()} archivo{bulkProgress.fallidos !== 1 ? 's' : ''} sin poder descargar — van listados dentro del ZIP.
+                            {bulkProgress.fallidos.toLocaleString('es-SV')} archivo{bulkProgress.fallidos !== 1 ? 's' : ''} sin poder descargar — van listados dentro del ZIP.
                         </div>
                     )}
                 </div>
@@ -1255,7 +1255,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
     return (
         <div className="p-5 md:p-6 space-y-5">
             <div className="text-label text-content-3 font-medium px-1">
-                {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
+                {loading ? 'Cargando…' : `${filtered.length.toLocaleString('es-SV')} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
             {rowError && <Notice variant="danger">{rowError}</Notice>}
 

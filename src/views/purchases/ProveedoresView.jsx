@@ -175,7 +175,7 @@ function BulkBar({ count, conSugerencia, categorias, busy, onAceptarSugerencia, 
             className="sticky bottom-4 z-dropdown mt-4 flex items-center gap-3 flex-wrap px-4 py-3"
         >
             <span className="text-body-sm font-black text-content whitespace-nowrap">
-                {count.toLocaleString()} seleccionado{count !== 1 ? 's' : ''}
+                {count.toLocaleString('es-SV')} seleccionado{count !== 1 ? 's' : ''}
             </span>
             <span className="w-px h-6 bg-divider" aria-hidden="true" />
             <Button

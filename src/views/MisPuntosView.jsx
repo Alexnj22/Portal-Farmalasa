@@ -305,7 +305,7 @@ function Movimiento({ m }) {
             </div>
             <span className={`text-body-lg font-black tabular-nums shrink-0
                               ${resta ? 'text-chart-3-text' : 'text-success-text'}`}>
-                {m.puntos > 0 ? '+' : '−'}{Math.abs(m.puntos).toLocaleString()}
+                {m.puntos > 0 ? '+' : '−'}{Math.abs(m.puntos).toLocaleString('es-SV')}
             </span>
         </div>
     );
@@ -714,7 +714,7 @@ function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
                         ${cifra.toFixed(2)}
                     </p>
                     <p className="text-body-xl text-content-2 font-bold tabular-nums">
-                        {datos.saldo.toLocaleString()} puntos
+                        {datos.saldo.toLocaleString('es-SV')} puntos
                     </p>
 
                     <div className="h-px bg-divider my-4" />
@@ -764,7 +764,7 @@ function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
                     <div data-surface="card" className="px-4 py-3.5">
                         <div className="flex items-baseline justify-between gap-3 mb-2.5">
                             <p className="text-body-lg text-content-1 font-bold">
-                                Te faltan <span className="tabular-nums">{faltan.toLocaleString()}</span> puntos
+                                Te faltan <span className="tabular-nums">{faltan.toLocaleString('es-SV')}</span> puntos
                             </p>
                             <p className="text-caption text-content-3 tabular-nums shrink-0">
                                 {datos.saldo} / {MINIMO_DE_CANJE}
@@ -812,14 +812,14 @@ function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
                                         </p>
                                         {dias !== null && (
                                             <p className="text-caption text-content-3">
-                                                {dias <= 0 ? 'Vence hoy' : dias === 1 ? 'Falta 1 día' : `Faltan ${dias.toLocaleString()} días`}
+                                                {dias <= 0 ? 'Vence hoy' : dias === 1 ? 'Falta 1 día' : `Faltan ${dias.toLocaleString('es-SV')} días`}
                                             </p>
                                         )}
                                     </div>
                                     {pronto
-                                        ? <Badge size="sm" variant="warning">{v.puntos.toLocaleString()} pts</Badge>
+                                        ? <Badge size="sm" variant="warning">{v.puntos.toLocaleString('es-SV')} pts</Badge>
                                         : <span className="text-body-lg font-black tabular-nums text-content-1 shrink-0">
-                                            {v.puntos.toLocaleString()} pts
+                                            {v.puntos.toLocaleString('es-SV')} pts
                                         </span>}
                                 </div>
                             );
@@ -841,7 +841,7 @@ function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
                         <div className="flex-1 px-4 py-3.5 min-w-0">
                             <p className="text-caption text-content-3 font-bold">Has ganado</p>
                             <p className="text-title-sm font-black text-success-text tabular-nums leading-tight">
-                                {datos.acumulados.toLocaleString()}
+                                {datos.acumulados.toLocaleString('es-SV')}
                             </p>
                             <p className="text-caption text-content-3">puntos</p>
                         </div>
@@ -849,7 +849,7 @@ function Resultado({ datos, todos, setTodos, volver, onCambiarPermisos }) {
                         <div className="flex-1 px-4 py-3.5 min-w-0">
                             <p className="text-caption text-content-3 font-bold">Has usado</p>
                             <p className="text-title-sm font-black text-chart-3-text tabular-nums leading-tight">
-                                {datos.canjeados.toLocaleString()}
+                                {datos.canjeados.toLocaleString('es-SV')}
                             </p>
                             <p className="text-caption text-content-3">puntos</p>
                         </div>

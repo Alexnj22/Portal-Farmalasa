@@ -37,8 +37,8 @@ export function planDeGuardadoMinMax({ row, productId, sucursalId, min, max, hay
         if (minNum === (row?.effective_min ?? 0) && maxNum === (row?.effective_max ?? 0)) return { sinCambio: true };
         const floorMin = row?.pub_min ?? 0;
         const floorMax = row?.pub_max ?? 0;
-        if (floorMin > 0 && (minNum ?? 0) < floorMin) return { error: `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString()})` };
-        if (floorMax > 0 && (maxNum ?? 0) < floorMax) return { error: `MAX de Bodega no puede ser menor a la Σ sucursales (${floorMax.toLocaleString()})` };
+        if (floorMin > 0 && (minNum ?? 0) < floorMin) return { error: `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString('es-SV')})` };
+        if (floorMax > 0 && (maxNum ?? 0) < floorMax) return { error: `MAX de Bodega no puede ser menor a la Σ sucursales (${floorMax.toLocaleString('es-SV')})` };
         const deltaMin = minNum - floorMin > 0 ? minNum - floorMin : null;
         const deltaMax = maxNum - floorMax > 0 ? maxNum - floorMax : null;
         return {

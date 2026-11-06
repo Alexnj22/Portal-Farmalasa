@@ -122,9 +122,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Stock en red</span>
                     {netStock !== null && (
                         <div className="flex items-center gap-3 text-micro text-content-3">
-                            <span>Red: <strong className="text-content-2 tabular-nums">{netStock.toLocaleString()} und</strong></span>
+                            <span>Red: <strong className="text-content-2 tabular-nums">{netStock.toLocaleString('es-SV')} und</strong></span>
                             <span className="text-content-3">·</span>
-                            <span>Incl. Bodega: <strong className="text-content-2 tabular-nums">{totalStock.toLocaleString()} und</strong></span>
+                            <span>Incl. Bodega: <strong className="text-content-2 tabular-nums">{totalStock.toLocaleString('es-SV')} und</strong></span>
                         </div>
                     )}
                 </div>
@@ -189,25 +189,25 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                         bStock === 0 ? 'text-danger' :
                                         bStock < bMin ? 'text-chart-4-text' : 'text-content'
                                     }`}>
-                                        {!hasData ? '—' : bStock === 0 ? '0' : bStock.toLocaleString()}
+                                        {!hasData ? '—' : bStock === 0 ? '0' : bStock.toLocaleString('es-SV')}
                                     </div>
                                     {hasData && <StockBar current={bStock} min={bMin} max={bMax} />}
                                     {hasData && (bMin > 0 || bMax > 0 || hasDraft) && (
                                         <div className="flex flex-col gap-0.5 mt-0.5">
                                             {(bMin > 0 || bMax > 0) && (
                                                 <div className="flex items-center gap-0.5 text-micro tabular-nums leading-tight">
-                                                    <span className={`font-black ${hasDraft ? 'text-chart-4-text/70' : 'text-chart-4-text'}`}>{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                    <span className={`font-black ${hasDraft ? 'text-chart-4-text/70' : 'text-chart-4-text'}`}>{bMin > 0 ? bMin.toLocaleString('es-SV') : '—'}</span>
                                                     <span className="text-content-3">·</span>
-                                                    <span className={`font-black ${hasDraft ? 'text-chart-1-text/70' : 'text-chart-1-text'}`}>{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                    <span className={`font-black ${hasDraft ? 'text-chart-1-text/70' : 'text-chart-1-text'}`}>{bMax > 0 ? bMax.toLocaleString('es-SV') : '—'}</span>
                                                 </div>
                                             )}
                                             {hasDraft && (
                                                 <div className="flex flex-col items-start gap-0.5 mt-0.5">
                                                     <span className="text-micro font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
                                                     <div className="flex items-center gap-0.5 text-micro tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-warning/40 bg-warning/10">
-                                                        <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString() : '—'}</span>
+                                                        <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString('es-SV') : '—'}</span>
                                                         <span className="text-warning">·</span>
-                                                        <span className="text-warning font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString() : '—'}</span>
+                                                        <span className="text-warning font-black">{bDraftMax > 0 ? bDraftMax.toLocaleString('es-SV') : '—'}</span>
                                                     </div>
                                                 </div>
                                             )}
@@ -245,14 +245,14 @@ export default function ExpandedPanel({ row, cycleDays }) {
                             <span className="flex items-center gap-1.5 text-label">
                                 <span className="w-2 h-2 rounded-full bg-chart-4 shrink-0" />
                                 <span className="text-content-3 font-semibold">MIN</span>
-                                <span className="font-black text-chart-4-text">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString()} und`}</span>
-                                {hasDominant && <span className="text-content-3 text-caption">({minN.toLocaleString()} und)</span>}
+                                <span className="font-black text-chart-4-text">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString('es-SV')} und`}</span>
+                                {hasDominant && <span className="text-content-3 text-caption">({minN.toLocaleString('es-SV')} und)</span>}
                             </span>
                             <span className="flex items-center gap-1.5 text-label">
                                 <span className="w-2 h-2 rounded-full bg-chart-1 shrink-0" />
                                 <span className="text-content-3 font-semibold">MAX</span>
-                                <span className="font-black text-chart-1-text">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString()} und`}</span>
-                                {hasDominant && <span className="text-content-3 text-caption">({maxN.toLocaleString()} und)</span>}
+                                <span className="font-black text-chart-1-text">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString('es-SV')} und`}</span>
+                                {hasDominant && <span className="text-content-3 text-caption">({maxN.toLocaleString('es-SV')} und)</span>}
                             </span>
                         </>
                     )}
@@ -260,8 +260,8 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         <span className="flex items-center gap-1.5 text-label">
                             <span className="w-2 h-2 rounded-full bg-danger shrink-0" />
                             <span className="text-content-3 font-semibold">Pedir</span>
-                            <span className="font-black text-danger">{hasDominant ? formatDominant(pedir, pres) : `${pedir.toLocaleString()} und`}</span>
-                            {hasDominant && <span className="text-content-3 text-caption">({pedir.toLocaleString()} und)</span>}
+                            <span className="font-black text-danger">{hasDominant ? formatDominant(pedir, pres) : `${pedir.toLocaleString('es-SV')} und`}</span>
+                            {hasDominant && <span className="text-content-3 text-caption">({pedir.toLocaleString('es-SV')} und)</span>}
                         </span>
                     )}
                 </div>
@@ -278,7 +278,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                             <div key={s.name} className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-warning/10 border border-warning/30">
                                 <Building2 size={9} className="text-warning shrink-0" />
                                 <span className="text-caption font-black text-warning-text">{s.name}</span>
-                                <span className="text-caption font-bold text-warning tabular-nums">{s.transferable.toLocaleString()} und disponibles</span>
+                                <span className="text-caption font-bold text-warning tabular-nums">{s.transferable.toLocaleString('es-SV')} und disponibles</span>
                             </div>
                         ))}
                     </div>
@@ -332,7 +332,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             <div className="flex items-center gap-3 text-caption">
                                                 <span className={`font-black tabular-nums w-8 shrink-0 ${urgent ? 'text-danger' : 'text-chart-4-text'}`}>{daysLeft}d</span>
                                                 <span className="text-content-3 font-mono text-micro shrink-0">{lot.lote || '—'}</span>
-                                                <span className="text-content-2 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString()} und</span>
+                                                <span className="text-content-2 font-semibold tabular-nums">{Number(lot.cantidad).toLocaleString('es-SV')} und</span>
                                                 <span className="text-content-3 text-micro">{fechaTexto(lot.fecha_vencimiento, { day: '2-digit', month: 'short', year: '2-digit' })}</span>
                                             </div>
                                             {sendDeadline && (
@@ -373,7 +373,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             {fechaTexto(p.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-content-2 tabular-nums shrink-0">
-                                                            {Number(p.cantidad).toLocaleString()} und
+                                                            {Number(p.cantidad).toLocaleString('es-SV')} und
                                                         </span>
                                                         <span className="text-content-3 shrink-0">{formatMoney(p.precio_unitario)}</span>
                                                         <span className="text-content-3 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
@@ -402,7 +402,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             {(ERP_NAMES[s.erp_sucursal_id] ?? `S${s.erp_sucursal_id}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                         </span>
                                                         <span className="font-bold text-success-text tabular-nums shrink-0">
-                                                            {Number(s.cantidad).toLocaleString()} und
+                                                            {Number(s.cantidad).toLocaleString('es-SV')} und
                                                         </span>
                                                         {s.total_linea > 0 && (
                                                             <span className="text-content-3 shrink-0">{formatMoney(s.total_linea)}</span>
@@ -434,12 +434,12 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             <span className="text-content-3 shrink-0 w-9 text-micro truncate">
                                                                 {(ERP_NAMES[erpId] ?? `S${erpId}`).replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                                             </span>
-                                                            <span className="text-chart-4-text font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString() : '—'}</span>
+                                                            <span className="text-chart-4-text font-black tabular-nums">{bMin > 0 ? bMin.toLocaleString('es-SV') : '—'}</span>
                                                             <span className="text-content-3">·</span>
-                                                            <span className="text-chart-1-text font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString() : '—'}</span>
+                                                            <span className="text-chart-1-text font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString('es-SV') : '—'}</span>
                                                             {hasDraft && (
                                                                 <span className="inline-flex items-center gap-0.5 text-micro font-black uppercase tracking-wide text-warning bg-warning/10 border border-warning/40 border-dashed rounded px-1 py-px whitespace-nowrap">
-                                                                    Borrador {dMin > 0 ? dMin.toLocaleString() : '—'}·{dMax > 0 ? dMax.toLocaleString() : '—'}
+                                                                    Borrador {dMin > 0 ? dMin.toLocaleString('es-SV') : '—'}·{dMax > 0 ? dMax.toLocaleString('es-SV') : '—'}
                                                                 </span>
                                                             )}
                                                         </div>
@@ -473,7 +473,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             {fechaTexto(p.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-content-2 tabular-nums shrink-0">
-                                                            {Number(p.cantidad).toLocaleString()} und
+                                                            {Number(p.cantidad).toLocaleString('es-SV')} und
                                                         </span>
                                                         <span className="text-content-3 shrink-0">{formatMoney(p.precio_unitario)}</span>
                                                         <span className="text-content-3 truncate min-w-0 flex-1">{p.proveedor || '—'}</span>
@@ -499,7 +499,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             {fechaTexto(s.fecha, { day: '2-digit', month: 'short', year: '2-digit' })}
                                                         </span>
                                                         <span className="font-bold text-success-text tabular-nums shrink-0">
-                                                            {Number(s.cantidad).toLocaleString()} und
+                                                            {Number(s.cantidad).toLocaleString('es-SV')} und
                                                         </span>
                                                         {s.total_linea > 0 && (
                                                             <span className="text-content-3 shrink-0">{formatMoney(s.total_linea)}</span>
@@ -535,7 +535,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     <div key={days} className="flex flex-col items-center gap-0.5">
                                                         <span className="text-micro text-content-3 font-semibold">+{days}d</span>
                                                         <span className={`text-subtitle font-black tabular-nums leading-none ${color}`}>
-                                                            {depleted ? '0 ✗' : casi ? '< 1' : projected.toLocaleString()}
+                                                            {depleted ? '0 ✗' : casi ? '< 1' : projected.toLocaleString('es-SV')}
                                                         </span>
                                                         <span className="text-micro text-content-3">und</span>
                                                     </div>
@@ -562,9 +562,9 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                     <span className="text-micro text-content-3 shrink-0 w-14 tabular-nums">
                                                         {fechaTexto(h.captured_at, { day: '2-digit', month: 'short' })}
                                                     </span>
-                                                    <span className="font-bold text-chart-4-text">{(h.min_units ?? 0).toLocaleString()}</span>
+                                                    <span className="font-bold text-chart-4-text">{(h.min_units ?? 0).toLocaleString('es-SV')}</span>
                                                     <span className="text-content-3">→</span>
-                                                    <span className="font-bold text-chart-1-text">{(h.max_units ?? 0).toLocaleString()}</span>
+                                                    <span className="font-bold text-chart-1-text">{(h.max_units ?? 0).toLocaleString('es-SV')}</span>
                                                     <span className="text-content-3">{Number(h.daily_velocity || 0).toFixed(1)}/d</span>
                                                     {h.abc_class && <AbcXyzBadge abc={h.abc_class} xyz={h.demand_variability} />}
                                                 </div>

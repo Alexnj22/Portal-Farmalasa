@@ -1195,6 +1195,10 @@ const RIGHT_BORDER_RE = /\bborder-r(-[248])?\b/;
 // en vez de excepcionar esos 5 archivos mantiene la categoría viva en ellos: si
 // mañana uno formatea un monto mal, el gate lo ve igual.
 const LOCALE_AJENO_RE = /toLocale(?:Date|Time)?String\(\s*['"](?!es-SV|en-CA)[a-z]{2}(?:-[A-Z]{2})?['"]/g;
+// 2026-11-06: el hueco era la llamada SIN locale — `n.toLocaleString()` toma el
+// idioma del navegador, así que la misma cifra salía `1,234` en uno y `1.234`
+// o `1234` en otro. Había 184. Se fijaron a 'es-SV' y ahora también se penaliza.
+const LOCALE_VACIO_RE = /toLocale(?:Date|Time)?String\(\s*\)/g;
 
 // ── Categorías `copy-vacio` y `copy-trato` (F2, DESIGN.md §34) ──────────────
 // Miran SOLO los slots enumerados, no todo string del proyecto: un gate de
@@ -3277,6 +3281,11 @@ function scanFile(path) {
       let m;
       while ((m = LOCALE_AJENO_RE.exec(line))) {
         findings.push({ line: i + 1, label: `locale ajeno: ${m[0]} — el portal formatea en 'es-SV' vía utils/formatNumber`,
+          category: 'formato-cifra', text: line.trim().slice(0, 120) });
+      }
+      LOCALE_VACIO_RE.lastIndex = 0;
+      while ((m = LOCALE_VACIO_RE.exec(line))) {
+        findings.push({ line: i + 1, label: `locale del navegador: ${m[0]} — fijar 'es-SV' o usar utils/formatNumber`,
           category: 'formato-cifra', text: line.trim().slice(0, 120) });
       }
       MONEDA_A_MANO_RE.lastIndex = 0;

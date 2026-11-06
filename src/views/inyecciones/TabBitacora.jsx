@@ -166,20 +166,20 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de la bitácora">
                     <StatCard icon={Syringe} label="Aplicaciones pagadas"
-                        value={cargando ? '—' : res.total.toLocaleString()}
+                        value={cargando ? '—' : res.total.toLocaleString('es-SV')}
                         sub={cargando ? undefined : `${formatMoney(res.monto)} cobrados`} loading={cargando}
                         active={estado === 'todas'} onClick={() => setEstado('todas')} />
                     <StatCard icon={CheckCircle2} label="Aplicadas" tono="success"
-                        value={cargando ? '—' : aplicadas.toLocaleString()}
+                        value={cargando ? '—' : aplicadas.toLocaleString('es-SV')}
                         iconBg="bg-success/10" iconCls="text-success" loading={cargando}
                         active={estado === 'APLICADA'} onClick={() => setEstado((e) => (e === 'APLICADA' ? 'todas' : 'APLICADA'))} />
                     <StatCard icon={Hourglass} label="Pendientes" tono="warning"
-                        value={cargando ? '—' : (res.total - aplicadas).toLocaleString()}
+                        value={cargando ? '—' : (res.total - aplicadas).toLocaleString('es-SV')}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text" loading={cargando}
                         active={estado === 'PENDIENTE'} onClick={() => setEstado((e) => (e === 'PENDIENTE' ? 'todas' : 'PENDIENTE'))} />
                     {puedeConfirmar && (
                         <StatCard icon={ClipboardCheck} label="Por confirmar" tono="warning"
-                            value={porConfirmar == null ? '—' : nPorConfirmar.toLocaleString()}
+                            value={porConfirmar == null ? '—' : nPorConfirmar.toLocaleString('es-SV')}
                             sub="Aplicadas que marcó otra persona" loading={porConfirmar == null}
                             iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
                             active={estado === 'POR_CONFIRMAR'} onClick={() => setEstado((e) => (e === 'POR_CONFIRMAR' ? 'todas' : 'POR_CONFIRMAR'))} />

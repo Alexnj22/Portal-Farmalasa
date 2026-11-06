@@ -305,7 +305,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
                 else useToastStore.getState().showToast(ERP_NAMES[selectedErp], salto, 'error');
                 return;
             }
-            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString()} borradores generados`, 'success');
+            useToastStore.getState().showToast(ERP_NAMES[selectedErp], `${(res?.rows ?? 0).toLocaleString('es-SV')} borradores generados`, 'success');
             await loadData(selectedErp);
             if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
         } catch (e) { useToastStore.getState().showToast(ERP_NAMES[selectedErp], fmtCalcError(e), 'error'); }
@@ -347,7 +347,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             if (failed.length > 0) partes.push(`Error en: ${failed.join(', ')}`);
             useToastStore.getState().showToast('Calcular', partes.join('. '), 'error');
         } else {
-            useToastStore.getState().showToast('Todas las sucursales', `${totalRows.toLocaleString()} borradores generados`, 'success');
+            useToastStore.getState().showToast('Todas las sucursales', `${totalRows.toLocaleString('es-SV')} borradores generados`, 'success');
         }
         await loadData(selectedErp);
         if (wasPublished) { setFilterChangesOnly(true); setFilterDraft(false); }
@@ -512,7 +512,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             const floor = edit.field === 'min' ? (edit.bodegaPubMin ?? targetRow?.pub_min ?? 0) : (edit.bodegaPubMax ?? targetRow?.pub_max ?? 0);
             if (floor > 0 && numVal < floor) {
                 useToastStore.getState().showToast(targetRow?.product_name || 'Producto',
-                    `${edit.field === 'min' ? 'MIN' : 'MAX'} de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`, 'error');
+                    `${edit.field === 'min' ? 'MIN' : 'MAX'} de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString('es-SV')})`, 'error');
                 return;
             }
             const col    = edit.field === 'min' ? 'manual_min' : 'manual_max';
@@ -790,8 +790,8 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
         useToastStore.getState().showToast(
             ERP_NAMES[selectedErp],
             cuadra
-                ? `Se descartaron ${aDescartar.borradores.toLocaleString()} borradores · y ${aDescartar.sinDatos.toLocaleString()} productos sin ventas para calcular, que vuelven solos`
-                : `Se descartaron ${total.toLocaleString()} borradores`,
+                ? `Se descartaron ${aDescartar.borradores.toLocaleString('es-SV')} borradores · y ${aDescartar.sinDatos.toLocaleString('es-SV')} productos sin ventas para calcular, que vuelven solos`
+                : `Se descartaron ${total.toLocaleString('es-SV')} borradores`,
             cuadra ? 'info' : 'success',
         );
         useStaff.getState().appendAuditLog('MINMAX_DISCARD_ALL', String(selectedErp), {
@@ -1137,7 +1137,7 @@ export function useMinMaxData({ searchTerm = '', lockedErpId }) {
             ));
         }
         const toastMsg = (freshFloorMin > 0 || freshFloorMax > 0)
-            ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString()} · MAX ${freshFloorMax.toLocaleString()} — ingresa el total de bodega (sum + excedente).`
+            ? `Σ sucursales: MIN ${freshFloorMin.toLocaleString('es-SV')} · MAX ${freshFloorMax.toLocaleString('es-SV')} — ingresa el total de bodega (sum + excedente).`
             : 'Sin MIN/MAX en salas. Ingresa el excedente que debe quedar en bodega.';
         useToastStore.getState().showToast('Bodega', toastMsg, 'info');
         setInlineDraftEdit({

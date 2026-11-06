@@ -60,21 +60,21 @@ const BorradoresRanura = memo(({
         {
             key: 'solo',
             icon: filterDraft ? X : Filter,
-            label: filterDraft ? 'Ver todos' : `Ver solo los borradores (${draftCount.toLocaleString()})`,
+            label: filterDraft ? 'Ver todos' : `Ver solo los borradores (${draftCount.toLocaleString('es-SV')})`,
             activo: filterDraft,
             onClick: onSoloBorradores,
         },
         ...(hasPublishedData && changesCount > 0 ? [{
             key: 'cambios',
             icon: filterChangesOnly ? X : GitCompare,
-            label: filterChangesOnly ? 'Ver todos' : `Solo los que cambian (${changesCount.toLocaleString()})`,
+            label: filterChangesOnly ? 'Ver todos' : `Solo los que cambian (${changesCount.toLocaleString('es-SV')})`,
             activo: filterChangesOnly,
             onClick: onSoloCambios,
         }] : []),
         ...(hasActiveFilter && filtradosCount > 0 ? [{
             key: 'ocultar',
             icon: ocultando ? Loader2 : EyeOff,
-            label: `Ocultar ${filterLabel} (${filtradosCount.toLocaleString()})`,
+            label: `Ocultar ${filterLabel} (${filtradosCount.toLocaleString('es-SV')})`,
             tone: 'danger',
             disabled: ocultando,
             onClick: onOcultarFiltrados,
@@ -92,8 +92,8 @@ const BorradoresRanura = memo(({
     const publicar = {
         icon: publicando ? Loader2 : Upload,
         label: publicarFiltrados
-            ? `Publicar ${filterLabel} (${filteredDraftIds.length.toLocaleString()})`
-            : `Publicar todo (${draftCount.toLocaleString()})`,
+            ? `Publicar ${filterLabel} (${filteredDraftIds.length.toLocaleString('es-SV')})`
+            : `Publicar todo (${draftCount.toLocaleString('es-SV')})`,
         disabled: publicando,
         onClick: () => (publicarFiltrados ? onPublicar(filteredDraftIds) : onPublicar()),
     };
@@ -130,7 +130,7 @@ const BorradoresRanura = memo(({
         <div className="flex flex-col gap-2 w-full">
             <div className="flex items-center gap-1.5">
                 <Punto />
-                <span className="text-body-sm font-black text-content tabular-nums">{draftCount.toLocaleString()}</span>
+                <span className="text-body-sm font-black text-content tabular-nums">{draftCount.toLocaleString('es-SV')}</span>
                 <span className="text-caption text-content-3 font-medium">
                     borrador{draftCount !== 1 ? 'es' : ''} sin publicar
                 </span>
@@ -141,8 +141,8 @@ const BorradoresRanura = memo(({
 
     // ── Escritorio: el botón compacto y su panel ──────────────────────────
     const resumen = changesCount > 0
-        ? `${draftCount.toLocaleString()} borrador${draftCount !== 1 ? 'es' : ''} · ${changesCount.toLocaleString()} cambia${changesCount !== 1 ? 'n' : ''} el MIN/MAX`
-        : `${draftCount.toLocaleString()} borrador${draftCount !== 1 ? 'es' : ''} sin publicar`;
+        ? `${draftCount.toLocaleString('es-SV')} borrador${draftCount !== 1 ? 'es' : ''} · ${changesCount.toLocaleString('es-SV')} cambia${changesCount !== 1 ? 'n' : ''} el MIN/MAX`
+        : `${draftCount.toLocaleString('es-SV')} borrador${draftCount !== 1 ? 'es' : ''} sin publicar`;
 
     return (
         <>
@@ -174,7 +174,7 @@ const BorradoresRanura = memo(({
                         animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
                     <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
                         <Punto />
-                        <span className="text-body-sm font-black text-content tabular-nums">{draftCount.toLocaleString()}</span>
+                        <span className="text-body-sm font-black text-content tabular-nums">{draftCount.toLocaleString('es-SV')}</span>
                         <span className="text-caption text-content-3 font-medium">
                             borrador{draftCount !== 1 ? 'es' : ''} sin publicar
                         </span>

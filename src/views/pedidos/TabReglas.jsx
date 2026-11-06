@@ -896,7 +896,7 @@ export default function TabReglas({ searchTerm = '' }) {
 
                     <StatCard
                         icon={Package} iconBg="bg-chart-1/10" iconCls="text-brand-text"
-                        label="Activos" value={allCount.toLocaleString()}
+                        label="Activos" value={allCount.toLocaleString('es-SV')}
                         loading={statsLoading}
                     />
 

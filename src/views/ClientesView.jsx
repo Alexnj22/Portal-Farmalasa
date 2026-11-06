@@ -448,14 +448,14 @@ export default function ClientesView({ openModal }) {
                 <div className="flex flex-col gap-3">
                     <CarrilCards ariaLabel="Resumen del catálogo de clientes">
                         <StatCard icon={Users} label="Clientes"
-                            value={stats ? stats.total.toLocaleString() : '—'}
+                            value={stats ? stats.total.toLocaleString('es-SV') : '—'}
                             sub="En el catálogo" loading={!stats} />
                         <StatCard icon={IdCard} label="Completas"
-                            value={stats ? stats.completas.toLocaleString() : '—'}
+                            value={stats ? stats.completas.toLocaleString('es-SV') : '—'}
                             iconBg="bg-success/10" iconCls="text-success"
                             sub="Según su categoría" loading={!stats} />
                         <StatCard icon={Receipt} label="Por completar"
-                            value={stats ? stats.por_completar.toLocaleString() : '—'}
+                            value={stats ? stats.por_completar.toLocaleString('es-SV') : '—'}
                             iconBg="bg-warning/10" iconCls="text-warning"
                             valueCls="text-warning-text"
                             sub="Compran y no tienen datos"
@@ -470,10 +470,10 @@ export default function ClientesView({ openModal }) {
                                 });
                             }} />
                         <StatCard icon={ShieldCheck} label="Contribuyentes"
-                            value={stats ? stats.contribuyentes.toLocaleString() : '—'}
+                            value={stats ? stats.contribuyentes.toLocaleString('es-SV') : '—'}
                             sub="Se declaran a Hacienda" loading={!stats} />
                         <StatCard icon={FileWarning} label="A revisar"
-                            value={stats ? stats.a_revisar.toLocaleString() : '—'}
+                            value={stats ? stats.a_revisar.toLocaleString('es-SV') : '—'}
                             iconBg="bg-danger/10" iconCls="text-danger"
                             valueCls={stats?.a_revisar ? 'text-danger-text' : undefined}
                             sub="DUI, teléfono o nombre" loading={!stats} />
@@ -539,7 +539,7 @@ export default function ClientesView({ openModal }) {
                                 <DataCell hideBelow="2xl"><UbicacionCell row={row} /></DataCell>
                                 <DataCell align="right" hideBelow="lg">
                                     <span className="tabular-nums font-bold text-content-2">
-                                        {row.facturas.toLocaleString()}
+                                        {row.facturas.toLocaleString('es-SV')}
                                     </span>
                                     {row.facturas_ccf > 0 && (
                                         <p className="text-caption text-content-3 tabular-nums">

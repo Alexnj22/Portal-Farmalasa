@@ -112,17 +112,17 @@ const validateEditForRow = (edit, row) => {
         if (edit.field === 'min') {
             const floor = edit.bodegaPubMin ?? row.pub_min ?? 0;
             if (floor > 0 && numVal < floor)
-                return `MIN de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`;
+                return `MIN de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString('es-SV')})`;
         }
         if (edit.field === 'max') {
             const floor = edit.bodegaPubMax ?? row.pub_max ?? 0;
             if (floor > 0 && numVal < floor)
-                return `MAX de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString()})`;
+                return `MAX de Bodega no puede ser menor a la Σ sucursales (${floor.toLocaleString('es-SV')})`;
             if (edit.pendingMin !== undefined) {
                 const pendMinNum = parseInt(edit.pendingMin, 10) || 0;
                 const floorMin = edit.bodegaPubMin ?? row.pub_min ?? 0;
                 if (floorMin > 0 && pendMinNum < floorMin)
-                    return `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString()})`;
+                    return `MIN de Bodega no puede ser menor a la Σ sucursales (${floorMin.toLocaleString('es-SV')})`;
             }
         }
     }
@@ -811,9 +811,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             ? Number(row.dispatch_pres_factor) * Number(row.dispatch_multiplo ?? 1)
                             : 0;
                         const reglaAyuda = dispatchRisk
-                            ? `Se despacha de a ${reglaPack.toLocaleString()} und`
+                            ? `Se despacha de a ${reglaPack.toLocaleString('es-SV')} und`
                               + `${row.dispatch_tipo ? ` (${row.dispatch_tipo}${Number(row.dispatch_multiplo ?? 1) > 1 ? ` ×${row.dispatch_multiplo}` : ''})` : ''}`
-                              + `, y el MAX${hasDraft ? ' del borrador' : ''} de ${Number(vistaMax ?? 0).toLocaleString()} no llega ni a una. `
+                              + `, y el MAX${hasDraft ? ' del borrador' : ''} de ${Number(vistaMax ?? 0).toLocaleString('es-SV')} no llega ni a una. `
                               + 'Así este producto nunca va a entrar en un pedido: hay que subir el MAX o cambiar la regla.'
                               + (puedeVerReglas ? ' Toca para ver la regla.' : '')
                             : '';
@@ -935,10 +935,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         {formatUnits(stock, pres)}
                                                     </span>
                                                     {!dead && minN > 0 && stock < minN && (
-                                                        <span className="text-micro font-bold text-warning-text">↓{(minN - stock).toLocaleString()}</span>
+                                                        <span className="text-micro font-bold text-warning-text">↓{(minN - stock).toLocaleString('es-SV')}</span>
                                                     )}
                                                     {!dead && maxN > 0 && stock > maxN && (
-                                                        <span className="text-micro font-bold text-chart-1-text">↑{(stock - maxN).toLocaleString()}</span>
+                                                        <span className="text-micro font-bold text-chart-1-text">↑{(stock - maxN).toLocaleString('es-SV')}</span>
                                                     )}
                                                     <span className="text-content-3 text-caption select-none mx-0.5">|</span>
                                                     {noHistory && (
@@ -948,9 +948,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         <span className="text-caption text-warning-text font-semibold flex items-center gap-0.5">
                                                             <AlertTriangle size={9} />
                                                             {Number(row.units_sold_6m) >= 10
-                                                                ? `Mayorista: ${Number(row.units_sold_6m).toLocaleString()} uds.`
+                                                                ? `Mayorista: ${Number(row.units_sold_6m).toLocaleString('es-SV')} uds.`
                                                                 : Number(row.units_sold_6m) > 0
-                                                                    ? `${Number(row.units_sold_6m).toLocaleString()} uds. 6m`
+                                                                    ? `${Number(row.units_sold_6m).toLocaleString('es-SV')} uds. 6m`
                                                                     : 'Sin ventas'
                                                             }
                                                             {row.last_sale_date && <span className="text-warning-text/70 ml-0.5">· {isBodega && row.last_sale_sucursal_id ? `${ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} ` : ''}{fechaTexto(row.last_sale_date, { day: '2-digit', month: 'short', year: '2-digit' })}</span>}
@@ -964,7 +964,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             {v30 > 0 && v30 < v6m * 0.9 && <TrendingDown size={9} className="text-danger ml-0.5" title={`30d: ${v30.toFixed(2)}/día`} />}
                                                             <span className="text-content-3 mx-0.5">·</span>
                                                             {Math.round(v6m * 30)}/mes
-                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-content-3 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString()} vend.</>}
+                                                            {Number(row.units_sold_6m) > 0 && <><span className="text-content-3 mx-0.5">·</span>{Number(row.units_sold_6m).toLocaleString('es-SV')} vend.</>}
                                                             <span className="text-content-3 mx-0.5">·</span>
                                                             {row.last_sale_date
                                                                 ? <span className="font-semibold text-content-2">{isBodega && row.last_sale_sucursal_id ? <span className="font-normal text-content-3">{ERP_NAMES[row.last_sale_sucursal_id] ?? `Suc.${row.last_sale_sucursal_id}`} · </span> : null}{fechaTexto(row.last_sale_date, { day: '2-digit', month: 'short', year: '2-digit' })}</span>
@@ -1067,7 +1067,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                             inputClassName="text-center font-black tabular-nums"
                                                         />
                                                         {sep}
-                                                        <div data-surface={hasDraft ? undefined : 'card'} className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover'}`}>{vistaMax > 0 ? vistaMax.toLocaleString() : '—'}</div>
+                                                        <div data-surface={hasDraft ? undefined : 'card'} className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-chart-1-text bg-chart-1/10 border-chart-1/40' : 'text-content-3 bg-surface-card-hover'}`}>{vistaMax > 0 ? vistaMax.toLocaleString('es-SV') : '—'}</div>
                                                     </div>
                                                     {sortedPres(pres).length > 0 && inlineDraftEdit.value !== '' && <div className={`text-micro font-bold mt-0.5 tabular-nums ${hasDraft ? 'text-warning-text' : 'text-success-text'}`}>≈ {formatDominant(parseInt(inlineDraftEdit.value, 10) || 0, pres)}</div>}
                                                     {(dead || noHistory) && <div className="text-micro text-warning-text font-semibold mt-0.5">⚠ Sin ventas 6 meses</div>}
@@ -1077,7 +1077,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isEditMax) return (
                                                 <div className="flex flex-col items-center">
                                                     <div className="flex items-center gap-1.5">
-                                                        <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString()) : ((vistaMin > 0 || vistaMax > 0) ? vistaMin.toLocaleString() : '—')}</div>
+                                                        <div className={`min-w-[36px] text-center text-body-sm font-black tabular-nums rounded-md border-2 border-dashed px-1 py-0.5 ${hasDraft ? 'text-warning bg-warning/10 border-warning' : 'text-success-text bg-success/10 border-success'}`}>{inlineDraftEdit.pendingMin !== undefined ? (inlineDraftEdit.pendingMin === '' ? '—' : (parseInt(inlineDraftEdit.pendingMin, 10) || 0).toLocaleString('es-SV')) : ((vistaMin > 0 || vistaMax > 0) ? vistaMin.toLocaleString('es-SV') : '—')}</div>
                                                         {sep}
                                                         <PortalInput
                                                             aria-label="Nuevo valor"
@@ -1159,12 +1159,12 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (hasDraft) return isBodega ? (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—', stock < minN ? 'text-warning-text bg-warning/10' : 'text-content-2 bg-surface-card', stock < minN ? 'border-warning/30' : 'border-border-card', openMinEdit)}
+                                                        {box((minN > 0 || maxN > 0) ? minN.toLocaleString('es-SV') : '—', stock < minN ? 'text-warning-text bg-warning/10' : 'text-content-2 bg-surface-card', stock < minN ? 'border-warning/30' : 'border-border-card', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN > 0 ? maxN.toLocaleString() : '—', stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
+                                                        {box(maxN > 0 ? maxN.toLocaleString('es-SV') : '—', stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
                                                     </div>
                                                     {row.has_manual && (row.pub_min > 0 || row.pub_max > 0 || (row.draft_min ?? 0) > 0 || (row.draft_max ?? 0) > 0) && (
-                                                        <div className="text-micro font-semibold text-chart-3-text tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString()}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString()}</div>
+                                                        <div className="text-micro font-semibold text-chart-3-text tabular-nums">Σ {Math.max(row.pub_min ?? 0, row.draft_min ?? 0).toLocaleString('es-SV')}·{Math.max(row.pub_max ?? 0, row.draft_max ?? 0).toLocaleString('es-SV')}</div>
                                                     )}
                                                     <Badge
                                                         variant="warning" size="sm" uppercase={false}
@@ -1174,26 +1174,26 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         onMouseLeave={closeBodegaTooltip}
                                                     >
                                                         <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block shrink-0" />
-                                                        {(row.draft_min ?? 0).toLocaleString()}·{(row.draft_max ?? 0).toLocaleString()}
+                                                        {(row.draft_min ?? 0).toLocaleString('es-SV')}·{(row.draft_max ?? 0).toLocaleString('es-SV')}
                                                     </Badge>
                                                 </div>
                                             ) : (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box((row.draft_min > 0 || row.draft_max > 0) ? (row.draft_min ?? 0).toLocaleString() : '—', 'text-warning-text bg-warning/10', 'border-warning/30', openMinEdit)}
+                                                        {box((row.draft_min > 0 || row.draft_max > 0) ? (row.draft_min ?? 0).toLocaleString('es-SV') : '—', 'text-warning-text bg-warning/10', 'border-warning/30', openMinEdit)}
                                                         {sep}
-                                                        {box(row.draft_max > 0 ? row.draft_max.toLocaleString() : '—', 'text-chart-1-text bg-chart-1/10', 'border-chart-1/30', openMaxEdit)}
+                                                        {box(row.draft_max > 0 ? row.draft_max.toLocaleString('es-SV') : '—', 'text-chart-1-text bg-chart-1/10', 'border-chart-1/30', openMaxEdit)}
                                                     </div>
-                                                    {(minN > 0 || maxN > 0) && <div className="text-micro text-content-3 tabular-nums">{minN.toLocaleString()} · {maxN.toLocaleString()} act.</div>}
+                                                    {(minN > 0 || maxN > 0) && <div className="text-micro text-content-3 tabular-nums">{minN.toLocaleString('es-SV')} · {maxN.toLocaleString('es-SV')} act.</div>}
                                                 </div>
                                             );
 
                                             if (isSparse) return (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box((minN > 0 || maxN > 0) ? minN.toLocaleString() : '—', 'text-warning-text bg-warning/10', 'border-dashed border-warning/40', openMinEdit)}
+                                                        {box((minN > 0 || maxN > 0) ? minN.toLocaleString('es-SV') : '—', 'text-warning-text bg-warning/10', 'border-dashed border-warning/40', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN > 0 ? maxN.toLocaleString() : '—', 'text-warning-text bg-warning/10', 'border-dashed border-warning/40', openMaxEdit)}
+                                                        {box(maxN > 0 ? maxN.toLocaleString('es-SV') : '—', 'text-warning-text bg-warning/10', 'border-dashed border-warning/40', openMaxEdit)}
                                                     </div>
                                                     <div className="text-micro text-warning-text font-semibold">⚠ Confirmar</div>
                                                 </div>
@@ -1223,11 +1223,11 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             if (isBodega && row.has_manual && (row.pub_min > 0 || row.pub_max > 0)) return (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box(minN.toLocaleString(), stock < minN ? 'text-warning-text bg-warning/10' : 'text-content-2 bg-surface-card', stock < minN ? 'border-warning/30' : 'border-border-card', openMinEdit)}
+                                                        {box(minN.toLocaleString('es-SV'), stock < minN ? 'text-warning-text bg-warning/10' : 'text-content-2 bg-surface-card', stock < minN ? 'border-warning/30' : 'border-border-card', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
+                                                        {box(maxN.toLocaleString('es-SV'), stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
                                                     </div>
-                                                    <div className="text-micro font-semibold text-chart-3-text tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString()}·{(row.pub_max ?? 0).toLocaleString()}</div>
+                                                    <div className="text-micro font-semibold text-chart-3-text tabular-nums">Σ {(row.pub_min ?? 0).toLocaleString('es-SV')}·{(row.pub_max ?? 0).toLocaleString('es-SV')}</div>
                                                     {pendingBadge}
                                                 </div>
                                             );
@@ -1235,9 +1235,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                             return (
                                                 <div className="flex flex-col items-center gap-0.5">
                                                     <div className="flex items-center gap-1">
-                                                        {box(minN.toLocaleString(), stock < minN ? 'text-warning-text bg-warning/10' : 'text-content-2 bg-surface-card', stock < minN ? 'border-warning/30' : 'border-border-card', openMinEdit)}
+                                                        {box(minN.toLocaleString('es-SV'), stock < minN ? 'text-warning-text bg-warning/10' : 'text-content-2 bg-surface-card', stock < minN ? 'border-warning/30' : 'border-border-card', openMinEdit)}
                                                         {sep}
-                                                        {box(maxN.toLocaleString(), stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
+                                                        {box(maxN.toLocaleString('es-SV'), stock > maxN && maxN > 0 ? 'text-chart-1-text bg-chart-1/10' : 'text-content-3 bg-surface-card', stock > maxN && maxN > 0 ? 'border-chart-1/30' : 'border-border-card', openMaxEdit)}
                                                     </div>
                                                     {pendingBadge}
                                                 </div>
@@ -1302,7 +1302,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     {hasRule && hasPres && (
                                                         <LiquidTooltip content="MIN · MAX ya redondeado a la regla de despacho">
                                                             <span className="text-micro font-semibold text-content-3 tabular-nums">
-                                                                {applyRule(dispMin).toLocaleString()} · {applyRule(dispMax).toLocaleString()}
+                                                                {applyRule(dispMin).toLocaleString('es-SV')} · {applyRule(dispMax).toLocaleString('es-SV')}
                                                             </span>
                                                         </LiquidTooltip>
                                                     )}
@@ -1434,7 +1434,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     {bodegaTooltip.pending.map(b => (
                         <div key={b.erp_sucursal_id} className="flex items-center justify-between gap-3">
                             <span className="text-caption text-content-2 font-medium">{ERP_NAMES[b.erp_sucursal_id] ?? `Suc. ${b.erp_sucursal_id}`}</span>
-                            <span className="text-caption text-warning-text tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString()}·{(b.draft_max ?? 0).toLocaleString()}</span>
+                            <span className="text-caption text-warning-text tabular-nums font-semibold">{(b.draft_min ?? 0).toLocaleString('es-SV')}·{(b.draft_max ?? 0).toLocaleString('es-SV')}</span>
                         </div>
                     ))}
                 </div>,
@@ -1543,9 +1543,9 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         <div className="flex flex-col gap-0.5">
                                             <span className="text-micro font-black uppercase tracking-wide text-content-3">Vigente</span>
                                             <span className="text-h3 font-black tabular-nums text-content leading-none">
-                                                {Number(historyRow.effective_min ?? 0).toLocaleString()}
+                                                {Number(historyRow.effective_min ?? 0).toLocaleString('es-SV')}
                                                 <span className="text-content-3 mx-1.5">·</span>
-                                                {Number(historyRow.effective_max ?? 0).toLocaleString()}
+                                                {Number(historyRow.effective_max ?? 0).toLocaleString('es-SV')}
                                             </span>
                                         </div>
                                         <Badge variant={origen ? 'success' : 'neutral'} size="sm" uppercase={false} className="shrink-0 mt-0.5">
@@ -1923,10 +1923,10 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             <p className="text-body font-medium leading-relaxed text-content-3">
                                 Además se limpiarán{' '}
                                 <strong className="text-content-1">
-                                    {aDescartar.sinDatos.toLocaleString()} productos sin ventas suficientes
+                                    {aDescartar.sinDatos.toLocaleString('es-SV')} productos sin ventas suficientes
                                 </strong>{' '}
                                 para calcular. No salen en esta lista y vuelven solos en el próximo cálculo,
-                                así que el total será {aDescartar.total.toLocaleString()}.
+                                así que el total será {aDescartar.total.toLocaleString('es-SV')}.
                             </p>
                         )}
                     </div>

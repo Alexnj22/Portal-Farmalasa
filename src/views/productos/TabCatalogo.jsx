@@ -150,9 +150,9 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             <StatCard
                 icon={Package} iconBg={statIconBg} iconCls="text-brand-text"
                 label="Activos"
-                value={sinConteo ? '—' : (productStats?.activos ?? 0).toLocaleString()} valueCls={statText}
+                value={sinConteo ? '—' : (productStats?.activos ?? 0).toLocaleString('es-SV')} valueCls={statText}
                 sub={sinConteo ? 'no se pudo contar' : (productStats?.inactivos ?? 0) > 0
-                    ? `${(productStats.inactivos).toLocaleString()} inactivos` : undefined}
+                    ? `${(productStats.inactivos).toLocaleString('es-SV')} inactivos` : undefined}
                 loading={productStatsLoading}
             />
 
@@ -161,7 +161,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             <StatCard
                 icon={Sparkles} iconBg={nuevosIconBg} iconCls="text-success-text"
                 label="Nuevos"                 sub={`agregados en ${fechaTexto(hoySV(), { month: 'long' })}`}
-                value={productStatsLoading || sinConteo ? '–' : (productStats?.nuevos ?? 0).toLocaleString()}
+                value={productStatsLoading || sinConteo ? '–' : (productStats?.nuevos ?? 0).toLocaleString('es-SV')}
                 valueCls="text-success-text"
                 tono="brand" active={filterNuevos}
                 loading={productStatsLoading}
@@ -171,7 +171,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
             <StatCard
                 icon={History} iconBg={filterModificados ? 'bg-surface-card' : 'bg-warning/10'} iconCls="text-warning-text"
                 label="Modificados" sub={sinModificados ? 'no se pudo contar' : 'precios o datos cambiados'}
-                value={modificadosLoading || sinModificados ? '–' : (modificadosStats?.count ?? 0).toLocaleString()}
+                value={modificadosLoading || sinModificados ? '–' : (modificadosStats?.count ?? 0).toLocaleString('es-SV')}
                 valueCls={(modificadosStats?.count ?? 0) > 0 ? 'text-warning-text' : 'text-content-3'}
                 tono="warning" active={filterModificados}
                 loading={modificadosLoading}
@@ -187,7 +187,7 @@ function MarginStatCards({ stats, loading, filterMargin, onFilter, productStats,
                     <StatCard key={c.id}
                         icon={c.Icon} iconBg={c.iconBg} iconCls={c.iconColor}
                         label={c.label} sub={sinMargen ? 'no se pudo contar' : c.sub}
-                        value={loading || sinMargen ? '–' : c.count.toLocaleString()} valueCls={c.countColor}
+                        value={loading || sinMargen ? '–' : c.count.toLocaleString('es-SV')} valueCls={c.countColor}
                         tono={c.tono} active={active}
                         loading={loading}
                         onClick={() => onFilter(c.id)}
@@ -637,7 +637,7 @@ function PurchaseHistorySection({ purchases, canSeeCosts = true, comoPanel = fal
                                 {row.purchase_receipts?.proveedor || '—'}
                             </DataCell>
                             <DataCell align="center" className="text-label text-content-2 tabular-nums">
-                                {parseFloat(row.cantidad || 0).toLocaleString()}
+                                {parseFloat(row.cantidad || 0).toLocaleString('es-SV')}
                             </DataCell>
                             <DataCell align="right" className="text-body-sm font-semibold text-content-2 tabular-nums">
                                 {fmtCost(row.precio_unitario)}

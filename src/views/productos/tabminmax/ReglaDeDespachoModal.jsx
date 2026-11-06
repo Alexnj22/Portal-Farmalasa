@@ -35,7 +35,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
     const tipo = row.dispatch_tipo ? String(row.dispatch_tipo) : null;
     const comoSeDespacha = tipo
         ? `${tipo}${multiplo > 1 ? ` ×${multiplo}` : ''}`
-        : `${(factor * multiplo).toLocaleString()} und`;
+        : `${(factor * multiplo).toLocaleString('es-SV')} und`;
 
     return (
         <ModalShell open onClose={onClose} maxWidthClass="max-w-md" zClass="z-tooltip"
@@ -62,7 +62,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                         <div className="flex flex-col gap-0.5 min-w-0">
                             <span className="text-micro font-black uppercase tracking-wide text-content-3">Se despacha de a</span>
                             <span className="text-h3 font-black tabular-nums text-content leading-none">
-                                {(factor * multiplo).toLocaleString()}
+                                {(factor * multiplo).toLocaleString('es-SV')}
                                 <span className="text-label font-bold text-content-3 ml-1.5">und</span>
                             </span>
                         </div>
@@ -70,7 +70,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                     </div>
 
                     <p className="text-body font-medium leading-relaxed text-content-3">
-                        El MAX {esBorrador ? 'del borrador' : 'de hoy'} es <strong className="text-content-1">{maxHoy.toLocaleString()}</strong>, y
+                        El MAX {esBorrador ? 'del borrador' : 'de hoy'} es <strong className="text-content-1">{maxHoy.toLocaleString('es-SV')}</strong>, y
                         aunque la sala quede en cero eso no llega a pedir ni un paquete: el pedido
                         redondea a cero y este producto <strong className="text-content-1">nunca entra</strong>.
                     </p>
@@ -79,12 +79,12 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                         <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-2">
                             <span className="text-micro font-black uppercase tracking-wide text-content-3">Sugerencia</span>
                             <div className="flex items-center gap-2 text-h3 font-black tabular-nums leading-none">
-                                <span className="text-content-3">{minHoy.toLocaleString()} · {maxHoy.toLocaleString()}</span>
+                                <span className="text-content-3">{minHoy.toLocaleString('es-SV')} · {maxHoy.toLocaleString('es-SV')}</span>
                                 <span className="text-content-3 text-body">→</span>
-                                <span className="text-content">{sug.minNuevo.toLocaleString()} · {sug.maxNuevo.toLocaleString()}</span>
+                                <span className="text-content">{sug.minNuevo.toLocaleString('es-SV')} · {sug.maxNuevo.toLocaleString('es-SV')}</span>
                             </div>
                             <p className="text-caption leading-relaxed text-content-3">
-                                {sug.maxNuevo.toLocaleString()} es el MAX más chico que alcanza el umbral —
+                                {sug.maxNuevo.toLocaleString('es-SV')} es el MAX más chico que alcanza el umbral —
                                 el 40% del paquete, el mismo que usa el armado del pedido. El MIN mantiene la
                                 proporción que ya tenía el par.
                             </p>
@@ -92,7 +92,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                     )}
 
                     <p className="text-caption leading-relaxed text-content-3">
-                        Si este producto de verdad no se pide de a {(factor * multiplo).toLocaleString()} unidades,
+                        Si este producto de verdad no se pide de a {(factor * multiplo).toLocaleString('es-SV')} unidades,
                         lo que hay que cambiar es la regla y no el MAX.
                         {onVerReglas && <> <button type="button" onClick={onVerReglas}
                             className="font-bold text-content-2 underline underline-offset-2">Ver la regla</button>.</>}

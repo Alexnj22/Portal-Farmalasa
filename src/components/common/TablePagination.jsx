@@ -171,7 +171,7 @@ export default function TablePagination({
                         {page} / {totalPages}
                     </span>
                     <span className="text-micro text-content-3 tabular-nums truncate">
-                        {desde.toLocaleString()}–{hasta.toLocaleString()} de {mostrado.toLocaleString()}
+                        {desde.toLocaleString('es-SV')}–{hasta.toLocaleString('es-SV')} de {mostrado.toLocaleString('es-SV')}
                     </span>
                 </span>
 
@@ -292,11 +292,11 @@ export default function TablePagination({
             {/* zona 3 · cuánto hay — el rango y el total, a la derecha */}
             <span className="justify-self-end flex items-center gap-2 min-w-0">
                 <span className="text-body-sm text-content-2 whitespace-nowrap tabular-nums" aria-live="polite">
-                    <b className="text-content font-black">{desde.toLocaleString()}–{hasta.toLocaleString()}</b>
+                    <b className="text-content font-black">{desde.toLocaleString('es-SV')}–{hasta.toLocaleString('es-SV')}</b>
                     {' de '}
-                    <b className="text-content font-black">{mostrado.toLocaleString()}</b>
+                    <b className="text-content font-black">{mostrado.toLocaleString('es-SV')}</b>
                     {filteredTotal != null && filteredTotal !== total && (
-                        <span className="text-content-3"> ({total.toLocaleString()} sin filtrar)</span>
+                        <span className="text-content-3"> ({total.toLocaleString('es-SV')} sin filtrar)</span>
                     )}
                     <span className="text-content-3"> {unit}</span>
                 </span>

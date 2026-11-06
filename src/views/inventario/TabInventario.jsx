@@ -170,11 +170,11 @@ function TablaUbicaciones({ filas, titulo, vencidos = false }) {
                             </DataCell>
                             <DataCell><ExpiryCell fecha={row.fecha_vencimiento} /></DataCell>
                             <DataCell align="right" className={`text-body-sm font-semibold tabular-nums ${txt}`}>
-                                {(row.cantidad || 0).toLocaleString()}
+                                {(row.cantidad || 0).toLocaleString('es-SV')}
                             </DataCell>
                             <DataCell align="right">
                                 <span className={`text-body-sm font-bold tabular-nums ${rowUnits === 0 ? 'text-content-3' : txt}`}>
-                                    {rowUnits.toLocaleString()}
+                                    {rowUnits.toLocaleString('es-SV')}
                                 </span>
                                 <span className={`text-micro ml-0.5 ${vencidos ? 'text-danger-text' : 'text-content-3'}`}>und</span>
                             </DataCell>
@@ -359,7 +359,7 @@ export default function TabInventario({ searchTerm = '' }) {
         return {
             value: String(id),
             label: ERP_NAMES[id],
-            sublabel: log?.items_count != null ? log.items_count.toLocaleString() + ' items' : undefined,
+            sublabel: log?.items_count != null ? log.items_count.toLocaleString('es-SV') + ' items' : undefined,
         };
     });
 
@@ -372,7 +372,7 @@ export default function TabInventario({ searchTerm = '' }) {
 
                     <StatCard
                         icon={Package} iconBg="bg-chart-1/10" iconCls="text-brand-text"
-                        label="Productos" value={total.toLocaleString()}
+                        label="Productos" value={total.toLocaleString('es-SV')}
                         sub={selectedErp !== null ? ERP_NAMES[selectedErp] : 'todas las sucursales'}
                         loading={loading}
                     />
@@ -383,7 +383,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <StatCard
                         icon={AlertTriangle} iconBg={filterVencidos ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
                         label="Vencidos" sub="por fecha"
-                        value={loading ? '–' : expiredTotal.toLocaleString()} valueCls="text-danger-text"
+                        value={loading ? '–' : expiredTotal.toLocaleString('es-SV')} valueCls="text-danger-text"
                         tono="danger" active={filterVencidos}
                         onClick={() => { setFilterVencidos(v => !v); setFilterSixMonths(false); setFilterAreaVenc(false); }}
                     />
@@ -391,7 +391,7 @@ export default function TabInventario({ searchTerm = '' }) {
                     <StatCard
                         icon={CalendarClock} iconBg={filterSixMonths ? 'bg-surface-card' : 'bg-chart-4/10'} iconCls="text-chart-4-text"
                         label="Próx. a vencer" sub="en 6 meses"
-                        value={loading ? '–' : sixMonthsTotal.toLocaleString()} valueCls="text-chart-4-text"
+                        value={loading ? '–' : sixMonthsTotal.toLocaleString('es-SV')} valueCls="text-chart-4-text"
                         tono="warning" active={filterSixMonths}
                         onClick={() => { setFilterSixMonths(v => !v); setFilterVencidos(false); setFilterAreaVenc(false); }}
                     />
@@ -400,7 +400,7 @@ export default function TabInventario({ searchTerm = '' }) {
                         <StatCard
                             icon={PackageX} iconBg={filterAreaVenc ? 'bg-surface-card' : 'bg-danger/10'} iconCls="text-danger-text"
                             label="Área vencidos" sub="ubicación bodega"
-                            value={loading ? '–' : Object.keys(vencidosMap).length.toLocaleString()} valueCls="text-danger-text"
+                            value={loading ? '–' : Object.keys(vencidosMap).length.toLocaleString('es-SV')} valueCls="text-danger-text"
                             tono="danger" active={filterAreaVenc}
                             onClick={() => { setFilterAreaVenc(v => !v); setFilterVencidos(false); setFilterSixMonths(false); }}
                         />
@@ -568,7 +568,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             units === 0 ? 'text-content-3' :
                                             hasExpired  ? 'text-danger-text'   : 'text-content-2'
                                         }`}>
-                                            {units.toLocaleString()}
+                                            {units.toLocaleString('es-SV')}
                                         </span>
                                         <span className="text-micro text-content-3 ml-0.5">und</span>
                                         {(() => {
@@ -576,7 +576,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                             if (!vUnits) return null;
                                             return (
                                                 <span className="ml-1.5 text-caption font-bold text-danger-text tabular-nums">
-                                                    / {vUnits.toLocaleString()} V
+                                                    / {vUnits.toLocaleString('es-SV')} V
                                                 </span>
                                             );
                                         })()}

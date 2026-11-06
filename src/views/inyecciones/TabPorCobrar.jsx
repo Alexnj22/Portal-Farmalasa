@@ -139,24 +139,24 @@ export default function TabPorCobrar({
             <div className="flex flex-col lg:flex-row lg:items-center gap-3">
                 <CarrilCards className="flex-1" ariaLabel="Resumen de inyecciones">
                     <StatCard icon={Syringe} label="Ventas con inyección"
-                        value={loading ? '—' : ventas.length.toLocaleString()}
+                        value={loading ? '—' : ventas.length.toLocaleString('es-SV')}
                         sub="Facturas del período" loading={loading} />
                     <StatCard icon={CheckCircle2} label="Con cobro de aplicación"
-                        value={loading ? '—' : resumen.con.toLocaleString()}
+                        value={loading ? '—' : resumen.con.toLocaleString('es-SV')}
                         iconBg="bg-success/10" iconCls="text-success"
                         sub={loading ? undefined : `${formatPct(pctCobrado)} de las ventas`}
                         active={estado === 'con'} tono="success"
                         onClick={() => setEstado((e) => (e === 'con' ? 'todas' : 'con'))}
                         loading={loading} />
                     <StatCard icon={CircleSlash} label="Sin cobro"
-                        value={loading ? '—' : (ventas.length - resumen.con).toLocaleString()}
+                        value={loading ? '—' : (ventas.length - resumen.con).toLocaleString('es-SV')}
                         iconBg="bg-warning/10" iconCls="text-warning" valueCls="text-warning-text"
                         sub="No se encontró su cobro"
                         active={estado === 'sin'} tono="warning"
                         onClick={() => setEstado((e) => (e === 'sin' ? 'todas' : 'sin'))}
                         loading={loading} />
                     <StatCard icon={HandCoins} label="Cobros sin venta"
-                        value={loading ? '—' : sueltos.length.toLocaleString()}
+                        value={loading ? '—' : sueltos.length.toLocaleString('es-SV')}
                         sub={loading ? undefined : `${formatMoney(montoSueltos)} cobrados`}
                         loading={loading} />
                 </CarrilCards>

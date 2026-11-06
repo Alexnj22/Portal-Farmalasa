@@ -355,7 +355,7 @@ function TabFacturas({
 
             {/* Summary line */}
             <div className="text-label text-content-3 font-medium px-1">
-                {loading ? 'Cargando…' : `${total.toLocaleString()} factura${total !== 1 ? 's' : ''}`}
+                {loading ? 'Cargando…' : `${total.toLocaleString('es-SV')} factura${total !== 1 ? 's' : ''}`}
             </div>
 
             <DataTable columns={cols} loading={loading} /* La inferencia toma la primera columna como identidad, y acá esa
@@ -488,7 +488,7 @@ function TabProductos({ searchTerm }) {
     return (
         <div className="flex flex-col gap-4">
             <div className="text-label text-content-3 font-medium px-1">
-                {loading ? 'Cargando…' : `${total.toLocaleString()} producto${total !== 1 ? 's' : ''} comprados por Bodega · el más reciente primero`}
+                {loading ? 'Cargando…' : `${total.toLocaleString('es-SV')} producto${total !== 1 ? 's' : ''} comprados por Bodega · el más reciente primero`}
             </div>
 
             <DataTable columns={cols} loading={loading}

@@ -21,8 +21,8 @@ import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Es información del área administrativa, NO de contabilidad: el contador no
 // la ve (pedido del usuario: «esto es oculto»). Vive en Libros IVA porque ahí
 // está el mes y el libro al que no entran, pero `LibrosIvaView` sólo la pinta
-// para los cuatro cargos de admin, y `get_cof_sin_envio_mh` contesta FORBIDDEN
-// a cualquier otro. El aviso de «ventas fuera del libro» tampoco los cuenta.
+// con el permiso «Ver el cotejo completo» (`corte_z_ver_envio_mh`, 2026-11-06),
+// y `get_cof_sin_envio_mh` contesta FORBIDDEN a cualquier otro. El aviso de «ventas fuera del libro» tampoco los cuenta.
 // ─────────────────────────────────────────────────────────────────────────────
 
 const COLS = [

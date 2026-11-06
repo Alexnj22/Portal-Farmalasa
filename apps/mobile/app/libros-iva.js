@@ -29,7 +29,6 @@ import {
   fetchLibroPercepcion, fetchLibroRetencion, fetchNotasCreditoCompras, fetchRetencionVentas, fetchVentasFueraDelLibro,
   fetchCofSinEnvioMh,
 } from '@nucleo/data/librosIva';
-import { CARGOS_DEL_AREA_ADMINISTRATIVA } from '@nucleo/utils/marcaDeLaSala';
 import CofNocheSinEnvio from '../componentes/fiscal/CofNocheSinEnvio';
 import { calcularTotales } from '@nucleo/utils/librosIva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -69,7 +68,8 @@ export default function LibrosIva() {
   const libros = LIBROS.filter((l) => hasPermission(`libros_iva_tab_${l.tab}`));
   // El candado de verdad está en `get_cof_sin_envio_mh`; acá sólo se evita
   // pedirla y pintar un error.
-  const esAdmin = CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.roleId)) || CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.secondaryRoleId));
+  // El mismo permiso que el Corte Z: «Ver el cotejo completo» (2026-11-06).
+  const esAdmin = hasPermission('corte_z_ver_envio_mh');
   const verCofNoche = esAdmin && hasPermission('libros_iva_tab_consumidor');
   const [abierto, setAbierto] = useState(null);
   const sucursales = useStaffStore((s) => s.branches);

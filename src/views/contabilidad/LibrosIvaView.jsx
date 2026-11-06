@@ -28,7 +28,6 @@ import {
 } from '@nucleo/data/librosIva';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import CofNocheSinEnvio from './CofNocheSinEnvio';
-import { CARGOS_DEL_AREA_ADMINISTRATIVA } from '@nucleo/utils/marcaDeLaSala';
 
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
@@ -634,12 +633,12 @@ export default function LibrosIvaView({ openModal }) {
     const [renta,         setRenta]         = useState([]);
     const [fuera,         setFuera]         = useState(null);
     // Los consumidores finales de las 6 p. m. en adelante, que no se envían a
-    // Hacienda (2026-10-19). Ver `CofNocheSinEnvio`. Sólo para el área
-    // administrativa: el contador no la ve. El candado de verdad está en
-    // `get_cof_sin_envio_mh`; acá sólo se evita pedirla y pintar un error.
+    // Hacienda (2026-10-19). Ver `CofNocheSinEnvio`. Sólo para quien tiene
+    // «Ver el cotejo completo» (2026-11-06): el contador y los jefes no la ven.
+    // El candado de verdad está en `get_cof_sin_envio_mh`; acá sólo se evita
+    // pedirla y pintar un error.
     const [cofNoche,      setCofNoche]      = useState(null);
-    const esAdmin = CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.roleId))
-                 || CARGOS_DEL_AREA_ADMINISTRATIVA.has(Number(user?.secondaryRoleId));
+    const esAdmin = hasPermission('corte_z_ver_envio_mh');
     const [notas,         setNotas]         = useState([]);
     const [loading, setLoading] = useState(true);
     const [error,   setError]   = useState(null);

@@ -3,9 +3,9 @@
 //
 // Decisión del usuario: todo COF emitido desde las 6:00 p. m. NO se envía a
 // Hacienda, pero se lleva registro de cuántos son y cuánto suman. Es
-// información del área administrativa, NO de contabilidad: `libros-iva` sólo la
-// pide para los cuatro cargos de admin, y `get_cof_sin_envio_mh` contesta
-// FORBIDDEN a cualquier otro. El CSV, documento por documento, es el mismo del
+// información reservada: `libros-iva` sólo la pide con el permiso «Ver el
+// cotejo completo» (`corte_z_ver_envio_mh`, 2026-11-06), y
+// `get_cof_sin_envio_mh` contesta FORBIDDEN a cualquier otro. El CSV, documento por documento, es el mismo del
 // portal (`csvCofNoche`, núcleo).
 import { useState } from 'react';
 import { Text, View } from 'react-native';

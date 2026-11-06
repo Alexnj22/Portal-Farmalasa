@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.14 — Corte Z y Libros IVA cotejan sólo lo enviado; «Ver el cotejo completo» agrega el detalle de la noche
+
+Pedido del usuario: los jefes ven el Corte Z «según lo reportado y enviado», así
+la diferencia siempre se ve. Se deshace la vista de sala del 2026-11-03.
+
+- `get_cortes_z` / `get_corte_z_dias`: el libro lleva sólo lo sellado, para todos
+  (octubre: $200,749.10, diferencia −$18,147.15 contra el Z).
+- Con «Ver el cotejo completo», la comprobación del sello agrega cuántas de las
+  ventas sin sello son consumidor final desde las 6:00 p. m.
+- El panel de la noche en Libros IVA (web y app) y `get_cof_sin_envio_mh` dejan
+  la lista fija de cargos 2/3/11/13 y usan ese mismo permiso, con su alcance.
+- Migración `20261106172937_cotejo_completo_manda_en_corte_z_y_libros`.
+
 ## v2.1461.13 — El arranque del portal baja de 314 a 286 kB
 
 Lo que se baja al entrar (y otra vez después de cada publicación) pasa de 314 a

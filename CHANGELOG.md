@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1463.3 — Compras: el encabezado va con los montos del documento y el sello de Hacienda
+
+- **El total de la compra es el del documento, al centavo.** La carga sumaba
+  las partes con 4 decimales y redondeaba al final; el proveedor redondea cada
+  parte y después suma. En 5 de 41 compras del 6-nov el total quedó a un
+  centavo (6538: $689.24 contra $689.25). Ahora, cuando la diferencia es de
+  redondeo, gravadas, IVA, percepción y total viajan como los dice el
+  documento; el centavo queda en el costo de los renglones. Una diferencia
+  mayor sigue frenando la carga (`encabezadoDelDocumento`).
+- **El sello de recepción viaja en la compra.** El campo «número de serie» iba
+  vacío en los documentos electrónicos: las 70 compras cargadas desde el portal
+  quedaron sin sello en el sistema, mientras las cargadas a mano lo llevan.
+
 ## v2.1463.2 — La ficha nunca manda el nombre generado
 
 - `partirPorLlave` también deja fuera `name` (columna generada: Postgres

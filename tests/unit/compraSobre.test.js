@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
-import { lineaDelSobre, totalesDelSobre, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura } from '../../supabase/functions/_shared/compraSobre.ts';
+import { lineaDelSobre, totalesDelSobre, encabezadoDelDocumento, tipoDocDe, costoNeto, factorEnLaDescripcion, leerModelo, preciosDelNuevo, sobreDeProductoNuevo, repartirRegalos, totalDelDocumento, factorDescuentoDeFactura } from '../../supabase/functions/_shared/compraSobre.ts';
 
 /* Presentaciones reales de Bodega, leídas el 2026-10-29 con `consultar_stock`
  * + `getpresentacion` (sólo lectura). */
@@ -73,6 +73,32 @@ describe('totalesDelSobre', () => {
     });
     it('factura: sin IVA aparte', () => {
         expect(totalesDelSobre([l('1.13', '10')], 'COF', 0)).toMatchObject({ iva: '0.0000', total: '11.30' });
+    });
+});
+
+describe('encabezadoDelDocumento', () => {
+    // Compra 6538 (MONTREAL, 6-nov): armado 689.2445 → 689.24; el documento,
+    // parte por parte, 604.60 + 78.60 + 6.05 = 689.25.
+    const armado6538 = { sumas_sin_iva: '604.6004', subtotal: '683.1985', iva: '78.5981', venta_exenta: '0.00', total_percepcion: '6.05', total: '689.24' };
+    const resumen6538 = { totalGravada: 604.6, descuGravada: 0, tributos: [{ codigo: '20', valor: 78.6 }], ivaPerci1: 6.05 };
+    it('una diferencia de redondeo se carga con los montos del documento', () => {
+        expect(encabezadoDelDocumento(armado6538, resumen6538, 689.25, 0.05))
+            .toMatchObject({ sumas_sin_iva: '604.6000', iva: '78.6000', total_percepcion: '6.05', total: '689.25' });
+    });
+    it('el medio centavo no se redondea para el lado equivocado (6542: 104.425 → 104.42 del documento)', () => {
+        const armado = { sumas_sin_iva: '104.4250', subtotal: '118.0003', iva: '13.5753', venta_exenta: '0.00', total_percepcion: '0.00', total: '118.00' };
+        const r = encabezadoDelDocumento(armado, { totalGravada: 104.42, tributos: [{ codigo: '20', valor: 13.58 }] }, 118, 0.05);
+        expect(r).toMatchObject({ sumas_sin_iva: '104.4200', iva: '13.5800', total: '118.00' });
+    });
+    it('una diferencia de verdad deja lo armado (la revisión frena)', () => {
+        expect(encabezadoDelDocumento(armado6538, resumen6538, 700, 0.05)).toBe(armado6538);
+        expect(encabezadoDelDocumento(armado6538, resumen6538, null, 0.05)).toBe(armado6538);
+    });
+    it('una parte que el documento no trae, o que está lejos, se queda con la nuestra', () => {
+        const r = encabezadoDelDocumento(armado6538, { totalGravada: 604.6, tributos: [{ codigo: '20', valor: 78.6 }] }, 689.25, 0.05);
+        expect(r).toMatchObject({ total_percepcion: '6.05', total: '689.25' });
+        const conDescuento = encabezadoDelDocumento(armado6538, { ...resumen6538, totalGravada: 660 }, 689.25, 0.05);
+        expect(conDescuento.sumas_sin_iva).toBe('604.6004');
     });
 });
 

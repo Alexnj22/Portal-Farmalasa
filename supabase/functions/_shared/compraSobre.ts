@@ -283,6 +283,49 @@ export function totalesDelSobre(
 }
 
 /**
+ * El encabezado de la compra con los montos del DOCUMENTO, al centavo
+ * (usuario, 2026-11-06: «muy bien» — la compra se registra como la emitió el
+ * proveedor).
+ *
+ * `totalesDelSobre` suma las partes con 4 decimales y redondea al final; el
+ * proveedor redondea cada parte y después suma. Con todo bien armado, eso
+ * corría el total un centavo en 5 de 41 compras del 6-nov (6538: el documento
+ * dice 604.60 + 78.60 + 6.05 = 689.25 y se cargó 689.24), y el sistema guardaba
+ * un encabezado que no suma su propio total. El centavo es del COSTO de los
+ * renglones —inventario—, no del documento.
+ *
+ * Sólo cuando la diferencia es de redondeo (≤ `tolerancia`): una mayor es un
+ * problema de verdad y la revisión ya frena. Cada parte se toma del documento
+ * sólo si está a 2 centavos de la nuestra: un proveedor que no llena
+ * `ivaPerci1` (GAMMA) o un descuento global dejan la nuestra.
+ */
+export function encabezadoDelDocumento(
+  tot: ReturnType<typeof totalesDelSobre>, resumen: any, totalDoc: number | null, tolerancia: number,
+): ReturnType<typeof totalesDelSobre> {
+  if (totalDoc == null || !(Math.abs(Number(tot.total) - totalDoc) <= tolerancia)) return tot;
+  const num = (v: unknown) => (v == null || v === "" || !Number.isFinite(Number(v)) ? null : Number(v));
+  const tributos = Array.isArray(resumen?.tributos) ? resumen.tributos : null;
+  const ivaDoc = tributos
+    ? tributos.filter((t: any) => String(t?.codigo) === "20").reduce((a: number, t: any) => a + Number(t?.valor ?? 0), 0)
+    : num(resumen?.totalIva);
+  const gravDoc = num(resumen?.totalGravada) == null ? null : num(resumen.totalGravada)! - (num(resumen?.descuGravada) ?? 0);
+  const percDoc = num(resumen?.ivaPerci1);
+  const cerca = (nuestro: number, delDoc: number | null) =>
+    delDoc != null && Math.abs(nuestro - delDoc) <= 0.02 ? r2(delDoc) : nuestro;
+  const grav = cerca(Number(tot.sumas_sin_iva), gravDoc);
+  const iva = Number(tot.iva) === 0 ? 0 : cerca(Number(tot.iva), ivaDoc);
+  const perc = Number(tot.total_percepcion) === 0 ? 0 : cerca(Number(tot.total_percepcion), percDoc);
+  return {
+    ...tot,
+    sumas_sin_iva: r4(grav).toFixed(4),
+    subtotal: r4(grav + iva).toFixed(4),
+    iva: r4(iva).toFixed(4),
+    total_percepcion: r2(perc).toFixed(2),
+    total: totalDoc.toFixed(2),
+  };
+}
+
+/**
  * El tamaño de la caja cuando el proveedor lo escribe en la descripción:
  * «Barrita Fresa Sarita|7401090800083|25.000 |Caja» (Sarita) o
  * «PALETA FROZEN MIXTA CJA 25 UND» (Nevería). Sólo esas dos formas: un número

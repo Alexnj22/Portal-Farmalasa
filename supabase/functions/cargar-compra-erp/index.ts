@@ -33,7 +33,7 @@ import {
 } from "../_shared/erp-traslado.ts";
 import {
   type Decision, type LineaSobre, type Problema, type ProductoDelSistema, type RenglonDoc,
-  lineaDelSobre, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
+  lineaDelSobre, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 
@@ -2208,9 +2208,14 @@ Deno.serve(async (req: Request) => {
       e.costo_unitario = Math.round((Number(l.compra) / (Number(l.unidad) || 1)) * 1e4) / 1e4;
     }
     for (const rp of reparto) rp.compra = String(lineas[rp.linea_idx!].compra);
-    const tot = totalesDelSobre(lineas, tipoDoc, tasa);
+    const armado = totalesDelSobre(lineas, tipoDoc, tasa);
     const totalDoc = totalDelDocumento(dte?.resumen);
-    const diferencia = totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100;
+    const diferencia = totalDoc == null ? null : Math.round((Number(armado.total) - totalDoc) * 100) / 100;
+    // Lo que viaja en el encabezado: los montos del documento cuando la
+    // diferencia es de redondeo y todos los renglones están armados (ver
+    // `encabezadoDelDocumento`). Con una diferencia de verdad queda lo armado
+    // y la revisión de abajo frena.
+    const tot = lineas.length === items.length ? encabezadoDelDocumento(armado, dte?.resumen, totalDoc, TOLERANCIA) : armado;
     if (diferencia == null) problemas.push({ renglon: null, texto: "El documento no trae su total." });
     // Sólo con TODOS los renglones armados: con uno sin producto el total
     // sale corto por construcción, y decirlo repite el problema de arriba.
@@ -2287,8 +2292,13 @@ Deno.serve(async (req: Request) => {
       clasificacion: uso === "consumo" ? "2" : "1",
       tipo_costo_gasto: uso === "consumo" ? "2" : "5",
       total_fovial: 0, total_cotrans: 0,
-      // Un papel es DOCUMENTO IMPRESO (1) y lleva su serie; un DTE, 4.
-      clase_documento_tributario: manual ? "1" : "4", numero_serie: manual?.serie ?? "",
+      // Un papel es DOCUMENTO IMPRESO (1) y lleva su serie; un DTE, 4, y su
+      // «número de serie» es el SELLO DE RECEPCIÓN de Hacienda (lo mismo que
+      // pide el anexo). Iba vacío: las 70 compras cargadas desde el portal hasta
+      // el 6-nov quedaron sin sello en el sistema, mientras que las cargadas a
+      // mano lo llevan (215 de 247, todas iguales al del documento).
+      clase_documento_tributario: manual ? "1" : "4",
+      numero_serie: manual ? (manual.serie ?? "") : String(d.sello_recibido ?? ""),
     };
 
     // Los totales lado a lado, para que la persona los compare con la factura
@@ -2314,7 +2324,8 @@ Deno.serve(async (req: Request) => {
 
     const revision = { regalos, totales,
       problemas, listo: problemas.length === 0,
-      total_documento: totalDoc, total_armado: Number(tot.total), diferencia,
+      total_documento: totalDoc, total_armado: Number(tot.total),
+      diferencia: totalDoc == null ? null : Math.round((Number(tot.total) - totalDoc) * 100) / 100,
       percepcion_proveedor: tasa, renglones: detalle, erroneos, reparto,
     };
     if (enviar) return responder(await enviarCompra(admin, {

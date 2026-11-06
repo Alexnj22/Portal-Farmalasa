@@ -4,12 +4,8 @@ import { createAuditSlice } from './slices/auditSlice';
 import { createBranchSlice } from './slices/branchSlice';
 import { createEmployeeSlice } from './slices/employeeSlice';
 import { createSystemSlice } from './slices/systemSlice';
-import { createRequestsSlice } from './slices/requestsSlice';
-import { createVacationPlanSlice } from './slices/vacationPlanSlice';
-import { createPayrollSlice } from './slices/payrollSlice';
 import { createNotificationsSlice } from './slices/notificationsSlice';
-import { createPracticantesSlice } from './slices/practicantesSlice';
-import { createConteoInventarioSlice } from './slices/conteoInventarioSlice';
+import { porcionDiferida, SOLICITUDES, PLANILLA, PLAN_VACACIONES, CONTEO_INVENTARIO, PRACTICANTES } from './porcionesDiferidas';
 import { registrarNombresElegidos } from '../utils/nameUtils';
 
 export const useStaffStore = create((...args) => ({
@@ -17,12 +13,17 @@ export const useStaffStore = create((...args) => ({
   ...createBranchSlice(...args),
   ...createEmployeeSlice(...args),
   ...createSystemSlice(...args),
-  ...createRequestsSlice(...args),
-  ...createVacationPlanSlice(...args),
-  ...createPayrollSlice(...args),
+  // Se baja al primer uso: ver porcionesDiferidas.js.
+  ...porcionDiferida(() => import('./slices/requestsAcciones').then((m) => m.createRequestsSlice), SOLICITUDES.estado, SOLICITUDES.acciones, SOLICITUDES.internas)(...args),
+  // Se baja al primer uso: ver porcionesDiferidas.js.
+  ...porcionDiferida(() => import('./slices/vacationPlanSlice').then((m) => m.createVacationPlanSlice), PLAN_VACACIONES.estado, PLAN_VACACIONES.acciones)(...args),
+  // Se baja al primer uso: ver porcionesDiferidas.js.
+  ...porcionDiferida(() => import('./slices/payrollSlice').then((m) => m.createPayrollSlice), PLANILLA.estado, PLANILLA.acciones)(...args),
   ...createNotificationsSlice(...args),
-  ...createPracticantesSlice(...args),
-  ...createConteoInventarioSlice(...args),
+  // Se baja al primer uso: ver porcionesDiferidas.js.
+  ...porcionDiferida(() => import('./slices/practicantesSlice').then((m) => m.createPracticantesSlice), PRACTICANTES.estado, PRACTICANTES.acciones)(...args),
+  // Se baja al primer uso: ver porcionesDiferidas.js.
+  ...porcionDiferida(() => import('./slices/conteoInventarioSlice').then((m) => m.createConteoInventarioSlice), CONTEO_INVENTARIO.estado, CONTEO_INVENTARIO.acciones)(...args),
 }));
 
 // El nombre que cada persona eligió para el portal se registra en cuanto cambia

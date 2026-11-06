@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { AlertTriangle, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, PackageSearch, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
@@ -9,13 +9,16 @@ import PeriodStepper from '../components/common/PeriodStepper';
 import CarrilCards from '../components/common/CarrilCards';
 import StatCard from '../components/common/StatCard';
 import Notice from '../components/common/Notice';
+import { SkeletonText } from '../components/common/StateViews';
 import TabHoy from './bitacoras/TabHoy';
-import TabBajoReceta from './bitacoras/TabBajoReceta';
-import TabCierre from './bitacoras/TabCierre';
-import TabConfiguracion from './bitacoras/TabConfiguracion';
-import TabAntibioticos from './bitacoras/TabAntibioticos';
-import TabRegistroLote from './bitacoras/TabRegistroLote';
-import TabLotesPorRevisar from './bitacoras/TabLotesPorRevisar';
+/* La pestaña de entrada («Hoy») viaja con la vista; las demás se bajan al
+ * abrirlas: se ve una a la vez (2026-11-06, gate:bundle). */
+const TabBajoReceta = lazy(() => import('./bitacoras/TabBajoReceta'));
+const TabCierre = lazy(() => import('./bitacoras/TabCierre'));
+const TabConfiguracion = lazy(() => import('./bitacoras/TabConfiguracion'));
+const TabAntibioticos = lazy(() => import('./bitacoras/TabAntibioticos'));
+const TabRegistroLote = lazy(() => import('./bitacoras/TabRegistroLote'));
+const TabLotesPorRevisar = lazy(() => import('./bitacoras/TabLotesPorRevisar'));
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
@@ -388,6 +391,7 @@ export default function BitacorasView() {
                     </div>}
                 </div>
 
+                <Suspense fallback={<SkeletonText lines={4} className="w-full" />}>
                 {enAntibioticos ? (
                     <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} puedeEditar={puedeEditarAntibioticos} />
                 ) : enRevision ? (
@@ -419,6 +423,7 @@ export default function BitacorasView() {
                     <TabConfiguracion branchId={sala} sucursalNombre={nombreSala}
                         puedeEditar={puedeConfigurar} onCambio={cargarDia} />
                 )}
+                </Suspense>
             </div>
         </GlassViewLayout>
     );

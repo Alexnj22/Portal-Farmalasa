@@ -36,7 +36,10 @@ import { textoBuscable } from '@nucleo/utils/trasladoTexto';
 import { fetchTrasladosPorRecibir, fetchTrasladosHistorial, fetchEstadoDeGrupos } from '@nucleo/data/traslados';
 import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo/data/envios';
 import { fetchFaltantes } from '@nucleo/data/faltantes';
-import RepartosDeCompra from './traslados/RepartosDeCompra';
+/* Los repartos que salen de una compra traen la capa de datos de «Cargar
+ * compra» (~4 kB). Se bajan al pintarse, después de la lista propia de
+ * traslados, para no cargarlos antes que ella (2026-11-06, gate:bundle). */
+const RepartosDeCompra = lazy(() => import('./traslados/RepartosDeCompra'));
 import PropuestasDeLote from './traslados/PropuestasDeLote';
 import Notice from '../components/common/Notice';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
@@ -744,8 +747,10 @@ export default function TrasladosView() {
 
                     {cargando && <SkeletonText lines={4} />}
 
-                    <RepartosDeCompra busqueda={busqueda} onCuenta={setDeCompras}
-                        puedeRecibir={alcanceTodas || Boolean(miBranch)} />
+                    <Suspense fallback={null}>
+                        <RepartosDeCompra busqueda={busqueda} onCuenta={setDeCompras}
+                            puedeRecibir={alcanceTodas || Boolean(miBranch)} />
+                    </Suspense>
 
                     {!cargando && lista.length === 0 && deCompras === 0 && (
                         <EmptyState

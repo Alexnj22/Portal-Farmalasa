@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.13 — El arranque del portal baja de 314 a 286 kB
+
+Lo que se baja al entrar (y otra vez después de cada publicación) pasa de 314 a
+286 kB gzip, contra un techo de 290. `gate:bundle` vuelve a verde.
+
+- **Porciones del store diferidas** (`src/store/porcionesDiferidas.js`):
+  Solicitudes, Planilla, Plan de vacaciones, Conteo y Practicantes declaran su
+  estado inicial y sus acciones; el código real se baja la primera vez que una
+  acción se llama. Las acciones de Solicitudes salen a `requestsAcciones.js`
+  (1,700 líneas) y las constantes que lee medio portal se quedan.
+  `tests/unit/porcionesDiferidas.test.js` compara las listas con las porciones
+  reales para que no se desincronicen.
+- **Saly**: quién ve la ayuda vive en `salyAyudaAcceso.js`; el marco ya no
+  arrastra al arranque lo que sólo usan Caja y Cortes.
+- **Vistas**: Cargar compra (75 → <54: la propuesta, las pestañas y la factura
+  en papel se bajan al usarse), Inicio (119 → <107: cada baldosa al pintarse),
+  Traslados (repartos de compra), Bitácoras (las pestañas que no son «Hoy»),
+  detalle de Conteo (ajuste en caja y vista previa al aprobar).
+- **Techos subidos a mano, con motivo en `_motivos`**: Cortes, Solicitudes,
+  campana, Productos y Cotizaciones reciben lo que antes viajaba en el entry;
+  Impresión lleva la ticketera por diseño (es la pantalla de prueba).
+
 ## v2.1461.12 — Ventas con el StatCard canónico
 
 - **Las tarjetas de Ventas ahora son el `StatCard` de todo el portal.** Ventas tenía una tarjeta propia por tres cosas que el canónico no tenía. Ahora el canónico las tiene y cualquier vista puede usarlas:

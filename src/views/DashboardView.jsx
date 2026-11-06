@@ -47,16 +47,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { REQUEST_TYPES } from '@nucleo/store/slices/requestsSlice';
 import GlassViewLayout from '../components/GlassViewLayout';
-import WidgetInventorySearch from './dashboard/WidgetInventorySearch';
 import SearchInput from '../components/common/SearchInput';
-import WidgetAnnulmentRequest from './dashboard/baldosas/BaldosaFacturacion';
-import WidgetMinMaxRequest from './dashboard/baldosas/BaldosaMinMax';
-import WidgetInventoryMovement from './dashboard/baldosas/BaldosaInventario';
-import WidgetDatoPedido from './dashboard/WidgetDatoPedido';
-import WidgetBitacoras from './dashboard/WidgetBitacoras';
-import WidgetRecetasPendientes from './dashboard/WidgetRecetasPendientes';
-import WidgetTransferRequests from './dashboard/WidgetTransferRequests';
-import WidgetMetaSala from './dashboard/WidgetMetaSala';
 /* Las dos baldosas del dinero se bajan al PINTARSE, no al entrar al Inicio.
  *
  * Arrastran el diagnóstico de cortes y la capa de datos de bolsas —los dos
@@ -78,7 +69,6 @@ const WidgetReservas = lazy(() => import('./dashboard/WidgetReservas'));
 // Estaba USADO y sin importar: el componente existe, su rama de render está
 // completa y su permiso registrado, pero faltaba esta línea. No se veía porque
 // `vendedores` tampoco estaba en ninguna pestaña — un bug tapando al otro.
-import WidgetVendedores from './dashboard/WidgetVendedores';
 import { TamanoWidgetCtx, useTamanoWidget } from './dashboard/tamanoWidget';
 import VistazoWidget from './dashboard/VistazoWidget';
 import { useSolicitudEnInicio } from './dashboard/useSolicitudEnInicio';
@@ -120,6 +110,28 @@ import { hora12 } from '@nucleo/utils/hora';
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../components/common/PuntoDeEstado';
 import IconoEnCaja from '../components/common/IconoEnCaja';
+
+/* Las baldosas se bajan al PINTARSE, no al entrar al Inicio (2026-11-06).
+ * Cada persona ve sólo las de su cargo y las que acomodó en su tablero, así que
+ * cargarlas todas de entrada era pagar por las de los demás: el Inicio estaba
+ * en 119 kB contra un techo de 107. Cada una con su propio `Suspense` (con
+ * `fallback` vacío): la rejilla ya le reservó el lugar, y así una baldosa que
+ * llega un instante después no esconde al resto del tablero. */
+const alPintarse = (cargar) => {
+    const Diferido = lazy(cargar);
+    const ConEspera = (props) => <Suspense fallback={null}><Diferido {...props} /></Suspense>;
+    return ConEspera;
+};
+const WidgetInventorySearch = alPintarse(() => import('./dashboard/WidgetInventorySearch'));
+const WidgetAnnulmentRequest = alPintarse(() => import('./dashboard/baldosas/BaldosaFacturacion'));
+const WidgetMinMaxRequest = alPintarse(() => import('./dashboard/baldosas/BaldosaMinMax'));
+const WidgetInventoryMovement = alPintarse(() => import('./dashboard/baldosas/BaldosaInventario'));
+const WidgetDatoPedido = alPintarse(() => import('./dashboard/WidgetDatoPedido'));
+const WidgetBitacoras = alPintarse(() => import('./dashboard/WidgetBitacoras'));
+const WidgetRecetasPendientes = alPintarse(() => import('./dashboard/WidgetRecetasPendientes'));
+const WidgetTransferRequests = alPintarse(() => import('./dashboard/WidgetTransferRequests'));
+const WidgetMetaSala = alPintarse(() => import('./dashboard/WidgetMetaSala'));
+const WidgetVendedores = alPintarse(() => import('./dashboard/WidgetVendedores'));
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit

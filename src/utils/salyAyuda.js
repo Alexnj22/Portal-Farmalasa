@@ -15,13 +15,9 @@ import { formatMoney } from './formatNumber';
 
 export const SALY_TOPE_DIARIO = 30;
 
-/* EN PRUEBA (usuario, 2026-11-04: «que solo salga a Edwin ahorita, lo probaré
- * bien primero»). Las fichas (`employees.id`) que ven la ayuda; `null` = todos.
- * La función `saly-ayuda` tiene la MISMA lista: para abrirla a todos se cambian
- * las dos. */
-export const SALY_AYUDA_SOLO_PARA = ['bbc796d7-7435-495b-9306-a2115f44a18f'];   // Edwin Núñez
-export const salyAyudaParaMi = (employeeId) =>
-    SALY_AYUDA_SOLO_PARA == null || SALY_AYUDA_SOLO_PARA.includes(String(employeeId ?? ''));
+// El acceso (quién ve la ayuda) vive en `salyAyudaAcceso.js`: lo pregunta el
+// marco en cada pantalla y no tiene que arrastrar el resto al arranque.
+export { SALY_AYUDA_SOLO_PARA, salyAyudaParaMi } from './salyAyudaAcceso';
 export const SALY_MAX_PANTALLA = 3500;
 export const SALY_MAX_PREGUNTA = 300;
 export const ANIMOS_DE_AYUDA = ['alegria', 'atencion', 'preocupacion', 'pensando'];

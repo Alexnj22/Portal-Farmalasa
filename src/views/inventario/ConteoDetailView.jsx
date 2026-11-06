@@ -32,7 +32,9 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
-import AjusteEnCaja from './AjusteEnCaja';
+/* Las piezas del conteo que ajusta el inventario sólo aparecen en ese tipo de
+ * conteo (y la vista previa, al aprobar): se bajan al pintarse (2026-11-06). */
+const AjusteEnCaja = lazy(() => import('./AjusteEnCaja'));
 // Diferido: el lector sólo existe si alguien toca «escanear», y arrastra el
 // diálogo entero además de la librería de decodificación. Estático costaba 2 kB
 // del cierre de esta vista —y el techo del `bundle-gate` los vio— para una
@@ -52,7 +54,8 @@ import { unidadDeConteo, esLoteGenerico } from '@nucleo/utils/conteoDeInventario
 // «GENERICO» es como la caja guarda lo que no tiene lote; quien cuenta lee
 // «Sin lote».
 const nombreDelLote = (lote) => (esLoteGenerico(lote) ? 'Sin lote' : lote);
-import AjusteAntesDeAprobar, { ProblemasDelAjuste } from './AjusteAntesDeAprobar';
+const AjusteAntesDeAprobar = lazy(() => import('./AjusteAntesDeAprobar'));
+const ProblemasDelAjuste = lazy(() => import('./AjusteAntesDeAprobar').then((m) => ({ default: m.ProblemasDelAjuste })));
 import AvanceSinLote from './AvanceSinLote';
 
 // ¿El conteo ajusta el inventario? Lo leen los renglones para decidir si
@@ -2393,7 +2396,9 @@ export default function ConteoDetailView() {
                         )}
                         {conteo.aplica_en_caja && conteo.status === 'CERRADO' && (
                             <div className="mt-4">
-                                <AjusteEnCaja conteoId={conteo.id} puedeReintentar={canApprove} />
+                                <Suspense fallback={<SkeletonText lines={3} className="w-full" />}>
+                                    <AjusteEnCaja conteoId={conteo.id} puedeReintentar={canApprove} />
+                                </Suspense>
                             </div>
                         )}
                         {!conteo.aplica_en_caja && conteo.status === 'CERRADO' && (
@@ -2700,19 +2705,27 @@ export default function ConteoDetailView() {
                 isProcessing={busy}
             />
 
-            {vistaAjusteOpen && <AjusteAntesDeAprobar
-                open
-                conteoId={id}
-                busy={busy}
-                onClose={() => setVistaAjusteOpen(false)}
-                onConfirm={confirmAprobar}
-            />}
-            <ProblemasDelAjuste
-                open={!!problemasAjuste}
-                problemas={problemasAjuste}
-                onClose={() => setProblemasAjuste(null)}
-                onIr={(p) => { setProblemasAjuste(null); cambiarBusqueda(p.producto || ''); }}
-            />
+            {vistaAjusteOpen && (
+                <Suspense fallback={null}>
+                    <AjusteAntesDeAprobar
+                        open
+                        conteoId={id}
+                        busy={busy}
+                        onClose={() => setVistaAjusteOpen(false)}
+                        onConfirm={confirmAprobar}
+                    />
+                </Suspense>
+            )}
+            {problemasAjuste && (
+                <Suspense fallback={null}>
+                    <ProblemasDelAjuste
+                        open
+                        problemas={problemasAjuste}
+                        onClose={() => setProblemasAjuste(null)}
+                        onIr={(p) => { setProblemasAjuste(null); cambiarBusqueda(p.producto || ''); }}
+                    />
+                </Suspense>
+            )}
 
             <PromptModal
                 isOpen={promptAprobarOpen}

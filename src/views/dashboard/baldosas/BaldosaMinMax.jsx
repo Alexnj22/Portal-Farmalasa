@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { Loader2, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
 import { fetchMinMaxEstados } from '@nucleo/data/minmaxRequests';
+import { LoadingState } from '../../../components/common/StateViews';
 
 // La BALDOSA de «Ajuste de Min/Max»: lo que el Inicio dibuja sin que nadie
 // toque nada.
@@ -26,11 +27,8 @@ const FormularioMinMax = lazy(() =>
 // El giro mientras baja el formulario. Nunca se ve en una conexión normal —el
 // trozo pesa 4 kB— pero un hueco en blanco dentro de un modal recién abierto se
 // lee como que algo se rompió.
-const Cargando = () => (
-    <div className="flex-1 min-h-[220px] grid place-items-center">
-        <Loader2 size={22} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[220px]" />;
 
 export default function BaldosaMinMax(props) {
   const [estados, setEstados] = useState(null);

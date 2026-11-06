@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.4 — Una sola carga
+
+- **Una sola forma de «cargando».** Nueve pantallas (Pedidos, Gestión de stock, Distribución, Promociones, Marketing, la solicitud operativa y tres baldosas del Inicio) tenían su propia copia del spinner; ahora usan `LoadingState`, y el tablero de Distribución usa `Skeleton`.
+- `gate:design`: categoría nueva `cargando-a-mano` (trinquete). Las ~100 ruedas sueltas que quedan en vistas están contadas y no pueden crecer.
+
 ## v2.1459.3 — Tipografía: un solo juego de tamaños
 
 - **Un solo juego de tamaños de letra.** 31 tamaños con decimales o en `rem` (`text-[7.5px]`, `text-[6.5px]` —bajo el piso legible de 9px—, `text-[0.5625rem]`, el `text-[12.5px]` del botón chico) y 72 tamaños de Tailwind (`text-xs`…`text-xl`) pasan a la escala del portal. El calendario de horarios sube sus rótulos de 6.5–7.5px a 9px.

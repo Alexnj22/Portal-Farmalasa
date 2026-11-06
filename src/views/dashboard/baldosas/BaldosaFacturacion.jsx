@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef, lazy, Suspense } from 'react';
-import { Loader2, Receipt } from 'lucide-react';
+import { Receipt } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
 import { fetchSolicitudesFacturacionPendientes } from '@nucleo/data/requests';
+import { LoadingState } from '../../../components/common/StateViews';
 
 // La BALDOSA de «Modificar facturación»: lo que el Inicio dibuja sin que nadie
 // toque nada.
@@ -19,11 +20,8 @@ const FormularioFacturacion = lazy(() =>
 
 // Un hueco en blanco dentro de un modal recién abierto se lee como que algo se
 // rompió. En una conexión normal no se llega a ver: el trozo pesa 9 kB.
-const Cargando = () => (
-    <div className="flex-1 min-h-[220px] grid place-items-center">
-        <Loader2 size={22} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[220px]" />;
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 // Las cuatro clases de solicitud, en el orden en que se muestran en la franja y

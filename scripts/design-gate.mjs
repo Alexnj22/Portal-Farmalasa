@@ -1577,6 +1577,19 @@ function scanFile(path) {
     });
   }
 
+  // ── `cargando-a-mano` (2026-11-06, TRINQUETE) ─────────────────────────
+  // Un spinner escrito en una vista en vez de `LoadingState` (sección o
+  // `variant="inline"`) o del `loading` de `Button`. Había nueve copias
+  // idénticas de `const Cargando = () => <Loader2 …/>` —se pasaron— y ~110
+  // ruedas sueltas en 14 tamaños, que quedan como deuda contada: el gate
+  // falla si SUBEN. Los canónicos de `components/common/` sí giran.
+  if (!path.includes('components/common/') && !hasException(path, 'cargando-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i] || !/\banimate-spin\b/.test(line)) return;
+      findings.push({ line: i + 1, label: 'spinner a mano — usar `LoadingState` (o `variant="inline"`) o `Button loading`', category: 'cargando-a-mano', text: line.trim().slice(0, 120) });
+    });
+  }
+
   // ── `texto-tailwind` (2026-11-06, CERO ABSOLUTO) ──────────────────────
   // La escala de Tailwind (`text-xs`…`text-xl`) al lado de la del portal
   // (`text-caption`, `text-body`…): dos escalas para lo mismo, y la de

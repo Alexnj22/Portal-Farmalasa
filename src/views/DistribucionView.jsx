@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, lazy, Suspense } from 'react';
-import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin, Truck, Loader2 } from 'lucide-react';
+import { ClipboardList, FileCheck2, Store, PackageSearch, Building2, AlertTriangle, Boxes, Tag, PackageX, LayoutDashboard, HandCoins, ShoppingCart, BarChart3, Wallet, Lock, Route, MapPin, Truck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import Notice from '../components/common/Notice';
@@ -11,6 +11,7 @@ import { VISTAS_REPORTES } from './distribucion/reportes';
 import { VISTAS_CARTERA } from './distribucion/cartera';
 import { VISTAS_PEDIDOS, VISTAS_PERDIDAS, PERIODOS, CUBETAS_FACTURACION } from './distribucion/comun';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
+import { LoadingState } from '../components/common/StateViews';
 
 // Cada sección llega por `lazy()` (2026-10-24). Se ve UNA a la vez —es una
 // dirección por sección desde el 2026-09-28— y las dieciocho viajaban juntas
@@ -39,11 +40,8 @@ const TabRutas = lazy(() => import('./distribucion/TabRutas'));
 
 // El área en blanco se lee como que algo se rompió: un giro del alto de una
 // sección ya dibujada, para que nada salte al llegar.
-const Cargando = () => (
-    <div className="flex-1 min-h-[320px] grid place-items-center">
-        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
 /** Una sección: su propio `Suspense`, así la que llega no oculta a las ya vistas. */
 const Seccion = ({ children }) => <Suspense fallback={<Cargando />}>{children}</Suspense>;
 

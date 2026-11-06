@@ -20,6 +20,7 @@ import { fetchTablero, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { rotuloTipoCliente, rangoDe } from './comun';
 import { variacionPct as variacion, repartoDeFormas, maximoDe } from '@nucleo/utils/distribucionTablero';
 import { rutaSeccion, rutaVentaA } from './rutas';
+import { Skeleton } from '../../components/common/StateViews';
 
 // El Inicio de la distribuidora. Pedido del usuario (2026-09-29): «un
 // dashboard con datos de ventas, clientes, etc., con gráficas y elementos
@@ -73,7 +74,7 @@ function Tarjeta({ titulo, icon: Icon, accion, children, className = '' }) {
     );
 }
 
-const Cargando = ({ alto = 190 }) => <div className="animate-pulse rounded-xl bg-surface-card-hover" style={{ height: alto }} />;
+const Cargando = ({ alto = 190 }) => <Skeleton h={alto} rounded="var(--card-radius)" />;
 
 /** Una fila de ranking con su barra proporcional. Tocable si `onClick`. */
 function FilaRanking({ izquierda, titulo, detalle, valor, proporcion, activo, onClick, tono = 'bg-chart-1' }) {

@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-    Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target,
-    CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, LayoutGrid, Lightbulb, Loader2,
-} from 'lucide-react';
+import { Megaphone, CalendarDays, KanbanSquare, Inbox, Plus, Send, ThumbsUp, Settings2, Target, CheckCircle2, AlertTriangle, DollarSign, Layers, MessageSquare, FileDown, Clock, Images, Palette, Copy, LayoutGrid, Lightbulb } from 'lucide-react';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
 import FilterBar from '../../components/common/FilterBar';
@@ -55,11 +52,8 @@ const AjustesModal = dialogoDiferido(() => import('./AjustesModal'));
 
 // El área en blanco se lee como que algo se rompió: un giro del alto de una
 // pestaña ya dibujada, para que nada salte al llegar.
-const Cargando = () => (
-    <div className="flex-1 min-h-[320px] grid place-items-center">
-        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
 
 /**
  * Marketing — el planificador de contenido para redes.

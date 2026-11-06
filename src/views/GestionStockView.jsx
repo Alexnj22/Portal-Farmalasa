@@ -1,12 +1,13 @@
 import React, { lazy, Suspense, useCallback } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
-import { Activity, Archive, ListPlus, Loader2 } from 'lucide-react';
+import { Activity, Archive, ListPlus } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { ERP_NAMES, ERP_BODEGA, MI_ERP_POR_BRANCH } from './inventario/salasDeStock';
+import { LoadingState } from '../components/common/StateViews';
 
 // Cada pestaña llega por `lazy()` (2026-10-24), con el patrón de PedidosView:
 // se ve UNA a la vez, y las dos viajaban juntas en el trozo de la vista.
@@ -17,11 +18,8 @@ const TabSinMinMax = lazy(() => import('./inventario/TabSinMinMax'));
 
 // El área en blanco se lee como que algo se rompió: un giro del alto de una
 // pestaña ya dibujada, para que nada salte al llegar.
-const Cargando = () => (
-    <div className="flex-1 min-h-[320px] grid place-items-center">
-        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
 
 /**
  * Gestión de stock — dos preguntas sobre la existencia de una sala:

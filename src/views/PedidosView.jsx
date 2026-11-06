@@ -1,10 +1,11 @@
 import React, { lazy, Suspense } from 'react';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { useSearchParams } from 'react-router-dom';
-import { ClipboardList, Loader2, Settings2, BarChart2, Package, Truck } from 'lucide-react';
+import { ClipboardList, Settings2, BarChart2, Package, Truck } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar      from '../components/common/ViewTabBar';
 import { useAuth }     from '@nucleo/context/AuthContext';
+import { LoadingState } from '../components/common/StateViews';
 
 // ── Cada pestaña se baja al abrirla, no al entrar (2026-08-19) ─────────────
 //
@@ -28,11 +29,8 @@ const TabRutas    = lazy(() => import('./pedidos/TabRutas'));
 
 // El área de la pestaña en blanco se lee como que algo se rompió. Ocupa el
 // alto de una pestaña ya dibujada para que la barra de arriba no salte.
-const Cargando = () => (
-    <div className="flex-1 min-h-[320px] grid place-items-center">
-        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
 
 const TABS = [
     { key: 'generar',  label: 'Generar',           icon: ClipboardList, permKey: 'pedidos_tab_generar'   },

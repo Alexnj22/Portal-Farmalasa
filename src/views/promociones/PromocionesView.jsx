@@ -1,9 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import {
-    Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent,
-    CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download, Loader2, BadgePercent,
-} from 'lucide-react';
+import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent, CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download, BadgePercent } from 'lucide-react';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -47,11 +44,8 @@ const ReactivarPromocionModal = dialogoDiferido(() => import('./ReactivarPromoci
 
 // El área en blanco se lee como que algo se rompió: un giro del alto de una
 // pestaña ya dibujada, para que nada salte al llegar.
-const Cargando = () => (
-    <div className="flex-1 min-h-[320px] grid place-items-center">
-        <Loader2 size={24} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
 
 /**
  * Promociones — `docs/planes-cerrados/PLAN-PROMOCIONES-2026-09-01.md`.

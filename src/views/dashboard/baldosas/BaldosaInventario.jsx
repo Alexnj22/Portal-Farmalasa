@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useMemo, lazy, Suspense } from 'react';
-import { Loader2, PackageMinus } from 'lucide-react';
+import { PackageMinus } from 'lucide-react';
 import LanzadorSolicitud from '../LanzadorSolicitud';
 import { BarraTramos, FranjaVacia } from '../InstrumentoBaldosa';
 import { contarPorVencer } from '@nucleo/data/inventoryMovements';
+import { LoadingState } from '../../../components/common/StateViews';
 
 // La BALDOSA de «Ajuste de inventario»: lo que el Inicio dibuja sin que nadie
 // toque nada.
@@ -17,11 +18,8 @@ const FormularioAjuste = lazy(() =>
 
 // Un hueco en blanco dentro de un modal recién abierto se lee como que algo se
 // rompió. En una conexión normal no se llega a ver: el trozo pesa 8 kB.
-const Cargando = () => (
-    <div className="flex-1 min-h-[220px] grid place-items-center">
-        <Loader2 size={22} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[220px]" />;
 
 /* ─── La baldosa del tablero ──────────────────────────────────────────────── */
 export default function BaldosaInventario(props) {

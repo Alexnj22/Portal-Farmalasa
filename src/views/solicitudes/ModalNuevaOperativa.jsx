@@ -1,8 +1,9 @@
 import React, { useState, useMemo, lazy, Suspense } from 'react';
-import { PackageMinus, ChevronRight, Loader2 } from 'lucide-react';
+import { PackageMinus, ChevronRight } from 'lucide-react';
 import { ModalConRanuras } from '../dashboard/LanzadorSolicitud';
 import { FAMILIAS, familiasDisponibles } from './familiasOperativas';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import { LoadingState } from '../../components/common/StateViews';
 import {
     ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP, ERP_UBICACION_POR_SUCURSAL,
 } from '@nucleo/constants/erp';
@@ -49,11 +50,8 @@ const FormularioMinMax = lazy(() =>
 const FormularioPedirASala = lazy(() =>
     import('../dashboard/inventario/PanelDeInventario').then(m => ({ default: m.FormularioPedirASala })));
 
-const Cargando = () => (
-    <div className="flex-1 min-h-[220px] grid place-items-center">
-        <Loader2 size={22} className="animate-spin text-content-3" strokeWidth={2.5} />
-    </div>
-);
+// La carga canónica (2026-11-06): antes era una copia a mano del spinner.
+const Cargando = () => <LoadingState className="flex-1 min-h-[220px]" />;
 
 export default function ModalNuevaOperativa({ onClose, hasPermission, branchIdUsuario, alcanceTodas, onEnviado }) {
     const disponibles = useMemo(() => familiasDisponibles(hasPermission), [hasPermission]);

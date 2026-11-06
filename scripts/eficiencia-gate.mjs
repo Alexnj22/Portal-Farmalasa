@@ -577,6 +577,14 @@ const CRONS = [
           + 'todavía no existen. Cada hora y no más seguido: alimenta un reloj de seis meses.',
   },
   {
+    job: 'conteo-caja-cada-minuto', slug: 'aplicar-conteo-caja', cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'El cron sólo llama a la función si hay productos en cola (WHERE EXISTS en el propio '
+          + 'SQL del cron): sin un conteo que corrige la caja recién aprobado, cero peticiones al '
+          + 'sistema de origen. Con '
+          + 'cola, ~6 por producto (sesión, lectura, carga, relectura, descargo) y sólo esos días.',
+  },
+  {
     job: 'continuar-traslados-pedido', slug: 'trasladar-pedido-erp', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'Cada minuto, pero sin corrida en curso contesta NADA_QUE_CONTINUAR mirando SOLO la '

@@ -49,6 +49,8 @@ const ERRORES = {
     CONTEO_NO_ESTA_EN_REVISION: 'El recuento solo se hace entre finalizar y aprobar el conteo.',
     RECUENTO_MISMO_CONTADOR: 'No puedes recontar una línea que contaste tú mismo: el recuento lo hace otra persona.',
     CANTIDAD_INVALIDA: 'La cantidad del recuento debe ser un número entero de 0 o más.',
+    CAJA_REQUIERE_LOTE_EN_VIVO: 'Un conteo que ajusta el inventario se hace por lote y en vivo.',
+    NO_SE_PUEDE_REINTENTAR: 'Ese producto ya no tiene nada pendiente que reintentar.',
 };
 
 function traducirError(err) {
@@ -84,7 +86,9 @@ export const createConteoInventarioSlice = (set, get) => ({
     // `fuenteSistema` contra qué se compara ('HOJA' contra el snapshot impreso,
     // 'VIVO' contra la existencia del momento). Cada default es explícito para
     // que un llamador que no los piense obtenga algo definido.
-    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds, modo = 'LOTE', fuenteSistema = 'HOJA' }) => {
+    // `aplicaEnCaja` (2026-11-05): al aprobarlo, las diferencias se aplican en
+    // la caja, lote por lote. Exige por lote y en vivo.
+    crearConteoInventario: async ({ branchId, scopeType, scopeFilter, erpProductIds, modo = 'LOTE', fuenteSistema = 'HOJA', aplicaEnCaja = false }) => {
         const { data, error } = await supabase.rpc('crear_conteo_inventario', {
             p_branch_id: branchId,
             p_scope_type: scopeType,
@@ -92,6 +96,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             p_erp_product_ids: erpProductIds || null,
             p_modo: modo,
             p_fuente_sistema: fuenteSistema,
+            p_aplica_en_caja: aplicaEnCaja,
         });
         if (error) throw traducirError(error);
 
@@ -99,7 +104,7 @@ export const createConteoInventarioSlice = (set, get) => ({
             timeline_title: 'Conteo de inventario iniciado',
             dimension: 'OPERATIVE',
             branch_id: branchId,
-            new_value: `Alcance: ${scopeType} · ${modo === 'SIMPLE' ? 'Sencillo (solo cantidades)' : 'Por lote y vencimiento'} · ${fuenteSistema === 'VIVO' ? 'En vivo' : 'Según la hoja'}`,
+            new_value: `Alcance: ${scopeType} · ${modo === 'SIMPLE' ? 'Sencillo (solo cantidades)' : 'Por lote y vencimiento'} · ${fuenteSistema === 'VIVO' ? 'En vivo' : 'Según la hoja'}${aplicaEnCaja ? ' · Ajusta el inventario al aprobar' : ''}`,
         });
 
         await get().fetchConteosInventario();
@@ -429,6 +434,22 @@ export const createConteoInventarioSlice = (set, get) => ({
     // El portal no escribe stock: esto NO ajusta nada, deja constancia de que
     // alguien ya tecleó el ajuste en el ERP. Sin este registro, un conteo
     // aprobado y uno ya reflejado en el ERP se ven idénticos.
+    // Lo que se aplicó en la caja de un conteo que la corrige, producto por producto.
+    fetchConteoCaja: async (conteoId) => {
+        const { data, error } = await supabase.rpc('get_conteo_caja', { p_conteo_id: conteoId });
+        if (error) throw traducirError(error);
+        return data;
+    },
+
+    reintentarConteoCaja: async (movimientoId) => {
+        const { error } = await supabase.rpc('conteo_caja_reintentar', { p_movimiento_id: movimientoId });
+        if (error) throw traducirError(error);
+        await get().appendAuditLog('CONTEO_CAJA_REINTENTO', movimientoId, {
+            timeline_title: 'Se reintentó ajustar el inventario de un producto del conteo',
+            dimension: 'OPERATIVE',
+        });
+    },
+
     marcarAjusteErp: async (conteoId, nota) => {
         const { data, error } = await supabase.rpc('marcar_ajuste_erp', { p_conteo_id: conteoId, p_nota: nota || null });
         if (error) throw traducirError(error);

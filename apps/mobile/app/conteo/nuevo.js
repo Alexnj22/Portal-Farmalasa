@@ -47,6 +47,12 @@ export default function NuevoConteo() {
   const [alcance, setAlcance] = useState('CICLICO');
   const [modo, setModo] = useState('LOTE');
   const [fuente, setFuente] = useState('HOJA');
+  // «Ajusta el inventario»: al aprobarlo, la existencia queda como se contó,
+  // lote por lote. Exige por lote y en vivo (lo valida también la base).
+  const [ajusta, setAjusta] = useState(false);
+  const elegirAjuste = (v) => { const si = v === 'SI'; setAjusta(si); if (si) { setModo('LOTE'); setFuente('VIVO'); } };
+  const elegirModo = (v) => { setModo(v); if (v !== 'LOTE') setAjusta(false); };
+  const elegirFuente = (v) => { setFuente(v); if (v !== 'VIVO') setAjusta(false); };
   const [tamano, setTamano] = useState(String(TAMANO_CICLICO_DEFAULT));
   const [lab, setLab] = useState(null);
   const [labs, setLabs] = useState([]);
@@ -107,7 +113,7 @@ export default function NuevoConteo() {
     setCreando(true);
     try {
       const id = await crearConteoInventario({
-        branchId: parseInt(sala, 10), scopeType: alcance, scopeFilter: pedido.scopeFilter, erpProductIds: pedido.erpProductIds, modo, fuenteSistema: fuente,
+        branchId: parseInt(sala, 10), scopeType: alcance, scopeFilter: pedido.scopeFilter, erpProductIds: pedido.erpProductIds, modo, fuenteSistema: fuente, aplicaEnCaja: ajusta,
       });
       listo('Conteo iniciado', 'Se generó el snapshot de inventario.');
       router.replace({ pathname: '/conteo/[id]', params: { id: String(id) } });
@@ -200,10 +206,13 @@ export default function NuevoConteo() {
           ) : null}
 
           <Seccion titulo="Detalle de cada renglón">
-            <Opciones opciones={MODOS_DE_CONTEO.map((o) => ({ id: o.value, label: o.label }))} valor={modo} onCambiar={setModo} />
+            <Opciones opciones={MODOS_DE_CONTEO.map((o) => ({ id: o.value, label: o.label }))} valor={modo} onCambiar={elegirModo} />
           </Seccion>
           <Seccion titulo="Contra qué existencia" pie={fuente === 'HOJA' ? 'Lo contado se compara con la existencia de cuando se imprimió la hoja: una venta en el medio no aparece como diferencia.' : 'Lo contado se compara con la existencia del momento en que se teclea.'}>
-            <Opciones opciones={FUENTES_DE_CONTEO.map((o) => ({ id: o.value, label: o.label }))} valor={fuente} onCambiar={setFuente} />
+            <Opciones opciones={FUENTES_DE_CONTEO.map((o) => ({ id: o.value, label: o.label }))} valor={fuente} onCambiar={elegirFuente} />
+          </Seccion>
+          <Seccion titulo="Al aprobarlo" pie={ajusta ? 'Lo que sobra entra con su lote y lo que falta sale de su lote. Lo que quede sin contar no se toca. Se cuenta por lote y en vivo.' : 'El conteo mide la diferencia; el ajuste se registra aparte.'}>
+            <Opciones opciones={[{ id: 'NO', label: 'Sólo medir' }, { id: 'SI', label: 'Ajusta el inventario' }]} valor={ajusta ? 'SI' : 'NO'} onCambiar={elegirAjuste} />
           </Seccion>
 
           {falta ? <Aviso texto={falta} /> : null}

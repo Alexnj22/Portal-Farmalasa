@@ -1006,10 +1006,12 @@ export const AREAS = [
                  'conteos_inventario', 'conteo_inventario_items', 'conteo_inventario_item_history',
                  'ventas_perdidas', 'traslados_erp_linea', 'productos_sin_venta_avisados',
                  // Consultas de existencia (2026-10-29): una sala cuenta un producto a ciegas.
-                 'consultas_existencia', 'consultas_existencia_salas'],
-        edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp'],
+                 'consultas_existencia', 'consultas_existencia_salas',
+                 // El conteo que corrige la caja (2026-11-05): la cola de lo que se aplica.
+                 'conteo_caja_movimiento'],
+        edge: ['aplicar-movimiento-inventario', 'analyze-history', 'leer-traslados-erp', 'aplicar-conteo-caja'],
         crons: ['refresh-inv-mv-2min', 'crear-conteos-ciclicos-mensual', 'vacuum-inventory-hourly',
-                'leer-traslados-erp'],
+                'leer-traslados-erp', 'conteo-caja-cada-minuto'],
         docs: ['docs/planes-cerrados/RETOMAR-AJUSTE-INVENTARIO-2026-08-06.md',
                'docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md'],
     },

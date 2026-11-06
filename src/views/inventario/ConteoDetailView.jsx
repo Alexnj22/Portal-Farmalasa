@@ -32,6 +32,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import Switch from '../../components/common/Switch';
 import Notice from '../../components/common/Notice';
+import AjusteEnCaja from './AjusteEnCaja';
 // Diferido: el lector sólo existe si alguien toca «escanear», y arrastra el
 // diálogo entero además de la librería de decodificación. Estático costaba 2 kB
 // del cierre de esta vista —y el techo del `bundle-gate` los vio— para una
@@ -2265,6 +2266,9 @@ export default function ConteoDetailView() {
                                         >
                                             {conteo.fuente_sistema === 'VIVO' ? 'En vivo' : 'Según la hoja'}
                                         </Badge>
+                                        {conteo.aplica_en_caja && (
+                                            <Badge variant="info" size="sm" uppercase={false}>Ajusta el inventario</Badge>
+                                        )}
                                     </div>
                                     <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {SCOPE_LABEL[conteo.scope_type] || conteo.scope_type}</p>
                                 </div>
@@ -2304,7 +2308,29 @@ export default function ConteoDetailView() {
                         {/* El conteo mide y firma la diferencia, pero el stock lo
                             corrige el ERP: hasta que alguien registre que lo aplicó,
                             el ERP sigue mintiendo y esto tiene que estar a la vista. */}
-                        {conteo.status === 'CERRADO' && (
+                        {conteo.aplica_en_caja && conteo.status === 'EN_PROGRESO' && (
+                            <div className="mt-4">
+                                <Notice variant="info">
+                                    Este conteo ajusta el inventario. Donde dice <strong>GENERICO</strong> es existencia sin
+                                    lote asignado: agrega cada lote que encuentres en el estante con su vencimiento, y en
+                                    GENERICO cuenta sólo lo que no traiga lote impreso.
+                                </Notice>
+                            </div>
+                        )}
+                        {conteo.aplica_en_caja && conteo.status === 'FINALIZADO' && (
+                            <div className="mt-4">
+                                <Notice variant="warning">
+                                    Al aprobarlo, el inventario queda como se contó, lote por lote. Lo que quedó sin
+                                    contar no se toca.
+                                </Notice>
+                            </div>
+                        )}
+                        {conteo.aplica_en_caja && conteo.status === 'CERRADO' && (
+                            <div className="mt-4">
+                                <AjusteEnCaja conteoId={conteo.id} puedeReintentar={canApprove} />
+                            </div>
+                        )}
+                        {!conteo.aplica_en_caja && conteo.status === 'CERRADO' && (
                             <div className="mt-4">
                                 {conteo.ajuste_erp_aplicado ? (
                                     <Notice variant="success" icon={ClipboardCheck}>

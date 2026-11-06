@@ -81,6 +81,9 @@
     "barrer-traslados-recibidos": {
       "guarda": "cron"
     },
+    "aplicar-conteo-caja": {
+      "guarda": "cron"
+    },
     "bulk-create-employee-users": {
       "guarda": "cron"
     },

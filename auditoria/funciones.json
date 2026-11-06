@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-05T23:35:03.130Z",
+ "generado": "2026-11-06T03:00:08.764Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1486,6 +1486,22 @@
    "area": "inventario",
    "por": "código"
   },
+  "conteo_caja_encolar": {
+   "area": "inventario",
+   "por": "tablas"
+  },
+  "conteo_caja_recalcular": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "conteo_caja_reintentar": {
+   "area": "inventario",
+   "por": "código"
+  },
+  "conteo_caja_tomar": {
+   "area": "inventario",
+   "por": "código"
+  },
   "conteo_costo_unitario": {
    "area": "productos",
    "por": "tablas"
@@ -2856,6 +2872,10 @@
   },
   "get_consecutive_mh_alerts": {
    "area": "ventas",
+   "por": "código"
+  },
+  "get_conteo_caja": {
+   "area": "inventario",
    "por": "código"
   },
   "get_conteo_item_history": {

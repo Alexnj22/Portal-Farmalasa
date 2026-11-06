@@ -49,6 +49,7 @@ import Resumen from '../../componentes/conteos/Resumen';
 import Historial from '../../componentes/conteos/Historial';
 import AgregarRenglon from '../../componentes/conteos/AgregarRenglon';
 import AccionDeRenglon from '../../componentes/conteos/AccionDeRenglon';
+import AjusteDelInventario from '../../componentes/conteos/AjusteDelInventario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 
@@ -415,6 +416,7 @@ export default function Conteo() {
                       hecha mientras se cuenta sale como diferencia. */}
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                     <Pildora texto={conteo.fuente_sistema === 'VIVO' ? 'En vivo' : 'Según la hoja'} color={conteo.fuente_sistema === 'VIVO' ? MARCA.ambar : colorSistema.texto2} />
+                    {conteo.aplica_en_caja ? <Pildora texto="Ajusta el inventario" color={MARCA.azulClaro} /> : null}
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
                       {`Iniciado ${fechaTexto(conteo.created_at, { day: 'numeric', month: 'short', year: 'numeric' })} · Alcance: ${ALCANCE_CONTEO[conteo.scope_type] ?? conteo.scope_type ?? '—'}`}
                     </Text>
@@ -447,7 +449,22 @@ export default function Conteo() {
           ) : null}
           {/* El conteo firma la diferencia; el stock se corrige afuera. Hasta que
               alguien registre que lo aplicó, tiene que estar a la vista. */}
-          {conteo?.status === 'CERRADO' ? (
+          {conteo?.aplica_en_caja && editable ? (
+            <View style={{ marginHorizontal: 16 }}>
+              <Aviso tono="nota" texto="Este conteo ajusta el inventario. GENERICO es existencia sin lote asignado: agrega cada lote que encuentres con su vencimiento, y en GENERICO cuenta sólo lo que no traiga lote impreso." />
+            </View>
+          ) : null}
+          {conteo?.aplica_en_caja && conteo.status === 'FINALIZADO' ? (
+            <View style={{ marginHorizontal: 16 }}>
+              <Aviso tono="cuidado" texto="Al aprobarlo, el inventario queda como se contó, lote por lote. Lo que quedó sin contar no se toca." />
+            </View>
+          ) : null}
+          {conteo?.aplica_en_caja && conteo.status === 'CERRADO' ? (
+            <View style={{ marginHorizontal: 16 }}>
+              <AjusteDelInventario conteoId={conteo.id} />
+            </View>
+          ) : null}
+          {conteo?.status === 'CERRADO' && !conteo.aplica_en_caja ? (
             <View style={{ marginHorizontal: 16, gap: 10 }}>
               {conteo.ajuste_erp_aplicado ? (
                 <Aviso tono="nota" texto={`Ajuste aplicado el ${fechaTexto(conteo.ajuste_erp_at, { day: 'numeric', month: 'short', year: 'numeric' })} a las ${fmtHM(conteo.ajuste_erp_at)}.${conteo.ajuste_erp_nota ? ` — «${conteo.ajuste_erp_nota}»` : ''}`} />

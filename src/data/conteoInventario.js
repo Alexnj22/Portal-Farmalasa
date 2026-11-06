@@ -26,7 +26,8 @@ const CONTEO_COLS = 'id, created_at, branch_id, created_by, scope_type, scope_fi
     + 'status, finalizado_por, finalizado_at, aprobado_por, aprobado_at, nota_aprobacion, '
     + 'total_items, total_contados, total_diferencias, notas, total_pendientes, '
     + 'pendientes_como_cero, ajuste_erp_aplicado, ajuste_erp_por, ajuste_erp_at, '
-    + 'ajuste_erp_nota, total_recontados, modo, fuente_sistema, branches(name)';
+    + 'ajuste_erp_nota, total_recontados, modo, fuente_sistema, '
+    + 'aplica_en_caja, caja_estado, caja_terminado_at, branches(name)';
 
 async function conValor(res) {
     if (res.error || !res.data) return res;

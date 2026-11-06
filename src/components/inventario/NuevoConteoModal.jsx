@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash, Printer, Radio } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash, Printer, Radio, Wrench, Eye } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -37,6 +37,14 @@ const MODO_OPTIONS = MODOS_DE_CONTEO.map((o) => ({ ...o, icon: o.value === 'LOTE
 // ninguna parte, así que una venta hecha entre imprimir la hoja y teclearla
 // aparecía como una diferencia del estante.
 const FUENTE_OPTIONS = FUENTES_DE_CONTEO.map((o) => ({ ...o, icon: o.value === 'HOJA' ? Printer : Radio }));
+
+// Qué pasa al aprobarlo (2026-11-05). «Ajusta el inventario» aplica las diferencias
+// lote por lote —incluida la existencia sin lote asignado que se cuenta con su
+// lote real—, y por eso sólo existe por lote y en vivo.
+const CAJA_OPTIONS = [
+    { value: 'NO', label: 'Sólo medir', icon: Eye },
+    { value: 'SI', label: 'Ajusta el inventario', icon: Wrench },
+];
 
 const TAMANO_DEFAULT = TAMANO_CICLICO_DEFAULT;
 
@@ -78,6 +86,15 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
     const [scopeType, setScopeType] = useState('TOTAL');
     const [modo, setModo] = useState('LOTE');
     const [fuenteSistema, setFuenteSistema] = useState('HOJA');
+    const [aplicaEnCaja, setAplicaEnCaja] = useState(false);
+    // Corregir la caja fija por lote y en vivo; elegir otra cosa la apaga.
+    const elegirCaja = (v) => {
+        const si = v === 'SI';
+        setAplicaEnCaja(si);
+        if (si) { setModo('LOTE'); setFuenteSistema('VIVO'); }
+    };
+    const elegirModo = (v) => { setModo(v); if (v !== 'LOTE') setAplicaEnCaja(false); };
+    const elegirFuente = (v) => { setFuenteSistema(v); if (v !== 'VIVO') setAplicaEnCaja(false); };
     const [laboratorioId, setLaboratorioId] = useState('');
     const [laboratorios, setLaboratorios] = useState([]);
     const [manualResults, setManualResults] = useState([]);
@@ -95,6 +112,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
         setScopeType('CICLICO');
         setModo('LOTE');
         setFuenteSistema('HOJA');
+        setAplicaEnCaja(false);
         setLaboratorioId('');
         setManualResults([]);
         setManualSelected([]);
@@ -164,6 +182,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                     pedidoDeConteo({ scopeType, laboratorioId, tamano, productos: manualSelected })),
                 modo,
                 fuenteSistema,
+                aplicaEnCaja,
             });
             showToast('Conteo iniciado', 'Se generó el snapshot de inventario', 'success');
             onCreated?.(conteoId);
@@ -329,7 +348,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         <SegmentedControl
                             layout="block" columns={2} tone="chart-9"
                             options={MODO_OPTIONS}
-                            value={modo} onChange={setModo} label="Detalle del conteo" />
+                            value={modo} onChange={elegirModo} label="Detalle del conteo" />
 
                         {/* El aviso cambia con la elección en vez de describir las
                             dos: quien ya eligió no necesita leer la que descartó. */}
@@ -362,7 +381,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                         <SegmentedControl
                             layout="block" columns={2} tone="chart-9"
                             options={FUENTE_OPTIONS}
-                            value={fuenteSistema} onChange={setFuenteSistema} label="Tipo de conteo" />
+                            value={fuenteSistema} onChange={elegirFuente} label="Tipo de conteo" />
 
                         <div className="mt-3">
                             {fuenteSistema === 'HOJA' ? (
@@ -381,6 +400,32 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                             {fuenteSistema === 'HOJA'
                                 ? 'Lo que se venda mientras se cuenta no aparece como faltante. Es lo que hay que elegir cuando se cuenta con hoja impresa: la hoja se imprime una vez y se llena después.'
                                 : 'Sirve para contar con la sucursal abierta y vendiendo, tecleando en el momento. Contra una hoja impresa hace ruido: cada venta hecha entre imprimirla y teclearla sale como diferencia.'}
+                        </p>
+                    </div>
+
+                    <div className={islandClass}>
+                        <label className={fieldLabel}>Al aprobarlo</label>
+                        <SegmentedControl
+                            layout="block" columns={2} tone="chart-9"
+                            options={CAJA_OPTIONS}
+                            value={aplicaEnCaja ? 'SI' : 'NO'} onChange={elegirCaja} label="Al aprobarlo" />
+                        <div className="mt-3">
+                            {aplicaEnCaja ? (
+                                <Notice variant="warning" icon={Wrench}>
+                                    Al aprobarlo, la existencia queda <strong>como se contó, lote por lote</strong>: lo que
+                                    falta se da de baja y lo que sobra entra con su lote. Lo que no tiene lote asignado
+                                    se cuenta en el lote que trae la caja.
+                                </Notice>
+                            ) : (
+                                <Notice variant="info" icon={Eye}>
+                                    El conteo <strong>sólo mide</strong>: las diferencias quedan anotadas y la existencia no cambia.
+                                </Notice>
+                            )}
+                        </div>
+                        <p className="text-caption text-content-3 leading-snug mt-2">
+                            {aplicaEnCaja
+                                ? 'Se cuenta por lote y en vivo, así lo que se venda mientras se cuenta no se da de baja dos veces. Lo que quede sin contar al finalizar no se toca.'
+                                : 'Para corregir la existencia después, hay que hacerlo aparte.'}
                         </p>
                     </div>
                 </div>

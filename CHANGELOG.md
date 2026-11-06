@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.0 — Conteo que ajusta el inventario: al aprobarlo, la existencia queda como se contó, lote por lote
+
+El 55% de la existencia de Bodega (1,451 productos) y ~60% de la de cada sala no tenía lote asignado, y de ahí salía el 68% de los renglones de pedido. La raíz se arregla contando, no despacho por despacho.
+
+- **Nueva opción al crear un conteo: «Al aprobarlo → Ajusta el inventario».** Sirve con todos los alcances (total, laboratorio, bajo receta, manual, cíclico) y fija el conteo por lote y en vivo.
+- **Mientras se cuenta**, lo que dice GENERICO es existencia sin lote asignado: se agrega cada lote del estante con su vencimiento y en GENERICO se cuenta sólo lo que no trae lote.
+- **Al aprobarlo** (otra persona, como siempre) se aplican en el inventario las DIFERENCIAS de cada renglón contra lo que el sistema decía al contarlo —nunca una foto, así una venta posterior no se deshace—: lo que sobra entra con su lote (carga) y lo que falta sale de su lote (descargo). Las presentaciones se llevan a unidades con su factor.
+- **Lo que quedó sin contar al finalizar no se toca.**
+- Lo hace `aplicar-conteo-caja` de a un producto, empujado por el cron `conteo-caja-cada-minuto`, que sólo llama si hay cola. Cada línea anota si se hizo; lo que falla queda en la pantalla del conteo con su motivo y un «Reintentar» que no repite lo ya hecho. Un producto que se cortó a la mitad queda «Revisar», no se reintenta solo.
+- Un lote nuevo se valida igual que el lote de la caja: formato, vencimiento futuro y que el número no esté registrado con otra fecha. Unidades sin lote de más no se cargan sin lote.
+- La app del teléfono también lo ofrece al crear un conteo, muestra el aviso mientras se cuenta y, después de aprobarlo, el avance producto por producto con «Reintentar».
+
 ## v2.1455.7 — El detalle del traslado dice qué lote viajó
 
 **Trazabilidad en el detalle de la solicitud.** Cada renglón de un traslado muestra ahora su lote y vencimiento (MM/AAAA). El dato ya estaba guardado y ninguna pantalla de Solicitudes lo leía. Se toma el más firme que haya: **Salió** (el lote que movió el despacho), **Apartado** (el que se asignó antes de salir, incluido el de la caja) o **Pidió** (el que eligió quien pidió). Un genérico se dice «Sin lote asignado» y sin fecha. Una línea que salió sin número no hereda el lote ni el vencimiento de otra. Helper `lotesPorRenglon` en `trasladoTexto.js`, con sus pruebas.

@@ -8077,6 +8077,59 @@ export type Database = {
         }
         Relationships: []
       }
+      conteo_caja_movimiento: {
+        Row: {
+          conteo_id: string
+          created_at: string
+          erp_product_id: number
+          error: string | null
+          estado: string
+          id: string
+          intentos: number
+          is_vencidos: boolean
+          lineas: Json
+          resultado: Json | null
+          tomado_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          conteo_id: string
+          created_at?: string
+          erp_product_id: number
+          error?: string | null
+          estado?: string
+          id?: string
+          intentos?: number
+          is_vencidos?: boolean
+          lineas: Json
+          resultado?: Json | null
+          tomado_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conteo_id?: string
+          created_at?: string
+          erp_product_id?: number
+          error?: string | null
+          estado?: string
+          id?: string
+          intentos?: number
+          is_vencidos?: boolean
+          lineas?: Json
+          resultado?: Json | null
+          tomado_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conteo_caja_movimiento_conteo_id_fkey"
+            columns: ["conteo_id"]
+            isOneToOne: false
+            referencedRelation: "conteos_inventario"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       conteo_inventario_costos: {
         Row: {
           costo_unitario: number | null
@@ -8287,9 +8340,12 @@ export type Database = {
           ajuste_erp_at: string | null
           ajuste_erp_nota: string | null
           ajuste_erp_por: string | null
+          aplica_en_caja: boolean
           aprobado_at: string | null
           aprobado_por: string | null
           branch_id: number
+          caja_estado: string | null
+          caja_terminado_at: string | null
           created_at: string
           created_by: string | null
           finalizado_at: string | null
@@ -8317,9 +8373,12 @@ export type Database = {
           ajuste_erp_at?: string | null
           ajuste_erp_nota?: string | null
           ajuste_erp_por?: string | null
+          aplica_en_caja?: boolean
           aprobado_at?: string | null
           aprobado_por?: string | null
           branch_id: number
+          caja_estado?: string | null
+          caja_terminado_at?: string | null
           created_at?: string
           created_by?: string | null
           finalizado_at?: string | null
@@ -8347,9 +8406,12 @@ export type Database = {
           ajuste_erp_at?: string | null
           ajuste_erp_nota?: string | null
           ajuste_erp_por?: string | null
+          aplica_en_caja?: boolean
           aprobado_at?: string | null
           aprobado_por?: string | null
           branch_id?: number
+          caja_estado?: string | null
+          caja_terminado_at?: string | null
           created_at?: string
           created_by?: string | null
           finalizado_at?: string | null
@@ -32369,6 +32431,13 @@ export type Database = {
         Args: { p_conteo_id: string; p_search: string }
         Returns: number[]
       }
+      conteo_caja_encolar: { Args: { p_conteo_id: string }; Returns: number }
+      conteo_caja_recalcular: { Args: { p_conteo_id: string }; Returns: string }
+      conteo_caja_reintentar: {
+        Args: { p_movimiento_id: string }
+        Returns: Json
+      }
+      conteo_caja_tomar: { Args: never; Returns: Json }
       conteo_costo_unitario: {
         Args: { p_presentacion: string; p_product_id: number }
         Returns: number
@@ -32474,6 +32543,7 @@ export type Database = {
       }
       crear_conteo_inventario: {
         Args: {
+          p_aplica_en_caja?: boolean
           p_branch_id: number
           p_erp_product_ids?: number[]
           p_fuente_sistema?: string
@@ -33984,6 +34054,7 @@ export type Database = {
           run_len: number
         }[]
       }
+      get_conteo_caja: { Args: { p_conteo_id: string }; Returns: Json }
       get_conteo_item_history: {
         Args: { p_item_id: string }
         Returns: {
@@ -38435,11 +38506,24 @@ export type Database = {
       }
       tope_renglones_envio: { Args: never; Returns: number }
       touch_session: { Args: { p_device_class?: string }; Returns: undefined }
+      traslado_avisar_propuesta: {
+        Args: { p_actor: string; p_evento: string; p_request_id: string }
+        Returns: undefined
+      }
       traslado_enviada_del_renglon: {
         Args: { p_i: number; p_meta: Json }
         Returns: number
       }
       traslado_por_codigo: { Args: { p_codigo: string }; Returns: Json }
+      traslado_proponer_lote: {
+        Args: { p_actor: string; p_lineas: Json; p_request_id: string }
+        Returns: Json
+      }
+      traslado_propuestas_de_mi_sala: { Args: never; Returns: Json }
+      traslado_responder_propuesta: {
+        Args: { p_acepta: boolean; p_request_id: string }
+        Returns: Json
+      }
       traslados_en_camino_a_sala: {
         Args: { p_branch_id: number; p_producto_id: number }
         Returns: Json
@@ -38470,6 +38554,7 @@ export type Database = {
           request_id: string
         }[]
       }
+      traslados_propuestas_al_dia: { Args: never; Returns: Json }
       tratamiento_ajusta_dosis: {
         Args: { p_product_id: number }
         Returns: boolean

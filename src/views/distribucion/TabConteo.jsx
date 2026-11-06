@@ -51,7 +51,7 @@ function RenglonConteo({ it, veSistema, abierto, onGuardado }) {
             <div className="sm:col-span-6 min-w-0">
                 <p className="text-body-sm font-bold text-content-2 truncate" title={it.nombre}>{it.nombre}</p>
                 <p className="text-caption text-content-3">Lote {it.lote}{it.vence ? ` · vence ${fechaNumerica(it.vence)}` : ''}{it.contado_por ? ` · contó ${shortEmployeeName(it.contado_por)}` : ''}</p>
-                {error && <p className="text-caption text-danger-text">{error}</p>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
             {veSistema && <span className="sm:col-span-2 text-caption text-content-3 tabular-nums sm:text-right">sistema {formatQty(it.sistema)}</span>}
             <div className={veSistema ? 'sm:col-span-2' : 'sm:col-span-4'}>

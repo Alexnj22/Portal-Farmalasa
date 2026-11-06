@@ -1577,6 +1577,19 @@ function scanFile(path) {
     });
   }
 
+  // ── `aviso-a-mano` (2026-11-06, CERO ABSOLUTO) ────────────────────────
+  // `{error && <p className="… text-danger…">{error}</p>}`: el mensaje de
+  // error escrito a mano, en vez de `<Notice variant="danger">`. Había 60 en
+  // 34 archivos con cinco tamaños y dos tonos de rojo; se pasaron todos.
+  // DESIGN.md §29 ya decía que este gate existía y no existía.
+  if (!hasException(path, 'aviso-a-mano')) {
+    const RE_AVISO = /\{\s*([\w.?]+)\s*&&\s*\(?\s*<(p|span|div)\s+className=["'`][^"'`]*\btext-danger(?:-text)?\b[^"'`]*["'`]\s*>\s*\{\s*\1\s*\}/;
+    lines.forEach((line, i) => {
+      if (isComment[i] || !RE_AVISO.test(line)) return;
+      findings.push({ line: i + 1, label: 'mensaje de error a mano — usar `<Notice variant="danger">`', category: 'aviso-a-mano', text: line.trim().slice(0, 120) });
+    });
+  }
+
   // ── `cargando-a-mano` (2026-11-06, TRINQUETE) ─────────────────────────
   // Un spinner escrito en una vista en vez de `LoadingState` (sección o
   // `variant="inline"`) o del `loading` de `Button`. Había nueve copias

@@ -57,13 +57,13 @@ export default function PausaDeEscrituras({ estado, onCambio }) {
                     confirmText={pausada ? 'Reanudar' : 'Pausar'}
                     confirmDisabled={!pausada && !motivo.trim()}
                     message={pausada ? (
-                        <>Cargar compra vuelve a escribir en el sistema.{error && <p className="text-danger-text mt-2">{error}</p>}</>
+                        <>Cargar compra vuelve a escribir en el sistema.{error && <Notice variant="danger" className="mt-2">{error}</Notice>}</>
                     ) : (
                         <div className="space-y-2 text-left">
                             <p>Mientras esté pausado no se registran compras, ni productos nuevos, ni envíos a salas, ni salidas de erróneos. Se puede seguir revisando.</p>
                             <PortalInput compact labelDenso label="Motivo" value={motivo} onChange={e => setMotivo(e.target.value)}
                                 placeholder="Ej.: revisando una carga con diferencias" />
-                            {error && <p className="text-danger-text">{error}</p>}
+                            {error && <Notice variant="danger">{error}</Notice>}
                         </div>
                     )} />
             )}

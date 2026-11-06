@@ -1455,7 +1455,7 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
                     {shortEmployeeName(vivo.pedido_nombre)}
                     {puedeEditar && <Button size="xs" variant="ghost" loading={ocupado} onClick={cancelar}>Cancelar pedido</Button>}
                 </span>
-                {error && <span className="block text-danger-text">{error}</span>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </Notice>
         );
     }
@@ -1483,7 +1483,7 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
                             Pedir fechas
                         </Button>
                     </span>
-                    {error && <span className="block mt-1 text-danger-text">{error}</span>}
+                    {error && <Notice variant="danger" className="mt-1">{error}</Notice>}
                 </Notice>
             )}
         </>
@@ -1551,7 +1551,7 @@ function AVencidos({ valor, total, onChange, puedeEditar }) {
                         placeholder="Escribe el motivo" onChange={(e) => poner('detalle', e.target.value)} />
                 </div>
             )}
-            {aviso && <p className="mt-1 text-caption font-bold text-danger-text">{aviso}</p>}
+            {aviso && <Notice variant="danger" className="mt-1">{aviso}</Notice>}
             <p className="mt-2 text-caption text-content-3">
                 Se carga con su nombre y, al terminar, {algunas && n > 0 ? `${n} ${n === 1 ? 'unidad pasa' : 'unidades pasan'}` : 'todas pasan'} al
                 área de vencidos de Bodega. Queda en «Productos erróneos» con su motivo.
@@ -1883,7 +1883,7 @@ function NotaEnPapel({ fila, onListo, onCancelar, adjuntar = adjuntarNotaEnPapel
                     value={n.iva} onChange={e => poner('iva', e.target.value)} />
                 <p className="text-label text-content tabular-nums pb-2">Total <b>{formatMoney(total)}</b></p>
             </div>
-            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
             <div className="flex items-center gap-2">
                 <Button size="xs" loading={guardando} onClick={guardar}
                     disabled={!n.serie.trim() || !n.numero.trim() || !n.fecha || !(Number(n.subtotal) > 0) || !(Number(n.iva) > 0)}>
@@ -2786,7 +2786,7 @@ function FacturasEnPapel({ facturas, puedeEditar, onAbrir, onDescartada }) {
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
                 Facturas en papel por cargar · {facturas.length}
             </p>
-            {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
             <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
                 {facturas.map(m => (
                     <div key={m.id} data-surface="card" className="px-3 py-2 flex items-center gap-2">

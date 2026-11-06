@@ -132,7 +132,7 @@ export default function ClienteModal({ cliente, emisorId, puedeEditar, onClose, 
                                     onChange={(v) => { const a = actividades.find(x => x.value === v); setF(p => ({ ...p, cod_actividad: v || '', desc_actividad: a?.desc ?? '' })); }}
                                     options={actividades} placeholder={actividades.length ? 'Buscar actividad…' : 'Cargando catálogo…'}
                                     disabled={ro || !actividades.length} />
-                                {errores.cod_actividad && <p className="text-caption text-danger-text mt-1">{errores.cod_actividad}</p>}
+                                {errores.cod_actividad && <Notice variant="danger" className="mt-1">{errores.cod_actividad}</Notice>}
                             </div>
                         </div>
                     </div>

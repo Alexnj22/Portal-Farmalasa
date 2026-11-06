@@ -3483,6 +3483,7 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `foto-condicionada` | `photo ? <Avatar/> : …` — se condiciona sobre la persona, no sobre la foto | §5.4 |
 | `foto-sin-identidad` | `AvatarConEstado` sin `id`: sin él no hay estado | §5.4 |
 | `avatar-fuera-de-escala` | un tamaño de foto fuera de `TAMANOS_DE_AVATAR` (20, 28, 36, 48, 64, 104) | §5.4 |
+| `aviso-a-mano` | `{error && <p className="…text-danger…">{error}</p>}` en vez de `<Notice variant="danger">` (cero absoluto) | §29 |
 | `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |
 | `editor-dos-veces` | abrir el editor de foto sin mirar `yaPreparado`: la foto del teléfono se cuadra dos veces | — (esta fila) |
 | `copy-vacio` | un vacío que no dice `Sin <sustantivo>`, Title Case o punto final en una etiqueta | §34.1, §34.4, §34.5 |

@@ -9,6 +9,7 @@ import { updateStockConfig } from '@nucleo/data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
 import { usuarioDeLaSesion } from '@nucleo/data/auth';
 import { payloadDeConfigMinMax, validarConfigMinMax } from '@nucleo/utils/configMinMax';
+import Notice from '../../../components/common/Notice';
 
 // Definido a nivel de módulo — dentro del componente, React lo recreaba en cada render
 // y desmontaba/remontaba el <input>, perdiendo el foco tras cada tecla (M-4).
@@ -194,7 +195,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
                         </p>
                     </section>
 
-                    {err && <p className="text-label text-danger-text font-semibold">{err}</p>}
+                    {err && <Notice variant="danger">{err}</Notice>}
                 </div>
             </>,
             // El pie, como ranura y no como parte del cuerpo. En escritorio

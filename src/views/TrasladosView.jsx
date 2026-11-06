@@ -38,6 +38,7 @@ import { fetchEnviosVivos, fetchEnviosHistorial, momentoDelEnvio } from '@nucleo
 import { fetchFaltantes } from '@nucleo/data/faltantes';
 import RepartosDeCompra from './traslados/RepartosDeCompra';
 import PropuestasDeLote from './traslados/PropuestasDeLote';
+import Notice from '../components/common/Notice';
 const GrupoPorRecibir = lazy(() => import('./traslados/GrupoPorRecibir'));
 // El historial es la pestaña que menos se abre, y trae sus tarjetas propias.
 const HistorialTraslados = lazy(() => import('./traslados/HistorialTraslados'));
@@ -582,7 +583,7 @@ export default function TrasladosView() {
                    sin que nadie lo pidiera. */
                 <Suspense fallback={<div className="p-4 md:p-5"><SkeletonText lines={4} /></div>}>
                 <div className="p-4 md:p-5 flex flex-col gap-3">
-                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
                     {cargando ? <SkeletonText lines={4} /> : (
                         <FilasFaltante
                             faltantes={faltantesVistos}
@@ -610,7 +611,7 @@ export default function TrasladosView() {
                    cuatro veces lo mismo y mostraría cuatro huecos en vez de uno. */
                 <Suspense fallback={<div className="p-4 md:p-5"><SkeletonText lines={4} /></div>}>
                 <div className="p-4 md:p-5 flex flex-col gap-4">
-                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
 
                     {/* A la derecha, en su propia fila, como las acciones de las
                         otras pestañas: suelto a la izquierda se leía como un
@@ -678,7 +679,7 @@ export default function TrasladosView() {
                    `HistorialTraslados`. */
             enHistorial ? (
                 <div className="p-4 md:p-5 flex flex-col gap-3">
-                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
                     {!cargando && enviosIncompletos && (
                         <p className="text-label text-content-2 font-medium px-1">
                             Los envíos cerrados de esta semana pueden estar incompletos: se ven los más recientes.
@@ -715,7 +716,7 @@ export default function TrasladosView() {
                    renglones de texto, y el nombre del producto termina flotando
                    solo en una línea que nadie puede recorrer. */
                 <div className="p-4 md:p-5 flex flex-col gap-3">
-                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
 
                     {/* La acción vive en la píldora de filtros (§17), no como
                         botón suelto arriba de la lista: es una acción DE LA

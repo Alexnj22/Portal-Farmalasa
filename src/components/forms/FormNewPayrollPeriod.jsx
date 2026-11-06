@@ -1,6 +1,7 @@
 import React from 'react';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import { problemaDeQuincena, quincenaPorDefecto, rotuloDePeriodo } from '@nucleo/utils/planilla';
+import Notice from '../common/Notice';
 
 const InputLabel = ({ children }) => (
     <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
@@ -32,7 +33,7 @@ const FormNewPayrollPeriod = ({ formData = {}, setFormData }) => {
                     <LiquidDatePicker value={end_date} onChange={val => setFormData(f => ({ ...f, end_date: val }))} />
                 </div>
             </div>
-            {problema && <p className="text-caption font-bold text-danger-text ml-1">{problema}</p>}
+            {problema && <Notice variant="danger" className="ml-1">{problema}</Notice>}
             <div>
                 <InputLabel>Fecha de pago</InputLabel>
                 <LiquidDatePicker value={pay_date} onChange={val => setFormData(f => ({ ...f, pay_date: val }))} />

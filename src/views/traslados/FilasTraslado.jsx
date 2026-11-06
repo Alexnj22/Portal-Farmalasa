@@ -709,7 +709,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                 />
             )}
 
-            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             {modo !== 'rechazo' ? (
                 <div className="flex gap-2">
@@ -1041,7 +1041,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 <OjoDeTarjeta className="self-start mt-1" />
             </button>
 
-            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             {/* El pie, como en `RequestCard`: a la izquierda cuándo salió y
                 cuánto lleva, a la derecha qué se hace con eso. El botón sólo se
@@ -1288,7 +1288,7 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                     {avisoPapel && (
                         <p className="text-label text-content-2 font-medium">{avisoPapel}</p>
                     )}
-                    {error && <p className="text-label text-danger-text font-medium">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
                 </div>
             </CuerpoDialogo>
         </ModalShell>

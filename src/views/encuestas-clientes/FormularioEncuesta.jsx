@@ -201,7 +201,7 @@ export default function FormularioEncuesta({
                         label={entrevista ? 'Consentimiento del cliente' : 'Consentimiento'}
                         description={encuesta.texto_consentimiento}
                         onChange={(v) => setContacto((c) => ({ ...c, consiente: v }))} />
-                    {errorContacto && <p className="text-micro font-semibold text-danger">{errorContacto}</p>}
+                    {errorContacto && <Notice variant="danger">{errorContacto}</Notice>}
                     {errorEnvio && <Notice variant="danger" icon={AlertTriangle} compact>{errorEnvio}</Notice>}
                     <div className="flex flex-wrap gap-2 justify-between pt-2 mt-auto">
                         <Button variant="secondary" icon={ArrowLeft} disabled={enviando} onClick={() => setEnContacto(false)}>Atrás</Button>

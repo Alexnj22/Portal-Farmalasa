@@ -11,6 +11,7 @@ import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { ES_PRUEBAS } from '../../entorno';
 import { enviarDocumentoPorCorreo, estadoDelCorreo } from './correo';
 import { correoValido, destinoDelCorreo } from '@nucleo/utils/distribucionFacturacion';
+import Notice from '../../components/common/Notice';
 
 // El correo al cliente, dentro del documento (borrador 0019): a quién se le
 // mandó, si falló, y el botón. Hacienda exige entregarle el documento SELLADO,
@@ -52,7 +53,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
                 <p className="text-caption text-content-3">El {fechaNumerica(vigente.enviado_at)} a las {hora12(vigente.enviado_at)}, con el archivo JSON y el PDF.</p>
             )}
             {vigente?.estado === 'fallido' && vigente.ultimo_error && <p className="text-caption text-danger-text">{vigente.ultimo_error}</p>}
-            {error && <p className="text-caption text-danger-text">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
             {puedeEnviar && (sellado || ES_PRUEBAS) ? (
                 <div className="flex flex-wrap items-end gap-2">
                     <PortalInput label="Enviar a" name="correo-destino" type="email" value={destino} onChange={(e) => setDestino(e.target.value)}

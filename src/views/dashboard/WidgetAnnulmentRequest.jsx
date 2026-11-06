@@ -37,6 +37,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { MOTIVOS_ANULACION, FORMAS_DE_PAGO, ROTULO_PAGO, esDeHoy, estadoDeLaCaja, MOTIVO_SIN_ANULAR, ventanaDelFiltro, esAnulada, ambitoDeFacturas, solicitudDeFacturacion } from '@nucleo/utils/solicitudFacturacion';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import PuntosDelCambio from '../solicitudes/PuntosDelCambio';
+import Notice from '../../components/common/Notice';
 const findTargetEmployee = supervisorQueResuelve;
 
 const REASONS = MOTIVOS_ANULACION;
@@ -448,7 +449,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
               placeholder={commentRequired ? 'Descripción detallada requerida...' : 'Descripción adicional...'}
           />
         </div>
-        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <Notice variant="danger">{submitError}</Notice>}
       </div>
 
       <StickySubmit label="Enviar solicitud de anulación" onClick={handleSubmit} disabled={!canSubmit} loading={submitting} />
@@ -532,7 +533,7 @@ function PaymentChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeB
               placeholder="Explica el motivo del cambio..."
           />
         </div>
-        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <Notice variant="danger">{submitError}</Notice>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newPayment} loading={submitting} />
@@ -645,7 +646,7 @@ function VendorChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               placeholder="Explica por qué se debe reasignar esta venta..."
           />
         </div>
-        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <Notice variant="danger">{submitError}</Notice>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newVendorId} loading={submitting} />
@@ -795,7 +796,7 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
               placeholder="Explica por qué se debe cambiar el cliente..."
           />
         </div>
-        {submitError && <p className="text-label text-danger-text font-medium px-1">{submitError}</p>}
+        {submitError && <Notice variant="danger">{submitError}</Notice>}
       </div>
 
       <StickySubmit label="Enviar solicitud de cambio" onClick={handleSubmit} disabled={!newClient} loading={submitting} />

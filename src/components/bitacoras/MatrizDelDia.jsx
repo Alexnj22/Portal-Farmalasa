@@ -157,7 +157,7 @@ function Celda({ area, franja, fecha, puedeAnotar, cerrado, onRecargar, onCorreg
             {franja.estado === 'vencida' && !String(temp).trim() && (
                 <p className="text-micro font-bold text-danger-text">se pasó la hora</p>
             )}
-            {error && <p className="text-micro font-bold text-danger-text">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
         </td>
     );
 }

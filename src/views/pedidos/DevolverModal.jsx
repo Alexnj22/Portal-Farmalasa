@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import { MOTIVOS, MAX_FOTOS, viajaPorMotivo } from '@nucleo/data/devoluciones';
+import Notice from '../../components/common/Notice';
 
 // La sala pide devolver a bodega lo que no cuadró.
 //
@@ -159,7 +160,7 @@ export default function DevolverModal({ open, onClose, item, onConfirm, saving, 
                     placeholder="Lo que bodega tendría que saber…"
                 />
 
-                {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
 
             <LiquidModal.Footer>

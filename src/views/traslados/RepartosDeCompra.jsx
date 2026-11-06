@@ -10,6 +10,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchPausaDeCompras, fetchRepartosDeCompra, recibirRepartoDeCompra, comprobarRepartoDeCompra, reintentarRepartoDeCompra, fetchPedidosDeVence, responderPedidoDeVence } from '@nucleo/data/cargarCompra';
+import Notice from '../../components/common/Notice';
 
 /* Lo que Bodega le repartió a la sala al cargar una compra (2026-10-30).
  *
@@ -145,7 +146,7 @@ function PedidoDeVence({ pedido, puedeResponder, onHecho }) {
                     </div>
                 ))}
             </div>
-            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
             <div className="mt-auto flex items-center justify-between gap-2">
                 {pedido.pedido_por ? (
                     <span className="flex items-center gap-1.5 text-micro text-content-3 min-w-0">
@@ -243,7 +244,7 @@ function Envio({ fila, puedeRecibir, puedeReintentar, onHecho, onAviso }) {
                     <AlertTriangle size={12} className="mt-0.5 shrink-0" /> <span><b>Qué pasó:</b> {fila.nota}</span>
                 </p>
             )}
-            {error && <p className="text-micro text-danger-text font-medium">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             <div className="mt-auto flex items-center justify-between gap-2">
                 {fila.enviado_por ? (

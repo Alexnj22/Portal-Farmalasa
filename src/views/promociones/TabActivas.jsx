@@ -12,6 +12,7 @@ import {
     fmtUnidades, fmtVigencia, diasRestantes, estadoVisible, rotuloMes,
     esLaboratorio, fmtLote,
 } from '@nucleo/utils/promocionesUtils';
+import Notice from '../../components/common/Notice';
 
 /**
  * Las promociones vivas, como tarjetas.
@@ -178,7 +179,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                 )}
             </div>
 
-            {fallo && <p className="text-caption text-danger-text">{fallo}</p>}
+            {fallo && <Notice variant="danger">{fallo}</Notice>}
 
             {/* Ver la matriz NO exige poder editar: es la pantalla que le dice a
                 supervisión cómo va cada sala, y pedir permiso de escritura para

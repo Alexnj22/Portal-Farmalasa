@@ -18,6 +18,7 @@ import useBorrador from '@nucleo/hooks/useBorrador';
 import AvisoDeBorrador from '../common/AvisoDeBorrador';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import Notice from '../common/Notice';
 
 function SectionHeader({ icon: Icon, children }) {
     return (
@@ -361,7 +362,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             clearable
                         />
                     </div>
-                    {clasifError && <div className="sm:col-span-2 text-label text-danger-text px-1">{clasifError}</div>}
+                    {clasifError && <Notice variant="danger" className="sm:col-span-2">{clasifError}</Notice>}
                 </div>
             </div>
 
@@ -456,7 +457,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             />
                         </div>
                     </>)}
-                    {fiscalError && <div className="sm:col-span-2 text-label text-danger-text px-1">{fiscalError}</div>}
+                    {fiscalError && <Notice variant="danger" className="sm:col-span-2">{fiscalError}</Notice>}
                     {canEdit && (
                         <div className="sm:col-span-2">
                             <Button
@@ -515,7 +516,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                             placeholder="Sin definir"
                         />
                     </div>
-                    {creditoError && <div className="sm:col-span-3 text-label text-danger-text px-1">{creditoError}</div>}
+                    {creditoError && <Notice variant="danger" className="sm:col-span-3">{creditoError}</Notice>}
                     {canEdit && (
                         <div className="sm:col-span-3">
                             <Button variant="secondary" disabled={savingCredito} onClick={guardarCredito}>
@@ -640,7 +641,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                 como el footer fijo de Nuevo Empleado). */}
             {canEdit && (
             <div data-pegajoso className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 border-t border-divider">
-                {error && <div className="text-label text-danger-text px-1 mb-2">{error}</div>}
+                {error && <Notice variant="danger" className="mb-2">{error}</Notice>}
                 <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
             </div>
             )}

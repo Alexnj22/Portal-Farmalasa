@@ -25,6 +25,7 @@ import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, fotoDeAjuste, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
+import Notice from '../../components/common/Notice';
 
 // Widget «Ajuste de Inventario».
 //
@@ -1197,7 +1198,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         </div>
                     )}
 
-                    {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
                 </div>
             )}
 

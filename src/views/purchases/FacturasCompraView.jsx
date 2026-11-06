@@ -37,6 +37,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { correrMes, etiquetaMes, fechaNumerica, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
+import Notice from '../../components/common/Notice';
 
 const CLASIFICAR_TIPO_OPTIONS = [
     { value: 'anulacion', label: 'Aviso de anulación — marca el DTE como invalidado' },
@@ -207,7 +208,7 @@ function SupplierMatchCell({ row, proveedores, onMatched, canEdit, matchSnippet 
                 {canEdit && (
                     <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setEditing(true); }}>Emparejar</Button>
                 )}
-                {error && <span className="text-caption text-danger-text">{error}</span>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
         );
     }
@@ -391,7 +392,7 @@ function MatchDocumentAction({ row, documents, open, onOpen, onClose, onMatched 
                     color="blue"
                     onClick={() => { onOpen(); setError(''); }}
                 />
-                {error && <span className="text-caption text-danger-text">{error}</span>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
         );
     }
@@ -471,7 +472,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     color="slate"
                     onClick={() => { onOpen(); setError(''); setTipo('anulacion'); setDocumentId(''); }}
                 />
-                {error && <span className="text-caption text-danger-text">{error}</span>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
         );
     }
@@ -514,7 +515,7 @@ function ClassifyReviewAction({ row, documents, open, onOpen, onClose, onClassif
                     clearable={false}
                 />
             </div>
-            {error && <span className="text-caption text-danger-text shrink-0">{error}</span>}
+            {error && <Notice variant="danger" className="shrink-0">{error}</Notice>}
             <Button tone="success" icon={CheckCircle2} disabled={saving || !documentId} title="Confirmar clasificación" iconOnly onClick={confirm} />
             <Button variant="ghost" icon={X} disabled={saving} title="Cancelar" iconOnly onClick={onClose} />
         </div>
@@ -553,7 +554,7 @@ function AttachJsonAction({ row, candidates, onMerged }) {
         return (
             <div className="flex items-center gap-1.5">
                 <Button variant="ghost" onClick={(e) => { e.stopPropagation(); setError(''); setOpen(true); }}>Adjuntar JSON</Button>
-                {error && <span className="text-caption text-danger-text">{error}</span>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
         );
     }
@@ -996,7 +997,7 @@ function TabDocumentos({
             </div>
             </div>
 
-            {bulkError && <div className="text-caption text-danger-text px-1">{bulkError}</div>}
+            {bulkError && <Notice variant="danger">{bulkError}</Notice>}
 
             {/* El avance vive acá, no en el rótulo del botón: adentro de la
                 píldora un contador que cambia por archivo la hacía re-medir y
@@ -1256,7 +1257,7 @@ function TabRevision({ searchTerm, refreshKey, bumpRefresh, dateStart, dateEnd, 
             <div className="text-label text-content-3 font-medium px-1">
                 {loading ? 'Cargando…' : `${filtered.length.toLocaleString()} pendiente${filtered.length !== 1 ? 's' : ''} de revisión`}
             </div>
-            {rowError && <div className="text-caption text-danger-text px-1">{rowError}</div>}
+            {rowError && <Notice variant="danger">{rowError}</Notice>}
 
             {/* El toque abre el archivo. Mismo motivo que la tabla de arriba. */}
             <DataTable columns={REVIEW_COLS} loading={loading} movil={{ usarAccionDeFila: true }} empty={{ icon: CheckCircle2, message: 'Sin pendientes de revisión' }}>

@@ -148,7 +148,7 @@ export default function TabEmisor({ emisor, puedeConfigurar, onGuardado }) {
                         <LiquidSelect value={f.cod_actividad} options={actividades} disabled={ro || !actividades.length}
                             placeholder={actividades.length ? 'Buscar actividad…' : 'Cargando catálogo…'}
                             onChange={(v) => { const a = actividades.find(x => x.value === v); setF(p => ({ ...p, cod_actividad: v || '', desc_actividad: a?.desc ?? '' })); }} />
-                        {errores.cod_actividad && <p className="text-caption text-danger-text mt-1">{errores.cod_actividad}</p>}
+                        {errores.cod_actividad && <Notice variant="danger" className="mt-1">{errores.cod_actividad}</Notice>}
                     </div>
                 </div>
             </section>

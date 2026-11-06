@@ -68,7 +68,7 @@ export default function PropuestasDeLote() {
                     </span>
                 </Notice>
             ))}
-            {error && <p className="text-caption font-semibold text-danger-text">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
         </div>
     );
 }

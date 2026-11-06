@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.8 — Errores con Notice
+
+- **Un solo aspecto para los mensajes de error.** 60 errores escritos a mano en 34 archivos (cinco tamaños de letra, dos rojos distintos, algunos sin ícono) pasan a `<Notice variant="danger">`: el mismo recuadro con ícono en todo el portal.
+- `gate:design`: categoría nueva `aviso-a-mano` (cero absoluto). DESIGN.md §29 la daba por existente y no existía.
+
 ## v2.1459.7 — Botón grande: ícono en la rampa
 
 - El ícono del `Button size="lg"` pasa de 17 a 16px: 17 estaba fuera de la rampa de íconos (§12). Los demás tamaños (11·12·14·15) ya estaban en la rampa y no cambian.

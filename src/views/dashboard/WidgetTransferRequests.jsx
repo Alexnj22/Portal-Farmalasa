@@ -12,6 +12,7 @@ import {
     fetchSalasQueCubro, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir,
 } from '@nucleo/data/traslados';
 import { fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
+import Notice from '../../components/common/Notice';
 
 // Widget «Traslados entre Salas».
 //
@@ -222,7 +223,7 @@ function PanelTraslados({ porConfirmar, porRecibir, envios, error, onCambio }) {
                 </Suspense>
             )}
 
-            {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             {cargando && <SkeletonText lines={3} />}
 

@@ -15,6 +15,7 @@ import { imprimirTicketDeEnvio } from '@nucleo/utils/imprimirTraslado';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fmtCuando, fmtFechaLarga } from '@nucleo/utils/trasladoTexto';
 import { desdeHace } from '@nucleo/utils/movimientoTexto';
+import Notice from '../../components/common/Notice';
 
 // Las tarjetas del envío, en un solo lugar.
 //
@@ -399,7 +400,7 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                 </li>
             </ul>
 
-            {error && <p className="text-caption text-danger-text font-semibold leading-snug">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             <Pie>
                 <span className="text-caption font-bold text-content-3 tabular-nums">
@@ -497,7 +498,7 @@ export function FilaEnvioPorDespachar({ envio, onHecho, ahora = null }) {
                     {l.descripcion}: {l.error}
                 </p>
             ))}
-            {error && <p className="text-caption text-danger-text font-semibold leading-snug">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             {cancelando ? (
                 <div className="mt-auto pt-3 border-t border-divider flex flex-col gap-2">
@@ -585,7 +586,7 @@ export function FilaDevolucionPorRecibir({ envio, onHecho, ahora = null }) {
             {/* Con el motivo de cada uno: es lo que hay que leer antes de
                 volverlo a poner en el estante. */}
             <ListaRenglones lineas={devueltas} conMotivo />
-            {error && <p className="text-caption text-danger-text font-semibold leading-snug">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
             <Pie>
                 {/* El botón dice lo que hay que haber hecho ANTES de apretarlo:
                     el producto vuelve a tu inventario, así que darlo por recibido

@@ -9,6 +9,7 @@ import { descargarPaqueteDteVenta } from '@nucleo/data/librosIva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ivaDelDte } from '@nucleo/utils/dteIva';
+import Notice from '../common/Notice';
 
 const fmt$ = (n) => formatMoney(n || 0);
 
@@ -125,7 +126,7 @@ const FormSalesDteViewer = ({ formData }) => {
                     </div>
                 </div>
 
-                {errorDescarga && <p className="mt-2 text-caption font-bold text-danger">{errorDescarga}</p>}
+                {errorDescarga && <Notice variant="danger" className="mt-2">{errorDescarga}</Notice>}
 
                 {document?.anulada && (
                     <div className="mt-3 flex items-start gap-2.5 rounded-2xl border border-danger/25 bg-danger/10 px-4 py-3">

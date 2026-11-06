@@ -1037,7 +1037,7 @@ function UsarSaldo({ saldo, onCerrar, onUsado, buscarSaldoAFavor, usarSaldoAFavo
                                 hasError={!!monto && !montoValido} errorMessage={!!monto && !montoValido ? `Hasta ${formatMoney(disponible)}.` : undefined} />
                         </>
                     )}
-                    {error && <p className="text-body-sm text-danger-text">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
                 </div>
             </LiquidModal.Body>
             <LiquidModal.Footer>

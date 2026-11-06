@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Loader2, PackageCheck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { recibirTraslado } from '@nucleo/data/traslados';
+import Notice from '../../components/common/Notice';
 
 // Las hermanas de una misma solicitud, juntas.
 //
@@ -111,7 +112,7 @@ export default function GrupoPorRecibir({ grupo, filas, onHecho, children }) {
                 </div>
             )}
 
-            {error && <p className="text-micro text-danger-text font-medium px-1 leading-snug">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
         </div>
     );
 }

@@ -10,6 +10,7 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
+import Notice from '../../components/common/Notice';
 
 // Pedirle un producto a otra sala.
 //
@@ -552,7 +553,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
 
                         <AvisoPedido aviso={avisos.paraQue} />
 
-                        {error && <p className="text-label text-danger-text font-medium px-1">{error}</p>}
+                        {error && <Notice variant="danger">{error}</Notice>}
                     </>
                 )}
             </LiquidModal.Body>

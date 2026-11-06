@@ -696,7 +696,7 @@ function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoApa
                 </div>
                 <Button variant="secondary" icon={Search} loading={buscando} disabled={nombre.trim().length < 3} onClick={buscar}>Buscar en el SRS</Button>
             </div>
-            {error && <p className="text-caption text-danger-text">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             {enCatalogo.length > 0 && (
                 <div className="space-y-1.5">
@@ -799,7 +799,7 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
                     <Button variant="primary" loading={guardando} disabled={digitos.length !== 8} onClick={guardar}>Guardar</Button>
                     {actual && <Button variant="ghost" onClick={() => { setEditando(false); setNuevo(actual); setError(''); }}>Volver</Button>}
                 </div>
-                {error && <p className="text-caption text-danger-text">{error}</p>}
+                {error && <Notice variant="danger">{error}</Notice>}
             </div>
         );
     }

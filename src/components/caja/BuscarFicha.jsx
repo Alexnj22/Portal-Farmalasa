@@ -6,6 +6,7 @@ import SearchInput from '../common/SearchInput';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { buscarClientes, crearClienteDeMostrador } from '@nucleo/data/customers';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import Notice from '../common/Notice';
 
 /**
  * La ficha del cliente que trajo su inyección: con ella la aplicación entra a
@@ -91,7 +92,7 @@ export default function BuscarFicha({ ficha, onElegir, ayuda = AYUDA, rotulo = '
                     <PortalInput label="DUI" value={nueva.dui} onChange={set('dui')} maxLength={10} inputMode="numeric" autoComplete="off" />
                 </div>
                 <p className="text-caption text-content-3">Hace falta el teléfono o el DUI.</p>
-                {errorNueva && <p className="text-caption text-danger">{errorNueva}</p>}
+                {errorNueva && <Notice variant="danger">{errorNueva}</Notice>}
                 <div className="flex justify-end gap-2">
                     <Button variant="ghost" size="sm" onClick={() => setNueva(null)} disabled={creando}>Cancelar</Button>
                     <Button variant="primary" size="sm" loading={creando} onClick={guardarNueva}

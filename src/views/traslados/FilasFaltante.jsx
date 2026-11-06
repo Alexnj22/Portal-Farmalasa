@@ -7,6 +7,7 @@ import { cerrarFaltante, ingresarAparecido } from '@nucleo/data/faltantes';
 import { fmtCuando } from '@nucleo/utils/trasladoTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ChipPersona } from '../solicitudes/PersonasSolicitud';
+import Notice from '../../components/common/Notice';
 
 // Lo que faltó en una bolsa, y qué se hizo con eso.
 //
@@ -158,7 +159,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null }) {
                 </div>
             )}
 
-            {error && <p className="text-micro text-danger-text font-semibold leading-snug">{error}</p>}
+            {error && <Notice variant="danger">{error}</Notice>}
 
             <div className="mt-auto pt-2.5 border-t border-divider flex flex-col gap-2.5">
                 <div className="flex items-center justify-between gap-3 min-w-0 text-content-2">

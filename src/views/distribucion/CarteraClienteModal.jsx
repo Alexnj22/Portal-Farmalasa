@@ -336,7 +336,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                 <div className="flex flex-wrap items-center justify-between gap-3">
                                     <Interruptor checked={imprimir} onChange={setImprimir} label="Imprimir el recibo" />
                                     <div className="flex items-center gap-3 ml-auto">
-                                        {problema && <p className="text-caption text-danger-text">{problema}</p>}
+                                        {problema && <Notice variant="danger">{problema}</Notice>}
                                         <Button variant="primary" icon={cobrando ? Loader2 : HandCoins} disabled={!listo} onClick={hacerCobro} data-cobrar-cartera>
                                             {montoFinal > 0 ? `Cobrar ${formatMoney(montoFinal)}` : 'Cobrar'}
                                         </Button>

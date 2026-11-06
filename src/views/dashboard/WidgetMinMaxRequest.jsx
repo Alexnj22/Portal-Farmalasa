@@ -373,7 +373,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
           ))}
         </div>
 
-        {err && <p className="text-label text-danger-text font-semibold px-1">{err}</p>}
+        {err && <Notice variant="danger">{err}</Notice>}
       </div>
 
       {/* El envío va al PIE del modal, no al final del cuerpo: adentro del

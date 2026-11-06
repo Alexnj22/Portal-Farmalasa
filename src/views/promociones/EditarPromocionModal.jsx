@@ -906,7 +906,7 @@ function ResumenDiario({ promocionId }) {
                     );
                 })}
             </div>
-            {fallo && <p className="text-caption text-danger-text mt-1.5">{fallo}</p>}
+            {fallo && <Notice variant="danger" className="mt-1.5">{fallo}</Notice>}
         </Campo>
     );
 }

@@ -7,6 +7,7 @@ import { buscarInventarioGlobalV2 } from '@nucleo/data/inventory';
 import { ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { existenciasPorProducto } from '@nucleo/utils/distribucionBodega';
+import Notice from '../../components/common/Notice';
 
 // «¿Hay en alguna sala?» — la existencia de un producto en TODAS las
 // sucursales (las siete, Bodega incluida), sin salir de la venta. Pedido del
@@ -52,7 +53,7 @@ export default function ExistenciasSucursales({ terminoInicial = '', onClose }) 
                     <PortalInput icon={cargando ? Loader2 : Search} name="buscar-existencias" value={termino} autoFocus
                         placeholder="Producto (nombre o código)…" aria-label="Buscar en todas las sucursales"
                         onChange={(e) => setTermino(e.target.value)} />
-                    {error && <p className="text-caption text-danger-text">{error}</p>}
+                    {error && <Notice variant="danger">{error}</Notice>}
                     {termino.trim().length < 2 && <p className="text-caption text-content-3">Escribe al menos dos letras.</p>}
                     {filas && termino.trim().length >= 2 && productos.length === 0 && !cargando && (
                         <p className="text-caption text-content-3 flex items-center gap-2"><PackageX size={14} /> Ninguna sucursal tiene ese producto.</p>

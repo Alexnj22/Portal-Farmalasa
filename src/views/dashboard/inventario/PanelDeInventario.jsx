@@ -64,6 +64,7 @@ import { ERP_BRANCH_MAP, BRANCH_ORDER, MI_ERP_POR_BRANCH } from './salas';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { MIN_LETRAS_BUSQUEDA } from '@nucleo/utils/consultaInventario';
 import { buscarEnSrs } from '@nucleo/data/srs';
+import Notice from '../../../components/common/Notice';
 
 // Desde cuántas letras se sale a preguntar. Con una sola, el buscador pedía
 // 16,722 filas —lo que empareja con «a»— y el navegador se quedaba pintando.
@@ -976,7 +977,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
   return (
     <div className="flex flex-col gap-2.5 flex-1 min-h-0">
 
-      {error && <p className="shrink-0 px-1 text-label text-danger-text font-medium">{error}</p>}
+      {error && <Notice variant="danger" className="shrink-0">{error}</Notice>}
 
       {/* ── La solicitud que quedó a medio armar ──────────────────────────────
           Agregar un producto cierra el formulario y devuelve acá, para elegir el

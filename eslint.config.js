@@ -12,8 +12,8 @@ export default defineConfig([
   // (27 el 2026-08-10). No era ruido: ESLint las recorría enteras y moría
   // formateando el informe —`RangeError: Invalid string length`— o sea que
   // `npm run lint` no fallaba por el código, fallaba siempre.
-  // `apps/`: la app del teléfono tiene su propio lint (`npx expo lint`) y su
-  // propio node_modules, que este recorrería entero.
+  // `apps/`: cada app tiene su propio node_modules, que este recorrería entero.
+  // La app del personal no tiene lint configurado (ver apps/mobile/AGENTS.md).
   // `.claude/` guarda los worktrees de los agentes: copias enteras del repo con
   // su node_modules. Sin esto `npm run lint` daba 10,258 errores ajenos (2026-10-21).
   globalIgnores(['dist', 'dist-*', 'android', 'ios', '.agents', 'apps', '.claude']),

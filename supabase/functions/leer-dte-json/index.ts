@@ -2,7 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
 import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
-import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
+import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
 import { diferenciasDeNumeros } from "../_shared/numerosDelNombre.ts";
 
@@ -206,7 +206,7 @@ Deno.serve(async (req: Request) => {
       const otra = (pp ?? []).find((x) => Number(x.factor) > 1 && Number(x.costo) > 0);
       const cu = uno ? Number(uno.costo) : otra ? Number(otra.costo) / Number(otra.factor) : null;
       const f = elegirFactor({
-        delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), pistas: tamanosEnLaDescripcion(desc), empaque: empaqueEnLaDescripcion(desc), aprendido: null,
+        delDoc: factorEnLaDescripcion(desc), debil: factorDebilEnLaDescripcion(desc), pistas: tamanosEnLaDescripcion(desc), empaque: empaqueEnLaDescripcion(desc), unitario: envaseUnitarioEnLaDescripcion(desc), aprendido: null,
         vinetaUno: Number((pp ?? []).find((x) => Number(x.factor) === 1)?.vineta) || null,
         costoNeto: Number(body?.costo_neto) || 0, costoUnidad: cu != null ? Number(cu) : null,
         presentaciones: (pp ?? []).map((x) => Number(x.factor)),
@@ -611,6 +611,7 @@ Deno.serve(async (req: Request) => {
             debil: factorDebilEnLaDescripcion(String(r.descripcion ?? "")),
             pistas: tamanosEnLaDescripcion(String(r.descripcion ?? "")),
             empaque: empaqueEnLaDescripcion(String(r.descripcion ?? "")),
+            unitario: envaseUnitarioEnLaDescripcion(String(r.descripcion ?? "")),
             vinetaUno: ((r as any).vinetas ?? []).find((v: { factor: number }) => v.factor === 1)?.vineta ?? null,
             aprendido: r.factor_aprendido ? Number(r.factor_aprendido) : null,
             costoNeto: neto,

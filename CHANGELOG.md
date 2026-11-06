@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1464.1 — Compras: un frasco suelto entra como una unidad
+
+- **«MEBEZOL SUSPENSION FCO X 30 ML» × 6 proponía 12 frascos.** Con el 35 %
+  de descuento al pie el frasco salía a $1.72 neto, el catálogo lo tenía a
+  $0.837 y el precio daba «2 por cada uno»; alguien lo confirmó y quedó
+  aprendido.
+- **Ahora un envase suelto (FCO, FRASCO, TUBO, BOTELLA, GOTERO…) que no dice
+  cuántas piezas trae ni nombra un empaque entra como 1**, si el catálogo vende
+  la de 1 — le gana al precio y a lo aprendido. «FCO X 100 TAB» o «CAJA X 12
+  FCO» siguen por las reglas de antes.
+- El 2 aprendido de ese código se corrigió a 1.
+
 ## v2.1464.0 — Bodega pasa producto del estante a vencidos, con motivo y foto
 
 - **Nueva opción «Pasar a vencidos» en Ajuste de inventario, sólo en Bodega.**

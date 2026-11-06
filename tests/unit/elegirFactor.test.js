@@ -1,6 +1,6 @@
 // Cuántas unidades trae cada una del proveedor, con el precio como juez (2026-11-05).
 import { describe, it, expect } from 'vitest';
-import { elegirFactor, empaqueEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
+import { elegirFactor, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
 
 describe('elegirFactor', () => {
     it('MELOFLEX: lo aprendido (1, de agosto) pierde contra el precio: caja de 10', () => {
@@ -71,5 +71,16 @@ describe('elegirFactor', () => {
     it('una caja nombrada que el precio contradice de plano no se usa (precio de unidad suelta)', () => {
         expect(elegirFactor({ delDoc: null, aprendido: null, empaque: true, pistas: [30], costoNeto: 2.7, costoUnidad: 2.62, presentaciones: [1, 30] }))
             .toEqual({ factor: 1, origen: null });
+    });
+    it('MEBEZOL «FCO X 30 ML»: un frasco es una unidad aunque el precio dé 2 y lo aprendido diga 2', () => {
+        const desc = 'MEBEZOL SUSPENSION FCO X 30 ML LOTE: 260669 VENCE: 30/06/2028';
+        expect(envaseUnitarioEnLaDescripcion(desc)).toBe(true);
+        expect(elegirFactor({ delDoc: null, aprendido: 2, unitario: true, pistas: [30], costoNeto: 1.7225, costoUnidad: 0.837, presentaciones: [1], vinetaUno: 3.75 }))
+            .toEqual({ factor: 1, origen: 'documento' });
+    });
+    it('un frasco que dice cuántas piezas trae no es una unidad', () => {
+        expect(envaseUnitarioEnLaDescripcion('ACETAMINOFEN 500 MG FCO X 100 TAB')).toBe(false);
+        expect(envaseUnitarioEnLaDescripcion('JARABE X 120 ML CAJA X 12 FCO')).toBe(false);
+        expect(envaseUnitarioEnLaDescripcion('SUPLEFERR GOTAS FRASCO X 30 ML')).toBe(true);
     });
 });

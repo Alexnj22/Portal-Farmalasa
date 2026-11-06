@@ -363,6 +363,19 @@ export function empaqueEnLaDescripcion(t: string): boolean {
   return /\b(CAJA|CAJ|CJA|CJ|DISPLAY|DISP|PAQUETE|PAQ|FARDO|BULTO)\b/i.test(String(t ?? ""));
 }
 
+/**
+ * ¿La descripción habla de UN envase y nada más? «MEBEZOL SUSPENSION FCO X 30
+ * ML»: el frasco es la unidad y el «X 30» son mililitros. Si nombra cuántas
+ * piezas trae («FCO X 100 TAB») o un empaque («CAJA»), no lo es: ahí el
+ * tamaño sí puede ser más de 1.
+ */
+export function envaseUnitarioEnLaDescripcion(t: string): boolean {
+  const s = String(t ?? "");
+  if (!/\b(FCO|FRASCO|TUBO|BOTE|BOTELLA|GOTERO|SPRAY|LATA)\b/i.test(s)) return false;
+  if (empaqueEnLaDescripcion(s)) return false;
+  return !/\bX\s*\d+\s*(TAB|TABS|TABL|TABLETAS?|CAP|CAPS|CAPSULAS?|COMP|COMPRIMIDOS?|GRAG|GRAGEAS?|SOBRES?|AMP|AMPOLLAS?|UND|UNDS|UNIDADES|U|PZ|PIEZAS?|PERLAS?)\b/i.test(s);
+}
+
 export function factorDebilEnLaDescripcion(t: string): number | null {
   const m = /\bDISP(?:LAY)?\.?\s*(?:X|DE|CON)\s*(\d+)\b/i.exec(String(t ?? ""));
   const n = m ? Number(m[1]) : NaN;
@@ -388,12 +401,17 @@ export function factorDebilEnLaDescripcion(t: string): number | null {
 export function elegirFactor(x: {
   delDoc: number | null; aprendido: number | null; costoNeto: number;
   costoUnidad: number | null | undefined; presentaciones: number[];
-  debil?: number | null; pistas?: number[]; vinetaUno?: number | null; empaque?: boolean;
+  debil?: number | null; pistas?: number[]; vinetaUno?: number | null; empaque?: boolean; unitario?: boolean;
 }): { factor: number; origen: "documento" | "aprendido" | "costo" | null; corrige?: number } {
   if (x.delDoc) return { factor: x.delDoc, origen: "documento" };
   // Lo que el papel dice a medias («DISP. X 50 TAB.») sólo vale si el catálogo
   // ya vende ese tamaño: así no se confunde con lo que trae el producto.
   if (x.debil && x.presentaciones.includes(x.debil)) return { factor: x.debil, origen: "documento" };
+  // «MEBEZOL SUSPENSION FCO X 30 ML» × 6 a $1.72 neto contra $0.837 en el
+  // catálogo (2026-11-06): el precio daba 2 y entraban 12 frascos. Un envase
+  // suelto es UNA unidad cuando el catálogo vende la de 1; el alza la avisa la
+  // revisión de costos. Le gana también a lo aprendido, como el documento.
+  if (x.unitario && x.presentaciones.includes(1)) return { factor: 1, origen: "documento" };
   const cu = Number(x.costoUnidad);
   const razon = cu > 0 && x.costoNeto > 0 ? x.costoNeto / cu : null;
   // «RINOKEM PLUS CAJA X 100 CAPS» a $8.90 con la cápsula a $0.0637 en el

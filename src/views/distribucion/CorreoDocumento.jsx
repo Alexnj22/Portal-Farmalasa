@@ -52,7 +52,7 @@ export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
             {vigente?.estado === 'enviado' && vigente.enviado_at && (
                 <p className="text-caption text-content-3">El {fechaNumerica(vigente.enviado_at)} a las {hora12(vigente.enviado_at)}, con el archivo JSON y el PDF.</p>
             )}
-            {vigente?.estado === 'fallido' && vigente.ultimo_error && <p className="text-caption text-danger-text">{vigente.ultimo_error}</p>}
+            {vigente?.estado === 'fallido' && vigente.ultimo_error && <Notice variant="danger">{vigente.ultimo_error}</Notice>}
             {error && <Notice variant="danger">{error}</Notice>}
             {puedeEnviar && (sellado || ES_PRUEBAS) ? (
                 <div className="flex flex-wrap items-end gap-2">

@@ -74,7 +74,7 @@ export default function RepartosDeCompra({ puedeRecibir, busqueda = '', onCuenta
                 <AlertTriangle size={14} className="mt-0.5 shrink-0" /> Gerencia pausó las escrituras al sistema: por ahora no se puede recibir lo que manda Bodega.
             </p>
         )}
-        {error && <p className="text-label text-danger-text font-medium px-1">No se pudo cargar lo que viene de Bodega: {error}</p>}
+        {error && <Notice variant="danger">No se pudo cargar lo que viene de Bodega: {error}</Notice>}
         {aviso && (
             <p className="text-label text-warning-text font-bold px-1 flex items-start gap-1">
                 <AlertTriangle size={14} className="mt-0.5 shrink-0" /> {aviso}

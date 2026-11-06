@@ -281,7 +281,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                                         <PortalInput label="Nota (opcional)" name="nota-saldo-a-favor" value={favorNota} onChange={(e) => setFavorNota(e.target.value)} />
                                     </div>
                                     <div className="flex flex-wrap items-center justify-end gap-3">
-                                        {usoFavor.problema && favorMonto && <p className="text-caption text-danger-text">{usoFavor.problema}</p>}
+                                        {usoFavor.problema && favorMonto && <Notice variant="danger">{usoFavor.problema}</Notice>}
                                         <Button variant="secondary" icon={aplicando ? Loader2 : PiggyBank} disabled={!!usoFavor.problema || aplicando} onClick={usarSaldoAFavor} data-usar-saldo-a-favor>
                                             {usoFavor.monto > 0 ? `Usar ${formatMoney(usoFavor.monto)}` : 'Usar'}
                                         </Button>

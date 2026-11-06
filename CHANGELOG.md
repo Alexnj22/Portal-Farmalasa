@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.1 — Errores que faltaban y entorno de pruebas
+
+- Tres errores que seguían escritos a mano (Traslados: «No se pudo cargar lo que viene de Bodega», la cartera de un cliente y el correo de un documento) pasan a `Notice`; los delató el navegador, al lado de uno ya migrado. `aviso-a-mano` ahora también ve el mensaje con texto delante y condiciones encadenadas.
+- Entorno de pruebas: el mantenimiento diario copia también los permisos POR COLUMNA de producción (`employees` se lee así); sin ellos el branch decía «permission denied for table employees».
+
 ## v2.1461.0 — Avance de los regulados sin lote
 
 - **Cuántos regulados siguen «sin lote».** En la lista de conteos, una tarjeta dice cuántos productos con lote obligatorio todavía tienen existencia sin lote asignado y qué porcentaje ya está todo en su lote (por sucursal si se filtra). Baja cada vez que se aprueba un conteo que ajusta. El día que nació: entre 766 y 1,160 productos por sucursal, la mitad de los regulados.

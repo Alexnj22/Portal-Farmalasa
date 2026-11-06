@@ -159,6 +159,23 @@ async function igualarPermisosDeTablas(ref) {
     }
     if (grants.length) await sql(ref, grants.join('\n'), { escribe: true });
     console.log(`✓ Permisos de tablas: ${grants.length ? `${grants.length} igualados a producción` : 'ya iguales a producción'}.`);
+
+    // Los permisos POR COLUMNA (2026-11-06). `employees` no tiene SELECT de
+    // tabla para `authenticated` en producción: se lee por columnas, para que
+    // el PIN y los datos sensibles no salgan. El paso de arriba sólo mira
+    // permisos de tabla, así que el branch quedaba sin ninguno y Traslados
+    // decía «permission denied for table employees».
+    const qc = `select grantee, table_name, privilege_type, string_agg(quote_ident(column_name), ', ' order by column_name) as cols
+                  from information_schema.column_privileges cp
+                 where table_schema = 'public' and grantee in ('anon', 'authenticated')
+                   and not exists (select 1 from information_schema.table_privileges tp
+                                    where tp.table_schema = 'public' and tp.table_name = cp.table_name
+                                      and tp.grantee = cp.grantee and tp.privilege_type = cp.privilege_type)
+                 group by 1, 2, 3`;
+    const cols = (await sql(PROD, qc)).filter((r) => existe.has(r.table_name))
+        .map((r) => `GRANT ${r.privilege_type} (${r.cols}) ON public."${r.table_name}" TO ${r.grantee};`);
+    if (cols.length) await sql(ref, cols.join('\n'), { escribe: true });
+    console.log(`✓ Permisos por columna: ${cols.length} sentencias copiadas de producción.`);
 }
 
 async function herramientas(ref) {

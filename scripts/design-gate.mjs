@@ -1620,9 +1620,14 @@ function scanFile(path) {
   // 34 archivos con cinco tamaños y dos tonos de rojo; se pasaron todos.
   // DESIGN.md §29 ya decía que este gate existía y no existía.
   if (!hasException(path, 'aviso-a-mano')) {
+    // La variante que se escapaba (vista en Traslados, 2026-11-06): una
+    // condición encadenada y texto delante de la variable —«No se pudo
+    // cargar…: {error}»—. Sólo <p>/<div>: un <span> así es una marca en línea
+    // (el asterisco de obligatorio, «Sin lote»), no un mensaje.
+    const RE_AVISO_CON_TEXTO = /&&\s*\(?\s*<(p|div)\s+className=["'`][^"'`]*\btext-danger(?:-text)?\b[^"'`]*["'`]\s*>[^<{]*\{\s*[\w.?]*(?:error|err|problema|fallo|motivo)[\w.?]*\s*\}/i;
     const RE_AVISO = /\{\s*([\w.?]+)\s*&&\s*\(?\s*<(p|span|div)\s+className=["'`][^"'`]*\btext-danger(?:-text)?\b[^"'`]*["'`]\s*>\s*\{\s*\1\s*\}/;
     lines.forEach((line, i) => {
-      if (isComment[i] || !RE_AVISO.test(line)) return;
+      if (isComment[i] || !(RE_AVISO.test(line) || RE_AVISO_CON_TEXTO.test(line))) return;
       findings.push({ line: i + 1, label: 'mensaje de error a mano — usar `<Notice variant="danger">`', category: 'aviso-a-mano', text: line.trim().slice(0, 120) });
     });
   }

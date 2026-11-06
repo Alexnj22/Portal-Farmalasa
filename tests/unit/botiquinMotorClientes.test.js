@@ -1,6 +1,11 @@
 // App de clientes — el motor del Botiquín (lib/botiquinMotor.js, Matter.js).
 // No importa nada de React Native: se prueba tal cual en Node.
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+// Hay una partida simulada de hasta 1200 pasos: sola tarda <5 s, pero en la
+// corrida completa (400+ archivos en paralelo) llegó a 14 s y caía por el tope
+// de 5 s sin que nada estuviera roto. El tope es por la carga, no por el motor.
+vi.setConfig({ testTimeout: 30000 });
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 

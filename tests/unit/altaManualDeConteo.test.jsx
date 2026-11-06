@@ -1,4 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+
+// Montar espera hasta 5 s y la búsqueda hasta 3 s más: dentro del tope por
+// defecto de 5 s por prueba, con la corrida completa cargada, no entraba.
+vi.setConfig({ testTimeout: 20000 });
 import React, { Suspense } from 'react';
 import { render, cleanup, waitFor, fireEvent } from '@testing-library/react';
 

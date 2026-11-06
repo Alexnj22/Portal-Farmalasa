@@ -288,3 +288,38 @@ export async function quitarAbonoDelOrigen(
   try { return String(JSON.parse(t)?.typeinfo ?? "").toLowerCase() === "success"; }
   catch { return false; }
 }
+
+
+/**
+ * Borrar un crédito ENTERO del sistema de la caja (2026-11-06).
+ *
+ * El origen no anula una venta al crédito mientras el crédito siga en «Admin
+ * Crédito», y no tiene «anular crédito»: lo único que hay es borrarlo
+ * (`borrar_credito.php`, la función `deleted()` de `funciones_credito.js`).
+ * Ejercido a mano por primera vez con el crédito 2839 de Salud 3 (ISSS,
+ * 0000064474_COF, $1,241.52): contestó «Registro eliminado con exito!», salió
+ * del listado y el total bajó en uno.
+ *
+ * **No se deshace.** Y como su hermano `quitarAbonoDelOrigen`, su «Success» no
+ * prueba nada: quien llama RELEE el listado y comprueba que ya no está.
+ *
+ * NO abre la sala: el borrado va por el id del crédito, y quien llama ya la
+ * abrió para leerlo.
+ */
+export async function borrarCreditoDelOrigen(cookie: string, creditoErpId: string): Promise<{ ok: boolean; msg: string }> {
+  const t = await (await fetch(`${BASE}borrar_credito.php`, {
+    method: "POST",
+    headers: {
+      Cookie: cookie, "Content-Type": "application/x-www-form-urlencoded",
+      "X-Requested-With": "XMLHttpRequest",
+    },
+    body: new URLSearchParams({ process: "deleted", id_credito: creditoErpId }).toString(),
+    signal: AbortSignal.timeout(45_000),
+  })).text();
+  try {
+    const j = JSON.parse(t);
+    return { ok: String(j?.typeinfo ?? "").toLowerCase() === "success", msg: String(j?.msg ?? "") };
+  } catch {
+    return { ok: false, msg: `respuesta ilegible: ${t.slice(0, 160)}` };
+  }
+}

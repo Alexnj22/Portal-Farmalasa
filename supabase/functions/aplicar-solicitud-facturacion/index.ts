@@ -4,6 +4,7 @@ import {
   BASE, ANULAR, login, pedir, leerRespuesta, formatearDui, estaAnulada, enviarDteAlMH,
   RechazoMH, leerFicha,
 } from "../_shared/erp-dte.ts";
+import { creditosDeLaSala, borrarCreditoDelOrigen } from "../_shared/creditos.ts";
 
 // Aplica en el ERP la solicitud que el supervisor acaba de aprobar.
 //
@@ -79,6 +80,60 @@ const ERP_A_PAGO: Record<string, string> = Object.fromEntries(
   Object.entries(PAGO_A_ERP).map(([k, v]) => [v, k]),
 );
 
+/** El día de El Salvador (UTC−6, sin horario de verano). */
+const hoySV = () => new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+const MOV_URL    = `${BASE}/admin_movimiento_caja_dt.php`;
+const BORRAR_MOV = `${BASE}/borrar_movimiento_caja.php`;
+
+/**
+ * Busca en la caja de HOY de la sala abierta en la sesión la salida
+ * «ANULACIÓN DE FACTURA <correlativo>» y la borra (ver el paso 1c).
+ *
+ * Se relee para confirmarlo: el «Success» del origen no prueba que haya borrado
+ * — `quitarAbonoDelOrigen` contestó que sí durante semanas sin borrar nada.
+ * Columnas del listado: id, concepto, fecha, monto, tipo (las mismas que lee
+ * `sync-cortes-caja`).
+ */
+async function quitarSalidaDeAnulacion(
+  cookie: string, correlativo: string,
+): Promise<{ erp_id: number | null; monto: number | null; borrada: boolean }> {
+  const texto = (s: unknown) => String(s ?? "").replace(/<[^>]*>/g, " ").replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ").trim();
+  const dia = hoySV();
+  const buscar = async () => {
+    const j = JSON.parse(await pedir(cookie,
+      `${MOV_URL}?fechai=${dia}&fechaf=${dia}&draw=1&start=0&length=1000`));
+    const filas = (Array.isArray(j?.data) ? j.data : []) as unknown[][];
+    return filas.find((f) => {
+      const c = texto(f[1]).toUpperCase();
+      return /ANULACI/.test(c) && c.includes(correlativo.toUpperCase())
+        && texto(f[4]).toUpperCase() === "SALIDA";
+    }) ?? null;
+  };
+  let erp_id: number | null = null, monto: number | null = null;
+  if (!correlativo) return { erp_id, monto, borrada: false };
+  try {
+    // El origen la escribe al anular; se le da un respiro por si tarda.
+    let fila: unknown[] | null = null;
+    for (let i = 0; i < 3 && !fila; i++) {
+      if (i) await new Promise((r) => setTimeout(r, 1500));
+      fila = await buscar();
+    }
+    if (!fila) return { erp_id, monto, borrada: false };
+    erp_id = Number(fila[0]) || null;
+    monto = Number(String(fila[3] ?? "").replace(/[^0-9.]/g, "")) || null;
+    if (!erp_id) return { erp_id, monto, borrada: false };
+    await pedir(cookie, BORRAR_MOV, new URLSearchParams({
+      process: "eliminar", id_movimiento: String(erp_id),
+    }), { reintentos: 1 });
+    const sigue = await buscar();
+    return { erp_id, monto, borrada: !sigue };
+  } catch (e) {
+    console.error(`quitando la salida de la anulación ${correlativo}:`, e);
+    return { erp_id, monto, borrada: false };
+  }
+}
 
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
@@ -445,6 +500,56 @@ Deno.serve(async (req) => {
         }
       }
 
+      // 0b · La venta al crédito: primero se borra su crédito (2026-11-06).
+      //
+      // El sistema de origen no anula una factura mientras su crédito siga en
+      // «Admin Crédito», y no tiene «anular crédito»: sólo borrarlo. Hasta hoy
+      // la sala lo esquivaba cambiando la forma de pago a tarjeta o
+      // transferencia antes de pedir la anulación — un dato falso escrito sólo
+      // para destrabar el botón. Ejercido a mano y verificado con 0000064474_COF
+      // de Salud 3 (ISSS, $1,241.52): crédito borrado, factura anulada,
+      // invalidada ante Hacienda.
+      //
+      // Se pregunta al ORIGEN si es crédito y cuál, no al espejo: el espejo va
+      // con atraso y la forma de pago pudo cambiar después de la venta.
+      //
+      // **Con abonos NO se borra.** Un abono es plata que sí entró al cajón:
+      // borrar el crédito la dejaría sin ninguna deuda que la explique, y anular
+      // la venta encima la devolvería como si nunca hubiera entrado. Eso lo
+      // decide una persona, no esta función.
+      let credito: { erp_id: string; total: number; borrado: boolean } | null = null;
+      if (!estaAnulada(factura.estado)) {
+        const ficha = await leerFicha(cookie, erpId);
+        if (ficha.credito === PAGO_A_ERP.credito) {
+          const dia = String(factura.fecha ?? "").slice(0, 10);
+          const buscar = async () =>
+            (await creditosDeLaSala(cookie, Number(mapa.erp_sucursal_id), dia, dia))
+              .find((c) => String(c.factura_erp) === erpId) ?? null;
+          const vivo = await buscar();
+          if (vivo) {
+            if (vivo.abonado > 0.004)
+              return json({
+                ok: false,
+                codigo: "CREDITO_CON_ABONOS",
+                error: `Esta venta al crédito ya tiene $${vivo.abonado.toFixed(2)} abonados. ` +
+                       `Hay que resolver esos abonos antes de anularla.`,
+              }, 409);
+            const b = await borrarCreditoDelOrigen(cookie, vivo.credito);
+            // Su «Success» no prueba nada: se relee y se exige que ya no esté.
+            const sigue = await buscar();
+            if (!b.ok || sigue)
+              return json({
+                ok: false,
+                error: `No se pudo quitar la cuenta por cobrar de esta venta, así que no se anula` +
+                       `${b.msg ? `: ${b.msg}` : "."}`,
+              }, 502);
+            credito = { erp_id: vivo.credito, total: vivo.total, borrado: true };
+          }
+          // Sin crédito vivo: ya se borró en un intento anterior (la anulación
+          // falló después) o a mano. No hay nada que frenar.
+        }
+      }
+
       // 1 · Anular en el sistema, sólo si sigue viva.
       let anuladaAhora = false;
       if (!estaAnulada(factura.estado)) {
@@ -453,6 +558,43 @@ Deno.serve(async (req) => {
         })));
         if (!r.ok) return json({ ok: false, error: `No se pudo anular la factura: ${r.msg}` }, 502);
         anuladaAhora = true;
+      }
+
+      // 1c · La salida de caja que la anulación inventa (2026-11-06).
+      //
+      // Al anular, el sistema de origen escribe en la caja abierta de la sala
+      // una SALIDA «ANULACIÓN DE FACTURA <correlativo>» por el total, sea cual
+      // sea la forma de pago. En una venta al crédito ese efectivo nunca entró:
+      // con la salida viva, el esperado del corte baja en el total y el conteo
+      // muestra un sobrante del mismo tamaño. Medido el 6-nov: 0000064474_COF
+      // dejó el movimiento 50727 por $1,241.52, y se borró a mano.
+      //
+      // Va SÓLO para la venta al crédito cuyo crédito acabamos de borrar. En
+      // efectivo la salida es real (el dinero vuelve al cliente). En tarjeta y
+      // transferencia también es falsa, pero eso no está decidido todavía.
+      //
+      // Un fallo acá NO revierte nada ni frena el APPROVED: la venta ya está
+      // anulada. Se avisa con el número del movimiento para borrarlo a mano.
+      let salidaCaja: { erp_id: number | null; monto: number | null; borrada: boolean } | null = null;
+      if (credito && anuladaAhora) {
+        salidaCaja = await quitarSalidaDeAnulacion(cookie, String(factura.correlativo ?? ""));
+        if (!salidaCaja.borrada)
+          avisos.push(salidaCaja.erp_id
+            ? `La caja de ${mapa.nombre ?? "la sala"} quedó con la salida ${salidaCaja.erp_id} ` +
+              `por la anulación y no se pudo quitar: hay que borrarla a mano.`
+            : `No se encontró la salida de caja que deja la anulación: revisa los movimientos ` +
+              `de hoy de ${mapa.nombre ?? "la sala"}.`);
+      }
+
+      // 1d · El espejo del portal deja de cobrarlo YA, sin esperar al barrido
+      // de las 2 a. m. Mismo cierre que `anular_creditos_ausentes`.
+      if (credito) {
+        const { error: espejoErr } = await admin
+          .from("creditos_de_clientes")
+          .update({ estado: "ANULADO", saldo: 0, anulado_el: hoySV(), updated_at: new Date().toISOString() })
+          .eq("branch_id", factura.branch_id)
+          .eq("credito_erp", credito.erp_id);
+        if (espejoErr) console.error(`espejo del crédito ${credito.erp_id}:`, espejoErr.message);
       }
 
       // 1b · Con la venta ya anulada, recién ahora se escribe el cierre interno
@@ -580,6 +722,7 @@ Deno.serve(async (req) => {
         // Qué tiene que hacer AHORA quien pidió la anulación. Va aparte de los
         // avisos porque no es una nota al pie: sin volver a facturar, la venta
         // queda sin ningún documento tributario que la respalde.
+        credito: credito ? { ...credito, salida_caja: salidaCaja ?? undefined } : undefined,
         solventado_internamente: Boolean(interno),
         instruccion: interno?.instruccion ?? undefined,
         responsable: mh ? { nombre: resp.name, dui } : undefined,

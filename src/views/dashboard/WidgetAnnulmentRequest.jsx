@@ -389,7 +389,7 @@ function AnnulForm({ inv, onBack, onSuccess, user, activeBranch, activeBranchId,
           <div className="rounded-2xl px-3 py-2 flex items-start gap-2 bg-chart-3/10 border border-chart-3/30">
             <Info size={12} className="text-chart-3-text mt-0.5 shrink-0" strokeWidth={2.5} />
             <p className="text-label font-bold text-chart-3-text leading-snug">
-              Venta a <strong>crédito</strong> — la anulación tomará más tiempo y se confirmará al realizarse.
+              Venta a <strong>crédito</strong> — al aprobarla también se quita su cuenta por cobrar. Si ya tiene abonos, primero hay que resolverlos.
             </p>
           </div>
         )}

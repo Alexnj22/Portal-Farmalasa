@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.0 — Anular una venta al crédito: se borra su crédito y la salida falsa de caja
+
+El sistema de la caja no anula una factura mientras su crédito siga en Admin
+Crédito, y la sala lo esquivaba cambiando la forma de pago a tarjeta o
+transferencia antes de pedir la anulación. Ahora `aplicar-solicitud-facturacion`
+lo resuelve al aprobar:
+
+- **Antes de anular**, si la venta es al crédito (se le pregunta al origen),
+  busca su crédito, **frena si tiene abonos** (`CREDITO_CON_ABONOS`) y lo borra
+  con `borrar_credito.php`. Relee el listado para confirmarlo: el «Success» del
+  origen no prueba nada.
+- **Después de anular**, borra la SALIDA «ANULACIÓN DE FACTURA <correlativo>»
+  que el origen escribe en la caja por el total — en una venta al crédito ese
+  efectivo nunca entró, y el corte mostraba un sobrante del mismo monto. Si no
+  la puede borrar, aprueba igual y avisa con el número del movimiento.
+- El espejo `creditos_de_clientes` queda ANULADO al momento, sin esperar al
+  barrido de las 2 a. m.
+
+Ejercido a mano primero con 0000064474_COF de Salud 3 (ISSS, $1,241.52):
+crédito 2839 borrado, factura anulada e invalidada ante Hacienda, movimiento
+50727 borrado. Tarjeta y transferencia dejan la misma salida falsa; eso queda
+sin decidir.
+
 ## v2.1458.0 — Avatar: retrato de 104 y el mismo diseño en la app
 
 - **Retrato de 104**: la foto de la cabecera del perfil de una persona tiene su propio tamaño en la escala (20 · 28 · 36 · 48 · 64 · 104). El detalle de Personal bajó de 144/160 a 104, igual que el perfil.

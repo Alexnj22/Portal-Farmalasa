@@ -178,6 +178,22 @@ async function igualarPermisosDeTablas(ref) {
     console.log(`✓ Permisos por columna: ${cols.length} sentencias copiadas de producción.`);
 }
 
+/* Apaga en el branch los crons que llaman a PRODUCCIÓN por HTTP.
+ *
+ * Va aparte, y además en el `catch`, por el 2026-11-05: la corrida de las
+ * 12:11 aplicó las migraciones, se cayó por timeout ANTES de `herramientas()`
+ * y dejó vivos los crons del branch apuntando a producción hasta que alguien
+ * la volvió a correr al día siguiente. Durante 21 horas cada aviso a clientes,
+ * cada regularizar-dte y cada leer-traslados salió dos veces; la copia del
+ * branch rebotó con 401 sólo porque su secreto es otro. Apagarlos no puede
+ * depender de que el resto de la corrida termine bien. */
+let refTocado = null;
+async function apagarCronsQueLlamanAProduccion(ref) {
+    await sql(ref, `select cron.alter_job(jobid, active := false) from cron.job
+                     where active and command ilike '%net.http_post%'
+                       and command ilike '%${PROD}%'`, { escribe: true });
+}
+
 async function herramientas(ref) {
     const leer = (f) => fs.readFileSync(path.join(aqui, f), 'utf8');
     // Los crons que llaman a PRODUCCIÓN por HTTP se apagan en cada corrida, no
@@ -185,9 +201,7 @@ async function herramientas(ref) {
     // ese día, y cada migración posterior que programe uno nuevo lo trae
     // encendido. Medido el 2026-09-23: dos de aperturas de caja quedaban vivos
     // apuntando a producción. `sql()` se niega a escribir en producción.
-    await sql(ref, `select cron.alter_job(jobid, active := false) from cron.job
-                     where active and command ilike '%net.http_post%'
-                       and command ilike '%${PROD}%'`, { escribe: true });
+    await apagarCronsQueLlamanAProduccion(ref);
     // Ventas, clientes y vendedores inventados. Sólo siembra con la base vacía
     // (o sea, después de rehacer el branch); va antes de correr las fechas para
     // que lo sembrado quede pegado a hoy igual que todo lo demás.
@@ -348,6 +362,7 @@ async function escribirEnv(ref) {
         console.log(`No existe el branch «${NOMBRE}».`);
         if (!aplicar) process.exit(2);
         b = await rehacer(null);
+        refTocado = b.project_ref;
         await herramientas(b.project_ref);
         await avisarAVercel(b.project_ref);
         if (vercelPendiente) process.exitCode = 1;
@@ -367,13 +382,17 @@ async function escribirEnv(ref) {
         }
         if (c.huerfanas.length === 0) {
             console.log('→ push…');
+            refTocado = b.project_ref;
             await api('POST', `/branches/${b.id}/push`);
             b = await esperar(NOMBRE);
+            await apagarCronsQueLlamanAProduccion(b.project_ref);
             c = comparar(await versiones(PROD), await versiones(b.project_ref));
             console.log(`  push terminó en ${b.status}; faltan ${c.faltan}`);
         }
         if (!c.igual) {
             b = await rehacer(b);
+            refTocado = b.project_ref;
+            await apagarCronsQueLlamanAProduccion(b.project_ref);
             await avisarAVercel(b.project_ref);
         }
 
@@ -391,7 +410,15 @@ async function escribirEnv(ref) {
         console.log('✓ Fechas a hoy y permisos de la cuenta de pruebas al día.');
     }
     if (vercelPendiente) process.exitCode = 1;
-})().catch((e) => {
+})().catch(async (e) => {
     console.error(`✗ ${e.message}`);
+    if (refTocado) {
+        try {
+            await apagarCronsQueLlamanAProduccion(refTocado);
+            console.error(`  (los crons del branch que llaman a producción quedaron apagados igual)`);
+        } catch (e2) {
+            console.error(`✗ y NO se pudieron apagar los crons que llaman a producción: ${e2.message}`);
+        }
+    }
     process.exit(1);
 });

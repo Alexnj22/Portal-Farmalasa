@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.11 — Entorno de pruebas: los crons que llaman a producción se apagan aunque la corrida falle
+
+La corrida programada del 2026-11-05 (12:11 SV) aplicó migraciones al branch y
+se cayó por timeout antes de apagar sus crons. Durante 21 horas (hasta la
+corrida manual del 6-nov, 9:47 SV) los crons del branch llamaron a producción:
+`avisos-clientes` cada minuto, `regularizar-dte`, `leer-traslados-erp` y otros
+salían dos veces, y la copia rebotaba con 401 sólo porque el secreto del branch
+es otro (pg_net 0.20.4 desde 34.204.33.65, contra 0.20.0 de producción).
+
+`mantener_al_dia.mjs` ahora apaga esos crons apenas termina el push o el
+rehecho, y otra vez en el `catch` si la corrida falla después de tocar el branch.
+
 ## v2.1461.10 — Popover canónico
 
 - **El panel que abre un botón es `Popover`**, sobre `useAnclaje`. Había cuatro escritos uno por uno: «Más filtros» y «Otros» de la barra de filtros, los borradores de Mín·Máx y la matriz ABC. La matriz además tenía su propia copia de la lógica de cierre, con otro atributo para reconocer su panel. Ahora los cuatro se anclan, se cierran (Escape o clic afuera) y se ven igual por construcción.

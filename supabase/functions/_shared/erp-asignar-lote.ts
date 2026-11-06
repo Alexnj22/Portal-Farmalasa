@@ -105,6 +105,22 @@ export type ResultadoAsignacion =
     descuadre?: string;
   };
 
+/**
+ * Los trozos en que sale `total` de varios renglones GENERICO: del mayor al
+ * menor, cada uno hasta lo que tiene ese renglón. Puro, para poder anclarlo.
+ */
+export function trozosDeGenerico(stocks: number[], total: number): number[] {
+  let resto = Math.max(0, Number(total) || 0);
+  const trozos: number[] = [];
+  for (const s of [...stocks].map(Number).filter((n) => n > 0).sort((a, b) => b - a)) {
+    if (resto <= 0) break;
+    const t = Math.min(s, resto);
+    trozos.push(t);
+    resto -= t;
+  }
+  return resto > 0 ? [] : trozos;
+}
+
 export async function asignarLoteAGenerico(opc: {
   /** Sesión YA abierta en la sucursal de origen. */
   cookie: string;
@@ -137,15 +153,21 @@ export async function asignarLoteAGenerico(opc: {
   // número y fecha (la carga se le suma), así que lo que se compara es su
   // stock, no su aparición.
   const antes = await traerFila(o.cookie, o.erpProductId, o.erpUbicacion);
-  // El MAYOR de los GENERICO y no la suma: el descargo sale de UNO
-  // (`descartarUnaLinea` busca uno que alcance), así que con dos de 5 una
-  // salida de 8 se rechazaría DESPUÉS de haber cargado.
-  const gen = Math.max(0, ...antes.lotes.filter((x) => esLoteGenerico(x.numero)).map((x) => x.stock));
-  if (gen < enUnidades)
+  // Si UN renglón GENERICO alcanza, el descargo sale de él en la presentación
+  // del traslado, como siempre. Si no, pero la SUMA sí (2026-11-05: FOLIMEN
+  // 5 mg en Bodega, una caja partida en dos GENERICO de 2 blísteres), sale en
+  // trozos por unidad base, uno por renglón (`trozosDeGenerico`).
+  const genericos = antes.lotes.filter((x) => esLoteGenerico(x.numero));
+  const mayor = Math.max(0, ...genericos.map((x) => x.stock));
+  const suma = genericos.reduce((n, x) => n + Number(x.stock || 0), 0);
+  if (suma < enUnidades)
     return {
       ok: false, codigo: "GENERICO_NO_ALCANZA",
-      error: `${nombre}: sin lote asignado hay ${gen} unidades juntas y salen ${enUnidades}.`,
+      error: `${nombre}: sin lote asignado hay ${suma} unidades y salen ${enUnidades}.`,
     };
+  const trozos = mayor >= enUnidades ? null : trozosDeGenerico(genericos.map((x) => x.stock), enUnidades);
+  if (trozos && !trozos.length)
+    return { ok: false, codigo: "GENERICO_NO_ALCANZA", error: `${nombre}: no se pudo repartir lo sin lote asignado.` };
   // El mismo número con otra fecha, en ESTA sala, según el sistema mismo.
   const otraFecha = antes.lotes.find((x) =>
     norm(x.numero) === norm(o.lote) && dia(x.vence) !== o.vence);
@@ -194,6 +216,47 @@ export async function asignarLoteAGenerico(opc: {
     erp_product_id: o.erpProductId, presentacion_tipo: o.presentacionTipo,
     factor: Number(o.factor), cantidad: Number(o.paquetes), descripcion: o.descripcion,
   };
+  if (trozos) {
+    // Por unidad base (presentación de factor 1), un trozo por renglón: el
+    // descargo elige el GENERICO que alcanza, y con los trozos del tamaño de
+    // cada renglón —del mayor al menor— siempre hay uno.
+    let salieron = 0;
+    for (const t of trozos) {
+      const d = await descartarUnaLinea({
+        erpSucursal: o.erpSucursal, erpUbicacion: o.erpUbicacion,
+        linea: { erp_product_id: o.erpProductId, presentacion_tipo: "", factor: 1, cantidad: t,
+                 descripcion: o.descripcion, lote: "GENERICO" },
+        concepto, iden: "DESCARTE",
+      });
+      if (d.ok) { salieron += t; continue; }
+      if (d.codigo === "INCIERTO")
+        return {
+          ok: false, codigo: "DESCARGO_INCIERTO", error: `${nombre}: ${d.error}`,
+          descuadre: `Se cargaron ${enUnidades} unidades al lote ${o.lote} de ${nombre}; de GENERICO salieron `
+            + `${salieron} seguro y ${t} no se sabe. Revisar el kardex antes de volver a intentar.`,
+        };
+      // Rechazo claro: se saca del lote nuevo lo que NO salió de GENERICO.
+      const falta = enUnidades - salieron;
+      const des = await descartarUnaLinea({
+        erpSucursal: o.erpSucursal, erpUbicacion: o.erpUbicacion,
+        linea: { erp_product_id: o.erpProductId, presentacion_tipo: "", factor: 1, cantidad: falta,
+                 descripcion: o.descripcion, lote: o.lote },
+        concepto: conceptoDe([`DESHACE ASIGNACION LOTE ${o.lote}`, o.referencia]), iden: "DESCARTE",
+      });
+      if (des.ok && salieron === 0)
+        return { ok: false, codigo: "DESCARGO_RECHAZADO", error: `${nombre}: ${d.error} (no se cambió nada).` };
+      return {
+        ok: false, codigo: "DESCARGO_RECHAZADO", error: `${nombre}: ${d.error}`,
+        descuadre: des.ok
+          ? `De GENERICO salieron ${salieron} de ${enUnidades} unidades de ${nombre}: esas ${salieron} quedaron `
+            + `en el lote ${o.lote} (vence ${o.vence}) y lo demás se deshizo. Revisar si se quiere así.`
+          : `Quedaron ${falta} unidades DE MÁS en el lote ${o.lote} (vence ${o.vence}) de ${nombre}: `
+            + `no salieron de GENERICO y deshacerlas falló (${des.error}).`,
+      };
+    }
+    return { ok: true, idLote: nuevo!.id, lote: o.lote, vence: o.vence, paquetes: o.paquetes, concepto };
+  }
+
   const desc = await descartarUnaLinea({
     erpSucursal: o.erpSucursal, erpUbicacion: o.erpUbicacion,
     linea: { ...linea, lote: "GENERICO" }, concepto, iden: "DESCARTE",

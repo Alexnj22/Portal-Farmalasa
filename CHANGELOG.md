@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.1 — Traslados: lo sin lote partido en varios renglones sale junto
+
+Salud 3 no podía recibir una caja de FOLIMEN 5 mg de Bodega: los 4 blísteres estaban en dos renglones «sin lote asignado» de 2 (vencen 10/2028 y 12/2028), y una caja tenía que salir entera de uno solo.
+
+- **Lo sin lote asignado de un producto con control de lote cuenta junto** aunque esté partido (`juntarSinLote`). Antes de salir se le asigna el lote de la caja, así que el renglón juntado nunca viaja tal cual.
+- **La asignación descuenta de varios renglones** cuando ninguno alcanza solo: en trozos por unidad base, del mayor al menor (`trozosDeGenerico`). Si un trozo se rechaza, se saca del lote nuevo lo que no salió y se dice qué revisar.
+- La tarjeta de despacho ofrece «Sin lote asignado» con la suma, igual que el servidor.
+- Probado en real con autorización en Bodega (3 blísteres de FOLIMEN al lote PRUEBA: salieron 2 + 1) y devuelto a como estaba (2 + 2).
+
 ## v2.1455.0 — Traslados: lote que vence antes se le pregunta a la sala que pidió
 
 Cuando la sala no tiene el lote pedido y el que puede mandar vence ANTES que el pedido y dentro de 6 meses, ya no se despacha sólo por mandar: se le pregunta a la sala que pidió.

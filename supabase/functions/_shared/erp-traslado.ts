@@ -563,6 +563,27 @@ export function hayEnTexto(
 export type LoteErp = { id: string; numero: string; vence: string; stock: number };
 
 /**
+ * Lo que no tiene lote asignado, contado como UNA existencia (2026-11-05).
+ *
+ * El sistema puede tener varios renglones GENERICO del mismo producto —con
+ * fechas distintas—, y como el reparto exige que cada paquete salga entero de
+ * un renglón, una caja partida en dos no salía: Bodega tenía FOLIMEN 5 mg en
+ * dos GENERICO de 2 blísteres y la caja de 4 no se podía despachar.
+ *
+ * Sólo vale para un producto con control de lote: ahí lo que sale de GENERICO
+ * nunca viaja con ese renglón —se le asigna el lote de la caja primero
+ * (`asignarLoteAGenerico`, que descuenta de los renglones que haga falta)—,
+ * así que el `id` del renglón juntado no llega al sistema.
+ */
+export function juntarSinLote(lotes: LoteErp[]): LoteErp[] {
+  const gen = lotes.filter((x) => /^GEN[EÉ]RICO$/i.test(String(x.numero ?? "").trim()));
+  if (gen.length <= 1) return lotes;
+  const primero = [...gen].sort((a, b) => (a.vence || "9999").localeCompare(b.vence || "9999"))[0];
+  const junto: LoteErp = { ...primero, stock: gen.reduce((n, x) => n + Number(x.stock || 0), 0) };
+  return [...lotes.filter((x) => !gen.includes(x)), junto];
+}
+
+/**
  * De qué lotes sale lo que se despacha, y en qué cantidad cada uno.
  *
  * **La otra mitad de `disponibleEnBodega`.** Ese cuenta lote por lote —suma

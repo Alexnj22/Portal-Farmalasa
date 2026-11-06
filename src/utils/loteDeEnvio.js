@@ -36,9 +36,11 @@ export function opcionesDeLote(lotesSala, paquetes, factor) {
     const reales = sala
         .filter((l) => l?.lote && !esLoteGenerico(l.lote) && Number(l.unidades) >= hace)
         .map((l) => ({ lote: norm(l.lote), vence: dia(l.vence), unidades: Number(l.unidades), sinAsignar: false }));
-    const gen = sala.filter((l) => esLoteGenerico(l?.lote) && Number(l.unidades) >= hace)
-        .sort((a, b) => b.unidades - a.unidades)[0];
-    return gen ? [...reales, { lote: 'GENERICO', vence: '', unidades: Number(gen.unidades), sinAsignar: true }] : reales;
+    // Lo sin lote asignado cuenta JUNTO aunque esté en varios renglones: al
+    // salir se le asigna el lote de la caja y se descuenta de los que haga
+    // falta (igual que el servidor, `juntarSinLote`).
+    const gen = sala.filter((l) => esLoteGenerico(l?.lote)).reduce((n, l) => n + Number(l.unidades || 0), 0);
+    return gen >= hace ? [...reales, { lote: 'GENERICO', vence: '', unidades: gen, sinAsignar: true }] : reales;
 }
 
 /**

@@ -288,3 +288,22 @@ describe('repartirEnLotes — la reserva ordena, no limita', () => {
         expect(r.avisos.join(' ')).toMatch(/no es el que el pedido había reservado/);
     });
 });
+
+describe('juntarSinLote — una caja partida en dos GENERICO', () => {
+    it('FOLIMEN 5 mg en Bodega: 2 + 2 blísteres sale como una caja de 4', async () => {
+        const { juntarSinLote } = await import('../../supabase/functions/_shared/erp-traslado.ts');
+        const lotes = [
+            { id: '11', numero: 'GENERICO', vence: '2028-12-01', stock: 2 },
+            { id: '12', numero: 'GENERICO', vence: '2028-10-01', stock: 2 },
+        ];
+        expect(repartirEnLotes(lotes, 1, 4).faltan).toBe(1);
+        const junto = juntarSinLote(lotes);
+        expect(junto).toEqual([{ id: '12', numero: 'GENERICO', vence: '2028-10-01', stock: 4 }]);
+        expect(repartirEnLotes(junto, 1, 4).faltan).toBe(0);
+    });
+    it('los lotes reales no se tocan, y un solo GENERICO queda igual', async () => {
+        const { juntarSinLote } = await import('../../supabase/functions/_shared/erp-traslado.ts');
+        const uno = [{ id: '1', numero: 'A1', vence: '2027-01-01', stock: 5 }, { id: '2', numero: 'GENERICO', vence: '', stock: 3 }];
+        expect(juntarSinLote(uno)).toBe(uno);
+    });
+});

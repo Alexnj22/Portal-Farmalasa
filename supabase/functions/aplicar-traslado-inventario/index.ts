@@ -61,6 +61,7 @@ import {
   avisoDelAreaDeVencidos,
   type RenglonEnRiesgo,
   disponibleEnBodega,
+  juntarSinLote,
   estadoDeRecepcion,
   leerUbicacion,
   hayEnTexto,
@@ -1062,6 +1063,9 @@ Deno.serve(async (req) => {
         origen: String(ubicOrigen), sortBy: "asc", records: "50",
       }), { extra: { Referer: TRASLADO } });
       const f = leerFila(filaHtml);
+      // Lo sin lote asignado partido en varios renglones cuenta junto: se le
+      // asigna el lote de la caja antes de salir (ver `juntarSinLote`).
+      if (f.regulado) f.lotes = juntarSinLote(f.lotes);
 
       if (!f.encontrado)
         return json({

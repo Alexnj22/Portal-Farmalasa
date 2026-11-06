@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.6 — Cargar compra: la sugerencia de saldo también al elegir el producto a mano
+
+La sugerencia de saldo no aparecía al elegir RECARGA SALDO MOVISTAR a mano: el tamaño «por costo» proponía 195 y la regla «ya viene en dólares» lo comparaba contra eso. Ahora se compara contra la cantidad del papel, y no se repite cuando lo que se va a cargar ya coincide (Tigo con su 25 aprendido). Además, MOVIKAL «EPIN» deja de estar apartado como servicio y queda aprendido como RECARGA SALDO TIGO (las 5 compras cargadas de ese proveedor son Tigo, 212 × $0.8407).
+
 ## v2.1455.5 — Cargar compra: saldo sugerido y lote/vence validados contra octubre
 
 **Saldo de recargas: sugerencia de cuántos dólares trae.** Movistar («RECARGA ELECTRONICA» 1 × $176.99) y BOXFUL («SERVICIO DE RECARGA» 1 × $30) no dicen cuánto saldo traen. Ahora la tarjeta muestra un aviso rotulado **«Sugerencia — revisa que cuadre con la factura»**: lo pagado ÷ el costo por dólar de la última compra de ese producto (del mismo proveedor si la hay), con botón «Usar N». Medido: $176.99 ÷ $0.8428 = 210, lo que Bodega cargó a mano las últimas cuatro veces. También aparece al elegir el producto a mano. No sugiere nada si el renglón ya viene en dólares (Claro, Tigo con su factor aprendido).

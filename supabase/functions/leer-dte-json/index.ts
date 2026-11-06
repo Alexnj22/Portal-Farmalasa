@@ -97,7 +97,7 @@ const norm20 = (s: string) =>
 // valen 0 en el catálogo (Tigo, Movistar, Digicel) o se llama RECARGA SALDO
 // (Claro). Si ya viene en dólares (Claro: 300 × $0.81), no sugiere nada.
 async function saldoSugerido(admin: any, x: {
-  productId: number; nombre: string | null; factores: number[]; pagado: number; entra: number; emisor: string;
+  productId: number; nombre: string | null; factores: number[]; pagado: number; cantidad: number; entra: number; emisor: string;
 }) {
   const esSaldo = /^RECARGA\s+SALDO/i.test(String(x.nombre ?? "")) || (x.factores.length > 0 && x.factores.every((f) => !(f > 0)));
   if (!esSaldo || !(x.pagado > 0)) return null;
@@ -114,7 +114,12 @@ async function saldoSugerido(admin: any, x: {
   if (!ref) return null;
   const costo = Number(ref.precio_unitario);
   const n = x.pagado / costo;
-  if (n < x.entra * 2) return null;
+  // Ya viene en dólares (Claro: 300 × $0.81) → nada que sugerir. Se mide
+  // contra la CANTIDAD del papel, no contra el tamaño estimado: al elegir
+  // Movistar a mano, el tamaño «por costo» salía 195 y tapaba la sugerencia.
+  if (n < x.cantidad * 2) return null;
+  // Lo que ya se va a cargar coincide (Tigo con su 25 aprendido): no repetir.
+  if (Math.abs(x.entra - n) / n < 0.03) return null;
   return {
     unidades: Math.round(n), pagado: Math.round(x.pagado * 100) / 100, costo_referencia: costo,
     de: { proveedor: ref.purchase_receipts.proveedor, fecha: ref.purchase_receipts.fecha, mismo_proveedor: !!delMismo },
@@ -216,7 +221,7 @@ Deno.serve(async (req: Request) => {
       const cant = Number(body?.cantidad) || 0;
       const saldo = cant > 0 ? await saldoSugerido(admin, {
         productId: pid, nombre: prod?.nombre ?? null, factores: presentaciones.map((x) => x.factor),
-        pagado: (Number(body?.costo_neto) || 0) * cant, entra: cant * f.factor, emisor: String(body?.emisor ?? ""),
+        pagado: (Number(body?.costo_neto) || 0) * cant, cantidad: cant, entra: cant * f.factor, emisor: String(body?.emisor ?? ""),
       }) : null;
       return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones, saldo_sugerido: saldo }), { headers: cors });
     }
@@ -621,6 +626,7 @@ Deno.serve(async (req: Request) => {
           const sug = await saldoSugerido(admin, {
             productId: r.producto_id, nombre: r.producto, factores: ((r.vinetas ?? []) as { factor: number }[]).map((v) => v.factor),
             pagado: Number(r.costo_neto) * (Number(r.cantidad) || 0),
+            cantidad: Number(r.cantidad) || 0,
             entra: (Number(r.cantidad) || 0) * (Number(r.factor_proveedor) || 1), emisor: d.emisor_nombre,
           });
           if (sug) r.saldo_sugerido = sug;

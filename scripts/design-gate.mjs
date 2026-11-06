@@ -1581,6 +1581,21 @@ function scanFile(path) {
     });
   }
 
+  // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
+  // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
+  // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y
+  // `rounded-card/btn/modal…` son los semánticos. Los ~20 que quedan son
+  // reflejos que copian el radio de su padre (→ `rounded-[inherit]`), las
+  // burbujas del chat y barras de gráficos: contados, no pueden crecer.
+  if (!hasException(path, 'radio-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const m of line.matchAll(/\brounded(?:-[trbl]{1,2})?-\[[0-9.]+(?:px|rem)\]/g)) {
+        findings.push({ line: i + 1, label: `radio a mano (${m[0]}) — usar rounded-card/btn/… o la escala rounded-sm…3xl`, category: 'radio-a-mano', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
   // ── `aviso-a-mano` (2026-11-06, CERO ABSOLUTO) ────────────────────────
   // `{error && <p className="… text-danger…">{error}</p>}`: el mensaje de
   // error escrito a mano, en vez de `<Notice variant="danger">`. Había 60 en

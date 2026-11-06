@@ -35285,6 +35285,10 @@ export type Database = {
         Args: { p_branch_id: number; p_periodo: string }
         Returns: Json
       }
+      get_regulados_sin_lote: {
+        Args: { p_branch_id?: number; p_conteo_id?: string }
+        Returns: Json
+      }
       get_remitentes_dte_conocidos: {
         Args: { p_account_id?: number }
         Returns: Json

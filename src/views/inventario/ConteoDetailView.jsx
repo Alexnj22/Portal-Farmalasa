@@ -53,6 +53,7 @@ import { unidadDeConteo, esLoteGenerico } from '@nucleo/utils/conteoDeInventario
 // «Sin lote».
 const nombreDelLote = (lote) => (esLoteGenerico(lote) ? 'Sin lote' : lote);
 import AjusteAntesDeAprobar, { ProblemasDelAjuste } from './AjusteAntesDeAprobar';
+import AvanceSinLote from './AvanceSinLote';
 
 // ¿El conteo ajusta el inventario? Lo leen los renglones para decidir si
 // ofrecen el lápiz del lote: en un conteo que ajusta, la etiqueta de un
@@ -2369,6 +2370,15 @@ export default function ConteoDetailView() {
                                     dice debajo del lote: cajas, blísteres o unidades. Cuenta todos los renglones de un
                                     producto: uno a medio contar no se puede ajustar.
                                 </Notice>
+                            </div>
+                        )}
+                        {/* El avance de la limpieza de lotes: lo que este conteo ya
+                            contó y lo que le queda a la sucursal (2026-11-06). Se
+                            refresca con cada renglón contado. */}
+                        {conteo.aplica_en_caja && (
+                            <div className="mt-4">
+                                <AvanceSinLote branchId={conteo.branch_id} conteoId={conteo.id}
+                                    refrescar={`${conteo.total_contados}|${conteo.status}|${conteo.caja_estado}`} />
                             </div>
                         )}
                         {conteo.aplica_en_caja && conteo.status === 'FINALIZADO' && (

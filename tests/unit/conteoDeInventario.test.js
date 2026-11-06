@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cantidadValida, conteoEditable, guardadoDelRenglon, noUbicado, factorDelRenglon, pluralDePresentacion, unidadDeConteo, esLoteGenerico, reglaDeLoteYVence, rotuloDeAjuste } from '@nucleo/utils/conteoDeInventario';
+import { cantidadValida, conteoEditable, guardadoDelRenglon, noUbicado, factorDelRenglon, pluralDePresentacion, unidadDeConteo, esLoteGenerico, reglaDeLoteYVence, rotuloDeAjuste, avanceSinLote } from '@nucleo/utils/conteoDeInventario';
 
 describe('conteoDeInventario', () => {
     it('se cuenta en borrador o en progreso', () => {
@@ -70,5 +70,20 @@ describe('lote y vencimiento según el producto', () => {
     it('rótulo de una línea del ajuste', () => {
         expect(rotuloDeAjuste({ lote: 'L1', vence: '2028-02-01', unidades: 10 })).toBe('+10 unidades · lote L1 (vence 02/2028)');
         expect(rotuloDeAjuste({ lote: 'GENERICO', vence: null, unidades: -1 })).toBe('−1 unidad · sin lote asignado');
+    });
+});
+
+describe('avance de regulados sin lote', () => {
+    const suc = [
+        { branch_id: 4, sucursal: 'Salud 1', regulados: 1000, sin_lote: 600 },
+        { branch_id: 25, sucursal: 'Salud 2', regulados: 500, sin_lote: 100 },
+    ];
+    it('suma todas, o sólo la elegida', () => {
+        expect(avanceSinLote(suc)).toEqual({ regulados: 1500, sinLote: 700, limpios: 53, sucursal: null });
+        expect(avanceSinLote(suc, '25')).toEqual({ regulados: 500, sinLote: 100, limpios: 80, sucursal: 'Salud 2' });
+    });
+    it('sin datos no inventa avance', () => {
+        expect(avanceSinLote([]).limpios).toBe(100);
+        expect(avanceSinLote(null).regulados).toBe(0);
     });
 });

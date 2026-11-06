@@ -696,6 +696,9 @@
     "get_recetas_abiertas": {
       "guarda": "alcance"
     },
+    "get_regulados_sin_lote": {
+      "guarda": "alcance"
+    },
     "get_recetas_recientes": {
       "guarda": "alcance"
     },

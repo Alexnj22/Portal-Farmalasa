@@ -203,3 +203,17 @@ export const PROBLEMA_DE_AJUSTE = {
     SIN_FACTOR: 'Presentación sin contenido',
     VENTA_CERCA: 'Venta al contar',
 };
+
+/**
+ * Avance de los regulados que siguen con existencia «sin lote» (2026-11-06),
+ * sumado sobre las sucursales que devuelve `get_regulados_sin_lote` (todas, o
+ * sólo `branchId`). `limpios` es el porcentaje de regulados que ya tienen toda
+ * su existencia en un lote: el número que sube conteo a conteo.
+ */
+export function avanceSinLote(sucursales, branchId = null) {
+    const filas = (sucursales ?? []).filter((s) => !branchId || String(s.branch_id) === String(branchId));
+    const regulados = filas.reduce((n, s) => n + (Number(s.regulados) || 0), 0);
+    const sinLote = filas.reduce((n, s) => n + (Number(s.sin_lote) || 0), 0);
+    const limpios = regulados ? Math.floor(((regulados - sinLote) / regulados) * 100) : 100;
+    return { regulados, sinLote, limpios, sucursal: filas.length === 1 ? filas[0].sucursal : null };
+}

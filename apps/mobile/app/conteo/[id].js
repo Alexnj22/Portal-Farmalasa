@@ -24,7 +24,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO, cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado, unidadDeConteo, esLoteGenerico, rotuloDeAjuste, PROBLEMA_DE_AJUSTE } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO, cantidadValida, conteoEditable, ESTADO_CONTEO, FILTROS_CONTEO, faltaAjusteDelConteo, guardadoDelRenglon, noUbicado, unidadDeConteo, esLoteGenerico, rotuloDeAjuste, PROBLEMA_DE_AJUSTE, avanceSinLote } from '@nucleo/utils/conteoDeInventario';
 import { avisoDeConteoParcial } from '@nucleo/utils/conteoPapel';
 import Interruptor from '../../componentes/Interruptor';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -201,6 +201,24 @@ export default function Conteo() {
     hayVencidosRef.current = (r?.productos_vencidos ?? 0) > 0;
   }, [id, fetchConteoDetalle, fetchConteoResumen]);
   useEffect(() => { cargarConteo(); }, [cargarConteo]);
+
+  // Regulados con existencia «sin lote»: cuántos ya contó este conteo y cuántos
+  // le quedan a la sucursal (2026-11-06). Contexto: si no se lee, no se muestra.
+  const fetchReguladosSinLote = useStaffStore((s) => s.fetchReguladosSinLote);
+  const [sinLote, setSinLote] = useState(null);
+  useEffect(() => {
+    if (!conteo?.aplica_en_caja) return undefined;
+    let vivo = true;
+    fetchReguladosSinLote({ branchId: conteo.branch_id, conteoId: id })
+      .then((d) => { if (vivo) setSinLote(d); })
+      .catch(() => {});
+    return () => { vivo = false; };
+  }, [conteo?.aplica_en_caja, conteo?.branch_id, conteo?.total_contados, conteo?.status, id, fetchReguladosSinLote]);
+  const avanceSuc = sinLote ? avanceSinLote(sinLote.sucursales, conteo?.branch_id) : null;
+  const textoSinLote = sinLote ? [
+    sinLote.conteo?.sin_lote ? `En este conteo: ${sinLote.conteo.contados} de ${sinLote.conteo.sin_lote} regulados con existencia sin lote ya contados.` : null,
+    avanceSuc?.regulados ? `En ${avanceSuc.sucursal ?? 'la sucursal'} quedan ${avanceSuc.sinLote} de ${avanceSuc.regulados} regulados con existencia sin lote (${avanceSuc.limpios}% ya en su lote). Baja al aprobar un conteo que ajusta.` : null,
+  ].filter(Boolean).join('\n') : '';
   useEffect(() => { setPagina(1); }, [busqueda, filtro, laboratorioId, area, orden]);
   // Cambiar de estante descarta lo abierto: un producto puede estar en los dos
   // con renglones distintos.
@@ -481,6 +499,11 @@ export default function Conteo() {
           {conteo?.aplica_en_caja && editable ? (
             <View style={{ marginHorizontal: 16 }}>
               <Aviso tono="nota" texto="Este conteo ajusta el inventario. «Sin lote» es existencia que el sistema tiene sin lote asignado: si esas unidades traen lote impreso, agrega ese lote con su vencimiento y en «Sin lote» cuenta sólo lo que no lo traiga (0 si no hay). Cuenta cada renglón en lo que dice: cajas, blísteres o unidades. Un producto a medio contar no se puede ajustar." />
+            </View>
+          ) : null}
+          {conteo?.aplica_en_caja && textoSinLote ? (
+            <View style={{ marginHorizontal: 16 }}>
+              <Aviso tono="nota" texto={textoSinLote} />
             </View>
           ) : null}
           {conteo?.aplica_en_caja && conteo.status === 'FINALIZADO' ? (

@@ -3,13 +3,13 @@ import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { useNavigate } from 'react-router-dom';
-import { ClipboardCheck, ScanSearch, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2, Trash2 } from 'lucide-react';
+import { ClipboardCheck, ScanSearch, Plus, ChevronRight, AlertTriangle, CheckCircle2, Clock, FileCheck2, Search, FileSpreadsheet, Building2, Trash2, Tags } from 'lucide-react';
 import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo, avanceSinLote } from '@nucleo/utils/conteoDeInventario';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import FilterBar from '../components/common/FilterBar';
@@ -181,6 +181,19 @@ export default function ConteoInventarioView() {
 
     useEffect(() => { fetchConteosInventario(); }, [fetchConteosInventario]);
 
+    // Regulados con existencia «sin lote», por sucursal (2026-11-06): el avance
+    // de la limpieza que hace el conteo que ajusta. Si no se puede leer, la
+    // tarjeta no aparece — es contexto, no un dato de los conteos.
+    const fetchReguladosSinLote = useStaffStore((s) => s.fetchReguladosSinLote);
+    const [sinLote, setSinLote] = useState(null);
+    useEffect(() => {
+        let vivo = true;
+        fetchReguladosSinLote()
+            .then((d) => { if (vivo) setSinLote(d?.sucursales ?? null); })
+            .catch((e) => console.error('[conteo] regulados sin lote', e));
+        return () => { vivo = false; };
+    }, [fetchReguladosSinLote]);
+
     // La lista sabe el ESTADO de cada conteo pero no si el abierto ya tiene
     // renglones contados: `total_contados` lo escribe recalcular_totales_conteo
     // y solo corre al finalizar, así que en un conteo abierto viene NULL. Por
@@ -215,6 +228,11 @@ export default function ConteoInventarioView() {
     // mintiendo. Antes solo se veía fila por fila.
     // La regla vive en el núcleo (`faltaAjusteDelConteo`), con la app nativa.
     const faltaAjuste = faltaAjusteDelConteo;
+
+    const avanceRegulados = useMemo(
+        () => (sinLote ? avanceSinLote(sinLote, branchFilter || null) : null),
+        [sinLote, branchFilter],
+    );
 
     const resumen = useMemo(() => {
         const base = branchFilter
@@ -306,6 +324,15 @@ export default function ConteoInventarioView() {
                     sub="el stock aún sin corregir"
                     active={foco === 'SIN_AJUSTE'} onClick={() => setFoco((f) => (f === 'SIN_AJUSTE' ? 'TODOS' : 'SIN_AJUSTE'))}
                 />
+                {/* No es filtro: no lleva `onClick`. Cuenta PRODUCTOS regulados con
+                    alguna existencia sin lote; baja al aprobar un conteo que ajusta. */}
+                {avanceRegulados && avanceRegulados.regulados > 0 && (
+                    <StatCard
+                        icon={Tags} label="Regulados sin lote" value={formatQty(avanceRegulados.sinLote)}
+                        iconBg="bg-warning/10" iconCls="text-warning-text"
+                        sub={`de ${formatQty(avanceRegulados.regulados)} · ${avanceRegulados.limpios}% en su lote`}
+                    />
+                )}
             </CarrilCards>
 
             {/* §17: los filtros de la vista, en UNA píldora, en el cuerpo y a la

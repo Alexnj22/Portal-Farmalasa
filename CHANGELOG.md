@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.0 — Avance de los regulados sin lote
+
+- **Cuántos regulados siguen «sin lote».** En la lista de conteos, una tarjeta dice cuántos productos con lote obligatorio todavía tienen existencia sin lote asignado y qué porcentaje ya está todo en su lote (por sucursal si se filtra). Baja cada vez que se aprueba un conteo que ajusta. El día que nació: entre 766 y 1,160 productos por sucursal, la mitad de los regulados.
+- **Dentro del conteo que ajusta**, en el portal y en la app: cuántos de esos productos ya se contaron en este conteo y cuánto le queda a la sucursal, con su barra de avance.
+
 ## v2.1460.0 — Conteo que ajusta el inventario: a prueba de errores, lote y vencimiento según el producto
 
 Auditoría del conteo que ajusta el inventario, antes de su primer uso. Cuatro defectos movían existencias de más o de menos sin dar error:

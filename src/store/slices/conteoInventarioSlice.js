@@ -464,6 +464,14 @@ export const createConteoInventarioSlice = (set, get) => ({
         return data;
     },
 
+    // Regulados que siguen con existencia «sin lote», por sucursal, y dentro
+    // de un conteo cuántos de ésos ya se contaron (2026-11-06).
+    fetchReguladosSinLote: async ({ branchId = null, conteoId = null } = {}) => {
+        const { data, error } = await supabase.rpc('get_regulados_sin_lote', { p_branch_id: branchId, p_conteo_id: conteoId });
+        if (error) throw traducirError(error);
+        return data;
+    },
+
     reintentarConteoCaja: async (movimientoId) => {
         const { error } = await supabase.rpc('conteo_caja_reintentar', { p_movimiento_id: movimientoId });
         if (error) throw traducirError(error);

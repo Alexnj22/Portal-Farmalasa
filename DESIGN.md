@@ -2208,6 +2208,8 @@ ancho y estiraba a la huérfana). El sobrante **no se tira**: se ve como el bord
 de la próxima tarjeta ("hay más"); **las flechas flotan**, no ocupan; y la
 reserva mínima es de 2 tarjetas.
 
+**Comparar, ocultar y anotar son del canónico** (2026-11-06): `delta` (el % contra el período anterior, ▲ verde / ▼ rojo, en la línea del detalle y nunca al lado del número), `oculto` (modo privado: tapa el valor y el detalle, y quita el tooltip) y `tooltip` (un dato de más al pasar el mouse, como el total con IVA). Eran las tres razones por las que Ventas tenía su propia tarjeta. Angosta (`compacta`), la tarjeta achica el ícono a 28px antes de cortar el número.
+
 ### 17.0.1 El rango de fechas se escribe compacto
 
 En `PeriodPicker` **el año se escribe una vez y sólo si hace falta**:

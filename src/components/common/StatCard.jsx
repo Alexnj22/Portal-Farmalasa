@@ -1,4 +1,5 @@
-import { Loader2, X } from 'lucide-react';
+import { ArrowDown, ArrowUp, Loader2, X } from 'lucide-react';
+import LiquidTooltip from './LiquidTooltip';
 
 /**
  * StatCard -- tarjeta de metrica reutilizable.
@@ -54,6 +55,16 @@ import { Loader2, X } from 'lucide-react';
  *   tono       ('brand'|'success'|'warning'|'danger') -- ver la regla de abajo
  *   loading    (boolean)               -- muestra skeleton en numero y label
  *   densa      (boolean)               -- la medida de BALDOSA (ver abajo)
+ *   delta      (number|null)           -- % contra el período anterior: ▲ verde / ▼ rojo al lado del valor
+ *   oculto     (boolean)               -- modo privado: el valor y el detalle se tapan
+ *   tooltip    (node, opcional)        -- nota al pasar el mouse (p. ej. el total con IVA)
+ *
+ * ── `delta`, `oculto` y `tooltip` (2026-11-06) ─────────────────────────────
+ * Eran las tres razones por las que Ventas tenía su propia tarjeta. Ahora son
+ * del canónico: cualquier vista que compare contra el período anterior, que
+ * tenga modo privado o que quiera un dato de más al pasar el mouse las usa
+ * igual. Oculta, la tarjeta no da tooltip (dejaría ver lo que tapa) y el
+ * `aria-label` no lleva el valor.
  *
  * ── `densa`: la misma tarjeta dentro de una baldosa del Inicio ─────────────
  * Las medidas canónicas de arriba son las de una VISTA, donde la fila de
@@ -113,12 +124,20 @@ export default function StatCard({
     compacta = false,
     // La medida de baldosa. Ver la nota del encabezado.
     densa = false,
+    delta = null,
+    oculto = false,
+    tooltip,
     style,
 }) {
     const isClickable = !!onClick;
     const Tag = isClickable ? 'button' : 'div';
     // Una baldosa nunca pasa `sub`, y reservarle la línea es alto regalado.
     const sinDetalle = compacta || densa;
+    // Angosta (`compacta`, lo decide el carril) el ícono baja a 28px y el aire
+    // a 8: medido en Ventas (2026-11-06), a 148px quedaban 74px para el texto
+    // y «$77,076.65» pedía 82. Con esto quedan 88. Es el caso en que falta
+    // ancho, así que el ícono es lo primero que cede, antes que el número.
+    const chica = densa || compacta;
 
     // Hover solo en clickable. Nota: el scope @media (hover:hover) es
     // trabajo transversal pendiente (B2); las clases hover: de Tailwind
@@ -130,7 +149,7 @@ export default function StatCard({
     // 2026-08-02 en /staff, donde encima vive anidada dentro de otra tarjeta).
     const hoverCls = isClickable && !active ? 'hover:shadow-md' : '';
 
-    return (
+    const tarjeta = (
         <Tag
             type={isClickable ? 'button' : undefined}
             // fase E: el gel y el destello van sólo donde se apunta. Acá no
@@ -144,7 +163,7 @@ export default function StatCard({
             // spinner, así que el botón se anunciaba como "botón" a secas
             // (encontrado el 2026-07-28 barriendo nombres accesibles en vivo).
             // `aria-busy` es lo que hace que el lector avise que está cargando.
-            aria-label={loading ? `${label}: cargando` : `${label}: ${value ?? 0}${sub ? `, ${sub}` : ''}`}
+            aria-label={loading ? `${label}: cargando` : oculto ? `${label}: oculto` : `${label}: ${value ?? 0}${delta != null ? `, ${delta >= 0 ? 'sube' : 'baja'} ${Math.abs(delta).toFixed(1)}%` : ''}${sub ? `, ${sub}` : ''}`}
             aria-busy={loading || undefined}
             disabled={isClickable && loading ? true : undefined}
             // `data-surface` SIEMPRE. Antes se le quitaba a la tarjeta activa y a
@@ -170,7 +189,7 @@ export default function StatCard({
                     : 'basis-[148px] max-sm:basis-[calc(50%-0.25rem)] max-w-[200px]'}
                 grow shrink-0 min-w-0 h-full
                 flex items-center rounded-card border
-                ${densa ? 'gap-2 pl-2 pr-2.5 py-2' : 'gap-3 pl-3 pr-4 py-3'}
+                ${densa ? 'gap-2 pl-2 pr-2.5 py-2' : compacta ? 'gap-2 pl-3 pr-3 py-3' : 'gap-3 pl-3 pr-3 py-3'}
                 transition-[box-shadow,border-color,background-color,transform] duration-[var(--dur-base)]
                 ${isClickable ? 'cursor-pointer active:scale-[0.97]' : 'cursor-default select-none'}
                 ${isClickable && loading ? 'disabled:opacity-60 disabled:cursor-wait' : ''}
@@ -181,11 +200,11 @@ export default function StatCard({
             style={style}
         >
             {/* Squircle de icono */}
-            <div className={`${densa ? 'w-7 h-7 rounded-lg' : 'w-9 h-9 rounded-xl'}
+            <div className={`${chica ? 'w-7 h-7 rounded-lg' : 'w-9 h-9 rounded-xl'}
                 flex items-center justify-center shrink-0 ${iconBg}`}>
                 {loading
-                    ? <Loader2 size={densa ? 12 : 14} strokeWidth={2} className="animate-spin text-content-3" />
-                    : <Icon size={densa ? 13 : 15} strokeWidth={1.5} className={iconCls} />
+                    ? <Loader2 size={chica ? 12 : 14} strokeWidth={2} className="animate-spin text-content-3" />
+                    : <Icon size={chica ? 13 : 15} strokeWidth={1.5} className={iconCls} />
                 }
             </div>
 
@@ -228,11 +247,12 @@ export default function StatCard({
                     // de la franja entera.
                     // `data-texto-metrica`: el barrido de escritorio mide si estos
                     // tres textos se están cortando de verdad (DESIGN §25.7).
-                    : <span data-texto-metrica="" className={`block truncate tabular-nums font-black leading-none ${
-                        String(value ?? '').length > 9 ? 'text-body'
+                    : <span data-texto-metrica="" className={`block truncate tabular-nums font-black leading-none transition-[filter] duration-[var(--dur-slow)] ${
+                        oculto ? 'text-title-sm blur-sm select-none'
+                        : String(value ?? '').length > 9 ? 'text-body'
                         : String(value ?? '').length > 6 ? 'text-body-lg'
                         : densa ? 'text-body-lg' : 'text-title-sm'} ${valueCls}`}>
-                        {value ?? 0}
+                        {oculto ? '••••••' : (value ?? 0)}
                       </span>
                 }
 
@@ -262,9 +282,25 @@ export default function StatCard({
                     renderiza ningun caracter de relleno. Cards con y sin
                     `sub` tienen exactamente la misma altura total.
                 */}
-                {!sinDetalle && (
-                    <span data-texto-metrica="" className="block truncate text-micro text-content-3 font-medium leading-none mt-0.5 min-h-[13px]">
-                        {!loading ? sub : ''}
+                {/* El delta va en la línea del detalle, ANTES del detalle, y
+                    no al lado del número ni de la etiqueta: medido en Ventas
+                    (2026-11-06), en cualquiera de esas dos líneas les quitaba
+                    el ancho y se leía «9…» por «988» o «Fa…» por «Facturas».
+                    Si la tarjeta va sin detalle (`compacta`), la línea queda
+                    sólo para el delta: es más dato que el detalle. */}
+                {(!sinDetalle || (delta != null && !oculto && !loading)) && (
+                    <span className="flex items-center gap-1 min-w-0 mt-0.5 min-h-[13px] leading-none">
+                        {!loading && !oculto && delta != null && (
+                            <span aria-hidden="true" className={`flex items-center gap-0.5 shrink-0 text-micro font-black tabular-nums ${delta >= 0 ? 'text-success-text' : 'text-danger-text'}`}>
+                                {delta >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
+                                {Math.abs(delta).toFixed(1)}%
+                            </span>
+                        )}
+                        {!sinDetalle && (
+                            <span data-texto-metrica="" className={`block truncate text-micro text-content-3 font-medium ${oculto ? 'blur-sm select-none' : ''}`}>
+                                {loading ? '' : oculto && sub ? '••' : sub}
+                            </span>
+                        )}
                     </span>
                 )}
             </div>
@@ -275,4 +311,6 @@ export default function StatCard({
             )}
         </Tag>
     );
+    if (!tooltip || oculto || loading) return tarjeta;
+    return <LiquidTooltip content={tooltip}>{tarjeta}</LiquidTooltip>;
 }

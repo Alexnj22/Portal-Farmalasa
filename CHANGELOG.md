@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.12 — Ventas con el StatCard canónico
+
+- **Las tarjetas de Ventas ahora son el `StatCard` de todo el portal.** Ventas tenía una tarjeta propia por tres cosas que el canónico no tenía. Ahora el canónico las tiene y cualquier vista puede usarlas:
+  - `delta`: el % contra el período anterior, en la línea del detalle;
+  - `oculto`: el modo privado, que tapa el valor y el detalle y hace que el lector de pantalla diga «oculto»;
+  - `tooltip`: el total con IVA al pasar el mouse.
+- **Cuando la tarjeta queda angosta, el ícono baja a 28px antes de que se corte el número.** En Ventas, a 148px, «$77,076.65» se leía cortado.
+- **El delta va en la línea del detalle.** Al lado del número o de la etiqueta les quitaba el ancho y se leía «9…» en vez de «988».
+- Revisado en el navegador, en Ventas: las cuatro tarjetas sin cortes, el modo privado y el tooltip con IVA en Productos.
+
 ## v2.1461.11 — Entorno de pruebas: los crons que llaman a producción se apagan aunque la corrida falle
 
 La corrida programada del 2026-11-05 (12:11 SV) aplicó migraciones al branch y

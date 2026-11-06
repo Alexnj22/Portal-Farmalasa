@@ -11,7 +11,7 @@ import AvisoSinProducto from '../components/common/AvisoSinProducto';
 import {
     TrendingUp, TrendingDown, Users, Package, FileText,
     Clock, Building2, Loader2, ChevronDown,
-    ChevronUp, Search, X, Trophy, Star, ChevronLeft,
+    ChevronUp, Search, Trophy, Star, ChevronLeft,
     ArrowUp, ArrowDown, Minus, Info, ChevronsUpDown, Eye, EyeOff, FlaskConical, AlertTriangle
 } from 'lucide-react';
 import { ROTULO_PUNTOS, OPCIONES_FILTRO_PUNTOS } from '@nucleo/data/puntos';
@@ -33,7 +33,6 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import FilterBar from '../components/common/FilterBar';
 import { alternarProductoOcultoEnVentas, fetchAntibioticProductIds, fetchEstadoPuntosDeVentas, fetchInvoiceChangelog, fetchInvoiceItemsByIds, fetchInvoiceItemsForInvoice, fetchInvoicesList, fetchLineasDeVentaDelProducto, fetchProductPreciosActivos, fetchProductPreciosDetail, fetchProductPreciosHistory, fetchPuntosCanjeados, fetchResumenDeVendedores, fetchResumenDeVentas, fetchResumenDelProductoVendido, fetchTendenciaDelProducto, fetchTotalVendidoPorProductos, fetchVendedorPorDia, fetchVendorMonthlyStats, fetchVentasConPuntos, fetchVentasConReceta, fetchVentasPorProducto, fetchVentasRecetaStats, fetchVentasSinProducto, ventasBusquedaEsAproximada } from '@nucleo/data/ventas';
-import { clickable } from '@nucleo/utils/clickable';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
@@ -46,6 +45,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { filaDeProductoVendido as mapAggRow, totalesDeProductos, CODIGOS_ESPECIALES as SPECIAL_CODES, diasDelRango as countDays, horaDeCorte as currentHoraCorte, mesEnCurso as currentMonthRange, periodoAnterior as computePrevRange, mesAnteriorDe, puestosDelMesAnterior, rankingDeVendedores, renglonesDeLaVenta, variacionPorDia as dailyPct, ventasDiariasDelVendedor, cuantosOcultos, productosSegunOcultos, laboratoriosDeProductos, DRILL_TIERS, DRILL_TIER_ORDER, detectTier, RELEVANT_CAMPOS, CAMPO_LABELS, fmtCampoVal, lineasDelDrill } from '@nucleo/utils/ventasPeriodo';
 
 import IconoEnCaja from '../components/common/IconoEnCaja';
+import StatCard from '../components/common/StatCard';
 // ─── Constants ────────────────────────────────────────────────────────────────
 const SALES_BRANCH_IDS = [4, 25, 27, 28, 29, 2];
 const PAGE_SIZE = 50;
@@ -193,61 +193,29 @@ function FilterControls({
 }
 
 
-// Stat card with % change vs previous period + optional sub label
-// Esta tarjeta NO es el `StatCard` canónico: tiene tres cosas que aquél no
-// —el delta contra el período anterior, el desenfoque del modo privacidad y el
-// tooltip de IVA—, así que fusionarlas es un trabajo aparte. Lo que sí adopta son
-// las MEDIDAS canónicas (§17.0): 148 mínimo, 200 máximo, y el detalle cede cuando
-// el carril la deja angosta.
-function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, active, blurred, conIva, compacta }) {
-    const isFilter = !!onClick;
-    const card = (
-        <div
-            {...clickable(onClick)}
-            // El MISMO material que cualquier otra tarjeta: `data-surface="card"`
-            // y el estado por `data-tono`. Antes elegía su fondo con clases —
-            // `bg-warning/10` al ser filtro, `bg-surface-card` si no— y por eso en
-            // la fila de Ventas convivían dos fondos distintos.
-            data-surface="card"
-            data-tono={active ? 'warning' : undefined}
-            // El acuse va con `isFilter`, que es exactamente cuando la tarjeta ES
-            // un control: las que sólo informan (o abren un tooltip de IVA) no se
-            // encogen al tocarlas, porque no pasa nada. Misma regla que `ListRow`.
-            className={`basis-[148px] grow shrink-0 min-w-0 max-w-[200px]
-                flex items-center gap-2 px-3 py-2 border select-none transition-[box-shadow,border-color,transform]
-                ${isFilter ? 'cursor-pointer hover:shadow-md active:scale-[0.97]' : conIva != null ? 'cursor-help' : 'cursor-default'}
-                ${active ? '-translate-y-px' : ''}`}
-        >
-            <div className={`w-6 h-6 rounded-lg bg-gradient-to-br ${grad} flex items-center justify-center shrink-0`}>
-                <Icon size={11} className="text-white" strokeWidth={2.5} />
-            </div>
-            <div className="flex flex-col min-w-0">
-                <span className="text-micro font-black uppercase tracking-widest text-content-2 leading-none mb-0.5">{label}</span>
-                <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-[var(--dur-slow)] ${blurred ? 'blur-sm select-none' : ''}`}>
-                    <span className={`text-subtitle font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
-                    {!blurred && pct !== null && pct !== undefined && (
-                        <span className={`flex items-center gap-0.5 text-caption font-black ${pct >= 0 ? 'text-success-text' : 'text-danger-text'}`}>
-                            {pct >= 0 ? <ArrowUp size={9} /> : <ArrowDown size={9} />}
-                            {Math.abs(pct).toFixed(1)}%
-                        </span>
-                    )}
-                </div>
-                {sub && !compacta && <span className={`text-micro text-content-3 font-medium leading-none mt-0.5 transition-all duration-[var(--dur-slow)] ${blurred ? 'blur-sm select-none' : ''}`}>{blurred ? '••' : sub}</span>}
-            </div>
-            {isFilter && !active && <ChevronDown size={11} className="text-warning-text ml-0.5 shrink-0" />}
-            {active && <X size={11} className="text-warning-text ml-0.5 shrink-0" />}
-        </div>
-    );
-    if (conIva == null || blurred) return card;
+// Las tarjetas de Ventas son el `StatCard` canónico (2026-11-06). Antes eran
+// una copia propia por tres cosas que el canónico no tenía —el delta contra el
+// período anterior, el desenfoque del modo privacidad y el total con IVA al
+// pasar el mouse—; ahora las tiene (`delta`, `oculto`, `tooltip`). Esto sólo
+// traduce el tono del ícono y arma el contenido del tooltip.
+const ICONO_TARJETA = {
+    'chart-1': ['bg-chart-1/10', 'text-chart-1-text'],
+    'chart-8': ['bg-chart-8/10', 'text-chart-8-text'],
+    success: ['bg-success/10', 'text-success-text'],
+    warning: ['bg-warning/10', 'text-warning-text'],
+    danger: ['bg-danger/10', 'text-danger-text'],
+};
+function TarjetaVentas({ tono, text, pct, conIva, blurred, ...rest }) {
+    const [iconBg, iconCls] = ICONO_TARJETA[tono] || ICONO_TARJETA['chart-8'];
     return (
-        <LiquidTooltip content={
-            <div className="whitespace-nowrap">
-                <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
-                <p className="text-body font-black text-content">{fmt(conIva)}</p>
-            </div>
-        }>
-            {card}
-        </LiquidTooltip>
+        <StatCard {...rest} iconBg={iconBg} iconCls={iconCls} valueCls={text}
+            delta={pct} oculto={blurred} tono="warning"
+            tooltip={conIva == null ? undefined : (
+                <div className="whitespace-nowrap">
+                    <p className="text-caption font-black uppercase tracking-widest text-content-2 mb-1">Total con IVA</p>
+                    <p className="text-body font-black text-content">{fmt(conIva)}</p>
+                </div>
+            )} />
     );
 }
 
@@ -926,11 +894,11 @@ function TabVentas({ branches, filterBranch, setFilterBranch, searchTerm, monthR
                         ? ((avgTicket - (prevStats.sum/prevStats.countValido)) / (prevStats.sum/prevStats.countValido)) * 100 : null;
                     const pctPuntos = dailyPct(totalPuntos,  curDays, prevStats.puntos, prevDays);
                     return [
-                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Total ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
-                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   sub: prevStats.sum && prevStats.countValido ? `${fmt(prevStats.sum/prevStats.countValido)}` : undefined },
-                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       grad: 'from-warning to-chart-4', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: alternarPuntos, active: filterPuntos },
-                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
+                        { label: 'Facturas',       value: fmtNum(totalCount), pct: pctCount,  icon: FileText,   tono: 'chart-1',  text: 'text-chart-1-text',    sub: prevStats.count  ? `${fmtNum(prevStats.count)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Total ventas',   value: fmt(totalAmount),   pct: pctSum,    icon: TrendingUp, tono: 'success', text: 'text-success-text', sub: prevStats.sum    ? `${fmt(prevStats.sum)} · ${fmtShort(prevMonthRange.prevFini)}→${fmtShort(prevMonthRange.prevFfin)}` : undefined },
+                        { label: 'Ticket Prom.',   value: fmt(avgTicket),     pct: pctAvg,    icon: TrendingUp, tono: 'chart-8',  text: 'text-content-2',   sub: prevStats.sum && prevStats.countValido ? `${fmt(prevStats.sum/prevStats.countValido)}` : undefined },
+                        { label: 'Pts. Canjeados', value: fmt(totalPuntos),   pct: pctPuntos, icon: Star,       tono: 'warning', text: 'text-warning-text',   sub: prevStats.puntos ? `${fmt(prevStats.puntos)}` : undefined, onClick: alternarPuntos, active: filterPuntos },
+                    ].map(card => <TarjetaVentas key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </CarrilCards>
                 )}
@@ -1363,10 +1331,10 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     const pctSum   = dailyPct(totalVentas,   curDaysV, prevVendStats.sum,   prevDaysV);
                     const pctCount = dailyPct(totalFacturas, curDaysV, prevVendStats.count, prevDaysV);
                     return [
-                        { label: 'Vendedores',   value: knownRows.length,      icon: Users,      grad: 'from-chart-1 to-chart-3',  text: 'text-chart-1-text',    pct: null,     sub: undefined },
-                        { label: 'Total ventas', value: fmt(totalVentas),       icon: TrendingUp, grad: 'from-success to-chart-9', text: 'text-success-text', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
-                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   grad: 'from-chart-8 to-chart-8/70',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
-                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode} />);
+                        { label: 'Vendedores',   value: knownRows.length,      icon: Users,      tono: 'chart-1',  text: 'text-chart-1-text',    pct: null,     sub: undefined },
+                        { label: 'Total ventas', value: fmt(totalVentas),       icon: TrendingUp, tono: 'success', text: 'text-success-text', pct: pctSum,   sub: prevVendStats.sum   > 0 ? `${fmt(prevVendStats.sum)} · ${periodLabel}`   : undefined },
+                        { label: 'Facturas',     value: fmtNum(totalFacturas),  icon: FileText,   tono: 'chart-8',  text: 'text-content-2',   pct: pctCount, sub: prevVendStats.count > 0 ? `${fmtNum(prevVendStats.count)} · ${periodLabel}` : undefined },
+                    ].map(card => <TarjetaVentas key={card.label} {...card} blurred={privacyMode} />);
                 })()}
                 </CarrilCards>
                 )}
@@ -2512,15 +2480,15 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                     const pctIngresos = filterLab ? null : dailyPct(totNeto, curDaysP, prevProdStats.sum, prevDaysP);
                     return [
                         ...(verCards ? [
-                        { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   grad: 'from-chart-1 to-chart-3',   text: 'text-chart-1-text',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
-                        { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, grad: 'from-danger to-chart-4',    text: 'text-danger-text',     pct: null,        sub: undefined },
-                        { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   grad: 'from-success to-chart-9',  text: 'text-success-text', pct: null,        sub: undefined },
-                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       grad: 'from-warning to-warning',  text: 'text-warning-text',   pct: null,        sub: undefined },
+                        { label: 'Total s/IVA',  value: fmt(totNeto),       icon: TrendingUp,   tono: 'chart-1',   text: 'text-chart-1-text',    pct: pctIngresos, sub: !filterLab && prevProdStats.sum > 0 ? `${fmt(prevProdStats.sum)} · ${fmtShort(prevFini)}→${fmtShort(prevFfin)}` : undefined, conIva: totNetoConIva },
+                        { label: 'Costo',         value: fmt(totCosto),      icon: TrendingDown, tono: 'danger',    text: 'text-danger-text',     pct: null,        sub: undefined },
+                        { label: 'Utilidad',      value: fmt(totUtilidad),   icon: TrendingUp,   tono: 'success',  text: 'text-success-text', pct: null,        sub: undefined },
+                        { label: 'Margen',        value: fmtPct(margenGlobal), icon: Star,       tono: 'warning',  text: 'text-warning-text',   pct: null,        sub: undefined },
                         ] : []),
                         ...(hiddenCount > 0 || showHidden ? [
-                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, grad: 'from-chart-8 to-chart-8/70', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
+                            { label: 'Ocultos', value: fmtNum(hiddenCount), icon: showHidden ? Eye : EyeOff, tono: 'chart-8', text: 'text-content-2', pct: null, sub: showHidden ? 'Viendo solo ocultos' : undefined, onClick: () => setShowHidden(v => !v), active: showHidden },
                         ] : []),
-                    ].map(card => <StatCard key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
+                    ].map(card => <TarjetaVentas key={card.label} {...card} blurred={privacyMode && card.label !== 'Ocultos'} />);
                 })()}
                 </CarrilCards>
                 )}

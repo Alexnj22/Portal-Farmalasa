@@ -8,6 +8,7 @@ import IconoPorNombre from '../../../components/common/IconoPorNombre';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
+import TituloDeSeccion from '../../../components/common/TituloDeSeccion';
 // Los íconos de los motivos de pausa: el catálogo (`constants/pedidos`) sólo
 // trae el nombre.
 const ICONOS_DE_PAUSA = { Coffee, Clock, ClipboardList, Bell, MessageSquare };
@@ -25,7 +26,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                             <Pause size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-content text-subtitle">Pausar despacho</h3>
+                            <TituloDeSeccion nivel="tarjeta">Pausar despacho</TituloDeSeccion>
                             <p className="text-body-sm text-content-2 mt-0.5">{ERP_NAMES[modal.sucId] ?? `Sucursal ${modal.sucId}`}</p>
                         </div>
                     </div>

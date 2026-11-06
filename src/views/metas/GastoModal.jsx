@@ -14,6 +14,7 @@ import { crearMetaGasto, previewMetaGasto } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { MESES_PARA_RECUPERAR, mesesParaArrancarGasto, metasQueReabreElGasto, salasDelGasto, ymHoySV, ymLabelCorto, ymSumar } from '@nucleo/utils/metasUtils';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 
 // Hasta 24 meses, los meses para arrancar, las salas válidas y qué metas
@@ -144,7 +145,7 @@ export default function GastoModal({ isOpen, onClose, onSaved, salaOptions, meta
             <div className="flex-none px-6 py-6 border-b border-border-card flex items-center gap-4">
                 <div className={`${squircleClass} text-brand-text`}><Receipt size={22} strokeWidth={2.5} /></div>
                 <div>
-                    <h3 className="text-title-sm font-black text-content tracking-tight leading-snug">Agregar gasto</h3>
+                    <TituloDeSeccion nivel="modal">Agregar gasto</TituloDeSeccion>
                     <p className="text-label font-medium text-content-3 mt-0.5">Gastos por recuperar</p>
                 </div>
             </div>

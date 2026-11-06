@@ -60,6 +60,7 @@ import {
     usoDelTopeTexto, vigenciaDelReglamentoTexto,
 } from '@nucleo/utils/nivelesDePuntos';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Las cuentas (rótulos, premios, qué cambió, cuánto cuesta un raspable) viven
 // en el núcleo desde el 2026-10-22: la app del personal configura lo mismo.
 const dolares = dolaresDePremio;
@@ -101,9 +102,9 @@ export default function NivelesDelPrograma({ puedeEditar }) {
                 puedeEditar={puedeEditar} alGuardar={recargar} />
 
             <section className="flex flex-col gap-3">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                     <Crown size={14} /> Niveles de Puntos Salud
-                </h3>
+                </TituloDeSeccion>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
                     {niveles.map((n) => (
                         <TarjetaDeNivel key={n.clave} nivel={n} conRaspable={n.orden >= ordenMax - 1}
@@ -114,9 +115,9 @@ export default function NivelesDelPrograma({ puedeEditar }) {
             </section>
 
             <section className="flex flex-col gap-3">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                     <Gem size={14} /> Cliente Mayorista, por rango
-                </h3>
+                </TituloDeSeccion>
                 <p className="text-caption text-content-3 -mt-1">
                     Cumpleaños y raspable del Cliente Mayorista aprobado (Condiciones §5). Rigen desde la misma
                     fecha que los niveles; mientras tanto recibe lo de cualquier cliente.
@@ -162,9 +163,9 @@ function EstadoDelPrograma({ config, usadoUsd, puedeEditar, alGuardar }) {
 
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-4 min-w-0">
-            <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+            <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                 <CalendarClock size={14} /> Estado del programa
-            </h3>
+            </TituloDeSeccion>
             <div className="min-w-0">
                 <p className="text-body-sm font-bold text-content">Niveles y beneficios del Cliente Mayorista</p>
                 <p className="text-caption text-content-3">{vigenciaDelReglamentoTexto(config)}</p>
@@ -529,9 +530,9 @@ function Historial({ filas, niveles, mayoreo }) {
     const nombreDe = (h) => sujetoDelHistorial(h, niveles, mayoreo);
     return (
         <section className="flex flex-col gap-3">
-            <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+            <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                 <History size={14} /> Historial de cambios
-            </h3>
+            </TituloDeSeccion>
             <DataTable
                 columns={[
                     { key: 'cuando', label: 'Cuándo' },

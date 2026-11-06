@@ -24,6 +24,7 @@ import {
     csvDeParados, cuantosArmables, gruposPorDestino, notaDeEnvioSugerido, POR_ENVIO, productosDeEnvioSugerido, totalesDeParados,
 } from '@nucleo/utils/gestionDeStock';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const EnviarProductoModal = lazy(() => import('../dashboard/EnviarProductoModal'));
 
 /** Filas a la vista por destino; el resto detrás de «Ver los N». */
@@ -292,9 +293,9 @@ export default function TabParados({ sala, onSala, searchTerm = '' }) {
                                 {esBodega ? <Archive size={16} /> : <Truck size={16} />}
                             </span>
                             <div className="min-w-0 flex-1">
-                                <h3 className="text-title font-black text-content leading-tight">
+                                <TituloDeSeccion nivel="modal">
                                     {esBodega ? 'A Bodega' : `A ${nombre}`}
-                                </h3>
+                                </TituloDeSeccion>
                                 <p className="text-label text-content-3 leading-snug">
                                     {g.filas.length} {g.filas.length === 1 ? 'producto' : 'productos'} · {unidades(g.unidades)}
                                     {veCostos && ` · ${formatMoney(g.costo)}`}

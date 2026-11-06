@@ -13,6 +13,7 @@ import {
     conMetasSugeridas, sugeridaDeLaEncuesta,
 } from '@nucleo/utils/encuestasClientes';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Cómo, dónde y hasta cuándo se aplica la encuesta, y qué recibe el cliente.
  *
@@ -189,9 +190,9 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
 function Bloque({ titulo, icono: Icono, children }) {
     return (
         <section data-surface="card" className="p-4 space-y-3">
-            <h3 className="text-label uppercase tracking-widest font-black text-content-2 flex items-center gap-1.5">
+            <TituloDeSeccion nivel="seccion" className="flex items-center gap-1.5">
                 {Icono && <Icono size={13} />} {titulo}
-            </h3>
+            </TituloDeSeccion>
             {children}
         </section>
     );

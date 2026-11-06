@@ -15,6 +15,7 @@ import { fetchMetasGastos, anularMetaGasto } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { resumenDeGastos, ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const COLS = [
     { key: 'mes',   label: 'Mes' },
     { key: 'sala',  label: 'Sala' },
@@ -166,7 +167,7 @@ export default function TabGastos({ canEdit, reloadKey, onChanged, onAgregarGast
                             toolbar={(
                                 <>
                                     <div className="min-w-0">
-                                        <h3 className="text-body-lg font-black leading-tight truncate">{g.concepto}</h3>
+                                        <TituloDeSeccion nivel="tarjeta" className="truncate">{g.concepto}</TituloDeSeccion>
                                         <p className="text-label font-semibold text-content-3 mt-0.5">
                                             {salas.map((s) => s.sala).join(' y ')}
                                             {' · '}

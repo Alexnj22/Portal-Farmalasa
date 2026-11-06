@@ -4,6 +4,7 @@ import Button from '../common/Button';
 import { CheckCircle2, AlertCircle, Eye, PartyPopper, ChevronLeft, ChevronRight, User, ChevronDown } from 'lucide-react';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 // 3. Componente de Controles de Paginación (Liquidglass)
 const PaginationControls = ({ currentPage, totalPages, setPage }) => {
   if (totalPages <= 1) return null;
@@ -67,9 +68,9 @@ const FormAnnouncements = ({ data }) => {
         </div>
         
         <div className="flex-1 min-w-0">
-            <h3 className="text-title md:text-2xl font-black text-content tracking-tight leading-none truncate mb-1 drop-shadow-sm">
+            <TituloDeSeccion nivel="modal" className="truncate mb-1">
                 {readersModal.title || 'Sin Título'}
-            </h3>
+            </TituloDeSeccion>
             <p className="text-caption md:text-label font-black text-content-3 uppercase tracking-widest">
                 Reporte de Lecturas
             </p>

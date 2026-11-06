@@ -14,6 +14,7 @@ import {
 } from '@nucleo/utils/promocionesUtils';
 import Notice from '../../components/common/Notice';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Las promociones vivas, como tarjetas.
  *
@@ -123,7 +124,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
         >
             <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-body-lg font-semibold text-content break-words">{promo.nombre}</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="break-words">{promo.nombre}</TituloDeSeccion>
                     <p className="text-caption text-content-3 tabular-nums mt-0.5">
                         {/* La de laboratorio se nombra por su MES, no por un par
                             de fechas: «agosto 2026» es la unidad en la que se

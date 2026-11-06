@@ -28,6 +28,7 @@ import {
     compraConLectura, compraConMontosCalculados, compraDesdeDetalle, compraVacia, costoSinIvaDeRenglon, payloadDeCompra, renglonDeCompraVacio,
 } from '@nucleo/utils/distribucionComercial';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Una compra a proveedor, de la captura a la bodega.
 //
 // El ERP la carga como una lista de productos y un total escrito a mano, y
@@ -301,7 +302,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                         {/* ── Productos ── */}
                         <section className="flex flex-col gap-2" aria-label="Productos de la compra">
                             <div className="flex items-center justify-between gap-2">
-                                <h3 className="text-body font-black text-content">Productos</h3>
+                                <TituloDeSeccion nivel="tarjeta">Productos</TituloDeSeccion>
                                 {editable && <Button size="sm" variant="secondary" icon={Plus} onClick={() => setC(x => ({ ...x, items: [...x.items, renglonDeCompraVacio()] }))}>Agregar producto</Button>}
                             </div>
                             {c.items.length === 0 ? (
@@ -371,7 +372,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                         {/* ── Montos del documento contra lo calculado ── */}
                         <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Montos del documento">
                             <div className="flex flex-wrap items-center justify-between gap-2">
-                                <h3 className="text-body font-black text-content">Montos del documento</h3>
+                                <TituloDeSeccion nivel="tarjeta">Montos del documento</TituloDeSeccion>
                                 <div className="flex items-center gap-2">
                                     <span className={`text-caption font-bold flex items-center gap-1 ${cuadra ? 'text-success-text' : 'text-content-3'}`} data-cuadre={cuadra ? 'si' : 'no'}>
                                         {cuadra ? <CheckCircle2 size={14} /> : <AlertTriangle size={14} />}

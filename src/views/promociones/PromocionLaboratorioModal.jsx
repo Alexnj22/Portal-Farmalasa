@@ -23,6 +23,7 @@ import {
 } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const CLAVE_BORRADOR = 'promocion_laboratorio';
 
 /**
@@ -267,9 +268,9 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                         {/* ── Los montos: iguales para todas las salas ───────── */}
                         <section className="rounded-card border border-border-card p-3 space-y-3">
                             <div className="flex items-center justify-between gap-2">
-                                <h3 className="text-body font-semibold text-content">
+                                <TituloDeSeccion nivel="tarjeta">
                                     Cuánto gana cada persona
-                                </h3>
+                                </TituloDeSeccion>
                                 <Button variant="secondary" size="sm" icon={Plus} onClick={agregarNivel}>
                                     Otro nivel
                                 </Button>
@@ -303,9 +304,9 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
 
                         {/* ── La matriz: un bloque por sala ─────────────────── */}
                         <section className="space-y-2">
-                            <h3 className="text-body font-semibold text-content">
+                            <TituloDeSeccion nivel="tarjeta">
                                 Cuánto tiene que vender cada sala
-                            </h3>
+                            </TituloDeSeccion>
                             <p className="text-caption text-content-3">
                                 Dejar un nivel en blanco significa que esa sala no lo puede alcanzar.
                             </p>

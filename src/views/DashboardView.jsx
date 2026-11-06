@@ -117,6 +117,7 @@ import { useRefrescoEnVivo } from '@nucleo/hooks/useRefrescoEnVivo';
 import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
 import { hora12 } from '@nucleo/utils/hora';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit
@@ -814,7 +815,7 @@ const WidgetCard = ({ title, icon: Icon, action, children, noClip = false, categ
       <div className="@container/cabeza relative flex flex-wrap items-center justify-between px-4 py-2.5 border-b border-border-card shrink-0 gap-x-2 gap-y-1.5">
         <div className="flex items-center gap-2 min-w-[7rem] flex-[1_1_0%]">
           <Icon size={15} style={{ color: cat.color }} strokeWidth={2.5} className="shrink-0" />
-          <h3 className="text-body-sm font-black text-content tracking-tight truncate">{title}</h3>
+          <TituloDeSeccion nivel="tarjeta" className="truncate">{title}</TituloDeSeccion>
         </div>
         {/* `whitespace-nowrap`: el corte de línea cae en el espacio que hay
             entre «Ver todas» y su flecha, así que en el teléfono el chevron se
@@ -3386,7 +3387,7 @@ const DashboardView = ({ openModal }) => {
                 <div className="w-7 h-7 rounded-lg bg-brand/10 border border-brand/15 flex items-center justify-center">
                   <Gift size={13} className="text-brand-text" strokeWidth={2}/>
                 </div>
-                <h3 className="text-body-sm font-black text-content tracking-tight">Cumpleaños</h3>
+                <TituloDeSeccion nivel="tarjeta">Cumpleaños</TituloDeSeccion>
               </div>
               <div className="ml-auto"><PeriodStepper
                 size="sm"

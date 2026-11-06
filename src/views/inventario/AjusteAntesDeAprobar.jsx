@@ -10,6 +10,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { PROBLEMA_DE_AJUSTE, rotuloDeAjuste } from '@nucleo/utils/conteoDeInventario';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * El conteo que ajusta el inventario, antes de firmarlo (2026-11-06).
  *
@@ -54,7 +55,7 @@ export default function AjusteAntesDeAprobar({ open, conteoId, busy, onClose, on
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-2xl" ariaLabel="Aprobar y ajustar el inventario">
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between gap-3 relative z-base">
                 <div className="min-w-0">
-                    <h3 className="font-black text-content text-subtitle">Aprobar y ajustar el inventario</h3>
+                    <TituloDeSeccion nivel="tarjeta">Aprobar y ajustar el inventario</TituloDeSeccion>
                     <p className="text-caption text-content-3">Esto es lo que se va a cargar y descontar, en unidades.</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />
@@ -141,7 +142,7 @@ export function ProblemasDelAjuste({ open, problemas, onClose, onIr }) {
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel="Antes de finalizar">
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between gap-3 relative z-base">
                 <div className="min-w-0">
-                    <h3 className="font-black text-content text-subtitle">Antes de finalizar</h3>
+                    <TituloDeSeccion nivel="tarjeta">Antes de finalizar</TituloDeSeccion>
                     <p className="text-caption text-content-3">
                         {lista.length === 1 ? 'Un producto no se podría ajustar' : `${lista.length} productos no se podrían ajustar`} así como están.
                     </p>

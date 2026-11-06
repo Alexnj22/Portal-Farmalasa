@@ -8,6 +8,7 @@ import SegmentedControl from '../../components/common/SegmentedControl';
 import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const TOGGLE_CFG = {
     ok:       { Icon: PackageCheck,  label: 'OK',      active: 'bg-success-solid text-white shadow-[var(--shadow-glow-success)]', idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-success/10 hover:text-success hover:border-success/30' },
     danada:   { Icon: AlertTriangle, label: 'Dañada',  active: 'bg-warning-solid text-white shadow-[var(--shadow-glow-warning)]',   idle: 'bg-surface-card-hover text-content-3 border-divider hover:bg-warning/10 hover:text-warning hover:border-warning/30' },
@@ -108,7 +109,7 @@ export default function ReenvioLlegadaModal({
                     <p className="text-label font-black text-content-2 uppercase tracking-widest">
                         Pedido #{pedidoNumero} · Reenvío {cicloNum > 1 ? cicloNum : ''}
                     </p>
-                    <h3 className="text-body-lg font-bold text-content leading-tight">{enDetalle ? '¿Cómo llegó el reenvío?' : '¿Llegó todo el reenvío?'}</h3>
+                    <TituloDeSeccion nivel="tarjeta">{enDetalle ? '¿Cómo llegó el reenvío?' : '¿Llegó todo el reenvío?'}</TituloDeSeccion>
                 </div>
                 <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>

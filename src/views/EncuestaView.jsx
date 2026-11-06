@@ -29,6 +29,7 @@ import SalyAvatar from '../components/common/SalyAvatar';
 import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregunta, filasPorSucursal, IDX_INCONFORMIDADES, IDX_RAZONES, indiceDeAutocalificacion, indicesInvertidos, personasPorOpcion, preguntaDeLaBase, puntajeDeBloque, puntajeGlobal, respuestaDeLaBase, SUPERVISOR_DE_JEFE } from '@nucleo/utils/climaLaboral';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // Jefe inmediato de cada sucursal: `SUPERVISOR_DE_JEFE` vive en el núcleo
 // (`climaLaboral`), el mismo que lee la app.
 
@@ -556,7 +557,7 @@ export default function EncuestaView() {
 
                             {/* Scores por bloque */}
                             <div data-surface="card" className="md:col-span-2 p-4">
-                                <h3 className="text-label font-black uppercase tracking-widest text-content-3 mb-3">Puntaje por Bloque</h3>
+                                <TituloDeSeccion nivel="seccion" className="mb-3">Puntaje por Bloque</TituloDeSeccion>
                                 <div className="space-y-2.5">
                                     {bloquesScores.map(b => {
                                         if (!b.score) return null;
@@ -583,9 +584,9 @@ export default function EncuestaView() {
                         {/* Razones de permanencia */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div data-surface="card" className="p-4">
-                                <h3 className="text-label font-black uppercase tracking-widest text-content-3 mb-3 flex items-center gap-1.5">
+                                <TituloDeSeccion nivel="seccion" className="mb-3 flex items-center gap-1.5">
                                     <Heart size={12} className="text-danger-text" /> ¿Por qué siguen en la empresa?
-                                </h3>
+                                </TituloDeSeccion>
                                 {[
                                     { k: 'A', label: 'Me encanta, quiero jubilarme',  cls: 'bg-success' },
                                     { k: 'B', label: 'Estabilidad y beneficios',      cls: 'bg-chart-1'    },
@@ -613,9 +614,9 @@ export default function EncuestaView() {
 
                             {/* Autocalificación */}
                             <div data-surface="card" className="p-4 flex flex-col gap-3">
-                                <h3 className="text-label font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+                                <TituloDeSeccion nivel="seccion" className="flex items-center gap-1.5">
                                     <Star size={12} className="text-warning" /> Autocalificación como trabajador/a
-                                </h3>
+                                </TituloDeSeccion>
                                 {Object.values(selfRatings.dist).every(n => n === 0) ? (
                                     <p className="text-label text-content-3 text-center py-6">Sin datos</p>
                                 ) : (() => {
@@ -674,9 +675,9 @@ export default function EncuestaView() {
 
                         {/* Comunicación de inconformidades */}
                         <div data-surface="card" className="p-4">
-                            <h3 className="text-label font-black uppercase tracking-widest text-content-3 mb-3 flex items-center gap-1.5">
+                            <TituloDeSeccion nivel="seccion" className="mb-3 flex items-center gap-1.5">
                                 <Info size={12} className="text-chart-1-text" /> ¿Con quién comunican las inconformidades?
-                            </h3>
+                            </TituloDeSeccion>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                                 {[
                                     { k: 'A', label: 'Jefe inmediato',          icon: '👤', cls: 'bg-chart-1/10 border-chart-1/30 text-chart-1-text'     },
@@ -915,9 +916,9 @@ export default function EncuestaView() {
                     <div className="space-y-5">
                         {/* Jefes vs Empleados */}
                         <div data-surface="card" className="p-4">
-                            <h3 className="text-label font-black uppercase tracking-widest text-content-3 mb-4 flex items-center gap-1.5">
+                            <TituloDeSeccion nivel="seccion" className="mb-4 flex items-center gap-1.5">
                                 <Award size={12} className="text-chart-3-text" /> Jefes vs Empleados
-                            </h3>
+                            </TituloDeSeccion>
                             <div className="overflow-x-auto">
                                 <table className="w-full min-w-[480px] text-body-lg">
                                     <thead>
@@ -967,9 +968,9 @@ export default function EncuestaView() {
 
                         {/* Por sucursal */}
                         <div data-surface="card" className="p-4">
-                            <h3 className="text-label font-black uppercase tracking-widest text-content-3 mb-4 flex items-center gap-1.5">
+                            <TituloDeSeccion nivel="seccion" className="mb-4 flex items-center gap-1.5">
                                 <Building2 size={12} className="text-chart-9-text" /> Score Global por Sucursal
-                            </h3>
+                            </TituloDeSeccion>
                             <div className="space-y-2.5">
                                 {sucursales.map(suc => {
                                     const rows = RESPUESTAS.filter(r => r.sucursal === suc);
@@ -1000,7 +1001,7 @@ export default function EncuestaView() {
 
                         {/* Detalle por sucursal y bloque */}
                         <div data-surface="card" className="p-4 overflow-x-auto">
-                            <h3 className="text-label font-black uppercase tracking-widest text-content-3 mb-3">Desglose por Sucursal × Bloque</h3>
+                            <TituloDeSeccion nivel="seccion" className="mb-3">Desglose por Sucursal × Bloque</TituloDeSeccion>
                             <table className="w-full text-body-sm min-w-[600px]">
                                 <thead>
                                     <tr className="bg-brand/5 border-b border-brand/10">
@@ -1329,7 +1330,7 @@ export default function EncuestaView() {
                         })}
 
                         {/* Individual comments */}
-                        <h3 className="text-label font-black uppercase tracking-widest text-content-2 px-1">{withComment.length} comentarios individuales</h3>
+                        <TituloDeSeccion nivel="seccion" className="px-1">{withComment.length} comentarios individuales</TituloDeSeccion>
                         {withComment.map((row, i) => (
                             <div key={i} data-surface="card" className="p-4">
                                 <div className="flex items-center gap-2.5 mb-2">

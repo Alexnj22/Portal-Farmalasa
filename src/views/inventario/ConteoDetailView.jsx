@@ -71,6 +71,7 @@ import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { cantidadValida, conteoEditable, EVENTO_DE_CONTEO, FILTROS_CONTEO, guardadoDelRenglon, noUbicado } from '@nucleo/utils/conteoDeInventario';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const PAGE_SIZE_INICIAL = 25;
 
 // Devuelve el valor recién cuando dejó de cambiar por `ms`. Es lo que separa
@@ -1275,7 +1276,7 @@ function PrintChooserModal({ open, documentos, busy, onClose, onPick }) {
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-md" ariaLabel="Elegir documento para imprimir">
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
-                    <h3 className="font-black text-content text-subtitle">Imprimir</h3>
+                    <TituloDeSeccion nivel="tarjeta">Imprimir</TituloDeSeccion>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-black">Elige el documento</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
@@ -1321,7 +1322,7 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel={`Historial de conteo — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
-                    <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
+                    <TituloDeSeccion nivel="tarjeta">{item?.product_nombre}</TituloDeSeccion>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-black">
                         Historial de conteo · {simple ? (item?.presentacion || 'sin presentación') : (item?.lote || 'sin lote')}
                     </p>
@@ -1400,7 +1401,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Corregir lote — ${item?.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
-                    <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
+                    <TituloDeSeccion nivel="tarjeta">Corregir lote</TituloDeSeccion>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-black truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
@@ -1456,7 +1457,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
         <LiquidModal open={open} onClose={handleClose} maxWidth="max-w-md" ariaLabel="Finalizar conteo">
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
-                    <h3 className="font-black text-content text-subtitle">Finalizar Conteo</h3>
+                    <TituloDeSeccion nivel="tarjeta">Finalizar Conteo</TituloDeSeccion>
                     <p className="text-caption text-content-3 uppercase tracking-widest font-black">Se calculan los resultados</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />

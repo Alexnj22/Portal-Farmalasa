@@ -18,6 +18,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, venceDelMes, mesDelVence } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Pedirle a la sala que cuente antes de corregir. Diferido: sólo hace falta al
 // apretar el botón.
 const NuevaConsultaExistencia = lazy(() => import('../../components/inventario/NuevaConsultaExistencia'));
@@ -160,10 +161,10 @@ function Seccion({ id, icono: Icono, titulo, cuenta, bajada, children }) {
             <header className="flex items-start gap-2.5">
                 <Icono size={16} className="text-content-3 shrink-0 mt-0.5" strokeWidth={2.5} />
                 <div className="min-w-0">
-                    <h3 className="text-body font-black text-content">
+                    <TituloDeSeccion nivel="tarjeta">
                         {titulo}
                         {cuenta > 0 && <span className="text-content-3 tabular-nums"> · {formatQty(cuenta)}</span>}
-                    </h3>
+                    </TituloDeSeccion>
                     <p className="text-label font-bold text-content-3">{bajada}</p>
                 </div>
             </header>

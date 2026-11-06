@@ -32,6 +32,7 @@ import Conversacion from './Conversacion';
 import { DecisionMesModal, DatosDelMesModal } from './MesModales';
 import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Las pestañas que no son la de entrada llegan por `lazy()` (2026-10-24): se
 // ve UNA a la vez y viajaban todas en el trozo de la vista. El calendario y la
 // conversación del mes se quedan estáticos: son lo que se ve al entrar.
@@ -519,12 +520,12 @@ export default function MarketingView() {
                                 <MessageSquare size={18} aria-hidden />
                             </span>
                             <div className="min-w-0 flex-1">
-                                <h3 className="text-body font-semibold text-content flex items-center gap-2">
+                                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                     Conversación del mes
                                     {comentariosDelMes.length > 0 && (
                                         <Badge variant="neutral" size="sm">{comentariosDelMes.length}</Badge>
                                     )}
-                                </h3>
+                                </TituloDeSeccion>
                                 <p className="text-caption text-content-3">
                                     Entre gerencia y diseño sobre {etiquetaMes(mes).toLowerCase()}. Lo de una pieza, coméntalo dentro de la pieza.
                                 </p>

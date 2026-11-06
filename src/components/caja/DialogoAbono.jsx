@@ -15,6 +15,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * El abono de un cliente para apartar un producto.
  *
@@ -208,7 +209,7 @@ export default function DialogoAbono({ abierto, ocupado, sala, onClose, onGuarda
         <LiquidModal open onClose={onClose} maxWidth="max-w-lg" ariaLabel="Abono para apartar producto">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Abono para apartar producto</h3>
+                    <TituloDeSeccion nivel="tarjeta">Abono para apartar producto</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         El dinero entra a la caja y sale un comprobante para el cliente.
                         Vale hasta el <b className="text-content">{vence}</b> ({diasDelAbono} días).

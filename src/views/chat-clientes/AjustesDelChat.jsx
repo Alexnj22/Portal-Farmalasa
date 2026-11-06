@@ -14,6 +14,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import EstadoDeLaFarmacia from './EstadoDeLaFarmacia';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * «Ajustes del chat»: los dos mensajes automáticos que recibe un cliente al
  * escribir —uno con la farmacia en horario y otro fuera de él—. Admiten
@@ -66,7 +67,7 @@ function EditorDeMensaje({ campo, valor, onCambio, estado, deshabilitado }) {
         <section className="flex flex-col gap-2">
             <div className="flex items-center gap-2">
                 <Icono size={15} className="text-brand-text shrink-0" />
-                <h3 className="text-body-sm font-black text-content">{campo.rotulo}</h3>
+                <TituloDeSeccion nivel="tarjeta">{campo.rotulo}</TituloDeSeccion>
             </div>
             <p className="text-caption text-content-3">{campo.ayuda}</p>
             <PortalTextarea name={campo.clave} rows={4} compact value={valor} maxLength={LARGO_MAXIMO_MENSAJE}

@@ -6,6 +6,7 @@ import PedidoModal from '../PedidoModal';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
+import TituloDeSeccion from '../../../components/common/TituloDeSeccion';
 export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
     const [motivo, setMotivo] = useState('');
     const canConfirm = !modal?.requiresReason || motivo.trim().length >= 5;
@@ -18,7 +19,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                         <Ban size={20} className="text-white" />
                     </div>
                     <div>
-                        <h3 className="font-bold text-content text-subtitle">Anular pedido</h3>
+                        <TituloDeSeccion nivel="tarjeta">Anular pedido</TituloDeSeccion>
                         <p className="text-body-sm text-content-2 mt-0.5">#{modal?.numero}</p>
                     </div>
                 </div>

@@ -16,6 +16,7 @@ import { fetchAvance } from '@nucleo/data/encuestasClientes';
 import IncentivosEncuesta from './IncentivosEncuesta';
 import { abrirAfiche, imprimirAfiche } from './aficheQr';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Cómo va la encuesta en campo: respuestas contra la meta, por sucursal y por
  * canal, y el QR de cada sucursal para imprimir o compartir.
@@ -77,7 +78,7 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
             </div>
 
             <section data-surface="card" className="p-4 space-y-3">
-                <h3 className="text-label uppercase tracking-widest font-black text-content-2">Por sucursal</h3>
+                <TituloDeSeccion nivel="seccion">Por sucursal</TituloDeSeccion>
                 <ul className="space-y-3">
                     {avance.por_sucursal.map((s) => {
                         const cuota = encuesta.alcance === 'sucursales' ? s.meta : null;
@@ -137,7 +138,7 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
             </section>
 
             <section data-surface="card" className="p-4 space-y-2">
-                <h3 className="text-label uppercase tracking-widest font-black text-content-2">Por canal</h3>
+                <TituloDeSeccion nivel="seccion">Por canal</TituloDeSeccion>
                 <div className="flex flex-wrap gap-x-6 gap-y-1">
                     {encuesta.canales.map((c) => (
                         <span key={c} className="text-body-sm text-content-2">

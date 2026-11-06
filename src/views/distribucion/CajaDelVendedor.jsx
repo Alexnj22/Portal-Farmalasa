@@ -15,6 +15,7 @@ import { abrirCaja, movimientoCaja, anularMovimientoCaja, mensajeDeDistribucion 
 import { leerMonto } from './comun';
 import { TIPOS_MOVIMIENTO_CAJA, ROTULO_MOVIMIENTO_CAJA as ROTULO, tiposDeMovimiento, movimientoListo, avisoDeEntrega, ejemploDeConcepto } from '@nucleo/utils/distribucionCaja';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // La caja del día de un vendedor (borrador 0024): el fondo de cambio que se le
 // entregó, los gastos de ruta, las entregas parciales (el «corte» a media
 // jornada: se cuenta y se compara con lo que debería tener) y el desglose de lo
@@ -96,7 +97,7 @@ export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, o
     return (
         <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Caja del día" data-caja={caja ? caja.estado : 'sin-abrir'}>
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-body font-black text-content flex items-center gap-2"><Coins size={16} className="text-brand-text" /> Caja del día</h3>
+                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><Coins size={16} className="text-brand-text" /> Caja del día</TituloDeSeccion>
                 {caja
                     ? <Badge size="sm" variant={abierta ? 'success' : 'neutral'} uppercase={false}>
                         {abierta ? `Abierta · fondo ${formatMoney(Number(caja.fondo))}` : 'Liquidada'}

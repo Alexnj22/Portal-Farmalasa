@@ -9,6 +9,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { etiquetaMes } from '@nucleo/utils/fecha';
 import { fetchCofSinEnvioMh } from '@nucleo/data/librosIva';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ─────────────────────────────────────────────────────────────────────────────
 // La evidencia de los consumidores finales de la noche (2026-10-19).
 //
@@ -57,9 +58,9 @@ export default function CofNocheSinEnvio({ resumen, loading, mes, desde, hasta, 
         <section data-surface="card" className="p-4 md:p-5 space-y-3">
             <header className="flex flex-wrap items-baseline justify-between gap-3">
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold flex items-center gap-2">
+                    <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                         <Moon size={16} aria-hidden="true" /> Consumidor final después de las 6:00 p. m.
-                    </h3>
+                    </TituloDeSeccion>
                     <p className="text-caption text-content-3">
                         Desde el 19 de octubre de 2026, los consumidores finales emitidos de las 6:00 p. m.
                         en adelante no se envían a Hacienda. Los que no tienen sello no entran a este libro.

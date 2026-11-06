@@ -48,6 +48,7 @@ import CodigoDeAcceso from './CodigoDeAcceso';
 import VentaDelAviso from './VentaDelAviso';
 import UnirCuentas, { AvisoDeUniones } from './UnirCuentas';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // `recharts` viaja en su chunk: el modal se abre sin esperarlo.
 const GraficaCliente = lazy(() => import('./GraficasPuntos').then((m) => ({ default: m.GraficaCliente })));
 
@@ -767,8 +768,8 @@ function Movimiento({ m, sala, info = {} }) {
 
 function Titulo({ icono: Icono, children }) {
     return (
-        <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+        <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
             <Icono size={14} /> {children}
-        </h3>
+        </TituloDeSeccion>
     );
 }

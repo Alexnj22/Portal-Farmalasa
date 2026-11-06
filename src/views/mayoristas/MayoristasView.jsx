@@ -27,6 +27,7 @@ import {
     fetchDetalleMayorista, fetchHistorialMayoristas, fetchMayoristas, proponerMayorista, resolverMayorista,
 } from '@nucleo/data/mayoristas';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Clientes Mayoristas (2026-10-08) — Condiciones del Cliente Mayorista y
  * Procedimiento de Clientes, vigentes desde el 15-oct-2026 (docs/legal).
@@ -348,7 +349,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
                     </div>
 
                     <section className="space-y-1.5">
-                        <h3 className="text-label font-semibold text-content-2">Compras por mes</h3>
+                        <TituloDeSeccion nivel="tarjeta">Compras por mes</TituloDeSeccion>
                         {!d ? <LoadingState label="Cargando" /> : (
                             <div className="rounded-lg border border-border-subtle divide-y divide-border-subtle">
                                 {meses.slice(-7).map((m) => (
@@ -368,7 +369,7 @@ function Detalle({ cliente, puedeProponer, puedeAprobar, onClose, onCambio }) {
 
                     {d?.historial?.length > 0 && (
                         <section className="space-y-1.5">
-                            <h3 className="text-label font-semibold text-content-2">Historial</h3>
+                            <TituloDeSeccion nivel="tarjeta">Historial</TituloDeSeccion>
                             <ul className="space-y-1">
                                 {d.historial.map((h, i) => (
                                     <li key={i} className="text-body-sm text-content-2">

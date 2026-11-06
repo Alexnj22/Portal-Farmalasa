@@ -29,6 +29,7 @@ import {
 } from './reportes';
 import { TIPO_DOCUMENTO } from './comun';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Reportes de la distribuidora (borrador 0016). Sólo quien administra: el
 // costo es el margen de la empresa. La pestaña va en `?reporte=`.
 //
@@ -146,7 +147,7 @@ function ReporteUtilidad({ buscar }) {
 
             {(datos?.por_dia?.length ?? 0) > 1 && (
                 <section data-surface="card" className="p-4" aria-label="Utilidad por día">
-                    <h3 className="text-body font-black text-content mb-2">Venta y utilidad por día</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="mb-2">Venta y utilidad por día</TituloDeSeccion>
                     <Suspense fallback={<div className="h-[220px]" />}><GraficaUtilidadDiaria serie={datos.por_dia} /></Suspense>
                 </section>
             )}
@@ -637,7 +638,7 @@ function ReporteRetenciones() {
                     <section key={l.clave} data-surface="card" className="p-4 flex flex-col gap-2" aria-label={l.titulo} data-listado={l.clave}>
                         <div className="flex items-start justify-between gap-2">
                             <div className="min-w-0">
-                                <h3 className="text-body font-black text-content">{l.titulo}</h3>
+                                <TituloDeSeccion nivel="tarjeta">{l.titulo}</TituloDeSeccion>
                                 <p className="text-caption text-content-3">{l.sub}</p>
                             </div>
                             <span className="text-title font-black tabular-nums text-content">{formatMoney(l.total)}</span>

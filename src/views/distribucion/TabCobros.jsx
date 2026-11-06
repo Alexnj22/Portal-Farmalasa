@@ -16,6 +16,7 @@ import { rotuloTipoCliente } from './comun';
 import { TRAMOS, clientesDeLaCartera, usoDelLimite } from './cartera';
 import CarteraClienteModal from './CarteraClienteModal';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Cuentas por cobrar de la distribuidora: quién debe, desde cuándo, y cobrarle.
 // Pedido del usuario (2026-09-30), con la cartera de las farmacias como
 // muestra. Todo sale de `dist_cartera()` en una llamada (borrador 0014).
@@ -90,7 +91,7 @@ export default function TabCobros({ emisor, puedeVender, puedeConfigurar, buscar
             {/* ── Antigüedad de saldos: el ancho de cada tramo ES su parte del total ── */}
             <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Antigüedad de saldos">
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="flex items-center gap-2 text-body font-black text-content"><Gauge size={16} className="text-brand-text" /> Antigüedad de saldos</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><Gauge size={16} className="text-brand-text" /> Antigüedad de saldos</TituloDeSeccion>
                     {tramo && <Button size="sm" variant="ghost" onClick={() => setTramo('')}>Ver todos</Button>}
                 </div>
                 <div className="flex h-4 rounded-full overflow-hidden bg-surface-card-hover" data-medida="dato">

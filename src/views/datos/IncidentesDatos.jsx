@@ -28,6 +28,7 @@ import {
     fetchIncidentes, guardarIncidente, plazoDeIncidente, NOTIFICACIONES_DE_INCIDENTE,
 } from '@nucleo/data/solicitudesDatos';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const COLUMNAS = [
     { key: 'detectado', label: 'Detectado' },
     { key: 'que', label: 'Qué pasó' },
@@ -182,7 +183,7 @@ function Ficha({ inc, onClose, onGuardado }) {
                     <PortalTextarea label="Recomendaciones a las personas afectadas" rows={2} value={f.recomendaciones} onChange={set('recomendaciones')} readOnly={cerrado} />
 
                     <section className="flex flex-col gap-2">
-                        <h3 className="text-body-sm font-black text-content uppercase tracking-wide">Notificaciones</h3>
+                        <TituloDeSeccion nivel="seccion">Notificaciones</TituloDeSeccion>
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                             {NOTIFICACIONES_DE_INCIDENTE.map((n) => (
                                 <PortalInput key={n.campo} label={n.rotulo} type="datetime-local" value={f[n.campo]}

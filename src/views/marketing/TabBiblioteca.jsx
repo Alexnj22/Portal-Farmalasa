@@ -15,6 +15,7 @@ import { TIPOS_DE_RECURSO, colorEscrito, colorValido as esColorValido, faltaEnRe
 import { abrirEnPestanaNueva } from '@plataforma/descargas';
 import { puntoDeMarca } from './iconos';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Rótulos, validación y agrupado: núcleo (`marketing`), lo mismo que la app; acá, los íconos.
 const ICONO_RECURSO = { logo: ImageIcon, color: Palette, tipografia: Type, foto: ImageIcon, plantilla: FileText, manual: BookOpen, otro: FileText };
 const TIPOS = TIPOS_DE_RECURSO.map((t) => ({ ...t, icono: ICONO_RECURSO[t.value] }));
@@ -78,7 +79,7 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
         <div className="space-y-6">
             {puedeGestionar && (
                 <section data-surface="card" className="p-4 space-y-3">
-                    <h3 className="text-label uppercase tracking-widest font-black text-content-2">Agregar a la biblioteca</h3>
+                    <TituloDeSeccion nivel="seccion">Agregar a la biblioteca</TituloDeSeccion>
                     <div className="grid gap-3 sm:grid-cols-3">
                         <Campo rotulo="Qué es">
                             <LiquidSelect value={form.tipo} clearable={false}
@@ -119,10 +120,10 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
 
             {grupos.map((g) => (
                 <section key={g.id || 'todas'} className="space-y-3">
-                    <h3 className="flex items-center gap-2 text-label uppercase tracking-widest font-black text-content-2">
+                    <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                         {g.color && <span className={`w-2.5 h-2.5 rounded-full ${puntoDeMarca(g.color)}`} aria-hidden />}
                         {g.nombre}
-                    </h3>
+                    </TituloDeSeccion>
                     {TIPOS.map((t) => {
                         const items = g.items.filter((r) => r.tipo === t.value);
                         if (!items.length) return null;

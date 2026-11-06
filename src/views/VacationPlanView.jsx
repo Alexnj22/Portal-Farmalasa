@@ -30,6 +30,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { diasDeVacacion, diasUsadosPorPersona, elegibilidadDeVacaciones, planesVisibles } from '@nucleo/utils/planDeVacaciones';
 import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // El motivo del rechazo se baja al rechazar, no al entrar (2026-10-24).
 const PromptModal = dialogoDiferido(() => import('../components/common/PromptModal'));
 
@@ -767,9 +768,9 @@ const VacationPlanView = () => {
                                             : <Plus size={16} className="text-white" strokeWidth={2.5} />
                                         }
                                     </div>
-                                    <h3 className="font-black text-content text-subtitle uppercase tracking-tight">
+                                    <TituloDeSeccion nivel="tarjeta">
                                         {editingPlan ? 'Editar Asignación' : 'Nueva Asignación'}
-                                    </h3>
+                                    </TituloDeSeccion>
                                 </div>
                                 {editingPlan && (
                                     <Button variant="secondary" icon={X} onClick={handleCancelEdit}>Cancelar</Button>

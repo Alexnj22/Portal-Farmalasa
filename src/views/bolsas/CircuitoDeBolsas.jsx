@@ -37,6 +37,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /* El detalle se baja al ABRIR una bolsa, no al entrar a la pestaña: arrastra el
  * motor de impresion y el visor de archivos firmados, y la lista se ve entera
  * sin tocar nada. Mismo criterio que `CorteDetalleModal` en la baldosa del
@@ -962,7 +963,7 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, rotuloTot
                 botón deshabilitado, que sería un blanco de dedo de 44px que no
                 hace nada (§15.8). */}
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
-                <h3 className="text-label font-bold text-content">
+                <TituloDeSeccion nivel="tarjeta">
                     {onPlegar ? (
                         <button type="button" onClick={onPlegar} aria-expanded={!plegada}
                             className="flex items-center gap-2 min-h-[var(--tap-min)] text-left
@@ -978,7 +979,7 @@ function Etapa({ icon: Icon, titulo, ayuda, grupos, total, montoTotal, rotuloTot
                             {titulo}
                         </span>
                     )}
-                </h3>
+                </TituloDeSeccion>
                 {/* Los TRES totales de la pantalla, de mayor a menor: éste es el
                     de la etapa entera. Va con más peso que su cuenta de bolsas
                     porque es la cifra contra la que se cuadra el trabajo del
@@ -2267,10 +2268,10 @@ export default function CircuitoDeBolsas({
                 ) : (
                 <section className="space-y-2">
                     <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
-                        <h3 className="text-label font-bold text-content flex items-center gap-2">
+                        <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                             <Scale size={15} className="text-danger-text" />
                             Diferencias por resolver
-                        </h3>
+                        </TituloDeSeccion>
                         <span className="text-caption text-content-3 tabular-nums">
                             {sinResolver.length} {sinResolver.length === 1 ? 'bolsa' : 'bolsas'}
                         </span>

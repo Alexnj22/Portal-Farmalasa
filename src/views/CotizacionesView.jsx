@@ -33,6 +33,7 @@ import {
     renglonesParaGuardar, renglonDesdeGuardado, payloadDeCotizacion,
 } from '@nucleo/utils/cotizacion';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // ─── Constantes ───────────────────────────────────────────────────────────────
 // Las tasas y la aritmética: `cotizacion` (núcleo, la misma de la app).
 const RETENTION_THRESHOLD = UMBRAL_RETENCION;
@@ -462,7 +463,7 @@ export default function CotizacionesView() {
                         <div className="w-8 h-8 rounded-xl bg-chart-1/10 text-chart-1-text border border-chart-1/30 flex items-center justify-center">
                             <FileText size={16} strokeWidth={2.5} />
                         </div>
-                        <h3 className="text-body-sm font-black uppercase tracking-widest text-content-2">Datos Generales</h3>
+                        <TituloDeSeccion nivel="seccion">Datos Generales</TituloDeSeccion>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         <div>
@@ -543,10 +544,10 @@ export default function CotizacionesView() {
                             <div className="w-8 h-8 rounded-xl bg-success/10 text-success border border-success/30 flex items-center justify-center">
                                 <ShoppingCart size={16} strokeWidth={2.5} />
                             </div>
-                            <h3 className="text-body-sm font-black uppercase tracking-widest text-content-2">
+                            <TituloDeSeccion nivel="seccion">
                                 Productos
                                 {items.length > 0 && <Badge variant="success" uppercase={false}>{items.length}</Badge>}
-                            </h3>
+                            </TituloDeSeccion>
                             {isCCFMode && (
                                 <Badge variant="chart-1" size="sm" icon={Info} uppercase={false}>Desglose CCF por línea</Badge>
                             )}
@@ -583,7 +584,7 @@ export default function CotizacionesView() {
                         <div data-surface="card" className="p-5 w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card mb-1">
                                 <Calculator size={14} className="text-chart-1-text" />
-                                <h3 className="text-label font-black uppercase tracking-widest text-content-2">Resumen</h3>
+                                <TituloDeSeccion nivel="seccion">Resumen</TituloDeSeccion>
                             </div>
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(totals.base)} />
                             <Row label="IVA 13%" val={fmt(totals.iva)} />
@@ -729,7 +730,7 @@ export default function CotizacionesView() {
                         <div data-surface="card" className="p-5 w-full max-w-[380px] space-y-2">
                             <div className="flex items-center gap-2 pb-3 border-b border-border-card">
                                 <Calculator size={14} className="text-chart-1-text" />
-                                <h3 className="text-label font-black uppercase tracking-widest text-content-2">Totales</h3>
+                                <TituloDeSeccion nivel="seccion">Totales</TituloDeSeccion>
                             </div>
                             <Row label="Subtotal gravado (s/IVA)" val={fmt(vTotals.base)} />
                             <Row label="IVA 13%" val={fmt(vTotals.iva)} />

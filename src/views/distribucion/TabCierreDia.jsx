@@ -28,6 +28,7 @@ import { cuentaDelDia, formasDelDia, depositoListo, preguntaDelCierre } from '@n
 import { rutaSeccion } from './rutas';
 import { MARCA_PAPEL } from './marca';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // El cierre del día de la distribuidora (borrador 0024): la empresa entera en
 // una pantalla. Lo vendido por forma de pago, lo que entró a la oficina (las
 // entregas parciales más lo contado al liquidar), los depósitos al banco y la
@@ -146,7 +147,7 @@ export default function TabCierreDia({ emisor }) {
 
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                     <section data-surface="card" className="p-4 flex flex-col gap-2 xl:col-span-2" aria-label="Vendedores">
-                        <h3 className="text-body font-black text-content">Vendedores</h3>
+                        <TituloDeSeccion nivel="tarjeta">Vendedores</TituloDeSeccion>
                         {d.vendedores.length === 0 ? <p className="text-caption text-content-3">Nadie vendió ni cobró este día.</p> : (
                             <ul className="divide-y divide-divider">
                                 {d.vendedores.map(v => (
@@ -164,20 +165,20 @@ export default function TabCierreDia({ emisor }) {
                                 ))}
                             </ul>
                         )}
-                        <h3 className="text-body font-black text-content mt-2">Por forma de pago</h3>
+                        <TituloDeSeccion nivel="tarjeta" className="mt-2">Por forma de pago</TituloDeSeccion>
                         <ul className="divide-y divide-divider">
                             {formas.map(([f, m]) => (
                                 <li key={f} className="py-1.5 flex justify-between text-body-sm"><span className="text-content-2">{rotuloForma(f)}</span><span className="tabular-nums font-bold">{formatMoney(m)}</span></li>
                             ))}
                         </ul>
                         {d.gastos_lista.length > 0 && (<>
-                            <h3 className="text-body font-black text-content mt-2">Gastos de ruta</h3>
+                            <TituloDeSeccion nivel="tarjeta" className="mt-2">Gastos de ruta</TituloDeSeccion>
                             <ul className="text-caption text-content-2">{d.gastos_lista.map((g, i) => <li key={i}>{g.concepto} · {formatMoney(Number(g.monto))}</li>)}</ul>
                         </>)}
                     </section>
 
                     <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Depósitos y cierre">
-                        <h3 className="text-body font-black text-content flex items-center gap-2"><Landmark size={16} className="text-brand-text" /> Depósitos</h3>
+                        <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><Landmark size={16} className="text-brand-text" /> Depósitos</TituloDeSeccion>
                         {d.depositos.length === 0 ? <p className="text-caption text-content-3">Sin depósitos este día.</p> : (
                             <ul className="text-body-sm divide-y divide-divider">
                                 {d.depositos.map(x => <li key={x.id} className="py-1.5 flex justify-between gap-2"><span className="truncate">{x.banco} · {x.referencia}</span><span className="tabular-nums font-bold">{formatMoney(Number(x.monto))}</span></li>)}

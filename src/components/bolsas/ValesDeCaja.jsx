@@ -7,6 +7,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * Lo que la caja todavía cuenta como suyo, y el botón que se lo anota.
  *
@@ -224,7 +225,7 @@ export default function ValesDeCaja({ sala = null }) {
                 maxWidth="max-w-lg" ariaLabel="Salidas por anotar en la caja">
                 <div className="p-5 space-y-4">
                     <div>
-                        <h3 className="text-h3 font-bold text-content">Lo que la caja todavía cuenta</h3>
+                        <TituloDeSeccion nivel="tarjeta">Lo que la caja todavía cuenta</TituloDeSeccion>
                         <p className="text-body-sm text-content-2 mt-1">
                             Un solo <b>vale de caja</b> por sala. El vale de papel y la etiqueta de
                             cada bolsa ya salieron al sacar el dinero: esto es el movimiento que

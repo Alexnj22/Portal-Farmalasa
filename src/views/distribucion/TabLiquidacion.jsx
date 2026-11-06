@@ -32,6 +32,7 @@ import { nombreFormaPago as rotuloForma } from '@nucleo/utils/distribucionFactur
 import { formasDeLaLiquidacion, cuentaDelCierre, efectivoDelCierre, textoDeLaDiferencia, resumenDelCamion, vendedoresParaElegir, rotuloDiferencia } from '@nucleo/utils/distribucionCaja';
 import { MARCA_PAPEL } from './marca';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // La liquidación diaria del vendedor (borrador 0020): lo que vendió, lo que
 // cobró, lo que le devolvieron y el efectivo que tiene que entregar. El día y
 // el vendedor van en la dirección (`?fecha=`, `?vendedor=`), así un enlace
@@ -55,7 +56,7 @@ function CamionDelDia({ cargas }) {
     return (
         <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Camión del día" data-camion-del-dia>
             <div className="flex flex-wrap items-center justify-between gap-2">
-                <h3 className="text-body font-black text-content flex items-center gap-2"><Truck size={16} className="text-brand-text" /> Camión</h3>
+                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><Truck size={16} className="text-brand-text" /> Camión</TituloDeSeccion>
                 <span className="text-caption text-content-3">
                     {t.notas}
                     {abierta ? ' · todavía no se descarga' : ''}
@@ -252,7 +253,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
 
                 <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
                     <section data-surface="card" className="p-4 flex flex-col gap-3 xl:col-span-2" aria-label="Formas de pago">
-                        <h3 className="text-body font-black text-content flex items-center gap-2"><Banknote size={16} className="text-brand-text" /> Por forma de pago</h3>
+                        <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><Banknote size={16} className="text-brand-text" /> Por forma de pago</TituloDeSeccion>
                         {formas.length === 0 ? <p className="text-caption text-content-3">Sin pagos este día.</p> : (
                             <ul className="divide-y divide-divider">
                                 {formas.map(f => (
@@ -278,10 +279,10 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
 
                     {/* ── El cierre ── */}
                     <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Cierre" data-cierre={c ? 'cerrada' : 'abierta'}>
-                        <h3 className="text-body font-black text-content flex items-center gap-2">
+                        <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                             {c ? <Lock size={16} className="text-success-text" /> : <Unlock size={16} className="text-warning-text" />}
                             {c ? 'Liquidación cerrada' : 'Por cerrar'}
-                        </h3>
+                        </TituloDeSeccion>
                         {c ? (<>
                             <dl className="grid grid-cols-2 gap-y-1 text-body-sm">
                                 <dt className="text-content-3">Esperado</dt><dd className="text-right tabular-nums">{formatMoney(Number(c.esperado))}</dd>
@@ -344,7 +345,7 @@ export default function TabLiquidacion({ emisor, puedeConfigurar }) {
                 </DataTable>
                 {liq.cobros.lista.length > 0 && (
                     <section data-surface="card" className="p-4" aria-label="Cobros del día">
-                        <h3 className="text-body font-black text-content mb-2">Cobros de cartera</h3>
+                        <TituloDeSeccion nivel="tarjeta" className="mb-2">Cobros de cartera</TituloDeSeccion>
                         <ul className="divide-y divide-divider">
                             {liq.cobros.lista.map(r => (
                                 <li key={r.id} className="py-2 flex items-center justify-between gap-3 text-body-sm">

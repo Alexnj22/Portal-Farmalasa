@@ -42,6 +42,7 @@ import {
     guardarPromocional, recibirPromocional,
 } from '@nucleo/data/puntos';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const fechaCorta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 
 // El estado, dónde se retira y qué le falta a un regalo: núcleo (`nivelesDePuntos`), lo mismo en la app.
@@ -100,7 +101,7 @@ function PorEntregar({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
 
     return (
         <section className="flex flex-col gap-3">
-            <h3 className="text-body font-black text-content flex items-center gap-2"><Gift size={16} /> Premios por entregar</h3>
+            <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><Gift size={16} /> Premios por entregar</TituloDeSeccion>
             <div className="flex flex-col sm:flex-row gap-2 sm:items-center">
                 <SearchInput value={texto} onChange={setTexto} placeholder="Escanea el código del premio, o busca por cliente o DUI" className="flex-1"
                     onKeyDown={(e) => {
@@ -207,7 +208,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala, opcionesSala }) {
     return (
         <section className="flex flex-col gap-3">
             <div className="flex items-center justify-between gap-2">
-                <h3 className="text-body font-black text-content flex items-center gap-2"><PackagePlus size={16} /> Regalos promocionales</h3>
+                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><PackagePlus size={16} /> Regalos promocionales</TituloDeSeccion>
                 {puedeAdministrar && (
                     <Button variant="ghost" size="sm" icon={Plus} onClick={() => setDialogo({ modo: 'nuevo', promo: null })}>Nuevo regalo</Button>
                 )}

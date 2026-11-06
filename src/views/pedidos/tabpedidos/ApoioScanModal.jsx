@@ -20,6 +20,7 @@ import { fetchEmployeeByKioskPin, upsertPedidoApoyo } from '@nucleo/data/pedidos
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
+import TituloDeSeccion from '../../../components/common/TituloDeSeccion';
 export default function ApoioScanModal({ open, onClose, pedidoId, sucId, currentUserId, existingApoyo = [], onSuccess, tipo = 'preparacion' }) {
     const [employee,    setEmployee]    = useState(null);
     const [error,       setError]       = useState('');
@@ -105,7 +106,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                             <Users size={20} className="text-white" />
                         </div>
                         <div>
-                            <h3 className="font-bold text-content text-subtitle">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</h3>
+                            <TituloDeSeccion nivel="tarjeta">Apoyo — {tipo === 'recepcion' ? 'Recepción' : 'Preparación'}</TituloDeSeccion>
                             <p className="text-body-sm text-content-2 mt-0.5">Escanea los carnés, uno tras otro</p>
                         </div>
                     </div>

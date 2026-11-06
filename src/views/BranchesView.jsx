@@ -34,6 +34,7 @@ import { soloPersonalEnPlanilla } from '@nucleo/utils/tipoDeFicha';
 import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
     { value: "ALERTS", label: "Con alertas" },
@@ -593,9 +594,9 @@ const BranchesView = ({ openModal }) => {
                             <div data-surface="card" className={`p-6 mb-5 transition-all duration-[var(--dur-slow)] ${filterStatus === 'ALERTS' ? 'text-success' : 'text-content-3'}`}>
                                 {filterStatus === 'ALERTS' ? <CheckCircle2 size={48} strokeWidth={1.5} /> : <Building2 size={48} strokeWidth={1.5} />}
                             </div>
-                            <h3 className="text-title font-black text-content tracking-tight">
+                            <TituloDeSeccion nivel="modal">
                                 {filterStatus === 'ALERTS' ? 'Todo en orden' : 'Sin sucursales'}
-                            </h3>
+                            </TituloDeSeccion>
                             <p className="text-body-lg text-content-3 mt-2 font-medium max-w-[300px] leading-relaxed">
                                 {filterStatus === 'ALERTS'
                                     ? 'Ninguna de tus sucursales presenta alertas críticas en este momento.'

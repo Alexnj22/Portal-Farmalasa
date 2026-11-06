@@ -8,6 +8,7 @@ import { asignarFichaAAplicacion } from '@nucleo/data/inyecciones';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /*
  * Ponerle la ficha a una aplicación que se cobró sin ella (2026-10-17, «que
  * salgan» en la app del cliente). La app muestra las inyecciones por ficha, así
@@ -43,7 +44,7 @@ export default function AsignarFichaModal({ fila, onClose, onHecho }) {
         <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-md" ariaLabel="Asignar a un cliente">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Asignar a un cliente</h3>
+                    <TituloDeSeccion nivel="tarjeta">Asignar a un cliente</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         {fila.producto} · cobrada a nombre de «{fila.cliente || 'sin nombre'}»
                     </p>

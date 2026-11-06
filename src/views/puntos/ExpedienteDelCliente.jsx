@@ -30,6 +30,7 @@ import {
     ESTADO_DE_ENCARGO, ESTADO_DE_RESERVA, estadoDeLaApp, marcasDelCliente,
 } from '@nucleo/utils/expedienteDelCliente';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const pts = (n) => formatQty(Number(n) || 0);
 // 100 puntos = US$1.00 (cláusula 4 del reglamento).
 const dolares = (n) => formatMoney((Number(n) || 0) / 100);
@@ -39,9 +40,9 @@ function Panel({ icono: Icono, titulo, nota, children }) {
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
             <div className="min-w-0">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                     <Icono size={14} /> {titulo}
-                </h3>
+                </TituloDeSeccion>
                 {nota && <p className="text-caption text-content-3 mt-1">{nota}</p>}
             </div>
             {children}

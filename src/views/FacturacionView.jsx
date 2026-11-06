@@ -58,6 +58,7 @@ import {
     claveDeSalto, correlativo7, filaDeSaltoSolventado, nulosPendientes, saltosPendientes, saltosSolventados,
     GRACIA_SELLO_DIAS, numerosFaltantes,
 } from '@nucleo/utils/colasDeFacturacion';
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 function avisarFalloAlSolventar(error, contexto) {
     console.error(`${contexto}: insert resolution failed:`, error.message);
     useToastStore.getState().showToast(
@@ -1665,7 +1666,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros,
 
             {/* ── Saltos pendientes ── */}
             <div className="space-y-3">
-                <h3 className="text-label font-black uppercase tracking-widest text-content-3 px-1">Saltos en correlativos</h3>
+                <TituloDeSeccion nivel="seccion" className="px-1">Saltos en correlativos</TituloDeSeccion>
 
                 {pendingGaps.length === 0 ? (
                     <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
@@ -1779,7 +1780,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros,
 
             {/* ── Campos nulos ── */}
             <div className="space-y-3">
-                <h3 className="text-label font-black uppercase tracking-widest text-content-3 px-1">Campos indefinidos / nulos</h3>
+                <TituloDeSeccion nivel="seccion" className="px-1">Campos indefinidos / nulos</TituloDeSeccion>
                 {activeNulls.length === 0 ? (
                     <EmptyState icon={CheckCircle2} iconClass="text-success" glowClass="bg-success"
                         linea title="Sin campos indefinidos" subtitle="Todos los documentos tienen sus campos completos." />

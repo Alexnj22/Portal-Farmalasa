@@ -22,6 +22,7 @@ import { variacionPct as variacion, repartoDeFormas, maximoDe } from '@nucleo/ut
 import { rutaSeccion, rutaVentaA } from './rutas';
 import { Skeleton } from '../../components/common/StateViews';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // El Inicio de la distribuidora. Pedido del usuario (2026-09-29): «un
 // dashboard con datos de ventas, clientes, etc., con gráficas y elementos
 // interactivos».
@@ -64,9 +65,9 @@ function Tarjeta({ titulo, icon: Icon, accion, children, className = '' }) {
     return (
         <section data-surface="card" className={`p-4 flex flex-col gap-3 min-w-0 ${className}`}>
             <header className="flex items-center justify-between gap-2 min-w-0">
-                <h3 className="flex items-center gap-2 text-body font-black text-content truncate">
+                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2 truncate">
                     {Icon && <Icon size={16} className="text-brand-text shrink-0" />} {titulo}
-                </h3>
+                </TituloDeSeccion>
                 {accion}
             </header>
             {children}

@@ -11,6 +11,7 @@ import { telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
 import ClienteAvatar from './ClienteAvatar';
 import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT } from '@nucleo/utils/chatClientes';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // «Cliente»: lo que conviene tener a mano mientras se le contesta — quién es,
 // cómo llamarlo, sus puntos, lo último que compró (con sus productos), lo que
 // tiene reservado y sus tratamientos. Sale de UNA llamada
@@ -170,9 +171,9 @@ export default function PanelCliente({ customerId, arriba = null }) {
 function Seccion({ icono: Icono, titulo, vacio, n, children }) {
     return (
         <section className="space-y-2">
-            <h3 className="flex items-center gap-1.5 text-caption font-black uppercase tracking-widest text-content-2">
+            <TituloDeSeccion nivel="seccion" className="flex items-center gap-1.5">
                 <Icono size={13} /> {titulo}
-            </h3>
+            </TituloDeSeccion>
             {n ? children : <p className="text-label text-content-3">{vacio}</p>}
         </section>
     );

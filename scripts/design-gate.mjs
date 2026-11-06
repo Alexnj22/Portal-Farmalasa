@@ -1599,6 +1599,22 @@ function scanFile(path) {
     });
   }
 
+  // ── `titulo-a-mano` (2026-11-06, TRINQUETE) ───────────────────────────
+  // Un `<h3>` con el tamaño escrito a mano, en vez de `TituloDeSeccion`
+  // (nivel modal / tarjeta / seccion — decisión del usuario). Había 211 con 34
+  // estilos, y 9 usaban `text-h3`, que no existe. Se migraron 181; los que
+  // quedan llevan un color con significado (rojo de alerta, blanco sobre
+  // foto), clases dinámicas o son la cifra de un estado vacío: contados, no
+  // pueden crecer. Los canónicos de `components/common/` no cuentan.
+  if (!path.includes('components/common/') && !hasException(path, 'titulo-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      if (/<h3\b[^>]*className=[^>]*\btext-(?:micro|caption|label|body|subtitle|title|display|h3)\b/.test(line)) {
+        findings.push({ line: i + 1, label: 'título escrito a mano — usar `<TituloDeSeccion nivel="modal|tarjeta|seccion">`', category: 'titulo-a-mano', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
   // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
   // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
   // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y

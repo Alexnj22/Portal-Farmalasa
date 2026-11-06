@@ -23,6 +23,7 @@ import {
     agruparPorProducto, efectoDeCorreccion, enPresentaciones, pedirAjusteDeConsulta, resolverConsulta, textoDeDiferencia, ajusteNecesitaVence,
 } from '@nucleo/data/consultasExistencia';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Conteo de inventario → Consultas de existencia.
  *
@@ -157,9 +158,9 @@ export default function TabConsultasExistencia() {
 
             {porContar.length > 0 && (
                 <section className="space-y-2">
-                    <h3 className="text-label font-black uppercase tracking-widest text-content-3">
+                    <TituloDeSeccion nivel="seccion">
                         Te toca contar <span className="tabular-nums">· {formatQty(porContar.length)}</span>
-                    </h3>
+                    </TituloDeSeccion>
                     <ul className="grid gap-2 lg:grid-cols-2">
                         {porContar.map(({ erp_product_id, nombre, motivo, salas }) => (
                             <li key={erp_product_id} data-surface="card" className="px-3.5 py-3 space-y-2.5">
@@ -190,7 +191,7 @@ export default function TabConsultasExistencia() {
             )}
 
             <section className="space-y-2">
-                <h3 className="text-label font-black uppercase tracking-widest text-content-3">Consultas</h3>
+                <TituloDeSeccion nivel="seccion">Consultas</TituloDeSeccion>
                 {consultas == null ? (
                     <div data-surface="card" className="p-4"><SkeletonText lines={4} /></div>
                 ) : grupos.length === 0 ? (

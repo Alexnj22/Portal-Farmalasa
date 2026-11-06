@@ -9,6 +9,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // La pestaña «Resumen» de la ficha (PENDIENTES 31 y 32): lo que Saly dijo
 // cada mañana, y debajo los números de donde salió — que ninguna frase se
 // tenga que creer sin poder mirarla.
@@ -114,7 +115,7 @@ export default function TabResumen({ liveBranch }) {
     return (
         <div className="space-y-6">
             <header className="max-w-3xl">
-                <h3 className="sr-only">Resumen del {dia(ultimo.fecha, true)}</h3>
+                <TituloDeSeccion nivel="tarjeta" className="sr-only">Resumen del {dia(ultimo.fecha, true)}</TituloDeSeccion>
                 <SalyDice animo={animoDeSaly(ultimo)} tamano="lg"
                     titulo={<span className="first-letter:uppercase">{dia(ultimo.fecha, true)}</span>}>
                     {ultimo.texto}

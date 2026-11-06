@@ -29,6 +29,7 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { gruposDelCatalogo, revisionDelTurno, sugerenciasDelCatalogo } from '@nucleo/utils/edicionDeHorario';
 import { clickable } from '@nucleo/utils/clickable';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ============================================================================
 // TARJETA DE SUGERENCIA DEL CATÁLOGO
 // ============================================================================
@@ -347,12 +348,12 @@ const TabShifts = ({ branches, searchTerm = '' }) => {
                 <div data-surface="card" className={`p-6 md:p-8 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] flex flex-col hover:border-border-card hover:bg-surface-card transform-gpu ${editingGroup ? 'border-warning/40 shadow-[var(--shadow-glass-3)]' : 'border-border-card shadow-[var(--shadow-glass-sm)]'}`}>
 
                     <div className="flex justify-between items-center mb-6 relative z-base">
-                        <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
+                        <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                             <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingGroup ? 'bg-warning-solid' : 'bg-brand'}`}>
                                 {editingGroup ? <Pencil size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                             </div>
                             <span className="font-black uppercase tracking-tight ml-1">{editingGroup ? 'Editar Turno' : 'Nuevo Turno'}</span>
-                        </h3>
+                        </TituloDeSeccion>
                         {editingGroup && (
                             <Button variant="secondary" icon={X} onClick={cancelEditing}>Cancelar</Button>
                         )}

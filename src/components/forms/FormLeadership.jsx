@@ -16,6 +16,7 @@ import { opcionesDeCargo, buscarCargo } from '@nucleo/utils/roles';
 import { SIN_ASIGNAR } from '@nucleo/data/constants';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 // A dónde va quien es relevado de una jefatura. Es una lista CURADA a
 // propósito —no son los 24 cargos de la tabla—, pero los nombres se resuelven
 // contra `roles` y el texto que se muestra sale de la fila real. Antes estaban
@@ -173,7 +174,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <AvatarConEstado emp={selectedEmp} px={64} marco="" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-title-sm font-black text-content leading-tight">{shortEmployeeName(selectedEmp)}</h3>
+                                    <TituloDeSeccion nivel="modal">{shortEmployeeName(selectedEmp)}</TituloDeSeccion>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Badge variant="chart-1" size="sm">{selectedEmp.role || 'Sin Rol'}</Badge>
                                         <span className="text-caption font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>
@@ -293,7 +294,7 @@ const FormLeadership = ({ formData, setFormData }) => {
 
                                 {/* 4. CONFIGURACIÓN DEL CARGO */}
                                 <div className="space-y-4">
-                                    <h3 className="text-caption font-black uppercase tracking-widest text-content-2 ml-1">Configuración del Cargo</h3>
+                                    <TituloDeSeccion nivel="seccion" className="ml-1">Configuración del Cargo</TituloDeSeccion>
                                     
                                     <div data-surface="tab-track" className="flex p-1.5">
                                         <Button

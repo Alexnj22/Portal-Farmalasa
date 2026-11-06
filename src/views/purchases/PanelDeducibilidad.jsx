@@ -13,6 +13,7 @@ import {
 } from '@nucleo/utils/f07Catalogos';
 import { agruparPorRegla } from '@nucleo/utils/deducibilidadPorRegla';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * PanelDeducibilidad — la revisión de la clasificación fiscal, POR REGLA.
  *
@@ -374,7 +375,7 @@ export default function PanelDeducibilidad({ rows, loading, canEdit, busy, onCon
             {propuestas.length > 0 && (
                 <section className="space-y-3">
                     <header className="flex items-baseline gap-3 flex-wrap pb-2 border-b border-divider">
-                        <h3 className="text-label font-black uppercase tracking-widest text-content-2">Propuestas del sistema</h3>
+                        <TituloDeSeccion nivel="seccion">Propuestas del sistema</TituloDeSeccion>
                         <span className="ml-auto text-body-sm text-content-3 tabular-nums">
                             <b className="text-content-2">{totales.prop.provs}</b> proveedores · <b className="text-content-2">{fmtMoneda(totales.prop.credito)}</b>
                         </span>
@@ -386,7 +387,7 @@ export default function PanelDeducibilidad({ rows, loading, canEdit, busy, onCon
             {condicionadas.length > 0 && (
                 <section className="space-y-3">
                     <header className="flex items-baseline gap-3 flex-wrap pb-2 border-b border-divider">
-                        <h3 className="text-label font-black uppercase tracking-widest text-content-2">Las que la ley condiciona</h3>
+                        <TituloDeSeccion nivel="seccion">Las que la ley condiciona</TituloDeSeccion>
                         <span className="ml-auto text-body-sm text-content-3 tabular-nums">
                             <b className="text-content-2">{totales.cond.provs}</b> proveedores · <b className="text-content-2">{fmtMoneda(totales.cond.credito)}</b>
                         </span>

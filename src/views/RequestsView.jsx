@@ -40,6 +40,7 @@ import { familiasDisponibles } from './solicitudes/familiasOperativas';
 import { lineasDe, buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { EmptyState } from '../components/common/StateViews';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // Las pestañas viven acá arriba y no dentro del componente: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección. El
 // contador de pendientes se le pega al vuelo — es un rótulo, no otra pestaña.
@@ -683,7 +684,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                                     <div className="w-6 h-6 rounded-lg flex items-center justify-center border border-divider bg-surface-card-hover text-content-2">
                                         <TypeIcon size={12} strokeWidth={2} />
                                     </div>
-                                    <h3 className="text-label font-black uppercase tracking-widest text-content-2">{typeConf.label}</h3>
+                                    <TituloDeSeccion nivel="seccion">{typeConf.label}</TituloDeSeccion>
                                     <span className="text-caption font-bold text-content-3">{cards.length}</span>
                                     <div className="flex-1 h-px bg-divider mx-1" />
                                     <ChevronDown size={13} strokeWidth={2.5}

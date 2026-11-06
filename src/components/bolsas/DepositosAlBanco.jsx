@@ -19,6 +19,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * El archivo de los depósitos al banco.
  *
@@ -379,7 +380,7 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
     return (
         <section className="space-y-2">
             <div className="flex items-baseline justify-between gap-3 px-1 flex-wrap">
-                <h3 className="text-label font-bold text-content">
+                <TituloDeSeccion nivel="tarjeta">
                     <button type="button" onClick={onPlegar} aria-expanded={!plegada}
                         className="flex items-center gap-2 min-h-[var(--tap-min)] text-left
                                    hover:text-content-2 transition-colors">
@@ -388,7 +389,7 @@ export default function DepositosAlBanco({ desde, hasta, nombreSala, plegada, on
                         <Landmark size={15} className="text-content-3" />
                         Depósitos al banco
                     </button>
-                </h3>
+                </TituloDeSeccion>
                 <span className="text-caption text-content-3 tabular-nums">
                     {lista.length} {lista.length === 1 ? 'depósito' : 'depósitos'}
                     {lista.length > 0 && (

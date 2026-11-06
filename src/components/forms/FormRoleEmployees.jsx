@@ -4,6 +4,7 @@ import { User, ShieldCheck } from 'lucide-react';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore'; // ✅ Corregido para usar Zustand
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const FormRoleEmployees = ({ formData }) => {
     const { employees, branches = [] } = useStaff();
     const role = formData?.role;
@@ -30,9 +31,9 @@ const FormRoleEmployees = ({ formData }) => {
                         <ShieldCheck size={32} strokeWidth={1.5} />
                     </div>
                     <div>
-                        <h3 className="text-title-sm font-black text-content tracking-tight leading-snug pr-8">
+                        <TituloDeSeccion nivel="modal" className="pr-8">
                             {role.name}
-                        </h3>
+                        </TituloDeSeccion>
                         <p className="text-label font-medium text-content-3 mt-0.5 flex items-center gap-1.5">
                             Personal asignado ({employeesInRole.length})
                         </p>

@@ -12,6 +12,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useToastStore } from '@nucleo/store/toastStore';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * Los bonos de promoción que la sala tiene por pagar — Fase 3 de
  * docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md.
@@ -203,7 +204,7 @@ function DialogoPagarBono({ item, onClose, onSalida, onPagado, onSinConfirmar, o
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Pagar bono de promoción">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Pagar bono · {nombre}</h3>
+                    <TituloDeSeccion nivel="tarjeta">Pagar bono · {nombre}</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         {item.promocion}{item.tipo === 'excedente' ? ' (excedente aprobado)' : ''}.
                         Saca <b className="text-content">{formatMoney(monto)}</b> del cajón y
@@ -277,7 +278,7 @@ function DialogoSinConfirmar({ item, onClose, onResuelto }) {
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Pago sin confirmar">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Pago sin confirmar · {nombre}</h3>
+                    <TituloDeSeccion nivel="tarjeta">Pago sin confirmar · {nombre}</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         Se mandó la salida de <b className="text-content">{formatMoney(item.monto)}</b> y la caja
                         no confirmó. Revisa en la caja si el movimiento salió antes de repetirlo.

@@ -18,6 +18,7 @@ import { hora12, fechaHora12 } from '@nucleo/utils/hora';
 import { diaSV, fechaTexto, relojSV } from '@nucleo/utils/fecha';
 import { cifraDeLaFranja } from '@nucleo/utils/cortesDiagnostico';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * Los movimientos de caja de un período: verlos y buscarlos TODOS.
  *
@@ -395,7 +396,7 @@ export default function MovimientosDeCaja({
 
             {dias.map((d) => (
                 <section key={d.fecha} className="space-y-4">
-                    <h3 className="text-label font-bold text-content capitalize px-1">{fechaLarga(d.fecha)}</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="capitalize px-1">{fechaLarga(d.fecha)}</TituloDeSeccion>
 
                     {d.grupos.map((g) => (
                         <div key={g.branchId} className="space-y-2">

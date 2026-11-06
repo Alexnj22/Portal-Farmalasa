@@ -27,6 +27,7 @@ import {
     EVENTO_DE_META, EVENTO_DE_META_SIN_MONTO, cambiosPorMeta,
 } from '@nucleo/utils/metasUtils';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Un toque = 1% sobre la propuesta, y el recorrido se topa en ±10%: más que eso
 // no es ajustar una meta, es escribir otra — y para eso está devolverla.
 // El paso del ajuste y su tope: núcleo (`metasUtils`), los mismos de la app.
@@ -580,7 +581,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                         <Store size={18} aria-hidden />
                     </span>
                     <div className="min-w-0 flex-1">
-                        <h3 className="text-body font-black leading-tight truncate">{salaNombre(r.branch_id)}</h3>
+                        <TituloDeSeccion nivel="tarjeta" className="truncate">{salaNombre(r.branch_id)}</TituloDeSeccion>
                         <p className="text-caption font-black text-content-3 uppercase tracking-widest mt-0.5">{ymLabelCorto(r.year_month)}</p>
                     </div>
                     <Badge variant={es.variante} size="sm">{es.label}</Badge>

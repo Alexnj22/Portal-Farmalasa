@@ -85,6 +85,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { avisoDeCortesSinResolver, avisoDeError, avisoDeFaltaPorContar, avisoDeRevision, revisarMovimientos, salyAyudaParaMi } from '@nucleo/utils/salyAyuda';
 import { useSalyEnPantalla } from '../components/saly/salyAyudaStore';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 /**
  * Mi caja — el turno de esta sala, ahora.
  *
@@ -1792,9 +1793,9 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                    cuál es: acá es cero de verdad sólo si la caja acaba de
                    abrir, así que se nombra el caso en vez de mostrar nada. */
                 <div className="space-y-1">
-                    <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                    <TituloDeSeccion nivel="seccion">
                         Vendido hoy
-                    </h3>
+                    </TituloDeSeccion>
                     <p className="text-body-sm text-content-3">
                         Todavía no hay ninguna venta registrada en este día.
                     </p>
@@ -1809,9 +1810,9 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                     <section className="space-y-3 md:pr-6">
                         <div className="flex items-end justify-between gap-3">
                             <div>
-                                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                <TituloDeSeccion nivel="seccion">
                                     Vendido hoy
-                                </h3>
+                                </TituloDeSeccion>
                                 <p className="text-caption text-content-3 tabular-nums">
                                     {docs} venta{docs === 1 ? '' : 's'} · por forma de pago
                                 </p>
@@ -1866,9 +1867,9 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                             <>
                                 <div className="flex items-end justify-between gap-3">
                                     <div>
-                                        <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                        <TituloDeSeccion nivel="seccion">
                                             Efectivo en caja
-                                        </h3>
+                                        </TituloDeSeccion>
                                         <p className="text-caption text-content-3">
                                             {puedeSumar ? 'lo que debería haber en el cajón' : 'sin la cuenta completa todavía'}
                                         </p>
@@ -1915,9 +1916,9 @@ function PanelDelDia({ estado, ventas, veLosMontos = true, entregas, personas })
                                que la pantalla falló, y el primero que lo vea va a
                                reportarlo como defecto. */
                             <div className="space-y-1">
-                                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                                <TituloDeSeccion nivel="seccion">
                                     Efectivo en caja
-                                </h3>
+                                </TituloDeSeccion>
                                 <p className="text-caption text-content-3">
                                     Los montos no se muestran antes del corte: el conteo se hace contando,
                                     y verlos de antemano sería copiarlos.
@@ -2358,9 +2359,9 @@ function MovimientosDelDia({ movimientos, deBolsas, revisionSaly, cobros, dia, t
     return (
         <div className="space-y-2">
             <div className="flex items-center justify-between gap-3 flex-wrap">
-                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                <TituloDeSeccion nivel="seccion">
                     Movimientos de este día{dia ? ` · ${fechaLegible(dia)}` : ''}
-                </h3>
+                </TituloDeSeccion>
                 {/* Sale sólo cuando hay algo que filtrar: un buscador sobre dos
                     movimientos es un control que estorba. */}
                 {lineas.length > 2 && (

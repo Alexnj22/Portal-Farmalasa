@@ -17,6 +17,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { csvDelLibroBajoReceta, loteDelRenglon, vencidoAlVender as venceAntesDeLaVenta } from '@nucleo/utils/libroBajoReceta';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Se abre al tocar un folio: no tiene por qué viajar con la pestaña.
 const DetalleDeFolio = lazy(() => import('../../components/bitacoras/DetalleDeFolio'));
 
@@ -158,9 +159,9 @@ export default function TabBajoReceta({
                 orden, para poder cotejar sin traducir. */}
             <div className="flex items-end justify-between gap-3 flex-wrap">
                 <div className="min-w-0">
-                    <h3 className="text-body font-black text-content leading-tight">
+                    <TituloDeSeccion nivel="tarjeta">
                         Libro de {rotularLibro(clase).toLowerCase()}
-                    </h3>
+                    </TituloDeSeccion>
                     <p className="text-caption text-content-3 mt-0.5">
                         {periodo ? `${periodo} · ` : ''}
                         {renglones.length} {renglones.length === 1 ? 'renglón' : 'renglones'}

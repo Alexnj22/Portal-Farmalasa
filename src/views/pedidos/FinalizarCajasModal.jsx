@@ -21,6 +21,7 @@ import {
 } from '@nucleo/utils/finalizarCajas';
 import { excesoGrande } from '@nucleo/utils/recepcionDePedido';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Lo que sale y lo asignado, en unidades del sistema. Para el aviso de una
  * cantidad muy grande: la misma trampa que en la recepción —cambiar la
@@ -320,9 +321,9 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 )}
                 <div className="flex-1 min-w-0">
                     <p className="text-caption font-black text-chart-3-text uppercase tracking-widest">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-subtitle font-black text-content leading-tight">
+                    <TituloDeSeccion nivel="tarjeta">
                         {screen === 1 ? 'Asignar cajas' : screen === 2 ? 'Página → Caja' : 'Confirmar lo que sale'}
-                    </h3>
+                    </TituloDeSeccion>
                 </div>
                 <Button variant="ghost" size="xs" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>

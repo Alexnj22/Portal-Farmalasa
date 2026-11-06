@@ -13,6 +13,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ivaDelDte } from '@nucleo/utils/dteIva';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const fmt$ = (n) => formatMoney(n || 0);
 
 // Detalle de un DTE de compra: parsea el JSON crudo (esquema del Ministerio de
@@ -143,9 +144,9 @@ const FormPurchaseDteViewer = ({ formData }) => {
                             <Receipt size={24} strokeWidth={1.5} />
                         </div>
                         <div className="min-w-0">
-                            <h3 className="text-title-sm font-black text-content truncate">
+                            <TituloDeSeccion nivel="modal" className="truncate">
                                 {document?.supplier_nombre || document?.emisor_nombre || 'Documento'}
-                            </h3>
+                            </TituloDeSeccion>
                             <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5 truncate">
                                 {dteTypeLabel(document?.tipo_dte)} · {document?.numero_control || document?.codigo_generacion}
                             </p>

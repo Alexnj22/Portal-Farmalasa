@@ -11,6 +11,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ivaDelDte } from '@nucleo/utils/dteIva';
 import Notice from '../common/Notice';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const fmt$ = (n) => formatMoney(n || 0);
 
 // Detalle de un DTE de VENTA. Es el espejo del de compras y comparte con él el
@@ -98,9 +99,9 @@ const FormSalesDteViewer = ({ formData }) => {
                         <div className="min-w-0">
                             {/* El receptor, no el emisor: en una venta el emisor
                                 somos nosotros y sería el mismo nombre siempre. */}
-                            <h3 className="text-title-sm font-black text-content">
+                            <TituloDeSeccion nivel="modal">
                                 {dte?.receptor?.nombre || document?.cliente || 'Documento'}
-                            </h3>
+                            </TituloDeSeccion>
                             <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">
                                 {esCCF ? 'CCF' : 'COF'}
                                 {' · '}{ident.numeroControl || document?.numero_control || codigo}

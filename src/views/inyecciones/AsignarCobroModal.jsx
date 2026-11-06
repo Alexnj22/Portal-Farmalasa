@@ -16,6 +16,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /*
  * Asignar a mano un cobro que quedó suelto: los de texto libre de antes del
  * control (2026-10-02). Se elige el RENGLÓN y no sólo la venta, porque es el
@@ -70,7 +71,7 @@ export default function AsignarCobroModal({ cobro, onClose, onHecho }) {
         <LiquidModal open onClose={enviando ? undefined : onClose} maxWidth="max-w-lg" ariaLabel="Asignar el cobro a una venta">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Asignar el cobro a una venta</h3>
+                    <TituloDeSeccion nivel="tarjeta">Asignar el cobro a una venta</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         {fechaCorta(cobro.fecha)} · {hora12(cobro.hora)} · {formatMoney(cobro.monto)} · {cobro.concepto}
                     </p>

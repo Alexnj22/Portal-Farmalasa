@@ -40,6 +40,7 @@ import { compararAsistencia, estadoDeAsistencia } from "@nucleo/utils/estadoDeAs
 import { hora12 } from "@nucleo/utils/hora";
 import { useAuth } from '@nucleo/context/AuthContext';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 const EMPTY_ARRAY = [];
 
 // Las 4 columnas del tablero cubren, entre todas, los 9 estados posibles de
@@ -549,7 +550,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
                     <span className={`w-2 h-2 rounded-full ${col.dot}`} />
-                    <h3 className="text-label font-black uppercase tracking-widest text-content-2">{col.label}</h3>
+                    <TituloDeSeccion nivel="seccion">{col.label}</TituloDeSeccion>
                   </div>
                   <span className="text-label font-bold text-content-3">{rows.length}</span>
                 </div>

@@ -5,6 +5,7 @@ import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { diaDePago } from '@nucleo/utils/edicionDeSucursal';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const SERVICE_CONFIG = {
  rent: { title: 'Arrendamiento', icon: Landmark, color: 'text-chart-3-text bg-chart-3/10 border-chart-3/30', ring: 'focus:border-chart-3', providerLabel: 'Nombre del Arrendador' },
  light: { title: 'Energía eléctrica', icon: Zap, color: 'text-chart-4-text bg-chart-4/10 border-chart-4/30', ring: 'focus:border-chart-4', providerLabel: 'Compañía Eléctrica' },
@@ -83,7 +84,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <Icon size={24} />
                     </div>
                     <div>
-                        <h3 className="text-title font-black tracking-tight">{config.title}</h3>
+                        <TituloDeSeccion nivel="modal">{config.title}</TituloDeSeccion>
                         <p className="text-caption font-black uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>
                     </div>
                 </div>

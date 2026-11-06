@@ -11,6 +11,7 @@ import { fetchAjustesEnvio, guardarAjustesEnvio } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ═══════════════════════════════════════════════════════════════════════════
 // Entrega a domicilio de la app (2026-10-07): si se ofrece, cuánto cuesta y
 // desde qué monto es gratis. La app lo lee al abrir el carrito; el servidor
@@ -52,7 +53,7 @@ export default function EnvioPanel({ puedeEditar, showToast }) {
             <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
                     <Truck className="h-5 w-5 text-content-2" aria-hidden />
-                    <h3 className="text-body font-semibold text-content">Entrega a domicilio</h3>
+                    <TituloDeSeccion nivel="tarjeta">Entrega a domicilio</TituloDeSeccion>
                 </div>
                 <Switch checked={cfg.activo} disabled={!puedeEditar} onChange={(v) => setCfg((x) => ({ ...x, activo: v }))} label="Ofrecer entrega a domicilio en la app" />
             </div>

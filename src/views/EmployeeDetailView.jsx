@@ -57,6 +57,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
     const employees = useStaffStore(s => s.employees);
@@ -675,9 +676,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {currentTab === 'history' && (
                                     <div className="space-y-8 animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                         <div className="flex justify-between items-center mb-6">
-                                            <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
+                                            <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                                 <Clock size={18} className="text-brand-text"/> Historial Operativo
-                                            </h3>
+                                            </TituloDeSeccion>
                                             <div className="px-3 py-1 bg-surface-card text-content-3 rounded-full text-micro font-black uppercase tracking-widest border border-border-card shadow-sm flex items-center gap-1.5">
                                                 {isLoadingTimeline && <Loader2 size={10} className="animate-spin"/>}
                                                 {timeline.length} Eventos
@@ -811,9 +812,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                 {currentTab === 'documents' && (
                                     <div className="animate-in fade-in slide-in-from-right-4 duration-[var(--dur-lento)]">
                                          <div className="flex justify-between items-center mb-6">
-                                            <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
+                                            <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                                 <FileText size={18} className="text-brand-text"/> Expediente Digital
-                                            </h3>
+                                            </TituloDeSeccion>
                                         </div>
                                         <Suspense fallback={null}>
                                             <EmployeeDocumentsList documents={emp.employee_documents} emptyLabel="Expediente vacío" />
@@ -829,10 +830,10 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                         {/* ── Cabecera ── */}
                                         <div className="flex flex-wrap items-center justify-between gap-3">
-                                            <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
+                                            <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                                 <Stethoscope size={18} className="text-warning"/> Ausencias
                                                 <span className="text-label font-bold text-content-3 normal-case tracking-normal">Permisos e Incapacidades</span>
-                                            </h3>
+                                            </TituloDeSeccion>
                                             <div className="flex items-center gap-2">
                                                 {ausenciasSelectedDay && (
                                                     <Button variant="destructive" icon={X} onClick={() => setAusenciasSelectedDay(null)}>{ausenciasSelectedDay}</Button>
@@ -1054,9 +1055,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         {puedeVerSalario && (
                                             <div>
                                                 <div className="flex justify-between items-center mb-5">
-                                                    <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
+                                                    <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                                         <Wallet size={18} className="text-success"/> Información Salarial
-                                                    </h3>
+                                                    </TituloDeSeccion>
                                                 </div>
                                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                     <div className="p-5 bg-gradient-to-br from-success/10 to-surface-card rounded-3xl border border-success/30 shadow-sm">
@@ -1080,9 +1081,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                         <div>
                                             <div className="flex justify-between items-center mb-5 pt-4 border-t border-divider">
-                                                <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
+                                                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                                     <CalendarDays size={18} className="text-brand-text"/> Turnos de la Semana
-                                                </h3>
+                                                </TituloDeSeccion>
                                             </div>
                                             
                                             <div data-surface="card" className="overflow-hidden">
@@ -1142,9 +1143,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                         {/* Solo lectura — crear/aprobar vive en Gestión de Solicitudes */}
                                         <div className="flex items-center justify-between">
-                                            <h3 className="font-black text-content uppercase tracking-tight text-body-xl flex items-center gap-2">
+                                            <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                                 <ClipboardList size={18} className="text-brand-text"/> Solicitudes del Empleado
-                                            </h3>
+                                            </TituloDeSeccion>
                                             <Button icon={Plus} onClick={() => navigate('/solicitudes', { state: { prefillEmployeeId: emp.id } })}>Nueva solicitud</Button>
                                         </div>
 

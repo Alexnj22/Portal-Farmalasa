@@ -5,6 +5,7 @@ import { fetchVouchersDelDia } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * Los vouchers del día y si cuadran (2026-10-17).
  *
@@ -39,9 +40,9 @@ export default function VouchersDelDia({ sala, dia, version }) {
 
     return (
         <div className="space-y-2">
-            <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+            <TituloDeSeccion nivel="seccion">
                 Vouchers de este día
-            </h3>
+            </TituloDeSeccion>
             {problemas > 0 && (
                 <Notice variant="warning" compact icon={CreditCard}>
                     {problemas === 1 ? 'Un voucher no cuadra' : `${problemas} vouchers no cuadran`}. Si la venta con

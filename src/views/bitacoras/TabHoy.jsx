@@ -16,6 +16,7 @@ import { bloquesDeLaRonda } from '@nucleo/data/bitacoras';
 import { momentosDelDia, resumenDelMomento } from '@nucleo/utils/rondaDeBitacora';
 import { rango12 } from '@nucleo/utils/hora';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ═══════════════════════════════════════════════════════════════════════════
 // La captura del día.
 //
@@ -54,7 +55,7 @@ function BandaDelMomento({ momento, areas, onRonda, puedeAnotar, cerrado }) {
             data-tono={tono || undefined}
             className="p-3 space-y-2">
             <header className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                <h3 className="text-body-sm font-black text-content">{momento.label}</h3>
+                <TituloDeSeccion nivel="tarjeta">{momento.label}</TituloDeSeccion>
                 <span className="text-label text-content-3 tabular-nums">
                     {rango12(momento.desde, momento.hasta)}
                 </span>

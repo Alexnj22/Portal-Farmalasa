@@ -25,6 +25,7 @@ import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import { fetchActiveEmployeesBasic, fetchTableroParaGenerarPedido } from '@nucleo/data/pedidos';
 import LiquidTooltip from '../../components/common/LiquidTooltip';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 function friendlyError(e) {
     const msg = e?.message || String(e);
     if (/statement timeout|canceling statement/i.test(msg))
@@ -321,7 +322,7 @@ export default function TabGenerar({ searchTerm = '' }) {
             <div data-surface="card" className="p-4">
                 <div className="flex items-start justify-between gap-3 flex-wrap mb-3">
                     <div className="min-w-0">
-                        <h3 className="font-semibold text-content text-subtitle">Sucursales a reponer</h3>
+                        <TituloDeSeccion nivel="tarjeta">Sucursales a reponer</TituloDeSeccion>
                         <p className="text-label text-content-3 mt-0.5">
                             La urgencia sube con los productos bajo su mínimo que Bodega puede mandar.
                         </p>
@@ -624,10 +625,10 @@ function PasoDeConfirmacion({ flujo, resumen, confirming, onVolver, onConfirmar,
             <PedidoModal.Header className="px-5 pt-5 pb-3">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <h3 className="text-body-xl font-black text-content leading-tight">
+                        <TituloDeSeccion nivel="tarjeta">
                             {esResumen ? 'Revisa antes de confirmar'
                                 : flujo?.numero != null ? `Pedido #${flujo.numero} confirmado` : 'Pedido confirmado'}
-                        </h3>
+                        </TituloDeSeccion>
                         <p className="text-label text-content-3 mt-0.5">
                             {esResumen
                                 ? `${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades`

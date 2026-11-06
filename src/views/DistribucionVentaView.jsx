@@ -46,6 +46,7 @@ import { indexarPrecios, presentacionesDe, listasDe, precioDe, descuentoDelCatal
 import { totalDePedido } from './distribucion/motor';
 import { rutaInicio, rutaDocumento, rutaVenta } from './distribucion/rutas';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // Los tres diálogos se bajan al abrirse, no al entrar a vender (2026-10-24):
 // anotar una venta perdida, dar de alta un cliente y mirar existencias en las
 // salas son excepciones del día, y viajaban en el trozo de la pantalla.
@@ -1303,7 +1304,7 @@ export default function DistribucionVentaView() {
                             {/* `pr-12`: la campana de escritorio flota en esta esquina,
                                 igual que en el portal; sin el hueco tapaba el documento. */}
                             <div className="flex items-baseline justify-between gap-2 pr-12">
-                                <h3 className="text-body font-black text-content">Resumen</h3>
+                                <TituloDeSeccion nivel="tarjeta">Resumen</TituloDeSeccion>
                                 <span className="text-caption text-content-3">{TIPO_DOCUMENTO[tipoDoc]?.largo}</span>
                             </div>
                             <p className={`text-caption ${bloqueoGuardar ? 'text-content-2' : 'text-content-3'}`}>

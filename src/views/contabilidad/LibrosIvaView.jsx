@@ -35,6 +35,7 @@ import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
 import { descargarArchivo } from '../../plataforma/descargas';
 import { calcularTotales, debitoDeConsumidor } from '@nucleo/utils/librosIva';
 import { correrMes, etiquetaMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ─────────────────────────────────────────────────────────────────────────────
 // Los siete libros y anexos de IVA del ERP, generados desde el portal:
 // ventas desde `sales_invoices`, compras desde `purchase_receipts`.
@@ -464,7 +465,7 @@ function SeccionRetencionVentas({ filas, loading, mes, empty, sufijoArchivo, nom
         <section data-surface="card" className="p-4 md:p-5 space-y-3">
             <header className="flex flex-wrap items-baseline justify-between gap-3">
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold">IVA que nos retuvieron</h3>
+                    <TituloDeSeccion nivel="tarjeta">IVA que nos retuvieron</TituloDeSeccion>
                     <p className="text-caption text-content-3">
                         Ventas en las que el cliente retuvo el 1% y lo entera él mismo (Art. 162
                         del Código Tributario). Es impuesto ya pagado: se acredita al declarar.
@@ -1256,7 +1257,7 @@ export default function LibrosIvaView({ openModal }) {
 
                 {activeTab === 'retencion' && (
                     <div className="pt-1">
-                        <h3 className="text-body font-bold">IVA que retuvo la empresa</h3>
+                        <TituloDeSeccion nivel="tarjeta">IVA que retuvo la empresa</TituloDeSeccion>
                         <p className="text-caption text-content-3">
                             El anexo del Art. 162: las retenciones practicadas como agente. Es la
                             mitad opuesta de la de arriba y por eso va aparte — sumarlas sería

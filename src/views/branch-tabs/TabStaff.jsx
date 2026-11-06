@@ -26,6 +26,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { analizarSucursal } from '@nucleo/data/ia';
 import { sincronizarVentasDeSucursal } from '@nucleo/data/branches';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
 // ============================================================================
@@ -531,7 +532,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             {/* HEADER CON BOTONES Y PÍLDORAS */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border-card pb-4 relative z-sidebar">
                 <div>
-                    <h3 className="font-black text-content uppercase tracking-tight text-title">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
+                    <TituloDeSeccion nivel="modal">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</TituloDeSeccion>
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-label font-black text-content-3 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
                     </div>

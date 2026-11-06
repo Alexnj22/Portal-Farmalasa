@@ -86,6 +86,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { avisoDePuntos, motorQuieto } from '@nucleo/utils/puntosTexto';
 import { clickable } from '@nucleo/utils/clickable';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // Cada pestaña con su permiso. La lista que se le pasa a la URL es la de las
 // VISIBLES: una dirección con `?tab=avisos` en manos de quien no la tiene cae a
 // la primera que sí.
@@ -648,9 +649,9 @@ function Panel({ icono: Icono, titulo, nota, accion, className = '', children })
         <section data-surface="card" className={`p-4 md:p-5 flex flex-col gap-3 min-w-0 ${className}`}>
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                    <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                         <Icono size={14} /> {titulo}
-                    </h3>
+                    </TituloDeSeccion>
                     {nota && <p className="text-caption text-content-3 mt-1">{nota}</p>}
                 </div>
                 {accion}
@@ -764,10 +765,10 @@ function ClientesConPuntos({ busqueda, onAbrir }) {
 
     return (
         <section className="flex flex-col gap-3">
-            <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+            <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                 <Users size={14} /> Clientes
                 {datos.total > 0 && <span className="font-bold text-content-3 normal-case tracking-normal">· {pts(datos.total)}</span>}
-            </h3>
+            </TituloDeSeccion>
             <DataTable
                 columns={[
                     { key: 'nombre',     label: 'Cliente',            sortable: true },

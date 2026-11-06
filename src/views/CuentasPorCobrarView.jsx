@@ -43,6 +43,7 @@ import { hora12 } from '@nucleo/utils/hora';
 // La regla de todo campo de dinero con máximo (ver el archivo).
 import { hastaElTope } from '@nucleo/utils/hastaElTope';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 /**
  * CUENTAS POR COBRAR — quién debe, desde cuándo, y cobrarle.
  *
@@ -771,7 +772,7 @@ function FichaDelCredito({ credito, vendedor, puedeAbonar, enAprobacion, onClose
             <div className="p-5 space-y-4 max-h-[80vh] overflow-y-auto">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <h3 className="text-h3 font-bold text-content truncate">{credito.cliente}</h3>
+                        <TituloDeSeccion nivel="tarjeta" className="truncate">{credito.cliente}</TituloDeSeccion>
                         <p className="text-body-sm text-content-2 mt-0.5 truncate">
                             {c?.sala || ''}{c?.sala ? ' · ' : ''}{credito.documento}
                         </p>
@@ -1278,7 +1279,7 @@ function DialogoAbono({ credito, onClose, onCobrar }) {
             <div className="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0">
-                        <h3 className="text-h3 font-bold text-content">Recibir un pago</h3>
+                        <TituloDeSeccion nivel="tarjeta">Recibir un pago</TituloDeSeccion>
                         <p className="text-body-sm text-content-2 mt-0.5 truncate">{credito.cliente}</p>
                     </div>
                     {credito.saldo > 0.004 && (
@@ -1748,7 +1749,7 @@ function PedirCorreccion({ credito, abono, onClose, onListo }) {
         <LiquidModal open onClose={onClose} maxWidth="max-w-md" ariaLabel="Pedir una corrección">
             <div className="p-5 space-y-4 max-h-[85vh] overflow-y-auto">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Pedir una corrección</h3>
+                    <TituloDeSeccion nivel="tarjeta">Pedir una corrección</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">
                         {formatMoney(abono.monto)} · {abono.forma} · {fechaCorta(abono.fecha)}
                     </p>

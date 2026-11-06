@@ -23,6 +23,7 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // `audit_log_de_sucursal` devuelve como mucho los 200 registros más recientes
 // de la bitácora (su `LIMIT 200`). Si llegan exactamente 200, hay más que no
 // se ven, y «Cargar historial completo» tiene que decirlo en vez de prometer
@@ -327,7 +328,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
             {/* HEADER CONTROLS */}
             <div className="relative z-modal flex flex-col xl:flex-row justify-between items-start xl:items-center gap-4 pb-5 border-b border-divider no-print">
                 <div>
-                    <h3 className="text-title-sm font-black text-content tracking-tight">Historial</h3>
+                    <TituloDeSeccion nivel="modal">Historial</TituloDeSeccion>
                     <p className="text-body-sm text-content-3">Lo que cambió en esta sucursal, lo más reciente arriba.</p>
                 </div>
 

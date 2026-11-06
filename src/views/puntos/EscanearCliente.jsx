@@ -40,6 +40,7 @@ import ExpedienteDelCliente from './ExpedienteDelCliente';
 import EntregarPremioEscaneado from './EntregarPremioEscaneado';
 import { leerCodigoDePremio } from '@nucleo/utils/codigoDePremio';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const LectorDeCodigo = lazy(() => import('../../components/common/LectorDeCodigo'));
 
 // ¿El foco está en algo donde se escribe? Ahí la tecla es de ese campo.
@@ -168,9 +169,9 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
         <div className="flex flex-col gap-4 min-w-0">
             <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
                 <div>
-                    <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                    <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                         <ScanLine size={14} /> Escanear tarjeta
-                    </h3>
+                    </TituloDeSeccion>
                     <p className="text-caption text-content-3 mt-1">
                         Pasa la tarjeta del cliente por el lector, o escribe su código, su DUI o su teléfono.
                         Para entregar un premio del raspable, escanea el código del premio en la app del cliente.
@@ -199,9 +200,9 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
 
             {candidatos && (
                 <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-2 min-w-0">
-                    <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                    <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                         <Users size={14} /> {candidatos.clientes.length} clientes con {NOMBRE_DE_ENTRADA[candidatos.modo] ?? 'ese dato'}
-                    </h3>
+                    </TituloDeSeccion>
                     <p className="text-caption text-content-3">Pregúntale su nombre y elige el suyo.</p>
                     <div className="flex flex-col divide-y divide-divider">
                         {candidatos.clientes.map((c) => (

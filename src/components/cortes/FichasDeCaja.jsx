@@ -8,6 +8,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { hora12 } from '@nucleo/utils/hora';
 import { aperturasOrdenadas, detalleDelCajon, lineaDeQuien, minutosAntes, piezasPorSalaYDia as piezasPorClave, primeraEntradaPorPersona, ventasPorSalaYDia as ventasPorClave } from '@nucleo/utils/fichasDeCaja';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * Quién abrió cada caja, desde cuándo y con cuánto — arriba de los cortes.
  *
@@ -291,9 +292,9 @@ export default function FichasDeCaja({
     return (
         <section className="space-y-2" aria-label="Las cajas del período">
             <div className="flex items-baseline justify-between gap-3 px-1">
-                <h3 className="text-caption font-black uppercase tracking-widest text-content-2">
+                <TituloDeSeccion nivel="seccion">
                     Las cajas
-                </h3>
+                </TituloDeSeccion>
                 <span className="text-micro text-content-3">
                     {aperturas.filter((a) => !a.cerrada_at).length} abierta
                     {aperturas.filter((a) => !a.cerrada_at).length === 1 ? '' : 's'}

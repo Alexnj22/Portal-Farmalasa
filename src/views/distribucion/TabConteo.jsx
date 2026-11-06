@@ -22,6 +22,7 @@ import {
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import { MOTIVOS_BAJA, leerEntero, resumenDeConteo, renglonesDeConteo, rotuloMotivoBaja, estadoDeBaja, valorDeBajas } from '@nucleo/utils/distribucionBodega';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Conteo físico y bajas (borrador 0026).
 //
 // Conteo A CIEGAS: quien cuenta no ve lo que dice el sistema —si lo ve, tiende
@@ -173,7 +174,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
             {/* ── Conteo ── */}
             <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Conteo físico" data-conteo={conteo ? 'abierto' : 'ninguno'}>
                 <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-body font-black text-content flex items-center gap-2"><ClipboardCheck size={16} className="text-brand-text" /> Conteo físico</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><ClipboardCheck size={16} className="text-brand-text" /> Conteo físico</TituloDeSeccion>
                     {conteo && <span className="text-caption text-content-3">Abierto por {shortEmployeeName(conteo.creado_por)}{conteo.nota ? ` · ${conteo.nota}` : ''}</span>}
                 </div>
                 {!conteo && (puedeConfigurar ? (
@@ -217,7 +218,7 @@ export default function TabConteo({ puedeVender, puedeConfigurar, buscar }) {
 
             {/* ── Bajas ── */}
             <section data-surface="card" className="p-4 flex flex-col gap-3" aria-label="Bajas">
-                <h3 className="text-body font-black text-content flex items-center gap-2"><PackageMinus size={16} className="text-danger-text" /> Bajas</h3>
+                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2"><PackageMinus size={16} className="text-danger-text" /> Bajas</TituloDeSeccion>
                 {(puedeVender || puedeConfigurar) && (
                     <div className="grid grid-cols-1 md:grid-cols-12 gap-2 items-end">
                         <Campo label="Lote" className="md:col-span-5">

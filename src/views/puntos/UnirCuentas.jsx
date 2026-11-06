@@ -23,6 +23,7 @@ import { formatQty } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { fetchClientesConPuntos, fusionarCuentasDePuntos } from '@nucleo/data/puntos';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const pts = (n) => formatQty(Number(n) || 0);
 
 export function AvisoDeUniones({ fusionadaEn, recibidas }) {
@@ -111,9 +112,9 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
             <div>
                 {/* Mismo encabezado que «Dar o quitar puntos»: los dos paneles se
                     abren en el mismo lugar y tienen que leerse como hermanos. */}
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+                <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                     <Merge size={14} /> Unir con otra cuenta
-                </h3>
+                </TituloDeSeccion>
                 <p className="text-caption text-content-3 mt-1">
                     Para la misma persona con dos fichas. Los puntos de la otra cuenta pasan a ésta con sus
                     fechas de vencimiento, y lo que compre después con la otra ficha también se suma aquí.

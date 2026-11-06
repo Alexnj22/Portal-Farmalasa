@@ -49,6 +49,7 @@ import AnotadorModal from './AnotadorModal';
 import VersionesModal from './VersionesModal';
 import { medirArchivo } from './medir';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // La pieza vacía, lo que falta para guardar y la fila que se manda: núcleo
 // (`marketing`), lo mismo que usa la app.
 const VACIA = PIEZA_VACIA;
@@ -61,7 +62,7 @@ function Bloque({ icon: Icono, titulo, accion, children }) {
         <section data-surface="card" className="p-4 space-y-3">
             <header className="flex items-center gap-2 min-w-0">
                 <Icono size={15} className="text-brand shrink-0" aria-hidden />
-                <h3 className="text-label uppercase tracking-widest font-black text-content-2 truncate">{titulo}</h3>
+                <TituloDeSeccion nivel="seccion" className="truncate">{titulo}</TituloDeSeccion>
                 {accion && <div className="ml-auto shrink-0">{accion}</div>}
             </header>
             {children}

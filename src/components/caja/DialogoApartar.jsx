@@ -36,6 +36,7 @@ import { apartadoDelPedido, clavePresentacion, listaQueLeToca, origenesDelPedido
 import { apartadoPorCobrar, plazoAlApartar, porCobrarDeSala, SI_EL_TRASLADO_NO_SALIO } from '@nucleo/utils/reservasDeSala';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 /**
  * Apartar o encargar (2026-10-20). Reemplaza al «Abono para apartar».
  *
@@ -612,7 +613,7 @@ function YaVieneEnCamino({ vienen, factor, cantidad, elegidos, onCambiar }) {
 function Seccion({ titulo, children }) {
     return (
         <section className="space-y-2.5">
-            <h3 className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">{titulo}</h3>
+            <TituloDeSeccion nivel="seccion" className="ml-1">{titulo}</TituloDeSeccion>
             {children}
         </section>
     );

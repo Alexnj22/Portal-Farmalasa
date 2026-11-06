@@ -12,6 +12,7 @@ import useMediaQuery from '../plataforma/useMediaQuery';
 import { esAtajoDePegar, esPegadoDeUnaPersona } from '@nucleo/utils/pegadoManual';
 import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
 const SCAN_MIN_LENGTH = 3;
@@ -1124,7 +1125,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             <div className="w-14 h-14 rounded-card bg-warning/10 border border-warning/40 flex items-center justify-center">
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
-                            <h3 className="text-title-lg font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
+                            <TituloDeSeccion nivel="modal" className="text-center">Cambia tu contraseña</TituloDeSeccion>
                             <p className="text-caption font-black text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
                         </div>
                         <form id="cpf" onSubmit={e=>{e.preventDefault();handleChangePassword();}} className="relative flex flex-col gap-3">

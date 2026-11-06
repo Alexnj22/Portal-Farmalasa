@@ -28,6 +28,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /*
  * «¿A quién se le cobró la aplicación?» — las ventas con inyección del período
  * y, al lado, el cobro de caja que les corresponde.
@@ -313,7 +314,7 @@ export default function TabPorCobrar({
             {!loading && sueltos.length > 0 && (
                 <div className="space-y-2">
                     <div>
-                        <h3 className="text-title-sm font-black text-content">Cobros de aplicación sin venta</h3>
+                        <TituloDeSeccion nivel="modal">Cobros de aplicación sin venta</TituloDeSeccion>
                         <p className="text-body-sm text-content-3">
                             No hay una venta de inyección cerca de su hora. Casi siempre es alguien que trajo su
                             inyección o la compró otro día.

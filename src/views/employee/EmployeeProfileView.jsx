@@ -28,6 +28,7 @@ import { shortEmployeeName, tieneNombreQueElegir } from '@nucleo/utils/nameUtils
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { ESTADO_DE_PLAN, ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tieneHorarioPublicado, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const formatDate = (d) => d
     ? fechaTexto(d, { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
@@ -78,9 +79,9 @@ const SectionCard = ({ children, className = '' }) => (
 /** Encabezado de sección: rótulo a la izquierda, lo que la acompañe a la derecha. */
 const SectionHeader = ({ icon: Icon, label, children }) => (
     <div className="flex items-center justify-between gap-2 mb-4 min-h-[var(--tap-min)]">
-        <h3 className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
+        <TituloDeSeccion nivel="seccion" className="flex items-center gap-1.5">
             <Icon size={12} /> {label}
-        </h3>
+        </TituloDeSeccion>
         {children && <div className="flex items-center gap-2">{children}</div>}
     </div>
 );

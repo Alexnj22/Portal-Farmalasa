@@ -11,6 +11,7 @@ import { textoDeProrroga } from '@nucleo/utils/reservasDeSala';
 import { TRASLADO, cuentasDeReserva, estadoDeReserva, faltanEnSala, formaDePagoLegible, renglonesDe, telefonoLegible, textoDeFaltante } from './reservaVista';
 import { HistorialDeAvisos, InsigniaDeNivel } from './AvisosDeReserva';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ═══════════════════════════════════════════════════════════════════════════
 // El detalle de una reserva (2026-10-22): lo que la tarjeta resume, entero.
 // Las acciones son las MISMAS que las de la tarjeta (`accionesDeReserva` de
@@ -175,7 +176,7 @@ export default function DetalleDeReserva({ r, acciones = [], onClose }) {
 function Bloque({ titulo, children }) {
     return (
         <section className="space-y-2.5">
-            <h3 className="text-caption font-black uppercase tracking-widest text-content-3 ml-1">{titulo}</h3>
+            <TituloDeSeccion nivel="seccion" className="ml-1">{titulo}</TituloDeSeccion>
             {children}
         </section>
     );

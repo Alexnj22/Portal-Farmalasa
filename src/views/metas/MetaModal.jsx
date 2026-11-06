@@ -10,6 +10,7 @@ import { guardarMetaManual, fetchMetasRows } from '@nucleo/data/metas';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ymHoySV, ymSumar, ymLabel, YM_INICIO_HISTORIA, situacionDeMetaManual } from '@nucleo/utils/metasUtils';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const squircleClass = 'w-12 h-12 rounded-2xl bg-surface-card-hover border border-border-card shadow-sm flex items-center justify-center shrink-0';
 
 // Qué pasa al guardar sobre la meta que ya existe: núcleo
@@ -100,7 +101,7 @@ export default function MetaModal({ isOpen, onClose, onSaved, salaOptions, initi
             <div className="flex-none px-6 py-6 border-b border-border-card flex items-center gap-4">
                 <div className={`${squircleClass} text-brand-text`}><Target size={22} strokeWidth={2.5} /></div>
                 <div>
-                    <h3 className="text-title-sm font-black text-content tracking-tight leading-snug">Agregar meta</h3>
+                    <TituloDeSeccion nivel="modal">Agregar meta</TituloDeSeccion>
                     <p className="text-label font-medium text-content-3 mt-0.5">Metas por sala</p>
                 </div>
             </div>

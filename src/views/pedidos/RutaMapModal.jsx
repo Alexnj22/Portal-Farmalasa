@@ -14,6 +14,7 @@ import { fetchCoordenadasDeSucursales } from '@nucleo/data/rutasDeEntrega';
 import { hayRastreoDeFondo } from '../../plataforma/rastreoRuta';
 import { claveDePuntos, crearCache, debeRecalcular } from './logicaDeRutas';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ── Lo que no cambia mientras la página vive ────────────────────────────────
 // Cada trazado por carretera es una petición que se paga. Abrir el mapa de la
 // misma ruta dos veces pedía dos trazados idénticos, y cada apertura volvía a
@@ -484,9 +485,9 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
               <p className="text-caption font-black text-chart-3-text uppercase tracking-widest">
                 {isConductor ? 'Tu ruta activa' : 'Rastreo en vivo'}
               </p>
-              <h3 className="text-subtitle font-black text-content leading-tight">
+              <TituloDeSeccion nivel="tarjeta">
                 Ruta #{ruta.numero} · {ruta.conductor_nombre}
-              </h3>
+              </TituloDeSeccion>
             </div>
           </div>
 

@@ -35,6 +35,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 // Puntaje por persona y su promedio: `climaLaboral` (núcleo, lo mismo de la app).
 const blockScore = puntajeDePersona;
@@ -492,14 +493,14 @@ export default function EncuestaAdminView() {
                         <div data-surface="card" className={`p-5 transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] relative overflow-visible ${ editingSurvey ? 'border-warning/40 shadow-[var(--shadow-glass-4)]' : 'border-border-card shadow-[var(--shadow-glass-3)] hover:shadow-[var(--shadow-glass-5)]' }`}>
 
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="font-bold text-content flex items-center gap-2 text-body-lg">
+                                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                     <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-white shadow-sm ${editingSurvey ? 'bg-warning-solid' : 'bg-brand'}`}>
                                         {editingSurvey ? <Pencil size={14} strokeWidth={2.5} /> : <Plus size={14} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-0.5">
                                         {editingSurvey ? 'Editar Encuesta' : 'Nueva Encuesta'}
                                     </span>
-                                </h3>
+                                </TituloDeSeccion>
                                 {editingSurvey && (
                                     <Button variant="secondary" icon={X} onClick={resetSurveyForm}>Cancelar</Button>
                                 )}
@@ -730,14 +731,14 @@ export default function EncuestaAdminView() {
                     {leftPanel === 'response-form' && canManage && (
                         <div data-surface="card" className="p-6 md:p-8">
                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
+                                <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                     <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingResponse ? 'bg-warning-solid' : 'bg-brand'}`}>
                                         {editingResponse ? <Pencil size={16} strokeWidth={2.5} /> : <ClipboardList size={16} strokeWidth={2.5} />}
                                     </div>
                                     <span className="font-black uppercase tracking-tight ml-1">
                                         {editingResponse ? 'Editar Respuesta' : 'Nueva Respuesta'}
                                     </span>
-                                </h3>
+                                </TituloDeSeccion>
                                 <Button variant="secondary" icon={X} onClick={() => { setLeftPanel('survey-form'); resetResponseForm(); }}>Cancelar</Button>
                             </div>
 

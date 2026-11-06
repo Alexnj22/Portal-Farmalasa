@@ -20,6 +20,7 @@ import { mensajeDelCodigo, telefonoParaWhatsapp } from '@nucleo/utils/codigoDePu
 import { estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy } from '@nucleo/data/puntos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * El código de acceso a «Mis puntos», en la ficha.
  *
@@ -211,7 +212,7 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
                 </span>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-body-sm font-black text-content">Acceso a Mis puntos</h3>
+                        <TituloDeSeccion nivel="tarjeta">Acceso a Mis puntos</TituloDeSeccion>
                         {tiene
                             ? <Badge size="sm" variant="success">Activo</Badge>
                             : <Badge size="sm" variant="neutral">Sin código</Badge>}

@@ -22,6 +22,7 @@ import { crearIdea, editarIdea, quitarIdea, moverIdea } from '@nucleo/data/marke
 import { ICONOS_FORMATO, ICONO_DESCONOCIDO, puntoDeMarca } from './iconos';
 import { Quien } from './Historial';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Estados, vistas y conteos: núcleo (`marketing`), los mismos que la app.
 const ESTADO_IDEA = Object.fromEntries(Object.entries(ESTADOS_IDEA).map(([k, v]) => [k, {
     ...v, tono: k === 'en_trabajo' ? 'brand' : k === 'usada' ? 'success' : undefined,
@@ -105,7 +106,7 @@ export default function TabIdeas({
                         <Lightbulb size={18} aria-hidden />
                     </span>
                     <div className="min-w-0">
-                        <h3 className="text-body font-semibold text-content">Deja una idea</h3>
+                        <TituloDeSeccion nivel="tarjeta">Deja una idea</TituloDeSeccion>
                         <p className="text-caption text-content-3">
                             Un tema, una campaña, algo que viste en la sala. Quien diseña la toma y la convierte en publicación.
                         </p>

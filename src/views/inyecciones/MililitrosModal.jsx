@@ -6,6 +6,7 @@ import PortalInput from '../../components/common/PortalInput';
 import { aplicacionesPorDosis, fmtMl } from '@nucleo/utils/inyeccionDosis';
 import { CASILLAS_DE_DOSIS as CASILLAS, leerMililitros } from '@nucleo/utils/inyeccionesAjustes';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /*
  * Contar un producto por mililitros (2026-10-03).
  *
@@ -31,7 +32,7 @@ export default function MililitrosModal({ fila, guardando, onGuardar, onQuitar, 
         <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth="max-w-md" ariaLabel="Contar por mililitros">
             <div className="p-5 space-y-4">
                 <div>
-                    <h3 className="text-h3 font-bold text-content">Contar por mililitros</h3>
+                    <TituloDeSeccion nivel="tarjeta">Contar por mililitros</TituloDeSeccion>
                     <p className="text-body-sm text-content-2 mt-1">{fila.descripcion}</p>
                 </div>
                 <PortalInput label="Cuánto trae una unidad (ml)" name="ml_contenido" inputMode="decimal" icon={Droplet}

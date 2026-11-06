@@ -40,6 +40,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import TramiteDeLey from './TramiteDeLey';
 import AnonimizarCliente from './AnonimizarCliente';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const paraInput = (iso) => {
     if (!iso) return '';
     const d = new Date(iso);
@@ -530,7 +531,7 @@ function Seccion({ titulo, nota, children }) {
     return (
         <section className="flex flex-col gap-3">
             <div>
-                <h3 className="text-body-sm font-black text-content uppercase tracking-wide">{titulo}</h3>
+                <TituloDeSeccion nivel="seccion">{titulo}</TituloDeSeccion>
                 {nota && <p className="text-caption text-content-3 mt-0.5">{nota}</p>}
             </div>
             {children}

@@ -15,6 +15,7 @@ import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { electrolitFueraDeEspeciales } from '@nucleo/utils/cajasEspeciales';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Opciones de sucursal para selector de caja extra (excluye bodega)
 const SUC_OPTIONS = SUCURSALES.map(id => ({ value: String(id), label: ERP_NAMES[id] ?? `Suc. ${id}` }));
 
@@ -207,7 +208,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">
                     <p className="text-label font-black text-content-2 uppercase tracking-widest">Pedido #{pedidoNumero}</p>
-                    <h3 className="text-body-lg font-bold text-content leading-tight">{enDetalle ? '¿Cómo llegó cada caja?' : '¿Llegó todo?'}</h3>
+                    <TituloDeSeccion nivel="tarjeta">{enDetalle ? '¿Cómo llegó cada caja?' : '¿Llegó todo?'}</TituloDeSeccion>
                 </div>
                 <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
             </div>

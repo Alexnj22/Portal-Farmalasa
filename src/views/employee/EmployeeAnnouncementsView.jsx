@@ -17,6 +17,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { EmptyState } from '../../components/common/StateViews';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 const TABS = [
     { key: 'UNREAD', label: 'Sin leer' },
     { key: 'READ',   label: 'Leídos'   },
@@ -728,9 +729,9 @@ const EmployeeAnnouncementsView = () => {
                                 <div className="relative z-base w-24 h-24 rounded-modal flex items-center justify-center mb-6 bg-surface-card border border-border-card shadow-[var(--shadow-elevation-md)] transition-all duration-[var(--dur-lento)] group-hover:-translate-y-2 group-hover:shadow-[var(--shadow-elevation-lg)] text-content-3 overflow-hidden">
                                     {searchQuery ? <Search size={40} strokeWidth={1.5} /> : <CheckCircle2 size={40} strokeWidth={1.5} />}
                                 </div>
-                                <h3 className="font-bold text-title-lg text-content tracking-tight mb-2">
+                                <TituloDeSeccion nivel="modal" className="mb-2">
                                     {searchQuery ? 'Sin resultados' : 'Sin leídos este mes'}
-                                </h3>
+                                </TituloDeSeccion>
                                 <p className="font-medium text-body-lg text-content-3 max-w-[280px] leading-relaxed">
                                     {searchQuery
                                         ? `Ningún aviso coincide con "${searchQuery}".`

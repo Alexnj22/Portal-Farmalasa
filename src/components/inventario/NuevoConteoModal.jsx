@@ -18,6 +18,7 @@ import {
     SEGMENTO_DE_MUESTRA_LABEL, SEGMENTO_DE_MUESTRA_ORDEN, pedidoDeConteo,
 } from '@nucleo/utils/conteoDeInventario';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 // Etiquetas de UNA línea: en `layout="block"` la píldora es de alto fijo (h-11),
 // así que un label que envuelve no crece — se desborda. Van en text-caption
 // uppercase con tracking-widest, que ensancha mucho: lo que en prosa parece
@@ -211,7 +212,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                 <div className="flex items-center gap-4">
                     <div className={`${squircleClass} text-chart-9-text`}><ClipboardCheck size={22} strokeWidth={2.5} /></div>
                     <div>
-                        <h3 className="text-title-sm font-black text-content tracking-tight leading-snug">Nuevo conteo de inventario</h3>
+                        <TituloDeSeccion nivel="modal">Nuevo conteo de inventario</TituloDeSeccion>
                         <p className="text-label font-medium text-content-3 mt-0.5">Auditoría física</p>
                     </div>
                 </div>

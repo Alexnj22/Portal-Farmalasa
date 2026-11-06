@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.4 — Títulos en tres niveles
+
+- **Los títulos de bloque salen de un solo componente, `TituloDeSeccion`, en tres niveles** (decisión del usuario): `modal` (18px, el de un modal o un panel), `tarjeta` (14px, el de una tarjeta) y `seccion` (el rótulo en mayúsculas). Había 211 `<h3>` con 34 estilos distintos; se pasaron 181 en 114 archivos.
+- Nueve títulos usaban `text-h3`, una clase que no existe, y salían sin tamaño. Ahora tienen el de su nivel.
+- La tarjeta se probó a 16px: en el teléfono los títulos de las baldosas de Inicio se cortaban, así que quedó en 14, que es la mediana de lo que había. Los títulos de Inicio pasan de 12 a 14px.
+- Revisado en el navegador, a ancho de teléfono, en Inicio, Puntos, Cargos, Sucursales, Efectivo y Facturación.
+- Gate nuevo `titulo-a-mano` (trinquete en 13): quedan los títulos con un color que significa algo (rojo de alerta, blanco sobre foto) y los de otra sesión.
+
 ## v2.1461.3 — Gates en verde: funciones, tipos, perf y el peso de Conteo
 
 - **`gate:edge` en verde.** Siete errores de tipos y dos avisos de lint en funciones ajenas al conteo, ninguno con cambio de comportamiento: `presentacion_tipo ?? ""` en traslados, `Set<number>` en app-clientes, `declare const EdgeRuntime` y `totalDoc!` (ya acotado por la rama) en cargar-compra-erp, una constante sin uso en `numerosDelNombre` y un `let` → `const` en `tiempoTrabajado`. Baseline de lint bajado en consolidate-timesheets.

@@ -19,6 +19,7 @@ import { EMPRESA } from '@nucleo/constants/empresa';
 import { CAUSAS_CORTE_Z, CUADRA_Z, cuadraZ, documentosQueDifieren, FILAS_DECLARACION, totalesCorteZ } from '@nucleo/utils/corteZ';
 import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ─────────────────────────────────────────────────────────────────────────────
 // CORTE Z — el Gran Z mensual de cada sucursal.
 //
@@ -353,7 +354,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
         <section data-surface="card" className="flex flex-col p-4 md:p-5 gap-4">
             <header className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <h3 className="text-body font-bold truncate">{fila.sucursal}</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="truncate">{fila.sucursal}</TituloDeSeccion>
                     {/* La dirección del local, la misma que sale impresa. No se
                         trunca: es un dato de identificación —el documento dice
                         DÓNDE se declaró— y una dirección cortada en la elipsis

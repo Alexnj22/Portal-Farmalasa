@@ -12,6 +12,7 @@ import {
     fetchCambiosPendientes, reintentarCambioDeCliente, marcarCambioResueltoAMano,
 } from '@nucleo/data/puntos';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /**
  * Traspasos de puntos que no terminaron (2026-10-01).
  *
@@ -76,9 +77,9 @@ export default function TraspasosPendientes({ puedeResolver }) {
 
     return (
         <section data-surface="card" className="p-4 flex flex-col gap-3 min-w-0">
-            <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
+            <TituloDeSeccion nivel="seccion" className="flex items-center gap-2">
                 <ArrowLeftRight size={14} /> Puntos de cambios de cliente
-            </h3>
+            </TituloDeSeccion>
             {filas.map((f) => {
                 const abierto = !f.resuelto_at;
                 return (

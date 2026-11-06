@@ -32,6 +32,7 @@ import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { cantidadEnOtraPresentacion, conteoInicial, enPresentacion, enviadoDe, excesoGrande, mapaDePresentaciones, presentacionesDeRenglones, quedaTodoListo, renglonContado, renglonTodoOk } from '@nucleo/utils/recepcionDePedido';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // `EmpChip` vivía acá y se fue con la franja de «Responsables» del pie: era su
 // único uso en todo el repo (el chip de las tarjetas de pedido es
 // `tabpedidos/EmpChip.jsx`, otro archivo).
@@ -1670,7 +1671,7 @@ export default function RecepcionModal({
                 <PedidoModal.Header className="px-5 py-4">
                     <div className="flex items-start justify-between gap-3">
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-subtitle font-bold text-content leading-snug">Confirmar recepción</h3>
+                            <TituloDeSeccion nivel="tarjeta">Confirmar recepción</TituloDeSeccion>
                             <p className="text-label text-content-3 mt-0.5">
                                 {/* «58 prod.» sonaba a que el despacho traía 58, cuando son
                                     los que QUEDAN: `rows` ya viene sin lo contado antes. */}
@@ -1969,7 +1970,7 @@ export default function RecepcionModal({
                             <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={volver} />
                         )}
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-subtitle font-bold text-content leading-snug">Ya confirmados</h3>
+                            <TituloDeSeccion nivel="tarjeta">Ya confirmados</TituloDeSeccion>
                             <p className="text-label text-content-3 mt-0.5">
                                 {sucursalNombre} · {confirmadosVivos.length} producto{confirmadosVivos.length !== 1 ? 's' : ''} contado{confirmadosVivos.length !== 1 ? 's' : ''}
                                 {conDif > 0 ? ` · ${conDif} con diferencia` : ''}
@@ -2066,7 +2067,7 @@ export default function RecepcionModal({
                     <div className="flex items-center gap-2">
                         <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={saving} iconOnly onClick={goBackFromExtras} />
                         <div className="flex-1 min-w-0">
-                            <h3 className="text-subtitle font-bold text-content leading-snug">Productos extra</h3>
+                            <TituloDeSeccion nivel="tarjeta">Productos extra</TituloDeSeccion>
                             <p className="text-label text-content-3 mt-0.5">
                                 {extras.length === 0
                                     ? 'Productos recibidos que no estaban en el pedido'
@@ -2297,20 +2298,20 @@ export default function RecepcionModal({
                                 exit={{ opacity: 0, x: -10 }} transition={{ duration: 0.15 }}>
                                 {selectedEspecial !== null ? (
                                     <>
-                                        <h3 className="text-body-lg font-bold text-content leading-tight truncate">
+                                        <TituloDeSeccion nivel="tarjeta" className="truncate">
                                             {selectedEspecial.label} — Caja especial
                                             {isDanadaEspecial && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Dañada</span>}
-                                        </h3>
+                                        </TituloDeSeccion>
                                         <p className="text-micro text-content-3 leading-tight truncate">
                                             {selectedEspecial.item.products?.nombre ?? ''} · {sucursalNombre}
                                         </p>
                                     </>
                                 ) : hayHojas ? (
                                     <>
-                                        <h3 className="text-body-lg font-bold text-content leading-tight truncate">
+                                        <TituloDeSeccion nivel="tarjeta" className="truncate">
                                             Hoja {selectedHoja}{hojaLabel[selectedHoja] ? ` — ${hojaLabel[selectedHoja]}` : ''}
                                             {hojaEnAlerta && <span className="ml-2 inline-flex items-center gap-1 text-label font-semibold text-warning"><AlertTriangle size={12} aria-hidden="true" />Revisar</span>}
-                                        </h3>
+                                        </TituloDeSeccion>
                                         <p className="text-micro text-content-3 leading-tight">
                                             {/* Cuántos quedan por contar, no cuántos trae la
                                                 hoja: los recibidos de a uno siguen en la
@@ -2323,7 +2324,7 @@ export default function RecepcionModal({
                                     </>
                                 ) : (
                                     <>
-                                        <h3 className="text-body-lg font-bold text-content leading-tight truncate">Confirmar recepción</h3>
+                                        <TituloDeSeccion nivel="tarjeta" className="truncate">Confirmar recepción</TituloDeSeccion>
                                         <p className="text-micro text-content-3 leading-tight truncate">
                                             {sucursalNombre}{pedido.codigo && ` · ${pedido.codigo}`} · {rows.length} productos
                                         </p>

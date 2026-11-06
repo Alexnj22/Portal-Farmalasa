@@ -706,6 +706,8 @@ una de las superficies con tratamiento propio de §25.4.
 
 **El rótulo en mayúsculas es uno solo**: `font-black uppercase tracking-widest` en `text-micro`, `text-caption` o `text-label`; cambian el tamaño y el color, nunca el peso ni el espaciado (gate `rotulo-a-mano`). El de un campo de formulario sale de `rotuloCampo()`.
 
+**El título de un bloque es `TituloDeSeccion`**, en tres niveles: `modal` (`text-title-sm font-black`, el de un modal o un panel), `tarjeta` (`text-body-lg font-black`, el de una tarjeta) y `seccion` (el rótulo en mayúsculas de arriba). El nivel decide tamaño, peso y color; `className` sólo lleva la disposición (gate `titulo-a-mano`).
+
 **Una sola escala**: `text-micro` … `text-display`. Ni `text-[Npx]` (tampoco decimales ni `rem`) ni la escala de Tailwind `text-xs`…`text-xl` (gates `typography` y `texto-tailwind`). `text-2xl` y mayores quedan para cifras de despliegue.
 
 Fuente: `system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif`.
@@ -3487,6 +3489,7 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `avatar-fuera-de-escala` | un tamaño de foto fuera de `TAMANOS_DE_AVATAR` (20, 28, 36, 48, 64, 104) | §5.4 |
 | `aviso-a-mano` | `{error && <p className="…text-danger…">{error}</p>}` en vez de `<Notice variant="danger">` (cero absoluto) | §29 |
 | `radio-a-mano` | `rounded-[Npx]`/`rounded-[Nrem]` en vez de los radios del tema (trinquete) | §8 |
+| `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion` (trinquete; quedan colores con significado y clases dinámicas) | §7 |
 | `rotulo-a-mano` | rótulo en mayúsculas chico con un peso o espaciado que no es `font-black tracking-widest` (cero absoluto) | §7 |
 | `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |
 | `editor-dos-veces` | abrir el editor de foto sin mirar `yaPreparado`: la foto del teléfono se cuadra dos veces | — (esta fila) |

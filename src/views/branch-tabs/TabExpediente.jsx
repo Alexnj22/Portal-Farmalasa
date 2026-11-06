@@ -14,6 +14,7 @@ import { CATEGORIAS_DOCUMENTO } from '../../components/common/catalogos/constant
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { SIN_DATO, ajustesSinDocumentoPropio, documentosDeSucursal, estadoDeDocumento } from '@nucleo/utils/expedienteDeSucursal';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // ============================================================================
 // 🎨 HELPER: ESTADOS DEL DOCUMENTO Y FECHAS
 // ============================================================================
@@ -291,7 +292,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
 
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <div className="min-w-0">
-                        <h3 className="font-black text-content uppercase tracking-tight text-title">Expediente Digital</h3>
+                        <TituloDeSeccion nivel="modal">Expediente Digital</TituloDeSeccion>
                         <p className="text-label font-black text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
                     </div>
 

@@ -8,6 +8,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { idsDeEnfermeria } from '@nucleo/utils/edicionDeSucursal';
 import { SIN_ASIGNAR } from '../common/catalogos/constantes';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
     try { return JSON.parse(obj) || {}; } catch { return {}; }
@@ -22,9 +23,9 @@ const EMPTY_EMPLOYEES = [];
 // quitaron las dos: la antigüedad real ya la pinta el listón del avatar.
 
 const Encabezado = ({ icon: Icon, children }) => (
-    <h3 className="flex items-center gap-2 mb-3 text-caption font-black uppercase tracking-widest text-content-3">
+    <TituloDeSeccion nivel="seccion" className="flex items-center gap-2 mb-3">
         <Icon size={14} strokeWidth={2.5} aria-hidden="true" /> {children}
-    </h3>
+    </TituloDeSeccion>
 );
 
 // Un puesto con persona abre su ficha; uno vacío no abre nada y se dibuja

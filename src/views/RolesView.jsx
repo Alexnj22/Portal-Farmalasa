@@ -25,6 +25,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { AMBITOS_DE_CARGO, bloqueoParaEliminarCargo, errorDeCargo, esCargoExterno, nombreDelSuperior, ocupantesDelCargo, ordenarPorJerarquia } from '@nucleo/utils/jerarquiaDeCargos';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // Las dos pestañas viven acá arriba y no en línea dentro del JSX: `usePestanaEnUrl`
 // necesita la lista para validar el `?tab=` que llegue por la dirección.
 const ROLE_TABS = [
@@ -474,12 +475,12 @@ const RolesView = ({ openModal }) => {
                             <div data-surface={editingRoleId ? 'card' : undefined} className={`bg-surface-card p-6 md:p-8 rounded-header transition-all duration-[var(--dur-lento)] group-hover/panel:-translate-y-[2px] relative overflow-visible ${editingRoleId ? 'border-warning/40' : 'border border-border-card shadow-[var(--shadow-glass-3)] group-hover/panel:shadow-[var(--shadow-glass-5)]'}`}>
 
                                 <div className="flex justify-between items-center mb-6">
-                                    <h3 className="font-bold text-content flex items-center gap-2 text-subtitle">
+                                    <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                         <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-white shadow-sm ${editingRoleId ? 'bg-warning-solid' : 'bg-brand'}`}>
                                             {editingRoleId ? <Pencil size={16} strokeWidth={2.5} /> : <Target size={16} strokeWidth={2.5} />}
                                         </div>
                                         <span className="font-black uppercase tracking-tight ml-1">{editingRoleId ? 'Editar Cargo' : 'Nuevo Cargo'}</span>
-                                    </h3>
+                                    </TituloDeSeccion>
                                     {editingRoleId && (
                                         <Button variant="secondary" icon={X} onClick={handleCancelEdit}>Cancelar</Button>
                                     )}
@@ -769,7 +770,7 @@ const RolesView = ({ openModal }) => {
                                             {roles.filter(r => !r.parent_role_id).length === 0 && (
                                                 <div className="text-center py-20 px-10 opacity-60">
                                                     <Network className="mx-auto text-content-3 mb-4" size={48} strokeWidth={1.5} />
-                                                    <h3 className="text-body-xl font-bold text-content-2">Sin Estructura Definida</h3>
+                                                    <TituloDeSeccion nivel="tarjeta">Sin Estructura Definida</TituloDeSeccion>
                                                     <p className="text-content-3 text-body-lg mt-1 font-medium">Crea un cargo "Nivel Raíz" para comenzar el árbol.</p>
                                                 </div>
                                             )}

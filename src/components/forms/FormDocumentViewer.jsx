@@ -3,6 +3,7 @@ import { Skeleton } from '../common/StateViews';
 import { Download, FileText, Loader2 } from 'lucide-react';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const FormDocumentViewer = ({ formData }) => {
     const { url: storedUrl, title } = formData || {};
 
@@ -29,7 +30,7 @@ const FormDocumentViewer = ({ formData }) => {
                         <FileText size={24} strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="text-title-sm font-black text-content truncate">{title || 'Documento Adjunto'}</h3>
+                        <TituloDeSeccion nivel="modal" className="truncate">{title || 'Documento Adjunto'}</TituloDeSeccion>
                         <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
                     </div>
                 </div>

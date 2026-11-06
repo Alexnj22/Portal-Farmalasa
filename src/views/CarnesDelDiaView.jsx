@@ -15,6 +15,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { carnesConPersona, carnesPorSala, SIN_SUCURSAL } from '@nucleo/utils/carnesDelDia';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 const VACIO = [];
 
 /**
@@ -142,9 +143,9 @@ const CarnesDelDiaView = () => {
                     recuadro plano. Es exactamente lo que reportó el usuario. */}
                 {busqueda.trim() && (
                     <div>
-                        <h3 className="text-body-sm font-black uppercase tracking-widest text-content mb-3">
+                        <TituloDeSeccion nivel="seccion" className="mb-3">
                             Imprimir un carné
-                        </h3>
+                        </TituloDeSeccion>
 
                         {/* «No hay nadie cargado» y «nadie se llama así» son dos
                             cosas distintas y se ven igual si las dos dicen «nadie
@@ -207,13 +208,13 @@ const CarnesDelDiaView = () => {
                 {/* ── Los que andan sueltos ───────────────────────────────── */}
                 <div>
                     <div className="flex items-center justify-between gap-3 mb-3 flex-wrap">
-                        <h3 className="text-body-sm font-black uppercase tracking-widest text-content">
+                        <TituloDeSeccion nivel="seccion">
                             Vigentes ahora{!cargando && !fallo && (
                                 busqueda.trim() && filasVisibles.length !== filas.length
                                     ? ` (${filasVisibles.length} de ${filas.length})`
                                     : ` (${filas.length})`
                             )}
-                        </h3>
+                        </TituloDeSeccion>
                         <Button variant="secondary" size="sm" onClick={releer} loading={cargando}>
                             Actualizar
                         </Button>

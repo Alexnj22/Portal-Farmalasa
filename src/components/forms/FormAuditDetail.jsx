@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { fechaHora12 } from '@nucleo/utils/hora';
 
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const FormAuditDetail = ({ data }) => {
     if (!data) return null;
 
@@ -42,9 +43,9 @@ const FormAuditDetail = ({ data }) => {
                         {sevStyles.icon}
                     </div>
                     <div>
-                        <h3 className="text-title-sm font-black text-content uppercase tracking-tight leading-none mb-1 drop-shadow-sm">
+                        <TituloDeSeccion nivel="modal" className="mb-1 drop-shadow-sm">
                             {data.severity}
-                        </h3>
+                        </TituloDeSeccion>
                         <p className="text-caption font-black text-content-3 uppercase tracking-widest">
                             Nivel de Auditoría
                         </p>

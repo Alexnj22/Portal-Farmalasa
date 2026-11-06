@@ -9,6 +9,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { esInmuebleAlquilado, estadoDeServicio, gastosPorMes, totalOperativo, variacionDeGastos } from '@nucleo/utils/gastosDeSucursal';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // El dibujo arrastra `recharts` (95 kB gzip) y estaba en el cierre estático de
 // `BranchDetailView`: se bajaba al abrir cualquier sucursal para una gráfica de
 // una sola pestaña. Leer el encabezado de `GraficaGastos.jsx` antes de tocarlo.
@@ -195,7 +196,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             {/* HEADER PRINCIPAL */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-border-card">
                 <div>
-                    <h3 className="font-black text-content uppercase tracking-tight text-title-sm">Finanzas y Gastos Operativos</h3>
+                    <TituloDeSeccion nivel="modal">Finanzas y Gastos Operativos</TituloDeSeccion>
                     <p className="text-label font-black text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">

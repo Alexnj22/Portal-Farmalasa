@@ -30,6 +30,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { rotuloTipoCliente } from './comun';
 import { DIAS_RUTA, ROTULO_RESULTADO, avanceDeRuta, comoLlegar, diasDeRuta, alternarDia, moverEnLista, enElMapa } from '@nucleo/utils/distribucionRutas';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 // Rutas y visitas (borrador 0027). «Hoy»: los clientes de las rutas que tocan
 // ese día, en su orden, con lo que conviene saber antes de entrar —qué debe,
 // si está atrasado, cuándo compró— y qué pasó en la visita. «Armar rutas»
@@ -249,7 +250,7 @@ function Armar() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <section data-surface="card" className="p-4 flex flex-col gap-2" aria-label="Rutas">
                 <div className="flex items-center justify-between gap-2">
-                    <h3 className="text-body font-black text-content">Rutas</h3>
+                    <TituloDeSeccion nivel="tarjeta">Rutas</TituloDeSeccion>
                     <Button size="sm" variant="secondary" icon={Plus} onClick={() => elegir(null)}>Nueva ruta</Button>
                 </div>
                 <ul className="divide-y divide-divider">

@@ -19,6 +19,7 @@ import {
     SECCIONES_DE_DESCUENTOS, descuentosPorEstado, fmtVigencia, estadoDescuento, ofertaDesdeDescuento,
 } from '@nucleo/utils/promocionesUtils';
 
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 /** Vigente, programado o terminado — el canónico vive en `promocionesUtils`. */
 const estado = (d) => estadoDescuento(d);
 
@@ -200,7 +201,7 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, puedeApp, abriendoApp, on
         >
             <div className="flex items-start gap-2">
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-body-lg font-semibold text-content truncate">{d.descripcion}</h3>
+                    <TituloDeSeccion nivel="tarjeta" className="truncate">{d.descripcion}</TituloDeSeccion>
                     <p className="text-caption text-content-3 tabular-nums mt-0.5 flex items-center gap-1.5">
                         <Calendar size={12} className="shrink-0" aria-hidden />
                         {fmtVigencia(d.inicio, d.fin)}

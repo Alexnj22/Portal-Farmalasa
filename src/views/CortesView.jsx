@@ -77,6 +77,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 
+import TituloDeSeccion from '../components/common/TituloDeSeccion';
 // ── Bolsas de efectivo salió de acá el 2026-08-24 ───────────────────────────
 //
 // Fue una pestaña de esta vista desde que existe, con un argumento bueno: es lo
@@ -1127,7 +1128,7 @@ const CortesView = () => {
                 {enCortes && !cargando && porDia.map((g) => (
                     <section key={g.fecha} className="space-y-3">
                         <div className="flex items-baseline justify-between gap-3 px-1">
-                            <h3 className="text-label font-bold text-content capitalize">{rotularDia(g.fecha)}</h3>
+                            <TituloDeSeccion nivel="tarjeta" className="capitalize">{rotularDia(g.fecha)}</TituloDeSeccion>
                             <span className="text-caption text-content-3">
                                 {g.total} {g.total === 1 ? 'corte' : 'cortes'}
                                 {g.conDiferencia > 0 && ` · ${g.conDiferencia} con diferencia`}

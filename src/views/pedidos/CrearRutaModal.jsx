@@ -22,6 +22,7 @@ import useMontadoParaSalida from '../../plataforma/useMontadoParaSalida';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 function fmtDist(m) {
   if (!m) return null;
   return m >= 1000 ? `${(m / 1000).toFixed(1)} km` : `${m} m`;
@@ -608,9 +609,9 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               <p className="text-caption font-black text-chart-3-text uppercase tracking-widest">
                 {step === 1 ? 'Paso 1 de 2' : 'Paso 2 de 2'}
               </p>
-              <h3 className="text-body-xl font-black text-content leading-tight">
+              <TituloDeSeccion nivel="tarjeta">
                 {step === 1 ? 'Nueva Ruta de Entrega' : 'Confirmar ruta'}
-              </h3>
+              </TituloDeSeccion>
             </div>
           </div>
           <Button variant="ghost" icon={X} iconOnly onClick={onClose} />

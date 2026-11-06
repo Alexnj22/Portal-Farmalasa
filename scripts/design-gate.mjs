@@ -93,15 +93,16 @@ const EXCLUDE_FILES = new Set(['src/version.js']);
 const EXCEPTIONS = {
   // El canónico del dinero: es el ÚNICO que puede pegar el `$` a una cifra.
   'src/utils/formatNumber.js': ['formato-cifra'],
-    // ── El papel de un documento legal no tiene tema ────────────────────────
-    // `src/generated/formularioDatos.js` es el formulario de solicitud de datos
-    // convertido a una cadena para la ventana de impresión. Sus hex son los del
-    // DOCUMENTO —el mismo membrete que el aviso de privacidad y el reglamento de
-    // puntos— y no tokens del portal: el papel se imprime en negro sobre blanco
-    // y no cambia con el tema de nadie. Además el archivo es GENERADO desde
-    // `docs/legal/formulario-solicitud-datos.html`, así que un token acá se
-    // perdería en la próxima corrida de `npm run legal:js`.
-    'src/generated/formularioDatos.js': ['hex'],
+
+  // ── El papel de un documento legal no tiene tema ────────────────────────
+  // `src/generated/formularioDatos.js` es el formulario de solicitud de datos
+  // convertido a una cadena para la ventana de impresión. Sus hex son los del
+  // DOCUMENTO —el mismo membrete que el aviso de privacidad y el reglamento de
+  // puntos— y no tokens del portal: el papel se imprime en negro sobre blanco
+  // y no cambia con el tema de nadie. Además el archivo es GENERADO desde
+  // `docs/legal/formulario-solicitud-datos.html`, así que un token acá se
+  // perdería en la próxima corrida de `npm run legal:js`.
+  'src/generated/formularioDatos.js': ['hex'],
 
   // El lector de código de barras: `white` y `shadow-literal` sobre la vista de
   // la CÁMARA, que es el único rectángulo del portal que no tiene tema.
@@ -122,12 +123,9 @@ const EXCEPTIONS = {
   // Documentado en DESIGN.md §6 junto al resto de las excepciones de color.
   'src/components/common/LectorDeCodigo.jsx': ['white', 'shadow-literal'],
 
-  // ── Las tres fotos que NO llevan aro, y por qué ──────────────────────────
-  //
-  // `LiquidSelect` es la primitiva del desplegable: su `opt.avatar` es una URL
-  // cualquiera y la opción puede ser una persona, una sucursal o un
-  // laboratorio. Un aro ahí prometería un estado que el componente no puede
-  // conocer — no recibe una ficha, recibe una imagen.
+  // ── Las fotos que NO llevan aro, y por qué ───────────────────────────────
+  // (`LiquidSelect` salió de esta lista el 2026-11-05: una opción que es una
+  // persona trae `persona` y se pinta con `AvatarConEstado`.)
 
   // La foto del formulario de empleado muestra `photoPreview`, que es el
   // archivo que la persona ACABA de elegir y todavía no se guardó: un blob
@@ -168,7 +166,6 @@ const EXCEPTIONS = {
   // Badge/Button/Switch NO están acá: ya tenían entrada más abajo (por 'white'
   // y 'hex') y repetir la clave habría borrado una de las dos. Llevan
   // 'chart-retirado' en aquella. Ver `assertSinClavesDuplicadas`.
-  'src/index.css': ['chart-retirado'],
   // `hex`/`inline-color` en CarrilCards NO son color: son las paradas alfa de la
   // máscara que desvanece la tarjeta cortada del borde del carril. `mask-image`
   // solo lee el canal alfa del gradiente —el matiz es irrelevante, `#000` es
@@ -179,7 +176,7 @@ const EXCEPTIONS = {
   // layout: el bloque `── Uso ──` muestra `<CarrilCards><StatCard/></CarrilCards>`
   // dentro de un comentario. Ahí no hay contenedor que pueda llevar `lg:flex-row`
   // porque no hay vista, hay documentación.
-  'src/components/common/CarrilCards.jsx': ['hex', 'inline-color', 'carril-pildora'],
+  'src/components/common/CarrilCards.jsx': ['hex', 'inline-color'],
   // El `#ffffff` de `EditorDeDocumento` es el relleno del CANVAS que exporta el
   // JPEG del documento, no una superficie de la interfaz: el papel de un
   // documento que se guarda por un año y se imprime para un inspector es
@@ -192,7 +189,6 @@ const EXCEPTIONS = {
   // (El relleno se mudó a `plataforma/componerDocumento.js` el 2026-08-29, cuando
   // el camino automático y el editor pasaron a compartir la misma tubería: el
   // motivo es el mismo y ahora vive donde está el píxel.)
-  'src/components/common/EditorDeDocumento.jsx': ['hex'],
   'src/plataforma/componerDocumento.js': ['hex'],
   // `carril-pildora` en ClientesView es la EXCEPCIÓN MEDIDA, no deuda — y estaba
   // contando como ratchet, que es al revés de lo que hay que decir. El motivo
@@ -237,9 +233,6 @@ const EXCEPTIONS = {
   // Misma mudanza del 2026-08-08 que su hermana: la ruta es otra, la medición
   // de 1337px contra 772 disponibles es la misma.
   'src/views/inventario/TabInventario.jsx': ['carril-pildora'],
-  'src/components/common/SegmentedControl.jsx': ['chart-retirado'],
-  'src/components/common/TabBarAction.jsx': ['chart-retirado'],
-  'src/components/common/Contador.jsx': ['chart-retirado'],
   // ── `vidrio-a-mano`: las dos familias bespoke (PLAN-MATERIALES §18.1) ─────
   // No son deuda: son las dos pantallas que **viven fuera del shell** y por eso
   // no pueden heredar su material.
@@ -284,7 +277,7 @@ const EXCEPTIONS = {
   // abajo — este objeto NO admite la misma clave dos veces: la segunda pisa a
   // la primera en silencio. Lo verifica `assertSinClavesDuplicadas`.)
   'src/components/layout/MenuSearchModal.jsx': ['input-a-mano'],
-  'src/views/branch-tabs/TabStaff.jsx': ['color', 'native'], // panel WFM dark + shimmer IA
+  'src/views/branch-tabs/TabStaff.jsx': ['color'], // panel WFM dark + shimmer IA
   // `color`: tooltip flotante dark. `icono-stroke`: el `Sparkles size={100}
   // strokeWidth={0.5}` es la marca de agua del panel (`text-[#F79009]/15`,
   // `pointer-events-none`) — a 100px un trazo de la escala se ve como un dibujo,
@@ -300,7 +293,7 @@ const EXCEPTIONS = {
   // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
   // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
   'src/components/common/Checkbox.jsx': ['icono-stroke'],
-  'src/components/timeclock/IdleScanPanel.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'], // kiosco
+  'src/components/timeclock/IdleScanPanel.jsx': ['material-a-mano', 'white', 'vidrio-a-mano'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
   //
@@ -313,36 +306,24 @@ const EXCEPTIONS = {
   // `border-purple-400` donde la tercera usaba el token `chart-3`.
   'src/components/common/BotonIA.jsx': ['color'],
   'src/views/branch-tabs/TabHistory.jsx': ['color'],
-  'src/views/BranchesView.jsx': ['color'],
   'src/views/branch-tabs/TabExpediente.jsx': ['color'],
-  'src/components/forms/FormAiSchedulerPreview.jsx': ['color'],
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
-  'src/views/CotizacionesView.jsx': ['color', 'hex'],
   'src/utils/cotizacionPapel.js': ['hex'],   // el papel de la cotización (se mudó de CotizacionesView): no tiene tema
-  'src/views/pedidos/CrearRutaModal.jsx': ['color', 'white', 'hex', 'inline-color'], // marcadores Leaflet (L.divIcon HTML)
+  'src/views/pedidos/CrearRutaModal.jsx': ['white', 'hex', 'inline-color'], // marcadores Leaflet (L.divIcon HTML)
   // La boleta y la planilla se imprimen con estilos propios (color, hex). Su
   // dinero pasa por `formatMoney` desde el 2026-09-25, con separador de miles
   // como el resto del portal (pedido del usuario). El archivo del BANCO sigue
   // con `toFixed(2)` sin `$` ni separador: ahí un separador rompe la carga, y
   // la regla no lo toca porque no lleva `$`.
-  'src/views/PayrollView.jsx': ['color', 'hex'],
   // Tooltips flotantes dark (DESIGN.md §6 — no siguen el tema activo por diseño)
-  'src/components/forms/FormEditPayrollEntry.jsx': ['color'],
-  'src/components/common/SidebarSyncStatus.jsx': ['color', 'white'],
-  'src/views/pedidos/tabpedidos/LifecycleTimeline.jsx': ['color'],
-  'src/views/schedule-tabs/components/SalyCopilot.jsx': ['color'], // caja IA siempre-oscura, mismo patrón shimmer
-  'src/views/schedule-tabs/components/ScheduleChart.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
-  'src/views/schedule-tabs/TabShifts.jsx': ['color'], // caja IA siempre-oscura
   // `color`: tooltip flotante dark (resto del archivo ya tokenizado).
   // `segmentado-largo`: son las cinco SECCIONES de la ficha, o sea navegación
   // —el caso que §15.3 ya exime en la misma frase que fija el tope de 3—. Este
   // control reemplazó una pestaña escrita a mano cuyo indicador se calculaba
   // con cinco ternarios; volverla un desplegable sería peor que el original.
-  'src/views/EmployeeDetailView.jsx': ['color', 'segmentado-largo'],
+  'src/views/EmployeeDetailView.jsx': ['segmentado-largo'],
   // `carril-pildora`: excepción MEDIDA en pantalla, ver la nota junto a TabInventario.
-  'src/views/AttendanceAuditView.jsx': ['color', 'carril-pildora'], // tooltip flotante dark (resto del archivo ya tokenizado)
-  'src/views/VentasView.jsx': ['color'], // tooltip flotante dark (resto del archivo ya tokenizado)
-  'src/views/VacationPlanView.jsx': ['color'], // tooltips flotantes dark
+  'src/views/AttendanceAuditView.jsx': ['carril-pildora'], // tooltip flotante dark (resto del archivo ya tokenizado)
   // Superficies kiosco / cámara / editor de foto — siempre-oscuras por diseño
   // `vidrio-a-mano` + `material-a-mano` agregados el 2026-08-06 al cerrar §20:
   // el kiosco vive FUERA del shell —no hay `data-surface` de la que colgar, ni
@@ -350,46 +331,31 @@ const EXCEPTIONS = {
   // `backdrop-blur-[60px]` sobre el fondo de cámara. Es la quinta fila de §20.2
   // («bespoke → EXCEPTIONS con el motivo escrito»), no deuda sin clasificar.
   'src/views/TimeClockView.jsx': ['material-a-mano', 'vidrio-a-mano', 'color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['material-a-mano', 'color', 'z-index', 'input-a-mano', 'white', 'hex', 'inline-color', 'vidrio-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
-  'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'color', 'white', 'hex', 'vidrio-a-mano'],
-  'src/components/common/ThemeToggle.jsx': ['color', 'white'], // host siempre-oscuro documentado inline (SidebarSettingsMenu)
+  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'hex', 'inline-color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'white', 'hex', 'vidrio-a-mano'],
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
   // 'relleno-sin-solid': `selection:bg-success/30 selection:text-white` es el
   // resaltado de SELECCIÓN de texto, no un relleno de control — el usuario ve
   // ese par solo mientras arrastra sobre el bloque de código.
-  'src/components/forms/FormAuditDetail.jsx': ['color', 'relleno-sin-solid', 'hex'], // mockup de ventana macOS (colores reales del semáforo Apple)
-  'src/views/AccessDeniedView.jsx': ['color'], // verde real de marca WhatsApp
-  'src/views/NoAccessView.jsx': ['color'], // verde real de marca WhatsApp
-  'src/App.jsx': ['color', 'hex'], // fondo splash bespoke (comparte gradiente con LoginView)
+  'src/components/forms/FormAuditDetail.jsx': ['relleno-sin-solid', 'hex'], // mockup de ventana macOS (colores reales del semáforo Apple)
+  'src/App.jsx': ['hex'], // fondo splash bespoke (comparte gradiente con LoginView)
   // Vistas de diagnóstico/QA, no UI real de negocio
-  'src/views/IOSTestView.jsx': ['color'],
   // Franja de aviso del tope del portal. Sólo su variante `obra` es bespoke
   // (rayado ámbar/naranja con texto oscuro fijo, no reactivo al tema — ver
   // src/version.js v2.57.1); las otras cuatro variantes usan tokens.
-  'src/components/common/BannerPortal.jsx': ['color', 'hex', 'inline-color'],
+  'src/components/common/BannerPortal.jsx': ['hex', 'inline-color'],
   // Los componentes canónicos SON la implementación del select/date-picker/
   // modal — su interior legítimamente toca lo nativo que envuelven.
-  'src/components/common/LiquidSelect.jsx': ['native'],
-  'src/components/common/LiquidDatePicker.jsx': ['native'],
-  'src/components/common/RangeDatePicker.jsx': ['native'],
-  'src/components/common/TimePicker12.jsx': ['native'],
-  'src/components/common/PortalTextarea.jsx': ['native'],
-  'src/components/common/ConfirmModal.jsx': ['native'],
-  'src/components/common/AlertModal.jsx': ['native'],
-  'src/components/common/PeriodPicker.jsx': ['native'], // fn local `confirm(s,e)`, no window.confirm
   // Preview/storybook, no visible a usuarios reales
-  'src/views/_StatCardPreview.jsx': ['color', 'native'],
   // ── Agregadas en D0 (2026-07-26) al corregir HEX_RE ────────────────────
   // El regex viejo no podía ver estos hex (no hay `className=` en la línea),
   // por eso nunca aparecieron. Son hex por naturaleza de la tecnología,
   // exactamente la categoría "Mapas/canvas/PDF" que ya existe arriba.
-  'src/utils/pedidoPrint.js': ['hex'],            // pdfmake: docDefinition, no CSS
   'src/utils/aficheQr.js': ['hex'],              // el afiche impreso con el QR: papel, sólo negro sobre blanco (el QR tiene que leerse)
   'src/utils/pedidoPdfDoc.js': ['hex'],           // la misma docDefinition del pedido (papel, no tema), separada para el teléfono
   'src/plataforma/documentoDeBienvenida.js': ['hex'],  // idem: es un PDF, no hay tokens de tema en un papel
   'src/utils/constanciaDeSancion.js': ['hex'],    // idem: la constancia del Art. 83 se imprime y se firma
   'src/utils/marcaDelPapel.js': ['hex'],
-  'src/utils/planillaDePapel.js': ['hex'],        // idem: la planilla impresa (negro y gris de rejilla, sin tema)          // idem: los colores del logo para el PAPEL (carné, bienvenida, constancia)
   // El QR tiene que ser negro puro sobre blanco puro: es lo que lee un lector, y
   // un token de tema lo dejaría claro sobre claro en oscuro — ilegible para
   // cualquier teléfono. Mismo criterio que la guía de encuadre de la cámara.
@@ -401,7 +367,6 @@ const EXCEPTIONS = {
   'src/utils/conteoInventarioPrint.js': ['hex'],
   // El afiche del QR de una encuesta es PAPEL: negro sobre blanco a propósito
   // (un QR con poco contraste no lo lee ningún teléfono) y sin tokens del tema.
-  'src/views/encuestas-clientes/aficheQr.js': ['hex'],
   // La tarjeta de un aviso de solicitud no lleva imports A PROPÓSITO: la
   // corre también Deno (`send-push-notification/tarjeta.ts`), así que no puede
   // usar `formatMoney`. Su `$` con dos decimales es la moneda a mano declarada.
@@ -429,7 +394,7 @@ const EXCEPTIONS = {
   // (§25.4). Ahí `bg-chart-6/10` no es un relleno claro sino un tinte sobre
   // negro, y el texto blanco encima mide de sobra — la regla del `-solid`
   // existe para rellenos sobre fondo claro.
-  'src/components/timeclock/FeedbackOverlay.jsx': ['material-a-mano', 'color', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano', 'foto-sin-aro'],
+  'src/components/timeclock/FeedbackOverlay.jsx': ['material-a-mano', 'typography', 'relleno-sin-solid', 'white', 'hex', 'vidrio-a-mano', 'foto-sin-aro'],
   // ── Agregadas en D2.5/N1 (2026-07-26) tras migrar 25 de los 32 hex ─────
   // Los 7 que quedan NO tienen token equivalente y no es honesto forzarlos:
   // · Button.jsx  — #f65a4d es el arranque del degradado destructive del
@@ -443,13 +408,12 @@ const EXCEPTIONS = {
   //   chart-8 colapsaría dos categorías en un color. Es una rampa
   //   secuencial y el sistema solo tiene paletas categóricas — decidirlo es
   //   trabajo de D2.5, no de un reemplazo mecánico.
-  'src/components/common/Button.jsx': ['hex', 'white', 'chart-retirado'],
   // Badge.jsx ES la implementación canónica del patrón sólido que definió N2
   // (bg-X-solid + text-white). Su `text-white` no es deuda: es el contrato.
   // Mismo criterio que la excepción 'native' de LiquidSelect por ser el
   // canónico del <select>.
-  'src/components/common/Badge.jsx': ['white', 'chart-retirado'],
-  'src/components/common/Switch.jsx': ['white', 'chart-retirado'], // ES el canónico de la perilla
+  'src/components/common/Badge.jsx': ['white'],
+  'src/components/common/Switch.jsx': ['white'], // ES el canónico de la perilla
   // ── Perillas de switch (revisadas una por una, 2026-07-27) ─────────────
   // `bg-white` en un círculo pequeño ABSOLUTAMENTE POSICIONADO dentro de un
   // riel: es una perilla de switch, y una perilla es blanca sobre su riel en
@@ -460,37 +424,28 @@ const EXCEPTIONS = {
   // había drifteado — 18 switches a mano con 8 tamaños, 6 sombras y 8 offsets
   // distintos. Por eso existe ahora components/common/Switch.jsx. Estas
   // excepciones cubren los que faltan migrar (A14), no son permanentes.
-  'src/components/forms/BranchHelpers.jsx': ['white'],
-  'src/components/forms/FormPlanificador.jsx': ['white'],
-  'src/components/forms/FormAddCustomDocument.jsx': ['white'],
-  'src/views/AnnouncementsView.jsx': ['white'],
   'src/views/PermissionsView.jsx': ['white'],
   'src/views/BranchDetailView.jsx': ['white'],
-  'src/views/productos/tabminmax/LabsPanel.jsx': ['white'],
   // Barridos especulares (`via-white/[0.08-0.25]`) sobre botones brand: el
   // fondo es azul en los 4 temas, así que el destello blanco es correcto —
   // ya se decidió en el barrido de v2.62.4. Y los dos `bg-white` que quedan
   // son puntos de un timeline/paso sobre una línea de color.
-  'src/components/common/ErrorBoundary.jsx': ['white', 'z-index'],
-  'src/views/RequestsView.jsx': ['white'],
+  'src/components/common/ErrorBoundary.jsx': ['z-index'],
   'src/views/EncuestaView.jsx': ['white'],
-  'src/components/forms/FormNursingRegents.jsx': ['white'],
-  'src/views/productos/TabMinMax.jsx': ['white', 'z-index'],
+  'src/views/productos/TabMinMax.jsx': ['z-index'],
   // ── Superficies siempre-oscuras, agregadas al cerrar D3.8 (2026-07-27) ──
   // Mismo criterio que IdleScanPanel: los paneles del kiosco y los popovers
   // anclados al sidebar NO siguen el tema activo — son oscuros en los cuatro.
   // Ahí `bg-white/[0.06]` y `border-white/10` no son deuda: son la paleta
   // bespoke de esa superficie, que ya está documentada en DESIGN.md §6.
-  'src/components/timeclock/AuthPromptPanel.jsx': ['material-a-mano', 'color', 'white', 'input-a-mano', 'vidrio-a-mano'],
-  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'],
-  'src/components/timeclock/EarlyExitForm.jsx': ['material-a-mano', 'color', 'white', 'vidrio-a-mano'],
-  'src/components/common/SidebarSettingsMenu.jsx': ['color', 'white'],
+  'src/components/timeclock/AuthPromptPanel.jsx': ['material-a-mano', 'white', 'input-a-mano', 'vidrio-a-mano'],
+  'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['material-a-mano', 'white', 'vidrio-a-mano'],
+  'src/components/timeclock/EarlyExitForm.jsx': ['material-a-mano', 'white', 'vidrio-a-mano'],
   // ListRow lleva la paleta `onDark` para las filas de los flyouts del sidebar,
   // que se quedan oscuras en los 4 temas (si no, cuelga un panel claro de un
   // panel oscuro). Antes esa paleta estaba escrita a mano en cada archivo; que
   // viva en el canónico es mejor, pero el blanco sigue siendo literal a
   // propósito y por eso la excepción se mueve acá.
-  'src/components/common/ListRow.jsx': ['white'],
   // Misma razón: `PortalInput.onDark` es la paleta bespoke del kiosco viviendo
   // en el canónico en vez de copiada en cada pantalla (2026-07-28).
   "src/components/common/PortalInput.jsx": ['white'],
@@ -508,7 +463,6 @@ const EXCEPTIONS = {
   // `carril-pildora`: excepción MEDIDA, ver la nota junto a ClientesView.
   'src/views/productos/TabCatalogo.jsx': ['carril-pildora'],
   'src/plataforma/imagenes.js': ['hex'],
-  'src/views/productos/tabminmax/constants.js': ['hex'],
   // ── D2.2, cierre (2026-07-27) ──────────────────────────────────────────
   // Los 20 `zIndex:` que quedaban son tooltips y popovers PORTALEADOS: se
   // renderizan en document.body y calculan su top/left contra el elemento que
@@ -516,7 +470,7 @@ const EXCEPTIONS = {
   // una clase partiría la decisión de apilamiento en dos mecanismos — peor que
   // dejarla junta. Se excepciona con motivo para que la categoría llegue a 0 y
   // quede BLOQUEANTE: a partir de acá, cualquier zIndex inline NUEVO falla.
-  'src/views/DashboardView.jsx': ['color', 'z-index'],
+  'src/views/DashboardView.jsx': ['z-index'],
   // `z-index` y `capa-flotante` se fueron el 2026-08-26: los dos existían por el
   // tooltip de «Información pendiente», que esta vista se escribía a mano con su
   // propio `createPortal` y un `zIndex: 99999` inline. Ahora es `LiquidTooltip`
@@ -536,11 +490,9 @@ const EXCEPTIONS = {
   // enteras, desborde 0 en los tres anchos. Lo que la regla evita —que la
   // píldora le descuente 314px al carril en silencio— acá no puede pasar,
   // porque debajo de 1536 no comparten renglón.
-  'src/views/StaffManagementView.jsx': ['color', 'carril-pildora'],
   // 'capa-flotante': es EL tooltip canónico. Mismo motivo que arriba.
   'src/components/common/LiquidTooltip.jsx': ['capa-flotante'],
-  'src/components/common/LiquidWeekPicker.jsx': ['z-index'],
-  'src/components/common/PhotoEditorModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],
+  'src/components/common/PhotoEditorModal.jsx': ['z-index', 'hex', 'inline-color'],
   // Parte del mismo editor: el cuadro donde se juntan varias fotos se pinta en
   // BLANCO (es el fondo con que la foto se guarda y sale en la app) o con el
   // damero de transparencia, igual que PhotoEditorModal. No son colores de tema.
@@ -549,15 +501,9 @@ const EXCEPTIONS = {
   'src/components/common/ComponerFotos.jsx': ['hex', 'inline-color'],
   'src/views/productos/tabminmax/RowActions.jsx': ['z-index'],
   'src/views/pedidos/RecepcionModal.jsx': ['z-index'],
-  'src/views/pedidos/RutaMapModal.jsx': ['color', 'z-index', 'hex', 'inline-color'],
+  'src/views/pedidos/RutaMapModal.jsx': ['hex', 'inline-color'],
   'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography', 'z-index'],
-  'src/views/RawTestView.jsx': ['color', 'z-index', 'hex', 'inline-color'],
-  // AppLayout y LoginView: apilamiento INTERNO de sus propias superficies
-  // bespoke (las capas del sidebar siempre-oscuro, los orbes del splash). La
-  // escala canónica gobierna el apilamiento ENTRE componentes, no dentro de
-  // uno — un z-[2] sobre un z-[1] hermano no compite con nada del resto de la
-  // app, y nombrarlo con la escala global sería peor: sugeriría una relación
-  // que no existe.
+  'src/views/RawTestView.jsx': ['z-index', 'hex', 'inline-color'],
 };
 
 // EXCEPTIONS es un objeto literal: repetir una clave NO es un error de JS, la

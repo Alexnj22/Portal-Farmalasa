@@ -1,10 +1,11 @@
 // Extracted from TabMinMax.jsx (Bloque 6.C)
-import React, { useMemo, useState, useRef, useEffect, useId } from 'react';
-import { createPortal } from 'react-dom';
+import React, { useMemo, useState, useCallback, useId } from 'react';
 import { BarChart2, ChevronDown } from 'lucide-react';
 import { matrizAbcXyz } from '@nucleo/utils/minmaxTabla';
 import Button from '../../../components/common/Button';
 import useCapaFlotante from '../../../plataforma/capaFlotante';
+import useAnclaje from '../../../plataforma/useAnclaje';
+import Popover from '../../../components/common/Popover';
 import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 
 const XYZ_KEYS = ['X', 'Y', 'Z'];
@@ -41,9 +42,9 @@ const TRAMO = { X: 100, Y: 55, Z: 24 };
 export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz, setFilterXyz, loading }) {
     const compacto = useLayoutCompacto();
     const [abierto, setAbierto] = useState(false);
-    const [caja, setCaja] = useState(null);
-    const btnRef = useRef(null);
+    const cerrar = useCallback(() => setAbierto(false), []);
     const id = useId();
+    const { btnRef, caja } = useAnclaje(abierto && !compacto, cerrar, id);
 
     // Con el popover abierto, lo de atrás se queda quieto — ver
     // `src/plataforma/capaFlotante.js`. En compacto no hay popover (se dibuja en
@@ -60,28 +61,6 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
         setFilterXyz(px => px === xyz ? 'all' : xyz);
     };
 
-    useEffect(() => {
-        if (!abierto || compacto) return undefined;
-        const medir = () => {
-            const r = btnRef.current?.getBoundingClientRect();
-            if (r) setCaja({ top: r.bottom + 8, left: r.left });
-        };
-        medir();
-        const alTeclear = e => { if (e.key === 'Escape') setAbierto(false); };
-        const alClic = e => {
-            if (!btnRef.current?.contains(e.target) && !e.target.closest?.(`[data-abc="${id}"]`)) setAbierto(false);
-        };
-        window.addEventListener('keydown', alTeclear);
-        window.addEventListener('resize', medir);
-        window.addEventListener('scroll', medir, true);
-        document.addEventListener('mousedown', alClic);
-        return () => {
-            window.removeEventListener('keydown', alTeclear);
-            window.removeEventListener('resize', medir);
-            window.removeEventListener('scroll', medir, true);
-            document.removeEventListener('mousedown', alClic);
-        };
-    }, [abierto, compacto, id]);
 
     // ── Las barras: una fila por clase, partida en X/Y/Z ──────────────────
     const barras = (
@@ -200,18 +179,13 @@ export default function AbcXyzMatrix({ data, filterAbc, setFilterAbc, filterXyz,
                 <ChevronDown size={11} strokeWidth={2.5} className="text-content-3" />
             </button>
 
-            {abierto && caja && createPortal(
-                <div data-abc={id} role="dialog" aria-label="Clasificación ABC por XYZ"
-                    data-surface="dropdown"
-                    style={{ top: caja.top, left: caja.left }}
-                    className="fixed z-dropdown p-3 animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
+            <Popover abierto={abierto} caja={caja} id={id} ariaLabel="Clasificación ABC por XYZ" lado="izquierda"
+                    className="p-3">
                     <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">
                         Clasificación ABC × XYZ
                     </p>
                     {barras}
-                </div>,
-                document.body,
-            )}
+                </Popover>
         </>
     );
 }

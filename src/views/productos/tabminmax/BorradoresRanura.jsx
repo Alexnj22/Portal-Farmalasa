@@ -1,9 +1,9 @@
 import React, { memo, useCallback, useId, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { ChevronDown, EyeOff, Filter, GitCompare, Loader2, Trash2, Upload, X } from 'lucide-react';
 import TabBarAction from '../../../components/common/TabBarAction';
 import LiquidTooltip from '../../../components/common/LiquidTooltip';
 import useAnclaje from '../../../plataforma/useAnclaje';
+import Popover from '../../../components/common/Popover';
 import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 
 import PuntoDeEstado from '../../../components/common/PuntoDeEstado';
@@ -167,12 +167,8 @@ const BorradoresRanura = memo(({
                 </button>
             </LiquidTooltip>
 
-            {abierto && caja && createPortal(
-                <div data-panel={id} role="dialog" aria-label="Borradores de MIN y MAX"
-                    data-surface="dropdown"
-                    style={{ top: caja.top, right: caja.right }}
-                    className="fixed z-dropdown w-[280px] p-2 flex flex-col gap-2
-                        animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
+            <Popover abierto={abierto} caja={caja} id={id} ariaLabel="Borradores de MIN y MAX"
+                    className="w-[280px] p-2 flex flex-col gap-2">
                     <div className="flex items-center gap-1.5 px-1.5 pt-1 pb-0.5">
                         <Punto />
                         <span className="text-body-sm font-black text-content tabular-nums">{draftCount.toLocaleString('es-SV')}</span>
@@ -181,9 +177,7 @@ const BorradoresRanura = memo(({
                         </span>
                     </div>
                     {lista}
-                </div>,
-                document.body,
-            )}
+                </Popover>
         </>
     );
 });

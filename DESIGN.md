@@ -1213,6 +1213,10 @@ un formulario que ya es hoja.
 
 **El ancho de un modal sale de una escala de seis**: `max-w-sm` (24rem, confirmar o avisar), `max-w-md` (28), `max-w-lg` (32), `max-w-2xl` (42), `max-w-4xl` (56) y `max-w-6xl` (72), más `max-w-none` para una hoja o una barra. En el teléfono todos son hoja y ocupan el ancho completo. Gate `ancho-de-modal`.
 
+### Popover
+
+Archivo: `src/components/common/Popover.jsx`, con `useAnclaje` (`@plataforma/useAnclaje`). El panel que abre un botón: va por portal al `body`, se ancla al botón (`lado` derecha o izquierda), cierra con Escape y con un clic afuera, y lleva el material `dropdown`. `className` es para el ancho y el relleno. Gate `popover-a-mano`.
+
 ### LiquidModal
 
 Archivo: `src/components/common/LiquidModal.jsx`. Envuelve `ModalShell` con
@@ -3501,6 +3505,7 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `punto-a-mano` | punto de estado `w-2 h-2 rounded-full bg-…` a mano en vez de `PuntoDeEstado` (trinquete) | §7 |
 | `ancho-de-modal` | `maxWidth` de un modal fuera de la escala sm · md · lg · 2xl · 4xl · 6xl · none (cero absoluto) | §14 · ModalShell |
 | `icono-en-caja-a-mano` | ícono en cuadro o círculo de fondo neutro o teñido escrito a mano en vez de `IconoEnCaja` (trinquete) | §7 |
+| `popover-a-mano` | panel anclado a un botón escrito a mano (`data-panel=`, o una copia del cierre por clic afuera) en vez de `Popover` + `useAnclaje` (cero absoluto) | §14 |
 | `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion` (trinquete; quedan colores con significado y clases dinámicas) | §7 |
 | `rotulo-a-mano` | rótulo en mayúsculas chico con un peso o espaciado que no es `font-black tracking-widest` (cero absoluto) | §7 |
 | `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |

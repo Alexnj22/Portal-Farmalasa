@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from 'react';
 /**
  * useAnclaje — un panel flotante medido contra el botón que lo abre.
  *
- * Devuelve la ref que va en el disparador y la caja `{top, right}` con la que
- * posicionar el panel. Va SIEMPRE por portal al `body`: dentro de la píldora de
+ * Devuelve la ref que va en el disparador y la caja `{top, right, left}` con
+ * la que posicionar el panel; el panel en sí es `components/common/Popover`. Va SIEMPRE por portal al `body`: dentro de la píldora de
  * filtros —que tiene su propio `overflow` y alto fijo de 52px— un panel queda
  * recortado.
  *
@@ -30,7 +30,7 @@ export default function useAnclaje(abierto, cerrar, id) {
         if (!abierto) return undefined;
         const medir = () => {
             const r = btnRef.current?.getBoundingClientRect();
-            if (r) setCaja({ top: r.bottom + 8, right: window.innerWidth - r.right });
+            if (r) setCaja({ top: r.bottom + 8, right: window.innerWidth - r.right, left: r.left });
         };
         medir();
         const alTeclear = e => { if (e.key === 'Escape') cerrar(); };

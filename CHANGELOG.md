@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.10 — Popover canónico
+
+- **El panel que abre un botón es `Popover`**, sobre `useAnclaje`. Había cuatro escritos uno por uno: «Más filtros» y «Otros» de la barra de filtros, los borradores de Mín·Máx y la matriz ABC. La matriz además tenía su propia copia de la lógica de cierre, con otro atributo para reconocer su panel. Ahora los cuatro se anclan, se cierran (Escape o clic afuera) y se ven igual por construcción.
+- Revisado en el navegador, en Mín·Máx: la matriz ABC abre anclada al botón, un clic adentro no la cierra, y Escape y el clic afuera sí.
+- Gate nuevo `popover-a-mano` (cero absoluto). Se probó con una regresión fabricada.
+
 ## v2.1461.9 — Íconos en caja
 
 - **El ícono en una caja de color sale de un solo componente, `IconoEnCaja`**: tres tamaños (32, 40 y 48px), cuadro o círculo, y fondo neutro o teñido al 10% con el ícono en el color de su tono. Había 78 cajas en 12 tamaños; se pasaron 37 en 24 archivos.

@@ -6,6 +6,7 @@ import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 // El anclaje de los paneles de esta barra vive en `hooks/` desde que son tres
 // (desborde, otros, y el de borradores que TabMinMax mete como ranura).
 import useAnclaje from '../../plataforma/useAnclaje';
+import Popover from './Popover';
 import Contador from './Contador';
 import BarraFlotante, { LARGO_ROTULO_CLUSTER } from './BarraFlotante';
 import TabBarAction from './TabBarAction';
@@ -389,12 +390,8 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
                 </button>
             </div>
 
-            {abierto && caja && createPortal(
-                <div data-panel={id} role="dialog" aria-label="Más filtros"
-                    data-surface="dropdown"
-                    style={{ top: caja.top, right: caja.right }}
-                    className="fixed z-dropdown w-[280px] p-3 flex flex-col gap-3
-                        animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
+            <Popover abierto={abierto} caja={caja} id={id} ariaLabel="Más filtros"
+                    className="w-[280px] p-3 flex flex-col gap-3">
                     {secciones.map((s, i) => (
                         <div key={i} className="flex flex-col gap-1.5">
                             {s.props?.label && (
@@ -405,9 +402,7 @@ const PanelDesborde = memo(({ secciones, aplicadas }) => {
                             <div className="[&_*]:!max-w-full">{s}</div>
                         </div>
                     ))}
-                </div>,
-                document.body,
-            )}
+                </Popover>
         </>
     );
 });
@@ -452,12 +447,8 @@ const PanelAcciones = memo(({ acciones, extra }) => {
                     className={activas > 0 || abierto ? '!bg-brand/10 !border-brand/30 !text-brand-text' : ''} />
             </div>
 
-            {abierto && caja && createPortal(
-                <div data-panel={id} role="dialog" aria-label="Otras acciones"
-                    data-surface="dropdown"
-                    style={{ top: caja.top, right: caja.right }}
-                    className="fixed z-dropdown w-[240px] p-2 flex flex-col gap-2
-                        animate-in fade-in zoom-in-95 duration-[var(--dur-fast)] ease-out">
+            <Popover abierto={abierto} caja={caja} id={id} ariaLabel="Otras acciones"
+                    className="w-[240px] p-2 flex flex-col gap-2">
                     {acciones.map(a => (
                         <TabBarAction key={a.key} size="sm" icon={a.icon} tone={a.tone}
                             as={a.as} href={a.href} target={a.target} rel={a.rel}
@@ -469,9 +460,7 @@ const PanelAcciones = memo(({ acciones, extra }) => {
                         </TabBarAction>
                     ))}
                     {extra && <div className="flex flex-col gap-2 [&>*]:w-full">{extra}</div>}
-                </div>,
-                document.body,
-            )}
+                </Popover>
         </>
     );
 });

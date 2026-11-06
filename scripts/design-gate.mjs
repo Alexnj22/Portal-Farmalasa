@@ -1679,6 +1679,20 @@ function scanFile(path) {
     });
   }
 
+  // ── `popover-a-mano` (2026-11-06, CERO ABSOLUTO) ──────────────────────
+  // El panel anclado a un botón es `Popover` + `useAnclaje`. Había cuatro
+  // escritos uno por uno, y uno con su propia copia de la lógica de cierre.
+  // Un `data-panel=` fuera de Popover es otro panel a mano; una copia del
+  // cierre se delata por el `closest?.(\`[data-…` contra el clic.
+  if (!path.endsWith('components/common/Popover.jsx') && !path.endsWith('plataforma/useAnclaje.js') && !hasException(path, 'popover-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      if (/\bdata-panel=\{/.test(line) || /closest\?\.\(`\[data-[\w-]+="\$\{id\}"\]`\)/.test(line)) {
+        findings.push({ line: i + 1, label: 'panel flotante a mano — usar `<Popover>` con `useAnclaje`', category: 'popover-a-mano', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
   // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
   // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
   // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y

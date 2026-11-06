@@ -846,6 +846,9 @@ export const avanzarEtapaDePedidoEnSala = (params) => supabase.rpc('update_pedid
 /** Anula un pedido. */
 export const anularPedido = (params) => supabase.rpc('anular_pedido', params);
 
+/** Anula sólo la parte de UNA sala (sin iniciar); las demás salas siguen. */
+export const anularPedidoDeSala = (params) => supabase.rpc('anular_pedido_sucursal', params);
+
 /** Resuelve la novedad de un renglón de pedido. */
 export const resolverRenglonDePedido = (params) => supabase.rpc('resolve_pedido_item', params);
 

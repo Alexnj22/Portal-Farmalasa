@@ -871,6 +871,9 @@
     "update_pedido_sucursal_lifecycle": {
       "guarda": "alcance"
     },
+    "anular_pedido_sucursal": {
+      "guarda": "alcance"
+    },
     "upsert_meta_manual": {
       "guarda": "modulo-de-red",
       "modulos": [

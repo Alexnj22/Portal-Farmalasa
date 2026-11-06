@@ -699,8 +699,9 @@ export const EVENTO_DE_DIFERENCIA = {
 export function etapasPorPedido(rows = []) {
     const map = new Map();
     for (const row of rows) {
-        const prev = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false, anyFinalized: false };
+        const prev = map.get(row.pedido_id) ?? { allFinalized: true, anyActive: false, anyFinalized: false, salas: 0 };
         map.set(row.pedido_id, {
+            salas: prev.salas + 1,
             allFinalized: prev.allFinalized && !!row.finalizado_at,
             anyActive: prev.anyActive || (!!row.iniciado_at && !row.finalizado_at),
             anyFinalized: prev.anyFinalized || !!row.finalizado_at,
@@ -713,6 +714,22 @@ export function etapasPorPedido(rows = []) {
 export function anulacionDelPedido(row, etapas) {
     const st = etapas?.get(row?.pedido_id) ?? {};
     return { puede: row?.pedido_status === 'confirmado' && !st.anyFinalized, pideMotivo: !!st.anyActive };
+}
+
+/**
+ * ¿Se puede anular sólo la parte de ESTA sala? (2026-11-06)
+ *
+ * Regla del usuario: «si un pedido a una sucursal no se ha iniciado, que se
+ * pueda anular sin afectar lo demás». Sólo tiene sentido con otra sala en el
+ * pedido —con una sola, es «Anular» el pedido—, y sólo mientras Bodega no la
+ * empezó: lo ya separado en la mano no se deshace con un botón. El juez es
+ * `anular_pedido_sucursal` en la base; esto decide si se ofrece el botón.
+ */
+export function puedeAnularLaSala(row, etapas) {
+    const st = etapas?.get(row?.pedido_id) ?? {};
+    return (st.salas ?? 0) > 1
+        && getBranchStage(row) === 'sin_iniciar'
+        && !['anulado', 'completado'].includes(row?.pedido_status);
 }
 
 /** Una sala sin MIN·MAX publicado no se puede reponer: no hay qué pedir. */

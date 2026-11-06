@@ -7,7 +7,7 @@
 // cambie el historial de reenvíos o la cuenta del código, las dos pantallas
 // dejarían el mismo pedido en estados distintos.
 import {
-    anularPedido, avanzarEtapaDePedidoEnSala, confirmarPedido, fetchPedidoIdsSinceExcluding, fetchPedidoNumero,
+    anularPedido, anularPedidoDeSala, avanzarEtapaDePedidoEnSala, confirmarPedido, fetchPedidoIdsSinceExcluding, fetchPedidoNumero,
     fetchPedidoSucursalStatus, fetchPedidoSucursalStatusForPedidos, fetchVistaPreviaDePedido,
     fetchPedidoItemsForPrintCapture, guardarPaginasDeSala, iniciarCodigosDeSucursalesDelPedido,
     tieneEtiquetaDeDespacho,
@@ -41,6 +41,19 @@ export function razonesDePausaDisponibles(historial = []) {
 
 export async function anularPedidoConMotivo({ pedidoId, userId = null, motivo = null }) {
     sinError(await anularPedido({ p_pedido_id: pedidoId, p_anulado_por: userId, p_motivo: motivo || null }));
+}
+
+/**
+ * Anula sólo la parte de UNA sala, sin tocar las demás (2026-11-06). La base
+ * (`anular_pedido_sucursal`) es el juez: sólo Bodega, sólo una sala que nadie
+ * empezó a preparar, y con motivo. Si era la última sala viva, el pedido
+ * entero queda anulado: lo dice `pedido_anulado`.
+ * @returns {Promise<{ renglones: number, pedido_anulado: boolean }>}
+ */
+export async function anularSalaDelPedido({ pedidoId, sucId, motivo }) {
+    const { data, error } = await anularPedidoDeSala({ p_pedido_id: pedidoId, p_sucursal_id: sucId, p_motivo: motivo });
+    if (error) throw error;
+    return data ?? { renglones: 0, pedido_anulado: false };
 }
 
 /**

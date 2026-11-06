@@ -22,7 +22,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import { ERP_NAMES } from '@nucleo/constants/erp';
-import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, puedeReportarError, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, faltantesDeLaSala, describirFaltantes, esDeAntesDelPeriodo } from '@nucleo/utils/tableroDePedidos';
+import { fmtMin, elapsed, fmtEntrega, fmtRelative, getBranchStage, hayRecepcionPendiente, puedeReportarError, estadoDeLaSala, claveParada, puedePrepararse, puedeDespacharse, puedeAnularLaSala, faltantesDeLaSala, describirFaltantes, esDeAntesDelPeriodo } from '@nucleo/utils/tableroDePedidos';
 import ItemSections from './tabpedidos/ItemSections';
 import AvanceCompacto, { EncabezadoDeAvance } from './tabpedidos/AvanceCompacto';
 import DifSection from './tabpedidos/DifSection';
@@ -248,6 +248,12 @@ const FilaDeSala = React.memo(function FilaDeSala({
         && row.pedido_status === 'confirmado'
         && !(etapaPedido?.anyFinalized);
 
+    // Anular sólo ESTA sala (2026-11-06): con otra sala en el pedido y mientras
+    // Bodega no la empezó. Las demás siguen. El juez es la base.
+    const canAnularSala = canActuar && !isBranch
+        && puedeAnularLaSala(row, new Map([[row.pedido_id, etapaPedido ?? {}]]));
+    const nombreDeLaSala = ERP_NAMES[row.erp_sucursal_id] ?? `Sala ${row.erp_sucursal_id}`;
+
     const rtStop   = rutaInfo?.stop ?? entrega ?? null;
     const condId   = rutaInfo?.ruta?.conductor_id ?? entrega?.ruta?.conductor_id ?? null;
     const rtCond   = condId ? empMap.get(condId) ?? null : null;
@@ -407,7 +413,10 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         clic de más anulaba el pedido. Sigue en rojo (§15.2: una
                         acción irreversible no se atenúa). */}
                     {verSecundarias && canAnular && (
-                        <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); const st = etapaPedido ?? {}; acc.setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>Anular</Button>
+                        <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); const st = etapaPedido ?? {}; acc.setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, requiresReason: !!(st.anyActive) }); }}>{canAnularSala ? 'Anular todo' : 'Anular'}</Button>
+                    )}
+                    {verSecundarias && canAnularSala && (
+                        <Button variant="destructive" icon={Ban} className="mr-2" onClick={e => { e.stopPropagation(); acc.setAnularModal({ pedidoId: row.pedido_id, numero: row.numero, sucId: row.erp_sucursal_id, sala: nombreDeLaSala, requiresReason: true }); }}>{`Anular ${nombreDeLaSala}`}</Button>
                     )}
                     {/* El botón se pedía además con `!isApoyoBodega`,
                         o sea «que YO no esté ya de apoyo» — y esto

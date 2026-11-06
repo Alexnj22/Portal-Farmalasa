@@ -21100,6 +21100,8 @@ export type Database = {
       }
       pedido_sucursal_status: {
         Row: {
+          anulado_at: string | null
+          anulado_por: string | null
           caja_map: Json | null
           cajas_danadas: Json | null
           cajas_electrolit: number
@@ -21134,6 +21136,7 @@ export type Database = {
           llegada_fisica_por: string | null
           llegada_nota: string | null
           llegada_tipo: string | null
+          motivo_anulacion: string | null
           pagina_items: Json | null
           paginas: Json | null
           pausa_razon: string | null
@@ -21150,6 +21153,8 @@ export type Database = {
           total_cajas: number | null
         }
         Insert: {
+          anulado_at?: string | null
+          anulado_por?: string | null
           caja_map?: Json | null
           cajas_danadas?: Json | null
           cajas_electrolit?: number
@@ -21184,6 +21189,7 @@ export type Database = {
           llegada_fisica_por?: string | null
           llegada_nota?: string | null
           llegada_tipo?: string | null
+          motivo_anulacion?: string | null
           pagina_items?: Json | null
           paginas?: Json | null
           pausa_razon?: string | null
@@ -21200,6 +21206,8 @@ export type Database = {
           total_cajas?: number | null
         }
         Update: {
+          anulado_at?: string | null
+          anulado_por?: string | null
           caja_map?: Json | null
           cajas_danadas?: Json | null
           cajas_electrolit?: number
@@ -21234,6 +21242,7 @@ export type Database = {
           llegada_fisica_por?: string | null
           llegada_nota?: string | null
           llegada_tipo?: string | null
+          motivo_anulacion?: string | null
           pagina_items?: Json | null
           paginas?: Json | null
           pausa_razon?: string | null
@@ -31132,6 +31141,10 @@ export type Database = {
       anular_pedido: {
         Args: { p_anulado_por?: string; p_motivo?: string; p_pedido_id: string }
         Returns: undefined
+      }
+      anular_pedido_sucursal: {
+        Args: { p_motivo: string; p_pedido_id: string; p_sucursal_id: number }
+        Returns: Json
       }
       anular_receta: {
         Args: { p_motivo: string; p_receta_id: number }

@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1469.0 — Anular la parte de una sala del pedido sin afectar las demás
+
+Bodega preguntó cómo quitar Salud 1 del pedido #243 (iba a Salud 1 y Salud 2)
+porque ya no se iba a hacer. No había forma: «Anular» anula el pedido ENTERO y
+además desaparece en cuanto alguna sala está finalizada.
+
+- **«Anular <sala>»** en la tarjeta abierta de una sala, para Bodega, cuando el
+  pedido tiene más de una sala y ESA sala no se ha empezado a preparar. Pide
+  motivo. Sus productos pendientes quedan anulados, la tarjeta sale del tablero
+  y las demás salas siguen igual. Si era la última sala, el pedido queda
+  anulado; si las demás ya cerraron, el pedido se cierra.
+- Con dos salas, el botón del pedido entero pasa a decir «Anular todo».
+- Una sala ya iniciada no se anula sola: tiene producto separado en la mano.
+- Base: `anular_pedido_sucursal` (el juez), columnas `anulado_at`,
+  `anulado_por`, `motivo_anulacion` en `pedido_sucursal_status`;
+  `update_pedido_sucursal_lifecycle` se niega a mover una sala anulada y
+  `get_pedidos_en_curso` la deja fuera. Migración `20261106213651`.
+
 ## v2.1468.2 — El lote se anota de una vez, por mes, y el ajuste habla en cajas
 
 Lo que dejó la prueba en Salud 4 con «Anotar lote»:

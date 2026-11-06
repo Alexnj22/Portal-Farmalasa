@@ -9,7 +9,11 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import TituloDeSeccion from '../../../components/common/TituloDeSeccion';
 export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
     const [motivo, setMotivo] = useState('');
-    const canConfirm = !modal?.requiresReason || motivo.trim().length >= 5;
+    // Con `sala`, se anula sólo la parte de esa sala (2026-11-06): siempre
+    // pide motivo, porque las demás salas siguen y alguien va a preguntar.
+    const deSala = !!modal?.sala;
+    const pideMotivo = deSala || !!modal?.requiresReason;
+    const canConfirm = !pideMotivo || motivo.trim().length >= 5;
 
     return (
         <PedidoModal onClose={onCancel}>
@@ -19,21 +23,31 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
                         <Ban size={20} className="text-white" />
                     </div>
                     <div>
-                        <TituloDeSeccion nivel="tarjeta">Anular pedido</TituloDeSeccion>
-                        <p className="text-body-sm text-content-2 mt-0.5">#{modal?.numero}</p>
+                        <TituloDeSeccion nivel="tarjeta">{deSala ? `Anular ${modal.sala}` : 'Anular pedido'}</TituloDeSeccion>
+                        <p className="text-body-sm text-content-2 mt-0.5">Pedido #{modal?.numero}</p>
                     </div>
                 </div>
             </PedidoModal.Header>
 
             <PedidoModal.Body className="space-y-4">
-                {modal?.requiresReason ? (
+                {pideMotivo ? (
                     <>
-                        <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
-                            <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" />
-                            <p className="text-body-sm text-warning-text">
-                                Este pedido ya fue iniciado. Se anulará la preparación en curso y todos los ítems pendientes.
-                            </p>
-                        </div>
+                        {deSala ? (
+                            <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-danger/10 border border-danger/30">
+                                <AlertTriangle size={14} className="text-danger shrink-0 mt-0.5" />
+                                <p className="text-body-sm text-danger-text">
+                                    Se quita <strong>{modal.sala}</strong> de este pedido: sus productos ya no se preparan ni se envían.
+                                    Las demás salas siguen igual. No se puede deshacer.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-warning/10 border border-warning/30">
+                                <AlertTriangle size={14} className="text-warning shrink-0 mt-0.5" />
+                                <p className="text-body-sm text-warning-text">
+                                    Este pedido ya fue iniciado. Se anulará la preparación en curso y todos los ítems pendientes.
+                                </p>
+                            </div>
+                        )}
                         <div>
                             <label className={rotuloCampo('text-content-2')}>
                                 Motivo de anulación *
@@ -63,8 +77,8 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
             <PedidoModal.Footer>
                 <div className="flex justify-end gap-2">
                     <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
-                    <Button variant="destructive" disabled={!canConfirm || busy} onClick={() => onConfirm(modal?.requiresReason ? motivo.trim() : null)}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
-                        Anular pedido</Button>
+                    <Button variant="destructive" disabled={!canConfirm || busy} onClick={() => onConfirm(pideMotivo ? motivo.trim() : null)}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
+                        {deSala ? `Anular ${modal.sala}` : 'Anular pedido'}</Button>
                 </div>
             </PedidoModal.Footer>
         </PedidoModal>

@@ -17,7 +17,7 @@ import {
 } from '../data/devoluciones';
 import { confirmarLlegadaDiferencia } from '../data/diferencias';
 import { decidirDiferenciaYMover, decidirDevolucionYMover, finalizarPedidoConCajas, registrarReenvio, reintentarIngreso } from '../data/accionesDeBodega';
-import { anularPedidoConMotivo, cicloDeReenvioPendiente, confirmarLlegadaDeReenvio, etapaDePedido, programarEntregaDePedido, reenvioTodaviaEnBodega, textoDePausa } from '../data/accionesDePedido';
+import { anularPedidoConMotivo, anularSalaDelPedido, cicloDeReenvioPendiente, confirmarLlegadaDeReenvio, etapaDePedido, programarEntregaDePedido, reenvioTodaviaEnBodega, textoDePausa } from '../data/accionesDePedido';
 import { confirmarLlegadaDePedido } from '../data/llegadaDePedido';
 import { seguirPosicion } from '@plataforma/ubicacion';
 
@@ -806,7 +806,7 @@ export function usePedidosData({ searchTerm = '' }) {
         } finally { setBusyLifecycle(null); }
     }, [user, loadActive]);
 
-    const [anularModal,      setAnularModal]      = useState(null); // { pedidoId, numero, requiresReason }
+    const [anularModal,      setAnularModal]      = useState(null); // { pedidoId, numero, requiresReason, sucId?, sala? }
     const [busyAnular,       setBusyAnular]       = useState(false);
 
     const [printingPdf,      setPrintingPdf]      = useState(null);
@@ -905,9 +905,22 @@ export function usePedidosData({ searchTerm = '' }) {
         if (!anularModal) return;
         setBusyAnular(true);
         try {
-            await anularPedidoConMotivo({ pedidoId: anularModal.pedidoId, userId: user?.id ?? null, motivo });
-            useStaff.getState().appendAuditLog('PEDIDO_ANULADO', anularModal.pedidoId, { numero: anularModal.numero, motivo });
-            useToastStore.getState().showToast(`Pedido #${anularModal.numero} anulado`, motivo ? `Motivo: ${motivo}` : 'El pedido fue anulado correctamente.', 'success');
+            if (anularModal.sucId != null) {
+                // Sólo la parte de una sala: las demás siguen (2026-11-06).
+                const r = await anularSalaDelPedido({ pedidoId: anularModal.pedidoId, sucId: anularModal.sucId, motivo });
+                useStaff.getState().appendAuditLog('PEDIDO_SALA_ANULADA', anularModal.pedidoId, {
+                    numero: anularModal.numero, sala: anularModal.sala, erp_sucursal_id: anularModal.sucId,
+                    motivo, renglones: r.renglones, pedido_anulado: r.pedido_anulado,
+                });
+                useToastStore.getState().showToast(
+                    `${anularModal.sala} quitada del pedido #${anularModal.numero}`,
+                    r.pedido_anulado ? 'Era la última sala: el pedido quedó anulado.' : 'Las demás salas siguen igual.',
+                    'success');
+            } else {
+                await anularPedidoConMotivo({ pedidoId: anularModal.pedidoId, userId: user?.id ?? null, motivo });
+                useStaff.getState().appendAuditLog('PEDIDO_ANULADO', anularModal.pedidoId, { numero: anularModal.numero, motivo });
+                useToastStore.getState().showToast(`Pedido #${anularModal.numero} anulado`, motivo ? `Motivo: ${motivo}` : 'El pedido fue anulado correctamente.', 'success');
+            }
             setAnularModal(null);
             await loadActive();
         } catch (e) {

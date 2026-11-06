@@ -130,5 +130,12 @@ export async function leerCargoYSalaPropios(employeeId) {
         .eq('id', employeeId)
         .maybeSingle();
     if (error || !data) return null;
-    return data;
+    /* La sala que hay que comparar es la EFECTIVA —la de un apoyo temporal
+     * vigente, si lo hay—, que es la que trae el perfil. Con la de la ficha,
+     * quien está de apoyo pedía el perfil completo cada vez que volvía a la
+     * pestaña. Si la lectura falla no se afirma nada: sin fila no hay cambio. */
+    const { data: salaApoyo, error: apoyoErr } = await supabase
+        .rpc('sala_de_apoyo_vigente', { p_employee_id: employeeId });
+    if (apoyoErr) return null;
+    return salaApoyo != null ? { ...data, branch_id: Number(salaApoyo) } : data;
 }

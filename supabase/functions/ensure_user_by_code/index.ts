@@ -205,7 +205,13 @@ Deno.serve(async (req: Request) => {
         Number((employee.role as { rango?: number } | null)?.rango ?? 0),
         Number((employee.sec_role as { rango?: number } | null)?.rango ?? 0),
       );
-      const newBranchId   = employee.branch_id ?? null;
+      // La sala de la sesión es la EFECTIVA: la de un apoyo temporal vigente,
+      // si lo hay (2026-11-06). Misma regla que `auth_employee_branch_id()`,
+      // que es la que aplican las policies; si la lectura falla, la de la ficha.
+      const { data: salaApoyo, error: apoyoErr } = await admin
+        .rpc("sala_de_apoyo_vigente", { p_employee_id: employee.id });
+      if (apoyoErr) console.error(`[ensure_user_by_code] sala_de_apoyo_vigente: ${apoyoErr.message}`);
+      const newBranchId   = (!apoyoErr && salaApoyo != null) ? Number(salaApoyo) : (employee.branch_id ?? null);
       const curMeta       = authenticatedUser.user_metadata || {};
 
       const metaChanged =

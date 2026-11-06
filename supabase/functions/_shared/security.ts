@@ -214,7 +214,11 @@ export interface PermisoModulo {
   puede: boolean;
   /** Si su alcance es TODAS las sucursales (SUPERADMIN o `scope = 'ALL'`). */
   alcanceTodo: boolean;
-  /** La ficha, para el nombre del concepto y la sucursal propia. */
+  /**
+   * La ficha, para el nombre del concepto y la sucursal propia. `branch_id` es
+   * la sala EFECTIVA: la de un apoyo temporal vigente si lo hay, si no la de la
+   * ficha — la misma regla que `auth_employee_branch_id()` en la base.
+   */
   emp: {
     role_id: number | null;
     secondary_role_id: number | null;
@@ -230,7 +234,7 @@ export interface PermisoModulo {
 }
 
 export async function permisoDeModulo(
-  admin: { from: (t: string) => any },
+  admin: { from: (t: string) => any; rpc: (fn: string, args: Record<string, unknown>) => any },
   employeeId: string,
   modulo: string,
   accion: "can_view" | "can_edit" | "can_approve",
@@ -244,6 +248,22 @@ export async function permisoDeModulo(
   if (empErr) {
     console.error(`[permisoDeModulo] employees (${modulo}/${accion}): ${empErr.message}`);
     return { ...vacio, roto: "No se pudo leer tu ficha de empleado." };
+  }
+
+  /* La sala de un APOYO TEMPORAL vigente reemplaza a la de la ficha mientras
+   * dura (2026-11-06): quien está de apoyo en otra sala opera ESA caja, igual
+   * que las policies, que preguntan por `auth_employee_branch_id()`. Si la
+   * lectura falla se queda la de la ficha, que es el lado estricto: nunca le
+   * abre una sala que no le toca, a lo sumo le niega la del apoyo. */
+  let empEfectivo = emp;
+  if (emp) {
+    const { data: salaApoyo, error: apoyoErr } = await admin
+      .rpc("sala_de_apoyo_vigente", { p_employee_id: employeeId });
+    if (apoyoErr) {
+      console.error(`[permisoDeModulo] sala_de_apoyo_vigente: ${apoyoErr.message}`);
+    } else if (salaApoyo != null) {
+      empEfectivo = { ...emp, branch_id: Number(salaApoyo) };
+    }
   }
 
   /* Los DOS roles: el principal y el secundario.
@@ -285,7 +305,7 @@ export async function permisoDeModulo(
   return {
     puede: filas.some((p) => p[accion] === true),
     alcanceTodo: filas.some((p) => p[accion] === true && p.scope === "ALL"),
-    emp: (emp ?? null) as PermisoModulo["emp"],
+    emp: (empEfectivo ?? null) as PermisoModulo["emp"],
     roto: null,
   };
 }

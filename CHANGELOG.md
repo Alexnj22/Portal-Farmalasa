@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1462.0 — Un apoyo temporal mueve la sala de la persona mientras dura
+
+Fernando Oliva (ficha en Bodega) apoya como vendedor en Salud 4 hasta el 15-nov
+y no podía hacer entradas ni salidas de caja allá: «Solo puedes operar la caja
+de tu propia sala». La caja y más de 90 policies deciden «tu sala» con
+`employees.branch_id`, y el evento «Apoyo temporal» no lo tocaba.
+
+Decisión del usuario: **mientras el apoyo esté vigente, la persona es de esa
+sala en todo el portal**, y al vencer vuelve sola a la de su ficha.
+
+- Base: `sala_de_apoyo_vigente(empleado, día)` (SUPPORT no cancelado ni
+  reemplazado, con sala destino y el día dentro de sus rangos o entre `date` y
+  `endDate`; sin `endDate`, sólo su día). `auth_employee_branch_id()` devuelve
+  esa sala si la hay. Probado en el entorno de pruebas: vigente del 1 al 15,
+  nada el 16, cancelado no cuenta, rangos con huecos, y en sesión la sala pasa
+  de la ficha a la del apoyo.
+- `permisoDeModulo` (la caja) y `ensure_user_by_code` (el perfil de la sesión)
+  usan la misma regla; si la lectura falla se quedan con la de la ficha.
+- `leerCargoYSalaPropios` compara la sala efectiva, para no pedir el perfil
+  completo a cada vuelta a la pestaña.
+
 ## v2.1461.16 — Corte Z sin «Ver el cotejo completo»: se muestra según lo enviado
 
 Sin «Ver el cotejo completo», el Corte Z se muestra según lo enviado a Hacienda:

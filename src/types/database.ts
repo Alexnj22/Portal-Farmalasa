@@ -38215,6 +38215,10 @@ export type Database = {
       }
       sala_abierta_ahora: { Args: { p_branch_id: number }; Returns: boolean }
       sala_con_caja_abierta: { Args: { p_branch_id: number }; Returns: boolean }
+      sala_de_apoyo_vigente: {
+        Args: { p_dia?: string; p_employee_id: string }
+        Returns: number
+      }
       sala_hora_de_cierre: {
         Args: { p_branch: number; p_dia: string }
         Returns: string

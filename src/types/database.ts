@@ -30198,6 +30198,7 @@ export type Database = {
           contrato_lugar_celebracion: string | null
           contrato_prorrogas: Json | null
           created_at: string | null
+          cumple_mes_dia: string | null
           department: string | null
           disability_grade: string | null
           disability_has_certification: boolean | null
@@ -36087,6 +36088,10 @@ export type Database = {
       }
       lock_module: {
         Args: { p_hours?: number; p_module_key: string; p_reason?: string }
+        Returns: Json
+      }
+      lotes_de_renglon_de_traslado: {
+        Args: { idx: number; meta: Json }
         Returns: Json
       }
       mapfre_cotizar: {

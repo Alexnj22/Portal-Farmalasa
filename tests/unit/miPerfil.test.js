@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ausenciaDelDia, cumpleEn, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tieneHorarioPublicado, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
+import { ausenciaDelDia, cumpleEn, cumpleMesDia, esCumpleHoy, filtrarHistorial, historialDePerfil, proximasVacaciones, semanaDelPerfil, tieneHorarioPublicado, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 
 describe('miPerfil', () => {
     it('tiempo en la empresa por mes calendario', () => {
@@ -48,5 +48,17 @@ describe('miPerfil', () => {
         expect(cumpleEn('1990-10-03', '2026-10-02')).toBe('Mañana');
         expect(cumpleEn('1990-10-20', '2026-10-02')).toBe('en 18 días');
         expect(cumpleEn('1990-12-25', '2026-10-02')).toBeNull();
+    });
+
+    it('cumpleaños de otro: sólo día y mes, sin la fecha completa', () => {
+        // Sin permiso de Personal, `employees_safe` manda `cumple_mes_dia` y
+        // `birth_date` en null: tiene que alcanzar para saber si es hoy.
+        expect(cumpleMesDia({ birthDate: null, cumpleMesDia: '11-05' })).toBe('11-05');
+        expect(cumpleMesDia({ cumple_mes_dia: '02-29' })).toBe('02-29');
+        expect(cumpleMesDia({ birthDate: '1990-11-05' })).toBe('11-05');
+        expect(cumpleMesDia({})).toBeNull();
+        expect(esCumpleHoy({ cumpleMesDia: '11-05' }, '2026-11-05')).toBe(true);
+        expect(esCumpleHoy({ cumpleMesDia: '11-06' }, '2026-11-05')).toBe(false);
+        expect(esCumpleHoy({}, '2026-11-05')).toBe(false);
     });
 });

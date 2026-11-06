@@ -84,6 +84,7 @@ import VistazoWidget from './dashboard/VistazoWidget';
 import { useSolicitudEnInicio } from './dashboard/useSolicitudEnInicio';
 import { tieneSelloMh } from '@nucleo/data/facturacion';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
+import { cumpleMesDia } from '@nucleo/utils/miPerfil';
 import { MODULE_MAP } from '../components/common/catalogos/modulos';
 import LiquidTooltip from '../components/common/LiquidTooltip';
 import LiquidSelect from '../components/common/LiquidSelect';
@@ -2336,15 +2337,20 @@ const DashboardView = ({ openModal }) => {
     const today=new Date(todayStr+'T12:00:00');
     const tomorrow=new Date(today); tomorrow.setDate(today.getDate()+1);
     const tomorrowStr=`${tomorrow.getFullYear()}-${String(tomorrow.getMonth()+1).padStart(2,'0')}-${String(tomorrow.getDate()).padStart(2,'0')}`;
+    // Día y mes de `cumpleMesDia`, no de `birthDate`: la fecha completa sólo
+    // llega para uno mismo o con permiso de Personal, así que el personal de
+    // sala veía únicamente SU cumpleaños (2026-11-05). La edad sale del año, y
+    // por eso sólo se muestra a quien lo tiene.
     return activeEmployees
-      .filter(e=>{if(!e.birthDate)return false; const bd=new Date(e.birthDate+'T12:00:00'); return bd.getMonth()===m;})
-      .map(e=>{
-        const bd=new Date(e.birthDate+'T12:00:00');
-        const age=y-bd.getFullYear();
-        const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(bd.getDate()).padStart(2,'0')}`;
+      .map(e=>({ e, md: cumpleMesDia(e) }))
+      .filter(({md})=>md && Number(md.slice(0,2))===m+1)
+      .map(({e,md})=>{
+        const dia=Number(md.slice(3,5));
+        const age=e.birthDate ? y-Number(String(e.birthDate).slice(0,4)) : null;
+        const ds=`${y}-${md}`;
         const branch=branches.find(b=>String(b.id)===String(e.branchId||e.branch_id));
         const isToday=ds===todayStr, isTomorrow=ds===tomorrowStr, isPast=new Date(ds+'T12:00:00')<today&&!isToday;
-        return {...e, age, day:bd.getDate(), dateStr:ds, isToday, isTomorrow, isPast, branchName:branch?.name||'Sin sucursal'};
+        return {...e, age, day:dia, dateStr:ds, isToday, isTomorrow, isPast, branchName:branch?.name||'Sin sucursal'};
       })
       .sort((a,b)=>a.day-b.day);
   },[activeEmployees,bdMonth,branches]);
@@ -3445,7 +3451,7 @@ const DashboardView = ({ openModal }) => {
                           ?<Badge variant="info" size="sm" uppercase={false}>Hoy</Badge>
                           :e.isTomorrow
                           ?<Badge variant="warning" size="sm" uppercase={false}>Mañana</Badge>
-                          :<Badge size="sm" uppercase={false}>{e.age} años</Badge>
+                          :e.age!=null&&<Badge size="sm" uppercase={false}>{e.age} años</Badge>
                         }
                       </div>
                     </div>

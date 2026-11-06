@@ -1195,7 +1195,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                                     El radio y el marco se le pasan porque el sidebar es
                                                     una superficie bespoke con sus propios tokens. */}
                                                 <AvatarConEstado
-                                                    emp={user} px={36}
+                                                    emp={user} px={36} cumple={false}
                                                     className="shadow-[var(--shadow-elevation-xl)]"
                                                     marco="border border-[rgb(var(--sidebar-ink)/0.12)] bg-[rgb(var(--sidebar-realce)/0.08)]"
                                                 />
@@ -1247,7 +1247,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                                 bg-[rgb(var(--sidebar-realce)/0.08)] border border-[rgb(var(--sidebar-ink)/0.12)] text-[rgb(var(--sidebar-ink)/0.55)]
                                                 shadow-[var(--shadow-glass-1)]
                                                 hover:bg-[rgb(var(--sidebar-realce)/0.14)] hover:border-[rgb(var(--sidebar-ink)/0.20)] hover:shadow-[var(--sidebar-item-hover-shadow)] ${focusRing}`}>
-                                            <AvatarConEstado emp={user} px={44} radio="rounded-2xl" marco="" />
+                                            <AvatarConEstado emp={user} px={44} radio="rounded-2xl" marco="" cumple={false} />
                                         </Link>
                                         {myBirthday && (
                                             <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[#07031a] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>
@@ -1337,7 +1337,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                     <Link to="/mi-perfil" aria-label="Mi perfil"
  className="w-11 h-11 rounded-3xl shadow-md overflow-hidden active:scale-[0.97] transition flex items-center justify-center relative group hover:shadow-lg border bg-surface-card border-border-card">
                                         <div className="absolute inset-0 bg-brand/5 opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity z-base" />
-                                        <AvatarConEstado emp={user} px={44} radio="rounded-3xl" marco="" />
+                                        <AvatarConEstado emp={user} px={44} radio="rounded-3xl" marco="" cumple={false} />
                                     </Link>
                                     {myBirthday && (
                                         <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-chart-6 border-2 border-[rgb(var(--sidebar-ink))] shadow-sm flex items-center justify-center animate-bounce z-base pointer-events-none" role="img" title={`¡Hoy cumple ${myBirthday.turningAge} años! 🎉`}>

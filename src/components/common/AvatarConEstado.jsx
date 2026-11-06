@@ -1,5 +1,5 @@
 import React, { useMemo, useEffect, useState, useSyncExternalStore } from 'react';
-import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban } from 'lucide-react';
+import { Palmtree, Stethoscope, Baby, Clock, Briefcase, UserMinus, UserX, HelpCircle, Ban, Cake } from 'lucide-react';
 import LiquidAvatar from './LiquidAvatar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { estadoDePersona, normalizarPersona } from '@nucleo/utils/estadoDePersona';
@@ -12,6 +12,7 @@ import { antiguedadDePersona, pendientesDePersona } from '@nucleo/utils/alertasD
 import { agruparFaltantes } from '@nucleo/utils/expediente';
 import LiquidTooltip from './LiquidTooltip';
 import { esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
+import { esCumpleHoy } from '@nucleo/utils/miPerfil';
 import { useAuthSiHay } from '@nucleo/context/AuthContext';
 
 /* La foto firmada de alguien que NO está en el store, por id. Un pedido por
@@ -147,7 +148,8 @@ function GloboDePendientes({ pendientes }) {
 
 export default function AvatarConEstado({ emp: crudo, px, className = '', mostrarChip = true,
                                           radio = 'rounded-xl', marco = 'border border-border-card',
-                                          antiguedad: antiguedadDada, pendientes: conPendientes = true }) {
+                                          antiguedad: antiguedadDada, pendientes: conPendientes = true,
+                                          cumple: marcarCumple = true }) {
   // El portal muestra a la misma gente con seis formas de objeto distintas
   // según de qué consulta salga. `normalizarPersona` las acepta todas — ver su
   // nota en `utils/estadoDePersona.js`.
@@ -296,6 +298,12 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
     () => (conPendientes && puedeCorregir && fila && empleado && !deBaja ? pendientesDePersona(fila) : []),
     [conPendientes, puedeCorregir, fila, empleado, deBaja]);
 
+  /* La torta de cumpleaños, para TODOS y en cualquier foto (2026-11-05). Antes
+     sólo existía en el menú lateral y para uno mismo: el día del cumpleaños de
+     una compañera nadie más lo veía. Debajo de 28 px no entra; el menú lateral
+     dibuja la suya por fuera del recorte y pasa `cumple={false}`. */
+  const deCumple = marcarCumple && px >= 28 && empleado && !deBaja && esCumpleHoy(persona);
+
   const marca = estado ? MARCA[estado.variante] : null;
   const Icono = estado ? ICONO[estado.clave] : null;
 
@@ -323,7 +331,7 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
   const tituloPendientes = pendientes.length
     ? `Expediente incompleto: ${pendientes.length} ${pendientes.length === 1 ? 'dato' : 'datos'}`
     : '';
-  const titulo = [tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
+  const titulo = [deCumple ? '¡Hoy cumple años! 🎂' : '', tituloEstado, tituloAntiguedad].filter(Boolean).join(' · ') || undefined;
   const etiqueta = [titulo, tituloPendientes].filter(Boolean).join(' · ') || undefined;
   const marcaPendiente = pendientes.length > 0;
   const tamPendiente = px >= 28 ? Math.max(12, Math.round(px * 0.28)) : 8;
@@ -414,6 +422,15 @@ export default function AvatarConEstado({ emp: crudo, px, className = '', mostra
           que importa a este tamaño es QUE falta algo; cuántos y cuáles los dice
           el `title` del conjunto y el banner del formulario. Debajo de 28 px
           es un punto sin texto. */}
+      {deCumple && (
+        <span
+          className="absolute -top-1 -left-1 flex items-center justify-center rounded-full border-2 border-surface-card shadow-sm bg-chart-6-solid z-base pointer-events-none"
+          style={{ width: Math.max(16, Math.round(px * 0.3)), height: Math.max(16, Math.round(px * 0.3)) }}
+          aria-hidden="true" data-cumple="hoy"
+        >
+          <Cake size={Math.max(9, Math.round(px * 0.17))} className="text-white" strokeWidth={2.5} />
+        </span>
+      )}
       {marcaPendiente && (
         <LiquidTooltip variant="rich" side="bottom" className="absolute -top-1 -right-1 z-base"
           content={<GloboDePendientes pendientes={pendientes} />}>

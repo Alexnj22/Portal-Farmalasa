@@ -113,6 +113,24 @@ export function proximasVacaciones(planes = [], hoy = hoySV()) {
     return planes.find((vp) => vp.end_date >= hoy && (vp.status === 'PLANNED' || vp.status === 'CONFIRMED')) || null;
 }
 
+/**
+ * «MM-DD» del cumpleaños de una persona, venga de donde venga. La fecha
+ * completa (`birthDate`/`birth_date`) sólo llega para uno mismo o con permiso
+ * de Personal; para los demás `employees_safe` manda `cumple_mes_dia` —día y
+ * mes, sin el año—, que es lo único que hace falta para saber si es hoy.
+ */
+export function cumpleMesDia(persona) {
+    const completa = persona?.birthDate || persona?.birth_date;
+    if (completa) return String(completa).slice(5, 10);
+    return persona?.cumpleMesDia || persona?.cumple_mes_dia || null;
+}
+
+/** ¿Hoy cumple años? (hora de El Salvador). */
+export function esCumpleHoy(persona, hoy = hoySV()) {
+    const md = cumpleMesDia(persona);
+    return !!md && md === hoy.slice(5, 10);
+}
+
 /** «¡Hoy! 🎉», «Mañana», «en N días» (hasta 30) o null. */
 export function cumpleEn(birthDate, hoy = hoySV()) {
     if (!birthDate) return null;

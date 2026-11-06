@@ -391,6 +391,7 @@ export const createSystemSlice = (set, get) => ({
                                     branchId: e.branch_id,
                                     hireDate: e.hire_date,
                                     birthDate: e.birth_date,
+                                    cumpleMesDia: e.cumple_mes_dia,
                                     photo: e.photo_url,
                                     attendance: Array.isArray(e.attendance) ? e.attendance : [],
                                     history: myHistory,

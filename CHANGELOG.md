@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1456.6 — Cumpleaños: toda la sala ve los de su sucursal, y la torta en la foto para todos
+
+- El widget Cumpleaños del Inicio: el personal de sala sólo veía el suyo, porque la fecha de nacimiento de los demás se esconde sin permiso de Personal. Ahora todos ven el día y el mes de los de su sucursal; la edad sigue visible sólo para quien tiene ese permiso.
+- La torta de cumpleaños aparece en la foto de la persona en todo el portal (antes sólo en el menú lateral y para uno mismo).
+- Base: `employees_safe` expone `cumple_mes_dia` (MM-DD), sin el año.
+
 ## v2.1456.5 — Ventas por día: la cabecera vuelve a un renglón
 
 - El selector de sucursal ocupaba el renglón entero de la cabecera: el botón de ampliar, la sucursal y Horas/Días caían en tres renglones (~200px) y las barras quedaban aplastadas. Ahora van en una sola línea y el gráfico recupera ese alto.

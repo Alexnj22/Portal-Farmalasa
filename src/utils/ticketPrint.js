@@ -367,7 +367,7 @@ export function construirTicketHtml(ticket) {
     color: #000;
     font-family: ${MONO};
     font-size: 8.5pt;
-    line-height: 1.12;   /* 2026-11-04: menos papel, igual que el rollo */
+    line-height: 1.25;   /* 2026-11-06: 1.12 quedaba pegado; igual que el rollo */
     /* El navegador aclara los negros al imprimir si no se le prohíbe, y en
        térmico eso es la diferencia entre negro y gris entramado. */
     -webkit-print-color-adjust: exact;
@@ -644,7 +644,7 @@ const JUEGO_DE_CARACTERES = `${ESC}R\f`;   // el que usa el origen: latino
 // El margen de corte NO se toca: antes de los saltos del final se vuelve al
 // interlineado de fábrica (`ESC 2`), que es con el que se midieron los
 // ~17 mm de SALTOS_DE_CORTE.
-const RESPIRO = 4;                              // puntos entre renglones
+const RESPIRO = 8;                              // puntos entre renglones (2026-11-06: 4 quedaba pegado)
 const ALTO_DE_LETRA = { chica: 17, normal: 24 }; // fuente B / fuente A, en puntos
 const INTERLINEADO_DE_FABRICA = `${ESC}2`;
 

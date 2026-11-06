@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1466.4 — Tickets con un poco más de aire entre renglones
+
+El apretado del 2026-11-04 dejó los renglones pegados y difíciles de leer. Se
+abre un poco, sin volver al interlineado de fábrica: en el rollo el respiro
+entre renglones pasa de 4 a 8 puntos (letra chica 21 → 25, doble alto 52 → 56)
+y en el ticket del navegador el `line-height` de 1.12 a 1.25. El margen de
+corte no cambia.
+
 ## v2.1466.3 — Envíos: la recepción destraba el lote y la presentación cambiados después de despachar
 
 El destrabe del 2026-11-05 (`_shared/erp-destrabe.ts`) se había puesto en pedidos y

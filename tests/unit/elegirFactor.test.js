@@ -1,6 +1,6 @@
 // Cuántas unidades trae cada una del proveedor, con el precio como juez (2026-11-05).
 import { describe, it, expect } from 'vitest';
-import { elegirFactor, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
+import { elegirFactor, empaqueEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion } from '../../supabase/functions/_shared/compraSobre.ts';
 
 describe('elegirFactor', () => {
     it('MELOFLEX: lo aprendido (1, de agosto) pierde contra el precio: caja de 10', () => {
@@ -57,5 +57,19 @@ describe('elegirFactor', () => {
     it('el freno no toca una caja que el catálogo sí vende', () => {
         expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [30], costoNeto: 2.88, costoUnidad: 2.62 / 30, presentaciones: [30], vinetaUno: 9 }))
             .toEqual({ factor: 30, origen: 'costo' });
+    });
+    it('RINOKEM PLUS «CAJA X 100 CAPS»: el costo subió 40 % y la caja sigue siendo de 100', () => {
+        const desc = 'RINOKEM PLUS CAJA X 100 CAPS LOTE: 260265 VENCE: 28/02/2028';
+        expect(empaqueEnLaDescripcion(desc)).toBe(true);
+        expect(tamanosEnLaDescripcion(desc)).toEqual([100]);
+        expect(elegirFactor({ delDoc: null, aprendido: 140, empaque: true, pistas: [100], costoNeto: 8.904, costoUnidad: 0.0637, presentaciones: [1, 10, 100], vinetaUno: 0.27 }))
+            .toEqual({ factor: 100, origen: 'documento' });
+    });
+    it('sin la palabra del empaque, el mismo caso sigue yendo por el precio', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: null, pistas: [100], costoNeto: 8.904, costoUnidad: 0.0637, presentaciones: [1, 10, 100], vinetaUno: 0.27 }).factor).toBe(140);
+    });
+    it('una caja nombrada que el precio contradice de plano no se usa (precio de unidad suelta)', () => {
+        expect(elegirFactor({ delDoc: null, aprendido: null, empaque: true, pistas: [30], costoNeto: 2.7, costoUnidad: 2.62, presentaciones: [1, 30] }))
+            .toEqual({ factor: 1, origen: null });
     });
 });

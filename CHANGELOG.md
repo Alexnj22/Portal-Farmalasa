@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1463.4 — Compras: una caja nombrada en la factura no la cambia un alza de precio
+
+- **«RINOKEM PLUS CAJA X 100 CAPS» proponía 2 × 140 = 280 cápsulas.** La
+  factura cobraba $8.90 la caja y el catálogo tenía la cápsula a $0.0637: el
+  precio daba 140, el 100 de la descripción quedaba 40 % lejos y la regla sólo
+  lo aceptaba hasta 25 %. Alguien lo confirmó y quedó aprendido.
+- **Ahora, si la descripción nombra el empaque (CAJA, CJA, DISP, PAQ…) y un
+  tamaño «X N» que el catálogo ya vende, entra en ése** aunque el precio haya
+  subido; el alza la avisa la revisión de costos. Sólo un precio menor a la
+  mitad o mayor al doble lo descarta.
+- El 140 aprendido de ese código del proveedor se corrigió a 100; la compra se
+  cargó como 2 × CAJA (100).
+
 ## v2.1463.3 — Compras: el encabezado va con los montos del documento y el sello de Hacienda
 
 - **El total de la compra es el del documento, al centavo.** La carga sumaba

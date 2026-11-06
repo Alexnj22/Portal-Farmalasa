@@ -354,6 +354,15 @@ export function tamanosEnLaDescripcion(t: string): number[] {
   return [...String(t ?? "").matchAll(/\bX\s*(\d{1,3})\b/gi)].map((m) => Number(m[1])).filter((n) => n >= 2 && n <= 500);
 }
 
+/**
+ * ¿La descripción nombra un empaque («CAJA X 100 CAPS», «CJA X 30»)? Con eso,
+ * el «X N» que la acompaña deja de ser una pista y pasa a ser lo que el papel
+ * dice — siempre que el catálogo ya venda ese tamaño (`elegirFactor`).
+ */
+export function empaqueEnLaDescripcion(t: string): boolean {
+  return /\b(CAJA|CAJ|CJA|CJ|DISPLAY|DISP|PAQUETE|PAQ|FARDO|BULTO)\b/i.test(String(t ?? ""));
+}
+
 export function factorDebilEnLaDescripcion(t: string): number | null {
   const m = /\bDISP(?:LAY)?\.?\s*(?:X|DE|CON)\s*(\d+)\b/i.exec(String(t ?? ""));
   const n = m ? Number(m[1]) : NaN;
@@ -379,7 +388,7 @@ export function factorDebilEnLaDescripcion(t: string): number | null {
 export function elegirFactor(x: {
   delDoc: number | null; aprendido: number | null; costoNeto: number;
   costoUnidad: number | null | undefined; presentaciones: number[];
-  debil?: number | null; pistas?: number[]; vinetaUno?: number | null;
+  debil?: number | null; pistas?: number[]; vinetaUno?: number | null; empaque?: boolean;
 }): { factor: number; origen: "documento" | "aprendido" | "costo" | null; corrige?: number } {
   if (x.delDoc) return { factor: x.delDoc, origen: "documento" };
   // Lo que el papel dice a medias («DISP. X 50 TAB.») sólo vale si el catálogo
@@ -387,6 +396,18 @@ export function elegirFactor(x: {
   if (x.debil && x.presentaciones.includes(x.debil)) return { factor: x.debil, origen: "documento" };
   const cu = Number(x.costoUnidad);
   const razon = cu > 0 && x.costoNeto > 0 ? x.costoNeto / cu : null;
+  // «RINOKEM PLUS CAJA X 100 CAPS» a $8.90 con la cápsula a $0.0637 en el
+  // catálogo (2026-11-06): el precio daba 140 —el costo subió 40 %— y entraban
+  // 280 en vez de 200. Si la descripción nombra el empaque y un tamaño que el
+  // catálogo ya vende, es ése: un aumento de precio no cambia la caja, y el
+  // alza la avisa la revisión de costos. Sólo un precio que lo contradice de
+  // plano (menos de la mitad o más del doble) lo descarta.
+  if (x.empaque) {
+    const nombrados = [...new Set((x.pistas ?? []).filter((f) => f >= 2 && x.presentaciones.includes(f)))];
+    if (nombrados.length === 1 && (razon == null || (razon / nombrados[0] >= 0.5 && razon / nombrados[0] <= 2))) {
+      return { factor: nombrados[0], origen: "documento" };
+    }
+  }
   const cuadra = (f: number) => razon != null && Math.abs(razon / f - 1) <= 0.08;
   let porCosto: number | null = null;
   if (razon != null) {

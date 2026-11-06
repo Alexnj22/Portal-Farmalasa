@@ -23,6 +23,10 @@
  * Uso:
  *   npm run gate:migrations              solo chequeos locales (sin red, sin credenciales)
  *   npm run gate:migrations -- --remote  además cruza contra el registro de prod
+ *   npm run gate:migrations -- --revisar <borrador.sql>…   reglas de CLAUDE.md sobre un
+ *                                        borrador, ANTES de `apply_migration`
+ *   npm run gate:migrations -- --deuda [N] [--detalle]     cuántas de las últimas N
+ *                                        (60) no cumplen esas reglas; nunca falla
  *
  * `--remote` FALLA si no puede leer prod. Es a propósito: pedir el cruce y que no
  * se haga no puede terminar en el mismo tilde verde que un cruce que sí encontró
@@ -60,6 +64,220 @@ const CORTE = '20260729223030';
  * El gate ahora las cuenta en vivo en vez de anunciar una constante. */
 
 const NOMBRE = /^(\d{14})_([a-z0-9_]+)\.sql$/;
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Reglas OBLIGATORIAS de CLAUDE.md, leídas del SQL (2026-11-06)
+// ═════════════════════════════════════════════════════════════════════════════
+//
+// Cinco reglas que CLAUDE.md escribe en prosa —§«migraciones sobre tablas
+// calientes» y §«Estructura BD»— y que hasta hoy no verificaba nada. Cada una
+// salió de un incidente medido; una regla en prosa que nadie chequea es
+// exactamente cómo se volvió a colar `WITH CHECK (true)` en `attendance` y
+// `audit_logs` después de que la regla de `USING (true)` ya estaba escrita.
+//
+// Miran SÓLO migraciones posteriores a CORTE_REGLAS: la historia no se puede
+// reescribir (ya está aplicada en prod) y acusarla haría que el gate se calle
+// a fuerza de excepciones. Lo que ya existe se MIDE con `--deuda`, no se acusa.
+//
+// Cada regla tiene su escape en el archivo, con el mismo formato que
+// `-- venta-a-mano: <motivo>`: sin motivo escrito no vale.
+//
+// `--revisar <archivo.sql>…` corre estas reglas sobre un borrador SIN mirar el
+// corte —el borrador va al scratchpad antes de `apply_migration`, así que ése es
+// el momento de revisarlo, no después de aplicado—.
+const CORTE_REGLAS = '20261106140000';
+
+const REGLAS = {
+  'lock-timeout': {
+    escape: 'sin-lock-timeout',
+    titulo: 'DDL sin `SET lock_timeout`',
+    detalle: [
+      'Outage del 2026-07-08 15:48–16:02 UTC: DDL de RLS aplicado mientras corría un sync.',
+      'El ALTER/CREATE espera un lock ACCESS EXCLUSIVE, TODA lectura posterior de la tabla',
+      'se encola detrás, el pool de PostgREST se agota y el portal entero da 504 (que el',
+      "navegador pinta como error de CORS). Poner al principio: SET lock_timeout = '5s';",
+      'Si falla por lock timeout, NO congeló prod: reintentar.',
+    ],
+  },
+  'auth-por-fila': {
+    escape: 'auth-por-fila',
+    titulo: 'función de auth sin `(SELECT …)` dentro de una policy',
+    detalle: [
+      'Sin el wrapper Postgres la evalúa POR FILA (cada llamada consulta employees +',
+      'role_permissions). 2026-07-08: un count() de 27K filas en sales_invoices pasó de',
+      '25,000 ms a 19 ms con `(SELECT auth_x(...))`. Ser STABLE no alcanza; sólo el',
+      'initplan garantiza una evaluación. El advisor de Supabase sólo linta auth.uid().',
+    ],
+  },
+  'definer-sin-search-path': {
+    escape: 'definer-sin-search-path',
+    titulo: 'SECURITY DEFINER sin `SET search_path`',
+    detalle: [
+      'Una función DEFINER corre con los permisos de su dueño; sin search_path fijo,',
+      'quien la llama puede anteponer un esquema propio y hacerle resolver sus objetos.',
+      'Regla 4 de §Estructura BD: SET search_path = public, extensions.',
+    ],
+  },
+  'jsonb-agg': {
+    escape: 'jsonb-agg',
+    titulo: '`jsonb_agg` en una función que devuelve json/jsonb',
+    detalle: [
+      'Patrón C de CLAUDE.md: jsonb construye el valor binario completo en memoria y',
+      'spillea a disco. get_stock_analysis_jsonb (4,226 filas / 4.6 MB): jsonb_agg =',
+      '1,963 ms con temp spill; json_agg = 402 ms. Usar json_agg(to_json(t)) con RETURNS',
+      'json. Si el agregado es chico (un puñado de filas), declararlo con el escape.',
+    ],
+  },
+  'policy-abierta': {
+    escape: 'policy-abierta',
+    titulo: 'policy de escritura con condición `true`',
+    detalle: [
+      'USING (true) en UPDATE/DELETE y WITH CHECK (true) en INSERT están prohibidos',
+      '(§Estructura BD regla 3). Por el INSERT se colaron attendance y audit_logs: se',
+      'podía fabricar una marcación y firmar la bitácora con otro nombre. Usar',
+      "(SELECT auth_can_edit_any(ARRAY['modulo'])) o decir de quién es la fila.",
+      'Sólo `TO service_role` queda fuera: salta el RLS de todos modos.',
+    ],
+  },
+};
+
+// Quita comentarios. Las cadenas con `--` adentro son raras en migraciones y el
+// costo de equivocarse es un falso negativo, no un falso positivo.
+const sinComentarios = (t) => t.replace(/\/\*[\s\S]*?\*\//g, ' ').replace(/--.*$/gm, '');
+
+// Separa los cuerpos de función (`AS $$ … $$`) del SQL de nivel superior. Los
+// bloques `DO $$ … $$` se dejan EN LÍNEA: ahí adentro se crean policies y se
+// hace DDL que corre al aplicar la migración, igual que si estuviera afuera. Un
+// cuerpo de función, en cambio, corre cuando alguien la llama — un `ALTER TABLE`
+// ahí adentro no toma ningún lock al aplicarla.
+function separarCuerpos(texto) {
+  const cuerpos = [];
+  const arriba = texto.replace(/\$([A-Za-z_]\w*)?\$([\s\S]*?)\$\1\$/g, (m, _tag, cuerpo, idx) => {
+    const antes = texto.slice(Math.max(0, idx - 12), idx);
+    if (/\bDO\s*$/i.test(antes)) return ` ${cuerpo} `;
+    cuerpos.push(cuerpo);
+    return `$$#${cuerpos.length - 1}$$`;
+  });
+  return { arriba, cuerpos };
+}
+
+const DDL = /\b(?:CREATE(?:\s+OR\s+REPLACE)?|ALTER|DROP)\s+(?:UNIQUE\s+)?(?:MATERIALIZED\s+)?(?:TABLE|INDEX|POLICY|TRIGGER|FUNCTION|VIEW|TYPE|SEQUENCE)\b/i;
+const AUTH_LLAMADA = /(?:\bpublic\.)?\bauth_\w+\s*\(|\bauth\.(?:uid|jwt|role|email)\s*\(/gi;
+
+// ¿La posición `idx` está dentro de un `(SELECT …)` escalar? Ése es el wrapper
+// que vuelve la llamada un initplan. No alcanza con mirar lo inmediatamente
+// anterior: `USING ((SELECT EXISTS (SELECT 1 FROM unnest(…) m WHERE
+// auth_has_module_permission(m, …))))` (cerrar_lectura_inventario, 2026-09-23)
+// está bien —el SELECT de afuera no depende de la fila— y la primera versión
+// de esta regla la acusaba. Un `EXISTS (SELECT …)` / `IN (SELECT …)` a secas,
+// en cambio, NO cuenta: puede estar correlacionado con la fila.
+function dentroDeSubconsultaEscalar(sent, idx) {
+  const abiertos = [];
+  for (let i = 0; i < idx; i++) {
+    if (sent[i] === '(') abiertos.push(i);
+    else if (sent[i] === ')') abiertos.pop();
+  }
+  return abiertos.some(p =>
+    /^\(\s*SELECT\b/i.test(sent.slice(p, p + 16)) &&
+    !/\b(?:EXISTS|IN|ANY|ALL)\s*$/i.test(sent.slice(Math.max(0, p - 8), p)));
+}
+
+/** Devuelve [{ regla, msg }] para el SQL de UNA migración. Pura: sin disco. */
+export function revisarReglas(crudo) {
+  const hallazgos = [];
+  const escapado = (regla) =>
+    new RegExp(`--[ \\t]*${REGLAS[regla].escape}:[ \\t]*\\S`).test(crudo);
+  const acusar = (regla, msg) => { if (!escapado(regla)) hallazgos.push({ regla, msg }); };
+
+  const { arriba, cuerpos } = separarCuerpos(sinComentarios(crudo));
+
+  // 1. DDL sin lock_timeout. Se acepta `SET [LOCAL] lock_timeout` y la forma
+  //    `set_config('lock_timeout', …)`.
+  const ddl = arriba.match(DDL);
+  if (ddl && !/\bSET\s+(?:LOCAL\s+)?lock_timeout\b|set_config\s*\(\s*'lock_timeout'/i.test(arriba)) {
+    acusar('lock-timeout', `tiene DDL («${ddl[0].replace(/\s+/g, ' ')}») y ningún SET lock_timeout`);
+  }
+
+  // 2 y 5. Policies. Se leen sentencia por sentencia: de CREATE/ALTER POLICY
+  //    hasta el `;`.
+  for (const m of arriba.matchAll(/\b(CREATE|ALTER)\s+POLICY\s+("[^"]+"|\S+)[\s\S]*?(?:;|$)/gi)) {
+    const sent = m[0];
+    const nombre = m[2];
+    for (const a of sent.matchAll(AUTH_LLAMADA)) {
+      if (!dentroDeSubconsultaEscalar(sent, a.index)) {
+        acusar('auth-por-fila', `policy ${nombre}: «${a[0].replace(/\s+/g, '')}…» sin (SELECT …)`);
+      }
+    }
+    const roles = (sent.match(/\bTO\s+([\w\s,"]+?)(?=\s+(?:USING|WITH)\b|\s*;|$)/i) || [])[1] || 'public';
+    const soloServicio = roles.split(',').every(r => r.trim().replace(/"/g, '') === 'service_role');
+    if (soloServicio) continue;
+    const comando = ((sent.match(/\bFOR\s+(ALL|SELECT|INSERT|UPDATE|DELETE)\b/i) || [])[1] || 'ALL').toUpperCase();
+    const usingTrue = /\bUSING\s*\(+\s*true\s*\)+/i.test(sent);
+    const checkTrue = /\bWITH\s+CHECK\s*\(+\s*true\s*\)+/i.test(sent);
+    const tieneCheck = /\bWITH\s+CHECK\b/i.test(sent);
+    if (['UPDATE', 'DELETE', 'ALL'].includes(comando) && usingTrue) {
+      acusar('policy-abierta', `policy ${nombre} (FOR ${comando}): USING (true)`);
+    } else if (['INSERT', 'UPDATE', 'ALL'].includes(comando) && checkTrue) {
+      acusar('policy-abierta', `policy ${nombre} (FOR ${comando}): WITH CHECK (true)`);
+    } else if (comando === 'ALL' && usingTrue && !tieneCheck) {
+      acusar('policy-abierta', `policy ${nombre} (FOR ALL): USING (true) vale también como WITH CHECK`);
+    }
+  }
+
+  // 3 y 4. Funciones: el encabezado y las opciones quedan en `arriba`, el
+  //    cuerpo en `cuerpos[n]`.
+  for (const m of arriba.matchAll(/\bCREATE\s+(?:OR\s+REPLACE\s+)?FUNCTION\s+((?:\w+\.)?"?\w+"?)[\s\S]*?(?:;|$)/gi)) {
+    const sent = m[0];
+    const fn = m[1].replace(/^public\./, '').replace(/"/g, '');
+    if (/\bSECURITY\s+DEFINER\b/i.test(sent) && !/\bSET\s+search_path\b/i.test(sent)) {
+      // Lo arregla también un ALTER FUNCTION … SET search_path en el mismo archivo.
+      const alter = new RegExp(`ALTER\\s+FUNCTION\\s+(?:public\\.)?"?${fn}"?\\b[^;]*\\bSET\\s+search_path`, 'i');
+      if (!alter.test(arriba)) acusar('definer-sin-search-path', `${fn}()`);
+    }
+    if (/\bRETURNS\s+jsonb?\b(?!\s*\[)/i.test(sent)) {
+      const cuerpo = [...sent.matchAll(/\$\$#(\d+)\$\$/g)].map(c => cuerpos[+c[1]]).join('\n');
+      if (/\bjsonb_agg\s*\(/i.test(sinComentarios(cuerpo))) acusar('jsonb-agg', `${fn}()`);
+    }
+  }
+  return hallazgos;
+}
+
+// ── `--revisar <archivo.sql>…`: un borrador, antes de aplicarlo ───────────────
+if (process.argv.includes('--revisar')) {
+  const archivos = process.argv.slice(process.argv.indexOf('--revisar') + 1).filter(a => !a.startsWith('--'));
+  let total = 0;
+  for (const a of archivos) {
+    for (const h of revisarReglas(readFileSync(a, 'utf8'))) {
+      total++;
+      console.log(`  • ${a}: ${REGLAS[h.regla].titulo} — ${h.msg}`);
+      for (const l of REGLAS[h.regla].detalle) console.log(`      ${l}`);
+      console.log(`      Si es legítimo: \`-- ${REGLAS[h.regla].escape}: <motivo>\` en el archivo.\n`);
+    }
+  }
+  console.log(total ? `\n  ✗ ${total} hallazgo(s) en ${archivos.length} archivo(s).\n`
+                    : `\n  ✓ ${archivos.length} archivo(s) cumplen las reglas de migración.\n`);
+  process.exit(total ? 1 : 0);
+}
+
+// ── `--deuda [N]`: cuánto de lo YA aplicado no cumple (no falla nunca) ─────────
+// Para saber el tamaño de lo que el corte deja afuera. Cuenta archivos, no
+// hallazgos: una migración con diez policies abiertas es UNA migración a revisar.
+if (process.argv.includes('--deuda')) {
+  const n = Number(process.argv[process.argv.indexOf('--deuda') + 1]) || 60;
+  const ultimas = readdirSync(DIR).filter(f => NOMBRE.test(f)).sort().slice(-n);
+  const porRegla = Object.fromEntries(Object.keys(REGLAS).map(r => [r, []]));
+  for (const f of ultimas) {
+    const reglas = new Set(revisarReglas(readFileSync(`${DIR}/${f}`, 'utf8')).map(h => h.regla));
+    for (const r of reglas) porRegla[r].push(f);
+  }
+  console.log(`\n  Deuda en las últimas ${ultimas.length} migraciones (${ultimas[0]} → ${ultimas.at(-1)}):\n`);
+  for (const [r, fs] of Object.entries(porRegla)) {
+    console.log(`  ${String(fs.length).padStart(3)}  ${REGLAS[r].titulo}`);
+    if (process.argv.includes('--detalle')) for (const f of fs) console.log(`         ${f}`);
+  }
+  console.log('');
+  process.exit(0);
+}
 
 const errores = [];
 const err = (msg, detalle) => errores.push({ msg, detalle });
@@ -163,6 +381,19 @@ for (const archivo of locales) {
        '`public.venta_fiscal(si.estado, si.recibido_mh)` (lo que entra al libro).',
        'Si de verdad la pregunta es otra (¿está anulada?), declararlo en el archivo con',
        '`-- venta-a-mano: <motivo>`. Ver docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md §E2.']);
+  }
+}
+
+// ── 2c. Reglas obligatorias de CLAUDE.md (2026-11-06) ────────────────────────
+// Ver `revisarReglas` arriba. Sólo lo posterior a CORTE_REGLAS; la deuda vieja
+// se mide con `--deuda`, no se acusa.
+for (const archivo of locales) {
+  const m = archivo.match(NOMBRE);
+  if (!m || m[1] <= CORTE_REGLAS) continue;
+  for (const h of revisarReglas(readFileSync(`${DIR}/${archivo}`, 'utf8'))) {
+    err(`${archivo}: ${REGLAS[h.regla].titulo} — ${h.msg}`,
+      [...REGLAS[h.regla].detalle,
+       `Si es legítimo, declararlo en el archivo: \`-- ${REGLAS[h.regla].escape}: <motivo>\`.`]);
   }
 }
 

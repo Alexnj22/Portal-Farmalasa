@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, lazy, Suspense } from 'react';
 import Notice from '../components/common/Notice';
 import Badge from '../components/common/Badge';
 import ViewTabBar from '../components/common/ViewTabBar';
@@ -7,7 +7,6 @@ import { ClipboardCheck, ScanSearch, Plus, ChevronRight, AlertTriangle, CheckCir
 import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
-import NuevoConteoModal from '../components/inventario/NuevoConteoModal';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { ALCANCE_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo, avanceSinLote } from '@nucleo/utils/conteoDeInventario';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -28,7 +27,11 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import TabConsultasExistencia from './inventario/TabConsultasExistencia';
+// Diferidos (2026-11-06): la pestaña de consultas y el diálogo de crear un
+// conteo sólo se dibujan al abrirlos, y viajaban en el trozo de la lista —
+// medido, la vista había pasado de su techo de 50 kB a 70—.
+const TabConsultasExistencia = lazy(() => import('./inventario/TabConsultasExistencia'));
+const NuevoConteoModal = lazy(() => import('../components/inventario/NuevoConteoModal'));
 
 // 'APROBADO' no está porque nunca existió: aprobar_conteo_inventario escribe
 // 'CERRADO'. Las claves bg/text/border tampoco: solo se usaba `variante`, que es
@@ -278,7 +281,9 @@ export default function ConteoInventarioView() {
                 repartido en cada hijo se desincroniza en cuanto uno se esconde. */}
             {pestana === 'consultas' ? (
                 <div className="p-4 md:p-6 lg:p-8 animate-in fade-in duration-[var(--dur-lento)]">
-                    <TabConsultasExistencia />
+                    <Suspense fallback={<SkeletonText lines={4} className="w-full" />}>
+                        <TabConsultasExistencia />
+                    </Suspense>
                 </div>
             ) : (
             <div className="p-4 md:p-6 lg:p-8 space-y-6 animate-in fade-in duration-[var(--dur-lento)]">
@@ -544,11 +549,16 @@ export default function ConteoInventarioView() {
             </div>
             )}
 
-            <NuevoConteoModal
-                isOpen={showModal}
-                onClose={() => setShowModal(false)}
-                onCreated={(id) => navigate(`/conteo-inventario/${id}`)}
-            />
+            {/* Se monta al abrirlo: montado siempre, `lazy` bajaría el trozo igual. */}
+            {showModal && (
+                <Suspense fallback={null}>
+                    <NuevoConteoModal
+                        isOpen={showModal}
+                        onClose={() => setShowModal(false)}
+                        onCreated={(id) => navigate(`/conteo-inventario/${id}`)}
+                    />
+                </Suspense>
+            )}
 
             {/* Las opciones de una fila del teléfono. `HojaMovil` es el cuerpo
                 canónico y nace en gota del punto que se mantuvo presionado — el

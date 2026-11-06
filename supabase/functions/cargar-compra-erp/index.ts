@@ -23,6 +23,10 @@ import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { descartarUnaLinea } from "../_shared/erp-descarte.ts";
 import { dteDeManual, validarManual } from "../_shared/compraManual.ts";
+
+// Global del runtime de Supabase: termina un trabajo después de responder.
+// Declarado acá para que `deno check` lo conozca (antes, `Cannot find name`).
+declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 import {
   sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
   TRASLADO, RECIBIR, VER, buscarTrasladoHuerfano, direccionesPorSucursal,
@@ -2213,7 +2217,7 @@ Deno.serve(async (req: Request) => {
     else if (lineas.length === items.length && Math.abs(diferencia) > TOLERANCIA) {
       problemas.push({
         renglon: null,
-        texto: `El total armado ($${tot.total}) no cuadra con el de la factura ($${totalDoc.toFixed(2)}): ${diferencia > 0 ? "sobran" : "faltan"} $${Math.abs(diferencia).toFixed(2)}.`,
+        texto: `El total armado ($${tot.total}) no cuadra con el de la factura ($${totalDoc!.toFixed(2)}): ${diferencia > 0 ? "sobran" : "faltan"} $${Math.abs(diferencia).toFixed(2)}.`,
         // Qué puede ser: la persona no tiene cómo saberlo mirando dos totales.
         pistas: pistasDeDiferencia({
           diferencia, tasaPercepcion: tasa, tipoDoc, resumen: dte?.resumen,

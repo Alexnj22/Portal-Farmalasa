@@ -65,7 +65,6 @@ export function diferenciasDeNumeros(factura: string, producto: string): string[
   const a = medidas(factura), b = medidas(producto);
   const dif: string[] = [];
   const NOMBRE: Record<string, string> = { masa: "concentración o peso", volumen: "volumen", ui: "UI", pct: "porcentaje" };
-  const UN: Record<string, string> = { masa: "mg", volumen: "ml", ui: "UI", pct: "%" };
   for (const [k, va] of a) {
     const vb = b.get(k);
     if (!vb) continue;

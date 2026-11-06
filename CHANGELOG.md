@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.3 — Gates en verde: funciones, tipos, perf y el peso de Conteo
+
+- **`gate:edge` en verde.** Siete errores de tipos y dos avisos de lint en funciones ajenas al conteo, ninguno con cambio de comportamiento: `presentacion_tipo ?? ""` en traslados, `Set<number>` en app-clientes, `declare const EdgeRuntime` y `totalDoc!` (ya acotado por la rama) en cargar-compra-erp, una constante sin uso en `numerosDelNombre` y un `let` → `const` en `tiempoTrabajado`. Baseline de lint bajado en consolidate-timesheets.
+- **`gate:tipos`**: el `e.codigo` del slice de conteo va tipado.
+- **Conteo de inventario más liviano**: la pestaña de consultas de existencia y el modal de nuevo conteo se cargan al usarlos (`lazy`). La vista pasa de 70 kB a menos de su techo de 50.
+- **`gate:perf`**: declaradas en `planes-genericos.json` cuatro funciones medidas con literales (0.35, 7.3 y 0.8 ms; la cuarta es un UPDATE por PK, deuda sin `ANALYZE`) y `inyecciones_para_cobrar` en `bloques-por-llamada.json` con techo 35,000 y diagnóstico (una búsqueda por factura, como tenía `get_inyecciones_aplicadas`). Para `get_customers_page` (671 MB por llamada) la causa fue que `customers` y `customer_activity` nunca se habían analizado: el planificador estimaba 148 clientes contra 29,086 y armaba un bucle anidado. Con `ANALYZE` pasa de 85,834 a 1,695 bloques. También se analizaron dos tablas con columnas sin estadística.
+- Quedan en rojo y **no son de este cambio**: `gate:bundle` (el arranque 314 kB contra un techo de 290, y siete vistas de otros módulos) y `gate:eficiencia` (tres crons con «job startup timeout» de pg_cron).
+
 ## v2.1461.2 — Insignias en un renglón
 
 - **Una insignia ya no se parte en renglones.** En los pedidos de la distribuidora, «Descuento por aprobar» salía en tres renglones dentro de la columna de estado. `Badge` lleva `whitespace-nowrap`: una píldora es una sola línea. Verificado en el navegador contra el entorno de pruebas.

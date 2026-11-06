@@ -1,8 +1,8 @@
 {
  "_comment": "Funciones LANGUAGE sql con parámetros y CTEs SIN plan_cache_mode. Producción exponiendo una que no esté acá FALLA gate:perf. Ver docs/planes-cerrados/PLAN-PLANES-GENERICOS-2026-08-25.md. `ms: null` es deuda declarada — NO se rellena con un número estimado.",
- "actualizado": "2026-10-26",
- "medidas": 49,
- "sin_medir": 24,
+ "actualizado": "2026-11-06",
+ "medidas": 51,
+ "sin_medir": 25,
  "funciones": {
   "auth_module_scope": {
    "ms": null,
@@ -45,6 +45,12 @@
    "casos": "producción, ventana limpia de 17.5 h",
    "divergencia": "imposible",
    "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
+  },
+  "compras_cargadas_desde_portal": {
+   "ms": "0.35",
+   "casos": "49 compras recientes · 35 bloques",
+   "divergencia": null,
+   "nota": "medida el 2026-11-06 con literales: 0.347 ms, BitmapAnd sobre compra_carga_erp_compra_id_idx y compra_carga_una_real, Memoize sobre employees_pkey. El plan no puede depender del argumento: `= ANY(p_erp_ids)` entra como Index Cond con cualquier arreglo, así que el genérico es el mismo plan."
   },
   "conteo_lineas_netas": {
    "ms": null,
@@ -244,6 +250,12 @@
    "divergencia": null,
    "nota": "SIN MEDIR — costo despreciable en producción (bajo 20 s acumulados en la ventana medida). Deuda declarada, no un número inventado."
   },
+  "get_pistas_documentos_sin_cargar": {
+   "ms": "7.27",
+   "casos": "40 documentos recientes · 862 bloques",
+   "divergencia": null,
+   "nota": "medida el 2026-11-06 con literales (sin la guarda de permiso, que como servicio deja `docs` vacío): 7.3 ms, purchase_dte_documents_pkey por `= ANY(p_ids)` y un Index Scan por fecha en purchase_receipts por documento. El argumento sólo elige las filas de `docs` por la PK; el resto del plan es por documento, así que el genérico no cambia de forma."
+  },
   "get_product_branch_summary": {
    "ms": null,
    "casos": null,
@@ -310,6 +322,12 @@
    "divergencia": "imposible",
    "nota": "jsonb_array_elements se estima en 100 filas SIEMPRE (literal de 3, de 5,000, o como parámetro): conocer el valor no le aporta nada al planificador, así que genérico y personalizado son el mismo por construcción"
   },
+  "inyeccion_enfermeria_estado": {
+   "ms": "0.80",
+   "casos": "aplicada hace 2 h, sin confirmar · 0 bloques de tablas",
+   "divergencia": null,
+   "nota": "medida el 2026-11-06: 0.8 ms. No lee tablas: es un CASE sobre sus dos timestamps y `now()`. No hay plan que dependa de los argumentos."
+  },
   "mayorista_rango": {
    "ms": "0.17",
    "casos": "cliente 29 (7 meses en el resumen) · 20 llamadas en 3.4 ms, 721 bloques",
@@ -363,6 +381,12 @@
    "casos": "20 pedidos reales · 1,343 bloques",
    "divergencia": null,
    "nota": "medida el 2026-09-26 con el plan GENÉRICO forzado (force_generic_plan): 26 ms, bitmap por idx_pedido_items_pedido_status y pedido_traslado_linea_hoja_idx + hash join. El plan no depende de cuántos pedidos lleguen en el arreglo: con el genérico ya entra por índice en las dos tablas. Se reescribió ese día (antes 16,445 bloques, buscando el ítem de cada renglón por su llave)."
+  },
+  "saly_ayuda_calificar": {
+   "ms": null,
+   "casos": null,
+   "divergencia": null,
+   "nota": "SIN MEDIR con ANALYZE: es un UPDATE y medirlo escribiría. Plan visto el 2026-11-06 con EXPLAIN: Index Scan sobre saly_ayuda_registro_pkey por `id = p_id`, filtro por empleado y fecha sobre una fila. El genérico es el mismo plan. Deuda declarada, no un número inventado."
   },
   "search_inventory_descripcion_ids": {
    "ms": "89",

@@ -1292,7 +1292,7 @@ Deno.serve(async (req) => {
           });
           if (faltan.length)
             loteNoEsta.push({
-              posicion: pos, producto: nombre, presentacion: l.presentacion_tipo, paquetes: Number(l.cantidad),
+              posicion: pos, producto: nombre, presentacion: l.presentacion_tipo ?? "", paquetes: Number(l.cantidad),
               pedidos: faltan.map((r) => r.numero), disponibles: disponibles(),
             });
         }

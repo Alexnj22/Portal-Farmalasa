@@ -68,7 +68,7 @@ function traducirError(err) {
         if (err.message?.includes(code)) {
             // El código viaja con el error: la pantalla decide qué mostrar por
             // él (la lista de productos por resolver), no por el texto.
-            const e = new Error(msg);
+            const e = /** @type {Error & { codigo?: string }} */ (new Error(msg));
             e.codigo = code;
             return e;
         }

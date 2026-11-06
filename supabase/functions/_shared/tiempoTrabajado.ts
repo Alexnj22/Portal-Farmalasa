@@ -61,7 +61,7 @@ export function splitNocturnal(startUTC: Date, endUTC: Date): { diurnalMins: num
   const iterStart = new Date(startUTC); iterStart.setUTCHours(0, 0, 0, 0);
   const iterEnd   = new Date(endUTC);   iterEnd.setUTCDate(iterEnd.getUTCDate() + 1); iterEnd.setUTCHours(0, 0, 0, 0);
 
-  for (let d = new Date(iterStart); d.getTime() < iterEnd.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
+  for (const d = new Date(iterStart); d.getTime() < iterEnd.getTime(); d.setUTCDate(d.getUTCDate() + 1)) {
     const twelveUTC = d.getTime() + 12 * 3600000; // 06:00 SV — empieza el día
     const oneUTC    = d.getTime() +  1 * 3600000; // 19:00 SV — empieza la noche
     if (twelveUTC > startUTC.getTime() && twelveUTC < endUTC.getTime()) boundaries.push(twelveUTC);

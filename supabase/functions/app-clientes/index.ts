@@ -2993,7 +2993,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // pago esperando abono, y el saldo releído de la caja antes de cobrar.
     if (accion === "pagar_creditos") {
       if (!customerId) return json({ ok: false, mensaje: "Para pagar, entra con tu DUI y teléfono." });
-      const ids = [...new Set((Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0))];
+      const ids = [...new Set<number>((Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0))];
       if (ids.length < 2 || ids.length > 30) return json({ ok: false, mensaje: "Elige los créditos que quieres pagar." });
       const { data: lista, error } = await admin.from("creditos_de_clientes")
         .select("id, branch_id, credito_erp, numero_doc, fecha, saldo")

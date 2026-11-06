@@ -118,6 +118,7 @@ import { announcementAppliesToUser } from '@nucleo/utils/announcementAudience';
 import { hora12 } from '@nucleo/utils/hora';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // ─── Grid constants ────────────────────────────────────────────────────────────
 const EMPTY_OBJ  = {};
 const ROW_H      = 120; // px per row unit
@@ -2824,7 +2825,7 @@ const DashboardView = ({ openModal }) => {
               <>
               {ausHoy.length > 0 && (
                 <div className="px-4 py-3">
-                  <div className="flex items-center gap-2 mb-2"><span className="w-2 h-2 rounded-full bg-danger"/><span className="text-caption font-black uppercase tracking-widest text-content-2">Con ausencia</span><Badge variant="danger" size="sm">{ausHoy.length}</Badge></div>
+                  <div className="flex items-center gap-2 mb-2"><PuntoDeEstado className="bg-danger" /><span className="text-caption font-black uppercase tracking-widest text-content-2">Con ausencia</span><Badge variant="danger" size="sm">{ausHoy.length}</Badge></div>
                   <div className="space-y-1">
                     {ausHoy.map(r => {
                       const cfgA = ABSENCE_COLORS[r.clave] || ABSENCE_COLORS.PERMIT;
@@ -2844,7 +2845,7 @@ const DashboardView = ({ openModal }) => {
                 const cfg = status==='ABSENT' && !hayMarcaciones ? SIN_MARCACIONES_AUN : cfgBase;
                 return (
                   <div key={status} className="px-4 py-3">
-                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-widest text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
+                    <div className="flex items-center gap-2 mb-2"><PuntoDeEstado className={cfg.dot} /><span className="text-caption font-black uppercase tracking-widest text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
                     <div className="flex flex-wrap gap-1">{group.map(e=><Badge key={e.id} variant={cfg.variante} size="sm" uppercase={false}>{shortEmployeeName(e)}</Badge>)}</div>
                   </div>
                 );
@@ -3038,7 +3039,7 @@ const DashboardView = ({ openModal }) => {
                       <div key={h} className="flex-1 flex flex-col justify-end relative h-full"
                         onMouseEnter={e=>{const r=e.currentTarget.getBoundingClientRect();setSalesBarTip({x:r.left+r.width/2,y:r.top,label:formatHourAMPM(h),amount:fS(hourSalesMap[h]||0),txCount:v});}}
                         onMouseLeave={()=>setSalesBarTip(null)}>
-                        {isNow&&<div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full w-1.5 h-1.5 rounded-full bg-success shadow-[var(--shadow-glow-chart-9-sm)] animate-pulse z-base"/>}
+                        {isNow&&<PuntoDeEstado tamano="sm" className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-full bg-success shadow-[var(--shadow-glow-chart-9-sm)] animate-pulse z-base" />}
                         <div className="w-full rounded-t-[2px] transition-[height,opacity]" style={{height:`${bH}%`,backgroundColor:bC(v),opacity:v>0?1:0.35}}/>
                       </div>
                     );
@@ -3292,7 +3293,7 @@ const DashboardView = ({ openModal }) => {
                       onMouseLeave={()=>setCalTooltip(null)}
                       className={`flex flex-col items-center justify-center rounded-full relative cursor-default transition-[background-color] duration-[var(--dur-fast)] ${isToday?'bg-brand':hasH?'bg-danger/10 hover:bg-danger/10':'hover:bg-surface-card-hover/80'}`}>
                       <span className={`text-body-sm font-bold leading-none ${isToday?'text-white':hasH?'text-danger-text':'text-content-2'}`}>{day}</span>
-                      {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><span className="w-1 h-1 rounded-full bg-danger"/></div>}
+                      {hasH&&!isToday&&<div className="flex gap-0.5 mt-0.5"><PuntoDeEstado tamano="sm" className="bg-danger" /></div>}
                     </div>
                   );
                 })}
@@ -3601,14 +3602,14 @@ const DashboardView = ({ openModal }) => {
             </div>
             <div className="grid grid-cols-2 gap-2">
               <div className="flex items-center gap-2 bg-danger/10 rounded-xl px-3 py-2">
-                <span className="w-2 h-2 rounded-full bg-danger shrink-0"/>
+                <PuntoDeEstado className="bg-danger" />
                 <div>
                   <p className="text-body-lg font-black text-danger-text">{factStats.ccf}</p>
                   <p className="text-micro font-black text-danger-text uppercase tracking-widest">CCF</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-surface-card-hover rounded-xl px-3 py-2">
-                <span className="w-2 h-2 rounded-full bg-content-3 shrink-0"/>
+                <PuntoDeEstado className="bg-content-3" />
                 <div>
                   <p className="text-body-lg font-black text-content-2">{factStats.fcf}</p>
                   <p className="text-micro font-black text-content-2 uppercase tracking-widest">FCF / otros</p>

@@ -30,6 +30,7 @@ import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregu
 import AvatarConEstado from '../components/common/AvatarConEstado';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // Jefe inmediato de cada sucursal: `SUPERVISOR_DE_JEFE` vive en el núcleo
 // (`climaLaboral`), el mismo que lee la app.
 
@@ -1038,10 +1039,10 @@ export default function EncuestaView() {
                                 </tbody>
                             </table>
                             <div className="mt-2 flex items-center gap-4 text-micro text-content-3 flex-wrap">
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-success inline-block" /> ≥85% Excelente</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-chart-1 inline-block" /> 70–84% Bueno</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-warning inline-block" /> 55–69% Regular</span>
-                                <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-danger inline-block" /> &lt;55% Crítico</span>
+                                <span className="flex items-center gap-1"><PuntoDeEstado className="bg-success" /> ≥85% Excelente</span>
+                                <span className="flex items-center gap-1"><PuntoDeEstado className="bg-chart-1" /> 70–84% Bueno</span>
+                                <span className="flex items-center gap-1"><PuntoDeEstado className="bg-warning" /> 55–69% Regular</span>
+                                <span className="flex items-center gap-1"><PuntoDeEstado className="bg-danger" /> &lt;55% Crítico</span>
                             </div>
                         </div>
                     </div>

@@ -41,6 +41,7 @@ import { hora12 } from "@nucleo/utils/hora";
 import { useAuth } from '@nucleo/context/AuthContext';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 const EMPTY_ARRAY = [];
 
 // Las 4 columnas del tablero cubren, entre todas, los 9 estados posibles de
@@ -524,7 +525,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
 
               {isActive && (
                 <div className="absolute bottom-3 right-3 animate-in zoom-in duration-[var(--dur-slow)]">
-                  <div className="w-2.5 h-2.5 rounded-full bg-brand shadow-[var(--shadow-glow-brand)]" />
+                  <PuntoDeEstado className="bg-brand shadow-[var(--shadow-glow-brand)]" />
                 </div>
               )}
             </button>
@@ -549,7 +550,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div key={col.id} className={`rounded-modal border p-4 md:p-5 flex flex-col gap-4 ${col.tint}`}>
                 <div className="flex items-center justify-between px-1">
                   <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${col.dot}`} />
+                    <PuntoDeEstado className={col.dot} />
                     <TituloDeSeccion nivel="seccion">{col.label}</TituloDeSeccion>
                   </div>
                   <span className="text-label font-bold text-content-3">{rows.length}</span>

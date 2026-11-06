@@ -1615,6 +1615,23 @@ function scanFile(path) {
     });
   }
 
+  // ── `punto-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
+  // El punto de estado escrito a mano (`w-2 h-2 rounded-full bg-…`) en vez de
+  // `PuntoDeEstado` (dos tamaños: 8 y 6px). Había 109 en 10 tamaños; se
+  // pasaron 63. Los que quedan tienen hijos, un aro o un tamaño que viene de
+  // una variable: contados, no pueden crecer.
+  if (!path.includes('components/common/') && !hasException(path, 'punto-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const m of line.matchAll(/(["'`])((?:(?!\1)[^\\\n])*)\1/g)) {
+        const t = m[2];
+        if (/(?<![\w:-])rounded-full(?![\w-])/.test(t) && (/(?<![\w:-])w-(1|1\.5|2|2\.5)(?![\w./-])/.test(t) && /(?<![\w:-])h-(1|1\.5|2|2\.5)(?![\w./-])/.test(t) || /(?<![\w:-])size-(1|1\.5|2|2\.5)(?![\w.-])/.test(t)) && /(?<![\w:-])bg-/.test(t)) {
+          findings.push({ line: i + 1, label: 'punto de estado a mano — usar `<PuntoDeEstado tamano="sm|md" className="bg-…">`', category: 'punto-a-mano', text: line.trim().slice(0, 120) });
+        }
+      }
+    });
+  }
+
   // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
   // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
   // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y

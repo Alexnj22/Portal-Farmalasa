@@ -58,6 +58,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fijarContrasenaDeEmpleado } from '@nucleo/data/auth';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, setActiveTab }) => {
     const navigate = useNavigate(); 
     const employees = useStaffStore(s => s.employees);
@@ -923,9 +924,9 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                             </span>
                                                             {hasEvents && !isSelected && !isToday && (
                                                                 <div className="flex gap-0.5 mt-0.5">
-                                                                    {hasPermit   && <span className="w-1 h-1 rounded-full bg-warning"/>}
-                                                                    {hasDisab    && <span className="w-1 h-1 rounded-full bg-danger"/>}
-                                                                    {isInsurance && <span className="w-1 h-1 rounded-full bg-chart-3"/>}
+                                                                    {hasPermit   && <PuntoDeEstado tamano="sm" className="bg-warning" />}
+                                                                    {hasDisab    && <PuntoDeEstado tamano="sm" className="bg-danger" />}
+                                                                    {isInsurance && <PuntoDeEstado tamano="sm" className="bg-chart-3" />}
                                                                 </div>
                                                             )}
                                                             {/* Tooltip */}
@@ -1099,7 +1100,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                                 )}
 
                                                                 <div className="flex items-center gap-3 w-32 shrink-0 relative">
-                                                                    <div className={`w-2.5 h-2.5 rounded-full ${dia.active ? 'bg-success shadow-[var(--shadow-glow-chart-9-md)]' : 'bg-content-3'}`}></div>
+                                                                    <PuntoDeEstado className={dia.active ? 'bg-success shadow-[var(--shadow-glow-chart-9-md)]' : 'bg-content-3'} />
                                                                     <span className={`text-body-sm font-black uppercase tracking-widest ${dia.active ? 'text-content-2' : 'text-content-2'}`}>{dia.day}</span>
                                                                     {isToday && (
                                                                         <span className="ml-2 px-1.5 py-0.5 rounded text-micro font-black uppercase tracking-widest bg-brand text-white shadow-sm animate-pulse">Hoy</span>

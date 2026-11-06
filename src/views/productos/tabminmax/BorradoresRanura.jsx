@@ -6,6 +6,7 @@ import LiquidTooltip from '../../../components/common/LiquidTooltip';
 import useAnclaje from '../../../plataforma/useAnclaje';
 import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 
+import PuntoDeEstado from '../../../components/common/PuntoDeEstado';
 /**
  * BorradoresRanura — los borradores de MIN·MAX, dentro de la píldora de filtros.
  *
@@ -192,7 +193,7 @@ const BorradoresRanura = memo(({
 const Punto = () => (
     <span className="relative flex h-2 w-2 shrink-0" aria-hidden="true">
         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-chart-1 opacity-75" />
-        <span className="relative inline-flex rounded-full h-2 w-2 bg-chart-1" />
+        <PuntoDeEstado className="relative bg-chart-1" />
     </span>
 );
 

@@ -17,6 +17,7 @@ import { TRAMOS, clientesDeLaCartera, usoDelLimite } from './cartera';
 import CarteraClienteModal from './CarteraClienteModal';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // Cuentas por cobrar de la distribuidora: quién debe, desde cuándo, y cobrarle.
 // Pedido del usuario (2026-09-30), con la cartera de las farmacias como
 // muestra. Todo sale de `dist_cartera()` en una llamada (borrador 0014).
@@ -109,7 +110,7 @@ export default function TabCobros({ emisor, puedeVender, puedeConfigurar, buscar
                                 onClick={() => setTramo(activo ? '' : t.key)}
                                 className={`text-left rounded-xl px-3 py-2 min-h-[var(--tap-min)] border transition-colors active:scale-[0.98] ${activo ? 'border-brand bg-brand/10' : 'border-divider hover:bg-surface-card-hover'}`}>
                                 <span className="flex items-center gap-1.5 text-caption text-content-3">
-                                    <span className={`w-2.5 h-2.5 rounded-full ${COLOR_TRAMO[t.key]}`} /> {t.label}
+                                    <PuntoDeEstado className={COLOR_TRAMO[t.key]} /> {t.label}
                                 </span>
                                 <span className="block text-body font-black tabular-nums text-content">{formatMoneyCorto(monto)}</span>
                                 <span className="block text-micro text-content-3 tabular-nums">{Math.round((monto / totalAnt) * 100)}%</span>

@@ -25,6 +25,7 @@ import {
     faltaMotivo as faltaMotivoDe, lineasDeDecision, resumenDeDecision, seleccionInicial,
 } from '@nucleo/utils/decisionDeSolicitud';
 
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // La tarjeta y el modal de una solicitud — el canónico, para las TRES pantallas
 // que muestran solicitudes.
 //
@@ -251,7 +252,7 @@ export const RequestCard = memo(({ req, onOpen, empleadosPorId, ahora }) => {
                             </span>
                         )}
                         <span className={`flex items-center gap-1 text-caption font-bold shrink-0 ${statConf.color.split(' ').filter(c => c.startsWith('text-')).join(' ')}`}>
-                            <span className={`w-1.5 h-1.5 rounded-full ${statConf.dot}`} />
+                            <PuntoDeEstado tamano="sm" className={statConf.dot} />
                             {parcial ? 'Aprobada parcial' : statConf.label}
                         </span>
                         {isUrgent && <span className="text-micro font-black text-danger animate-pulse shrink-0">URGENTE</span>}

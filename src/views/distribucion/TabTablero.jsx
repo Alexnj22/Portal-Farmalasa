@@ -23,6 +23,7 @@ import { rutaSeccion, rutaVentaA } from './rutas';
 import { Skeleton } from '../../components/common/StateViews';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // El Inicio de la distribuidora. Pedido del usuario (2026-09-29): «un
 // dashboard con datos de ventas, clientes, etc., con gráficas y elementos
 // interactivos».
@@ -231,7 +232,7 @@ export default function TabTablero({ periodo = '30d' }) {
                         {rutas.map((x, i) => (
                             <FilaRanking key={x.ruta} tono={PUNTOS[i % PUNTOS.length]} activo={ruta === x.ruta}
                                 onClick={() => filtrar('ruta', ruta === x.ruta ? '' : x.ruta)}
-                                izquierda={<span className={`w-2.5 h-2.5 rounded-full shrink-0 ${PUNTOS[i % PUNTOS.length]}`} />}
+                                izquierda={<PuntoDeEstado className={PUNTOS[i % PUNTOS.length]} />}
                                 titulo={x.ruta} valor={formatMoneyCorto(num(x.ventas))} proporcion={num(x.ventas) / maxDe(rutas)}
                                 detalle={`${formatQty(num(x.documentos))} documentos · ${formatQty(num(x.clientes))} clientes`} />
                         ))}
@@ -306,7 +307,7 @@ export default function TabTablero({ periodo = '30d' }) {
                             {tipos.map((t, i) => (
                                 <div key={t.tipo} className="flex items-center justify-between gap-2 text-caption">
                                     <span className="flex items-center gap-1.5 min-w-0">
-                                        <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${PUNTOS[i % PUNTOS.length]}`} />
+                                        <PuntoDeEstado className={PUNTOS[i % PUNTOS.length]} />
                                         <span className="truncate text-content-2 font-bold">{rotuloTipoCliente(t.tipo)}</span>
                                     </span>
                                     <span className="tabular-nums text-content-2">{formatMoneyCorto(num(t.ventas))}</span>
@@ -325,7 +326,7 @@ export default function TabTablero({ periodo = '30d' }) {
                         {reparto.map((f, i) => (
                             <div key={f.forma} className="flex items-center justify-between gap-2 text-caption">
                                 <span className="flex items-center gap-1.5 min-w-0">
-                                    <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${PUNTOS[i % PUNTOS.length]}`} />
+                                    <PuntoDeEstado className={PUNTOS[i % PUNTOS.length]} />
                                     <span className="truncate text-content-2 font-bold">{f.rotulo}</span>
                                 </span>
                                 <span className="tabular-nums text-content-2">{formatMoneyCorto(f.monto)} · {f.pct}%</span>

@@ -39,6 +39,7 @@ import { ChipsDeEtiquetas, EditorDeEtiquetas } from './EtiquetasDelCliente';
 import { CalificacionEnLinea } from './Calificacion';
 import { escribeAhora, useRelojDeEscritura } from './escribiendo';
 
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // El hilo de una conversación: el contexto del cliente arriba, los mensajes
 // (los del cliente a la izquierda, los del equipo a la derecha con la foto y el
 // nombre corto de quien contestó) y el cuadro para responder.
@@ -811,9 +812,9 @@ function QuienEscribe({ conversacion: c, cliente, yo, equipo, asegurarEquipo }) 
 function Puntos() {
     return (
         <span aria-hidden="true" className="inline-flex items-center gap-0.5 shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse" />
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse [animation-delay:200ms]" />
-            <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse [animation-delay:400ms]" />
+            <PuntoDeEstado tamano="sm" className="bg-current animate-pulse" />
+            <PuntoDeEstado tamano="sm" className="bg-current animate-pulse [animation-delay:200ms]" />
+            <PuntoDeEstado tamano="sm" className="bg-current animate-pulse [animation-delay:400ms]" />
         </span>
     );
 }

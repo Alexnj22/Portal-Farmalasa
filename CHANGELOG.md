@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1461.6 — Puntos de estado en dos tamaños
+
+- **El punto de estado sale de un solo componente, `PuntoDeEstado`, en dos tamaños**: 8px (el de una fila o una leyenda) y 6px (pegado a un texto chico). Había 10 tamaños; se pasaron 63 puntos en 27 archivos. Los de 4px suben a 6 y los de 10px bajan a 8.
+- Revisado en el navegador, en escritorio, en Sucursales e Inicio: los puntos miden 8 y 6px y tienen su color.
+- Gate nuevo `punto-a-mano` (trinquete en 9): quedan los puntos con aro, los que cambian de tamaño según el ancho de pantalla y los que rebotan como indicador de carga.
+
 ## v2.1461.5 — Las tareas programadas dejan de arrancar todas en el mismo minuto
 
 - **27 tareas recurrentes pasan a minutos impares** (`20261106164644_crones_recurrentes_a_minutos_impares`). `gate:eficiencia` marcaba tres crons con «job startup timeout». No era un error de esos crons: en ciertos momentos la base entera se frena (hoy a las 16:34 UTC una consulta trivial tardó 80 s y se cortaron conexiones de clientes), y todo lo que arranca justo ahí falla junto. En la última semana esos episodios cayeron casi siempre en minutos redondos, y en el minuto :00 arrancaban 63 tareas distintas. Las tareas de cada 2, 5, 10, 15, 20 y 30 minutos, y las de cada hora, quedan repartidas en los minutos 1–9, 11 y 13. **La frecuencia no cambia, sólo el minuto.** No se tocan los avisos diarios que salen a una hora pactada ni los de caja. La migración sólo mueve un cron que existe y que todavía tiene su cadencia vieja.

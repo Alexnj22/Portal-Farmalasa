@@ -25,6 +25,7 @@ import SalyIcono from '../../components/common/SalyIcono';
 import { barraDeDimension } from './iconos';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 /**
  * Lo que dijeron los clientes: NPS, puntaje por dimensión (escala común
  * 0-100), la distribución de cada pregunta, la comparación entre sucursales y
@@ -277,7 +278,7 @@ export default function ResultadosEncuesta({ encuesta }) {
 }
 
 function Leyenda({ cls, texto }) {
-    return <span className="inline-flex items-center gap-1.5"><span className={`w-2.5 h-2.5 rounded-full ${cls}`} />{texto}</span>;
+    return <span className="inline-flex items-center gap-1.5"><PuntoDeEstado className={cls} />{texto}</span>;
 }
 
 function Barra({ label, valor, max, cls = 'bg-brand', sub }) {

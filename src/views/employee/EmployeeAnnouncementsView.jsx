@@ -18,6 +18,7 @@ import { EmptyState } from '../../components/common/StateViews';
 import { fechaTexto } from '@nucleo/utils/fecha';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 const TABS = [
     { key: 'UNREAD', label: 'Sin leer' },
     { key: 'READ',   label: 'Leídos'   },
@@ -54,7 +55,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
         >
             {/* Badges row */}
             <div className="flex flex-wrap items-center gap-2">
-                <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isRead ? 'bg-content-3' : isUrgent ? 'bg-danger' : 'bg-brand'}`} />
+                <PuntoDeEstado className={isRead ? 'bg-content-3' : isUrgent ? 'bg-danger' : 'bg-brand'} />
                 {isUrgent && (
                     <Badge variant="danger" tone="solid" icon={Flame}>Urgente</Badge>
                 )}

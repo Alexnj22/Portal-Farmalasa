@@ -15,6 +15,7 @@ import { hayRastreoDeFondo } from '../../plataforma/rastreoRuta';
 import { claveDePuntos, crearCache, debeRecalcular } from './logicaDeRutas';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // ── Lo que no cambia mientras la página vive ────────────────────────────────
 // Cada trazado por carretera es una petición que se paga. Abrir el mapa de la
 // misma ruta dos veces pedía dos trazados idénticos, y cada apertura volvía a
@@ -525,8 +526,8 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
           {/* Badge mapa */}
           <div className="absolute bottom-2 left-2 flex items-center gap-1 bg-surface-card rounded-lg px-2 py-1 text-micro font-semibold text-content-2 shadow-sm border border-border-card">
             {mapsMode
-              ? <><span className="w-1.5 h-1.5 rounded-full bg-success inline-block" />Google Maps</>
-              : <><span className="w-1.5 h-1.5 rounded-full bg-warning inline-block" />OpenStreetMap</>
+              ? <><PuntoDeEstado tamano="sm" className="bg-success" />Google Maps</>
+              : <><PuntoDeEstado tamano="sm" className="bg-warning" />OpenStreetMap</>
             }
           </div>
 

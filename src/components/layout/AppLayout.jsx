@@ -61,6 +61,7 @@ import { useHayDialogo } from '../common/dialogosAbiertos';
 import { hoySV } from '@nucleo/utils/fecha';
 import { escucharCambios } from '@nucleo/data/tiempoReal';
 
+import PuntoDeEstado from '../common/PuntoDeEstado';
 // Los grupos del menú viven en el núcleo (`constants/menuGroups.js`) para que
 // la app nativa arme su menú con la misma lista; acá se les ponen los íconos.
 
@@ -768,7 +769,7 @@ const AppLayout = ({ children, handleLogout }) => {
                     {!isExpanded && alert && (
                         <span className="absolute -top-1 -right-1 flex h-2 w-2">
                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
+                            <PuntoDeEstado className="relative inline-flex bg-danger" />
                         </span>
                     )}
                     {!isExpanded && badge > 0 && (
@@ -786,7 +787,7 @@ const AppLayout = ({ children, handleLogout }) => {
                         {alert && (
                             <span className="relative z-base flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-danger shadow-[var(--shadow-glow-danger-md)]" />
+                                <PuntoDeEstado className="relative inline-flex bg-danger shadow-[var(--shadow-glow-danger-md)]" />
                             </span>
                         )}
                         {badge > 0 && (
@@ -883,7 +884,7 @@ const AppLayout = ({ children, handleLogout }) => {
                             {!isOpen && groupAlert && (
                                 <span className="relative flex h-2 w-2 flex-shrink-0">
                                     <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                    <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
+                                    <PuntoDeEstado className="relative inline-flex bg-danger" />
                                 </span>
                             )}
                             <ChevronDown
@@ -1453,10 +1454,10 @@ const AppLayout = ({ children, handleLogout }) => {
                                     {flyout.alert && (
                                         <span className="relative flex h-2 w-2 flex-shrink-0">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
+                                            <PuntoDeEstado className="relative inline-flex bg-danger" />
                                         </span>
                                     )}
-                                    {flyout.isActive && <div className="w-1.5 h-1.5 rounded-full bg-chart-1 shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
+                                    {flyout.isActive && <PuntoDeEstado tamano="sm" className="bg-chart-1 shadow-[var(--shadow-glow-chart-1-sm)]" />}
                                 </Link>
                             </div>
                         ) : flyout.type === 'group' ? (
@@ -1510,7 +1511,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                                         />
                                                     </div>
                                                     <span className="text-body font-medium whitespace-nowrap flex-1">{m.label}</span>
-                                                    {m.isActive && <div className="w-1.5 h-1.5 rounded-full bg-chart-1 shadow-[var(--shadow-glow-chart-1-sm)] flex-shrink-0" />}
+                                                    {m.isActive && <PuntoDeEstado tamano="sm" className="bg-chart-1 shadow-[var(--shadow-glow-chart-1-sm)]" />}
                                                     {m.badge > 0 && (
                                                         <Contador valor={m.badge}
                                                             aria-label={`${m.badge} pendiente${m.badge === 1 ? '' : 's'} en ${m.label}`} />
@@ -1518,7 +1519,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                                     {m.alert && (
                                                         <span className="relative flex h-2 w-2 flex-shrink-0">
                                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                                            <span className="relative inline-flex rounded-full h-2 w-2 bg-danger" />
+                                                            <PuntoDeEstado className="relative inline-flex bg-danger" />
                                                         </span>
                                                     )}
                                                 </Link>

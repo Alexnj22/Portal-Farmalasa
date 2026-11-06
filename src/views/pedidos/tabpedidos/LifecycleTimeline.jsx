@@ -8,6 +8,7 @@ import Badge from '../../../components/common/Badge';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
+import PuntoDeEstado from '../../../components/common/PuntoDeEstado';
 // El ancho de cada paso del carril. Eran 48px y ninguno de los rótulos entraba
 // —«Confirmado» mide ~52px y la hora ~55px—, así que el texto se salía de su
 // columna por los dos lados y se encimaba con el paso vecino: en un iPhone se
@@ -163,7 +164,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
                                         </svg>
                                     )}
                                     {isActive && !isPausedDot && (
-                                        <div className={`w-2 h-2 rounded-full anim-tl-pulse ${tlDot(idx)}`} />
+                                        <PuntoDeEstado className={`anim-tl-pulse ${tlDot(idx)}`} />
                                     )}
                                     {isPausedDot && (
                                         <svg width="9" height="9" viewBox="0 0 9 9" fill="none">

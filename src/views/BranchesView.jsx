@@ -35,6 +35,7 @@ import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 const FILTER_OPTIONS = [
     { value: "ALL", label: "Todas" },
     { value: "ALERTS", label: "Con alertas" },
@@ -191,7 +192,7 @@ const BranchCard = memo(({
                         )}
                     </div>
                     <p className="mt-1 flex items-center gap-1.5 text-caption font-semibold text-content-2">
-                        <span className={`w-2 h-2 rounded-full shrink-0 ${estado.punto}`} aria-hidden="true" />
+                        <PuntoDeEstado className={estado.punto} aria-hidden="true" />
                         <span className="truncate">{estado.texto}</span>
                     </p>
                 </div>

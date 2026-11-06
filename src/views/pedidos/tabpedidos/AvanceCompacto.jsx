@@ -28,6 +28,7 @@ const diaSiNoEsHoy = iso => (iso && diaDe(iso) !== hoySV() ? fmtDia(iso) : null)
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
 
+import PuntoDeEstado from '../../../components/common/PuntoDeEstado';
 // El rótulo del paso EN CURSO dice lo que está pasando, no el nombre del hito
 // que lo abrió: preparando es «Preparando», no «Inicio».
 const EN_CURSO = { confirmado: 'Por preparar', iniciado: 'Preparando', preparado: 'Listo', enviado: 'En ruta', llegada: 'Recibiendo' };
@@ -144,7 +145,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                         : 'bg-surface-card border border-divider'}`}>
                         {e.hecho && <Check size={10} strokeWidth={3} className="text-white" aria-hidden="true" />}
                         {e.activo && pausado && <Pause size={8} strokeWidth={3} className="text-white" aria-hidden="true" />}
-                        {e.activo && !pausado && <span className={`w-1.5 h-1.5 rounded-full ${t.punto}`} />}
+                        {e.activo && !pausado && <PuntoDeEstado tamano="sm" className={t.punto} />}
                     </span>
                     {!ultimo && (
                         <span className="relative flex-1 mx-1">

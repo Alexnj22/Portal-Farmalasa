@@ -18,6 +18,7 @@ import Badge from '../../components/common/Badge';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // La forma de una ubicación y la sección de un laboratorio: `ubicacionLaboratorio` (núcleo, la misma de la app).
 const emptyLoc = ubicacionVacia;
 const hasAnySala = tieneSala;
@@ -167,7 +168,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                     // ocupa el ancho completo.
                                     className="w-full flex items-center gap-2.5 mb-3 group min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
                                 >
-                                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sec.dot}`} />
+                                    <PuntoDeEstado className={sec.dot} />
                                     <span className="text-body-lg font-bold text-content-2 group-hover:text-content transition-colors">
                                         {sec.label}
                                     </span>

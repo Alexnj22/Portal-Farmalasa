@@ -49,6 +49,7 @@ import VentaDelAviso from './VentaDelAviso';
 import UnirCuentas, { AvisoDeUniones } from './UnirCuentas';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // `recharts` viaja en su chunk: el modal se abre sin esperarlo.
 const GraficaCliente = lazy(() => import('./GraficasPuntos').then((m) => ({ default: m.GraficaCliente })));
 
@@ -468,7 +469,7 @@ function Reparto({ ganados, saldo, canjeado, vencido, anulado }) {
             <div className="flex flex-wrap gap-x-4 gap-y-1">
                 {partes.map((p) => (
                     <span key={p.clave} className="inline-flex items-center gap-1.5 text-caption text-content-3">
-                        <span className={`w-2 h-2 rounded-full ${p.color}`} />
+                        <PuntoDeEstado className={p.color} />
                         {p.rotulo} <span className="font-bold text-content-2 tabular-nums">{Math.round((p.valor / ganados) * 100)}%</span>
                     </span>
                 ))}

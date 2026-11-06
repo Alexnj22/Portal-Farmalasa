@@ -34,6 +34,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { cargosNivelANivel } from '@nucleo/utils/jerarquiaDeCargos';
 import { MAX_INACTIVIDAD, MIN_INACTIVIDAD, filasCopiadasDe, filasParaDelegar, filasParaActivarTodo, filasDeSeccion, mapaDePermisos, planDeCambioDePermiso, aQuienLlegaLaDelegacion, modulosQueVe } from '@nucleo/utils/permisosDeCargo';
 
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // ─── Módulos del sistema agrupados por función ─────────────────────────────
 // MODULE_GROUPS vive en constants/permissionModules.js (lo comparte MaintenanceView).
 
@@ -1412,13 +1413,13 @@ const PermissionsView = () => {
                                         izquierda —que es por donde baja el ojo—, con el nombre a
                                         peso pleno y cuántos módulos del grupo tiene el cargo. */}
                                     <div className="flex items-center gap-3 mb-3.5">
-                                        <span className={`w-2 h-2 rounded-full bg-current shrink-0 ${g.color}`} />
+                                        <PuntoDeEstado className={`bg-current ${g.color}`} />
                                         <p className="text-label font-black uppercase tracking-widest text-content-2">{g.group}</p>
                                         <span className="text-caption font-semibold text-content-3 tabular-nums shrink-0">
                                             {groupCount} de {g.modules.length}
                                         </span>
                                         {groupActive && <Check size={11} strokeWidth={3} className="text-success shrink-0" />}
-                                        {groupPartial && <span className="w-1.5 h-1.5 rounded-full bg-content-3 shrink-0" />}
+                                        {groupPartial && <PuntoDeEstado tamano="sm" className="bg-content-3" />}
                                         <span className="flex-1 border-t border-divider" />
                                         {/* Toggle de sección. `groupPartial` (algunos módulos
                                             de la sección activos, no todos) no es un estado que

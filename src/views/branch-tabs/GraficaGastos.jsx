@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Cell } from 'recha
 import ChartContainer from '../../components/common/ChartContainer';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 /**
  * La «Tendencia de Gastos» de la pestaña Gastos de una sucursal, en su propio
  * módulo para que `recharts` viaje en un chunk aparte.
@@ -35,7 +36,7 @@ const CustomTooltip = ({ active, payload, label }) => {
             <div data-surface="card" className="p-4">
                 <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-1.5">{label}</p>
                 <p className="text-body-xl font-black text-content flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-brand shadow-sm"></span>
+                    <PuntoDeEstado className="bg-brand shadow-sm" />
                     {formatMoney(payload[0].value)}
                 </p>
             </div>

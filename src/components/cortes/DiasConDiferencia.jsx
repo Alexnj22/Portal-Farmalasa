@@ -15,6 +15,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { desgloseDelDia, resolucionesDe, responsablesDelDia } from '@nucleo/utils/diferenciasDeCaja';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 
+import PuntoDeEstado from '../common/PuntoDeEstado';
 /**
  * La pestaña «Diferencias» de /caja: qué días tuvieron diferencia, cómo quedó
  * cada uno y qué falta hacer con ellos.
@@ -120,7 +121,7 @@ function BarraDelDia({ desglose, signo }) {
             <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-caption">
                 {tramos.map((t) => (
                     <span key={t.k} className="inline-flex items-center gap-1.5 text-content-2">
-                        <span className={`w-2 h-2 rounded-full ${t.punto}`} aria-hidden="true" />
+                        <PuntoDeEstado className={t.punto} aria-hidden="true" />
                         {t.label}
                         <span className="font-bold tabular-nums text-content">{formatMoney(desglose[t.k])}</span>
                     </span>
@@ -279,7 +280,7 @@ export default function DiasConDiferencia({
                                     const ec = ESTADO[c.estadoDif] || ESTADO.resuelto;
                                     return (
                                         <li key={c.id} className="flex items-center gap-2 text-caption">
-                                            <span className={`w-2 h-2 rounded-full shrink-0 ${PUNTO_ESTADO[c.estadoDif] || 'bg-success'}`} aria-hidden="true" />
+                                            <PuntoDeEstado className={PUNTO_ESTADO[c.estadoDif] || 'bg-success'} aria-hidden="true" />
                                             <span className="text-content-2 shrink-0">{hora12(c.hora)}</span>
                                             <span className="text-content-3 truncate flex-1">{ec.label}</span>
                                             <span className={`tabular-nums font-bold ${colorDe(c.tramo)}`}>{conSigno(c.tramo)}</span>

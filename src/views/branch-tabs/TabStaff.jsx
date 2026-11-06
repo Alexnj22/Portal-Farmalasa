@@ -27,6 +27,7 @@ import { analizarSucursal } from '@nucleo/data/ia';
 import { sincronizarVentasDeSucursal } from '@nucleo/data/branches';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // ============================================================================
 // 🎨 MOTOR DE TEMAS LIQUID GLASS
 // ============================================================================
@@ -123,7 +124,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="text-center relative z-base mb-3">
                 <p className="text-body-lg font-black text-content leading-tight group-hover:text-brand-text transition-colors truncate px-2">{employee.name}</p>
                 <div className="inline-flex items-center gap-1 mt-1 px-2 py-0.5 bg-surface-card border border-border-card rounded-full shadow-sm">
-                    <div className={`w-1.5 h-1.5 rounded-full ${theme.badge}`}></div>
+                    <PuntoDeEstado tamano="sm" className={theme.badge} />
                     <p className={`text-micro font-black uppercase tracking-widest ${theme.text} truncate max-w-[120px]`}>{roleLabel || employee.role}</p>
                 </div>
             </div>

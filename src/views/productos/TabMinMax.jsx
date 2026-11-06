@@ -62,6 +62,7 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { descargarArchivo } from '../../plataforma/descargas';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { HISTORIAL_MINMAX_META } from '@nucleo/constants/minmax';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 // ─── Animation presets ────────────────────────────────────────────────────────
 // easeOutExpo — snappy entry, silky exit. Standard for Apple/Liquid Glass UIs.
 const EASE_OUT_EXPO = [0.16, 1, 0.3, 1];
@@ -702,7 +703,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             {bodegaPendingCount > 0 ? (
                                 <>
                                     <div className="h-3.5 w-px bg-divider mx-0.5 shrink-0" />
-                                    <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block shrink-0" />
+                                    <PuntoDeEstado tamano="sm" className="bg-warning animate-pulse" />
                                     <span className="text-caption font-bold text-warning-text whitespace-nowrap">{bodegaPendingCount} pendiente{bodegaPendingCount !== 1 ? 's' : ''}</span>
                                 </>
                             ) : hasPublishedData ? (
@@ -1173,7 +1174,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                         onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                         onMouseLeave={closeBodegaTooltip}
                                                     >
-                                                        <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block shrink-0" />
+                                                        <PuntoDeEstado tamano="sm" className="bg-warning animate-pulse" />
                                                         {(row.draft_min ?? 0).toLocaleString('es-SV')}·{(row.draft_max ?? 0).toLocaleString('es-SV')}
                                                     </Badge>
                                                 </div>
@@ -1215,7 +1216,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                                     onMouseEnter={e => openBodegaTooltip(row.erp_product_id, e.currentTarget.getBoundingClientRect())}
                                                     onMouseLeave={closeBodegaTooltip}
                                                 >
-                                                    <span className="w-1.5 h-1.5 rounded-full bg-warning animate-pulse inline-block shrink-0" />
+                                                    <PuntoDeEstado tamano="sm" className="bg-warning animate-pulse" />
                                                     Suc. pendientes
                                                 </Badge>
                                             ) : null;

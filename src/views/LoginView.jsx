@@ -13,6 +13,7 @@ import { esAtajoDePegar, esPegadoDeUnaPersona } from '@nucleo/utils/pegadoManual
 import { problemaDeContrasenaNueva } from '@nucleo/utils/contrasena';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // Lectores físicos (keyboard-wedge) tipean rápido y terminan con Enter.
 const SCAN_KEY_GAP_MS = 250;
 const SCAN_MIN_LENGTH = 3;
@@ -309,7 +310,7 @@ const CameraScanner = ({ videoRef, compact }) => {
         </div>
         <div className="flex items-center gap-2.5 px-4 py-2.5 bg-[var(--lgn-campo)] border border-[var(--lgn-borde)] rounded-card">
             <div className="relative shrink-0">
-                <div className="w-2 h-2 rounded-full bg-brand" />
+                <PuntoDeEstado className="bg-brand" />
                 <div className="absolute inset-0 rounded-full bg-brand/40 animate-ping" />
             </div>
             <p className="text-caption font-black uppercase tracking-widest text-content-2">Apunta la cámara al código de barras</p>

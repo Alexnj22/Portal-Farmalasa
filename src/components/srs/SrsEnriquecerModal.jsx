@@ -14,6 +14,7 @@ import {
 import PortalInput from '../common/PortalInput';
 import { aplicarPrincipiosDeSrs, buscarEnSrsParaProducto } from '@nucleo/data/srs';
 
+import PuntoDeEstado from '../common/PuntoDeEstado';
 // ── La cuenta y las escrituras: núcleo (2026-10-15) ──────────────────────────
 // Búsquedas, parecido y principios en `utils/enriquecerSrs`; leer y guardar en
 // `data/srs`. La app recorre lo mismo. Acá quedan los nombres de siempre.
@@ -240,9 +241,9 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 </p>
                             </div>
                             <div className="flex gap-4 text-label font-bold">
-                                <span className="flex items-center gap-1.5 text-success"><span className="w-2.5 h-2.5 rounded-full bg-success inline-block"/> ≥ 70% — auto-aplica</span>
-                                <span className="flex items-center gap-1.5 text-warning"><span className="w-2.5 h-2.5 rounded-full bg-warning inline-block"/> {'< 70%'} — te consulta</span>
-                                <span className="flex items-center gap-1.5 text-content-3"><span className="w-2.5 h-2.5 rounded-full bg-content-3 inline-block"/> Sin resultados SRS — descarta</span>
+                                <span className="flex items-center gap-1.5 text-success"><PuntoDeEstado className="bg-success" /> ≥ 70% — auto-aplica</span>
+                                <span className="flex items-center gap-1.5 text-warning"><PuntoDeEstado className="bg-warning" /> {'< 70%'} — te consulta</span>
+                                <span className="flex items-center gap-1.5 text-content-3"><PuntoDeEstado className="bg-content-3" /> Sin resultados SRS — descarta</span>
                             </div>
                             <Button tone="chart-3" onClick={handleStart}>Iniciar escaneo</Button>
                         </div>

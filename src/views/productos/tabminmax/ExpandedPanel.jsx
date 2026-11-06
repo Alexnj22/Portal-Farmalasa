@@ -18,6 +18,7 @@ import { diaSV, fechaTexto } from '@nucleo/utils/fecha';
 import { avisoDeLote } from '@nucleo/utils/plazoDeDevolucion';
 import { estadoDeProyeccion } from '@nucleo/utils/minmaxGuardar';
 
+import PuntoDeEstado from '../../../components/common/PuntoDeEstado';
 export default function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
     // El día de la sala, que cambia solo a medianoche con la pantalla abierta.
@@ -182,7 +183,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                 suspensivos. */}
                                             {erpId === 6 ? 'Bodega' : ERP_NAMES[erpId].replace('Salud ', 'S.').replace('La Popular', 'Pop.')}
                                         </span>
-                                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${alert.dot}`} />
+                                        <PuntoDeEstado tamano="sm" className={alert.dot} />
                                     </div>
                                     <div className={`text-body-sm font-black tabular-nums leading-none ${
                                         !hasData ? 'text-content-3' :
@@ -234,7 +235,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     <span className="text-micro font-black uppercase tracking-widest text-content-2">Referencia pedido</span>
                     {coverDays && (
                         <span className="flex items-center gap-1.5 text-label">
-                            <span className="w-2 h-2 rounded-full bg-content-3 shrink-0" />
+                            <PuntoDeEstado className="bg-content-3" />
                             <span className="text-content-3 font-semibold">Cobertura</span>
                             <span className="font-black text-content-2">{coverDays} días</span>
                             <span className="text-content-3 text-caption">de {cycleDays}d objetivo</span>
@@ -243,13 +244,13 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     {minN > 0 && (
                         <>
                             <span className="flex items-center gap-1.5 text-label">
-                                <span className="w-2 h-2 rounded-full bg-chart-4 shrink-0" />
+                                <PuntoDeEstado className="bg-chart-4" />
                                 <span className="text-content-3 font-semibold">MIN</span>
                                 <span className="font-black text-chart-4-text">{hasDominant ? formatDominant(minN, pres) : `${minN.toLocaleString('es-SV')} und`}</span>
                                 {hasDominant && <span className="text-content-3 text-caption">({minN.toLocaleString('es-SV')} und)</span>}
                             </span>
                             <span className="flex items-center gap-1.5 text-label">
-                                <span className="w-2 h-2 rounded-full bg-chart-1 shrink-0" />
+                                <PuntoDeEstado className="bg-chart-1" />
                                 <span className="text-content-3 font-semibold">MAX</span>
                                 <span className="font-black text-chart-1-text">{hasDominant ? formatDominant(maxN, pres) : `${maxN.toLocaleString('es-SV')} und`}</span>
                                 {hasDominant && <span className="text-content-3 text-caption">({maxN.toLocaleString('es-SV')} und)</span>}
@@ -258,7 +259,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                     )}
                     {pedir !== null && (
                         <span className="flex items-center gap-1.5 text-label">
-                            <span className="w-2 h-2 rounded-full bg-danger shrink-0" />
+                            <PuntoDeEstado className="bg-danger" />
                             <span className="text-content-3 font-semibold">Pedir</span>
                             <span className="font-black text-danger">{hasDominant ? formatDominant(pedir, pres) : `${pedir.toLocaleString('es-SV')} und`}</span>
                             {hasDominant && <span className="text-content-3 text-caption">({pedir.toLocaleString('es-SV')} und)</span>}

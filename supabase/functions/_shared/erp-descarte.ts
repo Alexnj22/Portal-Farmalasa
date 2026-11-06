@@ -52,6 +52,65 @@ export interface LineaDescarte {
   lote?: string | null;
 }
 
+export interface LoteDeDescargo { id: string; numero: string; vence: string; stock: number }
+export interface RenglonDeDescargo { idLote: string; numero: string; vence: string; cantidad: number }
+
+const esGenerico = (n: string) => /^gen[eé]rico$/i.test(String(n ?? "").trim());
+
+/**
+ * De qué lotes sale un descargo, en presentaciones ENTERAS (2026-11-05).
+ *
+ * Hasta ese día se pedía UN registro que alcanzara solo. Dos casos reales lo
+ * rompían sin que faltara producto: lo «sin lote asignado» partido en varios
+ * registros (FOLIMEN en Bodega: 2 + 2) y la existencia repartida entre lotes.
+ *
+ * 1. Si un lote alcanza solo, ése: el que vence primero (un renglón, como antes).
+ *    Lo sin lote asignado cuenta JUNTO para esta pregunta.
+ * 2. Si no, se completa por vencimiento, cada paquete entero de un lote.
+ * Con `numero`, sólo los registros de ESE lote (un producto devuelto sale con el
+ * lote con que entró). Devuelve lo que falta; no inventa.
+ */
+export function lotesDelDescargo(
+  lotes: LoteDeDescargo[], paquetes: number, unidad: number, numero?: string | null,
+): { renglones: RenglonDeDescargo[]; faltan: number } {
+  const u = Number(unidad) || 1;
+  const caben = (x: LoteDeDescargo) => Math.floor((Number(x.stock) + 1e-9) / u);
+  const pool = numero
+    ? lotes.filter((x) => esGenerico(numero) ? esGenerico(x.numero) : x.numero === String(numero))
+    : lotes;
+  const porVence = [...pool].filter((x) => x.stock > 0)
+    .sort((a, b) => (a.vence || "").localeCompare(b.vence || ""));
+  const comoRenglon = (x: LoteDeDescargo, n: number) => ({ idLote: x.id, numero: x.numero, vence: x.vence, cantidad: n });
+
+  // 1. Un solo lote. Lo sin lote asignado es UN lote aunque viva en varios registros.
+  const solo = porVence.find((x) => !esGenerico(x.numero) && caben(x) >= paquetes);
+  const gen = porVence.filter((x) => esGenerico(x.numero));
+  const genCaben = gen.reduce((n, x) => n + caben(x), 0);
+  const genVence = gen[0]?.vence ?? "";
+  const usarGen = genCaben >= paquetes && (!solo || genVence.localeCompare(solo.vence || "") <= 0);
+  if (usarGen) {
+    const renglones: RenglonDeDescargo[] = [];
+    let resto = paquetes;
+    for (const x of [...gen].sort((a, b) => caben(b) - caben(a))) {
+      if (resto <= 0) break;
+      const t = Math.min(caben(x), resto);
+      if (t > 0) { renglones.push(comoRenglon(x, t)); resto -= t; }
+    }
+    return { renglones, faltan: 0 };
+  }
+  if (solo) return { renglones: [comoRenglon(solo, paquetes)], faltan: 0 };
+
+  // 2. Por vencimiento, paquetes enteros.
+  const renglones: RenglonDeDescargo[] = [];
+  let resto = paquetes;
+  for (const x of porVence) {
+    if (resto <= 0) break;
+    const t = Math.min(caben(x), resto);
+    if (t > 0) { renglones.push(comoRenglon(x, t)); resto -= t; }
+  }
+  return { renglones, faltan: resto };
+}
+
 export type ResultadoDescarte =
   | { ok: true; aplicado: Record<string, unknown> }
   | { ok: false; codigo: string; error: string };
@@ -134,35 +193,59 @@ export async function descartarUnaLinea(opc: {
              error: `${nombre}: la presentación ${l.presentacion_tipo} ya no trae ${l.factor}.` };
   }
 
-  // Existencia, en unidades base.
+  // Existencia, en unidades base. En un producto con lote, la casilla de
+  // existencia trae la del lote que la pantalla preselecciona y no la del
+  // producto (ver `disponibleEnBodega`): se suma de los lotes.
   const enUnidades = Number(l.cantidad) * Number(unidad);
-  if (stock !== null && enUnidades > stock) {
+  const existencia = regulado ? lotes.reduce((n, x) => n + x.stock, 0) : stock;
+  if (existencia !== null && enUnidades > existencia + 1e-9) {
     return { ok: false, codigo: "SIN_EXISTENCIA",
-             error: `De ${nombre} quedan ${stock} unidades y el descarte lleva ${enUnidades}.` };
+             error: `De ${nombre} quedan ${existencia} unidades y el descarte lleva ${enUnidades}.` };
   }
 
-  // Lote: el que vence primero y alcanza (un regalo no elige lote; la sala
-  // entrega el que está más cerca de vencer, que es lo que haría a mano).
-  let idLote = "0";
-  let loteUsado: { numero: string; vence: string } | null = null;
+  // Lotes: uno si alcanza (el que vence primero), si no por vencimiento con
+  // paquetes enteros, y si ninguna combinación arma la presentación, en la
+  // presentación de una unidad — que sale de los mismos lotes. Cada lote es un
+  // renglón del mismo descargo: se sabe exactamente qué salió de cuál.
+  let presId = elegida.id;
+  let cantidad = Number(l.cantidad);
+  let renglones: RenglonDeDescargo[] = [{ idLote: "0", numero: "", vence: "", cantidad }];
+  const avisos: string[] = [];
   if (regulado) {
-    const lote = l.lote
-      ? lotes.find((x) => x.numero === String(l.lote) && x.stock >= enUnidades)
-      : lotes.filter((x) => x.stock >= enUnidades).sort((a, b) => a.vence.localeCompare(b.vence))[0];
-    if (!lote) {
+    let r = lotesDelDescargo(lotes, cantidad, Number(unidad), l.lote);
+    if (r.faltan > 0 && Number(unidad) > 1) {
+      const base = presentaciones.find((p) => p.etiqueta.endsWith("(1)"));
+      const enU = lotesDelDescargo(lotes, enUnidades, 1, l.lote);
+      if (base && enU.faltan === 0) {
+        try {
+          const jb = JSON.parse(await pedir(cookie, DESCARGO, new URLSearchParams({
+            process: "getpresentacion", id_presentacion: base.id,
+          }), { extra: { Referer: DESCARGO } }));
+          if (Number(jb?.unidad) !== 1) throw new Error("factor");
+          costo = String(jb.costo); precio = String(jb.precio); unidad = "1";
+        } catch {
+          return { ok: false, codigo: "PRESENTACION_ILEGIBLE", error: `No se pudo leer la presentación de una unidad de ${nombre}.` };
+        }
+        avisos.push(`ningún lote completaba ${l.presentacion_tipo} (${l.factor}): salió en ${enUnidades} unidades`);
+        presId = base.id;
+        cantidad = enUnidades;
+        r = enU;
+      }
+    }
+    if (r.faltan > 0) {
       if (l.lote) return { ok: false, codigo: "SIN_LOTE", error: `${nombre}: el lote ${l.lote} no alcanza en esta ubicación.` };
       return { ok: false, codigo: "SIN_LOTE",
-               error: `${nombre} lleva control de lote y ningún lote de esta sucursal alcanza para el premio.` };
+               error: `${nombre}: los lotes de esta sucursal no alcanzan para ${l.cantidad} de ${l.presentacion_tipo || "la presentación"}.` };
     }
-    idLote = lote.id;
-    loteUsado = { numero: lote.numero, vence: lote.vence };
+    renglones = r.renglones;
   }
 
-  const datos = [l.erp_product_id, costo, precio, l.cantidad, unidad, "", elegida.id, idLote].join("|") + "#";
-  const total = Number(costo || 0) * Number(l.cantidad);
+  const datos = renglones.map((r) =>
+    [l.erp_product_id, costo, precio, r.cantidad, unidad, "", presId, r.idLote].join("|")).join("#") + "#";
+  const total = Number(costo || 0) * cantidad;
   // Una sola vez: un descarte reenviado tras un corte descarta dos veces.
   const crudo = await pedir(cookie, DESCARGO, new URLSearchParams({
-    process: "insert", datos, cuantos: "1", total: total.toFixed(4), fecha: hoySV(),
+    process: "insert", datos, cuantos: String(renglones.length), total: total.toFixed(4), fecha: hoySV(),
     concepto, origen: String(erpUbicacion), iden,
   }), { extra: { Referer: DESCARGO }, reintentos: 1 });
   const resp = leerRespuesta(crudo);
@@ -179,8 +262,12 @@ export async function descartarUnaLinea(opc: {
       at: new Date().toISOString(), movimiento: "DESCARTE", iden, concepto,
       erp_sucursal_id: erpSucursal, erp_ubicacion_id: erpUbicacion,
       erp_product_id: l.erp_product_id, presentacion: `${l.presentacion_tipo} (${l.factor})`,
-      id_presentacion_erp: elegida.id, cantidad: l.cantidad, unidad, costo, precio,
-      total: Number(total.toFixed(4)), stock_previo: stock, lote: loteUsado, msg: resp.msg,
+      id_presentacion_erp: presId, cantidad, unidad, costo, precio,
+      total: Number(total.toFixed(4)), stock_previo: existencia,
+      // `lote` (el primero) se conserva para quien ya lo lee; `lotes` es el detalle completo.
+      lote: regulado ? { numero: renglones[0].numero, vence: renglones[0].vence } : null,
+      lotes: regulado ? renglones.map((r) => ({ numero: r.numero, vence: r.vence, cantidad: r.cantidad })) : null,
+      avisos, msg: resp.msg,
     },
   };
 }

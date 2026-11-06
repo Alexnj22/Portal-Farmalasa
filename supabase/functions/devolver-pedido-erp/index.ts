@@ -9,6 +9,7 @@ import {
   avisoDelAreaDeVencidos,
   type RenglonEnRiesgo,
   armarConcepto,
+  armarEnSuelto,
   disponibleEnBodega,
   estadoDeRecepcion,
   hayEnTexto,
@@ -836,7 +837,7 @@ Deno.serve(async (req) => {
         const f = await traerFila(cookie, d.erp_product_id, ubicOrigen);
         if (!f.encontrado) { await fallar(`${it.nombre} ya no tiene existencia en ${nombreOrigen}.`); continue; }
 
-        const pres = await resolverPresentacion(cookie, f, it.tipo, it.factor, { porFactor: true });
+        let pres = await resolverPresentacion(cookie, f, it.tipo, it.factor, { porFactor: true });
         if (!pres) {
           await fallar(`${it.nombre}: llegó como ${it.tipo} de ${it.factor}, y hoy ninguna presentación `
             + `con ese nombre trae ese factor. Ofrece: ${f.presentaciones.map((p) => p.tipo).join(", ") || "ninguna"}.`);
@@ -852,13 +853,24 @@ Deno.serve(async (req) => {
           enUbicacion ? (enUbicacion.get(Number(d.erp_product_id)) ?? 0) : null,
           apartadoQueEstorba(lecturaEstante, lecturaVencidos, Number(d.erp_product_id)),
         );
-        if (Number(d.cantidad) > hay.paquetes) {
-          // Lo apartado en el área de vencidos ya no achica este número: el
-          // sistema respeta la ubicación desde el 26-ago (ver
-          // `disponibleEnBodega`). Si falta, falta en el estante.
-          await fallar(`De ${it.nombre} ${hayEnTexto(hay, nombreOrigen)}: alcanzan para `
-            + `${hay.paquetes} y la devolución son ${d.cantidad}.`);
-          continue;
+        // Cuánto sale, en la presentación que sale. Si ningún lote completa un
+        // paquete pero las unidades alcanzan, sale en unidades sueltas, cada
+        // una con su lote (2026-11-05, igual que el despacho: `armarEnSuelto`).
+        let cantidad = Number(d.cantidad);
+        const avisosDeSuelto: string[] = [];
+        if (cantidad > hay.paquetes) {
+          const suelto = await armarEnSuelto(cookie, f, Number(pres.unidad), cantidad);
+          if (!suelto) {
+            // Lo apartado en el área de vencidos ya no achica este número: el
+            // sistema respeta la ubicación desde el 26-ago (ver
+            // `disponibleEnBodega`). Si falta, falta en el estante.
+            await fallar(`De ${it.nombre} ${hayEnTexto(hay, nombreOrigen)}: alcanzan para `
+              + `${hay.paquetes} y la devolución son ${d.cantidad}.`);
+            continue;
+          }
+          avisosDeSuelto.push(`ningún lote completaba ${it.tipo}: salió en ${suelto.cantidad} unidades sueltas`);
+          pres = suelto.pres;
+          cantidad = suelto.cantidad;
         }
 
         // ── El lote ───────────────────────────────────────────────────────
@@ -872,12 +884,12 @@ Deno.serve(async (req) => {
         // despachó, así que no tiene ninguno y cae directo al reparto por
         // vencimiento de abajo — que es lo correcto, no un respaldo.
         const renglones: { cantidad: number; idLote: string; lote: string | null }[] = [];
-        const avisos: string[] = [];
+        const avisos: string[] = [...avisosDeSuelto];
 
         if (!f.regulado) {
-          renglones.push({ cantidad: Number(d.cantidad), idLote: "0", lote: null });
+          renglones.push({ cantidad, idLote: "0", lote: null });
         } else {
-          let resto = Number(d.cantidad);
+          let resto = cantidad;
           const usados = new Set<string>();
           // Cuánto se le sacó ya a cada lote. El traslado de ida puede nombrar
           // el MISMO lote en dos renglones —así se despachaba hasta el
@@ -941,7 +953,7 @@ Deno.serve(async (req) => {
         if (simulacro) {
           hechas.push({
             clave: d.clave, producto: it.nombre, cantidad: d.cantidad,
-            presentacion: `${it.tipo} (${pres.unidad})`,
+            presentacion: Number(pres.unidad) === Number(it.factor) ? `${it.tipo} (${pres.unidad})` : "UNIDAD (1)",
             renglones, avisos, existencia_previa: f.existencia, simulacro: true,
           });
           continue;
@@ -1045,7 +1057,7 @@ Deno.serve(async (req) => {
           aviso: avisos.length ? avisos.join(" · ") : null,
           detalle: {
             producto: it.nombre,
-            presentacion: `${it.tipo} (${pres.unidad})`,
+            presentacion: Number(pres.unidad) === Number(it.factor) ? `${it.tipo} (${pres.unidad})` : "UNIDAD (1)",
             id_presentacion_erp: pres.id,
             renglones,
             concepto,

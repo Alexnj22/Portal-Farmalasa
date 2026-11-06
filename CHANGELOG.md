@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.4 — Descartes, premios, salidas de compras y devoluciones: varios lotes en un movimiento y caja en unidades
+
+Auditoría de todo lo que saca producto de un lote, después de la FOLIMEN de Bodega (4 blísteres en dos registros «sin lote asignado» de 2).
+
+- **El descargo compartido** (`descartarUnaLinea`: descartes, premios, devolución a proveedor, faltantes con nota de crédito y la asignación del lote de la caja) pedía UN registro que alcanzara solo. Ahora `lotesDelDescargo`: un lote si alcanza (el que vence primero; lo sin lote asignado cuenta junto), si no por vencimiento con paquetes enteros, y si ninguna combinación arma la presentación, en la de una unidad. **Cada lote es un renglón del mismo descargo** y el registro guarda `lotes` con lo que salió de cuál.
+- **El tope comparaba contra la existencia del primer lote**, no la del producto: un descarte con existencia repartida se rechazaba con «quedan N». Ahora suma los lotes.
+- **Devoluciones de pedido**: si ningún lote completa la presentación pero las unidades alcanzan, sale en unidades sueltas con su lote (`armarEnSuelto`, igual que el despacho de pedidos), y queda anotado en el aviso de la devolución.
+- Venta y preventa NO cambian: ahí cambiar de presentación cambia el precio.
+
 ## v2.1455.3 — Envío directo: lo sin lote partido sale junto y la caja que ningún lote completa se ofrece en unidades
 
 Lo mismo que en las solicitudes de traslado, ahora en el envío directo de producto.

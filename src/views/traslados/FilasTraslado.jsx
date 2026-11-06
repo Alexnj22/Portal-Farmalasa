@@ -25,6 +25,7 @@ import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import { imprimirTicketDeTraslado, reimprimirTicketDeTraslado, loQueVaEnLaBolsa } from '@nucleo/utils/imprimirTraslado';
 import LoteDeLaCaja from './LoteDeLaCaja';
 import ElegirLoteDeEnvio from './ElegirLoteDeEnvio';
+import CajaEnUnidades from './CajaEnUnidades';
 import { opcionesDeLote, pedidosQueNoEstan, eleccionEfectiva, venceMasCortoQueLoPedido } from '@nucleo/utils/loteDeEnvio';
 import Notice from '../../components/common/Notice';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -300,6 +301,10 @@ export function DecisionTraslado({ fila, onHecho }) {
     const [lotesSala,      setLotesSala]      = useState({});          // { [erp]: lotesEnUnidades | null }
     const [eleccion,       setEleccion]       = useState({});          // { [posicion]: { lote, vence, sinAsignar } }
     const [cambiando,      setCambiando]      = useState(() => new Set());
+    /* Una caja que ningún lote completa sale en unidades base (2026-11-05): el
+     * servidor la ofrece (`CAJA_EN_UNIDADES`) y quien despacha la confirma. */
+    const [cajaEnUnidades, setCajaEnUnidades] = useState([]);
+    const [aceptaUnidades, setAceptaUnidades] = useState(() => new Set());
     const [noEstaServidor, setNoEstaServidor] = useState(null);        // { [posicion]: { pedidos, opciones } }
     const origenErp = Number(disp?.origen?.erp_sucursal_id) || null;
 
@@ -408,6 +413,7 @@ export function DecisionTraslado({ fila, onHecho }) {
             recortado ? aceptadas : null,
             pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion].envio })),
             [...conEleccion.values()].map(x => ({ posicion: x.pos, lote: x.valor.lote, vence: x.valor.vence })),
+            [...aceptaUnidades],
         );
         setOcupado(false);
         if (!r?.ok) {
@@ -418,6 +424,12 @@ export function DecisionTraslado({ fila, onHecho }) {
                     posicion: x.posicion, producto: x.producto, unidades: x.unidades,
                     erp: Number(items[x.posicion]?.erp_product_id),
                 })));
+            }
+            // Ningún lote completa la presentación: se ofrece en unidades.
+            if (r?.codigo === 'CAJA_EN_UNIDADES' && Array.isArray(r.lineas)) {
+                setCajaEnUnidades(r.lineas);
+                setError('');
+                return;
             }
             // Vence antes que lo pedido: se le preguntó a la sala que pidió.
             if (['PROPUESTA_ENVIADA', 'PROPUESTA_PENDIENTE', 'PROPUESTA_RECHAZADA'].includes(r?.codigo) && r.propuesta) {
@@ -503,6 +515,7 @@ export function DecisionTraslado({ fila, onHecho }) {
     // Y la misma regla del otro lado: mandar de menos también hay que explicarlo.
     // El servidor lo exige igual; acá se avisa para no gastar el viaje.
     const puedeConfirmar = lotesCompletos && !esperandoRespuesta
+        && cajaEnUnidades.every(c => aceptaUnidades.has(c.posicion))
         && (sinDatos || (hayQueMandar && (!recortado || porQue.trim().length > 0)));
 
     return (
@@ -631,6 +644,16 @@ export function DecisionTraslado({ fila, onHecho }) {
                     lo pedido y dentro de 6 meses: al confirmar se le pregunta a {salaQuePide} antes de enviarlo.
                 </p>
             )}
+
+            {/* ── La caja que sale en unidades ─────────────────────────────── */}
+            {modo !== 'rechazo' && cajaEnUnidades.map(c => (
+                <CajaEnUnidades key={c.posicion} linea={c} aceptada={aceptaUnidades.has(c.posicion)}
+                    onAceptar={(si) => setAceptaUnidades(prev => {
+                        const n = new Set(prev);
+                        if (si) n.add(c.posicion); else n.delete(c.posicion);
+                        return n;
+                    })} />
+            ))}
 
             {/* ── El lote que sale, cuando el pedido no está o se cambia ──── */}
             {modo !== 'rechazo' && lineasLote.filter(x => x.abierto).map(x => (

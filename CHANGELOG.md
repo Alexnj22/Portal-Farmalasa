@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1455.2 — Traslados: la caja que ningún lote completa sale en unidades, confirmándolo
+
+Piden 1 caja (×4) y en la sala hay 3 blísteres de un lote y 1 de otro: ningún lote arma la caja y el despacho frenaba aunque las unidades alcanzaban.
+
+- **El despacho ahora la ofrece en la presentación base** (`CAJA_EN_UNIDADES`): dice cuántas unidades salen de cada lote y con qué vencimiento, empezando por lo reservado y luego por lo que vence primero.
+- **Quien despacha lo confirma** con «Mandarla en 4 blister x 25»; sin confirmarlo no se puede enviar. El traslado sale con un renglón por lote.
+- Si parte es «sin lote asignado», sigue pidiendo el lote de la caja para esa parte.
+- Sólo aplica a productos con control de lote y cuando existe una presentación base (factor 1).
+
 ## v2.1455.1 — Traslados: lo sin lote partido en varios renglones sale junto
 
 Salud 3 no podía recibir una caja de FOLIMEN 5 mg de Bodega: los 4 blísteres estaban en dos renglones «sin lote asignado» de 2 (vencen 10/2028 y 12/2028), y una caja tenía que salir entera de uno solo.

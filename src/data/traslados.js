@@ -386,7 +386,7 @@ export async function responderPropuestaDeLote(requestId, acepta) {
  * y no vinieron; con ellos, les asigna ese lote a esas unidades antes de
  * despachar. Ver `supabase/functions/_shared/erp-asignar-lote.ts`.
  */
-export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, lotesDeGenerico = null, lotesElegidos = null) =>
+export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, lotesDeGenerico = null, lotesElegidos = null, enUnidades = null) =>
     invocar({
         request_id: requestId,
         approver_note: nota,
@@ -394,6 +394,8 @@ export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, 
         ...(lineasAceptadas ? { lineas_aceptadas: lineasAceptadas } : {}),
         ...(lotesDeGenerico?.length ? { lotes_de_generico: lotesDeGenerico } : {}),
         ...(lotesElegidos?.length ? { lotes_elegidos: lotesElegidos } : {}),
+        // Posiciones cuya caja, que ningún lote completa, sale en unidades base.
+        ...(enUnidades?.length ? { en_unidades: enUnidades } : {}),
     });
 
 /**

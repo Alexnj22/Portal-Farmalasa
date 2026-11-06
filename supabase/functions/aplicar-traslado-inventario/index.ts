@@ -214,7 +214,7 @@ Deno.serve(async (req) => {
     // `lotes_elegidos` (2026-11-05): el lote que quien despacha eligió EN LUGAR
     // del que pidió la solicitud, porque el pedido no está. `[{ posicion, lote,
     // vence }]`, un lote por renglón.
-    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico, lotes_elegidos } =
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico, lotes_elegidos, en_unidades } =
       await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
@@ -1010,6 +1010,17 @@ Deno.serve(async (req) => {
       posicion: number; producto: string; lote: string; vence: string; sin_asignar: boolean;
       pedido: { lote: string; vence: string }[];
     }[] = [];
+    // ── Una caja que ningún lote completa sale en unidades (2026-11-05) ────
+    // Pedido del usuario: piden 1 caja (×4) y hay 3 blísteres de un lote y 1
+    // de otro. Ningún lote arma la caja, pero las unidades sí alcanzan: en vez
+    // de frenar, se ofrece mandarla en la presentación base, un renglón por
+    // lote, y quien despacha lo CONFIRMA (`en_unidades` trae las posiciones).
+    const enUnidadesOk = new Set<number>(
+      (Array.isArray(en_unidades) ? en_unidades : []).map((x: unknown) => Number(x)).filter(Number.isFinite));
+    const cajaEnUnidades: {
+      posicion: number; producto: string; presentacion: string; paquetes: number; unidades: number;
+      base: string; reparto: { lote: string; vence: string; unidades: number }[];
+    }[] = [];
     const loteNoEsta: {
       posicion: number; producto: string; presentacion: string; paquetes: number;
       pedidos: string[]; disponibles: { lote: string; vence: string; paquetes: number }[];
@@ -1054,7 +1065,7 @@ Deno.serve(async (req) => {
     for (let i = 0; i < envio.length; i++) {
       if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
       const arranqueRenglon = Date.now();
-      const l = envio[i];
+      let l = envio[i];
       const nombre = l.descripcion ?? String(l.erp_product_id);
 
       const filaHtml = await pedir(cookie, TRASLADO, new URLSearchParams({
@@ -1117,11 +1128,46 @@ Deno.serve(async (req) => {
       //
       // Y la cifra sale de los LOTES, no de la casilla de existencia — que trae
       // la del primer lote y no la del producto (ver `disponibleEnBodega`).
-      const hay = disponibleEnBodega(
+      const medir = () => disponibleEnBodega(
         f, Number(unidad),
         enUbicacion ? (enUbicacion.get(Number(l.erp_product_id)) ?? 0) : null,
         apartadoQueEstorba(lecturaOrigen, lecturaVencidos, Number(l.erp_product_id)),
       );
+      let hay = medir();
+
+      // Ningún lote completa un paquete pero las unidades sí alcanzan: se
+      // ofrece (o, confirmado, se hace) en la presentación base.
+      if (f.regulado && Number(unidad) > 1 && Number(l.cantidad) > hay.paquetes
+          && hay.unidades >= Number(l.cantidad) * Number(unidad)) {
+        let base: { id: string; tipo: string; costo: string; precio: string } | null = null;
+        for (const c of f.presentaciones) {
+          try {
+            const jp = JSON.parse(await pedir(cookie, TRASLADO, new URLSearchParams({
+              process: "getpresentacion", id_presentacion: c.id,
+            }), { extra: { Referer: TRASLADO } }));
+            if (Number(jp?.unidad) === 1) { base = { id: c.id, tipo: c.tipo, costo: String(jp.costo), precio: String(jp.precio) }; break; }
+          } catch { /* la siguiente */ }
+        }
+        if (base) {
+          const enU = Number(l.cantidad) * Number(unidad);
+          if (!enUnidadesOk.has(posDe[i])) {
+            const rep = repartirEnLotes(f.lotes, enU, 1, reservadosDe(l, 1));
+            cajaEnUnidades.push({
+              posicion: posDe[i], producto: nombre, presentacion: String(l.presentacion_tipo ?? ""),
+              paquetes: Number(l.cantidad), unidades: enU, base: base.tipo,
+              reparto: rep.renglones.map((r) => ({
+                lote: String(r.lote ?? ""), unidades: r.cantidad,
+                vence: String(f.lotes.find((x) => x.id === r.idLote)?.vence ?? "").slice(0, 10),
+              })),
+            });
+            msPorRenglon.push(Date.now() - arranqueRenglon);
+            continue;
+          }
+          l = { ...l, presentacion_tipo: base.tipo, factor: 1, cantidad: enU };
+          elegida = base.id; costo = base.costo; precio = base.precio; unidad = "1";
+          hay = medir();
+        }
+      }
       if (Number(l.cantidad) > hay.paquetes)
         return json({
           ok: false, codigo: "SIN_EXISTENCIA",
@@ -1279,6 +1325,17 @@ Deno.serve(async (req) => {
 
       msPorRenglon.push(Date.now() - arranqueRenglon);
     }
+
+    // La caja que sale en unidades se confirma primero: cambia el reparto de
+    // todo lo demás de ese renglón.
+    if (cortadoEn < 0 && cajaEnUnidades.length)
+      return json({
+        ok: false, codigo: "CAJA_EN_UNIDADES", lineas: cajaEnUnidades,
+        error: cajaEnUnidades.length === 1
+          ? `${cajaEnUnidades[0].producto}: ningún lote completa ${cajaEnUnidades[0].paquetes === 1 ? "la" : "cada"} `
+            + `${cajaEnUnidades[0].presentacion}. Puede salir en ${cajaEnUnidades[0].unidades} ${cajaEnUnidades[0].base}: confírmalo.`
+          : `${cajaEnUnidades.length} productos no completan su presentación con un solo lote. Confirma que salgan en unidades.`,
+      }, 409);
 
     // El lote pedido que no está va ANTES que el de la caja: elegir otro lote
     // puede cambiar si hace falta escribir uno.

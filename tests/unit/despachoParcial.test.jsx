@@ -132,7 +132,7 @@ describe('cuando alcanza todo', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
-        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, [], []);
+        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, [], [], []);
     });
 });
 
@@ -168,7 +168,7 @@ describe('cuando alcanza menos de lo que piden', () => {
             fireEvent.click(screen.getByRole('button', { name: /Enviar lo que hay/i }));
         });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', 'Se vendió una hace un rato', [{ i: 0, cantidad: 2 }], [], [],
+            'sol-1', 'Se vendió una hace un rato', [{ i: 0, cantidad: 2 }], [], [], [],
         );
     });
 
@@ -215,7 +215,7 @@ describe('el tope es lo pedido', () => {
         await act(async () => {
             fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i }));
         });
-        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, [], []);
+        expect(despacharTraslado).toHaveBeenCalledWith('sol-1', '', null, [], [], []);
     });
 });
 
@@ -315,7 +315,7 @@ describe('cuando sale existencia sin lote asignado', () => {
         expect(boton).not.toBeDisabled();
         await act(async () => { fireEvent.click(boton); });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', '', null, [{ posicion: 0, lote: 'ABC123', vence: '2030-05-01' }], [],
+            'sol-1', '', null, [{ posicion: 0, lote: 'ABC123', vence: '2030-05-01' }], [], [],
         );
     });
 
@@ -355,7 +355,7 @@ describe('el lote de la caja contra los ya registrados', () => {
         expect(boton).not.toBeDisabled();
         await act(async () => { fireEvent.click(boton); });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', '', null, [{ posicion: 0, lote: 'K221', vence: '2031-02-01' }], [],
+            'sol-1', '', null, [{ posicion: 0, lote: 'K221', vence: '2031-02-01' }], [], [],
         );
     });
 });
@@ -393,7 +393,7 @@ describe('cuando el lote pedido no está en la sala', () => {
         expect(boton).not.toBeDisabled();
         await act(async () => { fireEvent.click(boton); });
         expect(despacharTraslado).toHaveBeenCalledWith(
-            'sol-1', '', null, [], [{ posicion: 0, lote: 'L3', vence: '2028-06-01' }],
+            'sol-1', '', null, [], [{ posicion: 0, lote: 'L3', vence: '2028-06-01' }], [],
         );
     });
 
@@ -476,7 +476,29 @@ describe('cuando el lote que sale vence antes que el pedido (≤ 6 meses)', () =
         expect(boton).not.toBeDisabled();
         await act(async () => { fireEvent.click(boton); });
         expect(despacharTraslado).toHaveBeenLastCalledWith(
-            'sol-1', '', null, [], [{ posicion: 0, lote: 'L2', vence: '2027-02-01' }],
+            'sol-1', '', null, [], [{ posicion: 0, lote: 'L2', vence: '2027-02-01' }], [],
         );
+    });
+});
+
+describe('una caja que ningún lote completa', () => {
+    it('el servidor la ofrece en unidades y no deja enviar hasta confirmarlo', async () => {
+        disponibilidad = conExistencia(50);
+        despacharTraslado.mockResolvedValueOnce({
+            ok: false, codigo: 'CAJA_EN_UNIDADES',
+            lineas: [{ posicion: 0, producto: 'FOLIMEN 5 MG', presentacion: 'CAJA X 100', paquetes: 1, unidades: 4,
+                       base: 'BLISTER X 25', reparto: [
+                           { lote: 'A1', vence: '2028-10-01', unidades: 3 },
+                           { lote: 'B2', vence: '2028-12-01', unidades: 1 }] }],
+        });
+        await act(async () => { render(<DecisionTraslado fila={FILA} onHecho={vi.fn()} />); });
+        await act(async () => { fireEvent.click(screen.getByRole('button', { name: /Confirmar y enviar/i })); });
+        expect(screen.getByText(/3 del lote A1 \(vence 10\/2028\)/)).toBeInTheDocument();
+        expect(screen.getByRole('button', { name: /Confirmar y enviar/i })).toBeDisabled();
+        await act(async () => { fireEvent.click(screen.getByRole('checkbox', { name: /Mandarla en 4 blister x 25/i })); });
+        const boton = screen.getByRole('button', { name: /Confirmar y enviar/i });
+        expect(boton).not.toBeDisabled();
+        await act(async () => { fireEvent.click(boton); });
+        expect(despacharTraslado).toHaveBeenLastCalledWith('sol-1', '', null, [], [], [0]);
     });
 });

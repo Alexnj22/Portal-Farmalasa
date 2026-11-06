@@ -141,7 +141,7 @@ export default function SidebarSettingsMenu({
     >
       {(showPin || showSu) && (
         <div>
-          <p className="text-[9.5px] font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.5)] px-0.5 mb-1.5">Códigos</p>
+          <p className="text-caption font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.5)] px-0.5 mb-1.5">Códigos</p>
           <div className={`grid gap-1.5 ${showPin && showSu ? 'grid-cols-2' : 'grid-cols-1'}`}>
             {showPin && <CodeCard label="PIN" value={authPin} copied={isCopied} onCopy={onCopyPin} />}
             {showSu && <CodeCard label="SU" value={`${authPin}${suSuffix}`} copied={isSuCopied} onCopy={onCopySuPin} />}
@@ -150,7 +150,7 @@ export default function SidebarSettingsMenu({
       )}
 
       <div>
-        <p className="text-[9.5px] font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.5)] px-0.5 mb-1.5">Sistema</p>
+        <p className="text-caption font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.5)] px-0.5 mb-1.5">Sistema</p>
         <SidebarSyncStatus />
       </div>
 

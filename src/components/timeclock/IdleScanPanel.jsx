@@ -27,7 +27,7 @@ function ScanReadyRing({ specialMode }) {
       <p className="text-body [@media(max-height:800px)]:text-label font-bold text-white/85 text-center">
         {specialMode ? 'Acerca tu carné para autorizar' : 'Acerca tu carné al lector'}
       </p>
-      <p className="text-[9.5px] [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.12em] text-white/35 text-center">
+      <p className="text-caption [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.12em] text-white/35 text-center">
         Esperando escaneo
       </p>
     </div>
@@ -55,8 +55,8 @@ export default function IdleScanPanel({
               ? <ShieldAlert size={40} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
               : <ScanBarcode size={40} className="text-chart-1-text drop-shadow-[var(--shadow-glow-chart-1)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />}
           </div>
-          <h1 className="text-2xl sm:text-4xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1 [@media(max-height:800px)]:mb-0.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
-          <p className={`text-micro sm:text-xs [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
+          <h1 className="text-2xl sm:text-4xl [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1 [@media(max-height:800px)]:mb-0.5 transition-colors">{specialMode ? 'Autorización' : 'Asistencia'}</h1>
+          <p className={`text-micro sm:text-body-sm [@media(max-height:800px)]:hidden font-bold uppercase tracking-[0.25em] transition-colors ${specialMode ? 'text-chart-4-text/80' : 'text-chart-1-text/80'}`}>Farmacias La Salud &amp; Popular</p>
         </div>
 
         {/* MIDDLE: estado de espera del escáner (nada se teclea a mano) */}

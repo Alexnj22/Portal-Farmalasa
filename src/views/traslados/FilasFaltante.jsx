@@ -96,7 +96,7 @@ export function FilaFaltante({ faltante: f, onHecho, personaPor = null }) {
                 <span className={`shrink-0 w-[3.25rem] rounded-xl px-1 py-1.5 flex flex-col items-center
                                   justify-center ring-1 ring-inset ${tono.caja}`}>
                     <span className="text-title-sm font-black leading-none tabular-nums">{f.cantidad}</span>
-                    <span className="mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none opacity-80">
+                    <span className="mt-1 text-micro font-black uppercase tracking-wider leading-none opacity-80">
                         faltó
                     </span>
                 </span>

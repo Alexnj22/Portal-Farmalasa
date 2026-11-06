@@ -214,7 +214,7 @@ export default function TabPoliticaVencimiento({ searchTerm = '' }) {
             </div>
 
             {filtered.length === 0 ? (
-                <div className="text-center py-20 text-content-3 text-sm">
+                <div className="text-center py-20 text-content-3 text-body-lg">
                     {searchTerm ? 'Sin resultados.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (

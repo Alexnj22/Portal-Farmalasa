@@ -1132,7 +1132,7 @@ const AttendanceAuditView = () => {
                       <div className="flex items-center gap-2 flex-wrap">
                         <TimePicker12 value={editStart} onChange={setEditStart}
                           className="bg-surface-card border border-chart-3/40 rounded-xl" />
-                        <span className="text-content-3 text-xs">–</span>
+                        <span className="text-content-3 text-body-sm">–</span>
                         <TimePicker12 value={editEnd} onChange={setEditEnd}
                           className="bg-surface-card border border-chart-3/40 rounded-xl" />
                         <Button tone="success" disabled={isBusy} onClick={() => handleProcessShiftException(req, 'APPROVE', editStart, editEnd)}>{isBusy ? '…' : 'Aplicar'}</Button>

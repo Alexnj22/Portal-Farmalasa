@@ -135,7 +135,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                 </div>
 
                 {/* Hint */}
-                <p className="px-4 pb-1.5 text-[9.5px] text-content-3 leading-relaxed">
+                <p className="px-4 pb-1.5 text-caption text-content-3 leading-relaxed">
                     Ocultos: no aparecen en MinMax ni en el cálculo. No se cuentan como productos ocultos individualmente.
                 </p>
 

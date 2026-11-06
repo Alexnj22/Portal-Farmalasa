@@ -323,7 +323,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         <div className="relative shrink-0">
           <div
             className={[
-              "h-11 w-11 rounded-xl border-2 overflow-hidden flex items-center justify-center font-black text-sm shadow-sm transition-transform group-hover:scale-105",
+              "h-11 w-11 rounded-xl border-2 overflow-hidden flex items-center justify-center font-black text-body-lg shadow-sm transition-transform group-hover:scale-105",
               isLate && status !== "FINISHED"
                 ? "border-danger/30 bg-danger/10 text-danger"
                 : "border-border-card bg-surface-card text-content-3",

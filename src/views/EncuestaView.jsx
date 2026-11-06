@@ -919,7 +919,7 @@ export default function EncuestaView() {
                                 <Award size={12} className="text-chart-3-text" /> Jefes vs Empleados
                             </h3>
                             <div className="overflow-x-auto">
-                                <table className="w-full min-w-[480px] text-sm">
+                                <table className="w-full min-w-[480px] text-body-lg">
                                     <thead>
                                         <tr className="bg-brand/5 border-b border-brand/10">
                                             <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Bloque</th>
@@ -1001,7 +1001,7 @@ export default function EncuestaView() {
                         {/* Detalle por sucursal y bloque */}
                         <div data-surface="card" className="p-4 overflow-x-auto">
                             <h3 className="text-label font-black uppercase tracking-wider text-content-3 mb-3">Desglose por Sucursal × Bloque</h3>
-                            <table className="w-full text-xs min-w-[600px]">
+                            <table className="w-full text-body-sm min-w-[600px]">
                                 <thead>
                                     <tr className="bg-brand/5 border-b border-brand/10">
                                         <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 whitespace-nowrap">Sucursal</th>
@@ -1076,7 +1076,7 @@ export default function EncuestaView() {
                                     <span className="text-label text-content-3">— {branchRows.length} {branchRows.length === 1 ? 'persona' : 'personas'}</span>
                                 </div>
                                 <div className="overflow-x-auto">
-                                    <table className="w-full min-w-[560px] text-sm">
+                                    <table className="w-full min-w-[560px] text-body-lg">
                                         <thead>
                                             <tr className="bg-brand/5 border-b border-brand/10">
                                                 <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Empleado</th>

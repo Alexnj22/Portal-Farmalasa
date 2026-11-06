@@ -109,7 +109,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
             <div className="flex flex-col items-center justify-center relative z-base mb-3 mt-2">
                 <div className="relative">
                     <div className={`w-16 h-16 rounded-full p-[2px] bg-gradient-to-tr ${theme.gradient} shadow-sm group-hover:scale-105 transition-transform`}>
-                        <div className="w-full h-full rounded-full border-2 border-surface-card overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-xl">
+                        <div className="w-full h-full rounded-full border-2 border-surface-card overflow-hidden bg-surface-card-hover flex items-center justify-center text-content-3 font-black text-title">
                             <AvatarConEstado emp={employee} px={36} marco="" />
                         </div>
                     </div>
@@ -531,7 +531,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
             {/* HEADER CON BOTONES Y PÍLDORAS */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4 border-b border-border-card pb-4 relative z-sidebar">
                 <div>
-                    <h3 className="font-black text-content uppercase tracking-tight text-xl">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
+                    <h3 className="font-black text-content uppercase tracking-tight text-title">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
                         <p className="text-label font-bold text-content-3 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
                     </div>
@@ -662,7 +662,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                 </div>
 
                                 <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico de personal</h2>
-                                <p className="text-sm font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
+                                <p className="text-body-lg font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis de la plantilla y cumplimiento legal</p>
 
                                 {isGeneratingAi ? (
                                     /* SKELETON DE CARGA NEURONAL */

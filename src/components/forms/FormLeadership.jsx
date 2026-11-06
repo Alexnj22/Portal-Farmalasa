@@ -133,7 +133,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                 }`}
                             >
                                 <div className="flex items-center gap-3">
-                                    <div data-surface={isSelected ? undefined : 'card'} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-lg overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'text-content-3'}`}>
+                                    <div data-surface={isSelected ? undefined : 'card'} className={`w-10 h-10 rounded-full flex items-center justify-center font-black text-title-sm overflow-hidden shrink-0 border-2 shadow-[var(--shadow-shine)] ${isSelected ? 'border-brand text-brand-text bg-chart-1/10' : 'text-content-3'}`}>
                                         <AvatarConEstado emp={emp} px={36} marco="" />
                                     </div>
                                     <div className="flex-1 min-w-0">
@@ -173,7 +173,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     <AvatarConEstado emp={selectedEmp} px={64} marco="" />
                                 </div>
                                 <div className="flex-1">
-                                    <h3 className="text-lg font-black text-content leading-tight">{shortEmployeeName(selectedEmp)}</h3>
+                                    <h3 className="text-title-sm font-black text-content leading-tight">{shortEmployeeName(selectedEmp)}</h3>
                                     <div className="flex items-center gap-2 mt-1">
                                         <Badge variant="chart-1" size="sm">{selectedEmp.role || 'Sin Rol'}</Badge>
                                         <span className="text-caption font-bold text-content-3 flex items-center gap-1"><MapPin size={10}/> {empBranch?.name || 'Banca'}</span>

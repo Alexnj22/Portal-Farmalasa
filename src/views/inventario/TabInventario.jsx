@@ -43,7 +43,7 @@ const ERP_VARIANTE = {
 };
 
 function ExpiryCell({ fecha }) {
-    if (!fecha) return <span className="text-content-3 text-xs">—</span>;
+    if (!fecha) return <span className="text-content-3 text-body-sm">—</span>;
     const info = vencimientoDe(fecha);
     if (!info) return null;
     if (info.vencido) return (
@@ -54,11 +54,11 @@ function ExpiryCell({ fecha }) {
             <Calendar size={9} /> {fecha} <span className="opacity-70">{info.dias}d</span>
         </span>
     );
-    if (info.franja === 'trimestre') return <span className="text-xs font-semibold text-warning-text whitespace-nowrap">{fecha}</span>;
+    if (info.franja === 'trimestre') return <span className="text-body-sm font-semibold text-warning-text whitespace-nowrap">{fecha}</span>;
     if (info.franja === 'semestre') return (
         <Badge variant="chart-4" icon={Calendar} uppercase={false}>{fecha}</Badge>
     );
-    return <span className="text-xs text-content-3 whitespace-nowrap">{fecha}</span>;
+    return <span className="text-body-sm text-content-3 whitespace-nowrap">{fecha}</span>;
 }
 
 // ── Las ubicaciones de un producto, dentro de su fila expandida ──────────────
@@ -100,10 +100,10 @@ function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false, on
     const cuerpo = cargando ? (
         <div className="flex items-center gap-2 text-content-3 py-2">
             <Loader2 size={14} className="animate-spin" />
-            <span className="text-xs">Cargando...</span>
+            <span className="text-body-sm">Cargando...</span>
         </div>
     ) : !hayRegulares && !hayVencidos ? (
-        <p className="text-xs text-content-3 py-2">Sin datos</p>
+        <p className="text-body-sm text-content-3 py-2">Sin datos</p>
     ) : (
         <>
             {/* Las dos listas —regular y vencidos— salen del MISMO
@@ -469,7 +469,7 @@ export default function TabInventario({ searchTerm = '' }) {
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />
-                    <p className="text-sm font-semibold text-danger-text mb-1">Error al cargar inventario</p>
+                    <p className="text-body-lg font-semibold text-danger-text mb-1">Error al cargar inventario</p>
                     <p className="text-label text-danger-text mb-4">{loadError}</p>
                     <Button variant="destructive" onClick={() => loadInventory(selectedErp, filterVencidos, filterSixMonths, filterAreaVenc, filterLab, filterCat, searchTerm, page, pageSize, sortField, sortDir)}>Reintentar</Button>
                 </div>
@@ -554,7 +554,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                                     <Badge key={p} uppercase={false}>{p}</Badge>
                                                 ))}
                                             </div>
-                                        ) : <span className="text-content-3 text-xs">—</span>}
+                                        ) : <span className="text-content-3 text-body-sm">—</span>}
                                     </DataCell>
 
                                     <DataCell hideBelow="lg">
@@ -564,7 +564,7 @@ export default function TabInventario({ searchTerm = '' }) {
                                     </DataCell>
 
                                     <DataCell align="right" className="whitespace-nowrap">
-                                        <span className={`text-sm font-semibold tabular-nums ${
+                                        <span className={`text-body-lg font-semibold tabular-nums ${
                                             units === 0 ? 'text-content-3' :
                                             hasExpired  ? 'text-danger-text'   : 'text-content-2'
                                         }`}>

@@ -78,7 +78,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <Receipt size={26} strokeWidth={2} />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black text-success-text tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
+                        <h3 className="text-title font-black text-success-text tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
                         <div className="flex items-center gap-2">
                             <Badge size="sm">Sede: {formData.name}</Badge>
                             {currentPaidThrough && (
@@ -100,7 +100,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <label className={rotuloCampo('text-content-3')}><span className="flex items-center gap-1.5"><DollarSign size={12} className="text-brand-text" /> Monto Pagado Exacto</span></label>
                         <div className="relative group">
                             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                                <span className="text-content-3 font-black text-lg">$</span>
+                                <span className="text-content-3 font-black text-title-sm">$</span>
                             </div>
                             <PortalInput
                                 aria-label="Monto del pago"
@@ -111,7 +111,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                                 placeholder="0.00"
                                 required
                                 tono="brand"
-                                inputClassName="font-black text-content text-lg"
+                                inputClassName="font-black text-content text-title-sm"
                             />
                         </div>
                     </div>

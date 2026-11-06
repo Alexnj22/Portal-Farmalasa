@@ -1307,7 +1307,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                     {expandedData.map(d => {
                         const cross = d.branches.filter(b => b.branch_id !== baseBranchId);
                         return (
-                            <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-xs ${cross.length > 0 ? cardCross : cardNormal}`}>
+                            <div key={d.fecha} className={`border rounded-xl px-3 py-2 text-body-sm ${cross.length > 0 ? cardCross : cardNormal}`}>
                                 <p className="mb-0.5 text-content-3">{fechaTexto(d.fecha + 'T12:00', { day: '2-digit', month: 'short' })}</p>
                                 <p className="font-black text-content">{fmt(d.total)}</p>
                                 <p className="text-content-3">{d.count} fact.</p>
@@ -1414,7 +1414,7 @@ function TabVendedores({ branches, filterBranch, setFilterBranch, employees, sea
                                         {i === 0 ? <Trophy size={15} className="text-warning-text" />
                                             : i === 1 ? <Trophy size={15} className="text-content-3" />
                                             : i === 2 ? <Trophy size={15} className="text-warning-text" />
-                                            : <span className="text-xs text-content-3 font-bold w-4 text-center">{i + 1}</span>}
+                                            : <span className="text-body-sm text-content-3 font-bold w-4 text-center">{i + 1}</span>}
                                         <TrendBadge cod={r.cod_vendedor} currentRank={i + 1} />
                                     </div>
                                 </DataCell>

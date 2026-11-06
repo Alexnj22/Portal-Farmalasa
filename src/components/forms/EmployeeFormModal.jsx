@@ -2919,7 +2919,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                                 onChange={handlePhotoUpload} id="photo-camara" />
                                             <label htmlFor="photo-camara"
                                                 className="mt-2 inline-flex items-center gap-1.5 h-[max(34px,var(--tap-min))] px-3.5 rounded-btn cursor-pointer
-                                                    text-[12.5px] font-bold text-content bg-gradient-to-b from-surface-card to-surface-card-hover
+                                                    text-body-sm font-bold text-content bg-gradient-to-b from-surface-card to-surface-card-hover
                                                     border border-border-card shadow-sm hover:shadow-md transition-shadow duration-[var(--dur-base)]">
                                                 <Camera size={14} strokeWidth={2.5} /> Tomar foto
                                             </label>

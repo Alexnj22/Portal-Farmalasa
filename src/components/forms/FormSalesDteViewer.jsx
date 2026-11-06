@@ -97,7 +97,7 @@ const FormSalesDteViewer = ({ formData }) => {
                         <div className="min-w-0">
                             {/* El receptor, no el emisor: en una venta el emisor
                                 somos nosotros y sería el mismo nombre siempre. */}
-                            <h3 className="text-lg font-black text-content">
+                            <h3 className="text-title-sm font-black text-content">
                                 {dte?.receptor?.nombre || document?.cliente || 'Documento'}
                             </h3>
                             <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5">
@@ -146,7 +146,7 @@ const FormSalesDteViewer = ({ formData }) => {
                 ) : error ? (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5} />
-                        <p className="font-bold text-sm">No se pudo cargar el detalle ({error}).</p>
+                        <p className="font-bold text-body-lg">No se pudo cargar el detalle ({error}).</p>
                     </div>
                 ) : (
                     <div className="flex-1 min-h-0 w-full overflow-y-auto rounded-3xl border border-divider bg-surface-card shadow-sm p-6">

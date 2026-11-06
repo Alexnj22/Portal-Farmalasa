@@ -71,7 +71,7 @@ const ServiceExpenseCard = ({ title, provider, amount, dueDay, paidThrough, isRe
             <div className="flex-1 flex items-end justify-between mt-2 relative z-base">
                 <div>
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">Monto (Aprox)</p>
-                    <p className="text-lg font-black text-content">{formatMoney(amount ?? 0)}</p>
+                    <p className="text-title-sm font-black text-content">{formatMoney(amount ?? 0)}</p>
                 </div>
                 <div className="text-right">
                     <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-0.5">
@@ -195,7 +195,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             {/* HEADER PRINCIPAL */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-border-card">
                 <div>
-                    <h3 className="font-black text-content uppercase tracking-tight text-lg">Finanzas y Gastos Operativos</h3>
+                    <h3 className="font-black text-content uppercase tracking-tight text-title-sm">Finanzas y Gastos Operativos</h3>
                     <p className="text-label font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">

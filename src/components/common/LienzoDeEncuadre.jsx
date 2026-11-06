@@ -306,7 +306,7 @@ export default function LienzoDeEncuadre({ imagen, esquinas, alCambiarEsquinas, 
                             style={{ left: pts[i].x, top: pts[i].y }}>
                             <span className={`block rounded-full border-2 border-border-card
                                               bg-brand shadow-[var(--shadow-glass-2)]
-                                              transition-all duration-[var(--dur-rapido)]
+                                              transition-all duration-[var(--dur-fast)]
                                               ${arrastrando === i ? 'w-7 h-7' : 'w-4 h-4'}`} />
                         </button>
                     ))}

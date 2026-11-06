@@ -111,7 +111,7 @@ export default function FeedbackOverlay({
 
                 {/* Nombre: Píldora encrustada */}
                 <div className="absolute -bottom-4 z-content px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[var(--shadow-glass-3)] max-w-[120%] w-max flex items-center justify-center">
-                  <h2 className="text-caption sm:text-label md:text-xs font-black text-white uppercase tracking-[0.2em] drop-shadow-md truncate">
+                  <h2 className="text-caption sm:text-label md:text-body-sm font-black text-white uppercase tracking-[0.2em] drop-shadow-md truncate">
                     {shortEmployeeName(employee)}
                   </h2>
                 </div>
@@ -119,7 +119,7 @@ export default function FeedbackOverlay({
 
               {/* Mensaje Principal (ej: ENTRADA EXTRA AUTORIZADA) */}
               <div className="mb-4">
-                <p className="text-sm md:text-body-xl font-bold uppercase tracking-[0.15em] text-center text-balance leading-relaxed text-white drop-shadow-md">
+                <p className="text-body-lg md:text-body-xl font-bold uppercase tracking-[0.15em] text-center text-balance leading-relaxed text-white drop-shadow-md">
                   {message}
                 </p>
               </div>
@@ -130,7 +130,7 @@ export default function FeedbackOverlay({
                 
                 {/* Subtexto (Píldora adaptable al 100% del contenedor padre) */}
                 <div className={`flex items-center justify-center bg-white/5 backdrop-blur-2xl rounded-3xl px-8 py-3.5 [@media(max-height:800px)]:py-2 border shadow-sm w-full ${color === 'red' ? 'border-danger/40' : 'border-white/10'}`}>
-                  <p className="text-xs sm:text-sm md:text-subtitle text-white font-bold uppercase tracking-[0.15em] text-center whitespace-nowrap">
+                  <p className="text-body-sm sm:text-body-lg md:text-subtitle text-white font-bold uppercase tracking-[0.15em] text-center whitespace-nowrap">
                     {subtext}
                   </p>
                 </div>
@@ -184,7 +184,7 @@ export default function FeedbackOverlay({
                     <p className={`text-subtitle md:text-body-xl font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 [@media(min-height:801px)_and_(max-height:900px)]:mt-5 [@media(max-height:800px)]:mt-3 w-full py-4 [@media(max-height:800px)]:py-2.5 rounded-btn font-bold uppercase tracking-widest text-label sm:text-xs flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 [@media(min-height:801px)_and_(max-height:900px)]:mt-5 [@media(max-height:800px)]:mt-3 w-full py-4 [@media(max-height:800px)]:py-2.5 rounded-btn font-bold uppercase tracking-widest text-label sm:text-body-sm flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
                     {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-[var(--dur-base)]" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>
@@ -218,14 +218,14 @@ export default function FeedbackOverlay({
               </div>
             </div>
 
-            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl [@media(max-height:800px)]:!text-xl font-bold text-white mb-6 [@media(max-height:800px)]:mb-3 tracking-tight uppercase text-center leading-tight w-full px-4 drop-shadow-md">
+            <h1 className="text-title sm:text-2xl md:text-3xl lg:text-4xl [@media(max-height:800px)]:!text-xl font-bold text-white mb-6 [@media(max-height:800px)]:mb-3 tracking-tight uppercase text-center leading-tight w-full px-4 drop-shadow-md">
               {message}
             </h1>
 
             <div className={`backdrop-blur-2xl rounded-3xl px-8 py-4 [@media(max-height:800px)]:py-2.5 border shadow-lg text-center transition-colors duration-[var(--dur-lento)] max-w-[95%] w-fit mx-auto
               ${color === 'red' ? 'bg-danger/15 border-danger/30' : 'bg-white/5 border-white/10'}
             `}>
-              <p className={`text-sm md:text-body-xl font-bold uppercase tracking-widest text-balance leading-relaxed
+              <p className={`text-body-lg md:text-body-xl font-bold uppercase tracking-widest text-balance leading-relaxed
                 ${color === 'red' ? 'text-danger' : 'text-white/70'}
               `}>
                 {subtext}

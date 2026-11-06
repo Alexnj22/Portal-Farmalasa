@@ -319,7 +319,7 @@ const RolesView = ({ openModal }) => {
                 )}
 
                 {hasDualReporting && !isExporting && (
-                    <div className="absolute -bottom-4 bg-chart-3/10 text-chart-3-text text-[7.5px] font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border border-chart-3/30 shadow-sm z-base flex items-start justify-center gap-1 w-[90%] leading-tight text-center">
+                    <div className="absolute -bottom-4 bg-chart-3/10 text-chart-3-text text-micro font-black uppercase tracking-widest px-2.5 py-1 rounded-xl border border-chart-3/30 shadow-sm z-base flex items-start justify-center gap-1 w-[90%] leading-tight text-center">
                         <GitMerge size={9} className="shrink-0 mt-[1px]" />
                         <span className="whitespace-normal break-words">{secondaryParentName}</span>
                     </div>

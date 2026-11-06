@@ -29,7 +29,7 @@ const FormDocumentViewer = ({ formData }) => {
                         <FileText size={24} strokeWidth={1.5} />
                     </div>
                     <div className="min-w-0">
-                        <h3 className="text-lg font-black text-content truncate">{title || 'Documento Adjunto'}</h3>
+                        <h3 className="text-title-sm font-black text-content truncate">{title || 'Documento Adjunto'}</h3>
                         <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
                     </div>
                 </div>
@@ -62,7 +62,7 @@ const FormDocumentViewer = ({ formData }) => {
                 ) : (
                     <div className="flex-1 min-h-0 w-full flex flex-col items-center justify-center text-content-3 bg-surface-card rounded-3xl border border-divider shadow-sm border-dashed">
                         <FileText size={48} className="mb-4 opacity-30" strokeWidth={1.5}/>
-                        <p className="font-bold text-sm">URL no disponible o archivo corrupto.</p>
+                        <p className="font-bold text-body-lg">URL no disponible o archivo corrupto.</p>
                     </div>
                 )}
             </div>

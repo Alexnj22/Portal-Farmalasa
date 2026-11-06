@@ -39,7 +39,7 @@ const inactiveTabClsDark = 'bg-transparent text-[rgb(var(--sidebar-ink)/0.5)] ho
 function SegmentedRow({ label, options, activeKey, onPick, dark }) {
   return (
     <div>
-      <p className={`text-[9.5px] font-black uppercase tracking-widest px-0.5 mb-1.5 ${dark ? 'text-[rgb(var(--sidebar-ink)/0.4)]' : 'text-content-3'}`}>{label}</p>
+      <p className={`text-caption font-black uppercase tracking-widest px-0.5 mb-1.5 ${dark ? 'text-[rgb(var(--sidebar-ink)/0.4)]' : 'text-content-3'}`}>{label}</p>
       <div
         {...(dark ? {} : { 'data-surface': 'tab-track' })}
         className={`flex items-center gap-1 p-1 rounded-full ${dark ? 'bg-[rgb(var(--sidebar-realce)/0.06)] border border-[rgb(var(--sidebar-ink)/0.09)]' : ''}`}

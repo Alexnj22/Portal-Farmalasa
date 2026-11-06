@@ -73,7 +73,7 @@ const KioskConfigModal = ({
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Kiosco Activo
             </h2>
-            <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-success/80 transition-colors px-2 mb-6">
+            <p className="text-micro sm:text-body-sm font-bold uppercase tracking-[0.25em] text-success/80 transition-colors px-2 mb-6">
               Dispositivo Autorizado
             </p>
 
@@ -82,7 +82,7 @@ const KioskConfigModal = ({
               <p className="text-white/40 text-micro font-semibold uppercase tracking-widest mb-1">
                 Sucursal Asignada
               </p>
-              <p className="text-white text-lg sm:text-xl font-bold truncate w-full px-2">
+              <p className="text-white text-title-sm sm:text-title font-bold truncate w-full px-2">
                 {assignedBranchName}
               </p>
             </div>
@@ -101,7 +101,7 @@ const KioskConfigModal = ({
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Vincular Kiosco
             </h2>
-            <p className="text-micro sm:text-xs font-bold uppercase tracking-[0.25em] text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
+            <p className="text-micro sm:text-body-sm font-bold uppercase tracking-[0.25em] text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
               Configuración Inicial
             </p>
 

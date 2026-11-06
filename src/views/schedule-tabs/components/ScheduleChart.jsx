@@ -23,16 +23,16 @@ const ScheduleChart = ({
             {/* Header: title + legend + toggle — compact single row */}
             <div className="flex items-center justify-between gap-3 mb-0.5 shrink-0 flex-wrap">
                 <div className="flex items-center gap-2.5 min-w-0 flex-wrap">
-                    <span className="flex items-center gap-1.5 text-[10.5px] font-black text-content-2 tracking-tight whitespace-nowrap">
+                    <span className="flex items-center gap-1.5 text-label font-black text-content-2 tracking-tight whitespace-nowrap">
                         <TrendingUp size={10} strokeWidth={2.5} className="text-chart-9-text shrink-0" />
                         {chartTitle}
                     </span>
                     {/* Legend inline */}
                     <div className="hidden md:flex items-center gap-2">
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-muerta" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Muerta</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-normal" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Normal</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-pico" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Pico</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-critica" /><span className="text-[6.5px] font-bold text-content-2 uppercase tracking-widest">Crítica</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-muerta" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-normal" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Normal</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-pico" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Pico</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-critica" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Crítica</span></div>
                     </div>
                 </div>
 
@@ -105,7 +105,7 @@ const ScheduleChart = ({
                                     {item.avg} Tx
                                 </p>
                                 {chartView === 'DAYS' && (
-                                    <p className="text-[6.5px] text-brand-text font-black uppercase tracking-widest mt-0.5">Clic → horas</p>
+                                    <p className="text-micro text-brand-text font-black uppercase tracking-widest mt-0.5">Clic → horas</p>
                                 )}
                             </div>
 

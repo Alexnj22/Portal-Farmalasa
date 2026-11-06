@@ -110,7 +110,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
 
             <div className="grid grid-cols-7 mb-1">
                 {DAYS_SH.map(d => (
-                    <div key={d} className="text-center text-[8.5px] font-black uppercase tracking-wider text-content-2 py-0.5">{d}</div>
+                    <div key={d} className="text-center text-micro font-black uppercase tracking-wider text-content-2 py-0.5">{d}</div>
                 ))}
             </div>
 
@@ -345,7 +345,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
                     {/* Presets */}
                     <div className="px-5 pb-3">
-                        <p className="text-[8.5px] font-black uppercase tracking-[0.12em] text-content-3 mb-2">
+                        <p className="text-micro font-black uppercase tracking-[0.12em] text-content-3 mb-2">
                             Accesos rápidos
                         </p>
                         <div className="grid grid-cols-3 gap-1.5">
@@ -353,7 +353,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                                 const active = dayPhase === 'idle' && fini === p.start && ffin === p.end;
                                 return (
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
-                                        className={`px-2 py-2 rounded-xl text-[10.5px] font-bold transition-all text-center leading-tight
+                                        className={`px-2 py-2 rounded-xl text-label font-bold transition-all text-center leading-tight
                                             ${active
                                                 ? 'bg-brand text-white shadow-[var(--shadow-glow-brand)] scale-[1.03]'
                                                 : 'bg-surface-card-hover text-content-2 hover:bg-surface-card hover:text-brand-text hover:shadow-md hover:translate-y-[var(--lift-hover)] border border-border-card'

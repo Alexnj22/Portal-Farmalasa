@@ -83,7 +83,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                         <Icon size={24} />
                     </div>
                     <div>
-                        <h3 className="text-xl font-black tracking-tight">{config.title}</h3>
+                        <h3 className="text-title font-black tracking-tight">{config.title}</h3>
                         <p className="text-caption font-bold uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>
                     </div>
                 </div>

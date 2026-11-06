@@ -25,13 +25,13 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                     <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 [@media(max-height:800px)]:mb-1.5 bg-warning/10 border border-warning/40 shadow-[var(--shadow-glow-warning-lg)]">
                         <Clock size={40} className="text-warning drop-shadow-[var(--shadow-glow-warning)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
                     </div>
-                    <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5">
+                    <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-title [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5">
                         Declara tu Horario
                     </h1>
-                    <p className="text-micro sm:text-xs [@media(max-height:800px)]:text-micro font-bold uppercase tracking-[0.25em] text-warning/80">
+                    <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-bold uppercase tracking-[0.25em] text-warning/80">
                         Turno Extra — {shortEmployeeName(employee)}
                     </p>
-                    <p className="text-white/40 text-caption sm:text-xs [@media(max-height:800px)]:text-micro leading-relaxed mt-2.5 [@media(max-height:800px)]:mt-1.5 px-2">
+                    <p className="text-white/40 text-caption sm:text-body-sm [@media(max-height:800px)]:text-micro leading-relaxed mt-2.5 [@media(max-height:800px)]:mt-1.5 px-2">
                         Indica el horario que trabajarás hoy. Talento Humano lo revisará y confirmará.
                     </p>
                 </div>

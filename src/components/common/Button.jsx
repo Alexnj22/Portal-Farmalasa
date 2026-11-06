@@ -158,7 +158,7 @@ const SIZE_CLASSES = {
     // al botón.
     rotulo: 'relative blanco-tactil h-5 px-1.5 text-caption gap-1',
     xs: 'h-[max(28px,var(--tap-min),calc(var(--control-h)-12px))] px-2.5 text-micro gap-1',
-    sm: 'h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] px-3.5 text-[12.5px] gap-1.5',
+    sm: 'h-[max(34px,var(--tap-min),calc(var(--control-h)-6px))] px-3.5 text-body-sm gap-1.5',
     md: 'h-[max(var(--tap-min),var(--control-h))] px-[18px] text-body gap-1.5',
     lg: 'h-[max(48px,calc(var(--control-h)+8px))] px-6 text-body-lg gap-2',
 };

@@ -67,7 +67,7 @@ const FormAnnouncements = ({ data }) => {
         </div>
         
         <div className="flex-1 min-w-0">
-            <h3 className="text-xl md:text-2xl font-black text-content tracking-tight leading-none truncate mb-1 drop-shadow-sm">
+            <h3 className="text-title md:text-2xl font-black text-content tracking-tight leading-none truncate mb-1 drop-shadow-sm">
                 {readersModal.title || 'Sin Título'}
             </h3>
             <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">
@@ -143,7 +143,7 @@ const FormAnnouncements = ({ data }) => {
               ) : (
                 <div data-surface="card" className="p-5 text-center">
                   <p className="text-body-sm text-content-3 font-bold flex items-center justify-center gap-2">
-                    Nadie ha abierto este aviso todavía <span className="text-lg">🫣</span>
+                    Nadie ha abierto este aviso todavía <span className="text-title-sm">🫣</span>
                   </p>
                 </div>
               )}

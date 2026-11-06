@@ -50,13 +50,13 @@ const AuthPromptPanel = ({
           <div className="inline-flex p-4 [@media(max-height:800px)]:p-2 rounded-3xl mb-3 sm:mb-4 [@media(max-height:800px)]:mb-1.5 transition-all duration-[var(--dur-slow)] border backdrop-blur-md bg-chart-4/10 border-chart-4/40 shadow-[var(--shadow-glow-chart-4-lg)] group-hover/icon:scale-105 group-hover/icon:-translate-y-1 group-hover/icon:shadow-[var(--shadow-glow-chart-4-lg)]">
             <ShieldAlert size={40} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-12 sm:h-12 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
           </div>
-          <h1 className="text-2xl sm:text-3xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5 transition-colors">
+          <h1 className="text-2xl sm:text-3xl [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5 transition-colors">
             {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : promptType === 'IN_EARLY_EXTRA' ? 'Registrar Tiempo Extra' : 'Autorización Requerida'}
           </h1>
-          <p className="text-micro sm:text-xs [@media(max-height:800px)]:text-micro font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
+          <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
             {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : promptType === 'IN_EARLY_EXTRA' ? `Tiempo extra: ${employeeName}` : `Turno Extra: ${employeeName}`}
           </p>
-          <p className="text-white/40 text-caption sm:text-xs [@media(max-height:800px)]:hidden leading-relaxed mt-2.5 px-2">
+          <p className="text-white/40 text-caption sm:text-body-sm [@media(max-height:800px)]:hidden leading-relaxed mt-2.5 px-2">
             {promptType === 'IN_AFTER_SHIFT' ? 'Requiere autorización para registrar entrada a esta hora.' : promptType === 'IN_EARLY' ? 'Puedes marcar normalmente 5 minutos antes.' : promptType === 'OUT_LATE' ? '¿El tiempo extra fue solicitado por administración?' : promptType === 'IN_EARLY_EXTRA' ? 'Autoriza para guardar la hora de llegada real (no ajustada).' : 'Solicite a su supervisor autorizar el movimiento.'}
           </p>
           {requiresSuPin && (
@@ -90,7 +90,7 @@ const AuthPromptPanel = ({
     /* 🚨 ESTABILIZACIÓN: Tamaño y espaciado fijo para el valor */
     text-2xl sm:text-4xl [@media(max-height:800px)]:!text-lg tracking-[0.5em] sm:tracking-[0.8em]
     /* 🚨 PLACEHOLDER: Estilo independiente para evitar saltos */
-    placeholder:text-body-xl placeholder:sm:text-xs placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-chart-4-text/60
+    placeholder:text-body-xl placeholder:sm:text-body-sm placeholder:tracking-[0.2em] placeholder:font-bold placeholder:uppercase placeholder:text-chart-4-text/60
     /* 🚨 CARET VIRTUAL: Oculta el cursor nativo y activa la animación del CSS */
     caret-transparent virtual-caret-orange"
 />

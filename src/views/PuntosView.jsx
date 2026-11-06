@@ -320,9 +320,9 @@ export default function PuntosView({ openModal }) {
                                 <DataCell>{fechaHora12(a.cuando)}</DataCell>
                                 <DataCell>
                                     <Badge variant={avisoDe(a).variante} tone="soft" uppercase={false}>{avisoDe(a).rotulo}</Badge>
-                                    {a.nota && <div className="text-xs text-content-2 mt-1">{a.nota}</div>}
+                                    {a.nota && <div className="text-body-sm text-content-2 mt-1">{a.nota}</div>}
                                     {a.quien_id && (
-                                        <div className="flex items-center gap-1.5 mt-1 text-xs text-content-2">
+                                        <div className="flex items-center gap-1.5 mt-1 text-body-sm text-content-2">
                                             <AvatarConEstado emp={{ id: a.quien_id, name: a.quien }} px={20} marco="" />
                                             <span>{shortEmployeeName({ name: a.quien })}</span>
                                         </div>

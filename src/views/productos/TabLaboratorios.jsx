@@ -144,7 +144,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
 
             {/* ── Sections ───────────────────────────────────────────── */}
             {filtered.length === 0 ? (
-                <div className="text-center py-20 text-content-3 text-sm">
+                <div className="text-center py-20 text-content-3 text-body-lg">
                     {searchTerm ? 'Sin resultados.' : 'No hay laboratorios registrados.'}
                 </div>
             ) : (
@@ -168,7 +168,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                     className="w-full flex items-center gap-2.5 mb-3 group min-h-[var(--tap-min)] transition-transform duration-[var(--dur-fast)] active:scale-[0.99]"
                                 >
                                     <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${sec.dot}`} />
-                                    <span className="text-sm font-bold text-content-2 group-hover:text-content transition-colors">
+                                    <span className="text-body-lg font-bold text-content-2 group-hover:text-content transition-colors">
                                         {sec.label}
                                     </span>
                                     <span className={`text-label font-semibold px-2 py-0.5 rounded-full border ${sec.pill}`}>
@@ -524,7 +524,7 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
                                     whileTap={{ scale: 0.96 }}
                                     onClick={save}
                                     disabled={saving}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-chart-9-solid hover:bg-chart-9/80 text-white text-xs font-bold shadow-md shadow-chart-9/30 transition-all disabled:opacity-50"
+                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-chart-9-solid hover:bg-chart-9/80 text-white text-body-sm font-bold shadow-md shadow-chart-9/30 transition-all disabled:opacity-50"
                                 >
                                     {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                                     Guardar

@@ -62,7 +62,7 @@ export default function PhotoLightbox({ src, alt, onClose, zClass = 'z-lightbox'
             onClick={onClose}
         >
             <div
-                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-4)]"
+                className="relative max-w-[90vw] max-h-[90vh] rounded-3xl overflow-hidden shadow-[var(--shadow-elevation-xl)]"
                 style={{ animation: 'lightbox-in 0.22s var(--ease-spring) both' }}
                 onClick={e => e.stopPropagation()}
             >

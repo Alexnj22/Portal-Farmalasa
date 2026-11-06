@@ -1815,7 +1815,7 @@ export default function TabCatalogo({
             {loadError ? (
                 <div className="rounded-2xl border border-danger/30 bg-danger/10 shadow-sm py-16 text-center">
                     <AlertTriangle size={28} className="opacity-40 mx-auto mb-3 text-danger-text" />
-                    <p className="text-sm font-semibold text-danger-text mb-1">Error al cargar productos</p>
+                    <p className="text-body-lg font-semibold text-danger-text mb-1">Error al cargar productos</p>
                     <p className="text-label text-danger-text mb-4">{loadError}</p>
                     <Button variant="destructive" onClick={() => { const bids = filterMargin === 'all' ? null : filterMargin === 'perdida' ? [...(marginStats?.perdidaIds||[])] : [...(marginStats?.bajoIds||[])]; loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos); }}>Reintentar</Button>
                 </div>
@@ -1872,7 +1872,7 @@ export default function TabCatalogo({
                                                         item flex no encoge por debajo de su
                                                         contenido salvo que se le diga. Sin eso, un
                                                         nombre largo se salía de la ficha. */}
-                                                    <span className={`min-w-0 truncate text-[13.5px] font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
+                                                    <span className={`min-w-0 truncate text-body-lg font-semibold leading-snug ${isInactive ? tk.textInactive : tk.textStrong}`}>{p.nombre}</span>
                                                     {mInfo && <Badge variant={mInfo.variante} size="sm" className="shrink-0" uppercase={false}
                                                         icon={worstM < 0 ? ShieldAlert : TrendingDown}>{mInfo.label}</Badge>}
                                                     {specLoss && [...specLoss].map(k => (

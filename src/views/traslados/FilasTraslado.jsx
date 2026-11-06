@@ -970,7 +970,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                     <span className={`text-title-sm font-black leading-none tabular-nums ${trabado ? 'text-danger-text' : 'text-warning-text'}`}>
                         {piezas?.numero ?? '—'}
                     </span>
-                    <span className={`mt-1 text-[0.5625rem] font-black uppercase tracking-wider leading-none text-center
+                    <span className={`mt-1 text-micro font-black uppercase tracking-wider leading-none text-center
                                       ${trabado ? 'text-danger-text/80' : 'text-warning-text/80'}`}>
                         {piezas?.unidad ?? ''}
                     </span>

@@ -286,8 +286,8 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
         return createPortal(
             <div id="print-report-container" className="hidden print:block w-full bg-surface-card text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
-                    <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-sm font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand-text">{liveBranch?.name || 'No especificada'}</span></h2></div>
-                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-xs font-black text-content leading-none">{fechaTexto(hoySV())}</p></div>
+                    <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-body-lg font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand-text">{liveBranch?.name || 'No especificada'}</span></h2></div>
+                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-body-sm font-black text-content leading-none">{fechaTexto(hoySV())}</p></div>
                 </div>
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">
@@ -440,7 +440,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                             </div>
                             
                             <h2 className="text-2xl md:text-3xl font-black bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent tracking-tight mb-2">Diagnóstico Operativo Inteligente</h2>
-                            <p className="text-sm font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis basado en {printHistory.length} registros del historial</p>
+                            <p className="text-body-lg font-bold text-chart-3-text/80 uppercase tracking-widest mb-10">Análisis basado en {printHistory.length} registros del historial</p>
 
                             {isGeneratingAi ? (
                                 /* SKELETON DE CARGA NEURONAL */

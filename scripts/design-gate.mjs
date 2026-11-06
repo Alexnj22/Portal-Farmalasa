@@ -330,7 +330,10 @@ const EXCEPTIONS = {
   // tema que respetar: es siempre-oscuro por diseño— y su tarjeta del reloj usa
   // `backdrop-blur-[60px]` sobre el fondo de cámara. Es la quinta fila de §20.2
   // («bespoke → EXCEPTIONS con el motivo escrito»), no deuda sin clasificar.
-  'src/views/TimeClockView.jsx': ['material-a-mano', 'vidrio-a-mano', 'color', 'white', 'hex', 'inline-color'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
+  // `typography` (2026-11-06): la hora GRANDE del kiosco se dimensiona por el
+  // ALTO de cada monitor (1.5 a 3.5rem) y está muy por encima de la escala
+  // (`text-display` = 26px): no es texto de interfaz, es el reloj.
+  'src/views/TimeClockView.jsx': ['material-a-mano', 'vidrio-a-mano', 'color', 'white', 'hex', 'inline-color', 'typography'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
   'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'hex', 'inline-color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
   'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'white', 'hex', 'vidrio-a-mano'],
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
@@ -1046,7 +1049,10 @@ const QUOTE_RE = /['"`]/;
 // D0 solo los hace visibles. Dos etiquetas distintas dentro de la misma
 // categoría porque no son lo mismo: estar sin tokenizar es deuda, estar
 // bajo 9px es ilegible hoy (§7 fija ahí el piso — 270 usos por debajo).
-const TYPE_PX_RE = /\btext-\[(\d+)px\]/g;
+// 2026-11-06: el patrón sólo veía enteros en px, así que `text-[7.5px]`,
+// `text-[6.5px]` (bajo el piso) y `text-[0.5625rem]` pasaban en verde — 31
+// usos, el propio `Button size="sm"` entre ellos. Ahora lee decimales y rem.
+const TYPE_PX_RE = /\btext-\[(\d+(?:\.\d+)?)(px|rem)\]/g;
 const TYPE_FLOOR_PX = 9;
 
 // ── Categoría 8: z-index fuera de la escala canónica (D0.3, 2026-07-26) ──
@@ -1562,11 +1568,26 @@ function scanFile(path) {
       TYPE_PX_RE.lastIndex = 0;
       let m;
       while ((m = TYPE_PX_RE.exec(line))) {
-        const px = Number(m[1]);
+        const px = Number(m[1]) * (m[2] === 'rem' ? 16 : 1);
         const label = px < TYPE_FLOOR_PX
           ? `tipografía bajo el piso legible de ${TYPE_FLOOR_PX}px: ${m[0]}`
           : `tamaño a mano, sin token: ${m[0]}`;
         findings.push({ line: i + 1, label, category: 'typography', text: line.trim().slice(0, 120) });
+      }
+    });
+  }
+
+  // ── `texto-tailwind` (2026-11-06, CERO ABSOLUTO) ──────────────────────
+  // La escala de Tailwind (`text-xs`…`text-xl`) al lado de la del portal
+  // (`text-caption`, `text-body`…): dos escalas para lo mismo, y la de
+  // Tailwind no sigue la densidad del tema. Había 72 usos en 28 archivos y se
+  // pasaron todos (xs→body-sm, sm→body-lg, base→body-xl, lg→title-sm,
+  // xl→title). `text-2xl` y mayores quedan: son cifras de despliegue.
+  if (!hasException(path, 'texto-tailwind')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const m of line.matchAll(/(?<=["'`\s:{])(?:[a-z0-9]+:)*text-(xs|sm|base|lg|xl)(?![\w\-/[])/g)) {
+        findings.push({ line: i + 1, label: `tamaño de Tailwind (${m[0]}) — usar la escala del portal (text-caption, text-body…)`, category: 'texto-tailwind', text: line.trim().slice(0, 120) });
       }
     });
   }

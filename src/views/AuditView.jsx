@@ -66,7 +66,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
     return (
         <DataRow>
             <DataCell>
-                <div className="text-label md:text-xs font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand-text">
+                <div className="text-label md:text-body-sm font-black text-content uppercase tracking-tight transition-colors group-hover:text-brand-text">
                     {logDate.toLocaleDateString()}
                 </div>
                 <div className="text-micro md:text-caption font-bold text-content-3 mt-1 flex flex-col md:flex-row md:items-center gap-1 md:gap-1.5 font-mono">

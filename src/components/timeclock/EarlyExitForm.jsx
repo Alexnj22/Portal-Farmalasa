@@ -46,10 +46,10 @@ function EarlyExitForm({
             <FileText size={36} className="text-chart-4-text drop-shadow-[var(--shadow-glow-chart-4)] sm:w-10 sm:h-10 [@media(max-height:800px)]:!w-6 [@media(max-height:800px)]:!h-6" strokeWidth={1.5} />
           </div>
 
-          <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-xl [@media(max-height:800px)]:text-lg font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">
+          <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-title [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">
             Solicitud de Permiso
           </h1>
-          <p className="text-micro sm:text-xs [@media(max-height:800px)]:text-micro [@media(max-height:640px)]:hidden font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
+          <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro [@media(max-height:640px)]:hidden font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
             Registrar salida anticipada
           </p>
         </div>
@@ -60,7 +60,7 @@ function EarlyExitForm({
             {/* La foto canónica (2026-11-05), a 48: uno de los cinco tamaños. */}
             <AvatarConEstado emp={employee} px={48} />
             <div className="text-left flex-1 overflow-hidden">
-              <h3 className="text-white font-semibold text-sm sm:text-body-xl leading-tight truncate" title={employee.name}>{shortEmployeeName(employee)}</h3>
+              <h3 className="text-white font-semibold text-body-lg sm:text-body-xl leading-tight truncate" title={employee.name}>{shortEmployeeName(employee)}</h3>
               <p className="text-white/40 text-micro sm:text-micro uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">
                 Perfil a autorizar
               </p>

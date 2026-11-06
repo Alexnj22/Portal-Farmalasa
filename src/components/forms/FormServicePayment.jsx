@@ -84,7 +84,7 @@ const FormServicePayment = ({ formData, setFormData }) => {
                     </div>
                     <div>
                         <h3 className="text-title font-black tracking-tight">{config.title}</h3>
-                        <p className="text-caption font-bold uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>
+                        <p className="text-caption font-black uppercase tracking-widest opacity-80">Gestión de Pago y Proveedor</p>
                     </div>
                 </div>
                 <div className={`px-4 py-2 flex items-center gap-2 rounded-xl border shadow-sm ${statusPreview.color}`}>

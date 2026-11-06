@@ -170,7 +170,7 @@ export default function ResumenFiscalView() {
 
                 {!loading && datos && (
                     <div data-surface="card" className="rounded-2xl border border-divider p-5 md:p-6">
-                        <p className="text-caption font-black text-content-2 uppercase tracking-wider mb-2">
+                        <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-2">
                             Cómo se llega ahí
                         </p>
 

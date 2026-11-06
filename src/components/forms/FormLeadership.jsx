@@ -138,7 +138,7 @@ const FormLeadership = ({ formData, setFormData }) => {
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <p className={`text-body font-black truncate leading-tight ${isSelected ? 'text-brand-text' : 'text-content'}`} title={emp.name}>{shortEmployeeName(emp)}</p>
-                                        <p className="text-micro font-bold text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
+                                        <p className="text-micro font-black text-content-3 uppercase tracking-widest truncate mt-0.5">{emp.role || 'Sin puesto'}</p>
                                     </div>
                                     {isSelected && <CheckCircle2 size={18} className="text-brand-text shrink-0" strokeWidth={2.5}/>}
                                 </div>

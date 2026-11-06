@@ -86,7 +86,7 @@ function VistaDetalle({ dte, pagos }) {
                 <div><dt className="text-caption text-content-3">Condición</dt><dd className="text-content-2">{d.condicion ?? 'Contado'}</dd></div>
             </dl>
             <div data-surface="card" className="overflow-hidden">
-                <div className="hidden sm:grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_6rem] gap-3 px-3 py-2 border-b border-divider text-micro font-bold uppercase tracking-wide text-content-3">
+                <div className="hidden sm:grid grid-cols-[3.5rem_minmax(0,1fr)_6rem_6rem] gap-3 px-3 py-2 border-b border-divider text-micro font-black uppercase tracking-widest text-content-3">
                     <span className="text-right">Cant.</span><span>Producto</span><span className="text-right">P. unit.</span><span className="text-right">Importe</span>
                 </div>
                 {d.renglones.map(x => (
@@ -106,7 +106,7 @@ function VistaDetalle({ dte, pagos }) {
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex flex-col gap-1.5">
-                    <p className="text-micro font-bold uppercase tracking-wide text-content-3">Pago</p>
+                    <p className="text-micro font-black uppercase tracking-widest text-content-3">Pago</p>
                     {pagos == null && <p className="text-caption text-content-3">Cargando…</p>}
                     {pagos?.length === 0 && <p className="text-caption text-content-3">Sin pagos registrados.</p>}
                     {(pagos ?? []).map(p => {
@@ -124,7 +124,7 @@ function VistaDetalle({ dte, pagos }) {
                     })}
                 </div>
                 <div className="flex flex-col gap-1.5">
-                    <p className="text-micro font-bold uppercase tracking-wide text-content-3">Totales</p>
+                    <p className="text-micro font-black uppercase tracking-widest text-content-3">Totales</p>
                     {!r.ivaIncluido && <Fila rotulo="Sumas (sin IVA)" valor={formatMoney(r.subTotal)} />}
                     {r.descuento > 0 && <Fila rotulo="Descuentos (ya aplicados)" valor={formatMoney(r.descuento)} tono="text-success-text" />}
                     {!r.ivaIncluido && <Fila rotulo="IVA 13%" valor={formatMoney(r.iva)} />}

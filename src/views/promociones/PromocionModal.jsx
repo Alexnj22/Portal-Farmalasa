@@ -436,7 +436,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     {/* ── 3 · Los productos ──────────────────────────────── */}
                     <div className="space-y-2">
                         <div className="flex items-baseline gap-2 flex-wrap">
-                            <p className="text-label uppercase tracking-wide font-semibold text-content-2">
+                            <p className="text-label uppercase tracking-widest font-black text-content-2">
                                 {renglones.length
                                     ? `${renglones.length} ${renglones.length === 1 ? 'producto' : 'productos'}`
                                     : 'Productos'}
@@ -709,7 +709,7 @@ function GeneralDeLaPromocion({ valor, onCambiar, onReparto, onSala, salas, prov
                 DÓNDE; la caja de al lado, cuántas unidades del lote le tocan, y
                 es opcional. */}
             <div className="space-y-1">
-                <span className="text-label uppercase tracking-wide font-semibold text-content-2">
+                <span className="text-label uppercase tracking-widest font-black text-content-2">
                     Salas donde aplica
                 </span>
                 <p className="text-caption text-content-3">
@@ -907,7 +907,7 @@ function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, 
                 <span className="flex-1 min-w-0 truncate text-body-sm font-semibold text-content">
                     {r.producto}
                 </span>
-                <span className="text-micro uppercase text-content-3 shrink-0">{r.laboratorio}</span>
+                <span className="text-micro font-black uppercase tracking-widest text-content-3 shrink-0">{r.laboratorio}</span>
                 <Button variant="ghost" size="sm" iconOnly icon={Trash2}
                     onClick={onQuitar} title="Quitar producto" />
             </div>
@@ -1009,7 +1009,7 @@ function RenglonEditor({ r, salas, proveedores, onCambiar, onReparto, onQuitar, 
             {hayLote && (
                 <div>
                     <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
-                        <span className="text-label uppercase tracking-wide text-content-3 font-semibold">
+                        <span className="text-label uppercase tracking-widest text-content-3 font-black">
                             Reparto por sala
                         </span>
                         <span className="text-caption text-content-3">opcional</span>

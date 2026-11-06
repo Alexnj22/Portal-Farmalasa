@@ -186,7 +186,7 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
                     la cara no decía qué hizo esa persona (usuario, 23-sep). Es
                     quien HIZO el corte; confirmarlo es el paso que falta. */}
                 <div className="min-w-0 leading-tight">
-                    <p className={`text-caption font-black uppercase tracking-wide break-words ${claseTenue}`}>
+                    <p className={`text-caption font-black uppercase tracking-widest break-words ${claseTenue}`}>
                         Hizo el corte
                     </p>
                     <p className="text-body-sm font-bold break-words mt-0.5">
@@ -198,7 +198,7 @@ export function CuerpoDeCorte({ datos, claseTenue, isDark, buscarEmpleado }) {
                 </div>
             </div>
             <div className={`flex flex-col justify-center items-end px-2.5 py-2 leading-tight ${tono.texto}`}>
-                <span className="text-caption font-black uppercase tracking-wide">{rotulo}</span>
+                <span className="text-caption font-black uppercase tracking-widest">{rotulo}</span>
                 {datos.estado !== 'sin_conteo' && (
                     <span className="text-body-lg font-black tracking-tight tabular-nums mt-0.5">{diferencia}</span>
                 )}
@@ -429,7 +429,7 @@ const CeldaPersona = ({ emp, rotulo, respaldo, claseTenue }) => (
             </span>
         )}
         <div className="min-w-0 leading-tight">
-            <p className={`text-caption font-black uppercase tracking-wide break-words ${claseTenue}`}>{rotulo}</p>
+            <p className={`text-caption font-black uppercase tracking-widest break-words ${claseTenue}`}>{rotulo}</p>
             <p className="text-body-sm font-bold break-words mt-0.5">{emp ? shortEmployeeName(emp) : respaldo}</p>
         </div>
     </div>
@@ -519,7 +519,7 @@ function Presentaciones({ datos, claseTenue, isDark }) {
             )}
             {lista.length > 1 && (
                 <div className="bg-surface-card-hover px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
-                    <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Presentaciones</p>
+                    <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>Presentaciones</p>
                     <div className="flex flex-wrap gap-1.5 mt-1">
                         {lista.map((p) => (
                             <Badge key={`${p.tipo}-${p.factor}`} variant="neutral">
@@ -560,7 +560,7 @@ export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
                 note más»). */}
             {datos.producto && (
                 <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                    <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Producto</p>
+                    <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>Producto</p>
                     <p className={`text-body font-black break-words mt-0.5 ${azul.texto}`}>{datos.producto}</p>
                 </div>
             )}
@@ -574,7 +574,7 @@ export function CuerpoDeMinmax({ datos, claseTenue, isDark, buscarEmpleado }) {
             <Presentaciones datos={datos} claseTenue={claseTenue} isDark={isDark} />
             {datos.motivo && (
                 <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                    <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                    <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>
                         Por qué lo pide
                     </p>
                     <p className="text-body-sm font-semibold mt-0.5 break-words">{enOracion(datos.motivo)}</p>
@@ -616,7 +616,7 @@ export function CuerpoDeBolsa({ datos, claseTenue, isDark, buscarEmpleado }) {
                             (24-sep: «pon la hora del corte de esa bolsa»). En uno
                             solo no entraba en el teléfono. */}
                         <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-tight">
-                            <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Bolsa del corte</p>
+                            <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>Bolsa del corte</p>
                             <p className="text-body-sm font-bold tabular-nums break-words mt-0.5">{b.folio}</p>
                             {(fecha || b.hora) && (
                                 <p className={`text-caption font-semibold break-words mt-0.5 ${claseTenue}`}>
@@ -737,7 +737,7 @@ export function CuerpoDeAlertaDeVentas({ datos, claseTenue, isDark, buscarEmplea
                 )}
                 {datos.cliente && (
                     <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                        <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>
                             Cliente{datos.hora ? ` · ${hora12(datos.hora)}` : ''}
                         </p>
                         <p className="text-body-sm font-bold break-words mt-0.5">{datos.cliente}</p>
@@ -745,7 +745,7 @@ export function CuerpoDeAlertaDeVentas({ datos, claseTenue, isDark, buscarEmplea
                 )}
                 {datos.problemas.length > 0 && (
                     <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Qué tiene</p>
+                        <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>Qué tiene</p>
                         <p className={`text-body-sm font-bold break-words mt-0.5 ${tono.texto}`}>
                             {datos.problemas.join(' · ')}
                         </p>
@@ -781,7 +781,7 @@ export function CuerpoDeFacturaDeSala({ datos, claseTenue }) {
             ))}
             {varias && (
                 <li className="flex items-center justify-between gap-3 px-2.5 py-2">
-                    <span className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>En total</span>
+                    <span className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>En total</span>
                     <span className="text-body font-black tabular-nums">{formatMoney(datos.total)}</span>
                 </li>
             )}
@@ -816,7 +816,7 @@ function FilaDeCortePendiente({ c, claseTenue, isDark, buscarEmpleado }) {
                 <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>{cuando}</p>
             </div>
             <div className={`flex-shrink-0 flex flex-col items-end leading-tight ${tono.texto}`}>
-                <span className="text-caption font-black uppercase tracking-wide">{ROTULO_DE_CORTE[estado]}</span>
+                <span className="text-caption font-black uppercase tracking-widest">{ROTULO_DE_CORTE[estado]}</span>
                 {estado !== 'sin_conteo' && (
                     <span className="text-body-sm font-black tabular-nums mt-0.5">
                         {estado === 'cuadra' ? '$0.00' : `${c.tramo > 0 ? '+' : '−'}${formatMoney(Math.abs(c.tramo))}`}
@@ -907,7 +907,7 @@ export function CuerpoDePedido({ datos, claseTenue, isDark, buscarEmpleado }) {
                         )}
                         {datos.detalle && (
                             <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                                <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>
                                     {datos.etapa === 'problema' ? 'Qué pasó' : 'Nota'}
                                 </p>
                                 <p className={`text-body-sm font-bold break-words mt-0.5 ${datos.etapa === 'problema' ? t.rojo.texto : ''}`}>
@@ -1052,7 +1052,7 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
 
                 {rango && (
                     <div className="bg-surface-card-hover px-2.5 py-2 min-w-0" style={{ gridColumn: '1 / -1' }}>
-                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Fechas</p>
+                        <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>Fechas</p>
                         <p className="text-body-sm font-bold mt-0.5">{rango}</p>
                     </div>
                 )}
@@ -1087,7 +1087,7 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
 
                 {datos.motivo && (
                     <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-                        <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>
+                        <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>
                             {datos.tipo === 'INVENTORY_TRANSFER_PUSH' ? 'Por qué lo envía' : 'Por qué lo pide'}
                         </p>
                         <p className="text-body-sm font-semibold break-words mt-0.5">{enOracion(datos.motivo)}</p>
@@ -1107,7 +1107,7 @@ export function CuerpoDeSolicitud({ datos, claseTenue, isDark, buscarEmpleado, e
 /* Un bloque de texto a todo el ancho, con su rótulo. */
 const Bloque = ({ rotulo, children, claseTenue, claseRotulo = '' }) => (
     <div className="bg-surface-card-hover px-2.5 py-2 min-w-0 leading-snug" style={{ gridColumn: '1 / -1' }}>
-        <p className={`text-caption font-black uppercase tracking-wide ${claseRotulo || claseTenue}`}>{rotulo}</p>
+        <p className={`text-caption font-black uppercase tracking-widest ${claseRotulo || claseTenue}`}>{rotulo}</p>
         <div className="text-body-sm font-semibold break-words mt-0.5">{children}</div>
     </div>
 );
@@ -1778,7 +1778,7 @@ export function CuerpoDeMetasPorAprobar({ datos, claseTenue, buscarEmpleado }) {
             {/* Apilado y no lado a lado: a 320 px el cambio se salía por la
                 derecha y la grilla lo recortaba sin que se notara. */}
             <div className="bg-surface-card-hover px-2.5 py-2 min-w-0">
-                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>Meta de la empresa</p>
+                <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>Meta de la empresa</p>
                 <p className="text-title font-black tabular-nums mt-0.5">{formatMoney(datos.total)}</p>
                 {totalCambio && (
                     <p className={`text-caption font-semibold mt-0.5 ${claseTenue}`}>
@@ -1842,7 +1842,7 @@ export function CuerpoDeProductosSinVenta({ datos, claseTenue, isDark }) {
                 ...(datos.costo != null ? [{ etiqueta: 'en costo', valor: formatMoney(datos.costo), clase: t.naranja.texto }] : []),
             ]} />
             <div className="bg-surface-card-hover px-2.5 py-2 min-w-0">
-                <p className={`text-caption font-black uppercase tracking-wide ${claseTenue}`}>A dónde mandarlos</p>
+                <p className={`text-caption font-black uppercase tracking-widest ${claseTenue}`}>A dónde mandarlos</p>
                 <ul className="mt-1.5 flex flex-col gap-2">
                     {datos.destinos.map((d) => (
                         <li key={d.sala} className="min-w-0">

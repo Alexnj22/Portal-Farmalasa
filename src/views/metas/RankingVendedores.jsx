@@ -245,7 +245,7 @@ export default function RankingVendedores({ data, compacto = false, vistaComplet
                                     horario el que está viejo) y Katlin Molina
                                     uno solo con un ticket a las 15:37. */}
                                 {(v.sala_ajena || v.dias_sin_turno > 0) && (
-                                    <p className="text-micro font-black uppercase tracking-wider text-warning-text mt-0.5">
+                                    <p className="text-micro font-black uppercase tracking-widest text-warning-text mt-0.5">
                                         {v.sala_ajena && 'No es su sala'}
                                         {v.sala_ajena && v.dias_sin_turno > 0 && ' · '}
                                         {v.dias_sin_turno > 0 &&

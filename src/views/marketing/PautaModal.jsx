@@ -92,7 +92,7 @@ export default function PautaModal({ open, onClose, pieza, redes, limite = 0, ot
                 <div className="space-y-5">
                     {hayBorrador && <AvisoDeBorrador cuando={cuando} onRecuperar={reponer} onDescartar={descartar} />}
                     <section className="space-y-3">
-                        <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">El plan</h3>
+                        <h3 className="text-label uppercase tracking-widest font-black text-content-2">El plan</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             <PortalInput label="Presupuesto" name="presupuesto" inputMode="decimal" maskType="DECIMAL" prefix="$"
                                 value={form.presupuesto} onChange={set('presupuesto')} placeholder="0.00"
@@ -126,7 +126,7 @@ export default function PautaModal({ open, onClose, pieza, redes, limite = 0, ot
                             placeholder="Ej. Chalatenango, 25–55 años, interés en salud" />
                     </section>
                     <section className="space-y-3">
-                        <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Resultados</h3>
+                        <h3 className="text-label uppercase tracking-widest font-black text-content-2">Resultados</h3>
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                             {RESULTADOS.map(([k, label]) => (
                                 <PortalInput key={k} label={label} name={k}

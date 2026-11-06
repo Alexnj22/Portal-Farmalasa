@@ -230,7 +230,7 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
             </div>
             <div className="min-w-0">
                 <p className="text-2xl font-black text-content leading-none tracking-tight">{value}</p>
-                <p className={`text-label mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
+                <p className={`text-label mt-1 font-black uppercase tracking-widest ${c.text}`}>{label}</p>
             </div>
         </div>
     );

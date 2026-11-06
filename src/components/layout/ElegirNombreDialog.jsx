@@ -81,7 +81,7 @@ function Dialogo({ empleado, onClose, obligatorio }) {
                         </div>
                     )}
                     <div className="rounded-card border border-border-card bg-surface-card-hover px-4 py-3">
-                        <p className="text-micro font-bold uppercase tracking-wider text-content-3">Así te verán en el portal</p>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Así te verán en el portal</p>
                         <p className="text-title-sm font-black text-content mt-1">{`${nombre} ${apellido}`.trim()}</p>
                     </div>
                     <p className="text-caption text-content-3">

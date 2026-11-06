@@ -245,7 +245,7 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
 function Dato({ rotulo, valor, sufijo }) {
     return (
         <div className="min-w-0">
-            <span className="block text-micro uppercase tracking-wide text-content-3 font-semibold">
+            <span className="block text-micro uppercase tracking-widest text-content-3 font-black">
                 {rotulo}
             </span>
             <span className="text-subtitle font-semibold text-content tabular-nums">

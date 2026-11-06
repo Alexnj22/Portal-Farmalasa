@@ -111,7 +111,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
             <div>
                 {/* Mismo encabezado que «Dar o quitar puntos»: los dos paneles se
                     abren en el mismo lugar y tienen que leerse como hermanos. */}
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                     <Merge size={14} /> Unir con otra cuenta
                 </h3>
                 <p className="text-caption text-content-3 mt-1">

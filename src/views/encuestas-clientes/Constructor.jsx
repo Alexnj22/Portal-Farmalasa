@@ -65,7 +65,7 @@ export default function Constructor({ cuestionario, dimensiones, soloLectura, on
             {secciones.map((s, si) => (
                 <section key={s.id} data-surface="card" className="p-4 space-y-3">
                     <div className="flex items-start gap-2">
-                        <span className="text-micro font-bold uppercase tracking-wide text-content-3 pt-1 shrink-0">
+                        <span className="text-micro font-black uppercase tracking-widest text-content-3 pt-1 shrink-0">
                             Sección {si + 1}
                         </span>
                         {soloLectura ? (

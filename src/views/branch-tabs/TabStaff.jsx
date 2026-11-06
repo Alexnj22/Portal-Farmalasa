@@ -86,7 +86,7 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
                     <AlertTriangle size={24} strokeWidth={2} />
                 </div>
                 <p className="text-body-lg font-black text-content-2 leading-tight group-hover:text-danger-text transition-colors text-center">{missingText}</p>
-                <p className="text-micro font-bold text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
+                <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-1 text-center">{missingSub}</p>
                 <div className="absolute top-3 right-3 px-3 py-1.5 rounded-full bg-surface-card shadow-sm border border-danger/30 flex items-center gap-1.5 text-content-3 group-hover:bg-danger-solid group-hover:text-white transition-all">
                     <Pencil size={10} strokeWidth={2.5} /> <span className="text-micro font-black uppercase tracking-widest">Asignar</span>
                 </div>
@@ -533,7 +533,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                 <div>
                     <h3 className="font-black text-content uppercase tracking-tight text-title">{isAdmin ? 'Organigrama Administrativo' : 'Organigrama de Sucursal'}</h3>
                     <div className="flex items-center gap-2 mt-0.5">
-                        <p className="text-label font-bold text-content-3 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
+                        <p className="text-label font-black text-content-3 uppercase tracking-widest">{liveBranch?.name} • {currentStaff.length} Activos</p>
                     </div>
                 </div>
 
@@ -750,7 +750,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                         </div>
                                         <div>
                                             <h4 className="text-body font-black uppercase tracking-widest text-brand-text leading-none">Análisis en vivo</h4>
-                                            <p className="text-caption font-bold text-content-3 mt-1 uppercase tracking-widest">Las horas de la sala, al momento</p>
+                                            <p className="text-caption font-black text-content-3 mt-1 uppercase tracking-widest">Las horas de la sala, al momento</p>
                                         </div>
                                     </div>
 
@@ -835,7 +835,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                                                 <Plus size={20} strokeWidth={2} />
                                             </div>
                                             <p className="text-body-sm font-black text-warning-text">Plaza Sugerida</p>
-                                            <p className="text-micro font-bold text-warning-text uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
+                                            <p className="text-micro font-black text-warning-text uppercase tracking-widest mt-0.5 text-center px-4 leading-tight">Garantiza descanso y cobertura</p>
                                         </div>
                                     ))}
                                 </div>

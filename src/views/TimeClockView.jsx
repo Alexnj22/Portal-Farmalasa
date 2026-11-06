@@ -237,7 +237,7 @@ const TimeClockView = ({ setView }) => {
               className="w-12 h-12 [@media(max-height:800px)]:w-8 [@media(max-height:800px)]:h-8 object-contain opacity-80 drop-shadow-[0_0_24px_rgba(147,197,253,0.35)]"
               draggable="false"
             />
-            <span className="text-micro font-bold uppercase tracking-[0.32em] text-white/30">
+            <span className="text-micro font-black uppercase tracking-widest text-white/30">
               Farmacias La Salud &amp; Popular
             </span>
           </div>
@@ -267,13 +267,13 @@ const TimeClockView = ({ setView }) => {
             </h2>
 
             {/* Date */}
-            <p className="relative text-white/40 text-caption font-bold uppercase tracking-[0.32em] mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 capitalize">
+            <p className="relative text-white/40 text-caption font-black uppercase tracking-widest mt-3 [@media(max-height:800px)]:mt-1 w-full text-center truncate px-2 capitalize">
               {dateStr}
             </p>
 
             {/* Device label */}
             {kioskLabel && (
-              <p className="relative text-white/20 text-micro font-semibold uppercase tracking-[0.22em] mt-2 [@media(max-height:800px)]:mt-1 [@media(max-height:640px)]:hidden w-full text-center truncate px-4">
+              <p className="relative text-white/20 text-micro font-black uppercase tracking-widest mt-2 [@media(max-height:800px)]:mt-1 [@media(max-height:640px)]:hidden w-full text-center truncate px-4">
                 {kioskLabel}
               </p>
             )}

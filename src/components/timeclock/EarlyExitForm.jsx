@@ -49,7 +49,7 @@ function EarlyExitForm({
           <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-title [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1 transition-colors">
             Solicitud de Permiso
           </h1>
-          <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro [@media(max-height:640px)]:hidden font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
+          <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro [@media(max-height:640px)]:hidden font-black uppercase tracking-widest text-chart-4-text/80 transition-colors px-2">
             Registrar salida anticipada
           </p>
         </div>
@@ -61,7 +61,7 @@ function EarlyExitForm({
             <AvatarConEstado emp={employee} px={48} />
             <div className="text-left flex-1 overflow-hidden">
               <h3 className="text-white font-semibold text-body-lg sm:text-body-xl leading-tight truncate" title={employee.name}>{shortEmployeeName(employee)}</h3>
-              <p className="text-white/40 text-micro sm:text-micro uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">
+              <p className="text-white/40 text-micro sm:text-micro font-black uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">
                 Perfil a autorizar
               </p>
             </div>
@@ -114,7 +114,7 @@ function EarlyExitForm({
             <button
               type="submit"
               disabled={isProcessing}
-              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-bold text-chart-4-text flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] bg-chart-4/15 py-3 sm:py-3.5 rounded-btn border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[var(--shadow-glow-chart-4-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
+              className="flex-1 relative z-content text-micro sm:text-caption uppercase tracking-widest font-black text-chart-4-text flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] bg-chart-4/15 py-3 sm:py-3.5 rounded-btn border border-chart-4/30 hover:bg-chart-4/25 hover:border-chart-4/50 hover:shadow-[var(--shadow-glow-chart-4-md)] active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none"
             >
               {isProcessing ? (
                 <span className="w-3.5 h-3.5 border-2 border-chart-4/30 border-t-chart-4 rounded-full animate-spin" />

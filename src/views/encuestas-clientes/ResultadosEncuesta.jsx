@@ -152,7 +152,7 @@ export default function ResultadosEncuesta({ encuesta }) {
 
                     {nps.respuestas > 0 && (
                         <section data-surface="card" className="p-4 space-y-2">
-                            <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Recomendación</h3>
+                            <h3 className="text-label uppercase tracking-widest font-black text-content-2">Recomendación</h3>
                             <div className="flex h-3 rounded-full overflow-hidden bg-surface-card-hover" data-medida="dato"
                                 role="img" aria-label={`${nps.promotores} promotores, ${nps.pasivos} pasivos, ${nps.detractores} detractores`}>
                                 <div className="bg-success" style={{ width: `${pct(nps.promotores)}%` }} />
@@ -170,7 +170,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                     <div className="grid gap-5 lg:grid-cols-2">
                         {datos.por_dimension.length > 0 && (
                             <section data-surface="card" className="p-4 space-y-3">
-                                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Por tema (0 a 100)</h3>
+                                <h3 className="text-label uppercase tracking-widest font-black text-content-2">Por tema (0 a 100)</h3>
                                 <ul className="space-y-2.5">
                                     {datos.por_dimension.map((d) => (
                                         <Barra key={d.clave} label={d.nombre} valor={d.puntaje} max={100} cls={barraDeDimension(d.color)}
@@ -181,7 +181,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                         )}
                         {!sala && datos.por_sucursal.length > 1 && (
                             <section data-surface="card" className="p-4 space-y-3">
-                                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">NPS por sucursal</h3>
+                                <h3 className="text-label uppercase tracking-widest font-black text-content-2">NPS por sucursal</h3>
                                 <ul className="space-y-2">
                                     {datos.por_sucursal.map((s) => {
                                         const l = lecturaNps(s.nps);
@@ -199,7 +199,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                     </div>
 
                     <section data-surface="card" className="p-4 space-y-5">
-                        <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Pregunta por pregunta</h3>
+                        <h3 className="text-label uppercase tracking-widest font-black text-content-2">Pregunta por pregunta</h3>
                         {datos.por_pregunta.filter((p) => p.tipo !== 'texto').map((p, i) => (
                             <Distribucion key={p.id} p={p} numero={numeroDe[p.id] ?? i + 1} />
                         ))}
@@ -207,7 +207,7 @@ export default function ResultadosEncuesta({ encuesta }) {
 
                     <section data-surface="card" className="p-4 space-y-3">
                         <div className="flex flex-wrap items-center gap-2">
-                            <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5 flex-1">
+                            <h3 className="text-label uppercase tracking-widest font-black text-content-2 flex items-center gap-1.5 flex-1">
                                 <MessageSquareText size={13} /> Comentarios ({comentarios.length})
                             </h3>
                             {comentarios.length >= 3 && (() => {
@@ -252,7 +252,7 @@ export default function ResultadosEncuesta({ encuesta }) {
 
             {rondas.length > 1 && (
                 <section data-surface="card" className="p-4 space-y-3">
-                    <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
+                    <h3 className="text-label uppercase tracking-widest font-black text-content-2 flex items-center gap-1.5">
                         <History size={13} /> Rondas de esta encuesta
                     </h3>
                     <ul className="space-y-2">

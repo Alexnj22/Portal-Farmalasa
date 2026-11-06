@@ -581,7 +581,7 @@ export default function HistorialTraslados({
                     {porSucursal ? (
                         enviosPorSala.map(([sala, deLaSala]) => (
                             <div key={sala} className="flex flex-col gap-2">
-                                <p className="text-label font-black text-content-2 uppercase tracking-wide px-1">
+                                <p className="text-label font-black text-content-2 uppercase tracking-widest px-1">
                                     {sala}
                                     <span className="text-content-3"> · {deLaSala.length}</span>
                                 </p>

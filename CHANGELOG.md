@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.10 — Un solo rótulo en mayúsculas
+
+- **Un solo rótulo en mayúsculas.** Los rótulos chicos en mayúsculas (encabezados de columna, títulos de tarjeta, etiquetas) tenían 80 combinaciones de peso y espaciado. 409 renglones en 151 archivos pasan al estilo que ya usaba la mayoría: `font-black uppercase tracking-widest`. Cambian el tamaño y el color según el lugar, nunca el peso ni el espaciado.
+- `gate:design`: categoría nueva `rotulo-a-mano` (cero absoluto).
+
 ## v2.1459.9 — Cifras con locale fijo
 
 - **Las cifras ya no dependen del idioma del navegador.** 184 `toLocaleString()` sin locale (27 archivos) tomaban el idioma de cada computadora: la misma cantidad salía `1,234`, `1.234` o `1234` según quién la mirara. Ahora todas usan `es-SV`, como el resto del portal.

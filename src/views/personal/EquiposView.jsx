@@ -250,7 +250,7 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
         )}
 
         {respondeA && (
-          <p className="flex items-center gap-1 text-micro font-bold uppercase tracking-widest text-content-3">
+          <p className="flex items-center gap-1 text-micro font-black uppercase tracking-widest text-content-3">
             <CornerDownRight size={11} strokeWidth={2.5} className="shrink-0" />
             <span className="truncate">Responde a {respondeA}</span>
           </p>

@@ -73,7 +73,7 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         <h4 className="text-body font-black uppercase tracking-widest text-content leading-none mb-1">
                             Regencia Farmacéutica
                         </h4>
-                        <p className="text-caption font-bold text-content-3 uppercase tracking-widest">
+                        <p className="text-caption font-black text-content-3 uppercase tracking-widest">
                             Asignación y Credenciales JVQF
                         </p>
                     </div>

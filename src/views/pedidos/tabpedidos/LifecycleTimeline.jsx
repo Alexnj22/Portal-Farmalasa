@@ -262,7 +262,7 @@ export default function LifecycleTimeline({ row, stage, creatorEmp, iniciadorEmp
             vez de imponer una píldora en Solid. */}
         {receptionApoyo.length > 0 && (
             <div className="flex items-center gap-1.5 flex-wrap pt-1.5">
-                <span className="text-caption font-semibold text-content-3 uppercase tracking-wide shrink-0">Apoyo en recepción</span>
+                <span className="text-caption font-black text-content-3 uppercase tracking-widest shrink-0">Apoyo en recepción</span>
                 {receptionApoyo.map(a => (
                     <Badge key={a.id} variant="neutral" uppercase={false} className="pl-1">
                         {/* `photo || photo_url` y no `photo_url` a secas: el bucket es

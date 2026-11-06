@@ -122,24 +122,24 @@ const ItemCard = React.memo(({ item, idx, isCCF, pricesMap, removeItem, updateIt
                 {isCCF ? (
                     <>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-micro font-bold text-content-2 uppercase tracking-wider">P. s/IVA</span>
+                            <span className="text-micro font-black text-content-2 uppercase tracking-widest">P. s/IVA</span>
                             <span className="text-label font-black text-content-2">{fmt(dsg.unitSinIva)}</span>
                         </div>
                         <span className="text-content-3">|</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-micro font-bold text-content-2 uppercase tracking-wider">Subtotal s/IVA</span>
+                            <span className="text-micro font-black text-content-2 uppercase tracking-widest">Subtotal s/IVA</span>
                             <span className="text-label font-black text-content-2">{fmt(dsg.subtotalSinIva)}</span>
                         </div>
                         <span className="text-content-3">|</span>
                         <div className="flex items-center gap-1.5">
-                            <span className="text-micro font-bold text-content-2 uppercase tracking-wider">IVA 13%</span>
+                            <span className="text-micro font-black text-content-2 uppercase tracking-widest">IVA 13%</span>
                             <span className="text-label font-black text-chart-1-text">{fmt(dsg.subtotalIva)}</span>
                         </div>
                         <span className="text-content-3">|</span>
                     </>
                 ) : null}
                 <div className="flex items-center gap-1.5 ml-auto">
-                    <span className="text-micro font-bold text-content-2 uppercase tracking-wider">Subtotal</span>
+                    <span className="text-micro font-black text-content-2 uppercase tracking-widest">Subtotal</span>
                     <span className="text-body-lg font-black text-brand-text">{fmt(item.subtotal)}</span>
                 </div>
             </div>

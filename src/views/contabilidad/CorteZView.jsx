@@ -146,7 +146,7 @@ const ParaDeclarar = ({ declaracion }) => {
     return (
         <div>
             <div className={`${GRILLA_DECL} pb-1 border-b border-divider`}>
-                <span className="col-span-2 md:col-span-1 text-micro font-semibold text-content-3 uppercase tracking-wide">
+                <span className="col-span-2 md:col-span-1 text-micro font-black text-content-3 uppercase tracking-widest">
                     Para la declaración
                 </span>
                 <span className="text-micro text-content-3 text-right">Consumidor</span>
@@ -199,7 +199,7 @@ const Comprobaciones = ({ items }) => {
     return (
         <div>
             <div className="flex items-baseline justify-between gap-2 pb-1 border-b border-divider">
-                <span className="text-micro font-semibold text-content-3 uppercase tracking-wide">
+                <span className="text-micro font-black text-content-3 uppercase tracking-widest">
                     Comprobaciones
                 </span>
                 <span className="text-micro text-content-3">
@@ -398,7 +398,7 @@ const TarjetaSucursal = ({ fila, onPdf, verTicket, onVerTicket, dias, cargandoDi
                     columna tienen que caer sobre sus cifras en los dos
                     tamaños, también cuando en el teléfono bajan de línea. */}
                 <div className={`${GRILLA_COTEJO} pb-1 border-b border-divider`}>
-                    <span className="col-span-3 md:col-span-1 text-micro font-semibold text-content-3 uppercase tracking-wide">
+                    <span className="col-span-3 md:col-span-1 text-micro font-black text-content-3 uppercase tracking-widest">
                         Cotejo contra el libro
                     </span>
                     <span className="text-micro text-content-3 text-right">Corte Z</span>

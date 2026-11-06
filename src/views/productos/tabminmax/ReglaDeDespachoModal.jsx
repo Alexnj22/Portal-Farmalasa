@@ -60,7 +60,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
                         pantalla. Sale de la fila: `get_stock_analysis` ya lo trae. */}
                     <div data-surface="card" className="px-4 py-3.5 flex items-center justify-between gap-3">
                         <div className="flex flex-col gap-0.5 min-w-0">
-                            <span className="text-micro font-black uppercase tracking-wide text-content-3">Se despacha de a</span>
+                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Se despacha de a</span>
                             <span className="text-h3 font-black tabular-nums text-content leading-none">
                                 {(factor * multiplo).toLocaleString('es-SV')}
                                 <span className="text-label font-bold text-content-3 ml-1.5">und</span>
@@ -77,7 +77,7 @@ export default function ReglaDeDespachoModal({ open, row, guardando, onAceptar, 
 
                     {sug && (
                         <div data-surface="card" className="px-4 py-3.5 flex flex-col gap-2">
-                            <span className="text-micro font-black uppercase tracking-wide text-content-3">Sugerencia</span>
+                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Sugerencia</span>
                             <div className="flex items-center gap-2 text-h3 font-black tabular-nums leading-none">
                                 <span className="text-content-3">{minHoy.toLocaleString('es-SV')} · {maxHoy.toLocaleString('es-SV')}</span>
                                 <span className="text-content-3 text-body">→</span>

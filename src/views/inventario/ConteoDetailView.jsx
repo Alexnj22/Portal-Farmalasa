@@ -1255,7 +1255,7 @@ function PrintChooserModal({ open, documentos, busy, onClose, onPick }) {
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">Imprimir</h3>
-                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Elige el documento</p>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-black">Elige el documento</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
@@ -1301,7 +1301,7 @@ function ItemHistoryModal({ open, item, onClose, simple = false }) {
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">{item?.product_nombre}</h3>
-                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-black">
                         Historial de conteo · {simple ? (item?.presentacion || 'sin presentación') : (item?.lote || 'sin lote')}
                     </p>
                 </div>
@@ -1380,7 +1380,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">Corregir lote</h3>
-                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold truncate max-w-[220px]">{item?.product_nombre}</p>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-black truncate max-w-[220px]">{item?.product_nombre}</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={onClose} />
             </div>
@@ -1436,7 +1436,7 @@ function FinalizarConteoModal({ open, pendientes, busy, onClose, onConfirm }) {
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div>
                     <h3 className="font-black text-content text-subtitle">Finalizar Conteo</h3>
-                    <p className="text-caption text-content-3 uppercase tracking-widest font-bold">Se calculan los resultados</p>
+                    <p className="text-caption text-content-3 uppercase tracking-widest font-black">Se calculan los resultados</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly onClick={handleClose} />
             </div>
@@ -2270,7 +2270,7 @@ export default function ConteoDetailView() {
                                             <Badge variant="info" size="sm" uppercase={false}>Ajusta el inventario</Badge>
                                         )}
                                     </div>
-                                    <p className="text-caption text-content-2 uppercase tracking-wide">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {SCOPE_LABEL[conteo.scope_type] || conteo.scope_type}</p>
+                                    <p className="text-caption text-content-2 font-black uppercase tracking-widest">Iniciado {fmtDate(conteo.created_at?.split('T')[0])} · Alcance: {SCOPE_LABEL[conteo.scope_type] || conteo.scope_type}</p>
                                 </div>
                             </div>
                             {/* Un botón por documento eran hasta CUATRO ("Imprimir Hoja",

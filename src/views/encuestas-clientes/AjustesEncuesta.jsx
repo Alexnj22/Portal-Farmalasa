@@ -189,7 +189,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
 function Bloque({ titulo, icono: Icono, children }) {
     return (
         <section data-surface="card" className="p-4 space-y-3">
-            <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
+            <h3 className="text-label uppercase tracking-widest font-black text-content-2 flex items-center gap-1.5">
                 {Icono && <Icono size={13} />} {titulo}
             </h3>
             {children}

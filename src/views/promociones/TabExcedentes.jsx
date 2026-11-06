@@ -165,7 +165,7 @@ export default function TabExcedentes({ puedeAprobar, busqueda = '', onResumen, 
                         <DataCell>
                             <span className="font-medium text-content">{shortEmployeeName(f.persona)}</span>
                             {f.sala && (
-                                <span className="block text-micro uppercase tracking-wide text-content-3">
+                                <span className="block text-micro font-black uppercase tracking-widest text-content-3">
                                     {f.sala}
                                 </span>
                             )}

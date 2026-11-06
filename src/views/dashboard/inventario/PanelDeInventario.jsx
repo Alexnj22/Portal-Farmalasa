@@ -359,7 +359,7 @@ function LotesDeProducto({ lots, danger = false }) {
           <span className="text-micro font-mono text-content-3 flex-1 truncate min-w-0">{row.lote || '—'}</span>
           <ExpiryBadge date={row.fecha_vencimiento} />
           {row.presentacion && (
-            <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+            <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">
               {row.presentacion}
             </span>
           )}
@@ -393,7 +393,7 @@ function LotesDeProducto({ lots, danger = false }) {
             </>
           )}
           {g.presentacion && (
-            <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0">
+            <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">
               {g.presentacion}
             </span>
           )}
@@ -477,7 +477,7 @@ function BranchSections({ branches, onDrill, onZoom, onPedir, animOffset = 0 }) 
           <div className="h-px flex-1 bg-gradient-to-r from-transparent to-divider" />
           <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border ${theme.pill} shadow-sm`}>
             <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />
-            <span className={`text-caption font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
+            <span className={`text-caption font-black uppercase tracking-widest ${theme.label}`}>{branch.name}</span>
             <span className="w-px h-3 bg-divider mx-1" />
             <span className={`text-body-sm font-black tabular-nums ${theme.label}`}>{branchTotal}</span>
             <span className="text-micro font-semibold text-content-3 ml-0.5">uds</span>
@@ -574,7 +574,7 @@ function SectionLabel({ icon: Icon, label, color = 'text-content-3', bg = 'bg-su
     <div className="flex items-center gap-2 mb-2 mt-1">
       <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full ${bg}`}>
         <Icon size={10} className={color} strokeWidth={2.5} />
-        <span className={`text-micro font-black uppercase tracking-wider ${color}`}>{label}</span>
+        <span className={`text-micro font-black uppercase tracking-widest ${color}`}>{label}</span>
       </div>
       <div className="h-px flex-1 bg-divider" />
     </div>
@@ -898,7 +898,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
                       {branch.isVencidos
                         ? <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
                         : <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: theme.dot }} />}
-                      <span className={`text-caption font-black uppercase tracking-wider ${theme.label}`}>{branch.name}</span>
+                      <span className={`text-caption font-black uppercase tracking-widest ${theme.label}`}>{branch.name}</span>
                       <span className="w-px h-3 bg-divider mx-1" />
                       <span className={`text-body-sm font-black tabular-nums ${theme.label}`}>{total}</span>
                       <span className="text-micro font-semibold text-content-3 ml-0.5">uds</span>
@@ -1108,7 +1108,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
               <div className="h-px flex-1 bg-danger/20" />
               <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-danger/10 border border-danger/30 shadow-sm">
                 <AlertTriangle size={9} className="text-danger-text shrink-0" strokeWidth={2.5} />
-                <span className="text-caption font-black uppercase tracking-wider text-danger-text">Bodega · Área de Vencidos</span>
+                <span className="text-caption font-black uppercase tracking-widest text-danger-text">Bodega · Área de Vencidos</span>
                 <span className="w-px h-3 bg-danger/20 mx-1" />
                 <span className="text-body-sm font-black tabular-nums text-danger-text">
                   {vencidosProds.reduce((s, p) => s + sumaUnidades(p.lots), 0)}
@@ -1147,7 +1147,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
                                   número no se entiende sin saber de qué
                                   presentación es. */}
                               {r.presentacion && (
-                                <span className="text-micro font-black text-content-2 uppercase tracking-wider shrink-0 ml-auto">
+                                <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0 ml-auto">
                                   {r.presentacion}
                                 </span>
                               )}

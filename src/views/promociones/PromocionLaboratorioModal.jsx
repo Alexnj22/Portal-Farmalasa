@@ -312,7 +312,7 @@ export default function PromocionLaboratorioModal({ open, promocionId, onClose, 
                             {salas.map((s) => (
                                 <div key={s.id} className="rounded-lg bg-surface-card-hover p-3">
                                     <div className="flex items-center gap-2 mb-2">
-                                        <span className="flex-1 min-w-0 truncate text-label uppercase tracking-wide font-semibold text-content-2">
+                                        <span className="flex-1 min-w-0 truncate text-label uppercase tracking-widest font-black text-content-2">
                                             {s.name}
                                         </span>
                                         {salaTieneUmbral(s.id) && hayVacias && (

@@ -695,13 +695,13 @@ function PriceHistorySection({ history, allowedPriceFields, comoPanel = false, c
             </div>
             {allowedPriceFields.map(f => (
                 <div key={f.key} className="flex items-baseline gap-3 px-3 py-1.5 border-b border-divider last:border-b-0">
-                    <span className="flex-1 text-caption font-black uppercase tracking-wider text-content-2">{f.label}</span>
+                    <span className="flex-1 text-caption font-black uppercase tracking-widest text-content-2">{f.label}</span>
                     <span className="text-body-sm font-black tabular-nums text-content">{fmtP(row[f.key])}</span>
                 </div>
             ))}
             {conCosto && (
                 <div className="flex items-baseline gap-3 px-3 py-1.5">
-                    <span className="flex-1 text-caption font-black uppercase tracking-wider text-content-2">Costo · margen</span>
+                    <span className="flex-1 text-caption font-black uppercase tracking-widest text-content-2">Costo · margen</span>
                     <span className="text-body-sm font-black tabular-nums text-content">{fmtP(row.costo)} · {celdaMargen(row)}</span>
                 </div>
             )}
@@ -1194,7 +1194,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                                                     return (
                                                         <div key={f.key}
                                                             className={`flex items-baseline gap-3 px-3.5 py-2 border-t ${xk.divider} ${ch ? xk.pricingCellChanged : ''}`}>
-                                                            <span className="flex-1 min-w-0 text-caption font-black uppercase tracking-wider text-content-2">
+                                                            <span className="flex-1 min-w-0 text-caption font-black uppercase tracking-widest text-content-2">
                                                                 {f.label}
                                                             </span>
                                                             {ch && (

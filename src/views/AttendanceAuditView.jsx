@@ -598,7 +598,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
         {/* Name + role + alert chips */}
         <div className="flex-1 min-w-0">
           <p className="text-body font-black text-content leading-none truncate" title={emp.name}>{shortEmployeeName(emp)}</p>
-          <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
+          <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">{emp.role || '—'}</p>
           {(alerts.total > 0 || hasCrossBranch) && (
             <div className="flex items-center gap-1 mt-1.5 flex-wrap">
               {alerts.inconsistencies > 0 && (
@@ -702,7 +702,7 @@ function EmployeeAuditRow({ emp, quinceaDates, shiftById, timesheets, branchName
                 {isMonday && idx > 0 && (
                   <div className="flex items-center gap-2 pt-1">
                     <div className="h-px flex-1 bg-gradient-to-r from-divider to-transparent" />
-                    <span className="text-micro font-black uppercase tracking-[0.2em] text-content-3">nueva semana</span>
+                    <span className="text-micro font-black uppercase tracking-widest text-content-3">nueva semana</span>
                     <div className="h-px w-8 bg-divider" />
                   </div>
                 )}
@@ -1122,7 +1122,7 @@ const AttendanceAuditView = () => {
                       {meta.declaredStart && meta.declaredEnd ? (
                         <p className="text-label font-bold text-chart-3-text mt-1">
                           Declara: {meta.declaredStart} – {meta.declaredEnd}
-                          {meta.pinOmitido && <span className="ml-2 text-warning-text text-micro uppercase tracking-wider font-black">sin PIN</span>}
+                          {meta.pinOmitido && <span className="ml-2 text-warning-text text-micro uppercase tracking-widest font-black">sin PIN</span>}
                         </p>
                       ) : (
                         <p className="text-caption text-content-3 mt-1 italic">No declaró horario — solo registró entrada</p>
@@ -1212,7 +1212,7 @@ const AttendanceAuditView = () => {
                         </div>
                         <div className="min-w-0">
                           <p className="text-body-sm font-black text-content-2 leading-none">{bName}</p>
-                          <p className="text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5">
+                          <p className="text-micro font-black text-content-2 uppercase tracking-widest mt-0.5">
                             {branchEmployees.length} empleado{branchEmployees.length !== 1 ? 's' : ''}
                           </p>
                         </div>

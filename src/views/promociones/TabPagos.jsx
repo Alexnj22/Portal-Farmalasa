@@ -156,7 +156,7 @@ function Fondo({ icon: Icono, rotulo, monto, estado }) {
             <div className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2 min-w-0">
                     <Icono className="w-4 h-4 text-content-3 shrink-0" aria-hidden />
-                    <span className="text-label uppercase tracking-wide font-semibold text-content-2 truncate">{rotulo}</span>
+                    <span className="text-label uppercase tracking-widest font-black text-content-2 truncate">{rotulo}</span>
                 </span>
                 <span className="text-subtitle font-semibold tabular-nums text-content">{hay ? fmtMoneda(monto) : '—'}</span>
             </div>

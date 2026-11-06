@@ -80,7 +80,7 @@ export function EncabezadoDeAvance() {
                 <React.Fragment key={lado}>
                     {ti > 0 && <span className="self-stretch w-px shrink-0" />}
                     <div className={`min-w-0 ${ti === 0 ? 'flex-[5]' : 'flex-[2]'}`}>
-                        <p className={`flex items-center gap-1.5 text-micro font-bold uppercase tracking-wider mb-1.5 ${TRAMO[lado].texto}`}>
+                        <p className={`flex items-center gap-1.5 text-micro font-black uppercase tracking-widest mb-1.5 ${TRAMO[lado].texto}`}>
                             {React.createElement(TRAMO[lado].Icono, { size: 12, 'aria-hidden': true })}{TRAMO[lado].titulo}
                         </p>
                         <div className="flex w-full">
@@ -196,7 +196,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                         {ti > 0 && <span aria-hidden="true" className="self-stretch w-px bg-divider shrink-0" />}
                         <div className={`min-w-0 ${ti === 0 ? 'flex-[5]' : 'flex-[2]'}`}>
                             {conTitulos && (
-                                <p className={`text-micro font-semibold uppercase tracking-wider mb-1 ${TRAMO[lado].texto}`}>
+                                <p className={`text-micro font-black uppercase tracking-widest mb-1 ${TRAMO[lado].texto}`}>
                                     {TRAMO[lado].titulo}
                                 </p>
                             )}
@@ -205,7 +205,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
                             </ol>
                             {detalle && (apoyo?.[lado] ?? []).length > 0 && (
                                 <div className="mt-2 flex items-center gap-1.5 flex-wrap">
-                                    <span className="text-micro text-content-3 uppercase tracking-wider">Apoyo</span>
+                                    <span className="text-micro text-content-3 font-black uppercase tracking-widest">Apoyo</span>
                                     {apoyo[lado].map(a => (
                                         <span key={a.id ?? a.employee_id} className="flex items-center gap-1">
                                             <AvatarConEstado emp={a} px={20} marco="" mostrarChip={false} />
@@ -225,7 +225,7 @@ export default function AvanceCompacto({ row, stage, rutaStop = null, conductor 
         <div className="flex flex-col gap-3">
             {linea}
             <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-2.5 border-t border-divider">
-                <span className="text-micro font-semibold text-content-3 uppercase tracking-wider">Incidencias</span>
+                <span className="text-micro font-black text-content-3 uppercase tracking-widest">Incidencias</span>
                 {incidencias.map(x => {
                     const [, Icono, tono] = incidenciaDe(x.key);
                     return (

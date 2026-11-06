@@ -1499,7 +1499,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                     <div className="space-y-3 text-left">
                         {(m.cajas.length > 0 || m.electrolits > 0) && (
                             <div className="space-y-1.5">
-                                <p className="text-label font-semibold text-content-2 uppercase tracking-wide">Se reenvía</p>
+                                <p className="text-label font-black text-content-2 uppercase tracking-widest">Se reenvía</p>
                                 {m.cajas.length > 0 && (
                                     <div className="flex items-center gap-2 text-body-sm text-content-2">
                                         <Box size={13} className="text-danger shrink-0" />
@@ -1521,7 +1521,7 @@ export default function TabPedidos({ searchTerm = '' }) {
                         {productos.length > 0 && (
                             <div className="space-y-2">
                                 <div className="flex items-center justify-between gap-2 flex-wrap">
-                                    <p className="text-label font-semibold text-content-2 uppercase tracking-wide">Cajas especiales</p>
+                                    <p className="text-label font-black text-content-2 uppercase tracking-widest">Cajas especiales</p>
                                     {cancelables.length > 1 && (
                                         <div className="flex items-center gap-1.5">
                                             <Button size="xs" variant="secondary" onClick={() => setReenviarConfirmModal(prev => prev && ({ ...prev, noReenviar: [] }))}>Reenviar todas</Button>

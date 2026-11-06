@@ -1146,7 +1146,7 @@ export default function DistribucionVentaView() {
                                 </div>
                             ) : (
                                 <div className="@container rounded-xl border border-divider overflow-hidden" onKeyDownCapture={navegarRenglones}>
-                                    <div className={`hidden @4xl:grid ${COLUMNAS} gap-2 px-3 py-2 border-b border-divider bg-surface-card-hover/40 text-micro font-bold uppercase tracking-wide text-content-3`}>
+                                    <div className={`hidden @4xl:grid ${COLUMNAS} gap-2 px-3 py-2 border-b border-divider bg-surface-card-hover/40 text-micro font-black uppercase tracking-widest text-content-3`}>
                                         <span>Producto</span><span className="text-center">Cantidad</span><span>Presentación</span>
                                         <span>Precio {conIva ? 'c/IVA' : 's/IVA'} · lista</span><span>Descuento</span>
                                         <span className="text-right">Importe</span><span />
@@ -1323,7 +1323,7 @@ export default function DistribucionVentaView() {
                             </div>
                         </section>
                         <section data-surface="card" className="p-3 flex flex-col gap-2" aria-label="Teclas rápidas">
-                            <p className="text-micro font-bold uppercase tracking-wide text-content-3">Teclas</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-3">Teclas</p>
                             <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-3 gap-y-1 items-center text-caption">
                                 {TECLAS.map(([k, t]) => (
                                     <React.Fragment key={k}>

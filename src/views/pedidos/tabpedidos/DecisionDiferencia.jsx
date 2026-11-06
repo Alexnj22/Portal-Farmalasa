@@ -132,7 +132,7 @@ export default function DecisionDiferencia({
                 {/* Rediseño 2026-10-08: cada salida dice en su propia tarjeta
                     QUÉ VA A PASAR si se elige — antes había que tocar las dos
                     para leer la explicación, que vivía en un párrafo aparte. */}
-                <p className="text-micro font-semibold text-content-3 uppercase tracking-wider">
+                <p className="text-micro font-black text-content-3 uppercase tracking-widest">
                     ¿Cómo se arregla?
                 </p>
                 <SegmentedControl

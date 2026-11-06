@@ -78,7 +78,7 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
         <div className="space-y-6">
             {puedeGestionar && (
                 <section data-surface="card" className="p-4 space-y-3">
-                    <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Agregar a la biblioteca</h3>
+                    <h3 className="text-label uppercase tracking-widest font-black text-content-2">Agregar a la biblioteca</h3>
                     <div className="grid gap-3 sm:grid-cols-3">
                         <Campo rotulo="Qué es">
                             <LiquidSelect value={form.tipo} clearable={false}
@@ -119,7 +119,7 @@ export default function TabBiblioteca({ recursos, marcas, firmadas, puedeGestion
 
             {grupos.map((g) => (
                 <section key={g.id || 'todas'} className="space-y-3">
-                    <h3 className="flex items-center gap-2 text-label uppercase tracking-wide font-semibold text-content-2">
+                    <h3 className="flex items-center gap-2 text-label uppercase tracking-widest font-black text-content-2">
                         {g.color && <span className={`w-2.5 h-2.5 rounded-full ${puntoDeMarca(g.color)}`} aria-hidden />}
                         {g.nombre}
                     </h3>

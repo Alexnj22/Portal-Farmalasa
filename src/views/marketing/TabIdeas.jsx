@@ -303,7 +303,7 @@ function TarjetaDeIdea({
 function Paso({ rotulo, id, cuando, personas }) {
     return (
         <li className="flex items-center gap-2 min-w-0">
-            <span className="w-[74px] shrink-0 text-micro uppercase tracking-wide font-semibold text-content-3">{rotulo}</span>
+            <span className="w-[74px] shrink-0 text-micro uppercase tracking-widest font-black text-content-3">{rotulo}</span>
             <span className="min-w-0 flex-1"><Quien id={id} personas={personas} px={20} /></span>
             <span className="text-micro text-content-3 shrink-0 tabular-nums">
                 {cuando ? fechaHora12(cuando, { day: 'numeric', month: 'short' }) : ''}

@@ -70,7 +70,7 @@ const FormAnnouncements = ({ data }) => {
             <h3 className="text-title md:text-2xl font-black text-content tracking-tight leading-none truncate mb-1 drop-shadow-sm">
                 {readersModal.title || 'Sin Título'}
             </h3>
-            <p className="text-caption md:text-label font-bold text-content-3 uppercase tracking-[0.2em]">
+            <p className="text-caption md:text-label font-black text-content-3 uppercase tracking-widest">
                 Reporte de Lecturas
             </p>
         </div>
@@ -133,7 +133,7 @@ const FormAnnouncements = ({ data }) => {
                             <p className="text-body-sm font-black text-content truncate" title={emp.name}>
                               {shortEmployeeName(emp)}
                             </p>
-                            <p className="text-micro text-content-3 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
+                            <p className="text-micro text-content-3 font-black uppercase tracking-widest truncate mt-0.5">{emp.role}</p>
                           </div>
                         </div>
                       ))}
@@ -187,7 +187,7 @@ const FormAnnouncements = ({ data }) => {
                             <p className="text-body-sm font-bold text-content-2 truncate transition-colors group-hover:text-content" title={emp.name}>
                               {shortEmployeeName(emp)}
                             </p>
-                            <p className="text-micro text-content-2 font-bold uppercase tracking-wider truncate mt-0.5">{emp.role}</p>
+                            <p className="text-micro text-content-2 font-black uppercase tracking-widest truncate mt-0.5">{emp.role}</p>
                           </div>
                         </div>
                       ))}

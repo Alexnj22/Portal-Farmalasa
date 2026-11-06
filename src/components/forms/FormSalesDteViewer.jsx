@@ -101,7 +101,7 @@ const FormSalesDteViewer = ({ formData }) => {
                             <h3 className="text-title-sm font-black text-content">
                                 {dte?.receptor?.nombre || document?.cliente || 'Documento'}
                             </h3>
-                            <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5">
+                            <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">
                                 {esCCF ? 'CCF' : 'COF'}
                                 {' · '}{ident.numeroControl || document?.numero_control || codigo}
                             </p>
@@ -165,11 +165,11 @@ const FormSalesDteViewer = ({ formData }) => {
                                 <table className="w-full text-label">
                                     <thead>
                                         <tr className="border-b border-divider text-content-3 font-semibold">
-                                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">#</th>
-                                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3">Descripción</th>
-                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-center">Cant.</th>
-                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">P. Unit.</th>
-                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-wider text-content-3 text-right">Total</th>
+                                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-widest text-content-3">#</th>
+                                            <th className="text-left px-3 py-2 text-caption font-black uppercase tracking-widest text-content-3">Descripción</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-widest text-content-3 text-center">Cant.</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-widest text-content-3 text-right">P. Unit.</th>
+                                            <th className="px-3 py-2 text-caption font-black uppercase tracking-widest text-content-3 text-right">Total</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-divider">

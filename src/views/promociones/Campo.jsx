@@ -34,7 +34,7 @@ import React from 'react';
 export default function Campo({ rotulo, falta = false, children }) {
     return (
         <div className="space-y-1 min-w-0">
-            <span className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5">
+            <span className="text-label uppercase tracking-widest font-black text-content-2 flex items-center gap-1.5">
                 {rotulo}
                 {falta && <span className="text-danger" aria-label="requerido">*</span>}
             </span>

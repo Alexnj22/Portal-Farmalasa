@@ -29,10 +29,10 @@ const ScheduleChart = ({
                     </span>
                     {/* Legend inline */}
                     <div className="hidden md:flex items-center gap-2">
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-muerta" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Muerta</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-normal" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Normal</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-pico" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Pico</span></div>
-                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-critica" /><span className="text-micro font-bold text-content-2 uppercase tracking-widest">Crítica</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-muerta" /><span className="text-micro font-black text-content-2 uppercase tracking-widest">Muerta</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-normal" /><span className="text-micro font-black text-content-2 uppercase tracking-widest">Normal</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-pico" /><span className="text-micro font-black text-content-2 uppercase tracking-widest">Pico</span></div>
+                        <div className="flex items-center gap-1"><div className="w-1.5 h-1.5 rounded-full bg-txvol-critica" /><span className="text-micro font-black text-content-2 uppercase tracking-widest">Crítica</span></div>
                     </div>
                 </div>
 

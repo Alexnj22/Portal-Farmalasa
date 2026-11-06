@@ -55,7 +55,7 @@ export default function TorogozLoginView() {
                     <img src={MARCA_DISTRIBUIDORA.icono} alt={MARCA_DISTRIBUIDORA.nombre} className="w-16 h-16 rounded-2xl" />
                     <div>
                         <h1 className="text-display font-black text-content leading-tight">{MARCA_DISTRIBUIDORA.nombre}</h1>
-                        <p className="text-caption font-black text-brand-text uppercase tracking-[0.25em]">{MARCA_DISTRIBUIDORA.bajada}</p>
+                        <p className="text-caption font-black text-brand-text uppercase tracking-widest">{MARCA_DISTRIBUIDORA.bajada}</p>
                     </div>
                 </div>
                 {cambiarClave ? (

@@ -1430,7 +1430,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                     data-surface="dropdown"
                     className="px-3 py-2 min-w-[148px]"
                 >
-                    <div className="text-micro font-bold text-warning uppercase tracking-wide mb-1.5">Sucursales pendientes</div>
+                    <div className="text-micro font-black text-warning uppercase tracking-widest mb-1.5">Sucursales pendientes</div>
                     {bodegaTooltip.pending.map(b => (
                         <div key={b.erp_sucursal_id} className="flex items-center justify-between gap-3">
                             <span className="text-caption text-content-2 font-medium">{ERP_NAMES[b.erp_sucursal_id] ?? `Suc. ${b.erp_sucursal_id}`}</span>
@@ -1541,7 +1541,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                         número que había que ir a buscar a la fila de atrás. */}
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex flex-col gap-0.5">
-                                            <span className="text-micro font-black uppercase tracking-wide text-content-3">Vigente</span>
+                                            <span className="text-micro font-black uppercase tracking-widest text-content-3">Vigente</span>
                                             <span className="text-h3 font-black tabular-nums text-content leading-none">
                                                 {Number(historyRow.effective_min ?? 0).toLocaleString('es-SV')}
                                                 <span className="text-content-3 mx-1.5">·</span>
@@ -1589,7 +1589,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                                 );
                             })()}
                             {!historyLoading && historyLogs.length > 0 && (
-                                <span className="text-micro font-black uppercase tracking-wide text-content-3 mt-1 px-0.5">
+                                <span className="text-micro font-black uppercase tracking-widest text-content-3 mt-1 px-0.5">
                                     Todo lo que pasó
                                 </span>
                             )}

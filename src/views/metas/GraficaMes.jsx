@@ -102,7 +102,7 @@ export default function GraficaMes({ data, vista, onVista, ocultarMontos = false
                                 <span className="text-title-sm font-black tabular-nums text-content-2 leading-none">
                                     {porVenir}
                                 </span>
-                                <span className="text-micro font-bold uppercase tracking-widest text-content-3 leading-tight mt-1">
+                                <span className="text-micro font-black uppercase tracking-widest text-content-3 leading-tight mt-1">
                                     días por<br />venir
                                 </span>
                             </div>

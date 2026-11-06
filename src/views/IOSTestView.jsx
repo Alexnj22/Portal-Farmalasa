@@ -281,7 +281,7 @@ const IOSTestView = () => {
                                             conclusión sin su dato, y si el veredicto está mal
                                             no habría con qué darse cuenta. */}
                                         <div className="mt-2 flex flex-col gap-0.5">
-                                            <div className="flex text-micro font-black uppercase tracking-wider text-content-3">
+                                            <div className="flex text-micro font-black uppercase tracking-widest text-content-3">
                                                 <span className="w-12">ms</span>
                                                 <span className="w-20">documento</span>
                                                 <span className="w-12">vista</span>
@@ -410,7 +410,7 @@ const IOSTestView = () => {
                     </p>
                     <div className="flex items-center gap-1.5 mt-2">
                         <Layers size={12} className="text-warning" />
-                        <span className="text-label font-bold text-warning uppercase tracking-wider">Solo visible para SUPERADMIN y ADMIN</span>
+                        <span className="text-label font-black text-warning uppercase tracking-widest">Solo visible para SUPERADMIN y ADMIN</span>
                     </div>
                 </Card>
 

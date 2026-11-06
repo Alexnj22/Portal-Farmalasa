@@ -54,7 +54,7 @@ export default function IncentivosEncuesta({ encuesta, puedeEditar }) {
     return (
         <section data-surface="card" className="p-4 space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2 flex items-center gap-1.5 flex-1">
+                <h3 className="text-label uppercase tracking-widest font-black text-content-2 flex items-center gap-1.5 flex-1">
                     <Gift size={13} /> Incentivos
                 </h3>
                 <span className="text-body-sm text-content-2">

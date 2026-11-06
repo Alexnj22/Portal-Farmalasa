@@ -110,7 +110,7 @@ function ActionButton({ icon: Icon, label, onClick, title, color = 'slate', disa
             className={`flex flex-col items-center justify-center gap-0.5 w-14 h-12 rounded-xl transition-colors disabled:opacity-40 disabled:pointer-events-none ${ACTION_COLORS[color]}`}
         >
             <Icon size={15} strokeWidth={2.5} />
-            <span className="text-micro font-bold uppercase tracking-wide leading-none text-center">{label}</span>
+            <span className="text-micro font-black uppercase tracking-widest leading-none text-center">{label}</span>
         </button>
     );
 }
@@ -334,7 +334,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         return (
             <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3">
                 <ScanSearch size={15} className="animate-pulse" />
-                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Analizando</span>
+                <span className="text-micro font-black uppercase tracking-widest leading-none mt-0.5">Analizando</span>
             </div>
         );
     }
@@ -352,7 +352,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         return (
             <div className="flex flex-col items-center justify-center w-14 h-12 text-danger" role="img" title={result.error}>
                 <AlertTriangle size={15} />
-                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Error</span>
+                <span className="text-micro font-black uppercase tracking-widest leading-none mt-0.5">Error</span>
             </div>
         );
     }
@@ -360,7 +360,7 @@ function DetectCodeAction({ pdfPath, detectedCodigo, serverChecked, onFound, com
         return (
             <div className="flex flex-col items-center justify-center w-14 h-12 text-content-3" role="img" title={`Código completo: ${result.code} — todavía no aparece entre los documentos`}>
                 <ScanSearch size={15} />
-                <span className="text-micro font-bold uppercase tracking-wide leading-none mt-0.5">Sin hallar</span>
+                <span className="text-micro font-black uppercase tracking-widest leading-none mt-0.5">Sin hallar</span>
             </div>
         );
     }

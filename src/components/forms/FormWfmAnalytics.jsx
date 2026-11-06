@@ -291,7 +291,7 @@ const FormWfmAnalytics = ({ branches }) => {
                 {isLoading ? (
                     <AiThinkingState title="Analizando la operación" className="flex-1 relative z-base" />
                 ) : chartData.length === 0 ? (
-                    <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-content-2 text-label font-bold uppercase tracking-widest relative z-base">
+                    <div className="flex-1 flex flex-col items-center justify-center gap-2.5 text-content-2 text-label font-black uppercase tracking-widest relative z-base">
                         <Activity size={32} />
                          No hay datos de ventas registrados para este período.
                     </div>
@@ -325,10 +325,10 @@ const FormWfmAnalytics = ({ branches }) => {
                 de arriba, así que el mismo CARRIL — que además los empareja: eran dos
                 píldoras gemelas con dos materiales escritos por separado. */}
             <div data-surface="tab-track" className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 py-3.5 px-6 mt-2">
-                <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
-                <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-brand shadow-sm"></div> Tráfico Normal</div>
-                <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#F79009] shadow-sm"></div> Hora Pico (Aviso)</div>
-                <div className="flex items-center gap-2.5 text-caption sm:text-label font-extrabold text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF2D55] shadow-sm"></div> Hora Crítica</div>
+                <div className="flex items-center gap-2.5 text-caption sm:text-label font-black text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#64748b] shadow-sm"></div> Valle / Muerta</div>
+                <div className="flex items-center gap-2.5 text-caption sm:text-label font-black text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-brand shadow-sm"></div> Tráfico Normal</div>
+                <div className="flex items-center gap-2.5 text-caption sm:text-label font-black text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#F79009] shadow-sm"></div> Hora Pico (Aviso)</div>
+                <div className="flex items-center gap-2.5 text-caption sm:text-label font-black text-content-2 uppercase tracking-widest"><div className="w-3.5 h-3.5 rounded-full bg-[#FF2D55] shadow-sm"></div> Hora Crítica</div>
             </div>
         </div>
     );

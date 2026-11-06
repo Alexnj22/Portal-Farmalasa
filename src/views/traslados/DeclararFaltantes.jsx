@@ -88,7 +88,7 @@ export default function DeclararFaltantes({
 
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-            <p className="text-micro font-black text-content uppercase tracking-wider">
+            <p className="text-micro font-black text-content uppercase tracking-widest">
                 Qué faltó
             </p>
             <p className="text-micro text-content-3 font-medium leading-snug">

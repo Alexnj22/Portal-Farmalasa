@@ -180,14 +180,14 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
                 { label: 'ID Venta',      value: `#${inv.id}`, mono: true },
               ].map(({ label, value, mono }, i) => (
                 <div key={i} className={`px-3 py-1.5 ${i > 0 ? 'border-t border-divider' : ''}`}>
-                  <p className="text-micro font-black text-content-2 uppercase tracking-wider">{label}</p>
+                  <p className="text-micro font-black text-content-2 uppercase tracking-widest">{label}</p>
                   <p className={`text-label font-bold text-content-2 ${mono ? 'font-mono' : ''}`}>{value}</p>
                 </div>
               ))}
             </div>
             <div>
               <div className="px-3 py-1.5 border-b border-divider">
-                <p className="text-micro font-black text-content-2 uppercase tracking-wider">Vendedor</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Vendedor</p>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   <VendorAvatar employee={vendor} size={5} />
                   <p className="text-label font-bold text-content-2 truncate">
@@ -196,11 +196,11 @@ function InvoiceDetail({ inv, onBack, onModify, employees, cajaAbierta }) {
                 </div>
               </div>
               <div className="px-3 py-1.5 border-b border-divider">
-                <p className="text-micro font-black text-content-2 uppercase tracking-wider">Fecha</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Fecha</p>
                 <p className="text-body-sm font-black text-content">{fmtDate(inv.fecha)}</p>
               </div>
               <div className="px-3 py-1.5">
-                <p className="text-micro font-black text-content-2 uppercase tracking-wider">Total</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Total</p>
                 <p className="text-body font-black text-content">{fmtCurrency(inv.total)}</p>
               </div>
             </div>

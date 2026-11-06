@@ -581,7 +581,7 @@ export default function TabConfirmacion({ salaNombre, canEdit, canApprove, reloa
                     </span>
                     <div className="min-w-0 flex-1">
                         <h3 className="text-body font-black leading-tight truncate">{salaNombre(r.branch_id)}</h3>
-                        <p className="text-caption font-bold text-content-3 uppercase tracking-widest mt-0.5">{ymLabelCorto(r.year_month)}</p>
+                        <p className="text-caption font-black text-content-3 uppercase tracking-widest mt-0.5">{ymLabelCorto(r.year_month)}</p>
                     </div>
                     <Badge variant={es.variante} size="sm">{es.label}</Badge>
                 </header>

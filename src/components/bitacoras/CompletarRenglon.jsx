@@ -78,7 +78,7 @@ const MODOS = [
  */
 const Rotulo = ({ texto, ayuda, children }) => (
     <label className="block">
-        <span className="block text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">
+        <span className="block text-label font-black uppercase tracking-widest text-content-3 mb-1.5">
             {texto}
         </span>
         {children}
@@ -453,7 +453,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                         <span className="text-body font-black text-brand-text tabular-nums">
                             {num(renglon.cantidad)}
-                            <span className="ml-1 text-caption font-bold uppercase tracking-wider text-content-3">
+                            <span className="ml-1 text-caption font-black uppercase tracking-widest text-content-3">
                                 {Number(renglon.cantidad) === 1 ? 'entregada' : 'entregadas'}
                             </span>
                         </span>
@@ -636,7 +636,7 @@ export default function CompletarRenglon({ renglon, branchId, onCerrar }) {
                                 médico con apellido parecido. */}
                             {candidatos.length > 0 && (
                                 <div className="space-y-1.5">
-                                    <p className="text-label font-bold uppercase tracking-widest text-content-3">
+                                    <p className="text-label font-black uppercase tracking-widest text-content-3">
                                         {candidatos.length} coinciden — elige cuál
                                     </p>
                                     <ul className="space-y-1.5 max-h-56 overflow-y-auto">

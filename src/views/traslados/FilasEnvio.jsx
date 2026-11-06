@@ -190,7 +190,7 @@ function Cabecera({ envio, tono = 'brand', ahora = null }) {
             <span className={`shrink-0 w-[3.75rem] rounded-xl px-1 py-1.5 flex flex-col items-center
                               justify-center ring-1 ring-inset ${paleta}`}>
                 <span className="text-title-sm font-black leading-none tabular-nums">{n}</span>
-                <span className="mt-1 text-micro font-black uppercase tracking-wider leading-none opacity-80">
+                <span className="mt-1 text-micro font-black uppercase tracking-widest leading-none opacity-80">
                     {n === 1 ? 'producto' : 'prod.'}
                 </span>
             </span>

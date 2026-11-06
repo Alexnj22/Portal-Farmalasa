@@ -463,7 +463,7 @@ const LiquidDatePicker = ({
                 {currentMode === 'days' && (
                     <div className="animate-in fade-in duration-[var(--dur-slow)]" onMouseLeave={() => setHoverDate(null)}>
                         <div className="grid grid-cols-7 gap-1 mb-2">
-                            {DAYS.map(d => <div key={d} className="text-center text-caption font-black text-content-2 uppercase tracking-wider">{d}</div>)}
+                            {DAYS.map(d => <div key={d} className="text-center text-caption font-black text-content-2 uppercase tracking-widest">{d}</div>)}
                         </div>
                         
                         <div className="grid grid-cols-7 gap-y-1 gap-x-0 relative">

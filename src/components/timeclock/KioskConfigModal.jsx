@@ -73,13 +73,13 @@ const KioskConfigModal = ({
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Kiosco Activo
             </h2>
-            <p className="text-micro sm:text-body-sm font-bold uppercase tracking-[0.25em] text-success/80 transition-colors px-2 mb-6">
+            <p className="text-micro sm:text-body-sm font-black uppercase tracking-widest text-success/80 transition-colors px-2 mb-6">
               Dispositivo Autorizado
             </p>
 
             {/* Info de Sucursal (Mini Glass Card) */}
             <div className="w-full bg-white/5 border border-white/10 rounded-2xl p-4 shadow-[var(--shadow-shine-lg)] mb-6 flex flex-col items-center justify-center">
-              <p className="text-white/40 text-micro font-semibold uppercase tracking-widest mb-1">
+              <p className="text-white/40 text-micro font-black uppercase tracking-widest mb-1">
                 Sucursal Asignada
               </p>
               <p className="text-white text-title-sm sm:text-title font-bold truncate w-full px-2">
@@ -101,7 +101,7 @@ const KioskConfigModal = ({
             <h2 className="text-2xl sm:text-3xl font-semibold text-white tracking-tight leading-tight mb-1.5 transition-colors">
               Vincular Kiosco
             </h2>
-            <p className="text-micro sm:text-body-sm font-bold uppercase tracking-[0.25em] text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
+            <p className="text-micro sm:text-body-sm font-black uppercase tracking-widest text-chart-1-text/80 transition-colors px-2 mb-6 sm:mb-8">
               Configuración Inicial
             </p>
 

@@ -81,7 +81,7 @@ export default function SidebarSyncStatus() {
             ? <AlertTriangle size={10} className="text-danger" />
             : <CheckCircle2  size={10} className={allGood ? 'text-success' : dimIconCls} />
           }
-          <span className={`text-micro font-semibold uppercase tracking-wider ${labelCls}`}>Datos</span>
+          <span className={`text-micro font-black uppercase tracking-widest ${labelCls}`}>Datos</span>
         </div>
         {/* Dots row */}
         <div className="flex items-center justify-center gap-[3px] flex-wrap">
@@ -116,7 +116,7 @@ export default function SidebarSyncStatus() {
       {!isSupported ? (
         <div className={`flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2 border opacity-30 ${cardCls}`}>
           <BellOff size={14} className={dimIconCls} />
-          <span className={`text-micro uppercase tracking-wider font-semibold ${labelCls}`}>N/D</span>
+          <span className={`text-micro uppercase tracking-widest font-black ${labelCls}`}>N/D</span>
         </div>
       ) : (
         <button

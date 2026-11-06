@@ -113,7 +113,7 @@ const StatusBadge = ({ status }) => {
 };
 
 const InputLabel = ({ children }) => (
-    <p className="text-caption font-black text-content-3 uppercase tracking-[0.15em] mb-1.5 ml-1">{children}</p>
+    <p className="text-caption font-black text-content-3 uppercase tracking-widest mb-1.5 ml-1">{children}</p>
 );
 
 
@@ -274,7 +274,7 @@ const GanttChart = ({ plans, year }) => {
                             <React.Fragment key={emp?.id || bars[0]?.employee_id}>
                                 {showHeader && branchName && (
                                     <div className="flex items-center gap-2 mt-3 mb-1 ml-0 pr-0">
-                                        <span className="text-micro font-black uppercase tracking-[0.2em] text-content-3 w-[160px] text-right pr-3 shrink-0">
+                                        <span className="text-micro font-black uppercase tracking-widest text-content-3 w-[160px] text-right pr-3 shrink-0">
                                             {branchName}
                                         </span>
                                         <div className="flex-1 h-px bg-divider" />
@@ -328,7 +328,7 @@ const GanttChart = ({ plans, year }) => {
                     {Object.entries(STATUS_META).filter(([k]) => k !== 'CANCELLED').map(([k, m]) => (
                         <div key={k} className="flex items-center gap-1.5">
                             <div className={`w-3 h-3 rounded-sm ${m.bar}`} />
-                            <span className="text-micro font-bold text-content-2 uppercase tracking-widest">{m.label}</span>
+                            <span className="text-micro font-black text-content-2 uppercase tracking-widest">{m.label}</span>
                         </div>
                     ))}
                 </div>

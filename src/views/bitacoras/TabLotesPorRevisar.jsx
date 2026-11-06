@@ -302,7 +302,7 @@ function CorregirLote({ revision, onCerrar }) {
                             hasError={Boolean(p.lote) && fundido(p.lote)}
                             helperText={p.lote && fundido(p.lote) ? 'Un lote por fila' : undefined} />
                         <label className="block">
-                            <span className="block text-label font-bold uppercase tracking-widest text-content-3 mb-1.5">Vence</span>
+                            <span className="block text-label font-black uppercase tracking-widest text-content-3 mb-1.5">Vence</span>
                             <LiquidDatePicker value={p.vence} onChange={(v) => cambiar(k, 'vence', v || '')} />
                         </label>
                         <PortalInput label="Cantidad" name={`cantidad-${k}`} type="number" inputMode="decimal"

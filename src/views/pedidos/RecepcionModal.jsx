@@ -75,7 +75,7 @@ function LotesDelRenglon({ row }) {
 
     return (
         <span className="flex flex-col gap-0.5 mt-1 font-normal">
-            <span className="text-micro text-content-3 uppercase tracking-wide">
+            <span className="text-micro text-content-3 font-black uppercase tracking-widest">
                 {lotes.length === 1 ? 'Debe venir del lote' : `Debe venir de ${lotes.length} lotes`}
             </span>
             {lotes.map((l, i) => {
@@ -365,7 +365,7 @@ function SueltoRapido({ rows, confirmados = [], hojaDe, sueltosOk, saving, onRec
 
             {yaHits.length > 0 && (
                 <div className="mt-3">
-                    <p className="text-caption font-bold text-content-3 uppercase tracking-wide px-1">
+                    <p className="text-caption font-black text-content-3 uppercase tracking-widest px-1">
                         Ya lo contaste
                     </p>
                     {yaHits.map(r => (
@@ -1702,7 +1702,7 @@ export default function RecepcionModal({
                         correccion={correccionBag}
                     />
 
-                    <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2 mt-4">Hojas del despacho</p>
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-2 mt-4">Hojas del despacho</p>
                     <div className="flex flex-col gap-1.5">
                         {allHojaNums.map(hojaNum => {
                             const isContada  = hojaEstado[hojaNum] === 'contada';
@@ -1803,7 +1803,7 @@ export default function RecepcionModal({
                     {/* Cajas especiales */}
                     {especialItems.length > 0 && (
                         <div className="mt-4">
-                            <p className="text-caption font-bold text-content-2 uppercase tracking-wide mb-2">Cajas especiales</p>
+                            <p className="text-caption font-black text-content-2 uppercase tracking-widest mb-2">Cajas especiales</p>
                             {/* Dos columnas hasta seis baldosas: el nombre del producto es
                                 lo que se busca en el estante, y en tres columnas no le
                                 queda ancho para leerse entero. */}
@@ -2087,13 +2087,13 @@ export default function RecepcionModal({
                         <div data-pegajoso className="sticky top-0 z-header border-b-2 border-divider shadow-sm">
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 px-5 pt-2.5 pb-1`}>
                                 <span />
-                                <span className="col-span-2 text-center text-caption font-bold text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Lo que llegó</span>
+                                <span className="col-span-2 text-center text-caption font-black text-chart-9-text uppercase tracking-widest border-b-2 border-chart-9 pb-1">Lo que llegó</span>
                                 <span />
                             </div>
                             <div className={`grid ${EXTRAS_GRID} gap-x-2 items-center px-5 py-2`}>
-                                <span className="text-caption font-bold text-content-2 uppercase tracking-wide">Producto</span>
-                                <span className="text-caption font-bold text-chart-9-text uppercase text-center">Pres.</span>
-                                <span className="text-caption font-bold text-chart-9-text uppercase text-center">Cant.</span>
+                                <span className="text-caption font-black text-content-2 uppercase tracking-widest">Producto</span>
+                                <span className="text-caption font-black text-chart-9-text uppercase tracking-widest text-center">Pres.</span>
+                                <span className="text-caption font-black text-chart-9-text uppercase tracking-widest text-center">Cant.</span>
                                 <span />
                             </div>
                         </div>
@@ -2384,10 +2384,10 @@ export default function RecepcionModal({
                         </div>
                     )}
                     <div className={`grid ${GRID} gap-x-2 items-center px-5 pt-1.5 pb-2`}>
-                        <span className="text-micro font-semibold text-content-3 uppercase tracking-wider">Producto</span>
-                        <span className="text-micro font-semibold text-content-3 uppercase tracking-wider text-center">Enviado</span>
-                        <span className="text-micro font-semibold text-content-3 uppercase tracking-wider text-center">Presentación</span>
-                        <span className="text-micro font-semibold text-chart-9-text uppercase tracking-wider text-center">Llegó</span>
+                        <span className="text-micro font-black text-content-3 uppercase tracking-widest">Producto</span>
+                        <span className="text-micro font-black text-content-3 uppercase tracking-widest text-center">Enviado</span>
+                        <span className="text-micro font-black text-content-3 uppercase tracking-widest text-center">Presentación</span>
+                        <span className="text-micro font-black text-chart-9-text uppercase tracking-widest text-center">Llegó</span>
                         <span />
                     </div>
                     {/* La regla de la pantalla en una línea, donde se cuenta. Sin

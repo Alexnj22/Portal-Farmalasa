@@ -565,11 +565,11 @@ export default function EncuestaAdminView() {
                                     <label className={rotuloCampo('text-content-3', { denso: true })}><span className="flex items-center gap-1.5"><CalendarRange size={10} strokeWidth={2.5} /> Período de aplicación</span></label>
                                     <div className="grid grid-cols-2 gap-3">
                                         <div>
-                                            <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Inicio</p>
+                                            <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-1 ml-1">Inicio</p>
                                             <LiquidDatePicker value={sfFechaInicio} onChange={setSfFechaInicio} />
                                         </div>
                                         <div>
-                                            <p className="text-micro font-black text-content-3 uppercase tracking-[0.12em] mb-1 ml-1">Fin</p>
+                                            <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-1 ml-1">Fin</p>
                                             <LiquidDatePicker value={sfFechaFin} onChange={setSfFechaFin} />
                                         </div>
                                     </div>
@@ -1019,7 +1019,7 @@ export default function EncuestaAdminView() {
                                             </div>
                                             <div className="flex items-center gap-2">
                                                 {(s.fecha_inicio || s.fecha_fin) && (
-                                                    <div className="flex items-center gap-1 text-label text-content-2 font-bold uppercase tracking-widest">
+                                                    <div className="flex items-center gap-1 text-label text-content-2 font-black uppercase tracking-widest">
                                                         <CalendarRange size={12} strokeWidth={2} />
                                                         {s.fecha_inicio}{s.fecha_fin ? ` → ${s.fecha_fin}` : ''}
                                                     </div>
@@ -1105,12 +1105,12 @@ export default function EncuestaAdminView() {
                                                                 <table className="w-full min-w-[520px]">
                                                                     <thead>
                                                                         <tr className="border-b border-border-card">
-                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-micro font-black uppercase tracking-wider text-content-2">Empleado</th>
-                                                                            <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2">Rol</th>
+                                                                            <th className="text-left py-2.5 pl-5 pr-3 text-micro font-black uppercase tracking-widest text-content-2">Empleado</th>
+                                                                            <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-widest text-content-2">Rol</th>
                                                                             {bloques.map(b => (
-                                                                                <th key={b.id} className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2 cursor-help"><LiquidTooltip content={b.nombre || `Bloque ${b.numero}`}>B{b.numero}</LiquidTooltip></th>
+                                                                                <th key={b.id} className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-widest text-content-2 cursor-help"><LiquidTooltip content={b.nombre || `Bloque ${b.numero}`}>B{b.numero}</LiquidTooltip></th>
                                                                             ))}
-                                                                            <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-wider text-content-2">Global</th>
+                                                                            <th className="text-center py-2.5 px-2 text-micro font-black uppercase tracking-widest text-content-2">Global</th>
                                                                             <th className="py-2.5 w-20 pr-3" />
                                                                         </tr>
                                                                     </thead>
@@ -1265,7 +1265,7 @@ export default function EncuestaAdminView() {
                                                                                                     })}
                                                                                                     {row.comentario && (
                                                                                                         <div data-surface="card" className="px-4 py-3">
-                                                                                                            <p className="text-micro font-black uppercase tracking-wider text-content-2 mb-1">Comentario</p>
+                                                                                                            <p className="text-micro font-black uppercase tracking-widest text-content-2 mb-1">Comentario</p>
                                                                                                             <p className="text-body-sm text-content-2 leading-relaxed">{row.comentario}</p>
                                                                                                         </div>
                                                                                                     )}

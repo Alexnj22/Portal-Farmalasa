@@ -2823,7 +2823,7 @@ const DashboardView = ({ openModal }) => {
               <>
               {ausHoy.length > 0 && (
                 <div className="px-4 py-3">
-                  <div className="flex items-center gap-2 mb-2"><span className="w-2 h-2 rounded-full bg-danger"/><span className="text-caption font-black uppercase tracking-wide text-content-2">Con ausencia</span><Badge variant="danger" size="sm">{ausHoy.length}</Badge></div>
+                  <div className="flex items-center gap-2 mb-2"><span className="w-2 h-2 rounded-full bg-danger"/><span className="text-caption font-black uppercase tracking-widest text-content-2">Con ausencia</span><Badge variant="danger" size="sm">{ausHoy.length}</Badge></div>
                   <div className="space-y-1">
                     {ausHoy.map(r => {
                       const cfgA = ABSENCE_COLORS[r.clave] || ABSENCE_COLORS.PERMIT;
@@ -2843,7 +2843,7 @@ const DashboardView = ({ openModal }) => {
                 const cfg = status==='ABSENT' && !hayMarcaciones ? SIN_MARCACIONES_AUN : cfgBase;
                 return (
                   <div key={status} className="px-4 py-3">
-                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-wide text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
+                    <div className="flex items-center gap-2 mb-2"><span className={`w-2 h-2 rounded-full ${cfg.dot}`}/><span className="text-caption font-black uppercase tracking-widest text-content-2">{cfg.label}</span><Badge variant={cfg.variante} size="sm">{group.length}</Badge></div>
                     <div className="flex flex-wrap gap-1">{group.map(e=><Badge key={e.id} variant={cfg.variante} size="sm" uppercase={false}>{shortEmployeeName(e)}</Badge>)}</div>
                   </div>
                 );
@@ -2926,7 +2926,7 @@ const DashboardView = ({ openModal }) => {
             )}
             <div className="flex flex-wrap gap-3 mb-3 shrink-0">
               {[['var(--txvol-muerta)','Muerta'],['var(--txvol-normal)','Normal'],['var(--txvol-pico)','Pico'],['var(--txvol-critica)','Crítica']].map(([c,l])=>(
-                <div key={l} className="flex items-center gap-1 text-micro font-bold text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
+                <div key={l} className="flex items-center gap-1 text-micro font-black text-content-2 uppercase tracking-widest"><div className="w-2 h-2 rounded-full" style={{backgroundColor:c}}/>{l}</div>
               ))}
             </div>
             <div className="relative flex-1 min-h-0">
@@ -3268,7 +3268,7 @@ const DashboardView = ({ openModal }) => {
           <div className="px-3 pb-3 pt-1 flex flex-col h-full overflow-hidden">
             {/* Day headers — always visible */}
             <div className="grid grid-cols-7 mb-0.5 shrink-0">
-              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-micro font-black text-content-3 uppercase py-1">{d}</div>)}
+              {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map((d,i)=><div key={i} className="text-center text-micro font-black text-content-3 uppercase tracking-widest py-1">{d}</div>)}
             </div>
             {/* Day grid — scrolls internally if widget is too small */}
             <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 min-h-0 [&::-webkit-scrollbar]:hidden">
@@ -3511,7 +3511,7 @@ const DashboardView = ({ openModal }) => {
               </div>
               <div className="mb-1">
                 <p className="text-body font-black text-success-text">{fmt(cotizStats.total)}</p>
-                <p className="text-micro font-bold text-content-2 uppercase tracking-wide">monto total</p>
+                <p className="text-micro font-black text-content-2 uppercase tracking-widest">monto total</p>
               </div>
             </div>
             <div className="overflow-y-auto overscroll-contain [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] flex-1 divide-y divide-divider">
@@ -3603,14 +3603,14 @@ const DashboardView = ({ openModal }) => {
                 <span className="w-2 h-2 rounded-full bg-danger shrink-0"/>
                 <div>
                   <p className="text-body-lg font-black text-danger-text">{factStats.ccf}</p>
-                  <p className="text-micro font-bold text-danger-text uppercase tracking-wide">CCF</p>
+                  <p className="text-micro font-black text-danger-text uppercase tracking-widest">CCF</p>
                 </div>
               </div>
               <div className="flex items-center gap-2 bg-surface-card-hover rounded-xl px-3 py-2">
                 <span className="w-2 h-2 rounded-full bg-content-3 shrink-0"/>
                 <div>
                   <p className="text-body-lg font-black text-content-2">{factStats.fcf}</p>
-                  <p className="text-micro font-bold text-content-2 uppercase tracking-wide">FCF / otros</p>
+                  <p className="text-micro font-black text-content-2 uppercase tracking-widest">FCF / otros</p>
                 </div>
               </div>
             </div>

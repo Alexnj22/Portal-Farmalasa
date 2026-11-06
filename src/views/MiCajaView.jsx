@@ -2172,7 +2172,7 @@ function Movimiento({ l, corte, saly, abierto, onAlternar, quien, puedeOperar, o
                     <dl className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-2 pt-1">
                         {datos.map(([rotulo, valor, resalta]) => (
                             <div key={rotulo} className="min-w-0">
-                                <dt className="text-micro font-bold uppercase tracking-wider text-content-3">{rotulo}</dt>
+                                <dt className="text-micro font-black uppercase tracking-widest text-content-3">{rotulo}</dt>
                                 <dd className={`text-body-sm break-words ${resalta ? 'text-warning-text font-semibold' : 'text-content'}`}>
                                     {valor}
                                 </dd>
@@ -2182,7 +2182,7 @@ function Movimiento({ l, corte, saly, abierto, onAlternar, quien, puedeOperar, o
                             reclamar. Con su cara, como en cortes y bolsas. */}
                         {quien && (
                             <div className="min-w-0">
-                                <dt className="text-micro font-bold uppercase tracking-wider text-content-3">Lo anotó</dt>
+                                <dt className="text-micro font-black uppercase tracking-widest text-content-3">Lo anotó</dt>
                                 <dd className="flex items-center gap-1.5 text-body-sm text-content">
                                     <AvatarConEstado emp={quien} px={20} marco="" />
                                     <span className="truncate">{shortEmployeeName(quien)}</span>

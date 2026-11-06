@@ -53,7 +53,7 @@ const AuthPromptPanel = ({
           <h1 className="text-2xl sm:text-3xl [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5 transition-colors">
             {promptType === 'IN_AFTER_SHIFT' ? 'Turno Finalizado' : promptType === 'IN_EARLY' ? 'Entrada Anticipada' : promptType === 'OUT_LATE' ? 'Fuera de Tiempo' : promptType === 'IN_EARLY_EXTRA' ? 'Registrar Tiempo Extra' : 'Autorización Requerida'}
           </h1>
-          <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-bold uppercase tracking-[0.25em] text-chart-4-text/80 transition-colors px-2">
+          <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-black uppercase tracking-widest text-chart-4-text/80 transition-colors px-2">
             {promptType === 'IN_AFTER_SHIFT' ? `Tu turno concluyó a las ${shiftEnd ? formatTime(shiftEnd) : '--:--'}` : promptType === 'IN_EARLY' ? `Tu turno inicia a las ${expectedIn ? formatTime(expectedIn) : '--:--'}` : promptType === 'OUT_LATE' && authPrompt.extraMins >= 25 ? `+${authPrompt.extraMins} min de tu salida oficial` : promptType === 'SPECIAL_OUT_REQUEST' ? `Permiso: ${employeeName}` : promptType === 'IN_EARLY_EXTRA' ? `Tiempo extra: ${employeeName}` : `Turno Extra: ${employeeName}`}
           </p>
           <p className="text-white/40 text-caption sm:text-body-sm [@media(max-height:800px)]:hidden leading-relaxed mt-2.5 px-2">
@@ -62,7 +62,7 @@ const AuthPromptPanel = ({
           {requiresSuPin && (
             <div className="mt-2.5 [@media(max-height:800px)]:mt-1 flex items-center justify-center gap-1.5 px-4 py-2 [@media(max-height:800px)]:py-1 rounded-2xl bg-chart-3/10 border border-chart-3/25">
               <ShieldAlert size={11} className="text-chart-3-text shrink-0" />
-              <span className="text-micro sm:text-caption font-bold uppercase tracking-widest text-chart-3-text">Requiere código SU (6 dígitos)</span>
+              <span className="text-micro sm:text-caption font-black uppercase tracking-widest text-chart-3-text">Requiere código SU (6 dígitos)</span>
             </div>
           )}
         </div>

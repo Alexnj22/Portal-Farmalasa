@@ -206,7 +206,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             {/* Header */}
             <div className="flex items-center gap-3 px-5 pt-5 pb-4 border-b border-divider shrink-0">
                 <div className="flex-1">
-                    <p className="text-label font-medium text-content-2 uppercase tracking-wide">Pedido #{pedidoNumero}</p>
+                    <p className="text-label font-black text-content-2 uppercase tracking-widest">Pedido #{pedidoNumero}</p>
                     <h3 className="text-body-lg font-bold text-content leading-tight">{enDetalle ? '¿Cómo llegó cada caja?' : '¿Llegó todo?'}</h3>
                 </div>
                 <Button variant="ghost" icon={X} disabled={submitting} iconOnly onClick={handleClose} />
@@ -270,7 +270,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
             {enDetalle && (<>
             {/* Body — todo el contenido variable va aquí, scrollea cuando no cabe */}
             <div className="flex-1 min-h-0 overflow-y-auto scrollbar-hide px-5 py-4 space-y-4">
-                <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
+                <p className="text-caption text-content-2 uppercase tracking-widest font-black">
                     {cajas.length} caja{cajas.length !== 1 ? 's' : ''} en el pedido
                 </p>
 
@@ -347,7 +347,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                             <span className="text-label font-semibold text-warning-text flex-1">
                                 Cajas de Electrolit
                             </span>
-                            <span className="text-micro font-bold text-warning uppercase tracking-wide">
+                            <span className="text-micro font-black text-warning uppercase tracking-widest">
                                 {electrolitAparte} caja{electrolitAparte !== 1 ? 's' : ''}
                             </span>
                         </div>
@@ -391,7 +391,7 @@ export default function LlegadaModal({ open, onClose, onConfirm, items = [], ped
                         <div className="flex items-center gap-2">
                             <Package size={13} className="text-chart-3-text shrink-0" />
                             <span className="text-label font-semibold text-chart-3-text flex-1">Cajas especiales</span>
-                            <span className="text-micro font-bold text-chart-3-text uppercase tracking-wide">
+                            <span className="text-micro font-black text-chart-3-text uppercase tracking-widest">
                                 {cajasEspeciales.length} caja{cajasEspeciales.length !== 1 ? 's' : ''}
                             </span>
                         </div>

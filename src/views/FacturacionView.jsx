@@ -562,7 +562,7 @@ function BloqueFormaPago({
                 </h3>
                 <Badge uppercase={false}>{filas.length} transacci{filas.length !== 1 ? 'ones' : 'ón'}</Badge>
                 <div className="ml-auto text-right">
-                    <div className="text-micro font-bold uppercase tracking-widest text-content-3">Total pendiente</div>
+                    <div className="text-micro font-black uppercase tracking-widest text-content-3">Total pendiente</div>
                     <div className={`text-title-sm font-black leading-none mt-0.5 ${t.texto}`}>{<Monto v={total} />}</div>
                 </div>
             </div>
@@ -1810,7 +1810,7 @@ function TabSaltos({ branches, filterBranch, currentUser, canEdit, barraFiltros,
                                                             </p>
                                                             {n.fecha && <span className="shrink-0 text-micro font-bold text-content-3 capitalize">{fechaLegible(n.fecha)}</span>}
                                                         </div>
-                                                        <p className="mt-1.5 text-micro font-bold uppercase tracking-widest text-content-3">Le falta</p>
+                                                        <p className="mt-1.5 text-micro font-black uppercase tracking-widest text-content-3">Le falta</p>
                                                         <div className="mt-1 flex flex-wrap gap-1">
                                                             {(n.campos_nulos || []).map(c => (
                                                                 <Badge key={c} variant="danger" size="sm" uppercase={false}>{c}</Badge>
@@ -2207,7 +2207,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                         <>
                             <div className="flex items-center gap-3 pt-2">
                                 <div className="flex-1 h-px bg-surface-card-hover" />
-                                <span className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Ventas a crédito</span>
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3">Ventas a crédito</span>
                                 <div className="flex-1 h-px bg-surface-card-hover" />
                             </div>
                             {CREDIT_TIPOS.filter(t => byTipo[t]?.length > 0).map(tipo => (
@@ -2269,7 +2269,7 @@ function TabNoEfectivo({ branches, filterBranch, searchTerm, currentUser, canEdi
                                        es la ranura que `DataTable` tiene justo para eso. El recuento
                                        lo da ahora `TablePagination` con `filteredTotal`. */
                                     <div className="flex items-center gap-3 flex-wrap">
-                                        <span className="text-caption font-bold uppercase text-content-3 tracking-widest shrink-0">Filtrar:</span>
+                                        <span className="text-caption font-black uppercase text-content-3 tracking-widest shrink-0">Filtrar:</span>
                                         <div className="w-[160px]">
                                             <LiquidSelect value={filterConfirmedTipo} onChange={setFilterConfirmedTipo} options={tipoFilterOpts} placeholder="Tipo pago" compact bare />
                                         </div>

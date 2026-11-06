@@ -221,7 +221,7 @@ function StatCard({ label, value, pct, sub, icon: Icon, grad, text, onClick, act
                 <Icon size={11} className="text-white" strokeWidth={2.5} />
             </div>
             <div className="flex flex-col min-w-0">
-                <span className="text-micro font-bold uppercase tracking-wider text-content-2 leading-none mb-0.5">{label}</span>
+                <span className="text-micro font-black uppercase tracking-widest text-content-2 leading-none mb-0.5">{label}</span>
                 <div className={`flex items-baseline gap-1.5 flex-wrap transition-[filter] duration-[var(--dur-slow)] ${blurred ? 'blur-sm select-none' : ''}`}>
                     <span className={`text-subtitle font-black leading-none ${text}`}>{blurred ? '••••••' : value}</span>
                     {!blurred && pct !== null && pct !== undefined && (
@@ -2373,7 +2373,7 @@ function TabProductos({ filterBranch, setFilterBranch, searchTerm, monthRange, s
                                         movil={{ identidad: 'correlativo', ancla: 'neto_display', chips: ['fecha', 'cliente'] }}
                                         footer={
                                             <>
-                                                <span className="text-caption font-black text-content-3 uppercase tracking-wide">
+                                                <span className="text-caption font-black text-content-3 uppercase tracking-widest">
                                                     Total {filteredDrill.length < drillData.length ? '(filtrado)' : ''}
                                                 </span>
                                                 <span className="flex items-center gap-4">

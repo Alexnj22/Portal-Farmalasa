@@ -79,7 +79,7 @@ export default function DuplicarPromocionModal({ promo, open, onClose, onDuplica
                     />
 
                     <div className="space-y-1 min-w-0">
-                        <span className="text-label uppercase tracking-wide font-semibold text-content-2">
+                        <span className="text-label uppercase tracking-widest font-black text-content-2">
                             Para una sala
                         </span>
                         <LiquidSelect

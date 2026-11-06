@@ -153,13 +153,13 @@ const DocumentCard = ({ doc, openModal, liveBranch, onDeleteClick, puedeEditar }
                 <div className="flex flex-col gap-1.5 mt-2">
                     {Array.isArray(doc.datos) && doc.datos.map(d => (
                         <p key={d.rotulo} className="text-micro font-bold text-content-3 flex items-center gap-1 min-w-0">
-                            <span className="text-content-2 uppercase tracking-widest text-micro shrink-0">{d.rotulo}:</span>
+                            <span className="text-content-2 font-black uppercase tracking-widest text-micro shrink-0">{d.rotulo}:</span>
                             <span className={`truncate ${d.valor ? 'text-content font-mono' : 'italic'}`}>{d.valor || SIN_DATO}</span>
                         </p>
                     ))}
                     {effectiveIssueDate && (
                         <p className="text-micro font-bold text-content-3 flex items-center gap-1">
-                            <span className="text-content-2 uppercase tracking-widest text-micro">Emisión:</span> {formatDate(effectiveIssueDate)}
+                            <span className="text-content-2 font-black uppercase tracking-widest text-micro">Emisión:</span> {formatDate(effectiveIssueDate)}
                         </p>
                     )}
                     {effectiveExpDate && (
@@ -292,7 +292,7 @@ const TabExpediente = ({ liveBranch, openModal, puedeEditar = false }) => {
                 <div className="flex items-center gap-4 w-full md:w-auto">
                     <div className="min-w-0">
                         <h3 className="font-black text-content uppercase tracking-tight text-title">Expediente Digital</h3>
-                        <p className="text-label font-bold text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
+                        <p className="text-label font-black text-content-3 uppercase tracking-widest truncate">Documentación de {liveBranch?.name}</p>
                     </div>
 
                     <div className="hidden sm:block w-px h-8 bg-content-3/60 shrink-0"></div>

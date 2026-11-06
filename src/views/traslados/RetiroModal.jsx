@@ -431,7 +431,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
                         llegar, antes de cargar nada nuevo. */}
                     {paraEstaSala.length > 0 && (
                         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
-                            <p className="text-label font-black uppercase tracking-wide text-content-2">
+                            <p className="text-label font-black uppercase tracking-widest text-content-2">
                                 Dejar en {salaActual.nombre} · {paraEstaSala.length}
                             </p>
                             {paraEstaSala.map(b => (
@@ -499,7 +499,7 @@ export default function RetiroModal({ abierto, onCerrar, onCambio }) {
 
                     {bultos.length > 0 && (
                         <div className="flex flex-col gap-2">
-                            <p className="text-label font-black uppercase tracking-wide text-content-2">
+                            <p className="text-label font-black uppercase tracking-widest text-content-2">
                                 Encima tuyo · {bultos.length}
                             </p>
                             {bultos.map(b => (

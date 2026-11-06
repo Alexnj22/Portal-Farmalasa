@@ -116,14 +116,14 @@ function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
             {...(compacto ? {} : { 'data-surface': 'card' })}
             className={`flex items-center gap-4 flex-wrap ${compacto ? 'px-1 py-0.5' : 'px-4 py-3'}`}>
             <div className="flex flex-col">
-                <span className="text-micro font-bold uppercase tracking-widest text-content-3">Necesidad</span>
+                <span className="text-micro font-black uppercase tracking-widest text-content-3">Necesidad</span>
                 <span className="text-body-lg font-bold tabular-nums leading-tight text-content">
                     {NECESIDAD_EJEMPLO}<span className="text-caption font-semibold text-content-2 ml-1">und.</span>
                 </span>
             </div>
             <ArrowRight size={14} className="text-content-3 shrink-0" aria-hidden="true" />
             <div className="flex flex-col">
-                <span className="text-micro font-bold uppercase tracking-widest text-content-3">Se despacha</span>
+                <span className="text-micro font-black uppercase tracking-widest text-content-3">Se despacha</span>
                 <span className="text-body-lg font-bold tabular-nums leading-tight text-brand-text">
                     {cantidad}<span className="text-caption font-semibold text-content-2 ml-1">{unidad}</span>
                 </span>
@@ -146,7 +146,7 @@ function ResultadoDespacho({ multiplo, tipo, etiqueta, compacto = false }) {
 function TituloColumna({ children, nota }) {
     return (
         <div className="flex items-baseline gap-2 pb-2 mb-3.5 border-b border-divider">
-            <h4 className="text-caption font-extrabold uppercase tracking-wider text-content">{children}</h4>
+            <h4 className="text-caption font-black uppercase tracking-widest text-content">{children}</h4>
             {nota && <span className="text-micro text-content-3">{nota}</span>}
         </div>
     );
@@ -290,7 +290,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Presentaciones del producto */}
             <div>
-                <p className="text-micro text-content-3 uppercase tracking-widest mb-2 font-bold">
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-2 font-black">
                     Presentación de despacho
                 </p>
                 {loadingPres ? (
@@ -387,7 +387,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                         transition={{ duration: 0.18, ease: EASE }}
                         className="space-y-2 mt-4"
                     >
-                        <p className="text-micro text-content-3 uppercase tracking-widest font-bold">Por lote</p>
+                        <p className="text-micro text-content-3 uppercase tracking-widest font-black">Por lote</p>
                         <div className={`flex flex-wrap items-center gap-1.5 ${saving ? 'opacity-60 pointer-events-none' : ''}`}>
                             <SegmentedControl
                                 size="sm"
@@ -430,7 +430,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Etiqueta en PDF */}
             <div className={vals.dispatch_id_presentacion ? '' : 'opacity-45 pointer-events-none'}>
-                <p className="text-micro text-content-3 uppercase tracking-widest mb-1 font-bold">
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-1 font-black">
                     Mostrar en PDF como
                 </p>
                 {/* La ayuda pasa de dos renglones de párrafo a una línea con lo que
@@ -457,7 +457,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
                 relleno de rosa: como botón no se sabía si el rótulo describía el
                 estado actual o lo que iba a pasar al apretarlo. */}
             <div className={`mt-4 ${vals.dispatch_id_presentacion ? '' : 'opacity-45 pointer-events-none'}`}>
-                <p className="text-micro text-content-3 uppercase tracking-widest mb-2 font-bold">Caja especial</p>
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-2 font-black">Caja especial</p>
                 <div className="flex items-center gap-3">
                     <Switch
                         checked={!!vals.caja_especial}
@@ -478,7 +478,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
 
             {/* Notas */}
             <div className="mt-4">
-                <p className="text-micro text-content-3 uppercase tracking-widest mb-1.5 font-bold">
+                <p className="text-micro text-content-3 uppercase tracking-widest mb-1.5 font-black">
                     Notas internas
                     <span className="normal-case tracking-normal font-medium text-content-3"> · se guardan al salir</span>
                 </p>

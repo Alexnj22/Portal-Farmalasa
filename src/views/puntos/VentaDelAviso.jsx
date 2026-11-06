@@ -55,7 +55,7 @@ export default function VentaDelAviso({ aviso, rotulo, variante, puntosTexto }) 
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-4 min-w-0">
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div className="min-w-0">
-                    <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <Receipt size={14} /> La venta del aviso
                     </h3>
                     <div className="flex flex-wrap items-center gap-2 mt-2">

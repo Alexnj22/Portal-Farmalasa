@@ -111,7 +111,7 @@ export default function FeedbackOverlay({
 
                 {/* Nombre: Píldora encrustada */}
                 <div className="absolute -bottom-4 z-content px-6 py-2.5 rounded-full bg-white/[0.03] backdrop-blur-3xl border border-white/20 shadow-[var(--shadow-glass-3)] max-w-[120%] w-max flex items-center justify-center">
-                  <h2 className="text-caption sm:text-label md:text-body-sm font-black text-white uppercase tracking-[0.2em] drop-shadow-md truncate">
+                  <h2 className="text-caption sm:text-label md:text-body-sm font-black text-white uppercase tracking-widest drop-shadow-md truncate">
                     {shortEmployeeName(employee)}
                   </h2>
                 </div>
@@ -136,7 +136,7 @@ export default function FeedbackOverlay({
                 </div>
 
                 {warning && (
-                  <div className="flex items-center justify-center gap-2 px-8 py-3 bg-warning/10 backdrop-blur-xl border border-warning/30 text-warning rounded-3xl font-bold uppercase tracking-widest text-label animate-pulse shadow-sm w-full">
+                  <div className="flex items-center justify-center gap-2 px-8 py-3 bg-warning/10 backdrop-blur-xl border border-warning/30 text-warning rounded-3xl font-black uppercase tracking-widest text-label animate-pulse shadow-sm w-full">
                     <AlertTriangle size={16} strokeWidth={2.5} className="shrink-0" />
                     <span className="whitespace-nowrap">{warning}</span>
                   </div>
@@ -170,7 +170,7 @@ export default function FeedbackOverlay({
                     {isBirthday ? '🎂' : isUrgent ? <AlertTriangle size={28} strokeWidth={2} /> : <Megaphone size={28} strokeWidth={2} />}
                   </div>
                   <div className="flex flex-col text-left">
-                    <span className={`text-caption font-bold uppercase tracking-[0.2em] mb-0.5 ${isBirthday ? 'text-chart-6' : isUrgent ? 'text-danger' : 'text-white/40'}`}>
+                    <span className={`text-caption font-black uppercase tracking-widest mb-0.5 ${isBirthday ? 'text-chart-6' : isUrgent ? 'text-danger' : 'text-white/40'}`}>
                       {isBirthday ? '🎉 ¡Celebración!' : isUrgent ? '🚨 Aviso Urgente' : 'Mensaje Administrativo'}
                     </span>
                     <h3 className={`font-semibold text-title leading-tight tracking-tight ${isBirthday ? 'text-white' : 'text-white/90'}`}>
@@ -184,7 +184,7 @@ export default function FeedbackOverlay({
                     <p className={`text-subtitle md:text-body-xl font-medium leading-relaxed whitespace-pre-wrap px-1 ${isBirthday ? 'text-white/80' : 'text-white/60'}`}>{announcement.message}</p>
                   </div>
 
-                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 [@media(min-height:801px)_and_(max-height:900px)]:mt-5 [@media(max-height:800px)]:mt-3 w-full py-4 [@media(max-height:800px)]:py-2.5 rounded-btn font-bold uppercase tracking-widest text-label sm:text-body-sm flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
+                  <button onClick={handleAnnouncementClose} disabled={isSuccess} className={`mt-8 [@media(min-height:801px)_and_(max-height:900px)]:mt-5 [@media(max-height:800px)]:mt-3 w-full py-4 [@media(max-height:800px)]:py-2.5 rounded-btn font-black uppercase tracking-widest text-label sm:text-body-sm flex items-center justify-center gap-2 transition-all duration-[var(--dur-slow)] active:scale-[0.97] ${isSuccess ? 'bg-success/20 text-success border border-success/50 shadow-[var(--shadow-glow-success-lg)]' : isBirthday ? 'bg-chart-6/20 text-chart-6 border border-chart-6/40 hover:bg-chart-6/30 hover:border-chart-6/60 hover:shadow-[var(--shadow-glow-danger-lg)]' : isUrgent ? 'bg-danger/10 text-danger border border-danger/30 hover:bg-danger/20 hover:border-danger/50 hover:shadow-[var(--shadow-glow-danger-md)]' : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10 hover:text-white hover:border-white/20'}`}>
                     {isSuccess ? <><CheckCircle2 size={18} strokeWidth={2.5} className="animate-in zoom-in-50 duration-[var(--dur-base)]" /> ¡Confirmado!</> : isBirthday ? <><span className="text-body-xl">🎉</span> ¡Muchas Gracias!</> : <><CheckSquare size={18} strokeWidth={2.5} /> Entendido, Continuar</>}
                   </button>
                 </div>

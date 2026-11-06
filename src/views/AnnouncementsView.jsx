@@ -116,7 +116,7 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
       </div>
 
       <div className="mt-2 space-y-2">
-        <div className={`flex justify-between items-end text-caption font-bold uppercase tracking-widest ${ann.priority === 'URGENT' && !isScheduled ? 'text-danger' : 'text-content-3'}`}>
+        <div className={`flex justify-between items-end text-caption font-black uppercase tracking-widest ${ann.priority === 'URGENT' && !isScheduled ? 'text-danger' : 'text-content-3'}`}>
           <span>{isScheduled ? 'Progreso Bloqueado' : 'Progreso de Lectura'}</span>
           <span className={ann.priority === 'URGENT' && ann.readPercentage < 100 && !isScheduled ? 'text-danger' : ann.readPercentage === 100 ? 'text-success' : isScheduled ? 'text-chart-3-text' : 'text-brand-text'}>
             {ann.readPercentage}%
@@ -150,11 +150,11 @@ const AnnouncementCard = memo(({ ann, onArchive, onDelete, onViewDetail, onEdit,
 
         <div className="flex flex-col items-end">
           {isScheduled ? (
-            <p className="text-label text-chart-3-text font-bold tracking-widest uppercase flex items-center gap-1.5">
+            <p className="text-label text-chart-3-text font-black tracking-widest uppercase flex items-center gap-1.5">
               <CalendarClock size={12} /> Para: {fechaTexto(ann.scheduledFor)}
             </p>
           ) : (
-            <p className="text-label text-content-3 font-bold tracking-widest uppercase flex items-center gap-1.5">
+            <p className="text-label text-content-3 font-black tracking-widest uppercase flex items-center gap-1.5">
               <Clock size={12} /> {fechaTexto(ann.date)}
             </p>
           )}

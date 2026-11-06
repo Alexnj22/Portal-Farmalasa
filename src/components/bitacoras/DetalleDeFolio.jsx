@@ -63,7 +63,7 @@ function Seccion({ icon: Icono, titulo, children, aviso }) {
 function Dato({ label, children, mono = false, ancho = false }) {
     return (
         <div className={ancho ? 'col-span-2' : ''}>
-            <p className="text-label font-bold uppercase tracking-widest text-content-3">{label}</p>
+            <p className="text-label font-black uppercase tracking-widest text-content-3">{label}</p>
             <p className={`text-body-sm font-bold text-content-2 break-words ${mono ? 'tabular-nums' : ''}`}>
                 {children ?? '—'}
             </p>

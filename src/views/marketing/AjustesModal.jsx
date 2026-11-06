@@ -58,7 +58,7 @@ export default function AjustesModal({ open, onClose, marcas, redes, ajustes, fe
         setFecha({ nombre: '', mes: '', dia: '', idea: '' });
     });
 
-    const titulo = 'text-label uppercase tracking-wide font-semibold text-content-2';
+    const titulo = 'text-label uppercase tracking-widest font-black text-content-2';
 
     return (
         <LiquidModal open={open} onClose={onClose} maxWidth="max-w-lg" ariaLabel="Ajustes del planificador">

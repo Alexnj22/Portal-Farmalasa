@@ -293,7 +293,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                 ) : conf ? (
                                     <div className={`w-full flex-1 flex flex-col items-center justify-center ${conf.text}`}>
                                         <IconoPorNombre iconos={ICONOS_DE_CONFLICTO} nombre={conf.icono} className="w-4 h-4 2xl:w-[18px] 2xl:h-[18px] mb-1" strokeWidth={2.5} />
-                                        <span className="text-micro font-black uppercase text-center leading-tight truncate px-1">{conf.label}</span>
+                                        <span className="text-micro font-black uppercase tracking-widest text-center leading-tight truncate px-1">{conf.label}</span>
                                         {hasShift && (
                                             <span className="text-micro font-bold mt-1 opacity-60 truncate px-1 text-center leading-tight">
                                                 {r.nombre} · {netShiftDurationHrs}h
@@ -303,7 +303,7 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                                 ) : hasShift ? (
                                     <div className="flex flex-col h-full">
                                         <div className="flex items-start justify-between w-full mb-1">
-                                            <span className="text-micro font-black uppercase text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
+                                            <span className="text-micro font-black uppercase tracking-widest text-content bg-surface-card-hover border border-divider px-1 py-[1px] rounded truncate max-w-[70%]">
                                                 {r.nombre}
                                             </span>
                                             <div data-surface={isDailyOvertime ? undefined : 'card'} className={`flex items-center gap-0.5 px-1 py-[1px] rounded border shadow-sm ${isDailyOvertime ? 'bg-danger/10 border-danger/30 text-danger' : 'bg-surface-card-hover text-content-3'}`}>
@@ -438,7 +438,7 @@ const CoverageEmployeeRow = memo(({ emp, homeBranch, homeRoster, coverageDaysByD
                                 ) : (
                                     <div className="w-full flex-1 flex items-center justify-center">
                                         {isCoverageDay
-                                            ? <span className="text-micro font-black uppercase text-chart-3-text">Libre</span>
+                                            ? <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">Libre</span>
                                             : <span className="text-micro font-black text-content-3">—</span>
                                         }
                                     </div>
@@ -663,7 +663,7 @@ const ScheduleCalendar = memo(({
                                                 </div>
                                             </div>
 
-                                            <div className={`text-micro uppercase font-black tracking-wider mb-0.5 ${dayTextColor}`}>
+                                            <div className={`text-micro uppercase font-black tracking-widest mb-0.5 ${dayTextColor}`}>
                                                 {fechaTexto(date, { weekday: 'long' })}
                                             </div>
                                             <div className={`text-title font-black leading-none ${headerTextColor}`}>

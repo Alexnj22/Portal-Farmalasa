@@ -119,7 +119,7 @@ const SyncHealthView = () => {
                                     </div>
                                 </DataCell>
                                 <DataCell>
-                                    <span className="text-label font-black uppercase tracking-wide text-content-2">
+                                    <span className="text-label font-black uppercase tracking-widest text-content-2">
                                         {DOMAIN_LABELS[row.domain] || row.domain}
                                     </span>
                                     {row.source && (

@@ -173,7 +173,7 @@ export default function MenuSearchModal({ isOpen, onClose, items, onNavigate }) 
                 </div>
 
                 {/* Footer hint */}
-                <div className="relative z-base hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-caption font-bold uppercase tracking-wide text-content-3">
+                <div className="relative z-base hidden sm:flex items-center gap-4 px-5 py-2.5 border-t border-divider bg-surface-card-hover text-caption font-black uppercase tracking-widest text-content-3">
                     <span className="flex items-center gap-1"><ArrowUp size={11} /><ArrowDown size={11} /> Navegar</span>
                     <span className="flex items-center gap-1"><CornerDownLeft size={11} /> Abrir</span>
                     <span className="ml-auto">Esc para cerrar</span>

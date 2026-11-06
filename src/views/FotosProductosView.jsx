@@ -637,7 +637,7 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                         </div>
                         {!preset && (
                             <div className="space-y-1.5">
-                                <div className="hidden sm:grid grid-cols-[1rem_1fr_6rem_8rem_2.75rem] gap-1.5 text-micro font-semibold uppercase tracking-wide text-content-3">
+                                <div className="hidden sm:grid grid-cols-[1rem_1fr_6rem_8rem_2.75rem] gap-1.5 text-micro font-black uppercase tracking-widest text-content-3">
                                     <span /><span>Principio activo</span><span className="text-center">Cantidad</span><span>Unidad</span><span />
                                 </div>
                                 {items.map((it, i) => (

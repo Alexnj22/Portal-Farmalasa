@@ -38,7 +38,7 @@ export default function PostCompletionSection({ row, difItems = [], empMap = new
     return (
         <div className="border-t border-divider px-4 py-3 space-y-1.5">
             <div className="flex items-center justify-between gap-2">
-                <p className="text-caption font-bold text-content-2 uppercase tracking-wide">Resumen de recepción</p>
+                <p className="text-caption font-black text-content-2 uppercase tracking-widest">Resumen de recepción</p>
                 {/* Reportado el 2026-08-15: «sigo sin ver la foto de Dolores, y
                     pon nombre y apellido». Dos bugs en el mismo renglón, y los
                     dos porque este bloque no usaba los canónicos:

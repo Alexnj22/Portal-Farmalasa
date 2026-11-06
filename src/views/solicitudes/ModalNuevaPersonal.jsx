@@ -436,7 +436,7 @@ export default function ModalNuevaPersonal({
                         <div className="flex items-start gap-2 px-3 py-2.5 rounded-2xl bg-warning/10 border border-warning/30">
                             <AlertTriangle size={13} className="text-warning flex-shrink-0 mt-0.5" strokeWidth={2.5} />
                             <div>
-                                <p className="text-caption font-black text-warning-text uppercase tracking-wide">Incapacidad activa</p>
+                                <p className="text-caption font-black text-warning-text uppercase tracking-widest">Incapacidad activa</p>
                                 <p className="text-label font-medium text-warning-text leading-snug">
                                     {incapacidades.map(periodo).join(', ')} — los días cubiertos no están disponibles.
                                 </p>

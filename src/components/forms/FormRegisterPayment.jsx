@@ -82,7 +82,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <div className="flex items-center gap-2">
                             <Badge size="sm">Sede: {formData.name}</Badge>
                             {currentPaidThrough && (
-                                <span className="text-caption font-bold text-success/80 uppercase tracking-widest">
+                                <span className="text-caption font-black text-success/80 uppercase tracking-widest">
                                     Último: {currentPaidThrough}
                                 </span>
                             )}

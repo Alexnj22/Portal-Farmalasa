@@ -712,7 +712,7 @@ function MainApp() {
                         {/* Brand text */}
                         <div className="flex flex-col items-center gap-1.5">
                             <span className="text-title-lg font-black text-content tracking-tight leading-none">Portal Farmalasa</span>
-                            <span className="text-caption font-bold uppercase tracking-[0.22em] text-brand-text/60">Sistema de Gestión</span>
+                            <span className="text-caption font-black uppercase tracking-widest text-brand-text/60">Sistema de Gestión</span>
                         </div>
 
                         {/* Animated dots */}
@@ -726,7 +726,7 @@ function MainApp() {
                         </div>
 
                         {/* Status */}
-                        <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3 -mt-2">
+                        <span className="text-caption font-black uppercase tracking-widest text-content-3 -mt-2">
                             Verificando sesión...
                         </span>
 

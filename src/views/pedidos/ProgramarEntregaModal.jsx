@@ -68,7 +68,7 @@ export default function ProgramarEntregaModal({ open, onClose, numero, currentAt
                     <div className="space-y-2">
                         <div className="flex items-center gap-1.5">
                             <History size={11} className="text-content-3" />
-                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide">Historial</span>
+                            <span className="text-caption font-black text-content-2 uppercase tracking-widest">Historial</span>
                         </div>
                         <div className="space-y-1.5">
                             {[...historial].reverse().map((h, i) => {

@@ -85,7 +85,7 @@ export default function ReceptionActions({ llegadaOk, erpOk, onMarkLlegada, onOp
                     no un dato secundario, y medido sobre la tarjeta pintada el
                     terciario daba 2.86:1 (4.2 ya con el material arreglado) —
                     los dos por debajo de AA. El secundario da 5.3:1. */}
-                <span className="text-caption font-semibold text-content-2 uppercase tracking-wide">Recepción</span>
+                <span className="text-caption font-black text-content-2 uppercase tracking-widest">Recepción</span>
                 {!canEdit && (
                     <Badge variant="neutral" size="sm" uppercase={false}>Solo lectura — tu cargo no recibe pedidos</Badge>
                 )}

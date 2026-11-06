@@ -203,7 +203,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                             )}
                                             {hasDraft && (
                                                 <div className="flex flex-col items-start gap-0.5 mt-0.5">
-                                                    <span className="text-micro font-black uppercase tracking-wide text-warning leading-none">Borrador</span>
+                                                    <span className="text-micro font-black uppercase tracking-widest text-warning leading-none">Borrador</span>
                                                     <div className="flex items-center gap-0.5 text-micro tabular-nums leading-tight rounded px-0.5 py-px border border-dashed border-warning/40 bg-warning/10">
                                                         <span className="text-warning font-black">{bDraftMin > 0 ? bDraftMin.toLocaleString('es-SV') : '—'}</span>
                                                         <span className="text-warning">·</span>
@@ -438,7 +438,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                                             <span className="text-content-3">·</span>
                                                             <span className="text-chart-1-text font-black tabular-nums">{bMax > 0 ? bMax.toLocaleString('es-SV') : '—'}</span>
                                                             {hasDraft && (
-                                                                <span className="inline-flex items-center gap-0.5 text-micro font-black uppercase tracking-wide text-warning bg-warning/10 border border-warning/40 border-dashed rounded px-1 py-px whitespace-nowrap">
+                                                                <span className="inline-flex items-center gap-0.5 text-micro font-black uppercase tracking-widest text-warning bg-warning/10 border border-warning/40 border-dashed rounded px-1 py-px whitespace-nowrap">
                                                                     Borrador {dMin > 0 ? dMin.toLocaleString('es-SV') : '—'}·{dMax > 0 ? dMax.toLocaleString('es-SV') : '—'}
                                                                 </span>
                                                             )}

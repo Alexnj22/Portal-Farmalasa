@@ -110,7 +110,7 @@ function DayGrid({ year, month, startDate, endDate, hoverDate, onDayClick, onDay
 
             <div className="grid grid-cols-7 mb-1">
                 {DAYS_SH.map(d => (
-                    <div key={d} className="text-center text-micro font-black uppercase tracking-wider text-content-2 py-0.5">{d}</div>
+                    <div key={d} className="text-center text-micro font-black uppercase tracking-widest text-content-2 py-0.5">{d}</div>
                 ))}
             </div>
 
@@ -345,7 +345,7 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
 
                     {/* Presets */}
                     <div className="px-5 pb-3">
-                        <p className="text-micro font-black uppercase tracking-[0.12em] text-content-3 mb-2">
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3 mb-2">
                             Accesos rápidos
                         </p>
                         <div className="grid grid-cols-3 gap-1.5">

@@ -260,7 +260,7 @@ function Cuerpo({ solicitud, onClose, onGuardada }) {
                             «Nombre, DUI o teléfono» es justo lo que hay que
                             seguir viendo mientras se escribe. */}
                         <div className="space-y-1 min-w-0">
-                            <span className="text-label uppercase tracking-wide font-semibold text-content-2">
+                            <span className="text-label uppercase tracking-widest font-black text-content-2">
                                 Nombre, DUI o teléfono
                             </span>
                             <SearchInput

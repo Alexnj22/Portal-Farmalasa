@@ -92,7 +92,7 @@ const Dato = ({ icon: Icon, tinte, label, value, sub }) => (
             <Icon size={15} className={tinte} strokeWidth={2.5} />
         </div>
         <div className="min-w-0 flex-1">
-            <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">{label}</p>
+            <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">{label}</p>
             <p className={`text-body-sm truncate ${value ? 'font-bold text-content' : 'font-medium text-content-3 italic'}`}>
                 {value || 'No registrado'}
             </p>

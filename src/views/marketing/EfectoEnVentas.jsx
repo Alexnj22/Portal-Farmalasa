@@ -36,7 +36,7 @@ export default function EfectoEnVentas({ pieza }) {
         <div data-surface="card" className="p-3 space-y-2">
             <div className="flex items-center gap-2">
                 <BarChart3 size={14} className="text-content-3" />
-                <span className="text-label uppercase tracking-wide font-semibold text-content-2">Ventas de la promoción</span>
+                <span className="text-label uppercase tracking-widest font-black text-content-2">Ventas de la promoción</span>
                 {!v && (
                     <Button variant="ghost" size="xs" className="ml-auto" loading={cargando} onClick={medir}>Medir</Button>
                 )}

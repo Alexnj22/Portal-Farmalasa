@@ -481,7 +481,7 @@ export default function RutaMapModal({ ruta, open, onClose, currentUserId }) {
               <MapPin size={15} className="text-chart-3-text" />
             </div>
             <div>
-              <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">
+              <p className="text-caption font-black text-chart-3-text uppercase tracking-widest">
                 {isConductor ? 'Tu ruta activa' : 'Rastreo en vivo'}
               </p>
               <h3 className="text-subtitle font-black text-content leading-tight">

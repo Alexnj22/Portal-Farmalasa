@@ -312,7 +312,7 @@ function TarjetaRenglon({ r }) {
 function Mini({ rotulo, valor, destacado }) {
     return (
         <div className="min-w-0">
-            <span className="block text-micro uppercase tracking-wide text-content-3 font-semibold truncate">
+            <span className="block text-micro uppercase tracking-widest text-content-3 font-black truncate">
                 {rotulo}
             </span>
             <span className={`text-body font-semibold tabular-nums ${destacado ? 'text-brand' : 'text-content'}`}>
@@ -332,7 +332,7 @@ function BarrasPorSala({ reparto }) {
     const total = reparto.reduce((a, s) => a + (Number(s.vendido) || 0), 0);
     return (
         <div className="pt-3 border-t border-border-muted space-y-2">
-            <p className="text-micro uppercase tracking-wide text-content-3 font-semibold">
+            <p className="text-micro uppercase tracking-widest text-content-3 font-black">
                 {conCupo ? 'Por sala, contra su cupo' : 'Por sala'}
             </p>
             <ul className="space-y-2">

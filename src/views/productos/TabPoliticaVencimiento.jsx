@@ -303,7 +303,7 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
             </div>
             <div className="min-w-0">
                 <p className="text-2xl font-black text-content leading-none tracking-tight">{value}</p>
-                <p className={`text-label mt-1 font-semibold uppercase tracking-wide ${c.text}`}>{label}</p>
+                <p className={`text-label mt-1 font-black uppercase tracking-widest ${c.text}`}>{label}</p>
             </div>
         </div>
     );
@@ -351,7 +351,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                         <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3 space-y-2">
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
-                                    <span className="text-caption font-bold uppercase tracking-wide text-content-2">Proveedores</span>
+                                    <span className="text-caption font-black uppercase tracking-widest text-content-2">Proveedores</span>
                                     <Button tone="warning" disabled={markingND} title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos" onClick={onMarkND}>{markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
                                         Marcar todo como ND</Button>
                                 </div>
@@ -568,7 +568,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
                 />
             )}
             {draft.devolutivo && draft.meses_devolucion === '' && (
-                <p className="text-micro font-black uppercase text-danger mt-1 px-0.5">Meses requeridos para guardar</p>
+                <p className="text-micro font-black uppercase tracking-widest text-danger mt-1 px-0.5">Meses requeridos para guardar</p>
             )}
         </motion.div>
     );

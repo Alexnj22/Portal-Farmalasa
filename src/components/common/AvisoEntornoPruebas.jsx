@@ -36,7 +36,7 @@ export default function AvisoEntornoPruebas() {
           opaco: encima del degradado un velo translúcido se lee flojo. */}
       <div className="hidden lg:flex absolute top-[var(--sa-top)] left-1/2 -translate-x-1/2 items-center gap-1.5 rounded-b-lg border border-t-0 border-warning/40 bg-surface-card px-2.5 py-0.5">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning-solid" />
-        <span className="text-micro font-bold uppercase tracking-[0.18em] text-warning-text leading-none py-0.5">
+        <span className="text-micro font-black uppercase tracking-widest text-warning-text leading-none py-0.5">
           Entorno de pruebas
         </span>
       </div>
@@ -48,7 +48,7 @@ export default function AvisoEntornoPruebas() {
           producción). */}
       <div className="lg:hidden absolute left-[var(--sa-left)] top-1/2 -translate-y-1/2 flex flex-col items-center gap-1.5 rounded-r-lg border border-l-0 border-warning/40 bg-surface-card px-0.5 py-2.5">
         <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-warning-solid" />
-        <span className="text-micro font-bold uppercase tracking-[0.18em] text-warning-text leading-none [writing-mode:vertical-rl] rotate-180">
+        <span className="text-micro font-black uppercase tracking-widest text-warning-text leading-none [writing-mode:vertical-rl] rotate-180">
           Entorno de pruebas
         </span>
       </div>

@@ -105,7 +105,7 @@ export default function ReenvioLlegadaModal({
                     <Truck size={16} className="text-white" />
                 </div>
                 <div className="flex-1">
-                    <p className="text-label font-medium text-content-2 uppercase tracking-wide">
+                    <p className="text-label font-black text-content-2 uppercase tracking-widest">
                         Pedido #{pedidoNumero} · Reenvío {cicloNum > 1 ? cicloNum : ''}
                     </p>
                     <h3 className="text-body-lg font-bold text-content leading-tight">{enDetalle ? '¿Cómo llegó el reenvío?' : '¿Llegó todo el reenvío?'}</h3>
@@ -156,7 +156,7 @@ export default function ReenvioLlegadaModal({
                 {/* Cajas regulares */}
                 {cajasCiclo.length > 0 && (
                     <div className="space-y-2.5">
-                        <p className="text-caption text-content-2 uppercase tracking-wide font-semibold">
+                        <p className="text-caption text-content-2 uppercase tracking-widest font-black">
                             {cajasCiclo.length} caja{cajasCiclo.length !== 1 ? 's' : ''} esperadas
                         </p>
                         {cajasCiclo.map(num => {
@@ -204,9 +204,9 @@ export default function ReenvioLlegadaModal({
                                 ¿Llegaron las cajas de Electrolit?
                             </span>
                             {electrolitOk === null ? (
-                                <span className="text-micro font-bold text-danger-text uppercase tracking-wide animate-pulse">Pendiente</span>
+                                <span className="text-micro font-black text-danger-text uppercase tracking-widest animate-pulse">Pendiente</span>
                             ) : (
-                                <span className="text-micro font-bold text-warning uppercase tracking-wide">
+                                <span className="text-micro font-black text-warning uppercase tracking-widest">
                                     {electrolitCount} caja{electrolitCount > 1 ? 's' : ''}
                                 </span>
                             )}
@@ -234,7 +234,7 @@ export default function ReenvioLlegadaModal({
                         <div className="flex items-center gap-2">
                             <Package size={13} className="text-chart-3-text shrink-0" />
                             <span className="text-label font-semibold text-chart-3-text flex-1">Cajas especiales pendientes</span>
-                            <span className="text-micro font-bold text-chart-3-text uppercase tracking-wide">
+                            <span className="text-micro font-black text-chart-3-text uppercase tracking-widest">
                                 {especialesList.length} caja{especialesList.length !== 1 ? 's' : ''}
                             </span>
                         </div>

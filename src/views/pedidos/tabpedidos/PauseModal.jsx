@@ -43,7 +43,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                     )}
 
                     <div>
-                        <p className="text-label font-semibold text-content-2 uppercase tracking-wide mb-2">¿Por qué pausas?</p>
+                        <p className="text-label font-black text-content-2 uppercase tracking-widest mb-2">¿Por qué pausas?</p>
                         <div className="grid grid-cols-2 gap-2">
                             {PAUSE_REASONS.map(opt => {
                                 const isUsed   = opt.maxUses === 1 && alreadyHadAlmuerzo;

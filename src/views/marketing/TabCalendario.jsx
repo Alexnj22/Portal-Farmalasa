@@ -43,7 +43,7 @@ export default function TabCalendario({
                 {dias.map((d) => (
                     <section key={d} className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className={`text-label uppercase tracking-wide font-semibold ${d === hoy ? 'text-brand' : 'text-content-2'}`}>
+                            <h3 className={`text-label uppercase tracking-widest font-black ${d === hoy ? 'text-brand' : 'text-content-2'}`}>
                                 {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'long' })}
                             </h3>
                             {puedeEditar && (
@@ -80,7 +80,7 @@ export default function TabCalendario({
         <div data-surface="card" className="overflow-hidden p-0">
             <div className="grid grid-cols-7 border-b border-border-card">
                 {DIAS_SEMANA.map((d) => (
-                    <div key={d} className="px-2 py-2 text-label uppercase tracking-wide font-semibold text-content-3 text-center">{d}</div>
+                    <div key={d} className="px-2 py-2 text-label uppercase tracking-widest font-black text-content-3 text-center">{d}</div>
                 ))}
             </div>
             {semanas.map((semana, i) => (

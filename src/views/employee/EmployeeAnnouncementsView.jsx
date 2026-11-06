@@ -162,7 +162,7 @@ const AnnouncementCard = memo(({ ann, userId, onRead }) => {
 
             {/* Footer */}
             <div className="flex items-center justify-between pt-1 border-t border-divider">
-                <p className="text-caption font-bold text-content-2 uppercase tracking-widest flex items-center gap-1.5">
+                <p className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1.5">
                     <Clock size={11} />
                     {fechaTexto(ann.date, { day: '2-digit', month: 'short', year: 'numeric' })}
                     {ann.editedAt && (
@@ -334,7 +334,7 @@ const UnreadStack = memo(({ list, onRead }) => {
             <div className="mb-10 flex flex-col items-center gap-3 select-none">
                 <div className="flex items-center gap-4">
                     <div className="text-center">
-                        <p className="text-micro font-black text-content-3 uppercase tracking-[0.3em] mb-0.5">Sin leer</p>
+                        <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">Sin leer</p>
                         <span
                             className="text-[72px] font-black leading-none tracking-tighter transition-all duration-[var(--dur-lento)]"
                             style={{
@@ -551,13 +551,13 @@ const UnreadStack = memo(({ list, onRead }) => {
                                 <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[var(--shadow-glass-1)] font-mono leading-none">
                                     {key}
                                 </kbd>
-                                {label && <span className="text-micro font-bold text-content-2 uppercase tracking-widest">{label}</span>}
+                                {label && <span className="text-micro font-black text-content-2 uppercase tracking-widest">{label}</span>}
                             </div>
                         ))}
-                        <span className="text-micro font-bold text-content-2 uppercase tracking-widest">— confirmar</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest">— confirmar</span>
                         <span className="text-content-3">·</span>
                         <kbd className="px-2 py-0.5 rounded-md bg-surface-card border border-divider text-caption font-black text-content-2 shadow-[var(--shadow-glass-1)] font-mono leading-none">←</kbd>
-                        <span className="text-micro font-bold text-content-2 uppercase tracking-widest">— retroceder</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest">— retroceder</span>
                     </div>
                 </div>
             </div>

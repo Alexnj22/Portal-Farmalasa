@@ -30,7 +30,7 @@ const FormDocumentViewer = ({ formData }) => {
                     </div>
                     <div className="min-w-0">
                         <h3 className="text-title-sm font-black text-content truncate">{title || 'Documento Adjunto'}</h3>
-                        <p className="text-caption font-bold text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
+                        <p className="text-caption font-black text-content-2 uppercase tracking-widest mt-0.5">Vista Previa de Archivo</p>
                     </div>
                 </div>
                 <a 
@@ -38,7 +38,7 @@ const FormDocumentViewer = ({ formData }) => {
                     download 
                     target="_blank" 
                     rel="noreferrer" 
-                    className="flex items-center gap-2 px-5 py-3 bg-brand hover:bg-brand-hover text-white rounded-2xl font-black text-label uppercase tracking-[0.15em] transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97] shrink-0"
+                    className="flex items-center gap-2 px-5 py-3 bg-brand hover:bg-brand-hover text-white rounded-2xl font-black text-label uppercase tracking-widest transition-all shadow-[var(--shadow-glow-brand)] active:scale-[0.97] shrink-0"
                 >
                     <Download size={16} strokeWidth={2} /> Descargar
                 </a>

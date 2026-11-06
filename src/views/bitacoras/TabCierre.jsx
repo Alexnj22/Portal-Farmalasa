@@ -47,7 +47,7 @@ function Cifra({ valor, label, tono }) {
     return (
         <div data-surface="card" className="p-3">
             <p className={`text-title font-black tabular-nums ${color}`}>{valor}</p>
-            <p className="text-label font-bold uppercase tracking-widest text-content-3">{label}</p>
+            <p className="text-label font-black uppercase tracking-widest text-content-3">{label}</p>
         </div>
     );
 }

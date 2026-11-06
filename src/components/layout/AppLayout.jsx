@@ -1060,7 +1060,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                 {isExpanded && (
                                     <div className="animate-in fade-in zoom-in-95 duration-[var(--dur-slow)] origin-left min-w-0">
                                         <h1 className="font-black text-subtitle leading-tight tracking-tight text-[rgb(var(--sidebar-ink))]">Portal</h1>
-                                        <p className="text-caption font-bold uppercase tracking-[0.18em] mt-0.5 leading-snug text-[rgb(var(--sidebar-ink)/0.5)]">La Salud & La Popular</p>
+                                        <p className="text-caption font-black uppercase tracking-widest mt-0.5 leading-snug text-[rgb(var(--sidebar-ink)/0.5)]">La Salud & La Popular</p>
                                     </div>
                                 )}
                             </div>
@@ -1310,7 +1310,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                 <div className="w-px h-6 rounded-full bg-divider" />
                                 <div className="flex flex-col justify-center">
                                     <h1 className="text-body-lg font-black leading-none tracking-tight">Portal</h1>
-                                    <p className="text-micro font-bold uppercase tracking-[0.2em] mt-0.5 text-brand-text">La Salud</p>
+                                    <p className="text-micro font-black uppercase tracking-widest mt-0.5 text-brand-text">La Salud</p>
                                 </div>
                             </div>
                             <div className="flex items-center gap-2">
@@ -1466,7 +1466,7 @@ const AppLayout = ({ children, handleLogout }) => {
 
                                     <div className="px-4 pt-3.5 pb-2.5 border-b border-[rgb(var(--sidebar-ink)/0.08)] flex items-center gap-2">
                                         <div className="w-[3px] h-3.5 rounded-full bg-gradient-to-b from-chart-1 to-brand shadow-[var(--shadow-glow-chart-1-sm)]" />
-                                        <span className="text-[rgb(var(--sidebar-ink)/0.7)] text-caption font-black uppercase tracking-[0.18em]">{flyout.label}</span>
+                                        <span className="text-[rgb(var(--sidebar-ink)/0.7)] text-caption font-black uppercase tracking-widest">{flyout.label}</span>
                                     </div>
 
                                     <div className="p-1.5 space-y-0.5">

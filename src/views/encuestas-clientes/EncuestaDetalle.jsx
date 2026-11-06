@@ -287,7 +287,7 @@ export default function EncuestaDetalle({
             )}
             {encuesta.estado === 'borrador' && !listo && (
                 <section data-surface="card" className="p-3">
-                    <p className="text-label uppercase tracking-wide font-semibold text-content-2 mb-1.5">Falta para enviarla</p>
+                    <p className="text-label uppercase tracking-widest font-black text-content-2 mb-1.5">Falta para enviarla</p>
                     <ul className="space-y-1">
                         {problemas.map((p) => (
                             <li key={p} className="flex items-start gap-1.5 text-body-sm text-content">
@@ -304,7 +304,7 @@ export default function EncuestaDetalle({
             ) : vista === 'vista' ? (
                 <div className="flex justify-center">
                     <div data-surface="card" className="w-full max-w-md p-5">
-                        <p className="text-micro uppercase tracking-wide font-semibold text-content-3 mb-3">Así la ve el cliente</p>
+                        <p className="text-micro uppercase tracking-widest font-black text-content-3 mb-3">Así la ve el cliente</p>
                         <FormularioEncuesta encuesta={encuesta} />
                     </div>
                 </div>

@@ -3643,7 +3643,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                                     <div key={a.id} data-surface="card" className="p-3">
                                         <div className="flex items-center justify-between gap-3 mb-2">
                                             <div className="min-w-0">
-                                                <p className="text-label font-black text-content uppercase tracking-wide">{a.label}</p>
+                                                <p className="text-label font-black text-content uppercase tracking-widest">{a.label}</p>
                                                 <p className="text-micro text-content-3 font-medium leading-snug">{a.organismo}</p>
                                             </div>
                                             {esProvisional

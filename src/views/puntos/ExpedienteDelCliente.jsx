@@ -39,7 +39,7 @@ function Panel({ icono: Icono, titulo, nota, children }) {
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
             <div className="min-w-0">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                     <Icono size={14} /> {titulo}
                 </h3>
                 {nota && <p className="text-caption text-content-3 mt-1">{nota}</p>}

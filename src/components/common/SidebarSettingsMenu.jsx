@@ -27,7 +27,7 @@ function CodeCard({ label, value, copied, onCopy }) {
       className="group/code relative flex flex-col items-center justify-center gap-0.5 rounded-xl py-2 px-2
         border border-[rgb(var(--sidebar-ink)/0.09)] bg-[rgb(var(--sidebar-realce)/0.06)] hover:bg-[rgb(var(--sidebar-realce)/0.11)] hover:border-[rgb(var(--sidebar-ink)/0.14)] transition active:scale-[0.97]">
       <div className="flex items-center gap-1 mb-0.5">
-        <span className="text-micro font-bold uppercase tracking-wider text-[rgb(var(--sidebar-ink)/0.55)]">{label}</span>
+        <span className="text-micro font-black uppercase tracking-widest text-[rgb(var(--sidebar-ink)/0.55)]">{label}</span>
       </div>
       <div className="relative h-4 flex items-center justify-center w-full">
         <span className={`absolute text-body-sm font-black tracking-widest font-mono text-[rgb(var(--sidebar-ink))] transition duration-[var(--dur-slow)] ${copied ? 'opacity-0 scale-75' : 'opacity-100 scale-100 group-hover/code:opacity-0 group-hover/code:scale-90'}`}>{value}</span>

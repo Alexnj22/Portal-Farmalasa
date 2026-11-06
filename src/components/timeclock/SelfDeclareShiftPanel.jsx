@@ -28,7 +28,7 @@ const SelfDeclareShiftPanel = ({ employee, onSubmit }) => {
                     <h1 className="text-2xl sm:text-3xl [@media(min-height:801px)_and_(max-height:900px)]:text-title [@media(max-height:800px)]:text-title-sm font-semibold text-white tracking-tight leading-tight mb-1.5 [@media(max-height:800px)]:mb-0.5">
                         Declara tu Horario
                     </h1>
-                    <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-bold uppercase tracking-[0.25em] text-warning/80">
+                    <p className="text-micro sm:text-body-sm [@media(max-height:800px)]:text-micro font-black uppercase tracking-widest text-warning/80">
                         Turno Extra — {shortEmployeeName(employee)}
                     </p>
                     <p className="text-white/40 text-caption sm:text-body-sm [@media(max-height:800px)]:text-micro leading-relaxed mt-2.5 [@media(max-height:800px)]:mt-1.5 px-2">

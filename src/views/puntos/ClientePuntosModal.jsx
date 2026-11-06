@@ -767,7 +767,7 @@ function Movimiento({ m, sala, info = {} }) {
 
 function Titulo({ icono: Icono, children }) {
     return (
-        <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+        <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
             <Icono size={14} /> {children}
         </h3>
     );

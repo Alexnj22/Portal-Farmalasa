@@ -587,7 +587,7 @@ const LiquidSelect = ({
                         return opt.isSeparator ? (
                             <div
                                 key={opt.value}
-                                className="px-4 pt-3 pb-1 text-micro font-black uppercase tracking-[0.15em] mt-1 border-t border-divider first:border-t-0 first:pt-1 text-content-3"
+                                className="px-4 pt-3 pb-1 text-micro font-black uppercase tracking-widest mt-1 border-t border-divider first:border-t-0 first:pt-1 text-content-3"
                             >
                                 {opt.label}
                             </div>

@@ -359,7 +359,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                             no ofrecerlo. */}
                         {promo.estado !== 'finalizada' && (
                             <div className="space-y-2">
-                                <p className="text-label uppercase tracking-wide font-semibold text-content-2">
+                                <p className="text-label uppercase tracking-widest font-black text-content-2">
                                     Agregar productos
                                 </p>
                                 <AgregarProductos
@@ -708,7 +708,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
             {lote !== '' && Number(lote) > 0 && (
                 <div className="pt-2 border-t border-border-muted">
                     <div className="flex items-baseline gap-2 mb-1.5 flex-wrap">
-                        <span className="text-label uppercase tracking-wide text-content-3 font-semibold">
+                        <span className="text-label uppercase tracking-widest text-content-3 font-black">
                             Reparto por sala
                         </span>
                         <span className="flex-1" />

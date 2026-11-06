@@ -101,7 +101,7 @@ export default function NivelesDelPrograma({ puedeEditar }) {
                 puedeEditar={puedeEditar} alGuardar={recargar} />
 
             <section className="flex flex-col gap-3">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                     <Crown size={14} /> Niveles de Puntos Salud
                 </h3>
                 <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
@@ -114,7 +114,7 @@ export default function NivelesDelPrograma({ puedeEditar }) {
             </section>
 
             <section className="flex flex-col gap-3">
-                <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                     <Gem size={14} /> Cliente Mayorista, por rango
                 </h3>
                 <p className="text-caption text-content-3 -mt-1">
@@ -162,7 +162,7 @@ function EstadoDelPrograma({ config, usadoUsd, puedeEditar, alGuardar }) {
 
     return (
         <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-4 min-w-0">
-            <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+            <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                 <CalendarClock size={14} /> Estado del programa
             </h3>
             <div className="min-w-0">
@@ -419,7 +419,7 @@ function TarjetaDeNivel({ nivel, conRaspable, esEntrada, puedeEditar, alGuardar 
             </div>
             {conRaspable && (
                 <div className="flex flex-col gap-2">
-                    <p className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <Ticket size={13} /> Raspable del mes
                     </p>
                     <EditorDePremios premios={form.cupon_premios} puedeEditar={puedeEditar}
@@ -497,7 +497,7 @@ function TarjetaDeRango({ rango, conRaspable, puedeEditar, alGuardar }) {
                 readOnly={!puedeEditar} helperText="Sólo persona natural con fecha de nacimiento." />
             {conRaspable && (
                 <div className="flex flex-col gap-2">
-                    <p className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <p className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <Ticket size={13} /> Raspable del mes
                     </p>
                     <EditorDePremios premios={form.cupon_premios} puedeEditar={puedeEditar}
@@ -529,7 +529,7 @@ function Historial({ filas, niveles, mayoreo }) {
     const nombreDe = (h) => sujetoDelHistorial(h, niveles, mayoreo);
     return (
         <section className="flex flex-col gap-3">
-            <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+            <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                 <History size={14} /> Historial de cambios
             </h3>
             <DataTable

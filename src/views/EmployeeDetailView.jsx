@@ -594,7 +594,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
                                             <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-brand-text group-hover:scale-110 transition-transform"><Mail size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Correo</p>
+                                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">Correo</p>
                                                 <p className="text-body-sm font-bold text-content-2 truncate">{emp.email || emp.username || 'No registrado'}</p>
                                             </div>
                                         </div>
@@ -602,7 +602,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors relative">
                                             <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-success group-hover:scale-110 transition-transform"><Phone size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Celular</p>
+                                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">Celular</p>
                                                 <p className="text-body-sm font-bold text-content-2">{emp.phone || 'No registrado'}</p>
                                             </div>
                                             {emp.phone && (
@@ -615,7 +615,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
                                             <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-chart-3-text group-hover:scale-110 transition-transform"><Shield size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Documento (DUI)</p>
+                                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">Documento (DUI)</p>
                                                 <p className="text-body-sm font-bold text-content-2">{emp.dui || 'No registrado'}</p>
                                             </div>
                                         </div>
@@ -623,7 +623,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         <div data-surface="card" className="group flex items-center gap-3.5 p-3.5 hover:bg-surface-card-hover transition-colors">
                                             <div className="size-9 grid place-items-center bg-surface-card border border-divider rounded-xl shadow-sm text-chart-4-text group-hover:scale-110 transition-transform"><MapPin size={16} strokeWidth={2.5}/></div>
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-micro font-black text-content-3 uppercase tracking-[0.15em] mb-0.5">Sucursal Base</p>
+                                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">Sucursal Base</p>
                                                 <p className="text-body-sm font-bold text-content-2 truncate">{branch ? branch.name : SIN_ASIGNAR}</p>
                                             </div>
                                         </div>
@@ -641,14 +641,14 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                     <div className="space-y-3 relative z-base">
                                         {emp.emergency_contact_name && (
                                             <div>
-                                                <p className="text-micro font-bold text-content-2 uppercase tracking-widest">Avisar a</p>
+                                                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Avisar a</p>
                                                 <p className="text-body font-bold text-content">{emp.emergency_contact_name}</p>
                                             </div>
                                         )}
                                         {emp.emergency_contact_phone && (
                                             <div className="flex items-center justify-between">
                                                 <div>
-                                                    <p className="text-micro font-bold text-content-2 uppercase tracking-widest">Teléfono</p>
+                                                    <p className="text-micro font-black text-content-2 uppercase tracking-widest">Teléfono</p>
                                                     <p className="text-body font-bold text-content">{emp.emergency_contact_phone}</p>
                                                 </div>
                                                 <a href={`tel:${emp.emergency_contact_phone.replace(/\D/g,'')}`} className="p-2.5 bg-danger/10 text-danger rounded-full hover:bg-danger-solid hover:text-white transition-colors shadow-sm">
@@ -658,7 +658,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                         )}
                                         {emp.blood_type && (
                                             <div className="pt-2 border-t border-danger/30">
-                                                <p className="text-micro font-bold text-content-2 uppercase tracking-widest">Tipo de Sangre</p>
+                                                <p className="text-micro font-black text-content-2 uppercase tracking-widest">Tipo de Sangre</p>
                                                 <p className="text-body font-black text-danger">{emp.blood_type}</p>
                                             </div>
                                         )}
@@ -716,7 +716,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
 
                                                             {ev.metadata?.permissionDates && ev.metadata.permissionDates.length > 0 && (
                                                                 <div className="mt-3 flex flex-wrap gap-1.5">
-                                                                    <span className="text-micro font-black uppercase text-content-3 w-full mb-0.5">Días de Ausencia Autorizada:</span>
+                                                                    <span className="text-micro font-black uppercase tracking-widest text-content-3 w-full mb-0.5">Días de Ausencia Autorizada:</span>
                                                                     {ev.metadata.permissionDates.map((d, i) => (
                                                                         <Badge key={i} variant="chart-1" uppercase={false}>{formatDate(d)}</Badge>
                                                                     ))}
@@ -864,7 +864,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                             {/* Encabezados días */}
                                             <div className="grid grid-cols-7 mb-1">
                                                 {['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'].map(d => (
-                                                    <div key={d} className="text-center text-micro font-black text-content-3 uppercase py-1">{d}</div>
+                                                    <div key={d} className="text-center text-micro font-black text-content-3 uppercase tracking-widest py-1">{d}</div>
                                                 ))}
                                             </div>
                                             {/* Celdas */}

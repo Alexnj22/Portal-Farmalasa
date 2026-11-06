@@ -213,7 +213,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                         {/* ── Cuentas abiertas: qué documento, cuánto y cuánto le toca de este cobro ── */}
                         <div data-surface="card" className="overflow-hidden">
                             <div className="flex items-center justify-between gap-2 px-3 py-2 border-b border-divider">
-                                <p className="text-micro font-bold uppercase tracking-wide text-content-3">{abiertas.length} documento{abiertas.length === 1 ? '' : 's'} por cobrar</p>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3">{abiertas.length} documento{abiertas.length === 1 ? '' : 's'} por cobrar</p>
                                 {puedeCobrar && abiertas.length > 1 && (
                                     <Button size="sm" variant="ghost" icon={SlidersHorizontal} onClick={() => { setAMano(v => !v); setManual({}); }}>
                                         {aMano ? 'Repartir automático' : 'Repartir a mano'}
@@ -348,7 +348,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
                         {/* ── El saldo a favor ya usado: cuándo, en qué cuenta y quién ── */}
                         {(estado.a_favor_usado ?? []).length > 0 && (
                             <div className="flex flex-col gap-2">
-                                <p className="text-micro font-bold uppercase tracking-wide text-content-3">Saldo a favor usado</p>
+                                <p className="text-micro font-black uppercase tracking-widest text-content-3">Saldo a favor usado</p>
                                 {estado.a_favor_usado.slice(0, 8).map(a => (
                                     <div key={a.id} data-surface="card" className="px-3 py-2 flex flex-wrap items-center justify-between gap-2">
                                         <div className="flex items-center gap-2.5 min-w-0">
@@ -366,7 +366,7 @@ export default function CarteraClienteModal({ cliente, emisor, puedeCobrar, pued
 
                         {/* ── Lo que ya pagó ── */}
                         <div className="flex flex-col gap-2">
-                            <p className="text-micro font-bold uppercase tracking-wide text-content-3">Cobros recientes</p>
+                            <p className="text-micro font-black uppercase tracking-widest text-content-3">Cobros recientes</p>
                             {(estado.recibos ?? []).length === 0 && <p className="text-caption text-content-3">Sin cobros registrados.</p>}
                             {(estado.recibos ?? []).slice(0, 12).map(r => (
                                 <div key={r.id} data-surface="card" className={`px-3 py-2 flex flex-col gap-2 ${r.anulado_at ? 'opacity-60' : ''}`} data-recibo={r.id}>

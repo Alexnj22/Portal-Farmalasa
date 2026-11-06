@@ -379,7 +379,7 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                     <ChevronRight size={12} strokeWidth={3} className="transition-transform duration-[var(--dur-slow)]" />
                                 </div>
                             </div>
-                            <span className="text-micro md:text-caption font-bold text-content-2 uppercase tracking-widest">
+                            <span className="text-micro md:text-caption font-black text-content-2 uppercase tracking-widest">
                                 {(liveBranch?.openingDate || liveBranch?.opening_date)
                                     ? `Inaugurada en ${fechaTexto(liveBranch.openingDate || liveBranch.opening_date, { month: 'long', year: 'numeric' })}`
                                     : 'Fecha de inauguración pendiente'}

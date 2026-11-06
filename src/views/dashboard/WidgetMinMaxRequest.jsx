@@ -186,7 +186,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
         {erp && (
           <div className="rounded-2xl border border-divider bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
-              <span className="text-caption font-black text-content-2 uppercase tracking-wider">En uso ahora</span>
+              <span className="text-caption font-black text-content-2 uppercase tracking-widest">En uso ahora</span>
               {loadingCur ? <Loader2 size={13} className="animate-spin text-content-3" /> : (
                 <div className="text-right">
                   <span className="text-label font-bold text-content-2">
@@ -215,7 +215,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                 llega en null y ahí sí va el guión — nunca un 0. */}
             {!loadingCur && (
               <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
-                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                <span className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1 shrink-0">
                   <TrendingUp size={11} className="text-success" /> Vendidas
                 </span>
                 <div className="flex items-end gap-3">
@@ -247,7 +247,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                 el estante se ve lleno—, y sólo aparecen si los hay. */}
             {!loadingCur && (
               <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
-                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                <span className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1 shrink-0">
                   <Boxes size={11} className="text-chart-1-text" /> En sala
                 </span>
                 {ventas === null
@@ -271,7 +271,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
             )}
             {!loadingCur && (
               <div className="flex items-center justify-between gap-2 border-t border-divider pt-1.5">
-                <span className="text-caption font-black text-content-2 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                <span className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-1 shrink-0">
                   <CalendarClock size={11} className="text-chart-4-text" /> Última venta
                 </span>
                 {ventas === null

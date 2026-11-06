@@ -297,7 +297,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                 ].map(c => (
                                     <div key={c.label} className="bg-surface-card-hover rounded-2xl py-2.5 px-1">
                                         <p className={`text-title-sm font-black tabular-nums ${c.cls}`}>{c.v}</p>
-                                        <p className="text-micro font-bold text-content-2 uppercase tracking-wide">{c.label}</p>
+                                        <p className="text-micro font-black text-content-2 uppercase tracking-widest">{c.label}</p>
                                     </div>
                                 ))}
                             </div>

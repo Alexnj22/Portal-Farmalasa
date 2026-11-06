@@ -943,17 +943,17 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         ) : cameraActive ? (
                             <>
                                 <p className="text-label font-black uppercase tracking-widest text-content-2">Cámara activa</p>
-                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Escaneando con la cámara</p>
+                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Escaneando con la cámara</p>
                             </>
                         ) : paused ? (
                             <>
                                 <p className="text-label font-black uppercase tracking-widest text-content-2">Lector en pausa</p>
-                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">Toca fuera de los campos para reactivar</p>
+                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Toca fuera de los campos para reactivar</p>
                             </>
                         ) : conLector ? (
                             <>
                                 <p className="text-label font-black uppercase tracking-widest text-brand-text">Lector activo</p>
-                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">
+                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">
                                     {scanHold ? `Escanea tu carné · usuario en ${scanHoldLeft}s` : 'Escanea tu carné para entrar'}
                                 </p>
                             </>
@@ -966,7 +966,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     ver `loEscribioUnLector`). El subtítulo nombra la
                                     cámara sólo si este equipo tiene una. */}
                                 <p className="text-label font-black uppercase tracking-widest text-content-2">Escanear carné</p>
-                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide mt-0.5">
+                                <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">
                                     {hasCamera ? 'Con el lector o con la cámara' : 'Pasa el carné por el lector'}
                                 </p>
                             </>
@@ -1125,7 +1125,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                 <Lock size={22} className="text-warning" strokeWidth={2} />
                             </div>
                             <h3 className="text-title-lg font-black text-content tracking-tight text-center">Cambia tu contraseña</h3>
-                            <p className="text-caption font-bold text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
+                            <p className="text-caption font-black text-content-3 uppercase tracking-widest text-center">Primer acceso — establece una contraseña personal</p>
                         </div>
                         <form id="cpf" onSubmit={e=>{e.preventDefault();handleChangePassword();}} className="relative flex flex-col gap-3">
                             {[{ph:'Nueva contraseña (mín. 8 caracteres)',v:newPassword,s:e=>{setNewPassword(e.target.value);setChangePassError('');}},{ph:'Confirmar contraseña',v:confirmPassword,s:e=>{setConfirmPassword(e.target.value);setChangePassError('');}}].map((f,i)=>(
@@ -1158,7 +1158,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                 </div>
                 <div className="text-center mt-1">
                     <p className="font-black text-title text-content tracking-tight leading-none">Portal Farmalasa</p>
-                    <p className="text-micro font-black text-brand-text/70 uppercase tracking-[0.22em] mt-1">Sistema de Gestión</p>
+                    <p className="text-micro font-black text-brand-text/70 uppercase tracking-widest mt-1">Sistema de Gestión</p>
                 </div>
             </div>
 
@@ -1176,7 +1176,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     </div>
                                     <div className="text-left">
                                         <p className="text-caption font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-micro font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
                                 <div className="w-7 h-7 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-all duration-[var(--dur-base)]">
@@ -1235,7 +1235,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                         </div>
                         <div className="text-center">
                             <h1 className={`${esBaja ? 'text-display' : 'text-display-lg'} font-black text-content tracking-tight leading-none`}>Portal</h1>
-                            <p className={`text-caption font-black text-brand-text/72 uppercase tracking-[0.22em] ${esBaja ? 'mt-1' : 'mt-2'}`}>Farmacias La Popular &amp; La Salud</p>
+                            <p className={`text-caption font-black text-brand-text/72 uppercase tracking-widest ${esBaja ? 'mt-1' : 'mt-2'}`}>Farmacias La Popular &amp; La Salud</p>
                         </div>
                     </div>
 
@@ -1256,7 +1256,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                                     </div>
                                     <div className="text-left">
                                         <p className="text-body-sm font-black text-content-2 uppercase tracking-widest">Terminal Kiosco</p>
-                                        <p className="text-micro font-bold text-content-3 uppercase tracking-[0.1em] mt-0.5">Marcar entrada / salida</p>
+                                        <p className="text-micro font-black text-content-3 uppercase tracking-widest mt-0.5">Marcar entrada / salida</p>
                                     </div>
                                 </div>
                                 <div className="w-8 h-8 rounded-full bg-surface-card border border-border-card flex items-center justify-center group-hover:bg-brand group-hover:border-transparent transition-[background-color,border-color] duration-[var(--dur-fast)]">
@@ -1294,7 +1294,7 @@ const LoginView = ({ setView, setActiveEmployee }) => {
                             </div>
                             <div className="min-w-0">
                                 <p className="text-label font-black text-content-2 group-hover:text-content transition-colors truncate">{label}</p>
-                                <p className="text-micro font-bold text-content-3 uppercase tracking-wide">{sub}</p>
+                                <p className="text-micro font-black text-content-3 uppercase tracking-widest">{sub}</p>
                             </div>
                             <ChevronRight size={11} className="text-content-3 ml-auto shrink-0 transition-transform duration-[var(--dur-fast)] group-hover:translate-x-0.5" strokeWidth={2.5} />
                         </a>

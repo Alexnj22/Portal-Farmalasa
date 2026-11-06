@@ -243,7 +243,7 @@ function Tarjeta({ d, salas, alcanceTodo, puedeEditar, puedeApp, abriendoApp, on
             </p>
 
             <div className="min-w-0">
-                <p className="text-label uppercase tracking-wide font-semibold text-content-3 mb-1 flex items-center gap-1.5">
+                <p className="text-label uppercase tracking-widest font-black text-content-3 mb-1 flex items-center gap-1.5">
                     <Tag size={12} aria-hidden />
                     {productos.length === 1 ? '1 producto' : `${productos.length} productos`}
                 </p>

@@ -144,7 +144,7 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
             <div data-cargando className={`fixed inset-0 w-full h-[100dvh] flex items-center justify-center z-header ${className}`}>
                 <div data-surface="card" className="relative px-10 py-8 shadow-[var(--card-shadow)] flex flex-col items-center gap-3">
                     {spinner}
-                    <span className="text-caption font-bold uppercase tracking-[0.2em] text-content-3">
+                    <span className="text-caption font-black uppercase tracking-widest text-content-3">
                         {label || 'Cargando…'}
                     </span>
                 </div>
@@ -163,7 +163,7 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
         <div data-cargando className={`w-full h-full min-h-[160px] flex flex-col items-center justify-center gap-3 ${className}`}>
             {spinner}
             {label && (
-                <span className="text-caption font-bold uppercase tracking-widest text-content-3">{label}</span>
+                <span className="text-caption font-black uppercase tracking-widest text-content-3">{label}</span>
             )}
         </div>
     );

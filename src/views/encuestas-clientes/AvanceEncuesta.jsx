@@ -77,7 +77,7 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
             </div>
 
             <section data-surface="card" className="p-4 space-y-3">
-                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Por sucursal</h3>
+                <h3 className="text-label uppercase tracking-widest font-black text-content-2">Por sucursal</h3>
                 <ul className="space-y-3">
                     {avance.por_sucursal.map((s) => {
                         const cuota = encuesta.alcance === 'sucursales' ? s.meta : null;
@@ -137,7 +137,7 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
             </section>
 
             <section data-surface="card" className="p-4 space-y-2">
-                <h3 className="text-label uppercase tracking-wide font-semibold text-content-2">Por canal</h3>
+                <h3 className="text-label uppercase tracking-widest font-black text-content-2">Por canal</h3>
                 <div className="flex flex-wrap gap-x-6 gap-y-1">
                     {encuesta.canales.map((c) => (
                         <span key={c} className="text-body-sm text-content-2">

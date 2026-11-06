@@ -499,12 +499,12 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
             <tr key={`mm_${row.id}`}>
                 <td colSpan={colCount} className="px-4 pb-2.5 pt-0">
                     <div className="rounded-xl border border-divider bg-surface-card-hover/50 px-3 py-2 flex items-center gap-2 flex-wrap">
-                        <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">Ventas 6M</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">Ventas 6M</span>
                         <span className="text-label font-bold tabular-nums text-content-2 shrink-0">
                             {psp === undefined ? <span className="text-content-3">—</span> : v6m != null ? `${v6m} und.` : '0 und.'}
                         </span>
                         <div className="w-px h-4 bg-divider shrink-0 mx-0.5" />
-                        <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MIN</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">MIN</span>
                         <PortalInput
                             aria-label="Mínimo"
                             tono={!!err && err !== 'MAX inválido' && !err.startsWith('MAX') ? 'danger' : undefined}
@@ -520,7 +520,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                             compact
                             inputClassName="text-center font-bold tabular-nums"
                         />
-                        <span className="text-micro font-semibold text-content-2 uppercase tracking-wide shrink-0">MAX</span>
+                        <span className="text-micro font-black text-content-2 uppercase tracking-widest shrink-0">MAX</span>
                         <PortalInput
                             aria-label="Máximo"
                             tono={!!err && err !== 'MIN inválido' ? 'danger' : undefined}

@@ -1581,6 +1581,24 @@ function scanFile(path) {
     });
   }
 
+  // ── `rotulo-a-mano` (2026-11-06, CERO ABSOLUTO) ───────────────────────
+  // El rótulo en mayúsculas chico (micro/caption/label) es UNO: `font-black
+  // uppercase tracking-widest`. Había 80 combinaciones de peso y espaciado
+  // sobre 1,000 rótulos; se llevaron 409 al estilo mayoritario. El tamaño y
+  // el color siguen libres — es lo que cambia de un contexto a otro.
+  if (!hasException(path, 'rotulo-a-mano')) {
+    lines.forEach((line, i) => {
+      if (isComment[i]) return;
+      for (const m of line.matchAll(/(["'`])((?:(?!\1)[^\\\n])*)\1/g)) {
+        const t = m[2];
+        if (!/(?<![\w:-])uppercase(?![\w-])/.test(t) || !/(?<![\w-])(?:[a-z0-9]+:)*text-(?:micro|caption|label)(?![\w-])/.test(t)) continue;
+        if (/(?<![\w:-])(?:font-(?:bold|semibold|extrabold|medium)|tracking-(?:wide|wider|\[[0-9.]+em\]))(?![\w-])/.test(t)) {
+          findings.push({ line: i + 1, label: 'rótulo en mayúsculas con otro peso/espaciado — es `font-black uppercase tracking-widest`', category: 'rotulo-a-mano', text: line.trim().slice(0, 120) });
+        }
+      }
+    });
+  }
+
   // ── `radio-a-mano` (2026-11-06, TRINQUETE) ────────────────────────────
   // `rounded-[Npx]` / `rounded-[N rem]`: un radio que no sigue al tema.
   // `rounded-sm…3xl` SÍ son tokens (§8: cada tema los redefine) y

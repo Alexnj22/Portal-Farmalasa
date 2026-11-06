@@ -314,7 +314,7 @@ export default function TabTablero({ periodo = '30d' }) {
                         </div>
                     </div>
                     <div className="border-t border-divider pt-3 flex flex-col gap-2">
-                        <p className="text-micro font-bold uppercase tracking-wide text-content-3">Formas de pago</p>
+                        <p className="text-micro font-black uppercase tracking-widest text-content-3">Formas de pago</p>
                         {/* Una barra apilada: el ancho de cada tramo ES la proporción. */}
                         <div className="flex h-3 rounded-full overflow-hidden bg-surface-card-hover" data-medida="dato">
                             {reparto.map((f, i) => (
@@ -336,7 +336,7 @@ export default function TabTablero({ periodo = '30d' }) {
                 <Tarjeta titulo="Pide atención" icon={AlertTriangle}>
                     {/* Clientes que dejaron de comprar: el botón abre una venta ya con ese cliente. */}
                     <div className="flex flex-col gap-1.5">
-                        <p className="flex items-center justify-between text-micro font-bold uppercase tracking-wide text-content-3">
+                        <p className="flex items-center justify-between text-micro font-black uppercase tracking-widest text-content-3">
                             <span className="flex items-center gap-1.5"><CalendarClock size={12} /> Sin comprar hace +30 días</span>
                             <Badge size="sm" variant={num(datos?.inactivos?.total) ? 'warning' : 'success'} uppercase={false}>{formatQty(num(datos?.inactivos?.total))}</Badge>
                         </p>
@@ -354,7 +354,7 @@ export default function TabTablero({ periodo = '30d' }) {
                         ))}
                     </div>
                     <div className="border-t border-divider pt-3 flex flex-col gap-1.5">
-                        <p className="flex items-center justify-between text-micro font-bold uppercase tracking-wide text-content-3">
+                        <p className="flex items-center justify-between text-micro font-black uppercase tracking-widest text-content-3">
                             <span className="flex items-center gap-1.5"><Boxes size={12} /> Lotes que vencen en 90 días</span>
                             <Badge size="sm" variant={num(datos?.inventario?.por_vencer_total) ? 'warning' : 'success'} uppercase={false}>{formatQty(num(datos?.inventario?.por_vencer_total))}</Badge>
                         </p>

@@ -196,7 +196,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4 pb-4 border-b border-border-card">
                 <div>
                     <h3 className="font-black text-content uppercase tracking-tight text-title-sm">Finanzas y Gastos Operativos</h3>
-                    <p className="text-label font-bold text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
+                    <p className="text-label font-black text-content-3 uppercase tracking-widest">Control de Pagos de la Sucursal</p>
                 </div>
                 <div className="flex items-center gap-3">
                     <div className="px-4 py-2 bg-success/10 text-success rounded-2xl border border-success/30 shadow-sm flex items-center gap-2">
@@ -259,7 +259,7 @@ const TabExpenses = ({ liveBranch, openModal, branchType }) => {
                                 </div>
                                 <div>
                                     <h4 className="text-body-lg font-black text-content uppercase tracking-widest leading-none mb-1">Tendencia de Gastos</h4>
-                                    <p className="text-caption font-bold text-content-3 uppercase tracking-widest">Últimos 6 meses operacionales</p>
+                                    <p className="text-caption font-black text-content-3 uppercase tracking-widest">Últimos 6 meses operacionales</p>
                                 </div>
                             </div>
                         </div>

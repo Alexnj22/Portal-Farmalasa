@@ -605,7 +605,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               <Truck size={16} className="text-chart-3-text" />
             </div>
             <div>
-              <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">
+              <p className="text-caption font-black text-chart-3-text uppercase tracking-widest">
                 {step === 1 ? 'Paso 1 de 2' : 'Paso 2 de 2'}
               </p>
               <h3 className="text-body-xl font-black text-content leading-tight">
@@ -638,7 +638,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                   bucket privado: una imagen rota. Con el id toma la firmada. */}
               <AvatarConEstado emp={{ id: conductorElegido.id, name: conductorNombre, photo_url: conductorPhoto }} px={28} />
               <div className="min-w-0 flex-1">
-                <p className="text-micro font-semibold text-chart-3-text uppercase tracking-wider">{esUnoMismo ? 'Conductor (tú)' : 'Conductor'}</p>
+                <p className="text-micro font-black text-chart-3-text uppercase tracking-widest">{esUnoMismo ? 'Conductor (tú)' : 'Conductor'}</p>
                 {opcionesConductor.length > 1 ? (
                   <div className="mt-1 max-w-[260px]">
                     <LiquidSelect
@@ -859,7 +859,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                             </div>
                             <div className="flex items-start gap-2 shrink-0">
                               <div className="text-right">
-                                <p className="text-micro text-content-2 uppercase tracking-wider">acumulado</p>
+                                <p className="text-micro text-content-2 font-black uppercase tracking-widest">acumulado</p>
                                 <p className={`text-subtitle font-black ${timeCls} leading-tight`}>{fmtMin(cumul)}</p>
                               </div>
                               <Button variant="destructive" icon={Trash2} title="Quitar parada" iconOnly onClick={() => removeStop(stop._uid)} />
@@ -878,7 +878,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 {showAddVisita ? (
                   <div className="ml-10 p-3 rounded-xl border border-warning/30 bg-warning/10 space-y-2">
                     <div className="flex items-center justify-between gap-2">
-                      <p className="text-caption font-bold text-warning-text uppercase tracking-wide">¿A qué sucursal?</p>
+                      <p className="text-caption font-black text-warning-text uppercase tracking-widest">¿A qué sucursal?</p>
                       <Button variant="ghost" icon={X} iconOnly onClick={() => setShowAddVisita(false)} />
                     </div>
                     <div className="grid grid-cols-2 gap-1.5">
@@ -913,7 +913,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                         <div className="flex items-center justify-between">
                           <p className="text-label font-bold text-content-2">Bodega — Vuelta en base</p>
                           <div className="text-right">
-                            <p className="text-micro text-content-2 uppercase tracking-wider">total estimado</p>
+                            <p className="text-micro text-content-2 font-black uppercase tracking-widest">total estimado</p>
                             <p className="text-subtitle font-black text-content leading-tight">{fmtMin(totalTime)}</p>
                           </div>
                         </div>
@@ -928,17 +928,17 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
               {totalDist > 0 && (
                 <div className="mt-3 flex gap-2">
                   <div className="flex-1 bg-chart-3/10 rounded-xl px-3 py-2 border border-chart-3/30 text-center">
-                    <p className="text-micro text-chart-3-text font-semibold uppercase tracking-wider">Distancia</p>
+                    <p className="text-micro text-chart-3-text font-black uppercase tracking-widest">Distancia</p>
                     <p className="text-subtitle font-black text-chart-3-text">{fmtDist(totalDist)}</p>
                     <p className="text-micro text-chart-3-text">ida + vuelta a bodega</p>
                   </div>
                   <div className="flex-1 bg-warning/10 rounded-xl px-3 py-2 border border-warning/30 text-center">
-                    <p className="text-micro text-warning-text font-semibold uppercase tracking-wider">Tiempo total</p>
+                    <p className="text-micro text-warning-text font-black uppercase tracking-widest">Tiempo total</p>
                     <p className="text-subtitle font-black text-warning-text">{fmtMin(totalTime)}</p>
                     <p className="text-micro text-warning-text/60">conducir + {MIN_POR_PARADA} min por parada</p>
                   </div>
                   <div className="flex-1 bg-surface-card-hover rounded-xl px-3 py-2 border border-divider text-center">
-                    <p className="text-micro text-content-2 font-semibold uppercase tracking-wider">Solo conducir</p>
+                    <p className="text-micro text-content-2 font-black uppercase tracking-widest">Solo conducir</p>
                     <p className="text-subtitle font-black text-content-2">{fmtMin(totalDriveMin)}</p>
                     <p className="text-micro text-content-3">sin descargas</p>
                   </div>

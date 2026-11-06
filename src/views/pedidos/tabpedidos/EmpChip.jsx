@@ -35,7 +35,7 @@ export default function EmpChip({ emp, label, prefijo, tono = 'content-2' }) {
     const px = 20;
     return (
         <span className={`inline-flex items-center gap-1.5 text-label font-medium shrink-0 ${TONO[tono] ?? TONO['content-2']}`}>
-            {label && <span className="text-content-3 text-caption uppercase tracking-wide">{label}</span>}
+            {label && <span className="text-content-3 text-caption font-black uppercase tracking-widest">{label}</span>}
             {prefijo && <span className="text-content-3 text-caption">{prefijo}</span>}
             <AvatarConEstado emp={emp} px={px} className="shadow-sm" />
             <span className="font-semibold whitespace-nowrap">{shortEmployeeName(emp)}</span>

@@ -391,7 +391,7 @@ const PayrollView = ({ openModal }) => {
                     <div className="w-full lg:w-[280px] shrink-0 lg:h-full lg:overflow-y-auto scrollbar-hide pb-8">
                         <div data-surface="card" className="p-5">
                             <div className="flex items-center justify-between mb-4">
-                                <p className="text-caption font-black uppercase tracking-[0.15em] text-content-3">Períodos</p>
+                                <p className="text-caption font-black uppercase tracking-widest text-content-3">Períodos</p>
                                 {canEdit && (
                                     <Button size="sm" icon={Plus} iconOnly title="Nueva quincena" onClick={() => openModal?.('newPayrollPeriod')} />
                                 )}

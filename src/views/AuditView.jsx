@@ -92,7 +92,7 @@ const AuditRow = memo(({ log, openModal, userPhoto }) => {
                         </span>
                         {/* 🚨 MEJORA: Muestra la sucursal debajo del nombre si existe */}
                         {log.branch_name && (
-                            <span className="text-micro md:text-micro font-bold text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
+                            <span className="text-micro md:text-micro font-black text-content-2 uppercase tracking-widest mt-0.5 truncate max-w-[120px]">
                                 {log.branch_name}
                             </span>
                         )}
@@ -333,7 +333,7 @@ const filtrosCuerpo = (
         >
             {/* Cuenta a la izquierda, barra de filtros a la derecha (§17) */}
             <div className="px-4 md:px-8 py-4 bg-surface-card border-b border-border-card flex justify-between items-center gap-4 flex-wrap">
-                <div className="flex items-center gap-2 text-caption md:text-label font-bold uppercase text-content-2 tracking-widest">
+                <div className="flex items-center gap-2 text-caption md:text-label font-black uppercase text-content-2 tracking-widest">
                     <Hash size={12} className="text-brand-text md:w-3 md:h-3" />
                     {totalItems} <span className="hidden sm:inline">Registros</span>
                 </div>

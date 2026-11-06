@@ -81,7 +81,7 @@ export default function SrsBuscadorWidget({
                         </div>
                     ) : (
                         <>
-                            <p className="text-caption font-bold text-content-2 uppercase tracking-widest px-1">
+                            <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1">
                                 {total} resultado{total !== 1 ? 's' : ''} en SRS
                             </p>
 

@@ -136,7 +136,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                         la foto por `photo` (firmada) antes que `photo_url`. */}
                     {anotados.length > 0 && (
                         <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-caption font-semibold text-content-2 uppercase tracking-wide shrink-0">
+                            <span className="text-caption font-black text-content-2 uppercase tracking-widest shrink-0">
                                 {anotados.length === 1 ? 'Anotado:' : `Anotados (${anotados.length}):`}
                             </span>
                             {anotados.map(a => (

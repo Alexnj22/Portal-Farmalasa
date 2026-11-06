@@ -1000,7 +1000,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                         <Rotulo>Se pide anularlo</Rotulo>
                         <p className="text-body-sm font-black text-content-2 tabular-nums">
                             {formatMoney(meta.monto_actual)}
-                            <span className="text-micro font-bold text-content-3 ml-1.5 uppercase tracking-wide">
+                            <span className="text-micro font-black text-content-3 ml-1.5 uppercase tracking-widest">
                                 {esAbono ? 'vuelve al saldo del crédito'
                                     : (meta.forma_actual && meta.forma_actual !== 'EFECTIVO')
                                         ? 'no toca el cajón: no se pagó en efectivo'
@@ -1208,7 +1208,7 @@ export const BloquePorTipo = ({ req, meta, seleccion, onToggle, onCantidad, cant
                             <p className="text-label font-black text-content-2 tabular-nums mt-0.5">
                                 {formatMoney(meta.monto)}
                                 {meta.forma && (
-                                    <span className="text-micro font-bold text-content-3 ml-1.5 uppercase tracking-wide">
+                                    <span className="text-micro font-black text-content-3 ml-1.5 uppercase tracking-widest">
                                         {meta.forma}
                                     </span>
                                 )}

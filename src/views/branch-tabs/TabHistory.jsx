@@ -287,12 +287,12 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
             <div id="print-report-container" className="hidden print:block w-full bg-surface-card text-content font-sans p-6 md:p-10 max-w-[1200px] mx-auto">
                 <div className="border-b-[3px] border-slate-900 pb-3 mb-4 flex justify-between items-end">
                     <div><h1 className="text-2xl font-black uppercase tracking-tighter text-content leading-none mb-1">Historial Operativo</h1><h2 className="text-body-lg font-bold text-content-2 uppercase tracking-widest leading-none">Sucursal: <span className="text-brand-text">{liveBranch?.name || 'No especificada'}</span></h2></div>
-                    <div className="text-right"><p className="text-micro font-bold text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-body-sm font-black text-content leading-none">{fechaTexto(hoySV())}</p></div>
+                    <div className="text-right"><p className="text-micro font-black text-content-3 uppercase tracking-widest mb-0.5">Fecha de Emisión</p><p className="text-body-sm font-black text-content leading-none">{fechaTexto(hoySV())}</p></div>
                 </div>
                 <div className="overflow-x-auto w-full">
                 <table className="w-full text-left border-collapse">
                     <thead className="bg-brand/5">
-                        <tr className="border-b border-brand/10 text-caption text-content-3 font-black uppercase tracking-[0.15em]">
+                        <tr className="border-b border-brand/10 text-caption text-content-3 font-black uppercase tracking-widest">
                             <th className="py-2 px-2 w-[120px]">Fecha / Hora</th><th className="py-2 px-2 w-[140px]">Acción</th><th className="py-2 px-2">Descripción del Evento</th><th className="py-2 px-2 w-[200px]">Realizado Por / Doc</th>
                         </tr>
                     </thead>
@@ -304,7 +304,7 @@ const TabHistory = ({ liveBranch, history: propHistory = [], isLoadingHistory, h
                             return (
                                 <tr key={idx} className="border-b border-divider break-inside-avoid">
                                     <td className="py-2.5 px-2 font-bold">{dateObj.toLocaleDateString('es-SV')}</td>
-                                    <td className="py-2.5 px-2 text-micro uppercase tracking-widest">{getActionLabel(item)}</td>
+                                    <td className="py-2.5 px-2 text-micro font-black uppercase tracking-widest">{getActionLabel(item)}</td>
                                     <td className="py-2.5 px-2 font-bold text-content">{itemTitle}</td>
                                     <td className="py-2.5 px-2 font-bold text-content-2">{actorDelRegistro(item, employees).nombre || (item.isDoc ? 'DOCUMENTO' : 'SISTEMA')}</td>
                                 </tr>

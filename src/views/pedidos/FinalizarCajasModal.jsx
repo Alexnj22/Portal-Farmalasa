@@ -319,7 +319,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                     <Button variant="secondary" size="xs" icon={ChevronLeft} disabled={submitting} iconOnly onClick={() => setScreen(screen - 1)} />
                 )}
                 <div className="flex-1 min-w-0">
-                    <p className="text-caption font-semibold text-chart-3-text uppercase tracking-wider">Pedido #{pedidoNumero}</p>
+                    <p className="text-caption font-black text-chart-3-text uppercase tracking-widest">Pedido #{pedidoNumero}</p>
                     <h3 className="text-subtitle font-black text-content leading-tight">
                         {screen === 1 ? 'Asignar cajas' : screen === 2 ? 'Página → Caja' : 'Confirmar lo que sale'}
                     </h3>
@@ -403,7 +403,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                 <div className="px-4 py-3 max-h-[56vh] overflow-y-auto scrollbar-hide">
                     {/* Box legend */}
                     <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                        <span className="text-caption font-semibold text-content-2 uppercase tracking-wide mr-1">Cajas:</span>
+                        <span className="text-caption font-black text-content-2 uppercase tracking-widest mr-1">Cajas:</span>
                         {boxes.map(b => (
                             <Badge key={b} variant="chart-3" uppercase={false}>C{b}</Badge>
                         ))}
@@ -425,11 +425,11 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                                                 ? 'bg-chart-3-solid text-white shadow-[var(--shadow-glow-chart-3)]'
                                                 : 'bg-warning-solid text-white'
                                         }`}>
-                                            <span className="text-micro font-bold opacity-75 uppercase leading-none tracking-wide">Pág.</span>
+                                            <span className="text-micro font-black opacity-75 uppercase leading-none tracking-widest">Pág.</span>
                                             <span className="text-subtitle font-black tabular-nums leading-tight">{idx + 1}</span>
                                         </div>
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-micro font-semibold text-content-2 uppercase tracking-wide leading-none mb-0.5">Primer producto</p>
+                                            <p className="text-micro font-black text-content-2 uppercase tracking-widest leading-none mb-0.5">Primer producto</p>
                                             <p className="text-label font-semibold text-content-2 truncate leading-tight">{pg.firstItem}</p>
                                             <p className="text-micro text-content-3 truncate mt-0.5">{pg.firstLab} · {pg.itemCount} prod.</p>
                                         </div>

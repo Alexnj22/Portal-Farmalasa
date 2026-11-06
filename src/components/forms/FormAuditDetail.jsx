@@ -45,7 +45,7 @@ const FormAuditDetail = ({ data }) => {
                         <h3 className="text-title-sm font-black text-content uppercase tracking-tight leading-none mb-1 drop-shadow-sm">
                             {data.severity}
                         </h3>
-                        <p className="text-caption font-bold text-content-3 uppercase tracking-[0.25em]">
+                        <p className="text-caption font-black text-content-3 uppercase tracking-widest">
                             Nivel de Auditoría
                         </p>
                     </div>
@@ -113,7 +113,7 @@ const FormAuditDetail = ({ data }) => {
                     </div>
                     <div className="flex items-center gap-2.5 text-white/40">
                         <Code2 size={16} />
-                        <span className="text-label font-black uppercase tracking-[0.25em]">Payload.json</span>
+                        <span className="text-label font-black uppercase tracking-widest">Payload.json</span>
                     </div>
                 </div>
 

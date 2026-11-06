@@ -1291,7 +1291,7 @@ const PermissionsView = () => {
                                         {isRoleSU && (
                                             <div className="flex items-center gap-1.5 px-2 py-1.5 rounded-xl bg-warning/12 border border-warning/40 animate-in fade-in slide-in-from-bottom-1 duration-[var(--dur-slow)]">
                                                 <Zap size={8} className="text-warning flex-shrink-0" strokeWidth={2.5} />
-                                                <p className="text-micro font-black text-warning-text uppercase tracking-wide">Permisos ignorados</p>
+                                                <p className="text-micro font-black text-warning-text uppercase tracking-widest">Permisos ignorados</p>
                                             </div>
                                         )}
                                     </div>

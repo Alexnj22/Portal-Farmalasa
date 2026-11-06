@@ -127,7 +127,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                     (4)» con una ya resuelta adentro: un contador que incluye lo
                     hecho no sirve para saber cuánto queda, que es para lo único
                     que se mira. */}
-                <span className={`text-caption font-semibold uppercase tracking-wide ${allConfirmed ? 'text-success-text' : 'text-warning-text'}`}>
+                <span className={`text-caption font-black uppercase tracking-widest ${allConfirmed ? 'text-success-text' : 'text-warning-text'}`}>
                     {allConfirmed
                         ? `Diferencias resueltas${resueltas.length > 1 ? ` (${resueltas.length})` : ''}`
                         : `Diferencias — te toca resolver (${mias.length})`}

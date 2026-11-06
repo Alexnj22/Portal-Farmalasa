@@ -87,7 +87,7 @@ function Marca({ compacta = false }) {
                 className={compacta ? 'w-9 h-9 rounded-xl shrink-0' : 'w-11 h-11 rounded-2xl shrink-0'} />
             <div className="min-w-0">
                 <p className="text-body font-black text-content leading-tight truncate">{MARCA_DISTRIBUIDORA.nombre}</p>
-                <p className="text-micro font-black text-brand-text uppercase tracking-wider truncate">{MARCA_DISTRIBUIDORA.bajada}</p>
+                <p className="text-micro font-black text-brand-text uppercase tracking-widest truncate">{MARCA_DISTRIBUIDORA.bajada}</p>
             </div>
         </div>
     );

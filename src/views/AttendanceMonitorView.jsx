@@ -247,7 +247,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "FINISHED":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-divider">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-2 rounded-xl text-caption font-black uppercase tracking-widest border border-divider">
             <LogOut size={14} /> Finalizado
           </div>
         );
@@ -261,13 +261,13 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
         );
       case "OFF_DAY":
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-3 rounded-xl text-caption font-bold uppercase tracking-widest border border-divider">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-3 rounded-xl text-caption font-black uppercase tracking-widest border border-divider">
             <Clock size={14} /> Día Libre
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-2 rounded-xl text-caption font-bold uppercase tracking-widest border border-divider">
+          <div className="flex items-center gap-1.5 px-3 py-1 bg-surface-card-hover text-content-2 rounded-xl text-caption font-black uppercase tracking-widest border border-divider">
             <CircleDashed size={14} /> Sin Marcar
           </div>
         );
@@ -363,7 +363,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
             className="font-bold text-content text-body leading-tight line-clamp-2 break-words group-hover:text-brand-text transition-colors">
             {shortEmployeeName(emp)}
           </h3>
-          <p className="text-micro font-bold text-content-2 uppercase tracking-widest truncate mt-0.5">
+          <p className="text-micro font-black text-content-2 uppercase tracking-widest truncate mt-0.5">
             {emp.role || "Empleado"}
           </p>
         </div>
@@ -423,7 +423,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
               <div
                 key={`${p.timestamp}-${idx}`}
                 className={[
-                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-micro font-bold uppercase tracking-wider",
+                  "flex items-center gap-1 px-1.5 py-0.5 rounded-md border text-micro font-black uppercase tracking-widest",
                   isLatest
                     ? "bg-surface-card border-chart-1/30 text-chart-1-text shadow-sm"
                     : "bg-surface-card border-divider text-content-3",
@@ -576,7 +576,7 @@ const AttendanceMonitorView = ({ setView, setActiveEmployee }) => {
                                 type="button"
                                 onClick={() => toggleSectionCollapsed(sectionKey)}
                             >
-                                <span className="text-caption font-black uppercase tracking-wider text-content-3 flex items-center gap-1.5">
+                                <span className="text-caption font-black uppercase tracking-widest text-content-3 flex items-center gap-1.5">
                                 
                                 {group.branchName}
                               </span>

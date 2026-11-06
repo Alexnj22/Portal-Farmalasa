@@ -168,7 +168,7 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
         <div className="flex flex-col gap-4 min-w-0">
             <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-3 min-w-0">
                 <div>
-                    <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <ScanLine size={14} /> Escanear tarjeta
                     </h3>
                     <p className="text-caption text-content-3 mt-1">
@@ -199,7 +199,7 @@ export default function EscanearCliente({ onVerPuntos, onVerFicha, puedeEditarFi
 
             {candidatos && (
                 <section data-surface="card" className="p-4 md:p-5 flex flex-col gap-2 min-w-0">
-                    <h3 className="text-caption font-black text-content-2 uppercase tracking-wide flex items-center gap-2">
+                    <h3 className="text-caption font-black text-content-2 uppercase tracking-widest flex items-center gap-2">
                         <Users size={14} /> {candidatos.clientes.length} clientes con {NOMBRE_DE_ENTRADA[candidatos.modo] ?? 'ese dato'}
                     </h3>
                     <p className="text-caption text-content-3">Pregúntale su nombre y elige el suyo.</p>

@@ -164,7 +164,7 @@ export default function SolicitudModal({ open, onClose, solicitud, marcas, perso
                             onChange={(e) => setRespuesta(e.target.value)} rows={2} placeholder="Opcional" />
                     ) : solicitud.respuesta && (
                         <div>
-                            <p className="text-label uppercase tracking-wide font-semibold text-content-2 mb-1">Respuesta</p>
+                            <p className="text-label uppercase tracking-widest font-black text-content-2 mb-1">Respuesta</p>
                             <p className="text-body-sm text-content-2 whitespace-pre-wrap">{solicitud.respuesta}</p>
                         </div>
                     )}

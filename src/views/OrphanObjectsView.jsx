@@ -97,7 +97,7 @@ const OrphanObjectsView = () => {
                                     )}
                                 </DataCell>
                                 <DataCell hideBelow="md">
-                                    <span className="text-caption font-bold uppercase tracking-wide text-content-3">{row.kind}</span>
+                                    <span className="text-caption font-black uppercase tracking-widest text-content-3">{row.kind}</span>
                                 </DataCell>
                                 <DataCell hideBelow="md">
                                     <span className="inline-flex items-center gap-1 text-caption text-content-3">

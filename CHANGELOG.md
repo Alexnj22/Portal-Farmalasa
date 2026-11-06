@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1467.1 — Crear un conteo volvió a funcionar
+
+Iniciar un conteo fallaba siempre, de cualquier alcance y en cualquier sala, y
+la pantalla lo mostraba como «no está habilitado». `crear_conteo_inventario`
+comparaba el producto contra `ANY((SELECT antibioticos_del_cuadre()))`, que
+Postgres lee como subconsulta de una fila con el arreglo entero
+(`integer = integer[]`, 42883 → 404). Venía del 28-oct: el último conteo creado
+es del 15-oct. Ahora el arreglo va en una variable y sólo se calcula para
+«Bajo Receta». Probado como la jefa de Salud 4 y deshecho: total que ajusta el
+inventario, 2,879 renglones; bajo receta, 162.
+
+- Migración `20261106205240_conteo_crear_no_falla_por_el_arreglo_de_antibioticos`.
+
 ## v2.1467.0 — Tickets: lo importante se ve primero
 
 Usuario, con los tickets de Salud 4: «todo se ve igual del mismo tamaño así que

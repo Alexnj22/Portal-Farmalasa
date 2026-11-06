@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1459.1 — Anular con tarjeta o transferencia también quita la salida falsa de caja
+
+Decisión del usuario (2026-11-06): «también para tarjeta y transferencia, solo
+si hizo salida». Al anular una venta pagada con crédito, tarjeta o
+transferencia —según el origen, leído antes de anular—, `aplicar-solicitud-
+facturacion` borra la SALIDA «ANULACIÓN DE FACTURA <correlativo>» de la caja de
+hoy. En efectivo la salida es real y no se toca; si no hubo salida, no hace
+nada. Hasta hoy la sala compensaba la de tarjeta a mano con una ENTRADA «Otro ·
+Anulación de factura»: ya no hace falta, y hacerlo además la contaría dos
+veces. La forma de pago y la salida quitada quedan en `erp_aplicado`.
+
 ## v2.1459.0 — Anular una venta al crédito: se borra su crédito y la salida falsa de caja
 
 El sistema de la caja no anula una factura mientras su crédito siga en Admin

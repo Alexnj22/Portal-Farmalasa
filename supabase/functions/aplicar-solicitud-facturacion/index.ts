@@ -518,8 +518,12 @@ Deno.serve(async (req) => {
       // la venta encima la devolvería como si nunca hubiera entrado. Eso lo
       // decide una persona, no esta función.
       let credito: { erp_id: string; total: number; borrado: boolean } | null = null;
+      // La forma de pago SEGÚN EL ORIGEN, leída antes de anular: decide el paso
+      // 0b (crédito) y el 1c (qué salida de caja es falsa).
+      let formaErp: string | null = null;
       if (!estaAnulada(factura.estado)) {
         const ficha = await leerFicha(cookie, erpId);
+        formaErp = ficha.credito;
         if (ficha.credito === PAGO_A_ERP.credito) {
           const dia = String(factura.fecha ?? "").slice(0, 10);
           const buscar = async () =>
@@ -569,21 +573,29 @@ Deno.serve(async (req) => {
       // muestra un sobrante del mismo tamaño. Medido el 6-nov: 0000064474_COF
       // dejó el movimiento 50727 por $1,241.52, y se borró a mano.
       //
-      // Va SÓLO para la venta al crédito cuyo crédito acabamos de borrar. En
-      // efectivo la salida es real (el dinero vuelve al cliente). En tarjeta y
-      // transferencia también es falsa, pero eso no está decidido todavía.
+      // Va para las formas de pago en las que el efectivo NUNCA estuvo en el
+      // cajón: crédito, tarjeta y transferencia (usuario, 2026-11-06: «también
+      // para tarjeta y transferencia, solo si hizo salida»). En efectivo la
+      // salida es real —el dinero vuelve al cliente— y no se toca. Hasta hoy la
+      // sala compensaba la de tarjeta a mano con una ENTRADA «Otro · Anulación
+      // de factura» (Salud 4 el 8-oct, Salud 3 el 7-oct); con esto ya no hace
+      // falta, y hacerlo además la contaría dos veces.
       //
-      // Un fallo acá NO revierte nada ni frena el APPROVED: la venta ya está
-      // anulada. Se avisa con el número del movimiento para borrarlo a mano.
+      // «Sólo si hizo salida»: si no hay ninguna, no hay nada que avisar.
+      // Un fallo al BORRARLA no revierte nada ni frena el APPROVED: la venta ya
+      // está anulada. Se avisa con el número del movimiento para borrarlo a mano.
+      const SIN_EFECTIVO = new Set([PAGO_A_ERP.credito, PAGO_A_ERP.tarjeta, PAGO_A_ERP.transferencia]);
       let salidaCaja: { erp_id: number | null; monto: number | null; borrada: boolean } | null = null;
-      if (credito && anuladaAhora) {
+      if (anuladaAhora && formaErp !== null && SIN_EFECTIVO.has(formaErp)) {
         salidaCaja = await quitarSalidaDeAnulacion(cookie, String(factura.correlativo ?? ""));
-        if (!salidaCaja.borrada)
-          avisos.push(salidaCaja.erp_id
-            ? `La caja de ${mapa.nombre ?? "la sala"} quedó con la salida ${salidaCaja.erp_id} ` +
-              `por la anulación y no se pudo quitar: hay que borrarla a mano.`
-            : `No se encontró la salida de caja que deja la anulación: revisa los movimientos ` +
-              `de hoy de ${mapa.nombre ?? "la sala"}.`);
+        if (salidaCaja.erp_id && !salidaCaja.borrada)
+          avisos.push(`La caja de ${mapa.nombre ?? "la sala"} quedó con la salida ${salidaCaja.erp_id} ` +
+                      `por la anulación y no se pudo quitar: hay que borrarla a mano.`);
+        else if (!salidaCaja.erp_id)
+          console.log(`anulación ${factura.correlativo}: sin salida de caja que quitar.`);
+        else
+          avisos.push(`Se quitó de la caja la salida de $${(salidaCaja.monto ?? 0).toFixed(2)} ` +
+                      `que deja la anulación: ese dinero nunca entró en efectivo.`);
       }
 
       // 1d · El espejo del portal deja de cobrarlo YA, sin esperar al barrido
@@ -722,7 +734,9 @@ Deno.serve(async (req) => {
         // Qué tiene que hacer AHORA quien pidió la anulación. Va aparte de los
         // avisos porque no es una nota al pie: sin volver a facturar, la venta
         // queda sin ningún documento tributario que la respalde.
-        credito: credito ? { ...credito, salida_caja: salidaCaja ?? undefined } : undefined,
+        forma_pago_erp: formaErp ? (ERP_A_PAGO[formaErp] ?? formaErp) : undefined,
+        credito: credito ?? undefined,
+        salida_caja: salidaCaja ?? undefined,
         solventado_internamente: Boolean(interno),
         instruccion: interno?.instruccion ?? undefined,
         responsable: mh ? { nombre: resp.name, dui } : undefined,

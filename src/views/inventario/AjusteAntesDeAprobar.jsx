@@ -56,7 +56,7 @@ export default function AjusteAntesDeAprobar({ open, conteoId, busy, onClose, on
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between gap-3 relative z-base">
                 <div className="min-w-0">
                     <TituloDeSeccion nivel="tarjeta">Aprobar y ajustar el inventario</TituloDeSeccion>
-                    <p className="text-caption text-content-3">Esto es lo que se va a cargar y descontar, en unidades.</p>
+                    <p className="text-caption text-content-3">Esto es lo que se va a cargar y descontar, en lo que se contó; la caja lo mueve en unidades.</p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />
             </div>

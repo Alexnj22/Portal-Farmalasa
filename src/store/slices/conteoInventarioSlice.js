@@ -409,30 +409,37 @@ export const createConteoInventarioSlice = (set, get) => ({
     },
 
     // «Lote y vence» de un renglón del sistema en un conteo que ajusta (ver
-    // `planDeLoteReal`). CONFIRMAR guarda la cantidad en el mismo renglón; MOVER
-    // da de alta el renglón del lote real, le guarda la cantidad y deja en el
-    // original lo que sigue ahí. Si un paso falla después del alta, el error
-    // lo dice: el renglón nuevo ya existe y se puede contar a mano. El original
-    // queda CONTADO (en 0 si nada), no «No ubicado»: no se perdió nada, se
-    // supo su lote.
-    anotarLoteRealConteo: async (conteoId, item, plan) => {
+    // `planDeLotesReales`): primero los lotes —a renglones que ya existen o
+    // nuevos—, y al final el renglón original con lo que le tocó. Así, si algo
+    // falla a mitad, el original sigue con su número de antes y no hay
+    // unidades que desaparezcan; el error dice qué quedó hecho.
+    anotarLotesRealesConteo: async (conteoId, item, plan) => {
         const guardar = get().guardarConteoItem;
-        if (plan.tipo === 'CONFIRMAR') {
-            return guardar(item.id, { fisicoCantidad: plan.cantidad, nota: item.nota ?? null, estadoItem: 'CONTADO' });
-        }
-        const alta = await get().agregarProductoManualConteo(conteoId, {
-            erpProductId: item.erp_product_id,
-            presentacion: item.presentacion,
-            lote: plan.lote,
-            fechaVencimiento: plan.vence,
-        });
+        let hechos = 0;
         try {
-            await guardar(alta.id, { fisicoCantidad: plan.cantidad, nota: null, estadoItem: 'CONTADO' });
-            await guardar(item.id, { fisicoCantidad: plan.quedan, nota: item.nota ?? null, estadoItem: 'CONTADO' });
+            for (const h of plan.aHermanos) {
+                await guardar(h.id, { fisicoCantidad: h.cantidad, nota: null, estadoItem: 'CONTADO' });
+                hechos += 1;
+            }
+            for (const n of plan.nuevos) {
+                const alta = await get().agregarProductoManualConteo(conteoId, {
+                    erpProductId: item.erp_product_id,
+                    presentacion: item.presentacion,
+                    lote: n.lote,
+                    fechaVencimiento: n.vence,
+                });
+                await guardar(alta.id, { fisicoCantidad: n.cantidad, nota: null, estadoItem: 'CONTADO' });
+                hechos += 1;
+            }
+            // El original queda CONTADO (en 0 si nada), no «No ubicado»: no se
+            // perdió nada, se supo su lote.
+            await guardar(item.id, { fisicoCantidad: plan.original, nota: item.nota ?? null, estadoItem: 'CONTADO' });
         } catch (err) {
-            throw new Error(`El lote quedó agregado, pero no se guardaron las cantidades: ${err?.message || 'error'}. Cuéntalas en sus renglones.`);
+            if (!hechos) throw err;
+            const e = new Error(`Se guardaron ${hechos} lote(s), pero no todo: ${err?.message || 'error'}. Revisa los renglones de este producto.`);
+            e.cause = err;
+            throw e;
         }
-        return alta;
     },
 
     finalizarConteoInventario: async (conteoId, pendientesComoCero = false) => {

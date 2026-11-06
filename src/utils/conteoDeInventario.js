@@ -186,13 +186,31 @@ export const reglaDeLoteYVence = (producto) => ({
     pideVence: !!producto?.regulado || !!producto?.perecedero,
 });
 
-/** Una línea del plan de ajuste, en palabras: «+10 lote L1 (vence 02/2028)». */
+/**
+ * Una línea del plan de ajuste, en palabras. Primero en lo que se CONTÓ
+ * —«+3 cajas · lote L1 (vence 02/2028) · 30 unidades»— y las unidades al
+ * final, porque son lo que se mueve en la caja. Sólo en unidades, 3 cajas de
+ * 10 salían «+30» y la sala lo leyó como un error (Salud 4, 2026-11-06). Una
+ * línea sin `en_presentacion` (planes viejos) sigue en unidades.
+ */
 export function rotuloDeAjuste(linea) {
     const u = Number(linea?.unidades) || 0;
+    const signo = (n) => (n > 0 ? '+' : '−');
+    const unidades = (n) => `${signo(n)}${Math.abs(n)} ${n === 1 || n === -1 ? 'unidad' : 'unidades'}`;
     const lote = esLoteGenerico(linea?.lote) ? 'sin lote asignado' : `lote ${linea.lote}`;
     const [a, m] = String(linea?.vence ?? '').split('-');
     const vence = a && m ? ` (vence ${m}/${a})` : '';
-    return `${u > 0 ? '+' : '−'}${Math.abs(u)} ${u === 1 || u === -1 ? 'unidad' : 'unidades'} · ${lote}${vence}`;
+    const pres = (linea?.en_presentacion ?? []).filter((p) => Number(p?.cantidad));
+    if (!pres.length) return `${unidades(u)} · ${lote}${vence}`;
+    const contado = pres.map((p) => {
+        const n = Number(p.cantidad);
+        const plural = pluralDePresentacion(p.presentacion);
+        const nombre = Math.abs(n) === 1 ? String(p.presentacion ?? '').trim().toLowerCase().replace(/\s*x\s*\d+.*$/, '') || 'unidad' : plural;
+        return `${signo(n)}${Math.abs(n)} ${nombre}`;
+    }).join(', ');
+    const suma = pres.reduce((t, p) => t + Number(p.cantidad), 0);
+    const enUnidades = pres.length > 1 || suma !== u ? ` · ${unidades(u)}` : '';
+    return `${contado} · ${lote}${vence}${enUnidades}`;
 }
 
 /** Los motivos por los que un producto no se puede ajustar, en el orden en que se resuelven. */
@@ -218,43 +236,63 @@ export function avanceSinLote(sucursales, branchId = null) {
     return { regulados, sinLote, limpios, sucursal: filas.length === 1 ? filas[0].sucursal : null };
 }
 
+
+/** Clave de un lote para compararlos: lote en mayúsculas (vacío = sin lote) + vence. */
+const claveDeLote = (lote, vence) => `${esLoteGenerico(lote) ? '' : String(lote).trim().toUpperCase()}|${vence || ''}`;
+
 /**
  * Qué hace «Lote y vence» sobre un renglón del sistema en un conteo que ajusta
  * el inventario (2026-11-06). Pedido del usuario: «si no tiene lote deben salir
- * los campos a llenar; si tiene, deben salir para confirmar o editarlos».
+ * los campos a llenar; si tiene, deben salir para confirmar o editarlos». Y
+ * después de probarlo en Salud 4: una caja de Alerkem «sin lote» eran DOS lotes
+ * (3 + 2), y hubo que abrir la ventana dos veces y adivinar cuántas «quedaban».
+ * Por eso son VARIOS lotes en una sola pasada.
  *
  * La etiqueta de un renglón del sistema no se reescribe —es una existencia de
  * la caja y el ajuste se mide contra ella (`editar_lote_conteo_item` lo
- * rechaza)—, así que «editar» es MOVER: las unidades se cuentan en un renglón
- * nuevo con el lote real, y en el original queda lo que de verdad sigue ahí
- * (`quedan`, 0 si nada). Al aprobar, sale del lote viejo y entra al real.
+ * rechaza)—, así que cada lote anotado:
+ *   - si es el MISMO lote y vence del renglón → su cantidad va al renglón;
+ *   - si ya es otro renglón del conteo (`hermanos`) → su cantidad va a ése;
+ *   - si no → renglón nuevo con esa cantidad.
+ * El renglón original queda con lo que le tocó (0 si nada): para uno «sin lote»
+ * es `sinLote`, lo que de verdad no trae lote impreso.
  *
- * - `CONFIRMAR`: el renglón ya tenía lote y no cambió ni el lote ni el vence →
- *   sólo se guarda la cantidad en el mismo renglón.
- * - `MOVER`: renglón sin lote, o lote/vence distintos → alta + cantidad + resto.
- *
- * Devuelve `{ error }` con el texto para la persona si algo falta.
+ * Devuelve `{ error }` con el texto para la persona, o
+ * `{ original, aHermanos: [{ id, cantidad }], nuevos: [{ lote, vence, cantidad }] }`.
  */
-export function planDeLoteReal({ item, lote, vence, cantidad, quedan = 0, regla = { pideLote: true, pideVence: true } }) {
-    const loteLimpio = String(lote ?? '').trim().toUpperCase();
-    const venceLimpio = vence || null;
+export function planDeLotesReales({ item, lotes = [], sinLote = 0, hermanos = [], regla = { pideLote: true, pideVence: true } }) {
     const entero = (v) => {
         if (v === '' || v === null || v === undefined) return null;
         const n = Number(v);
         return Number.isInteger(n) && n >= 0 ? n : null;
     };
-    const cant = entero(cantidad);
-    if (cant == null) return { error: 'Escribe cuántas hay con ese lote (0 o más).' };
-    const resto = entero(quedan);
-    if (resto == null) return { error: 'Escribe cuántas quedan en el renglón original (0 si ninguna).' };
-    if (regla.pideLote && (!loteLimpio || esLoteGenerico(loteLimpio))) return { error: 'Escribe el lote impreso en la caja.' };
-    if (regla.pideVence && !venceLimpio) return { error: 'Pon la fecha de vencimiento.' };
-
-    const teniaLote = !esLoteGenerico(item?.lote);
-    const mismoLote = teniaLote && loteLimpio === String(item.lote).trim().toUpperCase();
-    const mismoVence = (item?.fecha_vencimiento || null) === venceLimpio;
-    // Sin lote propio (producto que no lo lleva) sólo cambia el vencimiento.
-    const igual = regla.pideLote ? (mismoLote && mismoVence) : mismoVence;
-    if (igual) return { tipo: 'CONFIRMAR', cantidad: cant };
-    return { tipo: 'MOVER', lote: loteLimpio || null, vence: venceLimpio, cantidad: cant, quedan: resto };
+    const original = esLoteGenerico(item?.lote);
+    const claveOriginal = claveDeLote(item?.lote, item?.fecha_vencimiento || null);
+    let enOriginal = 0;
+    if (original) {
+        const resto = entero(sinLote);
+        if (resto == null) return { error: 'Escribe cuántas no traen lote impreso (0 si ninguna).' };
+        enOriginal = resto;
+    }
+    const vistos = new Set();
+    const aHermanos = [];
+    const nuevos = [];
+    for (const [i, l] of lotes.entries()) {
+        const n = lotes.length > 1 ? ` (lote ${i + 1})` : '';
+        const lote = String(l?.lote ?? '').trim().toUpperCase();
+        const vence = l?.vence || null;
+        const cant = entero(l?.cantidad);
+        if (regla.pideLote && (!lote || esLoteGenerico(lote))) return { error: `Escribe el lote impreso en la caja${n}.` };
+        if (regla.pideVence && !vence) return { error: `Pon el mes y año de vencimiento${n}.` };
+        if (cant == null) return { error: `Escribe cuántas hay${n} (0 o más).` };
+        const clave = claveDeLote(regla.pideLote ? lote : null, vence);
+        if (vistos.has(clave)) return { error: `Ese lote y vencimiento está dos veces${n}.` };
+        vistos.add(clave);
+        if (clave === claveOriginal) { enOriginal += cant; continue; }
+        const hermano = hermanos.find((h) => h.id !== item?.id && !h.is_vencidos
+            && claveDeLote(h.lote, h.fecha_vencimiento || null) === clave);
+        if (hermano) aHermanos.push({ id: hermano.id, cantidad: cant });
+        else nuevos.push({ lote: regla.pideLote ? lote : null, vence, cantidad: cant });
+    }
+    return { original: enOriginal, aHermanos, nuevos };
 }

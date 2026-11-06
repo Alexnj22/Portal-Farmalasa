@@ -2704,6 +2704,7 @@ export default function ConteoDetailView() {
             {loteRealItem && (
                 <Suspense fallback={null}>
                     <LoteRealDelRenglon open conteoId={id} item={loteRealItem}
+                        hermanos={(itemsByProduct[loteRealItem.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteRealItem.presentacion ?? '').trim().toUpperCase())}
                         onClose={() => setLoteRealItem(null)} onListo={load} />
                 </Suspense>
             )}

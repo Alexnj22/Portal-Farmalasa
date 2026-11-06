@@ -21,6 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1468.2 — El lote se anota de una vez, por mes, y el ajuste habla en cajas
+
+Lo que dejó la prueba en Salud 4 con «Anotar lote»:
+
+- **Varios lotes en una pasada.** Una caja de Alerkem «sin lote» eran dos
+  lotes (3 + 2): hubo que abrir la ventana dos veces y adivinar cuántas
+  «quedaban». Ahora se agregan con «Otro lote», y «Sin lote impreso» se calcula
+  solo (lo que había menos lo anotado). Un lote que ya es renglón del conteo
+  recibe la cantidad en ese renglón en vez de duplicarse; uno repetido en la
+  ventana es un error. El renglón original se guarda AL FINAL: si algo falla a
+  mitad, no desaparecen unidades. Regla: `planDeLotesReales`.
+- **El vencimiento es mes y año** (`CampoMesAnio`), como el empaque; antes
+  pedía el día.
+- **El ajuste dice lo contado.** 3 cajas de 10 salían «+30 unidades» y las 5
+  cajas sin lote «−50», y se leía como cantidades erróneas. La cuenta estaba
+  bien (la caja mueve unidades); ahora `conteo_caja_plan` devuelve también
+  `en_presentacion` y se lee «+3 cajas · lote 260412 (vence 04/2028) · +30
+  unidades». Vale también para la app (mismo `rotuloDeAjuste`).
+- Auditado el conteo de prueba: los 5 productos cuadran (sistema sin lote =
+  suma de los lotes anotados) y el plan del ajuste los acepta.
+- Migración `20261106212607_conteo_caja_plan_dice_cuanto_en_lo_contado`.
+
 ## v2.1468.1 — Tickets: datos a dos columnas y tablas en dos pisos
 
 Tercera vuelta con el papel de Salud 4: «el encabezado hacelo de 2 columnas, así

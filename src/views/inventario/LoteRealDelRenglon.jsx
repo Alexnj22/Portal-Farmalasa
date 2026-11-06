@@ -1,17 +1,18 @@
-import React, { useEffect, useState } from 'react';
-import { X, CheckCircle2 } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { X, CheckCircle2, Plus, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Notice from '../../components/common/Notice';
 import LiquidModal from '../../components/common/LiquidModal';
-import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import CampoMesAnio from '../../components/common/CampoMesAnio';
 import PortalInput from '../../components/common/PortalInput';
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { esLoteGenerico, reglaDeLoteYVence, planDeLoteReal, unidadDeConteo } from '@nucleo/utils/conteoDeInventario';
+import { venceDelMes } from '@nucleo/utils/fecha';
+import { esLoteGenerico, reglaDeLoteYVence, planDeLotesReales, unidadDeConteo } from '@nucleo/utils/conteoDeInventario';
 import { fetchReglaDeLoteDelProducto } from '@nucleo/data/conteoInventario';
-import { Campo, CajaFecha } from './camposDeConteo';
+import { Campo } from './camposDeConteo';
 
 /**
  * «Lote y vence» de un renglón del sistema, en un conteo que ajusta el
@@ -19,32 +20,37 @@ import { Campo, CajaFecha } from './camposDeConteo';
  * «Sin lote» sólo dejaba poner cantidad: «si no tiene lote deben salir los
  * campos a llenar; si tiene, deben salir para confirmar o editarlos».
  *
- * Sin lote → los campos vacíos, para anotar el impreso en la caja.
- * Con lote → los campos con lo que dice el sistema: si no se tocan es
- * confirmar; si se cambian, las unidades pasan al lote real. La regla vive en
- * `planDeLoteReal` y los pasos en `anotarLoteRealConteo`.
+ * Rehecho tras la prueba en Salud 4, el mismo día:
+ * - Una caja «sin lote» puede ser VARIOS lotes (Alerkem: 3 + 2). Se anotan
+ *   todos de una vez con «Otro lote», no abriendo la ventana dos veces.
+ * - El vencimiento es MES y año (`CampoMesAnio`): es lo que trae el empaque;
+ *   el día lo inventaba quien contaba.
+ * - «Sin lote impreso» se calcula solo: lo que había menos lo anotado. Se
+ *   puede cambiar; una vez cambiado, deja de calcularse.
+ *
+ * La regla vive en `planDeLotesReales`; los pasos, en `anotarLotesRealesConteo`.
  */
-export default function LoteRealDelRenglon({ open, conteoId, item, onClose, onListo }) {
+const aMes = (fecha) => (fecha ? String(fecha).slice(0, 7) : '');
+const loteVacio = () => ({ lote: '', vence: '', cantidad: '' });
+
+export default function LoteRealDelRenglon({ open, conteoId, item, hermanos = [], onClose, onListo }) {
     const { showToast } = useToastStore();
-    const anotar = useStaffStore((s) => s.anotarLoteRealConteo);
+    const anotar = useStaffStore((s) => s.anotarLotesRealesConteo);
     const [regla, setRegla] = useState({ pideLote: true, pideVence: true });
-    const [lote, setLote] = useState('');
-    const [vence, setVence] = useState('');
-    const [cantidad, setCantidad] = useState('');
-    const [quedan, setQuedan] = useState('0');
+    const [lotes, setLotes] = useState([loteVacio()]);
+    const [sinLoteEscrito, setSinLoteEscrito] = useState(null);
     const [saving, setSaving] = useState(false);
 
     const sinLote = esLoteGenerico(item?.lote);
+    // Lo que había en el renglón: lo contado, o lo que dice el sistema.
+    const total = Number(item?.fisico_cantidad ?? item?.sistema_cantidad ?? 0) || 0;
 
     useEffect(() => {
         if (!open || !item) return;
-        setLote(sinLote ? '' : item.lote);
-        setVence(item.fecha_vencimiento || '');
-        // Sin lote: lo contado ahí (o lo que dice el sistema) es lo que se va a
-        // anotar con su lote; con lote, lo contado en el renglón.
-        const base = item.fisico_cantidad ?? item.sistema_cantidad ?? '';
-        setCantidad(base === null ? '' : String(base));
-        setQuedan('0');
+        setLotes(sinLote
+            ? [loteVacio()]
+            : [{ lote: item.lote, vence: aMes(item.fecha_vencimiento), cantidad: String(total) }]);
+        setSinLoteEscrito(null);
         let vivo = true;
         fetchReglaDeLoteDelProducto(item.erp_product_id).then(({ data, error }) => {
             if (!vivo) return;
@@ -52,79 +58,102 @@ export default function LoteRealDelRenglon({ open, conteoId, item, onClose, onLi
             if (data) setRegla(reglaDeLoteYVence(data));
         });
         return () => { vivo = false; };
-    }, [open, item, sinLote]);
+    }, [open, item, sinLote, total]);
+
+    const anotado = lotes.reduce((t, l) => t + (Number(l.cantidad) || 0), 0);
+    const sinLoteAuto = Math.max(0, total - anotado);
+    const sinLoteValor = sinLoteEscrito ?? String(sinLoteAuto);
+
+    const plan = useMemo(() => planDeLotesReales({
+        item,
+        lotes: lotes.map((l) => ({ lote: l.lote, vence: l.vence ? venceDelMes(l.vence) : null, cantidad: l.cantidad })),
+        sinLote: sinLoteValor,
+        hermanos,
+        regla,
+    }), [item, lotes, sinLoteValor, hermanos, regla]);
 
     if (!item) return null;
     const unidad = unidadDeConteo(item);
-    const plan = planDeLoteReal({ item, lote, vence, cantidad, quedan, regla });
-    const mueve = plan.tipo === 'MOVER';
-    const origen = sinLote ? '«Sin lote»' : `el lote ${item.lote}`;
+
+    const cambiar = (i, campo, valor) => setLotes((prev) => prev.map((l, j) => (j === i ? { ...l, [campo]: valor } : l)));
+    const quitar = (i) => setLotes((prev) => (prev.length > 1 ? prev.filter((_, j) => j !== i) : prev));
 
     const guardar = async () => {
         if (plan.error) { showToast('Falta un dato', plan.error, 'error'); return; }
         setSaving(true);
         try {
             await anotar(conteoId, item, plan);
-            showToast(mueve ? 'Lote anotado' : 'Lote confirmado',
-                mueve ? `${plan.cantidad} con lote ${plan.lote || 'sin lote'}; en ${origen} quedan ${plan.quedan}.` : `${plan.cantidad} en el lote ${item.lote}.`,
+            const n = plan.nuevos.length + plan.aHermanos.length;
+            showToast(n ? 'Lotes anotados' : 'Lote confirmado',
+                n ? `${n} ${n === 1 ? 'lote' : 'lotes'}${sinLote ? `; sin lote impreso: ${plan.original}` : ''}.` : `${plan.original} ${unidad.nombre} en el lote ${item.lote}.`,
                 'success');
             onClose();
-            await onListo?.();
         } catch (err) {
-            showToast('No se guardó', mensajeAmigable(err), 'error');
-            await onListo?.();
+            showToast('No se guardó todo', mensajeAmigable(err), 'error');
         } finally {
             setSaving(false);
+            await onListo?.();
         }
     };
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-sm" ariaLabel={`Lote y vencimiento — ${item.product_nombre || ''}`}>
+        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-md" ariaLabel={`Lote y vencimiento — ${item.product_nombre || ''}`}>
             <div className="flex-none bg-transparent px-6 py-5 border-b border-border-card flex items-center justify-between relative z-base">
                 <div className="min-w-0">
                     <TituloDeSeccion nivel="tarjeta">{sinLote ? 'Anotar lote' : 'Confirmar lote'}</TituloDeSeccion>
-                    <p className="text-caption text-content-3 truncate max-w-[240px]">{item.product_nombre} · {item.presentacion}</p>
+                    <p className="text-caption text-content-3 truncate max-w-[280px]">
+                        {item.product_nombre} · {unidad.texto} · había {total}
+                    </p>
                 </div>
                 <Button variant="ghost" size="sm" icon={X} iconOnly aria-label="Cerrar" onClick={onClose} />
             </div>
-            <div className="px-6 py-5 flex flex-col gap-3 relative z-base">
+            <form className="px-6 py-5 flex flex-col gap-3 relative z-base" onSubmit={(e) => { e.preventDefault(); guardar(); }}>
                 <p className="text-label text-content-3">
                     {sinLote
-                        ? 'Escribe el lote y el vencimiento impresos en la caja, y cuántas hay con ese lote.'
-                        : 'Revisa el lote y el vencimiento contra la caja. Si coinciden, sólo confirma la cantidad; si no, corrígelos.'}
+                        ? 'Anota cada lote impreso en las cajas, con su vencimiento y cuántas hay. Si hay más de uno, toca «Otro lote».'
+                        : 'Revisa el lote y el vencimiento contra la caja. Si coinciden, sólo confirma la cantidad; si no, corrígelos o agrega otro lote.'}
                 </p>
-                {regla.pideLote && (
-                    <Campo label="Lote">
-                        <PortalInput aria-label="Lote" type="text" value={lote} placeholder="Ej. A-1234"
-                            onChange={(e) => setLote(e.target.value)} inputClassName="text-body-xl uppercase" />
+                {lotes.map((l, i) => (
+                    <div key={i} className="grid grid-cols-[1fr_auto] gap-2 items-end p-3 rounded-2xl border border-border-card">
+                        <div className="grid grid-cols-2 gap-2 min-w-0">
+                            {regla.pideLote && (
+                                <div className="col-span-2">
+                                    <Campo label={lotes.length > 1 ? `Lote ${i + 1}` : 'Lote'}>
+                                        <PortalInput aria-label={`Lote ${i + 1}`} type="text" value={l.lote} placeholder="Ej. 260412"
+                                            onChange={(e) => cambiar(i, 'lote', e.target.value)} inputClassName="text-body-xl uppercase" />
+                                    </Campo>
+                                </div>
+                            )}
+                            {regla.pideVence && (
+                                <CampoMesAnio label="Vence (mes/año)" value={l.vence} onChange={(v) => cambiar(i, 'vence', v)} compact />
+                            )}
+                            <Campo label={`Cantidad (${unidad.nombre})`}>
+                                <PortalInput aria-label={`Cantidad del lote ${i + 1}`} type="number" inputMode="numeric" min="0"
+                                    value={l.cantidad} onChange={(e) => cambiar(i, 'cantidad', e.target.value)} inputClassName="text-body-xl tabular-nums" />
+                            </Campo>
+                        </div>
+                        {lotes.length > 1 && (
+                            <Button variant="ghost" icon={Trash2} iconOnly aria-label={`Quitar el lote ${i + 1}`} onClick={() => quitar(i)} />
+                        )}
+                    </div>
+                ))}
+                <Button variant="secondary" size="sm" icon={Plus} onClick={() => setLotes((prev) => [...prev, loteVacio()])}>Otro lote</Button>
+                {sinLote && (
+                    <Campo label={`Sin lote impreso (${unidad.nombre})`}>
+                        <PortalInput aria-label="Sin lote impreso" type="number" inputMode="numeric" min="0"
+                            value={sinLoteValor} onChange={(e) => setSinLoteEscrito(e.target.value)} inputClassName="text-body-xl tabular-nums" />
                     </Campo>
                 )}
-                {regla.pideVence && (
-                    <Campo label="Vencimiento">
-                        <CajaFecha><LiquidDatePicker value={vence} onChange={setVence} /></CajaFecha>
-                    </Campo>
+                {sinLote && (
+                    <Notice variant="info">
+                        Había {total}; anotaste {anotado} con lote. Al aprobar, las que tienen lote salen de «Sin lote» y entran a su lote.
+                    </Notice>
                 )}
-                <Campo label={`Cantidad (${unidad.texto})`}>
-                    <PortalInput aria-label="Cantidad con este lote" type="number" inputMode="numeric" min="0"
-                        value={cantidad} onChange={(e) => setCantidad(e.target.value)} inputClassName="text-body-xl tabular-nums" />
-                </Campo>
-                {mueve && (
-                    <>
-                        <Campo label={`Quedan en ${origen}`}>
-                            <PortalInput aria-label={`Quedan en ${origen}`} type="number" inputMode="numeric" min="0"
-                                value={quedan} onChange={(e) => setQuedan(e.target.value)} inputClassName="text-body-xl tabular-nums" />
-                        </Campo>
-                        <Notice variant="info">
-                            Al aprobar, estas unidades salen de {origen} y entran al lote que anotaste.
-                            Deja 0 en «Quedan» salvo que de verdad haya unidades {sinLote ? 'sin lote impreso' : `con el lote ${item.lote}`}.
-                        </Notice>
-                    </>
-                )}
-                <Button tone="chart-9" icon={CheckCircle2} loading={saving} disabled={saving || !!plan.error} onClick={guardar}>
-                    {mueve ? 'Guardar lote' : 'Confirmar'}
+                <Button type="submit" tone="chart-9" icon={CheckCircle2} loading={saving} disabled={saving || !!plan.error}>
+                    {plan.nuevos?.length || plan.aHermanos?.length ? 'Guardar lotes' : 'Confirmar'}
                 </Button>
                 {plan.error && <p className="text-caption text-content-3">{plan.error}</p>}
-            </div>
+            </form>
         </LiquidModal>
     );
 }

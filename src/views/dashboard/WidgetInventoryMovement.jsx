@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-    AlertTriangle, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, Loader2,
+    AlertTriangle, Archive, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, Loader2,
     ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
@@ -26,6 +26,8 @@ import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, fotoDeAjuste, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import Notice from '../../components/common/Notice';
+import PasarAVencidosBodega from './PasarAVencidosBodega';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 // Widget «Ajuste de Inventario».
 //
@@ -121,7 +123,7 @@ let contador = 0;
 // desde que la app pide ajustes: una sola definición para las dos pantallas.
 
 /* ─── Paso 1 · qué se va a hacer ──────────────────────────────────────────── */
-function SelectorOperacion({ onSelect }) {
+function SelectorOperacion({ onSelect, onAVencidos }) {
     return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">
             <p className="text-caption font-black text-content-2 uppercase tracking-widest px-1 shrink-0">
@@ -144,6 +146,22 @@ function SelectorOperacion({ onSelect }) {
                         <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
                     </button>
                 ))}
+                {/* Sólo Bodega, y directo: no es una solicitud (PasarAVencidosBodega). */}
+                {onAVencidos && (
+                    <button
+                        onClick={onAVencidos}
+                        className="w-full flex items-center gap-3 p-3 rounded-2xl border text-left hover:translate-y-[var(--lift-hover)] transition-all bg-danger/10 border-danger/30"
+                    >
+                        <IconoEnCaja tamano="sm" tono="danger" className="flex-shrink-0">
+                            <Archive size={15} strokeWidth={2} />
+                        </IconoEnCaja>
+                        <div className="flex-1 min-w-0">
+                            <p className="text-body-sm font-black text-danger-text">Pasar a vencidos</p>
+                            <p className="text-caption text-content-3 mt-0.5">Del estante al área de vencidos de Bodega, sin aprobación</p>
+                        </div>
+                        <ChevronRight size={13} strokeWidth={2.5} className="text-content-3 shrink-0" />
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -157,7 +175,10 @@ function SelectorOperacion({ onSelect }) {
 const TONO_DE_OPERACION = { 'VENCIMIENTO': 'danger', 'DESCARTE': 'warning', 'PRODUCTO DAÑADO': 'warning', 'CARGA': 'success' };
 
 export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbicacionId, selectorSucursal, onHecho }) {
-    const { user } = useAuth();
+    const { user, hasPermission } = useAuth();
+    // Bodega (erp 6) pasa a vencidos directo; lo hace quien carga compras.
+    const [aVencidos, setAVencidos] = useState(false);
+    const puedeAVencidos = Number(erpSucursalId) === 6 && hasPermission('cargar_compra', 'can_edit');
     const employees = useStaffStore(s => s.employees);
 
     const [opKey, setOpKey] = useState(null);      // null = paso 1
@@ -562,10 +583,14 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
         </div>
     );
 
+    if (aVencidos && puedeAVencidos) return (
+        <PasarAVencidosBodega branchName={branchName} onVolver={() => setAVencidos(false)} onHecho={onHecho} />
+    );
+
     if (!op) return (
         <div className="flex flex-col gap-3 flex-1 min-h-0">
             {selectorSucursal}
-            <SelectorOperacion onSelect={setOpKey} />
+            <SelectorOperacion onSelect={setOpKey} onAVencidos={puedeAVencidos ? () => setAVencidos(true) : null} />
         </div>
     );
 

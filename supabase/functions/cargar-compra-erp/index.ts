@@ -28,7 +28,7 @@ import { dteDeManual, validarManual } from "../_shared/compraManual.ts";
 // Declarado acá para que `deno check` lo conozca (antes, `Cannot find name`).
 declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
 import {
-  sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
+  sesionEn, existenciasDeUbicacion, estadoDeRecepcion, traerFila, resolverPresentacion, pendientesDeOrigen, identificarTrasladoNuevo, armarConcepto, hoySV,
   TRASLADO, RECIBIR, VER, buscarTrasladoHuerfano, direccionesPorSucursal,
 } from "../_shared/erp-traslado.ts";
 import {
@@ -1089,6 +1089,81 @@ const MOTIVOS_VENCIDOS: Record<string, string> = {
  * quedan `por_mover` con la razón, y nadie mueve a ciegas. La recepción se
  * comprueba leyendo la existencia de vencidos antes y después.
  */
+/**
+ * Pasa renglones del estante de Bodega a su área de vencidos y lo COMPRUEBA:
+ * un traslado de Bodega a Bodega (sale del estante) que se recibe en la
+ * ubicación de vencidos, y después se lee la existencia de vencidos antes y
+ * después. Lo usan los erróneos de una compra (`apartarErroneos`) y el paso a
+ * vencidos de lo que ya estaba en el estante (`estanteAVencidos`).
+ *
+ * `partes` va en el formato del formulario de traslado:
+ * `producto|compra|venta|paquetes|unidad|vence|presentación|lote`.
+ * `esperado` son las UNIDADES que tiene que subir cada producto en vencidos.
+ *
+ * Nunca reintenta: un traslado que salió y no se pudo identificar o recibir
+ * se devuelve con su `traslado` (si se supo) y `salio: true`, para que nadie lo
+ * mande otra vez.
+ */
+async function moverAlAreaDeVencidos(cookie: string, x: {
+  partes: string[]; total: number; esperado: Map<number, number>; estante: number; vencidosUbic: number;
+  concepto: string; conceptoRecibir: (idTraslado: string) => string;
+}): Promise<{ ok: true; traslado: string } | { ok: false; traslado: string | null; salio: boolean; error: string; nota: string }> {
+  const falla = (salio: boolean, traslado: string | null, error: string, nota: string) =>
+    ({ ok: false as const, salio, traslado, error, nota });
+  const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
+  const vale = pagina.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
+  if (!vale) return falla(false, null, "Sin vale.", "El sistema no entregó el número de vale.");
+  const antesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, x.vencidosUbic);
+  const antes = await pendientesDeOrigen(cookie, x.estante);
+  const r = await pedir(cookie, TRASLADO, new URLSearchParams({
+    process: "insert", datos: x.partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(x.partes.length),
+    total: x.total.toFixed(4), fecha: hoySV(), concepto: x.concepto,
+    origen: String(x.estante), id_suc_destino: String(ERP_BODEGA), id_ubicacion_destino: "0", numero_vale: vale,
+  }), { extra: { Referer: TRASLADO }, reintentos: 1 });
+  let ok = false;
+  try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+  if (!ok) return falla(false, null, "El traslado a vencidos no entró.", `El sistema no aceptó el traslado: ${r.slice(0, 300)}`);
+  const despues = await pendientesDeOrigen(cookie, x.estante);
+  // Sin la foto de antes, cualquier traslado viejo a Bodega parecería el nuevo.
+  const idT = antes.size > 0 ? (await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, [])).id : null;
+  if (!idT) {
+    return falla(true, null, "Traslado sin identificar: recibirlo a mano.",
+      "Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
+  }
+
+  // Recibirlo en vencidos, con lo que la propia pantalla de recepción muestra.
+  const rec = await pedir(cookie, `${RECIBIR}?id_movimiento=${idT}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
+  const filas: string[] = []; let tot = 0;
+  for (const tr of [...rec.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((t) => /class="id_p"/.test(t))) {
+    const idProd = tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? "";
+    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
+    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const venta = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
+    const esp = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
+    const vence = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
+    if (!idProd || !idPres) continue;
+    filas.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
+    tot += Number(compra) * Number(esp);
+  }
+  if (filas.length !== x.partes.length) {
+    return falla(true, idT, "No se pudo leer la recepción.", `El traslado ${idT} quedó sin recibir: recibirlo a mano en vencidos.`);
+  }
+  const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
+    process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
+    fecha: hoySV(), concepto: x.conceptoRecibir(idT), destino: String(x.vencidosUbic), id_traslado: idT,
+  }), { extra: { Referer: RECIBIR }, reintentos: 1 });
+  let ok2 = false;
+  try { ok2 = String(JSON.parse(r2)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
+
+  // Comprobarlo en vencidos: cada producto tiene que haber subido lo marcado.
+  const despuesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, x.vencidosUbic);
+  const entro = ok2 && antesVenc && despuesVenc && [...x.esperado].every(([id, u]) =>
+    (despuesVenc.get(id) ?? 0) - (antesVenc.get(id) ?? 0) >= u - 1e-6);
+  if (!entro) return falla(true, idT, "No se comprobó en vencidos.", `El traslado ${idT} no se pudo comprobar en vencidos: revisarlo.`);
+  return { ok: true, traslado: idT };
+}
+
 async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
   cargaId: number; documentId: number | null; manualId: number | null; quien: string; emisor: { nit: string | null; nombre: string | null };
   erpCompra: number | null; lineas: LineaSobre[]; mover: boolean; estante: number;
@@ -1140,65 +1215,18 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     esperado.set(e.product_id, (esperado.get(e.product_id) ?? 0) + e.unidades);
   }
 
-  const pagina = await pedir(cookie, TRASLADO, undefined, { extra: { Referer: `${BASE}/dashboard.php` } });
-  const vale = pagina.match(/numero_vale["'][^>]*value=["']([^"']+)["']/)?.[1] ?? "";
-  if (!vale) { await nota("El sistema no entregó el número de vale."); return { movidos: 0, error: "Sin vale." }; }
-  const antesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidosUbic);
-  const antes = await pendientesDeOrigen(cookie, x.estante);
-  const r = await pedir(cookie, TRASLADO, new URLSearchParams({
-    process: "insert", datos: partes.join("#") + "#", id_traslado_guardado: "0", cuantos: String(partes.length),
-    total: total.toFixed(4), fecha: hoySV(),
-    concepto: armarConcepto(`PORTAL ${errs.every((e) => e.motivo) ? "" : "ERROR DEL PROVEEDOR "}COMPRA ${x.erpCompra ?? ""} ${x.emisor.nombre ?? ""} A VENCIDOS`).concepto,
-    origen: String(x.estante), id_suc_destino: String(ERP_BODEGA), id_ubicacion_destino: "0", numero_vale: vale,
-  }), { extra: { Referer: TRASLADO }, reintentos: 1 });
-  let ok = false;
-  try { ok = String(JSON.parse(r)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
-  if (!ok) { await nota(`El sistema no aceptó el traslado: ${r.slice(0, 300)}`); return { movidos: 0, error: "El traslado a vencidos no entró." }; }
-  const despues = await pendientesDeOrigen(cookie, x.estante);
-  // Sin la foto de antes, cualquier traslado viejo a Bodega parecería el nuevo.
-  const idT = antes.size > 0 ? (await identificarTrasladoNuevo(cookie, antes, despues, pagina, ERP_BODEGA, [])).id : null;
-  if (!idT) {
-    await nota("Salió el traslado a vencidos pero no se pudo identificar su número: recibirlo a mano en vencidos.");
-    return { movidos: 0, error: "Traslado sin identificar: recibirlo a mano." };
+  const conceptoT = armarConcepto(`PORTAL ${errs.every((e) => e.motivo) ? "" : "ERROR DEL PROVEEDOR "}COMPRA ${x.erpCompra ?? ""} ${x.emisor.nombre ?? ""} A VENCIDOS`).concepto;
+  const mov = await moverAlAreaDeVencidos(cookie, {
+    partes, total, esperado, estante: x.estante, vencidosUbic, concepto: conceptoT,
+    conceptoRecibir: (idT) => `PORTAL ERROR DEL PROVEEDOR (TRASLADO ${idT})`,
+  });
+  if (mov.traslado) {
+    const { error: eTr } = await admin.from("compra_renglon_erroneo").update({ erp_traslado_id: mov.traslado, updated_at: new Date().toISOString() })
+      .eq("compra_carga_id", x.cargaId);
+    if (eTr) throw eTr;
   }
-  const { error: eTr } = await admin.from("compra_renglon_erroneo").update({ erp_traslado_id: idT, updated_at: new Date().toISOString() })
-    .eq("compra_carga_id", x.cargaId);
-  if (eTr) throw eTr;
-
-  // Recibirlo en vencidos, con lo que la propia pantalla de recepción muestra.
-  const rec = await pedir(cookie, `${RECIBIR}?id_movimiento=${idT}`, undefined, { extra: { Referer: `${BASE}/admin_traslados.php` } });
-  const filas: string[] = []; let tot = 0;
-  for (const tr of [...rec.matchAll(/<tr[^>]*>[\s\S]*?<\/tr>/g)].map((m) => m[0]).filter((t) => /class="id_p"/.test(t))) {
-    const idProd = tr.match(/class="id_p">\s*(\d+)/)?.[1] ?? "";
-    const idPres = tr.match(/<select[^>]*class=['"]sel['"][^>]*>\s*<option[^>]*value=['"](\d+)['"]/)?.[1] ?? "";
-    const compra = tr.match(/class=['"][^'"]*precio_compra[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const venta = tr.match(/class=['"][^'"]*precio_venta[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const unidad = tr.match(/class=['"]unidad['"][^>]*value=['"](\d+)/)?.[1] ?? "1";
-    const esp = tr.match(/class=['"][^'"]*\besp\b[^'"]*['"][^>]*value=['"]\s*([\d.]+)/)?.[1] ?? "0";
-    const vence = tr.match(/class=['"][^'"]*\bvence\b[^'"]*['"][^>]*value=['"]([^'"]*)['"]/)?.[1] ?? "";
-    if (!idProd || !idPres) continue;
-    filas.push([idProd, compra, venta, esp, unidad, vence, idPres, esp].join("|"));
-    tot += Number(compra) * Number(esp);
-  }
-  if (filas.length !== partes.length) {
-    await nota(`El traslado ${idT} quedó sin recibir: recibirlo a mano en vencidos.`);
-    return { movidos: 0, traslado: idT, error: "No se pudo leer la recepción." };
-  }
-  const r2 = await pedir(cookie, RECIBIR, new URLSearchParams({
-    process: "insert", datos: filas.join("#") + "#", cuantos: String(filas.length), total: tot.toFixed(4),
-    fecha: hoySV(), concepto: `PORTAL ERROR DEL PROVEEDOR (TRASLADO ${idT})`, destino: String(vencidosUbic), id_traslado: idT,
-  }), { extra: { Referer: RECIBIR }, reintentos: 1 });
-  let ok2 = false;
-  try { ok2 = String(JSON.parse(r2)?.typeinfo).toLowerCase() === "success"; } catch { /* abajo */ }
-
-  // Comprobarlo en vencidos: cada producto tiene que haber subido lo marcado.
-  const despuesVenc = await existenciasDeUbicacion(cookie, ERP_BODEGA, vencidosUbic);
-  const entro = ok2 && antesVenc && despuesVenc && [...esperado].every(([id, u]) =>
-    (despuesVenc.get(id) ?? 0) - (antesVenc.get(id) ?? 0) >= u - 1e-6);
-  if (!entro) {
-    await nota(`El traslado ${idT} no se pudo comprobar en vencidos: revisarlo.`);
-    return { movidos: 0, traslado: idT, error: "No se comprobó en vencidos." };
-  }
+  if (!mov.ok) { await nota(mov.nota); return { movidos: 0, traslado: mov.traslado ?? undefined, error: mov.error }; }
+  const idT = mov.traslado;
   // Comprobado en vencidos: recién ahora se puede dar salida. Un renglón al
   // que ya le adjuntaron la nota conserva `con_nota`.
   const ahora = new Date().toISOString();
@@ -1209,6 +1237,114 @@ async function apartarErroneos(admin: any, cookie: string, errs: Erroneo[], x: {
     .update({ estado: "en_vencidos" }).eq("compra_carga_id", x.cargaId).eq("estado", "por_mover");
   if (eU2) throw eU2;
   return { movidos: errs.length, traslado: idT };
+}
+
+/* ── Del estante de Bodega a su área de vencidos (2026-11-06) ────────────────
+ *
+ * Usuario: «creemos algo para bodega que lo pueda hacer, con motivo, foto».
+ * Bodega lo hace directo, sin aprobación; por daño exige foto (la tabla lo
+ * vuelve a exigir con un CHECK). Hasta hoy sólo se podía al CARGAR una compra;
+ * lo que ya estaba en el estante se movía a mano en el sistema y sin rastro.
+ *
+ * Un solo traslado para todos los renglones, recibido en vencidos y comprobado
+ * leyendo vencidos antes y después (`moverAlAreaDeVencidos`). Las filas se
+ * escriben ANTES de mandar (`enviando`): un corte a medio camino queda escrito.
+ */
+const MOTIVOS_A_VENCIDOS = ["proximo_a_vencer", "vencido", "danado", "devolucion", "retiro", "otro"] as const;
+const ROTULO_MOTIVO: Record<string, string> = {
+  proximo_a_vencer: "PROXIMO A VENCER", vencido: "VENCIDO", danado: "DANADO",
+  devolucion: "DEVOLUCION", retiro: "RETIRO DEL MERCADO", otro: "OTRO",
+};
+
+async function estanteAVencidos(admin: any, body: any, quien: string) {
+  const motivo = String(body?.motivo ?? "");
+  if (!(MOTIVOS_A_VENCIDOS as readonly string[]).includes(motivo)) return { error: "Elige el motivo." };
+  const detalle = String(body?.detalle ?? "").trim() || null;
+  const fotos = (Array.isArray(body?.fotos) ? body.fotos : []).map(String).filter(Boolean).slice(0, 3);
+  if (motivo === "danado" && !fotos.length) return { error: "Por daño hace falta al menos una foto." };
+  if (motivo === "otro" && (detalle ?? "").length < 4) return { error: "Escribe por qué va a vencidos." };
+  type Pedido = {
+    erp_product_id: number; descripcion: string; presentacion: string; factor: number; cantidad: number;
+    lote: string | null; vence: string | null;
+  };
+  const pedidos: Pedido[] = (Array.isArray(body?.renglones) ? body.renglones : []).map((r: any) => ({
+    erp_product_id: Math.trunc(Number(r?.erp_product_id)),
+    descripcion: String(r?.descripcion ?? "").trim(),
+    presentacion: String(r?.presentacion ?? "").trim(),
+    factor: Number(r?.factor),
+    cantidad: Number(r?.cantidad),
+    lote: r?.lote && String(r.lote).trim().toUpperCase() !== "GENERICO" ? String(r.lote).trim() : null,
+    vence: /^\d{4}-\d{2}-\d{2}$/.test(String(r?.vence ?? "")) ? String(r.vence) : null,
+  }));
+  if (!pedidos.length || pedidos.length > 30) return { error: "Agrega entre 1 y 30 productos." };
+  for (const r of pedidos) {
+    if (!(r.erp_product_id > 0) || !r.presentacion || !(r.factor > 0) || !(r.cantidad > 0) || !Number.isInteger(r.cantidad)) {
+      return { error: `Revisa la cantidad de ${r.descripcion || r.erp_product_id}.` };
+    }
+  }
+
+  const estante = await ubicacionDeBodega(admin, false);
+  const vencidosUbic = await ubicacionDeBodega(admin, true);
+  if (!estante || !vencidosUbic) return { error: "No se conoce el estante o el área de vencidos de Bodega." };
+
+  const cookie = await sesionEn(ERP_BODEGA, login);
+  // Todo se valida contra lo que el sistema ofrece AHORA, antes de escribir
+  // nada: presentación con ese tamaño, lote y existencia suficiente.
+  const partes: string[] = [];
+  let total = 0;
+  const esperado = new Map<number, number>();
+  for (const r of pedidos) {
+    const f = await traerFila(cookie, r.erp_product_id, estante);
+    if (!f.encontrado) return { error: `${r.descripcion} no está en el estante de Bodega.` };
+    const pres = await resolverPresentacion(cookie, f, r.presentacion, r.factor, { porFactor: true });
+    if (!pres) return { error: `${r.descripcion}: su presentación ya no está en el estante.` };
+    const unidades = r.cantidad * r.factor;
+    let idLote = "0";
+    let vence = r.vence ?? f.vence ?? "";
+    if (f.regulado) {
+      const lote = f.lotes.find((z) => z.numero === r.lote);
+      if (!lote) return { error: `${r.descripcion}: el lote ${r.lote ?? "(sin lote)"} ya no está en el estante.` };
+      if (lote.stock < unidades - 1e-6) return { error: `${r.descripcion}: del lote ${lote.numero} quedan ${lote.stock} unidades.` };
+      idLote = lote.id;
+      vence = lote.vence || vence;
+    } else if (f.existencia < unidades - 1e-6) {
+      return { error: `${r.descripcion}: quedan ${f.existencia} unidades en el estante.` };
+    }
+    partes.push([r.erp_product_id, pres.costo, pres.precio, r.cantidad, pres.unidad, vence, pres.id, idLote].join("|"));
+    total += Number(pres.costo) * r.cantidad;
+    esperado.set(r.erp_product_id, (esperado.get(r.erp_product_id) ?? 0) + unidades);
+  }
+
+  const { data: filas, error: eI } = await admin.from("bodega_a_vencidos").insert(pedidos.map((r) => ({
+    erp_product_id: r.erp_product_id, descripcion: r.descripcion || String(r.erp_product_id), presentacion: r.presentacion,
+    factor: r.factor, cantidad: r.cantidad, unidades: r.cantidad * r.factor, lote: r.lote, vence: r.vence,
+    motivo, detalle, fotos, hecho_por: quien,
+  }))).select("id");
+  if (eI) throw eI;
+  const ids = (filas ?? []).map((f: any) => f.id);
+  const cerrar = async (cambios: Record<string, unknown>) => {
+    const { error } = await admin.from("bodega_a_vencidos").update({ ...cambios, updated_at: new Date().toISOString() }).in("id", ids);
+    if (error) throw error;
+  };
+
+  let mov;
+  try {
+    mov = await moverAlAreaDeVencidos(cookie, {
+      partes, total, esperado, estante, vencidosUbic,
+      concepto: armarConcepto(`PORTAL A VENCIDOS ${ROTULO_MOTIVO[motivo]}${detalle ? ` ${detalle}` : ""}`).concepto,
+      conceptoRecibir: (idT) => `PORTAL A VENCIDOS (TRASLADO ${idT})`,
+    });
+  } catch (e: any) {
+    // No se sabe si salió: queda para revisar, nunca para reintentar a ciegas.
+    await cerrar({ estado: "sin_verificar", nota: `Se cortó a medio camino: ${e?.message ?? e}` });
+    return { error: "Se cortó a medio camino. Quedó anotado para revisarlo; no lo vuelvas a mandar." };
+  }
+  if (!mov.ok) {
+    await cerrar({ estado: mov.salio ? "sin_verificar" : "fallido", erp_traslado_id: mov.traslado, nota: mov.nota });
+    return { error: mov.salio ? `${mov.nota} No lo vuelvas a mandar.` : mov.error, traslado: mov.traslado };
+  }
+  await cerrar({ estado: "en_vencidos", erp_traslado_id: mov.traslado, nota: null });
+  return { ok: true, traslado: mov.traslado, renglones: ids.length };
 }
 
 const NOTA_CREDITO = `${BASE}/nota_credito_compras.php`;
@@ -1874,7 +2010,7 @@ Deno.serve(async (req: Request) => {
   // no el de cargar compras, así que va antes de ese freno.
   const cuerpo = await req.clone().json().catch(() => ({}));
   const escribe = cuerpo?.enviar === true || cuerpo?.accion === "reparto_recibir" || cuerpo?.accion === "reparto_reintentar"
-    || cuerpo?.accion === "erroneo_salida" || cuerpo?.accion === "faltante_salida" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
+    || cuerpo?.accion === "erroneo_salida" || cuerpo?.accion === "faltante_salida" || cuerpo?.accion === "estante_a_vencidos" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
   if (escribe) {
     const p = await pausa(admin);
     if (p) return responder({ error: p, pausada: true }, 409);
@@ -1916,6 +2052,10 @@ Deno.serve(async (req: Request) => {
       return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
     }
     if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
+    if (body?.accion === "estante_a_vencidos") {
+      const r = await estanteAVencidos(admin, body, quien.id);
+      return responder(r, "error" in r ? 409 : 200);
+    }
     if (body?.accion === "erroneo_comprobar") return responder(await comprobarErroneo(admin, Number(body?.id)));
     if (body?.accion === "faltante_salida") return responder(await darSalidaFaltante(admin, Number(body?.id), quien.id));
     if (body?.accion === "faltante_comprobar") return responder(await comprobarFaltante(admin, Number(body?.id), quien.id));

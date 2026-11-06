@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1464.0 — Bodega pasa producto del estante a vencidos, con motivo y foto
+
+- **Nueva opción «Pasar a vencidos» en Ajuste de inventario, sólo en Bodega.**
+  Hasta hoy el portal sólo mandaba a vencidos al cargar una compra; lo que ya
+  estaba en el estante se movía a mano en el sistema, sin rastro (el 6-nov el
+  SUPLEX TRI de la compra 6520 apareció en vencidos y nadie sabía por qué).
+  Ahora se busca el producto en el estante, se elige cantidad (por lote y
+  presentación), motivo y detalle, y se mueve **directo, sin aprobación**.
+- **Por daño, la foto es obligatoria** (pantalla, función y un `CHECK` en la
+  tabla). «Otro» exige escribir por qué.
+- La función hace un traslado del estante a Bodega, lo recibe en el área de
+  vencidos y lo **comprueba** leyendo vencidos antes y después. Si se corta a
+  medio camino queda «por comprobar» y nunca se reintenta solo.
+- Queda anotado en `bodega_a_vencidos` (quién, cuándo, motivo, fotos, número de
+  traslado) y en la bitácora. La lógica del traslado a vencidos se extrajo a
+  `moverAlAreaDeVencidos`, que también usan los erróneos de una compra.
+
 ## v2.1463.4 — Compras: una caja nombrada en la factura no la cambia un alza de precio
 
 - **«RINOKEM PLUS CAJA X 100 CAPS» proponía 2 × 140 = 280 cápsulas.** La

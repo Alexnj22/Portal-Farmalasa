@@ -588,3 +588,43 @@ export async function darSalidaFaltante(id) {
 
 /** Un faltante cuya salida se cortó: ¿bajó Bodega? */
 export const comprobarSalidaFaltante = (id) => comprobar('faltante_comprobar', id, 'COMPRA_FALTANTE_COMPROBADO');
+
+/* ── Del estante de Bodega a su área de vencidos (2026-11-06) ────────────────
+ * Bodega lo hace directo, sin aprobación. Por daño hace falta foto. La función
+ * manda un traslado, lo recibe en vencidos y lo comprueba; la fila queda en
+ * `bodega_a_vencidos` con quién, cuándo, el motivo y las fotos. */
+
+/** Los motivos, en el orden en que se ofrecen. El valor es el de la tabla. */
+export const MOTIVOS_A_VENCIDOS = [
+    { value: 'proximo_a_vencer', label: 'Próximo a vencer' },
+    { value: 'vencido',          label: 'Ya vencido' },
+    { value: 'danado',           label: 'Dañado', foto: true },
+    { value: 'devolucion',       label: 'Para devolver al proveedor' },
+    { value: 'retiro',           label: 'Retiro del mercado' },
+    { value: 'otro',             label: 'Otro', detalle: true },
+];
+
+/** Pasa los renglones a vencidos. `renglones` = `[{ erp_product_id, descripcion, presentacion, factor, cantidad, lote, vence }]`. */
+export async function pasarAVencidosEnBodega({ renglones, motivo, detalle, fotos }) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
+        body: { accion: 'estante_a_vencidos', renglones, motivo, detalle, fotos },
+    });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('BODEGA_A_VENCIDOS', data?.traslado ?? null, {
+        ok: !msg, motivo, renglones: renglones.length, fotos: fotos?.length ?? 0, error: msg,
+    });
+    return { resultado: msg ? null : data, error: msg };
+}
+
+/** Lo que Bodega pasó a vencidos en los últimos 30 días. */
+export async function fetchPasadosAVencidos() {
+    const desde = new Date(Date.now() - 30 * 864e5).toISOString();
+    const { data, error } = await supabase.from('bodega_a_vencidos')
+        .select('id, created_at, descripcion, presentacion, cantidad, lote, vence, motivo, estado, nota, hecho_por')
+        .gte('created_at', desde).order('created_at', { ascending: false }).range(0, 199);
+    return { filas: data ?? [], error: error?.message ?? null };
+}

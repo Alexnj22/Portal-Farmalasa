@@ -91,10 +91,9 @@ const MEDIDA = String.raw`(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|%|U
 // la del producto aunque Bodega la cuente en otra unidad: VALPAKINE 500MG X 40
 // TABLETAS se lleva en blísteres (BLISTER 1, CAJA 4 = 40 tabletas), y «x 40»
 // en la factura son tabletas, no blísteres (2026-11-07). No cambió nada.
-const nombreDiceTamano = (nombre, tam) => {
-    const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
-    return [...String(nombre ?? '').matchAll(re)].some(m => Number(m[1]) === tam);
-};
+const tamanosDelNombre = (nombre) => [...String(nombre ?? '').matchAll(new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi'))]
+    .map(m => Number(m[1]));
+const nombreDiceTamano = (nombre, tam) => tamanosDelNombre(nombre).includes(tam);
 const nombreConTamano = (nombre, tam) => {
     const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
     const m = [...String(nombre ?? '').matchAll(re)];
@@ -1636,7 +1635,9 @@ function PresentacionComparada({ tam, presentaciones, nombre }) {
     if (!pres.length) return null;
     // Si la presentación de 1 ES la caja («CAJA (1)»: COMBINATER, y así ~1,400
     // productos), la caja de la factura es esa misma: no cambió nada (2026-11-07).
-    const cajaEsLaUnidad = pres.some(x => x.factor === 1 && /^CAJA\b/i.test(String(x.nombre ?? '').trim()));
+    // Salvo que el nombre diga OTRO tamaño: «X 30» con factura de 60 sí cambió.
+    const cajaEsLaUnidad = pres.some(x => x.factor === 1 && /^CAJA\b/i.test(String(x.nombre ?? '').trim()))
+        && tamanosDelNombre(nombre).length === 0;
     const cambio = tam && !pres.some(x => x.factor === tam) && !nombreDiceTamano(nombre, tam) && !cajaEsLaUnidad;
     const nuevo = cambio ? nombreConTamano(nombre, tam) : null;
     return (

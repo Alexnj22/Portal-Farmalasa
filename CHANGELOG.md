@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1473.1 — Compras: la caja que se vende entera sí avisa si el nombre dice otro tamaño
+
+- La excepción de v2.1470.3 (`CAJA (1)` = la caja misma) dejaba callado un
+  cambio real: «X 30» en el nombre y una factura de caja de 60. Ahora sólo
+  calla cuando el nombre no dice ningún tamaño. Medido sobre lo cargado desde
+  el 30 de octubre: de 77 productos con el aviso, 75 eran falsa alarma y ya no
+  lo muestran; ningún cambio real quedó callado.
+
 ## v2.1473.0 — Encuestas: opción múltiple con máximo de opciones a marcar
 
 - **Una pregunta de opción múltiple puede limitar cuántas se marcan** («Seleccione

@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1479.3 — Saly: «Ahora no» aparta el aviso, y se señala la pregunta entera
+
+- «Ahora no» no hacía nada: el aviso a la vista se calculaba sin mirar la
+  señal de que se había apartado (`version` faltaba en el `useMemo`). Vale
+  para todas las pantallas con Saly, también Efectivo.
+- Al arrastrar a Saly, un bloque que la pantalla marca con `data-saly-ancla`
+  gana aunque haya una fila más cerca. En Resultados de encuestas cada
+  pregunta está marcada: se señala la pregunta completa con todas sus
+  opciones, no una opción suelta.
+
 ## v2.1479.2 — Compras: un decimal no es un tamaño de caja; el historial de productos sin repetidos
 
 - **«X 2.0MG» se leía como caja de 2** (ACREA). La regla que excluye las

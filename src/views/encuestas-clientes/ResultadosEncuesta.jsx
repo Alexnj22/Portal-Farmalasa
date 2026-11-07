@@ -424,7 +424,7 @@ function Distribucion({ p, numero }) {
         );
     }
     return (
-        <div className="space-y-2">
+        <div className="space-y-2 rounded-xl" data-saly-ancla={`pregunta-${p.id}`}>
             <div className="flex flex-wrap items-baseline gap-2">
                 <p className="text-body-sm font-semibold text-content flex-1"><span className="text-content-3">{numero}.</span> {p.texto}</p>
                 <span className="text-micro text-content-3">{tipoDe(p.tipo).corto} · {total} resp.{p.puntaje != null ? ` · ${p.puntaje}/100` : ''}</span>

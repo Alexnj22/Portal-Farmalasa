@@ -65,7 +65,14 @@ function marcar(anclas) {
 function bloqueEn(x, y, propio) {
     let el = document.elementFromPoint(x, y);
     if (!el || propio?.contains(el)) return null;
-    const candidato = el.closest('[data-saly-ancla], [data-surface="card"], tr, li, article, [role="row"], section');
+    // Un bloque que la pantalla marcó (`data-saly-ancla`) gana aunque haya una
+    // fila más cerca: en Resultados de encuestas se señala la PREGUNTA entera,
+    // no una opción suelta (usuario, 2026-11-07: «debería ser más fácil
+    // seleccionar el sector, la pregunta completa»).
+    const anclado = el.closest('[data-saly-ancla]');
+    const candidato = anclado && anclado.getBoundingClientRect().height <= window.innerHeight * 0.8
+        ? anclado
+        : el.closest('[data-saly-ancla], [data-surface="card"], tr, li, article, [role="row"], section');
     el = candidato && candidato !== document.body ? candidato : el;
     // Un bloque que es casi la página entera no dice nada: se queda el de abajo.
     if (el.getBoundingClientRect().height > window.innerHeight * 0.8) el = document.elementFromPoint(x, y);
@@ -85,7 +92,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const [contenido, setContenido] = useState(null);   // { animo, piezas, id?, util? }
     const [pregunta, setPregunta] = useState('');
     const [pensando, setPensando] = useState(false);
-    const [, setVersion] = useState(0);                  // repinta al apartar
+    const [version, setVersion] = useState(0);           // repinta al apartar
     const [quieto, setQuieto] = useState(null);
     const [senalado, setSenalado] = useState(null);     // { texto }
     const [apuntando, setApuntando] = useState(false);  // modo «Señalar»
@@ -137,8 +144,10 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     // El que se asoma solo: el primero que nadie apartó.
     const aviso = useMemo(
         () => vigentes.find((a) => !apartados.has(a.clave)) || null,
-        // eslint-disable-next-line react-hooks/exhaustive-deps -- `apartados` cambia con `setVersion`
-        [vigentes, abierto],
+        // `apartados` vive fuera de React: `version` es lo que avisa que cambió.
+        // Sin ella en la lista, «Ahora no» no hacía nada (usuario, 2026-11-07).
+        // eslint-disable-next-line react-hooks/exhaustive-deps -- `version` es la señal de `apartados`
+        [vigentes, abierto, version],
     );
 
     const apartar = useCallback((a) => { if (a) apartados.add(a.clave); setVersion((v) => v + 1); }, []);

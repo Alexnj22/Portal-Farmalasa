@@ -87,6 +87,14 @@ const nombrePres = (x) => `${x.nombre ?? (x.factor > 1 ? 'CAJA' : 'UNIDAD')} (${
 // El nombre del producto con el tamaño nuevo, si lo nombra una sola vez
 // («RINOKEM PLUS X 100 CAPSULAS» → «… X 120 CAPSULAS»). Una medida no cuenta.
 const MEDIDA = String.raw`(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|%|UI)\b)`;
+// ¿El nombre del producto ya dice «X <tam>»? Entonces la caja de la factura ES
+// la del producto aunque Bodega la cuente en otra unidad: VALPAKINE 500MG X 40
+// TABLETAS se lleva en blísteres (BLISTER 1, CAJA 4 = 40 tabletas), y «x 40»
+// en la factura son tabletas, no blísteres (2026-11-07). No cambió nada.
+const nombreDiceTamano = (nombre, tam) => {
+    const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
+    return [...String(nombre ?? '').matchAll(re)].some(m => Number(m[1]) === tam);
+};
 const nombreConTamano = (nombre, tam) => {
     const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
     const m = [...String(nombre ?? '').matchAll(re)];
@@ -944,7 +952,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                     </div>
                                     {uso === 'venta' && !aj.servicio && (
                                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)] gap-3 items-start">
-                                            <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar}
+                                            <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar} nombre={elegido?.nombre ?? r.producto}
                                                 presentaciones={[...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]}
                                                 onCargar={v => ajustarCarga(i, r, v)}
                                                 recordar={factorCambio && puedeEditar && Number.isInteger(Number(aj.factor)) ? (() => {
@@ -1011,6 +1019,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                             total={aj.llegaron !== '' && aj.llegaron != null
                                                 ? Math.min(Number(aj.llegaron), Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0)
                                                 : Number(aj.cargar ?? cargarDe(r, aj.factor)) || 0}
+                                            presentaciones={vinetasDe(r, i)}
                                             valor={aj.reparto} onChange={v => ajustar(i, 'reparto', v)} />
                                     )}
                                     {sim?.linea && !aj.servicio && <ComoEntra sim={sim} costo={costos.get(i)} />}
@@ -1072,7 +1081,11 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                     {uso === 'venta' && puedeEditar && (
                                         <div className="mt-3 pt-3 border-t border-divider flex items-center gap-2 flex-wrap">
                                             {conProducto && !aj.erroneo && !aj.servicio && !aj.reparto && salasReparto.length > 0 && (
-                                                <Button size="xs" variant="ghost" icon={Truck} onClick={() => ajustar(i, 'reparto', {})}>
+                                                <Button size="xs" variant="ghost" icon={Truck} onClick={() => {
+                                                    // Por defecto, en la presentación en que se carga.
+                                                    const f = Number(aj.factor) || 1;
+                                                    ajustar(i, 'reparto', { por: presDelCatalogo(vinetasDe(r, i)).some(x => x.factor === f) ? f : 1 });
+                                                }}>
                                                     Enviar a sucursales
                                                 </Button>
                                             )}
@@ -1366,15 +1379,19 @@ function PedirFechas({ documentId, sinFecha, salas, puedeEditar, onFechas }) {
 /** `{ branchId: '12' }` tecleado → `{ branchId: 12 }` sin vacíos, o null. */
 function aRepartir(reparto) {
     if (!reparto) return null;
-    const limpio = Object.fromEntries(Object.entries(reparto)
-        .map(([b, v]) => [b, Number(v)]).filter(([, n]) => n > 0));
+    // `por`: cuántas unidades trae cada una de lo que se escribió (CAJA 20 →
+    // 2 cajas son 40). Al servidor viaja siempre en unidades.
+    const por = Number(reparto.por) || 1;
+    const limpio = Object.fromEntries(Object.entries(reparto).filter(([b]) => b !== 'por')
+        .map(([b, v]) => [b, Number(v) * por]).filter(([, n]) => n > 0));
     return Object.keys(limpio).length ? limpio : null;
 }
 
 /**
- * ¿Se envía parte de este renglón a otras salas? (usuario, 2026-10-30). La
- * cantidad va en UNIDADES, igual que «Cantidad a cargar»; nunca más de lo que
- * entra, y si se envía menos se dice cuánto queda en Bodega.
+ * ¿Se envía parte de este renglón a otras salas? (usuario, 2026-10-30). Se
+ * escribe en la presentación que se elija (por defecto, la que se carga: 2 cajas
+ * de TRAMACET mandaban 2 unidades, 2026-11-07) y viaja en unidades; nunca más
+ * de lo que entra, y si se envía menos se dice cuánto queda en Bodega.
  */
 /**
  * «A vencidos» (Bodega, 2026-11-05): el producto es el correcto, entra con su
@@ -1433,20 +1450,36 @@ function AVencidos({ valor, total, onChange, puedeEditar }) {
     );
 }
 
-function RepartoASalas({ salas, total, valor, onChange, puedeEditar }) {
+function RepartoASalas({ salas, total, valor, presentaciones, onChange, puedeEditar }) {
     // El botón para abrirlo vive al pie de la tarjeta, con las demás acciones.
     if (!valor) return null;
-    const suma = Object.values(valor).reduce((t, v) => t + (Number(v) || 0), 0);
+    const pres = presDelCatalogo(presentaciones);
+    const por = Number(valor.por) || 1;
+    const cuantas = Object.entries(valor).filter(([b]) => b !== 'por')
+        .reduce((t, [, v]) => t + (Number(v) || 0), 0);
+    const suma = cuantas * por;
     const quedan = total - suma;
+    const elegida = pres.find(x => x.factor === por);
+    const enPres = (n) => por > 1 && elegida ? `${n} × ${nombrePres(elegida)} = ${n * por} unidades` : `${n}`;
     return (
         <div className="mt-3 pt-3 border-t border-divider">
-            <div className="flex items-center justify-between gap-2">
+            <div className="flex items-center justify-between gap-2 flex-wrap">
                 <p className="text-caption font-black text-content-3 uppercase tracking-widest flex items-center gap-1">
                     <Truck size={12} /> Enviar a sucursales
                 </p>
-                {puedeEditar && (
-                    <Button size="xs" variant="ghost" onClick={() => onChange(null)}>No enviar</Button>
-                )}
+                <div className="flex items-center gap-2">
+                    {pres.length > 1 && (
+                        <div className="w-44">
+                            <LiquidSelect compact clearable={false} disabled={!puedeEditar} ariaLabel="Se envía en"
+                                value={String(por)}
+                                options={pres.map(x => ({ value: String(x.factor), label: nombrePres(x) }))}
+                                onChange={v => v && onChange({ ...valor, por: Number(v) })} />
+                        </div>
+                    )}
+                    {puedeEditar && (
+                        <Button size="xs" variant="ghost" onClick={() => onChange(null)}>No enviar</Button>
+                    )}
+                </div>
             </div>
             <div className="mt-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
                 {salas.map(sala => (
@@ -1458,9 +1491,9 @@ function RepartoASalas({ salas, total, valor, onChange, puedeEditar }) {
             </div>
             {suma > 0 && (
                 <p className={`mt-1 text-micro font-bold tabular-nums ${quedan < 0 ? 'text-danger' : quedan > 0 ? 'text-warning' : 'text-content-2'}`}>
-                    {quedan < 0 ? `Se envían ${suma} y entran ${total}: no se puede enviar más de lo que entra.`
-                        : quedan > 0 ? `Se envían ${suma} · quedan ${quedan} en el inventario de Bodega.`
-                        : `Se envían las ${suma}: no queda nada en Bodega.`}
+                    {quedan < 0 ? `Se envían ${enPres(cuantas)} y entran ${total}: no se puede enviar más de lo que entra.`
+                        : quedan > 0 ? `Se envían ${enPres(cuantas)} · quedan ${quedan} unidades en el inventario de Bodega.`
+                        : `Se envían ${enPres(cuantas)}: no queda nada en Bodega.`}
                 </p>
             )}
         </div>
@@ -1481,7 +1514,7 @@ function cantidadSospechosa(sim, costo) {
     return Number.isInteger(unidades) && unidades > 0 ? { veces, sube, unidades } : null;
 }
 
-function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar }) {
+function SeCargaComo({ r, aj, presentaciones, nombre, puedeEditar, onCargar, recordar }) {
     const cant = Number(r.cantidad) || 0;
     const f = Number(aj.factor) || 0;
     const unidades = aj.cargar ?? cargarDe(r, aj.factor);
@@ -1583,7 +1616,7 @@ function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar })
                 const tam = Number(r.tamano_factura) || null;
                 const fr = r3(f);
                 if (!(fr > 1)) return null;
-                if (tam && fr !== tam) {
+                if (tam && fr !== tam && !(nombreDiceTamano(nombre, tam) && pres.some(x => x.factor === fr))) {
                     return <p className="mt-0.5 text-caption font-bold text-warning-text">Ojo: la factura dice caja de {tam}, y aquí van {fr} por cada una.</p>;
                 }
                 if (!tam && pres.length > 0 && !pres.some(x => x.factor === fr)) {
@@ -1601,7 +1634,7 @@ function SeCargaComo({ r, aj, presentaciones, puedeEditar, onCargar, recordar })
 function PresentacionComparada({ tam, presentaciones, nombre }) {
     const pres = presDelCatalogo(presentaciones);
     if (!pres.length) return null;
-    const cambio = tam && !pres.some(x => x.factor === tam);
+    const cambio = tam && !pres.some(x => x.factor === tam) && !nombreDiceTamano(nombre, tam);
     const nuevo = cambio ? nombreConTamano(nombre, tam) : null;
     return (
         <>

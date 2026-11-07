@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1470.2 — Compras: enviar a sucursales por presentación y sin falsa alarma de caja
+
+- **Enviar a sucursales contaba en unidades.** TRAMACET cargado como 5 × CAJA
+  (20): escribir 2 en Salud 4 mandaba 2 tabletas, no 2 cajas. Ahora el envío
+  tiene su selector de presentación —por defecto, la misma en que se carga—,
+  el aviso dice «2 × CAJA (20) = 40 unidades» y al servidor viaja en unidades.
+- **«¿Cambió la presentación?» saltaba sin motivo** cuando Bodega cuenta en
+  otra unidad: VALPAKINE 500MG X 40 se lleva en blísteres (BLISTER 1, CAJA 4 =
+  40 tabletas) y la factura dice «x 40» en tabletas. Si el nombre del producto
+  ya dice ese tamaño, la caja no cambió: ni el aviso ni el «Ojo» de 40 contra 4.
+
 ## v2.1470.1 — Conteo: el total del producto en una sola unidad y la presentación en la fila del lote
 
 Tras la prueba de Salud 4 («¿−45? no entiendo» y «¿dónde se selecciona la

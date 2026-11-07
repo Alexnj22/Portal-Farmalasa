@@ -69,6 +69,26 @@ export async function posicionActual() {
   }
 }
 
+/**
+ * Gemelo de `leerPosicion` del portal: una lectura CON su precisión en metros,
+ * o `null` (sin permiso, sin señal o pasada la `espera`). La usa Aplicar
+ * encuesta en campo, que guarda dónde se hizo cada una.
+ */
+export async function leerPosicion({ espera = 10000 } = {}) {
+  if (!(await conPermiso())) return null;
+  try {
+    const cache = await Location.getLastKnownPositionAsync({ maxAge: 30_000 });
+    const p = cache ?? await Promise.race([
+      Location.getCurrentPositionAsync({ accuracy: Location.Accuracy.High }),
+      new Promise((_, no) => setTimeout(() => no(new Error('sin señal')), espera)),
+    ]);
+    return p ? { lat: p.coords.latitude, lng: p.coords.longitude, precision: p.coords.accuracy ?? null } : null;
+  } catch (e) {
+    console.warn('ubicación: sin lectura puntual', e?.message ?? e);
+    return null;
+  }
+}
+
 /** ¿El permiso está negado? Para avisarlo UNA vez en pantalla. */
 export async function ubicacionNegada() {
   try {

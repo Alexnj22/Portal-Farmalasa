@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1477.1 — App: «¿Dónde estás?» una vez al aplicar encuestas
+
+- App del personal, Aplicar encuesta: cada tarjeta ya no repite la lista de
+  sucursales. Arriba se elige una vez dónde se está (una sala o Campo), queda
+  como una fila compacta con «Cambiar», y abajo sólo salen las encuestas de
+  ese lugar con su avance. Campo también en la app: lugar escrito y ubicación
+  del teléfono al guardar cada una.
+- La entrevista en la app va una pregunta por pantalla, como el portal en el
+  teléfono.
+
 ## v2.1477.0 — Encuestas: una pregunta por pantalla en el teléfono
 
 - El formulario de la encuesta (vista previa, QR, tablet y entrevista) muestra

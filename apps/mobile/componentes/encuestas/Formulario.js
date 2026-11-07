@@ -100,7 +100,9 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
 
   const { visibles, limpias } = useMemo(() => recorrido(encuesta?.cuestionario, respuestas), [encuesta?.cuestionario, respuestas]);
   const de = (s) => visibles.filter((p) => p.seccionId === s.id);
-  const pasos = secciones.filter((s) => de(s).length > 0);
+  // En el teléfono, UNA pregunta por pantalla (como el portal en teléfono):
+  // cada paso lleva su sección para mostrar el título arriba.
+  const pasos = secciones.flatMap((s) => de(s).map((p) => ({ seccion: s, preguntas: [p] })));
   const actual = pasos[paso] || null;
   const terminado = resultado !== undefined;
   const progreso = terminado ? 100 : Math.round(((enContacto ? pasos.length : paso) / (pasos.length + 1)) * 100);
@@ -116,7 +118,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
     // Un «ordenar» que no se tocó ya muestra un orden completo: ese orden es la respuesta.
     let conOrden = respuestas;
     if (actual) {
-      for (const p of de(actual)) {
+      for (const p of actual.preguntas) {
         if (p.tipo !== 'ranking') continue;
         const ops = opcionesConTexto(p);
         const r = conOrden[p.id];
@@ -124,7 +126,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
       }
       if (conOrden !== respuestas) setRespuestas(conOrden);
     }
-    if (actual) { const f = primeraSinContestar(de(actual), conOrden); if (f) { setFaltante(f.id); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); return; } }
+    if (actual) { const f = primeraSinContestar(actual.preguntas, conOrden); if (f) { setFaltante(f.id); Haptics.notificationAsync(Haptics.NotificationFeedbackType.Warning).catch(() => {}); return; } }
     setFaltante(null);
     if (paso + 1 >= pasos.length) setEnContacto(true); else setPaso(paso + 1);
   };
@@ -182,13 +184,13 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
         </Seccion>
       ) : actual ? (
         <>
-          {actual.titulo || actual.descripcion ? (
+          {actual.seccion.titulo || actual.seccion.descripcion ? (
             <View style={{ marginHorizontal: 20, gap: 2 }}>
-              {actual.titulo ? <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{actual.titulo}</Text> : null}
-              {actual.descripcion ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{actual.descripcion}</Text> : null}
+              {actual.seccion.titulo ? <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{actual.seccion.titulo}</Text> : null}
+              {actual.seccion.descripcion ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{actual.seccion.descripcion}</Text> : null}
             </View>
           ) : null}
-          {de(actual).map((p) => (
+          {actual.preguntas.map((p) => (
             <Seccion key={p.id}>
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>
                 {`${p.numero}. ${p.texto || 'Pregunta sin texto'}`}{p.obligatoria ? <Text style={{ color: MARCA.rojo }}> *</Text> : null}

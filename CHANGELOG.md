@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1470.3 — Compras: sin falsa alarma de caja cuando el producto se vende por caja
+
+- **«¿Cambió la presentación?» saltaba en productos que se venden por caja
+  entera.** COMBINATER 2.5MG tiene sólo `CAJA (1)`: la presentación de 1 es la
+  caja misma, y la «caja de 30» de la factura es esa caja. Si la presentación
+  de 1 se llama CAJA, ya no hay aviso ni «entra en unidades».
+
 ## v2.1470.2 — Compras: enviar a sucursales por presentación y sin falsa alarma de caja
 
 - **Enviar a sucursales contaba en unidades.** TRAMACET cargado como 5 × CAJA

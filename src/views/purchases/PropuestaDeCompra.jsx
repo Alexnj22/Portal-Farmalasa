@@ -1634,7 +1634,10 @@ function SeCargaComo({ r, aj, presentaciones, nombre, puedeEditar, onCargar, rec
 function PresentacionComparada({ tam, presentaciones, nombre }) {
     const pres = presDelCatalogo(presentaciones);
     if (!pres.length) return null;
-    const cambio = tam && !pres.some(x => x.factor === tam) && !nombreDiceTamano(nombre, tam);
+    // Si la presentación de 1 ES la caja («CAJA (1)»: COMBINATER, y así ~1,400
+    // productos), la caja de la factura es esa misma: no cambió nada (2026-11-07).
+    const cajaEsLaUnidad = pres.some(x => x.factor === 1 && /^CAJA\b/i.test(String(x.nombre ?? '').trim()));
+    const cambio = tam && !pres.some(x => x.factor === tam) && !nombreDiceTamano(nombre, tam) && !cajaEsLaUnidad;
     const nuevo = cambio ? nombreConTamano(nombre, tam) : null;
     return (
         <>

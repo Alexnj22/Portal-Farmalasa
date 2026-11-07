@@ -7,7 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto, opcionesConTexto, MAX_TEXTO, MAX_NUMERO,
-    maximoDe, alternarOpcion, textoDeMaximo,
+    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe,
 } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import useMediaQuery from '../../plataforma/useMediaQuery';
@@ -375,6 +375,7 @@ function Respuesta({ p, valor, onChange }) {
         case 'multiple': {
             const marcadas = Array.isArray(valor) ? valor : [];
             const maximo = maximoDe(p);
+            const exclusivas = exclusivasDe(p);
             const lleno = !!maximo && marcadas.length >= maximo;
             return (
                 <div className="flex flex-col gap-1.5">
@@ -386,9 +387,9 @@ function Respuesta({ p, valor, onChange }) {
                     {opcionesConTexto(p).map((o) => {
                         const on = marcadas.includes(o.id);
                         return (
-                            <button key={o.id} type="button" aria-pressed={on} disabled={!on && lleno}
+                            <button key={o.id} type="button" aria-pressed={on} disabled={!on && lleno && !exclusivas.includes(o.id)}
                                 className={`${opcionCls(on)} text-left flex items-center gap-2 disabled:opacity-40`}
-                                onClick={() => onChange(alternarOpcion(marcadas, o.id, maximo))}>
+                                onClick={() => onChange(alternarOpcion(marcadas, o.id, maximo, exclusivas))}>
                                 <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0
                                     ${on ? 'border-current' : 'border-border-card'}`}>{on && <Check size={11} />}</span>
                                 {o.texto}

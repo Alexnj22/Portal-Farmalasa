@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1480.0 — Encuestas: opción que va sola
+
+En una pregunta de opción múltiple, una opción puede marcarse «Va sola»
+(«Ninguno, estoy satisfecho», «No he tenido necesidad de cambiar»): al
+marcarla se desmarcan las demás, y al marcar otra se desmarca ella. Se activa
+por opción en el constructor y la respeta el formulario del portal, la app
+interna y la app de clientes. La base rechaza una respuesta que la combine con
+otras (migración `encuestas_clientes_opcion_exclusiva`).
+
 ## v2.1479.3 — Saly: «Ahora no» aparta el aviso, y se señala la pregunta entera
 
 - «Ahora no» no hacía nada: el aviso a la vista se calculaba sin mirar la

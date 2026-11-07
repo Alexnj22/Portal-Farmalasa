@@ -167,7 +167,10 @@ export function cambiarTipo(pregunta, tipo) {
     } else {
         delete n.opciones;
     }
-    if (tipo !== 'multiple') delete n.maximo;
+    if (tipo !== 'multiple') {
+        delete n.maximo;
+        if (n.opciones) n.opciones = n.opciones.map(({ exclusiva, ...o }) => o);
+    }
     return n;
 }
 
@@ -182,12 +185,27 @@ export function maximoDe(pregunta) {
     return pregunta.maximo != null && Number.isInteger(n) && n >= 1 ? n : null;
 }
 
-/** Marcar o desmarcar una opción de una «múltiple» sin pasar del máximo. */
-export function alternarOpcion(marcadas, id, maximo = null) {
+/**
+ * Los ids de las opciones que «excluyen a las demás» en una «múltiple»
+ * («Ninguno», «No he tenido necesidad»): marcada, va sola. Gemela de la regla
+ * de `encuesta_cliente_limpiar` (migración `encuestas_clientes_opcion_exclusiva`).
+ */
+export function exclusivasDe(pregunta) {
+    if (pregunta?.tipo !== 'multiple') return [];
+    return (pregunta.opciones || []).filter((o) => o.exclusiva === true).map((o) => o.id);
+}
+
+/**
+ * Marcar o desmarcar una opción de una «múltiple» sin pasar del máximo.
+ * Marcar una exclusiva deja sólo ésa; marcar otra quita las exclusivas.
+ */
+export function alternarOpcion(marcadas, id, maximo = null, exclusivas = []) {
     const m = Array.isArray(marcadas) ? marcadas : [];
     if (m.includes(id)) return m.filter((x) => x !== id);
-    if (maximo && m.length >= maximo) return m;
-    return [...m, id];
+    if (exclusivas.includes(id)) return [id];
+    const sinExclusivas = m.filter((x) => !exclusivas.includes(x));
+    if (maximo && sinExclusivas.length >= maximo) return m;
+    return [...sinExclusivas, id];
 }
 
 /** El aviso debajo de una «múltiple» con máximo: «Puedes marcar hasta 3.» */

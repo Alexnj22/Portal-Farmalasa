@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import {
-    Plus, Trash2, ArrowUp, ArrowDown, Copy, ChevronDown, ChevronRight, GitBranch, X, Layers,
+    Plus, Trash2, ArrowUp, ArrowDown, Copy, ChevronDown, ChevronRight, GitBranch, X, Layers, Ban,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -179,7 +179,7 @@ function PreguntaEditor({
                 {resumen}
                 {tipo.opciones && (
                     <ul className="pl-14 text-body-sm text-content-2 list-disc">
-                        {(p.opciones || []).map((o) => <li key={o.id}>{o.texto}</li>)}
+                        {(p.opciones || []).map((o) => <li key={o.id}>{o.texto}{p.tipo === 'multiple' && o.exclusiva ? ' (va sola)' : ''}</li>)}
                     </ul>
                 )}
             </div>
@@ -236,6 +236,18 @@ function PreguntaEditor({
                                         <PortalInput name={`op-${p.id}-${o.id}`} value={o.texto} placeholder={`Opción ${oi + 1}`}
                                             onChange={(e) => set('opciones')(p.opciones.map((x) => (x.id === o.id ? { ...x, texto: e.target.value } : x)))} />
                                     </div>
+                                    {p.tipo === 'multiple' && (
+                                        <Button variant={o.exclusiva ? 'secondary' : 'ghost'} size="sm" icon={Ban}
+                                            aria-pressed={!!o.exclusiva}
+                                            title={o.exclusiva ? 'Excluye a las demás: marcada, va sola' : 'Hacer que excluya a las demás'}
+                                            onClick={() => set('opciones')(p.opciones.map((x) => {
+                                                if (x.id !== o.id) return x;
+                                                const { exclusiva, ...resto } = x;
+                                                return exclusiva ? resto : { ...resto, exclusiva: true };
+                                            }))}>
+                                            Va sola
+                                        </Button>
+                                    )}
                                     <Button variant="ghost" size="sm" iconOnly icon={ArrowUp} title="Subir opción" disabled={oi === 0}
                                         onClick={() => set('opciones')(mover(p.opciones, oi, -1))} />
                                     <Button variant="ghost" size="sm" iconOnly icon={X} title="Quitar opción" disabled={p.opciones.length <= 2}
@@ -245,6 +257,11 @@ function PreguntaEditor({
                             <Button variant="ghost" size="sm" icon={Plus} onClick={() => set('opciones')([...(p.opciones || []), nuevaOpcion(p.opciones)])}>
                                 Agregar opción
                             </Button>
+                            {p.tipo === 'multiple' && (
+                                <p className="text-micro text-content-3">
+                                    «Va sola»: para respuestas como «Ninguno». Al marcarla se desmarcan las demás, y al marcar otra se desmarca ella.
+                                </p>
+                            )}
                         </div>
                     )}
 

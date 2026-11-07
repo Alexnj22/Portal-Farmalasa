@@ -189,8 +189,12 @@ function Pregunta({ p, valor, alCambiar }) {
           {maximo ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{maximo === 1 ? 'Puedes marcar sólo 1.' : `Puedes marcar hasta ${maximo}.`}</Text> : null}
           {ops.map((o) => <Opcion key={o.id} texto={o.texto} activa={sel.includes(o.id)}
             alTocar={() => {
+              // `exclusiva` («Ninguno»): marcada, va sola; marcar otra la quita.
+              const exclusivas = ops.filter((x) => x.exclusiva === true).map((x) => x.id);
+              const resto = sel.filter((x) => !exclusivas.includes(x));
               if (sel.includes(o.id)) alCambiar(sel.filter((x) => x !== o.id));
-              else if (!maximo || sel.length < maximo) alCambiar([...sel, o.id]);
+              else if (exclusivas.includes(o.id)) alCambiar([o.id]);
+              else if (!maximo || resto.length < maximo) alCambiar([...resto, o.id]);
             }} />)}
         </View>
       );

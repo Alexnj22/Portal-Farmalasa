@@ -287,3 +287,30 @@ describe('campo — respuestas sin sucursal', () => {
         expect(rows[0][4]).toBe(13.7);
     });
 });
+
+describe('opción que excluye a las demás — gemelo de encuesta_cliente_limpiar', () => {
+    const p = { id: 'x', tipo: 'multiple', maximo: 3, opciones: [
+        { id: 'a', texto: 'A' }, { id: 'b', texto: 'B' }, { id: 'c', texto: 'C' }, { id: 'd', texto: 'D' },
+        { id: 'n', texto: 'Ninguno', exclusiva: true },
+    ] };
+    it('lee las exclusivas sólo de una múltiple', async () => {
+        const { exclusivasDe } = await import('@nucleo/utils/encuestasClientes');
+        expect(exclusivasDe(p)).toEqual(['n']);
+        expect(exclusivasDe({ ...p, tipo: 'unica' })).toEqual([]);
+    });
+    it('marcar la exclusiva deja sólo ésa, aun con el máximo lleno', async () => {
+        const { alternarOpcion } = await import('@nucleo/utils/encuestasClientes');
+        expect(alternarOpcion(['a', 'b', 'c'], 'n', 3, ['n'])).toEqual(['n']);
+    });
+    it('marcar otra quita la exclusiva', async () => {
+        const { alternarOpcion } = await import('@nucleo/utils/encuestasClientes');
+        expect(alternarOpcion(['n'], 'a', 3, ['n'])).toEqual(['a']);
+        expect(alternarOpcion(['n'], 'n', 3, ['n'])).toEqual([]);
+        expect(alternarOpcion(['a', 'b', 'c'], 'd', 3, ['n'])).toEqual(['a', 'b', 'c']);
+    });
+    it('cambiar a otro tipo quita la marca', async () => {
+        const { cambiarTipo } = await import('@nucleo/utils/encuestasClientes');
+        expect(cambiarTipo(p, 'unica').opciones.some((o) => 'exclusiva' in o)).toBe(false);
+        expect(cambiarTipo(p, 'multiple').opciones.find((o) => o.id === 'n').exclusiva).toBe(true);
+    });
+});

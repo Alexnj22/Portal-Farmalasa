@@ -11,7 +11,7 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
-import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo } from '@nucleo/utils/encuestasClientes';
+import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
@@ -53,11 +53,12 @@ function Respuesta({ p, valor, onChange }) {
     case 'multiple': {
       const m = Array.isArray(valor) ? valor : [];
       const maximo = maximoDe(p);
+      const exclusivas = exclusivasDe(p);
       return <View style={{ gap: 6 }}>
         {maximo ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{textoDeMaximo(maximo)}</Text> : null}
         {opcionesConTexto(p).map((o) => {
           const on = m.includes(o.id);
-          return <Opcion key={o.id} activa={on} onPress={() => onChange(alternarOpcion(m, o.id, maximo))}>{`${on ? '✓ ' : ''}${o.texto}`}</Opcion>;
+          return <Opcion key={o.id} activa={on} onPress={() => onChange(alternarOpcion(m, o.id, maximo, exclusivas))}>{`${on ? '✓ ' : ''}${o.texto}`}</Opcion>;
         })}</View>;
     }
     case 'ranking': {

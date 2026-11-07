@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1471.1 — Publicar sin descargar de nuevo los archivos de versiones anteriores
+
+- **Vercel avisó que el portal pasó su plan de CDN: 2.8 millones de peticiones
+  contra 1 millón al mes.** Medido con `vercel metrics`: el 84% venía de las
+  propias compilaciones (sin navegador, desde las máquinas de compilación de
+  Vercel en AWS). `scripts/conservar-assets.mjs` bajaba de producción hasta
+  5,000 archivos de las publicaciones de las últimas 48 h en CADA compilación
+  —con ~30 publicaciones al día, ~250 mil peticiones diarias—.
+- Ahora cada compilación guarda lo que sirve en `node_modules/.cache/conservar-assets`,
+  que Vercel restaura en la siguiente, y sólo baja lo que la caché no tenga.
+  Se sigue conservando lo mismo (las pestañas abiertas no ven «no se pudo
+  cargar»); lo que cambia es de dónde sale. Si Vercel descarta la caché, esa
+  compilación baja como antes. El log dice cuántos salieron de la caché y
+  cuántos se bajaron.
+
 ## v2.1471.0 — Conteo: lo que sólo cambió de lote ya no cuenta como diferencia ni faltante
 
 - **El conteo de Salud 4 decía «10 diferencias» y «Faltante $22.59» en rojo

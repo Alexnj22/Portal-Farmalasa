@@ -23,6 +23,16 @@
  * Así la ventana se cuenta desde la última vez que alguien pudo tener ese
  * archivo pedido, y lo que pasó las 48 horas se cae solo.
  *
+ * ── La caché de compilación (2026-11-07) ─────────────────────────────────────
+ * Bajar todo eso en cada compilación costaba 5,000 peticiones al CDN por
+ * publicación (el tope), con ~30 publicaciones al día: ~250 mil peticiones
+ * diarias, el 84% de todas las del portal y la causa de pasar el plan de 1M al
+ * mes. Cada archivo con hash es inmutable, así que basta con bajarlo UNA vez:
+ * cada compilación copia lo suyo y lo heredado a `node_modules/.cache/`, que
+ * Vercel restaura en la siguiente («Restored build cache…» en el log). Sólo se
+ * baja lo que la caché no tenga — si Vercel la descarta, esa compilación baja
+ * como antes y la siguiente ya vuelve a cero. La caché se poda al inventario.
+ *
  * Nunca rompe una publicación: si producción no responde o un archivo falla,
  * sigue sin él (es el comportamiento de antes). Baja de `portal.farmasalud.lat`
  * y no de la URL del despliegue, que está detrás del inicio de sesión de Vercel.
@@ -31,7 +41,7 @@
  *   CONSERVAR_ASSETS_ORIGEN=http://localhost:9999 node scripts/conservar-assets.mjs dist   # a mano
  *   node scripts/conservar-assets.mjs dist --solo-inventario   # sólo escribe el inventario
  */
-import { existsSync, readdirSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
 import { join } from 'node:path';
@@ -44,6 +54,9 @@ const VENTANA_MS = 48 * 60 * 60 * 1000;
 const TOPE_ARCHIVOS = 5000;        // freno: un inventario roto no puede bajar el mundo
 const EN_PARALELO = 16;
 const INVENTARIO = 'assets-vivos.json';
+// Dónde se guardan los archivos entre compilaciones. Sólo cuando hay origen
+// (o sea, en la compilación de producción): a mano no hace falta.
+const CACHE = process.env.CONSERVAR_ASSETS_CACHE || 'node_modules/.cache/conservar-assets';
 
 // Por qué falló cada archivo que no se pudo bajar: sin esto, «191 fallidos»
 // no dice si fue la red, el servidor o el tiempo.
@@ -79,6 +92,26 @@ const escribirInventario = () => {
     if (inventario) writeFileSync(join(DIR, INVENTARIO), JSON.stringify({ generado: new Date().toISOString(), archivos: inventario }));
 };
 
+// Deja en la caché todo lo que esta publicación sirve (lo propio y lo heredado)
+// y borra lo que ya no figura en el inventario, para que no crezca sin fin.
+// Nada de esto puede romper la publicación: la caché es sólo un atajo.
+function guardarEnCache(carpeta, enCache) {
+    let guardados = 0, podados = 0;
+    try {
+        for (const f of Object.keys(inventario)) {
+            if (enCache.has(f)) continue;
+            try { copyFileSync(join(carpeta, f), join(CACHE, f)); guardados += 1; } catch { /* sigue */ }
+        }
+        for (const f of enCache) {
+            if (inventario[f]) continue;
+            try { rmSync(join(CACHE, f), { force: true }); podados += 1; } catch { /* sigue */ }
+        }
+        console.log(`conservar-assets: caché de compilación · ${guardados} guardados · ${podados} podados`);
+    } catch (e) {
+        console.log(`conservar-assets: no se pudo actualizar la caché (${e.message}); la próxima baja lo que falte.`);
+    }
+}
+
 async function main() {
     const carpeta = join(DIR, 'assets');
     if (!existsSync(carpeta)) {
@@ -89,7 +122,12 @@ async function main() {
     const propios = new Set(readdirSync(carpeta));
     inventario = Object.fromEntries([...propios].map((f) => [f, ahora]));
 
-    let heredados = 0, fallidos = 0, vencidos = 0;
+    let heredados = 0, fallidos = 0, vencidos = 0, deCache = 0;
+    const usarCache = Boolean(ORIGEN && !soloInventario);
+    let enCache = new Set();
+    if (usarCache) {
+        try { mkdirSync(CACHE, { recursive: true }); enCache = new Set(readdirSync(CACHE)); } catch { enCache = new Set(); }
+    }
     if (ORIGEN && !soloInventario) {
         const crudo = await bajar(`${ORIGEN}/${INVENTARIO}`);
         let anterior = null;
@@ -107,6 +145,14 @@ async function main() {
 
         for (let i = 0; i < pendientes.length; i += EN_PARALELO) {
             await Promise.all(pendientes.slice(i, i + EN_PARALELO).map(async ([f, desde]) => {
+                if (enCache.has(f)) {
+                    try {
+                        copyFileSync(join(CACHE, f), join(carpeta, f));
+                        inventario[f] = Number(desde);
+                        heredados += 1; deCache += 1;
+                        return;
+                    } catch { /* copia fallida: se baja como antes */ }
+                }
                 // Hasta tres intentos: un corte suelto de la conexión no puede
                 // costar el archivo que alguien tiene pedido en una pestaña.
                 let cuerpo = null;
@@ -117,11 +163,12 @@ async function main() {
                 heredados += 1;
             }));
         }
+        guardarEnCache(carpeta, enCache);
         if (!crudo) console.log(`conservar-assets: ${ORIGEN} no tiene inventario todavía (primera publicación con esto).`);
     }
 
     escribirInventario();
-    console.log(`conservar-assets: ${propios.size} propios · ${heredados} heredados de las últimas 48 h`
+    console.log(`conservar-assets: ${propios.size} propios · ${heredados} heredados de las últimas 48 h (${deCache} de la caché, ${heredados - deCache} bajados)`
         + ` · ${vencidos} vencidos · ${fallidos} que no se pudieron bajar${ORIGEN ? '' : ' (sin origen: sólo inventario)'}`
         + (motivos.size ? ` [${[...motivos].map(([k, n]) => `${k}: ${n}`).join(', ')}]` : ''));
 }

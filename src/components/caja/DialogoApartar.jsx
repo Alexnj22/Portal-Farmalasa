@@ -541,7 +541,9 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
             )}
 
             <div className="flex flex-col-reverse sm:flex-row sm:items-center sm:justify-between gap-3 pt-2">
-                <p className="text-caption text-content-3 min-w-0">{falta ?? ''}</p>
+                {/* Por qué no se puede enviar, a la vista (2026-11-07: en gris
+                    chico nadie lo veía y no se entendía el botón apagado). */}
+                <div className="min-w-0">{falta && <Notice variant="warning" compact>{falta}</Notice>}</div>
                 <Button variant="primary" loading={enviando} disabled={ocupado || !!falta} onClick={enviar}>{etiquetaBoton}</Button>
             </div>
         </div>
@@ -697,7 +699,12 @@ function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoApa
                 </div>
                 <Button variant="secondary" icon={Search} loading={buscando} disabled={nombre.trim().length < 3} onClick={buscar}>Buscar en el SRS</Button>
             </div>
-            {error && <Notice variant="danger">{error}</Notice>}
+            {error && !srs && !noAparece && (
+                <div className="space-y-2">
+                    <Notice variant="danger">{error}</Notice>
+                    <Button variant="secondary" icon={PackageSearch} className="w-full" onClick={onNoAparece}>No aparece en el SRS: consultar igual</Button>
+                </div>
+            )}
 
             {enCatalogo.length > 0 && (
                 <div className="space-y-1.5">
@@ -730,7 +737,9 @@ function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoApa
                 <Notice variant="warning" compact>No aparece en el SRS: Bodega lo revisa antes de responder.</Notice>
             ) : resultados && (
                 <div className="space-y-2">
-                    {resultados.length === 0 && <p className="text-body-sm text-content-3">El SRS no tiene nada con ese nombre.</p>}
+                    {resultados.length === 0
+                        ? <Notice variant="warning" compact>El SRS no tiene nada con ese nombre.</Notice>
+                        : <p className="text-caption font-semibold text-content-2">Toca el registro que es, o márcalo como que no aparece:</p>}
                     <ul className="space-y-1.5 max-h-[30vh] overflow-y-auto">
                         {resultados.map((r, i) => (
                             <li key={`${r.noregistro}-${i}`}>
@@ -742,7 +751,7 @@ function ProductoQueNoTenemos({ nombre, srs, noAparece, onNombre, onSrs, onNoApa
                             </li>
                         ))}
                     </ul>
-                    <Button variant="ghost" size="sm" onClick={onNoAparece}>No aparece en el SRS: consultar igual</Button>
+                    <Button variant="secondary" icon={PackageSearch} className="w-full" onClick={onNoAparece}>No aparece en el SRS: consultar igual</Button>
                 </div>
             )}
 
@@ -804,15 +813,21 @@ function TelefonoDelCliente({ cliente, confirmado, onConfirmar, onCambiado }) {
             </div>
         );
     }
+    // Sin confirmar se ve en ámbar y dice por qué: es lo que apaga «Enviar»
+    // y antes pasaba desapercibido (2026-11-07).
     return (
-        <div className="mt-2 flex items-center justify-between gap-3 rounded-lg border border-border-subtle px-3 py-2">
-            <p className="text-body-sm text-content flex items-center gap-1.5 min-w-0">
-                <Phone size={14} className="text-content-3 shrink-0" />
-                <span className="font-semibold tabular-nums">{actual}</span>
-                {confirmado && <Check size={14} className="text-success-text shrink-0" aria-label="Confirmado" />}
-            </p>
+        <div className={`mt-2 flex flex-wrap items-center justify-between gap-3 rounded-lg border px-3 py-2 ${confirmado
+            ? 'border-border-subtle' : 'border-warning/40 bg-warning/10'}`}>
+            <div className="min-w-0">
+                <p className="text-body-sm text-content flex items-center gap-1.5 min-w-0">
+                    <Phone size={14} className={`${confirmado ? 'text-content-3' : 'text-warning-text'} shrink-0`} />
+                    <span className="font-semibold tabular-nums">{actual}</span>
+                    {confirmado && <Check size={14} className="text-success-text shrink-0" aria-label="Confirmado" />}
+                </p>
+                {!confirmado && <p className="text-caption text-warning-text">Pregúntale al cliente si este número es correcto: ahí le llega el aviso.</p>}
+            </div>
             <div className="flex items-center gap-1">
-                {!confirmado && <Button variant="secondary" size="sm" icon={Check} onClick={onConfirmar}>Es correcto</Button>}
+                {!confirmado && <Button variant="primary" size="sm" icon={Check} onClick={onConfirmar}>Es correcto</Button>}
                 <Button variant="ghost" size="sm" icon={Pencil} onClick={() => setEditando(true)}>Cambiar</Button>
             </div>
         </div>

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1473.2 — Encargos: se ve por qué no se puede enviar y el «no aparece en el SRS»
+
+- **Teléfono sin confirmar**: el recuadro se pinta en ámbar, explica que hay que preguntarle al cliente si el número es correcto, y «Es correcto» pasa a botón principal.
+- **El motivo del botón apagado** (falta teléfono, falta el SRS, etc.) se muestra como aviso junto al botón, no en gris chico.
+- **SRS sin resultados**: «No aparece en el SRS: consultar igual» es un botón visible de ancho completo, con aviso cuando no hay coincidencias; también aparece si la consulta al SRS falla, para no quedar trabado.
+
 ## v2.1473.1 — Compras: la caja que se vende entera sí avisa si el nombre dice otro tamaño
 
 - La excepción de v2.1470.3 (`CAJA (1)` = la caja misma) dejaba callado un

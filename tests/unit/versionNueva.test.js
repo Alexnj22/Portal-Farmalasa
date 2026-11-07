@@ -65,6 +65,40 @@ describe('qué archivo está corriendo', () => {
     });
 });
 
+describe('con nombres estables (la entrada siempre es index.js)', () => {
+    function ponerCompilacion(huella) {
+        document.head.innerHTML = '';
+        const s = document.createElement('script');
+        s.type = 'module';
+        s.setAttribute('src', '/assets/index.js');
+        document.head.appendChild(s);
+        if (huella) {
+            const m = document.createElement('meta');
+            m.setAttribute('name', 'portal-build');
+            m.setAttribute('content', huella);
+            document.head.appendChild(m);
+        }
+    }
+
+    it('la marca del html manda sobre el nombre del archivo', () => {
+        ponerCompilacion('a1b2c3d4e5f60718');
+        expect(entradaQueCorre()).toBe('a1b2c3d4e5f60718');
+    });
+
+    it('otra huella publicada es otra versión, aunque el archivo se llame igual', () => {
+        ponerCompilacion('a1b2c3d4e5f60718');
+        expect(esOtraVersion({ entrada: 'ffffffffffffffff' }, entradaQueCorre())).toBe(true);
+        expect(esOtraVersion({ entrada: 'a1b2c3d4e5f60718' }, entradaQueCorre())).toBe(false);
+    });
+
+    it('una pestaña de antes (sin marca) ve la huella nueva como versión nueva', () => {
+        // Es la transición: la pestaña abierta corre `index-<hash>.js` y el
+        // servidor ya publica una huella. Tiene que avisar, no callarse.
+        ponerEntradaEnElDom(ENTRADA);
+        expect(esOtraVersion({ entrada: 'a1b2c3d4e5f60718' }, entradaQueCorre())).toBe(true);
+    });
+});
+
 describe('comparar publicado contra lo que corre', () => {
     it('el mismo archivo no es otra versión', () => {
         expect(esOtraVersion({ entrada: ENTRADA }, ENTRADA)).toBe(false);

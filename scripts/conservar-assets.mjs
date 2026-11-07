@@ -57,6 +57,11 @@ const INVENTARIO = 'assets-vivos.json';
 // Dónde se guardan los archivos entre compilaciones. Sólo cuando hay origen
 // (o sea, en la compilación de producción): a mano no hace falta.
 const CACHE = process.env.CONSERVAR_ASSETS_CACHE || 'node_modules/.cache/conservar-assets';
+// Sólo se hereda y se guarda en caché un archivo CON hash en el nombre: su
+// contenido no cambia nunca. La entrada se llama siempre `index.js` (nombres
+// estables, ver vite.config.js); heredar una vieja o sacarla de la caché
+// pisaría la de esta versión con código de otra.
+const conHash = (f) => /-[A-Za-z0-9_-]{8}\.[a-z0-9]+$/.test(f);
 
 // Por qué falló cada archivo que no se pudo bajar: sin esto, «191 fallidos»
 // no dice si fue la red, el servidor o el tiempo.
@@ -99,11 +104,11 @@ function guardarEnCache(carpeta, enCache) {
     let guardados = 0, podados = 0;
     try {
         for (const f of Object.keys(inventario)) {
-            if (enCache.has(f)) continue;
+            if (enCache.has(f) || !conHash(f)) continue;
             try { copyFileSync(join(carpeta, f), join(CACHE, f)); guardados += 1; } catch { /* sigue */ }
         }
         for (const f of enCache) {
-            if (inventario[f]) continue;
+            if (inventario[f] && conHash(f)) continue;
             try { rmSync(join(CACHE, f), { force: true }); podados += 1; } catch { /* sigue */ }
         }
         console.log(`conservar-assets: caché de compilación · ${guardados} guardados · ${podados} podados`);
@@ -135,7 +140,7 @@ async function main() {
         const archivos = anterior?.archivos && typeof anterior.archivos === 'object' ? anterior.archivos : {};
 
         const pendientes = Object.entries(archivos)
-            .filter(([f]) => /^[\w.-]+$/.test(f) && !propios.has(f))       // sólo nombres de archivo planos
+            .filter(([f]) => /^[\w.-]+$/.test(f) && conHash(f) && !propios.has(f))   // sólo nombres planos y con hash
             .filter(([, desde]) => {
                 const vivo = ahora - Number(desde) < VENTANA_MS;
                 if (!vivo) vencidos += 1;

@@ -21,6 +21,34 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1472.0 — Publicar sin obligar a todos a volver a bajar el portal
+
+- **Cada publicación renombraba ~630 de los ~730 archivos del portal**, aunque
+  cambiara una sola línea: 623 importan el archivo de entrada por su nombre
+  (`index-<hash>.js`), y la entrada cambia siempre porque lleva el número de
+  versión. Todo navegador volvía a bajar cada pantalla que abría después de
+  cada publicación — con ~30 publicaciones al día, eso más el arreglo de
+  v2.1471.1 explica las 2.8M peticiones al mes del CDN de Vercel (plan de 1M).
+- La entrada se llama ahora siempre `assets/index.js` y los nombres de lo que
+  exporta no se acortan (`vite.config.js`). Medido con dos compilaciones:
+  cambiar la versión renombra **0** archivos (antes 633); cambiar una vista
+  renombra **3** (ella y sus piezas). En el navegador, una pestaña nueva tras
+  publicar bajó 4 de 65 archivos; el resto salió de lo que ya tenía.
+- `vercel.json` sirve `assets/index.js` sin la caché de un año: se revalida en
+  cada carga, así nadie se queda con una entrada vieja.
+- El aviso de «hay una versión nueva» ya no compara el nombre de la entrada
+  (ahora es fijo) sino una huella de la compilación: `<meta name="portal-build">`
+  en `index.html` y `e` en `version.json`. Una pestaña de antes ve la huella
+  nueva como versión nueva y avisa.
+- `conservar-assets` nunca hereda ni guarda en caché un archivo sin hash.
+- Probado en el navegador contra el entorno de pruebas: con una pestaña abierta
+  en la versión 1 y la versión 2 publicada encima, la pestaña vieja abrió su
+  propia versión de la vista que cambió y las piezas compartidas de una que no
+  cambió, sin errores; la pestaña nueva cargó la versión 2.
+- Costo: ~1.7% más de peso comprimido (nombres sin acortar). Se subieron 13
+  techos de `gate:bundle` en 1–3 kB, cada uno con su motivo.
+  `ConteoDetailView` ya estaba en rojo antes de este cambio y queda igual.
+
 ## v2.1471.1 — Publicar sin descargar de nuevo los archivos de versiones anteriores
 
 - **Vercel avisó que el portal pasó su plan de CDN: 2.8 millones de peticiones

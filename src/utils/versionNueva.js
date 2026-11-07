@@ -56,14 +56,22 @@ const escribirSesion = (k, v) => { try { almacen.deLaSesion.guardar(k, v); } cat
 const borrarSesion = (k) => { try { almacen.deLaSesion.borrar(k); } catch { /* modo privado */ } };
 
 /**
- * El archivo de código que está corriendo AHORA, leído del DOM.
+ * La compilación que está corriendo AHORA, leída del DOM.
  *
- * Es el `<script type="module">` que el build escribió en `index.html`. En
- * desarrollo no hay `/assets/`, así que devuelve `null` y toda la vigilancia
- * queda apagada sola — que es lo correcto: en `npm run dev` el bundle se
- * reemplaza en caliente y no hay nada que avisar.
+ * Desde el 2026-11-07 la entrada se llama siempre `assets/index.js` (nombres
+ * estables, ver `vite.config.js`), así que el nombre ya no distingue una
+ * publicación de otra: la marca es `<meta name="portal-build">`, que el build
+ * escribe en `index.html` con el mismo valor que `version.json` trae en `e`.
+ * Sin esa marca (un `index.html` de antes) se cae al nombre del archivo, que
+ * era la marca vieja.
+ *
+ * En desarrollo no hay ni marca ni `/assets/`, así que devuelve `null` y toda
+ * la vigilancia queda apagada sola — que es lo correcto: en `npm run dev` el
+ * bundle se reemplaza en caliente y no hay nada que avisar.
  */
 export function entradaQueCorre(doc = typeof document !== 'undefined' ? document : null) {
+    const marca = doc?.querySelector?.('meta[name="portal-build"]')?.getAttribute?.('content');
+    if (marca) return marca;
     const el = doc?.querySelector?.('script[type="module"][src*="/assets/"]');
     const src = el?.getAttribute?.('src') || '';
     return src.split('/').pop() || null;

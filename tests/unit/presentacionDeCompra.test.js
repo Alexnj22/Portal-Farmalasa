@@ -88,3 +88,11 @@ describe('juzgarPresentacion', () => {
         expect(juzgarPresentacion({ tam: null, presentaciones: TRAMACET, nombre: 'TRAMACET X 20 TABLETAS', factor: 20 }).aviso).toBeNull();
     });
 });
+
+describe('tamanosDelNombre — decimales y porcentajes', () => {
+    it('«X 2.0MG», «X 0,5 MG» y «X 5%» no son tamaños', () => {
+        expect(tamanosDelNombre('ACREA X 2.0MG X 21 COMP')).toEqual([21]);
+        expect(tamanosDelNombre('GOTAS X 0,5 MG X 20')).toEqual([20]);
+        expect(tamanosDelNombre('CREMA X 5% X 30G')).toEqual([]);
+    });
+});

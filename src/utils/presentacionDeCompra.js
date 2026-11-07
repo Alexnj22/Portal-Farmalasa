@@ -17,7 +17,7 @@
  * (`tests/unit/presentacionDeCompra.test.js`).
  */
 
-const MEDIDA = String.raw`(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|%|UI)\b)`;
+const MEDIDA = String.raw`(?!\s*(?:[.,]\d|%|(?:ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|UI)\b))`;
 
 /** Los «X <n>» del nombre que no son una medida: «X 30 TABLETAS» → [30]. */
 export const tamanosDelNombre = (nombre) =>

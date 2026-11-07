@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1479.2 — Compras: un decimal no es un tamaño de caja; el historial de productos sin repetidos
+
+- **«X 2.0MG» se leía como caja de 2** (ACREA). La regla que excluye las
+  medidas ponía `\b` sobre todo el grupo, así que `.0` seguido de `MG` no
+  calzaba como decimal; tampoco `%`. Corregida en sus tres copias
+  (`_shared/compraSobre.ts`, `presentacionDeCompra.js`, `PropuestaDeCompra.jsx`),
+  y aceptando también la coma decimal. Sobre las 646 compras cargadas desde el
+  30-oct cambia sólo ACREA (2 → ninguno). Pruebas en `elegirFactor.test.js` y
+  `presentacionDeCompra.test.js`.
+- **El historial de productos anotaba dos veces el mismo cambio** cuando el
+  cron y el refresco de Cargar compra corrían a la vez (COMBINATER, a 0.1 s; 2
+  veces en 90 días). Trigger `products_changelog_sin_repetir`: con un candado
+  de transacción, descarta un cambio idéntico dentro de 2 minutos. Probado en
+  el entorno de pruebas: la repetición se descarta; un cambio distinto, y el
+  mismo 3 minutos después, entran.
+
 ## v2.1479.1 — Encuestas: Saly en su lugar de siempre
 
 - La Saly de Resultados flotaba aparte y chocaba con el chat y con las flechas

@@ -391,7 +391,7 @@ export function tamanoDeCajaEnLaDescripcion(t: string): number | null {
   const doc = factorEnLaDescripcion(s) ?? factorDebilEnLaDescripcion(s);
   if (doc) return doc;
   if (!empaqueEnLaDescripcion(s)) return null;
-  const n = [...new Set([...s.matchAll(/\bX\s*(\d{1,3})\b(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|GRAMOS|MG|MCG|KG|OZ|%|UI)\b)/gi)]
+  const n = [...new Set([...s.matchAll(/\bX\s*(\d{1,3})\b(?!\s*(?:[.,]\d|%|(?:ML|CC|L|LT|LTS|G|GR|GRS|GRAMOS|MG|MCG|KG|OZ|UI)\b))/gi)]
     .map((m) => Number(m[1])).filter((x) => x >= 2 && x <= 500))];
   return n.length === 1 ? n[0] : null;
 }

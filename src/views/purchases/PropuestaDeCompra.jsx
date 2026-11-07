@@ -87,7 +87,7 @@ const presDelCatalogo = (lista) => [...new Map((lista ?? []).filter(x => Number(
 const nombrePres = (x) => `${x.nombre ?? (x.factor > 1 ? 'CAJA' : 'UNIDAD')} (${x.factor})`;
 // El nombre del producto con el tamaño nuevo, si lo nombra una sola vez
 // («RINOKEM PLUS X 100 CAPSULAS» → «… X 120 CAPSULAS»). Una medida no cuenta.
-const MEDIDA = String.raw`(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|%|UI)\b)`;
+const MEDIDA = String.raw`(?!\s*(?:[.,]\d|%|(?:ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|UI)\b))`;
 const nombreConTamano = (nombre, tam) => {
     const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
     const m = [...String(nombre ?? '').matchAll(re)];

@@ -103,3 +103,16 @@ describe('elegirFactor', () => {
         expect(tamanoDeCajaEnLaDescripcion('AZTHOMAC 200mg/5ml. Polv. P/S. F X 15ml.')).toBe(null);
     });
 });
+
+describe('tamanoDeCajaEnLaDescripcion — un decimal pegado a la medida no es un tamaño (2026-11-07)', () => {
+    it('ACREA «X 2.0MG» no es caja de 2', () => {
+        expect(tamanoDeCajaEnLaDescripcion('ACREA 0.035MG X 2.0MG COMP. REC. CAJA X BLISTER 21 L166354')).toBeNull();
+    });
+    it('«X 5%» y «X 0,5MG» tampoco', () => {
+        expect(tamanoDeCajaEnLaDescripcion('CREMA X 5% CAJA X 30')).toBe(30);
+        expect(tamanoDeCajaEnLaDescripcion('GOTAS X 0,5MG CAJA X 20')).toBe(20);
+    });
+    it('el tamaño de verdad sigue saliendo', () => {
+        expect(tamanoDeCajaEnLaDescripcion('VALPAKINE 500 MG x 40 GRAG CAJA')).toBe(40);
+    });
+});

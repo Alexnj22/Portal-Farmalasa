@@ -424,6 +424,7 @@ export function reabrirCorte(id, motivo) {
  */
 export function resolverDiferencia(corteId, {
     via, causa, montoVisto, monto = null, personas = [], evidenciaRef = null, evidenciaFoto = null,
+    mapfreInvoiceId = null,
 }, contexto = {}) {
     return conBitacora(supabase.rpc('resolver_diferencia_corte', {
         p_corte_id: corteId,
@@ -437,9 +438,14 @@ export function resolverDiferencia(corteId, {
         p_evidencia_ref: evidenciaRef || null,
         p_evidencia_foto: evidenciaFoto || null,
         p_monto: monto == null ? null : Math.abs(Number(monto)),
+        // El pago de Mapfre cobrado sin anotar (2026-11-07): la factura queda
+        // cobrada en el día en que entró el dinero, sin pasar por la caja de
+        // hoy. Sólo se manda si hay: así las pantallas viejas no cambian nada.
+        ...(mapfreInvoiceId ? { p_mapfre_invoice_id: Number(mapfreInvoiceId) } : {}),
     }), 'CORTE_CAJA_DIFERENCIA_RESUELTA', corteId, {
         corte_id: corteId, via, causa, monto: monto == null ? undefined : Math.abs(Number(monto)),
         evidencia_ref: evidenciaRef || null, con_foto: !!evidenciaFoto,
+        mapfre_invoice_id: mapfreInvoiceId || undefined,
         responsables: via === 'REPONE' ? personas.length : undefined, ...contexto,
     });
 }
@@ -577,6 +583,17 @@ export async function subirEvidenciaDeDiferencia(archivo, { salaId, userId }) {
  *
  * Las fotos se firman acá: `photo_url` se guarda cruda y el bucket es privado.
  */
+/**
+ * Las facturas de Mapfre cuyo pago puede explicar el sobrante de un corte: de
+ * su sala, de su día o antes, y que nadie cobró. Lanza: una lista vacía por
+ * error diría «no hay» cuando no se pudo preguntar.
+ */
+export async function fetchMapfreDeCorte(corteId) {
+    const { data, error } = await supabase.rpc('mapfre_facturas_de_corte', { p_corte_id: corteId });
+    if (error) throw new Error(error.message);
+    return Array.isArray(data) ? data : [];
+}
+
 export async function fetchTurnoDelCorte(corteId) {
     const { data, error } = await supabase.rpc('get_corte_turno', { p_corte_id: corteId });
     if (error) { console.error('cortes: fetchTurnoDelCorte failed:', error.message); return []; }

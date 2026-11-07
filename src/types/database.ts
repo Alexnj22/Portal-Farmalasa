@@ -9165,6 +9165,7 @@ export type Database = {
           fecha: string
           id: number
           impreso_at: string | null
+          mapfre_invoice_id: number | null
           monto: number
           registrado_at: string
           registrado_por: string | null
@@ -9187,6 +9188,7 @@ export type Database = {
           fecha: string
           id?: number
           impreso_at?: string | null
+          mapfre_invoice_id?: number | null
           monto: number
           registrado_at?: string
           registrado_por?: string | null
@@ -9209,6 +9211,7 @@ export type Database = {
           fecha?: string
           id?: number
           impreso_at?: string | null
+          mapfre_invoice_id?: number | null
           monto?: number
           registrado_at?: string
           registrado_por?: string | null
@@ -31175,6 +31178,7 @@ export type Database = {
           fecha: string
           id: number
           impreso_at: string | null
+          mapfre_invoice_id: number | null
           monto: number
           registrado_at: string
           registrado_por: string | null
@@ -36190,6 +36194,7 @@ export type Database = {
           fecha: string
           id: number
           impreso_at: string | null
+          mapfre_invoice_id: number | null
           monto: number
           registrado_at: string
           registrado_por: string | null
@@ -36360,6 +36365,8 @@ export type Database = {
         Args: { p_branch_id: number; p_buscar?: string; p_dias?: number }
         Returns: Json
       }
+      mapfre_facturas_de_corte: { Args: { p_corte_id: number }; Returns: Json }
+      mapfre_ya_cobrada: { Args: { p_invoice_id: number }; Returns: boolean }
       marcar_abonos_impresos: { Args: { p_ids: number[] }; Returns: number }
       marcar_ajuste_erp: {
         Args: { p_conteo_id: string; p_nota?: string }
@@ -36384,6 +36391,7 @@ export type Database = {
           fecha: string
           id: number
           impreso_at: string | null
+          mapfre_invoice_id: number | null
           monto: number
           registrado_at: string
           registrado_por: string | null
@@ -38323,6 +38331,7 @@ export type Database = {
           p_corte_id: number
           p_evidencia_foto?: string
           p_evidencia_ref?: string
+          p_mapfre_invoice_id?: number
           p_monto?: number
           p_monto_esperado: number
           p_personas?: Json
@@ -38344,6 +38353,7 @@ export type Database = {
           fecha: string
           id: number
           impreso_at: string | null
+          mapfre_invoice_id: number | null
           monto: number
           registrado_at: string
           registrado_por: string | null

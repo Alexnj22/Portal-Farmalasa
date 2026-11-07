@@ -7,12 +7,16 @@ import AvatarConEstado from '../common/AvatarConEstado';
 import Checkbox from '../common/Checkbox';
 import FirmaConFoto from './FirmaConFoto';
 import FileField from '../common/FileField';
+import LiquidSelect from '../common/LiquidSelect';
 import Notice from '../common/Notice';
 import PhotoLightbox from '../common/PhotoLightbox';
 import PortalInput from '../common/PortalInput';
 import PortalTextarea from '../common/PortalTextarea';
 import SegmentedControl from '../common/SegmentedControl';
-import { fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '@nucleo/data/cortes';
+import { fetchMapfreDeCorte, fetchTurnoDelCorte, subirEvidenciaDeDiferencia } from '@nucleo/data/cortes';
+import { fechaNumerica } from '@nucleo/utils/fecha';
+import { hora12 } from '@nucleo/utils/hora';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -272,6 +276,14 @@ export default function ResolverDiferencia({
     const [marcadas, setMarcadas] = useState(() => new Set());
     const [montos, setMontos] = useState(() => new Map());
     const [abriendo, setAbriendo] = useState(() => !!(borrador?.via || borrador?.causa));
+    // El pago de Mapfre cobrado sin anotar (usuario, 2026-11-07, Salud 5 del
+    // 6-nov). Cobrarlo en la caja al día siguiente sumaba el monto al esperado
+    // de HOY sin que el dinero estuviera en el cajón —está en la bolsa del día
+    // del corte— y fabricaba un faltante. Ligado a la causa, la factura queda
+    // cobrada en el día en que entró el dinero y ya no se ofrece para cobrar.
+    const [mapfreId, setMapfreId] = useState('');
+    const [facturasMapfre, setFacturasMapfre] = useState(null);
+    const [errorMapfre, setErrorMapfre] = useState('');
 
     const corteId = corte?.id ?? null;
 
@@ -330,10 +342,26 @@ export default function ResolverDiferencia({
         setMontos(new Map(ids.map((id, i) => [id, partes[i]])));
     }
 
+    // Las facturas se piden al abrir la explicación de un SOBRANTE: un pago que
+    // entró sin anotarse sólo deja dinero de más.
+    useEffect(() => {
+        if (!abriendo || !corteId || via !== 'JUSTIFICA' || falta) return;
+        let vivo = true;
+        fetchMapfreDeCorte(corteId)
+            .then((f) => { if (vivo) { setFacturasMapfre(f); setErrorMapfre(''); } })
+            .catch((e) => { if (vivo) { setFacturasMapfre([]); setErrorMapfre(mensajeAmigable(e)); } });
+        return () => { vivo = false; };
+    }, [abriendo, corteId, via, falta]);
+    const mapfre = (facturasMapfre || []).find((f) => String(f.id) === mapfreId) || null;
+    const numeroDeFactura = (f) => String(f?.correlativo ?? '').split('_')[0].replace(/^0+/, '') || '—';
+
     // La cuenta (objetivo, lo que explica la causa, lo que falta repartir y el
-    // freno del botón) es la del núcleo: la misma que usa la app.
+    // freno del botón) es la del núcleo: la misma que usa la app. La factura de
+    // Mapfre ES el comprobante: el servidor guarda su número si no hay otro.
     const cuenta = cuentaDeResolucion({
-        via, pendiente, montoCausa, causa, evidenciaRef, conFoto: !!foto,
+        via, pendiente, montoCausa, causa,
+        evidenciaRef: evidenciaRef.trim() || (mapfre ? `Mapfre Fac ${numeroDeFactura(mapfre)}` : ''),
+        conFoto: !!foto,
         aportes: [...marcadas].map((id) => montos.get(id) ?? 0),
     });
     const { objetivo, restan } = cuenta;
@@ -363,6 +391,7 @@ export default function ResolverDiferencia({
     const cerrarFormulario = useCallback(() => {
         if (claveBorrador) clearDraft(claveBorrador);
         setAbriendo(false); setVia(null); setCausa(''); setEvidenciaRef(''); setFoto(null); setMontoCausa('');
+        setMapfreId('');
     }, [claveBorrador]);
 
     const guardar = useCallback(async () => {
@@ -400,13 +429,14 @@ export default function ResolverDiferencia({
             personas, nombres,
             evidenciaRef: via === 'JUSTIFICA' ? evidenciaRef.trim() : null,
             evidenciaFoto,
+            mapfreInvoiceId: via === 'JUSTIFICA' && mapfre ? mapfre.id : null,
         });
         if (r) {
             cerrarFormulario();
             onCambio?.();
         }
     }, [marcadas, via, montos, candidatos, resolver, corte, causa, tramo, onCambio, foto, evidenciaRef, user,
-        explica, pendiente, cerrarFormulario]);
+        explica, pendiente, cerrarFormulario, mapfre]);
 
     const hechas = vivas.map((d) => (
         <ResolucionHecha
@@ -515,6 +545,34 @@ export default function ResolverDiferencia({
 
                 {via === 'JUSTIFICA' && (
                     <div className="space-y-2">
+                        {!falta && facturasMapfre?.length > 0 && (
+                            <LiquidSelect
+                                label="¿Fue un pago de Mapfre que no se anotó?"
+                                placeholder="No, es otra causa"
+                                value={mapfreId}
+                                onChange={(v) => setMapfreId(v ? String(v) : '')}
+                                options={facturasMapfre.map((f) => ({
+                                    value: String(f.id),
+                                    label: `Fac ${numeroDeFactura(f)} · ${formatMoney(Number(f.asegurado))}`,
+                                    sublabel: `${fechaNumerica(f.fecha, { anio: false })} · ${hora12(f.hora)}`,
+                                }))}
+                            />
+                        )}
+                        {errorMapfre && !falta && (
+                            <Notice variant="warning">No se pudieron leer las facturas de Mapfre: {errorMapfre}</Notice>
+                        )}
+                        {mapfre && (
+                            <Notice variant="info">
+                                <span className="font-bold">
+                                    La Fac {numeroDeFactura(mapfre)} queda cobrada en este corte
+                                </span>
+                                <span className="block mt-0.5 font-normal text-content-2">
+                                    El asegurado pagó {formatMoney(Number(mapfre.asegurado))} y ese dinero ya está en
+                                    este corte: no se cobra otra vez en la caja. Si la causa explica otro monto
+                                    —por ejemplo, el pago menos algo que faltó descartar—, escríbelo abajo.
+                                </span>
+                            </Notice>
+                        )}
                         {/* Cuánto explica: una causa puede no cubrir todo
                             (usuario, 2026-09-29). Vacío = todo lo que queda. */}
                         <PortalInput
@@ -552,7 +610,7 @@ export default function ResolverDiferencia({
                             hint="El documento que muestra la causa. Basta con el número o con la foto."
                         />
                         {errorFoto && <Notice variant="danger">{errorFoto}</Notice>}
-                        {faltaComprobante && (
+                        {faltaComprobante && !mapfre && (
                             <p className="text-caption text-content-3">
                                 Para dar la causa por encontrada hace falta el número del documento o una foto.
                             </p>

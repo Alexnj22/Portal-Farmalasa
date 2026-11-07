@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1481.0 — Cortes: el pago de Mapfre cobrado sin anotar se explica en el corte
+
+- Al explicar el sobrante de un corte («Tiene causa: explicarlo») aparece
+  «¿Fue un pago de Mapfre que no se anotó?» con las facturas de Mapfre de esa
+  sala, de ese día o antes, que nadie cobró. Elegida, la factura es el
+  comprobante y queda **cobrada** en ese corte: deja de ofrecerse en el cobro de
+  Mapfre de Mi Caja y no se puede cobrar dos veces.
+- Antes, cobrarla al día siguiente desde la caja sumaba el monto al esperado de
+  hoy sin que el dinero estuviera en el cajón (está en la bolsa del día del
+  corte) y fabricaba un faltante. Caso: Salud 5, 6-nov, Fac 20312 ($34.55),
+  sobrante de $29.55 junto con $5 de un anticipo que faltó descartar.
+- Base: `cortes_caja_diferencias.mapfre_invoice_id` (una causa viva por
+  factura), `resolver_diferencia_corte` con `p_mapfre_invoice_id`,
+  `mapfre_facturas_de_corte` y `mapfre_ya_cobrada` como juez único del cobro
+  (lo usan `mapfre_cotizar` y `mapfre_facturas`). Anular la causa libera la
+  factura. La app nativa todavía no ofrece el selector.
+
 ## v2.1480.1 — Saly señala el sector, no el elemento suelto
 
 - Al soltar a Saly sobre algo, en todas las pantallas, toma el primer bloque

@@ -3939,6 +3939,14 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
+  "mapfre_facturas_de_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "mapfre_ya_cobrada": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
   "mapfre_customer_id": {
    "area": "facturacion-dte",
    "por": "tablas"

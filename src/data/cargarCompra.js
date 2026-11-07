@@ -629,3 +629,33 @@ export async function pasarAVencidosEnBodega({ renglones, motivo, detalle, fotos
     });
     return { resultado: msg ? null : data, error: msg };
 }
+
+/**
+ * El costo de una unidad de inventario, por producto, ANTES de esta compra
+ * (2026-11-07). Es la prueba que decide si la caja de la factura cambió de
+ * tamaño (`juzgarPresentacion`): mismo costo por unidad = misma caja.
+ * De a 50 productos: cada uno tiene a lo sumo un puñado de presentaciones, así
+ * que la respuesta queda lejos de las 1000. Si falla, devuelve un Map vacío y
+ * la pantalla decide por el nombre, como antes.
+ */
+export async function costosPorUnidad(productIds = []) {
+    const ids = [...new Set(productIds.filter(Boolean))];
+    const m = new Map();
+    for (let k = 0; k < ids.length; k += 50) {
+        const { data, error } = await supabase.from('product_precios')
+            .select('product_id, factor, costo')
+            .in('product_id', ids.slice(k, k + 50))
+            .eq('activo', true)
+            .gt('factor', 0)
+            .gt('costo', 0)
+            .range(0, 999);
+        if (error) { console.error('costosPorUnidad', error.message); return new Map(); }
+        for (const x of data ?? []) {
+            const f = Number(x.factor), c = Number(x.costo) / f;
+            const prev = m.get(x.product_id);
+            // La de 1 manda; si no hay, la más chica.
+            if (!prev || f < prev.f) m.set(x.product_id, { f, c });
+        }
+    }
+    return new Map([...m].map(([id, v]) => [id, v.c]));
+}

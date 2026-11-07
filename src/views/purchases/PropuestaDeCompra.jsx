@@ -17,7 +17,8 @@ import Checkbox from '../../components/common/Checkbox';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
-import { factorParaProducto, resolverDocumento, fetchPropuesta, confirmarProducto, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence, refrescarCatalogo } from '@nucleo/data/cargarCompra';
+import { factorParaProducto, resolverDocumento, fetchPropuesta, confirmarProducto, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence, refrescarCatalogo, costosPorUnidad } from '@nucleo/data/cargarCompra';
+import { juzgarPresentacion } from '@nucleo/utils/presentacionDeCompra';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -87,13 +88,6 @@ const nombrePres = (x) => `${x.nombre ?? (x.factor > 1 ? 'CAJA' : 'UNIDAD')} (${
 // El nombre del producto con el tamaño nuevo, si lo nombra una sola vez
 // («RINOKEM PLUS X 100 CAPSULAS» → «… X 120 CAPSULAS»). Una medida no cuenta.
 const MEDIDA = String.raw`(?!\s*(?:\.\d|ML|CC|L|LT|LTS|G|GR|GRS|MG|MCG|KG|OZ|%|UI)\b)`;
-// ¿El nombre del producto ya dice «X <tam>»? Entonces la caja de la factura ES
-// la del producto aunque Bodega la cuente en otra unidad: VALPAKINE 500MG X 40
-// TABLETAS se lleva en blísteres (BLISTER 1, CAJA 4 = 40 tabletas), y «x 40»
-// en la factura son tabletas, no blísteres (2026-11-07). No cambió nada.
-const tamanosDelNombre = (nombre) => [...String(nombre ?? '').matchAll(new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi'))]
-    .map(m => Number(m[1]));
-const nombreDiceTamano = (nombre, tam) => tamanosDelNombre(nombre).includes(tam);
 const nombreConTamano = (nombre, tam) => {
     const re = new RegExp(String.raw`\bX\s*(\d{1,3})\b` + MEDIDA, 'gi');
     const m = [...String(nombre ?? '').matchAll(re)];
@@ -322,6 +316,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [error, setError]   = useState('');
     // Lo que la persona corrigió acá: {codigo_proveedor: {product_id, nombre}}
     const [elegidos, setEleg] = useState({});
+    // Costo de una unidad antes de esta compra, por producto: la prueba de si
+    // la caja cambió de tamaño (`juzgarPresentacion`).
+    const [costoU, setCostoU] = useState(() => new Map());
     const [buscando, setBusc] = useState(null);
     const [guardando, setG]   = useState(null);
     // El renglón cuyo «Siempre así» pide la segunda confirmación.
@@ -361,6 +358,16 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     // Una factura en papel (`doc.manual_id`) va por el mismo camino que un DTE.
     const papel = !!doc.manual_id;
     const claveBorrador = `cargar-compra:${papel ? `m${doc.manual_id}` : doc.document_id}`;
+    const idsConCosto = useMemo(() => [...new Set([
+        ...(p?.renglones ?? []).map(r => r.producto_id),
+        ...Object.values(elegidos).map(e => e?.product_id),
+    ].filter(Boolean))].sort((a, b) => a - b).join(','), [p, elegidos]);
+    useEffect(() => {
+        if (!idsConCosto) return;
+        let vivo = true;
+        costosPorUnidad(idsConCosto.split(',').map(Number)).then(m => { if (vivo) setCostoU(m); });
+        return () => { vivo = false; };
+    }, [idsConCosto]);
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
         // Los productos se actualizan EN PARALELO, no antes (2026-11-05):
@@ -887,6 +894,15 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             const factorCambio = conProducto && (r.llave || r.codigo_proveedor)
                                 && Number(aj.factor) !== Number(elegido?.factor ?? r.factor_proveedor ?? 1);
                             const sim = entraComo.get(i);
+                            const fCarga = Number(aj.factor) || 1;
+                            const juicio = juzgarPresentacion({
+                                tam: Number(r.tamano_factura) || null,
+                                presentaciones: vinetasDe(r, i),
+                                nombre: elegido?.nombre ?? r.producto,
+                                factor: fCarga,
+                                costoNuevoUnidad: Number(r.costo_neto) > 0 ? Number(r.costo_neto) / fCarga : null,
+                                costoAntesUnidad: costoU.get(productoDe(r, i) ?? r.producto_id) ?? null,
+                            });
                             return (
                                 <div key={`${r.codigo_proveedor}-${i}`} data-surface="card" className="p-4">
                                     {/* Encabezado: qué producto es y cuánto factura el proveedor. */}
@@ -911,7 +927,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                 <p className="mt-0.5 text-caption text-content-3">En la factura: {r.descripcion}</p>
                                             )}
                                             {uso === 'venta' && !aj.servicio && !aj.erroneo && conProducto && (
-                                                <PresentacionComparada tam={Number(r.tamano_factura) || null}
+                                                <PresentacionComparada tam={Number(r.tamano_factura) || null} juicio={juicio}
                                                     presentaciones={vinetasDe(r, i)} nombre={elegido?.nombre ?? r.producto} />
                                             )}
                                             {uso === 'venta' && !aj.servicio && !aj.erroneo && (() => {
@@ -951,7 +967,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                     </div>
                                     {uso === 'venta' && !aj.servicio && (
                                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)] gap-3 items-start">
-                                            <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar} nombre={elegido?.nombre ?? r.producto}
+                                            <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar} juicio={juicio}
                                                 presentaciones={[...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]}
                                                 onCargar={v => ajustarCarga(i, r, v)}
                                                 recordar={factorCambio && puedeEditar && Number.isInteger(Number(aj.factor)) ? (() => {
@@ -1513,7 +1529,7 @@ function cantidadSospechosa(sim, costo) {
     return Number.isInteger(unidades) && unidades > 0 ? { veces, sube, unidades } : null;
 }
 
-function SeCargaComo({ r, aj, presentaciones, nombre, puedeEditar, onCargar, recordar }) {
+function SeCargaComo({ r, aj, presentaciones, juicio, puedeEditar, onCargar, recordar }) {
     const cant = Number(r.cantidad) || 0;
     const f = Number(aj.factor) || 0;
     const unidades = aj.cargar ?? cargarDe(r, aj.factor);
@@ -1615,7 +1631,9 @@ function SeCargaComo({ r, aj, presentaciones, nombre, puedeEditar, onCargar, rec
                 const tam = Number(r.tamano_factura) || null;
                 const fr = r3(f);
                 if (!(fr > 1)) return null;
-                if (tam && fr !== tam && !(nombreDiceTamano(nombre, tam) && pres.some(x => x.factor === fr))) {
+                // Sólo si el juicio de la presentación no lo descartó: VALPAKINE
+                // va de a 4 blísteres por caja de 40 tabletas, y está bien.
+                if (tam && fr !== tam && juicio?.aviso) {
                     return <p className="mt-0.5 text-caption font-bold text-warning-text">Ojo: la factura dice caja de {tam}, y aquí van {fr} por cada una.</p>;
                 }
                 if (!tam && pres.length > 0 && !pres.some(x => x.factor === fr)) {
@@ -1630,15 +1648,13 @@ function SeCargaComo({ r, aj, presentaciones, nombre, puedeEditar, onCargar, rec
 
 /* Lo que dice la factura de la presentación, al lado de lo que vende Bodega.
  * Si la caja cambió de tamaño, lo dice y sugiere qué crear (2026-11-06). */
-function PresentacionComparada({ tam, presentaciones, nombre }) {
+function PresentacionComparada({ tam, presentaciones, nombre, juicio }) {
     const pres = presDelCatalogo(presentaciones);
     if (!pres.length) return null;
-    // Si la presentación de 1 ES la caja («CAJA (1)»: COMBINATER, y así ~1,400
-    // productos), la caja de la factura es esa misma: no cambió nada (2026-11-07).
-    // Salvo que el nombre diga OTRO tamaño: «X 30» con factura de 60 sí cambió.
-    const cajaEsLaUnidad = pres.some(x => x.factor === 1 && /^CAJA\b/i.test(String(x.nombre ?? '').trim()))
-        && tamanosDelNombre(nombre).length === 0;
-    const cambio = tam && !pres.some(x => x.factor === tam) && !nombreDiceTamano(nombre, tam) && !cajaEsLaUnidad;
+    // Quién decide si cambió: `juzgarPresentacion` (el costo, y si no hay, el
+    // nombre). Las alarmas falsas de «x 40» contra «CAJA (4)» salían de acá.
+    const cambio = !!juicio?.aviso;
+    const confirmado = juicio?.aviso === 'confirmado';
     const nuevo = cambio ? nombreConTamano(nombre, tam) : null;
     return (
         <>
@@ -1648,7 +1664,12 @@ function PresentacionComparada({ tam, presentaciones, nombre }) {
             </p>
             {cambio && (
                 <Notice variant="warning" icon={AlertTriangle} className="mt-2">
-                    <b>¿Cambió la presentación?</b> La factura trae caja de {tam} y Bodega no la tiene.
+                    {confirmado ? (
+                        <><b>Cambió la presentación.</b> La factura trae caja de {tam}, no de {juicio.tamanoBodega}: cargada así, cada
+                        unidad queda {Math.round(Math.abs(juicio.sube))} % más {juicio.sube > 0 ? 'cara' : 'barata'}, justo lo que da {tam} ÷ {juicio.tamanoBodega}.</>
+                    ) : (
+                        <><b>¿Cambió la presentación?</b> La factura trae caja de {tam} y Bodega no la tiene.</>
+                    )}
                     {' '}Si es así, hay que crear la presentación de {tam}
                     {nuevo ? <> y cambiar el nombre del producto a <b>«{nuevo}»</b></> : null}.
                     {pres.some(x => x.factor === 1) ? ' Mientras tanto entra en unidades.' : ''}

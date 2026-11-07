@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1475.0 — Compras: el costo decide si cambió la presentación
+
+El aviso «¿Cambió la presentación?» comparaba el «x 40» de la factura (que
+cuenta tabletas) con las presentaciones de Bodega (que cuentan en su propia
+unidad), y en las compras de octubre era falso en 75 de 77 productos.
+
+- **El costo es la prueba.** `juzgarPresentacion` (`src/utils/presentacionDeCompra.js`)
+  compara el costo de una unidad con esta carga contra el de antes
+  (`costosPorUnidad`, de `product_precios`). Igual (±10 %) → la caja es la
+  misma, no hay aviso. Salta justo en la proporción del tamaño (30 ÷ 20 = +50 %)
+  → **«Cambió la presentación»**, con el número. Salta sin cuadrar → subió el
+  precio, y decide el nombre.
+- **Sin costo anterior decide el nombre**, como en v2.1470.2–v2.1473.1.
+- **Si la carga ya sigue el tamaño de la factura** (30 sueltas de una caja de
+  30), el aviso se queda: falta crear la presentación.
+- Pruebas: 13 casos en `tests/unit/presentacionDeCompra.test.js`. Pasada por
+  las 646 compras cargadas desde el 30-oct: 97 con tamaño en la factura, avisa
+  sólo en el producto comodín «PRODUCTO ERRONEO». Con cambios de caja
+  fabricados sobre 370 de esos productos (+50 %, ×2, −50 %, y +50 % con precio
+  +10 %), avisa en todos; con sólo el precio +25 %, en ninguno.
+
 ## v2.1474.0 — Conteo: lista, bitácora e impresos por producto, y los movimientos de cada lote a la vista
 
 - **Lo sellado al finalizar también va por producto.** La lista de conteos,

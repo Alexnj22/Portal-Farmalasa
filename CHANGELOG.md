@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1479.0 — Encuestas: Saly flotante que pregunta qué leer, y su lectura por bloques
+
+- En Resultados, Saly aparece flotando abajo a la derecha con su globo: «Tócame
+  y te digo qué significan los resultados». Si la encuesta tiene más de un
+  lugar, pregunta **¿Qué resultados leo?**: todas las sucursales, una, o
+  campo, con cuántas respuestas tiene cada uno. Al elegir, el filtro de la
+  pantalla pasa a ese lugar (lo que se ve y lo que lee son lo mismo), lee si
+  hace falta y lleva la vista a su lectura.
+- La lectura se pinta por bloques en vez de un párrafo corrido: «En pocas
+  palabras» destacado, los números y lo que los explica en tarjetas con las
+  cifras en negrita, y «Qué haría» como acciones numeradas. El texto lo parte
+  el núcleo (`bloquesDeLectura`).
+- La lista de sucursales del filtro ya no se encoge al elegir una.
+
 ## v2.1478.0 — Encuestas: Saly lee los resultados y dice qué significan
 
 - Resultados de una encuesta a clientes: arriba, **«Qué significan los

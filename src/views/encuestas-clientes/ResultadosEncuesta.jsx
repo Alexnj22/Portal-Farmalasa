@@ -21,6 +21,7 @@ import {
     fetchLectura, guardarLectura, fetchUbicaciones,
 } from '@nucleo/data/encuestasClientes';
 import { paqueteParaSaly, estadoDeLectura } from '@nucleo/utils/encuestasLectura';
+import SalyFlotante, { LecturaDeSaly } from './SalyLeeResultados';
 import { preguntarASaly } from '@nucleo/data/ia';
 import SalyDice from '../../components/common/SalyDice';
 import SalyIcono from '../../components/common/SalyIcono';
@@ -48,6 +49,15 @@ export default function ResultadosEncuesta({ encuesta }) {
     const [resumiendo, setResumiendo] = useState(false);
     const [lecturaSaly, setLecturaSaly] = useState(null);
     const [leyendo, setLeyendo] = useState(false);
+    // Para qué filtro está pintado lo que se ve (`undefined` = todavía nada):
+    // Saly sólo lee cuando los números en pantalla son los del lugar elegido.
+    const [cargadoPara, setCargadoPara] = useState(undefined);
+    // Lo que se le pidió a Saly al tocarla: `{ b }` (null = todas).
+    const [pedido, setPedido] = useState(null);
+    // Las sucursales y el total de TODA la encuesta: con un filtro puesto,
+    // `por_sucursal` trae sólo la elegida, y la lista no puede encogerse.
+    const [todas, setTodas] = useState({ salas: [], total: 0 });
+    const lecturaRef = useRef(null);
 
     const branchId = sala ? Number(sala) : null;
     // Sólo pinta la ÚLTIMA carga pedida: al cambiar rápido de sucursal, una
@@ -63,6 +73,10 @@ export default function ResultadosEncuesta({ encuesta }) {
             if (n !== vigente.current) return;
             setLecturaSaly(lec);
             setDatos(d);
+            setCargadoPara(branchId);
+            if (branchId == null) {
+                setTodas({ salas: (d?.por_sucursal || []).map((s) => ({ value: String(s.branch_id), label: s.nombre, respuestas: s.respuestas })), total: d?.total || 0 });
+            }
             setComentarios(c);
             setRondas(r);
             setResumen(res);
@@ -77,7 +91,7 @@ export default function ResultadosEncuesta({ encuesta }) {
     // constructor y de los avisos de la base), no su posición en esta lista.
     const numeroDe = useMemo(() => Object.fromEntries(preguntasEnOrden(encuesta.cuestionario).map((p) => [p.id, p.numero])),
         [encuesta.cuestionario]);
-    const salas = useMemo(() => (datos?.por_sucursal || []).map((s) => ({ value: String(s.branch_id), label: s.nombre })), [datos?.por_sucursal]);
+    const salas = todas.salas;
 
     const exportar = async () => {
         setExportando(true);
@@ -153,6 +167,26 @@ export default function ResultadosEncuesta({ encuesta }) {
         }
     };
 
+    // Al tocar a Saly: se pone el filtro del lugar elegido (así lo que se ve y
+    // lo que ella lee son lo mismo), y cuando esos números ya están en
+    // pantalla, lee —si hace falta— y lleva la vista a su lectura.
+    const pedirLectura = (b) => {
+        setSala(b == null ? '' : String(b));
+        setPedido({ b: b ?? null });
+    };
+    useEffect(() => {
+        if (!pedido || leyendo || cargadoPara !== pedido.b) return;
+        setPedido(null);
+        if (estadoDeLectura(lecturaSaly).puede) leerResultados();
+        requestAnimationFrame(() => lecturaRef.current?.scrollIntoView?.({ block: 'start', behavior: 'smooth' }));
+    }, [pedido, cargadoPara, leyendo]); // eslint-disable-line react-hooks/exhaustive-deps -- `leerResultados` lee el render vigente
+
+    const lugaresParaSaly = [
+        { value: null, label: 'Todas las sucursales', respuestas: todas.total },
+        ...todas.salas.filter((x) => x.respuestas > 0).map((x) => ({ value: Number(x.value), label: x.label, respuestas: x.respuestas })),
+    ];
+    const nombreDelFiltro = branchId == null ? 'todas las sucursales' : (salas.find((x) => Number(x.value) === branchId)?.label || 'esta sucursal');
+
     if (!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado)) {
         return <Notice variant="info" compact>Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas.</Notice>;
     }
@@ -190,34 +224,10 @@ export default function ResultadosEncuesta({ encuesta }) {
                             valueCls={nps.detractores ? 'text-danger' : undefined} sub={`${nps.detractores} dieron 0 a 6`} />
                     </CarrilCards>
 
-                    {(() => {
-                        const l = estadoDeLectura(lecturaSaly);
-                        return (
-                            <section data-surface="card" className="p-4 space-y-3">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <TituloDeSeccion nivel="seccion" className="flex-1">Qué significan los resultados</TituloDeSeccion>
-                                    <Button variant={l.hay ? 'secondary' : 'primary'} size="sm" icon={SalyIcono} loading={leyendo}
-                                        disabled={!l.puede} title={l.ayuda || 'Saly lee los números, los cruces y los comentarios, y lo guarda para todos'}
-                                        onClick={leerResultados}>
-                                        {l.boton}
-                                    </Button>
-                                </div>
-                                {leyendo && <SalyDice animo="pensando">Estoy leyendo los resultados y cruzando las respuestas, dame un momento…</SalyDice>}
-                                {!leyendo && lecturaSaly?.texto && (
-                                    <SalyDice animo="atencion" titulo={`leyó ${lecturaSaly.respuestas_n} respuesta(s)`}
-                                        pie={<>{fechaTexto(lecturaSaly.generado_at, { day: 'numeric', month: 'short' })} {hora12(lecturaSaly.generado_at)}
-                                            {lecturaSaly.nuevas > 0 ? ` · ${lecturaSaly.nuevas} nueva(s) desde entonces` : ''}</>}>
-                                        <div className="whitespace-pre-line"><ConNegritas texto={lecturaSaly.texto} /></div>
-                                    </SalyDice>
-                                )}
-                                {!leyendo && !lecturaSaly?.texto && (
-                                    <p className="text-body-sm text-content-3">
-                                        Saly lee los números, cruza las preguntas entre sí (por ejemplo, quiénes recomiendan menos y por qué) y te dice qué hacer.
-                                    </p>
-                                )}
-                            </section>
-                        );
-                    })()}
+                    <div ref={lecturaRef} className="scroll-mt-4">
+                        <LecturaDeSaly lectura={lecturaSaly} nombre={nombreDelFiltro} leyendo={leyendo}
+                            onActualizar={leerResultados} />
+                    </div>
 
                     {nps.respuestas > 0 && (
                         <section data-surface="card" className="p-4 space-y-2">
@@ -343,6 +353,10 @@ export default function ResultadosEncuesta({ encuesta }) {
                         })}
                     </ul>
                 </section>
+            )}
+
+            {todas.total > 0 && (
+                <SalyFlotante lectura={lecturaSaly} lugares={lugaresParaSaly} leyendo={leyendo} onLeer={pedirLectura} />
             )}
         </div>
     );

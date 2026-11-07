@@ -84,3 +84,39 @@ describe('estadoDeLectura', () => {
         expect(e.ayuda).toMatch(/5 respuestas nuevas \(van 3\)/);
     });
 });
+
+describe('bloquesDeLectura', () => {
+    it('separa títulos, texto y puntos como los escribe Saly', async () => {
+        const { bloquesDeLectura } = await import('@nucleo/utils/encuestasLectura');
+        const texto = `**En pocas palabras:**
+Son resultados preliminares.
+Indican algo.
+
+**Lo que muestran los números:**
+* Me preocupa que el 100 % (2 de 2) no usa la app.
+* Hay **desconexión** en medios.
+
+**Qué haría:**
+1. Comunicar la privacidad.
+2. Reforzar Instagram.`;
+        const b = bloquesDeLectura(texto);
+        expect(b.map((x) => x.clave)).toEqual(['resumen', 'numeros', 'acciones']);
+        expect(b[0].texto).toBe('Son resultados preliminares. Indican algo.');
+        expect(b[1].puntos).toEqual(['Me preocupa que el 100 % (2 de 2) no usa la app.', 'Hay desconexión en medios.']);
+        expect(b[2].puntos).toHaveLength(2);
+    });
+    it('título y texto en la misma línea, y texto sin títulos', async () => {
+        const { bloquesDeLectura } = await import('@nucleo/utils/encuestasLectura');
+        expect(bloquesDeLectura('**En pocas palabras:** Todo bien.')[0]).toMatchObject({ clave: 'resumen', texto: 'Todo bien.' });
+        expect(bloquesDeLectura('Sólo texto.')[0]).toMatchObject({ titulo: null, texto: 'Sólo texto.' });
+    });
+});
+
+describe('invitacionDeSaly', () => {
+    it('invita, ofrece releer y calla sin respuestas', async () => {
+        const { invitacionDeSaly } = await import('@nucleo/utils/encuestasLectura');
+        expect(invitacionDeSaly({ respuestas: 0 })).toBeNull();
+        expect(invitacionDeSaly({ respuestas: 4, nuevas: 4 }, { varias: true })).toMatch(/todas las sucursales o de una/);
+        expect(invitacionDeSaly({ texto: 'x', respuestas: 12, nuevas: 6, minimo_nuevas: 5 })).toMatch(/6 respuestas nuevas/);
+    });
+});

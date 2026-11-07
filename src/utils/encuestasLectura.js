@@ -203,3 +203,57 @@ export function estadoDeLectura(lectura) {
         ayuda: hay && !puede ? `Se actualiza cuando entren ${minimo} respuestas nuevas (van ${nuevas}).` : null,
     };
 }
+
+/**
+ * La lectura de Saly, en bloques para pintarla: `**Título:**` abre un bloque y
+ * cada renglón que empieza con `*`, `-` o `•` es un punto. Un texto sin
+ * títulos queda como un solo bloque sin título. Tolera el título y el texto en
+ * la misma línea («**En pocas palabras:** Son resultados…»).
+ *
+ * @returns {{ titulo: string|null, clave: string, texto: string, puntos: string[] }[]}
+ */
+export function bloquesDeLectura(texto) {
+    const bloques = [];
+    let actual = null;
+    const nuevo = (titulo) => {
+        actual = { titulo, clave: claveDeBloque(titulo), texto: '', puntos: [] };
+        bloques.push(actual);
+    };
+    for (const cruda of String(texto || '').split('\n')) {
+        let linea = cruda.trim();
+        if (!linea) continue;
+        const t = linea.match(/^\*\*(.+?):?\*\*:?\s*(.*)$/);
+        if (t) {
+            nuevo(t[1].replace(/:$/, '').trim());
+            linea = t[2].trim();
+            if (!linea) continue;
+        }
+        if (!actual) nuevo(null);
+        const punto = linea.match(/^(?:[*•-]|\d+[.)])\s+(.*)$/);
+        const limpio = (punto ? punto[1] : linea).replace(/\*\*/g, '').trim();
+        if (punto) actual.puntos.push(limpio);
+        else actual.texto = actual.texto ? `${actual.texto} ${limpio}` : limpio;
+    }
+    return bloques.filter((b) => b.texto || b.puntos.length);
+}
+
+function claveDeBloque(titulo) {
+    const t = String(titulo || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+    if (t.includes('pocas palabras')) return 'resumen';
+    if (t.includes('numeros')) return 'numeros';
+    if (t.includes('explica')) return 'cruces';
+    if (t.includes('haria') || t.includes('accion')) return 'acciones';
+    return 'otro';
+}
+
+/**
+ * Lo que Saly le dice a quien entra, según el estado de su lectura. Sin
+ * respuestas no dice nada (no hay qué leer).
+ */
+export function invitacionDeSaly(lectura, { varias = false } = {}) {
+    const e = estadoDeLectura(lectura);
+    if (!(lectura?.respuestas > 0) && !e.hay) return null;
+    if (!e.hay) return varias ? 'Tócame y te digo qué significan los resultados: de todas las sucursales o de una.' : 'Tócame y te digo qué significan los resultados.';
+    if (e.puede) return `Entraron ${e.nuevas} respuestas nuevas. ¿Los vuelvo a leer?`;
+    return varias ? 'Ya los leí. Tócame si quieres que lea otra sucursal.' : 'Ya los leí: está arriba.';
+}

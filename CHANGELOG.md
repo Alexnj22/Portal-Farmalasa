@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1476.1 — Compras: el costo anterior viene de la lectura de la factura
+
+v2.1475.0 leía el costo anterior desde el navegador (`product_precios.costo`),
+y esa columna no se le da al navegador: en la prueba en vivo respondió
+`permission denied` y la pantalla caía siempre a la regla del nombre. Ahora lo
+trae `leer-dte-json`, que ya lo calculaba (`costoUnidad`): `costo_unidad_antes`
+en cada renglón y en el modo `factor` (cuando se elige otro producto). Es el
+mismo «antes» que la revisión ya muestra en «Costo por unidad».
+
+Requiere desplegar `leer-dte-json` (con JWT, como está en vivo). Sin ese
+despliegue la pantalla sigue funcionando con la regla del nombre.
+
 ## v2.1476.0 — Encuestas: aplicar en campo con ubicación y elegir la sala una vez
 
 - **Aplicar encuesta pregunta «¿Dónde estás?» una sola vez** y vale para todas

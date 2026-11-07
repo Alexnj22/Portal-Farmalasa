@@ -17,7 +17,7 @@ import Checkbox from '../../components/common/Checkbox';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
-import { factorParaProducto, resolverDocumento, fetchPropuesta, confirmarProducto, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence, refrescarCatalogo, costosPorUnidad } from '@nucleo/data/cargarCompra';
+import { factorParaProducto, resolverDocumento, fetchPropuesta, confirmarProducto, simularCarga, simularProductoNuevo, crearProductoNuevo, enviarCarga, fetchPedidosDeVence, pedirVencesASala, cancelarPedidoDeVence, refrescarCatalogo } from '@nucleo/data/cargarCompra';
 import { juzgarPresentacion } from '@nucleo/utils/presentacionDeCompra';
 import CampoMesAnio from '../../components/common/CampoMesAnio';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -316,9 +316,6 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [error, setError]   = useState('');
     // Lo que la persona corrigió acá: {codigo_proveedor: {product_id, nombre}}
     const [elegidos, setEleg] = useState({});
-    // Costo de una unidad antes de esta compra, por producto: la prueba de si
-    // la caja cambió de tamaño (`juzgarPresentacion`).
-    const [costoU, setCostoU] = useState(() => new Map());
     const [buscando, setBusc] = useState(null);
     const [guardando, setG]   = useState(null);
     // El renglón cuyo «Siempre así» pide la segunda confirmación.
@@ -358,16 +355,6 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     // Una factura en papel (`doc.manual_id`) va por el mismo camino que un DTE.
     const papel = !!doc.manual_id;
     const claveBorrador = `cargar-compra:${papel ? `m${doc.manual_id}` : doc.document_id}`;
-    const idsConCosto = useMemo(() => [...new Set([
-        ...(p?.renglones ?? []).map(r => r.producto_id),
-        ...Object.values(elegidos).map(e => e?.product_id),
-    ].filter(Boolean))].sort((a, b) => a - b).join(','), [p, elegidos]);
-    useEffect(() => {
-        if (!idsConCosto) return;
-        let vivo = true;
-        costosPorUnidad(idsConCosto.split(',').map(Number)).then(m => { if (vivo) setCostoU(m); });
-        return () => { vivo = false; };
-    }, [idsConCosto]);
     const cargar = useCallback(async () => {
         setP(null); setError(''); setRes(null);
         // Los productos se actualizan EN PARALELO, no antes (2026-11-05):
@@ -462,6 +449,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
         let vinetas = null;
         let saldo;
         let numeros;
+        let costoUnidadAntes;
         if (producto.id !== renglon.producto_id) {
             setG(k);
             const r = await factorParaProducto({
@@ -472,6 +460,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
             vinetas = r.presentaciones;
             saldo = r.saldo;
             numeros = r.numeros;
+            costoUnidadAntes = r.costoUnidadAntes;
             if (intacto && !['documento', 'aprendido'].includes(renglon.factor_origen)) factor = r.factor ? String(r.factor) : '1';
         }
         if (factor !== ajustes[i]?.factor) setAjustes(a => ({ ...a, [i]: { ...a[i], factor } }));
@@ -490,7 +479,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
             setG(null);
             if (e) { setError(e); return; }
         }
-        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}), ...(saldo !== undefined ? { saldo } : {}), ...(numeros?.length ? { numeros } : {}) } }));
+        setEleg(x => ({ ...x, [k]: { product_id: producto.id, nombre: producto.nombre, factor, ...(vinetas ? { vinetas } : {}), ...(saldo !== undefined ? { saldo } : {}), ...(numeros?.length ? { numeros } : {}), ...(costoUnidadAntes !== undefined ? { costoUnidadAntes } : {}) } }));
         setBusc(null);
         setRes(null);
     };
@@ -901,7 +890,12 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                 nombre: elegido?.nombre ?? r.producto,
                                 factor: fCarga,
                                 costoNuevoUnidad: Number(r.costo_neto) > 0 ? Number(r.costo_neto) / fCarga : null,
-                                costoAntesUnidad: costoU.get(productoDe(r, i) ?? r.producto_id) ?? null,
+                                // El costo de antes lo trae la lectura de la factura (el navegador
+                                // no puede leer el costo del catálogo); con otro producto elegido,
+                                // el de ESE producto.
+                                costoAntesUnidad: elegido && elegido.product_id !== r.producto_id
+                                    ? (elegido.costoUnidadAntes ?? null)
+                                    : (Number(r.costo_unidad_antes) > 0 ? Number(r.costo_unidad_antes) : null),
                             });
                             return (
                                 <div key={`${r.codigo_proveedor}-${i}`} data-surface="card" className="p-4">

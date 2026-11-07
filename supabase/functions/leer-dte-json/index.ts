@@ -225,7 +225,10 @@ Deno.serve(async (req: Request) => {
         pagado: (Number(body?.costo_neto) || 0) * cant, cantidad: cant, entra: cant * f.factor, emisor: String(body?.emisor ?? ""),
       }) : null;
       const numeros = prod?.nombre ? diferenciasDeNumeros(nombreLimpio(desc), prod.nombre) : [];
-      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones, saldo_sugerido: saldo, numeros_distintos: numeros }), { headers: cors });
+      // El costo de UNA unidad antes de esta compra (2026-11-07): la pantalla
+      // lo compara con el de la factura para saber si la caja cambió de tamaño
+      // (`juzgarPresentacion`). Es el mismo «antes» que ya muestra la revisión.
+      return new Response(JSON.stringify({ factor: f.factor, origen: f.origen, presentaciones, saldo_sugerido: saldo, numeros_distintos: numeros, costo_unidad_antes: cu }), { headers: cors });
     }
 
     // ── `barrido`: armar la lista de preguntas distintas ────────────────────
@@ -622,6 +625,10 @@ Deno.serve(async (req: Request) => {
           // Cuántas trae la caja según la factura: la pantalla lo pone al lado
           // de las presentaciones del catálogo para ver si cambió.
           (r as any).tamano_factura = tamanoDeCajaEnLaDescripcion(String(r.descripcion ?? ""));
+          // Y el costo de una unidad antes de esta compra, para decidir si esa
+          // caja cambió (`juzgarPresentacion`, 2026-11-07). El navegador no
+          // puede leer `product_precios.costo` (permiso de columna).
+          (r as any).costo_unidad_antes = r.producto_id ? (costoUnidad.get(r.producto_id) ?? null) : null;
           // La pantalla lo manda de vuelta cuando Bodega elige otro producto
           // (modo «factor»): el tamaño se recalcula contra ESE producto.
           (r as any).costo_neto = Math.round(neto * 10000) / 10000;

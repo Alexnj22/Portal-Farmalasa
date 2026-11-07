@@ -7,6 +7,7 @@ import { exportCsv } from './csvExport';
 import { descargarPdf } from '@plataforma/descargas';
 import { fechaNumerica } from './fecha';
 import { formatMoney } from './formatNumber';
+import { cifrasDelConteo } from './conteoDeInventario';
 import {
     FUENTE_LABEL, SCOPE_LABEL, csvDeAjustesConteo, esAjuste, esSimple, ordenarParaDigitar, ordenarRenglonesDeConteo, valorAjuste,
 } from './conteoPapel';
@@ -584,21 +585,28 @@ function buildTotalesBlock(conteo, items) {
     // reporte dice «22 con diferencia» y el ajuste trae 0 renglones, el que lo
     // recibe no sabe cuál de los dos creer.
     const conDiferencia = items.filter(esAjuste).length;
+    const k = cifrasDelConteo(conteo);
     const sinContar = items.filter((i) => i.estado_item === 'PENDIENTE').length;
     const noUbicados = items.filter((i) => i.estado_item === 'SIN_UBICAR').length;
     // El valorizado llega null sin «Ver el valorizado» (la base no lo entrega):
     // en ese caso las dos casillas no van, en vez de imprimir un $0.00 falso.
     const celdas = [
         { text: `${items.length} ítems`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
-        { text: `${conDiferencia} con diferencia`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
+        // Por producto cuando el conteo lo trae sellado (2026-11-07): un renglón
+        // que sólo cambió de lote no es una diferencia, y se dice aparte.
+        { text: k.porProducto ? `${k.conDiferencia} producto(s) con diferencia` : `${conDiferencia} con diferencia`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] },
+        ...(k.renglonesReacomodo > 0 ? [{ text: `${k.renglonesReacomodo} renglón(es) sólo cambian de lote`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] }] : []),
         { text: `${noUbicados} no ubicados`, fontSize: 8, bold: true, color: '#92400e', fillColor: '#fffbeb', margin: [6, 4, 6, 4] },
         { text: `${sinContar} sin contar`, fontSize: 8, bold: true, color: '#92400e', fillColor: '#fffbeb', margin: [6, 4, 6, 4] },
     ];
-    if (conteo.valor_faltante != null) {
+    if (k.faltante != null) {
         celdas.push(
-            { text: `Faltante: ${fmtMoney(conteo.valor_faltante)}`, fontSize: 8, bold: true, color: '#dc2626', fillColor: '#fef2f2', margin: [6, 4, 6, 4] },
-            { text: `Sobrante: ${fmtMoney(conteo.valor_sobrante)}`, fontSize: 8, bold: true, color: '#2563eb', fillColor: '#eff6ff', margin: [6, 4, 6, 4] },
+            { text: `Faltante: ${fmtMoney(k.faltante)}`, fontSize: 8, bold: true, color: '#dc2626', fillColor: '#fef2f2', margin: [6, 4, 6, 4] },
+            { text: `Sobrante: ${fmtMoney(k.sobrante)}`, fontSize: 8, bold: true, color: '#2563eb', fillColor: '#eff6ff', margin: [6, 4, 6, 4] },
         );
+        if (k.reacomodado > 0) {
+            celdas.push({ text: `Cambio de lote: ${fmtMoney(k.reacomodado)}`, fontSize: 8, bold: true, fillColor: '#f0f0f0', margin: [6, 4, 6, 4] });
+        }
     }
     return {
         margin: [0, 10, 0, 0],

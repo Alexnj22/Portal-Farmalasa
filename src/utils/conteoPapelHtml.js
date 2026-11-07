@@ -5,6 +5,7 @@
 // letra, no los números. Papel: sólo negro, sin fondos.
 import { fechaTexto } from './fecha';
 import { formatMoney } from './formatNumber';
+import { cifrasDelConteo, textoDeMontos } from './conteoDeInventario';
 import {
     FUENTE_LABEL, SCOPE_LABEL, avisoDeConteoParcial, esAjuste, esSimple, ordenarParaDigitar, ordenarRenglonesDeConteo,
     totalesDelConteo, valorAjuste,
@@ -96,13 +97,16 @@ export function hojaDeConteoHtml(conteo, items = [], { ciego = false, compacta =
 export function resultadosDeConteoHtml(conteo, items = []) {
     const simple = esSimple(conteo);
     const t = totalesDelConteo(items);
+    // Por producto (2026-11-07): lo que sólo cambió de lote va aparte.
+    const k = cifrasDelConteo(conteo);
+    const montos = textoDeMontos(conteo, formatMoney);
     const filas = ordenarRenglonesDeConteo(items).map(i => `<tr><td>${producto(i)}</td><td>${esc(simple ? (i.presentacion || '—') : (i.lote || '—'))}</td>
 <td class="n">${n(i.sistema_cantidad)}</td><td class="n">${i.estado_item === 'PENDIENTE' ? 'sin contar' : n(i.fisico_cantidad)}</td>
 <td class="n">${n(i.diferencia)}</td><td class="n">${valorAjuste(i) != null && i.diferencia ? esc(formatMoney(valorAjuste(i))) : ''}</td><td>${esc(i.nota || '')}</td></tr>`).join('');
     const aviso = avisoDeConteoParcial(conteo);
     return `<!doctype html><html><head><meta charset="utf-8"/>${ESTILO}</head><body>${cabecera(conteo, 'Resultados del conteo')}
 <table><thead><tr><th>Producto</th><th>${simple ? 'Presentación' : 'Lote'}</th><th>Sistema</th><th>Físico</th><th>Dif.</th><th>Valor</th><th>Nota</th></tr></thead><tbody>${filas}</tbody></table>
-<p class="nota">${t.items} ítems · ${t.conDiferencia} con diferencia · ${t.noUbicados} no ubicados · ${t.sinContar} sin contar${conteo?.valor_faltante != null ? ` · Faltante ${esc(formatMoney(conteo.valor_faltante))} · Sobrante ${esc(formatMoney(conteo.valor_sobrante))}` : ''}</p>
+<p class="nota">${t.items} ítems · ${k.porProducto ? `${k.conDiferencia} producto(s) con diferencia` : `${t.conDiferencia} con diferencia`}${k.renglonesReacomodo > 0 ? ` · ${k.renglonesReacomodo} renglón(es) sólo cambian de lote` : ''} · ${t.noUbicados} no ubicados · ${t.sinContar} sin contar${montos ? ` · ${esc(montos)}` : ''}</p>
 ${aviso ? `<p class="nota">${esc(aviso)}</p>` : ''}<div class="pie"><div>Contó</div><div>Aprobó</div></div></body></html>`;
 }
 

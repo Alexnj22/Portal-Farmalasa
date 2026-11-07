@@ -6,6 +6,8 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { rotuloDeAjuste } from '@nucleo/utils/conteoDeInventario';
+import { hora12 } from '@nucleo/utils/hora';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 
 const ESTADO = {
     PENDIENTE: { label: 'En cola', variant: 'neutral' },
@@ -30,6 +32,7 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
     const { showToast } = useToastStore();
     const [datos, setDatos] = useState(null);
     const [ocupado, setOcupado] = useState(null);
+    const [todos, setTodos] = useState(false);
 
     const cargar = useCallback(() => fetchConteoCaja(conteoId).then(setDatos)
         .catch((e) => showToast('Error', mensajeAmigable(e), 'error')), [conteoId, fetchConteoCaja, showToast]);
@@ -46,6 +49,13 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
 
     if (!datos) return null;
     const problemas = movs.filter((m) => m.estado === 'ERROR' || m.estado === 'INCIERTO' || m.estado === 'OMITIDO');
+    // Todos los movimientos, siempre (2026-11-07): «quedaron como se contaron»
+    // no deja ver QUÉ entró y qué salió de cada lote, y el control del
+    // inventario es justamente eso. Los que fallaron llegan primero (la base los
+    // ordena así). Un conteo de bodega mueve cientos: se muestran los primeros
+    // y el resto a pedido.
+    const VISIBLES = 12;
+    const lista = todos ? movs : movs.slice(0, VISIBLES);
 
     const otraVez = async (id) => {
         setOcupado(id);
@@ -70,45 +80,68 @@ export default function AjusteEnCaja({ conteoId, puedeReintentar }) {
                 </Notice>
             ) : (
                 <Notice variant="success">
-                    Los {movs.length} productos con diferencia quedaron en el inventario como se contaron.
+                    Los {movs.length} productos con diferencia quedaron en el inventario como se contaron. Abajo, lo
+                    que entró y lo que salió de cada lote.
                 </Notice>
             )}
 
-            {problemas.length > 0 && (
+            {movs.length > 0 && (
                 <ul className="flex flex-col gap-2">
-                    {problemas.map((m) => (
-                        <li key={m.id} className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
-                            <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-body font-bold text-content">{m.producto ?? `Producto ${m.erp_product_id}`}</span>
-                                {m.is_vencidos && <Badge variant="neutral" size="sm" uppercase={false}>Área de vencidos</Badge>}
-                                <Badge variant={ESTADO[m.estado]?.variant} size="sm" uppercase={false}>{ESTADO[m.estado]?.label}</Badge>
-                            </div>
-                            <ul className="text-caption text-content-2">
-                                {(m.lineas ?? []).filter((l) => Number(l.unidades)).map((l) => (
-                                    <li key={`${l.lote}|${l.vence}`}>
-                                        {rotuloDeAjuste(l)} — {l.hecho ? 'aplicado' : (l.error ?? 'pendiente')}
-                                    </li>
-                                ))}
-                            </ul>
-                            {m.estado === 'INCIERTO' && (
-                                <p className="text-caption font-semibold text-warning-text">
-                                    Puede haber entrado una parte. Revisa los movimientos del producto antes de reintentar.
-                                </p>
-                            )}
-                            {m.estado === 'OMITIDO' && m.error && (
-                                <p className="text-caption text-content-2">{m.error}</p>
-                            )}
-                            {puedeReintentar && m.estado !== 'OMITIDO' && (
-                                <div>
-                                    <Button size="sm" variant="secondary" disabled={ocupado === m.id}
-                                        loading={ocupado === m.id} onClick={() => otraVez(m.id)}>
-                                        Reintentar
-                                    </Button>
+                    {lista.map((m) => {
+                        const problema = m.estado === 'ERROR' || m.estado === 'INCIERTO' || m.estado === 'OMITIDO';
+                        return (
+                            <li key={m.id} className="flex flex-col gap-1.5 rounded-lg border border-line bg-surface-2 px-3 py-2">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <span className="text-body font-bold text-content">{m.producto ?? `Producto ${m.erp_product_id}`}</span>
+                                    {m.is_vencidos && <Badge variant="neutral" size="sm" uppercase={false}>Área de vencidos</Badge>}
+                                    <Badge variant={ESTADO[m.estado]?.variant} size="sm" uppercase={false}>{ESTADO[m.estado]?.label}</Badge>
+                                    {m.estado === 'HECHO' && m.updated_at && (
+                                        <span className="text-micro text-content-3 tabular-nums">{fechaNumerica(m.updated_at)} · {hora12(m.updated_at)}</span>
+                                    )}
                                 </div>
-                            )}
-                        </li>
-                    ))}
+                                <ul className="flex flex-col gap-0.5 text-caption text-content-2">
+                                    {(m.lineas ?? []).filter((l) => Number(l.unidades)).map((l) => {
+                                        const entra = Number(l.unidades) > 0;
+                                        return (
+                                            <li key={`${l.lote}|${l.vence}`} className="flex items-baseline gap-2">
+                                                <span className={`w-10 shrink-0 font-bold ${entra ? 'text-chart-1-text' : 'text-content-2'}`}>
+                                                    {entra ? 'Entra' : 'Sale'}
+                                                </span>
+                                                <span className="tabular-nums">
+                                                    {rotuloDeAjuste(l)}
+                                                    {problema && ` — ${l.hecho ? 'aplicado' : (l.error ?? 'pendiente')}`}
+                                                </span>
+                                            </li>
+                                        );
+                                    })}
+                                </ul>
+                                {m.estado === 'INCIERTO' && (
+                                    <p className="text-caption font-semibold text-warning-text">
+                                        Puede haber entrado una parte. Revisa los movimientos del producto antes de reintentar.
+                                    </p>
+                                )}
+                                {m.estado === 'OMITIDO' && m.error && (
+                                    <p className="text-caption text-content-2">{m.error}</p>
+                                )}
+                                {puedeReintentar && problema && m.estado !== 'OMITIDO' && (
+                                    <div>
+                                        <Button size="sm" variant="secondary" disabled={ocupado === m.id}
+                                            loading={ocupado === m.id} onClick={() => otraVez(m.id)}>
+                                            Reintentar
+                                        </Button>
+                                    </div>
+                                )}
+                            </li>
+                        );
+                    })}
                 </ul>
+            )}
+            {movs.length > VISIBLES && (
+                <div>
+                    <Button size="sm" variant="ghost" onClick={() => setTodos((v) => !v)}>
+                        {todos ? 'Ver menos' : `Ver los ${movs.length} productos`}
+                    </Button>
+                </div>
             )}
         </div>
     );

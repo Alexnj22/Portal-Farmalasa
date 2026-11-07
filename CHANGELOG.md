@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1474.0 — Conteo: lista, bitácora e impresos por producto, y los movimientos de cada lote a la vista
+
+- **Lo sellado al finalizar también va por producto.** La lista de conteos,
+  la bitácora, el PDF y la hoja impresa leían `total_diferencias` y
+  `valor_faltante`, que cuentan como diferencia y faltante lo que sólo cambió
+  de lote: Salud 4 seguía en «10 diferencias · faltante $22.59» después de
+  aprobado. `conteos_inventario` guarda ahora `productos_con_diferencia`,
+  `renglones_reacomodo` y `valor_reacomodado` (migración `20261107155038`),
+  calculados por `conteo_cifras_por_producto` —un solo juez para lo sellado y
+  para el resumen vivo— y rellenados en los 9 conteos que había. En pantalla:
+  «N productos con diferencia · M cambios de lote» y faltante/sobrante netos,
+  con lo que sólo cambió de lote aparte. Igual en la app.
+- **Los movimientos de cada lote, siempre a la vista.** El conteo aprobado
+  decía sólo «los N productos quedaron como se contaron»; ahora lista, producto
+  por producto, qué entró y qué salió de cada lote y a qué hora se aplicó.
+- La tabla de conteos marcaba «Falta ajuste» en un conteo que ajusta el
+  inventario solo y ya lo había aplicado: usaba la condición a mano en vez de
+  `faltaAjusteDelConteo`.
+
 ## v2.1473.2 — Encargos: se ve por qué no se puede enviar y el «no aparece en el SRS»
 
 - **Teléfono sin confirmar**: el recuadro se pinta en ámbar, explica que hay que preguntarle al cliente si el número es correcto, y «Es correcto» pasa a botón principal.

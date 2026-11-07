@@ -3,7 +3,7 @@ import {
     fetchConteosInventario as fetchConteosInventarioData, fetchConteoDetalle as fetchConteoDetalleData,
     fetchReglaDeLoteDelProducto,
 } from '../../data/conteoInventario';
-import { esLoteGenerico, planDeLotesReales, reglaDeLoteYVence } from '../../utils/conteoDeInventario';
+import { esLoteGenerico, planDeLotesReales, reglaDeLoteYVence, textoDeDiferencias, textoDeMontos } from '../../utils/conteoDeInventario';
 import { signPhotosDeep } from '../../utils/storageFiles';
 import { formatMoney } from '../../utils/formatNumber';
 
@@ -501,6 +501,7 @@ export const createConteoInventarioSlice = (set, get) => ({
         if (error) throw traducirError(error);
 
         const detalle = await get().fetchConteoDetalle(conteoId);
+        const montos = textoDeMontos(detalle?.valor_faltante != null ? detalle : data, formatMoney);
         const trato = data.total_pendientes > 0
             ? ` · ${data.total_pendientes} pendiente(s) ${pendientesComoCero ? 'cerrados como no ubicados' : 'excluidos del cálculo'}`
             : '';
@@ -510,7 +511,9 @@ export const createConteoInventarioSlice = (set, get) => ({
             branch_id: detalle?.branch_id,
             // Los montos vienen null sin «Ver el valorizado»: la base no los
             // entrega, y la bitácora no los inventa en $0.00.
-            new_value: `${data.total_diferencias} diferencia(s)${data.valor_faltante != null ? ` — faltante ${formatMoney(data.valor_faltante)} · sobrante ${formatMoney(data.valor_sobrante)}` : ''}${trato}`,
+            // Por producto (2026-11-07): lo que sólo cambió de lote no es una
+            // diferencia. `detalle` ya trae lo sellado; si no llegó, lo de la RPC.
+            new_value: `${textoDeDiferencias(detalle ?? data)}${montos ? ` — ${montos}` : ''}${trato}`,
         });
 
         return data;

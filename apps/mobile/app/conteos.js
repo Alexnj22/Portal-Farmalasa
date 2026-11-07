@@ -15,7 +15,7 @@ import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO as ALCANCE, ESTADO_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO as ALCANCE, ESTADO_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo, cifrasDelConteo } from '@nucleo/utils/conteoDeInventario';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
@@ -30,6 +30,17 @@ import { BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+
+// «· 2 productos con diferencia · 10 cambios de lote». Por producto (2026-11-07):
+// lo que sólo cambió de lote no es una diferencia. El resumen vivo (`r`) manda
+// mientras el conteo está abierto; si no, lo sellado.
+function difTexto(r, c) {
+  const k = cifrasDelConteo(c);
+  const n = r?.productos_con_diferencia ?? k.conDiferencia;
+  const lote = r?.renglones_reacomodo ?? k.renglonesReacomodo;
+  const prod = r?.productos_con_diferencia != null || k.porProducto;
+  return `${Number(n) ? ` · ${n} ${prod ? 'producto(s) ' : ''}con diferencia` : ''}${Number(lote) ? ` · ${lote} cambio(s) de lote` : ''}`;
+}
 
 const COLOR = { BORRADOR: colorSistema.texto2, EN_PROGRESO: MARCA.ambar, FINALIZADO: MARCA.azulClaro, CERRADO: MARCA.verde };
 
@@ -138,15 +149,16 @@ export default function Conteos() {
                     <View style={{ width: `${pct}%`, height: 6, backgroundColor: pct >= 100 ? MARCA.verde : MARCA.azulClaro }} />
                   </View>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                    {`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} renglones contados (${pct}%)${Number(r?.con_diferencia ?? c.total_diferencias) ? ` · ${r?.con_diferencia ?? c.total_diferencias} con diferencia` : ''}`}
+                    {`${contados.toLocaleString('es-SV')} de ${total.toLocaleString('es-SV')} renglones contados (${pct}%)${difTexto(r, c)}`}
                   </Text>
                   {/* El valor neto se sella al cerrar: en uno abierto todavía no existe. */}
                   {verMontos && !['BORRADOR', 'EN_PROGRESO'].includes(c.status) && (c.valor_sobrante != null || c.valor_faltante != null) ? (() => {
                     const neto = valorNetoDelConteo(c);
+                    const k = cifrasDelConteo(c);
                     return (
                       <Text style={{ color: neto < 0 ? MARCA.rojo : neto > 0 ? MARCA.azulClaro : colorSistema.texto2, fontSize: 14, fontWeight: '700' }}>
                         {`Valor neto ${formatMoney(neto)}`}
-                        <Text style={{ color: colorSistema.texto2, fontWeight: '400', fontSize: 12 }}>{`  faltante ${formatMoney(c.valor_faltante || 0)} · sobrante ${formatMoney(c.valor_sobrante || 0)}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontWeight: '400', fontSize: 12 }}>{`  faltante ${formatMoney(k.faltante ?? 0)} · sobrante ${formatMoney(k.sobrante ?? 0)}${k.reacomodado > 0 ? ` · ${formatMoney(k.reacomodado)} cambia de lote` : ''}`}</Text>
                       </Text>
                     );
                   })() : null}

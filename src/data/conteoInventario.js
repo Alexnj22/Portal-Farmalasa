@@ -27,7 +27,7 @@ const CONTEO_COLS = 'id, created_at, branch_id, created_by, scope_type, scope_fi
     + 'total_items, total_contados, total_diferencias, notas, total_pendientes, '
     + 'pendientes_como_cero, ajuste_erp_aplicado, ajuste_erp_por, ajuste_erp_at, '
     + 'ajuste_erp_nota, total_recontados, modo, fuente_sistema, '
-    + 'aplica_en_caja, caja_estado, caja_terminado_at, branches(name)';
+    + 'aplica_en_caja, caja_estado, caja_terminado_at, productos_con_diferencia, renglones_reacomodo, branches(name)';
 
 async function conValor(res) {
     if (res.error || !res.data) return res;
@@ -40,7 +40,7 @@ async function conValor(res) {
     const respuestas = await Promise.all(tandas.map(t => supabase.rpc('get_conteos_valor', { p_ids: t })));
     const error = respuestas.find(r => r.error)?.error ?? null;
     // La función devuelve `json` (un arreglo): se aplana como lista de objetos.
-    /** @type {Array<{ id: number, valor_faltante?: number|null, valor_sobrante?: number|null }>} */
+    /** @type {Array<{ id: number, valor_faltante?: number|null, valor_sobrante?: number|null, valor_reacomodado?: number|null }>} */
     const valores = respuestas.flatMap(r => (Array.isArray(r.data) ? /** @type {any[]} */ (r.data) : []));
     if (error) console.error('[conteo] valorizado', error);
     const porId = new Map((valores || []).map(v => [v.id, v]));
@@ -48,6 +48,9 @@ async function conValor(res) {
         ...c,
         valor_faltante: porId.get(c.id)?.valor_faltante ?? null,
         valor_sobrante: porId.get(c.id)?.valor_sobrante ?? null,
+        // Lo que sólo cambió de lote (2026-11-07): resta del faltante y del
+        // sobrante, porque sale de un renglón y entra en otro.
+        valor_reacomodado: porId.get(c.id)?.valor_reacomodado ?? null,
     }));
     return { ...res, data: Array.isArray(res.data) ? conMontos : conMontos[0] };
 }

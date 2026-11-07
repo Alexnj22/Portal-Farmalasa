@@ -8464,6 +8464,8 @@ export type Database = {
           nota_aprobacion: string | null
           notas: string | null
           pendientes_como_cero: boolean | null
+          productos_con_diferencia: number | null
+          renglones_reacomodo: number | null
           scope_filter: Json | null
           scope_type: string
           status: string
@@ -8473,6 +8475,7 @@ export type Database = {
           total_pendientes: number | null
           total_recontados: number | null
           valor_faltante: number | null
+          valor_reacomodado: number | null
           valor_sobrante: number | null
         }
         Insert: {
@@ -8497,6 +8500,8 @@ export type Database = {
           nota_aprobacion?: string | null
           notas?: string | null
           pendientes_como_cero?: boolean | null
+          productos_con_diferencia?: number | null
+          renglones_reacomodo?: number | null
           scope_filter?: Json | null
           scope_type: string
           status?: string
@@ -8506,6 +8511,7 @@ export type Database = {
           total_pendientes?: number | null
           total_recontados?: number | null
           valor_faltante?: number | null
+          valor_reacomodado?: number | null
           valor_sobrante?: number | null
         }
         Update: {
@@ -8530,6 +8536,8 @@ export type Database = {
           nota_aprobacion?: string | null
           notas?: string | null
           pendientes_como_cero?: boolean | null
+          productos_con_diferencia?: number | null
+          renglones_reacomodo?: number | null
           scope_filter?: Json | null
           scope_type?: string
           status?: string
@@ -8539,6 +8547,7 @@ export type Database = {
           total_pendientes?: number | null
           total_recontados?: number | null
           valor_faltante?: number | null
+          valor_reacomodado?: number | null
           valor_sobrante?: number | null
         }
         Relationships: [
@@ -32580,6 +32589,16 @@ export type Database = {
         Returns: Json
       }
       conteo_caja_tomar: { Args: never; Returns: Json }
+      conteo_cifras_por_producto: {
+        Args: { p_conteo_id: string }
+        Returns: {
+          faltante_neto: number
+          productos_con_diferencia: number
+          renglones_reacomodo: number
+          sobrante_neto: number
+          valor_reacomodado: number
+        }[]
+      }
       conteo_costo_unitario: {
         Args: { p_presentacion: string; p_product_id: number }
         Returns: number

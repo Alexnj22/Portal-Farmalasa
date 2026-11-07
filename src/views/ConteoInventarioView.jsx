@@ -8,7 +8,7 @@ import LiquidSelect from '../components/common/LiquidSelect';
 import GlassViewLayout from '../components/GlassViewLayout';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ALCANCE_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo, avanceSinLote } from '@nucleo/utils/conteoDeInventario';
+import { ALCANCE_CONTEO, faltaAjusteDelConteo, FOCOS_CONTEO, resumenDeConteos, valorNetoDelConteo, avanceSinLote, cifrasDelConteo } from '@nucleo/utils/conteoDeInventario';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import FilterBar from '../components/common/FilterBar';
@@ -405,6 +405,7 @@ export default function ConteoInventarioView() {
                 ) : filtered.map((c) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
                     const valorNeto = valorNetoDelConteo(c);
+                    const cifras = cifrasDelConteo(c);
                     return (
                         <FilaConteoMovil
                             key={c.id}
@@ -437,9 +438,14 @@ export default function ConteoInventarioView() {
                                 <span className="flex items-center gap-2">
                                     <span className="flex flex-col items-end gap-1">
                                         <Badge variant={es.variante} size="sm">{es.label}</Badge>
-                                        {c.total_diferencias > 0 && (
+                                        {cifras.conDiferencia > 0 && (
                                             <span className="text-caption font-bold text-warning-text tabular-nums">
-                                                {c.total_diferencias} dif{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
+                                                {cifras.conDiferencia} dif{canVerMontos ? ` · ${formatMoney(valorNeto)}` : ''}
+                                            </span>
+                                        )}
+                                        {cifras.renglonesReacomodo > 0 && (
+                                            <span className="text-micro text-content-3 tabular-nums">
+                                                {cifras.renglonesReacomodo} cambio(s) de lote
                                             </span>
                                         )}
                                         {faltaAjuste(c) && (
@@ -485,6 +491,7 @@ export default function ConteoInventarioView() {
                 {filtered.map((c, i) => {
                     const es = ESTADO_CFG[c.status] || ESTADO_CFG.BORRADOR;
                     const valorNeto = valorNetoDelConteo(c);
+                    const cifras = cifrasDelConteo(c);
                     return (
                         <DataRow key={c.id} index={i} onClick={() => navigate(`/conteo-inventario/${c.id}`)}>
                             <DataCell><span className="text-body-sm font-semibold text-content-2">{fmtDate(c.created_at)}</span></DataCell>
@@ -502,11 +509,21 @@ export default function ConteoInventarioView() {
                                 </div>
                             </DataCell>
                             <DataCell align="center">
-                                {c.total_diferencias > 0 ? (
-                                    <Badge variant="warning" icon={AlertTriangle} uppercase={false}>{c.total_diferencias}</Badge>
-                                ) : c.total_diferencias === 0 ? (
-                                    <span className="text-caption font-bold text-success">Sin diferencias</span>
-                                ) : <span className="text-content-3">—</span>}
+                                {/* Por producto (2026-11-07): un renglón que sólo
+                                    cambió de lote no es una diferencia, y se dice
+                                    debajo para que se vea que se movió algo. */}
+                                <div className="flex flex-col items-center gap-0.5">
+                                    {cifras.conDiferencia > 0 ? (
+                                        <Badge variant="warning" icon={AlertTriangle} uppercase={false}>{cifras.conDiferencia}</Badge>
+                                    ) : cifras.conDiferencia === 0 ? (
+                                        <span className="text-caption font-bold text-success">Sin diferencias</span>
+                                    ) : <span className="text-content-3">—</span>}
+                                    {cifras.renglonesReacomodo > 0 && (
+                                        <span className="text-micro text-content-3 tabular-nums whitespace-nowrap">
+                                            {cifras.renglonesReacomodo} cambio(s) de lote
+                                        </span>
+                                    )}
+                                </div>
                             </DataCell>
                             {canVerMontos && (
                                 <DataCell align="right" hideBelow="lg">
@@ -518,7 +535,10 @@ export default function ConteoInventarioView() {
                                     <Badge variant={es.variante} size="sm" icon={es.icon}>{es.label}</Badge>
                                     {/* Aprobado no es el final: el stock lo corrige el ERP.
                                         Un conteo firmado y sin ajustar es trabajo a medias. */}
-                                    {c.status === 'CERRADO' && c.total_diferencias > 0 && !c.ajuste_erp_aplicado && (
+                                    {/* El juez de la lista y de la tarjeta «Sin ajustar»:
+                                        a mano esto marcaba «Falta ajuste» en un conteo
+                                        que ajusta el inventario solo y ya lo aplicó. */}
+                                    {faltaAjuste(c) && (
                                         <Badge variant="warning" size="sm" icon={FileSpreadsheet} uppercase={false}>Falta ajuste</Badge>
                                     )}
                                 </div>

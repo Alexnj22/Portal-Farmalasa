@@ -75,6 +75,52 @@ export function resumenDeConteos(conteos) {
     };
 }
 
+/**
+ * Las cifras de un conteo contadas POR PRODUCTO (2026-11-07). Lo que sólo
+ * cambió de lote —sale de «sin lote» y entra en su lote real— no es una
+ * diferencia ni un faltante: el producto cuadra. La base sella
+ * `productos_con_diferencia`, `renglones_reacomodo` y `valor_reacomodado`
+ * (`conteo_cifras_por_producto`); el faltante neto es el faltante menos lo
+ * que sólo cambió de lote, y lo mismo el sobrante. Un conteo sellado antes de
+ * que existieran cae a las cifras por renglón.
+ *
+ * Los montos quedan `null` sin «Ver el valorizado»: no se inventa un $0.00.
+ */
+export function cifrasDelConteo(c) {
+    const reacomodado = Number(c?.valor_reacomodado) || 0;
+    const neto = (v) => (v == null ? null : Math.max((Number(v) || 0) - reacomodado, 0));
+    const porProducto = c?.productos_con_diferencia != null;
+    return {
+        porProducto,
+        conDiferencia: porProducto ? c.productos_con_diferencia : (c?.total_diferencias ?? null),
+        renglonesReacomodo: Number(c?.renglones_reacomodo) || 0,
+        faltante: neto(c?.valor_faltante),
+        sobrante: neto(c?.valor_sobrante),
+        reacomodado,
+    };
+}
+
+/** «3 productos con diferencia · 10 renglones sólo cambian de lote». */
+export function textoDeDiferencias(c) {
+    const k = cifrasDelConteo(c);
+    if (k.conDiferencia == null) return '';
+    const n = k.conDiferencia;
+    const base = k.porProducto
+        ? `${n} producto${n === 1 ? '' : 's'} con diferencia`
+        : `${n} diferencia(s)`;
+    const r = k.renglonesReacomodo;
+    return r > 0 ? `${base} · ${r} renglón${r === 1 ? '' : 'es'} sólo cambi${r === 1 ? 'a' : 'an'} de lote` : base;
+}
+
+/** «faltante $X · sobrante $Y · $Z sólo cambia de lote», o '' sin permiso. */
+export function textoDeMontos(c, formatMoney) {
+    const k = cifrasDelConteo(c);
+    if (k.faltante == null) return '';
+    const partes = [`faltante ${formatMoney(k.faltante)}`, `sobrante ${formatMoney(k.sobrante ?? 0)}`];
+    if (k.reacomodado > 0) partes.push(`${formatMoney(k.reacomodado)} sólo cambia de lote`);
+    return partes.join(' · ');
+}
+
 /** Sobrante menos faltante, en dinero: negativo = se perdió producto. */
 export const valorNetoDelConteo = (c) => (Number(c?.valor_sobrante) || 0) - (Number(c?.valor_faltante) || 0);
 

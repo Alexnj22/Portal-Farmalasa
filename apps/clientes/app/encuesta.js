@@ -180,9 +180,20 @@ function Pregunta({ p, valor, alCambiar }) {
     case 'unica':
       return <View style={{ gap: 6 }}>{ops.map((o) => <Opcion key={o.id} texto={o.texto} activa={valor === o.id} alTocar={() => alCambiar(o.id)} />)}</View>;
     case 'multiple': {
+      // `maximo`: cuántas puede marcar (la base rechaza más). Gemelo de
+      // `alternarOpcion` del portal; esta app no importa el núcleo.
       const sel = Array.isArray(valor) ? valor : [];
-      return <View style={{ gap: 6 }}>{ops.map((o) => <Opcion key={o.id} texto={o.texto} activa={sel.includes(o.id)}
-        alTocar={() => alCambiar(sel.includes(o.id) ? sel.filter((x) => x !== o.id) : [...sel, o.id])} />)}</View>;
+      const maximo = Number.isInteger(p.maximo) && p.maximo >= 1 ? p.maximo : null;
+      return (
+        <View style={{ gap: 6 }}>
+          {maximo ? <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>{maximo === 1 ? 'Puedes marcar sólo 1.' : `Puedes marcar hasta ${maximo}.`}</Text> : null}
+          {ops.map((o) => <Opcion key={o.id} texto={o.texto} activa={sel.includes(o.id)}
+            alTocar={() => {
+              if (sel.includes(o.id)) alCambiar(sel.filter((x) => x !== o.id));
+              else if (!maximo || sel.length < maximo) alCambiar([...sel, o.id]);
+            }} />)}
+        </View>
+      );
     }
     case 'ranking': {
       // Tocar en orden de preferencia; tocar otra vez lo quita.

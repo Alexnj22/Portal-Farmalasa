@@ -7,6 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto, opcionesConTexto, MAX_TEXTO, MAX_NUMERO,
+    maximoDe, alternarOpcion, textoDeMaximo,
 } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 
@@ -359,14 +360,21 @@ function Respuesta({ p, valor, onChange }) {
             );
         case 'multiple': {
             const marcadas = Array.isArray(valor) ? valor : [];
+            const maximo = maximoDe(p);
+            const lleno = !!maximo && marcadas.length >= maximo;
             return (
                 <div className="flex flex-col gap-1.5">
+                    {maximo && (
+                        <p className="text-micro text-content-3" aria-live="polite">
+                            {textoDeMaximo(maximo)} {marcadas.length > 0 && `Llevas ${marcadas.length}.`}
+                        </p>
+                    )}
                     {opcionesConTexto(p).map((o) => {
                         const on = marcadas.includes(o.id);
                         return (
-                            <button key={o.id} type="button" aria-pressed={on}
-                                className={`${opcionCls(on)} text-left flex items-center gap-2`}
-                                onClick={() => onChange(on ? marcadas.filter((x) => x !== o.id) : [...marcadas, o.id])}>
+                            <button key={o.id} type="button" aria-pressed={on} disabled={!on && lleno}
+                                className={`${opcionCls(on)} text-left flex items-center gap-2 disabled:opacity-40`}
+                                onClick={() => onChange(alternarOpcion(marcadas, o.id, maximo))}>
                                 <span className={`w-4 h-4 rounded border flex items-center justify-center shrink-0
                                     ${on ? 'border-current' : 'border-border-card'}`}>{on && <Check size={11} />}</span>
                                 {o.texto}

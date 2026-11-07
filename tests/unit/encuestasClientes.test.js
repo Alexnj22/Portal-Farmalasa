@@ -244,3 +244,26 @@ describe('textoSeguroParaHoja — lo que escribe un anónimo no se ejecuta en Ex
         expect(rows[0]).toContain("'@x");
     });
 });
+
+describe('máximo de una múltiple — gemelo de encuesta_cliente_limpiar', () => {
+    it('lee el máximo sólo de una múltiple y con un entero válido', async () => {
+        const { maximoDe } = await import('@nucleo/utils/encuestasClientes');
+        expect(maximoDe({ tipo: 'multiple', maximo: 3 })).toBe(3);
+        expect(maximoDe({ tipo: 'multiple' })).toBeNull();
+        expect(maximoDe({ tipo: 'multiple', maximo: 0 })).toBeNull();
+        expect(maximoDe({ tipo: 'multiple', maximo: 2.5 })).toBeNull();
+        expect(maximoDe({ tipo: 'unica', maximo: 3 })).toBeNull();
+    });
+    it('no deja marcar más del máximo, pero sí desmarcar', async () => {
+        const { alternarOpcion } = await import('@nucleo/utils/encuestasClientes');
+        expect(alternarOpcion(['a', 'b'], 'c', 3)).toEqual(['a', 'b', 'c']);
+        expect(alternarOpcion(['a', 'b', 'c'], 'd', 3)).toEqual(['a', 'b', 'c']);
+        expect(alternarOpcion(['a', 'b', 'c'], 'b', 3)).toEqual(['a', 'c']);
+        expect(alternarOpcion(['a', 'b', 'c'], 'd', null)).toEqual(['a', 'b', 'c', 'd']);
+    });
+    it('cambiar a otro tipo quita el máximo', async () => {
+        const { cambiarTipo } = await import('@nucleo/utils/encuestasClientes');
+        const p = cambiarTipo({ id: 'x', tipo: 'multiple', maximo: 3, opciones: [{ id: 'a', texto: 'A' }, { id: 'b', texto: 'B' }] }, 'unica');
+        expect(p.maximo).toBeUndefined();
+    });
+});

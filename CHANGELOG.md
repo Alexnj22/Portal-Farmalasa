@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1473.0 — Encuestas: opción múltiple con máximo de opciones a marcar
+
+- **Una pregunta de opción múltiple puede limitar cuántas se marcan** («Seleccione
+  hasta tres opciones»). En el constructor: «Cuántas puede marcar» → «Todas las
+  que quiera» o «Hasta N». Al llegar al límite, el formulario apaga las demás
+  opciones y avisa «Puedes marcar hasta N».
+- La base lo hace cumplir: `encuesta_cliente_limpiar` rechaza más marcadas que
+  el máximo y `encuesta_cliente_problemas_de` marca un máximo inválido
+  (migración `20261107154144_encuestas_clientes_maximo_multiple`, partiendo de
+  las definiciones vivas). Gemelos en `maximoDe`/`alternarOpcion`.
+- Las apps (interna y de clientes) respetan el máximo en el código; llega a los
+  teléfonos con su próxima compilación.
+- Cargadas como borradores la «Encuesta de satisfacción» y la «Encuesta de
+  comunicación y servicios digitales».
+
 ## v2.1472.0 — Publicar sin obligar a todos a volver a bajar el portal
 
 - **Cada publicación renombraba ~630 de los ~730 archivos del portal**, aunque

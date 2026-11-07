@@ -158,7 +158,33 @@ export function cambiarTipo(pregunta, tipo) {
     } else {
         delete n.opciones;
     }
+    if (tipo !== 'multiple') delete n.maximo;
     return n;
+}
+
+/**
+ * Cuántas opciones se pueden marcar en una «múltiple»: un entero de 1 en
+ * adelante, o `null` = todas las que quiera. Gemela de la regla de
+ * `encuesta_cliente_limpiar` (migración `encuestas_clientes_maximo_multiple`).
+ */
+export function maximoDe(pregunta) {
+    if (pregunta?.tipo !== 'multiple') return null;
+    const n = Number(pregunta.maximo);
+    return pregunta.maximo != null && Number.isInteger(n) && n >= 1 ? n : null;
+}
+
+/** Marcar o desmarcar una opción de una «múltiple» sin pasar del máximo. */
+export function alternarOpcion(marcadas, id, maximo = null) {
+    const m = Array.isArray(marcadas) ? marcadas : [];
+    if (m.includes(id)) return m.filter((x) => x !== id);
+    if (maximo && m.length >= maximo) return m;
+    return [...m, id];
+}
+
+/** El aviso debajo de una «múltiple» con máximo: «Puedes marcar hasta 3.» */
+export function textoDeMaximo(maximo) {
+    if (!maximo) return '';
+    return maximo === 1 ? 'Puedes marcar sólo 1.' : `Puedes marcar hasta ${maximo}.`;
 }
 
 /** La pregunta sin su condición (se muestra siempre). */

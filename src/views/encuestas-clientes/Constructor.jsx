@@ -15,7 +15,7 @@ import {
     cambiarTipo, quitarPregunta, sinCondicion, operadoresPara, puedeSerCondicion, textoDeCondicion,
     cambiarSeccion as cambiarSeccionDe, cambiarPregunta as cambiarPreguntaDe, agregarSeccion as agregarSeccionA,
     agregarPregunta as agregarPreguntaA, duplicarPregunta as duplicarPreguntaDe, moverPregunta as moverPreguntaDe,
-    quitarSeccion as quitarSeccionDe, condicionSobre,
+    quitarSeccion as quitarSeccionDe, condicionSobre, maximoDe,
 } from '@nucleo/utils/encuestasClientes';
 import { ICONOS, tintaDeDimension } from './iconos';
 
@@ -245,6 +245,24 @@ function PreguntaEditor({
                             <Button variant="ghost" size="sm" icon={Plus} onClick={() => set('opciones')([...(p.opciones || []), nuevaOpcion(p.opciones)])}>
                                 Agregar opción
                             </Button>
+                        </div>
+                    )}
+
+                    {p.tipo === 'multiple' && (p.opciones || []).length > 2 && (
+                        <div className="sm:max-w-xs">
+                            <Rotulo>Cuántas puede marcar</Rotulo>
+                            <LiquidSelect value={maximoDe(p) ? String(maximoDe(p)) : ''} clearable={false}
+                                ariaLabel="Cuántas opciones puede marcar"
+                                options={[{ value: '', label: 'Todas las que quiera' },
+                                    ...Array.from({ length: p.opciones.length - 2 }, (_, i) => ({
+                                        value: String(i + 2), label: `Hasta ${i + 2}`,
+                                    }))]}
+                                onChange={(v) => {
+                                    const n = { ...p };
+                                    if (v) n.maximo = Number(v); else delete n.maximo;
+                                    onChange(n);
+                                }} />
+                            <p className="text-micro text-content-3 mt-1">Al llegar al límite, las demás opciones se apagan.</p>
                         </div>
                     )}
 

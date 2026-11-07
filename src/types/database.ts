@@ -15813,7 +15813,7 @@ export type Database = {
       }
       encuesta_cliente_respuestas: {
         Row: {
-          branch_id: number
+          branch_id: number | null
           canal: string
           consentimiento_at: string | null
           contacto_nombre: string | null
@@ -15824,15 +15824,19 @@ export type Database = {
           encuesta_id: string
           entrevistador_id: string | null
           id: string
+          lat: number | null
+          lng: number | null
+          lugar: string | null
           mes: string
           nps: number | null
+          precision_m: number | null
           ref: string | null
           respuestas: Json
           telefono: string | null
           telefono_hash: string | null
         }
         Insert: {
-          branch_id: number
+          branch_id?: number | null
           canal: string
           consentimiento_at?: string | null
           contacto_nombre?: string | null
@@ -15843,15 +15847,19 @@ export type Database = {
           encuesta_id: string
           entrevistador_id?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
+          lugar?: string | null
           mes?: string
           nps?: number | null
+          precision_m?: number | null
           ref?: string | null
           respuestas: Json
           telefono?: string | null
           telefono_hash?: string | null
         }
         Update: {
-          branch_id?: number
+          branch_id?: number | null
           canal?: string
           consentimiento_at?: string | null
           contacto_nombre?: string | null
@@ -15862,8 +15870,12 @@ export type Database = {
           encuesta_id?: string
           entrevistador_id?: string | null
           id?: string
+          lat?: number | null
+          lng?: number | null
+          lugar?: string | null
           mes?: string
           nps?: number | null
+          precision_m?: number | null
           ref?: string | null
           respuestas?: Json
           telefono?: string | null
@@ -33728,6 +33740,17 @@ export type Database = {
         }
         Returns: Json
       }
+      encuesta_cliente_entrevistar_campo: {
+        Args: {
+          p_contacto?: Json
+          p_duracion?: number
+          p_id: string
+          p_ref?: string
+          p_respuestas: Json
+          p_ubicacion: Json
+        }
+        Returns: Json
+      }
       encuesta_cliente_enviar: {
         Args: { p_id: string; p_nota?: string }
         Returns: Json
@@ -33774,6 +33797,7 @@ export type Database = {
           p_entrevistador: string
           p_ref?: string
           p_respuestas: Json
+          p_ubicacion?: Json
         }
         Returns: Json
       }
@@ -33794,6 +33818,7 @@ export type Database = {
         Returns: Json
       }
       encuesta_cliente_rondas: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_ubicaciones: { Args: { p_id: string }; Returns: Json }
       encuesta_publica: { Args: { p_token: string }; Returns: Json }
       encuesta_publica_responder: {
         Args: {

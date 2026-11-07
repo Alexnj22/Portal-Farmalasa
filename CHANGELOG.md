@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1476.0 — Encuestas: aplicar en campo con ubicación y elegir la sala una vez
+
+- **Aplicar encuesta pregunta «¿Dónde estás?» una sola vez** y vale para todas
+  las entrevistas del día en ese teléfono. Sin sala asignada hoy no hay valor
+  por defecto: antes arrancaba en la primera sucursal de la lista y un descuido
+  registraba las respuestas en otra sala.
+- **Canal nuevo «Campo (fuera de las salas)».** Un encuestador (p. ej. un
+  practicante) la aplica en mercados, parques o la calle: la respuesta no lleva
+  sucursal, guarda el lugar escrito y las coordenadas del teléfono al guardar.
+  Sin ubicación, el lugar es obligatorio.
+- **Resultados:** «Campo» es una fila más en el filtro y en NPS por sucursal; la
+  sección «Dónde se hizo en campo» muestra un mapa (Leaflet + OpenStreetMap,
+  cargado al abrir) y el NPS por lugar. El CSV suma Lugar, Latitud y Longitud.
+  Avance cuenta las de campo. El aviso de cliente insatisfecho en campo va sólo
+  a Supervisión de Ventas.
+- Base: migración `20261107160519_encuestas_clientes_campo_y_ubicacion`
+  (probada antes en el entorno de pruebas); las funciones que sólo cambian un
+  filtro se reescriben desde su definición viva.
+
 ## v2.1475.0 — Compras: el costo decide si cambió la presentación
 
 El aviso «¿Cambió la presentación?» comparaba el «x 40» de la factura (que

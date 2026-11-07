@@ -134,6 +134,12 @@ export default function AvanceEncuesta({ encuesta, puedeEditar }) {
                             </li>
                         );
                     })}
+                    {(avance.campo > 0 || encuesta.canales.includes('campo')) && (
+                        <li className="flex flex-wrap items-center gap-2">
+                            <span className="text-body-sm font-semibold text-content flex-1 min-w-0">Campo (fuera de las salas)</span>
+                            <span className="text-body-sm text-content-2">{avance.campo || 0}</span>
+                        </li>
+                    )}
                 </ul>
             </section>
 

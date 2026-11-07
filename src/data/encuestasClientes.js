@@ -294,6 +294,27 @@ export async function guardarEntrevista(encuestaId, branchId, { respuestas, cont
     return data;
 }
 
+/**
+ * Guardar una entrevista de CAMPO: sin sucursal, con dónde se hizo.
+ * `ubicacion` = { lugar?, lat?, lng?, precision? } — la base exige el lugar o
+ * las coordenadas.
+ */
+export async function guardarEntrevistaCampo(encuestaId, ubicacion, { respuestas, contacto, segundos, referencia }) {
+    const { data, error } = await supabase.rpc('encuesta_cliente_entrevistar_campo', {
+        p_id: encuestaId, p_respuestas: respuestas, p_ubicacion: ubicacion || {},
+        p_contacto: contacto || null, p_duracion: segundos ?? null, p_ref: referencia || null,
+    });
+    if (error) throw mensajeDe(error);
+    const r = /** @type {{ id?: string, repetida?: boolean } | null} */ (data);
+    if (!r?.repetida) anotar('ENCUESTA_CLIENTE_ENTREVISTA', r?.id, { encuesta: encuestaId, campo: ubicacion?.lugar || true });
+    return data;
+}
+
+/** Dónde se hicieron las de campo: los puntos del mapa y el resumen por lugar. */
+export async function fetchUbicaciones(id) {
+    return sinError(await supabase.rpc('encuesta_cliente_ubicaciones', { p_id: id })) || { puntos: [], por_lugar: [] };
+}
+
 /** Avance de una encuesta: total, por sucursal (con su token), por canal y por día. */
 export async function fetchAvance(id) {
     return sinError(await supabase.rpc('encuesta_cliente_avance', { p_id: id }));

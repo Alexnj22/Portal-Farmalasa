@@ -15,7 +15,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { exportCsv } from '@nucleo/utils/csvExport';
-import { lecturaNps, categoriasDe, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
+import { lecturaNps, categoriasDe, CAMPO, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
 import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
 } from '@nucleo/data/encuestasClientes';
@@ -23,6 +23,7 @@ import { preguntarASaly } from '@nucleo/data/ia';
 import SalyDice from '../../components/common/SalyDice';
 import SalyIcono from '../../components/common/SalyIcono';
 import { barraDeDimension } from './iconos';
+import UbicacionesDeCampo from './UbicacionesDeCampo';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
@@ -78,7 +79,7 @@ export default function ResultadosEncuesta({ encuesta }) {
         try {
             const todas = await fetchRespuestasParaExportar(encuesta.id);
             // Con una sucursal elegida se exporta esa, igual que lo que se ve.
-            const filas = branchId ? todas.filter((f) => Number(f.branch_id) === branchId) : todas;
+            const filas = branchId ? todas.filter((f) => Number(f.branch_id ?? CAMPO) === branchId) : todas;
             const { headers, rows } = tablaDeRespuestas(encuesta.cuestionario, filas,
                 { fechaHora: (f) => `${fechaTexto(f, { day: '2-digit', month: '2-digit', year: 'numeric' })} ${hora12(f)}` });
             const nombreSala = branchId ? salas.find((x) => Number(x.value) === branchId)?.label : null;
@@ -146,7 +147,7 @@ export default function ResultadosEncuesta({ encuesta }) {
                         <StatCard icon={Gauge} label="NPS" value={nps.puntaje ?? '—'} sub={lectura.label}
                             valueCls={lectura.variant === 'danger' ? 'text-danger' : lectura.variant === 'success' ? 'text-success' : undefined} />
                         <StatCard icon={Users} label="Respuestas" value={datos.total}
-                            sub={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${c === 'qr' ? 'QR' : c === 'kiosco' ? 'tablet' : c === 'app' ? 'app' : 'entrevista'}`).join(' · ')} />
+                            sub={Object.entries(datos.por_canal || {}).map(([c, n]) => `${n} ${c === 'qr' ? 'QR' : c === 'kiosco' ? 'tablet' : c === 'app' ? 'app' : c === 'campo' ? 'campo' : 'entrevista'}`).join(' · ')} />
                         <StatCard icon={Smile} label="Promotores" value={formatPct(pct(nps.promotores), { decimales: 0 })} sub={`${nps.promotores} dieron 9 o 10`} />
                         <StatCard icon={Frown} label="Detractores" value={formatPct(pct(nps.detractores), { decimales: 0 })}
                             valueCls={nps.detractores ? 'text-danger' : undefined} sub={`${nps.detractores} dieron 0 a 6`} />
@@ -199,6 +200,10 @@ export default function ResultadosEncuesta({ encuesta }) {
                             </section>
                         )}
                     </div>
+
+                    {(!sala || Number(sala) === CAMPO) && (datos.por_canal?.campo || 0) > 0 && (
+                        <UbicacionesDeCampo encuestaId={encuesta.id} />
+                    )}
 
                     <section data-surface="card" className="p-4 space-y-5">
                         <TituloDeSeccion nivel="seccion">Pregunta por pregunta</TituloDeSeccion>

@@ -28,7 +28,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
     const sugeridaTotal = muestraSugerida(ticketsElegidas);
     const meta = metaTotal(encuesta, sucursales);
     // La muestra la entrega quien entrevista: la tablet corre sin sesión y no hay quién firme la entrega.
-    const conEntrevista = encuesta.canales.includes('entrevista');
+    const conEntrevista = encuesta.canales.includes('entrevista') || encuesta.canales.includes('campo');
 
     const set = (k) => (v) => onChange({ [k]: v });
     // Canales, sucursales, cuotas y la muestra sugerida: núcleo, lo mismo que la app.
@@ -68,6 +68,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                             {porSala
                                 ? 'Cada sucursal tiene su cuota: la encuesta termina cuando todas la cumplen.'
                                 : 'Se reparte en las sucursales elegidas y cuenta el total.'}
+                            {encuesta.canales.includes('campo') && ' Las respuestas de campo no son de ninguna sucursal: cuentan para la meta general, no para las cuotas.'}
                         </p>
                         <div className="divide-y divide-border-card rounded-xl border border-border-card">
                             {salas.map((s) => {
@@ -149,7 +150,7 @@ export default function AjustesEncuesta({ encuesta, sucursales, salas, poblacion
                         )}
                         {encuesta.incentivo_tipo === 'muestra' && !conEntrevista && (
                             <Notice variant="warning" compact>
-                                La muestra médica sólo se entrega en entrevista. Marca ese canal.
+                                La muestra médica sólo se entrega en persona. Marca «Entrevista» o «Campo».
                             </Notice>
                         )}
                         {encuesta.incentivo_tipo === 'puntos' && (

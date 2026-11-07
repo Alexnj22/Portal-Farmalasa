@@ -92,5 +92,31 @@ export async function posicionActual() {
     }
 }
 
+/**
+ * Una lectura puntual con su precisión en metros, en el navegador o en la app.
+ * `null` si no hay permiso, no hay señal o tarda más de `espera`.
+ * (`posicionActual` es sólo de la app: en el navegador devuelve null a propósito.)
+ * @returns {Promise<{lat: number, lng: number, precision: number|null} | null>}
+ */
+export async function leerPosicion({ espera = 10000 } = {}) {
+    try {
+        if (esNativo()) {
+            const Geo = await getGeo();
+            const p = await Geo.getCurrentPosition({ enableHighAccuracy: true, timeout: espera, maximumAge: 30000 });
+            return { lat: p.coords.latitude, lng: p.coords.longitude, precision: p.coords.accuracy ?? null };
+        }
+        const geo = typeof navigator !== 'undefined' ? navigator.geolocation : null;
+        if (!geo) return null;
+        return await new Promise((ok) => geo.getCurrentPosition(
+            (p) => ok({ lat: p.coords.latitude, lng: p.coords.longitude, precision: p.coords.accuracy ?? null }),
+            () => ok(null),
+            { enableHighAccuracy: true, timeout: espera, maximumAge: 30000 },
+        ));
+    } catch (e) {
+        console.warn('ubicación: sin lectura puntual', e?.message ?? e);
+        return null;
+    }
+}
+
 /** ¿El permiso de ubicación está negado? En el navegador no se pregunta: nunca. */
 export async function ubicacionNegada() { return false; }

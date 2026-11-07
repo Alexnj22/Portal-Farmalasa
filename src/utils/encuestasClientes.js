@@ -71,8 +71,17 @@ export const CANALES = [
     { value: 'qr',         label: 'QR o enlace',  icono: 'QrCode',     ayuda: 'El cliente responde desde su teléfono, sin iniciar sesión.' },
     { value: 'entrevista', label: 'Entrevista',   icono: 'Mic',        ayuda: 'Alguien del equipo la aplica desde el portal.' },
     { value: 'kiosco',     label: 'Tablet en sala', icono: 'Tablet',   ayuda: 'Un dispositivo en el mostrador donde el cliente responde.' },
+    { value: 'campo',      label: 'Campo (fuera de las salas)', icono: 'MapPin', ayuda: 'Un encuestador la aplica fuera de las sucursales —mercados, parques, la calle— y se guarda dónde.' },
     { value: 'app',        label: 'App de clientes', icono: 'Smartphone', ayuda: 'Aparece en la app Puntos Salud; una respuesta por cliente, y los puntos se acreditan solos.' },
 ];
+/**
+ * Las respuestas de campo no tienen sucursal: en los filtros y en «por
+ * sucursal» van con este id. No es 0: 0 ya significa «todas» en los resúmenes.
+ */
+export const CAMPO = -1;
+/** ¿Esta fila de respuesta (o de «por sucursal») es de campo? */
+export const esDeCampo = (branchId) => branchId == null || Number(branchId) === CAMPO;
+
 export const canalDe = (v) => CANALES.find((c) => c.value === v) || { value: v, label: v };
 
 export const INCENTIVOS = [
@@ -450,10 +459,13 @@ export function categoriasDe(pregunta) {
 /** El CSV de respuestas: una columna por pregunta, con el valor en palabras. */
 export function tablaDeRespuestas(cuestionario, filas, { fechaHora }) {
     const preguntas = preguntasEnOrden(cuestionario);
-    const headers = ['Fecha', 'Sucursal', 'Canal', 'Entrevistó', 'NPS',
+    const headers = ['Fecha', 'Sucursal', 'Canal', 'Lugar', 'Latitud', 'Longitud', 'Entrevistó', 'NPS',
         ...preguntas.map((p) => `${p.numero}. ${p.texto}`), 'Nombre', 'Teléfono', 'Duración (s)'];
     const rows = filas.map((f) => [
-        fechaHora(f.fecha), f.sucursal, canalDe(f.canal).label, f.entrevistador || '', f.nps ?? '',
+        fechaHora(f.fecha), f.sucursal, canalDe(f.canal).label,
+        // El lugar lo escribe el encuestador: también va neutralizado.
+        textoSeguroParaHoja(f.lugar || ''), f.lat ?? '', f.lng ?? '',
+        f.entrevistador || '', f.nps ?? '',
         // Lo que escribió el cliente va neutralizado: el texto de `/e/:token`
         // lo escribe cualquiera, y `=HYPERLINK(…)` se ejecuta al abrir el CSV.
         ...preguntas.map((p) => textoSeguroParaHoja(textoDeValor(p, f.respuestas?.[p.id]))),

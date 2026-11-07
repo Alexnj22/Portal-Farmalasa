@@ -146,6 +146,9 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
     const explicar = useCallback((a) => {
         limpiarMarcas();
         apartados.add(a.clave);   // ya no se asoma solo; sigue en la lista
+        // Un aviso con `hacer` no se explica: se hace (p. ej. «Léelos» en
+        // Resultados de encuestas). La pantalla decide qué; Saly sólo lo ofrece.
+        if (a.hacer) { setVersion((v) => v + 1); setAbierto(false); setContenido(null); a.hacer(); return; }
         setContenido({ animo: a.animo, piezas: a.explicacion, volver: true });
         setAbierto(true);
         if (a.anclas?.length || a.ancla) desmarcar.current = marcar(a.anclas?.length ? a.anclas : [a.ancla]);
@@ -160,7 +163,8 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
         abrirInicio();
     }, [abierto, aviso, cerrar, explicar, abrirInicio]);
 
-    const ir = useCallback((ruta) => { cerrar(); navigate(ruta); }, [cerrar, navigate]);
+    // Un botón lleva a otra pantalla (`ir`) o hace algo de ésta (`hacer`).
+    const ir = useCallback((ruta, hacer) => { cerrar(); if (hacer) hacer(); else if (ruta) navigate(ruta); }, [cerrar, navigate]);
 
     // ── Señalar: tomar un bloque de la pantalla ─────────────────────────────
     const tomar = useCallback((el) => {
@@ -644,7 +648,7 @@ export default function SalyBurbuja({ hayDialogo = false, oculta = false }) {
                                 <>
                                     <PiezasDeSaly piezas={aviso.oferta} onIr={ir} />
                                     <div className="mt-3 flex gap-2">
-                                        <Button variant="secondary" size="sm" onClick={() => explicar(aviso)}>Explícamelo</Button>
+                                        <Button variant={aviso.boton ? 'primary' : 'secondary'} size="sm" onClick={() => explicar(aviso)}>{aviso.boton || 'Explícamelo'}</Button>
                                         <Button variant="ghost" size="sm" onClick={() => apartar(aviso)}>Ahora no</Button>
                                     </div>
                                 </>

@@ -20,8 +20,9 @@ import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
     fetchLectura, guardarLectura, fetchUbicaciones,
 } from '@nucleo/data/encuestasClientes';
-import { paqueteParaSaly, estadoDeLectura } from '@nucleo/utils/encuestasLectura';
-import SalyFlotante, { LecturaDeSaly } from './SalyLeeResultados';
+import { paqueteParaSaly, estadoDeLectura, avisoDeLectura } from '@nucleo/utils/encuestasLectura';
+import LecturaDeSaly from './SalyLeeResultados';
+import { useSalyEnPantalla } from '../../components/saly/salyAyudaStore';
 import { preguntarASaly } from '@nucleo/data/ia';
 import SalyDice from '../../components/common/SalyDice';
 import SalyIcono from '../../components/common/SalyIcono';
@@ -185,6 +186,20 @@ export default function ResultadosEncuesta({ encuesta }) {
         { value: null, label: 'Todas las sucursales', respuestas: todas.total },
         ...todas.salas.filter((x) => x.respuestas > 0).map((x) => ({ value: Number(x.value), label: x.label, respuestas: x.respuestas })),
     ];
+    // Saly flota en SU lugar (la burbuja de siempre, como en Efectivo): esta
+    // vista sólo le pasa qué ofrecer. Con varios lugares, al tocarla pregunta
+    // cuál leer.
+    useSalyEnPantalla({
+        modulo: 'encuestas_clientes',
+        titulo: `Resultados · ${encuesta.nombre}`,
+        leer: () => ({
+            encuesta: encuesta.nombre, filtro: branchId == null ? 'todas las sucursales' : salas.find((x) => Number(x.value) === branchId)?.label,
+            respuestas: datos?.total ?? null, nps: datos?.nps ?? null,
+            lectura_de_saly: lecturaSaly?.texto ? String(lecturaSaly.texto).slice(0, 1500) : null,
+        }),
+        avisos: [avisoDeLectura({ lectura: lecturaSaly, lugares: todas.total > 0 ? lugaresParaSaly : [], leyendo, onLeer: pedirLectura })],
+    });
+
     const nombreDelFiltro = branchId == null ? 'todas las sucursales' : (salas.find((x) => Number(x.value) === branchId)?.label || 'esta sucursal');
 
     if (!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado)) {
@@ -355,9 +370,6 @@ export default function ResultadosEncuesta({ encuesta }) {
                 </section>
             )}
 
-            {todas.total > 0 && (
-                <SalyFlotante lectura={lecturaSaly} lugares={lugaresParaSaly} leyendo={leyendo} onLeer={pedirLectura} />
-            )}
         </div>
     );
 }

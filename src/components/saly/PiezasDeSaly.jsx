@@ -95,7 +95,8 @@ function Pieza({ p, onIr }) {
             return (
                 <div className="flex flex-wrap gap-2">
                     {p.items.map((b) => (
-                        <Button key={b.texto} variant="secondary" size="sm" onClick={() => onIr?.(b.ir)}>{b.texto}</Button>
+                        <Button key={b.texto} variant={b.principal ? 'primary' : 'secondary'} size="sm"
+                            onClick={() => (b.hacer ? onIr?.(null, b.hacer) : onIr?.(b.ir))}>{b.texto}</Button>
                     ))}
                 </div>
             );

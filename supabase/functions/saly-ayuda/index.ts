@@ -64,6 +64,7 @@ Tipos de corte: C = corte del turno · Z = cierre del día · X = lectura (no cu
 // Lo propio de cada pantalla, después del conocimiento común.
 const GUIAS: Record<string, string> = {
   cortes_caja: `PANTALLA ACTUAL: Efectivo → Cortes. Lista de cortes por día y por sala, con esperado, contado y diferencia. Estados: Sin confirmar (PENDIENTE), Confirmados, Descartados. Filtros: sucursal, fecha, estado y diferencia (Cuadraron / Con exceso / Con faltante). Tocar un corte abre su detalle para confirmarlo o descartarlo.`,
+  encuestas_clientes: `PANTALLA ACTUAL: Encuestas a clientes → Resultados de una encuesta. Arriba el filtro de sucursal (Todas, cada sucursal o Campo) y las cifras: NPS, respuestas, promotores (9 o 10) y detractores (0 a 6). Debajo «Qué significan los resultados» (la lectura que hiciste de los números, con los cruces entre preguntas y qué harías), la recomendación, cada pregunta con sus porcentajes, los comentarios y las rondas. Para leer otra sucursal, la persona te toca y elige cuál. El NPS es % promotores menos % detractores; con menos de 30 respuestas los resultados son preliminares.`,
   caja: `PANTALLA ACTUAL: Efectivo → Hoy (Mi caja). Arriba el estado de la caja y los botones Corte · Entrada · Salida · Cerrar (o Abrir / Iniciar turno). Abajo «Movimientos de este día», agrupados por corte, con hora, tipo, detalle, quién lo anotó y monto; tocar uno muestra su detalle, la boleta y «Corregir».`,
 }
 

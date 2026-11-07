@@ -257,3 +257,33 @@ export function invitacionDeSaly(lectura, { varias = false } = {}) {
     if (e.puede) return `Entraron ${e.nuevas} respuestas nuevas. ¿Los vuelvo a leer?`;
     return varias ? 'Ya los leí. Tócame si quieres que lea otra sucursal.' : 'Ya los leí: está arriba.';
 }
+
+/**
+ * El aviso que la burbuja de Saly ofrece en Resultados. Con varios lugares,
+ * al tocarla pregunta cuál leer (todas, una sucursal o campo); con uno solo,
+ * lee directo. Ya leída y al día, con un solo lugar, no dice nada: no hay
+ * nada que ofrecer. `onLeer(branchId|null)` lo pone la pantalla.
+ */
+export function avisoDeLectura({ lectura, lugares = [], leyendo = false, onLeer }) {
+    if (leyendo || !lugares.length) return null;
+    const varias = lugares.length > 1;
+    const e = estadoDeLectura(lectura);
+    const invitacion = invitacionDeSaly(lectura, { varias });
+    if (!invitacion || (e.hay && !e.puede && !varias)) return null;
+    const base = {
+        clave: `lectura:${e.hay ? (e.puede ? 'nuevas' : 'otra') : 'pedir'}:${lectura?.respuestas ?? 0}`,
+        animo: 'atencion',
+        oferta: [{ tipo: 'titular', texto: e.hay && !e.puede ? 'Ya leí estos resultados' : '¿Te digo qué significan?', sub: invitacion }],
+    };
+    if (!varias) return { ...base, boton: e.hay ? 'Léelos otra vez' : 'Léelos', hacer: () => onLeer(lugares[0].value) };
+    return {
+        ...base,
+        boton: 'Elegir qué leo',
+        explicacion: [
+            { tipo: 'titular', texto: '¿Qué resultados leo?', sub: 'Pongo ese filtro y te digo qué significan' },
+            { tipo: 'botones', items: lugares.map((l) => ({
+                texto: `${l.label} · ${l.respuestas} resp.`, principal: l.value == null, hacer: () => onLeer(l.value),
+            })) },
+        ],
+    };
+}

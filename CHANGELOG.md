@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1479.1 — Encuestas: Saly en su lugar de siempre
+
+- La Saly de Resultados flotaba aparte y chocaba con el chat y con las flechas
+  de subir y bajar. Ahora es la burbuja de siempre (la de Efectivo): la vista
+  se anota con `useSalyEnPantalla` y le pasa un aviso (`avisoDeLectura`).
+  Con varios lugares, «Elegir qué leo» muestra un botón por cada uno (todas,
+  cada sucursal, campo); con uno solo, «Léelos» lee directo.
+- La burbuja acepta avisos que HACEN algo en la pantalla (`hacer`) además de
+  los que explican, y botones con `hacer` en vez de `ir`.
+- `saly-ayuda` (v5) conoce la pantalla de resultados de encuestas, para que
+  también se le pueda preguntar ahí.
+- Sin la burbuja (está en prueba con una persona), la tarjeta «¿Te digo qué
+  significan estos resultados?» ofrece la lectura en la misma pantalla.
+
 ## v2.1479.0 — Encuestas: Saly flotante que pregunta qué leer, y su lectura por bloques
 
 - En Resultados, Saly aparece flotando abajo a la derecha con su globo: «Tócame

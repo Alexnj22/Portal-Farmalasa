@@ -120,3 +120,25 @@ describe('invitacionDeSaly', () => {
         expect(invitacionDeSaly({ texto: 'x', respuestas: 12, nuevas: 6, minimo_nuevas: 5 })).toMatch(/6 respuestas nuevas/);
     });
 });
+
+describe('avisoDeLectura', () => {
+    const lugares = [{ value: null, label: 'Todas las sucursales', respuestas: 9 }, { value: 3, label: 'Salud 2', respuestas: 4 }];
+    it('con varios lugares pregunta cuál, y cada botón lee ese', async () => {
+        const { avisoDeLectura } = await import('@nucleo/utils/encuestasLectura');
+        const pedidos = [];
+        const a = avisoDeLectura({ lectura: { respuestas: 9, nuevas: 9 }, lugares, onLeer: (b) => pedidos.push(b) });
+        expect(a.boton).toBe('Elegir qué leo');
+        const botones = a.explicacion.find((p) => p.tipo === 'botones').items;
+        botones.forEach((b) => b.hacer());
+        expect(pedidos).toEqual([null, 3]);
+    });
+    it('con un solo lugar lee directo; al día no ofrece nada; leyendo, tampoco', async () => {
+        const { avisoDeLectura } = await import('@nucleo/utils/encuestasLectura');
+        let leido = 'no';
+        const a = avisoDeLectura({ lectura: { respuestas: 2, nuevas: 2 }, lugares: lugares.slice(0, 1), onLeer: (b) => { leido = b; } });
+        a.hacer();
+        expect(leido).toBeNull();
+        expect(avisoDeLectura({ lectura: { texto: 'x', respuestas: 2, nuevas: 0, minimo_nuevas: 5 }, lugares: lugares.slice(0, 1), onLeer: () => {} })).toBeNull();
+        expect(avisoDeLectura({ lectura: { respuestas: 2 }, lugares, leyendo: true, onLeer: () => {} })).toBeNull();
+    });
+});

@@ -18,7 +18,9 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import { lecturaNps, categoriasDe, CAMPO, tablaDeRespuestas, tipoDe, estadoDe, loteParaResumir, archivoDeEncuesta, estadoDelResumen, preguntasEnOrden } from '@nucleo/utils/encuestasClientes';
 import {
     fetchResultados, fetchComentarios, fetchRondas, fetchRespuestasParaExportar, fetchResumen, guardarResumen,
+    fetchLectura, guardarLectura, fetchUbicaciones,
 } from '@nucleo/data/encuestasClientes';
+import { paqueteParaSaly, estadoDeLectura } from '@nucleo/utils/encuestasLectura';
 import { preguntarASaly } from '@nucleo/data/ia';
 import SalyDice from '../../components/common/SalyDice';
 import SalyIcono from '../../components/common/SalyIcono';
@@ -44,6 +46,8 @@ export default function ResultadosEncuesta({ encuesta }) {
     const [exportando, setExportando] = useState(false);
     const [resumen, setResumen] = useState(null);
     const [resumiendo, setResumiendo] = useState(false);
+    const [lecturaSaly, setLecturaSaly] = useState(null);
+    const [leyendo, setLeyendo] = useState(false);
 
     const branchId = sala ? Number(sala) : null;
     // Sólo pinta la ÚLTIMA carga pedida: al cambiar rápido de sucursal, una
@@ -52,11 +56,12 @@ export default function ResultadosEncuesta({ encuesta }) {
     const cargar = useCallback(async () => {
         const n = (vigente.current += 1);
         try {
-            const [d, c, r, res] = await Promise.all([
+            const [d, c, r, res, lec] = await Promise.all([
                 fetchResultados(encuesta.id, branchId), fetchComentarios(encuesta.id, branchId), fetchRondas(encuesta.id),
-                fetchResumen(encuesta.id, branchId),
+                fetchResumen(encuesta.id, branchId), fetchLectura(encuesta.id, branchId),
             ]);
             if (n !== vigente.current) return;
+            setLecturaSaly(lec);
             setDatos(d);
             setComentarios(c);
             setRondas(r);
@@ -116,6 +121,38 @@ export default function ResultadosEncuesta({ encuesta }) {
         }
     };
 
+    // La LECTURA de Saly (2026-11-07): los números ya contados más los cruces
+    // entre preguntas que se apartan del total (núcleo, `encuestasLectura`),
+    // y ella dice qué significan y qué hacer. Se guarda y todos ven la misma;
+    // se rehace a mano cuando entran respuestas nuevas suficientes.
+    const leerResultados = async () => {
+        setLeyendo(true);
+        try {
+            const enCampo = branchId === CAMPO;
+            const [todas, ubic] = await Promise.all([
+                fetchRespuestasParaExportar(encuesta.id),
+                (!branchId || enCampo) && (datos?.por_canal?.campo || 0) > 0 ? fetchUbicaciones(encuesta.id).catch(() => null) : null,
+            ]);
+            const filas = branchId ? todas.filter((f) => Number(f.branch_id ?? CAMPO) === branchId) : todas;
+            const nombreSala = branchId ? salas.find((x) => Number(x.value) === branchId)?.label : null;
+            const paquete = paqueteParaSaly({
+                encuesta, datos, filas, comentarios, lugares: ubic?.por_lugar || [], filtro: nombreSala,
+            });
+            const { data, error: e } = await preguntarASaly({
+                action: 'analyze-customer-survey-results', payload: { datos: paquete },
+            });
+            if (e) throw e;
+            const texto = data?.aiSummary;
+            if (!texto) throw new Error('Saly no devolvió la lectura.');
+            await guardarLectura(encuesta.id, branchId, texto, filas.length);
+            setLecturaSaly(await fetchLectura(encuesta.id, branchId));
+        } catch (err) {
+            showToast('Saly no pudo leer los resultados', mensajeAmigable(err, 'Intenta de nuevo.'), 'error');
+        } finally {
+            setLeyendo(false);
+        }
+    };
+
     if (!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado)) {
         return <Notice variant="info" compact>Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas.</Notice>;
     }
@@ -152,6 +189,35 @@ export default function ResultadosEncuesta({ encuesta }) {
                         <StatCard icon={Frown} label="Detractores" value={formatPct(pct(nps.detractores), { decimales: 0 })}
                             valueCls={nps.detractores ? 'text-danger' : undefined} sub={`${nps.detractores} dieron 0 a 6`} />
                     </CarrilCards>
+
+                    {(() => {
+                        const l = estadoDeLectura(lecturaSaly);
+                        return (
+                            <section data-surface="card" className="p-4 space-y-3">
+                                <div className="flex flex-wrap items-center gap-2">
+                                    <TituloDeSeccion nivel="seccion" className="flex-1">Qué significan los resultados</TituloDeSeccion>
+                                    <Button variant={l.hay ? 'secondary' : 'primary'} size="sm" icon={SalyIcono} loading={leyendo}
+                                        disabled={!l.puede} title={l.ayuda || 'Saly lee los números, los cruces y los comentarios, y lo guarda para todos'}
+                                        onClick={leerResultados}>
+                                        {l.boton}
+                                    </Button>
+                                </div>
+                                {leyendo && <SalyDice animo="pensando">Estoy leyendo los resultados y cruzando las respuestas, dame un momento…</SalyDice>}
+                                {!leyendo && lecturaSaly?.texto && (
+                                    <SalyDice animo="atencion" titulo={`leyó ${lecturaSaly.respuestas_n} respuesta(s)`}
+                                        pie={<>{fechaTexto(lecturaSaly.generado_at, { day: 'numeric', month: 'short' })} {hora12(lecturaSaly.generado_at)}
+                                            {lecturaSaly.nuevas > 0 ? ` · ${lecturaSaly.nuevas} nueva(s) desde entonces` : ''}</>}>
+                                        <div className="whitespace-pre-line"><ConNegritas texto={lecturaSaly.texto} /></div>
+                                    </SalyDice>
+                                )}
+                                {!leyendo && !lecturaSaly?.texto && (
+                                    <p className="text-body-sm text-content-3">
+                                        Saly lee los números, cruza las preguntas entre sí (por ejemplo, quiénes recomiendan menos y por qué) y te dice qué hacer.
+                                    </p>
+                                )}
+                            </section>
+                        );
+                    })()}
 
                     {nps.respuestas > 0 && (
                         <section data-surface="card" className="p-4 space-y-2">

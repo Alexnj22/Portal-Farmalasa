@@ -15811,6 +15811,55 @@ export type Database = {
           },
         ]
       }
+      encuesta_cliente_lecturas: {
+        Row: {
+          branch_key: number
+          created_at: string
+          encuesta_id: string
+          generado_por: string | null
+          respuestas_n: number
+          texto: string
+        }
+        Insert: {
+          branch_key?: number
+          created_at?: string
+          encuesta_id: string
+          generado_por?: string | null
+          respuestas_n: number
+          texto: string
+        }
+        Update: {
+          branch_key?: number
+          created_at?: string
+          encuesta_id?: string
+          generado_por?: string | null
+          respuestas_n?: number
+          texto?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encuesta_cliente_lecturas_encuesta_id_fkey"
+            columns: ["encuesta_id"]
+            isOneToOne: false
+            referencedRelation: "encuestas_cliente"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_lecturas_generado_por_fkey"
+            columns: ["generado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "encuesta_cliente_lecturas_generado_por_fkey"
+            columns: ["generado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       encuesta_cliente_respuestas: {
         Row: {
           branch_id: number | null
@@ -33755,6 +33804,15 @@ export type Database = {
         Args: { p_id: string; p_nota?: string }
         Returns: Json
       }
+      encuesta_cliente_guardar_lectura: {
+        Args: {
+          p_branch: number
+          p_id: string
+          p_respuestas_n: number
+          p_texto: string
+        }
+        Returns: Json
+      }
       encuesta_cliente_guardar_resumen: {
         Args: {
           p_branch: number
@@ -33765,6 +33823,10 @@ export type Database = {
         Returns: Json
       }
       encuesta_cliente_incentivos_de: { Args: { p_id: string }; Returns: Json }
+      encuesta_cliente_lectura: {
+        Args: { p_branch?: number; p_id: string }
+        Returns: Json
+      }
       encuesta_cliente_limpiar: {
         Args: { p_cuestionario: Json; p_r: Json }
         Returns: Json
@@ -33800,6 +33862,10 @@ export type Database = {
           p_ubicacion?: Json
         }
         Returns: Json
+      }
+      encuesta_cliente_respuestas_n: {
+        Args: { p_branch: number; p_id: string }
+        Returns: number
       }
       encuesta_cliente_respuestas_para_exportar: {
         Args: { p_id: string }

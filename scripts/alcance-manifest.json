@@ -570,6 +570,24 @@
       ],
       "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
     },
+    "encuesta_cliente_lectura": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "encuesta_cliente_guardar_lectura": {
+      "guarda": "modulo-de-red",
+      "modulos": [
+        "encuestas_clientes"
+      ],
+      "motivo": "Módulo que hoy sólo tienen cargos de toda la red. Si un cargo de sala lo recibe, el gate falla."
+    },
+    "encuesta_cliente_respuestas_n": {
+      "guarda": "solo-servidor",
+      "motivo": "Sólo para service_role: la llaman encuesta_cliente_lectura y encuesta_cliente_guardar_lectura (DEFINER), que ya exigen el módulo."
+    },
     "explicar_meta_propuesta": {
       "guarda": "modulo-de-red",
       "modulos": [

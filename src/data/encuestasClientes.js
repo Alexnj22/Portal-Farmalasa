@@ -374,6 +374,18 @@ export async function fetchResumen(id, branchId = null) {
     return sinError(await supabase.rpc('encuesta_cliente_resumen', { p_id: id, p_branch: branchId }));
 }
 
+/** La lectura de Saly de los resultados guardada, y cuántas respuestas entraron desde entonces. */
+export async function fetchLectura(id, branchId = null) {
+    return sinError(await supabase.rpc('encuesta_cliente_lectura', { p_id: id, p_branch: branchId }));
+}
+
+/** Guarda la lectura para todos. `respuestasN`: cuántas respuestas leyó Saly. */
+export async function guardarLectura(id, branchId, texto, respuestasN) {
+    return sinError(await supabase.rpc('encuesta_cliente_guardar_lectura', {
+        p_id: id, p_branch: branchId, p_texto: texto, p_respuestas_n: respuestasN,
+    }));
+}
+
 /** Guarda el resumen para que todos lo vean sin volver a llamar a la IA. */
 export async function guardarResumen(id, branchId, texto, hasta) {
     return sinError(await supabase.rpc('encuesta_cliente_guardar_resumen', {

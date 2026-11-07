@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1478.0 — Encuestas: Saly lee los resultados y dice qué significan
+
+- Resultados de una encuesta a clientes: arriba, **«Qué significan los
+  resultados»**. Saly lee los números, la recomendación, las sucursales, los
+  lugares de campo y los comentarios, y entrega: en pocas palabras, lo que
+  muestran los números, lo que explica cada cosa y qué haría.
+- Lo que la pantalla no mostraba son los **cruces**: el núcleo
+  (`src/utils/encuestasLectura.js`) compara cada pregunta cerrada, la sucursal
+  y el canal contra las demás y sólo le pasa a Saly los grupos (de 5 o más
+  respuestas) que se apartan 15 puntos o más del total. Ella interpreta; los
+  números los cuenta el portal, así que lo que cita existe.
+- La lectura se guarda (`encuesta_cliente_lecturas`) y todos ven la misma; se
+  actualiza a mano cuando entran 5 respuestas nuevas (o el 10 %). Con menos de
+  30 respuestas avisa que es preliminar.
+- Base: migración `20261107165457_encuestas_clientes_lectura_de_saly`. Función
+  `saly-ai`: acción `analyze-customer-survey-results`.
+
 ## v2.1477.1 — App: «¿Dónde estás?» una vez al aplicar encuestas
 
 - App del personal, Aplicar encuesta: cada tarjeta ya no repite la lista de

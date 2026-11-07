@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-07T15:55:15.251Z",
+ "generado": "2026-11-07T16:56:27.592Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -2459,7 +2459,15 @@
    "area": "encuestas-clientes",
    "por": "código"
   },
+  "encuesta_cliente_entrevistar_campo": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
   "encuesta_cliente_enviar": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_guardar_lectura": {
    "area": "encuestas-clientes",
    "por": "código"
   },
@@ -2468,6 +2476,10 @@
    "por": "código"
   },
   "encuesta_cliente_incentivos_de": {
+   "area": "encuestas-clientes",
+   "por": "código"
+  },
+  "encuesta_cliente_lectura": {
    "area": "encuestas-clientes",
    "por": "código"
   },
@@ -2503,6 +2515,10 @@
    "area": "encuestas-clientes",
    "por": "tablas"
   },
+  "encuesta_cliente_respuestas_n": {
+   "area": "encuestas-clientes",
+   "por": "tablas"
+  },
   "encuesta_cliente_respuestas_para_exportar": {
    "area": "encuestas-clientes",
    "por": "código"
@@ -2526,6 +2542,10 @@
   "encuesta_cliente_sucursal_candado": {
    "area": "encuestas-clientes",
    "por": "trigger"
+  },
+  "encuesta_cliente_ubicaciones": {
+   "area": "encuestas-clientes",
+   "por": "código"
   },
   "encuesta_publica": {
    "area": "encuestas-clientes",

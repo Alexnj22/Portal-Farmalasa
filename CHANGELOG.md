@@ -21,6 +21,24 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1471.0 — Conteo: lo que sólo cambió de lote ya no cuenta como diferencia ni faltante
+
+- **El conteo de Salud 4 decía «10 diferencias» y «Faltante $22.59» en rojo
+  con los cinco productos cuadrando.** La existencia «sin lote» se había
+  contado en sus lotes reales: cada renglón tenía diferencia, pero ningún
+  producto. `get_conteo_resumen` ahora netea POR PRODUCTO y devuelve
+  `productos_con_diferencia`, `renglones_reacomodo`, `faltante_neto`,
+  `sobrante_neto` y `valor_reacomodado` (migración `20261107152558`). Las
+  columnas brutas de siempre se quedan.
+- Tarjetas: «Con diferencia» cuenta productos («10 renglones sólo cambiaron de
+  lote» abajo) y la de dinero muestra el neto, con lo que sólo cambia de lote
+  aparte. Igual en la app.
+- En la tabla, los renglones de un producto que cuadra pintan su diferencia en
+  gris con la explicación; la banda dice «cambio de lote» bajo el 0, y el
+  contador de ediciones de esos renglones deja de ser naranja.
+- El total optimista del producto se suma en unidades por PRODUCTO, como el
+  servidor: tras guardar un lote saltaba a -45 hasta refrescar.
+
 ## v2.1470.3 — Compras: sin falsa alarma de caja cuando el producto se vende por caja
 
 - **«¿Cambió la presentación?» saltaba en productos que se venden por caja

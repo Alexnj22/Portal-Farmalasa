@@ -17,8 +17,23 @@ export default function Resumen({ resumen, abierto, verMontos }) {
   const {
     total_items: items = 0, total_productos: productos = 0, contados = 0, pendientes = 0,
     sin_ubicar: sinUbicar = 0, recontados = 0, contadores = 0, agregados = 0,
-    con_diferencia: conDif = 0, valor_faltante: falt = 0, valor_sobrante: sobra = 0, ver_sistema: ver,
+    con_diferencia: conDifRenglones = 0, valor_faltante: faltBruto = 0, valor_sobrante: sobraBruto = 0, ver_sistema: ver,
+    productos_con_diferencia: prodDif, renglones_reacomodo: reacomodados = 0,
+    faltante_neto: faltNeto, sobrante_neto: sobraNeto, valor_reacomodado: valorReacomodo = 0,
   } = resumen;
+  // Netas por producto (igual que el portal): lo que sólo cambió de lote —sale
+  // de «sin lote» y entra en su lote— no es diferencia ni faltante.
+  const conDif = prodDif ?? conDifRenglones;
+  const falt = Number(faltNeto ?? faltBruto) || 0;
+  const sobra = Number(sobraNeto ?? sobraBruto) || 0;
+  const muestraSobrante = !(falt > 0) && sobra > 0;
+  const apoyoDif = reacomodados > 0
+    ? `${formatQty(reacomodados)} renglón${reacomodados === 1 ? '' : 'es'} sólo cambi${reacomodados === 1 ? 'ó' : 'aron'} de lote`
+    : (recontados > 0 ? `${formatQty(recontados)} recontada${recontados === 1 ? '' : 's'}` : (prodDif != null ? 'productos que no cuadran' : 'contra la existencia'));
+  const apoyoMonto = [
+    falt > 0 && sobra > 0 ? `sobrante ${formatMoney(sobra)}` : null,
+    Number(valorReacomodo) > 0 ? `${formatMoney(valorReacomodo)} sólo cambia de lote` : null,
+  ].filter(Boolean).join(' · ') || (falt > 0 || muestraSobrante ? 'por producto, neto' : 'cuadra');
   const pct = items > 0 ? Math.round((contados / items) * 100) : 0;
   const tarjetas = [
     <Kpi key="avance" icono="CheckCircle2" rotulo="Avance" valor={`${pct}%`} apoyo={`${formatQty(contados)} de ${formatQty(items)} renglones`}
@@ -29,10 +44,11 @@ export default function Resumen({ resumen, abierto, verMontos }) {
       apoyo={agregados > 0 ? `${formatQty(agregados)} agregado${agregados === 1 ? '' : 's'} a mano` : 'en este conteo'} color={MARCA.azulClaro} />,
     <Kpi key="nou" icono="PackageMinus" rotulo="No ubicados" valor={formatQty(sinUbicar)} pide={sinUbicar > 0}
       apoyo="buscados y no están" color={sinUbicar > 0 ? MARCA.rojo : colorSistema.texto2} />,
-    ver ? <Kpi key="dif" icono="AlertTriangle" rotulo="Diferencias" valor={formatQty(conDif)} pide={conDif > 0}
-      apoyo={recontados > 0 ? `${formatQty(recontados)} recontada${recontados === 1 ? '' : 's'}` : 'contra la existencia'} color={conDif > 0 ? MARCA.ambar : colorSistema.texto2} /> : null,
-    ver && verMontos ? <Kpi key="falt" icono="DollarSign" rotulo={abierto ? 'Faltante parcial' : 'Faltante'} valor={formatMoney(falt)} pide={falt > 0}
-      apoyo={`sobrante ${formatMoney(sobra)}`} color={falt > 0 ? MARCA.rojo : colorSistema.texto2} /> : null,
+    ver ? <Kpi key="dif" icono="AlertTriangle" rotulo={prodDif != null ? 'Con diferencia' : 'Diferencias'} valor={formatQty(conDif)} pide={conDif > 0}
+      apoyo={apoyoDif} color={conDif > 0 ? MARCA.ambar : colorSistema.texto2} /> : null,
+    ver && verMontos ? <Kpi key="falt" icono="DollarSign" rotulo={`${muestraSobrante ? 'Sobrante' : 'Faltante'}${abierto ? ' parcial' : ''}`}
+      valor={formatMoney(muestraSobrante ? sobra : falt)} pide={falt > 0}
+      apoyo={apoyoMonto} color={falt > 0 ? MARCA.rojo : colorSistema.texto2} /> : null,
   ].filter(Boolean);
   const filas = [];
   for (let i = 0; i < tarjetas.length; i += 2) filas.push(tarjetas.slice(i, i + 2));

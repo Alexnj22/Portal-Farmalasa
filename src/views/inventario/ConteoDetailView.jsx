@@ -209,6 +209,22 @@ const difLabel = (dif) => (dif == null ? '—' : dif > 0 ? `+${dif}` : String(di
 const esReacomodo = (item) => !!item?.grupo_mixto && (item?.diferencia_grupo ?? 0) === 0;
 const REACOMODO_AVISO = 'El sistema cuenta los paquetes y las unidades por separado. En unidades este producto cuadra: el total del producto lo dice.';
 
+// La otra forma del mismo caso: lo que el sistema tenía «sin lote» (o en otro
+// lote) se contó en sus lotes reales. Cada renglón tiene diferencia, pero el
+// PRODUCTO cuadra: al aprobar sale de un renglón y entra en otro, y no falta
+// ni sobra nada. En rojo y azul se leía como mercadería perdida y encontrada
+// (conteo de Salud 4, 2026-11-06: «10 diferencias», «Faltante $22.59» con los
+// cinco productos en 0). Se decide con el total del producto que da el
+// servidor, y sólo con todos sus renglones contados: a medias todavía no se
+// sabe si cuadra.
+const REACOMODO_LOTE_AVISO = 'Este producto cuadra en total: lo que el sistema tenía en este renglón se contó en otro lote. Al aprobar, pasa de un renglón al otro; no falta ni sobra nada.';
+const productoCuadra = (product) => !!product
+    && product.diferencia_total === 0
+    && product.item_count > 1
+    && product.contados_count >= product.item_count;
+// La banda del producto: cuadra, pero adentro hubo renglones que se movieron.
+const productoReacomodado = (product) => productoCuadra(product) && (product.con_diferencia_count ?? 0) > 0;
+
 // Vuelve a netear las pilas de un producto con lo que hay en memoria. Es la
 // copia cliente de `conteo_lineas_netas`, y existe porque `diferencia_grupo`
 // llega calculado sobre lo GUARDADO: al teclear el segundo renglón de una pila,
@@ -333,7 +349,7 @@ const TAPADO = '•••';
 // Una sola línea a propósito: en el teléfono hay una de estas por LOTE, y
 // apilarla en tres renglones (avatar, nombre, fecha) empujaba el siguiente lote
 // fuera de la pantalla.
-function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
+function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick, tonoEdiciones = 'warning' }) {
     if (!nombre && !cuando) return null;
     // Primer nombre + primer apellido, que es el estándar del portal entero
     // (`nameUtils`). Se normaliza ACÁ y no sólo en quien pasa la prop porque
@@ -364,7 +380,7 @@ function AutorLinea({ id, nombre, fotoUrl, cuando, ediciones = 0, onClick }) {
                     exactamente la forma escrita a mano que el canónico vino a
                     reemplazar — y la décima vez que pasa. El "ed." además no hacía
                     falta: el `title` ya dice "editada 2 veces". */}
-                <Contador valor={ediciones} tono="warning" size="sm" max={9}
+                <Contador valor={ediciones} tono={tonoEdiciones} size="sm" max={9}
                     aria-label={`editada ${ediciones} ${ediciones === 1 ? 'vez' : 'veces'}`} />
             </span>
         </Button>
@@ -384,6 +400,9 @@ function ItemRow({
     // —«1 presentación · 13» arriba y «LATA 1X1 · 13» abajo—, y con 2,953
     // productos para 3,665 renglones eso era casi duplicar la tabla.
     producto = null,
+    // El producto cuadra en total con todos sus renglones contados (ver
+    // `productoCuadra`). Lo decide la lista, que tiene el total del servidor.
+    cuadraElProducto = false,
 }) {
     const { showToast } = useToastStore();
     const ajusta = useContext(AjustaElInventario);
@@ -434,7 +453,8 @@ function ItemRow({
     // El neto del grupo lo calcula el servidor sobre lo GUARDADO, así que
     // mientras se teclea el renglón sin confirmar se pinta normal: la señal de
     // «esto cuadra en unidades» aparece cuando el número ya está registrado.
-    const reacomodo = esReacomodo(item) && item.fisico_cantidad != null;
+    const reacomodoDeLote = cuadraElProducto && !esReacomodo(item);
+    const reacomodo = (esReacomodo(item) || cuadraElProducto) && item.fisico_cantidad != null;
 
     // Una línea ya confirmada NO es un campo. Una celda que sigue pareciendo un
     // input invita a teclear encima de lo ya contado; el lápiz es el único
@@ -629,6 +649,9 @@ function ItemRow({
                 <AutorLinea
                     id={contadoPorId} nombre={contadoPorNombre} fotoUrl={contadoPorFoto} cuando={contadoAt}
                     ediciones={ediciones} onClick={() => onShowHistory(item)}
+                    // Editar un renglón que después se reacomodó es lo esperado
+                    // (se baja «sin lote» a 0 al agregar los lotes): no alarma.
+                    tonoEdiciones={reacomodo ? 'neutral' : 'warning'}
                 />
             </DataCell>
             {verSistema && (
@@ -704,8 +727,8 @@ function ItemRow({
                     {tapado ? (
                         <span className="text-body-sm font-black text-content-3 tabular-nums">{TAPADO}</span>
                     ) : reacomodo ? (
-                        <LiquidTooltip content={REACOMODO_AVISO}>
-                            <span className="text-body-sm font-black tabular-nums text-content-3">{difLabel(dif)}</span>
+                        <LiquidTooltip content={reacomodoDeLote ? REACOMODO_LOTE_AVISO : REACOMODO_AVISO}>
+                            <span className="text-body-sm font-black tabular-nums text-content-3 underline decoration-dotted underline-offset-4 cursor-help">{difLabel(dif)}</span>
                         </LiquidTooltip>
                     ) : (
                         <span className={`text-body-sm font-black tabular-nums ${difClass(dif)}`}>{difLabel(dif)}</span>
@@ -797,7 +820,14 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
             <DataCell align="center"><TotalDelProducto valor={product.fisico_total} enUnidades={enUnidades} /></DataCell>
             {verSistema && (
                 <DataCell align="center">
-                    <TotalDelProducto valor={dif} enUnidades={enUnidades} clase={difClass(dif)} etiqueta={difLabel(dif)} />
+                    <div className="flex flex-col items-center">
+                        <TotalDelProducto valor={dif} enUnidades={enUnidades} clase={difClass(dif)} etiqueta={difLabel(dif)} />
+                        {productoReacomodado(product) && (
+                            <LiquidTooltip content={REACOMODO_LOTE_AVISO}>
+                                <span className="text-micro text-content-3 whitespace-nowrap cursor-help">cambio de lote</span>
+                            </LiquidTooltip>
+                        )}
+                    </div>
                 </DataCell>
             )}
             <DataCell align="center">
@@ -815,7 +845,7 @@ function ProductGroupRow({ product, index, verSistema, simple = false }) {
 // pasillo: una tarjeta por PRODUCTO con sus lotes adentro (el producto repetido
 // por lote se leía como dos productos distintos), campo de 56px y todo objetivo
 // táctil en 44px o más.
-function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, onLoteEnLinea, currentUser, simple = false, enVivo = false }) {
+function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, onRecount, onShowHistory, onEditLote, onLoteEnLinea, currentUser, simple = false, enVivo = false, cuadraElProducto = false }) {
     const ajusta = useContext(AjustaElInventario);
     const unidad = unidadDeConteo(item);
     const { showToast } = useToastStore();
@@ -859,7 +889,8 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
     // existencia en el instante del guardado.
     const dif = fisico !== '' && sistema != null ? Number(fisico) - sistema : null;
     const isLive = enVivo && item.fisico_cantidad == null && !item.es_agregado_manual;
-    const reacomodo = esReacomodo(item) && item.fisico_cantidad != null;
+    const reacomodoDeLote = cuadraElProducto && !esReacomodo(item);
+    const reacomodo = (esReacomodo(item) || cuadraElProducto) && item.fisico_cantidad != null;
     // El recuento tapa el sistema y el primer conteo hasta que el supervisor
     // registra el suyo: si ve que decía 12, escribe 12.
     const tapado = recuento && !revelado;
@@ -1032,7 +1063,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                         tooltip acá tiene que estar escrito. Sale una sola vez
                         por renglón y solo cuando hay algo que explicar. */}
                     {reacomodo && !tapado && (
-                        <span className="text-micro text-content-3 basis-full text-center">Cuadra en unidades</span>
+                        <span className="text-micro text-content-3 basis-full text-center">{reacomodoDeLote ? 'Cambió de lote · el producto cuadra' : 'Cuadra en unidades'}</span>
                     )}
                     {!tapado && item.fisico_primer_conteo != null && (
                         <span className={`text-micro font-bold tabular-nums ${item.fisico_primer_conteo === Number(fisico) ? 'text-success' : 'text-warning-text'}`}>
@@ -1049,6 +1080,7 @@ function LoteMovil({ item, editable, recuento, desbloqueada, onUnlock, onSave, o
                     <AutorLinea
                         nombre={autor.nombre} fotoUrl={autor.foto} cuando={autor.cuando}
                         ediciones={autor.ediciones} onClick={() => onShowHistory(item)}
+                        tonoEdiciones={reacomodo ? 'neutral' : 'warning'}
                     />
                 </div>
             )}
@@ -1119,6 +1151,7 @@ function ListaDeConteo({
                                     item={item}
                                     index={soloUno ? i : j}
                                     producto={soloUno ? product : null}
+                                    cuadraElProducto={verSistema && productoCuadra(product)}
                                     verSistema={verSistema}
                                     simple={simple}
                                     {...fila}
@@ -1175,11 +1208,15 @@ function ProductCardMovil({ product, lines, desbloqueadas, verSistema, ...rest }
                     {product.total_en_unidades && (
                         <span className="text-micro text-content-3 basis-full">Totales en unidades (hay paquetes y unidades)</span>
                     )}
+                    {verSistema && productoReacomodado(product) && (
+                        <span className="text-micro text-content-3 basis-full">Cuadra: sólo cambió de lote</span>
+                    )}
                 </div>
             )}
             {lines
                 ? lines.map((it) => (
-                    <LoteMovil key={it.id} item={it} desbloqueada={!!desbloqueadas[it.id]} {...rest} />
+                    <LoteMovil key={it.id} item={it} desbloqueada={!!desbloqueadas[it.id]}
+                        cuadraElProducto={verSistema && productoCuadra(product)} {...rest} />
                 ))
                 : <div className="mt-2"><SkeletonText lines={2} /></div>}
         </div>
@@ -1223,8 +1260,28 @@ function tarjetasResumen(resumen, abierto, canVerMontos) {
     const {
         total_items: items = 0, total_productos: productos = 0, contados = 0, pendientes = 0,
         sin_ubicar: sinUbicar = 0, recontados = 0, contadores = 0, agregados = 0,
-        con_diferencia: conDif, valor_faltante: falt, valor_sobrante: sobra, ver_sistema: ver,
+        con_diferencia: conDifRenglones, valor_faltante: faltBruto, valor_sobrante: sobraBruto, ver_sistema: ver,
+        productos_con_diferencia: prodDif, renglones_reacomodo: reacomodados = 0,
+        faltante_neto: faltNeto, sobrante_neto: sobraNeto, valor_reacomodado: valorReacomodo = 0,
     } = resumen;
+    // Netas por producto desde v2.1471: lo que sólo cambió de lote (sale de
+    // «sin lote», entra en su lote) no es faltante ni diferencia. Si la base
+    // todavía no las manda, se cae a las brutas de siempre.
+    const conDif = prodDif ?? conDifRenglones;
+    const falt = faltNeto ?? faltBruto;
+    const sobra = sobraNeto ?? sobraBruto;
+    const subDif = reacomodados > 0
+        ? `${formatQty(reacomodados)} renglón(es) sólo cambiaron de lote`
+        : (recontados > 0 ? `${formatQty(recontados)} recontada(s)`
+            : (prodDif != null ? 'productos que no cuadran' : 'contra la existencia'));
+    // La tarjeta de dinero muestra lo que PESA: el faltante si lo hay; si no,
+    // el sobrante; si tampoco, $0.00 «Faltante» en neutro. Lo que sólo cambia
+    // de lote va abajo, para que se vea que se miró y no que se perdió.
+    const muestraSobrante = !(falt > 0) && sobra > 0;
+    const subMonto = [
+        falt > 0 && sobra > 0 ? `sobrante ${formatMoney(sobra)}` : null,
+        Number(valorReacomodo) > 0 ? `${formatMoney(valorReacomodo)} sólo cambia de lote` : null,
+    ].filter(Boolean).join(' · ') || (falt > 0 || muestraSobrante ? 'por producto, neto' : 'cuadra');
     const pct = items > 0 ? (contados / items) * 100 : 0;
 
     // `.filter(Boolean)` y no un fragmento condicional: las dos últimas
@@ -1268,9 +1325,9 @@ function tarjetasResumen(resumen, abierto, canVerMontos) {
             <StatCard
                 key="diferencias"
                 icon={AlertTriangle}
-                label="Diferencias"
+                label={prodDif != null ? 'Con diferencia' : 'Diferencias'}
                 value={formatQty(conDif)}
-                sub={recontados > 0 ? `${formatQty(recontados)} recontada(s)` : 'contra la existencia'}
+                sub={subDif}
                 {...TONO_STAT[conDif > 0 ? 'warning' : 'neutral']}
             />
         ),
@@ -1283,9 +1340,9 @@ function tarjetasResumen(resumen, abierto, canVerMontos) {
             <StatCard
                 key="faltante"
                 icon={FileSpreadsheet}
-                label={abierto ? 'Faltante parcial' : 'Faltante'}
-                value={formatMoney(falt)}
-                sub={`sobrante ${formatMoney(sobra)}`}
+                label={`${muestraSobrante ? 'Sobrante' : 'Faltante'}${abierto ? ' parcial' : ''}`}
+                value={formatMoney(muestraSobrante ? sobra : falt)}
+                sub={subMonto}
                 {...TONO_STAT[falt > 0 ? 'danger' : 'neutral']}
             />
         ),
@@ -1937,7 +1994,12 @@ export default function ConteoDetailView() {
         const contados_count = lines.filter((l) => l.estado_item !== 'PENDIENTE').length;
         const con_diferencia_count = lines.filter((l) => l.diferencia != null && l.diferencia !== 0
             && (l.diferencia_grupo ?? 0) !== 0).length;
-        const mult = (l) => (l.grupo_mixto ? (l.factor ?? 1) : 1);
+        // Por PRODUCTO, como `mult_prod` de `get_conteo_products_page`: si algún
+        // grupo mezcla paquetes y unidades, todo el producto se suma en
+        // unidades. Por renglón, un lote en cajas sumaba en cajas y el «sin
+        // lote» en unidades, y el total saltaba a -45 hasta refrescar.
+        const prodMixto = lines.some((l) => l.grupo_mixto);
+        const mult = (l) => (prodMixto ? (l.factor ?? 1) : 1);
         const sistema_total = lines.reduce((sum, l) => sum + (l.sistema_cantidad ?? 0) * mult(l), 0);
         const contadas = lines.filter((l) => l.fisico_cantidad != null);
         const fisico_total = contadas.length ? contadas.reduce((sum, l) => sum + l.fisico_cantidad * mult(l), 0) : null;

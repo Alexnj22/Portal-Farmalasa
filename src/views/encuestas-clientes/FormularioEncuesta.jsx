@@ -10,6 +10,8 @@ import {
     maximoDe, alternarOpcion, textoDeMaximo,
 } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
+import useMediaQuery from '../../plataforma/useMediaQuery';
+import { CORTE_TELEFONO } from '../../components/common/usarExpediente';
 
 /**
  * El cuestionario tal como lo contesta el cliente: una sección por pantalla,
@@ -57,10 +59,22 @@ export default function FormularioEncuesta({
     const { visibles, limpias } = useMemo(() => recorrido(encuesta?.cuestionario, respuestas), [encuesta?.cuestionario, respuestas]);
     // Las secciones que quedaron sin ninguna pregunta visible se saltan.
     const visiblesDe = (s) => visibles.filter((p) => p.seccionId === s.id);
-    const pasos = secciones.filter((s) => visiblesDe(s).length > 0);
-    const actual = paso >= 0 ? pasos[paso] || null : null;
+    // En el teléfono, UNA pregunta por pantalla (pedido del usuario
+    // 2026-11-07): botones grandes, sin bajar, y el aviso de «falta» a la
+    // vista. En pantalla ancha, una SECCIÓN por pantalla. El orden y las
+    // condiciones son los mismos: sólo cambia cuántas se ven a la vez.
+    const enTelefono = useMediaQuery(CORTE_TELEFONO);
+    const pasos = secciones.flatMap((s) => {
+        const ps = visiblesDe(s);
+        if (!ps.length) return [];
+        return enTelefono ? ps.map((p) => ({ seccion: s, preguntas: [p] })) : [{ seccion: s, preguntas: ps }];
+    });
+    // Al girar el teléfono o cambiar el ancho, el número de pasos cambia: nunca
+    // apuntar más allá del último.
+    const pasoReal = paso >= 0 ? Math.min(paso, pasos.length - 1) : -1;
+    const actual = pasoReal >= 0 ? pasos[pasoReal] || null : null;
     const total = pasos.length + 1;
-    const progreso = terminado ? 100 : Math.round((Math.max(enContacto ? pasos.length : paso, 0) / total) * 100);
+    const progreso = terminado ? 100 : Math.round((Math.max(enContacto ? pasos.length : pasoReal, 0) / total) * 100);
     const incentivo = encuesta?.incentivo_tipo === 'puntos' && encuesta?.incentivo_puntos
         ? `Deja tu teléfono y recibe ${encuesta.incentivo_puntos} puntos en tu cuenta.`
         : encuesta?.incentivo_tipo === 'muestra' && entrevista
@@ -106,7 +120,7 @@ export default function FormularioEncuesta({
             // Un «ordenar» que no se tocó se muestra con un orden completo: ese
             // orden ES la respuesta. Sin esto contaba como no contestado.
             const porDefecto = {};
-            for (const p of visiblesDe(actual)) {
+            for (const p of actual.preguntas) {
                 if (p.tipo !== 'ranking') continue;
                 const ops = opcionesConTexto(p);
                 const r = respuestas[p.id];
@@ -117,12 +131,12 @@ export default function FormularioEncuesta({
                 if (inicio.current == null) inicio.current = Date.now();
                 setRespuestas(conOrden);
             }
-            const falta = primeraSinContestar(visiblesDe(actual), conOrden);
+            const falta = primeraSinContestar(actual.preguntas, conOrden);
             if (falta) { setFaltante(falta.id); return; }
         }
         setFaltante(null);
-        if (paso + 1 >= pasos.length) { setEnContacto(true); return; }
-        setPaso((p) => p + 1);
+        if (pasoReal + 1 >= pasos.length) { setEnContacto(true); return; }
+        setPaso(pasoReal + 1);
     };
 
     const enviar = async (conDatos) => {
@@ -220,21 +234,21 @@ export default function FormularioEncuesta({
                 </div>
             ) : actual && (
                 <>
-                    {(actual.titulo || actual.descripcion) && (
+                    {(actual.seccion.titulo || actual.seccion.descripcion) && (
                         <div>
-                            {actual.titulo && <p className="text-body-lg font-semibold text-content">{actual.titulo}</p>}
-                            {actual.descripcion && <p className="text-body-sm text-content-2">{actual.descripcion}</p>}
+                            {actual.seccion.titulo && <p className="text-body-lg font-semibold text-content">{actual.seccion.titulo}</p>}
+                            {actual.seccion.descripcion && <p className="text-body-sm text-content-2">{actual.seccion.descripcion}</p>}
                         </div>
                     )}
                     <div className="space-y-5 flex-1">
-                        {visiblesDe(actual).map((p) => (
+                        {actual.preguntas.map((p) => (
                             <Pregunta key={p.id} p={p} valor={respuestas[p.id]} falta={faltante === p.id}
                                 onChange={(v) => contestar(p.id, v)} />
                         ))}
                     </div>
                     <div className="flex gap-2 justify-between pt-2">
-                        <Button variant="secondary" icon={ArrowLeft} disabled={paso === 0 && !conBienvenida}
-                            onClick={() => setPaso((x) => x - 1)}>Atrás</Button>
+                        <Button variant="secondary" icon={ArrowLeft} disabled={pasoReal === 0 && !conBienvenida}
+                            onClick={() => setPaso(pasoReal - 1)}>Atrás</Button>
                         <Button icon={ArrowRight} onClick={siguiente}>Siguiente</Button>
                     </div>
                 </>

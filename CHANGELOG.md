@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1477.0 — Encuestas: una pregunta por pantalla en el teléfono
+
+- El formulario de la encuesta (vista previa, QR, tablet y entrevista) muestra
+  **una pregunta por pantalla en el teléfono** y una sección por pantalla en
+  pantalla ancha. Mismo orden y mismas condiciones; sólo cambia cuántas se ven
+  a la vez. Al girar el teléfono no se pierde lo contestado.
+- Las encuestas «Satisfacción» y «Comunicación y servicios digitales»
+  (borradores) quedaron en cuatro secciones por tema cada una.
+
 ## v2.1476.1 — Compras: el costo anterior viene de la lectura de la factura
 
 v2.1475.0 leía el costo anterior desde el navegador (`product_precios.costo`),

@@ -61,22 +61,54 @@ function marcar(anclas) {
     return () => marcados.forEach((el) => el.removeAttribute('data-saly-senalado'));
 }
 
-/** El bloque con sentido debajo de un punto: una ficha, una fila, una tarjeta. */
+/* ── Qué señala Saly al soltarla ─────────────────────────────────────────
+ *
+ * El SECTOR, no el elemento suelto (usuario, 2026-11-07: «debería ser más fácil
+ * seleccionar el sector, la pregunta completa, no tanto elemento a elemento»;
+ * y después: «sí, en todo»). En orden:
+ *
+ *  1. Lo que la pantalla marcó con `data-saly-ancla`, aunque haya algo más
+ *     cerca (en Resultados de encuestas, cada pregunta).
+ *  2. El primer contenedor hacia arriba que tiene TÍTULO —un encabezado, o
+ *     una primera línea corta en negrita seguida de más cosas— y cabe en
+ *     pantalla. Así una opción suelta trae su pregunta, un renglón de un
+ *     resumen trae el bloque, sin que cada pantalla tenga que marcar nada.
+ *  3. Si nada de eso cabe, la fila o la ficha de antes (una fila de una tabla
+ *     larga sigue siendo un registro con sentido propio).
+ */
+const ALTO_MAX_SECTOR = 0.6;   // de la ventana: más que eso ya no es «un sector»
+const ENCABEZADO = 'h1, h2, h3, h4, h5, h6, [role="heading"]';
+
+function cabe(el, tope = ALTO_MAX_SECTOR) {
+    return el.getBoundingClientRect().height <= window.innerHeight * tope;
+}
+
+function tieneTitulo(el) {
+    const hijos = el.children;
+    if (hijos.length < 2) return false;
+    const primero = hijos[0];
+    if (primero.matches(ENCABEZADO) || primero.querySelector(':scope > ' + ENCABEZADO.split(', ').join(', :scope > '))) return true;
+    const texto = String(primero.innerText || '').trim();
+    if (!texto || texto.length > 160 || texto.includes('\n\n')) return false;
+    const peso = Number(window.getComputedStyle(primero.querySelector('p, span, strong, b, div') || primero).fontWeight) || 400;
+    return peso >= 600;
+}
+
 function bloqueEn(x, y, propio) {
-    let el = document.elementFromPoint(x, y);
-    if (!el || propio?.contains(el)) return null;
-    // Un bloque que la pantalla marcó (`data-saly-ancla`) gana aunque haya una
-    // fila más cerca: en Resultados de encuestas se señala la PREGUNTA entera,
-    // no una opción suelta (usuario, 2026-11-07: «debería ser más fácil
-    // seleccionar el sector, la pregunta completa»).
-    const anclado = el.closest('[data-saly-ancla]');
-    const candidato = anclado && anclado.getBoundingClientRect().height <= window.innerHeight * 0.8
-        ? anclado
-        : el.closest('[data-saly-ancla], [data-surface="card"], tr, li, article, [role="row"], section');
-    el = candidato && candidato !== document.body ? candidato : el;
+    const bajo = document.elementFromPoint(x, y);
+    if (!bajo || propio?.contains(bajo) || bajo === document.body || bajo === document.documentElement) return null;
+
+    const anclado = bajo.closest('[data-saly-ancla]');
+    if (anclado && cabe(anclado, 0.8)) return anclado;
+
+    for (let el = bajo; el && el !== document.body; el = el.parentElement) {
+        if (!cabe(el)) break;
+        if (el !== bajo && tieneTitulo(el)) return el;
+    }
+
+    let el = bajo.closest('[data-surface="card"], tr, li, article, [role="row"], section') || bajo;
     // Un bloque que es casi la página entera no dice nada: se queda el de abajo.
-    if (el.getBoundingClientRect().height > window.innerHeight * 0.8) el = document.elementFromPoint(x, y);
-    if (!el || el === document.body || el === document.documentElement) return null;
+    if (!cabe(el, 0.8)) el = bajo;
     return el;
 }
 

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1480.1 — Saly señala el sector, no el elemento suelto
+
+- Al soltar a Saly sobre algo, en todas las pantallas, toma el primer bloque
+  hacia arriba que tiene título (un encabezado, o una primera línea corta en
+  negrita) y cabe en pantalla: una opción trae su pregunta, un renglón trae
+  su bloque. Lo marcado con `data-saly-ancla` sigue ganando, y si nada cabe,
+  queda la fila o la ficha como antes.
+
 ## v2.1480.0 — Encuestas: opción que va sola
 
 En una pregunta de opción múltiple, una opción puede marcarse «Va sola»

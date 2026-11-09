@@ -219,11 +219,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icono.png",
-          "imageWidth": 150,
+          "image": "./assets/logo-puntos-salud.png",
+          "imageWidth": 200,
           "backgroundColor": "#F5F4F8",
           "dark": {
-            "image": "./assets/icono.png",
+            "image": "./assets/logo-puntos-salud.png",
             "backgroundColor": "#0A090E"
           }
         }

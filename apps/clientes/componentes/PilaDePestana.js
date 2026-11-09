@@ -17,7 +17,6 @@ import Aurora from './Aurora';
 import Campana from './Campana';
 import { colorSistema } from './sistema';
 import { useVisible } from '../lib/visible';
-import { useTema } from '../tema/tema';
 
 const ANDROID = Platform.OS === 'android';
 const IOS26 = Platform.OS === 'ios' && isLiquidGlassAvailable();

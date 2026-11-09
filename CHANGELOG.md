@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.6 — App de clientes: logo de Puntos Salud en la pantalla de carga
+
+La pantalla de carga de la app muestra el logo de Puntos Salud.
+
 ## v2.1492.5 — App de clientes: logo de Puntos Salud
 
 El logo de Puntos Salud va en el encabezado, la bienvenida y la pantalla de bloqueo de la app.

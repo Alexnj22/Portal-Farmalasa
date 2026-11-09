@@ -9,9 +9,9 @@
 // Cambiar la redacción = cambiar `version` y desplegar las DOS funciones.
 export const TEXTOS_CONSENTIMIENTO = {
   version: "consentimiento-2026-09-05",
-  // Aviso de privacidad v2 (vigente desde el 17-oct-2026): al subirlo, la app
+  // Aviso de privacidad v3 (vigente desde el 9-nov-2026): al subirlo, la app
   // y `/mis-puntos` vuelven a pedirlo a quien sólo aceptó el anterior.
-  aviso: "aviso-2026-10-17",
+  aviso: "aviso-2026-11-09",
   programa:
     "Acepto seguir en el Programa de Puntos Salud. Para administrarlo, la " +
     "Empresa usa mi nombre, mi documento, mi teléfono y el historial de mis " +

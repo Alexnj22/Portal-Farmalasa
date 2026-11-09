@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1490.0 — Aviso de privacidad v3: Mi familia
+
+Aviso de privacidad versión 3: agrega «Mi familia». Los clientes lo aceptan de nuevo al abrir la app.
+
 ## v2.1489.2 — Escáner: un código de ceros no es un producto
 
 El escáner ya no confunde un código de puros ceros con un producto.

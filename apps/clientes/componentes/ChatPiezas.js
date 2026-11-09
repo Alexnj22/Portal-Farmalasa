@@ -181,7 +181,16 @@ export function Compositor({ texto, alEscribir, alEnviar, alAdjuntar, enviando, 
       </Animated.View>
     );
   }
-  return <View style={{ backgroundColor: t.oscuro ? '#1E1B24' : '#FFFFFF', elevation: 8 }}>{contenido}{mic.encima}</View>;
+  // Android, igual que iOS (2026-11-09): sube con el teclado y deja debajo el
+  // margen de la barra de navegación. Sin `subida` ni `espacio`, la fila para
+  // escribir quedaba detrás de esa barra y del teclado (sólo se veían los atajos).
+  return (
+    <Animated.View style={[{ backgroundColor: t.oscuro ? '#1E1B24' : '#FFFFFF', elevation: 8 }, subida]}>
+      {contenido}
+      {espacio ?? <View style={{ height: abajoFijo }} />}
+      {mic.encima}
+    </Animated.View>
+  );
 }
 
 // El «+» y la cámara: toque de 44 con un círculo visible de 34, como iMessage.

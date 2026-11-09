@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.7 — Barra del chat visible en Android
+
+- App de clientes (Android): la barra para escribir del chat había quedado detrás de la barra de navegación (sólo se veían los atajos) y no subía con el teclado. Ahora se comporta como en iPhone.
+
 ## v2.1500.6 — Logo horizontal de Puntos Salud en el encabezado
 
 - App de clientes: versión horizontal del logo de Puntos Salud («PUNTOS Salud» en una línea), centrada en el encabezado de cada pestaña.

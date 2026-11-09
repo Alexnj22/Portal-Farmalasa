@@ -145,7 +145,7 @@ export default function Laboratorios() {
   const salasCubiertas = (labId) => Object.values(ubic[labId] || {}).filter(tieneUbicacion).length;
   const abrir = useCallback((l) => { Haptics.selectionAsync().catch(() => {}); setEditando(l); }, []);
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: String(user?.branchId ?? ''), onCambiar: setSala,
+    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: String(user?.branchId ?? (sucursales || [])[0]?.id ?? ''), onCambiar: setSala,
       opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : []),
     ...(!q ? [{ id: 'seccion', titulo: 'Sección', activa: seccion, porDefecto: 'principales', onCambiar: setSeccion,
       opciones: SECCIONES_DE_LABORATORIO.map((s) => ({ id: s.key, label: s.key === 'principales' ? 'Principales' : s.key === 'insumos' ? 'Insumos' : 'Cosméticos' })) }] : []),

@@ -34,7 +34,7 @@
 // con el suyo.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -150,14 +150,6 @@ function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar, userId, onRe
         <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Anotar</Text>
       </Pressable>
     </View>
-  );
-}
-
-function EnlaceDeSeccion({ texto, ruta }) {
-  return (
-    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(ruta); }} accessibilityRole="button" hitSlop={6} style={{ minHeight: 36, justifyContent: 'center' }}>
-      <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{texto}</Text>
-    </Pressable>
   );
 }
 
@@ -312,6 +304,12 @@ export default function Bolsas() {
   const contadoMarcado = marcadas.reduce((a, b) => a + Number(contadoDeBolsa(b)), 0);
   const difMarcada = Math.round((contadoMarcado - suma(marcadas)) * 100) / 100;
 
+  const abrirMas = () => {
+    const ops = [...(puedeEntregar ? [['Entregar y sacar dinero', '/bolsas-sala']] : []), ...(verMontos ? [['Depósitos', '/depositos-banco'], ['Conteos', '/conteos-bolsas']] : [])];
+    ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
+      (i) => { if (ops[i]) router.push(ops[i][1]); });
+  };
+
   const grupos = [
         { id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
           opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set([...(bolsas || []), ...contadas, ...diferencias].map((b) => String(b.branch_id)))]
@@ -327,7 +325,7 @@ export default function Bolsas() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Folio, caja, sala o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeEntregar || verMontos ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -339,13 +337,6 @@ export default function Bolsas() {
           { id: 'diferencias', label: 'Cuadre' },
         ]} />
         <FiltrosActivos grupos={grupos} />
-        {puedeEntregar || verMontos ? (
-          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
-            {puedeEntregar ? <EnlaceDeSeccion texto="Entregar y sacar" ruta="/bolsas-sala" /> : null}
-            {verMontos ? <EnlaceDeSeccion texto="Depósitos" ruta="/depositos-banco" /> : null}
-            {verMontos ? <EnlaceDeSeccion texto="Conteos" ruta="/conteos-bolsas" /> : null}
-          </View>
-        ) : null}
         {bolsas ? (
           <FilaDeKpis>
             <Kpi icono="HandCoins" rotulo="Sin recibir" color={MARCA.azulClaro}

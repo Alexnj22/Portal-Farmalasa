@@ -281,7 +281,8 @@ export default function Traslados() {
   // La sala de esta pestaña: sólo en Recibir y en Historial, y sólo con alcance de todas.
   const opcionesDeSala = (sucursales || []).filter((b) => b.type === 'FARMACIA' || b.type === 'BODEGA').map((b) => ({ id: String(b.id), label: b.name }));
   const grupoDeSala = (activa, poner) => (todas ? [{ id: 'sala', titulo: 'Sala', activa: activa ?? '', porDefecto: '', onCambiar: (v) => poner(v || null), opciones: [{ id: '', label: 'Todas las salas' }, ...opcionesDeSala] }] : []);
-  const filtrosDeVista = vista === 'recibir' ? grupoDeSala(salaRecibir, setSalaRecibir) : vista === 'historial' ? grupoDeSala(salaFiltro, setSalaFiltro) : [];
+  const filtrosDeVista = vista === 'recibir' ? grupoDeSala(salaRecibir, setSalaRecibir) : vista === 'historial' ? [...grupoDeSala(salaFiltro, setSalaFiltro), { id: 'desenlace', titulo: 'Desenlace', activa: desenlace, porDefecto: 'todos', onCambiar: setDesenlace,
+    opciones: [{ id: 'todos', label: 'Todos' }, { id: 'APPROVED', label: 'Recibidos' }, { id: 'REJECTED', label: 'Rechazados' }] }] : [];
   // El «+» de la barra: la barra admite una sola acción junto al filtro.
   const abrirNuevo = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -376,9 +377,6 @@ export default function Traslados() {
         {vista === 'historial' ? (
           <>
             <PasoDeSemana semana={semana} onCambiar={setSemana} />
-            <Segmentos activa={desenlace} onCambiar={setDesenlace} opciones={[
-              { id: 'todos', label: 'Todos' }, { id: 'APPROVED', label: 'Recibidos' }, { id: 'REJECTED', label: 'Rechazados' },
-            ]} />
             {historial == null ? null : historialVisto.length ? (
               <>
                 <Titulo texto="Traslados" n={historialVisto.length} />

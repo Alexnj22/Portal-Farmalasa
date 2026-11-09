@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1488.4 — App del personal: últimos filtros y enlace roto
+
+**Por qué.** Lo que faltaba de la auditoría de colocación de la app del personal.
+
+- Bolsas: los accesos a Entregar, Depósitos y Conteos pasan al menú «⋯» de la barra.
+- Traslados: Recibidos / Rechazados del historial pasa de segunda fila de pestañas al filtro.
+- Laboratorios: quitar el filtro de sala ya no deja la sala vacía a quien no tiene sala propia.
+- Un enlace roto muestra una pantalla en español con salida al inicio, en vez de la pantalla por defecto en inglés.
+
+Verificado en simulador iPad: Historial de Traslados y enlace roto. El menú de Bolsas no se pudo abrir con la cuenta de revisión.
+
 ## v2.1488.3 — App del personal: formato nativo uniforme
 
 **Por qué.** El usuario revisó la app vista por vista: las pestañas no se veían igual entre pantallas, había pestañas y botones debajo de los datos, filtros que no filtraban lo que decían, y Fernando (en apoyo) salía ausente.

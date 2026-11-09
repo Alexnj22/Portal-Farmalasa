@@ -4,9 +4,10 @@ import { useComposicionTraslado } from '../store/composicionTraslado';
 import { fetchPresentaciones } from '../data/inventoryMovements';
 import { crearSolicitudTraslado, fetchDondeHay, fetchEsAntibiotico } from '../data/traslados';
 import { fetchInventoryByProductIds } from '../data/inventory';
+import { fetchMinimoDeDespacho } from '../data/dispatchRules';
 import { lotesEnUnidades, repartirPedido } from '../utils/unidadesInventario';
 import { opcionesDePresentacion } from '../utils/presentacion';
-import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '../constants/erp';
+import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH, ERP_BODEGA } from '../constants/erp';
 import { avisosDelPedido, claveOrigen, diasHasta, fmtVence } from '../utils/pedirTraslado';
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -24,9 +25,11 @@ import { avisosDelPedido, claveOrigen, diasHasta, fmtVence } from '../utils/pedi
 // terminar de enviar. Los comentarios de abajo son los del modal original.
 // ═══════════════════════════════════════════════════════════════════════════
 /**
- * @param {{ productoInicial?: any, alCerrar?: () => void, alTerminar?: () => void }} [opciones]
+ * `aplicarMinimoDeBodega: false`: apartar para un cliente pide lo que el cliente
+ * lleva, no un envío de reposición.
+ * @param {{ productoInicial?: any, alCerrar?: () => void, alTerminar?: () => void, aplicarMinimoDeBodega?: boolean }} [opciones]
  */
-export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar } = {}) {
+export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar, aplicarMinimoDeBodega = true } = {}) {
     const { user } = useAuth();
     /* Lo elegido en el primer paso, cuando hubo primer paso. La fila del
        catálogo trae `{ id, nombre }` y el resto del archivo habla de
@@ -260,6 +263,29 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
 
     const unidadesPedidas = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
 
+    /* Bodega tiene reglas de cómo envía cada producto: si sale por caja, pedirle
+     * dos blísteres es pedir algo que no puede mandar. Sólo el estante de
+     * operación: el área de próximos a vencer guarda saldos sueltos.
+     * El estado lleva el id del producto para que la regla del ANTERIOR no
+     * conteste por éste mientras viaja la consulta; y sin saber la regla, el
+     * renglón no se da por listo. */
+    const aplicaMinimo = aplicarMinimoDeBodega && Number(sala?.erp_sucursal_id) === ERP_BODEGA && !sala?.vencidos;
+    const [reglaBodega, setReglaBodega] = useState(null);   // { id, minimo?, fallo? }
+    useEffect(() => {
+        if (!aplicaMinimo || !producto?.erp_product_id) return;
+        const id = producto.erp_product_id;
+        let cancelado = false;
+        fetchMinimoDeDespacho(id)
+            .then(minimo => { if (!cancelado) setReglaBodega({ id, minimo }); })
+            .catch(() => { if (!cancelado) setReglaBodega({ id, fallo: true }); });
+        return () => { cancelado = true; };
+    }, [aplicaMinimo, producto?.erp_product_id]);
+    const reglaVigente = aplicaMinimo && reglaBodega?.id === producto?.erp_product_id ? reglaBodega : null;
+    const reglaBodegaFallo = Boolean(reglaVigente?.fallo);
+    const reglaResuelta = !aplicaMinimo || (Boolean(reglaVigente) && !reglaBodegaFallo);
+    const minimoBodega = reglaVigente?.minimo ?? null;
+    const bajoMinimoBodega = Boolean(minimoBodega) && unidadesPedidas > 0 && unidadesPedidas < minimoBodega.unidades;
+
     // Si lleva receta. Decide DOS cosas: el rótulo «Bajo Receta» y —por decisión
     // del usuario el 2026-08-06— si el vencimiento importa acá.
     const [esAntibiotico, setEsAntibiotico] = useState(false);
@@ -360,6 +386,7 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
     const lineaLista = Boolean(
         producto && sala && pres && miErp && Number(cantidad) > 0
         && unidades > 0 && unidades <= Number(sala.unidades ?? 0)
+        && reglaResuelta && !bajoMinimoBodega
         // Con lotes a la vista, el pedido no sale si lo que queda no lo cubre:
         // mandarlo igual sería pedir algo que ya se sabe que no se puede dar.
         && (!hayLotes || faltan === 0),
@@ -391,6 +418,8 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
          * `presentaciones` es la de otro. Sin esto, corregir «pedí cajas y
          * quería unidades» obliga a borrar el renglón y rehacerlo. */
         presentaciones,
+        // Para que corregir la cantidad desde la lista respete el mismo mínimo.
+        minimoBodega,
         unidades,
         item: {
             erp_product_id:    producto.erp_product_id,
@@ -625,7 +654,8 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar 
     };
 
     const avisos = avisosDelPedido({ pres, cantidad, sala, unidades, opcionesPres, ningunaAlcanza, faltan,
-        descartados, lotesDeSala, aMedias, renglones, producto, yaEstaEnLaLista, conProblema, faltaElParaQue });
+        descartados, lotesDeSala, aMedias, renglones, producto, yaEstaEnLaLista, conProblema, faltaElParaQue,
+        minimoBodega, bajoMinimoBodega, reglaBodegaFallo });
 
     return {
         avisos,

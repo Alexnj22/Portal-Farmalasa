@@ -142,7 +142,7 @@ function PrecioDeBodega({ r, ocupado, hacer }) {
 function PedirAOtraSala({ r, falta, ocupado, hacer }) {
   const factor = Number(r.factor ?? 1);
   const productoInicial = useMemo(() => ({ erp_product_id: r.producto_id, descripcion: r.producto }), [r.producto_id, r.producto]);
-  const h = usePedirTraslado({ productoInicial });
+  const h = usePedirTraslado({ productoInicial, aplicarMinimoDeBodega: false });
   const { setCantidad, setPresIdx, setOrigenId, presentaciones } = h;
   const necesita = falta * factor;
   // Sólo el estante de operación y sólo quien alcanza (igual que `DeOtraSala`).

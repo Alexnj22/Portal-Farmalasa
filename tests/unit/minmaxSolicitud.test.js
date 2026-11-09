@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio } from '@nucleo/utils/minmaxSolicitud';
+import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, avisoDeEnvioMinMax } from '@nucleo/utils/minmaxSolicitud';
 
 /**
  * Los MISMOS casos que se corrieron contra `minmax_change_requests` en
@@ -102,5 +102,18 @@ describe('ajusteSinCambio — «— · —» y «0 · 0» son el mismo número',
         // mensaje equivocado — y el par nunca podría haber quedado así.
         expect(ajusteSinCambio({ min: 0, max: 2 }, 0, 2)).toBe(false);
         expect(ajusteSinCambio({ min: null, max: null }, null, null)).toBe(false);
+    });
+});
+
+describe('avisoDeEnvioMinMax — el MAX no puede quedar bajo lo que Bodega envía', () => {
+    const minimo = { unidades: 10, texto: '1 CAJA' };
+    it('frena y sugiere el MAX mínimo', () => {
+        expect(avisoDeEnvioMinMax(minimo, 2, 8)).toContain('Sugerencia: pon MAX 10 o más');
+        expect(avisoDeEnvioMinMax(minimo, 0, 1)).toContain('con MAX 1');
+    });
+    it('deja pasar el MAX que alcanza, el 0 · 0 y lo que no tiene regla', () => {
+        expect(avisoDeEnvioMinMax(minimo, 2, 10)).toBeNull();
+        expect(avisoDeEnvioMinMax(minimo, 0, 0)).toBeNull();
+        expect(avisoDeEnvioMinMax(null, 2, 8)).toBeNull();
     });
 });

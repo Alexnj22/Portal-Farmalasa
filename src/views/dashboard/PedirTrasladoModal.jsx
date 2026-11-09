@@ -407,6 +407,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             color: no alcanza (rojo, frena), alcanza pero deja a
                             la sala corta (ámbar, INFORMA y no impide —decisión
                             del usuario 2026-08-06—), y alcanza sin más (gris). */}
+                        <AvisoPedido aviso={avisos.minimoBodega} />
                         <AvisoPedido aviso={avisos.existencia} />
 
                         {/* Ninguna presentación entra ni una vez en lo que la

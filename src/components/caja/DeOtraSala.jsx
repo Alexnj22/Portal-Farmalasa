@@ -10,7 +10,7 @@ import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 export default function DeOtraSala({ producto, factor, cantidad, disponibles = null, apiRef, onCambio,
     rotulo = null, opcionNo = { titulo: 'No pedir: encargar a Compras', detalle: 'Compras confirma el precio y la fecha' } }) {
     const productoInicial = useMemo(() => ({ erp_product_id: producto.id, descripcion: producto.nombre }), [producto.id, producto.nombre]);
-    const h = usePedirTraslado({ productoInicial });
+    const h = usePedirTraslado({ productoInicial, aplicarMinimoDeBodega: false });
     const { setCantidad, setPresIdx, setOrigenId, presentaciones } = h;
     const necesita = cantidad * factor;
     // Sólo el estante de operación (lo próximo a vencer no se aparta) y sólo quien alcanza.

@@ -5,7 +5,7 @@ import { supabase } from '../supabaseClient';
 import { fetchAllRows } from '../utils/supabaseUtils';
 import { buscarIdsDeProducto } from './busquedaProductos';
 import { conBitacora } from './audit';
-import { payloadDeRegla } from '../utils/reglasDeDespacho';
+import { payloadDeRegla, minimoDeDespacho } from '../utils/reglasDeDespacho';
 
 // keepIdPresentacion: la regla ya configurada puede apuntar a una presentación
 // que desde entonces se marcó activo=false en el catálogo — igual debe listarse
@@ -175,4 +175,19 @@ export async function fetchReglaDeProducto(productId) {
         .eq('erp_product_id', productId).maybeSingle();
     if (error) throw error;
     return data ? { ...data, dispatch_tipo: data.presentaciones?.tipo ?? null } : null;
+}
+
+/**
+ * Lo menos que Bodega envía de este producto (`minimoDeDespacho`), o `null`
+ * si no tiene regla. Lanza si no se pudo leer: «no sé» no es «sin regla».
+ * El factor más grande gana, igual que `dispatch_pres_factor` del pedido.
+ */
+export async function fetchMinimoDeDespacho(productId) {
+    const regla = await fetchReglaDeProducto(productId);
+    if (!regla?.dispatch_id_presentacion) return null;
+    const { data, error } = await supabase.from('product_precios').select('factor')
+        .eq('product_id', productId).eq('id_presentacion', regla.dispatch_id_presentacion)
+        .order('factor', { ascending: false }).limit(1);
+    if (error) throw error;
+    return minimoDeDespacho(regla, data?.[0]?.factor);
 }

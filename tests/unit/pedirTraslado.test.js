@@ -31,3 +31,16 @@ describe('avisosDelPedido', () => {
         expect(avisosDelPedido(base).paraQue).toBeNull();
     });
 });
+
+describe('el mínimo de envío de Bodega', () => {
+    const minimoBodega = { unidades: 10, texto: '1 CAJA' };
+    const blister = { tipo: 'BLISTER', factor: 2 };
+    it('dice cuánto es lo mínimo en la presentación elegida', () => {
+        const a = avisosDelPedido({ ...base, pres: blister, cantidad: '2', unidades: 4, minimoBodega, bajoMinimoBodega: true }).minimoBodega;
+        expect(a.tono).toBe('danger');
+        expect(a.texto).toBe('Bodega lo envía de a 1 CAJA (10 unidades). Lo mínimo que puedes pedir es 5 BLISTER.');
+    });
+    it('calla cuando se pide lo suficiente', () => {
+        expect(avisosDelPedido({ ...base, minimoBodega, bajoMinimoBodega: false }).minimoBodega).toBeNull();
+    });
+});

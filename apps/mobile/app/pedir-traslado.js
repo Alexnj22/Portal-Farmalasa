@@ -139,6 +139,7 @@ export default function PedirTraslado() {
                 <View style={{ flex: 1 }}><Campo multiline={false} value={String(cantidad)} onChangeText={(v) => setCantidad(v.replace(/\D/g, ''))} keyboardType="number-pad" style={{ textAlign: 'center', fontSize: 20, fontWeight: '700' }} /></View>
                 <BotonPaso texto="+" onPress={() => setCantidad(String(Number(cantidad || 0) + 1))} />
               </View>
+              <AvisoPedido aviso={avisos.minimoBodega} />
               <AvisoPedido aviso={avisos.existencia} />
               <AvisoPedido aviso={avisos.ningunaAlcanza} />
               {avisoVence ? <Aviso tono={avisoVence.grave ? 'freno' : 'cuidado'} texto={avisoVence.texto} /> : null}

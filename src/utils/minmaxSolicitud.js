@@ -54,6 +54,19 @@ export function ajusteSinCambio(actual, pedidoMin, pedidoMax) {
 }
 
 /**
+ * Por qué este par no sirve con la regla de envío de Bodega, con su sugerencia;
+ * `null` si sirve. Es el MAX el que manda: la sala se repone hasta ahí, así que
+ * un MAX menor a lo que Bodega envía pide algo que no le puede llegar. El 0 · 0
+ * queda libre porque apaga el producto: no pide nada.
+ */
+export function avisoDeEnvioMinMax(minimo, pedidoMin, pedidoMax) {
+    if (!minimo?.unidades || !parMinMaxValido(pedidoMin, pedidoMax)) return null;
+    if ((pedidoMin === 0 && pedidoMax === 0) || pedidoMax >= minimo.unidades) return null;
+    const n = minimo.unidades;
+    return `Bodega envía este producto de a ${minimo.texto} (${n} ${n === 1 ? 'unidad' : 'unidades'}): con MAX ${pedidoMax} no le llegaría a la sala. Sugerencia: pon MAX ${n} o más; si ya no debe reponerse, deja MIN 0 y MAX 0.`;
+}
+
+/**
  * La última venta, dicha de las dos formas que hacen falta a la vez: la fecha
  * —para poder ir a buscarla— y hace cuánto —que es lo que uno decide leyendo—.
  *

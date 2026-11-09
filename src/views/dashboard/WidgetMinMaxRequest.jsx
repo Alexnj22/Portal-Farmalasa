@@ -14,9 +14,10 @@ import {
 } from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES } from '../productos/tabminmax/constants';
 import { effectiveMinMaxPair } from '@nucleo/data/stockParams';
+import { fetchMinimoDeDespacho } from '@nucleo/data/dispatchRules';
 import { parMinMaxValido, motivosQueExigenExplicacion, ajusteSinCambio, fmtUltimaVenta, solicitudDeMinMax, mensajeDeMinMax } from '@nucleo/utils/minmaxSolicitud';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { presentacionDominante, equivalenteEnCajas, presentacionesDelProducto } from '@nucleo/utils/minmaxSolicitud';
+import { presentacionDominante, equivalenteEnCajas, presentacionesDelProducto, avisoDeEnvioMinMax } from '@nucleo/utils/minmaxSolicitud';
 
 // La presentación de referencia y su equivalente: núcleo (`minmaxSolicitud`), lo mismo de la app.
 const dominantPres = presentacionDominante;
@@ -45,6 +46,17 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
     return () => { cancelled = true; };
   }, [product.id]);
   const domPres = dominantPres(pres);
+
+  // Lo menos que Bodega envía de este producto. undefined = todavía no se sabe.
+  const [envio, setEnvio] = useState(undefined);   // { minimo } | { fallo: true }
+  useEffect(() => {
+    let cancelled = false;
+    setEnvio(undefined);
+    fetchMinimoDeDespacho(product.id)
+      .then(minimo => { if (!cancelled) setEnvio({ minimo }); })
+      .catch(() => { if (!cancelled) setEnvio({ fallo: true }); });
+    return () => { cancelled = true; };
+  }, [product.id]);
 
   // Carga el min/max efectivo actual (manual ?? calculado) al elegir sucursal,
   // junto con el contexto de venta. Las dos consultas van en paralelo y el
@@ -108,7 +120,9 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
   // poder empezar.
   const productoOculto = !!current?.oculto;
   const sinCambio      = !loadingCur && !productoOculto && ajusteSinCambio(current, nMin, nMax);
-  const bloqueado      = productoOculto || sinCambio;
+  const avisoEnvio     = avisoDeEnvioMinMax(envio?.minimo, nMin, nMax);
+  const envioSinLeer   = envio === undefined || !!envio?.fallo;
+  const bloqueado      = productoOculto || sinCambio || !!avisoEnvio || envioSinLeer;
 
   const submit = async () => {
     setErr('');
@@ -128,6 +142,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
       setErr(`${ERP_NAMES[Number(erp)] || 'La sucursal'} ya está en MIN ${newMin} · MAX ${newMax}: esta solicitud no cambiaría nada.`);
       return;
     }
+    if (avisoEnvio) { setErr(avisoEnvio); return; }
     // Acá SÍ se evalúa con lo que haya: si el MIN·MAX de hoy no llegó, `current`
     // es null y eso ya es una razón («todavía no tiene»). Callarse cuando no se
     // sabe sería justo al revés.
@@ -339,6 +354,9 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
               : '.'} Esta solicitud no cambiaría nada.
           </Notice>
         )}
+
+        {avisoEnvio && <Notice variant="danger" icon={Package}>{avisoEnvio}</Notice>}
+        {envio?.fallo && <Notice variant="danger">No se pudo comprobar cómo envía Bodega este producto. Vuelve a abrirlo para reintentar.</Notice>}
 
         {/* El aviso del 0 · 0 se calla cuando el producto YA está apagado: ahí
             «deja de reponerse … no vuelve a entrar en los pedidos» sería falso

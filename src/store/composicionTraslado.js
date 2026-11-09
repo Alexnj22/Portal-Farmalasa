@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { repartirPedido } from '../utils/unidadesInventario';
 import { saveDraft, loadDraft, clearDraft } from '../utils/draftUtils';
+import { envioDeBodega } from '../utils/reglasDeDespacho';
 
 // La solicitud que se está armando, viva por fuera del modal que la arma.
 // Plan completo: `docs/planes-cerrados/PLAN-SOLICITUD-A-VARIAS-SALAS-2026-08-20.md`.
@@ -57,6 +58,7 @@ function recalcular(r, cambios) {
         // renglón y no se recalcula al pintar: lo que frena el envío y lo que se
         // lee en la tarjeta tienen que ser el mismo juicio.
         problema: cant <= 0 ? 'sin cantidad'
+            : (r.minimoBodega && unid < r.minimoBodega.unidades) ? envioDeBodega(r.minimoBodega)
             : unid > Number(r.origen.unidades ?? 0) ? `${r.origen.sala} tiene ${r.origen.unidades}`
             : (lotes.length > 0 && faltan > 0) ? `faltan ${faltan} en los lotes`
             : null,

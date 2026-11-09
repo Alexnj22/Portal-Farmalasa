@@ -20,6 +20,8 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscarProductosMinMax, fetchCurrentStockParams, fetchMinMaxContextoVenta, fetchProductPreciosForMinMax, insertMinMaxChangeRequest } from '@nucleo/data/minmaxRequests';
 import { effectiveMinMaxPair } from '@nucleo/data/stockParams';
+import { fetchMinimoDeDespacho } from '@nucleo/data/dispatchRules';
+import { avisoDeEnvioMinMax } from '@nucleo/utils/minmaxSolicitud';
 import { ajusteSinCambio, equivalenteEnCajas, presentacionDominante, presentacionesDelProducto, fmtUltimaVenta, mensajeDeMinMax, motivosQueExigenExplicacion, parMinMaxValido, solicitudDeMinMax } from '@nucleo/utils/minmaxSolicitud';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
@@ -90,6 +92,17 @@ export default function MinMax() {
     Promise.resolve(fetchProductPreciosForMinMax(producto.id)).then(({ data }) => { if (vivo) setPres(presentacionesDelProducto(data)); }).catch(() => {});
     return () => { vivo = false; };
   }, [producto]);
+  // Lo menos que Bodega envía de este producto. undefined = todavía no se sabe.
+  const [envio, setEnvio] = useState(undefined);   // { minimo } | { fallo: true }
+  useEffect(() => {
+    if (!producto) { setEnvio(undefined); return undefined; }
+    let vivo = true;
+    setEnvio(undefined);
+    fetchMinimoDeDespacho(producto.id)
+      .then((minimo) => { if (vivo) setEnvio({ minimo }); })
+      .catch(() => { if (vivo) setEnvio({ fallo: true }); });
+    return () => { vivo = false; };
+  }, [producto]);
   const caja = presentacionDominante(pres);
   const enCajas = (n) => equivalenteEnCajas(n, pres);
 
@@ -100,7 +113,9 @@ export default function MinMax() {
   const parValido = nMin != null && nMax != null && parMinMaxValido(nMin, nMax);
   const sinCambio = !cargando && !oculto && parValido && ajusteSinCambio(actual, nMin, nMax);
   const exigen = useMemo(() => (cargando || !parValido ? [] : motivosQueExigenExplicacion(actual, nMin, nMax)), [cargando, parValido, actual, nMin, nMax]);
-  const puedeEnviar = !!producto && erp && !cargando && !oculto && parValido && !sinCambio && (!exigen.length || motivo.trim());
+  const avisoEnvio = avisoDeEnvioMinMax(envio?.minimo, nMin, nMax);
+  const envioSinLeer = envio === undefined || !!envio?.fallo;
+  const puedeEnviar = !!producto && erp && !cargando && !oculto && parValido && !sinCambio && !avisoEnvio && !envioSinLeer && (!exigen.length || motivo.trim());
 
   const enviar = async () => {
     setEnviando(true); trabajando('Enviando el ajuste…');
@@ -168,6 +183,8 @@ export default function MinMax() {
                     {nMin != null && nMax != null && !parValido ? (
                       <Aviso tono="cuidado" texto={nMin === 0 ? 'Con el MIN en 0, el MAX sólo puede ser 0 (deja de reponerse) o 1.' : 'El MAX debe ser mayor que el MIN.'} />
                     ) : null}
+                    {avisoEnvio ? <Aviso tono="freno" texto={avisoEnvio} /> : null}
+                    {envio?.fallo ? <Aviso tono="freno" texto="No se pudo comprobar cómo envía Bodega este producto. Vuelve a abrirlo para reintentar." /> : null}
                     {sinCambio ? <Aviso tono="cuidado" texto={`${sala} ya está en MIN ${nMin} · MAX ${nMax}: no cambiaría nada.`} /> : null}
                   </Seccion>
                   <Seccion titulo={exigen.length ? 'Motivo (obligatorio)' : 'Motivo (opcional)'}>

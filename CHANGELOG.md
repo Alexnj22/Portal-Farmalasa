@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1491.0 — Bodega: no se pide menos de lo que envía
+
+Al pedirle un producto a Bodega ya no se puede solicitar menos de lo que su regla permite enviar; el formulario dice cuál es el mínimo. El ajuste de MIN y MAX tampoco acepta un MAX menor a ese envío, con aviso y sugerencia (MIN 0 y MAX 0 sigue permitido).
+
 ## v2.1490.2 — App de clientes: historias junto al saludo
 
 En el Inicio de la app, las historias pasan a la par del saludo, en círculos más chicos.

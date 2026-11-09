@@ -3,6 +3,7 @@
 // Vivía dentro de `PedirTrasladoModal`; salió al núcleo para que la app del
 // teléfono arme la MISMA solicitud (F8, docs/PLAN-NUCLEO-PORTABLE-2026-09-24.md).
 import { diasEntre, fechaTexto, hoySV } from './fecha';
+import { envioDeBodega } from './reglasDeDespacho';
 
 /**
  * De dónde sale el producto, dicho con una sola cadena.
@@ -49,10 +50,11 @@ const u = (n) => (Number(n) === 1 ? 'unidad' : 'unidades');
  *   repetido       — el mismo producto al mismo estante dos veces
  *   conProblema    — renglones de la lista que no se pueden mandar así
  *   paraQue        — falta decir para qué se pide
+ *   minimoBodega   — lo pedido es menos de lo que Bodega envía de este producto
  */
 export function avisosDelPedido(t) {
     const { pres, cantidad, sala, unidades, opcionesPres = [], ningunaAlcanza, faltan, descartados,
-        lotesDeSala = [], aMedias, renglones = [], producto, yaEstaEnLaLista, conProblema = [], faltaElParaQue } = t;
+        lotesDeSala = [], aMedias, renglones = [], producto, yaEstaEnLaLista, conProblema = [], faltaElParaQue, minimoBodega, bajoMinimoBodega, reglaBodegaFallo } = t;
     let existencia = null;
     if (pres && Number(cantidad) > 0 && sala) {
         if (unidades > Number(sala.unidades ?? 0)) {
@@ -75,7 +77,17 @@ export function avisosDelPedido(t) {
         const suman = lotesDeSala.reduce((s, l) => s + Number(l.unidades ?? 0), 0);
         lotes = { tono: 'danger', texto: `Los lotes de ${sala?.sala ?? 'esa sala'} suman ${suman} unidades, menos que las ${unidades} que pides. Baja la cantidad.` };
     }
+    let minimo = null;
+    if (reglaBodegaFallo) {
+        minimo = { tono: 'danger', texto: 'No se pudo comprobar cómo envía Bodega este producto. Cierra y vuelve a abrir para reintentar.' };
+    } else if (bajoMinimoBodega && pres) {
+        const minimoCant = Math.ceil(minimoBodega.unidades / (Number(pres.factor) || 1));
+        const noHay = Number(sala?.unidades ?? 0) < minimoBodega.unidades
+            ? ` Hoy tiene ${sala?.unidades ?? 0}: no alcanza para un envío.` : '';
+        minimo = { tono: 'danger', texto: `${envioDeBodega(minimoBodega)}. Lo mínimo que puedes pedir es ${minimoCant} ${String(pres.tipo ?? '').trim()}.${noHay}` };
+    }
     return {
+        minimoBodega: minimo,
         existencia,
         ningunaAlcanza: ninguna,
         lotes,

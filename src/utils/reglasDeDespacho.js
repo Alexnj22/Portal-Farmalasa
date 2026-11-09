@@ -79,3 +79,22 @@ export function rotuloDeRegla(rule) {
     if (rule.multiplo_unidades != null) return `×${rule.multiplo_unidades}u`;
     return 'Solo cajas';
 }
+
+/**
+ * Lo menos que Bodega puede enviar de un producto, según su regla: la
+ * presentación por su múltiplo. `factor` es el de la presentación de la regla.
+ * `null` = sin regla, o una regla de la que no se puede sacar la cuenta.
+ * Con etiqueta, el múltiplo ES el bulto («1 CAJA» de 24), igual que en el pedido.
+ */
+export function minimoDeDespacho(regla, factor) {
+    const f = Number(factor);
+    if (!regla?.dispatch_id_presentacion || !(f > 0)) return null;
+    const mult = Number(regla.dispatch_multiplo) > 0 ? Number(regla.dispatch_multiplo) : 1;
+    const tipo = String(regla.dispatch_label || regla.dispatch_tipo || 'presentación').trim();
+    return { unidades: f * mult, texto: `${regla.dispatch_label ? 1 : mult} ${tipo}` };
+}
+
+/** «Bodega lo envía de a 1 CAJA (10 unidades)»: la explicación que ve la sala. */
+export function envioDeBodega(minimo) {
+    return `Bodega lo envía de a ${minimo.texto} (${minimo.unidades} ${minimo.unidades === 1 ? 'unidad' : 'unidades'})`;
+}

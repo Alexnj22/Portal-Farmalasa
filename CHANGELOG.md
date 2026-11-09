@@ -23,7 +23,8 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1485.1 — Todos los avisos siguen al apoyo
 
-_(pendiente de redactar)_
+- Los avisos automáticos, las notificaciones al teléfono y los comunicados por
+  sala o cargo llegan según la sala y el cargo que la persona cubre esos días.
 
 ## v2.1485.0 — App de clientes: volver a pedir desde Inicio, mismo principio activo y mosaicos por necesidad
 

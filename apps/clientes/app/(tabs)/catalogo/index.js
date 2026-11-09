@@ -185,8 +185,6 @@ export default function Catalogo() {
   ), [q, texto, t]);
   const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>
-      <Image source={require('../../../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
-        style={{ width: 190, height: 26, marginLeft: 4, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos productos={ahorro} /> : null}
       {/* Debajo del banner (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
@@ -232,7 +230,8 @@ export default function Catalogo() {
           onChangeText: (e) => setTexto(e.nativeEvent.text ?? ''),
           onCancelButtonPress: () => setTexto(''),
         },
-        headerRight: () => (
+        // A la izquierda: la derecha es de la campana del encabezado.
+        headerLeft: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
             {lejos ? (
           <Presionable onPress={arriba} hitSlop={8} accessibilityRole="button" accessibilityLabel="Volver arriba"

@@ -97,7 +97,19 @@ export default function Historias({ generacion = 0, compacta = false }) {
     return nuevo;
   });
 
-  if (!lista.length) return null;
+  // PLACEHOLDER TEMPORAL (2026-11-09, para ver el acomodo): sin historias reales.
+  if (!lista.length) {
+    if (!compacta) return null;
+    return (
+      <View style={{ flexDirection: 'row', gap: 8, marginLeft: 10 }}>
+        {[1, 2, 3].map((n) => (
+          <LinearGradient key={n} colors={['#FFD60A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 2, borderRadius: 40 }}>
+            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: t.oscuro ? '#2A2630' : '#FFFFFF' }} />
+          </LinearGradient>
+        ))}
+      </View>
+    );
+  }
   // Las sin ver primero.
   const orden = [...lista].sort((a, b) => Number(vistas.has(String(a.id))) - Number(vistas.has(String(b.id))));
 

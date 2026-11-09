@@ -27,7 +27,7 @@ import { Regalo } from '../../../componentes/IlustracionesInicio';
 import { useVisible } from '../../../lib/visible';
 import { BarraAnimada, Confeti, Entrada, Tocable } from '../../../componentes/animacion';
 import { useConCodigo, useSesion } from '../../../lib/sesion';
-import { alLlegarAviso, sincronizarAvisos } from '../../../lib/avisos';
+import { sincronizarAvisos } from '../../../lib/avisos';
 import { cuponDePrueba, nivelDePrueba, raspableDePrueba, useModoPrueba } from '../../../lib/prueba';
 import { resumenConDemo, useDemo } from '../../../lib/demo';
 import { BotonWalletNativo, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, googleWalletYaAgregada, marcarGoogleWalletAgregada, serieEnWallet, walletDisponible } from '../../../modules/wallet';
@@ -154,7 +154,7 @@ export default function Puntos() {
     // `sinVidrio`: las tarjetas de esta lista, en el relleno del vidrio sin el
     // vidrio vivo (ver Pantalla en componentes/ui.js). La aurora de atrás
     // está quieta (puntos/_layout.js), así que se ven iguales.
-    <Pantalla alRefrescar={refrescar} refrescando={refrescando} sinVidrio sinBarra>
+    <Pantalla alRefrescar={refrescar} refrescando={refrescando} sinVidrio>
       {enPrueba ? (
         <Presionable onPress={() => navegar('/cuenta')} accessibilityRole="button" hitSlop={{ top: 10, bottom: 10, left: 4, right: 4 }}
           accessibilityLabel="Modo de prueba activo. Cambiarlo en Cuenta" accessibilityHint="Abre Cuenta, donde se elige el nivel de prueba"
@@ -163,12 +163,6 @@ export default function Puntos() {
           <Text style={{ flexShrink: 1, fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Presionable>
       ) : null}
-      {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
-      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
-        <Image source={require('../../../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
-          style={{ width: 190, height: 26, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
-        <Campana generacion={generacion} />
-      </Entrada>
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel || false} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
         forzarRango={verRango || false} forzarPrecio={verPrecio || false} forzarBienvenida={verMayoreo || false} forzarTuNivel={verTuNivel || false} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
@@ -487,54 +481,6 @@ function BotonGoogleWallet({ id, nivelPrueba }) {
       <Text style={{ flexShrink: 1, color: '#FFFFFF', fontSize: 16, fontWeight: '600' }}>
         {cargando ? 'Preparando…' : 'Agregar a Google Wallet'}
       </Text>
-    </Presionable>
-  );
-}
-
-// La campana: abre la bandeja; el número son los avisos sin leer.
-let campanaAt = 0;
-let campanaUltimo = 0;
-let campanaGen = -1;
-// Al cerrar sesión la campana vuelve a cero (2026-11-04): el número es de
-// módulo y sobrevivía a la sesión — quien entraba después veía, hasta la
-// próxima consulta, los avisos sin leer de la cuenta anterior.
-useSesion.subscribe((s, antes) => {
-  if (antes.token && !s.token) { campanaUltimo = 0; campanaAt = 0; campanaGen = -1; }
-});
-function Campana({ generacion }) {
-  const t = useTema();
-  const pedir = useSesion((s) => s.pedir);
-  const [sinLeer, setSinLeer] = useState(campanaUltimo);
-  // Al volver a la pestaña, a lo sumo una vez por minuto; con un resumen nuevo
-  // (deslizar para refrescar), siempre.
-  useFocusEffect(useCallback(() => {
-    if (generacion === campanaGen && Date.now() - campanaAt < 60_000) return;
-    campanaGen = generacion; campanaAt = Date.now();
-    pedir('bandeja').then((r) => { if (r?.ok) { campanaUltimo = r.sin_leer ?? 0; setSinLeer(campanaUltimo); } });
-  }, [pedir, generacion]));
-  // Un aviso que llega con la app abierta suma uno al instante, sin esperar
-  // al minuto de la próxima consulta.
-  // Sólo los push que van a la BANDEJA (2026-11-04): traen `tipo` y no son
-  // del chat (el chat tiene su propio punto y no entra a la bandeja). Los
-  // recordatorios de toma son locales y sin `tipo`: antes cada uno sumaba.
-  useEffect(() => alLlegarAviso((a) => {
-    if (!a?.tipo || a.tipo === 'chat') return;
-    campanaUltimo += 1; setSinLeer(campanaUltimo);
-  }), []);
-  // Abrir la bandeja los marca leídos: la campana se apaga ya, no al minuto.
-  const abrirBandeja = () => { campanaUltimo = 0; setSinLeer(0); navegar('/notificaciones'); };
-  return (
-    <Presionable onPress={abrirBandeja} hitSlop={10} accessibilityRole="button"
-      accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)', transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-      <Icono sf={sinLeer ? 'bell.badge' : 'bell'} respaldo="🔔" tam={21} color={t.color.magentaTexto} />
-      {sinLeer ? (
-        <View style={{ position: 'absolute', top: 4, right: 4, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4,
-          backgroundColor: colorSistema.rojo, alignItems: 'center', justifyContent: 'center' }}>
-          <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFF', fontSize: 11, fontWeight: '800' }}>{sinLeer > 9 ? '9+' : sinLeer}</Text>
-        </View>
-      ) : null}
     </Presionable>
   );
 }

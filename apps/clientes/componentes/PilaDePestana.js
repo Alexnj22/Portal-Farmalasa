@@ -10,12 +10,14 @@
 // OPACAS, en la superficie de Material 3 (`colorSistema.fondo`): la barra es
 // la «top app bar» chica de Material —título a la izquierda, 22 sp, flecha
 // de volver—, sin títulos grandes ni transparencias.
-import { Platform, useColorScheme, View } from 'react-native';
+import { Image, Platform, useColorScheme, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import Aurora from './Aurora';
+import Campana from './Campana';
 import { colorSistema } from './sistema';
 import { useVisible } from '../lib/visible';
+import { useTema } from '../tema/tema';
 
 const ANDROID = Platform.OS === 'android';
 const IOS26 = Platform.OS === 'ios' && isLiquidGlassAvailable();
@@ -62,6 +64,16 @@ export function barraAndroid(principal = false) {
 // desplaza. `auroraQuieta={false}` la vuelve a animar en una pestaña concreta.
 // `sinBarra` (2026-10-20, Inicio): sin barra de título; la pantalla pone su
 // propio encabezado (ver `Pantalla`).
+// El encabezado de marca (2026-11-09): logo centrado y campana en cada pestaña.
+function LogoEncabezado() {
+  const t = useTema();
+  return (
+    <Image source={require('../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
+      style={{ width: 150, height: 22, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
+  );
+}
+const ENCABEZADO_MARCA = { headerTitle: () => <LogoEncabezado />, headerTitleAlign: 'center', headerRight: () => <Campana /> };
+
 export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = false }) {
   useColorScheme();
   // La aurora de esta pestaña sólo se mueve mientras se ve.
@@ -70,7 +82,7 @@ export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = 
     return (
       <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
         <Stack screenOptions={barraAndroid(true)}>
-          <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra }} />
+          <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra, ...ENCABEZADO_MARCA }} />
         </Stack>
       </View>
     );
@@ -78,8 +90,8 @@ export default function PilaDePestana({ titulo, auroraQuieta = true, sinBarra = 
   return (
     <View style={{ flex: 1 }}>
       <Aurora activa={visible} />
-      <Stack screenOptions={{ headerLargeTitle: Platform.OS === 'ios', contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
-        <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra }} />
+      <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
+        <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra, ...ENCABEZADO_MARCA }} />
       </Stack>
     </View>
   );

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.0 — App de clientes: encabezado con logo centrado y campana
+
+Las pestañas de la app llevan el logo centrado y la campana en el encabezado. Se agregan círculos de muestra para ver las historias junto al saludo.
+
 ## v2.1491.0 — Bodega: no se pide menos de lo que envía
 
 Al pedirle un producto a Bodega ya no se puede solicitar menos de lo que su regla permite enviar; el formulario dice cuál es el mínimo. El ajuste de MIN y MAX tampoco acepta un MAX menor a ese envío, con aviso y sugerencia (MIN 0 y MAX 0 sigue permitido).

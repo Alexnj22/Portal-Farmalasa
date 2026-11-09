@@ -969,8 +969,11 @@ function Rafaga({ v }) {
 
 const estilos = StyleSheet.create({
   cara: { borderRadius: RADIO, overflow: 'hidden', backfaceVisibility: 'hidden' },
-  placa: { position: 'absolute', top: '3%', bottom: '3%', left: '4%', right: '4%' },
-  sombra: { shadowColor: '#2B0B3A', shadowRadius: 22, borderRadius: 22 },
+  // Metida 8 % (2026-11-09, «al inclinarlo en las esquinas se ve el fondo»): con
+  // la cara ladeada en los dos ejes, la esquina que se aleja se encoge ~5 % y
+  // dejaba ver la placa, plana y del color del nivel.
+  placa: { position: 'absolute', top: '8%', bottom: '8%', left: '8%', right: '8%' },
+  sombra: { shadowColor: '#2B0B3A', shadowRadius: 26, borderRadius: 22 },
   contenido: { flex: 1, paddingHorizontal: 18, paddingVertical: 14, justifyContent: 'space-between' },
   // Sombras de texto marcadas (2026-10-09): sobre metal claro (plata, oro) los
   // textos casi no se distinguían.

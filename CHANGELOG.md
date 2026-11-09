@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.10 — App de clientes: esquinas de la tarjeta al inclinarla
+
+Al inclinar la tarjeta de socio ya no asoma el color de fondo por las esquinas.
+
 ## v2.1492.9 — App de clientes: corrige las historias
 
 Corrige un error en la fila de historias de Inicio antes de publicarla.

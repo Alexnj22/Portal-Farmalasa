@@ -10,7 +10,8 @@
 // 2026-10-15: «¿Dónde lo hay?» cuenta por lo que se va a pedir (presentación ×
 // cantidad), dice si la sucursal está abierta y a cuánto queda.
 import { useEffect, useState } from 'react';
-import { Alert, Linking, ScrollView, Text, View } from 'react-native';
+import { Alert, Linking, Modal, ScrollView, Text, View } from 'react-native';
+import { Image as ImagenFicha } from 'expo-image';
 import Presionable from '../../componentes/Presionable';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import EncargoHoja from '../../componentes/EncargoHoja';
@@ -43,6 +44,7 @@ export default function Producto() {
   // Lo que se va a agregar: la presentación (por factor) y cuántas.
   const [sel, setSel] = useState(null);
   const [cant, setCant] = useState(1);
+  const [fotoGrande, setFotoGrande] = useState(false);
   const [encargando, setEncargando] = useState(false);
   // «Preguntar a la farmacia» (2026-10-13): sólo con sesión (el chat cuelga de la ficha).
   const conSesion = useSesion((s) => !!s.token);
@@ -122,27 +124,40 @@ export default function Producto() {
 
   return (
     <View style={{ flex: 1, backgroundColor: fondo }}>
+      <Modal visible={fotoGrande} transparent animationType="fade" onRequestClose={() => setFotoGrande(false)}>
+        <Presionable onPress={() => setFotoGrande(false)} accessibilityRole="button" accessibilityLabel="Cerrar foto" style={{ flex: 1, backgroundColor: '#FFFFFF', padding: 24 }}>
+          <ImagenFicha source={{ uri: p.foto }} contentFit="contain" style={{ flex: 1 }} accessibilityIgnoresInvertColors />
+        </Presionable>
+      </Modal>
       <ScrollView contentContainerStyle={{ paddingBottom: ins.bottom + 110 }}
         // Jalar hacia abajo estando arriba del todo también la cierra: el gesto de la
         // hoja a veces se lo queda el ScrollView (2026-10-07).
         onScrollEndDrag={(e) => { if (e.nativeEvent.contentOffset.y < -80) router.back(); }} scrollEventThrottle={16}>
-        <View style={{ padding: 16, paddingTop: 20 }}>
-          <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={240} radio={24} grande />
+        {/* Foto al lado del nombre (2026-11-09): el cuadro grande dejaba mucho blanco
+            y empujaba precio y existencias hacia abajo. Tocarla la amplía. */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, paddingHorizontal: 16, paddingTop: 20, paddingBottom: 12 }}>
+          <Presionable disabled={!p.foto} onPress={() => setFotoGrande(true)} accessibilityRole={p.foto ? 'imagebutton' : undefined} accessibilityLabel={p.foto ? `Ampliar foto de ${nombre}` : undefined}
+            style={({ pressed }) => ({ width: 120, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+            <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={120} radio={20} />
+          </Presionable>
+          {/* A la derecha deja libre la esquina de la X de la hoja. */}
+          <View style={{ flex: 1, gap: 5, paddingRight: 30 }}>
+            {p.bajo_receta ? (
+              <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4,
+                backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) }}>
+                <Icono sf="doc.text.fill" respaldo="" tam={11} color={t.color.magentaTexto} />
+                <Text style={{ fontSize: 12, fontWeight: '800', color: t.color.magentaTexto }}>Bajo Receta</Text>
+              </View>
+            ) : null}
+            <Text style={{ fontSize: 22, lineHeight: 26, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.3 }}>{nombre}</Text>
+            {p.principio_activo ? (
+              <Text numberOfLines={3} style={{ fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>{nombreProducto(p.principio_activo)}</Text>
+            ) : null}
+            {p.laboratorio ? <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>{nombreProducto(p.laboratorio)}</Text> : null}
+          </View>
         </View>
 
         <View style={{ paddingHorizontal: 20, gap: 8 }}>
-          {p.bajo_receta ? (
-            <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 6, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4,
-              backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) }}>
-              <Icono sf="doc.text.fill" respaldo="" tam={11} color={t.color.magentaTexto} />
-              <Text style={{ fontSize: 12, fontWeight: '800', color: t.color.magentaTexto }}>Bajo Receta</Text>
-            </View>
-          ) : null}
-          <Text style={{ fontSize: 26, fontWeight: '800', color: colorSistema.texto, letterSpacing: -0.4 }}>{nombre}</Text>
-          {p.principio_activo ? (
-            <Text style={{ fontSize: 15, lineHeight: 21, color: colorSistema.texto2 }}>{nombreProducto(p.principio_activo)}</Text>
-          ) : null}
-          {p.laboratorio ? <Text style={{ fontSize: 13, fontWeight: '600', color: colorSistema.texto3 }}>{nombreProducto(p.laboratorio)}</Text> : null}
           {/* Abre el chat con este producto ya puesto sobre la barra (2026-10-13). */}
           {conSesion ? (
             <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.back(); setTimeout(() => navegar(`/chat?producto=${p.id}`), 300); }}

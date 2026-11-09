@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1497.1 — Ficha del producto con la foto al lado del nombre
+
+- App de clientes: la ficha del producto lleva la foto en un cuadro pequeño al lado del nombre; al tocarla se amplía.
+
 ## v2.1497.0 — Laboratorios: familias unidas y ocultar en la app
 
 - Laboratorios: interruptor «Ocultar de la lista en la app» para lo que no es un laboratorio; sus productos siguen a la venta.

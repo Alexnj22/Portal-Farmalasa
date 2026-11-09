@@ -7833,6 +7833,68 @@ export type Database = {
           },
         ]
       }
+      compra_renglon_particion: {
+        Row: {
+          creado_por: string | null
+          created_at: string
+          document_id: number | null
+          emisor_nit: string
+          id: number
+          llave: string
+          partes: Json
+          updated_at: string
+        }
+        Insert: {
+          creado_por?: string | null
+          created_at?: string
+          document_id?: number | null
+          emisor_nit: string
+          id?: never
+          llave: string
+          partes: Json
+          updated_at?: string
+        }
+        Update: {
+          creado_por?: string | null
+          created_at?: string
+          document_id?: number | null
+          emisor_nit?: string
+          id?: never
+          llave?: string
+          partes?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "compra_renglon_particion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_particion_creado_por_fkey"
+            columns: ["creado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_particion_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "compra_deuda_documentos"
+            referencedColumns: ["document_id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_particion_document_id_fkey"
+            columns: ["document_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_dte_documents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       compra_renglon_pendiente: {
         Row: {
           codigo_proveedor: string | null
@@ -36034,6 +36096,15 @@ export type Database = {
       guardar_minmax_desde_pedido: {
         Args: { p_max: number; p_min: number; p_pedido_item_id: number }
         Returns: Json
+      }
+      guardar_particion_renglon: {
+        Args: {
+          p_document_id?: number
+          p_emisor_nit: string
+          p_llave: string
+          p_partes: Json
+        }
+        Returns: undefined
       }
       guardar_principios_activos: {
         Args: { p_filas: Json; p_product_id: number; p_texto: string }

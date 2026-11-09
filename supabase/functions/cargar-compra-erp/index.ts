@@ -36,6 +36,7 @@ import {
   lineaDelSobre, pistasDeDiferencia, tipoDocDe, totalDelDocumento, totalesDelSobre, encabezadoDelDocumento, leerModelo, sobreDeProductoNuevo, repartirRegalos, factorDescuentoDeFactura,
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
+import { aplicarParticiones } from "../_shared/particionRenglon.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import {
   devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
@@ -2364,8 +2365,19 @@ Deno.serve(async (req: Request) => {
       if (eB || !blob) throw new Error(`No se pudo leer el archivo: ${eB?.message}`);
       dte = desenvolver(JSON.parse(await blob.text()));
     }
-    const items: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
-    if (!items.length) return responder({ error: "El documento no trae renglones." }, 400);
+    const crudos: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
+    if (!crudos.length) return responder({ error: "El documento no trae renglones." }, 400);
+    // Los packs partidos (`compra_renglon_particion`). Las decisiones llegan por
+    // posición: si la regla cambió después de abrir la factura, cada una caería
+    // sobre el renglón equivocado, así que se rechaza antes de armar nada.
+    const { items, firma: particionFirma } = await aplicarParticiones(admin, crudos, d.emisor_nit, manual ? null : documentId);
+    if (String(body?.particion_firma ?? "") !== particionFirma) {
+      return responder({ error: "Cambió cómo se parte un renglón de esta factura. Vuelve a abrirla y revísala." }, 409);
+    }
+    // Una parte es de su producto y en unidades, diga lo que diga la pantalla.
+    items.forEach((it, i) => {
+      if (it?._parte) decisiones[String(i)] = { ...(decisiones[String(i)] ?? {}), product_id: it._parte.product_id, factor: 1 };
+    });
 
     // ── El sistema: sólo lecturas ────────────────────────────────────────────
     const cookie = await sesionEn(ERP_BODEGA, login);

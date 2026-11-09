@@ -108,6 +108,18 @@ export function adelantarPropuesta(documentId) {
     adelantadas.set(documentId, { t: Date.now(), promesa });
 }
 
+/**
+ * Cómo se parte un renglón (pack) de ese proveedor. `partes` vacío = entero.
+ * Con `documentId` vale sólo para esa factura; sin él, se recuerda.
+ */
+export async function guardarParticion({ emisorNit, llave, partes, documentId = null, contexto = {} }) {
+    const { error } = await supabase.rpc('guardar_particion_renglon', {
+        p_emisor_nit: emisorNit, p_llave: llave, p_partes: partes, p_document_id: documentId,
+    });
+    if (!error) anotar('COMPRA_RENGLON_PARTIDO', llave, { partes, solo_esta_factura: documentId != null, ...contexto });
+    return { error: error?.message ?? null };
+}
+
 export async function fetchPropuesta(documentId, manualId = null) {
     const ya = !manualId && adelantadas.get(documentId);
     if (ya) {
@@ -271,9 +283,9 @@ export async function buscarProductos(texto, limite = 12) {
  * del documento. Devuelve `{ sobre, revision }`; `revision.problemas` vacío
  * significa que se podría mandar.
  */
-export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito }) {
+export async function simularCarga({ documentId, manualId = null, uso, renglones, diasCredito, particionFirma = '' }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito },
+        body: { document_id: documentId, manual_id: manualId, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma },
     });
     if (error) {
         let msg = error.message;
@@ -291,9 +303,9 @@ export async function simularCarga({ documentId, manualId = null, uso, renglones
  * `enviada: true` (con `verificada` y `erp_compra_id`), `false` (no entró, se
  * puede corregir y volver a mandar) o `null` (no se sabe: NO mandar de nuevo).
  */
-export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito }) {
+export async function enviarCarga({ documentId, manualId = null, cargaId, uso, renglones, diasCredito, particionFirma = '' }) {
     const { data, error } = await supabase.functions.invoke('cargar-compra-erp', {
-        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito },
+        body: { document_id: documentId, manual_id: manualId, carga_id: cargaId, enviar: true, uso, renglones, dias_credito: diasCredito, particion_firma: particionFirma },
     });
     if (error) {
         let msg = error.message;

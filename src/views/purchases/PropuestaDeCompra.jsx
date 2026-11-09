@@ -4,7 +4,7 @@
 // necesitaba (2026-11-06, gate:bundle).
 
 import { useState, useEffect, useCallback, useMemo, useRef, Suspense, lazy } from 'react';
-import { PackagePlus, AlertTriangle, CheckCircle2, BookMarked, Search, HelpCircle, CalendarRange, Truck, Archive } from 'lucide-react';
+import { PackagePlus, AlertTriangle, CheckCircle2, BookMarked, Search, HelpCircle, CalendarRange, Truck, Archive, Split } from 'lucide-react';
 import Notice from '../../components/common/Notice';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -27,6 +27,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { ORIGEN, OTRA, ESTADO_CARGA, estadoDeCarga, fmtFecha } from './cargarCompraComun';
 import { Llegaron, BuscadorProducto } from './CargarCompraPiezas';
+import PartirRenglon from './PartirRenglon';
 
 // El mismo visor de Facturas de compra (lleva el PDF): sólo se baja al abrir
 // la pestaña «Documento».
@@ -320,6 +321,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [guardando, setG]   = useState(null);
     // El renglón cuyo «Siempre así» pide la segunda confirmación.
     const [duda, setDuda]     = useState(null);
+    const [partiendo, setPartiendo] = useState(null);   // índice del renglón en «Partir renglón»
     // ── Para armar la carga ──
     const [uso, setUso]         = useState('venta');
     const [ajustes, setAjustes] = useState({});   // {índice: ajusteInicial}
@@ -519,7 +521,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     }]));
 
     // Lo que se revisa y lo que se manda es esta MISMA firma.
-    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias) });
+    const firmaActual = () => JSON.stringify({ uso, renglones: decisiones(), diasCredito: dias === '' ? null : Number(dias), particionFirma: p?.particion_firma ?? '' });
 
     // Manda EXACTAMENTE lo revisado: la función lo vuelve a armar y se niega si
     // algo cambió, así que acá se le pasan las mismas decisiones.
@@ -880,7 +882,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                             const Icono = o?.icon ?? HelpCircle;
                             const aj = ajustes[i] ?? ajusteInicial(r);
                             const conProducto = !!productoDe(r, i);
-                            const factorCambio = conProducto && (r.llave || r.codigo_proveedor)
+                            const factorCambio = !r.parte && conProducto && (r.llave || r.codigo_proveedor)
                                 && Number(aj.factor) !== Number(elegido?.factor ?? r.factor_proveedor ?? 1);
                             const sim = entraComo.get(i);
                             const fCarga = Number(aj.factor) || 1;
@@ -916,6 +918,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                             && ` · ${Math.round(r.match_similitud * 100)}%`}
                                                     </Badge>
                                                 )}
+                                                {r.parte && <Badge variant="info" size="sm">Parte {r.parte.indice} de {r.parte.total}</Badge>}
                                             </div>
                                             {uso === 'venta' && !aj.servicio && (
                                                 <p className="mt-0.5 text-caption text-content-3">En la factura: {r.descripcion}</p>
@@ -961,7 +964,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                     </div>
                                     {uso === 'venta' && !aj.servicio && (
                                         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1.3fr)] gap-3 items-start">
-                                            <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar} juicio={juicio}
+                                            {r.parte ? <Dato titulo="Entran" valor={`${r.cantidad} unidades`} nota={`${r.parte.unidades} por cada una de la factura`} /> : <SeCargaComo r={r} aj={aj} puedeEditar={puedeEditar} juicio={juicio}
                                                 presentaciones={[...new Map(vinetasDe(r, i).map(x => [x.factor, x])).values()]}
                                                 onCargar={v => ajustarCarga(i, r, v)}
                                                 recordar={factorCambio && puedeEditar && Number.isInteger(Number(aj.factor)) ? (() => {
@@ -985,7 +988,7 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                             Siempre así: {Number(aj.factor)} por cada una
                                                         </Button>
                                                     );
-                                                })() : null} />
+                                                })() : null} />}
                                             <PortalInput compact labelDenso label="Lote" value={aj.lote}
                                                 onChange={e => ajustar(i, 'lote', e.target.value)} />
                                             <CampoMesAnio compact label="Vence" value={aj.vence} onChange={v => ajustar(i, 'vence', v)} />
@@ -1111,13 +1114,18 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                         Es correcto
                                                     </Button>
                                                 )}
+                                                {!aj.servicio && !aj.erroneo && (r.parte?.llave || r.llave || r.codigo_proveedor) && (!r.parte || r.parte.indice === 1) && (
+                                                    <Button size="xs" variant="ghost" icon={Split} onClick={() => setPartiendo(i)}>
+                                                        {r.parte ? 'Cambiar partición' : 'Partir renglón'}
+                                                    </Button>
+                                                )}
                                                 {!aj.servicio && !conProducto && !aj.erroneo && (
                                                     <Button size="xs" icon={PackagePlus} onClick={() => setCreando(i)}
                                                         variant={r.producto_id && r.match_origen === 'parecido' ? 'ghost' : 'primary'}>
                                                         Es nuevo
                                                     </Button>
                                                 )}
-                                                {!aj.servicio && (
+                                                {!aj.servicio && !r.parte && (
                                                     <Button size="xs" variant="ghost" icon={Search} loading={guardando === k}
                                                         onClick={() => setBusc(buscando === k ? null : k)}>
                                                         {conProducto || r.producto_id ? 'Es otro producto' : 'Elegir producto'}
@@ -1149,6 +1157,16 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                     </div>
                     </>)}
                 </>)}
+                {partiendo != null && p?.renglones[partiendo] && (() => {
+                    const r = p.renglones[partiendo];
+                    return (
+                        <PartirRenglon renglon={r} llave={r.parte?.llave ?? r.llave ?? r.codigo_proveedor}
+                            partesActuales={r.parte ? p.renglones.filter(x => x.parte?.llave === r.parte.llave) : []}
+                            emisorNit={p.documento.emisor_nit} documentId={doc.document_id ?? null} proveedor={doc.emisor_nombre}
+                            onCerrar={() => setPartiendo(null)}
+                            onGuardado={() => { setPartiendo(null); cargar(); }} />
+                    );
+                })()}
                 {creando != null && p && (
                     <NuevoProducto renglon={p.renglones[creando]} factor={ajustes[creando]?.factor}
                         documentId={doc.document_id ?? null} manualId={doc.manual_id ?? null}

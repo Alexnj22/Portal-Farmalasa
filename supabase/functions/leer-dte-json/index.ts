@@ -4,6 +4,7 @@ import { cargosYSalaDelDia, requireInvokeSecret, requireActiveEmployeeUser, getC
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
 import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
+import { aplicarParticiones } from "../_shared/particionRenglon.ts";
 import { diferenciasDeNumeros } from "../_shared/numerosDelNombre.ts";
 
 // Leer el JSON de un DTE de compra — la pieza que le faltaba a todo lo demás.
@@ -506,6 +507,15 @@ Deno.serve(async (req: Request) => {
         // del documento. Uno tras otro, una factura de 40 renglones eran 40
         // idas y vueltas a la base antes de poder mostrar nada.
         const emparejar = async (it: any) => {
+          // Una parte de un pack ya dice qué producto es: lo decidió una persona.
+          if (it?._parte) {
+            const { data: pr, error: errPr } = await admin.from("products").select("nombre").eq("id", it._parte.product_id).maybeSingle();
+            if (errPr) throw errPr;
+            return {
+              it, llave: `${it._parte.llave}~${it._parte.indice}`,
+              match: { product_id: it._parte.product_id, nombre: pr?.nombre ?? null, origen: "aprendido", similitud: 1 },
+            };
+          }
           // Al emparejador va el NOMBRE LIMPIO, no la descripción cruda: el
           // lote y la fecha metidos adentro son ruido distinto en cada renglón
           // y hunden el parecido. Medido: con la cruda, 28% de los renglones
@@ -530,17 +540,20 @@ Deno.serve(async (req: Request) => {
           return { it, llave, match: Array.isArray(m) ? m[0] : m };
         };
         const pares: { it: any; llave: string | null; match: any }[] = [];
-        for (let i = 0; i < items.length; i += 8) pares.push(...await Promise.all(items.slice(i, i + 8).map(emparejar)));
+        // Los packs se parten ANTES de emparejar: lo mismo hace `cargar-compra-erp`.
+        const { items: itemsP, firma: particionFirma } = await aplicarParticiones(admin, items, d.emisor_nit, d.manual_id ? null : d.id);
+        for (let i = 0; i < itemsP.length; i += 8) pares.push(...await Promise.all(itemsP.slice(i, i + 8).map(emparejar)));
         const txtPdfP = await pdfP;
         const renglones = [];
         for (const { it, llave, match } of pares) {
-          const lv = loteYVence(txtPdfP, it, undefined, items.map((x: any) => String(x?.descripcion ?? "")));
+          const lv = loteYVence(txtPdfP, it, undefined, itemsP.map((x: any) => String(x?.descripcion ?? "")));
           const sim = Number(match?.similitud ?? 0);
           const seguro = match?.origen === "codigo_barras" || match?.origen === "aprendido" || sim >= 0.75;
 
           renglones.push({
             codigo_proveedor: it?.codigo ?? null,
             llave,
+            parte: it?._parte ?? null,
             descripcion: it?.descripcion ?? null,
             cantidad: it?.cantidad ?? null,
             costo: it?.precioUni ?? null,
@@ -623,10 +636,11 @@ Deno.serve(async (req: Request) => {
             costoUnidad: r.producto_id ? costoUnidad.get(r.producto_id) : null,
             presentaciones: ((r as any).vinetas ?? []).map((v: { factor: number }) => v.factor),
           });
-          r.factor_proveedor = f.factor; r.factor_origen = f.origen;
+          // La parte de un pack ya viene en unidades: no hay caja que adivinar.
+          r.factor_proveedor = (r as any).parte ? 1 : f.factor; r.factor_origen = (r as any).parte ? "particion" : f.origen;
           // Cuántas trae la caja según la factura: la pantalla lo pone al lado
           // de las presentaciones del catálogo para ver si cambió.
-          (r as any).tamano_factura = tamanoDeCajaEnLaDescripcion(String(r.descripcion ?? ""));
+          (r as any).tamano_factura = (r as any).parte ? null : tamanoDeCajaEnLaDescripcion(String(r.descripcion ?? ""));
           // Y el costo de una unidad antes de esta compra, para decidir si esa
           // caja cambió (`juzgarPresentacion`, 2026-11-07). El navegador no
           // puede leer `product_precios.costo` (permiso de columna).
@@ -634,7 +648,7 @@ Deno.serve(async (req: Request) => {
           // La pantalla lo manda de vuelta cuando Bodega elige otro producto
           // (modo «factor»): el tamaño se recalcula contra ESE producto.
           (r as any).costo_neto = Math.round(neto * 10000) / 10000;
-          if (f.corrige) (r as any).factor_corrige = f.corrige;
+          if (f.corrige && !(r as any).parte) (r as any).factor_corrige = f.corrige;
         }
 
         for (const r of renglones as any[]) {
@@ -655,7 +669,7 @@ Deno.serve(async (req: Request) => {
         // no coinciden, el producto deja de ser «seguro» y hay que confirmarlo.
         // El código de barras no se discute: ahí lo que miente es el nombre.
         for (const r of renglones as any[]) {
-          if (!r.producto_id || !r.producto || r.match_origen === "codigo_barras") continue;
+          if (!r.producto_id || !r.producto || r.match_origen === "codigo_barras" || r.parte) continue;
           const d = diferenciasDeNumeros(nombreLimpio(String(r.descripcion ?? "")), String(r.producto));
           if (!d.length) continue;
           r.numeros_distintos = d;
@@ -664,6 +678,7 @@ Deno.serve(async (req: Request) => {
         }
 
         salida.push({
+          particion_firma: particionFirma,
           documento: {
             id: d.id, manual_id: d.manual_id ?? null, codigo_generacion: d.codigo_generacion,
             numero_control: dte?.identificacion?.numeroControl ?? null,

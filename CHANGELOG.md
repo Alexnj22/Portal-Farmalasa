@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1498.0 — Partir un renglón de compra en varios productos (2026-11-09)
+
+Diszasa factura «PACK OFF FAMILY + OFF SPRAY» en un renglón y son dos productos
+del inventario; confirmar la sugerencia cargaba todo el costo en uno y el otro
+no entraba. «2 PACK» a veces se separa y a veces llega así al cliente.
+
+- **Cargar compra → Partir renglón**: varios productos, unidades por cada una
+  facturada y % del costo. El total de la factura no cambia.
+- Se recuerda por (proveedor, código) y se puede dejar para una sola factura.
+  Tabla `compra_renglon_particion`, RPC `guardar_particion_renglon`.
+- `_shared/particionRenglon.ts` lo corren `leer-dte-json` y `cargar-compra-erp`
+  antes de armar; `particion_firma` rechaza una carga hecha con una regla vieja.
+- Un código ya partido sale de «Por confirmar».
 ## v2.1497.1 — Ficha del producto con la foto al lado del nombre
 
 - App de clientes: la ficha del producto lleva la foto en un cuadro pequeño al lado del nombre; al tocarla se amplía.

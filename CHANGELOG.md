@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.10 — Vuelve el logo vertical al encabezado
+
+- App de clientes: el encabezado vuelve al logo vertical original de Puntos Salud; se retira la versión horizontal (salía con las letras incompletas).
+
 ## v2.1500.9 — Vuelve el logo vertical al encabezado
 
 - App de clientes: el encabezado vuelve al logo vertical original de Puntos Salud; se retira la versión horizontal (salía con las letras incompletas).

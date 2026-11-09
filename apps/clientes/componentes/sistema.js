@@ -64,7 +64,9 @@ for (const [k, [nativo, web]] of Object.entries(COLORES)) {
 // `pie` (2026-11-09): fuera del desplazamiento; queda siempre a la vista, sobre el teclado.
 export function Formulario({ children, contentContainerStyle, pie = null, ...props }) {
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+    // Android también con 'padding' (2026-11-09): la app va de borde a borde y la
+    // ventana ya no se encoge sola con el teclado; sin esto, el botón quedaba debajo.
+    <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={[{ paddingVertical: 20, gap: 24, width: '100%', maxWidth: 560, alignSelf: 'center' }, contentContainerStyle]}
         keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"

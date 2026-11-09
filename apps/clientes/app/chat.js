@@ -173,9 +173,11 @@ const delEquipo = (m) => m.autor === 'equipo';
 // (app/_layout, AuroraRaiz) — se dibuja una vez y no cuesta nada al desplazar.
 // Los colores de los globos y las píldoras son los de antes, pensados para ella.
 const globoEquipo = (oscuro) => (oscuro ? '#26252A' : '#FFFFFF');
-// La altura del teclado, cuadro a cuadro, sólo en iOS: en Android la ventana
-// se redimensiona sola (adjustResize) y sumarle la altura lo empujaría dos veces.
-const useTecladoAlto = IOS ? () => useAnimatedKeyboard().height : () => null;
+// La altura del teclado, cuadro a cuadro, en las dos plataformas. Android
+// también desde el 2026-11-09: la app va de borde a borde y la ventana ya NO se
+// encoge con el teclado (adjustResize no actúa), así que la barra quedaba
+// detrás del teclado y no se veía lo que se escribía.
+const useTecladoAlto = () => useAnimatedKeyboard().height;
 const fechaCorta = (iso) => {
   try { return new Date(iso).toLocaleDateString('es-SV', { day: 'numeric', month: 'long' }); } catch { return ''; }
 };
@@ -1026,7 +1028,12 @@ export default function Chat() {
   ) }), [fuera, atiendeNombre, escribiendoNombre, conPreferencia, abrirBuscar, vaciar, t]);
   // El teclado en iOS, con transformaciones y no con el alto (ver «El teclado», al pie).
   const insAbajo = Math.max(ins.bottom, 8);
-  const subida = useAnimatedStyle(() => ({ transform: [{ translateY: tecladoAlto ? -subidaConTeclado(tecladoAlto.value, insAbajo) : 0 }] }));
+  // En Android la lista se ACORTA en vez de subir: no hay `contentInset` para
+  // recuperar lo que la subida escondería arriba.
+  const subida = useAnimatedStyle(() => {
+    const s = tecladoAlto ? subidaConTeclado(tecladoAlto.value, insAbajo) : 0;
+    return IOS ? { transform: [{ translateY: -s }] } : { paddingBottom: s };
+  });
   // Lo que la subida esconde ARRIBA de la lista se recupera como margen del
   // desplazamiento (en la lista invertida, el «abajo» nativo es arriba en
   // pantalla): así los mensajes más viejos se siguen pudiendo leer con el

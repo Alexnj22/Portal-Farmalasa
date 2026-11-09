@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.1 — Chat y formularios de la app sobre el teclado en Android
+
+- App de clientes (Android): la barra del chat y los botones de los formularios suben con el teclado; antes quedaban ocultos detrás.
+
 ## v2.1500.0 — Fotos desde la app de empleados sin margen blanco
 
 - App de empleados: la foto de producto que se sube desde el teléfono también se recorta sola, con la misma regla que el portal (función recortar-foto-producto, con la sesión de quien sube).

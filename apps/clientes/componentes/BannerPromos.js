@@ -34,7 +34,7 @@ function Separador() { return <View style={{ width: 10 }} />; }
 
 // `memo`: no recibe props, así que el catálogo puede redibujarse (cada tecla
 // de la búsqueda) sin arrastrar el carrusel.
-export default memo(function BannerPromos({ productos = [] }) {
+export default memo(function BannerPromos({ productos = [], titulo = null }) {
   const t = useTema();
   const { width } = useWindowDimensions();
   const { datos, cargar } = useOfertas();
@@ -74,6 +74,18 @@ export default memo(function BannerPromos({ productos = [] }) {
 
   return (
     <View style={{ gap: 8 }}>
+      {titulo ? (
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginLeft: 4 }}>
+          <Text accessibilityRole="header" style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{titulo}</Text>
+          {/* El carril de ofertas ya no está: por aquí se llega a todas. */}
+          {datos?.ofertas?.length ? (
+            <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/ofertas'); }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ver todas las promociones"
+              style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', paddingHorizontal: 6, opacity: pressed ? 0.6 : 1 })}>
+              <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Ver todas</Text>
+            </Presionable>
+          ) : null}
+        </View>
+      ) : null}
       <Animated.FlatList
         data={ofertas}
         keyExtractor={(o) => String(o.id)}

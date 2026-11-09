@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.12 — App de clientes: Tienda con buscador abierto y sin listado
+
+La Tienda queda en promociones, buscador siempre abierto, necesidades, mejores precios, laboratorios y vistos; se quita el listado completo.
+
 ## v2.1492.11 — App de clientes: foto del encabezado sin doble fondo
 
 La foto del encabezado se ve más grande: el aro del nivel es su único fondo.

@@ -1,7 +1,8 @@
 // El catálogo (2026-10-07): todos los productos con su precio de viñeta y su
 // precio VIP —el que paga el socio—, y si hay en alguna sucursal. Sin buscar,
-// lo más vendido de los últimos 60 días; con la barra del sistema, por nombre
-// o principio activo. Al tocar un producto se abre su ficha.
+// sólo las filas (promociones, necesidades, mejores precios, laboratorios y
+// vistos; 2026-11-09, sin el listado completo). Con el buscador, por nombre o
+// principio activo. Al tocar un producto se abre su ficha.
 //
 // Carga CONTINUA (2026-10-20): al acercarse al final se piden los siguientes y
 // se agregan abajo. Antes eran páginas de 20 con «Anterior / Siguiente»
@@ -13,7 +14,7 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
 import Presionable from '../../../componentes/Presionable';
 import { Stack } from 'expo-router';
@@ -23,12 +24,10 @@ import { ESPACIO_BURBUJA, Seccion, Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
-import { useOfertas } from '../../../lib/ofertas';
 import FilaProductos from '../../../componentes/FilaProductos';
 import BotonAgregar from '../../../componentes/BotonAgregar';
 import HojaAgregar, { AvisoAgregado } from '../../../componentes/HojaAgregar';
 import { Entrada } from '../../../componentes/animacion';
-import { PortadaOferta } from '../../../componentes/TarjetaOferta';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
 import { BUSQUEDAS, alCambiarVistos, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos } from '../../../lib/catalogo';
@@ -153,7 +152,7 @@ export default function Catalogo() {
   // marca de activa), así que el carrusel y las filas no se rehacen.
   const filas = useMemo(() => (q ? null : (
     <>
-      <FilaProductos titulo="Precio Preferente" sf="tag.fill" productos={ahorro} />
+      <FilaProductos titulo="Mejores precios" sf="tag.fill" productos={ahorro} />
       <FilaLaboratorios labs={labs} alElegir={elegirLab} />
       <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
         accion={{ texto: 'Limpiar', alTocar: olvidarVistos }} />
@@ -183,15 +182,15 @@ export default function Catalogo() {
       </ScrollView>
     </View>
   ), [q, texto, t]);
+  // Un laboratorio se busca como `lab:<id>`: eso no se le muestra a nadie.
+  const valorBuscador = texto.startsWith('lab:') ? '' : texto;
   const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>
-      {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
-      {!q ? <BannerPromos productos={ahorro} /> : null}
-      {/* Debajo del banner (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
+      {/* Promociones arriba, el buscador siempre abierto debajo (2026-11-09: en
+          Android la barra del sistema no salía abierta como en iOS). */}
+      {!q ? <BannerPromos productos={ahorro} titulo="Promociones" /> : null}
+      <Buscador valor={valorBuscador} alCambiar={setTexto} />
       {categorias}
-      {/* Las ofertas en un carril (2026-11-05, «así ahí aparecen las ofertas,
-          más práctico»): antes era una tarjeta que llevaba a otra pantalla. */}
-      {!q ? <CarrilOfertas /> : null}
       {filas}
       {/* Con un laboratorio elegido, su nombre y cómo soltarlo (la fila de
           laboratorios no se ve mientras se mira uno). */}
@@ -205,11 +204,9 @@ export default function Catalogo() {
             <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>Quitar</Text>
           </Presionable>
         </View>
-      ) : (
-        <Seccion>{q ? `Resultados para «${q}»` : 'Lo más vendido'}</Seccion>
-      )}
+      ) : q ? <Seccion>Resultados para «{q}»</Seccion> : null}
     </View>
-  ), [q, categorias, filas, labActivo, t, ahorro]);
+  ), [q, valorBuscador, categorias, filas, labActivo, t, ahorro]);
   // Estable: con una función nueva en cada render, la lista redibujaba todas
   // las tarjetas a cada tecla.
   const renderItem = useCallback(({ item, index }) => {
@@ -222,14 +219,6 @@ export default function Catalogo() {
   return (
     <>
       <Stack.Screen options={{
-        headerSearchBarOptions: {
-          placeholder: 'Medicamento o principio activo',
-          cancelButtonText: 'Cancelar',
-          hideWhenScrolling: false,
-          autoCapitalize: 'none',
-          onChangeText: (e) => setTexto(e.nativeEvent.text ?? ''),
-          onCancelButtonPress: () => setTexto(''),
-        },
         // A la izquierda: la derecha es de la campana del encabezado.
         headerLeft: () => (
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -255,7 +244,7 @@ export default function Catalogo() {
         scrollEventThrottle={100}
         // Cambiar `numColumns` exige montar la lista de nuevo.
         key={`col${columnas}`}
-        data={lista ?? []}
+        data={q ? (lista ?? []) : []}
         keyExtractor={(p) => String(p.id)}
         numColumns={columnas}
         columnWrapperStyle={columnas > 1 ? { gap: 12 } : undefined}
@@ -277,9 +266,9 @@ export default function Catalogo() {
             </Vacio>
           )
             : !lista ? <ActivityIndicator style={{ marginTop: 40 }} />
-              : <Vacio titulo="Sin resultados" icono="magnifyingglass" respaldo="⌕">Prueba con otro nombre o con el principio activo.</Vacio>
+              : !q ? null : <Vacio titulo="Sin resultados" icono="magnifyingglass" respaldo="⌕">Prueba con otro nombre o con el principio activo.</Vacio>
         }
-        ListFooterComponent={!lista?.length ? null
+        ListFooterComponent={!q || !lista?.length ? null
           // Pedir más falló: lo cargado se queda, se dice y se puede reintentar.
           : error ? <Reintentar alTocar={() => { setError(false); cargar(desde, lista); }} />
             : cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} />
@@ -378,34 +367,22 @@ const TarjetaProducto = memo(function TarjetaProducto({ p }) {
   );
 });
 
-// Las ofertas vigentes en un carril (2026-11-05, Tienda «Vitrina»): cada una
-// con su portada chica y, a la derecha del título, «Ver todas». Los datos son
-// los mismos que ya pidió el banner (lib/ofertas): no cuesta otra consulta.
-const CarrilOfertas = memo(function CarrilOfertas() {
+// El buscador, siempre abierto y dentro de la lista, igual en iOS y Android.
+const Buscador = memo(function Buscador({ valor, alCambiar }) {
   const t = useTema();
-  const datos = useOfertas((s) => s.datos);
-  const lista = datos?.ok ? (datos.ofertas ?? []).filter((o) => o.disponible !== false) : [];
-  if (!lista.length) return null;
   return (
-    <View style={{ gap: 10 }}>
-      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 4 }}>
-        <Icono sf="flame.fill" respaldo="" tam={14} color={t.color.magentaTexto} />
-        <Text accessibilityRole="header" style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>Ofertas de la semana</Text>
-        <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/ofertas'); }} hitSlop={10} accessibilityRole="button"
-          accessibilityLabel={`Ver las ${lista.length} ofertas`} style={({ pressed }) => ({ minHeight: 32, flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 6, opacity: pressed ? 0.6 : 1 })}>
-          <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Ver {lista.length > 1 ? `las ${lista.length}` : 'todo'}</Text>
-          <Icono sf="chevron.right" respaldo="›" tam={11} color={t.color.magentaTexto} />
+    <View style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 14, paddingRight: 4, borderRadius: 16,
+      backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)', borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)' }}>
+      <Icono sf="magnifyingglass" respaldo="⌕" tam={16} color={colorSistema.texto3} />
+      <TextInput value={valor} onChangeText={alCambiar} placeholder="Medicamento o principio activo" placeholderTextColor={colorSistema.texto3}
+        accessibilityLabel="Buscar medicamento o principio activo" returnKeyType="search" autoCapitalize="none" autoCorrect={false}
+        style={{ flex: 1, fontSize: 16, color: colorSistema.texto, paddingVertical: 10 }} />
+      {valor ? (
+        <Presionable onPress={() => alCambiar('')} accessibilityRole="button" accessibilityLabel="Borrar búsqueda"
+          style={({ pressed }) => ({ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+          <Icono sf="xmark.circle.fill" respaldo="×" tam={18} color={colorSistema.texto3} />
         </Presionable>
-      </View>
-      <FlatList horizontal data={lista.slice(0, 10)} keyExtractor={(o) => String(o.id)} showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}
-        renderItem={({ item: o }) => (
-          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/oferta/${o.id}`); }}
-            accessibilityRole="button" accessibilityLabel={`Oferta: ${o.titulo}${o.exclusiva ? ', sólo para socios' : ''}`}
-            style={({ pressed }) => ({ width: 230, borderRadius: 20, overflow: 'hidden', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-            <PortadaOferta oferta={o} alto={150} compartible={false} />
-          </Presionable>
-        )} />
+      ) : null}
     </View>
   );
 });

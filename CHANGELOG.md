@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1496.1 — Auditoría: área de la función del nombre en la app
+
+- Interno: la función que calcula el nombre del laboratorio en la app queda asignada a su área de auditoría.
+
 ## v2.1496.0 — Laboratorios: nombre en la app y unión de duplicados
 
 - Laboratorios: campo «Nombre en la app». Sin escribirlo, el nombre se limpia solo de códigos internos; dos laboratorios con el mismo nombre salen como uno en la app.

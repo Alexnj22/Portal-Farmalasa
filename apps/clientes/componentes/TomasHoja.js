@@ -51,7 +51,7 @@ import Icono from './Icono';
 import Segmentos from './Segmentos';
 import { Atajos, Caja, Contador } from './Pasos';
 import { colorSistema } from './sistema';
-import { Boton, RADIO, Seccion } from './ui';
+import { Boton, ConTeclado, RADIO, Seccion } from './ui';
 import SelectorHora, { HORA_NATIVA } from './SelectorHora';
 import SelectorFecha, { FECHA_NATIVA } from './SelectorFecha';
 import { CANTIDADES_RAPIDAS, CANTIDAD_MAX, CANTIDAD_MIN, CANTIDAD_PASO, cantidadDe, fraccionTexto, normalizarCantidad } from '../lib/dosis';
@@ -231,7 +231,8 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             {guardando ? <ActivityIndicator /> : <Text style={{ fontSize: 17, fontWeight: '700', color: t.color.magentaTexto }}>Guardar</Text>}
           </Presionable>
         </View>
-        <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }} keyboardShouldPersistTaps="handled">
+        <ConTeclado>
+        <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: ins.bottom + 24, gap: 16 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
             <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{nombrePropio(tratamiento.nombre)}</Text>
             <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto3 }}>Te avisamos en este teléfono a la hora de cada toma.</Text>
@@ -395,6 +396,7 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
             </Text>
           </View>
         </ScrollView>
+        </ConTeclado>
       </View>
     </Modal>
   );

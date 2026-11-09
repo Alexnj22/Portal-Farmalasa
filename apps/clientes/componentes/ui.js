@@ -4,7 +4,7 @@
 // sistema, y los colores del logo SÓLO para lo que es de la marca: lo que se
 // gana (verde) y lo que se usa (magenta).
 import { useEffect, useRef, useState } from 'react';
-import { FlatList, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, ScrollView, Text, View, RefreshControl } from 'react-native';
 import IndicadorCarga from './IndicadorCarga';
 import Presionable from './Presionable';
 import * as Haptics from 'expo-haptics';
@@ -58,6 +58,16 @@ export const ESPACIO_BURBUJA = 88;
 // título— y el contenido arranca bajo la barra de estado. Al desplazar, un
 // velo difuminado aparece detrás de la hora y la batería, como el de la barra
 // del sistema; arriba de todo no se ve.
+// El teclado (2026-11-09). En Android la app va de borde a borde y la ventana
+// ya no se encoge con el teclado: el campo quedaba debajo. Este envoltorio
+// acorta la pantalla lo que el teclado tapa (cuenta por superposición: si
+// algún día la ventana vuelve a encogerse, no empuja dos veces). En iOS lo
+// hace la lista con `automaticallyAdjustKeyboardInsets`.
+export function ConTeclado({ children }) {
+  if (Platform.OS !== 'android') return children;
+  return <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">{children}</KeyboardAvoidingView>;
+}
+
 export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false }) {
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
@@ -69,6 +79,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
   return (
     <ContextoDesplazamiento.Provider value={d}>
     <SinVidrio.Provider value={sinVidrio}>
+    <ConTeclado>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
@@ -81,6 +92,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       onScrollBeginDrag={d.empezar}
       onScrollEndDrag={d.soltar}
       onMomentumScrollBegin={d.inercia}
@@ -97,6 +109,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     >
       {children}
     </ScrollView>
+    </ConTeclado>
     {sinBarra && velo ? (
       Platform.OS === 'ios'
         ? <BlurView pointerEvents="none" intensity={60} tint="systemChromeMaterial" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ins.top }} />
@@ -131,6 +144,7 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
   return (
     <ContextoDesplazamiento.Provider value={d}>
     <SinVidrio.Provider value={sinVidrio}>
+    <ConTeclado>
     <FlatList
       data={datos}
       renderItem={renderItem}
@@ -146,6 +160,7 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
+      automaticallyAdjustKeyboardInsets
       onScrollBeginDrag={d.empezar}
       onScrollEndDrag={d.soltar}
       onMomentumScrollBegin={d.inercia}
@@ -153,6 +168,7 @@ export function PantallaLista({ datos, renderItem, keyExtractor, encabezado, alR
       refreshControl={alRefrescar ? <RefreshControl refreshing={refrescando} onRefresh={alRefrescar}
         colors={[t.color.magenta]} progressBackgroundColor={ANDROID ? colorSistema.superficieAlta : undefined} /> : undefined}
     />
+    </ConTeclado>
     </SinVidrio.Provider>
     </ContextoDesplazamiento.Provider>
   );

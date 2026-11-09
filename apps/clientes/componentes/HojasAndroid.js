@@ -12,7 +12,7 @@
 // con la MISMA firma, dibujadas por <HojasAndroid /> (montado una vez en la
 // raíz). En iOS no se toca nada: `instalarHojasAndroid` no hace nada.
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import HojaDeOpciones from './HojaDeOpciones';
 import { colorSistema } from './sistema';
 import { useTema } from '../tema/tema';
@@ -94,7 +94,8 @@ export default function HojasAndroid() {
   // anuncia con ese mismo título.
   return (
     <Modal transparent visible animationType="fade" onRequestClose={cancelar} statusBarTranslucent>
-      <View style={{ flex: 1, justifyContent: hoja.tipo === 'opciones' ? 'flex-end' : 'center', padding: 16 }}>
+      {/* Con el teclado, el cuadro sube: si no, el campo y los botones quedaban debajo. */}
+      <KeyboardAvoidingView behavior="padding" style={{ flex: 1, justifyContent: hoja.tipo === 'opciones' ? 'flex-end' : 'center', padding: 16 }}>
         <Pressable onPress={cancelar} accessibilityRole="button" accessibilityLabel="Cerrar"
           style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.45)' }]} />
         <View accessibilityViewIsModal style={{ backgroundColor: fondo, borderRadius: 28, paddingVertical: 16, maxHeight: '80%' }}>
@@ -133,7 +134,7 @@ export default function HojasAndroid() {
             </View>
           )}
         </View>
-      </View>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

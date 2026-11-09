@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.2 — Pantallas y hojas de la app sobre el teclado
+
+- App de clientes: todas las pantallas con campos (carrito, encuesta, familia), la hoja de tomas y los cuadros de texto de Android se acomodan al teclado; en iPhone las listas largas desplazan el campo a la vista.
+
 ## v2.1500.1 — Chat y formularios de la app sobre el teclado en Android
 
 - App de clientes (Android): la barra del chat y los botones de los formularios suben con el teclado; antes quedaban ocultos detrás.

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.9 — App de clientes: corrige las historias
+
+Corrige un error en la fila de historias de Inicio antes de publicarla.
+
 ## v2.1492.8 — App de clientes: foto en el encabezado y fila de historias
 
 En Inicio la foto pasa al encabezado, el saludo queda sólo para el cumpleaños y las historias tienen su propia fila.

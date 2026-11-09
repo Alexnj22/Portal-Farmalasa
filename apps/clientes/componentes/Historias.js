@@ -147,7 +147,7 @@ export default function Historias({ generacion = 0, conMuestras = false }) {
               <LinearGradient colors={vista ? ['#9A9AA2', '#9A9AA2'] : ['#FFD60A', t.color.magenta, '#5B1E9C']}
                 start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 3, borderRadius: 40 }}>
                 <View style={{ padding: 2.5, borderRadius: 37, backgroundColor: t.oscuro ? '#121016' : '#F5F4F8' }}>
-                  <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" transition={150} style={{ width: 64, height: 64, borderRadius: compacta ? 22 : 32 }} />
+                  <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" transition={150} style={{ width: 64, height: 64, borderRadius: 32 }} />
                 </View>
               </LinearGradient>
               {/* El rótulo corto (o la primera palabra): el título entero no cabía. */}

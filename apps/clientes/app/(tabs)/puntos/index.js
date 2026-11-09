@@ -186,6 +186,8 @@ export default function Puntos() {
           style={{ flex: 1, fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>
           {resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}
         </Text>
+        {/* Historias: promociones e información, tipo estados. A la par del saludo. */}
+        <Historias generacion={generacion} compacta />
       </Entrada>
 
       {/* Mis créditos (2026-10-15): si alguno pasó su fecha límite, la alerta
@@ -196,8 +198,6 @@ export default function Puntos() {
         </Entrada>
       ) : null}
 
-      {/* Historias: promociones e información, tipo estados. */}
-      <Historias generacion={generacion} />
 
       {/* La tarjeta de socio: saldo al frente, código y QR al reverso. */}
       <TarjetaEnVista activa={visible} equipo={empleado} estiloLogo={enPrueba ? prueba.logo : 'material'} nivel={material ?? resumen.nivel?.clave} nombre={resumen.nombre} saldo={saldo} equivale={resumen.equivale}

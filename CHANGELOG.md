@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1490.2 — App de clientes: historias junto al saludo
+
+En el Inicio de la app, las historias pasan a la par del saludo, en círculos más chicos.
+
 ## v2.1490.1 — App de clientes: campana junto al logo
 
 En el Inicio de la app, la campana de notificaciones pasa a la línea del logo.

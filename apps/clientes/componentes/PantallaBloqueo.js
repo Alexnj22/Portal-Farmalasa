@@ -62,8 +62,7 @@ export default function PantallaBloqueo({ soloCubrir = false }) {
         {/* La tapa no se anima: está para la foto del selector, no para mirarla. */}
         <Aurora activa={!soloCubrir} />
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 32 }}>
-          <Image source={require('../assets/icono.png')} style={{ width: 84, height: 84, borderRadius: 20 }} />
-          <Text style={{ fontSize: 24, fontWeight: '800', color: colorSistema.texto }}>Puntos Salud</Text>
+          <Image source={require('../assets/logo-puntos-salud.png')} resizeMode="contain" accessibilityLabel="Puntos Salud" style={{ width: 230, height: 112 }} />
           <Text style={{ fontSize: 15, color: colorSistema.texto2, textAlign: 'center' }}>Está bloqueada para cuidar tu saldo y tu código.</Text>
           {soloCubrir ? null : (
             <View style={{ width: '100%', marginTop: 12 }}>

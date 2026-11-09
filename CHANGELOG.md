@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.5 — App de clientes: logo de Puntos Salud
+
+El logo de Puntos Salud va en el encabezado, la bienvenida y la pantalla de bloqueo de la app.
+
 ## v2.1492.4 — App de clientes: logo con sus colores en el encabezado
 
 El logo del encabezado de la app se ve con sus colores en iPhone.

@@ -33,10 +33,7 @@ export default function Bienvenida() {
     >
       <View style={{ gap: 22 }}>
         <View style={{ alignItems: 'center', gap: 14 }}>
-          <Image source={require('../assets/icono.png')} style={{ width: 84, height: 84, borderRadius: 20 }} />
-          <Text style={{ fontSize: 32, fontWeight: '800', letterSpacing: -0.5, color: colorSistema.texto, textAlign: 'center' }}>
-            Puntos Salud
-          </Text>
+          <Image source={require('../assets/logo-puntos-salud.png')} resizeMode="contain" accessibilityRole="header" accessibilityLabel="Puntos Salud" style={{ width: 250, height: 122 }} />
           <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 16, lineHeight: 23, maxWidth: 300 }}>
             Cada compra suma. Tus puntos, la tienda, tus reservas, tus facturas y el chat con la farmacia, en tu teléfono.
           </Texto>

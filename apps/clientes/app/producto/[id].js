@@ -16,6 +16,7 @@ import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import EncargoHoja from '../../componentes/EncargoHoja';
 import DondeLoHay from '../../componentes/DondeLoHay';
 import MismoPrincipio from '../../componentes/MismoPrincipio';
+import BotonAvisame from '../../componentes/BotonAvisame';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -241,6 +242,8 @@ export default function Producto() {
             <Icono sf="shippingbox.fill" respaldo="📦" tam={17} color="#FFFFFF" />
             <Text style={{ flexShrink: 1, textAlign: 'center', color: '#FFFFFF', fontSize: 16, fontWeight: '800' }}>Pedir por encargo</Text>
           </Presionable>
+        ) : p.bajo_receta && !(p.existencias ?? []).length && conSesion ? (
+          <BotonAvisame productoId={p.id} nombre={nombre} bloque />
         ) : p.bajo_receta && !(p.existencias ?? []).length ? (
           // Bajo receta y sin existencia: no se encarga desde la app (se pide con la receta en la sucursal).
           <View style={{ flex: 1, minHeight: 54, borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
@@ -286,6 +289,8 @@ export default function Producto() {
             </Presionable>
           </>
         )}
+        {/* Sin existencia y con encargo disponible: la campana va al lado. */}
+        {!p.bajo_receta && !(p.existencias ?? []).length && conSesion ? <BotonAvisame productoId={p.id} nombre={nombre} /> : null}
         <Presionable onPress={consultar} accessibilityRole="button" accessibilityLabel="Consultar por WhatsApp"
           style={({ pressed }) => ({ width: 54, height: 54, borderRadius: 27, alignItems: 'center', justifyContent: 'center',
             backgroundColor: VERDE_WHATSAPP, transform: [{ scale: pressed ? 0.94 : 1 }],

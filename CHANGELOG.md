@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1486.0 — App de clientes: Avísame cuando haya
+
+En la ficha de un producto sin existencia, el cliente pide que le avisen cuando vuelva a haber. Recibe un solo aviso; la solicitud se cierra sola a los 60 días y se borra si elimina su cuenta.
+
 ## v2.1485.1 — Todos los avisos siguen al apoyo
 
 - Los avisos automáticos, las notificaciones al teléfono y los comunicados por

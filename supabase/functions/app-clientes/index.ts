@@ -278,6 +278,8 @@ async function borrarLoPersonal(admin: any, customerId: number) {
   const { error: eCa } = await admin.rpc("app_cancelar_reservas_abiertas_sin_pago", { p_customer: customerId });
   if (eCa) throw eCa;
 
+  const { error: eAv } = await admin.from("app_cliente_avisame").delete().eq("customer_id", customerId);
+  if (eAv) throw eAv;
   const { data: hecho, error: eB } = await admin.rpc("app_borrar_datos_de_cuenta", { p_customer: customerId });
   if (eB) throw eB;
   // deno-lint-ignore no-explicit-any
@@ -1734,7 +1736,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["avisame_ver", "avisame", "solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -2819,6 +2821,37 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // ── Encargos (2026-10-07): lo que no hay en ninguna sucursal se solicita.
     // La sala del retiro y Bodega confirman precio y fecha (trigger
     // `app_encargos_avisar`); el cliente acepta pagando el anticipo (100 %).
+    // «Avísame cuando haya» (2026-11-09): una solicitud abierta por producto.
+    if (accion === "avisame_ver" || accion === "avisame") {
+      const productId = Number(body?.product_id);
+      if (!Number.isInteger(productId) || productId <= 0) return json({ ok: false, mensaje: "Producto no válido." });
+      const { data: abierta, error: eA } = await admin.from("app_cliente_avisame").select("id")
+        .eq("customer_id", customerId).eq("product_id", productId).is("avisado_at", null).gt("vence_el", new Date().toISOString()).maybeSingle();
+      if (eA) throw eA;
+      if (accion === "avisame_ver") return json({ ok: true, activo: !!abierta });
+      if (body?.activo === false) {
+        const { error } = await admin.from("app_cliente_avisame").delete().eq("customer_id", customerId).eq("product_id", productId).is("avisado_at", null);
+        if (error) throw error;
+        return json({ ok: true, activo: false });
+      }
+      if (abierta) return json({ ok: true, activo: true });
+      const [{ data: p, error: eP }, { data: oc, error: eO }, { count, error: eC }] = await Promise.all([
+        admin.from("products").select("id, activo, oculto_en_ventas").eq("id", productId).maybeSingle(),
+        admin.from("app_catalogo_ocultos").select("product_id").eq("product_id", productId).maybeSingle(),
+        admin.from("app_cliente_avisame").select("id", { count: "exact", head: true }).eq("customer_id", customerId).is("avisado_at", null),
+      ]);
+      if (eP) throw eP; if (eO) throw eO; if (eC) throw eC;
+      if (!p || p.activo === false || p.oculto_en_ventas || oc) return json({ ok: false, mensaje: "Este producto ya no está en la tienda." });
+      if ((count ?? 0) >= 20) return json({ ok: false, mensaje: "Ya tienes 20 avisos activos. Quita alguno para agregar otro." });
+      // Una solicitud vencida sin purgar todavía ocupa el índice: se reemplaza.
+      const { error: eD } = await admin.from("app_cliente_avisame").delete().eq("customer_id", customerId).eq("product_id", productId).is("avisado_at", null);
+      if (eD) throw eD;
+      const { error } = await admin.from("app_cliente_avisame").insert({ customer_id: customerId, product_id: productId });
+      // Dos toques a la vez: el segundo choca con el índice y ya quedó guardada.
+      if (error && error.code !== "23505") throw error;
+      return json({ ok: true, activo: true });
+    }
+
     if (accion === "encargar") {
       const productId = Number(body?.product_id);
       const cantidad = Math.trunc(Number(body?.cantidad));

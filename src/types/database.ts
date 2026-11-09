@@ -1133,6 +1133,62 @@ export type Database = {
           },
         ]
       }
+      app_cliente_avisame: {
+        Row: {
+          avisado_at: string | null
+          created_at: string
+          customer_id: number
+          id: number
+          product_id: number
+          vence_el: string
+        }
+        Insert: {
+          avisado_at?: string | null
+          created_at?: string
+          customer_id: number
+          id?: never
+          product_id: number
+          vence_el?: string
+        }
+        Update: {
+          avisado_at?: string | null
+          created_at?: string
+          customer_id?: number
+          id?: never
+          product_id?: number
+          vence_el?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_avisame_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_avisame_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_cliente_avisame_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_avisame_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products_with_lab"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       app_cliente_avisos: {
         Row: {
           created_at: string
@@ -31430,6 +31486,7 @@ export type Database = {
         Args: { p_dia?: string; p_employee_id: string }
         Returns: Json
       }
+      app_avisame_por_avisar: { Args: { p_clientes: number[] }; Returns: Json }
       app_borrar_datos_de_cuenta: {
         Args: { p_customer: number }
         Returns: Json

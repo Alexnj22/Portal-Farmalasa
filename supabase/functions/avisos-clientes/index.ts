@@ -25,6 +25,7 @@
 //   · saldo       — (2026-10-20, diario) saldo a favor que vence en 7 días y
 //                   el día que vence (el plazo es de 60 días, `saldo_favor_dias`).
 //                   Una vez por fecha y por aviso. Va con tipo `reserva`.
+//   · avisame     — (2026-11-09, inmediato) volvió a haber lo que pidió. Va con tipo `encargo`.
 //   · credito     — (2026-10-15, diario) un crédito pasó el plazo: una vez por
 //                   crédito, y un recordatorio cada 7 días como máximo mientras
 //                   siga vencido. Sin montos (se lee en la pantalla bloqueada).
@@ -680,6 +681,26 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Avísame cuando haya (2026-11-09): volvió a haber en alguna sucursal ──
+    const avisameIds: number[] = [];
+    if (inmediato) {
+      const { data: espera, error: eAv } = await admin.rpc("app_avisame_por_avisar", { p_clientes: clientes });
+      if (eAv) console.error("no se pudo leer avísame:", eAv.message);
+      // deno-lint-ignore no-explicit-any
+      for (const a of (espera ?? []) as any[]) {
+        avisameIds.push(Number(a.id));
+        candidatos.push({ customer_id: a.customer_id, tipo: "encargo", ref: `avisame:${a.id}`,
+          titulo: "Ya lo tenemos", cuerpo: `${a.nombre} ya está disponible. Confirma en qué sucursal antes de ir.`,
+          cuerpoPublico: "Un producto que esperabas ya está disponible.", url: `/producto/${a.product_id}` });
+      }
+    }
+    // Retención: lo cerrado o vencido hace más de 30 días.
+    if (diario) {
+      const corte = new Date(Date.now() - 30 * 86_400_000).toISOString();
+      const { error: ePu } = await admin.from("app_cliente_avisame").delete().or(`avisado_at.lt.${corte},vence_el.lt.${corte}`);
+      if (ePu) console.error("no se pudo purgar avísame:", ePu.message);
+    }
+
     if (!candidatos.length) return json({ ok: true, avisos: 0, pendientes: pendientesBase });
 
     // Anotar primero: lo que ya estaba anotado NO vuelve (la UNIQUE lo frena).
@@ -687,6 +708,11 @@ Deno.serve(async (req) => {
       .upsert(candidatos.map(({ cuerpoPublico: _p, ...a }) => a), { onConflict: "customer_id,tipo,ref", ignoreDuplicates: true })
       .select("id, customer_id, tipo, ref");
     if (eA) throw eA;
+    // Anotado: la solicitud se cierra. Si esto falla, la UNIQUE impide repetir el aviso.
+    if (avisameIds.length) {
+      const { error } = await admin.from("app_cliente_avisame").update({ avisado_at: new Date().toISOString() }).in("id", avisameIds);
+      if (error) console.error("no se pudo cerrar avísame:", error.message);
+    }
     const llave = (a: { customer_id: number; tipo: string; ref: string }) => `${a.customer_id}|${a.tipo}|${a.ref}`;
     const nuevosSet = new Map((nuevos ?? []).map((n) => [llave(n), n.id]));
     const aEnviar = candidatos.filter((c) => nuevosSet.has(llave(c)));

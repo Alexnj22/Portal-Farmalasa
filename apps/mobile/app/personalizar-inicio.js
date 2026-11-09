@@ -63,12 +63,12 @@ export default function PersonalizarInicio() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Personalizar el Inicio' }} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
-          Enciende o apaga cada widget. Es la misma elección del portal: lo que apagues aquí también se apaga en el escritorio. El orden lo decide el uso: lo que más abres sube solo.
+          Enciende o apaga cada tarjeta. Es la misma elección del portal: lo que apagues aquí también se apaga en el escritorio. El orden lo decide el uso: lo que más abres sube solo.
         </Text>
         {widgets == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : !ids.length ? (
-          <Aviso texto="Tu cargo no tiene widgets para elegir." />
+          <Aviso texto="Tu cargo no tiene tarjetas para elegir." />
         ) : (
-          <Seccion titulo="Widgets" pie={guardando ? 'Guardando…' : null}>
+          <Seccion titulo="Tarjetas" pie={guardando ? 'Guardando…' : null}>
             {ids.map((id, i) => (
               <View key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{ROTULO_WIDGET[id] ?? id}</Text>

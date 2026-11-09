@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1482.1 — App de empleados: «Tarjetas» en vez de «Widgets» y texto del permiso de ubicación
+
+- Personalizar el Inicio dice «Tarjetas»: Apple rechazó la app por la guía 4.4
+  («widgets») y la app no tiene widgets de pantalla de inicio.
+- El permiso de ubicación «siempre» explica su motivo en español; el binario
+  llevaba el texto genérico en inglés.
+
 ## v2.1482.0 — El apoyo temporal lleva el cargo que cubre
 
 - Un apoyo temporal ahora puede decir qué cargo cubre. En sus días la persona

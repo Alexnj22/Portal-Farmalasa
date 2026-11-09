@@ -105,6 +105,7 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "FarmaSalud usa tu ubicación mientras haces la ruta, para registrar las visitas y mostrar en el mapa dónde va el recorrido.",
+          "locationAlwaysPermission": "FarmaSalud sigue marcando tu ubicación con la app cerrada mientras tienes una ruta iniciada, para que en el mapa se vea dónde va el reparto. Al terminar la ruta deja de usarla.",
           "locationAlwaysAndWhenInUsePermission": "FarmaSalud sigue marcando tu ubicación con la app cerrada mientras tienes una ruta iniciada, para que en el mapa se vea dónde va el reparto. Al terminar la ruta deja de usarla.",
           "isIosBackgroundLocationEnabled": true,
           "isAndroidBackgroundLocationEnabled": true,

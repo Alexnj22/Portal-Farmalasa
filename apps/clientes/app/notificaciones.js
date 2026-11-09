@@ -27,7 +27,8 @@ import { Stack, useFocusEffect } from 'expo-router';
 import Animated, { LinearTransition } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import Icono from '../componentes/Icono';
-import { Cargando, ESPACIO_BURBUJA, Pantalla, Vacio } from '../componentes/ui';
+import { Cargando, ESPACIO_BURBUJA, Pantalla, Tarjeta, Vacio } from '../componentes/ui';
+import { estiloDeAviso } from '../componentes/estiloDeAviso';
 import { Entrada } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { EncabezadoSeccion, FilaAviso, confirmar, estiloSnack, hojaDeOpciones, seccionar, velo } from '../componentes/BandejaAvisos';
@@ -44,6 +45,13 @@ const ANDROID = Platform.OS === 'android';
 // queda «Borradas recientemente»).
 const ESPERA_DESHACER = 4000;
 const RUTA_BORRADAS = '/notificaciones-borradas';
+
+const MUESTRAS = [
+  { tipo: 'ganado', titulo: 'Ganaste 25 puntos', cuerpo: 'Por tu compra de hoy. Ya puedes usarlos en caja.' },
+  { tipo: 'oferta', titulo: 'Nueva oferta para ti', cuerpo: 'Hay descuentos esta semana en productos que sueles comprar.' },
+  { tipo: 'tratamiento', titulo: '¿Ya te toca otra vez?', cuerpo: 'Tu medicamento está por acabarse. Resérvalo a tiempo.' },
+  { tipo: 'encargo', titulo: 'Ya lo tenemos', cuerpo: 'Un producto que esperabas ya está disponible.' },
+];
 
 export default function Notificaciones() {
   const t = useTema();
@@ -272,6 +280,20 @@ export default function Notificaciones() {
       <>
         {barra}
         <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+          {/* Muestra (2026-11-09): sólo se ven, no son avisos de la cuenta. */}
+          {MUESTRAS.map((m) => {
+            const e = estiloDeAviso(t, m.tipo);
+            return (
+              <Tarjeta key={m.tipo} estilo={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+                <Icono sf={e.sf} respaldo={e.respaldo} tam={20} color={e.texto} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{m.titulo}</Text>
+                  <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>{m.cuerpo}</Text>
+                  <Text style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto3 }}>Ejemplo</Text>
+                </View>
+              </Tarjeta>
+            );
+          })}
           <Entrada estilo={{ paddingTop: 24 }}>
             <Vacio icono="bell.badge.fill" respaldo="🔔" titulo={d.avisos?.length ? 'Todo limpio' : 'Estás al día'}
               accion="Borradas recientemente" alAccion={verBorradas}>

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.3 — App de clientes: notificaciones de muestra
+
+La bandeja vacía de la app muestra notificaciones de ejemplo.
+
 ## v2.1492.2 — App de clientes: campana y muestras de historias
 
 La campana muestra el mismo contador en todas las pestañas y pierde el doble fondo. Sin historias publicadas, se muestran productos del catálogo.

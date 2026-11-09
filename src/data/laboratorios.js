@@ -7,7 +7,7 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 import { subirArchivo } from '../utils/storageFiles';
 
 export function fetchLaboratoriosBasic() {
-    return supabase.from('laboratorios').select('id, nombre, foto, sugerir_en_app').order('nombre');
+    return supabase.from('laboratorios').select('id, nombre, foto, sugerir_en_app, nombre_app, nombre_tienda').order('nombre');
 }
 
 // Los productos de este laboratorio salen primero en «Mismo principio activo»
@@ -34,6 +34,17 @@ export async function subirFotoLaboratorio(id, blob, contexto = {}) {
     const foto = `${url}?t=${Date.now()}`;
     await guardarFotoLaboratorio(id, foto, contexto);
     return foto;
+}
+
+// El nombre que ve el cliente en la app. Vacío = limpieza automática; dos
+// laboratorios con el mismo nombre salen como uno solo. Devuelve el resultante.
+export async function guardarNombreAppLaboratorio(id, nombreApp, contexto = {}) {
+    const { data, error } = await supabase.from('laboratorios')
+        .update({ nombre_app: nombreApp.trim() || null }).eq('id', id).select('id, nombre_app, nombre_tienda');
+    if (error) throw error;
+    if (!data?.length) throw new Error('No tienes permiso para cambiar este laboratorio.');
+    anotar('NOMBRE_APP_LABORATORIO', id, { nombre_app: nombreApp.trim() || null, ...contexto });
+    return data[0];
 }
 
 export function fetchProveedores() {

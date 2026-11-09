@@ -18058,7 +18058,9 @@ export type Database = {
           foto: string | null
           id: number
           nombre: string
+          nombre_app: string | null
           nombre_busq: string | null
+          nombre_tienda: string | null
           ocultar_en_minmax: boolean | null
           sugerir_en_app: boolean
           ubicacion: string | null
@@ -18069,7 +18071,9 @@ export type Database = {
           foto?: string | null
           id: number
           nombre: string
+          nombre_app?: string | null
           nombre_busq?: string | null
+          nombre_tienda?: string | null
           ocultar_en_minmax?: boolean | null
           sugerir_en_app?: boolean
           ubicacion?: string | null
@@ -18080,7 +18084,9 @@ export type Database = {
           foto?: string | null
           id?: number
           nombre?: string
+          nombre_app?: string | null
           nombre_busq?: string | null
+          nombre_tienda?: string | null
           ocultar_en_minmax?: boolean | null
           sugerir_en_app?: boolean
           ubicacion?: string | null
@@ -36392,6 +36398,10 @@ export type Database = {
       }
       kiosk_auth_code_for: {
         Args: { p_branch_id: number; p_bucket: string; p_su: boolean }
+        Returns: string
+      }
+      lab_nombre_tienda: {
+        Args: { p_nombre: string; p_nombre_app: string }
         Returns: string
       }
       liberar_parada_de_ruta: {

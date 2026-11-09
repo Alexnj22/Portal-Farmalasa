@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1496.0 — Laboratorios: nombre en la app y unión de duplicados
+
+- Laboratorios: campo «Nombre en la app». Sin escribirlo, el nombre se limpia solo de códigos internos; dos laboratorios con el mismo nombre salen como uno en la app.
+- App de clientes: lista y ficha muestran el nombre limpio, y al elegir un laboratorio unido salen los productos de todos.
+
 ## v2.1495.0 — Un solo cargador de fotos para productos y laboratorios
 
 Fotos de productos, la ficha del producto y Laboratorios usan ahora el mismo cargador de fotos: pegar, arrastrar, buscar en internet, con el teléfono, y el fondo y el encuadre automáticos. En Laboratorios el cuadro y el recorte son redondos, y el logo se encuadra para que no se corte en el círculo.

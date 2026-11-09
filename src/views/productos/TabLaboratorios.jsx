@@ -5,7 +5,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
+import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarNombreAppLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
@@ -205,6 +205,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                                         onSave={(branchId, fields) => handleSave(lab.id, branchId, fields)}
                                                         onFoto={(foto) => setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, foto } : l))}
                                                         onSugerir={(sugerir_en_app) => setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, sugerir_en_app } : l))}
+                                                        onNombre={(fila) => setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, ...fila } : l))}
                                                     />
                                                 ))}
                                             </div>
@@ -271,6 +272,35 @@ function FotoLaboratorio({ lab, onFoto }) {
     );
 }
 
+// El nombre que ven los clientes. Vacío, se limpia solo; con el mismo nombre
+// que otro laboratorio, en la app salen como uno solo.
+function NombreEnLaApp({ lab, onNombre }) {
+    const [valor, setValor] = useState(lab.nombre_app || '');
+    const [ocupado, setOcupado] = useState(false);
+    const guardar = async () => {
+        setOcupado(true);
+        try {
+            onNombre(await guardarNombreAppLaboratorio(lab.id, valor, { lab: lab.nombre }));
+            useToastStore.getState().showToast('Guardado', 'Nombre en la app actualizado.', 'success');
+        } catch (err) {
+            useToastStore.getState().showToast('No se pudo guardar', mensajeAmigable(err), 'error');
+        } finally {
+            setOcupado(false);
+        }
+    };
+    return (
+        <div className="mb-3 pt-3 border-t border-divider">
+            <p className="text-body font-semibold text-content-1">Nombre en la app</p>
+            <p className="text-caption text-content-3 mb-2">Los clientes lo ven como «{lab.nombre_tienda}». Si le pones el mismo nombre que a otro laboratorio, en la app salen juntos.</p>
+            <div className="flex items-center gap-2">
+                <PortalInput aria-label="Nombre en la app" className="flex-1" compact value={valor}
+                    onChange={e => setValor(e.target.value)} placeholder={lab.nombre_tienda} />
+                <Button variant="secondary" size="sm" loading={ocupado} disabled={valor.trim() === (lab.nombre_app || '')} onClick={guardar}>Guardar</Button>
+            </div>
+        </div>
+    );
+}
+
 // Sus productos salen primero en «Mismo principio activo» de la app.
 function SugerirLaboratorio({ lab, onSugerir }) {
     const [ocupado, setOcupado] = useState(false);
@@ -296,7 +326,7 @@ function SugerirLaboratorio({ lab, onSugerir }) {
     );
 }
 
-function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto, onSugerir }) {
+function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto, onSugerir, onNombre }) {
     const filledCount = branches.filter(b => hasAny(locationMap[b.id] || {})).length;
 
     return (
@@ -382,6 +412,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto, 
                         {/* Inner panel with subtle glass bg */}
                         <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3">
                             <FotoLaboratorio lab={lab} onFoto={onFoto} />
+                            <NombreEnLaApp lab={lab} onNombre={onNombre} />
                             <SugerirLaboratorio lab={lab} onSugerir={onSugerir} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                                 {branches.map((branch, idx) => (

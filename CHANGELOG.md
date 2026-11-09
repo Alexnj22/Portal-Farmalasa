@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.11 — App de clientes: foto del encabezado sin doble fondo
+
+La foto del encabezado se ve más grande: el aro del nivel es su único fondo.
+
 ## v2.1492.10 — App de clientes: esquinas de la tarjeta al inclinarla
 
 Al inclinar la tarjeta de socio ya no asoma el color de fondo por las esquinas.

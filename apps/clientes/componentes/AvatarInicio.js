@@ -21,7 +21,7 @@ import { useTema } from '../tema/tema';
 
 const TAM = 46;
 
-export default function AvatarInicio({ codigo, nombre, material, equipo, tam = TAM }) {
+export default function AvatarInicio({ codigo, nombre, material, equipo, tam = TAM, fino = false }) {
   const t = useTema();
   const guardada = useFotoPerfil();
   const [subiendo, setSubiendo] = useState(false);
@@ -46,7 +46,7 @@ export default function AvatarInicio({ codigo, nombre, material, equipo, tam = T
       <Presionable onPress={tocar} hitSlop={6} accessibilityRole="button"
         accessibilityLabel={url ? 'Tu perfil' : 'Agregar tu foto de perfil'} accessibilityHint={url ? 'Abre Cuenta' : PARA_QUE_FOTO}
         style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-        <AvatarNivel nombre={nombre} material={material} equipo={equipo} uri={url} clave={mia ? guardada.clave : null} tam={tam} atenuado={subiendo} />
+        <AvatarNivel nombre={nombre} material={material} equipo={equipo} uri={url} clave={mia ? guardada.clave : null} tam={tam} fino={fino} atenuado={subiendo} />
         {!url ? (
           <Latido estilo={{ position: 'absolute', right: -3, bottom: -3 }} escala={1.18}>
             <View style={{ width: 20, height: 20, borderRadius: 10, alignItems: 'center', justifyContent: 'center',

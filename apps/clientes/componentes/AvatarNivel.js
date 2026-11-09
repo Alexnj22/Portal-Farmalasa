@@ -38,11 +38,12 @@ function iniciales(nombre) {
 // placa con el NOMBRE del nivel en su mismo metal o piedra (y «TEAM» si es del
 // equipo). El aro además es más grueso y brilla del tono del nivel: con 3 pt
 // de metal sobre la aurora, Oro y Bronce se confundían.
-export default function AvatarNivel({ nombre, material, equipo = false, uri, clave, tam = 64, atenuado = false, insignia = false }) {
+export default function AvatarNivel({ nombre, material, equipo = false, uri, clave, tam = 64, atenuado = false, insignia = false, fino = false }) {
   const t = useTema();
   const paleta = material ? (COLORES_NIVEL[material === 'vip' ? 'bronce' : material] ?? null) : equipo ? COLORES_NIVEL.empleado : null;
-  const anillo = insignia ? Math.max(4, Math.round(tam * 0.055)) : 3;
-  const hueco = 1.5;
+  // `fino` (encabezado, 2026-11-09): aro de 2 pt y sin hueco; a 42 pt la foto es lo que importa.
+  const anillo = fino ? 2 : insignia ? Math.max(4, Math.round(tam * 0.055)) : 3;
+  const hueco = fino ? 0 : 1.5;
   const interior = tam - 2 * (anillo + hueco);
   // El hueco va del tono hondo del mismo material (un bisel), no del fondo:
   // en iPhone el fondo es la aurora y un color fijo se veía como un disco.

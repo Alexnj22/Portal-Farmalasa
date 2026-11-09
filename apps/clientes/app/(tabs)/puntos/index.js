@@ -42,6 +42,13 @@ const MINIMO_DE_CANJE = 100;
 let confetiMostrado = false;
 const marcarConfeti = () => { confetiMostrado = true; };
 
+// iOS envuelve lo que va en la barra en una burbuja de vidrio: con la foto
+// adentro había doble fondo y la foto quedaba chica. Sin burbuja, el aro del
+// nivel es el fondo.
+const fotoEnEncabezado = (foto) => (Platform.OS === 'ios'
+  ? { unstable_headerLeftItems: () => [{ type: 'custom', element: foto, hidesSharedBackground: true }] }
+  : { headerLeft: () => foto });
+
 export default function Puntos() {
   const t = useTema();
   // Los `ver*` (modo de prueba y avisos) llegan con un valor que cambia en cada
@@ -169,10 +176,10 @@ export default function Puntos() {
       {/* La foto va en el encabezado, a la izquierda (2026-11-09): sin foto, la
           invitación a ponerla. Con la sesión de código no hay foto. */}
       {!conCodigo && !resumen.pendiente ? (
-        <Stack.Screen options={{ headerLeft: () => (
-          <AvatarInicio tam={34} codigo={resumen.codigo} nombre={resumen.nombre} equipo={empleado}
+        <Stack.Screen options={fotoEnEncabezado(
+          <AvatarInicio tam={42} fino codigo={resumen.codigo} nombre={resumen.nombre} equipo={empleado}
             material={material ?? resumen.nivel?.clave ?? null} />
-        ) }} />
+        )} />
       ) : null}
       {/* El saludo sólo el día del cumpleaños; el resto, la fila es de las historias. */}
       {resumen.cumpleanos ? (

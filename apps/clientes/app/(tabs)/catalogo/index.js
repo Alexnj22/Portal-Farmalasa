@@ -24,6 +24,7 @@ import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
 import { ESPACIO_BURBUJA, Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
+import Vidrio from '../../../componentes/Vidrio';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
 import FilaProductos from '../../../componentes/FilaProductos';
@@ -98,9 +99,10 @@ export default function Catalogo() {
     if (ahora !== yaLejos.value) { yaLejos.value = ahora; runOnJS(setLejos)(ahora); }
   }, [altoPantalla]);
   const estiloBuscador = useAnimatedStyle(() => {
-    if (posBuscador.value == null) return { opacity: 0 };
+    // Fuera de pantalla y no con opacidad: el Liquid Glass a veces no se dibuja bajo un fundido.
+    if (posBuscador.value == null) return { transform: [{ translateY: -200 }] };
     const d = desplazado.value;
-    return { opacity: 1, transform: [{ translateY: d == null ? posBuscador.value + tope : Math.max(tope + 6, posBuscador.value - d) }] };
+    return { transform: [{ translateY: d == null ? posBuscador.value + tope : Math.max(tope + 6, posBuscador.value - d) }] };
   }, [tope]);
   const arriba = useCallback(() => {
     Haptics.selectionAsync().catch(() => {});
@@ -401,12 +403,9 @@ const TarjetaProducto = memo(function TarjetaProducto({ p }) {
 
 // El buscador, siempre abierto y dentro de la lista, igual en iOS y Android.
 const Buscador = memo(function Buscador({ valor, alCambiar }) {
-  const t = useTema();
   return (
-    <View style={{ width: '100%', maxWidth: 688, height: ALTO_BUSCADOR, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 14, paddingRight: 4, borderRadius: 16,
-      // Opaco: los productos pasan por debajo.
-      backgroundColor: t.oscuro ? '#2A2930' : '#FFFFFF', borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
-      shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3 }}>
+    // Vidrio en iOS, superficie opaca en Android: los productos pasan por debajo.
+    <Vidrio radio={ALTO_BUSCADOR / 2} elevacion={3} style={{ width: '100%', maxWidth: 688, height: ALTO_BUSCADOR, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 14, paddingRight: 4 }}>
       <Icono sf="magnifyingglass" respaldo="⌕" tam={16} color={colorSistema.texto3} />
       <TextInput value={valor} onChangeText={alCambiar} placeholder="Medicamento o principio activo" placeholderTextColor={colorSistema.texto3}
         accessibilityLabel="Buscar medicamento o principio activo" returnKeyType="search" autoCapitalize="none" autoCorrect={false}
@@ -417,7 +416,7 @@ const Buscador = memo(function Buscador({ valor, alCambiar }) {
           <Icono sf="xmark.circle.fill" respaldo="×" tam={18} color={colorSistema.texto3} />
         </Presionable>
       ) : null}
-    </View>
+    </Vidrio>
   );
 });
 

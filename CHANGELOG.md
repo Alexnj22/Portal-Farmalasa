@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1493.2 — App de clientes: buscador de la Tienda con vidrio
+
+El buscador de la Tienda recupera el efecto de vidrio en iPhone.
+
 ## v2.1493.1 — App de clientes: buscador fijo y botones de entrada a la vista
 
 El buscador de la Tienda se queda fijo arriba al desplazar y los botones de Iniciar sesión siempre están a la vista.

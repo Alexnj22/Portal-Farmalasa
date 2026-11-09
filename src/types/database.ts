@@ -18061,6 +18061,7 @@ export type Database = {
           nombre_app: string | null
           nombre_busq: string | null
           nombre_tienda: string | null
+          ocultar_en_app: boolean
           ocultar_en_minmax: boolean | null
           sugerir_en_app: boolean
           ubicacion: string | null
@@ -18074,6 +18075,7 @@ export type Database = {
           nombre_app?: string | null
           nombre_busq?: string | null
           nombre_tienda?: string | null
+          ocultar_en_app?: boolean
           ocultar_en_minmax?: boolean | null
           sugerir_en_app?: boolean
           ubicacion?: string | null
@@ -18087,6 +18089,7 @@ export type Database = {
           nombre_app?: string | null
           nombre_busq?: string | null
           nombre_tienda?: string | null
+          ocultar_en_app?: boolean
           ocultar_en_minmax?: boolean | null
           sugerir_en_app?: boolean
           ubicacion?: string | null

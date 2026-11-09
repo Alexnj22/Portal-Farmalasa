@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1497.0 — Laboratorios: familias unidas y ocultar en la app
+
+- Laboratorios: interruptor «Ocultar de la lista en la app» para lo que no es un laboratorio; sus productos siguen a la venta.
+- App de clientes: las familias y categorías quedan bajo su marca (GSK, Bayer, Durex, Lilly…).
+
 ## v2.1496.1 — Auditoría: área de la función del nombre en la app
 
 - Interno: la función que calcula el nombre del laboratorio en la app queda asignada a su área de auditoría.

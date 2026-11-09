@@ -269,6 +269,7 @@
     ],
     "laboratorios": [
       "acumula_puntos",
+      "ocultar_en_app",
       "ocultar_en_minmax",
       "sugerir_en_app"
     ],

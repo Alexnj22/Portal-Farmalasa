@@ -5,7 +5,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarNombreAppLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
+import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarNombreAppLaboratorio, guardarOcultarLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
@@ -301,6 +301,31 @@ function NombreEnLaApp({ lab, onNombre }) {
     );
 }
 
+// Para lo que no es un laboratorio (Insumos, Bebidas…): no sale en las listas.
+function OcultarLaboratorio({ lab, onNombre }) {
+    const [ocupado, setOcupado] = useState(false);
+    const cambiar = async (ocultar) => {
+        setOcupado(true);
+        try {
+            await guardarOcultarLaboratorio(lab.id, ocultar, { lab: lab.nombre });
+            onNombre({ ocultar_en_app: ocultar });
+        } catch (err) {
+            useToastStore.getState().showToast('No se pudo guardar', mensajeAmigable(err), 'error');
+        } finally {
+            setOcupado(false);
+        }
+    };
+    return (
+        <div className="flex items-center justify-between gap-4 mb-3 pt-3 border-t border-divider">
+            <div className="min-w-0">
+                <p className="text-body font-semibold text-content-1">Ocultar de la lista en la app</p>
+                <p className="text-caption text-content-3">No aparece como laboratorio. Sus productos siguen a la venta.</p>
+            </div>
+            <Switch checked={!!lab.ocultar_en_app} onChange={cambiar} disabled={ocupado} label="Ocultar de la lista en la app" />
+        </div>
+    );
+}
+
 // Sus productos salen primero en «Mismo principio activo» de la app.
 function SugerirLaboratorio({ lab, onSugerir }) {
     const [ocupado, setOcupado] = useState(false);
@@ -414,6 +439,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto, 
                             <FotoLaboratorio lab={lab} onFoto={onFoto} />
                             <NombreEnLaApp lab={lab} onNombre={onNombre} />
                             <SugerirLaboratorio lab={lab} onSugerir={onSugerir} />
+                            <OcultarLaboratorio lab={lab} onNombre={onNombre} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                                 {branches.map((branch, idx) => (
                                     <BranchLocationCard

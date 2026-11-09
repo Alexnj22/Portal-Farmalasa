@@ -253,8 +253,8 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
 // editor que la foto de un producto (recortar, girar, quitar el fondo, pincel,
 // componer) y por los mismos caminos: archivo, pegar, cámara o teléfono.
 //
-// Sin la prop `producto` del editor a propósito: esa revisión bloquea lo menor
-// de 250 px, y el logo de un laboratorio suele venir chico y se ve en un círculo.
+// Con `producto`, igual que Fotos de productos: al abrir, el editor limpia el
+// fondo y encuadra solo, y no deja guardar una imagen vacía o diminuta.
 function FotoLaboratorio({ lab, onFoto }) {
     const [ocupado, setOcupado] = useState(false);
     const [pendiente, setPendiente] = useState(null);
@@ -347,7 +347,7 @@ function FotoLaboratorio({ lab, onFoto }) {
             </button>
             <div className="min-w-0 flex-1 basis-56">
                 <p className="text-body font-semibold text-content-1">Foto en la tienda</p>
-                <p className="text-caption text-content-3 mb-2">La ven los clientes en la app. Al elegirla se abre el editor: recortar, girar y quitar el fondo.</p>
+                <p className="text-caption text-content-3 mb-2">La ven los clientes en la app. Al elegirla, el fondo se quita y se encuadra sola.</p>
                 <input ref={selector} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={elegir} />
                 <input ref={camara} type="file" {...PROPS_CAMARA} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={elegir} />
                 <div className="flex flex-wrap items-center gap-2">
@@ -369,7 +369,7 @@ function FotoLaboratorio({ lab, onFoto }) {
             {fotoDelTelefono.dialogo}
             {pendiente && (
                 <Suspense fallback={null}>
-                    <PhotoEditorModal file={pendiente} onConfirm={subir} onCancel={() => setPendiente(null)} />
+                    <PhotoEditorModal file={pendiente} producto onConfirm={subir} onCancel={() => setPendiente(null)} />
                 </Suspense>
             )}
         </div>

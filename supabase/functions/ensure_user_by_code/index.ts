@@ -197,11 +197,23 @@ Deno.serve(async (req: Request) => {
       // El metadata del JWT ya no decide permisos (lo hacen las funciones auth_*
       // contra la tabla), pero el frontend lo lee para pintar la UI: se mantiene
       // al día con el empleado real, no con lo que pidió el cliente.
-      const newRoleId = employee.role_id ?? null;
+      // El apoyo que lleva cargo (2026-11-09): en sus días, el perfil es el del
+      // cargo que cubre y nada más. Misma regla que `auth_employee_role_id()`.
+      const { data: cargoApoyo, error: cargoErr } = await admin
+        .rpc("cargo_de_apoyo_vigente", { p_employee_id: employee.id });
+      if (cargoErr) console.error(`[ensure_user_by_code] cargo_de_apoyo_vigente: ${cargoErr.message}`);
+      let cargoCubierto: { name?: string; rango?: number } | null = null;
+      if (!cargoErr && cargoApoyo != null) {
+        const { data: fila, error: filaErr } = await admin
+          .from("roles").select("name, rango").eq("id", cargoApoyo).maybeSingle();
+        if (filaErr) console.error(`[ensure_user_by_code] roles: ${filaErr.message}`);
+        cargoCubierto = fila ?? null;
+      }
+      const newRoleId = cargoCubierto ? Number(cargoApoyo) : (employee.role_id ?? null);
       // El escalón sale del CARGO —el propio y el secundario, el mayor de los
       // dos—, que es la misma regla que `rango_de_empleado()` en la base.
       // Reemplaza a `systemRole`, que era un rango escrito por persona.
-      const newRango = Math.max(
+      const newRango = cargoCubierto ? Number(cargoCubierto.rango ?? 0) : Math.max(
         Number((employee.role as { rango?: number } | null)?.rango ?? 0),
         Number((employee.sec_role as { rango?: number } | null)?.rango ?? 0),
       );
@@ -254,9 +266,9 @@ Deno.serve(async (req: Request) => {
           name:            employee.name,
           code:            employee.code,
           username:        employee.username ?? null,
-          role:            (employee.role as { name?: string } | null)?.name || "Sin Cargo",
+          role:            cargoCubierto?.name || (employee.role as { name?: string } | null)?.name || "Sin Cargo",
           roleId:          newRoleId,
-          secondaryRoleId: employee.secondary_role_id ?? null,
+          secondaryRoleId: cargoCubierto ? null : (employee.secondary_role_id ?? null),
           branchId:        newBranchId,
           photo:           employee.photo_url,
           email:           authenticatedUser.email,

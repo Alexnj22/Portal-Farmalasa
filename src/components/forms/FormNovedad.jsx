@@ -201,6 +201,25 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 </div>
             )}
 
+            {/* El cargo sale de la tabla: en los días del apoyo tiene SÓLO sus permisos. */}
+            {isSupport && (
+                <div className="relative z-sidebar">
+                    <label className={labelClasses}>Cargo que cubre</label>
+                    <LiquidSelect
+                        value={formData?.coverRoleId ? String(formData.coverRoleId) : ''}
+                        onChange={(v) => setFormData(prev => ({
+                            ...prev,
+                            coverRoleId: v || null,
+                            coverRoleName: roles.find(r => String(r.id) === String(v))?.name || null,
+                        }))}
+                        options={roles.filter(r => !r.is_su).map(r => ({ value: String(r.id), label: r.name }))}
+                        placeholder="Mantiene su cargo"
+                        clearable
+                    />
+                    <p className="text-caption text-content-3 mt-1.5 ml-1">Esos días tendrá sólo los permisos de este cargo. Los demás días, los de su ficha.</p>
+                </div>
+            )}
+
             {/* 🚨 ALERTA ROJA DE HEADCOUNT (Bloqueante) */}
             {headcountWarning && (
                 <div className="bg-danger/10 border border-danger/40 p-4 rounded-3xl flex gap-3 items-start animate-in zoom-in-95 shadow-[var(--shadow-glow-danger)]">

@@ -238,6 +238,10 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "apoyo_vigente": {
+   "area": "acceso",
+   "por": "código"
+  },
   "app_borrar_datos_de_cuenta": {
    "area": "app-clientes",
    "por": "código"
@@ -1090,6 +1094,10 @@
   },
   "captura_de_foto_vigente": {
    "area": "personal",
+   "por": "código"
+  },
+  "cargo_de_apoyo_vigente": {
+   "area": "acceso",
    "por": "código"
   },
   "cargos_de_administracion": {
@@ -3939,19 +3947,19 @@
    "area": "cortes-efectivo",
    "por": "código"
   },
-  "mapfre_facturas_de_corte": {
-   "area": "cortes-efectivo",
-   "por": "código"
-  },
-  "mapfre_ya_cobrada": {
-   "area": "cortes-efectivo",
-   "por": "código"
-  },
   "mapfre_customer_id": {
    "area": "facturacion-dte",
    "por": "tablas"
   },
   "mapfre_facturas": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "mapfre_facturas_de_corte": {
+   "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "mapfre_ya_cobrada": {
    "area": "cortes-efectivo",
    "por": "código"
   },
@@ -5616,6 +5624,10 @@
    "por": "código"
   },
   "revoke_session": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "roles_efectivos_de": {
    "area": "acceso",
    "por": "código"
   },

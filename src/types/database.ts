@@ -31423,6 +31423,10 @@ export type Database = {
         Args: { p_branch_id: number; p_franjas?: Json; p_limpiezas?: Json }
         Returns: number
       }
+      apoyo_vigente: {
+        Args: { p_dia?: string; p_employee_id: string }
+        Returns: Json
+      }
       app_borrar_datos_de_cuenta: {
         Args: { p_customer: number }
         Returns: Json
@@ -32153,6 +32157,10 @@ export type Database = {
       }
       cantidad_de_diferencia: { Args: { p_item_id: number }; Returns: number }
       captura_de_foto_vigente: { Args: { p_secreto: string }; Returns: Json }
+      cargo_de_apoyo_vigente: {
+        Args: { p_dia?: string; p_employee_id: string }
+        Returns: number
+      }
       cargos_de_administracion: { Args: never; Returns: string[] }
       carne_disponible: {
         Args: { p_code: string; p_excluir?: string }
@@ -38444,6 +38452,10 @@ export type Database = {
       revision_de_presentaciones: { Args: never; Returns: Json }
       revoke_person_sessions: { Args: { p_user_id: string }; Returns: number }
       revoke_session: { Args: { p_session_id: string }; Returns: boolean }
+      roles_efectivos_de: {
+        Args: { p_dia?: string; p_employee_id: string }
+        Returns: number[]
+      }
       ruta_parada_no_entregada: {
         Args: {
           p_motivo: string

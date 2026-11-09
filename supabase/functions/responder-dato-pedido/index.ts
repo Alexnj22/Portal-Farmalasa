@@ -72,8 +72,13 @@ Deno.serve(async (req) => {
     const { data: quien, error: qErr } = await admin
       .from("employees").select("branch_id").eq("id", emp.id).maybeSingle();
     if (qErr) throw qErr;
-    const esSuSala = quien?.branch_id != null
-      && Number(quien.branch_id) === Number(pedido.branch_id);
+    // La sala de un apoyo vigente reemplaza a la de la ficha mientras dura.
+    const { data: salaApoyo, error: apoyoErr } = await admin
+      .rpc("sala_de_apoyo_vigente", { p_employee_id: emp.id });
+    if (apoyoErr) throw apoyoErr;
+    const miSala = salaApoyo ?? quien?.branch_id;
+    const esSuSala = miSala != null
+      && Number(miSala) === Number(pedido.branch_id);
     if (!esSuSala) {
       // Una consulta que falla NO es «no tenés permiso»: sin esa distinción, un
       // problema de red le dice a alguien que el pedido no es suyo.

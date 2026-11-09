@@ -256,6 +256,14 @@ export default function AccionDePersonal() {
                 </Seccion>
               ) : null}
 
+              {r.esApoyo ? (
+                <Seccion titulo="Cargo que cubre" pie="Esos días tendrá sólo los permisos de este cargo. Sin elegir, mantiene el suyo.">
+                  <Opciones valor={f.coverRoleId ? String(f.coverRoleId) : ''}
+                    onCambiar={(v) => pon({ coverRoleId: String(f.coverRoleId) === v ? null : v, coverRoleName: String(f.coverRoleId) === v ? null : ((roles || []).find((c) => String(c.id) === v)?.name || null) })}
+                    opciones={(roles || []).filter((c) => !c.is_su).map((c) => ({ id: String(c.id), label: c.name }))} />
+                </Seccion>
+              ) : null}
+
               {r.esIncapacidad ? (
                 <Seccion titulo="Boleta">
                   <Campo multiline={false} autoCapitalize="characters" placeholder="N° de boleta ISSS / médico (ej. B-12345678)" value={f.certificateNumber || ''}

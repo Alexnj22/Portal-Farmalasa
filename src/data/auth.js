@@ -137,5 +137,15 @@ export async function leerCargoYSalaPropios(employeeId) {
     const { data: salaApoyo, error: apoyoErr } = await supabase
         .rpc('sala_de_apoyo_vigente', { p_employee_id: employeeId });
     if (apoyoErr) return null;
-    return salaApoyo != null ? { ...data, branch_id: Number(salaApoyo) } : data;
+    /* En los días del apoyo con cargo, el perfil es el del cargo que cubre y
+     * nada más: así, al pasar la medianoche, volver a la pestaña trae los
+     * permisos del día. */
+    const { data: cargoApoyo, error: cargoErr } = await supabase
+        .rpc('cargo_de_apoyo_vigente', { p_employee_id: employeeId });
+    if (cargoErr) return null;
+    return {
+        ...data,
+        ...(salaApoyo != null && { branch_id: Number(salaApoyo) }),
+        ...(cargoApoyo != null && { role_id: Number(cargoApoyo), secondary_role_id: null }),
+    };
 }

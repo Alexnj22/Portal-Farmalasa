@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1482.0 — El apoyo temporal lleva el cargo que cubre
+
+- Un apoyo temporal ahora puede decir qué cargo cubre. En sus días la persona
+  tiene sólo los permisos de ese cargo y la sala del apoyo; los demás días, sólo
+  los de su ficha. Se elige en la novedad, en «Cargo que cubre».
+- Las acciones de faltantes, datos pedidos, cancelar envío, preventa y entrega
+  también toman la sala y el cargo del apoyo.
+
 ## v2.1481.0 — Cortes: el pago de Mapfre cobrado sin anotar se explica en el corte
 
 - Al explicar el sobrante de un corte («Tiene causa: explicarlo») aparece

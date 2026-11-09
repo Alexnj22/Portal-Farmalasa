@@ -286,7 +286,19 @@ export async function permisoDeModulo(
    * canon, que es el lado seguro para equivocarse — pero está anotado porque es
    * una diferencia real y alguien la va a encontrar.
    */
-  const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+  /* El apoyo que lleva cargo (2026-11-09): en sus días valen SÓLO los permisos
+   * del cargo que cubre; los demás días, los de la ficha. Misma regla que
+   * `auth_employee_role_id()`. Si no se puede leer, no se adivina. */
+  let roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+  if (emp) {
+    const { data: cargoApoyo, error: cargoErr } = await admin
+      .rpc("cargo_de_apoyo_vigente", { p_employee_id: employeeId });
+    if (cargoErr) {
+      console.error(`[permisoDeModulo] cargo_de_apoyo_vigente: ${cargoErr.message}`);
+      return { ...vacio, emp: empEfectivo ?? null, roto: "No se pudieron leer tus permisos." };
+    }
+    if (cargoApoyo != null) roles = [Number(cargoApoyo)];
+  }
   const { data: permisos, error: permErr } = await admin
     .from("role_permissions")
     .select("can_view, can_edit, can_approve, scope")

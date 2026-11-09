@@ -12,14 +12,11 @@ import PortalInput from '../components/common/PortalInput';
 import SegmentedControl from '../components/common/SegmentedControl';
 import AvatarConEstado from '../components/common/AvatarConEstado';
 import { EmptyState, SkeletonText } from '../components/common/StateViews';
-import useFotoDelTelefono from '../components/common/useFotoDelTelefono';
+import CargadorDeFoto from '../components/common/CargadorDeFoto';
 import useCoarsePointer from '../plataforma/useCoarsePointer';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
-import { fotoDeCatalogo } from '../plataforma/imagenes';
-import { precargarQuitarFondo } from '../plataforma/fotoDeProducto';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar } from '@nucleo/utils/edicionDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -35,7 +32,6 @@ import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchRecie
 import { UNIDADES, corregirConElNombre, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio } from '@nucleo/utils/concentracion';
 import LiquidSelect from '../components/common/LiquidSelect';
 
-const PhotoEditorModal = lazy(() => import('../components/common/PhotoEditorModal'));
 const LectorDeCodigo = lazy(() => import('../components/common/LectorDeCodigo'));
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -116,15 +112,6 @@ export default function FotosProductosView() {
 
     useEffect(() => { cargarCola(); }, [cargarCola]);
     useEffect(() => { cargarResumen(); }, [cargarResumen]);
-
-    // En computadora, el modelo de quitar fondo se baja mientras nadie usa la
-    // pantalla: así la primera foto no espera la descarga.
-    const tactilVista = useCoarsePointer();
-    useEffect(() => {
-        if (tactilVista || !puedeEditar) return undefined;
-        const id = setTimeout(() => { precargarQuitarFondo(); }, 3000);
-        return () => clearTimeout(id);
-    }, [tactilVista, puedeEditar]);
 
     // Los principios del catálogo, para elegir en vez de escribir (una vez por visita).
     const [nombres, setNombres] = useState([]);
@@ -380,11 +367,7 @@ const opcionesDeUnidad = (actual) =>
 //  · ⌘/Ctrl+Enter guarda y pasa al siguiente.
 function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar }) {
     const esTactil = useCoarsePointer();
-    const archivoRef = useRef(null);
-    const camaraRef = useRef(null);
-    const [pendiente, setPendiente] = useState(null);     // archivo elegido, todavía sin recortar
     const [fotoNueva, setFotoNueva] = useState(null);     // Blob recortado, listo para subir
-    const [encima, setEncima] = useState(false);          // arrastrando una imagen sobre la foto
     const vistaNueva = useMemo(() => (fotoNueva ? URL.createObjectURL(fotoNueva) : null), [fotoNueva]);
     useEffect(() => () => { if (vistaNueva) URL.revokeObjectURL(vistaNueva); }, [vistaNueva]);
 
@@ -394,64 +377,6 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
     const [tocoPrincipios, setTocoPrincipios] = useState(false);
     const [deSrs, setDeSrs] = useState(null);             // el registro de donde salió lo escrito
     const [guardando, setGuardando] = useState(false);
-
-    const fotoDelTelefono = useFotoDelTelefono(setPendiente, {
-        etiqueta: `Foto de ${producto.nombre}`,
-        onError: (msg) => { if (msg) avisar('Foto', msg); },
-    });
-
-    const elegirArchivo = (e) => {
-        const f = e.target.files?.[0];
-        if (f) setPendiente(f);
-        e.target.value = '';
-    };
-
-    // Pegar una imagen copiada (de internet, de WhatsApp Web…) en cualquier
-    // parte de la pantalla. Si el foco está en un campo de texto y lo pegado es
-    // texto, el campo lo recibe como siempre: sólo se toma una IMAGEN.
-    useEffect(() => {
-        if (!puedeEditar) return undefined;
-        const alPegar = (e) => {
-            for (const item of e.clipboardData?.items || []) {
-                if (item.type.startsWith('image/')) {
-                    const f = item.getAsFile();
-                    if (f) { e.preventDefault(); setPendiente(f); return; }
-                }
-            }
-        };
-        document.addEventListener('paste', alPegar);
-        return () => document.removeEventListener('paste', alPegar);
-    }, [puedeEditar]);
-
-    const soltar = (e) => {
-        e.preventDefault();
-        setEncima(false);
-        const f = [...(e.dataTransfer?.files || [])].find((x) => x.type.startsWith('image/'));
-        if (f) setPendiente(f);
-        else avisar('Foto', 'Suelta una imagen (JPG, PNG o WebP).', 'warning');
-    };
-
-    // El botón lee el portapapeles por la API, que pide permiso y algunos
-    // navegadores niegan. El camino que siempre anda es el clic derecho › Pegar
-    // sobre el cuadro (ver `zonaDePegado`), o ⌘V / Ctrl+V.
-    const pegarImagen = async () => {
-        try {
-            if (!navigator.clipboard?.read) throw new Error('sin-lectura');
-            for (const item of await navigator.clipboard.read()) {
-                const tipo = item.types.find((t) => t.startsWith('image/'));
-                if (tipo) { const b = await item.getType(tipo); setPendiente(new File([b], 'pegada.png', { type: tipo })); return; }
-            }
-            avisar('Pegar imagen', 'No hay una imagen copiada. En la búsqueda: clic derecho sobre la imagen › Copiar imagen.', 'warning');
-        } catch (err) {
-            console.error('FotosProductos: leer el portapapeles', err);
-            avisar('Pegar imagen', 'El navegador no deja leer lo copiado desde el botón. Haz clic derecho sobre el cuadro de la foto › Pegar, o ⌘V / Ctrl+V.', 'warning');
-        }
-    };
-
-    const buscarEnInternet = () => {
-        const q = [producto.nombre, producto.laboratorio].filter(Boolean).join(' ');
-        window.open(`https://www.google.com/search?tbm=isch&q=${encodeURIComponent(q)}`, '_blank', 'noopener');
-    };
 
     const cambiar = (fn) => { setTocoPrincipios(true); fn(); };
     const elegirPreset = (p) => cambiar(() => {
@@ -504,8 +429,7 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
         try {
             let fotoUrl = null;
             if (fotoNueva) {
-                const blob = await fotoDeCatalogo(fotoNueva, 800, 0.85);
-                const url = await subirArchivo('product-photos', `${producto.id}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
+                const url = await subirArchivo('product-photos', `${producto.id}.jpg`, fotoNueva, { upsert: true, contentType: 'image/jpeg' });
                 fotoUrl = `${url}?t=${Date.now()}`;
             }
             await guardarCarga(producto.id, { fotoUrl, principios: principiosValidos },
@@ -531,8 +455,6 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
         return () => document.removeEventListener('keydown', alTeclear);
     }, [puedeEditar]);
 
-    const fotoVisible = vistaNueva || producto.foto_url;
-
     return (
         <section data-surface="card" className="p-4 md:p-5 space-y-5">
             <header className="flex items-start justify-between gap-3">
@@ -552,73 +474,10 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
                 {/* ── Foto ── */}
                 <div className="space-y-2">
                     <p className="text-label font-semibold text-content-2 flex items-center gap-1.5"><Camera size={14} /> Foto</p>
-                    <input ref={archivoRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={elegirArchivo} />
-                    <input ref={camaraRef} type="file" {...PROPS_CAMARA} className="hidden" aria-hidden="true" tabIndex={-1} onChange={elegirArchivo} />
-                    <div className="relative w-full max-w-[240px]">
-                        <button type="button" disabled={!puedeEditar}
-                            onClick={() => (esTactil ? camaraRef : archivoRef).current?.click()}
-                            onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
-                            onDragLeave={() => setEncima(false)}
-                            onDrop={puedeEditar ? soltar : undefined}
-                            className={`relative w-full aspect-square max-w-[240px] rounded-2xl border-2 border-dashed overflow-hidden bg-surface-card active:scale-[0.97] transition-[transform,border-color] ${encima ? 'border-brand' : 'border-divider'}`}>
-                            {fotoVisible ? (
-                                <img src={fotoVisible} alt="" className="w-full h-full object-contain p-2" />
-                            ) : (
-                                <span className="w-full h-full flex flex-col items-center justify-center gap-2 px-4 text-center text-content-3">
-                                    <ImagePlus size={32} />
-                                    <span className="text-caption font-semibold">{esTactil ? 'Tomar foto' : 'Subir, arrastrar o clic derecho › Pegar'}</span>
-                                </span>
-                            )}
-                            {vistaNueva && <Badge variant="success" className="absolute top-2 left-2">Nueva</Badge>}
-                        </button>
-                        {/* Zona de pegado: el navegador sólo ofrece «Pegar» en el clic
-                            derecho sobre algo editable. Esta capa invisible lo es; lo
-                            pegado sube como evento `paste` al oyente de la pantalla, y
-                            cualquier texto que se cuele se borra. El clic sigue abriendo
-                            el selector de archivos. */}
-                        {puedeEditar && !esTactil && (
-                            <span contentEditable suppressContentEditableWarning role="textbox" aria-label="Pegar imagen aquí"
-                                className="absolute inset-0 rounded-2xl text-transparent caret-transparent outline-none cursor-pointer"
-                                onClick={(e) => { e.preventDefault(); archivoRef.current?.click(); }}
-                                onDragOver={(e) => { e.preventDefault(); if (!encima) setEncima(true); }}
-                                onDragLeave={() => setEncima(false)}
-                                onDrop={(e) => { e.preventDefault(); e.stopPropagation(); soltar(e); }}
-                                onPaste={(e) => {
-                                    if (![...(e.clipboardData?.items || [])].some((i) => i.type.startsWith('image/'))) {
-                                        e.preventDefault();
-                                        avisar('Pegar imagen', 'Lo copiado no es una imagen. En la búsqueda: clic derecho sobre la imagen › Copiar imagen.', 'warning');
-                                    }
-                                }}
-                                onInput={(e) => { e.currentTarget.textContent = ''; }} />
-                        )}
-                    </div>
-                    {puedeEditar && (
-                        <div className="flex flex-wrap gap-1.5">
-                            {esTactil && <Button variant="secondary" size="sm" icon={Camera} onClick={() => camaraRef.current?.click()}>Tomar foto</Button>}
-                            {!esTactil && (
-                                <Button variant="secondary" size="sm" icon={Smartphone}
-                                    loading={fotoDelTelefono.pidiendo} disabled={fotoDelTelefono.esperando}
-                                    onClick={fotoDelTelefono.pedir}>
-                                    {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
-                                </Button>
-                            )}
-                            {!esTactil && <Button variant="ghost" size="sm" icon={ClipboardPaste} onClick={pegarImagen}>Pegar imagen</Button>}
-                            <Button variant="ghost" size="sm" icon={Globe} onClick={buscarEnInternet}
-                                title="Abre la búsqueda de imágenes con el nombre del producto: copia una y pégala aquí">
-                                Buscar en internet
-                            </Button>
-                            <Button variant="ghost" size="sm" icon={ImagePlus} onClick={() => archivoRef.current?.click()}>Elegir archivo</Button>
-                            {fotoNueva && <Button variant="ghost" size="sm" icon={X} onClick={() => setFotoNueva(null)}>Descartar</Button>}
-                        </div>
-                    )}
-                    {fotoDelTelefono.dialogo}
-                    {pendiente && (
-                        <Suspense fallback={null}>
-                            <PhotoEditorModal file={pendiente} producto
-                                onConfirm={(blob) => { setPendiente(null); setFotoNueva(blob); }}
-                                onCancel={() => setPendiente(null)} />
-                        </Suspense>
-                    )}
+                    <CargadorDeFoto foto={vistaNueva || producto.foto_url} nueva={!!vistaNueva} puedeEditar={puedeEditar}
+                        etiqueta={`Foto de ${producto.nombre}`}
+                        busqueda={[producto.nombre, producto.laboratorio].filter(Boolean).join(' ')}
+                        onFoto={setFotoNueva} onDescartar={() => setFotoNueva(null)} />
                 </div>
 
                 {/* ── Principio activo ── */}

@@ -19,7 +19,6 @@ import CarrilCards from '../../components/common/CarrilCards';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination from '../../components/common/TablePagination';
 // Los dos se abren con un clic; el editor trae `react-easy-crop` (~20 kB).
-const PhotoEditorModal = lazy(() => import('../../components/common/PhotoEditorModal'));
 // La extensión va EXPLÍCITA. `ExpedienteMovil.jsx` y `expedienteMovil.js` son
 // dos archivos que solo difieren en la primera letra, y macOS no distingue
 // mayúsculas: sin extensión, Vite prueba `.js` antes que `.jsx`, encuentra el
@@ -39,12 +38,8 @@ import {
 } from '@nucleo/data/productos';
 import PortalInput from '../../components/common/PortalInput';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
-import PhotoLightbox from '../../components/common/PhotoLightbox';
-import MenuPegarFoto from '../../components/common/MenuPegarFoto';
+import CargadorDeFoto from '../../components/common/CargadorDeFoto';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
-import useFotoDelTelefono from '../../components/common/useFotoDelTelefono';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import {
     COLUMNAS_DE_PRECIO, NIVELES_DE_MARGEN, NIVELES_DE_PRECIO, nivelesVisibles,
@@ -52,7 +47,6 @@ import {
     clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir,
 } from '@nucleo/utils/preciosDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
-import { fotoDeCatalogo, imagenDelPortapapeles } from '../../plataforma/imagenes';
 
 
 // Los niveles de precio y cuáles ve cada cargo viven en el núcleo
@@ -732,10 +726,6 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
         alertDanger: 'bg-danger/10 border-danger/30 text-danger-text',
         alertWarning: 'bg-warning/10 border-warning/30 text-warning-text',
         sectionLabel: 'text-caption font-black uppercase tracking-widest text-content-2',
-        photoBtn: 'border-divider hover:border-brand/50 bg-surface-card-hover/70 hover:bg-chart-1/10',
-        photoSubText: 'text-content-3',
-        photoUploadIcon: 'text-content-3 group-hover:text-brand-text',
-        photoUploadLabel: 'text-content-3 group-hover:text-brand-text',
         emptyPresentaciones: 'bg-surface-card-hover border-divider text-content-3',
         pricingWrapper: 'bg-surface-card border-divider shadow-sm',
         pricingThead: 'bg-brand/[0.05] border-b border-brand/[0.08]',
@@ -768,25 +758,12 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     const allowedPriceFields = useMemo(() => nivelesVisibles(maxPriceLevel), [maxPriceLevel]);
     const marginCheckFields = useMemo(() => allowedPriceFields.filter(f => f.key !== 'precio_7' && f.key !== 'premium'), [allowedPriceFields]);
 
-    const [photoLoading, setPhotoLoading] = useState(false);
     const [localFoto, setLocalFoto]       = useState(product.foto_url);
-    const [pendingFile, setPendingFile]   = useState(null);
     const [showSrs, setShowSrs]           = useState(false);
-    const [ctxMenu, setCtxMenu]           = useState(null);
     const [showInactive, setShowInactive] = useState(false);
-    const [lightboxSrc, setLightboxSrc]   = useState(null);
     const [showAllLog, setShowAllLog]     = useState(false);
     const [devolutivo, setDevolutivo]           = useState(!!product.devolutivo);
     const [savingDevolutivo, setSavingDevolutivo] = useState(false);
-    const fileRef       = useRef(null);
-    // La cámara necesita su PROPIO input: `accept` con el comodín exacto y
-    // `capture` juntos, que es lo único que abre la cámara dentro de la app
-    // (ver `capturaDeFoto.js`). El de archivos conserva su lista fina, que es
-    // la que hace juego con los tipos que acepta el bucket `product-photos`.
-    const camaraRef     = useRef(null);
-    // En escritorio `capture` no hace nada y el botón sería un duplicado del
-    // de subir.
-    const esTactil      = useCoarsePointer();
 
     useEffect(() => { setDevolutivo(!!product.devolutivo); }, [product.devolutivo]);
 
@@ -850,50 +827,14 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
     useEffect(() => { setLocalFoto(product.foto_url); }, [product.foto_url]);
 
-    useEffect(() => {
-        const onPaste = (e) => {
-            const items = e.clipboardData?.items;
-            if (!items) return;
-            for (const item of items) {
-                if (item.type.startsWith('image/')) { const f = item.getAsFile(); if (f) { setPendingFile(f); break; } }
-            }
-        };
-        document.addEventListener('paste', onPaste);
-        return () => document.removeEventListener('paste', onPaste);
-    }, []);
-
-    const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
-    const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await imagenDelPortapapeles(); if (f) setPendingFile(f); };
-
-    // En escritorio, la foto puede venir del teléfono (2026-10-29): entra por el
-    // mismo editor que una elegida del disco.
-    const fotoDelTelefono = useFotoDelTelefono(setPendingFile, {
-        etiqueta: 'Foto del producto',
-        onError: (msg) => { if (msg) useToastStore.getState().showToast('Foto', msg, 'error'); },
-    });
-
-    const handlePhotoSelect = (e) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
-        setPendingFile(file);
-        e.target.value = '';
-    };
 
     const handlePhotoConfirm = async (blob) => {
-        setPendingFile(null);
-        setPhotoLoading(true);
-        try {
-            const resized = await fotoDeCatalogo(blob, 800, 0.85);
-            const path = `${product.id}.jpg`;
-            const publicUrl = await subirArchivo('product-photos', path, resized, { upsert: true, contentType: 'image/jpeg' });
-            const cacheBust = `${publicUrl}?t=${Date.now()}`;
-            conError(await updateProductFoto(product.id, cacheBust, { producto: product.nombre }));
-            setLocalFoto(cacheBust);
-            onPhotoUpdated(product.id, cacheBust);
-            useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
-        } catch (err) {
-            useToastStore.getState().showToast('Error', mensajeAmigable(err), 'error');
-        } finally { setPhotoLoading(false); }
+        const publicUrl = await subirArchivo('product-photos', `${product.id}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
+        const cacheBust = `${publicUrl}?t=${Date.now()}`;
+        conError(await updateProductFoto(product.id, cacheBust, { producto: product.nombre }));
+        setLocalFoto(cacheBust);
+        onPhotoUpdated(product.id, cacheBust);
+        useToastStore.getState().showToast('Foto guardada', 'Imagen actualizada.', 'success');
     };
 
     if (loadingRow) {
@@ -1035,68 +976,8 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             <p className={`${xk.sectionLabel} mb-2.5 flex items-center gap-1.5`}>
                                 <Camera size={9} /> Foto del producto
                             </p>
-                            <input ref={fileRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handlePhotoSelect} />
-                            <input ref={camaraRef} type="file" {...PROPS_CAMARA} className="hidden"
-                                aria-hidden="true" tabIndex={-1} onChange={handlePhotoSelect} />
-                            {pendingFile && (
-                                <Suspense fallback={null}>
-                                    <PhotoEditorModal
-                                        file={pendingFile}
-                                        onConfirm={handlePhotoConfirm}
-                                        onCancel={() => setPendingFile(null)}
-                                    />
-                                </Suspense>
-                            )}
-                            <button onClick={() => localFoto ? setLightboxSrc(localFoto) : fileRef.current?.click()}
-                                onContextMenu={handlePhotoContextMenu}
-                                className={`relative w-full h-[200px] max-w-[200px] rounded-2xl border-2 border-dashed overflow-hidden transition-all duration-[var(--dur-base)] group ${xk.photoBtn}`}>
-                                {localFoto ? (
-                                    <>
-                                        <img src={localFoto} alt="" className="w-full h-full object-contain bg-surface-card p-2" />
-                                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-transparent group-hover:bg-scrim transition-all">
-                                            {photoLoading
-                                                ? <Loader2 size={22} className="text-white animate-spin" />
-                                                : <>
-                                                    <Camera size={22} className="text-white opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity" />
-                                                    <span className="text-caption font-bold text-white opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">Ver foto</span>
-                                                </>}
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="w-full h-full flex flex-col items-center justify-center gap-2">
-                                        {photoLoading
-                                            ? <Loader2 size={24} className="text-brand-text animate-spin" />
-                                            : <>
-                                                <Camera size={24} className={`transition-colors ${xk.photoUploadIcon}`} />
-                                                <span className={`text-caption font-semibold transition-colors ${xk.photoUploadLabel}`}>Subir foto</span>
-                                                <span className={`text-micro ${xk.photoSubText}`}>JPG, PNG o WebP</span>
-                                            </>}
-                                    </div>
-                                )}
-                            </button>
-                            <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
-                                {esTactil && (
-                                    <Button variant="secondary" size="xs" icon={Camera}
-                                        onClick={() => camaraRef.current?.click()}>Tomar foto</Button>
-                                )}
-                                {/* La galería junto a la cámara: `fileRef` va sin
-                                    `capture`, así que abre las fotos ya tomadas. */}
-                                {esTactil && (
-                                    <Button variant="ghost" size="xs" icon={ImagePlus}
-                                        onClick={() => fileRef.current?.click()}>Galería</Button>
-                                )}
-                                {!esTactil && (
-                                    <Button variant="secondary" size="xs" icon={Smartphone}
-                                        loading={fotoDelTelefono.pidiendo} disabled={fotoDelTelefono.esperando}
-                                        onClick={fotoDelTelefono.pedir}>
-                                        {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
-                                    </Button>
-                                )}
-                                {localFoto && !esTactil && (
-                                    <Button variant="ghost" size="xs" onClick={() => fileRef.current?.click()}>Cambiar foto</Button>
-                                )}
-                            </div>
-                            {fotoDelTelefono.dialogo}
+                            <CargadorDeFoto foto={localFoto} etiqueta={`Foto de ${product.nombre}`}
+                                busqueda={product.nombre} onFoto={handlePhotoConfirm} />
                         </div>
 
                         {/* ── RIGHT: Precios ── */}
@@ -1362,8 +1243,6 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     // viajan igual en los dos envases.
     const flotantes = (
         <>
-        {ctxMenu && <MenuPegarFoto pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
-        <PhotoLightbox src={lightboxSrc} alt="Foto del producto" onClose={() => setLightboxSrc(null)} />
         </>
     );
 

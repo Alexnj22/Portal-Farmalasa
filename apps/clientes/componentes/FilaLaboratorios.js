@@ -6,12 +6,14 @@
 import { ScrollView, Text, View } from 'react-native';
 import { Image } from 'expo-image';
 import Animated, { FadeInRight } from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
+import { navegar } from '../lib/navegar';
 import Presionable from './Presionable';
 import Icono from './Icono';
 import { colorSistema } from './sistema';
 import { useTema } from '../tema/tema';
 
-export default function FilaLaboratorios({ labs, alElegir }) {
+export default function FilaLaboratorios({ labs, alElegir, verTodos = false }) {
   const t = useTema();
   if (!labs?.length) return null;
   return (
@@ -19,6 +21,12 @@ export default function FilaLaboratorios({ labs, alElegir }) {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginLeft: 4 }}>
         <Icono sf="building.2.fill" respaldo="" tam={14} color={t.color.magentaTexto} />
         <Text accessibilityRole="header" style={{ flex: 1, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>Laboratorios</Text>
+        {verTodos ? (
+          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/laboratorios'); }} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ver todos los laboratorios"
+            style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', paddingHorizontal: 6, opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: t.color.magentaTexto }}>Ver todos</Text>
+          </Presionable>
+        ) : null}
       </View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingHorizontal: 2 }}>
         {labs.map((l, i) => (

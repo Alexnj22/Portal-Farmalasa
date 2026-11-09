@@ -33,7 +33,7 @@ import HojaAgregar, { AvisoAgregado } from '../../../componentes/HojaAgregar';
 import { Entrada } from '../../../componentes/animacion';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
-import { BUSQUEDAS, alCambiarVistos, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos } from '../../../lib/catalogo';
+import { BUSQUEDAS, alCambiarVistos, alPedirLaboratorio, leerVistos, vistosEnMemoria, nombreProducto, olvidarVistos } from '../../../lib/catalogo';
 import { suave, useTema } from '../../../tema/tema';
 import { navegar } from '../../../lib/navegar';
 // Precio de mayoreo (2026-10-12): el catálogo se pide con la sesión, y a quien
@@ -132,6 +132,10 @@ export default function Catalogo() {
     setLab(l); setTexto(`lab:${l.id}`);
     listaRef.current?.scrollToOffset({ offset: 0, animated: false });
   }, [labActivo]);
+  useEffect(() => alPedirLaboratorio((l) => {
+    setLab(l); setTexto(`lab:${l.id}`);
+    listaRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }), []);
   // La búsqueda sale 300 ms después de la última tecla.
   useEffect(() => { const id = setTimeout(() => setQ(texto.trim()), 300); return () => clearTimeout(id); }, [texto]);
 
@@ -176,7 +180,7 @@ export default function Catalogo() {
   const filas = useMemo(() => (q ? null : (
     <>
       <FilaProductos titulo="Mejores precios" sf="tag.fill" productos={ahorro} />
-      <FilaLaboratorios labs={labs} alElegir={elegirLab} />
+      <FilaLaboratorios labs={labs} alElegir={elegirLab} verTodos />
       <FilaProductos titulo="Vistos recientemente" sf="clock.arrow.circlepath" productos={vistos}
         accion={{ texto: 'Limpiar', alTocar: olvidarVistos }} />
     </>

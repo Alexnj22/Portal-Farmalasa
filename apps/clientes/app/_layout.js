@@ -61,7 +61,7 @@ const OSCURO_ANDROID = { ...DarkTheme, colors: { ...DarkTheme.colors, background
 const MODAL_ANDROID = ANDROID ? { animation: 'slide_from_bottom' } : {};
 const PUBLICAS = new Set(['bienvenida', 'entrar', 'registro']);
 // Se ven con o sin sesión: la vitrina, las sucursales y el detalle de una oferta.
-const ABIERTAS = new Set(['vitrina', 'sucursales', 'oferta', 'o', 'producto', 'mis-puntos', 'legal']);
+const ABIERTAS = new Set(['vitrina', 'laboratorios', 'sucursales', 'oferta', 'o', 'producto', 'mis-puntos', 'legal']);
 // Lo que una sesión de CÓDIGO no abre (2026-10-19, decisión del dueño): todo
 // lo que pide DUI y teléfono. La guardia la manda a «completar» (la pantalla
 // que lo explica y lleva a Entrar). Es la mitad de AVISO: la que decide es la
@@ -384,6 +384,7 @@ function Raiz() {
             <Stack.Screen name="reservas" options={{ title: 'Mis reservas' }} />
             <Stack.Screen name="vitrina" options={{ title: 'Ofertas' }} />
             <Stack.Screen name="ofertas" options={{ title: 'Ofertas' }} />
+            <Stack.Screen name="laboratorios" options={{ title: 'Laboratorios' }} />
             <Stack.Screen name="movimientos" options={{ title: 'Mis puntos' }} />
             {/* Bienestar (2026-11-03): los ejercicios de la zona anti estrés. */}
             {/* Los juegos van sobre su propia escena: barra transparente y letras blancas. */}

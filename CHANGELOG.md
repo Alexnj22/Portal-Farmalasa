@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1495.0 — Un solo cargador de fotos para productos y laboratorios
+
+Fotos de productos, la ficha del producto y Laboratorios usan ahora el mismo cargador de fotos: pegar, arrastrar, buscar en internet, con el teléfono, y el fondo y el encuadre automáticos. En Laboratorios el cuadro y el recorte son redondos, y el logo se encuadra para que no se corte en el círculo.
+
+## v2.1494.2 — Tienda: ver todos los laboratorios
+
+- App de clientes: «Ver todos» en Laboratorios abre la lista completa con logo y buscador; al tocar uno, la Tienda muestra sus productos.
+
 ## v2.1494.1 — Tienda: buscar por laboratorio, con su logo
 
 - App de clientes: el buscador de la Tienda encuentra productos por nombre de laboratorio y muestra el logo del laboratorio que coincide.

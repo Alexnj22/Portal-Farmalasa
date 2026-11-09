@@ -1330,6 +1330,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const d: any = data ?? {};
       return json({ ok: true, ...d, productos: (Array.isArray(d.productos) ? d.productos : []).map(conPrecioTuyo(cond)) });
     }
+    // «Ver todos» de los laboratorios en la Tienda (2026-11-09).
+    if (accion === "catalogo_laboratorios") {
+      const { data, error } = await admin.rpc("app_catalogo_laboratorios");
+      if (error) throw error;
+      return json({ ok: true, laboratorios: Array.isArray(data) ? data : [] });
+    }
     // «Mismo principio activo» en la ficha (2026-11-09): el orden lo decide la
     // base, con los laboratorios marcados en el portal por delante.
     if (accion === "catalogo_mismo_principio") {

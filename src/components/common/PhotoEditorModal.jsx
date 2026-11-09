@@ -126,7 +126,7 @@ function BrushCursor({ pos, shape, size, type }) {
 // clientes. Mide la imagen al abrirla y NO deja guardar una miniatura o una
 // imagen vacía; ofrece «Encuadrar» (centra el producto con margen parejo) y lo
 // hace solo después de quitar el fondo.
-export default function PhotoEditorModal({ file, onConfirm, onCancel, producto = false }) {
+export default function PhotoEditorModal({ file, onConfirm, onCancel, producto = false, redondo = false }) {
     // Arriba de todo: hay `return` tempranos más abajo y un hook no puede quedar
     // detrás de uno.
     const enTactil = useMediaQuery('(hover: none)');
@@ -250,7 +250,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
         setEncuadrando(true);
         setSinProducto(false);
         try {
-            const hecho = await encuadrarProducto(src, { limpiarFondo, base: baseRef.current || originalUrl.current });
+            const hecho = await encuadrarProducto(src, { limpiarFondo, base: baseRef.current || originalUrl.current, circulo: redondo });
             if (!hecho) { setSinProducto(true); return; }
             const { url } = hecho;
             if (baseRef.current && baseRef.current !== originalUrl.current) URL.revokeObjectURL(baseRef.current);
@@ -559,6 +559,7 @@ export default function PhotoEditorModal({ file, onConfirm, onCancel, producto =
                                 zoom={zoom}
                                 rotation={rotation}
                                 aspect={1}
+                                cropShape={redondo ? 'round' : 'rect'}
                                 onCropChange={setCrop}
                                 onZoomChange={setZoom}
                                 onCropComplete={onCropComplete}

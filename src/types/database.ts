@@ -31555,6 +31555,7 @@ export type Database = {
         Args: { p_desde?: number; p_limite?: number; p_q: string }
         Returns: Json
       }
+      app_catalogo_laboratorios: { Args: never; Returns: Json }
       app_catalogo_mismo_principio: { Args: { p_id: number }; Returns: Json }
       app_catalogo_producto: { Args: { p_id: number }; Returns: Json }
       app_catalogo_rehacer_destacados: { Args: never; Returns: number }

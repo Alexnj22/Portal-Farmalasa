@@ -44,6 +44,10 @@ let enMemoria = null;
 export const vistosEnMemoria = () => enMemoria ?? [];
 // Quien muestra la fila se entera AL MOMENTO de abrir un producto (con la
 // ficha encima), no al volver: así el reacomodo no se ve.
+// «Ver todos»: la lista de laboratorios le pide a la Tienda que filtre por uno.
+const oyentesLab = new Set();
+export function alPedirLaboratorio(fn) { oyentesLab.add(fn); return () => oyentesLab.delete(fn); }
+export const pedirLaboratorio = (l) => oyentesLab.forEach((fn) => fn(l));
 const oyentes = new Set();
 export function alCambiarVistos(fn) { oyentes.add(fn); return () => oyentes.delete(fn); }
 const avisar = () => oyentes.forEach((fn) => fn(enMemoria ?? []));

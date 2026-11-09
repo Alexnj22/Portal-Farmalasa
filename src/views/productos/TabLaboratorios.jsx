@@ -1,16 +1,15 @@
 import useMediaQuery from '../../plataforma/useMediaQuery';
-import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import ListRow from '../../components/common/ListRow';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
-import { enCuadroBlanco, fotoDeCatalogo, imagenDelPortapapeles } from '../../plataforma/imagenes';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
-    ChevronDown, Building2, Package, ShoppingBag, ImagePlus, Camera, Smartphone, Clipboard, Scissors,
+    ChevronDown, Building2, Package, ShoppingBag,
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -22,13 +21,8 @@ import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
-import PhotoLightbox from '../../components/common/PhotoLightbox';
-import MenuPegarFoto from '../../components/common/MenuPegarFoto';
-import useCoarsePointer from '../../plataforma/useCoarsePointer';
-import useFotoDelTelefono from '../../components/common/useFotoDelTelefono';
-import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+import CargadorDeFoto from '../../components/common/CargadorDeFoto';
 
-const PhotoEditorModal = lazy(() => import('../../components/common/PhotoEditorModal'));
 // La forma de una ubicación y la sección de un laboratorio: `ubicacionLaboratorio` (núcleo, la misma de la app).
 const emptyLoc = ubicacionVacia;
 const hasAnySala = tieneSala;
@@ -251,129 +245,28 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
 
 // ─── Lab row ──────────────────────────────────────────────────────────────────
 
-// La foto que se ve en la Tienda de la app de clientes. Entra por el mismo
-// editor que la foto de un producto (recortar, girar, quitar el fondo, pincel,
-// componer) y por los mismos caminos: archivo, pegar, cámara o teléfono.
-//
-// Con `producto`, igual que Fotos de productos: al abrir, el editor limpia el
-// fondo y encuadra solo, y no deja guardar una imagen vacía o diminuta.
+// La foto que se ve en la Tienda de la app de clientes. El mecanismo es el
+// canónico (`CargadorDeFoto`); acá sólo se decide dónde se guarda.
 function FotoLaboratorio({ lab, onFoto }) {
-    const [ocupado, setOcupado] = useState(false);
-    const [pendiente, setPendiente] = useState(null);
-    const [menu, setMenu] = useState(null);
-    const [verGrande, setVerGrande] = useState(false);
-    const [abriendo, setAbriendo] = useState(false);
-    const selector = useRef(null);
-    const camara = useRef(null);
-    const esTactil = useCoarsePointer();
     const avisar = useToastStore.getState().showToast;
-    // Todo camino pasa por acá: los logos suelen ser anchos y el recorte es 1:1.
-    const abrirEditor = (archivo) => enCuadroBlanco(archivo)
-        .then(setPendiente)
-        .catch((err) => avisar('Foto', mensajeAmigable(err), 'error'));
-    const fotoDelTelefono = useFotoDelTelefono(abrirEditor, {
-        etiqueta: 'Foto del laboratorio',
-        onError: (msg) => { if (msg) avisar('Foto', msg, 'error'); },
-    });
-    // Sólo existe mientras la fila está abierta, y se abre una a la vez: el
-    // pegado no puede caerle a dos laboratorios.
-    useEffect(() => {
-        const alPegar = (e) => {
-            const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith('image/'));
-            const archivo = item?.getAsFile();
-            if (archivo) abrirEditor(archivo);
-        };
-        document.addEventListener('paste', alPegar);
-        return () => document.removeEventListener('paste', alPegar);
-    }, []);
-    const elegir = (e) => {
-        const f = e.target.files?.[0];
-        e.target.value = '';
-        if (f) abrirEditor(f);
+    const subir = async (blob) => {
+        onFoto(await subirFotoLaboratorio(lab.id, blob, { lab: lab.nombre }));
+        avisar('Guardado', 'Foto del laboratorio actualizada.', 'success');
     };
-    const pegar = async () => {
-        setMenu(null);
-        const archivo = await imagenDelPortapapeles();
-        if (archivo) abrirEditor(archivo);
-        else avisar('Pegar', 'No hay una imagen copiada, o el navegador no dio permiso. Prueba con Ctrl+V.', 'warning');
-    };
-    // La foto ya guardada vuelve al editor: recortarla o quitarle el fondo sin
-    // tener que buscar el archivo otra vez.
-    const editarActual = async () => {
-        setAbriendo(true);
-        try {
-            const r = await fetch(lab.foto, { signal: AbortSignal.timeout(15000) });
-            if (!r.ok) throw new Error('No se pudo abrir la foto guardada.');
-            await abrirEditor(new File([await r.blob()], 'logo.jpg', { type: 'image/jpeg' }));
-        } catch (err) {
-            avisar('Foto', mensajeAmigable(err), 'error');
-        } finally {
-            setAbriendo(false);
-        }
-    };
-    const trabajar = async (accion, exito) => {
-        setOcupado(true);
-        try {
-            onFoto(await accion());
-            avisar('Guardado', exito, 'success');
-        } catch (err) {
-            avisar('No se pudo guardar', mensajeAmigable(err), 'error');
-        } finally {
-            setOcupado(false);
-        }
-    };
-    const subir = (editada) => {
-        setPendiente(null);
-        return trabajar(async () => {
-            const blob = await fotoDeCatalogo(editada, 400, 0.85);
-            return subirFotoLaboratorio(lab.id, blob, { lab: lab.nombre });
-        }, 'Foto del laboratorio actualizada.');
-    };
-    const quitar = () => trabajar(async () => {
+    const quitar = async () => {
         await guardarFotoLaboratorio(lab.id, null, { lab: lab.nombre });
-        return null;
-    }, 'Foto quitada.');
+        onFoto(null);
+        avisar('Guardado', 'Foto quitada.', 'success');
+    };
 
     return (
-        <div className="flex flex-wrap items-center gap-4 mb-3">
-            <button type="button" aria-label={lab.foto ? 'Ver foto' : 'Subir foto'} title="Clic derecho para pegar una imagen"
-                onClick={() => lab.foto ? setVerGrande(true) : selector.current?.click()}
-                onContextMenu={(e) => { e.preventDefault(); setMenu({ x: e.clientX + 2, y: e.clientY + 2 }); }}
-                className="group relative w-24 h-24 shrink-0 rounded-2xl border-2 border-dashed border-divider hover:border-brand/50 overflow-hidden transition-all duration-[var(--dur-base)] active:scale-[0.97]">
-                {lab.foto
-                    ? <img src={lab.foto} alt={`Logo de ${lab.nombre}`} className="w-full h-full object-contain p-1.5 bg-surface-card" />
-                    : <span className="w-full h-full flex flex-col items-center justify-center gap-1 text-content-3 group-hover:text-brand-text">
-                        <Camera size={22} aria-hidden="true" />
-                        <span className="text-caption font-semibold">Subir foto</span>
-                    </span>}
-            </button>
-            <div className="min-w-0 flex-1 basis-56">
+        <div className="mb-3 space-y-2">
+            <div>
                 <p className="text-body font-semibold text-content-1">Foto en la tienda</p>
-                <p className="text-caption text-content-3 mb-2">La ven los clientes en la app. Al elegirla, el fondo se quita y se encuadra sola.</p>
-                <input ref={selector} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={elegir} />
-                <input ref={camara} type="file" {...PROPS_CAMARA} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={elegir} />
-                <div className="flex flex-wrap items-center gap-2">
-                    {lab.foto && <Button variant="secondary" size="sm" icon={Scissors} loading={abriendo} disabled={ocupado} onClick={editarActual}>Editar foto</Button>}
-                    {esTactil && <Button variant="secondary" size="sm" icon={Camera} disabled={ocupado} onClick={() => camara.current?.click()}>Tomar foto</Button>}
-                    <Button variant="secondary" size="sm" icon={ImagePlus} loading={ocupado} onClick={() => selector.current?.click()}>{esTactil ? 'Galería' : (lab.foto ? 'Cambiar foto' : 'Subir foto')}</Button>
-                    {!esTactil && <Button variant="secondary" size="sm" icon={Clipboard} disabled={ocupado} onClick={pegar}>Pegar</Button>}
-                    {!esTactil && (
-                        <Button variant="secondary" size="sm" icon={Smartphone} loading={fotoDelTelefono.pidiendo}
-                            disabled={ocupado || fotoDelTelefono.esperando} onClick={fotoDelTelefono.pedir}>
-                            {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
-                        </Button>
-                    )}
-                    {lab.foto && <Button variant="ghost" size="sm" disabled={ocupado} onClick={quitar}>Quitar</Button>}
-                </div>
+                <p className="text-caption text-content-3">La ven los clientes en la app.</p>
             </div>
-            {menu && <MenuPegarFoto pos={menu} onPaste={pegar} onClose={() => setMenu(null)} />}
-            <PhotoLightbox src={verGrande ? lab.foto : null} alt={`Foto de ${lab.nombre}`} onClose={() => setVerGrande(false)} />
-            {fotoDelTelefono.dialogo}
-            {pendiente && (
-                <Suspense fallback={null}>
-                    <PhotoEditorModal file={pendiente} producto onConfirm={subir} onCancel={() => setPendiente(null)} />
-                </Suspense>
-            )}
+            <CargadorDeFoto horizontal redondo foto={lab.foto} etiqueta={`Foto de ${lab.nombre}`}
+                busqueda={`${lab.nombre} logo`} onFoto={subir} onQuitar={quitar} />
         </div>
     );
 }

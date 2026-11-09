@@ -91,7 +91,7 @@ export async function medirFoto(src) {
  * `blob:` PNG (conserva la transparencia para poder seguir retocando), o
  * `null` si no encontró un producto que recortar.
  */
-export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600, limpiarFondo = false, base = null } = {}) {
+export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600, limpiarFondo = false, base = null, circulo = false } = {}) {
     const img = await cargar(src);
     const escala = Math.min(1, ladoMaximo / Math.max(img.naturalWidth, img.naturalHeight));
     const w = Math.round(img.naturalWidth * escala);
@@ -158,7 +158,8 @@ export async function encuadrarProducto(src, { margen = 0.08, ladoMaximo = 1600,
     // distinguible (una mesa, una mano): recortarla no mejora nada.
     if (!conAlfa && bw * bh > 0.97 * w * h) return null;
 
-    const lado = Math.round(Math.max(bw, bh) / (1 - 2 * margen));
+    // En un círculo lo que toca el borde son las esquinas: manda la diagonal.
+    const lado = Math.round((circulo ? Math.hypot(bw, bh) : Math.max(bw, bh)) / (1 - 2 * margen));
     const out = document.createElement('canvas');
     out.width = lado; out.height = lado;
     const octx = out.getContext('2d');

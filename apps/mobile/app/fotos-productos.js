@@ -22,7 +22,7 @@ import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { revisarCalidad } from '@nucleo/utils/calidadDeFoto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchResumenDeCarga, guardarCarga, tomarProducto } from '@nucleo/data/fotosProductos';
+import { buscarParaCarga, fetchColaDeCarga, fetchNombresDePrincipios, fetchResumenDeCarga, guardarCarga, recortarFotoProducto, tomarProducto } from '@nucleo/data/fotosProductos';
 import { buscarEnSrsParaProducto } from '@nucleo/data/srs';
 import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { SRS_AUTO_MIN, decidirSrs, principiosDeSrs } from '@nucleo/utils/enriquecerSrs';
@@ -212,6 +212,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
         fotoUrl = `${publica}?t=${Date.now()}`;
       }
       await guardarCarga(producto.id, { fotoUrl, principios: validos }, { producto: producto.nombre, desde: 'app' });
+      if (fotoUrl) await recortarFotoProducto(producto.id);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       listo('Guardado', producto.nombre);
       onGuardado();

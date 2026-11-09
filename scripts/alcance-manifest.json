@@ -336,6 +336,10 @@
       "guarda": "sin-sala",
       "motivo": "Proxy externo."
     },
+    "recortar-foto-producto": {
+      "guarda": "sin-sala",
+      "motivo": "Recorta la foto del producto que acaba de subir quien llama, y escribe con SU sesión (RLS y guardar_carga_producto deciden): no toca nada que esa persona no pudiera tocar."
+    },
     "subir-foto-de-captura": {
       "guarda": "publica",
       "motivo": "Entra con un secreto de un solo uso."

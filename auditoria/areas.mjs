@@ -971,7 +971,7 @@ export const AREAS = [
                  'product_precios', 'product_precios_changelog', 'product_precios_history',
                  'laboratorios', 'lab_locations', 'factores_sospechosos_avisados',
                  'producto_carga_tomas', 'producto_carga_log'],
-        edge: ['sync-products', 'notify-new-products-daily'],
+        edge: ['sync-products', 'notify-new-products-daily', 'recortar-foto-producto'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'refresh-product-last-sale-daily',

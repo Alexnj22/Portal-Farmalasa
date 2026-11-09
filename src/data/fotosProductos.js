@@ -50,6 +50,21 @@ export async function tomarProducto(productId) {
 }
 
 /**
+ * Quita el margen blanco de la foto recién subida (la app de empleados no puede
+ * leer los píxeles; el portal ya recorta al subir). Nunca lanza: si falla, la
+ * foto queda como se subió. Devuelve la dirección vigente o null.
+ */
+export async function recortarFotoProducto(productId) {
+    try {
+        const { data, error } = await supabase.functions.invoke('recortar-foto-producto', { body: { id: Number(productId) } });
+        if (error || !data?.ok) return null;
+        return data.foto_url ?? null;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Guardar la foto y/o los principios. Un `null` deja ese dato como está.
  * `principios` es `{ rows, text }` de `principiosParaGuardar`.
  */

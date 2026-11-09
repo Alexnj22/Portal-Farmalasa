@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.0 — Fotos desde la app de empleados sin margen blanco
+
+- App de empleados: la foto de producto que se sube desde el teléfono también se recorta sola, con la misma regla que el portal (función recortar-foto-producto, con la sesión de quien sube).
+
 ## v2.1499.0 — Fotos de productos sin margen blanco
 
 - Fotos de productos y logos de laboratorios: al subirlos desde el portal se recorta solo el margen blanco, para que el producto llene su espacio.

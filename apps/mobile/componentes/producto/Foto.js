@@ -17,6 +17,7 @@ import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as Haptics from 'expo-haptics';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { updateProductFoto } from '@nucleo/data/productos';
+import { recortarFotoProducto } from '@nucleo/data/fotosProductos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
@@ -70,7 +71,7 @@ export default function Foto({ productId, url, puedeCambiar, onCambiada }) {
       const conSello = `${publica}?t=${Date.now()}`;
       const { error } = await updateProductFoto(productId, conSello);
       if (error) throw error;
-      onCambiada?.(conSello);
+      onCambiada?.((await recortarFotoProducto(productId)) || conSello);
       listo('Foto guardada', 'Imagen actualizada.');
     } catch (e) {
       fallo('No se pudo guardar la foto', mensajeAmigable(e));

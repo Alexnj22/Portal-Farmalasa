@@ -17,7 +17,7 @@ import { mensajeDelCodigo, telefonoParaWhatsapp } from '@nucleo/utils/codigoDePu
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
 import { Seccion } from '../formulario/Piezas';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 import { imprimirEnLaSala } from '../imprimir';
 
@@ -96,7 +96,7 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
       {tiene ? (
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 6 }} accessibilityLabel={codigo ? `Código ${codigo}` : 'Código oculto'}>
           {casillas.map((c, i) => (
-            <View key={i} style={{ width: 34, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)' }}>
+            <View key={i} style={{ width: 34, height: 44, borderRadius: 8, alignItems: 'center', justifyContent: 'center', backgroundColor: FONDO_CONTROL }}>
               <Text style={{ color: codigo ? colorSistema.texto : colorSistema.texto2, fontSize: 20, fontWeight: '800' }}>{c}</Text>
             </View>
           ))}

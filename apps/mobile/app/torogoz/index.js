@@ -17,14 +17,13 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { BotonGrande } from '../../componentes/formulario/Piezas';
 import Vidrio from '../../componentes/Vidrio';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import { useColumnas } from '../../componentes/ListaPaginada';
 import { useRastreoDeRuta } from '../../componentes/torogoz/rutas/rastreo';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 // El color de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
-const PETROLEO = '#0f6e7d';
 
 const MENU = [
   { seccion: 'inicio', label: 'Inicio', icono: 'Gauge' },

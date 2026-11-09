@@ -14,7 +14,7 @@
 // · Solicitudes: las de esa persona con su tipo, estado, nota y respuesta, y
 //   «Nueva solicitud» a su nombre.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -32,7 +32,7 @@ import { descuentoDeSuspension } from '@nucleo/utils/planilla';
 import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { elegirArchivo } from '../../componentes/sucursal/elegirArchivo';
@@ -103,7 +103,7 @@ function Evento({ ev, emp, puedeEditar, onCambio }) {
 
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ padding: 12, gap: 6 }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
             <Pildora texto={ev.category && ev.category !== ev.type ? ev.category : (EVENT_TYPES[ev.type]?.label || ev.category || 'Movimiento')} color={colorDeVariante(varianteDeEvento(ev.type, EVENT_TYPES))} />
@@ -220,7 +220,7 @@ export default function Historial() {
         <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
           { id: 'historial', label: 'Historial' }, { id: 'ausencias', label: 'Ausencias' }, { id: 'solicitudes', label: 'Solicitudes' },
         ]} />
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {filas == null ? <Cargando /> : null}
 
         {seccion === 'historial' && filas ? (
           <>
@@ -260,7 +260,7 @@ export default function Historial() {
 
         {seccion === 'solicitudes' ? (
           <>
-            {solicitudes == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : solicitudes.map((r) => {
+            {solicitudes == null ? <Cargando /> : solicitudes.map((r) => {
               const t = { label: rotuloDeSolicitud(r.type) };
               const e = REQUEST_STATUS[r.status] || { label: r.status };
               return (

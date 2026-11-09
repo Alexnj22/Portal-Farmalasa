@@ -82,7 +82,7 @@ function Movimiento({ l, corte, quien, puedeOperar, onCorregir }) {
   };
 
   return (
-    <Vidrio radio={18} interactivo>
+    <Vidrio radio={20} interactivo>
       <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto((v) => !v); }}
         accessibilityRole="button" accessibilityState={{ expanded: abierto }}
         style={({ pressed }) => ({ padding: 12, gap: 6, opacity: pressed ? 0.75 : 1 })}>

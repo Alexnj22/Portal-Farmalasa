@@ -4,13 +4,13 @@
 // residuo del redondeo en el último mes. Agregar un gasto abre `meta-gasto`;
 // quitarlo pide motivo y deja los meses ya arrancados como estaban.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { anularMetaGasto, fetchMetasGastos } from '@nucleo/data/metas';
 import { resumenDeGastos, ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -58,7 +58,7 @@ export default function Gastos({ canEdit, onCambio }) {
       } },
     ], 'plain-text');
 
-  if (gastos == null) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (gastos == null) return <Cargando />;
   return (
     <View style={{ gap: 12 }}>
       {error ? (
@@ -89,7 +89,7 @@ export default function Gastos({ canEdit, onCambio }) {
         const salas = g.salas || [];
         return (
           <View key={g.id} style={{ marginHorizontal: 16, opacity: anulado ? 0.7 : 1 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, gap: 8 }}>
                 <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
                   <View style={{ flex: 1, gap: 2 }}>

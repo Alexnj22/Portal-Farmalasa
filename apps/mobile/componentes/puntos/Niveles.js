@@ -12,7 +12,7 @@
 // Las cuentas y los textos salen del núcleo (`nivelesDePuntos`), los mismos del
 // portal. Escribir exige `puntos_tab_niveles` can_edit; la base lo vuelve a exigir.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPanelDeNiveles, guardarConfigDePuntos } from '@nucleo/data/puntos';
@@ -26,7 +26,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
@@ -78,7 +78,7 @@ function TarjetaDeNivel({ fila, tipo, conRaspable, esEntrada, onAbrir }) {
   return (
     <Pressable onPress={onAbrir} accessibilityRole="button" accessibilityLabel={`${tipo === 'nivel' ? 'Nivel' : 'Rango'} ${fila.nombre}`}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800', marginRight: 4 }}>{fila.nombre}</Text>
@@ -113,7 +113,7 @@ export default function Niveles({ puedeEditar }) {
   useFocusEffect(cargar);
 
   if (error && !panel) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (!panel) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (!panel) return <Cargando />;
   const niveles = panel.niveles ?? [];
   const mayoreo = panel.mayoreo ?? [];
   const ordenMax = Math.max(0, ...niveles.map((n) => n.orden));
@@ -152,7 +152,7 @@ export default function Niveles({ puedeEditar }) {
       {!historial.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 32 }}>Todavía no hay cambios.</Text> : null}
       {historial.slice(0, ver).map((h) => (
         <View key={h.id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 5 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{sujetoDelHistorial(h, niveles, mayoreo)}</Text>

@@ -13,7 +13,7 @@
 //
 // Agrupar, sugerir y validar salen del núcleo (`gestionDeStock`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -37,7 +37,7 @@ import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -116,7 +116,7 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
   };
   const alternarHacia = (v) => setHaciaDonde((x) => (x === v ? null : v));
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (filas == null) return <Cargando />;
   return (
     <>
       <FilaDeKpis>
@@ -160,7 +160,7 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
               const nota = notaDeDespacho(r.existencia, despacho.get(Number(r.erp_product_id)), aBodega);
               return (
                 <View key={r.erp_product_id} style={{ marginHorizontal: 16 }}>
-                  <Vidrio radio={18}>
+                  <Vidrio radio={20}>
                     <View style={{ padding: 12, gap: 5 }}>
                       <View style={{ flexDirection: 'row', gap: 10 }}>
                         <View style={{ flex: 1 }}>
@@ -344,7 +344,7 @@ function SinMinMax({ sala, busqueda, filtro, orden, puedePedir, puedeAplicar, on
     setAbierta(null);
   };
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (filas == null) return <Cargando />;
   return (
     <>
       <FilaDeKpis>
@@ -370,7 +370,7 @@ function SinMinMax({ sala, busqueda, filtro, orden, puedePedir, puedeAplicar, on
         return (
           <Pressable key={r.erp_product_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(r); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <View style={{ padding: 12, gap: 5 }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <View style={{ flex: 1 }}>
@@ -394,9 +394,9 @@ function SinMinMax({ sala, busqueda, filtro, orden, puedePedir, puedeAplicar, on
       })}
       {filtradas.length > mostrar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setMostrar((m) => m + 30)} /></View> : null}
       {filas.length && !filtradas.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+        <Vacio>
           {busqueda ? 'Ningún producto con esa búsqueda' : 'Nada en este grupo'}
-        </Text>
+        </Vacio>
       ) : null}
       <Ajuste fila={abierta} sala={sala} puedePedir={puedePedir} puedeAplicar={puedeAplicar}
         descartado={abierta ? ignorados.has(abierta.erp_product_id) : false}

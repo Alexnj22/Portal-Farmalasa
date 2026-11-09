@@ -15,7 +15,7 @@
 // Los textos salen del núcleo (`causaDeCorreccion`, `textoDelSospechoso`,
 // `minmaxDelCambio`): dicen lo mismo que el portal.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -31,7 +31,7 @@ import { formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -134,7 +134,7 @@ export default function RevisionDeFactor() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 18, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {datos === null ? <ActivityIndicator style={{ marginTop: 40 }} /> : (
+        {datos === null ? <Cargando /> : (
           <>
             <Seccion titulo={`Existencia por corregir${cuenta(existencias.length)}`}
               pie="La caja no convierte la existencia cuando cambia el tamaño de la presentación: queda contada en la unidad vieja.">

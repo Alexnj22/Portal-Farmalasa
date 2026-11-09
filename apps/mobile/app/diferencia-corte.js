@@ -32,7 +32,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Fotos, { subirFotos } from '../componentes/formulario/Fotos';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
@@ -264,7 +264,7 @@ export default function DiferenciaCorte() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          {!corte ? (cargando ? <ActivityIndicator style={{ marginTop: 40 }} /> : <Aviso texto="Este corte ya no tiene diferencia en esta vista." />) : (
+          {!corte ? (cargando ? <Cargando /> : <Aviso texto="Este corte ya no tiene diferencia en esta vista." />) : (
             <>
               <View style={{ gap: 4, marginHorizontal: 4 }}>
                 <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{`${nombreSala[corte.branch_id] ?? ''} · ${fecha}${corte.empleado_texto ? ` · ${corte.empleado_texto}` : ''}`}</Text>

@@ -39,7 +39,7 @@ const ORDENES = [
 function Cuenta({ rotulo, valor, color }) {
   return (
     <View style={{ flex: 1 }}>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ padding: 12, gap: 2 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{rotulo}</Text>
           <Text style={{ color: color ?? colorSistema.texto, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{valor ?? '—'}</Text>
@@ -151,7 +151,7 @@ export default function ReglasDeDespacho() {
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={22}>
+          <Vidrio radio={20}>
             <View style={{ paddingVertical: 4 }}>
               {filas.map((p, i) => {
                 const regla = reglas?.[p.id];

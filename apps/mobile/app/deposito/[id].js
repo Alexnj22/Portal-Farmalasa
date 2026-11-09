@@ -8,7 +8,7 @@
 // (sale al volver de la ventanilla) y sólo donde hubo algo al banco.
 import usePantallaDespierta from '../../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -21,7 +21,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fotos, { subirFotos } from '../../componentes/formulario/Fotos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -49,7 +49,7 @@ export default function Deposito() {
   }, [id]);
   useEffect(() => { if (!depositoRecordado(id)) releer(); }, [id, releer]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
-  if (d === undefined) return <ActivityIndicator style={{ marginTop: 60 }} />;
+  if (d === undefined) return <Cargando />;
   if (!d) {
     return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósito' }} />
       <View style={{ padding: 20 }}><Aviso tono="freno" texto="No se encontró este depósito." /></View></>);

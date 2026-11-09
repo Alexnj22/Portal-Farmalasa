@@ -20,7 +20,7 @@
 // (`csvDelBanco`, el MISMO texto que baja el portal; sin la llave de aprobar
 // las cuentas salen como ****).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
 import { File, Paths } from 'expo-file-system';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -40,7 +40,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -345,7 +345,7 @@ export default function Nomina() {
           </View>
         ) : null}
 
-        {(cargando && !(entradas || []).length) || periodos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : porSala.map(([k, l]) => (
+        {(cargando && !(entradas || []).length) || periodos == null ? <Cargando /> : porSala.map(([k, l]) => (
           <View key={k} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginTop: 4 }}>
               <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>
@@ -383,8 +383,8 @@ export default function Nomina() {
             </View>
           </View>
         ))}
-        {periodos && !periodo ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{estadoFiltro === 'ALL' ? 'Todavía no hay planillas' : 'Ninguna planilla en ese estado'}</Text> : null}
-        {periodo && !cargando && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Esta planilla todavía no tiene personas</Text> : null}
+        {periodos && !periodo ? <Vacio>{estadoFiltro === 'ALL' ? 'Todavía no hay planillas' : 'Ninguna planilla en ese estado'}</Vacio> : null}
+        {periodo && !cargando && !visibles.length ? <Vacio>Esta planilla todavía no tiene personas</Vacio> : null}
         {puedeDecidir && periodo ? (
           <View style={{ marginHorizontal: 16, marginTop: 8, gap: 10 }}>
             {conRenglones && estadoKey !== 'PAID' ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada a una persona para editar su fila.</Text> : null}

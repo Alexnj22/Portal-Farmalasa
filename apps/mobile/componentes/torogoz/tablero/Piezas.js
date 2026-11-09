@@ -13,7 +13,7 @@ import { colorSistema } from '../../Formulario';
 import { MARCA } from '../../inicio/marca';
 
 /** La paleta del tablero, por posición: la misma lista que la dona y sus filas. */
-export const PALETA = ['#0f6e7d', MARCA.verde, '#6929C4', '#1192E8', '#FA4D56', '#B28600', MARCA.ambar, '#8D8D99'];
+export const PALETA = ['#0f6e7d', MARCA.verde, MARCA.violeta, '#1192E8', '#FA4D56', '#B28600', MARCA.ambar, MARCA.gris];
 export const colorDe = (i) => PALETA[i % PALETA.length];
 
 const tocar = (fn) => () => { Haptics.selectionAsync().catch(() => {}); fn(); };

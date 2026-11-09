@@ -166,7 +166,7 @@ export default function Empleado() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: shortEmployeeName(emp), headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
-        <Vidrio radio={24}>
+        <Vidrio radio={20}>
           <View style={{ padding: 18, gap: 10, alignItems: 'center' }}>
             <Avatar empleado={emp} tamano={104} />
             <Text style={{ color: colorSistema.texto, fontSize: 21, fontWeight: '800', textAlign: 'center' }}>{emp.name}</Text>

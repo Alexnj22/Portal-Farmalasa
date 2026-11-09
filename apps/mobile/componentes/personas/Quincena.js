@@ -18,7 +18,7 @@
 // quincena se exporta en CSV (mismas columnas del portal, anotada como salida
 // de datos), y una quincena pasada y cerrada ofrece «Ver planilla».
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';
@@ -30,9 +30,9 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
-import { BotonGrande } from '../formulario/Piezas';
+import { BotonGrande, Cargando } from '../formulario/Piezas';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { fallo, listo } from '../Progreso';
@@ -179,7 +179,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
         onAtras={() => setInicio(prevQuincena(inicio))}
         onAdelante={() => setInicio(nextQuincena(inicio))} puedeAdelante={!actual} />
 
-      {ts == null ? <ActivityIndicator style={{ marginTop: 20 }} /> : (
+      {ts == null ? <Cargando /> : (
         <>
           <FilaDeKpis>
             <Kpi icono="Users" rotulo="Empleados" valor={String((empleados || []).length)} color={MARCA.azulClaro} apoyo={`${total.approved} de ${total.total} días aprobados`} />
@@ -217,7 +217,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
                 const emp = (empleados || []).find((x) => String(x.id) === String(req.employee_id));
                 return (
                   <View key={req.id} style={{ marginHorizontal: 16 }}>
-                    <Vidrio radio={18} tinte="rgba(105,41,196,0.16)">
+                    <Vidrio radio={20} tinte="rgba(105,41,196,0.16)">
                       <View style={{ padding: 12, gap: 8 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                           {emp ? <Avatar empleado={emp} tamano={36} /> : null}
@@ -246,7 +246,7 @@ export default function Quincena({ empleados, sucursales, puedeEditar, puedeDesc
                                 <Text style={{ color: '#fff', fontSize: 14, fontWeight: '700' }}>{ocupado === req.id ? '…' : 'Aplicar'}</Text>
                               </Pressable>
                               <Pressable onPress={() => setEditando(null)}
-                                style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.8 : 1 })}>
+                                style={({ pressed }) => ({ flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center', backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.8 : 1 })}>
                                 <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '700' }}>Cancelar</Text>
                               </Pressable>
                             </View>

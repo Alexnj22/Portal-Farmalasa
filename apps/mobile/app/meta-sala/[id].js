@@ -3,7 +3,7 @@
 // o el termómetro con lo que falta por día), el ranking de sus vendedores y de
 // dónde sale su meta. Todo de lectura.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchMesEnCurso, fetchMetasRows } from '@nucleo/data/metas';
@@ -11,7 +11,7 @@ import { ymHoySV, ymLabel } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso } from '../../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../../componentes/formulario/Piezas';
 import { GraficaDelMes, Ranking } from '../../componentes/metas/Mes';
 import Explicacion from '../../componentes/metas/Explicacion';
 
@@ -41,7 +41,7 @@ export default function MetaSala() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center' }}>{ymLabel(ym)}</Text>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {mes === undefined && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {mes === undefined && !error ? <Cargando /> : null}
         {mes ? (
           <>
             <GraficaDelMes data={mes} />

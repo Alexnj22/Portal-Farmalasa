@@ -38,7 +38,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso } from '../../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../../componentes/formulario/Piezas';
 import Tocable from '../../componentes/Tocable';
 import Avatar from '../../componentes/Avatar';
 import { ErrorConReintento } from '../../componentes/ListaPaginada';
@@ -463,7 +463,7 @@ export default function ConversacionDelChat() {
         ) : (
           <>
             {error && !mensajes ? <ErrorConReintento mensaje={error} onReintentar={() => { setError(null); setC(conversacionRecordada(id)); }} /> : null}
-            {!mensajes && !error ? <ActivityIndicator style={{ marginTop: 32 }} /> : null}
+            {!mensajes && !error ? <Cargando /> : null}
             {mensajes ? (
               <FlatList inverted style={{ flex: 1 }} data={invertidos} keyExtractor={(x) => String(x.m.id)}
                 renderItem={({ item }) => (

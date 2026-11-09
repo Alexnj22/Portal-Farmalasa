@@ -8,7 +8,7 @@
 // con `metas` editar, con la MISMA llamada del portal (`setBonificaciones`). Es
 // un interruptor de toda la red: cada cambio pide confirmación.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import Interruptor from '../Interruptor';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchBonoMetaSala, setBonificaciones } from '@nucleo/data/metas';
@@ -16,7 +16,7 @@ import { TRAMO_CFG, ymHoySV, ymLabel } from '@nucleo/utils/metasUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Avatar from '../Avatar';
@@ -72,7 +72,7 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
   return (
     <View style={{ gap: 10 }}>
       <View style={{ marginHorizontal: 16 }}>
-        <Vidrio radio={18}>
+        <Vidrio radio={20}>
           <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: activas ? MARCA.verde : colorSistema.separador }} />
             <View style={{ flex: 1 }}>
@@ -100,7 +100,7 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
         </Vidrio>
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {data == null && !error ? <ActivityIndicator style={{ marginTop: 16 }} /> : null}
+      {data == null && !error ? <Cargando /> : null}
       {data ? (
         <>
           <FilaDeKpis>
@@ -133,7 +133,7 @@ export default function Bono({ sala, salaNombre, ym, esMesActual, config, canEdi
             const persona = porId.get(String(p.employee_id)) ?? { id: p.employee_id, name: p.nombre };
             return (
               <View key={p.employee_id} style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={18}>
+                <Vidrio radio={20}>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                     <Avatar empleado={persona} tamano={36} />
                     <View style={{ flex: 1, gap: 3 }}>

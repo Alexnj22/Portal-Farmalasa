@@ -14,7 +14,7 @@
 // por producto o por laboratorio, con el «+». En Descuentos: corregir, borrar
 // y llevar a la app de clientes.
 import { useCallback, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -30,7 +30,7 @@ import Segmentos from '../componentes/Segmentos';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -174,7 +174,11 @@ export default function Promociones() {
           onChangeText: (ev) => setTexto(ev.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nueva promoción', onPress: () => {
+        const ops = [['Nueva promoción por laboratorio', () => router.push({ pathname: '/promocion-laboratorio/[id]', params: { id: 'nueva' } })], ['Nueva promoción por producto', () => router.push('/promocion-producto/nueva')]];
+        ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
+          (i) => { if (i < ops.length) ops[i][1](); });
+      } } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setVuelta((n) => n + 1); setRecargando(false); }} />}>
@@ -186,7 +190,7 @@ export default function Promociones() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
 
         {pestana === 'activas' ? (
-          promos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+          promos == null ? <Cargando /> : (
             <>
               <FilaDeKpis>
                 <Kpi icono="Star" rotulo="Activas" valor={String(c.activas)} color={MARCA.verde} onPress={() => setFEstado(fEstado === 'activa' ? 'todos' : 'activa')} />
@@ -200,10 +204,10 @@ export default function Promociones() {
               {vivas.length ? <DescargarCsv cuenta={`${vivas.length} vigente${vivas.length === 1 ? '' : 's'}`} csv={() => csvListaDePromociones(vivas, 'vigentes')} /> : null}
               {vivas.map((p) => <TarjetaPromocion key={p.id} p={p} puedeEditar={puedeEditar} onAbrir={() => abrir(p)} onMenu={() => menu(p)} />)}
               {!vivas.length ? (
-                <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>
+                <Vacio>
                   {q || fEstado !== 'todos' || fTipo !== 'todos' || fLab !== 'todos' ? 'Ninguna promoción vigente con ese filtro'
                     : terminadas.length ? 'Sin promociones vigentes: las demás están en Histórico' : 'Todavía no hay promociones'}
-                </Text>
+                </Vacio>
               ) : null}
               {puedeEditar && vivas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada una promoción para editarla, pausarla, activarla o duplicarla.</Text> : null}
             </>
@@ -211,7 +215,7 @@ export default function Promociones() {
         ) : null}
 
         {pestana === 'historico' ? (
-          promos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+          promos == null ? <Cargando /> : (
             <>
               <FilaDeKpis>
                 <Kpi icono="Archive" rotulo="Terminadas" valor={String(terminadas.length)} color={colorSistema.texto2} />
@@ -220,7 +224,7 @@ export default function Promociones() {
               </FilaDeKpis>
               {terminadas.length ? <DescargarCsv cuenta={`${terminadas.length} terminada${terminadas.length === 1 ? '' : 's'}`} csv={() => csvListaDePromociones(terminadas, 'terminadas')} /> : null}
               {terminadas.map((p) => <TarjetaPromocion key={p.id} p={p} puedeEditar={puedeEditar} onAbrir={() => abrir(p)} onMenu={() => menu(p)} />)}
-              {!terminadas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin promociones terminadas</Text> : null}
+              {!terminadas.length ? <Vacio>Sin promociones terminadas</Vacio> : null}
             </>
           )
         ) : null}
@@ -230,16 +234,6 @@ export default function Promociones() {
         {pestana === 'excedentes' ? <Excedentes key={`e${vuelta}`} busqueda={q} puedeAprobar={puedeAprobar} /> : null}
         {pestana === 'pagos' ? <Pagos key={`p${vuelta}`} busqueda={q} soloPendientes={fPagos === 'pendientes'} /> : null}
 
-        {puedeEditar ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <View style={{ marginBottom: 10 }}>
-              <BotonGrande texto="Nueva promoción por laboratorio" color={MARCA.azul}
-                onPress={() => router.push({ pathname: '/promocion-laboratorio/[id]', params: { id: 'nueva' } })} />
-            </View>
-            <BotonGrande texto="Nueva promoción por producto" borde color={MARCA.azulClaro}
-              onPress={() => router.push('/promocion-producto/nueva')} />
-          </View>
-        ) : null}
       </ScrollView>
     </>
   );

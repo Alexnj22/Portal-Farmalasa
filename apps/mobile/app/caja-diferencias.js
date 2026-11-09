@@ -12,7 +12,7 @@
 // El buscador de la barra (como el portal) busca por sala, fecha, monto, quién
 // responde y la causa anotada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -30,7 +30,7 @@ import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -81,7 +81,7 @@ export default function CajaDiferencias() {
   const grupos = [
     { id: 'mes', titulo: 'Mes', activa: mes, porDefecto: hoySV().slice(0, 7), onCambiar: setMes,
       opciones: [...meses.map((m) => ({ id: m, label: etiquetaMes(m) })), { id: 'TODOS', label: 'Todos los meses' }] },
-    { id: 'estado', titulo: 'Estado', activa: filtro, porDefecto: 'PENDIENTES', onCambiar: setFiltro,
+    { id: 'estado', titulo: 'Estado', activa: filtro, porDefecto: signo === 'sobra' ? 'TODOS' : 'PENDIENTES', onCambiar: setFiltro,
       opciones: [{ id: 'PENDIENTES', label: 'Lo pendiente' }, { id: 'TODOS', label: 'Todos los días' },
         ...Object.entries(ESTADO_DIF).map(([k, [l]]) => ({ id: k, label: l }))] },
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
@@ -100,7 +100,7 @@ export default function CajaDiferencias() {
         <FiltrosActivos grupos={grupos} />
         {puedeAnotar && porAnotar.length ? (
           <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/asentar-diferencias'); }} style={({ pressed }) => ({ marginHorizontal: 16, opacity: pressed ? 0.55 : 1 })}>
-            <Vidrio radio={18} interactivo tinte="rgba(52,120,246,0.14)">
+            <Vidrio radio={20} interactivo tinte="rgba(52,120,246,0.14)">
               <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${porAnotar.length} ${porAnotar.length === 1 ? 'movimiento' : 'movimientos'} por anotar en el sistema`}</Text>
@@ -131,7 +131,7 @@ export default function CajaDiferencias() {
           )
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="No se pudieron leer los días con diferencia." /></View> : null}
-        {!leyo && !dias.length ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((d) => {
+        {!leyo && !dias.length ? <Cargando /> : visibles.map((d) => {
           const [estado, color] = ESTADO_DIF[d.estadoDif] ?? ESTADO_DIF.resuelto;
           const desglose = desgloseDelDia(d, signo);
           const personas = signo === 'sobra' ? [] : responsablesDelDia(d);

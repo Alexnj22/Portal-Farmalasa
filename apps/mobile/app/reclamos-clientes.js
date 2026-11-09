@@ -9,7 +9,7 @@
 // quien llama (`reclamo_registrar`), así que una sala sólo registra en la suya.
 // Todo sale del núcleo (`data/reclamos`), lo mismo del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,9 +22,10 @@ import {
   PROGRAMAS, ROTULO_PROGRAMA, VIAS, ROTULO_VIA, plazoDeReclamo, respondidoATiempo,
   fetchReclamos, registrarReclamo, responderReclamo,
 } from '@nucleo/data/reclamos';
+import { MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
@@ -111,6 +112,7 @@ export default function ReclamosClientes() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      <MenuDeFiltros grupos={[]} extra={puedeRegistrar && !alta ? { icono: 'plus', etiqueta: 'Registrar reclamo', onPress: () => { setSala(user?.branchId ?? null); setAlta(true); } } : null} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
@@ -133,12 +135,12 @@ export default function ReclamosClientes() {
             </Seccion>
           ) : null}
 
-          {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((r) => {
+          {filas == null ? <Cargando /> : visibles.map((r) => {
             const p = plazoTexto(r);
             const esta = abierto === r.id;
             return (
               <Tocable key={r.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(esta ? null : r.id); setRespuesta(''); }} style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={18} interactivo tinte={!r.respondido_at && plazoDeReclamo(r)?.vencido ? 'rgba(240,68,56,0.12)' : undefined}>
+                <Vidrio radio={20} interactivo tinte={!r.respondido_at && plazoDeReclamo(r)?.vencido ? 'rgba(240,68,56,0.12)' : undefined}>
                   <View style={{ padding: 12, gap: 6 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.folio}</Text>
@@ -174,12 +176,7 @@ export default function ReclamosClientes() {
               </Tocable>
             );
           })}
-          {filas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{texto.trim() ? 'Sin coincidencias' : pestana === 'abiertos' ? 'No hay reclamos por responder' : 'Sin reclamos respondidos'}</Text> : null}
-          {puedeRegistrar && !alta ? (
-            <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-              <BotonGrande texto="Registrar reclamo" onPress={() => { setSala(user?.branchId ?? null); setAlta(true); }} />
-            </View>
-          ) : null}
+          {filas && !visibles.length ? <Vacio>{texto.trim() ? 'Sin coincidencias' : pestana === 'abiertos' ? 'No hay reclamos por responder' : 'Sin reclamos respondidos'}</Vacio> : null}
         </ScrollView>
       </KeyboardAvoidingView>
     </>

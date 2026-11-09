@@ -10,7 +10,7 @@
 //   · Galería en modo gestión (`Galeria gestion`): todas las piezas de los
 //     últimos seis meses con el interruptor de liberar para las salas.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Image, Text, View, useWindowDimensions } from 'react-native';
+import { ActionSheetIOS, Image, Text, View, useWindowDimensions } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchGaleria, firmarDisenos, liberarPieza, moverPieza } from '@nucleo/data/marketing';
 import {
@@ -20,7 +20,7 @@ import { correrMes, fechaTexto, mesSV } from '@nucleo/utils/fecha';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -157,7 +157,7 @@ export function GaleriaGestion({ marca, formato, liberada, busqueda, puedeLibera
     catch (e) { setPiezas((g) => g.map((x) => (x.id === p.id ? { ...x, liberada: !on } : x))); fallo('No se pudo cambiar', mensajeAmigable(e, 'Intenta de nuevo.')); }
   };
   const lado = (width - 16 * 2 - 10) / 2;
-  if (piezas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (piezas == null) return <Cargando />;
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -184,7 +184,7 @@ export function GaleriaGestion({ marca, formato, liberada, busqueda, puedeLibera
           );
         })}
       </View>
-      {!visibles.length && !error ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin piezas con ese filtro</Text> : null}
+      {!visibles.length && !error ? <Vacio>Sin piezas con ese filtro</Vacio> : null}
     </>
   );
 }

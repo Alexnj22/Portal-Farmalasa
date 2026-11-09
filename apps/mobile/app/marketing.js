@@ -33,7 +33,7 @@
 // el efecto de las piezas en las ventas (`construirInformeHtml`, el mismo
 // documento del portal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Image, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -62,7 +62,7 @@ import { guardar as guardarElegido } from '../componentes/comercial/elegido';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -163,7 +163,6 @@ export default function Marketing() {
     setGenerando(false);
   };
   const estadoMes = datos?.fila ? ESTADOS_MES[datos.fila.estado] : null;
-  const abiertasSol = (solicitudes || []).filter((s) => s.estado === 'nueva' || s.estado === 'aceptada').length;
   const fila = datos?.fila;
   const publicado = !!fila?.publicado_at;
   const aprobadas = resumen.por.aprobado + resumen.por.programado + resumen.por.publicado;
@@ -240,15 +239,27 @@ export default function Marketing() {
     router.push({ pathname: '/marketing-pieza/[id]', params: { id: String(p.id) } });
   };
 
+  // La barra admite una sola acción junto al filtro: crear y las secciones van en su menú.
+  const abrirMas = () => {
+    Haptics.selectionAsync().catch(() => {});
+    const ops = [
+      ...(puedeEditar ? [['Nueva pieza', () => router.push({ pathname: '/marketing-editar', params: { mes } })]] : []),
+      ['Pedir un diseño', () => router.push('/marketing-solicitud')],
+      ...(puedeEditar || puedeAprobar ? [['Ajustes del calendario', () => router.push('/marketing-ajustes')]] : []),
+    ];
+    ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
+      (i) => { if (i < ops.length) ops[i][1](); });
+  };
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marketing', headerLargeTitle: true }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={{ icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[
           { id: 'calendario', label: 'Calendario' }, { id: 'flujo', label: 'Flujo' }, { id: 'feed', label: 'Feed' }, { id: 'pauta', label: 'Pauta' },
-          { id: 'ideas', label: 'Ideas' }, { id: 'solicitudes', label: abiertasSol ? `Solicitudes · ${abiertasSol}` : 'Solicitudes' },
+          { id: 'ideas', label: 'Ideas' }, { id: 'solicitudes', label: 'Solicitudes' },
           ...(puedeEditar || puedeAprobar ? [{ id: 'galeria', label: 'Galería' }] : []), { id: 'biblioteca', label: 'Marca' },
         ]} />
         <FiltrosActivos grupos={grupos} />
@@ -256,8 +267,8 @@ export default function Marketing() {
         {vista === 'calendario' ? (
           <>
             <PasoDeMes mes={mes} onCambiar={setMes} />
-            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : !datos.fila ? (
-              <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Este mes todavía no se planifica</Text>
+            {datos == null ? <Cargando /> : !datos.fila ? (
+              <Vacio>Este mes todavía no se planifica</Vacio>
             ) : (
               <>
                 {estadoMes ? (
@@ -318,7 +329,7 @@ export default function Marketing() {
                       const abiertaEsta = abierta === p.id;
                       return (
                         <Tocable key={p.id} onPress={() => abrirPieza(p)} onLongPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : p.id); }} delayLongPress={300} style={{ marginHorizontal: 16 }}>
-                          <Vidrio radio={18} interactivo>
+                          <Vidrio radio={20} interactivo>
                             <View style={{ padding: 12, gap: 6 }}>
                               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                 {imagenes[0] && !abiertaEsta ? <Image source={{ uri: datos.firmas.get(imagenes[0].url) }} style={{ width: 48, height: 48, borderRadius: 10 }} /> : null}
@@ -343,19 +354,19 @@ export default function Marketing() {
                     })}
                   </View>
                 ))}
-                {!dias.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin piezas este mes</Text> : null}
+                {!dias.length ? <Vacio>Sin piezas este mes</Vacio> : null}
               </>
             )}
           </>
         ) : vista === 'flujo' ? (
           <>
             <PasoDeMes mes={mes} onCambiar={setMes} />
-            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : <Flujo piezas={visibles} puedeMoverla={puedeMoverla} onAbrir={abrirPieza} onMovida={cargar} />}
+            {datos == null ? <Cargando /> : <Flujo piezas={visibles} puedeMoverla={puedeMoverla} onAbrir={abrirPieza} onMovida={cargar} />}
           </>
         ) : vista === 'pauta' ? (
           <>
             <PasoDeMes mes={mes} onCambiar={setMes} />
-            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+            {datos == null ? <Cargando /> : (
               <Pauta piezas={visibles} presupuestoMes={fila?.presupuesto_pauta} redes={catalogos.redes}
                 onAbrir={(p) => { if (puedeEditar) { guardarPieza(p, fila, datos.firmas); router.push('/marketing-pauta'); } else abrirPieza(p); }} />
             )}
@@ -366,13 +377,13 @@ export default function Marketing() {
         ) : vista === 'feed' ? (
           <>
             <PasoDeMes mes={mes} onCambiar={setMes} />
-            {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : <Feed piezas={datos.piezas} marcas={catalogos.marcas} firmas={datos.firmas} onAbrir={abrirPieza} />}
+            {datos == null ? <Cargando /> : <Feed piezas={datos.piezas} marcas={catalogos.marcas} firmas={datos.firmas} onAbrir={abrirPieza} />}
           </>
         ) : vista === 'ideas' ? (
           <Ideas busqueda="" marcas={catalogos.marcas} piezasDelMes={datos?.piezas || []} mes={mes} yoId={yoId} puedeEditar={puedeEditar} puedeAprobar={puedeAprobar} recarga={vuelta} />
         ) : vista === 'biblioteca' ? (
           <Biblioteca marcas={catalogos.marcas} puedeGestionar={puedeEditar || puedeAprobar} yoId={yoId} recarga={vuelta} />
-        ) : solicitudes == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        ) : solicitudes == null ? <Cargando /> : (
           <View style={{ gap: 8 }}>
             {solicitudes.map((s) => {
               const e = estadoSolicitudDe(s.estado);
@@ -414,22 +425,9 @@ export default function Marketing() {
                 </View>
               );
             })}
-            {!solicitudes.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin solicitudes</Text> : null}
+            {!solicitudes.length ? <Vacio>Sin solicitudes</Vacio> : null}
           </View>
         )}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          {puedeEditar ? (
-            <View style={{ marginBottom: 10 }}>
-              <BotonGrande texto="Nueva pieza" color={MARCA.azul} onPress={() => router.push({ pathname: '/marketing-editar', params: { mes } })} />
-            </View>
-          ) : null}
-          <BotonGrande texto="Pedir un diseño" borde color={MARCA.azulClaro} onPress={() => router.push('/marketing-solicitud')} />
-          {puedeEditar || puedeAprobar ? (
-            <View style={{ marginTop: 10 }}>
-              <BotonGrande texto="Ajustes del calendario" borde color={colorSistema.texto2} onPress={() => router.push('/marketing-ajustes')} />
-            </View>
-          ) : null}
-        </View>
       </ScrollView>
     </>
   );

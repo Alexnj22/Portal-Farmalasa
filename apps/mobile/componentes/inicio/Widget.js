@@ -40,7 +40,7 @@ export function Cuenta({ n, color }) {
 export default function Widget({ titulo, icono, color, cuenta, onAbrir, accion = 'Ver todo', children, relleno = true }) {
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <Pressable onPress={tocar(onAbrir)} disabled={!onAbrir}
           style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 9, paddingHorizontal: 14, paddingTop: 13, paddingBottom: 9, opacity: pressed ? 0.6 : 1 })}>
           <Chip icono={icono} color={color} />

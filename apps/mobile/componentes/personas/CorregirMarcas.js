@@ -22,7 +22,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Dato, Opciones, Seccion } from '../formulario/Piezas';
 import ConAurora from '../ConAurora';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 import Hora from './Hora';
 
@@ -93,7 +93,7 @@ export default function CorregirMarcas({ objetivo, usuario, onCerrar }) {
                   </Seccion>
                   <Seccion titulo="Motivo" pie="Queda en la bitácora con tu nombre.">
                     <TextInput value={motivo} onChangeText={setMotivo} placeholder="Ej: olvidó marcar, el kiosco no respondía" placeholderTextColor={colorSistema.texto2} multiline
-                      style={{ minHeight: 64, borderRadius: 12, padding: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+                      style={{ minHeight: 64, borderRadius: 12, padding: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: FONDO_CONTROL }} />
                   </Seccion>
                   <Aviso texto="La marca se agrega a las que ya hay: no reemplaza ninguna." />
                   <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar marca'} onPress={guardar} deshabilitado={guardando || !tipo || !hora} />

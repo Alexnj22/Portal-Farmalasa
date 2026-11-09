@@ -14,7 +14,7 @@
 // días de una sala pasaban de las 1000 filas y el promedio se hacía con un
 // pedazo.
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Platform, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, LayoutAnimation, Platform, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchBranchHourlySalesRange } from '@nucleo/data/dashboard';
 import { ERP_BODEGA, BRANCH_A_ERP, ordenDeSala } from '@nucleo/constants/erp';
@@ -96,9 +96,9 @@ export function VentasPorHora({ ctx }) {
         </Pressable>
         {dia == null ? (
           <Segmentos opciones={[{ id: 'dias', label: 'Días' }, { id: 'horas', label: 'Horas' }]} activa={vista}
-            onCambiar={setVista} margen={0} />
+            onCambiar={(v) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setVista(v); }} margen={0} />
         ) : (
-          <Pressable onPress={() => setDia(null)}>
+          <Pressable onPress={() => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setDia(null); }}>
             <Text style={{ color: colorSistema.acento, fontSize: 15 }}>‹ Toda la semana · <Text style={{ fontWeight: '700' }}>{DIAS_LARGOS[dia]}</Text></Text>
           </Pressable>
         )}
@@ -106,7 +106,7 @@ export function VentasPorHora({ ctx }) {
           <>
             <Barras items={items}
               rotulo={(it) => (it.day != null && dia == null && vista === 'dias' ? DIAS[it.day] : hora(it.hour))}
-              onTocar={dia == null && vista === 'dias' ? (it) => setDia(it.day) : null} />
+              onTocar={dia == null && vista === 'dias' ? (it) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setDia(it.day); } : null} />
             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
               {dia == null && vista === 'dias'
                 ? 'Tickets por hora en un día típico (últimos 90 días). Toca un día para ver sus horas.'

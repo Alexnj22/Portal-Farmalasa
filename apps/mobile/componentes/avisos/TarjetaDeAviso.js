@@ -50,6 +50,11 @@ import { armarDeOperacion } from './cuerpos/operacion';
 import { armarDeSolicitudes } from './cuerpos/solicitudes';
 import DetalleDeAviso from './DetalleDeAviso';
 
+// El mensaje plegado: en una bandeja de cien, un aviso de sólo texto no puede
+// ocupar media pantalla (2026-11-09). Lo demás, con «Ver mensaje completo».
+const LINEAS_DEL_MENSAJE = 2;
+const MENSAJE_LARGO = 100;
+
 const ICONO_DE_SEVERIDAD = { AlertCircle: ['AlertCircle', MARCA.rojo], AlertTriangle: ['AlertTriangle', MARCA.ambar], CheckCircle2: ['CheckCircle2', MARCA.verde] };
 
 function Boton({ texto, onPress, principal, color = MARCA.azul, ocupado }) {
@@ -83,7 +88,7 @@ function Fallback({ n, detalle, expandida }) {
     <>
       {detalle?.contexto ? <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{detalle.contexto}</Text> : null}
       {detalle?.renglones?.length ? <Lista filas={detalle.renglones.map(([a, b]) => [a, b])} resto={detalle.resto ? `y ${detalle.resto} más` : null} /> : null}
-      {!detalle && n.body ? <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }} numberOfLines={expandida ? undefined : 5}>{n.body}</Text> : null}
+      {!detalle && n.body ? <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }} numberOfLines={expandida ? undefined : LINEAS_DEL_MENSAJE}>{n.body}</Text> : null}
       {detalle?.pie ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle.pie}</Text> : null}
     </>
   );
@@ -109,7 +114,7 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
   // Qué se despliega: la lista entera del grupo, el detalle de la solicitud, o
   // el resto del mensaje — en ese orden, como el portal.
   const tieneDetalle = Boolean(n.metadata?.request_id);
-  const largo = !t && (n.body?.length ?? 0) > 220;
+  const largo = (!t || !t.ocultarTexto) && (n.body?.length ?? 0) > MENSAJE_LARGO;
   const expandir = t?.expandir
     ?? (tieneDetalle ? { cerrado: 'Ver detalle', abierto: 'Ocultar detalle', detalle: true } : null)
     ?? (largo ? { cerrado: 'Ver mensaje completo', abierto: 'Ocultar mensaje' } : null);
@@ -143,8 +148,8 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }}
       style={({ pressed }) => ({ marginHorizontal: margen, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-      <Vidrio radio={22} interactivo tinte={sinLeer ? 'rgba(59,130,246,0.10)' : undefined}>
-        <View style={{ padding: 14, gap: 12 }}>
+      <Vidrio radio={20} interactivo tinte={sinLeer ? 'rgba(59,130,246,0.10)' : undefined}>
+        <View style={{ padding: 12, gap: 8 }}>
           {t?.encabezado ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{t.encabezado}</Text> : null}
           <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
             {t?.lado ?? <Insignia icono={icono} color={colorIcono} />}
@@ -161,14 +166,14 @@ export default function TarjetaDeAviso({ n, detalle, onAbrir, pie = null, sinAcc
           </View>
 
           {t?.cuerpo ?? <Fallback n={n} detalle={detalle} expandida={expandida} />}
-          {t && !t.ocultarTexto && n.body ? <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{n.body}</Text> : null}
+          {t && !t.ocultarTexto && n.body ? <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }} numberOfLines={expandida ? undefined : LINEAS_DEL_MENSAJE}>{n.body}</Text> : null}
 
           {!conPersona && (n.created_by || sala) ? <DeQuien id={n.created_by} sala={sala} /> : null}
 
           {expandir ? (
             <Pressable onPress={(e) => { e.stopPropagation?.(); Haptics.selectionAsync().catch(() => {}); setExpandida((v) => !v); }} hitSlop={6}
-              style={{ alignSelf: 'flex-start', minHeight: 36, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.08)', borderWidth: 0.5, borderColor: colorSistema.separador }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{expandida ? expandir.abierto : expandir.cerrado}</Text>
+              style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
+              <Text style={{ color: colorSistema.acento, fontSize: 14, fontWeight: '600' }}>{expandida ? expandir.abierto : expandir.cerrado}</Text>
             </Pressable>
           ) : null}
           {expandida && expandir?.detalle ? <DetalleDeAviso n={n} /> : null}

@@ -12,7 +12,7 @@ import { colorSistema } from '../Formulario';
 export default function RangoDeFechas({ desde, hasta, onCambiar, margen = 16 }) {
   return (
     <View style={{ marginHorizontal: margen }}>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ padding: 12, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Desde</Text>

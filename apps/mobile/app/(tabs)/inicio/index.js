@@ -8,15 +8,17 @@
 //
 // Las secciones APRENDEN: cada toque se anota y, al abrir el Inicio, las que
 // más se usaron en las últimas semanas suben (`utils/ordenPorUso.js`). El
-// orden sólo cambia al abrir, nunca mientras se mira. «Hoy» va siempre
-// primero.
+// orden se calcula UNA vez, al abrir la app: antes se recalculaba al volver de
+// un widget y la tarjeta que se acababa de tocar saltaba de sitio (2026-11-09,
+// «se mueve de un solo»). «Hoy» va siempre primero.
 //
 // Los widgets que la persona apagó (en el portal o en «Personalizar el
 // Inicio», que se abre al final) no salen: es la misma preferencia
 // (`user_dashboard_prefs.widgets`).
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text } from 'react-native';
+import { LayoutAnimation, Pressable, RefreshControl, ScrollView, Text } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
+import { leer, guardar } from '@plataforma/almacen';
 import { fetchUserDashboardPrefs } from '@nucleo/data/dashboard';
 import { colorSistema } from '../../../componentes/Formulario';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -46,20 +48,27 @@ export default function Inicio() {
   const { datos, recargar, puede } = useDatosInicio();
   const [pestana, setPestana] = useState('general');
   const [recargando, setRecargando] = useState(false);
-  // El orden se fija al ENTRAR a la pantalla (no mientras se mira).
-  const [orden, setOrden] = useState(() => ordenar(SECCIONES.map((s) => s.id), user?.id));
-  useFocusEffect(useCallback(() => { setOrden(ordenar(SECCIONES.map((s) => s.id), user?.id)); }, [user?.id]));
+  // El orden se fija al abrir la app y no se mueve durante la sesión.
+  const [orden] = useState(() => ordenar(SECCIONES.map((s) => s.id), user?.id));
   // Los apagados se releen al volver (de «Personalizar el Inicio», por ejemplo).
-  const [apagados, setApagados] = useState(() => new Set());
+  // Arranca con lo último que se supo: si esperara a la base, los widgets
+  // apagados se pintarían un instante y desaparecerían empujando todo.
+  const claveApagados = `inicio.apagados.${user?.id ?? 'anon'}`;
+  const [apagados, setApagados] = useState(() => {
+    try { return new Set(JSON.parse(leer(claveApagados) || '[]')); } catch { return new Set(); }
+  });
   useFocusEffect(useCallback(() => {
     let vivo = true;
     if (user?.id) {
       Promise.resolve(fetchUserDashboardPrefs(user.id)).then(({ data }) => {
-        if (vivo) setApagados(new Set((Array.isArray(data?.widgets) ? data.widgets : []).filter((w) => w.enabled === false).map((w) => w.id)));
+        if (!vivo) return;
+        const ids = (Array.isArray(data?.widgets) ? data.widgets : []).filter((w) => w.enabled === false).map((w) => w.id);
+        try { guardar(claveApagados, JSON.stringify(ids)); } catch { /* sin almacén: sólo no se recuerda */ }
+        setApagados((antes) => (antes.size === ids.length && ids.every((id) => antes.has(id)) ? antes : new Set(ids)));
       }).catch(() => {});
     }
     return () => { vivo = false; };
-  }, [user?.id]));
+  }, [user?.id, claveApagados]));
 
   const sala = salaDelUsuario(user);
   const nombreSala = (sucursales || []).find((b) => String(b.id) === String(sala))?.name;
@@ -94,7 +103,7 @@ export default function Inicio() {
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
       <FranjaDelPortal />
       <Encabezado sala={nombreSala} />
-      <Pestanas opciones={pestanas} activa={pestana} onCambiar={setPestana} />
+      <Pestanas opciones={pestanas} activa={pestana} onCambiar={(p) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setPestana(p); }} />
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}
       {secciones.map(({ id, Componente }) => (
         <Componente key={id} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion(id, r) }} />

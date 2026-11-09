@@ -19,7 +19,7 @@ import { Seccion } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 
-const COLOR_TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro, neutral: '#8E8E93' };
+const COLOR_TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro, neutral: MARCA.gris };
 
 function Renglon({ titulo, detalle, cifra, pildora, primero }) {
   return (
@@ -95,7 +95,7 @@ export default function Expediente({ exp }) {
             <Renglon key={cr.id} primero={!i} titulo={`${cr.tipo_doc || 'Documento'} ${cr.numero_doc || ''}`.trim()}
               detalle={[fechaNumerica(cr.fecha), cr.sala].filter(Boolean).join(' · ')}
               cifra={formatMoney(cr.saldo)}
-              pildora={{ texto: cr.vencido ? `Vencido · ${cr.dias} días` : `${cr.dias} días`, color: cr.vencido ? MARCA.rojo : '#8E8E93' }} />
+              pildora={{ texto: cr.vencido ? `Vencido · ${cr.dias} días` : `${cr.dias} días`, color: cr.vencido ? MARCA.rojo : MARCA.gris }} />
           )) : <Nada texto="No debe nada." />}
         </Seccion>
       ) : null}

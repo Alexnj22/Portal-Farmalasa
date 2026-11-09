@@ -27,6 +27,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { Vacio } from '../componentes/formulario/Piezas';
 
 export default function Sucursales() {
   const sucursales = useStaffStore((s) => s.branches);
@@ -91,7 +92,7 @@ export default function Sucursales() {
             {lista.map(({ b, gente, abierta, alertas }) => (
               <Pressable key={b.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/sucursal/[id]', params: { id: String(b.id) } }); }}
                 style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                <Vidrio radio={18} interactivo tinte={alertas.critica ? 'rgba(240,68,56,0.10)' : undefined}>
+                <Vidrio radio={20} interactivo tinte={alertas.critica ? 'rgba(240,68,56,0.10)' : undefined}>
                   <View style={{ padding: 12, gap: 5 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{b.name}</Text>
@@ -108,7 +109,7 @@ export default function Sucursales() {
             ))}
           </View>
         ))}
-        {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Ninguna sucursal con ese filtro</Text> : null}
+        {!visibles.length ? <Vacio>Ninguna sucursal con ese filtro</Vacio> : null}
         {/* Editar una sucursal: desde su ficha. Crear una: el + de la barra (permiso de editar sucursales, como el portal). */}
       </ScrollView>
     </>

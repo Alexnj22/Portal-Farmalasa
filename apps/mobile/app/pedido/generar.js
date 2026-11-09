@@ -18,7 +18,7 @@
 // Bodega»: lo que piden las salas y Bodega no tiene para despachar.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -35,7 +35,7 @@ import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import ConAurora from '../../componentes/ConAurora';
@@ -68,7 +68,7 @@ function Resumen({ flujo, confirmando, onVolver, onConfirmar }) {
             </Text>
           </View>
           {resumen.map((s) => (
-            <Vidrio key={s.erp_sucursal_id} radio={18}>
+            <Vidrio key={s.erp_sucursal_id} radio={20}>
               <View style={{ padding: 12, gap: 6 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{ERP_NAMES[s.erp_sucursal_id] ?? `Sucursal ${s.erp_sucursal_id}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
@@ -239,7 +239,7 @@ export default function GenerarPedido() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Generar pedido', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {stats == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : (
+        {stats == null ? <Cargando /> : (
           <>
             {errorTablero ? <Aviso tono="freno" texto={`No se pudo leer cómo están las sucursales: ${errorTablero}`} /> : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginHorizontal: 4 }}>
@@ -257,7 +257,7 @@ export default function GenerarPedido() {
                 const urg = urgenciaDeSala(st);
                 return (
                   <Pressable key={id} disabled={sin} onPress={() => alternar(id)} style={({ pressed }) => ({ width: '48%', opacity: sin ? 0.45 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-                    <Vidrio radio={18} interactivo={!sin} tinte={on ? 'rgba(0,82,204,0.35)' : undefined}>
+                    <Vidrio radio={20} interactivo={!sin} tinte={on ? 'rgba(0,82,204,0.35)' : undefined}>
                       <View style={{ padding: 12, gap: 4 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{ERP_NAMES[id]}</Text>

@@ -14,7 +14,7 @@
 // las fichas que se congelaron o que parecen repetidas, con «Marcar revisado».
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -32,7 +32,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -59,7 +59,7 @@ function PorRevisar() {
       catch (e) { fallo('No se pudo guardar', e?.message || ''); }
     } },
   ]);
-  if (!d) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (!d) return <Cargando />;
   return (
     <>
       <FilaDeKpis>
@@ -78,7 +78,7 @@ function PorRevisar() {
           <Pressable key={f.id} disabled={!f.customer_id}
             onPress={() => { Haptics.selectionAsync().catch(() => {}); anotar('CLIENTES_VER_FICHA', f.customer_id, { nombre: f.name, desde: 'por-revisar' }); router.push({ pathname: '/cliente/[id]', params: { id: String(f.customer_id) } }); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <View style={{ padding: 14, gap: 6 }}>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{f.name}</Text>
@@ -238,10 +238,10 @@ export default function Clientes() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
-        <FiltrosActivos grupos={grupos} />
         {veClientes ? (
           <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'lista', label: 'Clientes' }, { id: 'revisar', label: 'Por revisar' }]} />
         ) : null}
+        <FiltrosActivos grupos={pestana === 'lista' ? grupos : []} />
         {pestana === 'revisar' ? <PorRevisar /> : null}
         {pestana === 'lista' && stats && !busqueda ? (
           <>
@@ -269,7 +269,7 @@ export default function Clientes() {
           </Text>
         ) : null}
         {datos.rows.map((c) => <Fila key={c.id} c={c} verMontos={verMontos} />)}
-        {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+        {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.rows.length && !error ? (
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40, fontSize: 15 }}>Ninguna ficha con esos filtros.</Text>

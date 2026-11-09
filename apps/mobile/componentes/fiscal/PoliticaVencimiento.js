@@ -9,7 +9,7 @@
 // `deleteProveedor`, `updateProductsMarkND`), con confirmación donde el portal
 // la pide.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import {
@@ -19,7 +19,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -106,7 +106,7 @@ export default function PoliticaVencimiento({ texto, canEdit }) {
     ]);
   };
 
-  if (!labs) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (!labs) return <Cargando />;
   return (
     <View style={{ gap: 10 }}>
       <FilaDeKpis>
@@ -119,7 +119,7 @@ export default function PoliticaVencimiento({ texto, canEdit }) {
         const open = abierto === lab.id;
         return (
           <View key={lab.id} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(open ? null : lab.id); setEditando(null); }} style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{lab.nombre}</Text>
@@ -166,7 +166,7 @@ export default function PoliticaVencimiento({ texto, canEdit }) {
           </View>
         );
       })}
-      {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin resultados</Text> : null}
+      {!visibles.length ? <Vacio>Sin resultados</Vacio> : null}
     </View>
   );
 }

@@ -6,7 +6,7 @@
 // Sólo se edita en borrador y con permiso; si no, se ve igual, sin controles.
 // Las operaciones sobre el cuestionario son del núcleo (`encuestasClientes`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -20,7 +20,7 @@ import {
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -261,7 +261,7 @@ export default function DisenarEncuesta() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           {error ? <Aviso tono="freno" texto={error} /> : null}
-          {!encuesta && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+          {!encuesta && !error ? <Cargando /> : null}
           {encuesta ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{encuesta.nombre}</Text>

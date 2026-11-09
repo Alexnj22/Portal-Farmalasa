@@ -17,14 +17,14 @@ import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../../componentes/formulario/Piezas';
 import { volver } from '../../../componentes/volver';
+import { FONDO_CONTROL, PETROLEO } from '../../../componentes/inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 function Flecha({ texto, etiqueta, deshabilitado, onPress }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} disabled={deshabilitado} accessibilityLabel={etiqueta} hitSlop={6}
       style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: 'rgba(127,127,127,0.16)', opacity: deshabilitado ? 0.25 : pressed ? 0.6 : 1 })}>
+        backgroundColor: FONDO_CONTROL, opacity: deshabilitado ? 0.25 : pressed ? 0.6 : 1 })}>
       <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
@@ -101,7 +101,7 @@ export default function EditarRuta() {
                     <Pressable key={d.n} accessibilityRole="button" accessibilityState={{ selected: on }}
                       onPress={() => { Haptics.selectionAsync().catch(() => {}); setSel((s) => ({ ...s, dias: alternarDia(s.dias, d.n) })); }}
                       style={({ pressed }) => ({ width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center',
-                        backgroundColor: on ? PETROLEO : 'rgba(127,127,127,0.16)', transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+                        backgroundColor: on ? PETROLEO : FONDO_CONTROL, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
                       <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '800' }}>{d.c}</Text>
                     </Pressable>
                   );

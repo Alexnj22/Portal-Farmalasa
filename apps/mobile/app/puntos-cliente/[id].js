@@ -32,7 +32,7 @@ import Segmentos from '../../componentes/Segmentos';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Grilla, Pildora } from '../../componentes/avisos/Piezas';
 import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
@@ -48,7 +48,7 @@ import { anotar } from '@nucleo/data/audit';
 
 const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
 const MINIMO = 100;
-const COLOR_PARTE = { saldo: COLOR_ACUMULADO, canjeado: COLOR_CANJEADO, vencido: '#8E8E93', anulado: MARCA.rojo };
+const COLOR_PARTE = { saldo: COLOR_ACUMULADO, canjeado: COLOR_CANJEADO, vencido: MARCA.gris, anulado: MARCA.rojo };
 const NOMBRE_MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const mesLargo = (clave) => { const [a, m] = clave.split('-').map(Number); return `${NOMBRE_MES[m - 1]} ${a}`; };
 
@@ -145,10 +145,10 @@ export default function PuntosCliente() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {!d && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {!d && !error ? <Cargando /> : null}
         {d ? (
           <>
-            <Vidrio radio={24} tinte="rgba(140,198,63,0.12)">
+            <Vidrio radio={20} tinte="rgba(140,198,63,0.12)">
               <View style={{ padding: 18, gap: 6 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }} numberOfLines={2}>{titulo}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[d.cliente?.dui, d.cliente?.telefono].filter(Boolean).join(' · ') || 'Sin datos de contacto'}</Text>

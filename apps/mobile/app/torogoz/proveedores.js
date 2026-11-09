@@ -2,20 +2,21 @@
 // («Proveedores»): NIT, plazo, si es relacionada o está inactivo; tocar uno lo
 // edita y «Nuevo proveedor» da el alta. Sólo quien configura.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchProveedores } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
+import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
-import { GRIS, PETROLEO, guardarElegida } from '../../componentes/torogoz/comercial/Piezas';
+import { GRIS, guardarElegida } from '../../componentes/torogoz/comercial/Piezas';
 
 export default function ProveedoresTorogoz() {
   const { hasPermission } = useAuth();
@@ -39,15 +40,11 @@ export default function ProveedoresTorogoz() {
         headerSearchBarOptions: { placeholder: 'Nombre o NIT', hideWhenScrolling: false,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') },
       }} />
+      <MenuDeFiltros grupos={[]} extra={puede ? { icono: 'plus', etiqueta: 'Nuevo proveedor', onPress: () => router.push({ pathname: '/torogoz/proveedor/[id]', params: { id: 'nuevo' } }) } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {puede ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Nuevo proveedor" color={PETROLEO} onPress={() => router.push({ pathname: '/torogoz/proveedor/[id]', params: { id: 'nuevo' } })} />
-          </View>
-        ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {lista === null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {lista === null ? <Cargando /> : null}
         {visibles.map((p) => (
           <Pressable key={p.id} disabled={!puede} accessibilityRole="button" accessibilityLabel={`Editar ${p.nombre}`}
             onPress={() => { Haptics.selectionAsync().catch(() => {}); guardarElegida('proveedor', p); router.push({ pathname: '/torogoz/proveedor/[id]', params: { id: String(p.id) } }); }}

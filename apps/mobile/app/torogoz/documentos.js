@@ -12,7 +12,7 @@
 // le hablan a Hacienda y al cliente DE VERDAD: en el entorno de pruebas esas
 // funciones no están, así que no se pueden probar ahí. Cada una pide confirmar.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -28,20 +28,19 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { enviarDocumentoPorCorreo } from '../../componentes/torogoz/fiscal/papel';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../componentes/torogoz/soloConsulta';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
-const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 50;
 const COLOR_NIVEL = { ok: MARCA.verde, pendiente: MARCA.ambar, error: MARCA.rojo, info: colorSistema.texto2 };
 
@@ -189,6 +188,9 @@ export default function Facturacion() {
   const grupos = [{ id: 'tipo', titulo: 'Tipo de documento', activa: tipo, porDefecto: '', onCambiar: setTipo,
     opciones: [{ id: '', label: 'Todos los tipos' }, ...Object.entries(TIPO_DOCUMENTO).map(([id, t]) => ({ id, label: t.largo }))] }];
   const colorSemaforo = COLOR_NIVEL[semaforo.nivel];
+  // Lo que se tocó en una cifra de arriba (`sub`) también se ve y se puede quitar.
+  const gruposAplicados = [...grupos, { id: 'sub', titulo: 'Pendiente', activa: sub, porDefecto: '', onCambiar: setSub,
+    opciones: [{ id: 'por_enviar', label: 'Sin sello' }, { id: 'rechazados', label: 'Rechazados' }, { id: 'invalidaciones', label: 'Invalidaciones' }] }];
 
   return (
     <>
@@ -201,13 +203,14 @@ export default function Facturacion() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={cubeta} onCambiar={(v) => { setCubeta(v); setSub(''); }} opciones={CUBETAS_FACTURACION.map((c) => ({ id: c.key, label: c.label }))} />
+        <FiltrosActivos grupos={gruposAplicados} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {docs ? (
           <View style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={22} tinte={`${colorSemaforo}26`}>
+            <Vidrio radio={20} tinte={`${colorSemaforo}26`}>
               <View style={{ padding: 16, gap: 10 }}>
                 <Text style={{ color: colorSemaforo, fontSize: 20, fontWeight: '800' }}>{semaforo.titulo}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{semaforo.detalle}</Text>
@@ -248,13 +251,12 @@ export default function Facturacion() {
             </FilaDeKpis>
           </>
         ) : null}
-        <Segmentos activa={cubeta} onCambiar={(v) => { setCubeta(v); setSub(''); }} opciones={CUBETAS_FACTURACION.map((c) => ({ id: c.key, label: c.label }))} />
         {docs ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
             {`${visibles.length} documento${visibles.length === 1 ? '' : 's'}${sub ? ` · ${sub === 'por_enviar' ? 'sin sello' : sub}` : ''}`}
           </Text>
         ) : null}
-        {docs == null && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, cuantos).map((d) => <Documento key={d.id} d={d} />)}
+        {docs == null && !error ? <Cargando /> : visibles.slice(0, cuantos).map((d) => <Documento key={d.id} d={d} />)}
         {visibles.length > cuantos ? (
           <View style={{ marginHorizontal: 16 }}>
             <BotonGrande borde color={PETROLEO} texto={`Ver ${Math.min(POR_PAGINA, visibles.length - cuantos)} más · quedan ${visibles.length - cuantos}`} onPress={() => setCuantos((n) => n + POR_PAGINA)} />

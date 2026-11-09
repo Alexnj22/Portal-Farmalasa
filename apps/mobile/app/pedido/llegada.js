@@ -7,7 +7,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPedidoItemsAll, fetchPedidosEnCurso } from '@nucleo/data/pedidos';
@@ -18,7 +17,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 
@@ -28,14 +27,7 @@ function Tres({ valor, onCambiar, opciones = ESTADOS }) {
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
       {opciones.map(([id, rotulo, color]) => {
-        const activo = valor === id;
-        return (
-          <Pressable key={id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(id); }}
-            style={({ pressed }) => ({ minHeight: 38, paddingHorizontal: 12, borderRadius: 19, justifyContent: 'center',
-              backgroundColor: activo ? color : 'rgba(127,127,127,0.16)', opacity: pressed ? 0.7 : 1 })}>
-            <Text style={{ color: activo ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{rotulo}</Text>
-          </Pressable>
-        );
+        return <Ficha key={id} texto={rotulo} activa={valor === id} color={color} onPress={() => onCambiar(id)} />;
       })}
     </View>
   );

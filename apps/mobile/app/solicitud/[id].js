@@ -54,7 +54,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 
-const COLOR_ESTADO = { PENDING: MARCA.ambar, APPROVED: MARCA.verde, REJECTED: MARCA.rojo, CANCELLED: '#8E8E93' };
+const COLOR_ESTADO = { PENDING: MARCA.ambar, APPROVED: MARCA.verde, REJECTED: MARCA.rojo, CANCELLED: MARCA.gris };
 
 function Boton({ texto, color, relleno, onPress, deshabilitado, icono }) {
   return (
@@ -192,7 +192,7 @@ export default function Solicitud() {
   };
 
   const titulo = REQUEST_TYPES[tipo]?.label ?? (esMinMax ? 'Ajuste de MIN·MAX' : 'Solicitud');
-  const colorEstado = COLOR_ESTADO[estado] ?? '#8E8E93';
+  const colorEstado = COLOR_ESTADO[estado] ?? MARCA.gris;
   const rotuloEstado = req && esParcial(req) ? 'Aprobada parcial' : (REQUEST_STATUS[estado]?.label ?? estado);
 
   return (

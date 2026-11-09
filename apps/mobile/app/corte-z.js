@@ -14,12 +14,12 @@
 // ventas con factura de cada día con documentos, total y rango de N.º de
 // control (`get_corte_z_dias`), para enfrentarlo al reporte diario.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchCortesZ, fetchCorteZDias } from '@nucleo/data/corteZ';
-import { MenuDeFiltros } from '../componentes/Filtros';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { causaDeCorteZ, cuadraZ, documentosQueDifieren, FILAS_DECLARACION, totalesCorteZ } from '@nucleo/utils/corteZ';
 import { EMPRESA } from '@nucleo/constants/empresa';
 import { correrMes, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
@@ -27,7 +27,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -60,7 +60,7 @@ function Tarjeta({ f, verMontos }) {
   ];
   return (
     <View style={{ marginHorizontal: 16, gap: 10 }}>
-      <Vidrio radio={22} tinte={ok ? undefined : 'rgba(247,144,9,0.12)'}>
+      <Vidrio radio={20} tinte={ok ? undefined : 'rgba(247,144,9,0.12)'}>
         <View style={{ padding: 16, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{f.sucursal}</Text>
@@ -219,14 +219,17 @@ export default function CorteZ() {
     });
   };
 
+  const grupos = puedeElegirSucursal && conCorte.length > 1 ? [{ id: 'sucursal', titulo: 'Sucursal', activa: sucursal, porDefecto: 'todas', onCambiar: setSucursal,
+    opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...conCorte] }] : [];
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Corte Z', headerLargeTitle: true }} />
-      <MenuDeFiltros grupos={puedeElegirSucursal && conCorte.length > 1 ? [{ id: 'sucursal', titulo: 'Sucursal', activa: sucursal, porDefecto: 'todas', onCambiar: setSucursal,
-        opciones: [{ id: 'todas', label: 'Todas las sucursales' }, ...conCorte] }] : []} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <FiltrosActivos grupos={grupos} />
         <PasoDeMes mes={mes} onCambiar={setMes} />
         {filas && filas.length ? (
           <FilaDeKpis>
@@ -237,10 +240,10 @@ export default function CorteZ() {
         ) : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 20 }}>{`${EMPRESA.razonSocial} · NIT ${EMPRESA.nit} · NRC ${EMPRESA.nrc}`}</Text>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.map((f) => <Tarjeta key={`${f.branch_id}-${f.periodo}`} f={f} verMontos={verMontos} />)}
+        {filas == null ? <Cargando /> : filas.map((f) => <Tarjeta key={`${f.branch_id}-${f.periodo}`} f={f} verMontos={verMontos} />)}
         {filas && !filas.length && !error ? (
           <View style={{ marginHorizontal: 24, gap: 6, marginTop: 30 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>{`Sin Corte Z de ${nombreDelMes(mes)}`}</Text>
+            <Vacio>{`Sin Corte Z de ${nombreDelMes(mes)}`}</Vacio>
             <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
               {mes >= mesSV() ? 'El mes en curso todavía no se cierra. El Corte Z se trae el día 1 del mes siguiente.' : 'Este período no se ha traído todavía. No es un mes sin ventas: es que nadie lo procesó.'}
             </Text>

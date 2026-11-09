@@ -9,7 +9,7 @@
 // que la sala YA decidió tener y no tiene. Con alcance de una sala manda la
 // suya. Tocar un producto abre su Mín·Máx.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +22,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
@@ -38,7 +38,7 @@ const Fila = memo(function Fila({ f, diasFoto, columnas }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/minmax-producto', params: { producto: String(f.erp_product_id), nombre: f.descripcion } }); }}
       style={({ pressed }) => ({ ...(columnas > 1 ? { flex: 1 / columnas } : { marginHorizontal: 16 }), marginTop: 12, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{f.descripcion}</Text>
@@ -110,7 +110,7 @@ export default function Agotados() {
             <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 20 }}>{`${ERP_NAMES[erp]} · lo que no hay y sí se vende`}</Text>
             <FiltrosActivos grupos={grupos.filter((g) => g.id !== 'sala')} />
             {resp?.error ? <ErrorConReintento mensaje={resp.error} onReintentar={() => { setResp(null); cargar(); }} /> : null}
-            {resp == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : resp.error ? null : (
+            {resp == null ? <Cargando /> : resp.error ? null : (
               <>
                 <FilaDeKpis>
                   <Kpi icono="PackageMinus" rotulo="Agotados" valor={formatQty(resumen.total)} color={MARCA.rojo} apoyo={`en ${diasFoto} día${diasFoto === 1 ? '' : 's'} mirados`}

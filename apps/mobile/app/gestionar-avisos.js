@@ -28,7 +28,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MenuDeFiltros } from '../componentes/Filtros';
@@ -247,12 +247,6 @@ export default function GestionarAvisos() {
   const recargar = useStaffStore((s) => s.fetchBoot);
   const [recargando, setRecargando] = useState(false);
   // Contar y filtrar una sola vez por cambio, no en cada render (los archivados crecen sin tope).
-  const cuentas = useMemo(() => {
-    const c = { ACTIVE: 0, SCHEDULED: 0, ARCHIVED: 0 };
-    procesados.forEach((a) => { const k = seccionDeAviso(a); c[k] = (c[k] || 0) + 1; });
-    return c;
-  }, [procesados]);
-  const cuenta = (k) => cuentas[k] || 0;
   const visibles = useMemo(() => procesados.filter((a) => seccionDeAviso(a) === seccion && (!texto.trim() || tokenMatch(texto.trim(), a.title, a.message, a.badgeText)))
     .sort((a, b) => String(b.createdAt ?? b.created_at ?? '').localeCompare(String(a.createdAt ?? a.created_at ?? ''))), [procesados, seccion, texto]);
   const elegido = abierto ? procesados.find((a) => a.id === abierto) : null;
@@ -291,20 +285,20 @@ export default function GestionarAvisos() {
         ListHeaderComponent={(
           <View style={{ marginBottom: 10 }}>
             <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
-              { id: 'ACTIVE', label: cuenta('ACTIVE') ? `Activos · ${cuenta('ACTIVE')}` : 'Activos' },
-              { id: 'SCHEDULED', label: cuenta('SCHEDULED') ? `Programados · ${cuenta('SCHEDULED')}` : 'Programados' },
+              { id: 'ACTIVE', label: 'Activos' },
+              { id: 'SCHEDULED', label: 'Programados' },
               { id: 'ARCHIVED', label: 'Archivados' },
             ]} />
           </View>
         )}
-        ListEmptyComponent={<Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 28 }}>Sin avisos en esta sección</Text>}
+        ListEmptyComponent={<Vacio>Sin avisos en esta sección</Vacio>}
         renderItem={({ item: a }) => {
           const urgente = a.priority === 'URGENT' && seccion !== 'SCHEDULED';
           const fecha = a.createdAt || a.created_at || a.date;
           return (
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(a.id); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={18} interactivo tinte={urgente && a.readPercentage < 100 ? 'rgba(240,68,56,0.12)' : undefined}>
+              <Vidrio radio={20} interactivo tinte={urgente && a.readPercentage < 100 ? 'rgba(240,68,56,0.12)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                     <Pildora texto={a.badgeText} color={MARCA.azulClaro} />

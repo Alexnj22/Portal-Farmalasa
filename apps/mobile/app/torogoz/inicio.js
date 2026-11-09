@@ -26,13 +26,12 @@ import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Widget, { Esqueleto, Renglon, Vacio } from '../../componentes/inicio/Widget';
 import Grafica from '../../componentes/metas/Graficas';
 import Avatar from '../../componentes/Avatar';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
 import { Aviso } from '../../componentes/formulario/Piezas';
 import { Dona, FilaRanking, FormasDePago, Puesto, Punto, Variacion, colorDe } from '../../componentes/torogoz/tablero/Piezas';
 import { TrasLaTransicion } from '../../componentes/trasLaTransicion';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
-const PETROLEO = '#0f6e7d';
 const VISIBLES = 5;
 const num = (v) => Number(v) || 0;
 const OPCIONES_PERIODO = PERIODOS.map((p) => ({ id: p.key, label: p.label }));
@@ -140,7 +139,7 @@ export default function TorogozInicio() {
             {cargando && !datos ? <Esqueleto lineas={4} /> : (
               <Grafica key={`${metrica}-${periodo}-${ruta}-${vendedor}`} datos={serie} alto={170}
                 series={metrica === 'ventas'
-                  ? [{ clave: 'ventas', rotulo: 'Este período', color: PETROLEO, tipo: 'area' }, { clave: 'anterior', rotulo: `Período anterior (${formatMoneyCorto(num(a.ventas))})`, color: '#8D8D99', tipo: 'linea' }]
+                  ? [{ clave: 'ventas', rotulo: 'Este período', color: PETROLEO, tipo: 'area' }, { clave: 'anterior', rotulo: `Período anterior (${formatMoneyCorto(num(a.ventas))})`, color: MARCA.gris, tipo: 'linea' }]
                   : [{ clave: 'documentos', rotulo: 'Documentos', color: PETROLEO, tipo: 'barra' }]}
                 formato={(v) => (metrica === 'ventas' ? formatMoney(v) : `${formatQty(v)} documentos`)}
                 formatoEje={metrica === 'ventas' ? formatMoneyCorto : (v) => formatQty(v)}
@@ -205,7 +204,7 @@ export default function TorogozInicio() {
                 formato={(v) => formatMoney(v)} formatoEje={formatMoneyCorto} detalle={(f) => `${formatQty(f.documentos)} documentos`}
                 resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Resaltado, el día que más se vende. Desliza para ver cada día.</Text>} />
             ) : (
-              <Grafica key="horas" datos={horas} alto={140} series={[{ clave: 'documentos', rotulo: 'Documentos', color: '#6929C4', tipo: 'barra' }]}
+              <Grafica key="horas" datos={horas} alto={140} series={[{ clave: 'documentos', rotulo: 'Documentos', color: MARCA.violeta, tipo: 'barra' }]}
                 formato={(v) => `${formatQty(v)} documentos`} formatoEje={(v) => formatQty(v)} detalle={(f) => formatMoney(f.ventas)}
                 resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Documentos emitidos a cada hora.</Text>} />
             )}

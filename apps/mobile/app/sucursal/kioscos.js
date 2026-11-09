@@ -9,7 +9,7 @@
 // Revocar exige editar sucursales (`branches`), igual que el botón del portal
 // en la ficha de la sucursal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -19,7 +19,7 @@ import { cupoDeKioscos, kioscosActivos } from '@nucleo/utils/kioscos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Insignia, Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 
@@ -102,7 +102,7 @@ export default function Kioscos() {
           {lista ? <Pildora texto={`${cupo.rotulo} activos`} color={cupo.activos ? MARCA.verde : colorSistema.texto2} /> : null}
         </View>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {lista == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        {lista == null ? <Cargando /> : (
           <Seccion titulo="Dispositivos aprobados"
             pie={cupo.lleno ? `La sala ya tiene ${cupo.limite} equipos: para vincular otro hay que revocar uno.` : 'Para vincular un equipo, inicia sesión en la tablet de la sucursal.'}>
             {activos.length ? activos.map((k, i) => (

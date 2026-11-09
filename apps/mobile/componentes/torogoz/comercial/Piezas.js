@@ -16,7 +16,7 @@ import ConAurora from '../../ConAurora';
 import Vidrio from '../../Vidrio';
 import { colorSistema } from '../../Formulario';
 import { Campo } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../inicio/marca';
 import { Rotulo } from '../../personas/Formulario';
 import HojaDeEleccion from '../../HojaDeEleccion';
 
@@ -56,7 +56,7 @@ export function Interruptor({ rotulo, ayuda, valor, onCambiar, deshabilitado }) 
 export function Nota({ texto, tono = 'info', titulo }) {
   const color = tono === 'danger' ? MARCA.rojo : tono === 'warning' ? MARCA.ambar : tono === 'success' ? MARCA.verde : MARCA.azulClaro;
   return (
-    <Vidrio radio={18} tinte={`${color}26`}>
+    <Vidrio radio={20} tinte={`${color}26`}>
       <View style={{ padding: 12, gap: 4 }}>
         {titulo ? <Text style={{ color, fontSize: 15, fontWeight: '700' }}>{titulo}</Text> : null}
         <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{texto}</Text>
@@ -85,7 +85,7 @@ export function ElegirLargo({ rotulo, requerido, valor, opciones, onCambiar, vac
       <Pressable disabled={deshabilitado || cargando} accessibilityRole="button" accessibilityLabel={rotulo}
         onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); setAbierta(true); }}
         style={({ pressed }) => ({ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, flexDirection: 'row', alignItems: 'center', gap: 8,
-          backgroundColor: 'rgba(127,127,127,0.16)', borderWidth: error ? 1 : 0, borderColor: MARCA.rojo, opacity: deshabilitado ? 0.5 : pressed ? 0.7 : 1 })}>
+          backgroundColor: FONDO_CONTROL, borderWidth: error ? 1 : 0, borderColor: MARCA.rojo, opacity: deshabilitado ? 0.5 : pressed ? 0.7 : 1 })}>
         <Text style={{ flex: 1, color: actual ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>
           {cargando ? 'Cargando…' : actual?.label ?? textoBoton ?? vacio ?? 'Elegir…'}
         </Text>
@@ -168,7 +168,7 @@ export function ElegirUbicacion({ f, setF, deshabilitado }) {
 }
 
 /** El gris de lo neutro, en hexadecimal: la píldora le pega transparencia y a un color del sistema no se le puede. */
-export const GRIS = '#8E8E93';
+export const GRIS = MARCA.gris;
 
 /** Una píldora de estado: el color de la variante del portal. */
 export const colorDe = (variant) => ({ success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro }[variant] ?? GRIS);

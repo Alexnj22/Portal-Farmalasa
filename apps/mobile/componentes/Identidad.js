@@ -15,11 +15,11 @@ import Escaner from './Escaner';
 import Avatar from './Avatar';
 import { colorSistema } from './Formulario';
 import { BotonGrande, Aviso } from './formulario/Piezas';
-import { MARCA } from './inicio/marca';
+import { MARCA, FONDO_CONTROL } from './inicio/marca';
 
 const campo = {
   minHeight: 46, paddingHorizontal: 12, borderRadius: 12, fontSize: 16,
-  color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)',
+  color: colorSistema.texto, backgroundColor: FONDO_CONTROL,
 };
 
 export default function Identidad({ identidad, onIdentidad, titulo = 'Escanea el carné de quien recibe' }) {

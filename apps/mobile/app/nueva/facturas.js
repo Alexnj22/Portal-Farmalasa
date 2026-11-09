@@ -30,7 +30,7 @@ function Fila({ f, onPress }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 13, gap: 4, opacity: anulada ? 0.55 : 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{f.correlativo}</Text>

@@ -26,7 +26,7 @@
 // falla, se recarga del servidor (la pantalla nunca muestra un permiso que
 // nadie guardó).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import Conmutador from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -52,7 +52,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { Elegir, Interruptor } from '../componentes/personas/Formulario';
@@ -224,7 +224,7 @@ export default function Permisos() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         {filtros.length ? <FiltrosActivos grupos={filtros} /> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {!mapa ? <ActivityIndicator style={{ marginTop: 24 }} /> : cargo ? (
+        {!mapa ? <Cargando /> : cargo ? (
           <>
             <View style={{ marginHorizontal: 20, gap: 6 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{cargo.name}</Text>

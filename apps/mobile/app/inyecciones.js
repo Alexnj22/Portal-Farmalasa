@@ -18,7 +18,7 @@
 // sale del núcleo (`inyeccionesPendientes`, `inyeccionesPorCobrar`,
 // `inyeccionesAjustes`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -38,7 +38,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -108,7 +108,7 @@ function Pendientes({ busqueda, salaPropia, salaFiltro, nombreSala, puedeAplicar
     cargar();
   };
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (filas == null) return <Cargando />;
   return (
     <>
       <FilaDeKpis>
@@ -171,9 +171,9 @@ function Pendientes({ busqueda, salaPropia, salaFiltro, nombreSala, puedeAplicar
         );
       })}
       {!grupos.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+        <Vacio>
           {busqueda ? 'Nadie con ese dato tiene aplicaciones pendientes' : 'Ninguna pendiente: todo lo pagado ya se aplicó'}
-        </Text>
+        </Vacio>
       ) : null}
     </>
   );
@@ -249,7 +249,7 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
     <>
       {periodo === 'libre' ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, gap: 8 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Del</Text>
               <Fecha valor={libre.desde} hasta={hoySV()} onCambiar={(v) => setLibre((l) => ({ ...l, desde: v }))} />
@@ -310,9 +310,9 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
           ) : null}
         </View>
       ) : null}
-      {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((f) => (
+      {filas == null ? <Cargando /> : visibles.map((f) => (
         <View key={f.id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 4 }}>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{f.cliente || 'Sin nombre'}</Text>
@@ -345,7 +345,7 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
       ))}
       {filas && totalFiltrado > visibles.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={mas ? 'Cargando…' : `Ver más · quedan ${totalFiltrado - visibles.length}`} borde deshabilitado={mas} onPress={verMas} /></View> : null}
       {filas && !visibles.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{filtros.length ? 'Ninguna aplicación cumple esos filtros' : 'Sin aplicaciones en el período'}</Text>
+        <Vacio>{filtros.length ? 'Ninguna aplicación cumple esos filtros' : 'Sin aplicaciones en el período'}</Vacio>
       ) : null}
     </>
   );

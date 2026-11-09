@@ -15,7 +15,7 @@
 // marca con su motivo (`componentes/personas/CorregirMarcas`, la acción del
 // portal). Cerrar la quincena está en la vista de Quincena.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -42,6 +42,7 @@ import Quincena from '../componentes/personas/Quincena';
 import CorregirMarcas from '../componentes/personas/CorregirMarcas';
 import { PasoDePeriodo } from '../componentes/personas/Piezas';
 import { fallo, listo } from '../componentes/Progreso';
+import { Cargando } from '../componentes/formulario/Piezas';
 
 /** Lo que hay que mirar de un día, en píldoras. */
 function senales(a) {
@@ -149,12 +150,12 @@ export default function AuditoriaDeTiempos() {
           </View>
         ) : null}
         {ts ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${filas.length} personas · ${conAlgo} con algo que mirar`}</Text> : null}
-        {ts == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.map(({ e, a, s }) => {
+        {ts == null ? <Cargando /> : filas.map(({ e, a, s }) => {
           const abiertoEste = abierto === e.id;
           return (
             <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(abiertoEste ? null : e.id); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.99 : 1 }] })}>
-              <Vidrio radio={18} interactivo tinte={s.some(([, c]) => c === MARCA.rojo) ? 'rgba(240,68,56,0.10)' : undefined}>
+              <Vidrio radio={20} interactivo tinte={s.some(([, c]) => c === MARCA.rojo) ? 'rgba(240,68,56,0.10)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar empleado={e} tamano={36} />

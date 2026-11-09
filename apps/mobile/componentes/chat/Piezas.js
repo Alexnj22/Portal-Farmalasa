@@ -14,8 +14,8 @@ import { MARCA } from '../inicio/marca';
 
 // Las variantes del portal, en los colores de la app.
 export const COLOR = {
-  info: MARCA.azulClaro, success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, neutral: '#8E8E93',
-  'chart-1': MARCA.azul, 'chart-4': '#B7791F', 'chart-6': '#6929C4', 'chart-9': '#981D97',
+  info: MARCA.azulClaro, success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, neutral: MARCA.gris,
+  'chart-1': MARCA.azul, 'chart-4': '#B7791F', 'chart-6': MARCA.violeta, 'chart-9': '#981D97',
 };
 export const colorDe = (variant) => COLOR[variant] ?? COLOR.neutral;
 
@@ -124,13 +124,13 @@ export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
   const estado = ESTADOS[clave];
   const espera = esperaDe(c, ahora);
   const conFoto = clave === 'atencion' && atiende;
-  const tono = espera ? (espera.tono === 'neutral' ? '#8E8E93' : colorDe(espera.tono)) : null;
+  const tono = espera ? (espera.tono === 'neutral' ? MARCA.gris : colorDe(espera.tono)) : null;
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
       {conFoto
         ? <Avatar empleado={atiende} tamano={20} />
         : <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colorDe(estado.variant) }} />}
-      <Text numberOfLines={1} style={{ color: '#8E8E93', fontSize: 12, fontWeight: '600', flexShrink: 1 }}>
+      <Text numberOfLines={1} style={{ color: MARCA.gris, fontSize: 12, fontWeight: '600', flexShrink: 1 }}>
         {conFoto ? nombreDeCliente(shortEmployeeName(atiende)) : estado.label}
       </Text>
       {espera ? (

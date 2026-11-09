@@ -199,7 +199,7 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
                 <Aviso tono="cuidado" texto="Quedaron renglones sin guardar. Lo demás ya está anotado; abajo está el motivo de cada uno." />
               ) : null}
               {momentos.map((m) => (
-                <Vidrio key={m.clave} radio={22}>
+                <Vidrio key={m.clave} radio={20}>
                   <View style={{ padding: 14, gap: 10 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '700' }}>{m.label}</Text>

@@ -34,7 +34,7 @@
 // con el suyo.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -56,9 +56,9 @@ import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import RangoDeFechas from '../componentes/formulario/RangoDeFechas';
-import { MenuDeFiltros } from '../componentes/Filtros';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -142,14 +142,22 @@ function Contar({ bolsa, verMontos, ocupado, onMarcar, onDesmarcar, userId, onRe
           <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700' }}>Cuadra</Text>
         </Pressable>
       ) : null}
-      <TextInput value={texto} onChangeText={(v) => setTexto(v.replace(/[^\d.,]/g, ''))} placeholder="Contado $" placeholderTextColor={colorSistema.texto2}
+      <Campo multiline={false} value={texto} onChangeText={(v) => setTexto(v.replace(/[^\d.,]/g, ''))} placeholder="Contado $"
         keyboardType="decimal-pad" returnKeyType="done" onSubmitEditing={() => { if (valido && !ocupado) anotar(); }}
-        style={{ flex: 1, minHeight: 44, borderRadius: 12, paddingHorizontal: 12, color: colorSistema.texto, fontSize: 17, fontWeight: '700', backgroundColor: 'rgba(255,255,255,0.08)', textAlign: 'right' }} />
+        style={{ flex: 1, fontSize: 17, fontWeight: '700', textAlign: 'right' }} />
       <Pressable disabled={!valido || ocupado} onPress={anotar}
         style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: 'rgba(52,120,246,0.22)', opacity: !valido || pressed || ocupado ? 0.5 : 1 })}>
         <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '700' }}>Anotar</Text>
       </Pressable>
     </View>
+  );
+}
+
+function EnlaceDeSeccion({ texto, ruta }) {
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(ruta); }} accessibilityRole="button" hitSlop={6} style={{ minHeight: 36, justifyContent: 'center' }}>
+      <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{texto}</Text>
+    </Pressable>
   );
 }
 
@@ -230,7 +238,6 @@ export default function Bolsas() {
   const enSala = useMemo(() => (bolsas || []).filter((b) => b.estado === 'ABIERTA'), [bolsas]);
   const enCamino = useMemo(() => (bolsas || []).filter((b) => b.estado === 'ENTREGADA'), [bolsas]);
   const porContar = useMemo(() => (bolsas || []).filter((b) => b.estado === 'RECIBIDA'), [bolsas]);
-  const marcadas = porContar.filter((b) => contadoDeBolsa(b) != null);
   // Sala y texto filtran TODAS las etapas; tanda y «sólo sin resolver», «Contadas».
   const q = buscar.trim().toLowerCase();
   const pasa = (b) => {
@@ -239,6 +246,14 @@ export default function Bolsas() {
     const personas = [b.cerrada_por, b.entregada_por, b.recibida_por, b.contado_por].map((id) => quien(id) || '').join(' ');
     return [b.folio, b.caja, nombreDeSala(b.branch_id), personas].join(' ').toLowerCase().includes(q);
   };
+  // Toda acción en lote y toda cifra miran lo que está A LA VISTA: con una sala
+  // filtrada, «Recibir todas» recibía también las bolsas de las otras salas, y
+  // «Confirmar» cerraba conteos que no se veían (2026-11-09).
+  const marcadas = porContar.filter((b) => contadoDeBolsa(b) != null && pasa(b));
+  const porContarVistas = porContar.filter(pasa);
+  const enCaminoVistas = enCamino.filter(pasa);
+  const elegidasVistas = enCaminoVistas.filter((b) => elegidas.has(b.id)).map((b) => b.id);
+  const diferenciasVistas = diferencias.filter(pasa);
   const tandas = useMemo(() => {
     const m = new Map();
     for (const b of contadas) if (b.conteo_id != null && !m.has(String(b.conteo_id))) m.set(String(b.conteo_id), b.contado_at || b.fecha);
@@ -250,9 +265,9 @@ export default function Bolsas() {
   const diasQueNoCuadran = invariante.filter((d) => (salaFiltro === 'todas' || String(d.branch_id) === salaFiltro) && Math.abs(Number(d.descuadre || 0)) >= 0.01);
   // Contar y recibir necesitan todas a la vista (se eligen y se anotan una por una).
   const paginar = etapa === 'contadas' || etapa === 'diferencias';
-  const sinRecibir = [...enSala, ...enCamino];
-  const { bolsa: masVieja, dias: diasMasVieja } = laMasVieja([...enSala, ...enCamino, ...porContar]);
-  const sinCuadrar = diferencias.reduce((a, b) => a + Math.abs(diferenciaDeBolsa(b) ?? 0), 0);
+  const sinRecibir = [...enSala, ...enCamino].filter(pasa);
+  const { bolsa: masVieja, dias: diasMasVieja } = laMasVieja([...sinRecibir, ...porContarVistas]);
+  const sinCuadrar = diferenciasVistas.reduce((a, b) => a + Math.abs(diferenciaDeBolsa(b) ?? 0), 0);
   const suma = (l) => l.reduce((a, b) => a + saldoDeBolsa(b), 0);
 
   const alternar = (id) => setElegidas((s) => { const x = new Set(s); if (x.has(id)) x.delete(id); else x.add(id); return x; });
@@ -297,11 +312,7 @@ export default function Bolsas() {
   const contadoMarcado = marcadas.reduce((a, b) => a + Number(contadoDeBolsa(b)), 0);
   const difMarcada = Math.round((contadoMarcado - suma(marcadas)) * 100) / 100;
 
-  return (
-    <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true,
-        headerSearchBarOptions: { placeholder: 'Folio, caja, sala o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
-      <MenuDeFiltros grupos={[
+  const grupos = [
         { id: 'sala', titulo: 'Sucursal', activa: salaFiltro, porDefecto: 'todas', onCambiar: setSalaFiltro,
           opciones: [{ id: 'todas', label: 'Todas' }, ...[...new Set([...(bolsas || []), ...contadas, ...diferencias].map((b) => String(b.branch_id)))]
             .sort((x, y) => ordenDeSala(x) - ordenDeSala(y)).map((id) => ({ id, label: nombreDeSala(id) }))] },
@@ -310,10 +321,31 @@ export default function Bolsas() {
         ...(etapa === 'contadas' ? [{ id: 'tanda', titulo: 'Contadas', activa: tanda, porDefecto: 'todas', onCambiar: setTanda,
           opciones: [{ id: 'todas', label: 'Todas' }, { id: 'sin-resolver', label: 'Sólo sin resolver' },
             ...tandas.map(([id, cuando]) => ({ id, label: `Tanda del ${fechaTexto(String(cuando).slice(0, 10), { day: 'numeric', month: 'short' })}${cuando && String(cuando).length > 10 ? ` · ${hora12(cuando)}` : ''}` }))] }] : []),
-      ]} />
+  ];
+
+  return (
+    <>
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true,
+        headerSearchBarOptions: { placeholder: 'Folio, caja, sala o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={etapa} onCambiar={(e) => { setEtapa(e); setElegidas(new Set()); }} opciones={[
+          { id: 'sala', label: 'Sala' },
+          { id: 'camino', label: 'Recibir' },
+          { id: 'contar', label: 'Contar' },
+          { id: 'contadas', label: 'Contadas' },
+          { id: 'diferencias', label: 'Cuadre' },
+        ]} />
+        <FiltrosActivos grupos={grupos} />
+        {puedeEntregar || verMontos ? (
+          <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+            {puedeEntregar ? <EnlaceDeSeccion texto="Entregar y sacar" ruta="/bolsas-sala" /> : null}
+            {verMontos ? <EnlaceDeSeccion texto="Depósitos" ruta="/depositos-banco" /> : null}
+            {verMontos ? <EnlaceDeSeccion texto="Conteos" ruta="/conteos-bolsas" /> : null}
+          </View>
+        ) : null}
         {bolsas ? (
           <FilaDeKpis>
             <Kpi icono="HandCoins" rotulo="Sin recibir" color={MARCA.azulClaro}
@@ -329,10 +361,10 @@ export default function Bolsas() {
             rótulos («Sin rec…»). */}
         {bolsas ? (
           <FilaDeKpis>
-            <Kpi icono="AlertTriangle" rotulo="Sin cuadrar" color={diferencias.length ? MARCA.rojo : MARCA.verde} pide={diferencias.length > 0}
-              valor={verMontos && diferencias.length ? formatMoney(sinCuadrar) : String(diferencias.length)}
-              apoyo={diferencias.length ? `${diferencias.length} bolsa${diferencias.length === 1 ? '' : 's'}` : 'todo cuadrado'}
-              onPress={diferencias.length ? () => { setEtapa('diferencias'); setElegidas(new Set()); } : undefined} />
+            <Kpi icono="AlertTriangle" rotulo="Sin cuadrar" color={diferenciasVistas.length ? MARCA.rojo : MARCA.verde} pide={diferenciasVistas.length > 0}
+              valor={verMontos && diferenciasVistas.length ? formatMoney(sinCuadrar) : String(diferenciasVistas.length)}
+              apoyo={diferenciasVistas.length ? `${diferenciasVistas.length} bolsa${diferenciasVistas.length === 1 ? '' : 's'}` : 'todo cuadrado'}
+              onPress={diferenciasVistas.length ? () => { setEtapa('diferencias'); setElegidas(new Set()); } : undefined} />
           </FilaDeKpis>
         ) : null}
         {bolsas && verCards ? (
@@ -368,18 +400,11 @@ export default function Bolsas() {
             </Vidrio>
           </View>
         ) : null}
-        <Segmentos activa={etapa} onCambiar={(e) => { setEtapa(e); setElegidas(new Set()); }} opciones={[
-          { id: 'sala', label: 'Sala' },
-          { id: 'camino', label: 'Recibir' },
-          { id: 'contar', label: 'Contar' },
-          { id: 'contadas', label: 'Contadas' },
-          { id: 'diferencias', label: 'Cuadre' },
-        ]} />
         {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
           {[
             etapa === 'sala' ? 'En la sala, esperando que la entreguen' : etapa === 'camino' ? 'Entregadas, esperando recepción'
-              : etapa === 'contar' ? `Por contar · ${marcadas.length} de ${porContar.length} anotadas` : etapa === 'contadas' ? (tanda === 'sin-resolver' ? 'Contadas sin resolver (de cualquier fecha)' : `Contadas ${periodo === 'rango' ? `del ${dia(rango.desde)} al ${dia(rango.hasta)}` : `en los últimos ${periodo} días`}`) : 'Contadas que no cuadraron',
+              : etapa === 'contar' ? `Por contar · ${marcadas.length} de ${porContarVistas.length} anotadas` : etapa === 'contadas' ? (tanda === 'sin-resolver' ? 'Contadas sin resolver (de cualquier fecha)' : `Contadas ${periodo === 'rango' ? `del ${dia(rango.desde)} al ${dia(rango.hasta)}` : `en los últimos ${periodo} días`}`) : 'Contadas que no cuadraron',
             `${lista.length} bolsa${lista.length === 1 ? '' : 's'}`,
             verMontos && lista.length ? formatMoney(suma(lista)) : null,
           ].filter(Boolean).join(' · ')}
@@ -394,13 +419,13 @@ export default function Bolsas() {
               deshabilitado={!!ocupado} onPress={confirmar} />
           </View>
         ) : null}
-        {etapa === 'camino' && puedeContar && enCamino.length ? (
+        {etapa === 'camino' && puedeContar && enCaminoVistas.length ? (
           <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto={elegidas.size ? (elegidas.size === 1 ? 'Recibir la elegida' : `Recibir las ${elegidas.size} elegidas`) : `Recibir todas (${enCamino.length})`} color={MARCA.azul}
-              deshabilitado={!!ocupado} onPress={() => recibir(elegidas.size ? [...elegidas] : enCamino.map((b) => b.id))} />
+            <BotonGrande texto={elegidasVistas.length ? (elegidasVistas.length === 1 ? 'Recibir la elegida' : `Recibir las ${elegidasVistas.length} elegidas`) : `Recibir ${salaFiltro !== 'todas' || q ? 'las de la lista' : 'todas'} (${enCaminoVistas.length})`} color={MARCA.azul}
+              deshabilitado={!!ocupado} onPress={() => recibir(elegidasVistas.length ? elegidasVistas : enCaminoVistas.map((b) => b.id))} />
           </View>
         ) : null}
-        {bolsas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
+        {bolsas == null ? <Cargando /> : porSala(paginar ? lista.slice(0, cuantos) : lista).map(([sala, del]) => (
           <View key={sala} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', marginHorizontal: 20, marginTop: 6 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{nombreDeSala(sala)}</Text>
@@ -416,7 +441,7 @@ export default function Bolsas() {
                   : etapa === 'contar' ? (quien(b.recibida_por) ? `recibió ${quien(b.recibida_por)}` : null)
                     : (quien(b.contado_por) ? `contó ${quien(b.contado_por)}` : null);
               const cuerpo = (
-                <Vidrio radio={18} interactivo={etapa !== 'contar'} tinte={elegida ? 'rgba(52,120,246,0.18)' : undefined}>
+                <Vidrio radio={20} interactivo={etapa !== 'contar'} tinte={elegida ? 'rgba(52,120,246,0.18)' : undefined}>
                   <View style={{ padding: 12, gap: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                       {etapa === 'camino' && puedeContar ? (
@@ -472,21 +497,10 @@ export default function Bolsas() {
           </View>
         ) : null}
         {bolsas && !lista.length ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {etapa === 'sala' ? 'Ninguna bolsa en las salas' : etapa === 'camino' ? 'No hay bolsas esperando recepción' : etapa === 'contar' ? 'No hay bolsas por contar'
               : etapa === 'contadas' ? 'Ninguna contada en ese período' : 'Sin diferencias por resolver'}
-          </Text>
-        ) : null}
-        {puedeEntregar ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Bolsas de una sala: entregar y sacar dinero" borde color={MARCA.azulClaro} onPress={() => router.push('/bolsas-sala')} />
-          </View>
-        ) : null}
-        {verMontos ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8, flexDirection: 'row', gap: 10 }}>
-            <View style={{ flex: 1 }}><BotonGrande texto="Depósitos" borde color={MARCA.azulClaro} onPress={() => router.push('/depositos-banco')} /></View>
-            <View style={{ flex: 1 }}><BotonGrande texto="Conteos" borde color={MARCA.azulClaro} onPress={() => router.push('/conteos-bolsas')} /></View>
-          </View>
+          </Vacio>
         ) : null}
       </ScrollView>
       <DetalleDeBolsa bolsa={abierta} sala={abierta ? nombreDeSala(abierta.branch_id) : ''} verMontos={verMontos} onCerrar={() => setAbierta(null)}

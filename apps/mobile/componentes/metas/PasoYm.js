@@ -19,7 +19,7 @@ export default function PasoYm({ ym, onCambiar, min, max, actual }) {
   );
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {flecha('‹', -1, ym <= min, 'Mes anterior')}
           <Tocable style={{ flex: 1, minHeight: 48, justifyContent: 'center' }} disabled={ym === actual}

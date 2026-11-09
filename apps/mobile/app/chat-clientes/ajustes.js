@@ -9,7 +9,7 @@
 // portal): horario de hoy, teléfonos, direcciones y precio y existencias de un
 // producto, contestados solos con los datos del portal. Se guarda al tocarlo.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -20,7 +20,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import useFarmaciaEstado from '@nucleo/hooks/useFarmaciaEstado';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
@@ -142,7 +142,7 @@ export default function AjustesDelChat() {
               </Text>
             </Seccion>
           ) : null}
-          {!fila ? <ActivityIndicator style={{ marginTop: 24 }} /> : CAMPOS.map((c) => (
+          {!fila ? <Cargando /> : CAMPOS.map((c) => (
             <Editor key={c.clave} campo={c} valor={f[c.clave]} estado={estado} deshabilitado={!puedeEditar || guardando}
               onCambio={(v) => setF((x) => ({ ...x, [c.clave]: v }))} />
           ))}

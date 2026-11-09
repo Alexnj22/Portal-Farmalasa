@@ -39,7 +39,7 @@ export default function BonosPorPagar({ sala, cajaAbierta, recarga = 0, puedeOpe
   const puedePagar = !!d?.puedo_pagar && puedeOperar;
 
   return (
-    <Vidrio radio={22}>
+    <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Chip icono="Gift" color={MARCA.violetaClaro} tamano={30} />

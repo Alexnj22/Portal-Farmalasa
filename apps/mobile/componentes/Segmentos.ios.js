@@ -5,15 +5,16 @@
 // El del sistema reparte el ancho en partes IGUALES y corta lo que no cabe
 // («Haciend…», «Anulada…»). Cuando el rótulo más largo no entra en su parte,
 // se usan las píldoras que se desplazan de lado (`Pestanas`): todas se leen
-// enteras. La cuenta es aproximada a propósito (≈8.5 pt por letra a 15 pt):
-// mejor pasar a píldoras un poco antes que cortar una palabra.
+// enteras. La cuenta es aproximada (≈7.5 pt por letra: el control usa 13 pt).
+// Con 8.5 caían a píldoras rótulos que sí cabían —«Historial» con cuatro
+// opciones— y dos pantallas vecinas se veían distintas (2026-11-09).
 import { useWindowDimensions } from 'react-native';
 import { Host, Picker, Text } from '@expo/ui/swift-ui';
 import { pickerStyle, tag } from '@expo/ui/swift-ui/modifiers';
 import Pestanas from './inicio/Pestanas';
 
-const PT_POR_LETRA = 8.5;
-const RELLENO = 18;
+const PT_POR_LETRA = 7.5;
+const RELLENO = 14;
 
 export default function Segmentos({ opciones, activa, onCambiar, margen = 16 }) {
   const { width } = useWindowDimensions();

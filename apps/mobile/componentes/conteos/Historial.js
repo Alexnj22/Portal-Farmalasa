@@ -6,7 +6,7 @@
 // cantidad del sistema sólo viene cuando este cargo puede verla: el ciego no
 // pasa por acá, porque la base no la manda.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { EVENTO_DE_CONTEO } from '@nucleo/utils/conteoDeInventario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -15,7 +15,7 @@ import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import ConAurora from '../ConAurora';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import { FONDO, Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
@@ -52,7 +52,7 @@ export default function Historial({ item, simple = false, onCerrar }) {
             </Pressable>
           </View>
           {error ? <Aviso tono="freno" texto={error} /> : null}
-          {filas == null ? <ActivityIndicator style={{ marginTop: 20 }} /> : !filas.length ? (
+          {filas == null ? <Cargando /> : !filas.length ? (
             <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 20 }}>Sin registros todavía.</Text>
           ) : filas.map((h, i) => {
             const ev = EVENTO_DE_CONTEO[h.evento] ?? EVENTO_DE_CONTEO.EDICION;

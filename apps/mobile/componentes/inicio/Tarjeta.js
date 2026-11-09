@@ -22,7 +22,7 @@ export default function Tarjeta({ titulo, icono, color, accion = 'Ver todo', onP
   const tocar = onPress ? () => { Haptics.selectionAsync().catch(() => {}); onPress(); } : undefined;
   return (
     <Pressable onPress={tocar} disabled={!tocar} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ padding: 16 }}>
           {sinTitulo ? null : <Titulo texto={titulo} icono={icono} color={color} accion={tocar ? accion : null} />}
           {children}

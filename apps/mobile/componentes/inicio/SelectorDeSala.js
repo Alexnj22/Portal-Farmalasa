@@ -8,7 +8,7 @@
 import { Pressable, ScrollView, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../Formulario';
-import { MARCA } from './marca';
+import { MARCA, FONDO_CONTROL } from './marca';
 
 export default function SelectorDeSala({ salas, activa, onCambiar, todas = false }) {
   const opciones = [...(todas ? [{ id: '', label: 'Todas' }] : []), ...salas];
@@ -21,7 +21,7 @@ export default function SelectorDeSala({ salas, activa, onCambiar, todas = false
           <Pressable key={o.id} accessibilityRole="button" accessibilityState={{ selected: esta }}
             onPress={() => { if (!esta) { Haptics.selectionAsync().catch(() => {}); onCambiar(o.id); } }}
             hitSlop={5} style={({ pressed }) => ({ minHeight: 34, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999,
-              backgroundColor: esta ? `${MARCA.azul}55` : 'rgba(127,127,127,0.16)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              backgroundColor: esta ? `${MARCA.azul}55` : FONDO_CONTROL, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Text style={{ color: esta ? colorSistema.texto : colorSistema.texto2, fontSize: 13, fontWeight: esta ? '700' : '500' }}>{o.label}</Text>
           </Pressable>
         );

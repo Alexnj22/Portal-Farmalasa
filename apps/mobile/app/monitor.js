@@ -30,6 +30,7 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { Contadores, Encabezado, Marcas, PildoraDeCargo } from '../componentes/personas/Piezas';
+import { Vacio } from '../componentes/formulario/Piezas';
 
 const COLOR = { working: MARCA.verde, pause: MARCA.ambar, pending: colorSistema.texto2, finished: MARCA.azulClaro };
 const columnaDe = (estado) => COLUMNAS_DE_ASISTENCIA.find((c) => c.estados.includes(estado))?.id ?? 'pending';
@@ -170,7 +171,7 @@ export default function Monitor() {
             </View>
           </View>
         ))}
-        {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Nadie en este grupo</Text> : null}
+        {!visibles.length ? <Vacio>Nadie en este grupo</Vacio> : null}
       </ScrollView>
     </>
   );

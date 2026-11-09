@@ -26,7 +26,7 @@ export default function PasoDeSemana({ semana, onCambiar }) {
   );
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {flecha(ICONO.anterior, () => ir(-1), false, 'Semana anterior')}
           <Pressable style={{ flex: 1, alignItems: 'center', paddingVertical: 6 }} disabled={esActual}

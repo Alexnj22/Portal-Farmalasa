@@ -7,7 +7,7 @@
 // las activas). Anular, editar y compartir el PDF viven en el detalle; crear,
 // en `cotizacion/nueva`, con las mismas reglas del portal (núcleo `cotizacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -19,9 +19,10 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import { MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -70,9 +71,11 @@ export default function Cotizaciones() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      <MenuDeFiltros grupos={[]} extra={hasPermission('cotizaciones', 'can_edit') ? { icono: 'plus', etiqueta: 'Nueva cotización', onPress: () => router.push('/cotizacion/nueva') } : null} />
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'vigentes', label: 'Vigentes' }, { id: 'anuladas', label: 'Anuladas' }, { id: 'todas', label: 'Todas' }]} />
         {filas ? (
           <>
             <FilaDeKpis>
@@ -85,12 +88,11 @@ export default function Cotizaciones() {
             </FilaDeKpis>
           </>
         ) : null}
-        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'vigentes', label: 'Vigentes' }, { id: 'anuladas', label: 'Anuladas' }, { id: 'todas', label: 'Todas' }]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : tramo.visibles.map((c) => (
+        {filas == null ? <Cargando /> : tramo.visibles.map((c) => (
           <Pressable key={c.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/cotizacion/[id]', params: { id: String(c.id) } }); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <View style={{ padding: 12, gap: 5 }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{c.customer_name || 'Sin cliente'}</Text>
@@ -113,12 +115,7 @@ export default function Cotizaciones() {
           </Pressable>
         ))}
         {filas && !visibles.length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{q ? 'Ninguna cotización con esa búsqueda' : 'Sin cotizaciones'}</Text>
-        ) : null}
-        {hasPermission('cotizaciones', 'can_edit') ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Nueva cotización" onPress={() => router.push('/cotizacion/nueva')} />
-          </View>
+          <Vacio>{q ? 'Ninguna cotización con esa búsqueda' : 'Sin cotizaciones'}</Vacio>
         ) : null}
       </ScrollView>
     </>

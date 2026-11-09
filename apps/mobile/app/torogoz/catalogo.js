@@ -8,7 +8,7 @@
 // los pedidos». Quien configura toca un producto para cambiar su precio y su
 // descuento, o agrega uno nuevo.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -19,7 +19,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -114,7 +114,7 @@ export default function CatalogoTorogoz() {
           onChangeText: (e) => { setCuantos(POR_PAGINA); setBuscar(e.nativeEvent.text); }, onCancelButtonPress: () => setBuscar(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeConfigurar && emisor ? { icono: 'plus', etiqueta: 'Agregar producto', onPress: () => router.push({ pathname: '/torogoz/precio/[id]', params: { id: 'nuevo' } }) } : null} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -132,13 +132,8 @@ export default function CatalogoTorogoz() {
           <Kpi icono="Percent" rotulo="Con descuento" valor={String(stats.descuento)} color={MARCA.ambar} pide={canal === 'descuento'}
             apoyo="vigente hoy" onPress={() => alternar('descuento')} />
         </FilaDeKpis>
-        {puedeConfigurar && emisor ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Agregar producto" color={PETROLEO} onPress={() => router.push({ pathname: '/torogoz/precio/[id]', params: { id: 'nuevo' } })} />
-          </View>
-        ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {items === null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        {items === null ? <Cargando /> : (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${filtrados.length} producto${filtrados.length === 1 ? '' : 's'}`}</Text>
         )}
         {filtrados.slice(0, cuantos).map((p) => <Fila key={p.product_id} p={p} hoy={hoy} puedeEditar={puedeConfigurar} />)}

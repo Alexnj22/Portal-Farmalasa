@@ -34,7 +34,7 @@ function Opcion({ icono, color, titulo, detalle, deshabilitada, onPress }) {
   return (
     <Pressable disabled={deshabilitada} onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
       style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], opacity: deshabilitada ? 0.45 : 1 })}>
-      <Vidrio radio={18} interactivo={!deshabilitada}>
+      <Vidrio radio={20} interactivo={!deshabilitada}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13 }}>
           <Chip icono={icono} color={color} tamano={34} />
           <View style={{ flex: 1 }}>

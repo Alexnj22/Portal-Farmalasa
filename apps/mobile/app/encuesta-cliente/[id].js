@@ -17,7 +17,7 @@
 // se rehace sólo cuando entran comentarios nuevos), las rondas de la encuesta,
 // y los accesos a Ajustes (`ajustes`) y al Avance con sus enlaces (`avance`).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   fetchComentarios, fetchEncuesta, fetchEventos, fetchPersonas, fetchProblemas, fetchRespuestasParaExportar, fetchResultados, fetchResumen, fetchRondas, guardarResumen,
@@ -30,9 +30,10 @@ import { archivoDeEncuesta, estadoDe, estadoDelResumen, lecturaNps, loteParaResu
 import { formatPct } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../../componentes/Segmentos';
+import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
@@ -100,11 +101,8 @@ export default function EncuestaCliente() {
 
   // ── Resultados de una sucursal, CSV y resumen con IA (como el portal) ──
   const salasConRespuestas = datos?.por_sucursal || [];
-  const elegirSala = () => {
-    const opciones = [{ id: null, label: 'Todas las sucursales' }, ...salasConRespuestas.map((x) => ({ id: Number(x.branch_id), label: x.nombre }))];
-    ActionSheetIOS.showActionSheetWithOptions({ title: 'Sucursal', options: [...opciones.map((o) => o.label), 'Cancelar'], cancelButtonIndex: opciones.length },
-      (i) => { if (i < opciones.length) { setDatos(null); setSala(opciones[i].id); } });
-  };
+  const filtrosDeSala = salasConRespuestas.length ? [{ id: 'sala', titulo: 'Sucursal', activa: sala == null ? '' : String(sala), porDefecto: '', onCambiar: (v) => { setDatos(null); setSala(v ? Number(v) : null); },
+    opciones: [{ id: '', label: 'Todas las sucursales' }, ...salasConRespuestas.map((x) => ({ id: String(x.branch_id), label: x.nombre }))] }] : [];
   const exportar = async () => {
     trabajando('Armando el archivo…');
     try {
@@ -137,8 +135,9 @@ export default function EncuestaCliente() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: encuesta?.nombre ?? 'Encuesta', headerLargeTitle: false }} />
+      <MenuDeFiltros grupos={filtrosDeSala} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
-        {encuesta == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : !encuesta ? (
+        {encuesta == null ? <Cargando /> : !encuesta ? (
           <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error || 'Esa encuesta no existe o no tienes acceso.'} /></View>
         ) : (
           <>
@@ -177,19 +176,17 @@ export default function EncuestaCliente() {
             <CicloDeEncuesta encuesta={encuesta} sinProblemas={!problemas.length} onHecho={hecho} />
             {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas." /></View>
-            ) : !datos && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : datos && !datos.total ? (
+            ) : !datos && !error ? <Cargando /> : datos && !datos.total ? (
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Todavía no hay respuestas." /></View>
             ) : datos ? (
               <>
-                <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 16 }}>
-                  <Tocable onPress={elegirSala} hitSlop={8} style={{ flex: 1, minHeight: 36, justifyContent: 'center' }}>
-                    <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>{`${sala ? salasConRespuestas.find((x) => Number(x.branch_id) === sala)?.nombre ?? 'Sucursal' : 'Todas las sucursales'} ▾`}</Text>
-                  </Tocable>
+                <FiltrosActivos grupos={filtrosDeSala} />
+                <View style={{ marginHorizontal: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 16 }}>
                   <Tocable onPress={exportar} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center' }}>
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar CSV</Text>
                   </Tocable>
                 </View>
-                <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'resultados', label: 'Resultados' }, { id: 'comentarios', label: comentarios?.length ? `Comentarios · ${comentarios.length}` : 'Comentarios' }]} />
+                <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'resultados', label: 'Resultados' }, { id: 'comentarios', label: 'Comentarios' }]} />
                 {vista === 'resultados' ? (
                   <>
                     <FilaDeKpis>

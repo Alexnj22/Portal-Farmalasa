@@ -27,7 +27,7 @@ import Vidrio from '../../Vidrio';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { Esqueleto } from '../../inicio/Widget';
 import { Aviso } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 import PasoDeDia from './PasoDeDia';
 import Etiqueta from './Etiqueta';
 import MapaDeRuta from './MapaDeRuta';
@@ -40,7 +40,6 @@ const PROBLEMA_GPS = {
   'sin-gps': 'El GPS del teléfono no respondió: la ruta sigue, pero sin recorrido.',
 };
 
-const PETROLEO = '#0f6e7d';
 
 function Accion({ texto, color = PETROLEO, lleno = false, onPress, deshabilitado }) {
   return (

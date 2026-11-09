@@ -12,7 +12,7 @@
 // El agrupado, los títulos y las preguntas salen del núcleo
 // (`deducibilidadPorRegla`), las escrituras también (`proveedores`).
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +22,7 @@ import { CLASIFICACION_OPTIONS, SECTOR_OPTIONS, clasificacionLabel, fmtMoneda, s
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Ficha } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -46,10 +46,7 @@ function Opciones({ titulo, opciones, valor, onCambiar }) {
       <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5 }}>{titulo}</Text>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {opciones.map((o) => (
-          <Pressable key={o.value} onPress={() => onCambiar(o.value)}
-            style={{ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: valor === o.value ? MARCA.azulClaro : 'rgba(127,127,127,0.16)' }}>
-            <Text style={{ color: valor === o.value ? '#fff' : colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{o.label}</Text>
-          </Pressable>
+          <Ficha key={o.value} texto={o.label} activa={valor === o.value} color={MARCA.azulClaro} onPress={() => onCambiar(o.value)} />
         ))}
       </View>
     </View>
@@ -204,7 +201,7 @@ export default function DeducibilidadDeProveedores() {
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : !filas.length ? (
+        {filas == null ? <Cargando /> : !filas.length ? (
           <View style={{ marginHorizontal: 16 }}><Aviso texto="Todo clasificado: cada proveedor tiene su deducibilidad confirmada. El libro de compras ya puede usarlas." /></View>
         ) : (
           <>

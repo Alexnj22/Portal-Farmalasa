@@ -5,7 +5,7 @@
 // con `decidirExcedente`, la misma llamada del portal (negar exige el motivo,
 // como lo exige la base).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { router } from 'expo-router';
 import { borrarDescuento, fetchDescuentos, fotoParaApp } from '@nucleo/data/descuentos';
@@ -22,7 +22,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
@@ -48,7 +48,7 @@ export function DescargarCsv({ cuenta, csv }) {
   );
 }
 
-const Tarjeta = ({ children }) => <View style={{ marginHorizontal: 16 }}><Vidrio radio={18}><View style={{ padding: 14, gap: 6 }}>{children}</View></Vidrio></View>;
+const Tarjeta = ({ children }) => <View style={{ marginHorizontal: 16 }}><Vidrio radio={20}><View style={{ padding: 14, gap: 6 }}>{children}</View></Vidrio></View>;
 
 // ── Descuentos: lo que baja el precio en la caja ────────────────────────────
 // Como `TabDescuentos`: en tres secciones (descontando, programados,
@@ -94,7 +94,7 @@ export function Descuentos({ busqueda, salaDe, sala = '', estado = '', onAlcance
     setOcupado(null);
   };
 
-  if (datos == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (datos == null) return <Cargando />;
   const accion = (texto, color, onPress, off) => (
     <Tocable disabled={off} onPress={onPress} hitSlop={8} style={{ minHeight: 36, justifyContent: 'center', opacity: off ? 0.4 : 1 }}>
       <Text style={{ color, fontSize: 14, fontWeight: '700' }}>{texto}</Text>
@@ -187,7 +187,7 @@ export function Excedentes({ busqueda, puedeAprobar }) {
     { text: 'Negar', style: 'destructive', onPress: (m) => { const t = String(m ?? '').trim(); if (!t) { fallo('Falta el motivo', ''); return; } decidir(f, false, t); } },
   ], 'plain-text');
 
-  if (todas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (todas == null) return <Cargando />;
   return (
     <>
       {filas.length ? (
@@ -245,7 +245,7 @@ export function Pagos({ busqueda, soloPendientes }) {
   }, []);
   const promos = useMemo(() => (todas || []).filter((p) => (!soloPendientes || pagoBonoPendiente(p))
     && (!busqueda || tokenMatch(busqueda, p.promocion, ...(p.salas || []).map((x) => x.sala)))), [todas, busqueda, soloPendientes]);
-  if (todas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (todas == null) return <Cargando />;
   const pendiente = promos.reduce((a, p) => a + (p.salas || []).reduce((b, s) => b + Number(s.total || 0) - Number(s.pagado || 0), 0), 0);
   const planilla = promos.reduce((a, p) => a + Number(p.administracion || 0), 0);
   return (

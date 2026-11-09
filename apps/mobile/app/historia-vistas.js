@@ -2,7 +2,7 @@
 // portal: los clientes con cuenta, el más reciente primero, y si tocaron un
 // botón. Los que la vieron sin cuenta se cuentan pero no tienen nombre.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { fetchQuienesVieron } from '@nucleo/data/ofertasClientes';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -10,7 +10,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -35,10 +35,10 @@ export default function HistoriaVistas() {
               {`${resumen?.vistas ?? 0} la vieron · ${resumen?.con_cuenta ?? 0} con cuenta · ${resumen?.visitantes ?? 0} sin cuenta · ${resumen?.tocaron ?? 0} tocaron un botón`}
             </Text>
             {error ? <Aviso tono="freno" texto={error} /> : null}
-            {lista == null ? <ActivityIndicator style={{ marginTop: 16 }} /> : !lista.length ? (
+            {lista == null ? <Cargando /> : !lista.length ? (
               <Aviso texto="Todavía no la ha visto ningún cliente con cuenta." />
             ) : (
-              <Vidrio radio={18}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 10 }}>
                   {lista.map((p, i) => (
                     <View key={p.customer_id} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 10 : 0 }}>

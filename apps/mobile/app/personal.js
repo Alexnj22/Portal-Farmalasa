@@ -7,8 +7,8 @@
 // núcleo (`repartirSala`, `estadoDePersona`, `alertasDePersona`), lo mismo
 // que pinta el portal.
 //
-// Vistas del portal: Todos / Activos / Ausentes en el segmentado; Practicantes
-// y Externos y sistema en el menú de filtros, junto con la sala. Tocar a
+// Vistas del portal: Planilla / Practicantes / Externos en las pestañas; Todos /
+// Activos / Ausentes en el menú de filtros, junto con la sala. Tocar a
 // alguien abre su ficha NATIVA (`empleado/[id]`), y desde ahí se edita
 // (`empleado/editar`). El «+» de la barra da de alta a un empleado —o a un
 // practicante, en esa vista—; tocar un practicante lo edita. Recontratar sigue
@@ -85,7 +85,7 @@ function FranjaDelSeguro({ personas }) {
   return (
     <Pressable accessibilityRole="button" accessibilityLabel="Abrir el seguro de vida colectivo" onPress={() => router.push('/seguro-de-vida')}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, minHeight: 44 }}>
           <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${MARCA.violetaClaro}26`, alignItems: 'center', justifyContent: 'center' }}>
             <Host matchContents><Icon name={iconoDe('ShieldCheck')} size={18} color={MARCA.violetaClaro} /></Host>
@@ -130,7 +130,6 @@ export default function Personal() {
   const base = useMemo(() => (todas ? (empleados || []) : (empleados || []).filter((e) => salaDe(e) === Number(user?.branchId))), [empleados, todas, user?.branchId]);
   // La plantilla vigente (para saber quién manda en cada sala aunque se filtre).
   const plantilla = useMemo(() => base.filter((e) => !INACTIVOS.includes(e.status)), [base]);
-  const ausentes = useMemo(() => soloPersonalEnPlanilla(plantilla).filter(estaAusenteHoy).length, [plantilla]);
 
   const secciones = useMemo(() => {
     if (tipo === 'practicantes') {
@@ -179,8 +178,8 @@ export default function Personal() {
     .map((id) => ({ id: String(id), label: nombreDe.get(id) || 'Sin sala' }))
     .sort((a, b) => pesoDeSucursal(a.label) - pesoDeSucursal(b.label) || a.label.localeCompare(b.label)), [plantilla, nombreDe]);
   const grupos = [
-    { id: 'tipo', titulo: 'Ver', activa: tipo, porDefecto: 'personal', onCambiar: setTipo,
-      opciones: [{ id: 'personal', label: 'Personal en planilla' }, { id: 'practicantes', label: 'Practicantes' }, { id: 'externos', label: 'Externos y sistema' }] },
+    ...(tipo === 'personal' ? [{ id: 'estado', titulo: 'Ver', activa: vista, porDefecto: 'todos', onCambiar: setVista,
+      opciones: [{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Activos' }, { id: 'ausentes', label: 'Ausentes' }] }] : []),
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: 'todas', onCambiar: setSala, opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas] }] : []),
   ];
   // Quién entra en la póliza: la misma lista que usa la vista del seguro.
@@ -197,12 +196,10 @@ export default function Personal() {
 
   const Cabecera = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 4 }}>
+      <Segmentos activa={tipo} onCambiar={setTipo}
+        opciones={[{ id: 'personal', label: 'Planilla' }, { id: 'practicantes', label: 'Practicantes' }, { id: 'externos', label: 'Externos' }]} />
       <FiltrosActivos grupos={grupos} />
       {tipo === 'personal' && (vista === 'todos' || vista === 'activos') ? <FranjaDelSeguro personas={enPlanilla} /> : null}
-      {tipo === 'personal' ? (
-        <Segmentos activa={vista} onCambiar={setVista}
-          opciones={[{ id: 'todos', label: 'Todos' }, { id: 'activos', label: 'Activos' }, { id: 'ausentes', label: ausentes ? `Ausentes · ${ausentes}` : 'Ausentes' }]} />
-      ) : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20 }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 13, flex: 1 }}>{`${total} ${tipo === 'practicantes' ? 'practicante' : 'persona'}${total === 1 ? '' : 's'}`}</Text>
         {puedeExportar && tipo === 'personal' && total ? (
@@ -244,7 +241,7 @@ export default function Personal() {
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{s.titulo}</Text>
                   {s.sinJefatura ? <Pildora texto="Sin jefatura" color={MARCA.ambar} /> : null}
                 </View>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{s.pulso}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{s.pulso}</Text>
               </View>
             </Vidrio>
             {s.sinSede ? (

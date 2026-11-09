@@ -8,7 +8,7 @@
 // es una lista y la ordena el uso (las secciones que más se abren suben,
 // `componentes/inicio/uso.js`). Publicar el acomodo temático es del portal.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -16,7 +16,7 @@ import { fetchUserDashboardPrefs, upsertUserDashboardPrefs } from '@nucleo/data/
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Interruptor from '../componentes/Interruptor';
 import { SECCIONES, WIDGET_WEB, ROTULO_WIDGET } from '../componentes/inicio/Secciones';
 import { fallo } from '../componentes/Progreso';
@@ -65,7 +65,7 @@ export default function PersonalizarInicio() {
         <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>
           Enciende o apaga cada tarjeta. Es la misma elección del portal: lo que apagues aquí también se apaga en el escritorio. El orden lo decide el uso: lo que más abres sube solo.
         </Text>
-        {widgets == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : !ids.length ? (
+        {widgets == null ? <Cargando /> : !ids.length ? (
           <Aviso texto="Tu cargo no tiene tarjetas para elegir." />
         ) : (
           <Seccion titulo="Tarjetas" pie={guardando ? 'Guardando…' : null}>

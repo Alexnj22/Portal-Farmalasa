@@ -9,7 +9,7 @@
 // núcleo (`promocionesUtils`), los mismos del portal. El alta guarda borrador
 // como el portal; al editar, lo guardado ES el borrador.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, TextInput, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import {
@@ -26,7 +26,7 @@ import {
 } from '@nucleo/utils/promocionesUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { Icono } from '../../componentes/promociones/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -173,7 +173,7 @@ export default function PromocionLaboratorio() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: editando ? 'Editar promoción' : 'Por laboratorio', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        {cargando ? <ActivityIndicator style={{ marginTop: 32 }} /> : (
+        {cargando ? <Cargando /> : (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
             <Seccion titulo="La promoción">
               <Campo multiline={false} value={nombre} onChangeText={setNombre} maxLength={120} placeholder="Nombre" />

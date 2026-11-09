@@ -191,7 +191,9 @@ export function estadoDePersona(emp) {
  */
 export function estaAusenteHoy(emp) {
     const e = estadoDePersona(emp);
-    return !!e && !e.faltan;
+    // Quien está en apoyo TRABAJA, en otra sala: no es una ausencia (2026-11-09,
+    // «está de apoyo, no ausente»). Sigue teniendo su píldora «En apoyo».
+    return !!e && !e.faltan && e.clave !== 'SUPPORT';
 }
 
 // ── Una persona, venga como venga ──────────────────────────────────────────

@@ -12,7 +12,7 @@
 // así que estos números reescriben el MIN·MAX de TODO el catálogo, en todas
 // las salas, en el próximo cálculo.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -25,7 +25,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
@@ -37,7 +37,7 @@ function Parametros({ puede }) {
   useEffect(() => {
     Promise.resolve(fetchStockConfigFull()).then(({ data }) => { setOrig(data ?? {}); setForm(data ?? {}); }).catch((e) => fallo('No se pudo cargar', mensajeAmigable(e)));
   }, []);
-  if (!form) return <ActivityIndicator style={{ marginTop: 30 }} />;
+  if (!form) return <Cargando />;
   const motivo = validarConfigMinMax(form);
   const cambio = SECCIONES_CONFIG_MINMAX.some((s) => s.campos.some((c) => Number(form[c.k]) !== Number(orig[c.k])));
 
@@ -97,7 +97,7 @@ function Laboratorios({ puede }) {
     }).catch((e) => { fallo('No se pudo cargar', mensajeAmigable(e)); setLabs([]); });
   }, []);
   const visibles = useMemo(() => (busca.trim() ? (labs ?? []).filter((l) => tokenMatch(busca, l.nombre)) : (labs ?? [])), [labs, busca]);
-  if (!labs) return <ActivityIndicator style={{ marginTop: 30 }} />;
+  if (!labs) return <Cargando />;
   const ocultos = labs.filter((l) => l.ocultar_en_minmax).length;
   const alternar = (lab) => {
     const ocultar = !lab.ocultar_en_minmax;

@@ -14,11 +14,10 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../../../componentes/formulario/Piezas';
-import { MARCA } from '../../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import { volver } from '../../../componentes/volver';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 
 export default function DescargarCamion() {
   const { vendedor } = useLocalSearchParams();

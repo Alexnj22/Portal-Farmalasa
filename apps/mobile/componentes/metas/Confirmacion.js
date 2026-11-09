@@ -10,7 +10,7 @@
 // llega el aviso. Cada tarjeta lleva su historial: quién la movió y cuánto
 // (`cambioDeMeta`, núcleo, el mismo del portal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import {
   aprobarMeta, aprobarMetaPorAutorizacion, aprobarMetasLote, aprobarMetasPorAutorizacionLote, confirmarMeta, confirmarMetasLote, devolverMeta,
@@ -25,7 +25,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
@@ -116,7 +116,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
     return g;
   }, [rows, ymActual, ymSig]);
 
-  if (rows == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (rows == null) return <Cargando />;
 
   return (
     <View style={{ gap: 12 }}>
@@ -151,7 +151,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
               const ctx = { sala, mes: r.year_month, desde: 'app' };
               return (
                 <View key={r.id} style={{ marginHorizontal: 16 }}>
-                  <Vidrio radio={18}>
+                  <Vidrio radio={20}>
                     <View style={{ padding: 14, gap: 10 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{sala}</Text>

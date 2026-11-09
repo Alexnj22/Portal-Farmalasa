@@ -10,7 +10,7 @@
 // ⚠ «Cerrar liquidación» y «Reabrir» mueven la caja DE VERDAD; en el entorno de
 // pruebas no se hacen.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -29,18 +29,17 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../formulario/Piezas';
 import Avatar from '../../Avatar';
 import Vidrio from '../../Vidrio';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 import { fallo, listo, trabajando } from '../../Progreso';
 import { compartirTicket, elegir, imprimirTicket } from '../fiscal/papel';
 import CajaDelVendedor from './CajaDelVendedor';
 import DiaElegido from './DiaElegido';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 const soloMonto = (v) => v.replace(',', '.').replace(/[^0-9.]/g, '');
 
 export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, puedeConfigurar, emisor, recarga = 0 }) {
@@ -132,7 +131,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
             const delDiaV = delDia.find((x) => String(x.id) === String(v.id));
             return (
               <Pressable key={v.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onVendedor(v.id); }} accessibilityRole="button" accessibilityState={{ selected: activo }}>
-                <Vidrio radio={18} interactivo tinte={activo ? `${PETROLEO}55` : undefined}>
+                <Vidrio radio={20} interactivo tinte={activo ? `${PETROLEO}55` : undefined}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, paddingVertical: 8, minHeight: 44 }}>
                     <Avatar empleado={v} tamano={28} />
                     <View>
@@ -150,7 +149,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
       ) : null}
 
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {liq === undefined ? <ActivityIndicator style={{ marginTop: 16 }} /> : null}
+      {liq === undefined ? <Cargando /> : null}
       {liq === null && !error ? (
         <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={puedeConfigurar ? 'Nadie vendió ni cobró este día.' : 'Este día no vendiste ni cobraste.'} /></View>
       ) : null}

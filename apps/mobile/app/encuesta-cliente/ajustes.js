@@ -9,7 +9,7 @@
 // tabla con el token del QR de cada una. Sólo se edita en borrador y con
 // permiso; si no, se ve igual, sin controles. Las cuentas son del núcleo.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Conmutador from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -23,7 +23,7 @@ import { formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Opciones, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import FechaOpcional from '../../componentes/torogoz/bodega/FechaOpcional';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo } from '../../componentes/Progreso';
@@ -108,7 +108,7 @@ export default function AjustesEncuesta() {
 
   const elegidas = useMemo(() => new Map(sucursales.map((s) => [s.branch_id, s])), [sucursales]);
   if (error) return <View style={{ padding: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (!encuesta) return <ActivityIndicator style={{ marginTop: 32 }} />;
+  if (!encuesta) return <Cargando />;
   const porSala = encuesta.alcance === 'sucursales';
   const meta = metaTotal(encuesta, sucursales);
   const sugerida = sugeridaDeLaEncuesta(encuesta, sucursales, poblacion);

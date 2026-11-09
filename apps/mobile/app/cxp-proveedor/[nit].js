@@ -12,7 +12,7 @@
 // El reparto a medio armar se guarda solo (`useBorrador`, por NIT), igual que
 // en el portal: la sesión se cierra sola y repartir un pago son minutos.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -25,7 +25,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -124,7 +124,7 @@ export default function ProveedorPorPagar() {
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error ? <Aviso tono="freno" texto={error} /> : null}
-          {docs == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+          {docs == null ? <Cargando /> : (
             <>
               <Seccion titulo="Resumen">
                 <Dato primero rotulo="Debemos" valor={formatMoney(saldo)} fuerte />

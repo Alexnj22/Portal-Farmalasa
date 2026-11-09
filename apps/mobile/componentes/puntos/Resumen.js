@@ -8,7 +8,7 @@
 // Las tarjetas de la red (Se les debe, Acumulado, Canjeado, Pueden canjear)
 // tienen su propio permiso (`puntos_tarjetas`), como en el portal.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -20,7 +20,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../Segmentos';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -72,7 +72,7 @@ export default function Resumen({ onIrA }) {
   }, [veAvisos, vePorAsignar]);
   useEffect(() => { cargar(); }, [cargar]);
   if (error) return <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (!d) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (!d) return <Cargando />;
 
   const { r, t } = d;
   const encendido = !!r.config?.encendido;

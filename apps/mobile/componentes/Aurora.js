@@ -10,12 +10,13 @@
 import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import Svg, { Defs, RadialGradient, Rect, Stop } from 'react-native-svg';
 import { colorSistema } from './Formulario';
+import { MARCA } from './inicio/marca';
 
 const MANCHAS = [
   { id: 'verde', color: '#8EC30F', cx: '12%', cy: '8%', r: '55%' },
   { id: 'magenta', color: '#981D97', cx: '92%', cy: '18%', r: '60%' },
   { id: 'azul', color: '#0052CC', cx: '85%', cy: '78%', r: '65%' },
-  { id: 'violeta', color: '#6929C4', cx: '8%', cy: '70%', r: '55%' },
+  { id: 'violeta', color: MARCA.violeta, cx: '8%', cy: '70%', r: '55%' },
 ];
 
 // En Android no hay aurora: el fondo es la SUPERFICIE de Material 3 (sólida,

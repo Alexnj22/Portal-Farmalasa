@@ -195,7 +195,7 @@ export default function Ajuste() {
           {OPERACIONES_AJUSTE.map((o) => (
             <Pressable key={o.key} disabled={!!enConteo?.en_conteo} onPress={() => { Haptics.selectionAsync().catch(() => {}); setOpKey(o.key); }}
               style={({ pressed }) => ({ transform: [{ scale: pressed ? 0.98 : 1 }], opacity: enConteo?.en_conteo ? 0.4 : 1 })}>
-              <Vidrio radio={18} interactivo>
+              <Vidrio radio={20} interactivo>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 13 }}>
                   <Chip icono={o.icono} color={TONO[o.tono]} tamano={36} />
                   <View style={{ flex: 1 }}>

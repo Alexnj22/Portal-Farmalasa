@@ -10,7 +10,7 @@
 // Todo el dinero, sólo con `compras_ver_montos`. Vincular un proveedor sigue
 // en el portal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPurchaseReceiptsPage, fetchSuppliersBasic, fetchUnlinkedPurchaseReceiptsCount } from '@nucleo/data/compras';
@@ -20,7 +20,7 @@ import { fechaTexto, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import PasoDeMes from '../componentes/PasoDeMes';
@@ -142,7 +142,7 @@ export default function Compras() {
           return (
             <Pressable key={r.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/compra/[id]', params: { id: String(r.id) } }); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={18} interactivo>
+              <Vidrio radio={20} interactivo>
                 <View style={{ padding: 12, gap: 4 }}>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{proveedor}</Text>
@@ -160,10 +160,10 @@ export default function Compras() {
             </Pressable>
           );
         })}
-        {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+        {cargando ? <Cargando /> : null}
         {!cargando && datos.total > datos.filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.filas.length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{busqueda ? 'Ninguna compra con esa búsqueda' : sinProveedor ? `Ninguna sin proveedor ${libre ? 'en el rango' : 'este mes'}` : `Sin compras ${libre ? 'en el rango' : 'este mes'}`}</Text>
+          <Vacio>{busqueda ? 'Ninguna compra con esa búsqueda' : sinProveedor ? `Ninguna sin proveedor ${libre ? 'en el rango' : 'este mes'}` : `Sin compras ${libre ? 'en el rango' : 'este mes'}`}</Vacio>
         ) : null}
         </>) : null}
       </ScrollView>

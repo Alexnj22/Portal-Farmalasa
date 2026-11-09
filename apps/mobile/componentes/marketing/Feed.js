@@ -11,6 +11,7 @@ import { colorSistema } from '../Formulario';
 import Segmentos from '../Segmentos';
 import { MARCA } from '../inicio/marca';
 import Tocable from '../Tocable';
+import { Vacio } from '../formulario/Piezas';
 
 export default function Feed({ piezas, marcas, firmas, onAbrir }) {
   const activas = (marcas || []).filter((m) => m.activo);
@@ -51,7 +52,7 @@ export default function Feed({ piezas, marcas, firmas, onAbrir }) {
           </Tocable>
         ))}
       </View>
-      {!cuadricula.length && !historias.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Nada de esta marca en el mes</Text> : null}
+      {!cuadricula.length && !historias.length ? <Vacio>Nada de esta marca en el mes</Vacio> : null}
     </>
   );
 }

@@ -12,7 +12,7 @@
 // `componentes/encuestas/Formulario` (una pregunta por pantalla). «Modo
 // tablet» abre la encuesta pública de la sala a pantalla completa.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
 import { fetchParaAplicar, guardarEntrevista, guardarEntrevistaCampo, marcarMuestraEntregada } from '@nucleo/data/encuestasClientes';
@@ -21,7 +21,7 @@ import { enlaceDeEncuesta, preguntasEnOrden } from '@nucleo/utils/encuestasClien
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -173,7 +173,7 @@ export default function EncuestasAplicar() {
         keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {encuestas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {encuestas == null ? <Cargando /> : null}
 
         {encuestas && opcionesDonde.length ? (
           <Tarjeta>
@@ -248,7 +248,7 @@ export default function EncuestasAplicar() {
 
         {encuestas && !encuestas.length ? (
           <View style={{ marginHorizontal: 24, marginTop: 40, gap: 6 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>Sin encuestas para aplicar</Text>
+            <Vacio>Sin encuestas para aplicar</Vacio>
             <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Cuando marketing publique una encuesta para entrevista, tablet o campo, aparece aquí.</Text>
           </View>
         ) : null}

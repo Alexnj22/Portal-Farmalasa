@@ -7,7 +7,7 @@
 // solventado, este mes o todo. Qué está pendiente y la fila que se escribe
 // salen del núcleo (`colasDeFacturacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import {
   fetchGapResolutions, fetchNullResolutionIds, fetchSalesInvoiceGaps, fetchSalesInvoiceNulls, insertGapResolution, insertNullResolution,
 } from '@nucleo/data/facturacion';
@@ -19,7 +19,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -75,7 +75,7 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
     cargar();
   };
 
-  if (!d) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (!d) return <Cargando />;
   const accion = (texto, onPress) => (
     <Tocable onPress={onPress} hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
       <Text style={{ color: MARCA.verde, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
@@ -95,7 +95,7 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
         const n = Number(g.gap_count ?? (Number(g.gap_to) - Number(g.gap_from) + 1));
         return (
           <View key={claveDeSalto(g)} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18} tinte="rgba(240,68,56,0.08)">
+            <Vidrio radio={20} tinte="rgba(240,68,56,0.08)">
               <View style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${g.tipo_documento} · ${correlativo7(g.gap_from)} → ${correlativo7(g.gap_to)}`}</Text>
@@ -111,7 +111,7 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
       {nulos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginHorizontal: 20, marginTop: 6 }}>{`Campos nulos · ${nulos.length}`}</Text> : null}
       {nulos.map((n) => (
         <View key={n.id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 4 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${n.correlativo ?? 'Sin número'}${n.erp_invoice_id ? ` · ID ${n.erp_invoice_id}` : ''}`}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[nombreSala(n.branch_id), n.fecha ? fechaTexto(n.fecha, { day: 'numeric', month: 'short' }) : null].filter(Boolean).join(' · ')}</Text>
@@ -123,7 +123,7 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
           </Vidrio>
         </View>
       ))}
-      {!pendientes.length && !nulos.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin saltos ni campos nulos</Text> : null}
+      {!pendientes.length && !nulos.length ? <Vacio>Sin saltos ni campos nulos</Vacio> : null}
 
       {d.res.length ? (
         <View style={{ marginHorizontal: 16, gap: 8, marginTop: 8 }}>

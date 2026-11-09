@@ -7,7 +7,7 @@
 // (`ACCIONES_DEL_HISTORIAL_MINMAX`, `HISTORIAL_MINMAX_META`); las solicitudes
 // se cruzan por `request_id` para traer el motivo que se escribió al pedir.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { effectiveMinMaxPair, fetchAuditLogsForProduct, fetchEmployeesBasic, fetchStockParams } from '@nucleo/data/stockParams';
 import { fetchSolicitudesDeProducto } from '@nucleo/data/minmaxRequests';
@@ -19,7 +19,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -80,7 +80,7 @@ export default function MinMaxHistorial() {
     const nota = igual(f.manual_nota, razon) ? null : f.manual_nota;
     const pedido = igual(origen?.reason, razon) ? null : origen?.reason;
     return (
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
             <View style={{ flex: 1 }}>
@@ -164,7 +164,7 @@ export default function MinMaxHistorial() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4, marginTop: -8 }}>{ERP_NAMES[Number(sala)] ?? ''}</Text>
-        {datos == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : (
+        {datos == null ? <Cargando /> : (
           <>
             {vigente()}
             {datos.logs.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginHorizontal: 4, marginTop: 4 }}>TODO LO QUE PASÓ</Text> : null}

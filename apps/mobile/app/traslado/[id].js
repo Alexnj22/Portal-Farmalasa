@@ -35,9 +35,10 @@ import Evidencia from '../../componentes/traslados/Evidencia';
 import { Pildora, Ruta } from '../../componentes/traslados/Tarjeta';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
+import { BotonGrande, Campo } from '../../componentes/formulario/Piezas';
 
 function Bloque({ titulo, children }) {
   return (
@@ -66,25 +67,6 @@ function Cantidad({ valor, max, onCambiar, etiqueta }) {
         accessibilityLabel={`Cuántos ${etiqueta}`} />
       <Boton d={1} texto="+" />
     </View>
-  );
-}
-
-function Campo(props) {
-  return (
-    <TextInput placeholderTextColor={colorSistema.texto2} multiline {...props}
-      style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colorSistema.texto,
-        backgroundColor: 'rgba(127,127,127,0.16)' }} />
-  );
-}
-
-function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado, borde = false }) {
-  return (
-    <Pressable onPress={onPress} disabled={deshabilitado} accessibilityRole="button"
-      style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
-        backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color,
-        opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Text style={{ color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' }}>{texto}</Text>
-    </Pressable>
   );
 }
 
@@ -189,7 +171,7 @@ export default function Traslado() {
   const estado = pendiente ? { texto: 'Por contestar', color: MARCA.ambar }
     : fila.status === 'REJECTED' ? { texto: 'Rechazado', color: MARCA.rojo }
     : m.erp_recibido ? { texto: 'Recibido', color: MARCA.verde }
-    : enCamino ? { texto: 'En camino', color: MARCA.azulClaro } : { texto: fila.status, color: '#8E8E93' };
+    : enCamino ? { texto: 'En camino', color: MARCA.azulClaro } : { texto: fila.status, color: MARCA.gris };
 
   return (
     <>

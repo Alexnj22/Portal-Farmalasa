@@ -148,7 +148,7 @@ export default function AuditoriaDelSistema() {
       <Segmentos activa={periodo} onCambiar={setPeriodo} opciones={[{ id: 'hoy', label: 'Hoy' }, { id: 'semana', label: '7 días' }, { id: 'rango', label: 'Fechas' }, { id: 'todo', label: 'Todo' }]} />
       {periodo === 'rango' ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 15 }}>Desde</Text>

@@ -38,7 +38,7 @@ export default function MatrizAbcXyz() {
         <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800', marginHorizontal: 4 }}>{ERP_NAMES[Number(sala)] ?? ''}</Text>
         {error ? <Aviso tono="freno" texto={error} /> : null}
         {!m ? <ActivityIndicator /> : (
-          <Vidrio radio={22}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 8 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <View style={{ width: 36 }} />

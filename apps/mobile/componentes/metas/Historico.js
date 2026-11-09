@@ -4,12 +4,12 @@
 // la meta como listón sobre la venta de cada mes). Las gráficas leen las MISMAS
 // filas ya filtradas (núcleo: `agruparHistoricoPorMes`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { fetchMetasHistorico } from '@nucleo/data/metas';
 import { TRAMO_CFG, agruparHistoricoPorMes, ymLabelCorto } from '@nucleo/utils/metasUtils';
 import { formatMoney, formatMoneyCorto, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
@@ -38,7 +38,7 @@ export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles
   }), [rows, sala, soloConMeta, salasVisibles]);
   const meses = useMemo(() => agruparHistoricoPorMes(filtradas), [filtradas]);
 
-  if (rows == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (rows == null) return <Cargando />;
   const pcts = meses.map((m) => m.pct).filter((v) => v != null);
   const mejor = meses.length ? meses.reduce((a, b) => (b.pct > a.pct ? b : a)) : null;
   const peor = meses.length ? meses.reduce((a, b) => (b.pct < a.pct ? b : a)) : null;
@@ -70,7 +70,7 @@ export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles
                 <Titulo>Meta y venta</Titulo>
                 <Grafica alto={170}
                   datos={meses.map((m) => ({ etiqueta: m.mes, titulo: m.mes, venta: m.venta, meta: m.meta }))}
-                  series={[{ clave: 'venta', rotulo: 'Vendido', color: MARCA.azulClaro, tipo: 'barra' }, { clave: 'meta', rotulo: 'Meta', color: '#8E8E93', tipo: 'marca' }]}
+                  series={[{ clave: 'venta', rotulo: 'Vendido', color: MARCA.azulClaro, tipo: 'barra' }, { clave: 'meta', rotulo: 'Meta', color: MARCA.gris, tipo: 'marca' }]}
                   formato={(v) => formatMoney(v)} formatoEje={(v) => (v ? formatMoneyCorto(v) : '0')}
                   detalle={(f) => (f.venta >= f.meta ? `${formatMoney(f.venta - f.meta)} por encima` : `${formatMoney(f.meta - f.venta)} por debajo`)}
                   resumen={<Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Lo más lejos ${peor.mes}, ${formatMoney(peor.meta - peor.venta)} por debajo${mejor.venta > mejor.meta ? ` · lo más alto ${mejor.mes}, ${formatMoney(mejor.venta - mejor.meta)} por encima` : ''}`}</Text>} />
@@ -85,7 +85,7 @@ export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles
         const color = COLOR_TRAMO[r.bono_tier] ?? colorSistema.texto2;
         return (
           <View key={`${r.year_month}-${r.branch_id}`} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                 <View style={{ flex: 1, gap: 2 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${salaNombre(r.branch_id)} · ${ymLabelCorto(r.year_month)}`}</Text>
@@ -107,7 +107,7 @@ export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles
         );
       })}
       {!filtradas.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 30 }}>Sin meses con ese filtro</Text>
+        <Vacio>Sin meses con ese filtro</Vacio>
       ) : null}
     </View>
   );

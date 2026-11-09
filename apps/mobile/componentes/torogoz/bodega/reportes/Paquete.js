@@ -10,8 +10,8 @@ import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { compartirZip } from '../../../fiscal/zip';
 import { BotonGrande } from '../../../formulario/Piezas';
 import { fallo, trabajando, cerrarProgreso } from '../../../Progreso';
+import { PETROLEO } from '../../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 export async function compartirPaquete(mes) {
   trabajando('Armando el paquete…');

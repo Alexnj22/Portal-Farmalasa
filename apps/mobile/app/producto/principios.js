@@ -20,7 +20,7 @@ import { resultadoDeSrs } from '@nucleo/utils/srs';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
@@ -91,7 +91,7 @@ export default function PrincipiosDelProducto() {
   useEffect(() => {
     Promise.resolve(fetchPrincipiosDeProducto(productId)).then((d) => setEd(editorDePrincipios(d))).catch((e) => { fallo('No se pudo cargar', mensajeAmigable(e)); setEd(editorDePrincipios([])); });
   }, [productId]);
-  if (!ed) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Principios activos' }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (!ed) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Principios activos' }} /><Cargando /></>;
 
   const set = (i, campo, v) => setEd((e) => ({ ...e, items: e.items.map((p, j) => (j === i ? { ...p, [campo]: v } : p)) }));
   const { rows, text } = principiosParaGuardar(productId, ed);
@@ -117,10 +117,7 @@ export default function PrincipiosDelProducto() {
         <Seccion titulo="No es un principio activo">
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {PRINCIPIO_PRESETS.map((p) => (
-              <Pressable key={p} onPress={() => setEd((e) => (e.preset === p ? editorDePrincipios([]) : { preset: p, items: [] }))}
-                style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, justifyContent: 'center', backgroundColor: ed.preset === p ? MARCA.violetaClaro : 'rgba(127,127,127,0.16)' }}>
-                <Text style={{ color: ed.preset === p ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{p}</Text>
-              </Pressable>
+              <Ficha key={p} texto={p} activa={ed.preset === p} color={MARCA.violetaClaro} onPress={() => setEd((e) => (e.preset === p ? editorDePrincipios([]) : { preset: p, items: [] }))} />
             ))}
           </View>
         </Seccion>

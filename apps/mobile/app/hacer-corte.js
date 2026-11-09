@@ -18,7 +18,7 @@
 // dice en pantalla, como el aviso del portal.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -33,7 +33,7 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { imprimirEnLaSala } from '../componentes/imprimir';
@@ -126,7 +126,7 @@ export default function HacerCorte() {
   }
 
   let cuerpo;
-  if (estado === undefined) cuerpo = <ActivityIndicator style={{ marginTop: 40 }} />;
+  if (estado === undefined) cuerpo = <Cargando />;
   else if (estado?.error) cuerpo = <Aviso tono="freno" texto={`No se pudo leer la caja: ${estado.error}`} />;
   else if (resultado) {
     const acumulada = Number(resultado.diferencia || 0);

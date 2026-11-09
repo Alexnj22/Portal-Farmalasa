@@ -8,7 +8,7 @@
 // se mandan: los pone el trigger con la sesión. «Ya no rota» se ofrece sólo con
 // alcance total, igual que en el portal y en la base.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -21,7 +21,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -85,7 +85,7 @@ export default function MinMaxMotivo() {
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', marginHorizontal: 4 }}>{nombre}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4, marginTop: -10 }}>{`${ERP_NAMES[Number(sala)] ?? ''} · Por qué está puesto a mano`}</Text>
-          {fila == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : !puede ? (
+          {fila == null ? <Cargando /> : !puede ? (
             <>
               <Aviso tono="nota" texto={fila.manual_motivo ? `Motivo: ${MOTIVO_AJUSTE[fila.manual_motivo]?.label ?? fila.manual_motivo}${fila.manual_nota ? ` · ${fila.manual_nota}` : ''}` : 'Sin motivo declarado.'} />
               <Aviso tono="freno" texto="Poner el motivo es de quien edita el MIN·MAX de esta sala." />

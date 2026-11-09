@@ -9,7 +9,7 @@
 // deben más que su límite (`VISTAS_CARTERA`). Tocar un cliente abre su cuenta,
 // donde se cobra. Las reglas de la lista salen del núcleo (`distribucionCartera`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchCartera, mensajeDeDistribucion } from '@nucleo/data/distribucion';
@@ -20,29 +20,28 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
-const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 50;
 // Suben de gravedad, igual que en el portal: verde, ámbar, naranja, rojo.
 const COLOR_TRAMO = { al_dia: MARCA.verde, '1_30': MARCA.ambar, '31_60': '#F97316', '61_90': MARCA.rojo, mas_90: '#BE123C' };
 
-function Antiguedad({ antiguedad, tramo, onTramo }) {
+function Antiguedad({ antiguedad, tramo }) {
   const total = antiguedad.reduce((a, t) => a + Number(t.monto), 0) || 1;
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ padding: 16, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>Antigüedad de saldos</Text>
-            {tramo ? <Pressable onPress={() => onTramo('')} hitSlop={8}><Text style={{ color: PETROLEO, fontSize: 15, fontWeight: '700' }}>Ver todos</Text></Pressable> : null}
           </View>
           <View style={{ flexDirection: 'row', height: 14, borderRadius: 7, overflow: 'hidden', backgroundColor: 'rgba(127,127,127,0.15)' }}>
             {antiguedad.map((t) => (
@@ -54,18 +53,17 @@ function Antiguedad({ antiguedad, tramo, onTramo }) {
               const monto = Number(antiguedad.find((a) => a.tramo === t.key)?.monto ?? 0);
               const activo = tramo === t.key;
               return (
-                <Pressable key={t.key} accessibilityRole="button" accessibilityState={{ selected: activo }}
-                  onPress={() => { Haptics.selectionAsync().catch(() => {}); onTramo(activo ? '' : t.key); }}
-                  style={({ pressed }) => ({ width: '31%', minHeight: 64, borderRadius: 14, padding: 10, gap: 2,
+                <View key={t.key}
+                  style={{ width: '31%', minHeight: 64, borderRadius: 14, padding: 10, gap: 2,
                     borderWidth: activo ? 1.5 : 0.5, borderColor: activo ? PETROLEO : colorSistema.separador,
-                    backgroundColor: activo ? `${PETROLEO}22` : 'transparent', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+                    backgroundColor: activo ? `${PETROLEO}22` : 'transparent' }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
                     <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_TRAMO[t.key] }} />
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>{t.label}</Text>
                   </View>
                   <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(monto, { decimales: 0 })}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${Math.round((monto / total) * 100)}%`}</Text>
-                </Pressable>
+                </View>
               );
             })}
           </View>
@@ -134,6 +132,8 @@ export default function Cobros() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   useEffect(() => { setCuantos(POR_PAGINA); }, [vista, tramo, texto]);
 
+  const grupos = [{ id: 'tramo', titulo: 'Antigüedad', activa: tramo, porDefecto: '', onCambiar: setTramo,
+    opciones: [{ id: '', label: 'Todos los tramos' }, ...TRAMOS.map((t) => ({ id: t.key, label: t.label }))] }];
   const r = datos?.resumen ?? {};
   const visibles = useMemo(() => {
     const q = texto.trim();
@@ -147,9 +147,12 @@ export default function Cobros() {
         headerSearchBarOptions: { placeholder: 'Cliente o ruta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS_CARTERA.map((v) => ({ id: v.key, label: v.label }))} />
+        <FiltrosActivos grupos={grupos} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -166,12 +169,11 @@ export default function Cobros() {
               <Kpi icono="CalendarClock" rotulo="Vence en 7 días" valor={formatMoney(Number(r.vence_7 ?? 0), { decimales: 0 })} color={MARCA.ambar} apoyo="Para cobrar esta semana" />
               <Kpi icono="HandCoins" rotulo="Cobrado este mes" valor={formatMoney(Number(r.cobrado_mes ?? 0), { decimales: 0 })} color={MARCA.verde} apoyo="Cobros sin anular" />
             </FilaDeKpis>
-            <Antiguedad antiguedad={datos.antiguedad ?? []} tramo={tramo} onTramo={setTramo} />
+            <Antiguedad antiguedad={datos.antiguedad ?? []} tramo={tramo} />
           </>
         ) : null}
-        <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS_CARTERA.map((v) => ({ id: v.key, label: v.label }))} />
         {datos ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${visibles.length} cliente${visibles.length === 1 ? '' : 's'} · ${formatMoney(visibles.reduce((t, c) => t + Number(c.saldo || 0), 0))}`}</Text> : null}
-        {datos == null && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, cuantos).map((c) => <Cliente key={c.id} c={c} />)}
+        {datos == null && !error ? <Cargando /> : visibles.slice(0, cuantos).map((c) => <Cliente key={c.id} c={c} />)}
         {visibles.length > cuantos ? (
           <View style={{ marginHorizontal: 16 }}>
             <BotonGrande borde color={PETROLEO} texto={`Ver ${Math.min(POR_PAGINA, visibles.length - cuantos)} más · quedan ${visibles.length - cuantos}`} onPress={() => setCuantos((n) => n + POR_PAGINA)} />

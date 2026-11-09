@@ -5,7 +5,7 @@
 // inflaría la utilidad). La gráfica es la de «Venta y utilidad por día» del
 // portal: el área es la venta, las barras la utilidad.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { fetchUtilidad } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { PERIODOS, rangoDe } from '@nucleo/utils/distribucionComun';
@@ -13,7 +13,7 @@ import { AGRUPAR_UTILIDAD, gruposDeUtilidad, margen, serieDeUtilidad } from '@nu
 import { formatMoney, formatMoneyCorto, formatQty } from '@nucleo/utils/formatNumber';
 import { FiltrosActivos, MenuDeFiltros } from '../../../Filtros';
 import { colorSistema } from '../../../Formulario';
-import { Aviso, Seccion } from '../../../formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import Grafica from '../../../metas/Graficas';
@@ -105,7 +105,7 @@ export default function Utilidad({ buscar }) {
         </View>
       ) : null}
 
-      {cargando && !datos ? <ActivityIndicator style={{ marginTop: 16 }} /> : filas.length === 0 ? (
+      {cargando && !datos ? <Cargando /> : filas.length === 0 ? (
         buscar ? <Vacio titulo="Sin resultados" texto="Nada coincide con la búsqueda." /> : <Vacio titulo="Sin ventas" texto="No hay ventas en el período." />
       ) : (
         <>

@@ -6,6 +6,7 @@ import * as Haptics from 'expo-haptics';
 import Vidrio from '../../Vidrio';
 import { colorSistema } from '../../Formulario';
 import { colorDeVariante } from '../../colorDeVariante';
+import { FONDO_CONTROL } from '../../inicio/marca';
 
 // COLORES_DISTRIBUIDORA.petroleo — el mismo del menú de Torogoz.
 export const PETROLEO = '#0f6e7d';
@@ -14,7 +15,7 @@ export const PETROLEO = '#0f6e7d';
 export function Chapa({ variante = 'neutral', texto }) {
   const c = colorDeVariante(variante);
   return (
-    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: typeof c === 'string' ? `${c}26` : 'rgba(127,127,127,0.16)' }}>
+    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: typeof c === 'string' ? `${c}26` : FONDO_CONTROL }}>
       <Text style={{ color: c, fontSize: 12, fontWeight: '700' }}>{texto}</Text>
     </View>
   );
@@ -28,7 +29,7 @@ export function Ficha({ onPress, onLongPress, tinte, children }) {
       onPress={onPress ? () => { Haptics.selectionAsync().catch(() => {}); onPress(); } : undefined}
       onLongPress={onLongPress ? () => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); onLongPress(); } : undefined}>
       {({ pressed }) => (
-        <Vidrio radio={18} interactivo={tocable} tinte={tinte} style={{ transform: [{ scale: pressed ? 0.98 : 1 }] }}>
+        <Vidrio radio={20} interactivo={tocable} tinte={tinte} style={{ transform: [{ scale: pressed ? 0.98 : 1 }] }}>
           <View style={{ padding: 14, gap: 6 }}>{children}</View>
         </Vidrio>
       )}

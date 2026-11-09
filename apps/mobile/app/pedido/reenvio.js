@@ -8,7 +8,7 @@
 // Si llegaron renglones por contar, se sigue directo al conteo.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -18,7 +18,7 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
@@ -28,13 +28,7 @@ function Elegir({ valor, onCambiar, opciones = ESTADOS }) {
   return (
     <View style={{ flexDirection: 'row', gap: 6 }}>
       {opciones.map(([id, rotulo, color]) => {
-        const on = valor === id;
-        return (
-          <Pressable key={id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(id); }}
-            style={{ minHeight: 34, paddingHorizontal: 12, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? color : 'rgba(127,127,127,0.18)' }}>
-            <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{rotulo}</Text>
-          </Pressable>
-        );
+        return <Ficha key={id} texto={rotulo} activa={valor === id} color={color} onPress={() => onCambiar(id)} />;
       })}
     </View>
   );

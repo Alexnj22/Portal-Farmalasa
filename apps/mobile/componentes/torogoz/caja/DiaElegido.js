@@ -21,7 +21,7 @@ export default function DiaElegido({ fecha, onCambiar }) {
   const hoy = hoySV();
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 6 }}>
           <Flecha texto="‹" etiqueta="Día anterior" onPress={() => onCambiar(sumarDias(fecha, -1))} />
           <View style={{ alignItems: 'center', gap: 2, paddingVertical: 6 }}>

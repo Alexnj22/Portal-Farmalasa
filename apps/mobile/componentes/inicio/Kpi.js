@@ -21,7 +21,7 @@ export default function Kpi({ icono, rotulo, valor, apoyo, color, pide = false, 
       android_ripple={ANDROID && onPress ? { color: 'rgba(127,127,127,0.20)', foreground: true } : undefined}
       onPress={onPress ? () => { Haptics.selectionAsync().catch(() => {}); onPress(); } : undefined}>
       {({ pressed }) => (
-        <Vidrio radio={22} interactivo={!!onPress} style={ANDROID ? undefined : { transform: [{ scale: pressed ? 0.97 : 1 }] }}>
+        <Vidrio radio={20} interactivo={!!onPress} style={ANDROID ? undefined : { transform: [{ scale: pressed ? 0.97 : 1 }] }}>
           <View style={{ padding: 14, gap: 4, minHeight: 112 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>

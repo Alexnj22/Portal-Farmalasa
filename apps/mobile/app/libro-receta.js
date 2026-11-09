@@ -12,7 +12,7 @@
 // se elige en el menú de filtros; y tocar un renglón abre el folio entero
 // (`app/folio.js`).
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -27,7 +27,7 @@ import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
@@ -64,11 +64,6 @@ export default function LibroReceta() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   // Cuántos hay en cada libro, para que el que no se mira no desaparezca.
-  const porLibro = useMemo(() => {
-    const c = {};
-    for (const r of filas || []) { const k = r.clase || CLASE_ANTIBIOTICO; c[k] = (c[k] ?? 0) + 1; }
-    return c;
-  }, [filas]);
   const delLibro = useMemo(() => (filas || []).filter((r) => (r.clase || CLASE_ANTIBIOTICO) === clase), [filas, clase]);
   const cuenta = useMemo(() => {
     const c = { pendiente: 0, completa: 0, todas: 0 };
@@ -91,7 +86,7 @@ export default function LibroReceta() {
       return (ka > kb ? 1 : -1) * signo;
     });
   }, [delLibro, vista, busca, orden]);
-  const grupos = [{ id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'folio:desc', onCambiar: setOrden, opciones: [
+  const grupos = [{ id: 'estado', titulo: 'Estado', activa: vista, porDefecto: 'pendiente', onCambiar: setVista, opciones: [{ id: 'pendiente', label: 'Pendientes' }, { id: 'completa', label: 'Completos' }, { id: 'todas', label: 'Todos' }] }, { id: 'orden', titulo: 'Ordenar', activa: orden, porDefecto: 'folio:desc', onCambiar: setOrden, opciones: [
     ['folio', 'Folio'], ['fecha', 'Fecha'], ['producto_nombre', 'Medicamento'], ['cantidad', 'Cantidad'], ['lote', 'Lote'], ['paciente', 'Paciente'], ['estado', 'Estado'],
   ].flatMap(([k, l]) => [{ id: `${k}:desc`, label: `${l} ↓` }, { id: `${k}:asc`, label: `${l} ↑` }]) }];
   const tramo = useEnTramos(visibles, 40, `${vista}|${clase}|${busca}|${orden}`);
@@ -105,19 +100,14 @@ export default function LibroReceta() {
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={clase} onCambiar={setClase} opciones={LIBROS.map((l) => ({ id: l.clave, label: l.corto }))} />
+        <FiltrosActivos grupos={grupos} />
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 20 }}>{nombre}</Text> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16 }}>
           <Paso texto="‹" onPress={() => setMes((m) => correrMes(m, -1))} />
           <Text style={{ flex: 1, textAlign: 'center', color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{etiquetaMes(mes)}</Text>
           <Paso texto="›" deshabilitado={esEsteMes} onPress={() => setMes((m) => correrMes(m, 1))} />
         </View>
-        <Segmentos activa={clase} onCambiar={setClase} opciones={LIBROS.map((l) => ({ id: l.clave, label: `${l.corto} · ${porLibro[l.clave] ?? 0}` }))} />
-        <FiltrosActivos grupos={grupos} />
-        <Segmentos activa={vista} onCambiar={setVista} opciones={[
-          { id: 'pendiente', label: `Pendientes · ${cuenta.pendiente}` },
-          { id: 'completa', label: `Completos · ${cuenta.completa}` },
-          { id: 'todas', label: 'Todos' },
-        ]} />
         {delLibro.length ? (
           <Pressable hitSlop={8} accessibilityRole="button" style={{ alignSelf: 'flex-end', marginHorizontal: 20, minHeight: 32, justifyContent: 'center' }}
             onPress={() => compartirCsv({ ...csvDelLibroBajoReceta(delLibro, { clase, sucursalNombre: nombre, periodo: mes }), modulo: 'bitacoras' }).catch((e) => fallo('No se pudo compartir', e?.message || ''))}>
@@ -125,7 +115,7 @@ export default function LibroReceta() {
           </Pressable>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 32 }} /> : visibles.length ? tramo.visibles.map((r) => {
+        {filas == null ? <Cargando /> : visibles.length ? tramo.visibles.map((r) => {
           const estado = ESTADO_RENGLON[r.estado] ?? { label: r.estado, variant: 'neutral' };
           const faltan = faltantesDelRenglon(r);
           const tocable = r.estado === 'pendiente' && puedeCompletar;

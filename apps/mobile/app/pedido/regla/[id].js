@@ -10,7 +10,7 @@
 // un toque por error no puede cambiar lo que despacha Bodega.
 import { volver } from '../../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -20,15 +20,15 @@ import { ETIQUETAS_DE_DESPACHO, MULTIPLOS, NECESIDAD_EJEMPLO, calcularDespacho, 
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../../componentes/formulario/Piezas';
-import { MARCA } from '../../../componentes/inicio/marca';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../../componentes/formulario/Piezas';
+import { MARCA, FONDO_CONTROL } from '../../../componentes/inicio/marca';
 import { fallo, listo } from '../../../componentes/Progreso';
 
 function Ficha({ titulo, detalle, activa, onPress, deshabilitado }) {
   return (
     <Pressable disabled={deshabilitado} onPress={onPress}
       style={({ pressed }) => ({ minHeight: 52, minWidth: 96, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 14, justifyContent: 'center',
-        backgroundColor: activa ? MARCA.violetaClaro : 'rgba(127,127,127,0.16)', opacity: deshabilitado ? 0.4 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        backgroundColor: activa ? MARCA.violetaClaro : FONDO_CONTROL, opacity: deshabilitado ? 0.4 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <Text style={{ color: activa ? '#fff' : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{titulo}</Text>
       {detalle ? <Text style={{ color: activa ? 'rgba(255,255,255,0.8)' : colorSistema.texto2, fontSize: 12 }}>{detalle}</Text> : null}
     </Pressable>
@@ -67,7 +67,7 @@ export default function ReglaDeProducto() {
     return JSON.stringify(a) !== JSON.stringify(vals);
   }, [regla, vals]);
 
-  if (regla === undefined || !vals || !presentaciones) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Regla' }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (regla === undefined || !vals || !presentaciones) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Regla' }} /><Cargando /></>;
 
   const multiplo = Number(vals.dispatch_multiplo) || 1;
   const elegida = presentaciones.find((p) => p.id_presentacion === vals.dispatch_id_presentacion);

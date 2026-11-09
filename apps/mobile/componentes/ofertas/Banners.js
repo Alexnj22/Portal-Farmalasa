@@ -3,7 +3,7 @@
 // su estado (el de una oferta: `estadoDeOferta`, por fechas y publicado) y sus
 // fechas; tocar edita, mantener presionado publica, retira o borra.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { borrarBanner, fetchBanners, publicarBanner } from '@nucleo/data/ofertasClientes';
@@ -12,7 +12,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { colorDeVariante } from '../colorDeVariante';
@@ -69,7 +69,7 @@ export default function Banners({ busqueda, estado, puedeEditar, recarga }) {
     });
   };
 
-  if (banners == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (banners == null) return <Cargando />;
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -79,7 +79,7 @@ export default function Banners({ busqueda, estado, puedeEditar, recarga }) {
         return (
           <Pressable key={b.id} onPress={() => (puedeEditar ? abrirBanner(b) : null)} onLongPress={() => menu(b)} delayLongPress={350}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               {b.imagen_url ? <Image source={{ uri: b.imagen_url }} style={{ width: '100%', aspectRatio: 12 / 5, borderTopLeftRadius: 18, borderTopRightRadius: 18 }} resizeMode="cover" /> : null}
               <View style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
@@ -94,7 +94,7 @@ export default function Banners({ busqueda, estado, puedeEditar, recarga }) {
           </Pressable>
         );
       })}
-      {!filas.length && !error ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin banners con ese filtro</Text> : null}
+      {!filas.length && !error ? <Vacio>Sin banners con ese filtro</Vacio> : null}
       {puedeEditar && filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionado un banner para publicarlo, retirarlo o borrarlo.</Text> : null}
     </>
   );

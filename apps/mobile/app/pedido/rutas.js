@@ -24,7 +24,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso } from '../../componentes/formulario/Piezas';
 import Kpi, { Avance, FilaDeKpis } from '../../componentes/inicio/Kpi';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import { Esqueleto } from '../../componentes/inicio/Widget';
@@ -107,7 +107,7 @@ export default function RutasDeReparto() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Rutas de reparto', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Número o conductor', onChangeText: (e) => setBuscar(e.nativeEvent.text) } }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeArmar ? { icono: 'plus', etiqueta: 'Crear ruta', onPress: () => router.push('/pedido/ruta/nueva') } : null} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
@@ -139,11 +139,6 @@ export default function RutasDeReparto() {
         {activas.map((r) => <TarjetaRuta key={r.id} ruta={r} yo={user?.id} />)}
         {completadas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32, marginTop: 8 }}>Completadas</Text> : null}
         {completadas.map((r) => <TarjetaRuta key={r.id} ruta={r} yo={user?.id} />)}
-        {puedeArmar ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Crear ruta" borde onPress={() => router.push('/pedido/ruta/nueva')} />
-          </View>
-        ) : null}
       </ScrollView>
     </>
   );

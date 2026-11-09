@@ -15,7 +15,7 @@
 // Historias`), Banners (`Banners`), Reservas de todas las salas (`Reservas`,
 // con `ofertas_clientes` editar) y Pre-registros.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -28,7 +28,7 @@ import Segmentos from '../componentes/Segmentos';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -109,7 +109,7 @@ export default function OfertasClientes() {
   const pestanas = [
     { id: 'ofertas', label: 'Ofertas' }, { id: 'historias', label: 'Historias' }, { id: 'banners', label: 'Banners' },
     ...(puedeEditar ? [{ id: 'reservas', label: 'Reservas' }] : []),
-    ...(veClientes ? [{ id: 'preregistros', label: pre?.length ? `Pre-registros · ${pre.length}` : 'Pre-registros' }] : []),
+    ...(veClientes ? [{ id: 'preregistros', label: 'Pre-registros' }] : []),
   ];
 
   const abrir = (o) => {
@@ -162,7 +162,7 @@ export default function OfertasClientes() {
           : pestana === 'banners' ? <Banners busqueda={texto.trim()} estado={estado} puedeEditar={puedeEditar} recarga={vuelta} />
           : pestana === 'reservas' ? <><Envio puedeEditar={puedeEditar} /><Reservas todas recarga={vuelta} /></>
           : pestana === 'ofertas' ? (
-          ofertas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+          ofertas == null ? <Cargando /> : (
             <>
               <FilaDeKpis>
                 <Kpi icono="Smartphone" rotulo="En la app" valor={String(cuenta('vigente'))} color={MARCA.verde} apoyo="hoy la ve el cliente" onPress={() => setEstado(estado === 'vigente' ? 'todas' : 'vigente')} />
@@ -204,12 +204,12 @@ export default function OfertasClientes() {
                   </Pressable>
                 );
               })}
-              {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin ofertas con ese filtro</Text> : null}
+              {!visibles.length ? <Vacio>Sin ofertas con ese filtro</Vacio> : null}
               {puedeEditar && visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada una oferta para publicarla, retirarla o borrarla.</Text> : null}
             </>
           )
         ) : (
-          pre == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+          pre == null ? <Cargando /> : (
             <>
               <View style={{ marginHorizontal: 16 }}>
                 <Aviso texto="Se unieron desde la app y todavía no tienen ficha. Cuando la sala los registra con el mismo documento y teléfono, la app los reconoce sola. Aquí quedan los que no coincidieron." />
@@ -221,7 +221,7 @@ export default function OfertasClientes() {
                 <Pressable key={p.id} disabled={!editaClientes}
                   onPress={() => { Haptics.selectionAsync().catch(() => {}); guardarPreregistro(p); router.push({ pathname: '/preregistro/[id]', params: { id: String(p.id) } }); }}
                   style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                  <Vidrio radio={18} interactivo>
+                  <Vidrio radio={20} interactivo>
                     <View style={{ padding: 14, gap: 4 }}>
                       <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{p.nombre}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[`Documento ${p.documento}`, `Tel. ${p.telefono}`].join(' · ')}</Text>
@@ -230,7 +230,7 @@ export default function OfertasClientes() {
                   </Vidrio>
                 </Pressable>
               ))}
-              {!preVisibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin pre-registros pendientes</Text> : null}
+              {!preVisibles.length ? <Vacio>Sin pre-registros pendientes</Vacio> : null}
             </>
           )
         )}

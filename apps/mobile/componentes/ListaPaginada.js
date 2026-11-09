@@ -25,7 +25,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, RefreshControl, Text, View, useWindowDimensions } from 'react-native';
 import { colorSistema } from './Formulario';
-import { BotonGrande } from './formulario/Piezas';
+import { BotonGrande, Cargando, Vacio } from './formulario/Piezas';
 
 /** Cuántas columnas caben con un ancho mínimo por tarjeta (1 en teléfono). */
 export function useColumnas(minAncho = 360, maximo = 3) {
@@ -37,7 +37,7 @@ export function useColumnas(minAncho = 360, maximo = 3) {
 export function ErrorConReintento({ mensaje, onReintentar }) {
   return (
     <View style={{ marginHorizontal: 16, marginTop: 24, gap: 12, alignItems: 'center' }}>
-      <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>No se pudo cargar</Text>
+      <Vacio>No se pudo cargar</Vacio>
       {mensaje ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>{mensaje}</Text> : null}
       {onReintentar ? <View style={{ alignSelf: 'stretch' }}><BotonGrande borde texto="Reintentar" onPress={onReintentar} /></View> : null}
     </View>
@@ -120,7 +120,7 @@ export default function ListaPaginada({
       )}
       keyExtractor={keyExtractor ?? ((f, i) => String(f?.id ?? i))}
       ListHeaderComponent={cabecera}
-      ListEmptyComponent={estado === 'cargando' ? <ActivityIndicator style={{ marginTop: 32 }} />
+      ListEmptyComponent={estado === 'cargando' ? <Cargando />
         : estado === 'error' ? <ErrorConReintento mensaje={error} onReintentar={() => { setEstado('cargando'); desdeCero(); }} />
           : <Text style={{ color: colorSistema.texto2, fontSize: 16, textAlign: 'center', marginTop: 40, marginHorizontal: 24 }}>{vacio}</Text>}
       ListFooterComponent={pie}

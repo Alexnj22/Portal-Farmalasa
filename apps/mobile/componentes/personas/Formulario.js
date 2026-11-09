@@ -12,7 +12,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import ConAurora from '../ConAurora';
 import { colorSistema } from '../Formulario';
 import { Campo, Opciones } from '../formulario/Piezas';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import Fecha from '../formulario/Fecha';
 import { hoySV } from '@nucleo/utils/fecha';
 import HojaDeEleccion from '../HojaDeEleccion';
@@ -55,7 +55,7 @@ export function Elegir({ rotulo, requerido, valor, opciones, onCambiar, vacio = 
       <Rotulo texto={rotulo} requerido={requerido} />
       <Pressable disabled={deshabilitado} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); setAbierta(true); }}
         style={({ pressed }) => ({ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, flexDirection: 'row', alignItems: 'center', gap: 8,
-          backgroundColor: 'rgba(127,127,127,0.16)', borderWidth: error ? 1 : 0, borderColor: MARCA.rojo, opacity: deshabilitado ? 0.5 : pressed ? 0.7 : 1 })}>
+          backgroundColor: FONDO_CONTROL, borderWidth: error ? 1 : 0, borderColor: MARCA.rojo, opacity: deshabilitado ? 0.5 : pressed ? 0.7 : 1 })}>
         <Text style={{ flex: 1, color: elegida ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>{elegida?.label ?? (vacio ?? 'Elegir…')}</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 16 }}>›</Text>
       </Pressable>
@@ -121,7 +121,7 @@ export function CampoFecha({ rotulo, requerido, valor, onCambiar, desde, hasta, 
           </>
         ) : (
           <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(hoySV()); }} hitSlop={8}
-            style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 10, justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)' }}>
+            style={{ minHeight: 40, paddingHorizontal: 14, borderRadius: 10, justifyContent: 'center', backgroundColor: FONDO_CONTROL }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 16 }}>Sin fecha · elegir</Text>
           </Pressable>
         )}

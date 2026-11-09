@@ -21,7 +21,7 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo } from '../../componentes/Progreso';
 
@@ -123,7 +123,7 @@ export default function ExtrasDelPedido() {
     } },
   ]);
 
-  if (renglones == null) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Llegó de más' }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (renglones == null) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Llegó de más' }} /><Cargando /></>;
 
   return (
     <>
@@ -158,10 +158,7 @@ export default function ExtrasDelPedido() {
                   <>
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                       {(opciones[e.erp_product_id] ?? []).map((o) => (
-                        <Pressable key={o.factor} onPress={() => editar(i, { fPres: o.factor })}
-                          style={{ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: e.fPres === o.factor ? MARCA.azulClaro : 'rgba(127,127,127,0.16)' }}>
-                          <Text style={{ color: e.fPres === o.factor ? '#fff' : colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{o.label}</Text>
-                        </Pressable>
+                        <Ficha key={o.factor} texto={o.label} activa={e.fPres === o.factor} color={MARCA.azulClaro} onPress={() => editar(i, { fPres: o.factor })} />
                       ))}
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

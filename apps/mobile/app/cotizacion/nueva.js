@@ -37,7 +37,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { cotizacionGuardada, guardarCotizaciones } from '../../componentes/cotizaciones/cache';
@@ -278,7 +278,7 @@ export default function NuevaCotizacion() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: edita ? 'Editar cotización' : 'Nueva cotización', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-        {cargando ? <ActivityIndicator style={{ marginTop: 40 }} /> : (
+        {cargando ? <Cargando /> : (
           <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}
             contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
             <Seccion titulo="Datos generales">

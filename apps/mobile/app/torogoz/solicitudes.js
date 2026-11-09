@@ -13,7 +13,7 @@
 // (corregirlo o deshacer la venta): las decide `resolverSolicitudDistribucion`,
 // la misma del portal, y la tarjeta dice qué pasa con el dinero.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -24,7 +24,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import Vidrio from '../../componentes/Vidrio';
@@ -59,7 +59,7 @@ function Tarjeta({ f, mia, puedeDecidir, destacada, ocupado, onDecidir }) {
   );
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22} tinte={destacada ? `${PETROLEO}40` : undefined}>
+      <Vidrio radio={20} tinte={destacada ? `${PETROLEO}40` : undefined}>
         <View style={{ padding: 14, gap: 10 }}>
           <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -207,12 +207,12 @@ export default function SolicitudesTorogoz() {
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <Segmentos activa={filtro} onCambiar={setFiltro}
-          opciones={[{ id: 'pendientes', label: pendientes ? `Por decidir · ${pendientes}` : 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />
+          opciones={[{ id: 'pendientes', label: 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />
         {!puedeDecidir ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Ves las que pediste. Las decide quien tiene permiso para aprobar solicitudes de Distribución.</Text>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas === null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {filas === null ? <Cargando /> : null}
         {visibles.map((f) => (
           <Tarjeta key={f.id} f={f} mia={!!user?.id && f.employee_id === user.id} puedeDecidir={puedeDecidir}
             destacada={!!solicitud && String(f.id) === String(solicitud)} ocupado={ocupado} onDecidir={decidir} />

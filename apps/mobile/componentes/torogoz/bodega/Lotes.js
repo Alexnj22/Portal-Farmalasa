@@ -6,7 +6,7 @@
 // Las cifras, el filtro y el costo salen del núcleo (`distribucionBodega`),
 // los mismos del portal. El costo sólo lo ve quien administra.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchCatalogo, fetchCuarentena } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';
@@ -17,7 +17,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { FiltrosActivos, MenuDeFiltros } from '../../Filtros';
 import { colorSistema } from '../../Formulario';
-import { Aviso } from '../../formulario/Piezas';
+import { Aviso, Cargando } from '../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { MARCA } from '../../inicio/marca';
 import Cuarentena from './Cuarentena';
@@ -99,7 +99,7 @@ export default function Lotes({ emisor, puedeVender, puedeConfigurar, buscar }) 
         <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>¿Hay en alguna sucursal? Ver existencias en las siete ›</Text>
       </Pressable>
 
-      {cargando ? <ActivityIndicator style={{ marginTop: 16 }} /> : filtrados.length === 0 ? (
+      {cargando ? <Cargando /> : filtrados.length === 0 ? (
         buscar || filtro
           ? <Vacio titulo="Sin resultados" texto="Ningún lote coincide con la búsqueda o el filtro." />
           : <Vacio titulo="Sin existencias" texto={puedeVender ? 'Registra lo que llega con «Entrada de lote» (el + de arriba).' : undefined} />

@@ -78,7 +78,7 @@ export default function ObjetosHuerfanos() {
           <Pressable key={f.id} onPress={() => elegir(f)} disabled={!puedeEditar} style={{ marginHorizontal: 16 }}
             accessibilityRole={puedeEditar ? 'button' : undefined} accessibilityLabel={`${f.title}, ${ESTADOS_HUERFANO[f.status] || f.status}`}>
             {({ pressed }) => (
-              <Vidrio radio={18} interactivo={puedeEditar}>
+              <Vidrio radio={20} interactivo={puedeEditar}>
                 <View style={{ padding: 14, gap: 4, transform: [{ scale: pressed ? 0.98 : 1 }], opacity: guardando === f.id ? 0.5 : 1 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{f.title}</Text>

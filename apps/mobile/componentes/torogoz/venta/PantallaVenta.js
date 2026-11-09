@@ -13,7 +13,7 @@
 // Rutas: `/torogoz/venta` (nueva; `?cliente=` y `?desde=` como en el portal)
 // y `/torogoz/venta/<pedido>` (finalizar o corregir una preventa).
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -25,7 +25,7 @@ import { presentacionesDe, precioDe } from '@nucleo/utils/distribucionPrecios';
 import { conCantidad } from '@nucleo/utils/distribucionVenta';
 import { BARRA_NATIVA } from '../../PilaDePestana';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../formulario/Piezas';
 import Segmentos from '../../Segmentos';
 import Vidrio from '../../Vidrio';
 import Escaner from '../../Escaner';
@@ -186,7 +186,7 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
   const opcionesPago = [...FORMA_PAGO, ...(s.tieneCredito ? [{ value: '13', label: `A crédito · ${cliente.plazo_dias} días` }] : [])];
 
   if (cargando) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} /><ActivityIndicator style={{ marginTop: 120 }} /></>);
+    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} /><Cargando /></>);
   }
 
   return (
@@ -350,7 +350,7 @@ export default function PantallaVenta({ pedidoId = null, desde = null, cliente: 
 
       {!errorCarga && lineas.length ? (
         <View style={{ position: 'absolute', left: 12, right: 12, bottom: Math.max(margen.bottom, 12) }}>
-          <Vidrio radio={26} interactivo>
+          <Vidrio radio={20} interactivo>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 10, paddingLeft: 18 }}>
               <View style={{ flex: 1 }}>
                 <Text style={{ color: colorSistema.texto2, fontSize: 12 }} numberOfLines={1}>

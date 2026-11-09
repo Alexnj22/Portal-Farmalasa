@@ -24,11 +24,10 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../../componentes/formulario/Piezas';
-import { MARCA } from '../../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
 import { volver } from '../../../componentes/volver';
 
-const PETROLEO = '#0f6e7d';
 const MOSTRAR = 30;
 
 export default function CargarCamion() {

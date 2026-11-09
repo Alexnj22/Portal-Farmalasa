@@ -13,10 +13,9 @@ import { encuadre, puntosValidos } from '@nucleo/utils/encuadreDelMapa';
 import { ROTULO_RESULTADO } from '@nucleo/utils/distribucionRutas';
 import { colorSistema } from '../../Formulario';
 import Vidrio from '../../Vidrio';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
-const colorDe = (c) => (c.estado === 'venta' ? MARCA.verde : c.estado === 'visitado' ? '#8E8E93' : PETROLEO);
+const colorDe = (c) => (c.estado === 'venta' ? MARCA.verde : c.estado === 'visitado' ? MARCA.gris : PETROLEO);
 const estadoDe = (c) => (c.estado === 'venta' ? 'Vendió' : c.estado === 'visitado' ? (ROTULO_RESULTADO[c.visita?.resultado] ?? 'Visitado') : 'Pendiente');
 
 function Pin({ n, color }) {

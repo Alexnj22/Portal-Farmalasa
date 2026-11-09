@@ -45,6 +45,7 @@ import { abrirAviso } from '../../../componentes/avisos/abrir';
 import Deslizable from '../../../componentes/Deslizable';
 import Tocable from '../../../componentes/Tocable';
 import { MARCA } from '../../../componentes/inicio/marca';
+import Segmentos from '../../../componentes/Segmentos';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -55,6 +56,15 @@ const DESHACER_MS = 4000;
 const ANDROID = Platform.OS === 'android';
 
 const animar = () => LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+
+// Para llegar rápido en una bandeja larga. Se clasifica por `type`; lo que no
+// cae en ninguna va a «Otros», así que un tipo nuevo nunca se pierde.
+const CATEGORIAS = [
+  { id: 'caja', label: 'Caja', es: /^(CORTE|CIERRE|DEPOSITO|BOLSA|CREDITO|CAJA|FALTANTE)/i },
+  { id: 'solicitudes', label: 'Solicitudes', es: /^(REQUEST|MINMAX|TRASLADO)/i },
+  { id: 'pedidos', label: 'Pedidos', es: /^(PEDIDO|COMPRA|RESERVA|ENCARGO|FACTURA)/i },
+];
+const categoriaDe = (n) => CATEGORIAS.find((c) => c.es.test(n.type ?? ''))?.id ?? 'otros';
 
 function Seccion({ texto, nota, derecha }) {
   return (
@@ -89,6 +99,7 @@ export default function Notificaciones() {
   const [ocultos, setOcultos] = useState(() => new Set());   // borrados que esperan el «Deshacer»
   const deshacer = useRef(null);                              // { ids, reloj }
   const [aviso, setAviso] = useState(null);                   // el texto del «Deshacer» a la vista
+  const [filtro, setFiltro] = useState('todas');
 
   const auth = useAuth();
   const { hasPermission } = auth;
@@ -208,6 +219,16 @@ export default function Notificaciones() {
 
   const vacio = !totalPorDecidir && !sinLeer.length && !decididos.length;
 
+  const presentes = new Set([...sinLeer, ...decididos].map(categoriaDe));
+  const opciones = [{ id: 'todas', label: 'Todas' },
+    ...CATEGORIAS.filter((c) => presentes.has(c.id)).map(({ id, label }) => ({ id, label })),
+    ...(presentes.has('otros') ? [{ id: 'otros', label: 'Otros' }] : [])];
+  // Si la categoría elegida se quedó sin avisos, se vuelve a «Todas».
+  const activa = opciones.some((o) => o.id === filtro) ? filtro : 'todas';
+  const pasa = (n) => activa === 'todas' || categoriaDe(n) === activa;
+  const sinLeerVista = sinLeer.filter(pasa);
+  const decididosVista = decididos.filter(pasa);
+
   return (
     <>
       <Stack.Screen options={{
@@ -218,9 +239,17 @@ export default function Notificaciones() {
         ) : undefined,
       }} />
       <ScrollView style={{ flex: 1 }}
-        contentContainerStyle={{ paddingVertical: 12, paddingBottom: aviso ? 96 : 24, gap: 12 }}
+        contentContainerStyle={{ paddingVertical: 12, paddingBottom: aviso ? 96 : 24, gap: 8 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
+
+        {opciones.length > 2 ? <Segmentos opciones={opciones} activa={activa} onCambiar={setFiltro} /> : null}
+
+        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
+          <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />
+          <Enlace texto="Comunicados" onPress={() => abrirRuta('/mis-avisos')} />
+          {visibles.length ? <Enlace texto="Borrar todas" onPress={borrarTodas} /> : null}
+        </View>
 
         {totalPorDecidir ? (
           <>
@@ -230,17 +259,17 @@ export default function Notificaciones() {
           </>
         ) : null}
 
-        {sinLeer.length ? (
+        {sinLeerVista.length ? (
           <>
-            <Seccion texto={`Sin leer · ${sinLeer.length}`} nota={totalPorDecidir ? null : 'Desliza a la izquierda para eliminar y a la derecha para marcar leído.'} />
-            {sinLeer.map((n) => tarjeta(n, { deslizar: true }))}
+            <Seccion texto={`Sin leer · ${sinLeerVista.length}`} nota={totalPorDecidir ? null : 'Desliza a la izquierda para eliminar y a la derecha para marcar leído.'} />
+            {sinLeerVista.map((n) => tarjeta(n, { deslizar: true }))}
           </>
         ) : null}
 
-        {decididos.length ? (
+        {decididosVista.length ? (
           <>
             <Seccion texto="Ya decididas" />
-            {decididos.map((n) => tarjeta(n, { deslizar: true }))}
+            {decididosVista.map((n) => tarjeta(n, { deslizar: true }))}
           </>
         ) : null}
 
@@ -250,12 +279,6 @@ export default function Notificaciones() {
             <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>No tienes nada por decidir ni avisos sin leer.</Text>
           </View>
         ) : null}
-
-        <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20, paddingTop: 8 }}>
-          <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />
-          <Enlace texto="Comunicados" onPress={() => abrirRuta('/mis-avisos')} />
-          {visibles.length ? <Enlace texto="Borrar todas" onPress={borrarTodas} /> : null}
-        </View>
       </ScrollView>
 
       {aviso ? (

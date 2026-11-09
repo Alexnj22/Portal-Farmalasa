@@ -8,7 +8,7 @@
 // existe (cuadrar contra el estado de cuenta, seguir el remanente).
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -19,7 +19,7 @@ import { rangoDeDiasDelDeposito, totalesDeDepositos } from '@nucleo/utils/deposi
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -62,7 +62,7 @@ export default function DepositosBanco() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
         <View style={{ marginHorizontal: 16, gap: 10 }}>
-          {lista == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : !lista.length ? (
+          {lista == null ? <Cargando /> : !lista.length ? (
             <Aviso texto="Sin depósitos en estas fechas." />
           ) : (<>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4, fontVariant: ['tabular-nums'] }}>
@@ -76,7 +76,7 @@ export default function DepositosBanco() {
             return (
               <Pressable key={d.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarDeposito(d); router.push({ pathname: '/deposito/[id]', params: { id: String(d.id) } }); }}>
                 {({ pressed }) => (
-                  <Vidrio radio={18} interactivo>
+                  <Vidrio radio={20} interactivo>
                     <View style={{ padding: 14, gap: 6, opacity: anulado ? 0.55 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] }}>
                       <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{d.folio}</Text>

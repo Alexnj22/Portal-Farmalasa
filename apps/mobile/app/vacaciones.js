@@ -14,7 +14,7 @@
 // planificado o confirmado, Editar, Confirmar y Cancelar — con las mismas
 // funciones del portal (`updateVacationPlanStatus`, `deleteVacationPlan`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -27,7 +27,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { fallo, listo } from '../componentes/Progreso';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -153,10 +153,11 @@ export default function Vacaciones() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Asignar vacaciones', onPress: () => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/vacaciones/plan', params: { anio: String(anio) } }); } } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Por mes' }, { id: 'anio', label: 'El año' }]} />
         <FiltrosActivos grupos={grupos} />
         <FilaDeKpis>
           <Kpi icono="Palmtree" rotulo={`Planes ${anio}`} valor={String(delAnio.filter((p) => p.status !== 'CANCELLED').length)} color={MARCA.verde}
@@ -177,10 +178,9 @@ export default function Vacaciones() {
         ) : null}
         <SolicitudesDeCambio cambios={(cambios || []).filter((c) => c.status === 'PENDING')} puedeDecidir={hasPermission('vacation_plan', 'can_edit')}
           procesar={processChangeRequest} aprobadorId={user?.id} alTerminar={cargar} />
-        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Por mes' }, { id: 'anio', label: 'El año' }]} />
         {vista === 'anio' ? <GanttDelAnio planes={visibles} anio={anio} colorDe={(st) => COLOR_PLAN[st] ?? colorSistema.texto2} /> : null}
         {aproximado && texto ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran nombres parecidos." /></View> : null}
-        {cargandoPlanes && !delAnio.length ? <ActivityIndicator style={{ marginTop: 24 }} /> : vista === 'anio' ? null : porMes.map(([mes, lista]) => (
+        {cargandoPlanes && !delAnio.length ? <Cargando /> : vista === 'anio' ? null : porMes.map(([mes, lista]) => (
           <View key={mes} style={{ gap: 10 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
               {`${NOMBRES_DE_MES[mes - 1]} · ${lista.length}`}
@@ -221,15 +221,13 @@ export default function Vacaciones() {
           </View>
         ))}
         {!cargandoPlanes && !visibles.length ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {texto ? 'Nadie con esa búsqueda' : `Sin vacaciones planificadas en ${anio}`}
-          </Text>
+          </Vacio>
         ) : null}
         {puedeEditar ? (
           <View style={{ marginHorizontal: 16, marginTop: 8, gap: 8 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionado un plan para editarlo, confirmarlo o cancelarlo.</Text>
-            <BotonGrande texto="Asignar vacaciones" color={MARCA.azul}
-              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/vacaciones/plan', params: { anio: String(anio) } }); }} />
           </View>
         ) : null}
       </ScrollView>

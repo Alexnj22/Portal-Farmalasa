@@ -9,7 +9,7 @@
 // Si la promoción baja el precio en la venta, al agregar o quitar se pregunta
 // si el descuento también cambia. Las mismas funciones del portal.
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, RefreshControl, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { volver } from '../../componentes/volver';
 import * as Haptics from 'expo-haptics';
@@ -24,7 +24,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import AgregarProductos from '../../componentes/promociones/AgregarProductos';
@@ -231,7 +231,7 @@ export default function EditarPromocionProducto() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error ? <Aviso tono="freno" texto={error} /> : null}
-          {!promo && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+          {!promo && !error ? <Cargando /> : null}
           {conDescuento ? <Aviso texto="Esta promoción también baja el precio en la venta." /> : null}
           {renglones.map((r) => (
             <Seccion key={`${r.id}-${r.lote_total}-${r.fin}-${r.bono_vendedor}`}>

@@ -12,7 +12,7 @@
 // Las que tienen receta por revisar abren `reserva-receta` (aprobar, pedir
 // otra foto o rechazar), como el «Ver receta» del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Linking, Text, View } from 'react-native';
+import { Alert, Linking, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import {
@@ -22,7 +22,7 @@ import { pilaDelCliente, plazoDeRetiro, reservasPendientes, reservasPorCodigo, r
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, Campo } from '../formulario/Piezas';
+import { Aviso, Campo, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
@@ -98,7 +98,7 @@ export default function Reservas({ sala, todas = false, recarga }) {
   const ahora = Date.now();
   const verReceta = (r) => router.push({ pathname: '/reserva-receta', params: todas ? { id: String(r.id), todas: '1' } : { id: String(r.id), sala: String(sala) } });
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (filas == null) return <Cargando />;
   if (!sala && !todas) return <View style={{ marginHorizontal: 16 }}><Aviso texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /></View>;
   return (
     <>
@@ -129,7 +129,7 @@ export default function Reservas({ sala, todas = false, recarga }) {
         const urgente = enRevision && r.receta_estado === 'pendiente' && horas >= HORAS_RECETA_URGENTE;
         return (
         <View key={r.id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18} tinte={urgente ? 'rgba(240,68,56,0.12)' : r.estado === 'pendiente' || enRevision ? 'rgba(247,144,9,0.12)' : undefined}>
+          <Vidrio radio={20} tinte={urgente ? 'rgba(240,68,56,0.12)' : r.estado === 'pendiente' || enRevision ? 'rgba(247,144,9,0.12)' : undefined}>
             <View style={{ padding: 12, gap: 6 }}>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>{`${r.cantidad} × ${r.producto}`}</Text>
@@ -174,7 +174,7 @@ export default function Reservas({ sala, todas = false, recarga }) {
         </View>
         );
       })}
-      {!filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin reservas: cuando un cliente aparte algo desde la app, aparece aquí</Text> : null}
+      {!filas.length ? <Vacio>Sin reservas: cuando un cliente aparte algo desde la app, aparece aquí</Vacio> : null}
     </>
   );
 }

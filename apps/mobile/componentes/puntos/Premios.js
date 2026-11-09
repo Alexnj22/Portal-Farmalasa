@@ -13,7 +13,7 @@
 // Quién puede qué lo decide la base: administrar es de quien edita los
 // niveles; entregar y recibir, de la sala propia.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -25,7 +25,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Interruptor from '../Interruptor';
 import Vidrio from '../Vidrio';
@@ -35,7 +35,7 @@ import { fallo, listo, trabajando } from '../Progreso';
 import { guardar as dejar } from '../comercial/elegido';
 import { entregarPremioPorCodigo } from './entregarPremio';
 
-const COLOR = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde, neutral: '#8E8E93' };
+const COLOR = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde, neutral: MARCA.gris };
 const fechaCorta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 
 const Titulo = ({ children }) => (
@@ -82,13 +82,13 @@ function PorEntregar({ busqueda, puedeAdministrar, miSala, nombreSala, salas }) 
         <Interruptor value={entregados} onValueChange={setEntregados} accessibilityLabel="Ver entregados" />
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {premios == null ? <ActivityIndicator style={{ marginTop: 12 }} /> : !premios.length ? (
+      {premios == null ? <Cargando /> : !premios.length ? (
         <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>{buscar ? 'Ningún premio coincide.' : 'No hay premios por entregar.'}</Text>
       ) : premios.map((p) => {
         const e = ESTADO_DE_PREMIO[p.estado] ?? ESTADO_DE_PREMIO.POR_RETIRAR;
         return (
           <View key={p.id} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={2}>
@@ -153,7 +153,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', marginHorizontal: 32 }}>Pedidos por clientes</Text>
           {(panel.pedidos ?? []).map((x) => (
             <View key={`${x.promocional_id}-${x.hacia}`} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15 }}>
                     <Text style={{ fontWeight: '700' }}>{`${x.cantidad} × ${x.nombre}`}</Text>
@@ -174,7 +174,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', marginHorizontal: 32 }}>En camino</Text>
           {envios.map((v) => (
             <View key={v.id} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 15 }}>
                     <Text style={{ fontWeight: '700' }}>{`${v.cantidad} × ${v.nombre}`}</Text>
@@ -194,7 +194,7 @@ function Regalos({ puedeAdministrar, miSala, nombreSala }) {
         const exist = Object.entries(x.existencias ?? {});
         return (
           <View key={x.id} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, gap: 5 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{x.nombre}</Text>

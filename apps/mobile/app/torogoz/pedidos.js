@@ -25,13 +25,13 @@ import Vidrio from '../../componentes/Vidrio';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import { Esqueleto } from '../../componentes/inicio/Widget';
 import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
 import Etiqueta from '../../componentes/torogoz/rutas/Etiqueta';
 import { recordarPedido } from '../../componentes/torogoz/pedidos/elegido';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
-const PETROLEO = '#0f6e7d';
 const POR_PAGINA = 40;
 const OPCIONES = VISTAS_PEDIDOS.map((v) => ({ id: v.key, label: v.label }));
 
@@ -43,7 +43,7 @@ function FilaPedido({ p }) {
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarPedido(p); router.push(`/torogoz/pedido/${p.id}`); }}
       accessibilityRole="button" accessibilityLabel={`Pedido ${p.id} de ${p.dist_clientes?.nombre ?? ''}`}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.985 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
             <View style={{ flex: 1, gap: 2 }}>
@@ -107,21 +107,18 @@ export default function TorogozPedidos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: false,
+        ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: true,
         headerSearchBarOptions: {
           placeholder: 'Cliente o número', hideWhenScrolling: false,
           onChangeText: (e) => { setTexto(e.nativeEvent.text); setCuantos(POR_PAGINA); }, onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      <MenuDeFiltros grupos={[]} extra={puedeVender ? { icono: 'plus', etiqueta: 'Nueva venta', onPress: () => router.push('/torogoz/venta') } : null} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos opciones={OPCIONES} activa={vista} onCambiar={(x) => { setCuantos(POR_PAGINA); router.setParams({ vista: x }); }} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        {puedeVender ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Nueva venta" color={PETROLEO} onPress={() => router.push('/torogoz/venta')} />
-          </View>
-        ) : null}
         <FilaDeKpis>
           <Kpi icono="ClipboardList" rotulo="Pendientes" color={PETROLEO} valor={v(stats.porFacturar)} apoyo="Preventas por finalizar"
             onPress={() => router.setParams({ vista: 'pendientes' })} />
@@ -134,9 +131,8 @@ export default function TorogozPedidos() {
         <FilaDeKpis>
           <Kpi icono="Receipt" rotulo="Sin comprobante" color={MARCA.ambar} pide={sinComprobante > 0} valor={v(sinComprobante)} apoyo="Tarjeta, transferencia o cheque" />
         </FilaDeKpis>
-        <Segmentos opciones={OPCIONES} activa={vista} onCambiar={(x) => { setCuantos(POR_PAGINA); router.setParams({ vista: x }); }} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {cargando ? <View style={{ marginHorizontal: 16 }}><Vidrio radio={18}><View style={{ padding: 14 }}><Esqueleto lineas={5} /></View></Vidrio></View> : null}
+        {cargando ? <View style={{ marginHorizontal: 16 }}><Vidrio radio={20}><View style={{ padding: 14 }}><Esqueleto lineas={5} /></View></Vidrio></View> : null}
         {pedidos && !filtrados.length ? (
           <View style={{ marginHorizontal: 16 }}>
             <Aviso texto={buscar ? 'Ningún pedido coincide con la búsqueda.' : vista === 'pendientes' ? 'Sin pendientes: todas las preventas están finalizadas.' : vista === 'anulados' ? 'Sin anulados.' : 'Sin pedidos finalizados.'} />

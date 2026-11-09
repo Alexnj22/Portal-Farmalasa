@@ -28,7 +28,7 @@ import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Avatar from '../../componentes/Avatar';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 
 const POR_PAGINA = 20;
 
@@ -99,7 +99,7 @@ export default function ProductoVendido() {
   const alFinal = useMasAlFinal(() => setCuantas((n) => n + POR_PAGINA), vistas.length > cuantas);
   const chip = (texto, activo, onPress, color = MARCA.azulClaro) => (
     <Pressable key={texto} onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); setCuantas(POR_PAGINA); }} hitSlop={4}
-      style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: activo ? `${color}40` : 'rgba(127,127,127,0.16)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+      style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: activo ? `${color}40` : FONDO_CONTROL, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <Text style={{ color: activo ? colorSistema.texto : colorSistema.texto2, fontSize: 13, fontWeight: activo ? '700' : '500' }}>{texto}</Text>
     </Pressable>
   );

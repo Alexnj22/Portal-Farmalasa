@@ -11,7 +11,7 @@
 // con esta plantilla»), las tarjetas Borradores / Por aprobar / Aprobadas /
 // En campo y el filtro por estado dentro de cada grupo.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +22,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -32,7 +32,6 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 
 export default function EncuestasClientes() {
   const { hasPermission } = useAuth();
-  const puedeAprobar = hasPermission('encuestas_clientes', 'can_approve');
   const puedeEditar = hasPermission('encuestas_clientes', 'can_edit');
   // «Nueva encuesta»: en blanco o desde una plantilla, encuesta o plantilla.
   const nueva = () => router.push('/encuesta-cliente/nueva');
@@ -52,7 +51,6 @@ export default function EncuestasClientes() {
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
 
   const reales = useMemo(() => (encuestas || []).filter((e) => !e.es_plantilla), [encuestas]);
-  const cuenta = (g) => reales.filter((e) => GRUPOS[g].includes(e.estado)).length;
   const porAprobar = reales.filter((e) => e.estado === 'en_revision').length;
   const plantillas = grupo === 'plantillas';
   const filas = (encuestas || [])
@@ -73,10 +71,17 @@ export default function EncuestasClientes() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nueva encuesta', onPress: nueva } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={grupo} onCambiar={cambiarGrupo} opciones={[
+          { id: 'diseno', label: 'En diseño' },
+          { id: 'campo', label: 'En campo' },
+          { id: 'cerradas', label: 'Cerradas' },
+          { id: 'plantillas', label: 'Plantillas' },
+        ]} />
+        <FiltrosActivos grupos={grupos} />
         {encuestas ? (
           <>
             <FilaDeKpis>
@@ -89,20 +94,13 @@ export default function EncuestasClientes() {
             </FilaDeKpis>
           </>
         ) : null}
-        <Segmentos activa={grupo} onCambiar={cambiarGrupo} opciones={[
-          { id: 'diseno', label: puedeAprobar && porAprobar ? `En diseño · ${porAprobar}` : 'En diseño' },
-          { id: 'campo', label: encuestas ? `En campo · ${cuenta('campo')}` : 'En campo' },
-          { id: 'cerradas', label: 'Cerradas' },
-          { id: 'plantillas', label: 'Plantillas' },
-        ]} />
-        <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {encuestas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : filas.map((e) => {
+        {encuestas == null ? <Cargando /> : filas.map((e) => {
           const est = estadoDe(e.estado);
           return (
             <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/encuesta-cliente/[id]', params: { id: String(e.id) } }); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={18} interactivo>
+              <Vidrio radio={20} interactivo>
                 <View style={{ padding: 12, gap: 5 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={2}>{`${e.nombre}${e.version > 1 ? ` · v${e.version}` : ''}`}</Text>
@@ -118,12 +116,7 @@ export default function EncuestasClientes() {
             </Pressable>
           );
         })}
-        {encuestas && !filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{fEstado !== 'todos' || texto.trim() ? 'Sin encuestas con ese filtro' : plantillas ? 'Sin plantillas' : grupo === 'campo' ? 'Ninguna encuesta en campo' : grupo === 'cerradas' ? 'Ninguna cerrada todavía' : 'Ninguna en diseño'}</Text> : null}
-        {puedeEditar ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Nueva encuesta" onPress={nueva} />
-          </View>
-        ) : null}
+        {encuestas && !filas.length ? <Vacio>{fEstado !== 'todos' || texto.trim() ? 'Sin encuestas con ese filtro' : plantillas ? 'Sin plantillas' : grupo === 'campo' ? 'Ninguna encuesta en campo' : grupo === 'cerradas' ? 'Ninguna cerrada todavía' : 'Ninguna en diseño'}</Vacio> : null}
       </ScrollView>
     </>
   );

@@ -63,7 +63,7 @@ export default function TarjetaDeReserva({ r, verTodas, marcas = null, acciones 
 
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={18} tinte={tinte ?? (estado.tono === 'danger' ? 'rgba(240,68,56,0.12)' : undefined)}>
+      <Vidrio radio={20} tinte={tinte ?? (estado.tono === 'danger' ? 'rgba(240,68,56,0.12)' : undefined)}>
         <View style={{ opacity: ocupada ? 0.5 : 1 }}>
           <Pressable onPress={() => onAbrir?.(r)} accessibilityRole="button" accessibilityLabel={`Ver la reserva ${codigo}`}
             style={({ pressed }) => ({ padding: 12, gap: 10, opacity: pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.99 : 1 }] })}>

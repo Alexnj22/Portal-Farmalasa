@@ -78,7 +78,7 @@ function Secciones() {
       {SECCIONES.map((x) => (
         <Pressable key={x.ruta} style={({ pressed }) => ({ flex: 1, transform: [{ scale: pressed ? 0.96 : 1 }] })}
           onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(x.ruta); }}>
-          <Vidrio radio={18} interactivo>
+          <Vidrio radio={20} interactivo>
             <View style={{ alignItems: 'center', gap: 6, paddingVertical: 12 }}>
               <Chip icono={x.icono} color={x.color} tamano={32} />
               <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{x.titulo}</Text>

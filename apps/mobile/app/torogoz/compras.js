@@ -5,7 +5,7 @@
 // búsqueda por proveedor o número, y para quien configura «Nueva compra» y
 // «Proveedores». Las cuentas salen del núcleo.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -18,7 +18,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -26,6 +26,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { PETROLEO, useEmisor } from '../../componentes/torogoz/comercial/Piezas';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
+import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const POR_PAGINA = 40;
@@ -74,9 +75,12 @@ export default function ComprasTorogoz() {
         headerSearchBarOptions: { placeholder: 'Proveedor o número', hideWhenScrolling: false,
           onChangeText: (e) => { setCuantos(POR_PAGINA); setBuscar(e.nativeEvent.text); }, onCancelButtonPress: () => setBuscar('') },
       }} />
+      <MenuDeFiltros grupos={[]} extra={puedeConfigurar && emisor ? { icono: 'plus', etiqueta: 'Nueva compra', onPress: () => router.push({ pathname: '/torogoz/compra/[id]', params: { id: 'nueva' } }) } : null} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={vista} onCambiar={(v) => { setCuantos(POR_PAGINA); setVista(v); }}
+          opciones={VISTAS_COMPRAS.map((v) => ({ id: v.key, label: v.label }))} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FilaDeKpis>
@@ -90,15 +94,8 @@ export default function ComprasTorogoz() {
           <Kpi icono="Truck" rotulo="Proveedores" valor={formatQty(activos)} color={MARCA.violetaClaro} apoyo="activos"
             onPress={puedeConfigurar ? () => router.push('/torogoz/proveedores') : undefined} />
         </FilaDeKpis>
-        {puedeConfigurar && emisor ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Nueva compra" color={PETROLEO} onPress={() => router.push({ pathname: '/torogoz/compra/[id]', params: { id: 'nueva' } })} />
-          </View>
-        ) : null}
-        <Segmentos activa={vista} onCambiar={(v) => { setCuantos(POR_PAGINA); setVista(v); }}
-          opciones={VISTAS_COMPRAS.map((v) => ({ id: v.key, label: v.label }))} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {compras === null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {compras === null ? <Cargando /> : null}
         {filtradas.slice(0, cuantos).map((c) => (
           <Pressable key={c.id} accessibilityRole="button" accessibilityLabel={`Compra ${c.numero}`}
             onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/torogoz/compra/[id]', params: { id: String(c.id) } }); }}

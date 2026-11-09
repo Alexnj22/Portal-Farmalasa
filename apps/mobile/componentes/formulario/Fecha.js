@@ -7,7 +7,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { Host, DateTimePicker } from '@expo/ui/jetpack-compose';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 
 const aFecha = (s) => (s ? new Date(`${s}T12:00:00`) : undefined);
 const aTexto = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -19,7 +19,7 @@ export default function Fecha({ valor, onCambiar, desde, hasta }) {
     <>
       <Pressable onPress={() => { setElegida(null); setAbierto(true); }} accessibilityRole="button"
         style={({ pressed }) => ({ minHeight: 44, minWidth: 130, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 12,
-          backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.7 : 1 })}>
+          backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.7 : 1 })}>
         <Text style={{ color: valor ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>
           {valor ? fechaTexto(valor, { day: 'numeric', month: 'short', year: 'numeric' }) : 'Elegir fecha'}
         </Text>

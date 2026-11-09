@@ -6,7 +6,7 @@
 // El cruce lo hace la base (`get_inyecciones_aplicadas`); resumen, filtro y CSV
 // salen del núcleo (`inyeccionesPorCobrar`), los mismos que usa el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { desvincularCobro } from '@nucleo/data/inyecciones';
@@ -21,7 +21,7 @@ import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../Segmentos';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Avatar from '../Avatar';
@@ -93,9 +93,10 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
 
   const asignar = (c) => { guardar('inyeccion-cobro', c); router.push('/inyeccion-asignar'); };
 
-  if (datos == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (datos == null) return <Cargando />;
   return (
     <>
+      <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'con', label: 'Con cobro' }, { id: 'sin', label: 'Sin cobro' }]} />
       <FilaDeKpis>
         <Kpi icono="ClipboardList" rotulo="Ventas con inyección" valor={String(r.ventas)} color={MARCA.azul} apoyo="facturas del período" />
         <Kpi icono="CheckCircle2" rotulo="Con cobro" valor={String(r.con)} color={MARCA.verde} apoyo={`${formatPct(r.pct)} de las ventas`}
@@ -106,7 +107,6 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
           onPress={() => setEstado((e) => (e === 'sin' ? 'todas' : 'sin'))} />
         <Kpi icono="HandCoins" rotulo="Cobros sin venta" valor={String(r.sueltos)} color={MARCA.azulClaro} apoyo={`${formatMoney(r.montoSueltos)} cobrados`} />
       </FilaDeKpis>
-      <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'con', label: 'Con cobro' }, { id: 'sin', label: 'Sin cobro' }]} />
       <View style={{ marginHorizontal: 16, gap: 6 }}>
         {fini < DESDE_EL_PORTAL ? <Aviso tono="cuidado" texto="Antes del 3 de septiembre la aplicación no se registraba en el portal: las ventas anteriores a esa fecha aparecen «sin cobro» aunque se hayan cobrado." /> : null}
         {error ? <Aviso tono="freno" texto={error} /> : null}
@@ -116,7 +116,7 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
       {vendedores.length ? (
         <View style={{ marginHorizontal: 16 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginLeft: 4, marginBottom: 6 }}>Por vendedor</Text>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 10 }}>
               {vendedores.map((v) => (
                 <View key={v.cod} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -143,7 +143,7 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
       </View>
       {filtradas.slice(0, cuantas).map((v) => (
         <View key={v.id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 4 }}>
               <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{v.cliente || 'Sin nombre'}</Text>
@@ -175,9 +175,9 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
         <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver ${Math.min(PAGINA, filtradas.length - cuantas)} más`} borde color={MARCA.azulClaro} onPress={() => setCuantas((n) => n + PAGINA)} /></View>
       ) : null}
       {!filtradas.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>
+        <Vacio>
           {estado === 'todas' ? 'Sin ventas de inyecciones en este período' : 'Ninguna venta con ese filtro'}
-        </Text>
+        </Vacio>
       ) : null}
 
       {sueltos.length ? (
@@ -185,7 +185,7 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>Cobros de aplicación sin venta</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>No hay una venta de inyección cerca de su hora. Casi siempre es alguien que trajo su inyección o la compró otro día.</Text>
           {sueltos.map((c) => (
-            <Vidrio key={c.id} radio={18}>
+            <Vidrio key={c.id} radio={20}>
               <View style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={2}>{c.concepto}</Text>

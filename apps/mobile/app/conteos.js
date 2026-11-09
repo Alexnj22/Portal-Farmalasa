@@ -10,7 +10,7 @@
 // quien ve todas, y eliminar un conteo manteniéndolo presionado — con el
 // permiso propio, o mientras no esté finalizado (la base lo vuelve a decidir).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -26,7 +26,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -107,7 +107,7 @@ export default function Conteos() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Conteos', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Sucursal o alcance', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') } }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={hasPermission('conteo_inventario', 'can_edit') ? { icono: 'plus', etiqueta: 'Nuevo conteo', onPress: () => { Haptics.selectionAsync().catch(() => {}); router.push('/conteo/nuevo'); } } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await fetchConteosInventario(); setRecargando(false); }} />}>
@@ -125,7 +125,7 @@ export default function Conteos() {
         </FilaDeKpis>
         <FiltrosActivos grupos={grupos} />
         {visibles.some(puedeBorrar) ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Mantén presionado un conteo para eliminarlo.</Text> : null}
-        {cargando && !mios.length ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((c) => {
+        {cargando && !mios.length ? <Cargando /> : visibles.map((c) => {
           const r = resumenes[c.id];
           const total = Number(r?.total_items ?? c.total_items) || 0;
           const contados = Number(r?.contados ?? c.total_contados) || 0;
@@ -169,15 +169,9 @@ export default function Conteos() {
           );
         })}
         {!cargando && !visibles.length ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {foco === 'TODOS' ? 'Sin conteos' : 'Nada pendiente aquí'}
-          </Text>
-        ) : null}
-        {hasPermission('conteo_inventario', 'can_edit') ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Nuevo conteo" color={MARCA.azul}
-              onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push('/conteo/nuevo'); }} />
-          </View>
+          </Vacio>
         ) : null}
       </ScrollView>
     </>

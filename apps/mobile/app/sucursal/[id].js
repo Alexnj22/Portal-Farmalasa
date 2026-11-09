@@ -38,10 +38,11 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
 import Segmentos from '../../componentes/Segmentos';
+import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Avatar from '../../componentes/Avatar';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Grafica from '../../componentes/metas/Graficas';
@@ -294,12 +295,14 @@ function Historial({ b, empleados }) {
   const porId = useMemo(() => new Map((empleados || []).map((e) => [String(e.id), e])), [empleados]);
   const todos = useMemo(() => historialConApertura(lista, b.opening_date || b.openingDate), [lista, b]);
   const visibles = dim === 'ALL' ? todos : todos.filter((i) => dimensionDelRegistro(i) === dim);
-  if (lista == null) return <ActivityIndicator style={{ marginTop: 20 }} />;
+  if (lista == null) return <Cargando />;
   if (error && !lista.length) return <Aviso texto={error} tono="freno" />;
+  const filtrosDeHistorial = [{ id: 'dim', titulo: 'Tema', activa: dim, porDefecto: 'ALL', onCambiar: (v) => { setDim(v); setCuantos(40); },
+    opciones: [{ id: 'ALL', label: 'Todo' }, ...DIMENSIONES_DEL_HISTORIAL.map((d) => ({ id: d.value, label: d.label }))] }];
   return (
     <>
-      <Segmentos activa={dim} onCambiar={(v) => { setDim(v); setCuantos(40); }}
-        opciones={[{ id: 'ALL', label: 'Todo' }, ...DIMENSIONES_DEL_HISTORIAL.map((d) => ({ id: d.value, label: d.label }))]} />
+      <MenuDeFiltros grupos={filtrosDeHistorial} />
+      <FiltrosActivos grupos={filtrosDeHistorial} />
       {visibles.slice(0, cuantos).map((item, i) => {
         const l = lecturaDelRegistro(item);
         const persona = l.actor ? (porId.get(String(l.actor.id)) ?? porNombre.get(String(l.actor.name).toLowerCase()) ?? { name: l.actor.name }) : null;
@@ -321,7 +324,7 @@ function Historial({ b, empleados }) {
           </Seccion>
         );
       })}
-      {visibles.length > cuantos ? <Boton texto={`Ver ${Math.min(40, visibles.length - cuantos)} más`} onPress={() => setCuantos((n) => n + 40)} /> : null}
+      {visibles.length > cuantos ? <BotonGrande texto={`Ver ${Math.min(40, visibles.length - cuantos)} más`} borde color={MARCA.azulClaro} onPress={() => setCuantos((n) => n + 40)} /> : null}
       {!visibles.length ? <Aviso texto="Nada registrado en este grupo." /> : null}
     </>
   );

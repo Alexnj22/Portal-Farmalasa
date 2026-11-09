@@ -26,7 +26,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import Vidrio from '../../componentes/Vidrio';
 import { ErrorConReintento } from '../../componentes/ListaPaginada';
@@ -127,7 +127,7 @@ export default function Mayorista() {
           contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           {error && !cliente ? <ErrorConReintento mensaje={error} onReintentar={cargar} /> : null}
-          {!cliente && !error ? <ActivityIndicator style={{ marginTop: 32 }} /> : null}
+          {!cliente && !error ? <Cargando /> : null}
           {cliente ? (
             <>
               <View style={{ gap: 2 }}>

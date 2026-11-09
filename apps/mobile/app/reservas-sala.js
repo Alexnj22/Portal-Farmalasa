@@ -42,7 +42,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Seccion } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
-import Pestanas from '../componentes/inicio/Pestanas';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
@@ -186,15 +186,17 @@ export default function ReservasDeSala() {
     );
   };
 
+  const filtrosSala = todas && salasDeVenta.length ? [{ id: 'sala', titulo: 'Sala', activa: salaFija, porDefecto: 'todas', onCambiar: setSalaFija,
+    opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salasDeVenta.map((b) => ({ id: String(b.id), label: b.name }))] }] : [];
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reservas', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Código R-… o P-…', autoCapitalize: 'characters', hideWhenScrolling: false, onChangeText: (e) => setCodigo(e.nativeEvent.text), onCancelButtonPress: () => setCodigo('') } }} />
+      <MenuDeFiltros grupos={filtrosSala} />
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }} keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
-        {todas && salasDeVenta.length ? (
-          <Pestanas opciones={[{ id: 'todas', label: 'Todas' }, ...salasDeVenta.map((b) => ({ id: String(b.id), label: b.name }))]} activa={salaFija} onCambiar={setSalaFija} />
-        ) : null}
+        <FiltrosActivos grupos={filtrosSala} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
           {!sala && !verTodas ? 'Las reservas son de una sala de ventas.' : `${verTodas ? 'Todas las salas' : nombreSala}${recetas ? ` · ${recetas} ${recetas === 1 ? 'receta por revisar' : 'recetas por revisar'}` : ''}`}
         </Text>

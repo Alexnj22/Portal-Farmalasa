@@ -4,12 +4,12 @@
 // servidor. El costo sólo con `compras_ver_montos`. La app le pone el NOMBRE
 // al código (`fetchNombresDeProductos`): el portal sólo muestra el número.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { fetchNombresDeProductos, fetchProductPurchaseSummaryPage } from '@nucleo/data/compras';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../formulario/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 
@@ -46,7 +46,7 @@ export default function ProductosComprados({ busqueda, verMontos }) {
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {filas.map((r) => (
         <View key={r.erp_product_id} style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={18}>
+          <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 6 }}>
               <View style={{ flexDirection: 'row', gap: 8 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{nombres.get(String(r.erp_product_id)) ?? `Producto ${r.erp_product_id}`}</Text>
@@ -65,9 +65,9 @@ export default function ProductosComprados({ busqueda, verMontos }) {
           </Vidrio>
         </View>
       ))}
-      {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+      {cargando ? <Cargando /> : null}
       {!cargando && total > filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
-      {!cargando && !filas.length && !error ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin productos con historial de compras</Text> : null}
+      {!cargando && !filas.length && !error ? <Vacio>Sin productos con historial de compras</Vacio> : null}
     </View>
   );
 }

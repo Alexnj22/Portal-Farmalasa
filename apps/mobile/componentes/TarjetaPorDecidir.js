@@ -81,7 +81,7 @@ export default function TarjetaPorDecidir({ item, persona }) {
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); d.abrir(); }}
       android_ripple={ANDROID ? { color: 'rgba(127,127,127,0.20)', foreground: true } : undefined}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed && !ANDROID ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 9 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${MARCA.azulClaro}33`, alignItems: 'center', justifyContent: 'center' }}>

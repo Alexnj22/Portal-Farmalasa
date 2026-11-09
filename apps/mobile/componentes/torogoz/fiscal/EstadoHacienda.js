@@ -35,7 +35,7 @@ export default function EstadoHacienda({ documento, ocupado = false, puedeActuar
   const [texto, prop] = BOTON[r.accion] ?? [];
   const onPress = prop ? acciones[prop] : null;
   return (
-    <Vidrio radio={22} tinte={`${n.color}22`}>
+    <Vidrio radio={20} tinte={`${n.color}22`}>
       <View style={{ padding: 16, gap: 12 }}>
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
           <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: `${n.color}33`, alignItems: 'center', justifyContent: 'center' }}>

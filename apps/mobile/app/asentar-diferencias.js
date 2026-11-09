@@ -11,7 +11,7 @@
 // lo lleva: es dinero que alguien entregó; si estuvo mal, se anula desde el
 // faltante.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -24,7 +24,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { imprimirEnLaSala } from '../componentes/imprimir';
@@ -101,7 +101,7 @@ export default function AsentarDiferenciasApp() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           {!puede ? <Aviso tono="freno" texto="Anotar diferencias es de quien tiene el permiso de resolver cortes." />
-            : cargando && !grupos.length ? <ActivityIndicator style={{ marginTop: 40 }} />
+            : cargando && !grupos.length ? <Cargando />
               : !grupos.length ? <Aviso texto="No queda nada por anotar en el sistema." /> : (
                 <>
                   <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>

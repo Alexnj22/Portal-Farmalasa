@@ -26,7 +26,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pasos, Pildora, Panel, Fichas } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
@@ -46,7 +46,7 @@ const COLOR_ESTADO = { confirmado: MARCA.azulClaro, enviado: MARCA.violetaClaro,
 function Bloque({ titulo, children }) {
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ padding: 14, gap: 10 }}>
           {titulo ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{titulo}</Text> : null}
           {children}
@@ -130,7 +130,7 @@ export default function DetalleDePedido() {
   const quien = usePersonas(ids);
 
   const titulo = `Pedido #${row?.numero ?? numero ?? ''}`;
-  if (row === undefined) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo, headerLargeTitle: false }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (row === undefined) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo, headerLargeTitle: false }} /><Cargando /></>;
 
   const etapa = row ? etapaDeLaTarjeta(row) : null;
   const [rotuloEtapa, colorEtapa] = ETAPA[etapa] ?? [etapa, MARCA.azulClaro];

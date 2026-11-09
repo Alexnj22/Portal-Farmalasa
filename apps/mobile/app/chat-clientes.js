@@ -41,6 +41,7 @@ import { estrellas } from '@nucleo/utils/chatPersonal';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Encabezado from '../componentes/chat/Encabezado';
+import { Cargando } from '../componentes/formulario/Piezas';
 
 const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo }) {
   const sinLeer = Number(c.sin_leer_equipo) || 0;
@@ -52,7 +53,7 @@ const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo
         // Al apoyar el dedo se precarga el hilo: para cuando se suelta, ya está (`chatHilo`).
         onPressIn={() => precargarHilo(c.id)}
         onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarConversacion(c); router.push(`/chat-clientes/${c.id}`); }}>
-        <Vidrio radio={18}>
+        <Vidrio radio={20}>
           <View style={{ flexDirection: 'row', gap: 12, padding: 12 }}>
             <ClienteAvatar cliente={c.cliente} fotoUrl={c.foto_url} tamano={44} conversacion={c} />
             <View style={{ flex: 1, gap: 4 }}>
@@ -161,7 +162,7 @@ export default function ChatClientes() {
             <Encabezado estado={estadoFarmacia} veIncumplimientos={veIncumplimientos} puedeEditar={puedeResponder} />
             <Segmentos activa={filtro} onCambiar={setFiltro} opciones={opciones} />
             <FiltrosActivos grupos={grupos} />
-            {!conversaciones && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+            {!conversaciones && !error ? <Cargando /> : null}
           </View>
         )}
         ListFooterComponent={cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}

@@ -37,7 +37,7 @@ export default function PanelDelDia({ estado, ventas, veLosMontos, entregas, per
   const c = cuentaDelCajon({ estado, ventas });
 
   return (
-    <Vidrio radio={24}>
+    <Vidrio radio={20}>
       <View style={{ padding: 16, gap: 16 }}>
         {hayEntrega ? (
           <View style={{ paddingBottom: estado?.abierta ? 14 : 0, borderBottomWidth: estado?.abierta ? 0.5 : 0, borderBottomColor: colorSistema.separador }}>

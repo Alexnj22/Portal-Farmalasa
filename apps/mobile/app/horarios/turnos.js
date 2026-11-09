@@ -31,10 +31,10 @@ import Segmentos from '../../componentes/Segmentos';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Vacio } from '../../componentes/formulario/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import ConAurora from '../../componentes/ConAurora';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import Hora from '../../componentes/personas/Hora';
 import { fallo, listo } from '../../componentes/Progreso';
 
@@ -137,7 +137,7 @@ export default function Turnos() {
           const color = error ? MARCA.rojo : MARCA.violetaClaro;
           return (
             <View key={sg.key} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18} tinte={error ? 'rgba(240,68,56,0.12)' : 'rgba(105,41,196,0.14)'}>
+              <Vidrio radio={20} tinte={error ? 'rgba(240,68,56,0.12)' : 'rgba(105,41,196,0.14)'}>
                 <View style={{ padding: 14, gap: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ flex: 1, color, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>{error ? 'Falta un dato' : 'Sugerencia'}</Text>
@@ -162,7 +162,7 @@ export default function Turnos() {
         {grupos.map((g) => (
           <Pressable key={g.groupId} onPress={() => (pestana === 'activos' && puedeEditar ? abrirEditar(g) : menu(g))} onLongPress={() => menu(g)} delayLongPress={350}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
                 <View style={{ flex: 1, gap: 3 }}>
                   <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{g.name}</Text>
@@ -175,7 +175,7 @@ export default function Turnos() {
             </Vidrio>
           </Pressable>
         ))}
-        {!grupos.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 32 }}>{pestana === 'activos' ? 'El catálogo está vacío' : 'Ningún turno archivado'}</Text> : null}
+        {!grupos.length ? <Vacio>{pestana === 'activos' ? 'El catálogo está vacío' : 'Ningún turno archivado'}</Vacio> : null}
         {puedeEditar && grupos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center', marginHorizontal: 24 }}>Mantén presionado un turno para duplicarlo, archivarlo o reactivarlo.</Text> : null}
       </ScrollView>
 
@@ -191,7 +191,7 @@ export default function Turnos() {
               <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
                 <Seccion titulo="Nombre" pie={`Si lo dejas vacío se llama «${revision?.autoName}».`}>
                   <TextInput value={form.name} onChangeText={cambiar('name')} placeholder={revision?.autoName} placeholderTextColor={colorSistema.texto2} maxLength={60}
-                    style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+                    style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: FONDO_CONTROL }} />
                 </Seccion>
                 <Seccion titulo="Horas">
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', minHeight: 44 }}>

@@ -25,11 +25,10 @@ import { colorSistema } from '../../Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../formulario/Piezas';
 import { Pildora } from '../../avisos/Piezas';
 import Segmentos from '../../Segmentos';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 import { fallo, listo, trabajando } from '../../Progreso';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 const soloMonto = (v) => v.replace(',', '.').replace(/[^0-9.]/g, '');
 
 export default function CajaDelVendedor({ liq, fecha, esHoy, puedeAdministrar, onCambio }) {

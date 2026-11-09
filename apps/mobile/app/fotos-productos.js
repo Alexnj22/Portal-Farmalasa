@@ -32,7 +32,7 @@ import {
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha as FichaDeOpcion, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -79,7 +79,7 @@ export default function FotosProductos() {
   const [falta, setFalta] = useState('cualquiera');
   const [cola, setCola] = useState(null);
   const [elegido, setElegido] = useState(null);
-  const [q, setQ] = useState('');
+  const barraDeBusqueda = useRef(null);
   const [resultados, setResultados] = useState(null);
   const [resumen, setResumen] = useState(null);
   const saltados = useRef(new Set());
@@ -100,7 +100,6 @@ export default function FotosProductos() {
   useEffect(() => () => clearTimeout(espera.current), []);
 
   const buscar = (t) => {
-    setQ(t);
     clearTimeout(espera.current);
     if (t.trim().length < 2) { setResultados(null); return; }
     espera.current = setTimeout(() => {
@@ -136,17 +135,22 @@ export default function FotosProductos() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Fotos de productos' }} />
+      <Stack.Screen options={{
+        ...BARRA_NATIVA, title: 'Fotos de productos',
+        headerSearchBarOptions: {
+          ref: barraDeBusqueda, placeholder: 'Buscar un producto o su código', hideWhenScrolling: false,
+          onChangeText: (e) => buscar(e.nativeEvent.text), onCancelButtonPress: () => buscar(''),
+        },
+      }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
           {resumen ? `Faltan ${resumen.faltan_foto} fotos y ${resumen.faltan_principio} principios · hoy el equipo completó ${hoy}` : 'Cargando…'}
         </Text>
         <Segmentos opciones={FALTAS} activa={falta} onCambiar={(v) => { setElegido(null); setFalta(v); }} />
-        <Campo multiline={false} value={q} onChangeText={buscar} placeholder="Buscar un producto o su código" autoCorrect={false} returnKeyType="search" />
         {resultados ? (
           <Seccion titulo={resultados.length ? 'Elige el producto' : 'Sin resultados'}>
             {resultados.map((r, i) => (
-              <Pressable key={r.id} onPress={() => { setElegido(r); setResultados(null); setQ(''); }}
+              <Pressable key={r.id} onPress={() => { setElegido(r); setResultados(null); barraDeBusqueda.current?.clearText(); }}
                 style={({ pressed }) => ({ minHeight: 44, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.nombre}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[r.laboratorio, r.principio_activo].filter(Boolean).join(' · ') || 'Sin principio activo'}</Text>
@@ -155,7 +159,7 @@ export default function FotosProductos() {
           </Seccion>
         ) : null}
         {!puedeEditar ? <Aviso tono="freno" texto="Puedes ver la lista, pero no tienes permiso para guardar fotos ni principios." /> : null}
-        {cola == null && !elegido ? <ActivityIndicator style={{ marginTop: 24 }} /> : actual ? (
+        {cola == null && !elegido ? <Cargando /> : actual ? (
           <Ficha key={actual.id} producto={actual} puedeEditar={puedeEditar} nombres={nombres} quedan={elegido ? null : cola.length}
             onGuardado={() => { cargarResumen(); pasar(actual.id); }} onSaltar={() => pasar(actual.id, true)} />
         ) : (
@@ -234,7 +238,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
           <View style={{ width: 220, height: 220, borderRadius: 24, overflow: 'hidden', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
             borderWidth: vista ? 0 : 1.5, borderStyle: 'dashed', borderColor: colorSistema.separador }}>
             {vista ? <Image source={{ uri: vista }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : (
-              <Text style={{ color: '#8a8a8a', fontSize: 15, fontWeight: '600' }}>{puedeEditar ? 'Tomar foto' : 'Sin foto'}</Text>
+              <Text style={{ color: MARCA.gris, fontSize: 15, fontWeight: '600' }}>{puedeEditar ? 'Tomar foto' : 'Sin foto'}</Text>
             )}
           </View>
         </Pressable>
@@ -248,10 +252,8 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
       <Seccion titulo="No es un medicamento">
         <View style={{ flexDirection: 'row', gap: 8 }}>
           {PRINCIPIO_PRESETS.map((p) => (
-            <Pressable key={p} disabled={!puedeEditar} onPress={() => { setDeSrs(null); cambiar((e) => (e.preset === p ? { preset: null, items: [renglonVacio()] } : { preset: p, items: [] })); }}
-              style={{ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center', backgroundColor: ed.preset === p ? MARCA.violetaClaro : 'rgba(127,127,127,0.16)' }}>
-              <Text style={{ color: ed.preset === p ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{p}</Text>
-            </Pressable>
+            <FichaDeOpcion key={p} texto={p} activa={ed.preset === p} color={MARCA.violetaClaro} deshabilitada={!puedeEditar}
+              onPress={() => { setDeSrs(null); cambiar((e) => (e.preset === p ? { preset: null, items: [renglonVacio()] } : { preset: p, items: [] })); }} />
           ))}
         </View>
       </Seccion>
@@ -268,10 +270,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
                 {sugeridos.length ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                     {sugeridos.map((n) => (
-                      <Pressable key={n} onPress={() => { set(i, 'nombre', n); setEnfocado(null); }}
-                        style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 12, borderRadius: 18, justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.6 : 1 })}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{n}</Text>
-                      </Pressable>
+                      <FichaDeOpcion key={n} texto={n} onPress={() => { set(i, 'nombre', n); setEnfocado(null); }} />
                     ))}
                   </View>
                 ) : null}
@@ -282,10 +281,7 @@ function Ficha({ producto, puedeEditar, nombres, quedan, onGuardado, onSaltar })
                   </View>
                   <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, alignItems: 'center' }} style={{ flex: 1 }}>
                     {UNIDADES.map((u) => (
-                      <Pressable key={u} disabled={!puedeEditar} onPress={() => set(i, 'unidad', u)}
-                        style={{ minHeight: 40, paddingHorizontal: 12, borderRadius: 20, justifyContent: 'center', backgroundColor: p.unidad === u ? MARCA.azulClaro : 'rgba(127,127,127,0.16)' }}>
-                        <Text style={{ color: p.unidad === u ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '700' }}>{u}</Text>
-                      </Pressable>
+                      <FichaDeOpcion key={u} texto={u} activa={p.unidad === u} color={MARCA.azulClaro} deshabilitada={!puedeEditar} onPress={() => set(i, 'unidad', u)} />
                     ))}
                   </ScrollView>
                 </View>

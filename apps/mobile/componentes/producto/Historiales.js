@@ -43,7 +43,7 @@ export function HistorialDeCompras({ purchases, conCosto }) {
           {`Primera ${fecha(new Date(Math.min(...fechas)))} · última ${fecha(new Date(Math.max(...fechas)))} · ${filas.length} compra${filas.length === 1 ? '' : 's'}`}
         </Text>
       </View>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ paddingHorizontal: 14 }}>
           {visibles.map((r, i) => (
             <View key={i} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
@@ -71,7 +71,7 @@ export function HistorialDePrecios({ history, niveles }) {
   return (
     <View style={{ gap: 10 }}>
       {visibles.map((r, i) => (
-        <Vidrio key={`${r.id_presentacion}-${r.valid_from}-${i}`} radio={18}>
+        <Vidrio key={`${r.id_presentacion}-${r.valid_from}-${i}`} radio={20}>
           <View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', paddingVertical: 9 }}>
               <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.presentaciones?.tipo || '—'}</Text>
@@ -104,7 +104,7 @@ export function CambiosEnLaFicha({ prodLog }) {
   const visibles = todo ? filas : (delMes.length ? delMes : filas.slice(0, 5));
   return (
     <View style={{ gap: 8 }}>
-      <Vidrio radio={18} tinte={`${MARCA.ambar}14`}>
+      <Vidrio radio={20} tinte={`${MARCA.ambar}14`}>
         <View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
           {visibles.map((c, i) => (
             <View key={i} style={{ paddingVertical: 8, gap: 2, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>

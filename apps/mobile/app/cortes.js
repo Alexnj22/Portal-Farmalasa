@@ -19,7 +19,7 @@
 // Arriba de la lista, «Las cajas» (`FichasDeCaja`): quién abrió cada caja,
 // el cruce con su marcación, la venta del día y el efectivo del cajón.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -39,7 +39,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -80,7 +80,7 @@ function Tarjeta({ c, sala, conSala, conFecha, puedeResolver }) {
   return (
     <Pressable onPress={() => abrir(null)}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{encabezado}</Text>
@@ -196,10 +196,11 @@ export default function Cortes() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={estado} onCambiar={setEstado} opciones={ESTADOS} />
         <FiltrosActivos grupos={grupos} />
         {periodo === 'libre' ? (
           <View style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 10, gap: 8 }}>
                 <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>Del</Text>
                 <Fecha valor={libre.desde} hasta={hoySV()} onCambiar={(v) => setLibre((l) => ({ ...l, desde: v }))} />
@@ -239,14 +240,13 @@ export default function Cortes() {
             ) : null}
           </>
         ) : null}
-        <Segmentos activa={estado} onCambiar={setEstado} opciones={ESTADOS} />
         {error ? (
           <View style={{ marginHorizontal: 16, gap: 8 }}>
             <Aviso tono="freno" texto={`No se pudieron leer los cortes. ${error}`} />
             <BotonGrande texto="Reintentar" borde onPress={cargar} />
           </View>
         ) : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : error ? null : visibles.length ? (
+        {filas == null ? <Cargando /> : error ? null : visibles.length ? (
           <>
             {visibles.slice(0, cuantos).map((c) => (
               <Tarjeta key={c.id} c={c} sala={nombre(c.branch_id)} conSala={todas && !sala} conFecha={variosDias} puedeResolver={puedeResolver} />
@@ -259,9 +259,9 @@ export default function Cortes() {
           </>
         ) : (
           <View style={{ alignItems: 'center', paddingTop: 50, gap: 6, marginHorizontal: 24 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>
+            <Vacio>
               {texto.trim() ? 'Ningún corte con esa búsqueda' : estado === 'PENDIENTE' ? 'Nada por confirmar' : 'Sin cortes con estos filtros'}
-            </Text>
+            </Vacio>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Desliza hacia abajo para actualizar.</Text>
           </View>
         )}

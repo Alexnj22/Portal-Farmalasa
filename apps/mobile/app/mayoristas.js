@@ -11,7 +11,7 @@
 // decidirlos uno por uno; «cumplen», «con (4)/(5)» y «ver los no aprobados»
 // son filtros. Quién decidió va con su foto y nombre corto.
 import { memo, useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, RefreshControl, Text, View } from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ESTADOS, ORIGENES, PRECIOS, RANGOS, fetchHistorialMayoristas, fetchMayoristas } from '@nucleo/data/mayoristas';
@@ -24,7 +24,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -36,7 +36,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { recordarMayorista } from '../componentes/mayoristas/elegido';
 import Avatar from '../componentes/Avatar';
 
-const COLOR_ESTADO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro, neutral: '#8E8E93' };
+const COLOR_ESTADO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo, info: MARCA.azulClaro, neutral: MARCA.gris };
 const corta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' });
 
 const FilaCliente = memo(function FilaCliente({ f, tab, columnas }) {
@@ -45,7 +45,7 @@ const FilaCliente = memo(function FilaCliente({ f, tab, columnas }) {
     <View style={{ ...(columnas > 1 ? { flex: 1 / columnas } : { marginHorizontal: 16 }), marginTop: 10 }}>
       <Tocable accessibilityRole="button" accessibilityLabel={f.nombre}
         onPress={() => { Haptics.selectionAsync().catch(() => {}); recordarMayorista(f); router.push(`/mayorista/${f.customer_id}`); }}>
-        <Vidrio radio={18}>
+        <Vidrio radio={20}>
           <View style={{ padding: 14, gap: 6 }}>
             <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
               <View style={{ flex: 1, gap: 2 }}>
@@ -94,7 +94,7 @@ const FilaHistorial = memo(function FilaHistorial({ h, columnas }) {
   return (
     <View style={{ ...(columnas > 1 ? { flex: 1 / columnas } : { marginHorizontal: 16 }), marginTop: 10 }}>
       <Tocable accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push(`/mayorista/${h.customer_id}`); }}>
-        <Vidrio radio={18}>
+        <Vidrio radio={20}>
           <View style={{ padding: 14, gap: 3 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{h.customers?.name ?? '—'}</Text>
             <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${textoDeAccion(h)}${h.nota ? ` — «${h.nota}»` : ''}`}</Text>
@@ -174,7 +174,7 @@ export default function Mayoristas() {
         ListHeaderComponent={(
           <View style={{ gap: 12 }}>
             <Segmentos activa={tab} onCambiar={setTab} opciones={[
-              { id: 'solicitudes', label: pendientes ? `Solicitudes · ${pendientes}` : 'Solicitudes' },
+              { id: 'solicitudes', label: 'Solicitudes' },
               { id: 'candidatos', label: 'Candidatos' },
               { id: 'mayoristas', label: 'Mayoristas' },
               { id: 'historial', label: 'Historial' },
@@ -188,7 +188,7 @@ export default function Mayoristas() {
             {!cargando && tab !== 'historial' ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${lista.length} ${lista.length === 1 ? 'cliente' : 'clientes'}`}</Text>
             ) : null}
-            {cargando && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+            {cargando && !error ? <Cargando /> : null}
           </View>
         )}
         ListEmptyComponent={cargando ? null : error ? <ErrorConReintento mensaje={error} onReintentar={() => { setFilas(null); cargar(); }} /> : (

@@ -4,14 +4,14 @@
 // calcular el envío al reservar, así que lo que se guarda acá es lo que se
 // cobra. Se edita con `ofertas_clientes` editar (como el portal); sin él, se mira.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchAjustesEnvio, guardarAjustesEnvio } from '@nucleo/data/reservas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { BotonGrande, Campo, Seccion, Cargando } from '../formulario/Piezas';
 import Interruptor from '../Interruptor';
 import { fallo, listo } from '../Progreso';
 
@@ -26,7 +26,7 @@ export default function Envio({ puedeEditar }) {
       activo: !!d?.envio_activo, costo: String(d?.envio_costo ?? ''), gratisDesde: d?.envio_gratis_desde == null ? '' : String(d.envio_gratis_desde), nota: d?.envio_nota ?? '',
     })).catch(() => setCfg({ activo: false, costo: '', gratisDesde: '', nota: '' }));
   }, []);
-  if (!cfg) return <ActivityIndicator style={{ marginTop: 12 }} />;
+  if (!cfg) return <Cargando />;
   const costo = Number(cfg.costo);
   const valido = cfg.costo !== '' && costo >= 0 && (cfg.gratisDesde === '' || Number(cfg.gratisDesde) > 0);
   const cambiar = (k) => (v) => setCfg((x) => ({ ...x, [k]: v }));

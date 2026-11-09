@@ -18,7 +18,7 @@
 // «Pérd. <precio especial>», «cambios», «ND» (no devolutivo) y «Receta» —
 // que salen de `fetchIndicadoresDeCatalogo` (núcleo), lo mismo que el portal.
 import { memo, useCallback, useEffect, useState } from 'react';
-import { Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Image, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchIdsModificadosDesde, fetchIdsPorMargen, fetchIndicadoresDeCatalogo, fetchProductCounts, fetchProductsList } from '@nucleo/data/productos';
@@ -31,7 +31,7 @@ import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { Chip } from '../componentes/inicio/Widget';
 import Vidrio from '../componentes/Vidrio';
@@ -158,12 +158,22 @@ export default function Productos() {
   };
 
   const grupos = [
+    { id: 'foco', titulo: 'Ver', activa: foco, porDefecto: 'todos', onCambiar: setFoco,
+      opciones: [{ id: 'todos', label: 'Todo el catálogo' }, { id: 'nuevos', label: 'Nuevos del mes' }, { id: 'modificados', label: 'Modificados' },
+        ...(conCosto ? [{ id: 'perdida', label: 'En pérdida' }, { id: 'bajo', label: 'Margen bajo' }] : [])] },
     { id: 'lab', titulo: 'Laboratorio', activa: lab, porDefecto: 'todos', onCambiar: setLab,
       opciones: [{ id: 'todos', label: 'Todos' }, ...labs] },
     { id: 'categoria', titulo: 'Categoría', activa: categoria, porDefecto: 'todas', onCambiar: setCategoria,
       opciones: [{ id: 'todas', label: 'Todas' }, ...categorias.map((c) => ({ id: c, label: c }))] },
     { id: 'orden', titulo: 'Ordenar por', activa: orden, porDefecto: 'nombre:asc', onCambiar: setOrden, opciones: ORDENES },
   ];
+  // Lo que antes eran botones sueltos en la cabecera: otras secciones del catálogo.
+  const abrirMas = () => {
+    Haptics.selectionAsync().catch(() => {});
+    const ops = [['Presentaciones', '/presentaciones'], ...(verRevision ? [['Revisión de factor', '/producto/revision-factor']] : []), ['Enriquecer SRS', '/producto/enriquecer-srs']];
+    ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
+      (i) => { if (i < ops.length) router.push(ops[i][1]); });
+  };
 
   return (
     <>
@@ -174,7 +184,7 @@ export default function Productos() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={{ icono: 'ellipsis.circle', etiqueta: 'Más del catálogo', onPress: abrirMas }} />
       <TrasLaTransicion>
       <ListaPaginada porPagina={30} cargarPagina={cargarPagina}
         dependencias={[busqueda, estado, categoria, foco, modificados, margen, lab, orden]}
@@ -182,6 +192,7 @@ export default function Productos() {
         vacio={busqueda ? 'Ningún producto con esa búsqueda' : 'Sin productos'}
         cabecera={(
           <View style={{ gap: 10, marginBottom: 2 }}>
+            <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }]} />
             <FiltrosActivos grupos={grupos} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
               {[
@@ -193,23 +204,17 @@ export default function Productos() {
               ].map(([id, rotulo, n, color]) => {
                 const activo = id === 'inactivos' ? estado === 'todos' && foco === 'todos' : foco === id && id !== 'todos';
                 return (
-                  <Pressable key={id} disabled={id === 'todos' || id === 'inactivos'} onPress={() => { Haptics.selectionAsync().catch(() => {}); setFoco((f) => (f === id ? 'todos' : id)); }}>
+                  <View key={id}>
                     <Vidrio radio={16}>
                       <View style={{ paddingHorizontal: 14, paddingVertical: 10, minWidth: 104, borderRadius: 16, borderWidth: activo ? 1.5 : 0, borderColor: color ?? MARCA.azulClaro }}>
                         <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{rotulo}</Text>
                         <Text style={{ color: color ?? colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{n == null ? '—' : n.toLocaleString('es-SV')}</Text>
                       </View>
                     </Vidrio>
-                  </Pressable>
+                  </View>
                 );
               })}
             </ScrollView>
-            <View style={{ marginHorizontal: 16, gap: 8 }}>
-              <BotonGrande texto="Presentaciones" borde onPress={() => router.push('/presentaciones')} />
-              {verRevision ? <BotonGrande texto="Revisión de factor" borde color={MARCA.ambar} onPress={() => router.push('/producto/revision-factor')} /> : null}
-              <BotonGrande texto="Enriquecer SRS" borde color={MARCA.violetaClaro} onPress={() => router.push('/producto/enriquecer-srs')} />
-            </View>
-            <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }]} />
             {resumen.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
             {resumen.total != null ? (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${resumen.total.toLocaleString('es-SV')} producto${resumen.total === 1 ? '' : 's'}`}</Text>

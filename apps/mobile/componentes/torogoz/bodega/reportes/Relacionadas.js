@@ -3,7 +3,7 @@
 // las referencias de precio de mercado y los mismos avisos que la compra. Es
 // papel de trabajo para el contador: el F-982 y el margen los decide él.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { fetchRelacionadas } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { aniosRecientes, csvRelacionadas, filasRelacionadas } from '@nucleo/utils/distribucionReportes';
@@ -11,7 +11,7 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { MenuDeFiltros } from '../../../Filtros';
 import { colorSistema } from '../../../Formulario';
-import { Aviso, Dato } from '../../../formulario/Piezas';
+import { Aviso, Dato, Cargando } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import Segmentos from '../../../Segmentos';
@@ -63,7 +63,7 @@ export default function Relacionadas({ buscar }) {
       <View style={{ marginHorizontal: 16 }}>
         <Aviso texto="Entre empresas del mismo grupo el precio tiene que ser el de mercado, el que se le cobraría a un tercero. Si las operaciones con relacionadas del año superan el monto que fija el Código Tributario, se presenta el informe de precios de transferencia (F-982). El margen y si aplica el informe los confirma el contador." />
       </View>
-      {cargando ? <ActivityIndicator style={{ marginTop: 16 }} /> : filas.length === 0 ? (
+      {cargando ? <Cargando /> : filas.length === 0 ? (
         <Vacio titulo="Sin compras a relacionadas" texto="Marca al proveedor como «empresa relacionada» y sus compras aparecen aquí." />
       ) : filas.map((f) => (
         <Ficha key={f.product_id}>

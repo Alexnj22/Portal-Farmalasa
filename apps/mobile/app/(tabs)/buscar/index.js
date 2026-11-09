@@ -40,7 +40,7 @@ function Grupo({ titulo, children, pie }) {
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>{titulo}</Text>
-      <View style={{ marginHorizontal: 16 }}><Vidrio radio={22}>{children}</Vidrio></View>
+      <View style={{ marginHorizontal: 16 }}><Vidrio radio={20}>{children}</Vidrio></View>
       {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 32 }}>{pie}</Text> : null}
     </View>
   );

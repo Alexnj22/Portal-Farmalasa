@@ -41,12 +41,11 @@ import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../../component
 import { Pildora } from '../../../componentes/avisos/Piezas';
 import Avatar from '../../../componentes/Avatar';
 import Vidrio from '../../../componentes/Vidrio';
-import { MARCA } from '../../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
 import { compartirTicket, elegir, imprimirTicket } from '../../../componentes/torogoz/fiscal/papel';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 const aC = (n) => Math.round(Number(n || 0) * 100);
 const soloMonto = (v) => v.replace(',', '.').replace(/[^0-9.]/g, '');
 
@@ -211,7 +210,7 @@ export default function CuentaDelCliente() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 56 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-          <Vidrio radio={24}>
+          <Vidrio radio={20}>
             <View style={{ padding: 18, gap: 6 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{p.nombre}</Text>
               {p.ruta || p.telefono ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[p.ruta, p.telefono && `Tel. ${p.telefono}`].filter(Boolean).join(' · ')}</Text> : null}

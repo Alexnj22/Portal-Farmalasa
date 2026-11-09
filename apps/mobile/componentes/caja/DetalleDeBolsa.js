@@ -27,7 +27,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../formulario/Piezas';
 import { fallo, listo, trabajando } from '../Progreso';
 import { reimprimirEtiqueta, valeDeLaSalida } from '../cortes/papel';
 import { Pildora } from '../avisos/Piezas';
@@ -43,7 +43,7 @@ function Salida({ s, puedeAnular, onAnular, onReimprimir }) {
     try { const url = await getSignedFileUrl(s.foto_url); setFoto(url ? { url } : { error: true }); } catch { setFoto({ error: true }); }
   };
   return (
-    <Vidrio radio={18}>
+    <Vidrio radio={20}>
       <View style={{ padding: 12, gap: 7, opacity: s.anulado_at ? 0.6 : 1 }}>
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1, gap: 2 }}>
@@ -161,7 +161,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
                 <Dato rotulo="Efectivo que debe haber" valor={formatMoney(saldo)} fuerte />
               </Seccion>
             ) : null}
-            {salidas == null ? <ActivityIndicator style={{ marginTop: 12 }} /> : (
+            {salidas == null ? <Cargando /> : (
               <View style={{ gap: 10 }}>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Lo que salió de esta bolsa</Text>
                 {salidas.length ? salidas.map((s) => (

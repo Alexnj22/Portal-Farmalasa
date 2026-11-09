@@ -9,7 +9,7 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { hoySV } from '@nucleo/utils/fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { compartirCsv } from '../componentes/fiscal/csv';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +22,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { BotonGrande, Campo, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -192,13 +192,13 @@ export default function VentasPerdidas() {
                 </View>
               </View>
             ) : null}
-            {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+            {filas == null ? <Cargando /> : null}
           </View>
         )}
         ListEmptyComponent={filas == null ? null : error ? <ErrorConReintento mensaje={error} onReintentar={() => { setFilas(null); cargar(); }} /> : (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {estado === 'pendiente' ? 'Sin ventas perdidas pendientes' : 'Sin registros procesados'}
-          </Text>
+          </Vacio>
         )} />
       <Reportar abierto={reportando} onCerrar={() => setReportando(false)} onListo={() => { setReportando(false); if (estado === 'pendiente') cargar(); else setEstado('pendiente'); }} />
     </>

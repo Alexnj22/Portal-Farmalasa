@@ -26,7 +26,7 @@
 // actualiza sola cuando cambia un pedido (`escucharCambios`) y, para una sala,
 // un aviso cuando Bodega le manda un pedido nuevo.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -63,7 +63,7 @@ function Tarjeta({ r, todas, puede, miErp, esSupervision }) {
   const observado = tieneObservacion(r);
   return (
     <Pressable onPress={() => abrir('/pedido/detalle')} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ flex: 1 }}>
@@ -179,6 +179,17 @@ export default function Pedidos() {
   ];
   const totalPeriodo = porSala.reduce((t, s) => t + s.total, 0);
 
+  // La barra admite una sola acción junto al filtro: las tres van en su menú.
+  const abrirMas = () => {
+    const ops = [
+      ...(todas && puede ? [['Generar pedido', () => router.push('/pedido/generar')]] : []),
+      ...(verRutas ? [['Rutas de reparto', () => router.push('/pedido/rutas')]] : []),
+      ...(verReglas ? [['Reglas de despacho', () => router.push('/pedido/reglas')]] : []),
+    ];
+    ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
+      (i) => { if (i < ops.length) ops[i][1](); });
+  };
+
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: true,
@@ -186,7 +197,7 @@ export default function Pedidos() {
           placeholder: 'Número de pedido', hideWhenScrolling: false,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
         } }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={(todas && puede) || verRutas || verReglas ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -199,7 +210,7 @@ export default function Pedidos() {
             {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
             {filas && porSala.length ? (
               <View style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={22}>
+                <Vidrio radio={20}>
                   <View style={{ padding: 14, gap: 8 }}>
                     <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                       <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>
@@ -230,13 +241,6 @@ export default function Pedidos() {
                   {q ? `Ningún pedido coincide con «${q}».` : estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
                 </Text>
               )}
-            {(todas && puede) || verRutas || verReglas ? (
-              <View style={{ marginHorizontal: 16, gap: 8 }}>
-                {todas && puede ? <BotonGrande texto="Generar pedido" color={MARCA.azul} onPress={() => router.push('/pedido/generar')} /> : null}
-                {verRutas ? <BotonGrande texto="Rutas de reparto" borde onPress={() => router.push('/pedido/rutas')} /> : null}
-                {verReglas ? <BotonGrande texto="Reglas de despacho" borde onPress={() => router.push('/pedido/reglas')} /> : null}
-              </View>
-            ) : null}
           </>
         )}
       </ScrollView>

@@ -19,8 +19,8 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
-import { MARCA } from '../componentes/inicio/marca';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
+import { MARCA, FONDO_CONTROL } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 // Las razones de siempre para pedir otra foto (las mismas del portal): un
@@ -32,7 +32,7 @@ function Chip({ texto, onPress, activo }) {
   return (
     <Pressable onPress={onPress} hitSlop={4} accessibilityRole="button"
       style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999,
-        backgroundColor: activo ? `${MARCA.azulClaro}40` : 'rgba(127,127,127,0.16)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+        backgroundColor: activo ? `${MARCA.azulClaro}40` : FONDO_CONTROL, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{texto}</Text>
     </Pressable>
   );
@@ -104,7 +104,7 @@ export default function RevisarReceta() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
           contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}>
-          {reserva === undefined ? <ActivityIndicator style={{ marginTop: 24 }} /> : !reserva ? (
+          {reserva === undefined ? <Cargando /> : !reserva ? (
             <Aviso tono="cuidado" texto="Esa reserva ya no está abierta: alguien la decidió o se canceló." />
           ) : (
             <>

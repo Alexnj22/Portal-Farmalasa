@@ -33,7 +33,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -194,7 +194,7 @@ export default function FinalizarPedido() {
     `${cajas} caja${cajas === 1 ? '' : 's'} · ${totalHojas} hoja${totalHojas === 1 ? '' : 's'}${noSalen ? ` · ${noSalen} producto${noSalen === 1 ? '' : 's'} no sale${noSalen === 1 ? '' : 'n'}` : ''}. Sale del sistema hacia ${ERP_NAMES[suc] ?? 'la sala'} y no se deshace.`,
     [{ text: 'Cancelar', style: 'cancel' }, { text: 'Finalizar', onPress: finalizar }]);
 
-  if (items == null || hojas == null) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Finalizar' }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (items == null || hojas == null) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Finalizar' }} /><Cargando /></>;
 
   return (
     <>

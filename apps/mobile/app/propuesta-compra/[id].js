@@ -82,7 +82,7 @@ export default function PropuestaDeCompra() {
               const elegido = elegidos[r.codigo_proveedor];
               const o = ORIGEN[elegido ? 'aprendido' : r.match_origen];
               return (
-                <Vidrio key={`${r.codigo_proveedor}-${i}`} radio={18}>
+                <Vidrio key={`${r.codigo_proveedor}-${i}`} radio={20}>
                   <View style={{ padding: 12, gap: 5 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{elegido?.nombre ?? r.producto ?? '— sin producto —'}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{r.descripcion}</Text>

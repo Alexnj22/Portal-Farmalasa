@@ -34,13 +34,14 @@ import { Pildora, Ruta } from '../../componentes/traslados/Tarjeta';
 import Evidencia from '../../componentes/traslados/Evidencia';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
+import { BotonGrande, Campo } from '../../componentes/formulario/Piezas';
 
 const ESTADO = {
   por_enviar: ['Sin salir', MARCA.ambar], error: ['No salió', MARCA.rojo], enviada: ['En camino', MARCA.azulClaro],
-  aceptada: ['Aceptado', MARCA.verde], devuelta: ['Devuelto', MARCA.rojo], devuelta_recibida: ['Devolución recibida', '#8E8E93'],
+  aceptada: ['Aceptado', MARCA.verde], devuelta: ['Devuelto', MARCA.rojo], devuelta_recibida: ['Devolución recibida', MARCA.gris],
   no_llego: ['No llegó', MARCA.rojo],
 };
 // Cerrado, lo mira cualquiera de las salas: el desenlace va en tercera persona
@@ -54,24 +55,6 @@ const OPCIONES = [
   { id: DECISIONES_ENVIO.devolver, texto: 'Devolver', color: MARCA.rojo },
   { id: DECISIONES_ENVIO.noLlego, texto: 'No llegó', color: MARCA.ambar },
 ];
-
-function Campo(props) {
-  return (
-    <TextInput placeholderTextColor={colorSistema.texto2} multiline {...props}
-      style={{ minHeight: 42, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 9, fontSize: 15, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
-  );
-}
-
-function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado, borde = false }) {
-  return (
-    <Pressable onPress={onPress} disabled={deshabilitado} accessibilityRole="button"
-      style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
-        backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color,
-        opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Text style={{ color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' }}>{texto}</Text>
-    </Pressable>
-  );
-}
 
 export default function Envio() {
   const { id } = useLocalSearchParams();
@@ -177,7 +160,7 @@ export default function Envio() {
           </View>
 
           {envio.motivo_tipo || envio.reason ? (
-            <Vidrio radio={18}><View style={{ padding: 14, gap: 4 }}>
+            <Vidrio radio={20}><View style={{ padding: 14, gap: 4 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Por qué lo envía</Text>
               <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{[envio.motivo_tipo, envio.reason].filter(Boolean).join(' · ')}</Text>
             </View></Vidrio>
@@ -187,7 +170,7 @@ export default function Envio() {
           <Evidencia urls={envio.evidencia_urls} />
 
           {lineas.map((l) => {
-            const [et, col] = (cerrado ? DESENLACE[l.estado] : null) ?? ESTADO[l.estado] ?? [l.estado, '#8E8E93'];
+            const [et, col] = (cerrado ? DESENLACE[l.estado] : null) ?? ESTADO[l.estado] ?? [l.estado, MARCA.gris];
             const d = decision[l.posicion] || {};
             const decide = momento === 'por_decidir' && l.estado === 'enviada';
             return (

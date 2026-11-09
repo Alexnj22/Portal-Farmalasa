@@ -78,7 +78,7 @@ export default function Boleta() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Boleta', headerLargeTitle: false }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
-        <Vidrio radio={24} tinte="rgba(18,183,106,0.12)">
+        <Vidrio radio={20} tinte="rgba(18,183,106,0.12)">
           <View style={{ padding: 18, gap: 6, alignItems: 'center' }}>
             <Avatar empleado={e.employee ?? { name: '?' }} tamano={64} />
             <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{e.employee ? shortEmployeeName(e.employee) : 'Sin ficha'}</Text>

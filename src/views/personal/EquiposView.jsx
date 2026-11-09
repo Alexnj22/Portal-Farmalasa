@@ -157,7 +157,7 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
   const estado = useMemo(() => estadoDe(emp), [estadoDe, emp]);
   // `!!estado` ya no alcanza: durante la cuenta regresiva hay estado y la
   // persona está en la sala. Ver `estaAusenteHoy`.
-  const ausente = !!estado && !estado.faltan;
+  const ausente = !!estado && !estado.faltan && estado.clave !== 'SUPPORT';
   const alertas = useMemo(() => alertasDe(emp), [emp]);
   const antiguedad = useMemo(() => antiguedadDePersona(emp), [emp]);
   const cargos = cargosDe(emp);
@@ -779,7 +779,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
       .filter(e => {
         if (vista !== 'activos' && vista !== 'ausentes') return true;
         const est = estadoDe(e);
-        const ausente = !!est && !est.faltan;
+        const ausente = !!est && !est.faltan && est.clave !== 'SUPPORT';
         return vista === 'ausentes' ? ausente : !ausente;
       })
       .filter(e => !selectedBranch || selectedBranch === 'ALL' || cubreLaSala(e, selectedBranch));

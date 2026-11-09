@@ -175,7 +175,7 @@ export default function BolsasDeLaSala() {
         {datos?.error ? <Aviso tono="freno" texto="No se pudieron cargar las bolsas. Desliza hacia abajo para reintentar." /> : null}
         {sala ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 4 }}>{nombre(sala)}</Text> : null}
 
-        <Vidrio radio={24}>
+        <Vidrio radio={20}>
           <View style={{ padding: 18, gap: 4 }}>
             <Text style={{ color: MARCA.verde, fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
               {verMontos ? formatMoney(total) : `${enSala.length}`}

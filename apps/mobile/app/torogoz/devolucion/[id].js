@@ -28,8 +28,8 @@ import Vidrio from '../../../componentes/Vidrio';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
 import { volver } from '../../../componentes/volver';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
+import { PETROLEO } from '../../../componentes/inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 const DESTINOS = DESTINOS_DEVOLUCION.map((x) => ({ id: x.value, label: x.label }));
 
 export default function Devolucion() {
@@ -80,7 +80,7 @@ export default function Devolucion() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           {doc ? (
-            <Vidrio radio={22}>
+            <Vidrio radio={20}>
               <View style={{ padding: 16, gap: 4 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{doc.cliente}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${doc.numero_control} · ${fechaNumerica(doc.fec_emi)}`}</Text>
@@ -125,7 +125,7 @@ export default function Devolucion() {
               <Seccion titulo="¿Por qué devuelve? (va en la nota)">
                 <Campo value={motivo} onChangeText={setMotivo} placeholder="Ej.: dos cajas llegaron golpeadas" />
               </Seccion>
-              <Vidrio radio={22}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 16, gap: 4 }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'baseline' }}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>

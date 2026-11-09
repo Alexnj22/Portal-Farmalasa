@@ -5,7 +5,7 @@ import { Modal, Pressable, Text, View } from 'react-native';
 import { Host, DateTimePicker } from '@expo/ui/jetpack-compose';
 import { hora12 } from '@nucleo/utils/hora';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 
 const aFecha = (h) => {
   const [hh, mm] = String(h || '08:00').split(':').map(Number);
@@ -20,7 +20,7 @@ export default function Hora({ valor, onCambiar }) {
     <>
       <Pressable onPress={() => { setElegida(null); setAbierto(true); }} accessibilityRole="button"
         style={({ pressed }) => ({ minHeight: 44, minWidth: 110, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 12,
-          backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.7 : 1 })}>
+          backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.7 : 1 })}>
         <Text style={{ color: valor ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>{valor ? hora12(valor) : 'Elegir hora'}</Text>
       </Pressable>
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={() => setAbierto(false)}>

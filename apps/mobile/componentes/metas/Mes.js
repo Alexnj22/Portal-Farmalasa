@@ -53,7 +53,7 @@ export function GraficaDelMes({ data }) {
           <>
             <Grafica datos={datos} series={[{ clave: 'venta', rotulo: 'Vendido', color: MARCA.azulClaro, tipo: 'barra' }]}
               formato={(v) => formatMoney(v)} formatoEje={(v) => (v ? formatMoneyCorto(v) : '0')}
-              referencias={r.ritmo > 0 ? [{ valor: r.ritmo, color: '#8E8E93', rotulo: `ritmo ${formatMoneyCorto(r.ritmo)}` }] : []}
+              referencias={r.ritmo > 0 ? [{ valor: r.ritmo, color: MARCA.gris, rotulo: `ritmo ${formatMoneyCorto(r.ritmo)}` }] : []}
               detalle={(f) => (f.venta == null ? null : f.venta >= r.ritmo ? 'Por encima del ritmo' : `Le faltaron ${formatMoney(r.ritmo - f.venta)} para el ritmo`)}
               resumen={(
                 <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' }}>

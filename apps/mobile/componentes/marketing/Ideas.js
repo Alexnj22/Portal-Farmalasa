@@ -6,7 +6,7 @@
 // mientras sigue nueva. Qué se puede con cada una sale del núcleo
 // (`accionesDeIdea`), lo mismo del portal; las escrituras, las del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { crearIdea, editarIdea, fetchIdeas, fetchPersonas, moverIdea, quitarIdea } from '@nucleo/data/marketing';
@@ -19,7 +19,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { BotonGrande, Campo, Seccion, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Segmentos from '../Segmentos';
 import Vidrio from '../Vidrio';
@@ -102,7 +102,7 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
     }
   };
 
-  if (ideas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (ideas == null) return <Cargando />;
   return (
     <>
       <View style={{ marginHorizontal: 16 }}>
@@ -129,7 +129,7 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
         const acciones = accionesDeIdea(i, { gestiona, puedeEditar, yoId });
         return (
           <View key={i.id} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, gap: 6, opacity: i.estado === 'descartada' ? 0.7 : 1 }}>
                 <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
                   <Pildora texto={est.label} color={colorDeVariante(est.variant)} />
@@ -157,7 +157,7 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
           </View>
         );
       })}
-      {!visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>{busqueda ? 'Sin ideas que coincidan' : 'Sin ideas aquí'}</Text> : null}
+      {!visibles.length ? <Vacio>{busqueda ? 'Sin ideas que coincidan' : 'Sin ideas aquí'}</Vacio> : null}
     </>
   );
 }

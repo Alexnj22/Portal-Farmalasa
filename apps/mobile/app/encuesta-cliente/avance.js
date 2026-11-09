@@ -8,7 +8,7 @@
 // portal). El afiche con el QR —el mismo papel del portal, armado por el núcleo
 // (`utils/aficheQr`)— se imprime, se comparte en PDF o se guarda desde acá.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Share, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -24,7 +24,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
@@ -126,7 +126,7 @@ export default function AvanceEncuesta() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {!encuesta || !avance ? (error ? null : <ActivityIndicator style={{ marginTop: 24 }} />) : !['publicada', 'cerrada'].includes(encuesta.estado) ? (
+        {!encuesta || !avance ? (error ? null : <Cargando />) : !['publicada', 'cerrada'].includes(encuesta.estado) ? (
           <View style={{ marginHorizontal: 16 }}><Aviso texto="El avance y los enlaces aparecen cuando la encuesta se publica." /></View>
         ) : (
           <>

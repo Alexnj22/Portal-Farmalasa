@@ -18,7 +18,7 @@
 // de después de las 6:00 p. m., que no se envían a Hacienda
 // (`componentes/fiscal/CofNocheSinEnvio`), con su CSV.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import DetalleDeLibro from '../componentes/fiscal/DetalleDeLibro';
@@ -37,7 +37,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import PasoDeMes from '../componentes/PasoDeMes';
 import { compartirZip } from '../componentes/fiscal/zip';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { fallo, trabajando, cerrarProgreso } from '../componentes/Progreso';
 import { paqueteDeLibrosIva } from '@nucleo/data/paqueteLibrosIva';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -137,7 +137,7 @@ export default function LibrosIva() {
           </View>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {t == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        {t == null ? <Cargando /> : (
           <>
             {verMontos ? (
               <FilaDeKpis>
@@ -159,7 +159,7 @@ export default function LibrosIva() {
                 <View key={l.k} style={{ gap: 10 }}>
                 <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(open ? null : l.k); }}
                   style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-                  <Vidrio radio={18} interactivo tinte={open ? 'rgba(59,130,246,0.14)' : undefined}>
+                  <Vidrio radio={20} interactivo tinte={open ? 'rgba(59,130,246,0.14)' : undefined}>
                     <View style={{ padding: 12, gap: 2 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{l.t}</Text>

@@ -38,7 +38,7 @@ const POR_PAGINA = 40;
 function Cuenta({ rotulo, valor, sub, color }) {
   return (
     <View style={{ flex: 1 }}>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ padding: 12, gap: 2 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{rotulo}</Text>
           <Text style={{ color: color ?? colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }} numberOfLines={1} adjustsFontSizeToFit>{valor ?? '—'}</Text>
@@ -73,7 +73,7 @@ function Facturas({ busca, dias }) {
       <View style={{ marginHorizontal: 16 }}><Aviso texto="El portal arma la compra desde el documento y dice de dónde salió cada dato. Todavía no registra nada en el sistema: es para revisarla. Lo que queda guardado es cada producto que confirmes." /></View>
       {filas == null ? <ActivityIndicator /> : !visibles.length ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30 }}>Sin facturas esperando carga en este período.</Text> : (
         <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={22}>
+          <Vidrio radio={20}>
             <View style={{ paddingVertical: 4 }}>
               {visibles.slice(0, hasta).map((f, i) => (
                 <Pressable key={f.document_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/propuesta-compra/[id]', params: { id: String(f.document_id), proveedor: f.proveedor_ficha ?? f.emisor_nombre, fecha: f.fecha_emision ?? '', total: String(f.monto_total ?? '') } }); }}

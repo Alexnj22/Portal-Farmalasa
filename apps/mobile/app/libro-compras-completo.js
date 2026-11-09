@@ -10,7 +10,7 @@
 // `csvDelDeclarable`, núcleo) con `libro_compras_completo_descargar`. Sin
 // tope de filas: se pagina de 40 en 40.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -28,7 +28,7 @@ import PasoDeMes from '../componentes/PasoDeMes';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -123,7 +123,7 @@ export default function LibroComprasCompleto() {
           </>
         ) : null}
         {filas && filas.length && puedeDescargar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={esDecl ? 'Exportar el declarable (CSV)' : 'Exportar el libro (CSV)'} borde color={MARCA.azulClaro} onPress={exportar} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : vistas.length ? vistas.slice(0, paginas * PAGINA).map((r, i) => {
+        {filas == null ? <Cargando /> : vistas.length ? vistas.slice(0, paginas * PAGINA).map((r, i) => {
           const abre = !!r.json_path && r.dte_id;
           const repetido = Number(r.veces_en_el_libro || 1) > 1;
           return (
@@ -151,7 +151,7 @@ export default function LibroComprasCompleto() {
               </Vidrio>
             </Pressable>
           );
-        }) : <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin documentos este mes</Text>}
+        }) : <Vacio>Sin documentos este mes</Vacio>}
         {vistas.length > paginas * PAGINA ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${vistas.length - paginas * PAGINA}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View> : null}
       </ScrollView>
     </>

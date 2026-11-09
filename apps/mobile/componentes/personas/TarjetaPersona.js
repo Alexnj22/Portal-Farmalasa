@@ -7,7 +7,7 @@ import { Linking, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
-import { estadoDePersona } from '@nucleo/utils/estadoDePersona';
+import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
 import { alertasDePersona } from '@nucleo/utils/alertasDePersona';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -24,19 +24,22 @@ import { PildoraDeCargo } from './Piezas';
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 
+// Sólidos con el ícono blanco: tintados al 13% se perdían sobre el vidrio.
+const VERDE_WHATSAPP = '#0E8A4F';
+
 function BotonRedondo({ icono, color, onPress, etiqueta }) {
   return (
     <Pressable onPress={onPress} accessibilityLabel={etiqueta} hitSlop={6}
       style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: `${color}22`, transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={20} color={color} /></Host>
+        backgroundColor: color, transform: [{ scale: pressed ? 0.92 : 1 }] })}>
+      <Host matchContents><Icon name={iconoDe(icono)} size={20} color="#FFFFFF" /></Host>
     </Pressable>
   );
 }
 
 export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = false, conSuperior = false }) {
   const estado = estadoDePersona(emp);
-  const ausente = !!estado && !estado.faltan;
+  const ausente = estaAusenteHoy(emp);
   const alertas = alertasDePersona(emp);
   const cargos = [emp.role, emp.secondary_role || emp.secondaryRole].filter(Boolean);
   const tel = soloDigitos(emp.phone);
@@ -60,12 +63,12 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
   };
   return (
     <Pressable onPress={abrir} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo tinte={destacada ? 'rgba(0,82,204,0.16)' : undefined}>
+      <Vidrio radio={20} interactivo tinte={destacada ? 'rgba(0,82,204,0.16)' : undefined}>
         <View style={{ padding: 14, gap: 8, opacity: inactiva ? 0.6 : 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar empleado={emp} tamano={destacada ? 64 : 48} />
             <View style={{ flex: 1, gap: 4 }}>
-              <Text style={{ color: ausente ? colorSistema.texto2 : colorSistema.texto, fontSize: destacada ? 17 : 16, fontWeight: '700' }}>{nombre}</Text>
+              <Text style={{ color: colorSistema.texto, fontSize: destacada ? 17 : 16, fontWeight: '700' }}>{nombre}</Text>
               {estado ? (
                 <View style={{ flexDirection: 'row' }}>
                   <Pildora texto={`${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`} color={colorDeVariante(estado.variante)} />
@@ -74,17 +77,17 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
             </View>
             {tel.length >= 8 ? (
               <View style={{ flexDirection: 'row', gap: 8 }}>
-                <BotonRedondo icono="MessageCircle" color={MARCA.verde} etiqueta={`Escribir a ${nombre}`} onPress={() => contactar('wa')} />
+                <BotonRedondo icono="MessageCircle" color={VERDE_WHATSAPP} etiqueta={`Escribir a ${nombre}`} onPress={() => contactar('wa')} />
                 <BotonRedondo icono="Phone" color={MARCA.azul} etiqueta={`Llamar a ${nombre}`} onPress={() => contactar('tel')} />
               </View>
             ) : null}
           </View>
-          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap', opacity: ausente ? 0.7 : 1 }}>
+          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             {cargos.length ? cargos.map((c) => <PildoraDeCargo key={c} cargo={c} />) : <PildoraDeCargo cargo="Sin cargo" />}
             {areas >= 2 ? <Pildora texto={`Cubre ${areas} áreas`} color={MARCA.azulClaro} /> : null}
             {inactiva ? <Pildora texto="Dado de baja" color={MARCA.rojo} /> : null}
           </View>
-          {respondeA ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{`↳ Responde a ${respondeA}`}</Text> : null}
+          {respondeA ? <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{`↳ Responde a ${respondeA}`}</Text> : null}
           {alertas.length ? (
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
               {alertas.map((a) => <Pildora key={a.key} texto={a.texto} color={colorDeVariante(a.variante)} />)}
@@ -101,7 +104,7 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
 export function PuestoVacante({ cargo }) {
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22} tinte="rgba(247,144,9,0.12)">
+      <Vidrio radio={20} tinte="rgba(247,144,9,0.12)">
         <View style={{ padding: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <View style={{ width: 46, height: 46, borderRadius: 23, borderWidth: 1.5, borderStyle: 'dashed', borderColor: MARCA.ambar }} />
           <View style={{ flex: 1 }}>
@@ -125,7 +128,7 @@ export function TarjetaPracticante({ p, nombreDeSala, puedeEditar = false }) {
     <Pressable disabled={!puedeEditar}
       onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/empleado/practicante', params: { id: String(p.id) } }); }}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ padding: 14, gap: 6 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{`${p.first_names || ''} ${p.last_names || ''}`.trim()}</Text>
           <View style={{ flexDirection: 'row', gap: 6 }}>

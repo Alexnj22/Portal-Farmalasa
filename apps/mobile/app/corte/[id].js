@@ -223,7 +223,7 @@ export default function Corte() {
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
 
-          <Vidrio radio={24} tinte={!noEsConteo && !descartado && sev !== 'ok' ? (sev === 'falta' ? 'rgba(240,68,56,0.10)' : 'rgba(247,144,9,0.10)') : undefined}>
+          <Vidrio radio={20} tinte={!noEsConteo && !descartado && sev !== 'ok' ? (sev === 'falta' ? 'rgba(240,68,56,0.10)' : 'rgba(247,144,9,0.10)') : undefined}>
             <View style={{ padding: 18, gap: 10 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
                 {`${fechaTexto(corte.fecha, { weekday: 'long', day: 'numeric', month: 'long' })} · ${hora12(corte.hora)}`}

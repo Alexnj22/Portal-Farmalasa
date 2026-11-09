@@ -6,15 +6,15 @@ import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { colorSistema } from '../../Formulario';
 import Vidrio from '../../Vidrio';
 import Fecha from '../../formulario/Fecha';
+import { PETROLEO } from '../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 export default function PasoDeDia({ fecha, onCambiar, max = null }) {
   const ir = (n) => { Haptics.selectionAsync().catch(() => {}); onCambiar(sumarDias(fecha, n)); };
   const puedeAvanzar = !max || fecha < max;
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Pressable onPress={() => ir(-1)} hitSlop={8} accessibilityLabel="Día anterior"
             style={({ pressed }) => ({ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>

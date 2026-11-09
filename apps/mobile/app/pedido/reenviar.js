@@ -8,7 +8,7 @@
 // esté hecha. Igual que el portal (`handleResolverFaltantes`).
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -19,7 +19,7 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -38,7 +38,7 @@ export default function ReenviarFaltantes() {
   }, [pedidoId, suc]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  if (!faltan) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reenviar' }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (!faltan) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reenviar' }} /><Cargando /></>;
 
   const productos = faltan.productosEspeciales ?? [];
   const aCancelar = productos.filter((p) => noVa.includes(p.itemId));

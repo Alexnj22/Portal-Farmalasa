@@ -135,6 +135,8 @@ export default function MonitorDeVentas() {
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: inicial, onCambiar: setSala,
       opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : []),
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: '30', onCambiar: setPeriodo, opciones: PERIODOS },
+    ...(!hoy && vista === 'horas' ? [{ id: 'dia', titulo: 'Día', activa: dia, porDefecto: 'todos', onCambiar: (v) => { Haptics.selectionAsync().catch(() => {}); setDia(v); setElegida(null); },
+      opciones: [{ id: 'todos', label: 'Todos los días' }, ...[1, 2, 3, 4, 5, 6, 0].map((d) => ({ id: String(d), label: DIA[d] }))] }] : []),
   ];
 
   const nombreDe = (it, largo) => (it.dia != null ? (largo ? DIA[it.dia] : DIA_CORTO[it.dia]) : (largo ? hora(it.hora) : horaCorta(it.hora)));
@@ -159,6 +161,10 @@ export default function MonitorDeVentas() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 8, paddingBottom: 40, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        {!hoy ? (
+          <Segmentos opciones={[{ id: 'semana', label: 'Semana' }, { id: 'horas', label: 'Por hora' }]} activa={vista}
+            onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setVista(v); setElegida(null); }} />
+        ) : null}
         <FiltrosActivos grupos={grupos} />
 
         <View style={{ paddingHorizontal: 20 }}>
@@ -166,19 +172,8 @@ export default function MonitorDeVentas() {
           <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{PERIODOS.find((p) => p.id === periodo)?.label}</Text>
         </View>
 
-        {!hoy ? (
-          <View style={{ gap: 10 }}>
-            <Segmentos opciones={[{ id: 'semana', label: 'Semana' }, { id: 'horas', label: 'Por hora' }]} activa={vista}
-              onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setVista(v); setElegida(null); }} />
-            {vista === 'horas' ? (
-              <Segmentos activa={dia} onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setDia(v); setElegida(null); }}
-                opciones={[{ id: 'todos', label: 'Todos' }, ...[1, 2, 3, 4, 5, 6, 0].map((d) => ({ id: String(d), label: DIA_CORTO[d] }))]} />
-            ) : null}
-          </View>
-        ) : null}
-
         <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={24}>
+          <Vidrio radio={20}>
             <View style={{ padding: 16, gap: 12 }}>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 Tickets por hora · {deQue}
@@ -199,7 +194,7 @@ export default function MonitorDeVentas() {
 
         {sel ? (
           <View style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={22}>
+            <Vidrio radio={20}>
               <View style={{ padding: 16, gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: COLOR_VOLUMEN[nivelDeVolumen(sel.tickets)] }} />

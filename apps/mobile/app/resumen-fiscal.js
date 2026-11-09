@@ -6,7 +6,7 @@
 // Los montos los calcula el servidor; el orden y el signo de cada renglón
 // salen del núcleo (`resumenFiscal`), lo mismo del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -19,7 +19,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import PasoDeMes from '../componentes/PasoDeMes';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { MARCA } from '../componentes/inicio/marca';
 
@@ -63,7 +63,7 @@ export default function ResumenFiscal() {
           <Aviso tono="cuidado" texto="Es un indicador, no una declaración. No incluye el saldo a favor del mes anterior ni decide qué compras dan derecho a crédito." />
         </View>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {datos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : datos ? (
+        {datos == null ? <Cargando /> : datos ? (
           <>
             <FilaDeKpis>
               <Kpi icono={aFavor ? 'TrendingDown' : 'TrendingUp'} rotulo="Movimiento de IVA" valor={formatMoney(Math.abs(movimiento))} color={aFavor ? MARCA.verde : MARCA.ambar} apoyo={aFavor ? 'a favor' : 'a pagar'} />

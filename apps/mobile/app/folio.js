@@ -9,7 +9,7 @@
 // son privados. El total del documento sólo con `bitacoras` can_view, como el
 // portal.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { ESTADO_RENGLON, fetchFolio } from '@nucleo/data/bitacoras';
@@ -19,7 +19,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
@@ -63,7 +63,7 @@ export default function Folio() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: d?.folio_txt ? `Folio ${d.folio_txt}` : 'Folio' }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {d === null ? <ActivityIndicator style={{ marginTop: 30 }} /> : error ? <Aviso tono="freno" texto={error} /> : (
+        {d === null ? <Cargando /> : error ? <Aviso tono="freno" texto={error} /> : (
           <>
             <View style={{ gap: 6, marginHorizontal: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>

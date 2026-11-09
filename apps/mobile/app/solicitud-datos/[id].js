@@ -27,7 +27,7 @@ import { diaSV, fechaTexto, hoySV, horaSV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Hora from '../../componentes/personas/Hora';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -77,7 +77,7 @@ export default function SolicitudDeDatos() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: solicitud ? `Solicitud ${solicitud.folio_txt}` : 'Solicitud', headerLargeTitle: false }} />
       {error ? <View style={{ padding: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {!solicitud && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+      {!solicitud && !error ? <Cargando /> : null}
       {solicitud ? <Cuerpo key={solicitud.id} solicitud={solicitud} /> : null}
     </>
   );

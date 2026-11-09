@@ -38,7 +38,7 @@ export function Eleccion({ rotulo, valor, opciones, onCambiar, deshabilitado, me
   );
 }
 
-const TONOS = { freno: MARCA.rojo, cuidado: MARCA.ambar, bien: MARCA.verde, nota: '#8E8E93', marca: PETROLEO };
+const TONOS = { freno: MARCA.rojo, cuidado: MARCA.ambar, bien: MARCA.verde, nota: MARCA.gris, marca: PETROLEO };
 
 /** Una etiqueta de estado (la «Badge» del portal). */
 export function Etiqueta({ texto, tono = 'nota' }) {

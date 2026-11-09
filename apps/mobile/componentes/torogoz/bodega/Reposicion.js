@@ -3,7 +3,7 @@
 // venta o se fijan a mano (quien administra, en la hoja `MinMax`). El pedido
 // sugerido sale agrupado por el proveedor de la última compra, como CSV.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useFocusEffect } from 'expo-router';
 import { fetchReposicion, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { filasDeReposicion, pedidoSugeridoCsv, resumenDeReposicion } from '@nucleo/utils/distribucionBodega';
@@ -12,7 +12,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { compartirCsv } from '../../fiscal/csv';
 import { FiltrosActivos, MenuDeFiltros } from '../../Filtros';
 import { colorSistema } from '../../Formulario';
-import { Aviso } from '../../formulario/Piezas';
+import { Aviso, Cargando } from '../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { MARCA } from '../../inicio/marca';
 import { fallo } from '../../Progreso';
@@ -67,7 +67,7 @@ export default function Reposicion({ puedeConfigurar, buscar }) {
         </Text>
       ) : null}
 
-      {cargando ? <ActivityIndicator style={{ marginTop: 16 }} /> : filas.length === 0 ? (
+      {cargando ? <Cargando /> : filas.length === 0 ? (
         buscar ? <Vacio titulo="Sin resultados" texto="Ningún producto coincide." />
           : <Vacio titulo={soloBajo === 'bajo' ? 'Nada bajo el mínimo' : 'Sin productos'} texto={soloBajo === 'bajo' ? 'Todo está sobre su mínimo.' : undefined} />
       ) : (

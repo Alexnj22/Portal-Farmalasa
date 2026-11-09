@@ -3,7 +3,7 @@
 // compras (con sus productos), sus reservas vivas y sus tratamientos. Sale de
 // UNA llamada (`chat_cliente_contexto`), la misma del portal.
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Linking, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
 import { fetchContextoCliente } from '@nucleo/data/chatClientes';
 import { RECETA_DEL_CHAT, RESERVA_DEL_CHAT } from '@nucleo/utils/chatClientes';
 import { telefonoParaWhatsapp } from '@nucleo/utils/codigoDePuntos';
@@ -11,7 +11,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, Seccion } from '../formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Tocable from '../Tocable';
 import Vidrio from '../Vidrio';
@@ -42,7 +42,7 @@ export default function PanelCliente({ customerId, arriba = null }) {
   }, [customerId]);
 
   if (error) return <View style={{ padding: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (ctx === undefined) return <ActivityIndicator style={{ marginTop: 32 }} />;
+  if (ctx === undefined) return <Cargando />;
   if (!ctx) return <View style={{ padding: 16 }}><Aviso texto="Este cliente ya no está registrado." /></View>;
 
   const wa = telefonoParaWhatsapp(ctx.telefono);

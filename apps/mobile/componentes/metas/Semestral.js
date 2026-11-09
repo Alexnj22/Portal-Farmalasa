@@ -10,7 +10,7 @@
 // Sin esas decisiones no se aprueba. Aprobar congela la hoja; reabrir pide
 // motivo. La cuenta es del núcleo (`resumenDelSemestre`), la misma del portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { aprobarBonoSemestral, decidirBonoSemestral, fetchBonoSemestral } from '@nucleo/data/metas';
@@ -21,7 +21,7 @@ import {
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Cargando } from '../formulario/Piezas';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
@@ -44,7 +44,7 @@ function Paso({ sem, onCambiar }) {
   );
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           {flecha('‹', -1, sem <= SEMESTRE_INICIO)}
           <View style={{ flex: 1, alignItems: 'center' }}>
@@ -127,7 +127,7 @@ export default function Semestral({ canApprove }) {
           <Aviso tono="freno" texto={error} />
           <BotonGrande texto="Reintentar" borde onPress={() => setIntento((n) => n + 1)} />
         </View>
-      ) : !hoja ? <ActivityIndicator style={{ marginTop: 20 }} /> : (
+      ) : !hoja ? <Cargando /> : (
         <>
           <FilaDeKpis>
             <Kpi icono="HandCoins" rotulo={r.aprobado ? 'Se paga' : 'A pagar'} valor={r.personas.length ? formatMoney(r.aPagar) : '—'} color={MARCA.azulClaro} apoyo={semestrePagoLabel(sem)} />
@@ -164,7 +164,7 @@ export default function Semestral({ canApprove }) {
           {buscar.trim() && !filtradas.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`Nadie coincide con «${buscar.trim()}».`} /></View> : null}
           {filtradas.map((p) => (
             <View key={p.employee_id} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar empleado={(empleados || []).find((e) => e.id === p.employee_id) ?? { name: p.nombre }} tamano={36} />

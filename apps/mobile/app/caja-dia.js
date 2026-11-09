@@ -8,7 +8,7 @@
 // diferencia» abre `diferencia-corte`: causa con comprobante, responsables y
 // sus abonos, igual que la ficha del corte del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -21,7 +21,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -51,11 +51,11 @@ export default function CajaDia() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto="No se pudo leer el día." /> : null}
-        {cargando && !dia ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {cargando && !dia ? <Cargando /> : null}
         {!cargando && !dia && !error ? <Aviso tono="nota" texto="Este día ya no tiene diferencias en esta vista." /> : null}
         {dia ? (
           <>
-            <Vidrio radio={24}>
+            <Vidrio radio={20}>
               <View style={{ padding: 18, gap: 10 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                   <View style={{ flex: 1 }}>

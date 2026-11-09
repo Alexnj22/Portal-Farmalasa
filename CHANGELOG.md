@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1488.3 — App del personal: formato nativo uniforme
+
+**Por qué.** El usuario revisó la app vista por vista: las pestañas no se veían igual entre pantallas, había pestañas y botones debajo de los datos, filtros que no filtraban lo que decían, y Fernando (en apoyo) salía ausente.
+
+- **Datos que estaban mal.** Bolsas: con una sala filtrada, «Recibir todas» y «Confirmar el conteo» actuaban sobre bolsas que no estaban a la vista; ahora acciones y cifras miran lo filtrado. Ventas: al buscar ya no quedan puestos filtros que no se aplican. Diferencias: sin ficha fantasma en Sobrantes. Cuentas por cobrar: «Pasados del plazo» respeta vendedor y búsqueda.
+- **Apoyo no es ausencia** (app y portal): `estaAusenteHoy` y Equipos excluyen `SUPPORT`.
+- **Canon.** Piezas `Cargando`, `Vacio` y `Ficha`; radios, colores y pestañas sin contador en toda la app. Pestañas primero, «+» en la barra y filtros en `MenuDeFiltros` en 41 pantallas.
+- **Vistas.** Inicio ya no salta al volver de un widget; Menú con buscador y «Lo que más abres»; Datos en una línea; Notificaciones plegadas y con filtros; Listado legible; Horarios asigna varios días y copia la semana anterior.
+
+Verificado en simulador iPad contra producción (12 pantallas, cuenta de revisión). Queda: «Vencidos» de Inventario sólo mira la sala (requiere cambiar la consulta).
+
 ## v2.1488.2 — Muestra de fichas con la sesión correcta
 
 La muestra temporal de códigos usa la cuenta que puede abrir las fichas.

@@ -10,18 +10,19 @@
 //
 // Rótulos, alcance y el estado por dominio salen del núcleo (`data/syncHealth`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { alcanceDeCorrida, estadoPorDominio, fetchSyncHealthRecent, ROTULO_DE_DOMINIO, SYNC_HEALTH_DOMAINS } from '@nucleo/data/syncHealth';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { fechaHora12 } from '@nucleo/utils/hora';
-import Segmentos from '../componentes/Segmentos';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
+import { Cargando } from '../componentes/formulario/Piezas';
 
 const POR_PAGINA = 60;
 
@@ -41,20 +42,24 @@ export default function ActualizacionDeDatos() {
   const nombreDeSala = useMemo(() => Object.fromEntries((sucursales || []).map((b) => [b.id, b.name])), [sucursales]);
   const estados = useMemo(() => estadoPorDominio(filas), [filas]);
   const visibles = (filas || []).filter((r) => dominio === 'todos' || r.domain === dominio);
+  const grupos = [{ id: 'dominio', titulo: 'Dato', activa: dominio, porDefecto: 'todos', onCambiar: (d) => { setDominio(d); setCuantas(POR_PAGINA); },
+    opciones: [{ id: 'todos', label: 'Todos' }, ...SYNC_HEALTH_DOMAINS.map((d) => ({ id: d, label: ROTULO_DE_DOMINIO[d] }))] }];
 
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Actualización de datos', headerLargeTitle: true }} />
+      <MenuDeFiltros grupos={grupos} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        <FiltrosActivos grupos={grupos} />
+        {filas == null ? <Cargando /> : (
           <>
             <View style={{ marginHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {estados.map((e) => {
                 const ok = e.ultima?.success;
                 return (
                   <View key={e.dominio} style={{ width: '48%' }}>
-                    <Vidrio radio={18} tinte={e.ultima && !ok ? 'rgba(240,68,56,0.14)' : undefined}>
+                    <Vidrio radio={20} tinte={e.ultima && !ok ? 'rgba(240,68,56,0.14)' : undefined}>
                       <View style={{ padding: 12, gap: 4 }}>
                         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{ROTULO_DE_DOMINIO[e.dominio]}</Text>
                         {e.ultima ? <Pildora texto={ok ? 'Al día' : 'Falló'} color={ok ? MARCA.verde : MARCA.rojo} /> : <Pildora texto="Sin datos" color={colorSistema.texto2} />}
@@ -66,7 +71,6 @@ export default function ActualizacionDeDatos() {
                 );
               })}
             </View>
-            <Segmentos activa={dominio} onCambiar={(d) => { setDominio(d); setCuantas(POR_PAGINA); }} opciones={[{ id: 'todos', label: 'Todos' }, ...SYNC_HEALTH_DOMAINS.map((d) => ({ id: d, label: ROTULO_DE_DOMINIO[d] }))]} />
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={20}>
                 <View style={{ padding: 12, gap: 10 }}>

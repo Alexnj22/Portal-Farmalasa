@@ -27,7 +27,7 @@ import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 
 const corta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
@@ -52,7 +52,7 @@ function Linea({ campo, valor, onCambiar, editable, error, requerido, opciones, 
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{valor || '—'}</Text>
       ) : opciones ? (
         <Pressable onPress={() => elegir(ETIQUETA_CAMPO[campo], opciones, onCambiar)}
-          style={({ pressed }) => ({ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.16)', opacity: pressed ? 0.7 : 1 })}>
+          style={({ pressed }) => ({ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, justifyContent: 'center', backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.7 : 1 })}>
           <Text style={{ color: valor ? colorSistema.texto : colorSistema.texto2, fontSize: 16 }}>{valor || 'Elegir'}</Text>
         </Pressable>
       ) : (
@@ -143,7 +143,7 @@ export default function FichaCliente() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-          <Vidrio radio={24}>
+          <Vidrio radio={20}>
             <View style={{ padding: 18, alignItems: 'center', gap: 8 }}>
               <Avatar empleado={{ name: cliente.name }} tamano={64} />
               <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800', textAlign: 'center' }}>{cliente.name}</Text>

@@ -14,7 +14,7 @@ export default function PasoDeMes({ mes, onCambiar }) {
   const ir = (n) => { Haptics.selectionAsync().catch(() => {}); onCambiar(correrMes(mes, n)); };
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
           <Pressable onPress={() => ir(-1)} hitSlop={8} accessibilityLabel="Mes anterior"
             style={({ pressed }) => ({ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>

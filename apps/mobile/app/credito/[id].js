@@ -68,7 +68,7 @@ export default function Credito() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Vidrio radio={24}>
+        <Vidrio radio={20}>
           <View style={{ padding: 18, gap: 8 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{p.cliente}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{[c?.sala, p.documento].filter(Boolean).join(' · ')}</Text>

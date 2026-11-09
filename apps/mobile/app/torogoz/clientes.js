@@ -5,7 +5,7 @@
 // vende. La licencia de la SRS es la columna que importa: sin licencia vigente
 // no se le vende. Las reglas salen del núcleo (`distribucionComercial`).
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -19,7 +19,7 @@ import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -125,7 +125,7 @@ export default function ClientesTorogoz() {
           onChangeText: (e) => cambiar(setBuscar)(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeVender && emisor ? { icono: 'plus', etiqueta: 'Nuevo cliente', onPress: () => router.push({ pathname: '/torogoz/cliente/[id]', params: { id: 'nuevo' } }) } : null} />
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -141,13 +141,8 @@ export default function ClientesTorogoz() {
             apoyo={soloSinLicencia ? 'filtrando · toca para quitar' : 'sin, vencida o por vencer'} onPress={() => cambiar(setSoloSinLicencia)(!soloSinLicencia)} />
           <Kpi icono="CreditCard" rotulo="Con crédito" valor={String(stats.credito)} color={MARCA.azulClaro} apoyo="plazo aprobado" />
         </FilaDeKpis>
-        {puedeVender && emisor ? (
-          <View style={{ marginHorizontal: 16 }}>
-            <BotonGrande texto="Nuevo cliente" color={PETROLEO} onPress={() => router.push({ pathname: '/torogoz/cliente/[id]', params: { id: 'nuevo' } })} />
-          </View>
-        ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {clientes === null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        {clientes === null ? <Cargando /> : (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
             {`${filtrados.length} cliente${filtrados.length === 1 ? '' : 's'}`}
           </Text>

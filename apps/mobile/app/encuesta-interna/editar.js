@@ -20,7 +20,7 @@ import { ALCANCES_DE_ENCUESTA, ESTADO_ENCUESTA, TIPO_ENCUESTA, idsDelAlcance } f
 import { hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Opciones, Seccion } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { encuestaInternaAbierta } from '../../componentes/encuestas/interna';
 import Segmentos from '../../componentes/Segmentos';
@@ -127,13 +127,7 @@ export default function EditarEncuestaInterna() {
             {alcance === 'branches' ? (
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                 {(branches || []).map((b) => {
-                  const on = ids.includes(b.id);
-                  return (
-                    <Pressable key={b.id} onPress={() => alternar(b.id)}
-                      style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
-                      <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{b.name}</Text>
-                    </Pressable>
-                  );
+                  return <Ficha key={b.id} texto={b.name} activa={ids.includes(b.id)} onPress={() => alternar(b.id)} />;
                 })}
               </View>
             ) : null}
@@ -142,10 +136,7 @@ export default function EditarEncuestaInterna() {
                 {elegidos.length ? (
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
                     {elegidos.map((p) => (
-                      <Pressable key={p.id} onPress={() => alternar(p.id)}
-                        style={{ paddingHorizontal: 12, minHeight: 34, justifyContent: 'center', borderRadius: 999, backgroundColor: `${MARCA.azulClaro}33` }}>
-                        <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{`${shortEmployeeName(p)}  ✕`}</Text>
-                      </Pressable>
+                      <Ficha key={p.id} texto={`${shortEmployeeName(p)}  ✕`} activa color={MARCA.azulClaro} onPress={() => alternar(p.id)} />
                     ))}
                   </View>
                 ) : <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nadie elegido todavía.</Text>}

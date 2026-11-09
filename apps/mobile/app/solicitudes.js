@@ -70,7 +70,7 @@ const PILDORA = {
   PENDING: { texto: 'Pendiente', color: MARCA.ambar },
   APPROVED: { texto: 'Aprobada', color: MARCA.verde },
   REJECTED: { texto: 'Rechazada', color: MARCA.rojo },
-  CANCELLED: { texto: 'Cancelada', color: '#8E8E93' },
+  CANCELLED: { texto: 'Cancelada', color: MARCA.gris },
 };
 const DECIDIR = { texto: 'Te toca decidir', color: MARCA.azulClaro };
 const ESTADOS = ['PENDING', 'APPROVED', 'REJECTED', 'ALL'];
@@ -103,7 +103,7 @@ function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }}
       style={({ pressed }) => ({ marginHorizontal: 16, marginBottom: 10, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo tinte={r.type === 'DISABILITY' && pendiente ? `${MARCA.rojo}1A` : undefined}>
+      <Vidrio radio={20} interactivo tinte={r.type === 'DISABILITY' && pendiente ? `${MARCA.rojo}1A` : undefined}>
         <View style={{ padding: 14, gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View>

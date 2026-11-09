@@ -104,7 +104,7 @@ export default function Venta() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {v ? (
           <>
-            <Vidrio radio={24}>
+            <Vidrio radio={20}>
               <View style={{ padding: 18, gap: 8 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{v.cliente || 'Consumidor final'}</Text>
                 <Text style={{ color: anulada ? colorSistema.texto2 : MARCA.verde, fontSize: 36, fontWeight: '800', fontVariant: ['tabular-nums'],

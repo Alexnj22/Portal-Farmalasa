@@ -3,8 +3,9 @@
 // «neutral» va escrito: el del sistema no se puede volver translúcido.
 import { Pildora } from '../../avisos/Piezas';
 import { colorDeVariante } from '../../colorDeVariante';
+import { MARCA } from '../../inicio/marca';
 
-export const colorDeEstado = (variante) => (variante === 'neutral' || !variante ? '#8D8D99' : colorDeVariante(variante));
+export const colorDeEstado = (variante) => (variante === 'neutral' || !variante ? MARCA.gris : colorDeVariante(variante));
 
 export default function Etiqueta({ variante, texto }) {
   return <Pildora texto={texto} color={colorDeEstado(variante)} />;

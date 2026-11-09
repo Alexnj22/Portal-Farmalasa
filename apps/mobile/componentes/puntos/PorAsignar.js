@@ -2,7 +2,7 @@
 // la pestaña «Cuentas por asignar» de Puntos. Cada una dice por qué no pasó y
 // cuántos puntos trae; tocarla abre `asignar-cuenta`, donde se elige la ficha.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { fetchCuentasPorAsignar } from '@nucleo/data/puntos';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -11,7 +11,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import Vidrio from '../Vidrio';
 
 export default function PorAsignar({ busqueda = '', motivo = 'TODOS' }) {
@@ -22,7 +22,7 @@ export default function PorAsignar({ busqueda = '', motivo = 'TODOS' }) {
   }, []);
   const visibles = useMemo(() => (lista || []).filter((c) => (motivo === 'TODOS' || c.motivo === motivo)
     && (!busqueda.trim() || tokenMatch(busqueda, c.nombre, c.dui, c.telefono, String(c.id_cliente)))), [lista, busqueda, motivo]);
-  if (lista == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (lista == null) return <Cargando />;
   return (
     <View style={{ gap: 10 }}>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -30,7 +30,7 @@ export default function PorAsignar({ busqueda = '', motivo = 'TODOS' }) {
       {visibles.slice(0, 200).map((c) => (
         <Pressable key={c.id_cliente} onPress={() => router.push({ pathname: '/asignar-cuenta', params: { cuenta: JSON.stringify(c) } })}
           style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-          <Vidrio radio={18} interactivo>
+          <Vidrio radio={20} interactivo>
             <View style={{ padding: 12, gap: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{c.nombre || 'Sin nombre'}</Text>

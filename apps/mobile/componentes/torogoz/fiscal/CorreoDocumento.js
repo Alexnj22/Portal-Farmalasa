@@ -17,8 +17,8 @@ import { Pildora } from '../../avisos/Piezas';
 import { colorDeVariante } from '../../colorDeVariante';
 import { fallo, listo, trabajando } from '../../Progreso';
 import { enviarDocumentoPorCorreo } from './papel';
+import { PETROLEO } from '../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 export default function CorreoDocumento({ dte, puedeEnviar, onEnviado }) {
   const vigente = Array.isArray(dte.correo) ? dte.correo[0] : dte.correo;

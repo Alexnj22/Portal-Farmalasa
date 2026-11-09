@@ -94,7 +94,7 @@ export default function ProveedoresEnLote() {
     opciones: [{ id: 'sin', label: 'Sin categoría' }, { id: 'sugerida', label: 'Con sugerencia distinta' }, { id: 'todos', label: 'Todos' }] }];
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Categoría en lote', headerLargeTitle: false,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Categoría en lote', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Nombre, alias o NIT', onChangeText: (e) => setBusca(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
       <FlatList data={filas == null ? [] : visibles} keyExtractor={(r) => String(r.id)} extraData={sel}

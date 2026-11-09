@@ -80,7 +80,7 @@ export default function Jefatura() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: `Asignar ${cargo}`,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: `Asignar ${cargo}`, headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Nombre o cargo', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 60, gap: 16 }} keyboardShouldPersistTaps="handled">

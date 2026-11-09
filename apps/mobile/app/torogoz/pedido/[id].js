@@ -27,13 +27,12 @@ import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../../componentes/formulario/Piezas';
 import { Esqueleto } from '../../../componentes/inicio/Widget';
-import { MARCA } from '../../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import Etiqueta from '../../../componentes/torogoz/rutas/Etiqueta';
 import PagosDelPedido from '../../../componentes/torogoz/fiscal/PagosDelPedido';
 import { pedidoRecordado } from '../../../componentes/torogoz/pedidos/elegido';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 const rutaDocumento = (dteId) => `/torogoz/documento/${dteId}`;
 
 export default function DetallePedido() {

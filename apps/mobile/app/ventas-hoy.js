@@ -83,7 +83,7 @@ export default function VentasHoy() {
         <FiltrosActivos grupos={grupos} />
 
         <View style={{ marginHorizontal: 16 }}>
-          <Vidrio radio={24}>
+          <Vidrio radio={20}>
             <View style={{ padding: 16 }}>
               <GraficaHoras valores={s.porHora ?? []} color={MARCA.verde} alto={200}
                 formato={(v) => formatMoney(v)}

@@ -26,7 +26,7 @@
 //   · «¿Necesitas un producto ya?» lo busca en TODO el pedido (dice en qué
 //     hoja cayó) para recibirlo solo, y dentro de una hoja larga hay buscador.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -44,7 +44,7 @@ import { conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRe
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -107,26 +107,14 @@ const Renglon = memo(function Renglon({ r, valor, onCambiar: cambiarDe, primero,
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, alignItems: 'center' }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Contado en</Text>
           {opciones.map((o) => {
-            const activo = o.factor === pres;
-            return (
-              <Pressable key={o.factor} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar({ fQty: qty, fPres: o.factor }); }}
-                accessibilityRole="button" accessibilityState={{ selected: activo }}
-                style={{ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: activo ? MARCA.azul : 'rgba(127,127,127,0.16)' }}>
-                <Text style={{ color: activo ? '#fff' : colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{o.label}</Text>
-              </Pressable>
-            );
+            return <Ficha key={o.factor} texto={o.label} activa={o.factor === pres} onPress={() => onCambiar({ fQty: qty, fPres: o.factor })} />;
           })}
         </View>
       ) : null}
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
         {PROBLEMAS.map(([id, rotulo]) => {
           const activo = valor.problema === id;
-          return (
-            <Pressable key={id} onPress={() => onCambiar({ problema: activo ? null : id })}
-              style={{ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: activo ? MARCA.ambar : 'rgba(127,127,127,0.16)' }}>
-              <Text style={{ color: activo ? '#fff' : colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>{rotulo}</Text>
-            </Pressable>
-          );
+          return <Ficha key={id} texto={rotulo} activa={activo} color={MARCA.ambar} onPress={() => onCambiar({ problema: activo ? null : id })} />;
         })}
       </View>
       {valor.problema === 'danado' || valor.problema === 'vencido' ? (
@@ -381,7 +369,7 @@ export default function Recibir() {
   const solo = useCallback((r) => soloRef.current(r), []);
 
   const titulo = `Contar #${numero ?? ''}`;
-  if (!derivado) return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} /><ActivityIndicator style={{ marginTop: 120 }} /></>);
+  if (!derivado) return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: titulo }} /><Cargando /></>);
 
   if (abierto) {
     const nombre = abierto.tipo === 'hoja' ? `Hoja ${abierto.hoja}` : abierto.tipo === 'especial' ? `Caja ${abierto.especial.labels.join('–')}` : 'Todo el pedido';
@@ -512,7 +500,7 @@ export default function Recibir() {
           ))}
           <BotonGrande texto="Escanear el carné de quien ayudó" borde onPress={() => { setAvisoApoyo(null); setEscaneando(true); }} />
         </Seccion>
-        <Vidrio radio={18}>
+        <Vidrio radio={20}>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, padding: 12 }}>
             Cuenta cada hoja con su papel. Si algo no cuadra, quedará como diferencia y se resuelve con Bodega.
           </Text>

@@ -29,7 +29,7 @@ import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -99,7 +99,7 @@ function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
         </>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {rows == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((f) => {
+      {rows == null ? <Cargando /> : visibles.map((f) => {
         const sinMeta = f.monto_meta == null;
         const color = COLOR_TRAMO[f.bono_tier] ?? MARCA.azul;
         const des = desglose[f.branch_id];
@@ -147,7 +147,7 @@ function Tablero({ ym, setYm, sala, todas, user, salaNombre }) {
         );
       })}
       {rows && !visibles.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 30 }}>Sin salas para este mes</Text>
+        <Vacio>Sin salas para este mes</Vacio>
       ) : null}
       {esActual ? (
         <View style={{ gap: 10, marginTop: 6 }}>
@@ -205,7 +205,7 @@ export default function Metas() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Metas', headerLargeTitle: true }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Agregar meta', onPress: () => router.push({ pathname: '/meta-nueva', params: { ym: pestana === 'tablero' ? ym : ymActual, sala: sala === 'todas' ? '' : sala } }) } : null} />
       <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
@@ -235,11 +235,6 @@ export default function Metas() {
         ) : (
           <Historico key={llave} sala={sala === 'todas' ? null : sala} soloConMeta={conMeta === 'con_meta'} salaNombre={salaNombre} salasVisibles={salasVisibles} />
         )}
-        {puedeEditar ? (
-          <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-            <BotonGrande texto="Agregar meta" onPress={() => router.push({ pathname: '/meta-nueva', params: { ym: pestana === 'tablero' ? ym : ymActual, sala: sala === 'todas' ? '' : sala } })} />
-          </View>
-        ) : null}
       </ScrollView>
       </TrasLaTransicion>
     </>

@@ -26,7 +26,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import Escaner from '../../Escaner';
 import { FiltrosActivos, MenuDeFiltros } from '../../Filtros';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { MARCA } from '../../inicio/marca';
 import { fallo, listo, trabajando } from '../../Progreso';
@@ -182,7 +182,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
     ...(producto ? [{ id: 'prod', titulo: 'Producto', activa: 'uno', porDefecto: 'todos', onCambiar: () => setProducto(null), opciones: [{ id: 'todos', label: 'Todos' }, { id: 'uno', label: producto.nombre }] }] : []),
   ] : [];
 
-  if (!cargado) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (!cargado) return <Cargando />;
   return (
     <View style={{ gap: 12 }}>
       <MenuDeFiltros grupos={grupos} extra={abierto && (puedeVender || puedeConfigurar) ? { icono: 'barcode.viewfinder', etiqueta: 'Escanear', onPress: () => setEscaneando(true) } : null} />

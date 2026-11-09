@@ -3,13 +3,39 @@
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
 import { useState } from 'react';
-import { InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { FONDO_CONTROL, MARCA } from '../inicio/marca';
 
 const ANDROID = Platform.OS === 'android';
+
+/** Lo que se ve mientras llega una pantalla: siempre a la misma altura. */
+export function Cargando() {
+  return <ActivityIndicator style={{ marginTop: 32 }} />;
+}
+
+/** Una pantalla o lista sin nada que mostrar. Título (o hijos) y detalle opcional. */
+export function Vacio({ titulo, detalle, children }) {
+  return (
+    <View style={{ alignItems: 'center', marginTop: 40, gap: 6, paddingHorizontal: 32 }}>
+      <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>{titulo ?? children}</Text>
+      {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>{detalle}</Text> : null}
+    </View>
+  );
+}
+
+/** Ficha para elegir entre pocas opciones, en línea. */
+export function Ficha({ texto, activa, onPress, color = MARCA.azul, deshabilitada }) {
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }} disabled={deshabilitada} accessibilityRole="button" accessibilityState={{ selected: !!activa }}
+      style={({ pressed }) => ({ minHeight: 40, paddingHorizontal: 14, borderRadius: 20, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: activa ? color : FONDO_CONTROL, opacity: deshabilitada ? 0.4 : pressed ? 0.7 : 1 })}>
+      <Text style={{ color: activa ? '#fff' : colorSistema.texto, fontSize: 15, fontWeight: activa ? '700' : '500' }}>{texto}</Text>
+    </Pressable>
+  );
+}
 
 export function Seccion({ titulo, pie, children }) {
   return (
@@ -49,7 +75,7 @@ export function Campo({ multiline = true, style, ...props }) {
       <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline}
         inputAccessoryViewID={numerico ? id : undefined} {...props}
         style={[{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, fontSize: 16, color: colorSistema.texto,
-          backgroundColor: 'rgba(127,127,127,0.16)' }, style]} />
+          backgroundColor: FONDO_CONTROL }, style]} />
       {numerico ? <BarraListo id={id} /> : null}
     </>
   );

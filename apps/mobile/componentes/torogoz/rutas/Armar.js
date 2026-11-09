@@ -10,8 +10,8 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Widget, { Esqueleto, Renglon, Vacio } from '../../inicio/Widget';
 import { Aviso, BotonGrande } from '../../formulario/Piezas';
 import Etiqueta from './Etiqueta';
+import { PETROLEO } from '../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 export default function Armar() {
   const [rutas, setRutas] = useState(null);

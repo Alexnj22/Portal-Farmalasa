@@ -32,7 +32,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { Chip } from '../../componentes/inicio/Widget';
 import Escaner from '../../componentes/Escaner';
@@ -449,7 +449,7 @@ export default function Conteo() {
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
           {conteo ? (
             <View style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={22}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 16, gap: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{sala ?? 'Conteo'}</Text>
@@ -537,8 +537,8 @@ export default function Conteo() {
           ) : null}
           {hayVencidos ? (
             <Segmentos activa={area} onCambiar={setArea} opciones={[
-              { id: 'NORMAL', label: `Inventario${resumen?.pendientes_bodega ? ` · faltan ${resumen.pendientes_bodega}` : ''}` },
-              { id: 'VENCIDOS', label: `Área de vencidos${resumen?.pendientes_vencidos ? ` · faltan ${resumen.pendientes_vencidos}` : ''}` },
+              { id: 'NORMAL', label: 'Inventario' },
+              { id: 'VENCIDOS', label: 'Área de vencidos' },
             ]} />
           ) : null}
           <Segmentos activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
@@ -575,12 +575,12 @@ export default function Conteo() {
               </View>
             );
           })}
-          {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+          {cargando ? <Cargando /> : null}
           {!cargando && productos.total > productos.filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((n) => n + 1)} /></View> : null}
           {!cargando && !productos.filas.length ? (
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 30 }}>
+            <Vacio>
               {busqueda ? 'Ningún producto del conteo con esa búsqueda' : filtro === 'PENDIENTES' ? 'No queda nada por contar' : 'Sin productos en este filtro'}
-            </Text>
+            </Vacio>
           ) : null}
           {editable ? (
             <View style={{ marginHorizontal: 16, marginTop: 8 }}>

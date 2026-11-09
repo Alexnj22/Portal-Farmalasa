@@ -5,7 +5,7 @@
 // desde acá (el + de arriba, con la hoja `VentaPerdida`). El estado va en la
 // dirección (`?estado=`), como en el portal.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor, fetchVentasPerdidas, mensajeDeDistribucion, resolverVentaPerdida } from '@nucleo/data/distribucion';
@@ -20,7 +20,7 @@ import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import VentaPerdida from '../../componentes/torogoz/bodega/VentaPerdida';
@@ -30,17 +30,6 @@ import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
 
 const OPCIONES = VISTAS_PERDIDAS.map((v) => ({ id: v.key, label: v.label }));
 const PAGINA = 60;
-
-function Accion({ texto, color, relleno, onPress, deshabilitado }) {
-  return (
-    <Pressable onPress={onPress} disabled={deshabilitado} accessibilityRole="button"
-      style={({ pressed }) => ({ flex: 1, minHeight: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: relleno ? color : 'transparent', borderWidth: relleno ? 0 : 1.5, borderColor: color,
-        opacity: deshabilitado ? 0.4 : pressed ? 0.7 : 1, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
-      <Text style={{ color: relleno ? '#fff' : color, fontSize: 15, fontWeight: '700' }}>{texto}</Text>
-    </Pressable>
-  );
-}
 
 export default function VentasPerdidas() {
   const { estado: enUrl } = useLocalSearchParams();
@@ -109,7 +98,7 @@ export default function VentasPerdidas() {
           Lo que los clientes pidieron y no se les pudo vender: la lista de lo que hay que comprar.
         </Text>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 16 }} /> : filtrados.length === 0 ? (
+        {filas == null ? <Cargando /> : filtrados.length === 0 ? (
           buscar ? <Vacio titulo="Sin resultados" texto="Ninguna venta perdida coincide con la búsqueda." />
             : vista === 'pendiente' ? <Vacio titulo="Sin pendientes" texto="Nada de lo que pidieron quedó sin atender." />
               : <Vacio titulo={vista === 'atendida' ? 'Sin atendidas' : 'Sin descartadas'} />
@@ -142,10 +131,10 @@ export default function VentasPerdidas() {
                     <View style={{ flexDirection: 'row', gap: 8, marginTop: 4 }}>
                       {vista === 'pendiente' ? (
                         <>
-                          <Accion texto="Descartar" color={colorSistema.texto2} onPress={() => resolver(f, 'descartada')} deshabilitado={ocupado === f.id} />
-                          <Accion texto="Atendida" color={PETROLEO} relleno onPress={() => resolver(f, 'atendida')} deshabilitado={ocupado === f.id} />
+                          <View style={{ flex: 1 }}><BotonGrande texto="Descartar" borde color={colorSistema.texto2} onPress={() => resolver(f, 'descartada')} deshabilitado={ocupado === f.id} /></View>
+                          <View style={{ flex: 1 }}><BotonGrande texto="Atendida" color={PETROLEO} onPress={() => resolver(f, 'atendida')} deshabilitado={ocupado === f.id} /></View>
                         </>
-                      ) : <Accion texto="Volver a pendientes" color={MARCA.azulClaro} onPress={() => resolver(f, 'pendiente')} deshabilitado={ocupado === f.id} />}
+                      ) : <View style={{ flex: 1 }}><BotonGrande texto="Volver a pendientes" borde color={MARCA.azulClaro} onPress={() => resolver(f, 'pendiente')} deshabilitado={ocupado === f.id} /></View>}
                     </View>
                   ) : null}
                 </Ficha>

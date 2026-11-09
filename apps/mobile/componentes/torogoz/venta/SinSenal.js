@@ -71,7 +71,7 @@ export function useColaSinSenal({ automatico = true } = {}) {
 export function AvisoSinSenal({ lista, enviando, onEnviar }) {
   if (!lista.length) return null;
   return (
-    <Vidrio radio={18}>
+    <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 8, backgroundColor: `${MARCA.ambar}1F` }}>
         <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>
           {`${lista.length} venta${lista.length === 1 ? '' : 's'} sin señal por facturar`}

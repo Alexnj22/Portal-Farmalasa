@@ -32,7 +32,7 @@ import { fechaTexto, rangoDelMes } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -151,10 +151,10 @@ export default function FacturaCompra() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarJson(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto={error} /> : null}
-        {!doc && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {!doc && !error ? <Cargando /> : null}
         {doc ? (
           <>
-            <Vidrio radio={24} tinte={doc.invalidado ? 'rgba(240,68,56,0.12)' : undefined}>
+            <Vidrio radio={20} tinte={doc.invalidado ? 'rgba(240,68,56,0.12)' : undefined}>
               <View style={{ padding: 18, gap: 6 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{proveedor}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

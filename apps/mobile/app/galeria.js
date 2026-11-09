@@ -8,7 +8,7 @@
 // Qué entra a la galería, el texto y los archivos vigentes salen del núcleo
 // (`marketing`), lo mismo del portal. Se filtra por formato y por marca (`esDeMarca`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Image, Modal, RefreshControl, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
+import { Image, Modal, RefreshControl, ScrollView, Share, Text, View, useWindowDimensions } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -20,7 +20,7 @@ import { registrarEgreso } from '@nucleo/data/egreso';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import ConAurora from '../componentes/ConAurora';
 import { MARCA } from '../componentes/inicio/marca';
@@ -106,7 +106,7 @@ export default function Galeria() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {piezas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+        {piezas == null ? <Cargando /> : (
           <View style={{ marginHorizontal: 16, flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
             {tramo.visibles.map((p) => {
               const portada = mediosDe(p).find((a) => tipoDeArchivo(a) === 'imagen' && firmadas.get(a.url));
@@ -122,7 +122,7 @@ export default function Galeria() {
             })}
           </View>
         )}
-        {piezas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Todavía no hay piezas liberadas</Text> : null}
+        {piezas && !visibles.length ? <Vacio>Todavía no hay piezas liberadas</Vacio> : null}
         {piezas?.length ? <View style={{ marginHorizontal: 16 }}><Pildora texto={`${visibles.length} pieza${visibles.length === 1 ? '' : 's'}`} color={MARCA.azulClaro} /></View> : null}
       </ScrollView>
       {abierta ? <Detalle pieza={abierta} firmadas={firmadas} onCerrar={() => setAbierta(null)} /> : null}

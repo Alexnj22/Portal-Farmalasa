@@ -11,7 +11,7 @@
 // no responde, se ordena en línea recta, igual que el portal cuando Google
 // falla. El trazo del mapa va en línea recta entre paradas.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';
@@ -30,7 +30,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando } from '../../../componentes/formulario/Piezas';
 import Segmentos from '../../../componentes/Segmentos';
 import Vidrio from '../../../componentes/Vidrio';
 import { MARCA } from '../../../componentes/inicio/marca';
@@ -212,7 +212,7 @@ export default function NuevaRuta() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         <Segmentos activa={paso} onCambiar={(v) => { if (v === '1' || paradas.length) setPaso(v); }}
           opciones={[{ id: '1', label: 'Pedidos' }, { id: '2', label: 'Paradas' }]} />
-        {disponibles == null ? <ActivityIndicator style={{ marginTop: 30 }} /> : paso === '1' ? (
+        {disponibles == null ? <Cargando /> : paso === '1' ? (
           <View style={{ marginHorizontal: 16, gap: 12 }}>
             {!disponibles.length ? <Aviso texto="No hay salas finalizadas esperando salir." /> : (
               <Seccion titulo={`Listos para salir · ${disponibles.length}`} pie={conductor.corto ? `Conduce ${conductor.corto}.` : null}>

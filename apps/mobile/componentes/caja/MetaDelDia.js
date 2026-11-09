@@ -37,7 +37,7 @@ export default function MetaDelDia({ sala }) {
   const color = llego ? MARCA.verde : MARCA.azulClaro;
 
   return (
-    <Vidrio radio={22}>
+    <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Chip icono="Target" color={color} tamano={30} />

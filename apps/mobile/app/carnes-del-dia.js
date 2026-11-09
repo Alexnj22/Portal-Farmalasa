@@ -11,7 +11,7 @@
 // antes de imprimirle otro) y «Imprimir carné» pregunta en qué sala sale y lo
 // manda a su caja (`useCarneDePapel`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { anularCarneTemporal, fetchCarnesVigentes } from '@nucleo/data/carneTemporal';
@@ -21,7 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hora12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -77,12 +77,12 @@ export default function CarnesDelDia() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vigentes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{vigentes.length ? `${vigentes.length} carné${vigentes.length === 1 ? '' : 's'} de papel vivo${vigentes.length === 1 ? '' : 's'} · vencen solos a medianoche` : ''}</Text> : null}
-        {vigentes == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : grupos.map((g) => (
+        {vigentes == null ? <Cargando /> : grupos.map((g) => (
           <View key={g.sala} style={{ gap: 8 }}>
             {grupos.length > 1 ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{`${g.sala} · ${g.items.length}`}</Text> : null}
             {g.items.map((c) => (
               <View key={c.id} style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={18}>
+                <Vidrio radio={20}>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar empleado={c.empleado ?? { name: c.nombre }} tamano={36} />
                     <View style={{ flex: 1, gap: 2 }}>
@@ -99,14 +99,14 @@ export default function CarnesDelDia() {
             ))}
           </View>
         ))}
-        {vigentes && !filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{texto.trim() ? 'Nadie con ese nombre tiene un carné vivo' : 'Nadie tiene un carné de papel hoy'}</Text> : null}
+        {vigentes && !filas.length ? <Vacio>{texto.trim() ? 'Nadie con ese nombre tiene un carné vivo' : 'Nadie tiene un carné de papel hoy'}</Vacio> : null}
         {texto.trim() ? (
           <View style={{ gap: 8, marginTop: 8 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>Imprimir un carné</Text>
             {!candidatos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{(empleados || []).length ? 'Nadie con ese nombre. Revisa cómo está escrito en su ficha.' : 'Todavía no se cargó el personal.'}</Text> : null}
             {candidatos.map((e) => (
               <View key={e.id} style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={18}>
+                <Vidrio radio={20}>
                   <View style={{ padding: 12, flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar empleado={e} tamano={36} />
                     <View style={{ flex: 1, gap: 2 }}>

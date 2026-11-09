@@ -13,7 +13,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso } from '../../componentes/formulario/Piezas';
+import { Aviso, Vacio } from '../../componentes/formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
@@ -70,7 +70,7 @@ export default function Vendedor() {
           const fuera = d.branches.filter((b) => sala && Number(b.branch_id) !== Number(sala));
           return (
             <View key={d.fecha} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18} tinte={fuera.length ? 'rgba(247,144,9,0.14)' : undefined}>
+              <Vidrio radio={20} tinte={fuera.length ? 'rgba(247,144,9,0.14)' : undefined}>
                 <View style={{ padding: 14, gap: 4 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>
@@ -88,7 +88,7 @@ export default function Vendedor() {
           );
         })}
         {dias && !dias.length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin ventas en este período</Text>
+          <Vacio>Sin ventas en este período</Vacio>
         ) : null}
       </ScrollView>
     </>

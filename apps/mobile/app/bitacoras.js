@@ -9,7 +9,7 @@
 // día con el selector del sistema; la bitácora de mañana no existe, así que no
 // se avanza de hoy.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -23,7 +23,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Ronda from '../componentes/bitacoras/Ronda';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
@@ -53,7 +53,7 @@ function Momento({ momento, areas, puedeAnotar, cerrado, onRonda, onCorregir }) 
   if (!r.bloques.length) return null;
   const color = TONO[r.tono] ?? (r.completo ? MARCA.verde : MARCA.azulClaro);
   return (
-    <Vidrio radio={22}>
+    <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{ flex: 1 }}>
@@ -197,7 +197,7 @@ export default function Bitacoras() {
         {!salaValida ? (
           <Aviso tono="cuidado" texto={!sala ? 'Elige una sucursal para ver su bitácora.' : `${nombreSala || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`} />
         ) : cargando && !dia ? (
-          <ActivityIndicator style={{ marginTop: 32 }} />
+          <Cargando />
         ) : error ? (
           <Aviso tono="freno" texto={error.code === '42501' ? 'Tu cargo no tiene el módulo de bitácoras. Hay que otorgarlo en Permisos.' : (error.message || 'No se pudo cargar la bitácora.')} />
         ) : !areas.length ? (
@@ -207,7 +207,7 @@ export default function Bitacoras() {
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
               {METRICAS.map((m) => (
                 <View key={m.clave} style={{ width: '47%', flexGrow: 1 }}>
-                  <Vidrio radio={18}>
+                  <Vidrio radio={20}>
                     <View style={{ padding: 12, gap: 2 }}>
                       <Text style={{ color: m.color, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{resumen[m.clave]}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{m.label}</Text>

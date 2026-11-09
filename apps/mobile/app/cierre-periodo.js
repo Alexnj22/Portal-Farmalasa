@@ -13,7 +13,7 @@
 // (`reabrirPeriodoFiscal`). Las dos con `libros_iva` · editar, como el portal;
 // si un período no se puede cerrar, el motivo lo dice el servidor.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -25,7 +25,7 @@ import { etiquetaMes, fechaTexto, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -89,11 +89,11 @@ export default function CierrePeriodo() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cierre de período', headerLargeTitle: true }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={declarable ? 'decl' : 'hoy'} onCambiar={(v) => setDeclarable(v === 'decl')} opciones={[{ id: 'hoy', label: 'El que se declara hoy' }, { id: 'decl', label: 'El declarable' }]} />
         <FilaDeKpis>
           <Kpi icono="Lock" rotulo="Cerrados" valor={String(t.cerrados)} color={MARCA.verde} apoyo={`${t.abiertos} sin cerrar`} />
           <Kpi icono="TrendingDown" rotulo="Sin arrastrar" valor={formatMoney(t.perdido)} color={t.perdido > 0 ? MARCA.rojo : MARCA.verde} apoyo={t.perdido > 0 ? 'se pierde si no se cierra' : 'nada'} />
         </FilaDeKpis>
-        <Segmentos activa={declarable ? 'decl' : 'hoy'} onCambiar={(v) => setDeclarable(v === 'decl')} opciones={[{ id: 'hoy', label: 'El que se declara hoy' }, { id: 'decl', label: 'El declarable' }]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {cadena.length ? (
           <View style={{ gap: 6 }}>
@@ -123,8 +123,8 @@ export default function CierrePeriodo() {
             {t.perdido > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`Hoy ese arrastre no ocurre: el mes siguiente se declara como si el anterior no hubiera existido. Son ${formatMoney(t.perdido)} que se pierden.`} /></View> : null}
           </View>
         ) : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : !cadena.length ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin períodos</Text>
+        {filas == null ? <Cargando /> : !cadena.length ? (
+          <Vacio>Sin períodos</Vacio>
         ) : [...cadena].reverse().map((f) => {
           const idx = cadena.indexOf(f);
           const siguiente = cadena[idx + 1];

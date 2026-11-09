@@ -40,7 +40,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -279,6 +279,8 @@ export default function Inventario() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
+        <Segmentos activa={vista} onCambiar={setVista}
+          opciones={[{ id: 'todo', label: 'Todo' }, { id: 'proximos', label: 'Por vencer' }, { id: 'vencidos', label: 'Vencidos' }]} />
         <FiltrosActivos grupos={grupos} />
         {cifras ? (
           <>
@@ -305,15 +307,13 @@ export default function Inventario() {
             {`${erp == null ? `La más vieja: ${ERP_NAMES[sincronia.erp_sucursal_id]} · ` : ''}actualizado ${desdeHace(sincronia.synced_at, Date.now())}${sincronia.items_count != null ? ` · ${Number(sincronia.items_count).toLocaleString('es-SV')} renglones` : ''}`}
           </Text>
         ) : null}
-        <Segmentos activa={vista} onCambiar={setVista}
-          opciones={[{ id: 'todo', label: 'Todo' }, { id: 'proximos', label: 'Por vencer' }, { id: 'vencidos', label: 'Vencidos' }]} />
         {datos.parecidos ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {datos.filas.map((g) => {
           const k = `${g.erp_sucursal_id}_${g.erp_product_id}`;
           return <Tarjeta key={k} g={g} conSala={erp == null} vencidas={vencidasPorProducto[k] || 0} />;
         })}
-        {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+        {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.filas.length && !error ? (
           <View style={{ alignItems: 'center', paddingTop: 40, gap: 6 }}>

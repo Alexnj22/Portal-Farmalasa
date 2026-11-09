@@ -9,7 +9,7 @@
 // (`inyeccionesAjustes`), los mismos del portal; las escrituras, las mismas
 // funciones de la base.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -25,7 +25,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
@@ -64,7 +64,7 @@ function Precios() {
       } },
     ]);
 
-  if (!precios) return <ActivityIndicator style={{ marginTop: 12 }} />;
+  if (!precios) return <Cargando />;
   return (
     <Seccion titulo="Precio por aplicación">
       <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Comprada aquí ($)</Text>
@@ -173,7 +173,7 @@ function CatalogoDeDosis({ recarga }) {
 
   const porMl = (f) => { guardar('inyeccion-ml', f); router.push('/inyeccion-ml'); };
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 12 }} />;
+  if (filas == null) return <Cargando />;
   return (
     <>
       <View style={{ marginHorizontal: 16, gap: 6 }}>
@@ -196,7 +196,7 @@ function CatalogoDeDosis({ recarga }) {
         const ml = f.contenido_ml != null;
         return (
           <View key={clave(f)} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, gap: 6 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{f.descripcion}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>

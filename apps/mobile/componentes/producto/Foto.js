@@ -93,7 +93,7 @@ export default function Foto({ productId, url, puedeCambiar, onCambiada }) {
         <View style={{ width: 200, height: 200, borderRadius: 24, overflow: 'hidden', backgroundColor: '#fff', alignItems: 'center', justifyContent: 'center',
           borderWidth: url ? 0 : 1.5, borderStyle: 'dashed', borderColor: colorSistema.separador }}>
           {url ? <Image source={{ uri: url }} style={{ width: '100%', height: '100%' }} resizeMode="contain" /> : (
-            <Text style={{ color: '#8a8a8a', fontSize: 14, fontWeight: '600' }}>{puedeCambiar ? 'Agregar foto' : 'Sin foto'}</Text>
+            <Text style={{ color: MARCA.gris, fontSize: 14, fontWeight: '600' }}>{puedeCambiar ? 'Agregar foto' : 'Sin foto'}</Text>
           )}
           {subiendo ? <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: 'rgba(0,0,0,0.35)', alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color="#fff" /></View> : null}
         </View>

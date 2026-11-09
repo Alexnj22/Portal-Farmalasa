@@ -3,7 +3,7 @@
 // historial con buscar, tipo y desde/hasta (`filtrarHistorial`, núcleo — la
 // misma regla del portal).
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Pressable, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -14,10 +14,10 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 
 const hoyIso = () => hoySV();
 import { colorSistema } from '../Formulario';
-import { Seccion } from '../formulario/Piezas';
+import { Campo, Seccion } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Fecha from '../formulario/Fecha';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { iconoDe } from '../../tema/iconos';
 
@@ -110,10 +110,9 @@ export function Historial({ historial }) {
   };
   return (
     <Seccion titulo={`Mi historial · ${filtrado.length}${hayFiltro ? ` de ${historial.length}` : ''}`}>
-      <TextInput value={busca} onChangeText={setBusca} placeholder="Buscar en el historial" placeholderTextColor={colorSistema.texto2} clearButtonMode="while-editing"
-        style={{ minHeight: 40, borderRadius: 12, paddingHorizontal: 12, fontSize: 15, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+      <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar en el historial" clearButtonMode="while-editing" />
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <Pressable onPress={elegirTipo} style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: tipo ? `${MARCA.azulClaro}33` : 'rgba(127,127,127,0.16)', opacity: pressed ? 0.7 : 1 })}>
+        <Pressable onPress={elegirTipo} style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 12, borderRadius: 17, justifyContent: 'center', backgroundColor: tipo ? `${MARCA.azulClaro}33` : FONDO_CONTROL, opacity: pressed ? 0.7 : 1 })}>
           <Text style={{ color: tipo ? MARCA.azulClaro : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{tipo ? rotulo(tipo) : 'Tipo ▾'}</Text>
         </Pressable>
         {hayFiltro ? (

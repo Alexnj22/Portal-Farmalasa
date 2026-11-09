@@ -7,7 +7,7 @@
 // tiempo de un pedido se lee de un vistazo, que es lo que una tabla de siete
 // columnas no deja ver en un teléfono.
 import { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '@nucleo/data/pedidos';
 import { indicadoresDePedidos, minutosLegibles } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES } from '@nucleo/constants/erp';
@@ -15,7 +15,7 @@ import Segmentos from '../Segmentos';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import { FONDO } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 
@@ -31,7 +31,7 @@ const dia = (d) => d.toISOString().slice(0, 10);
 function Tarjeta({ titulo, children }) {
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ padding: 14, gap: 12 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{titulo}</Text>
           {children}
@@ -66,7 +66,7 @@ export default function Metricas() {
     <View style={{ gap: 12 }}>
       <Segmentos activa={rango} onCambiar={setRango} opciones={RANGOS} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {!datos ? <ActivityIndicator style={{ marginTop: 20 }} /> : !ind.pedidos ? (
+      {!datos ? <Cargando /> : !ind.pedidos ? (
         <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30, fontSize: 15 }}>Sin tiempos registrados en este rango.</Text>
       ) : (
         <>

@@ -11,7 +11,7 @@
 // deducibilidad por regla es `proveedores-fiscal` y la categoría en lote,
 // `proveedores-lote`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchProveedorCategorias, fetchProveedoresMaestro } from '@nucleo/data/proveedores';
@@ -24,7 +24,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -110,10 +110,10 @@ export default function Proveedores() {
         <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Categoría en lote" borde onPress={() => router.push('/proveedores-lote')} /></View>
         {filas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${visibles.length.toLocaleString('es-SV')} proveedores`}</Text> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, mostrar).map((r) => (
+        {filas == null ? <Cargando /> : visibles.slice(0, mostrar).map((r) => (
           <Pressable key={r.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/proveedor/[id]', params: { id: String(r.id) } }); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <View style={{ padding: 12, gap: 4 }}>
                 <Text style={{ color: r.activo === false ? colorSistema.texto2 : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.alias || r.nombre_comercial || r.nombre}</Text>
                 {(r.alias || r.nombre_comercial) && r.nombre ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{r.nombre}</Text> : null}
@@ -133,7 +133,7 @@ export default function Proveedores() {
         ))}
         {filas && visibles.length > mostrar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setMostrar((n) => n + POR_PAGINA)} /></View> : null}
         {filas && !visibles.length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{q ? 'Ningún proveedor con esa búsqueda' : 'Sin proveedores'}</Text>
+          <Vacio>{q ? 'Ningún proveedor con esa búsqueda' : 'Sin proveedores'}</Vacio>
         ) : null}
       </ScrollView>
     </>

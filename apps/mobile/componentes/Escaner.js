@@ -102,7 +102,7 @@ export default function Escaner({ visible, titulo, ayuda, onCodigo, onCerrar, pi
         </View>
 
         <View style={{ position: 'absolute', bottom: margen.bottom + 24, left: 16, right: 16, alignItems: 'center', gap: 14 }}>
-          {pie ? <Vidrio radio={18}><View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>{pie}</View></Vidrio> : null}
+          {pie ? <Vidrio radio={20}><View style={{ paddingHorizontal: 16, paddingVertical: 10 }}>{pie}</View></Vidrio> : null}
           <BotonRedondo icono={linterna ? 'Flashlight' : 'FlashlightOff'} activo={linterna} etiqueta="Linterna" onPress={() => setLinterna((v) => !v)} />
         </View>
       </View>

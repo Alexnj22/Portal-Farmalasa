@@ -12,7 +12,7 @@
 // el motivo; el bloqueo cierra todas sus conexiones. No se ofrece sobre uno
 // mismo: la base lo rechaza y quedarías fuera. Todo sale de `data/sesiones`.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -25,7 +25,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -181,16 +181,16 @@ export default function Sesiones() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={filtro} onCambiar={setFiltro} opciones={[
           { id: 'todas', label: 'Todas' }, { id: 'hoy', label: 'Hoy' }, { id: 'olvidadas', label: 'Olvidadas' },
-          ...(bloqueadas ? [{ id: 'bloqueadas', label: `Bloqueadas · ${bloqueadas}` }] : []),
+          ...(bloqueadas ? [{ id: 'bloqueadas', label: 'Bloqueadas' }] : []),
         ]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${personas.length} persona${personas.length === 1 ? '' : 's'} · ${vivas} conexi${vivas === 1 ? 'ón abierta' : 'ones abiertas'}`}</Text> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((p) => {
+        {filas == null ? <Cargando /> : visibles.map((p) => {
           const bloqueo = describirBloqueo(p.bloqueado_hasta);
           return (
             <Pressable key={p.ficha_id ?? p.cuenta} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(p.ficha_id ?? p.cuenta); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={18} interactivo tinte={p.bloqueado ? 'rgba(240,68,56,0.12)' : undefined}>
+              <Vidrio radio={20} interactivo tinte={p.bloqueado ? 'rgba(240,68,56,0.12)' : undefined}>
                 <View style={{ padding: 12, gap: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Avatar empleado={{ id: p.ficha_id, name: p.empleado, photo: p.foto }} tamano={36} />
@@ -207,7 +207,7 @@ export default function Sesiones() {
             </Pressable>
           );
         })}
-        {filas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Nadie en este grupo</Text> : null}
+        {filas && !visibles.length ? <Vacio>Nadie en este grupo</Vacio> : null}
       </ScrollView>
       {elegida ? (
         <Ficha p={elegida} onCerrar={() => setAbierta(null)} puedeCerrar={puedeCerrar} puedeBloquear={puedeBloquear}

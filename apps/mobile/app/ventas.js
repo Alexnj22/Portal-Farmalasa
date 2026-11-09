@@ -21,7 +21,7 @@
 // puntos canjeados: `get_ventas_con_puntos`), ordenar por columna y el aviso
 // de los cobros que no son venta de productos (`get_ventas_sin_producto`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -47,7 +47,7 @@ import Vendedores from '../componentes/ventas/Vendedores';
 import Productos, { ORDENES_DE_PRODUCTOS } from '../componentes/ventas/Productos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -280,10 +280,10 @@ export default function Ventas() {
     { id: 'periodo', titulo: 'Período', activa: periodo, porDefecto: 'mes', onCambiar: setPeriodo, opciones: PERIODOS },
     ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
       opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
-    ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: mostrar, porDefecto: 'todas', onCambiar: setMostrar,
+    ...(vista === 'facturas' ? [{ id: 'mostrar', titulo: 'Mostrar', activa: buscando && mostrar === 'canjeo' ? 'todas' : mostrar, porDefecto: 'todas', onCambiar: setMostrar,
       opciones: [{ id: 'todas', label: 'Todas las ventas' }, { id: 'receta', label: 'Con receta médica' }, { id: 'anuladas', label: 'Sólo anuladas' }, { id: 'canjeo', label: 'Canjeó puntos' }] },
     // El estado de los puntos va por la lista paginada (como el portal): con búsqueda o receta no aplica.
-    ...(mostrar === 'todas' || mostrar === 'anuladas' ? [{ id: 'puntos', titulo: 'Puntos', activa: estadoPuntos, porDefecto: 'todos', onCambiar: setEstadoPuntos, opciones: PUNTOS }] : []),
+    ...(!buscando && (mostrar === 'todas' || mostrar === 'anuladas') ? [{ id: 'puntos', titulo: 'Puntos', activa: estadoPuntos, porDefecto: 'todos', onCambiar: setEstadoPuntos, opciones: PUNTOS }] : []),
     { id: 'ordenar', titulo: 'Ordenar', activa: orden, porDefecto: 'fecha|desc', onCambiar: setOrden, opciones: ORDENES }] : []),
     ...(vista === 'productos' ? [{ id: 'orden', titulo: 'Ordenar por', activa: ordenProductos, porDefecto: 'neto', onCambiar: setOrdenProductos,
       opciones: ORDENES_DE_PRODUCTOS },
@@ -355,7 +355,7 @@ export default function Ventas() {
           const emp = porCodigo.get(r.cod_vendedor);
           return <Fila key={r.id} r={r} sala={todas && !sala ? nombreDeSala(r.branch_id) : null} vendedor={emp ? shortEmployeeName(emp) : null} privado={privado} canjeo={canjeo} />;
         })}
-        {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+        {cargando ? <Cargando /> : null}
         {!cargando && datos.hayMas ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.filas.length && !error ? (
           <View style={{ alignItems: 'center', paddingTop: 40 }}>

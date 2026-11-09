@@ -5,7 +5,7 @@
 // La consolidación y los puestos salen del núcleo (`ventasPeriodo`), igual que
 // en el portal. Tocar a alguien abre sus ventas día por día.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -15,7 +15,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
@@ -66,7 +66,7 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
     ? smartFilter(busqueda, ranking.conocidos, (v) => [v.especial || v.emp?.name || '', v.cod_vendedor]).results
     : ranking.conocidos), [busqueda, ranking]);
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (filas == null) return <Cargando />;
   const dias = diasDelRango(fini, ffin);
 
   return (
@@ -130,9 +130,9 @@ export default function Vendedores({ fini, ffin, sala, busqueda, verCifras, priv
         </View>
       ))}
       {!lista.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+        <Vacio>
           {busqueda ? 'Nadie con ese nombre' : 'Sin ventas en este período'}
-        </Text>
+        </Vacio>
       ) : null}
     </>
   );

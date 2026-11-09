@@ -23,9 +23,8 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Ficha, Opciones, Seccion } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
-import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeAcento, ofertaElegida } from '../../componentes/ofertas/acentos';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
@@ -177,15 +176,7 @@ export default function EditarOferta() {
               </Seccion>
               <Seccion titulo="Salas" pie={f.branch_ids.length ? null : 'Sin ninguna elegida, vale en todas.'}>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                  {salas.map((s) => {
-                    const on = f.branch_ids.includes(s.id);
-                    return (
-                      <Tocable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); alternarSala(s.id); }}
-                        style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
-                        <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{s.name}</Text>
-                      </Tocable>
-                    );
-                  })}
+                  {salas.map((s) => <Ficha key={s.id} texto={s.name} activa={f.branch_ids.includes(s.id)} onPress={() => alternarSala(s.id)} />)}
                 </View>
               </Seccion>
             </>

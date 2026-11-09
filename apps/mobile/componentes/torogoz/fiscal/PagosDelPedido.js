@@ -18,8 +18,8 @@ import { Pildora } from '../../avisos/Piezas';
 import { colorDeVariante } from '../../colorDeVariante';
 import { fallo, listo, trabajando } from '../../Progreso';
 import ComprobantePago from './ComprobantePago';
+import { PETROLEO } from '../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 function Enlace({ texto, onPress, deshabilitado }) {
   return (

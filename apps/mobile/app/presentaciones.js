@@ -87,7 +87,7 @@ export default function Presentaciones() {
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${resumen.total} presentaciones · ${resumen.repetidas} repetidas · ${resumen.vario} con factor variable`}</Text>
         {filas == null ? <ActivityIndicator /> : visibles.map((r) => (
           <View key={r.tipo} style={{ marginHorizontal: 16 }}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierta === r.tipo ? null : r.tipo); }} style={{ padding: 14, gap: 4 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '800' }}>{r.tipo}</Text>

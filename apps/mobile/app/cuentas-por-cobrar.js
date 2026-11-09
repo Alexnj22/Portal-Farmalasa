@@ -17,14 +17,14 @@
 // Con saldo / Por vencer / Vencidos / Todos en el segmentado (`VER_CARTERA`);
 // sala, vendedor y orden (`ORDEN_CARTERA`) en el menú; de 50 en 50.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, AppState, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { AppState, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { edadDelCredito, fetchCreditos, fetchCreditosReservados, fetchUltimaLectura, refrescarCreditosDeHoy } from '@nucleo/data/creditos';
 import { carteraFiltrada, desdeLaLectura, ORDEN_CARTERA, pagadoPct, VER_CARTERA } from '@nucleo/utils/cartera';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { colorDeEdad } from '../componentes/creditos/edad';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -175,12 +175,13 @@ export default function CuentasPorCobrar() {
     return [...vistos].filter(([, n]) => n).sort((a, b) => a[1].localeCompare(b[1], 'es')).map(([id, label]) => ({ id, label }));
   }, [creditos, porId]);
   const debido = visibles.reduce((t, c) => t + (Number(c.saldo) || 0), 0);
-  const vencidos = conEdad.filter((c) => c.saldo > 0.004 && c.vencido).length;
+  // Con los mismos filtros que «Por cobrar»: dos cifras vecinas, un solo universo.
+  const vencidos = carteraFiltrada(conEdad, { ver: 'VENCIDOS', busqueda: texto, nombreDeSala, vendedor }).length;
 
   const salas = useMemo(() => (sucursales || []).filter((b) => b.name !== 'Bodega' && b.name !== 'Administracion')
     .sort((a, b) => ordenDeSala(a.id) - ordenDeSala(b.id)), [sucursales]);
   const grupos = [
-    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: setSala,
+    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: salaElegida, porDefecto: 'todas', onCambiar: (v) => { setSala(v); setVendedor(''); },
       opciones: [{ id: 'todas', label: 'Todas las salas' }, ...salas.map((b) => ({ id: String(b.id), label: b.name }))] }] : []),
     { id: 'vendedor', titulo: 'Vendedor', activa: vendedor, porDefecto: '', onCambiar: setVendedor,
       opciones: [{ id: '', label: 'Todos los vendedores' }, ...opcionesVendedor] },
@@ -201,6 +202,8 @@ export default function CuentasPorCobrar() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={ver} onCambiar={setVer}
+          opciones={VER_CARTERA.map((v) => ({ id: v.value, label: v.value === 'DEBEN' ? 'Saldo' : v.label }))} />
         <FiltrosActivos grupos={grupos} />
         {creditos ? (
           <FilaDeKpis>
@@ -210,11 +213,9 @@ export default function CuentasPorCobrar() {
               onPress={vencidos ? () => setVer('VENCIDOS') : undefined} />
           </FilaDeKpis>
         ) : null}
-        <Segmentos activa={ver} onCambiar={setVer}
-          opciones={VER_CARTERA.map((v) => ({ id: v.value, label: v.value === 'DEBEN' ? 'Saldo' : v.label }))} />
         {creditos ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${visibles.length} crédito${visibles.length === 1 ? '' : 's'} · ${formatMoney(debido)}`}</Text> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {creditos == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, cuantos).map((c) => (
+        {creditos == null ? <Cargando /> : visibles.slice(0, cuantos).map((c) => (
           <Tarjeta key={`${c.branch_id}-${c.credito}`} c={c} sala={sala ? null : nombreDeSala.get(c.branch_id)}
             vendedor={porId.get(String(c.vendedor_id))} enAprobacion={reservados.has(`${c.branch_id}:${c.credito}`)} />
         ))}

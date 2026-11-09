@@ -4,7 +4,7 @@
 // tocaron un botón (tocar el número abre quién la vio), hasta cuándo se ve, y
 // —con permiso— publicar, retirar, publicar otras 24 horas, editar y borrar.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { borrarHistoria, fetchHistorias, fetchVistasHistorias, publicarHistoria } from '@nucleo/data/ofertasClientes';
@@ -14,7 +14,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { colorDeVariante } from '../colorDeVariante';
@@ -82,7 +82,7 @@ export default function Historias({ busqueda, estado, puedeEditar, recarga }) {
   };
   const verQuienes = (h) => { guardar('historia-vistas', { historia: h, resumen: vistas.get(h.id) }); router.push('/historia-vistas'); };
 
-  if (historias == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (historias == null) return <Cargando />;
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -93,7 +93,7 @@ export default function Historias({ busqueda, estado, puedeEditar, recarga }) {
         return (
           <Tocable key={h.id} onPress={() => (puedeEditar ? abrirHistoria(h) : null)} onLongPress={() => menu(h)} delayLongPress={350}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo>
+            <Vidrio radio={20} interactivo>
               <View style={{ padding: 12, flexDirection: 'row', gap: 12 }}>
                 {h.imagen_url
                   ? <Image source={{ uri: h.imagen_url }} style={{ width: 54, aspectRatio: 9 / 16, borderRadius: 8 }} resizeMode="cover" />
@@ -116,7 +116,7 @@ export default function Historias({ busqueda, estado, puedeEditar, recarga }) {
           </Tocable>
         );
       })}
-      {!filas.length && !error ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin historias con ese filtro</Text> : null}
+      {!filas.length && !error ? <Vacio>Sin historias con ese filtro</Vacio> : null}
       {puedeEditar && filas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionada una historia para publicarla, retirarla o borrarla.</Text> : null}
     </>
   );

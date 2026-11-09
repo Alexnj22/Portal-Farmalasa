@@ -4,7 +4,7 @@
 // bolsa y su diferencia. Sólo lectura, detrás de `bolsas_ver_montos` como en el
 // portal: «CNT-260826-1 · 43 bolsas» sin montos no contesta nada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -17,7 +17,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -34,7 +34,7 @@ function Tanda({ c }) {
   const quienes = (c.contaron || []).map(nombre).filter(Boolean);
   return (
     <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.55 : 1 })} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta((a) => !a); }}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{c.folio}</Text>
@@ -115,7 +115,7 @@ export default function ConteosBolsas() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
         <View style={{ marginHorizontal: 16, gap: 10 }}>
-          {lista == null ? <ActivityIndicator style={{ marginTop: 30 }} />
+          {lista == null ? <Cargando />
             : !lista.length ? <Aviso texto="Sin conteos en estas fechas." />
               : (<>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4, fontVariant: ['tabular-nums'] }}>

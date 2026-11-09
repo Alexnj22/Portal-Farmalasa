@@ -23,11 +23,10 @@ import Avatar from '../../Avatar';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { Esqueleto } from '../../inicio/Widget';
 import { Aviso, BotonGrande, Campo } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
 import Etiqueta from './Etiqueta';
 
-const PETROLEO = '#0f6e7d';
 
 function Boton({ texto, color = PETROLEO, lleno = false, onPress, deshabilitado }) {
   return (

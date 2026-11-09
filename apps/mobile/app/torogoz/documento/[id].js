@@ -41,7 +41,7 @@ import { Pildora } from '../../../componentes/avisos/Piezas';
 import { colorDeVariante } from '../../../componentes/colorDeVariante';
 import Segmentos from '../../../componentes/Segmentos';
 import Vidrio from '../../../componentes/Vidrio';
-import { MARCA } from '../../../componentes/inicio/marca';
+import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import { cerrarProgreso, fallo, listo, trabajando } from '../../../componentes/Progreso';
 import EstadoHacienda from '../../../componentes/torogoz/fiscal/EstadoHacienda';
 import DetalleDeVenta from '../../../componentes/torogoz/fiscal/DetalleDeVenta';
@@ -53,7 +53,6 @@ import {
 } from '../../../componentes/torogoz/fiscal/papel';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../../../componentes/torogoz/soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 const VISTAS = [
   { id: 'detalle', label: 'Detalle' },
   { id: 'ticket', label: 'Ticket' },
@@ -195,7 +194,7 @@ export default function Documento() {
         {d ? (
           <>
             <View style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={24}>
+              <Vidrio radio={20}>
                 <View style={{ padding: 18, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 19, fontWeight: '800' }}>{d.dist_clientes?.nombre ?? '—'}</Text>

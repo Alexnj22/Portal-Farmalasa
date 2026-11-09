@@ -26,7 +26,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Seccion } from '../componentes/formulario/Piezas';
+import { Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Individuos, Resumen, Segmentos as SegmentosDeClima } from '../componentes/encuestas/AnalisisClima';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -61,7 +61,7 @@ function Bloque({ bloque: b, filas, preguntas, inv, abierto, onAbrir, anonima })
   const quien = (nombre, i) => (anonima ? `Respuesta ${i + 1}` : shortEmployeeName(nombre));
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onAbrir(); }} style={({ pressed }) => ({ padding: 12, gap: 6, opacity: pressed ? 0.7 : 1 })}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{b.nombre}</Text>
@@ -239,13 +239,17 @@ export default function Encuesta() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clima organizacional', headerLargeTitle: true }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
-        {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
-        {encuestas && !encuestas.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Todavía no hay encuestas</Text> : null}
-        {encuestaId && !datos ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        {encuestas && !encuestas.length ? <Vacio>Todavía no hay encuestas</Vacio> : null}
+        {encuestaId && !datos ? <Cargando /> : null}
         {datos ? (
           <>
+            <Segmentos activa={vista} onCambiar={setVista} opciones={[
+              { id: 'resumen', label: 'Resumen' }, { id: 'bloques', label: 'Bloques' }, { id: 'segmentos', label: 'Segmentos' },
+              { id: 'personas', label: 'Individuos' }, { id: 'comentarios', label: 'Comentarios' },
+            ]} />
+        {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
             <View style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={24} tinte={nivel ? `${colorDeVariante(nivel.severidad)}22` : undefined}>
+              <Vidrio radio={20} tinte={nivel ? `${colorDeVariante(nivel.severidad)}22` : undefined}>
                 <View style={{ padding: 18, alignItems: 'center', gap: 4 }}>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase' }}>{todas ? (sala ? `Índice de ${sala}` : 'Índice global') : `Índice de ${salaPropia}`}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 52, fontWeight: '800' }}>{global != null ? Math.round(global) : '—'}</Text>
@@ -257,10 +261,6 @@ export default function Encuesta() {
               <Kpi icono="Users" rotulo="Participaron" valor={String(filas.length)} color={MARCA.azul} apoyo={(() => { const j = filas.filter((r) => r.isJefe).length; return `${j} jefe${j === 1 ? '' : 's'}`; })()} />
               <Kpi icono="MessageSquare" rotulo="Comentarios" valor={String(comentarios.length)} color={MARCA.violeta} apoyo="escritos" />
             </FilaDeKpis>
-            <Segmentos activa={vista} onCambiar={setVista} opciones={[
-              { id: 'resumen', label: 'Resumen' }, { id: 'bloques', label: 'Bloques' }, { id: 'segmentos', label: 'Segmentos' },
-              { id: 'personas', label: 'Individuos' }, { id: 'comentarios', label: 'Comentarios' },
-            ]} />
             {vista === 'resumen' ? <Resumen filas={filas} bloques={datos.bloques} preguntas={datos.preguntas} inv={inv} /> : null}
             {vista === 'segmentos' ? <SegmentosDeClima filas={filas} bloques={datos.bloques} inv={inv} /> : null}
             {vista === 'personas' ? <Individuos filas={filas} bloques={datos.bloques} preguntas={datos.preguntas} inv={inv} anonima={!!encuestaActual?.anonima} /> : null}
@@ -272,7 +272,7 @@ export default function Encuesta() {
                 {segmentos.filter((seg) => seg.comments.length).map((seg) => {
                   const texto = resumenes?.[seg.key];
                   return (
-                    <Vidrio key={seg.key} radio={18} tinte="rgba(105,41,196,0.14)">
+                    <Vidrio key={seg.key} radio={20} tinte="rgba(105,41,196,0.14)">
                       <View style={{ padding: 12, gap: 8 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`Resumen IA · ${seg.label}`}</Text>

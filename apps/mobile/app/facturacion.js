@@ -38,7 +38,7 @@
 // los días que quedan salen del núcleo (`colasDeFacturacion`). Los montos,
 // sólo con `facturacion_ver_montos`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { Stack } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
@@ -63,7 +63,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -307,7 +307,7 @@ export default function Facturacion() {
               const visitada = !!r.erp_invoice_id && visitedIds.has(String(r.erp_invoice_id));
               return (
                 <View key={r.id} style={{ marginHorizontal: 16, opacity: visitada ? 0.5 : 1 }}>
-                  <Vidrio radio={18} tinte={esCcf ? 'rgba(240,68,56,0.10)' : undefined}>
+                  <Vidrio radio={20} tinte={esCcf ? 'rgba(240,68,56,0.10)' : undefined}>
                     <Tocable disabled={!canEdit || !solventable} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); }} style={{ padding: 12, gap: 5 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                         <Text selectable style={{ flex: 1, color: esCcf ? MARCA.rojo : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${r.tipo_documento ?? '—'} ${r.correlativo ?? 'sin número'}`}</Text>
@@ -353,11 +353,11 @@ export default function Facturacion() {
             {lista.length > visibles.length ? (
               <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${lista.length - visibles.length}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View>
             ) : null}
-            {!lista.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Nada pendiente aquí</Text> : null}
+            {!lista.length ? <Vacio>Nada pendiente aquí</Vacio> : null}
             {cola === 'mh' || cola === 'nulas' ? <Resueltas cola={cola} sala={sala} nombreSala={nombreSala} verMontos={verMontos} recarga={recargaHija} /> : null}
             {cola === 'obs' ? <ObservacionesSolventadas filas={datos.obsSolventadas || []} nombreSala={nombreSala} verMontos={verMontos} /> : null}
           </>
-        ) : ['mh', 'obs', 'nulas'].includes(cola) ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+        ) : ['mh', 'obs', 'nulas'].includes(cola) ? <Cargando /> : null}
       </ScrollView>
       </TrasLaTransicion>
     </>

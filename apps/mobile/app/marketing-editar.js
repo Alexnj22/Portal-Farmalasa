@@ -27,7 +27,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarPieza as recordarPieza, piezaElegida } from '../componentes/marketing/elegida';
@@ -48,15 +48,7 @@ function Fila({ titulo, valor, onPress }) {
 function Chips({ opciones, elegidas, onAlternar }) {
   return (
     <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-      {opciones.map((o) => {
-        const on = elegidas.includes(o.id);
-        return (
-          <Tocable key={o.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); onAlternar(o.id); }}
-            style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: on ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
-            <Text style={{ color: on ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{o.label}</Text>
-          </Tocable>
-        );
-      })}
+      {opciones.map((o) => <Ficha key={o.id} texto={o.label} activa={elegidas.includes(o.id)} onPress={() => onAlternar(o.id)} />)}
     </View>
   );
 }

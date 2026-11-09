@@ -37,7 +37,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable, mensajeConPrefijo } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { guardarProveedores, proveedorGuardado } from '../../componentes/compras/proveedores';
@@ -170,7 +170,7 @@ export default function Proveedor() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
           {error ? <Aviso tono="freno" texto={error} /> : null}
-          {!p && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+          {!p && !error ? <Cargando /> : null}
           {p ? (
             <>
               <View style={{ gap: 6, marginHorizontal: 4 }}>

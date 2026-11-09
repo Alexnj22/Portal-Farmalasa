@@ -3,7 +3,7 @@
 // entran al libro (no dan crédito fiscal). El archivo sale con el generador de
 // 23 columnas del libro de las farmacias (núcleo).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { fetchLibroCompras } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { TIPOS_COMPRA } from '@nucleo/utils/distribucionCompras';
@@ -13,7 +13,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { MenuDeFiltros } from '../../../Filtros';
 import { colorSistema } from '../../../Formulario';
-import { Aviso } from '../../../formulario/Piezas';
+import { Aviso, Cargando } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
@@ -65,7 +65,7 @@ export default function LibroCompras({ buscar }) {
           <Aviso texto={`${fuera} compra${fuera === 1 ? '' : 's'} con Factura o Sujeto excluido se listan abajo pero no entran al libro: no dan crédito fiscal.`} />
         </View>
       ) : null}
-      {cargando ? <ActivityIndicator style={{ marginTop: 16 }} /> : visibles.length === 0 ? (
+      {cargando ? <Cargando /> : visibles.length === 0 ? (
         buscar ? <Vacio titulo="Sin resultados" texto="Ninguna compra coincide con la búsqueda." /> : <Vacio titulo="Sin compras" texto="No se recibió ninguna compra en este mes." />
       ) : visibles.map((f) => (
         <Ficha key={f.id}>

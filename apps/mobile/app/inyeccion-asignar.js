@@ -5,7 +5,7 @@
 // viene de esa sala, con las del día del cobro primero (`ordenarParaVincular`).
 // Quedan aplicadas a la hora del cobro; se deshace desde la venta.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -19,7 +19,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -68,7 +68,7 @@ export default function AsignarCobro() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Asignar a una venta',
+        ...BARRA_NATIVA, title: 'Asignar a una venta', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Cliente, factura o inyección', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
@@ -76,17 +76,17 @@ export default function AsignarCobro() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         {!cobro ? <Aviso tono="freno" texto="Vuelve a la lista y elige el cobro otra vez." /> : (
           <>
-            <Vidrio radio={18}>
+            <Vidrio radio={20}>
               <View style={{ padding: 12, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{`${formatMoney(cobro.monto)} · ${cobro.concepto}`}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${fechaCorta(cobro.fecha)} · ${hora12(cobro.hora)}`}</Text>
               </View>
             </Vidrio>
             {error ? <Aviso tono="freno" texto={error} /> : null}
-            {ventas == null ? <ActivityIndicator style={{ marginTop: 16 }} /> : !ordenadas.length ? (
+            {ventas == null ? <Cargando /> : !ordenadas.length ? (
               <Aviso texto="No hay ventas con inyección que coincidan." />
             ) : ordenadas.map((v) => (
-              <Vidrio key={v.id} radio={18}>
+              <Vidrio key={v.id} radio={20}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{v.cliente || 'Sin nombre'}</Text>

@@ -15,7 +15,7 @@
 // «Detectar código» y «Adjuntar JSON» de un documento «Sin JSON», y «Ver el
 // documento de la anulación» de uno invalidado, viven en su ficha.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { compartirZipDeFacturas } from '../componentes/compras/zipDeFacturas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -30,7 +30,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -155,12 +155,12 @@ export default function FacturasCompra() {
           </FilaDeKpis>
         ) : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, mostrar).map((r) => {
+        {filas == null ? <Cargando /> : visibles.slice(0, mostrar).map((r) => {
           const proveedor = r.proveedor_alias || r.proveedor_nombre || r.supplier_nombre || r.emisor_nombre || 'Sin proveedor';
           return (
             <Pressable key={r.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/factura-compra/[id]', params: { id: String(r.id), fecha: r.fecha_emision } }); }}
               style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-              <Vidrio radio={18} interactivo tinte={r.invalidado ? 'rgba(240,68,56,0.10)' : undefined}>
+              <Vidrio radio={20} interactivo tinte={r.invalidado ? 'rgba(240,68,56,0.10)' : undefined}>
                 <View style={{ padding: 12, gap: 4 }}>
                   <View style={{ flexDirection: 'row', gap: 10 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{proveedor}</Text>
@@ -187,9 +187,9 @@ export default function FacturasCompra() {
         })}
         {filas && visibles.length > mostrar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setMostrar((n) => n + POR_PAGINA)} /></View> : null}
         {filas && !visibles.length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {texto ? 'Ninguna factura con esa búsqueda' : 'Sin facturas este mes'}
-          </Text>
+          </Vacio>
         ) : null}
       </ScrollView>
     </>

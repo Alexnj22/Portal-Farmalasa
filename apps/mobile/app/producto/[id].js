@@ -191,7 +191,7 @@ export default function Producto() {
         {error ? <Aviso tono="freno" texto="No se pudo cargar. Desliza hacia abajo para intentar de nuevo." /> : null}
 
         {alerta.peor !== null && alerta.peor < 15 ? (
-          <Vidrio radio={18} tinte={alerta.peor < 0 ? `${MARCA.rojo}22` : `${MARCA.ambar}22`}>
+          <Vidrio radio={20} tinte={alerta.peor < 0 ? `${MARCA.rojo}22` : `${MARCA.ambar}22`}>
             <View style={{ padding: 14, gap: 2 }}>
               <Text style={{ color: alerta.peor < 0 ? MARCA.rojo : MARCA.ambar, fontSize: 16, fontWeight: '800' }}>{alerta.peor < 0 ? 'Pérdida detectada' : 'Margen bajo'}</Text>
               <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
@@ -201,7 +201,7 @@ export default function Producto() {
           </Vidrio>
         ) : null}
         {alerta.especiales.length ? (
-          <Vidrio radio={18} tinte="rgba(232,121,249,0.16)">
+          <Vidrio radio={20} tinte="rgba(232,121,249,0.16)">
             <View style={{ padding: 14, gap: 2 }}>
               <Text style={{ color: '#E879F9', fontSize: 16, fontWeight: '800' }}>Pérdida en precio especial</Text>
               <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{`${alerta.especiales.map(specialLossLabel).join(' y ')} está por debajo del costo en alguna presentación.`}</Text>
@@ -214,7 +214,7 @@ export default function Producto() {
         ) : (
           <>
             <Titulo texto="Existencias" />
-            <Vidrio radio={22}>
+            <Vidrio radio={20}>
               <View style={{ padding: 16, flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatNumber(total)}</Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>

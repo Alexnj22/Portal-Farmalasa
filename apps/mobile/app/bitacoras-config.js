@@ -9,7 +9,7 @@
 // termómetro y su calibración, y agregar un área. Las reglas y la escritura
 // son las del núcleo (`data/bitacoras`, `configuracionDeBitacoras`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -26,7 +26,7 @@ import { hora12, rango12 } from '@nucleo/utils/hora';
 import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { MARCA } from '../componentes/inicio/marca';
@@ -280,7 +280,7 @@ export default function ConfiguracionDeBitacoras() {
         <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 60, gap: 14 }} keyboardShouldPersistTaps="handled"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{`${nombreSala}: apaga el área que esta sucursal no tenga; deja de contar como faltante al cerrar el mes.`}</Text>
-          {areas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : error ? (
+          {areas == null ? <Cargando /> : error ? (
             <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={textoDelError(error)} /></View>
           ) : (
             // `key={version}`: al recargar, cada tarjeta arranca de lo guardado.

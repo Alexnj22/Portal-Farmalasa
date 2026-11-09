@@ -10,7 +10,7 @@
 // ubicado. La segunda pestaña es la política de vencimiento
 // (`componentes/fiscal/PoliticaVencimiento`), editable como en el portal.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -28,7 +28,7 @@ import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
@@ -88,7 +88,7 @@ const TarjetaLab = memo(function TarjetaLab({ l, d, cubiertas, totalSalas, onAbr
   return (
     <Pressable onPress={() => onAbrir(l)}
       style={({ pressed }) => ({ ...(columnas > 1 ? { flex: 1 / columnas } : { marginHorizontal: 16 }), marginTop: 10, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 12, gap: 6 }}>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{l.nombre}</Text>
@@ -144,13 +144,12 @@ export default function Laboratorios() {
   const conUbicacion = useMemo(() => (labs || []).filter((l) => tieneUbicacion(ubic[l.id]?.[sala])).length, [labs, ubic, sala]);
   const salasCubiertas = (labId) => Object.values(ubic[labId] || {}).filter(tieneUbicacion).length;
   const abrir = useCallback((l) => { Haptics.selectionAsync().catch(() => {}); setEditando(l); }, []);
-  const porSeccion = useMemo(() => {
-    const c = {};
-    for (const l of labs || []) { const k = seccionDeLaboratorio(l.nombre); c[k] = (c[k] || 0) + 1; }
-    return c;
-  }, [labs]);
-  const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: String(user?.branchId ?? ''), onCambiar: setSala,
-    opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
+  const grupos = [
+    ...(todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: String(user?.branchId ?? ''), onCambiar: setSala,
+      opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : []),
+    ...(!q ? [{ id: 'seccion', titulo: 'Sección', activa: seccion, porDefecto: 'principales', onCambiar: setSeccion,
+      opciones: SECCIONES_DE_LABORATORIO.map((s) => ({ id: s.key, label: s.key === 'principales' ? 'Principales' : s.key === 'insumos' ? 'Insumos' : 'Cosméticos' })) }] : []),
+  ];
 
   return (
     <>
@@ -180,14 +179,13 @@ export default function Laboratorios() {
                   <Kpi icono="Check" rotulo="Con ubicación" valor={String(conUbicacion)} color={conUbicacion === labs.length ? MARCA.verde : MARCA.ambar} apoyo={`en ${nombreSala}`} />
                 </FilaDeKpis>
               ) : null}
-              {!q ? <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES_DE_LABORATORIO.map((s) => ({ id: s.key, label: `${s.key === 'principales' ? 'Principales' : s.key === 'insumos' ? 'Insumos' : 'Cosméticos'}${porSeccion[s.key] ? ` · ${porSeccion[s.key]}` : ''}` }))} /> : null}
               {error ? <ErrorConReintento mensaje={error} onReintentar={cargar} /> : null}
-              {labs == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+              {labs == null ? <Cargando /> : null}
             </>) : null}
           </View>
         )}
         ListEmptyComponent={pestana === 'ubicaciones' && labs ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Ningún laboratorio con esa búsqueda</Text>
+          <Vacio>Ningún laboratorio con esa búsqueda</Vacio>
         ) : null} />
       {editando ? (
         <Editar lab={editando} sala={sala} nombreSala={nombreSala}

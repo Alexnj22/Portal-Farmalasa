@@ -131,7 +131,7 @@ function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
 function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema, oscuro, codigos, rotuloModo, elegirModo, rotuloEstilo, elegirEstilo }) {
   return (
     <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 22 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: tema.color.marca, alignItems: 'center', justifyContent: 'center' }}>
             <Host matchContents><Icon name={iconoDe('User')} size={26} color="#FFFFFF" /></Host>
@@ -143,14 +143,14 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
         </View>
       </Vidrio>
       {modulos.length > 0 ? (
-        <Vidrio radio={22}>
+        <Vidrio radio={20}>
           <View style={{ paddingVertical: 2 }}>
             {modulos.map((m, i) => <Renglon key={m.key} primero={!i} icono={iconoDe(m.icono)} color={tema.color.marca} texto={m.label} alTocar={() => abrirModulo(m)} />)}
           </View>
         </Vidrio>
       ) : null}
       {biometria.nombre ? (
-        <Vidrio radio={22}>
+        <Vidrio radio={20}>
           <View style={{ paddingVertical: 2 }}>
             <Renglon primero icono={iconoDe('Lock')} color="#12B76A" texto={`Entrar con ${biometria.nombre}`}
               derecha={<Interruptor value={biometria.activa} onValueChange={cambiarBiometria} />} />
@@ -158,7 +158,7 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
         </Vidrio>
       ) : null}
       {codigos.length ? (
-        <Vidrio radio={22}>
+        <Vidrio radio={20}>
           <View style={{ paddingVertical: 2 }}>
             {codigos.map((c, i) => (
               <Renglon key={c.id} primero={!i} icono={iconoDe('Lock')} color={tema.color.marca} texto={c.titulo} alTocar={() => copiar(c.valor, c.titulo)}
@@ -167,7 +167,7 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
           </View>
         </Vidrio>
       ) : null}
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ paddingVertical: 2 }}>
           <Renglon primero icono={iconoDe(oscuro ? 'Moon' : 'Sun')} color="#6929C4" texto="Modo" alTocar={elegirModo}
             derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloModo}</Text>} />
@@ -177,7 +177,7 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
           ) : null}
         </View>
       </Vidrio>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ paddingVertical: 2 }}>
           <Renglon primero icono={ICONO_SALIR} color={tema.color.peligro} texto="Salir" alTocar={salir} peligro />
         </View>

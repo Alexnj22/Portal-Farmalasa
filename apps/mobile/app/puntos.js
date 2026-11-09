@@ -25,7 +25,7 @@
 // Cada pestaña con su permiso, como en el portal; la base lo vuelve a comprobar.
 // Los rótulos salen del núcleo (`puntosTexto`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -48,7 +48,7 @@ import Traspasos from '../componentes/puntos/Traspasos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -105,7 +105,7 @@ function EscanearTarjeta() {
     <View style={{ marginHorizontal: 16, gap: 10 }}>
       <BotonGrande texto="Escanear tarjeta o premio" onPress={() => { setAviso(null); setAbierto(true); }} />
       {candidatos ? (
-        <Vidrio radio={18}>
+        <Vidrio radio={20}>
           <View style={{ padding: 12, gap: 8 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${candidatos.clientes.length} clientes con ${NOMBRE_DE_ENTRADA[candidatos.modo] ?? 'ese dato'}: pregúntale su nombre.`}</Text>
             {candidatos.clientes.map((c) => (
@@ -158,7 +158,7 @@ function Consulta({ busqueda, orden, dir, masRef }) {
       {datos.filas.map((c) => (
         <Pressable key={c.customer_id} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/puntos-cliente/[id]', params: { id: String(c.customer_id), nombre: c.nombre } }); }}
           style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-          <Vidrio radio={18} interactivo>
+          <Vidrio radio={20} interactivo>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12 }}>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{c.nombre}</Text>
@@ -179,10 +179,10 @@ function Consulta({ busqueda, orden, dir, masRef }) {
           </Vidrio>
         </Pressable>
       ))}
-      {cargando ? <ActivityIndicator style={{ marginTop: 12 }} /> : null}
+      {cargando ? <Cargando /> : null}
       {!cargando && datos.total > datos.filas.length ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setDesde(datos.filas.length)} /></View> : null}
       {!cargando && !datos.filas.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Ningún cliente con esa búsqueda</Text>
+        <Vacio>Ningún cliente con esa búsqueda</Vacio>
       ) : null}
     </>
   );
@@ -192,7 +192,7 @@ function Avisos() {
   const [lista, setLista] = useState(null);
   const [error, setError] = useState(null);
   useEffect(() => { fetchAvisosDePuntos().then((a) => setLista(a || [])).catch((e) => { setError(mensajeAmigable(e)); setLista([]); }); }, []);
-  if (lista == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (lista == null) return <Cargando />;
   return (
     <>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
@@ -204,7 +204,7 @@ function Avisos() {
             // originó (productos y quién vendió), como el portal.
             onPress={() => router.push({ pathname: '/puntos-cliente/[id]', params: { id: String(a.customer_id), nombre: a.cliente, aviso: JSON.stringify(a) } })}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo={!!a.customer_id}>
+            <Vidrio radio={20} interactivo={!!a.customer_id}>
               <View style={{ padding: 12, gap: 5 }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                   <Pildora texto={x.rotulo} color={COLOR[x.severidad] ?? MARCA.ambar} />
@@ -222,7 +222,7 @@ function Avisos() {
         );
       })}
       {!lista.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Nada que revisar</Text>
+        <Vacio>Nada que revisar</Vacio>
       ) : null}
     </>
   );

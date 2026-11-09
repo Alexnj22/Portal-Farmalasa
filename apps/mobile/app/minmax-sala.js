@@ -19,7 +19,7 @@
 // mantenimiento lo respeta solo: `hasPermission` apaga la escritura mientras el
 // módulo está tomado por otra persona.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, FlatList, Pressable, RefreshControl, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -47,7 +47,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -74,7 +74,7 @@ function Fila({ r, esBodega, onAbrir, onMantener }) {
   return (
     <Pressable onPress={onAbrir} onLongPress={onMantener} delayLongPress={350}
       style={({ pressed }) => ({ marginHorizontal: 16, marginBottom: 10, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={18} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 12, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.product_name}</Text>
@@ -462,6 +462,8 @@ export default function MinMaxSala() {
 
   const encabezado = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 6 }}>
+      <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'borradores', label: 'Borradores' }, { id: 'cambios', label: 'Cambios' }]} />
+      <FiltrosActivos grupos={grupos} />
       {todas ? null : <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{ERP_NAMES[sala]}</Text>}
       {candado ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Min·Máx está en mantenimiento${candado.locked_by_name ? ` (${candado.locked_by_name})` : ''}: se puede mirar, no cambiar.`} /></View> : null}
       {esBodega && filas ? (
@@ -497,8 +499,6 @@ export default function MinMaxSala() {
           ) : null}
         </>
       ) : null}
-      <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'borradores', label: 'Borradores' }, { id: 'cambios', label: 'Cambios' }]} />
-      <FiltrosActivos grupos={grupos} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {filas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${visibles.length.toLocaleString('es-SV')} productos · mantén presionado uno para ver su historial${puede ? ', el motivo y sus acciones' : ''}`}</Text> : null}
     </View>
@@ -507,11 +507,11 @@ export default function MinMaxSala() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: todas ? `Min·Máx · ${ERP_NAMES[sala] ?? ''}` : 'Min·Máx de la sala', headerLargeTitle: false,
+        ...BARRA_NATIVA, title: todas ? `Min·Máx · ${ERP_NAMES[sala] ?? ''}` : 'Min·Máx de la sala', headerLargeTitle: true,
         headerSearchBarOptions: { placeholder: 'Producto o laboratorio', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
       <MenuDeFiltros grupos={grupos} extra={puede && filas ? { icono: 'ellipsis.circle', etiqueta: 'Acciones de la sala', onPress: ocupado ? () => {} : menuDeSala } : null} />
-      {filas == null ? <ActivityIndicator style={{ marginTop: 40 }} /> : (
+      {filas == null ? <Cargando /> : (
         <FlatList data={visibles} keyExtractor={(r) => String(r.erp_product_id)} ListHeaderComponent={encabezado}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={20} windowSize={9}
           contentContainerStyle={{ paddingBottom: 48 }}

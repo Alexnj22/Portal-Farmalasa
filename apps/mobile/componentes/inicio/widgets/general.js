@@ -11,7 +11,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import Widget, { Esqueleto, Vacio } from '../Widget';
 import { useDato } from '../useDato';
 import { colorSistema } from '../../Formulario';
-import { MARCA } from '../marca';
+import { MARCA, FONDO_CONTROL } from '../marca';
 import { fallo, listo, trabajando } from '../../Progreso';
 
 function Pedido({ p, onListo, primero }) {
@@ -41,7 +41,7 @@ function Pedido({ p, onListo, primero }) {
       <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
         <TextInput value={valor} onChangeText={setValor} placeholder="correo@cliente.com" placeholderTextColor={colorSistema.texto2}
           keyboardType="email-address" autoCapitalize="none" autoCorrect={false} textContentType="emailAddress"
-          style={{ flex: 1, minHeight: 42, borderRadius: 12, paddingHorizontal: 12, fontSize: 15, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+          style={{ flex: 1, minHeight: 42, borderRadius: 12, paddingHorizontal: 12, fontSize: 15, color: colorSistema.texto, backgroundColor: FONDO_CONTROL }} />
         <Pressable disabled={!valido || enviando} onPress={confirmar}
           style={({ pressed }) => ({ minHeight: 42, paddingHorizontal: 14, borderRadius: 21, justifyContent: 'center',
             backgroundColor: MARCA.azul, opacity: !valido || enviando ? 0.4 : pressed ? 0.8 : 1 })}>

@@ -31,7 +31,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
-import { MenuDeFiltros } from '../componentes/Filtros';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -136,7 +136,6 @@ export default function Comunicados() {
       .filter((a) => !ocultos.has(a.id))
       .filter((a) => !texto.trim() || tokenMatch(texto.trim(), a.title, a.message));
   }, [dePestana, pestana, filtro, apartados, texto]);
-  const sinLeer = useMemo(() => comunicadosDeLaPestana(mios, 'UNREAD', user?.id).length, [mios, user?.id]);
 
   const leer = (a) => {
     if (!user?.id) return;
@@ -158,6 +157,9 @@ export default function Comunicados() {
     { text: 'Marcar', onPress: () => { lista.forEach((a) => marcar(a.id, user.id)); } },
   ]);
 
+  const gruposDeLeidos = pestana === 'READ' ? [{ id: 'tipo', titulo: 'Mostrar', porDefecto: 'ALL', activa: filtro, onCambiar: setFiltro,
+    opciones: filtros.map((f) => ({ id: f.key, label: `${f.label} · ${f.count}` })) }] : [];
+
   return (
     <>
       <Stack.Screen options={{
@@ -165,10 +167,7 @@ export default function Comunicados() {
         headerSearchBarOptions: { placeholder: 'Buscar en los avisos', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
-      {pestana === 'READ' ? (
-        <MenuDeFiltros grupos={[{ id: 'tipo', titulo: 'Mostrar', porDefecto: 'ALL', activa: filtro, onCambiar: setFiltro,
-          opciones: filtros.map((f) => ({ id: f.key, label: `${f.label} · ${f.count}` })) }]} />
-      ) : null}
+      {pestana === 'READ' ? <MenuDeFiltros grupos={gruposDeLeidos} /> : null}
       {/* Lista virtualizada: con «meses anteriores» abiertos son todos los
           comunicados de la persona, y un ScrollView los pinta todos de golpe. */}
       <FlatList style={{ flex: 1 }} data={lista} keyExtractor={(a) => String(a.id)}
@@ -179,8 +178,9 @@ export default function Comunicados() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12, marginBottom: 12 }}>
-            <Segmentos opciones={PESTANAS.map((p) => ({ ...p, label: p.id === 'UNREAD' && sinLeer ? `Sin leer · ${sinLeer}` : p.label }))}
+            <Segmentos opciones={PESTANAS}
               activa={pestana} onCambiar={(v) => { setPestana(v); setFiltro('ALL'); }} />
+            <FiltrosActivos grupos={gruposDeLeidos} />
             {apartados.length ? (
               <View style={{ marginHorizontal: 16 }}>
                 <BotonGrande texto={`Deshacer · ${apartados.length} marcado${apartados.length === 1 ? '' : 's'}`} borde color={MARCA.azulClaro} onPress={deshacer} />

@@ -13,7 +13,7 @@
 // vuelve a mostrar) para todos (`alternarProductoOcultoEnVentas`). Con
 // «Ocultar montos» las cifras salen como puntos.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { alternarProductoOcultoEnVentas, fetchTotalVendidoPorProductos, fetchVentasPorProducto } from '@nucleo/data/ventas';
@@ -27,7 +27,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -107,7 +107,7 @@ export default function Productos({ fini, ffin, sala, busqueda, verCifras, orden
   }, [filas, busqueda, orden]);
   useEffect(() => { setCuantos(POR_PAGINA); }, [busqueda, orden, laboratorio, verOcultos]);   // eslint-disable-line react-hooks/set-state-in-effect -- vuelve al principio al cambiar la lista
 
-  if (filas == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (filas == null) return <Cargando />;
   const dias = diasDelRango(fini, ffin);
 
   return (
@@ -162,9 +162,9 @@ export default function Productos({ fini, ffin, sala, busqueda, verCifras, orden
       ))}
       {lista.length > cuantos ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setCuantos((n) => n + POR_PAGINA)} /></View> : null}
       {!lista.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+        <Vacio>
           {busqueda ? 'Ningún producto con esa búsqueda' : verOcultos ? 'No hay productos ocultos' : 'Sin ventas en este período'}
-        </Text>
+        </Vacio>
       ) : null}
     </>
   );

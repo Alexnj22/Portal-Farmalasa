@@ -193,7 +193,7 @@ export default function CobrarCredito() {
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled"
           automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
-          <Vidrio radio={24}>
+          <Vidrio radio={20}>
             <View style={{ padding: 18, gap: 6 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }} numberOfLines={1}>{credito.cliente}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[credito.documento, corta(credito.fecha)].filter(Boolean).join(' · ')}</Text>

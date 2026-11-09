@@ -17,8 +17,8 @@ import { aBase64Reducido } from '@plataforma/fotoParaLeer';
 import { Aviso, BotonGrande, Campo } from '../../formulario/Piezas';
 import Fotos from '../../formulario/Fotos';
 import { colorSistema } from '../../Formulario';
+import { PETROLEO } from '../../inicio/marca';
 
-const PETROLEO = '#0f6e7d';
 
 export default function ComprobantePago({ forma, montoEsperado, puedeCambiarMonto = false, onListo, onCancelar }) {
   const [fotos, setFotos] = useState([]);

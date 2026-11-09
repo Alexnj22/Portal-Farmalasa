@@ -4,14 +4,14 @@
 // `#RRGGBB` y se comparte con un toque. Quien edita o aprueba agrega (archivo
 // del teléfono, foto o enlace) y quita. Validar y agrupar sale del núcleo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, Image, Linking, Share, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Linking, Share, Text, View } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import { fetchRecursos, firmarDisenos, guardarRecurso, quitarRecurso } from '@nucleo/data/marketing';
 import { TIPOS_DE_RECURSO, colorEscrito, colorValido, faltaEnRecurso, recursosPorMarca } from '@nucleo/utils/marketing';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { BotonGrande, Campo, Seccion, Cargando, Vacio } from '../formulario/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
@@ -75,7 +75,7 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
     if (r.enlace) Linking.openURL(r.enlace).catch(() => fallo('No se pudo abrir el enlace', r.enlace));
   };
 
-  if (recursos == null) return <ActivityIndicator style={{ marginTop: 24 }} />;
+  if (recursos == null) return <Cargando />;
   return (
     <>
       {puedeGestionar ? (
@@ -108,7 +108,7 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
           </Seccion>
         </View>
       ) : null}
-      {!grupos.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Sin recursos de marca</Text> : null}
+      {!grupos.length ? <Vacio>Sin recursos de marca</Vacio> : null}
       {grupos.map((g) => (
         <View key={g.id || 'todas'} style={{ marginHorizontal: 16, gap: 8 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginLeft: 4 }}>{`${g.nombre} · ${g.items.length}`}</Text>

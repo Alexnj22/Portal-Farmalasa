@@ -4,7 +4,7 @@
 // medir contra otro mes («estás simulando»); un mes cerrado muestra los
 // números congelados que se pagaron, no un recálculo de hoy.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Text, View } from 'react-native';
+import { ActionSheetIOS, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { fetchPromocionLaboratorio } from '@nucleo/data/promociones';
 import { csvMatrizDeLaboratorio, fmtMoneda, fmtUnidades, mesesRecientes, rotuloMes } from '@nucleo/utils/promocionesUtils';
@@ -12,7 +12,7 @@ import { compartirCsv } from '../fiscal/csv';
 import { fallo } from '../Progreso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
@@ -51,7 +51,7 @@ export default function Matriz({ promocionId }) {
   // La barra de cada sala: lo vendido contra el umbral del siguiente nivel.
   const mayorVenta = Math.max(1, ...salas.map((s) => Number(s.venta) || 0));
 
-  if (cargando && !datos) return <ActivityIndicator style={{ marginTop: 16 }} />;
+  if (cargando && !datos) return <Cargando />;
   if (error) return <Aviso tono="freno" texto={error} />;
   if (!datos) return <Aviso tono="cuidado" texto="Ya no está en el portal. Puede que la hayan borrado." />;
   return (
@@ -88,7 +88,7 @@ export default function Matriz({ promocionId }) {
       {salas.map((s) => {
         const alcanzo = s.nivel != null;
         return (
-          <Vidrio key={s.branch_id} radio={18}>
+          <Vidrio key={s.branch_id} radio={20}>
             <View style={{ padding: 14, gap: 8 }}>
               <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 8 }}>
                 <View style={{ flex: 1 }}>

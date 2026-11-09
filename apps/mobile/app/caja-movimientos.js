@@ -17,7 +17,7 @@
 // (Wompi, 2026-10-20; `pagadoEnLaApp`, núcleo), sale marcado y sin «quién lo
 // cobró»: el dinero está en la cuenta de Wompi, no en el cajón.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -36,7 +36,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -52,7 +52,7 @@ const horaDeIso = (iso) => (iso ? hora12(iso) : null);
 function Renglon({ titulo, detalle, monto, entra, tachado, pildoras = [], quien, sala }) {
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={18}>
+      <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', gap: 12, padding: 13 }}>
           <View style={{ width: 4, borderRadius: 2, backgroundColor: tachado ? MARCA.rojo : entra ? MARCA.verde : MARCA.ambar }} />
           <View style={{ flex: 1, gap: 4 }}>
@@ -156,6 +156,8 @@ export default function CajaMovimientos() {
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+        <Segmentos activa={tipo} onCambiar={setTipo}
+          opciones={[{ id: 'TODOS', label: 'Todos' }, { id: 'ENTRADA', label: 'Entradas' }, { id: 'SALIDA', label: 'Salidas' }]} />
         <FiltrosActivos grupos={grupos} />
         {periodo === 'rango' ? <RangoDeFechas desde={libre.desde} hasta={libre.hasta} onCambiar={setLibre} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
@@ -177,10 +179,8 @@ export default function CajaMovimientos() {
               apoyo="en la caja" onPress={cuenta.borrados ? () => setEstado('DESAPARECIDOS') : undefined} />
           </FilaDeKpis>
         ) : null}
-        <Segmentos activa={tipo} onCambiar={setTipo}
-          opciones={[{ id: 'TODOS', label: 'Todos' }, { id: 'ENTRADA', label: 'Entradas' }, { id: 'SALIDA', label: 'Salidas' }]} />
         {datos?.error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="No se pudieron leer los movimientos." /></View> : null}
-        {!datos ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.slice(0, cuantos).map((it) => {
+        {!datos ? <Cargando /> : visibles.slice(0, cuantos).map((it) => {
           const salaTxt = sala ? null : nombreDeSala.get(it.branchId);
           if (it.kind === 'cobro') {
             const c = it.cb;
@@ -236,9 +236,9 @@ export default function CajaMovimientos() {
         })}
         {datos && visibles.length > cuantos ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setCuantos((n) => n + POR_PAGINA)} /></View> : null}
         {datos && !datos.error && !visibles.length ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {texto ? 'Nada con esa búsqueda' : 'Sin movimientos en este período'}
-          </Text>
+          </Vacio>
         ) : null}
       </ScrollView>
     </>

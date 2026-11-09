@@ -12,7 +12,7 @@
 // panel del portal. El período («todo» / desde junio 2026) va en el menú de
 // filtros. Los totales salen del núcleo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -26,7 +26,7 @@ import Segmentos from '../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -98,7 +98,7 @@ export default function CuentasPorPagar() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={tab} onCambiar={setTab} opciones={[
           { id: 'proveedores', label: 'Por proveedor' },
-          { id: 'pagos', label: pendientes.length ? `Pagos · ${pendientes.length}` : 'Pagos' },
+          { id: 'pagos', label: 'Pagos' },
         ]} />
         <FiltrosActivos grupos={grupos} />
         {filas ? (
@@ -121,10 +121,10 @@ export default function CuentasPorPagar() {
         {filas && t.sinPlazo > 0 && tab === 'proveedores' ? (
           <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${t.sinPlazo} proveedor(es) sin días de crédito: sus facturas no pueden decir si están vencidas. Se definen tocando al proveedor.`} /></View>
         ) : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : tab === 'proveedores' ? provVisibles.map((f) => (
+        {filas == null ? <Cargando /> : tab === 'proveedores' ? provVisibles.map((f) => (
           <Pressable key={f.emisor_nit} onPress={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/cxp-proveedor/[nit]', params: { nit: f.emisor_nit, nombre: f.proveedor } }); }}
             style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-            <Vidrio radio={18} interactivo tinte={Number(f.vencido) > 0 ? 'rgba(247,144,9,0.10)' : undefined}>
+            <Vidrio radio={20} interactivo tinte={Number(f.vencido) > 0 ? 'rgba(247,144,9,0.10)' : undefined}>
               <View style={{ padding: 12, gap: 4 }}>
                 <View style={{ flexDirection: 'row', gap: 10 }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{f.proveedor}</Text>
@@ -146,7 +146,7 @@ export default function CuentasPorPagar() {
           const e = ESTADO_PAGO[p.estado] ?? ESTADO_PAGO.pendiente;
           return (
             <View key={p.id} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18} tinte={p.estado === 'pendiente' ? 'rgba(247,144,9,0.10)' : undefined}>
+              <Vidrio radio={20} tinte={p.estado === 'pendiente' ? 'rgba(247,144,9,0.10)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center' }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{p.proveedor}</Text>
@@ -172,9 +172,9 @@ export default function CuentasPorPagar() {
           );
         })}
         {filas && !(tab === 'proveedores' ? provVisibles : pagosVisibles).length && !error ? (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>
+          <Vacio>
             {q ? 'Nada con esa búsqueda' : tab === 'proveedores' ? 'No le debemos nada a nadie' : 'Sin pagos en los últimos seis meses'}
-          </Text>
+          </Vacio>
         ) : null}
       </ScrollView>
     </>

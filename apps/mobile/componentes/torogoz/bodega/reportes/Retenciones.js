@@ -3,14 +3,14 @@
 // contador) y cuatro listados sacados de los libros de ventas y de compras, cada
 // uno con su archivo. Los listados y los archivos salen del núcleo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { fetchLibroCompras, fetchLibrosVentas } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { archivoDeRetencion, listadosDeRetenciones, resumenFiscal, totalesConsumidor, totalesContribuyente } from '@nucleo/utils/distribucionReportes';
 import { mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { colorSistema } from '../../../Formulario';
-import { Aviso, Seccion } from '../../../formulario/Piezas';
+import { Aviso, Seccion, Cargando } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
@@ -55,7 +55,7 @@ export default function Retenciones() {
       <FilaDeKpis>
         <Kpi icono="Percent" rotulo="Impuesto (referencial)" color={MARCA.ambar} valor={formatMoney(r.impuesto)} apoyo="Débito − crédito; lo liquida el contador" />
       </FilaDeKpis>
-      {cargando ? <ActivityIndicator style={{ marginTop: 16 }} /> : listados.map((l) => (
+      {cargando ? <Cargando /> : listados.map((l) => (
         <View key={l.clave} style={{ marginHorizontal: 16 }}>
           <Seccion>
             <View style={{ flexDirection: 'row', gap: 8 }}>

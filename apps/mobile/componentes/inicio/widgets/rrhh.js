@@ -7,7 +7,7 @@
 // últimos días que ya carga el Inicio) y se recorta a la sala con el alcance
 // de cada widget, igual que el portal.
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { LayoutAnimation, Pressable, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPendingApprovalRequests } from '@nucleo/data/dashboard';
@@ -97,7 +97,7 @@ const ESTADOS = [
   { id: 'LUNCH', rotulo: 'Almuerzo', color: MARCA.ambar },
   { id: 'LACTATION', rotulo: 'Lactancia', color: '#E0457B' },
   { id: 'BUSINESS', rotulo: 'Gestión externa', color: MARCA.azul },
-  { id: 'OUT', rotulo: 'Salió', color: '#8E8E93' },
+  { id: 'OUT', rotulo: 'Salió', color: MARCA.gris },
   { id: 'ABSENT', rotulo: 'Sin marcar', color: MARCA.rojo },
 ];
 
@@ -118,7 +118,7 @@ export function Turnos({ ctx }) {
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
             {conGente.map((e) => (
-              <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto(abierto === e.id ? null : e.id); }}
+              <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setAbierto(abierto === e.id ? null : e.id); }}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 999,
                   backgroundColor: abierto === e.id ? `${e.color}40` : `${e.color}22` }}>
                 <View style={{ width: 7, height: 7, borderRadius: 4, backgroundColor: e.color }} />
@@ -156,7 +156,7 @@ export function Ausencias({ datos: d, ctx }) {
         return (
           <Renglon key={a.id} primero={!i} titulo={shortEmployeeName(e)} izquierda={<Avatar empleado={e} tamano={28} />}
             detalle={`${rotuloDeSolicitud(a.type)}${hasta ? ` · hasta ${fechaTexto(String(hasta).slice(0, 10))}` : ''}`}
-            derecha={<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TIPO_AUSENCIA[a.type] ?? '#8E8E93' }} />} />
+            derecha={<View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: TIPO_AUSENCIA[a.type] ?? MARCA.gris }} />} />
         );
       }) : <Vacio texto="Nadie falta" bien />}
     </Widget>
@@ -207,7 +207,7 @@ export function Calendario() {
     });
     return r;
   }, [feriados, mes]);
-  const mover = (n) => { const d = new Date(anio, m - 1 + n, 1); setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); setElegido(null); };
+  const mover = (n) => { const d = new Date(anio, m - 1 + n, 1); LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setMes(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`); setElegido(null); };
   const celdas = [...Array(primero).fill(null), ...Array.from({ length: dias }, (_, i) => `${mes}-${String(i + 1).padStart(2, '0')}`)];
   const mesLargo = new Date(anio, m - 1, 1).toLocaleDateString('es-SV', { month: 'long' });
   const nombre = `${mesLargo.charAt(0).toUpperCase()}${mesLargo.slice(1)} ${anio}`;

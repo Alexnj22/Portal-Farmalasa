@@ -9,7 +9,7 @@
 // motivo, la historia del mes, e imprimirlo (el mismo papel del núcleo,
 // `armarHtmlDelMes`, por AirPrint o PDF, anotado como salida de datos).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -22,7 +22,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { cumplimiento, nombreDelPeriodo, puedeFirmarElCierre, rotularCumplimiento, tonoDelCumplimiento } from '@nucleo/utils/cierreDeBitacoras';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
@@ -151,7 +151,7 @@ export default function CierreDeBitacoras() {
             </View>
           </Seccion>
 
-          {cargando ? <ActivityIndicator style={{ marginTop: 24 }} /> : !resumen ? (
+          {cargando ? <Cargando /> : !resumen ? (
             <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="No se pudo calcular el resumen del mes." /></View>
           ) : resumen.sin_dias ? (
             <View style={{ marginHorizontal: 16 }}><Aviso texto="Ese mes es anterior a la puesta en marcha de las bitácoras." /></View>

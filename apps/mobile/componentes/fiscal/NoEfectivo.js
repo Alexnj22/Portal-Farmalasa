@@ -27,7 +27,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, mesSV } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -165,14 +165,14 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
         </FilaDeKpis>
       ) : null}
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {pend == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : porTipo.map(([t, filas]) => (
+      {pend == null ? <Cargando /> : porTipo.map(([t, filas]) => (
         <View key={t} style={{ gap: 8 }}>
           <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginHorizontal: 20 }}>{`${ROTULO[t] ?? t} · ${filas.length}`}</Text>
           {filas.map((r) => {
             const abierto = abierta === r.id;
             return (
               <View key={r.id} style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={18}>
+                <Vidrio radio={20}>
                   <Tocable disabled={!canEdit} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abierto ? null : r.id); setNota(''); setFoto(null); }} style={{ padding: 12, gap: 4 }}>
                     <View style={{ flexDirection: 'row', gap: 8 }}>
                       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{`${r.tipo_documento ?? ''} ${r.correlativo ?? 'sin número'}`}</Text>
@@ -200,7 +200,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
           })}
         </View>
       ))}
-      {pend && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>Todo confirmado este mes</Text> : null}
+      {pend && !visibles.length ? <Vacio>Todo confirmado este mes</Vacio> : null}
 
       {historial.length ? (
         <View style={{ marginHorizontal: 16, gap: 8, marginTop: 8 }}>

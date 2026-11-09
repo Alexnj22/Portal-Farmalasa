@@ -5,7 +5,7 @@
 // con `guardarUbicacionesProducto`, igual que allá.
 import { volver } from '../../componentes/volver';
 import { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -14,7 +14,7 @@ import { ubicacionesEditables, ubicacionesParaGuardar } from '@nucleo/utils/edic
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { BotonGrande, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -30,7 +30,7 @@ export default function UbicacionesDelProducto() {
     Promise.resolve(fetchUbicacionesDeProducto(productId)).then(({ data }) => setLocs(ubicacionesEditables(branches, data ?? [])))
       .catch((e) => { fallo('No se pudo cargar', mensajeAmigable(e)); setLocs(ubicacionesEditables(branches, [])); });
   }, [productId, branches]);
-  if (!locs) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ubicaciones' }} /><ActivityIndicator style={{ marginTop: 40 }} /></>;
+  if (!locs) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ubicaciones' }} /><Cargando /></>;
 
   const set = (i, campo, v) => setLocs((ls) => ls.map((l, j) => (j === i ? { ...l, [campo]: v } : l)));
   const guardar = () => {
@@ -62,10 +62,7 @@ export default function UbicacionesDelProducto() {
               <>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   {['vitrina', 'estante'].map((t) => (
-                    <Pressable key={t} onPress={() => set(i, 'tipo', t)}
-                      style={{ minHeight: 36, paddingHorizontal: 14, borderRadius: 18, justifyContent: 'center', backgroundColor: l.tipo === t ? MARCA.azulClaro : 'rgba(127,127,127,0.16)' }}>
-                      <Text style={{ color: l.tipo === t ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{t === 'vitrina' ? 'Vitrina' : 'Estante'}</Text>
-                    </Pressable>
+                    <Ficha key={t} texto={t === 'vitrina' ? 'Vitrina' : 'Estante'} activa={l.tipo === t} color={MARCA.azulClaro} onPress={() => set(i, 'tipo', t)} />
                   ))}
                 </View>
                 <View style={{ flexDirection: 'row', gap: 8 }}>

@@ -18,13 +18,13 @@ import Segmentos from '../../componentes/Segmentos';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { BotonGrande, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { BotonGrande, Opciones, Seccion, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Vidrio from '../../componentes/Vidrio';
 import ConAurora from '../../componentes/ConAurora';
 import { Encabezado } from '../../componentes/personas/Piezas';
-import { MARCA } from '../../componentes/inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
 const MESES = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
@@ -104,7 +104,7 @@ export default function Feriados() {
             ))}
           </View>
         ))}
-        {!porMes.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 32 }}>{`Sin feriados en ${anio}`}</Text> : null}
+        {!porMes.length ? <Vacio>{`Sin feriados en ${anio}`}</Vacio> : null}
         {puedeEditar && porMes.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, textAlign: 'center' }}>Mantén presionado un feriado para quitarlo.</Text> : null}
       </ScrollView>
 
@@ -120,7 +120,7 @@ export default function Feriados() {
               <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
                 <Seccion titulo="Nombre">
                   <TextInput value={form.name} onChangeText={(v) => setForm((x) => ({ ...x, name: v }))} placeholder="Ej: Día del Trabajo" placeholderTextColor={colorSistema.texto2}
-                    style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+                    style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: FONDO_CONTROL }} />
                 </Seccion>
                 <Seccion titulo="Fecha">
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -137,7 +137,7 @@ export default function Feriados() {
                     valor={form.tipo} onCambiar={(v) => setForm((x) => ({ ...x, tipo: v }))} />
                   {form.tipo === 'MUNICIPAL' ? (
                     <TextInput value={form.muni} onChangeText={(v) => setForm((x) => ({ ...x, muni: v }))} placeholder="Municipio" placeholderTextColor={colorSistema.texto2}
-                      style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: 'rgba(127,127,127,0.16)' }} />
+                      style={{ minHeight: 44, borderRadius: 12, paddingHorizontal: 12, fontSize: 16, color: colorSistema.texto, backgroundColor: FONDO_CONTROL }} />
                   ) : null}
                 </Seccion>
                 <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar feriado'} color={MARCA.ambar} onPress={guardar} deshabilitado={guardando || !form.name.trim() || !form.fecha} />

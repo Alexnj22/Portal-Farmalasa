@@ -31,9 +31,10 @@ import { ESTADO_ENCUESTA, indicesInvertidos, OPCIONES_POR_DEFECTO, nivelDePuntaj
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
+import { MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande, Dato } from '../componentes/formulario/Piezas';
+import { BotonGrande, Dato, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -210,14 +211,15 @@ export default function EncuestaAdmin() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Encuestas', headerLargeTitle: true }} />
+      <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nueva encuesta', onPress: () => { guardarEncuestaInterna(null); router.push({ pathname: '/encuesta-interna/editar', params: { id: 'nueva' } }); } } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'activa', label: 'Activas' }, { id: 'cerrada', label: 'Cerradas' }, { id: 'borrador', label: 'Borrador' }]} />
-        {encuestas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((e) => {
+        {encuestas == null ? <Cargando /> : visibles.map((e) => {
           const abiertaEsta = abierta === e.id;
           return (
             <Pressable key={e.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : e.id); }} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18} interactivo>
+              <Vidrio radio={20} interactivo>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{e.nombre}</Text>
@@ -247,15 +249,7 @@ export default function EncuestaAdmin() {
             </Pressable>
           );
         })}
-        {encuestas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>Sin encuestas aquí</Text> : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          {puedeEditar ? (
-            <View style={{ marginBottom: 10 }}>
-              <BotonGrande texto="Nueva encuesta" color={MARCA.azul}
-                onPress={() => { guardarEncuestaInterna(null); router.push({ pathname: '/encuesta-interna/editar', params: { id: 'nueva' } }); }} />
-            </View>
-          ) : null}
-        </View>
+        {encuestas && !visibles.length ? <Vacio>Sin encuestas aquí</Vacio> : null}
       </ScrollView>
     </>
   );

@@ -11,7 +11,7 @@
 // Arriba, lo que se puede hacer desde donde se la mira: volver a borrador /
 // activar y duplicar, con las mismas funciones y confirmaciones del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -23,7 +23,7 @@ import {
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso } from '../../componentes/formulario/Piezas';
+import { Aviso, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
@@ -57,7 +57,7 @@ function Accion({ texto, icono, color = MARCA.azulClaro, onPress }) {
 function Renglon({ r }) {
   const pct = Number(r.pct) || 0;
   return (
-    <Vidrio radio={18}>
+    <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 8 }}>
         <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{r.producto}</Text>
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
@@ -83,7 +83,7 @@ function Renglon({ r }) {
 function SalaQueVendio({ g, conBono, personaDe }) {
   const mayor = Math.max(1, ...g.gente.map((v) => Number(v.unidades) || 0));
   return (
-    <Vidrio radio={18}>
+    <Vidrio radio={20}>
       <View style={{ padding: 14, gap: 10 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: `${MARCA.azulClaro}26` }}>
@@ -188,7 +188,7 @@ export default function Promocion() {
         {esLab ? <Matriz key={vuelta} promocionId={id} /> : (
           <>
             {error ? <Aviso tono="freno" texto={error} /> : null}
-            {!detalle && !error ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
+            {!detalle && !error ? <Cargando /> : null}
             {detalle ? (
               <>
                 <View style={{ marginHorizontal: -16, gap: 12 }}>

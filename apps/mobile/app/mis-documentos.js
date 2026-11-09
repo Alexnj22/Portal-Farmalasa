@@ -14,7 +14,7 @@
 // pidió va la RESPUESTA de quien resolvió (`approver_note`): en un rechazo es lo
 // único que hay para leer.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -37,6 +37,7 @@ import { Chip } from '../componentes/inicio/Widget';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
+import { Cargando } from '../componentes/formulario/Piezas';
 
 // Un día de calendario (`issue_date`) se lee tal cual; un instante (`created_at`)
 // en la hora de El Salvador — cortarlo a 10 caracteres daba el día UTC.
@@ -127,9 +128,9 @@ export default function MisDocumentos() {
         ) : null}
         {pestanas.length > 2 ? (
           <Segmentos activa={activa} onCambiar={setPestana}
-            opciones={pestanas.map((t) => ({ id: t.key, label: t.key === 'ALL' ? `Todos · ${t.cuenta}` : t.label.replace('Del expediente', 'Expediente') }))} />
+            opciones={pestanas.map((t) => ({ id: t.key, label: t.label.replace('Del expediente', 'Expediente') }))} />
         ) : null}
-        {solicitudes == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : visibles.map((d) => {
+        {solicitudes == null ? <Cargando /> : visibles.map((d) => {
           const exp = d.type === 'EXPEDIENTE';
           const [icono, color] = exp ? [nombreDelIconoDeCategoria(d.meta?.categoria), MARCA.azul] : (ICONO_TIPO[d.type] ?? ['FileText', colorSistema.texto2]);
           const titulo = exp ? (d.meta?.nombre || 'Documento') : d.type === 'CERTIFICATE'

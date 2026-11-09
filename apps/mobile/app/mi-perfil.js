@@ -118,7 +118,7 @@ export default function MiPerfil() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Vidrio radio={26}>
+        <Vidrio radio={20}>
           <View style={{ padding: 20, alignItems: 'center', gap: 8 }}>
             <Avatar empleado={emp} tamano={104} />
             <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800', textAlign: 'center' }}>{shortEmployeeName(emp)}</Text>

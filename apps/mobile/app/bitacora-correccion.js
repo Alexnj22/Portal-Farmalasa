@@ -12,7 +12,7 @@
 // Recibe la sala, el día, el área y el bloque, y relee el día: así la pantalla
 // trabaja con lo que la base tiene AHORA y no con lo que se pintó antes.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -21,7 +21,7 @@ import { alternarPunto } from '@nucleo/utils/rondaDeBitacora';
 import { rango12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -100,7 +100,7 @@ export default function BitacoraCorreccion() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          {error ? <Aviso tono="freno" texto={error} /> : !dia ? <ActivityIndicator style={{ marginTop: 30 }} /> : !area || !registro ? (
+          {error ? <Aviso tono="freno" texto={error} /> : !dia ? <Cargando /> : !area || !registro ? (
             <Aviso tono="cuidado" texto="Ese registro ya no está: puede que alguien lo haya quitado o cambiado. Vuelve y recarga." />
           ) : !puedeAnotar || dia.cerrado ? (
             <Aviso tono="freno" texto={dia.cerrado ? 'Este mes ya está cerrado y firmado. Para corregir hay que reabrirlo desde el Cierre de mes.' : 'Corregir la bitácora es de quien la anota.'} />

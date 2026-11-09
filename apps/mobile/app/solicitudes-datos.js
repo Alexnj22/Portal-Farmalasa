@@ -13,7 +13,7 @@
 // Como el portal, se filtra además por estado y por período (la fecha en que
 // se recibió, o se imprimió si todavía no llegó): `filtrarSolicitudes`.
 import { useCallback, useMemo, useState } from 'react';
-import { ActionSheetIOS, ActivityIndicator, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -27,7 +27,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -107,7 +107,7 @@ export default function SolicitudesDatos() {
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={{ icono: 'plus', etiqueta: 'Nueva solicitud', onPress: nueva }} />
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -119,12 +119,12 @@ export default function SolicitudesDatos() {
             <Aviso tono={vencidas ? 'freno' : 'cuidado'} texto={[vencidas ? `${vencidas} vencida${vencidas === 1 ? '' : 's'}` : null, apremian ? `${apremian} vence${apremian === 1 ? '' : 'n'} en 3 días hábiles o menos` : null].filter(Boolean).join(' · ')} />
           </View>
         ) : null}
-        {filas == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : tramo.visibles.map((s) => {
+        {filas == null ? <Cargando /> : tramo.visibles.map((s) => {
           const plazo = plazoDe(s);
           const abiertaEsta = abierta === s.id;
           return (
             <Tocable key={s.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(abiertaEsta ? null : s.id); }} style={{ marginHorizontal: 16 }}>
-              <Vidrio radio={18} interactivo tinte={plazo?.vencida ? 'rgba(240,68,56,0.12)' : undefined}>
+              <Vidrio radio={20} interactivo tinte={plazo?.vencida ? 'rgba(240,68,56,0.12)' : undefined}>
                 <View style={{ padding: 12, gap: 6 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{s.folio_txt}</Text>
@@ -161,10 +161,7 @@ export default function SolicitudesDatos() {
             </Tocable>
           );
         })}
-        {filas && !visibles.length ? <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40 }}>{texto.trim() ? 'Sin coincidencias' : 'Sin solicitudes aquí'}</Text> : null}
-        <View style={{ marginHorizontal: 16, marginTop: 8 }}>
-          <BotonGrande texto="Nueva solicitud" onPress={nueva} />
-        </View>
+        {filas && !visibles.length ? <Vacio>{texto.trim() ? 'Sin coincidencias' : 'Sin solicitudes aquí'}</Vacio> : null}
       </ScrollView>
     </>
   );

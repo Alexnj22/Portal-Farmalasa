@@ -11,7 +11,7 @@
 // ⚠ Registrar un depósito, cerrar y reabrir el día mueven DINERO de verdad; en
 // el entorno de pruebas no se hacen.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Pressable, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cerrarDia, fetchCierreDia, mensajeDeDistribucion, reabrirDia, registrarDeposito } from '@nucleo/data/distribucion';
 import { cierreDelDiaListo, cuentaDelDia, depositoListo, formasDelDia, preguntaDelCierre } from '@nucleo/utils/distribucionCaja';
@@ -23,17 +23,16 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../formulario/Piezas';
 import { Pildora } from '../../avisos/Piezas';
 import Avatar from '../../Avatar';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 import { fallo, listo, trabajando } from '../../Progreso';
 import { compartirTicket, elegir, imprimirTicket } from '../fiscal/papel';
 import DiaElegido from './DiaElegido';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
 
-const PETROLEO = '#0f6e7d';
 const soloMonto = (v) => v.replace(',', '.').replace(/[^0-9.]/g, '');
 
 export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recarga = 0 }) {
@@ -102,7 +101,7 @@ export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recar
     <View style={{ gap: 14 }}>
       <DiaElegido fecha={fecha} onCambiar={onFecha} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-      {d === undefined ? <ActivityIndicator style={{ marginTop: 16 }} /> : null}
+      {d === undefined ? <Cargando /> : null}
       {d ? (
         <>
           <FilaDeKpis>

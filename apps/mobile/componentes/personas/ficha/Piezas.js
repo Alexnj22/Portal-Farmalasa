@@ -12,7 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { OTRA_ESPECIALIDAD, isCatalogOther } from '@nucleo/utils/educationCatalogs';
 import { colorSistema } from '../../Formulario';
 import { Campo } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../../inicio/marca';
 import { CampoConRotulo, Elegir, Rotulo } from '../Formulario';
 
 /** `{ value, label }` del núcleo → `{ id, label }` de `Elegir`. */
@@ -62,7 +62,7 @@ export function Fichas({ opciones, valor, onCambiar }) {
           <Pressable key={o.value} accessibilityRole="button" accessibilityState={{ selected: activa }}
             onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(o.value); }}
             style={({ pressed }) => ({ minHeight: 44, paddingHorizontal: 14, borderRadius: 22, justifyContent: 'center',
-              backgroundColor: activa ? MARCA.azul : 'rgba(127,127,127,0.16)', transform: [{ scale: pressed ? 0.97 : 1 }] })}>
+              backgroundColor: activa ? MARCA.azul : FONDO_CONTROL, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
             <Text style={{ color: activa ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{o.label}</Text>
           </Pressable>
         );

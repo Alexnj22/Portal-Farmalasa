@@ -9,7 +9,7 @@ import { ROTULO_MARCA, TIPOS_DE_ENTRADA, TIPOS_DE_SALIDA } from '@nucleo/utils/a
 import { hora12 } from '@nucleo/utils/hora';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 
 // Las flechas no están en el catálogo del menú (`tema/iconos.js`): se piden acá.
@@ -33,7 +33,7 @@ export function Contadores({ items, activo, onElegir, columnas = 3 }) {
               <Pressable key={it.id} style={{ flex: 1 }} disabled={!onElegir}
                 onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir?.(on ? null : it.id); }}>
                 {({ pressed }) => (
-                  <Vidrio radio={18} interactivo={!!onElegir} tinte={on ? `${it.color}40` : undefined} style={{ transform: [{ scale: pressed ? 0.96 : 1 }] }}>
+                  <Vidrio radio={20} interactivo={!!onElegir} tinte={on ? `${it.color}40` : undefined} style={{ transform: [{ scale: pressed ? 0.96 : 1 }] }}>
                     <View style={{ paddingVertical: 10, paddingHorizontal: 10, gap: 2, minHeight: 74 }}>
                       <Text style={{ color: it.color, fontSize: 24, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{it.valor}</Text>
                       <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{it.rotulo}</Text>
@@ -72,7 +72,7 @@ export function Marcas({ marcas, max = 3 }) {
           : TIPOS_DE_SALIDA.has(p.type) ? MARCA.rojo : MARCA.ambar;
         return (
           <View key={`${p.timestamp}-${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 8,
-            backgroundColor: i === 0 ? `${color}2A` : 'rgba(127,127,127,0.16)' }}>
+            backgroundColor: i === 0 ? `${color}2A` : FONDO_CONTROL }}>
             <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: color }} />
             <Text style={{ color: i === 0 ? colorSistema.texto : colorSistema.texto2, fontSize: 11, fontWeight: '700' }}>
               {`${ROTULO_MARCA[p.type] ?? p.type} ${hora12(p.timestamp)}`}

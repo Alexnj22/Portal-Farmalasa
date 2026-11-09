@@ -29,7 +29,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
   const dif = minutosAntes(apertura.abierta_a, marca);
   const detalle = piezas ? detalleDelCajon(piezas) : (Number(apertura.monto_apertura) > 0.005 ? `abrió con ${formatMoney(apertura.monto_apertura)}` : '');
   return (
-    <Vidrio radio={18}>
+    <Vidrio radio={20}>
       <View style={{ padding: 12, gap: 8 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }} numberOfLines={1}>{sala}</Text>

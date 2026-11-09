@@ -44,7 +44,7 @@ export default function TarjetaTraslado({ fila, persona, estado, alerta = false,
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress?.(); }}
       style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 10 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ flex: 1 }}><Ruta desde={m.origen_branch_name} hacia={m.branch_name} /></View>

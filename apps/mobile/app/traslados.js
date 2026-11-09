@@ -35,7 +35,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
 import { fetchEstadoDeGrupos, fetchSalasQueCubro, fetchTrasladosHistorial, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladoPorCodigo, recibirTraslado } from '@nucleo/data/traslados';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { BotonGrande, Vacio } from '../componentes/formulario/Piezas';
 import { fetchEnviosHistorial, fetchEnviosVivos, momentoDelEnvio } from '@nucleo/data/envios';
 import { buscadorDePersonas, motivoDeRechazoCorto } from '@nucleo/utils/movimientoTexto';
 import { textoBuscable } from '@nucleo/utils/trasladoTexto';
@@ -47,6 +47,7 @@ import PasoDeSemana from '../componentes/solicitudes/PasoDeSemana';
 import Escaner from '../componentes/Escaner';
 import TarjetaTraslado, { Pildora, Ruta } from '../componentes/traslados/Tarjeta';
 import Vidrio from '../componentes/Vidrio';
+import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
@@ -69,20 +70,11 @@ function Titulo({ texto, n }) {
   );
 }
 
-function Vacio({ titulo, detalle }) {
-  return (
-    <View style={{ alignItems: 'center', paddingTop: 60, gap: 6, paddingHorizontal: 32 }}>
-      <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{titulo}</Text>
-      {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>{detalle}</Text> : null}
-    </View>
-  );
-}
-
 function TarjetaEnvio({ envio, color, onPress }) {
   const lineas = envio.lineas || [];
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={22} interactivo>
+      <Vidrio radio={20} interactivo>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <View style={{ flex: 1 }}><Ruta desde={envio.origen_branch_name} hacia={envio.branch_name} /></View>
@@ -205,9 +197,9 @@ export default function Traslados() {
   };
 
   const opciones = [
-    decide && { id: 'piden', label: datos?.piden?.length ? `Te piden (${datos.piden.length})` : 'Te piden' },
-    { id: 'recibir', label: datos?.recibir?.length ? `Recibir (${datos.recibir.length})` : 'Recibir' },
-    { id: 'envios', label: envios.length ? `Envíos (${envios.length})` : 'Envíos' },
+    decide && { id: 'piden', label: 'Te piden' },
+    { id: 'recibir', label: 'Recibir' },
+    { id: 'envios', label: 'Envíos' },
     { id: 'historial', label: 'Historial' },
   ].filter(Boolean);
 
@@ -285,13 +277,25 @@ export default function Traslados() {
     if (!busqueda.trim()) return true;
     return smartFilter(busqueda, [e], (x) => [[x.origen_branch_name, x.branch_name, x.motivo_tipo, x.reason, ...(x.lineas || []).map((l) => l.descripcion)].filter(Boolean).join(' ')]).results.length > 0;
   });
-  const nombreDeSala = (sid) => (sucursales || []).find((b) => String(b.id) === String(sid))?.name ?? `Sala ${sid}`;
-  const elegirSala = (poner = setSalaFiltro) => {
-    const salas = (sucursales || []).filter((b) => b.type === 'FARMACIA' || b.type === 'BODEGA');
-    ActionSheetIOS.showActionSheetWithOptions({ title: 'Sala', options: ['Todas las salas', ...salas.map((b) => b.name), 'Cancelar'], cancelButtonIndex: salas.length + 1 },
-      (i) => { if (i === 0) poner(null); else if (i <= salas.length) poner(String(salas[i - 1].id)); });
-  };
   const escanear = () => { Haptics.selectionAsync().catch(() => {}); setAviso(null); setEscaneando(true); };
+  // La sala de esta pestaña: sólo en Recibir y en Historial, y sólo con alcance de todas.
+  const opcionesDeSala = (sucursales || []).filter((b) => b.type === 'FARMACIA' || b.type === 'BODEGA').map((b) => ({ id: String(b.id), label: b.name }));
+  const grupoDeSala = (activa, poner) => (todas ? [{ id: 'sala', titulo: 'Sala', activa: activa ?? '', porDefecto: '', onCambiar: (v) => poner(v || null), opciones: [{ id: '', label: 'Todas las salas' }, ...opcionesDeSala] }] : []);
+  const filtrosDeVista = vista === 'recibir' ? grupoDeSala(salaRecibir, setSalaRecibir) : vista === 'historial' ? grupoDeSala(salaFiltro, setSalaFiltro) : [];
+  // El «+» de la barra: la barra admite una sola acción junto al filtro.
+  const abrirNuevo = () => {
+    Haptics.selectionAsync().catch(() => {});
+    const ops = [
+      [enLaSolicitud ? `Seguir la solicitud (${enLaSolicitud})` : 'Pedir a otra sala', () => router.push('/pedir-traslado')],
+      ['Recibir una caja', escanear],
+      ['Recibir escribiendo el número', escribirNumero],
+      ...(hasPermission('traslados', 'can_edit') ? [['Enviar producto', () => router.push('/enviar-producto')]] : []),
+      ['Llevar productos', () => router.push('/retiro')],
+      ['Faltantes', () => router.push('/faltantes')],
+    ];
+    ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
+      (i) => { if (i < ops.length) ops[i][1](); });
+  };
 
   return (
     <>
@@ -306,26 +310,13 @@ export default function Traslados() {
           onCancelButtonPress: () => setBusqueda(''),
         },
       }} />
-      <Stack.Toolbar placement="right">
-        <Stack.Toolbar.Button icon="barcode.viewfinder" accessibilityLabel="Escanear una caja" onPress={escanear} />
-        <Stack.Toolbar.Menu icon="plus" accessibilityLabel="Nuevo">
-          <Stack.Toolbar.MenuAction icon="square.and.pencil" onPress={() => router.push('/pedir-traslado')}>
-            {enLaSolicitud ? `Seguir la solicitud (${enLaSolicitud})` : 'Pedir a otra sala'}
-          </Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="barcode.viewfinder" onPress={escanear}>Recibir una caja</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="number" onPress={escribirNumero}>Recibir escribiendo el número</Stack.Toolbar.MenuAction>
-          {hasPermission('traslados', 'can_edit') ? (
-            <Stack.Toolbar.MenuAction icon="shippingbox" onPress={() => router.push('/enviar-producto')}>Enviar producto</Stack.Toolbar.MenuAction>
-          ) : null}
-          <Stack.Toolbar.MenuAction icon="figure.walk" onPress={() => router.push('/retiro')}>Llevar productos</Stack.Toolbar.MenuAction>
-          <Stack.Toolbar.MenuAction icon="exclamationmark.triangle" onPress={() => router.push('/faltantes')}>Faltantes</Stack.Toolbar.MenuAction>
-        </Stack.Toolbar.Menu>
-      </Stack.Toolbar>
 
+      <MenuDeFiltros grupos={filtrosDeVista} extra={{ icono: 'plus', etiqueta: 'Nuevo', onPress: abrirNuevo }} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
         <Segmentos opciones={opciones} activa={vista} onCambiar={setVista} />
+        <FiltrosActivos grupos={filtrosDeVista} />
 
         {vista === 'piden' ? (
           piden.length ? piden.map((f) => (
@@ -336,11 +327,6 @@ export default function Traslados() {
 
         {vista === 'recibir' ? (
           <>
-            {todas ? (
-              <Pressable onPress={() => elegirSala(setSalaRecibir)} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{salaRecibir ? `Sala: ${nombreDeSala(salaRecibir)}  ✕` : 'Todas las salas ▾'}</Text>
-              </Pressable>
-            ) : null}
             <Pressable onPress={escribirNumero} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
               <Text style={{ color: colorSistema.acento, fontSize: 15 }}>¿La cámara no lee el ticket? Escribe el número</Text>
             </Pressable>
@@ -393,11 +379,6 @@ export default function Traslados() {
             <Segmentos activa={desenlace} onCambiar={setDesenlace} opciones={[
               { id: 'todos', label: 'Todos' }, { id: 'APPROVED', label: 'Recibidos' }, { id: 'REJECTED', label: 'Rechazados' },
             ]} />
-            {todas ? (
-              <Pressable onPress={() => elegirSala()} style={({ pressed }) => ({ alignSelf: 'center', minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-                <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>{salaFiltro ? `Sala: ${nombreDeSala(salaFiltro)}  ✕` : 'Todas las salas ▾'}</Text>
-              </Pressable>
-            ) : null}
             {historial == null ? null : historialVisto.length ? (
               <>
                 <Titulo texto="Traslados" n={historialVisto.length} />

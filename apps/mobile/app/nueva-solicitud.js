@@ -53,7 +53,7 @@ export default function NuevaSolicitud() {
         {familias.length ? (
           <View style={{ gap: 7 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>De la sala</Text>
-            <Vidrio radio={22}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
+            <Vidrio radio={20}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {familias.map((f, i) => (
                 <Opcion key={f.key} primero={!i} icono={f.icono} color={COLOR[f.key] ?? MARCA.azul} titulo={f.label} detalle={f.desc}
                   enPortal={!NATIVA[f.key]}
@@ -66,7 +66,7 @@ export default function NuevaSolicitud() {
         {personales ? (
           <View style={{ gap: 7 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Personales</Text>
-            <Vidrio radio={22}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
+            <Vidrio radio={20}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {PERSONALES.map((t, i) => (
                 <Opcion key={t} primero={!i} icono={nombreDelIconoDeTipo(t)} color={MARCA.violeta} titulo={rotuloDeSolicitud(t)}
                   onPress={() => router.push({ pathname: '/nueva/personal', params: { tipo: t } })} />

@@ -10,7 +10,7 @@
 // modos». Forma, validación y lo que se manda salen del núcleo, los mismos del
 // portal. Guarda borrador con el id en la clave.
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -27,7 +27,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -104,7 +104,7 @@ export default function CorregirDescuento() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Corregir descuento' }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
-          {error ? <Aviso tono="freno" texto={error} /> : !f ? <ActivityIndicator style={{ marginTop: 24 }} /> : (
+          {error ? <Aviso tono="freno" texto={error} /> : !f ? <Cargando /> : (
             <>
               <Seccion titulo="Nombre del descuento">
                 <Campo multiline={false} placeholder="Cómo se va a reconocer en la lista" value={f.descripcion} onChangeText={set('descripcion')} />

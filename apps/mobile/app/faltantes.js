@@ -42,7 +42,7 @@ function Faltante({ f, onHecho }) {
   };
   return (
     <View style={{ marginHorizontal: 16 }}>
-      <Vidrio radio={22}>
+      <Vidrio radio={20}>
         <View style={{ padding: 14, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{f.descripcion}</Text>
@@ -103,7 +103,7 @@ export default function Faltantes() {
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <Segmentos activa={vista} onCambiar={setVista}
-          opciones={[{ id: 'abiertos', label: abiertos.length ? `Sin resolver · ${abiertos.length}` : 'Sin resolver' }, { id: 'cerrados', label: 'Resueltos' }]} />
+          opciones={[{ id: 'abiertos', label: 'Sin resolver' }, { id: 'cerrados', label: 'Resueltos' }]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {lista == null ? null : visibles.length ? visibles.map((f) => <Faltante key={f.id} f={f} onHecho={cargar} />) : (
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 60, fontSize: 15 }}>

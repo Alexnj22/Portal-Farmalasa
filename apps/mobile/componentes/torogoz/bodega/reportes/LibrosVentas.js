@@ -4,7 +4,7 @@
 // está completo. Los totales y el archivo salen del núcleo, con el mismo
 // generador de los libros de las farmacias.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { fetchLibrosVentas } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { TIPO_DOCUMENTO } from '@nucleo/utils/distribucionComun';
@@ -14,7 +14,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { MenuDeFiltros } from '../../../Filtros';
 import { colorSistema } from '../../../Formulario';
-import { Aviso } from '../../../formulario/Piezas';
+import { Aviso, Cargando } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
@@ -107,7 +107,7 @@ export default function LibrosVentas({ buscar }) {
       ) : null}
       {!cargando && sinArchivo ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Algunas filas son datos de muestra sin su archivo: sus montos se derivaron del total." /></View> : null}
 
-      {cargando ? <ActivityIndicator style={{ marginTop: 16 }} /> : filas.length === 0 ? (
+      {cargando ? <Cargando /> : filas.length === 0 ? (
         <Vacio titulo={libro === 'anulados' ? 'Sin anulados' : libro === 'consumidor' ? 'Sin ventas' : 'Sin documentos'}
           texto={libro === 'anulados' ? 'No se invalidó ningún documento este mes.' : libro === 'consumidor' ? 'No hay Facturas selladas este mes.' : 'No hay Créditos Fiscales sellados este mes.'} />
       ) : libro === 'contribuyente' ? filas.map((f) => (

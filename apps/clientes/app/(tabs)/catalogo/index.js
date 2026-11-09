@@ -14,10 +14,12 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Keyboard, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, Image, Keyboard, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
 import Presionable from '../../../componentes/Presionable';
 import { Stack } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
+import Animated, { runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useSharedValue } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
 import { ESPACIO_BURBUJA, Vacio } from '../../../componentes/ui';
@@ -39,6 +41,7 @@ import { datosDePrecio, precioFinal, rotuloPrecioTuyo } from '../../../lib/preci
 
 // Cuántos trae cada «Ver más productos».
 const POR_TANDA = 30;
+const ALTO_BUSCADOR = 46;
 // El servidor no pasa de `desde = 1000` (app-clientes, acción `catalogo`): una
 // tanda que empiece más allá devuelve la misma de antes (2026-10-12). Ahí la
 // lista se detiene: 1,000 productos es más de lo que alguien recorre a dedo;
@@ -80,10 +83,25 @@ export default function Catalogo() {
   const listaRef = useRef(null);
   const [lejos, setLejos] = useState(false);
   const { height: altoPantalla } = useWindowDimensions();
-  const alDesplazar = useCallback((e) => {
-    const y = e.nativeEvent.contentOffset.y;
-    setLejos((v) => (v ? y > altoPantalla : y > altoPantalla * 1.5));
+  // El buscador va encima de la lista y se pega arriba al desplazar (2026-11-09).
+  // Es una sola pieza, fuera de la lista: así nunca pierde el foco ni el teclado.
+  // En iOS la barra es transparente y la lista corre debajo; en Android, no.
+  const altoBarra = useHeaderHeight();
+  const tope = Platform.OS === 'ios' ? altoBarra : 0;
+  const desplazado = useSharedValue(null);
+  const posBuscador = useSharedValue(null);
+  const yaLejos = useSharedValue(false);
+  const alDesplazar = useAnimatedScrollHandler((e) => {
+    const y = e.contentOffset.y;
+    desplazado.value = y;
+    const ahora = yaLejos.value ? y > altoPantalla : y > altoPantalla * 1.5;
+    if (ahora !== yaLejos.value) { yaLejos.value = ahora; runOnJS(setLejos)(ahora); }
   }, [altoPantalla]);
+  const estiloBuscador = useAnimatedStyle(() => {
+    if (posBuscador.value == null) return { opacity: 0 };
+    const d = desplazado.value;
+    return { opacity: 1, transform: [{ translateY: d == null ? posBuscador.value + tope : Math.max(tope + 6, posBuscador.value - d) }] };
+  }, [tope]);
   const arriba = useCallback(() => {
     Haptics.selectionAsync().catch(() => {});
     listaRef.current?.scrollToOffset({ offset: 0, animated: true });
@@ -197,7 +215,8 @@ export default function Catalogo() {
       {/* Promociones arriba, el buscador siempre abierto debajo (2026-11-09: en
           Android la barra del sistema no salía abierta como en iOS). */}
       {!q ? <BannerPromos productos={ahorro} titulo="Promociones" /> : null}
-      <Buscador valor={valorBuscador} alCambiar={setTexto} />
+      {/* El lugar que ocupa el buscador, que va fuera de la lista. */}
+      <View style={{ height: ALTO_BUSCADOR }} onLayout={(e) => { posBuscador.value = e.nativeEvent.layout.y + 16; }} />
       {/* Filtrando (2026-11-09, «no sé cómo volver a la tienda»): una sola salida,
           la misma para búsqueda, necesidad y laboratorio, pegada al buscador. */}
       {q ? (
@@ -217,7 +236,7 @@ export default function Catalogo() {
         </>
       )}
     </View>
-  ), [q, valorBuscador, tituloFiltro, volverALaTienda, categorias, filas, t, ahorro]);
+  ), [q, tituloFiltro, volverALaTienda, categorias, filas, t, ahorro]);
   // Estable: con una función nueva en cada render, la lista redibujaba todas
   // las tarjetas a cada tecla.
   const renderItem = useCallback(({ item, index }) => {
@@ -249,10 +268,10 @@ export default function Catalogo() {
           </View>
         ),
       }} />
-      <FlatList
+      <Animated.FlatList
         ref={listaRef}
         onScroll={alDesplazar}
-        scrollEventThrottle={100}
+        scrollEventThrottle={16}
         // Cambiar `numColumns` exige montar la lista de nuevo.
         key={`col${columnas}`}
         data={q ? (lista ?? []) : []}
@@ -267,7 +286,6 @@ export default function Catalogo() {
         ListHeaderComponent={encabezado}
         initialNumToRender={8}
         windowSize={7}
-        removeClippedSubviews
         renderItem={renderItem}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar} />}
         ListEmptyComponent={
@@ -287,6 +305,9 @@ export default function Catalogo() {
                 : lista.length > 12 ? <VerMas texto="Volver arriba" sf="arrow.up" alTocar={arriba} />
                   : null}
       />
+      <Animated.View pointerEvents="box-none" style={[{ position: 'absolute', top: 0, left: 0, right: 0, paddingHorizontal: 16, alignItems: 'center', zIndex: 10 }, estiloBuscador]}>
+        <Buscador valor={valorBuscador} alCambiar={setTexto} />
+      </Animated.View>
       <HojaAgregar />
       <AvisoAgregado />
     </>
@@ -382,12 +403,14 @@ const TarjetaProducto = memo(function TarjetaProducto({ p }) {
 const Buscador = memo(function Buscador({ valor, alCambiar }) {
   const t = useTema();
   return (
-    <View style={{ minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 14, paddingRight: 4, borderRadius: 16,
-      backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)', borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)' }}>
+    <View style={{ width: '100%', maxWidth: 688, height: ALTO_BUSCADOR, flexDirection: 'row', alignItems: 'center', gap: 8, paddingLeft: 14, paddingRight: 4, borderRadius: 16,
+      // Opaco: los productos pasan por debajo.
+      backgroundColor: t.oscuro ? '#2A2930' : '#FFFFFF', borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.08)',
+      shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 8, shadowOffset: { width: 0, height: 2 }, elevation: 3 }}>
       <Icono sf="magnifyingglass" respaldo="⌕" tam={16} color={colorSistema.texto3} />
       <TextInput value={valor} onChangeText={alCambiar} placeholder="Medicamento o principio activo" placeholderTextColor={colorSistema.texto3}
         accessibilityLabel="Buscar medicamento o principio activo" returnKeyType="search" autoCapitalize="none" autoCorrect={false}
-        style={{ flex: 1, fontSize: 16, color: colorSistema.texto, paddingVertical: 10 }} />
+        style={{ flex: 1, fontSize: 16, color: colorSistema.texto, paddingVertical: 0 }} />
       {valor ? (
         <Presionable onPress={() => alCambiar('')} accessibilityRole="button" accessibilityLabel="Borrar búsqueda"
           style={({ pressed }) => ({ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>

@@ -61,7 +61,8 @@ for (const [k, [nativo, web]] of Object.entries(COLORES)) {
 // `automaticallyAdjustKeyboardInsets`: ése reemplaza el margen de arriba que
 // pone la barra transparente, y al tocar el primer campo todo el formulario
 // subía y quedaba escondido bajo el título (Unirme y Entrar, 2026-10-06).
-export function Formulario({ children, contentContainerStyle, ...props }) {
+// `pie` (2026-11-09): fuera del desplazamiento; queda siempre a la vista, sobre el teclado.
+export function Formulario({ children, contentContainerStyle, pie = null, ...props }) {
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
       <ScrollView style={{ flex: 1 }}
@@ -70,6 +71,7 @@ export function Formulario({ children, contentContainerStyle, ...props }) {
         contentInsetAdjustmentBehavior="automatic" {...props}>
         {children}
       </ScrollView>
+      {pie}
     </KeyboardAvoidingView>
   );
 }

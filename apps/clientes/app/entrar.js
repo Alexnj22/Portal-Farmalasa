@@ -4,6 +4,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { InputAccessoryView, Platform, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Device from 'expo-device';
 import Segmentos from '../componentes/Segmentos';
 import { BotonSistema, colorSistema, FilaCampo, Formulario, Grupo } from '../componentes/sistema';
@@ -29,6 +30,7 @@ const IOS = Platform.OS === 'ios';
 
 export default function Entrar() {
   const t = useTema();
+  const ins = useSafeAreaInsets();
   const abrir = useSesion((s) => s.abrir);
   // Llegando desde el QR del ticket (app/mis-puntos.js), con el código escrito.
   const { codigo: delQr, completar } = useLocalSearchParams();
@@ -97,8 +99,19 @@ export default function Entrar() {
     if (!(await entrarCon(datos))) { await olvidarEntrada(); setRapida(null); }
   }
 
+  // Los botones y el error, siempre a la vista: nunca hay que desplazarse para entrar.
+  const pie = (
+    <View style={{ width: '100%', maxWidth: 560, alignSelf: 'center', gap: 12, paddingTop: 12, paddingBottom: Math.max(ins.bottom, 12) }}>
+      {error ? <Aviso>{error}</Aviso> : null}
+      {rapida && !completando ? (
+        <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar ${conBiometria(rapida.biometria)}`} alTocar={entrarRapido}
+          deshabilitado={enviando} color={t.color.magenta} />
+      ) : null}
+      <BotonSistema etiqueta={enviando ? 'Entrando…' : 'Entrar'} alTocar={entrar} deshabilitado={!listo || enviando} color={t.color.magenta} />
+    </View>
+  );
   return (
-    <Formulario>
+    <Formulario pie={pie}>
       {completando ? (
         <Aviso tipo="aviso">Entraste con el código de tu ticket. Para ver tus compras, facturas, reservas y el chat, entra con tu DUI y teléfono.</Aviso>
       ) : (
@@ -109,10 +122,6 @@ export default function Entrar() {
         />
       )}
       {motivo === 'vencida' ? <Aviso tipo="aviso">Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Aviso> : null}
-      {rapida && !completando ? (
-        <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar ${conBiometria(rapida.biometria)}`} alTocar={entrarRapido}
-          deshabilitado={enviando} color={t.color.magenta} />
-      ) : null}
       {modo === 'dui' ? (
         <Grupo pie={duiMalo ? 'Revisa tu DUI: ese número no es válido.' : telMalo ? 'Revisa tu teléfono: empieza con 2, 6 o 7.' : 'Los dos datos que dejaste en tu ficha. Sólo números: el guion se pone solo.'}>
           {/* Nombres explícitos para el lector de pantalla (2026-11-04): ver FilaCampo. */}
@@ -166,8 +175,6 @@ export default function Entrar() {
             alTocar={() => { telRef.current?.blur(); if (listo) entrar(); }} />
         </>
       ) : null}
-      {error ? <Aviso>{error}</Aviso> : null}
-      <BotonSistema etiqueta={enviando ? 'Entrando…' : 'Entrar'} alTocar={entrar} deshabilitado={!listo || enviando} color={t.color.magenta} />
       <Texto nivel={2} estilo={{ textAlign: 'center', marginHorizontal: 32, color: colorSistema.texto2, fontSize: 13 }}>
         ¿No te reconoce? Pregunta en cualquiera de nuestras salas: revisamos tu ficha.
       </Texto>

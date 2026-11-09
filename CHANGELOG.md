@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1493.1 — App de clientes: buscador fijo y botones de entrada a la vista
+
+El buscador de la Tienda se queda fijo arriba al desplazar y los botones de Iniciar sesión siempre están a la vista.
+
 ## v2.1493.0 — Foto de laboratorio con el editor de productos
 
 La foto del laboratorio ahora pasa por el mismo editor que la de un producto: recortar, girar, quitar el fondo, retocar con pincel y componer. Se puede subir de un archivo, pegar con Ctrl+V, tomar con la cámara o mandar desde el teléfono. Un logo ancho entra completo, centrado en un cuadro blanco.

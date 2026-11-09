@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1498.2 — Compras: un documento sin sello de Hacienda no se carga (2026-11-09)
+
+- «Revisar carga» frena un DTE sin sello de recepción válido (40 caracteres):
+  la compra se registraba con el número de serie vacío y, ya registrada, el
+  sistema no deja corregirlo («Actualizar compra» sólo cambia la clasificación
+  fiscal). Pasó con 71 compras hasta el 6-nov y con la 6568 y la 6569 el 7-nov.
+- El sello se toma de la ficha del documento o, si falta ahí, del archivo JSON.
+
 ## v2.1498.1 — Permisos: una capacidad encendida da también Gestionar (2026-11-09)
 
 «Recibir y contar el dinero» se veía encendida para Supervisor/a de Ventas y

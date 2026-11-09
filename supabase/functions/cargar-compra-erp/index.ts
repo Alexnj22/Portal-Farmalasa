@@ -37,6 +37,7 @@ import {
 } from "../_shared/compraSobre.ts";
 import { coincideConControl, fechaCercana } from "../_shared/numeroDeControl.ts";
 import { aplicarParticiones } from "../_shared/particionRenglon.ts";
+import { selloValido } from "../_shared/selloDeCompra.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import {
   devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
@@ -2358,12 +2359,25 @@ Deno.serve(async (req: Request) => {
     }
     if (!erpProveedor) problemas.push({ renglon: null, texto: "El proveedor no está registrado en el catálogo de proveedores." });
 
+    let selloDelArchivo: string | null = null;
     if (!dte) {
       const path = pathDeStorage(d.json_path);
       if (!path) return responder({ error: "El documento no tiene su archivo." }, 400);
       const { data: blob, error: eB } = await admin.storage.from("purchase-dte").download(path);
       if (eB || !blob) throw new Error(`No se pudo leer el archivo: ${eB?.message}`);
-      dte = desenvolver(JSON.parse(await blob.text()));
+      const archivo = JSON.parse(await blob.text());
+      selloDelArchivo = selloValido(archivo?.selloRecibido ?? archivo?.responseMH?.selloRecibido);
+      dte = desenvolver(archivo);
+    }
+    // El sello de recepción de Hacienda viaja como «número de serie» de la
+    // compra (lo pide el anexo). Hasta el 6-nov iba vacío —70 compras sin sello
+    // en el sistema— y el 7-nov entraron 2 más (6568, 6569) porque su documento
+    // llegó sin sello. Ya registrada, la compra no deja corregirlo:
+    // «Actualizar compra» sólo cambia la clasificación fiscal (leído el
+    // 2026-11-09). Así que un DTE sin sello válido NO se carga hasta que llegue.
+    const sello = manual ? null : (selloValido(d.sello_recibido) ?? selloDelArchivo);
+    if (!manual && !sello) {
+      problemas.push({ renglon: null, texto: "El documento no trae el sello de recepción de Hacienda: se podrá cargar cuando llegue." });
     }
     const crudos: any[] = Array.isArray(dte?.cuerpoDocumento) ? dte.cuerpoDocumento : [];
     if (!crudos.length) return responder({ error: "El documento no trae renglones." }, 400);
@@ -2664,7 +2678,7 @@ Deno.serve(async (req: Request) => {
       // el 6-nov quedaron sin sello en el sistema, mientras que las cargadas a
       // mano lo llevan (215 de 247, todas iguales al del documento).
       clase_documento_tributario: manual ? "1" : "4",
-      numero_serie: manual ? (manual.serie ?? "") : String(d.sello_recibido ?? ""),
+      numero_serie: manual ? (manual.serie ?? "") : (sello ?? ""),
     };
 
     // Los totales lado a lado, para que la persona los compare con la factura

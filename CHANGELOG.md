@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.13 — App de clientes: volver a la tienda desde un filtro
+
+Al buscar o filtrar en la Tienda aparece «Volver a la tienda», debajo del buscador.
+
 ## v2.1492.12 — App de clientes: Tienda con buscador abierto y sin listado
 
 La Tienda queda en promociones, buscador siempre abierto, necesidades, mejores precios, laboratorios y vistos; se quita el listado completo.

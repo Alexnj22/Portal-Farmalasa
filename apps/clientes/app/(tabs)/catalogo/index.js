@@ -14,13 +14,13 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Keyboard, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
 import Presionable from '../../../componentes/Presionable';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../../../componentes/sistema';
-import { ESPACIO_BURBUJA, Seccion, Vacio } from '../../../componentes/ui';
+import { ESPACIO_BURBUJA, Vacio } from '../../../componentes/ui';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
 import BannerPromos from '../../../componentes/BannerPromos';
@@ -184,29 +184,40 @@ export default function Catalogo() {
   ), [q, texto, t]);
   // Un laboratorio se busca como `lab:<id>`: eso no se le muestra a nadie.
   const valorBuscador = texto.startsWith('lab:') ? '' : texto;
+  const necesidad = BUSQUEDAS.find((b) => b.q === q);
+  const tituloFiltro = labActivo ? labActivo.nombre : necesidad ? necesidad.texto : `Resultados para «${q}»`;
+  const volverALaTienda = useCallback(() => {
+    Haptics.selectionAsync().catch(() => {});
+    Keyboard.dismiss();
+    setTexto(''); setQ('');
+    listaRef.current?.scrollToOffset({ offset: 0, animated: false });
+  }, []);
   const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba, el buscador siempre abierto debajo (2026-11-09: en
           Android la barra del sistema no salía abierta como en iOS). */}
       {!q ? <BannerPromos productos={ahorro} titulo="Promociones" /> : null}
       <Buscador valor={valorBuscador} alCambiar={setTexto} />
-      {categorias}
-      {filas}
-      {/* Con un laboratorio elegido, su nombre y cómo soltarlo (la fila de
-          laboratorios no se ve mientras se mira uno). */}
-      {labActivo ? (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text accessibilityRole="header" style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }} numberOfLines={2}>{labActivo.nombre}</Text>
-          <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(''); }} accessibilityRole="button" accessibilityLabel="Ver toda la tienda"
-            style={({ pressed }) => ({ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 12, borderRadius: 999,
-              backgroundColor: t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)', transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-            <Icono sf="xmark" respaldo="×" tam={11} color={colorSistema.texto2} />
-            <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>Quitar</Text>
+      {/* Filtrando (2026-11-09, «no sé cómo volver a la tienda»): una sola salida,
+          la misma para búsqueda, necesidad y laboratorio, pegada al buscador. */}
+      {q ? (
+        <View style={{ gap: 6 }}>
+          <Presionable onPress={volverALaTienda} accessibilityRole="button" accessibilityLabel="Volver a la tienda"
+            style={({ pressed }) => ({ alignSelf: 'flex-start', minHeight: 44, flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, borderRadius: 999,
+              backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+            <Icono sf="chevron.left" respaldo="‹" tam={13} color={t.color.magentaTexto} />
+            <Text style={{ fontSize: 15, fontWeight: '800', color: t.color.magentaTexto }}>Volver a la tienda</Text>
           </Presionable>
+          <Text accessibilityRole="header" numberOfLines={2} style={{ marginLeft: 4, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{tituloFiltro}</Text>
         </View>
-      ) : q ? <Seccion>Resultados para «{q}»</Seccion> : null}
+      ) : (
+        <>
+          {categorias}
+          {filas}
+        </>
+      )}
     </View>
-  ), [q, valorBuscador, categorias, filas, labActivo, t, ahorro]);
+  ), [q, valorBuscador, tituloFiltro, volverALaTienda, categorias, filas, t, ahorro]);
   // Estable: con una función nueva en cada render, la lista redibujaba todas
   // las tarjetas a cada tecla.
   const renderItem = useCallback(({ item, index }) => {

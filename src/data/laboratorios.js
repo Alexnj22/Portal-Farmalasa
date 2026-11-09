@@ -7,7 +7,16 @@ import { fetchAllRows } from '../utils/supabaseUtils';
 import { subirArchivo } from '../utils/storageFiles';
 
 export function fetchLaboratoriosBasic() {
-    return supabase.from('laboratorios').select('id, nombre, foto').order('nombre');
+    return supabase.from('laboratorios').select('id, nombre, foto, sugerir_en_app').order('nombre');
+}
+
+// Los productos de este laboratorio salen primero en «Mismo principio activo»
+// de la app. Con `.select` por la misma razón que la foto.
+export async function guardarSugerirLaboratorio(id, sugerir, contexto = {}) {
+    const { data, error } = await supabase.from('laboratorios').update({ sugerir_en_app: sugerir }).eq('id', id).select('id');
+    if (error) throw error;
+    if (!data?.length) throw new Error('No tienes permiso para cambiar este laboratorio.');
+    anotar('SUGERIR_LABORATORIO_APP', id, { sugerir, ...contexto });
 }
 
 // La foto del laboratorio para la Tienda de la app. Con `.select` para notar

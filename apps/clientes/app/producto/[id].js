@@ -228,7 +228,7 @@ export default function Producto() {
         <Text style={{ fontSize: 13, color: colorSistema.texto3, marginHorizontal: 32, marginTop: 8 }}>
           Las existencias se actualizan cada pocos minutos; confírmalo antes de ir.
         </Text>
-        {p.principio_activo ? <MismoPrincipio id={p.id} principio={p.principio_activo} /> : null}
+        {p.principio_activo ? <MismoPrincipio id={p.id} /> : null}
       </ScrollView>
 
       {/* Abajo, fijos: agregar al carrito (la presentación mayor) y consultar. */}

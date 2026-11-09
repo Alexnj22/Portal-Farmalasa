@@ -18060,6 +18060,7 @@ export type Database = {
           nombre: string
           nombre_busq: string | null
           ocultar_en_minmax: boolean | null
+          sugerir_en_app: boolean
           ubicacion: string | null
           updated_at: string | null
         }
@@ -18070,6 +18071,7 @@ export type Database = {
           nombre: string
           nombre_busq?: string | null
           ocultar_en_minmax?: boolean | null
+          sugerir_en_app?: boolean
           ubicacion?: string | null
           updated_at?: string | null
         }
@@ -18080,6 +18082,7 @@ export type Database = {
           nombre?: string
           nombre_busq?: string | null
           ocultar_en_minmax?: boolean | null
+          sugerir_en_app?: boolean
           ubicacion?: string | null
           updated_at?: string | null
         }
@@ -31552,6 +31555,7 @@ export type Database = {
         Args: { p_desde?: number; p_limite?: number; p_q: string }
         Returns: Json
       }
+      app_catalogo_mismo_principio: { Args: { p_id: number }; Returns: Json }
       app_catalogo_producto: { Args: { p_id: number }; Returns: Json }
       app_catalogo_rehacer_destacados: { Args: never; Returns: number }
       app_chat_por_purgar: { Args: { p_limite?: number }; Returns: Json }

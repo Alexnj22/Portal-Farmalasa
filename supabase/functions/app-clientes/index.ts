@@ -1330,6 +1330,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const d: any = data ?? {};
       return json({ ok: true, ...d, productos: (Array.isArray(d.productos) ? d.productos : []).map(conPrecioTuyo(cond)) });
     }
+    // «Mismo principio activo» en la ficha (2026-11-09): el orden lo decide la
+    // base, con los laboratorios marcados en el portal por delante.
+    if (accion === "catalogo_mismo_principio") {
+      const id = Number(body?.id);
+      if (!Number.isInteger(id) || id <= 0) return json({ ok: false, mensaje: "Producto no válido." });
+      const [{ data, error }, cond] = await Promise.all([
+        admin.rpc("app_catalogo_mismo_principio", { p_id: id }),
+        condicionDePrecio(),
+      ]);
+      if (error) throw error;
+      return json({ ok: true, productos: (Array.isArray(data) ? data : []).map(conPrecioTuyo(cond)) });
+    }
     // Escáner de la Tienda (2026-11-09): de un código de barras al producto. Un
     // UPC puede llegar con un cero de más o de menos según el teléfono.
     if (accion === "catalogo_por_codigo") {

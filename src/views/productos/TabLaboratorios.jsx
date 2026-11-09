@@ -5,7 +5,7 @@ import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
+import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
 import { enCuadroBlanco, fotoDeCatalogo, imagenDelPortapapeles } from '../../plataforma/imagenes';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
@@ -16,6 +16,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import Switch from '../../components/common/Switch';
 import IconoEnCaja from '../../components/common/IconoEnCaja';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -209,6 +210,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                                         onToggle={() => toggle(lab.id)}
                                                         onSave={(branchId, fields) => handleSave(lab.id, branchId, fields)}
                                                         onFoto={(foto) => setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, foto } : l))}
+                                                        onSugerir={(sugerir_en_app) => setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, sugerir_en_app } : l))}
                                                     />
                                                 ))}
                                             </div>
@@ -376,7 +378,32 @@ function FotoLaboratorio({ lab, onFoto }) {
     );
 }
 
-function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto }) {
+// Sus productos salen primero en «Mismo principio activo» de la app.
+function SugerirLaboratorio({ lab, onSugerir }) {
+    const [ocupado, setOcupado] = useState(false);
+    const cambiar = async (sugerir) => {
+        setOcupado(true);
+        try {
+            await guardarSugerirLaboratorio(lab.id, sugerir, { lab: lab.nombre });
+            onSugerir(sugerir);
+        } catch (err) {
+            useToastStore.getState().showToast('No se pudo guardar', mensajeAmigable(err), 'error');
+        } finally {
+            setOcupado(false);
+        }
+    };
+    return (
+        <div className="flex items-center justify-between gap-4 mb-3 pt-3 border-t border-divider">
+            <div className="min-w-0">
+                <p className="text-body font-semibold text-content-1">Sugerir primero en la app</p>
+                <p className="text-caption text-content-3">Sus productos salen antes en «Mismo principio activo», ordenados por precio.</p>
+            </div>
+            <Switch checked={!!lab.sugerir_en_app} onChange={cambiar} disabled={ocupado} label="Sugerir primero en la app" />
+        </div>
+    );
+}
+
+function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto, onSugerir }) {
     const filledCount = branches.filter(b => hasAny(locationMap[b.id] || {})).length;
 
     return (
@@ -433,6 +460,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto }
                     : `${filledCount} de ${branches.length} sucursal${branches.length !== 1 ? 'es' : ''} con ubicación`}
                 trailing={
                     <>
+                        {lab.sugerir_en_app && <Badge variant="success" size="sm">Sugerido en la app</Badge>}
                         <span className="hidden sm:flex items-center gap-1 mr-2">
                             {branches.map(b => (
                                 <span key={b.id} role="img" title={b.name}
@@ -461,6 +489,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto }
                         {/* Inner panel with subtle glass bg */}
                         <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3">
                             <FotoLaboratorio lab={lab} onFoto={onFoto} />
+                            <SugerirLaboratorio lab={lab} onSugerir={onSugerir} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                                 {branches.map((branch, idx) => (
                                     <BranchLocationCard

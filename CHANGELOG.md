@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1494.0 — Laboratorios sugeridos en la app
+
+- Laboratorios: nuevo interruptor «Sugerir primero en la app». Los productos de esos laboratorios salen antes en «Mismo principio activo», y dentro de cada grupo por precio.
+- App de clientes: esa lista ahora se calcula en el servidor y ya no muestra productos sin principio activo real («No aplica», «Insumo»).
+
 ## v2.1493.4 — Foto de laboratorio: fondo y encuadre automáticos
 
 La foto del laboratorio funciona igual que en Fotos de productos: al abrirla, el fondo se quita y se encuadra sola, y no deja guardar una imagen vacía o demasiado pequeña.

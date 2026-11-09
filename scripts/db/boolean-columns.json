@@ -269,7 +269,8 @@
     ],
     "laboratorios": [
       "acumula_puntos",
-      "ocultar_en_minmax"
+      "ocultar_en_minmax",
+      "sugerir_en_app"
     ],
     "marketing_ajustes": [
       "id",

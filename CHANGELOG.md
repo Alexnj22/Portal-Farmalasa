@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1493.0 — Foto de laboratorio con el editor de productos
+
+La foto del laboratorio ahora pasa por el mismo editor que la de un producto: recortar, girar, quitar el fondo, retocar con pincel y componer. Se puede subir de un archivo, pegar con Ctrl+V, tomar con la cámara o mandar desde el teléfono. Un logo ancho entra completo, centrado en un cuadro blanco.
+
 ## v2.1492.13 — App de clientes: volver a la tienda desde un filtro
 
 Al buscar o filtrar en la Tienda aparece «Volver a la tienda», debajo del buscador.

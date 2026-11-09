@@ -1,16 +1,16 @@
 import useMediaQuery from '../../plataforma/useMediaQuery';
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { Suspense, lazy, useState, useEffect, useCallback, useRef } from 'react';
 import ListRow from '../../components/common/ListRow';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
-import { fotoDeCatalogo } from '../../plataforma/imagenes';
+import { enCuadroBlanco, fotoDeCatalogo } from '../../plataforma/imagenes';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
-    ChevronDown, Building2, Package, ShoppingBag, ImagePlus,
+    ChevronDown, Building2, Package, ShoppingBag, ImagePlus, Camera, Smartphone,
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
@@ -21,6 +21,11 @@ import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
+import useCoarsePointer from '../../plataforma/useCoarsePointer';
+import useFotoDelTelefono from '../../components/common/useFotoDelTelefono';
+import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
+
+const PhotoEditorModal = lazy(() => import('../../components/common/PhotoEditorModal'));
 // La forma de una ubicación y la sección de un laboratorio: `ubicacionLaboratorio` (núcleo, la misma de la app).
 const emptyLoc = ubicacionVacia;
 const hasAnySala = tieneSala;
@@ -242,11 +247,43 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
 
 // ─── Lab row ──────────────────────────────────────────────────────────────────
 
-// La foto que se ve en la Tienda de la app de clientes.
+// La foto que se ve en la Tienda de la app de clientes. Entra por el mismo
+// editor que la foto de un producto (recortar, girar, quitar el fondo, pincel,
+// componer) y por los mismos caminos: archivo, pegar, cámara o teléfono.
+//
+// Sin la prop `producto` del editor a propósito: esa revisión bloquea lo menor
+// de 250 px, y el logo de un laboratorio suele venir chico y se ve en un círculo.
 function FotoLaboratorio({ lab, onFoto }) {
     const [ocupado, setOcupado] = useState(false);
+    const [pendiente, setPendiente] = useState(null);
     const selector = useRef(null);
+    const camara = useRef(null);
+    const esTactil = useCoarsePointer();
     const avisar = useToastStore.getState().showToast;
+    // Todo camino pasa por acá: los logos suelen ser anchos y el recorte es 1:1.
+    const abrirEditor = (archivo) => enCuadroBlanco(archivo)
+        .then(setPendiente)
+        .catch((err) => avisar('Foto', mensajeAmigable(err), 'error'));
+    const fotoDelTelefono = useFotoDelTelefono(abrirEditor, {
+        etiqueta: 'Foto del laboratorio',
+        onError: (msg) => { if (msg) avisar('Foto', msg, 'error'); },
+    });
+    // Sólo existe mientras la fila está abierta, y se abre una a la vez: el
+    // pegado no puede caerle a dos laboratorios.
+    useEffect(() => {
+        const alPegar = (e) => {
+            const item = [...(e.clipboardData?.items || [])].find((i) => i.type.startsWith('image/'));
+            const archivo = item?.getAsFile();
+            if (archivo) abrirEditor(archivo);
+        };
+        document.addEventListener('paste', alPegar);
+        return () => document.removeEventListener('paste', alPegar);
+    }, []);
+    const elegir = (e) => {
+        const f = e.target.files?.[0];
+        e.target.value = '';
+        if (f) abrirEditor(f);
+    };
     const trabajar = async (accion, exito) => {
         setOcupado(true);
         try {
@@ -258,28 +295,46 @@ function FotoLaboratorio({ lab, onFoto }) {
             setOcupado(false);
         }
     };
-    const subir = (archivo) => trabajar(async () => {
-        const blob = await fotoDeCatalogo(archivo, 400, 0.85);
-        return subirFotoLaboratorio(lab.id, blob, { lab: lab.nombre });
-    }, 'Foto del laboratorio actualizada.');
+    const subir = (editada) => {
+        setPendiente(null);
+        return trabajar(async () => {
+            const blob = await fotoDeCatalogo(editada, 400, 0.85);
+            return subirFotoLaboratorio(lab.id, blob, { lab: lab.nombre });
+        }, 'Foto del laboratorio actualizada.');
+    };
     const quitar = () => trabajar(async () => {
         await guardarFotoLaboratorio(lab.id, null, { lab: lab.nombre });
         return null;
     }, 'Foto quitada.');
 
     return (
-        <div className="flex items-center gap-3 mb-3">
+        <div className="flex flex-wrap items-center gap-3 mb-3">
             {lab.foto
                 ? <img src={lab.foto} alt={`Logo de ${lab.nombre}`} className="w-14 h-14 shrink-0 rounded-full object-contain p-1 bg-surface-card border border-divider" />
                 : <IconoEnCaja tamano="lg" forma="circulo"><ImagePlus size={20} aria-hidden="true" /></IconoEnCaja>}
-            <div className="min-w-0 flex-1">
+            <div className="min-w-0 flex-1 basis-40">
                 <p className="text-body font-semibold text-content-1">Foto en la tienda</p>
-                <p className="text-caption text-content-3">La ven los clientes en la app.</p>
+                <p className="text-caption text-content-3">La ven los clientes en la app.{!esTactil && ' También puedes pegarla con Ctrl+V.'}</p>
             </div>
-            <input ref={selector} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-hidden="true"
-                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) subir(f); }} />
-            <Button variant="secondary" size="sm" loading={ocupado} onClick={() => selector.current?.click()}>{lab.foto ? 'Cambiar' : 'Subir'}</Button>
-            {lab.foto && <Button variant="ghost" size="sm" disabled={ocupado} onClick={quitar}>Quitar</Button>}
+            <input ref={selector} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-hidden="true" onChange={elegir} />
+            <input ref={camara} type="file" {...PROPS_CAMARA} className="sr-only" tabIndex={-1} aria-hidden="true" onChange={elegir} />
+            <div className="flex flex-wrap items-center gap-2">
+                {esTactil && <Button variant="secondary" size="sm" icon={Camera} disabled={ocupado} onClick={() => camara.current?.click()}>Tomar foto</Button>}
+                <Button variant="secondary" size="sm" loading={ocupado} onClick={() => selector.current?.click()}>{esTactil ? 'Galería' : (lab.foto ? 'Cambiar' : 'Subir')}</Button>
+                {!esTactil && (
+                    <Button variant="secondary" size="sm" icon={Smartphone} loading={fotoDelTelefono.pidiendo}
+                        disabled={ocupado || fotoDelTelefono.esperando} onClick={fotoDelTelefono.pedir}>
+                        {fotoDelTelefono.esperando ? 'Esperando el teléfono…' : 'Con el teléfono'}
+                    </Button>
+                )}
+                {lab.foto && <Button variant="ghost" size="sm" disabled={ocupado} onClick={quitar}>Quitar</Button>}
+            </div>
+            {fotoDelTelefono.dialogo}
+            {pendiente && (
+                <Suspense fallback={null}>
+                    <PhotoEditorModal file={pendiente} onConfirm={subir} onCancel={() => setPendiente(null)} />
+                </Suspense>
+            )}
         </div>
     );
 }

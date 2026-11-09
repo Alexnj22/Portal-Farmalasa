@@ -109,3 +109,27 @@ export async function fotoDeCatalogo(archivo, ladoMaximo = 800, calidad = 0.85) 
         c.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('No se pudo preparar la foto.'))), 'image/jpeg', calidad);
     });
 }
+
+// Centra la imagen en un cuadro blanco con margen. El editor recorta 1:1 y no
+// deja alejar más que el lado corto: un logo de 2204×300 sólo permitía guardar
+// una tajada del centro. Una imagen ya cuadrada pasa tal cual.
+export async function enCuadroBlanco(archivo, { ladoMaximo = 1600, margen = 0.08, calidad = 0.92 } = {}) {
+    const img = await abrirImagen(archivo);
+    if (img.width === img.height) return archivo;
+    const lado = Math.max(img.width, img.height);
+    const escala = Math.min(1, ladoMaximo / (lado * (1 + 2 * margen)));
+    const cuadro = Math.round(lado * (1 + 2 * margen) * escala);
+    const ancho = Math.round(img.width * escala);
+    const alto = Math.round(img.height * escala);
+    const c = document.createElement('canvas');
+    c.width = cuadro;
+    c.height = cuadro;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cuadro, cuadro);
+    ctx.drawImage(img, Math.round((cuadro - ancho) / 2), Math.round((cuadro - alto) / 2), ancho, alto);
+    const blob = await new Promise((resolve, reject) => {
+        c.toBlob((b) => (b ? resolve(b) : reject(new Error('No se pudo preparar la foto.'))), 'image/jpeg', calidad);
+    });
+    return new File([blob], 'logo.jpg', { type: 'image/jpeg' });
+}

@@ -5,7 +5,7 @@ import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import { useVolverAPedir } from '../../../componentes/VolverAPedir';
 import { Alert, AppState, Image, Platform, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
-import { useFocusEffect, useLocalSearchParams } from 'expo-router';
+import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import * as Haptics from 'expo-haptics';
 import { Aviso, Cargando, Pantalla, RADIO, Seccion, Tarjeta, Texto, Titulo, Vacio } from '../../../componentes/ui';
@@ -166,22 +166,25 @@ export default function Puntos() {
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel || false} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
         forzarRango={verRango || false} forzarPrecio={verPrecio || false} forzarBienvenida={verMayoreo || false} forzarTuNivel={verTuNivel || false} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
-      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center' }}>
-        {/* La foto junto al saludo (2026-10-20): más personal; sin foto, la
-            invitación a ponerla. Con la sesión de código no hay foto. */}
-        {!conCodigo && !resumen.pendiente ? (
-          <View style={{ marginRight: 12 }}>
-            <AvatarInicio codigo={resumen.codigo} nombre={resumen.nombre} equipo={empleado}
-              material={material ?? resumen.nivel?.clave ?? null} />
-          </View>
-        ) : null}
-        {/* El saludo ES el título del Inicio (2026-10-20): sin la barra de «Inicio» encima. */}
-        <Text accessibilityRole="header" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3}
-          style={{ flex: 1, fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>
-          {resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}
-        </Text>
-        {/* Historias: promociones e información, tipo estados. A la par del saludo. */}
-        <Historias generacion={generacion} compacta />
+      {/* La foto va en el encabezado, a la izquierda (2026-11-09): sin foto, la
+          invitación a ponerla. Con la sesión de código no hay foto. */}
+      {!conCodigo && !resumen.pendiente ? (
+        <Stack.Screen options={{ headerLeft: () => (
+          <AvatarInicio tam={34} codigo={resumen.codigo} nombre={resumen.nombre} equipo={empleado}
+            material={material ?? resumen.nivel?.clave ?? null} />
+        ) }} />
+      ) : null}
+      {/* El saludo sólo el día del cumpleaños; el resto, la fila es de las historias. */}
+      {resumen.cumpleanos ? (
+        <Entrada indice={0}>
+          <Text accessibilityRole="header" numberOfLines={2} adjustsFontSizeToFit minimumFontScale={0.8} maxFontSizeMultiplier={1.3}
+            style={{ fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>
+            ¡Feliz cumpleaños, {primerNombre}!
+          </Text>
+        </Entrada>
+      ) : null}
+      <Entrada indice={0}>
+        <Historias generacion={generacion} conMuestras />
       </Entrada>
 
       {/* Mis créditos (2026-10-15): si alguno pasó su fecha límite, la alerta

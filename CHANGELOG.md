@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.8 — App de clientes: foto en el encabezado y fila de historias
+
+En Inicio la foto pasa al encabezado, el saludo queda sólo para el cumpleaños y las historias tienen su propia fila.
+
 ## v2.1492.7 — App de clientes: logo de la farmacia en la tarjeta de socio
 
 La tarjeta de socio lleva el logo completo de la farmacia en blanco.

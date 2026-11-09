@@ -65,8 +65,8 @@ async function leerVistas() {
   return lista;
 }
 
-// `compacta` (2026-11-09): a la par del saludo, círculos sin rótulo.
-export default function Historias({ generacion = 0, compacta = false }) {
+// `conMuestras` (2026-11-09): sin historias publicadas, productos de la Tienda.
+export default function Historias({ generacion = 0, conMuestras = false }) {
   const t = useTema();
   const token = useSesion((s) => s.token);
   const pedir = useSesion((s) => s.pedir);
@@ -87,11 +87,11 @@ export default function Historias({ generacion = 0, compacta = false }) {
   }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
 
   useEffect(() => {
-    if (!compacta || lista.length || muestras.length) return;
+    if (!conMuestras || lista.length || muestras.length) return;
     llamar('catalogo', { q: '', desde: 0, limite: 24, ...datosDePrecio() }).then((r) => {
       if (r?.ok) setMuestras((r.productos ?? []).filter((p) => p.foto).slice(0, 6));
     }).catch(() => {});
-  }, [compacta, lista.length, muestras.length]);
+  }, [conMuestras, lista.length, muestras.length]);
 
   // Anota en el servidor que se vio (o que se tocó un botón), para que el
   // portal sepa cuántos la vieron. Sin cuenta, con el id aleatorio del teléfono.
@@ -111,17 +111,21 @@ export default function Historias({ generacion = 0, compacta = false }) {
   // Sin historias publicadas, productos del catálogo: igual que las promociones
   // de la Tienda (2026-11-09). Tocar uno abre su ficha.
   if (!lista.length) {
-    if (!compacta || !muestras.length) return null;
+    if (!conMuestras || !muestras.length) return null;
     return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 1, maxWidth: '50%', marginLeft: 10 }}
-        contentContainerStyle={{ gap: 8, paddingHorizontal: 2, paddingVertical: 2 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 14, paddingHorizontal: 2, paddingVertical: 2 }}>
         {muestras.map((p) => (
-          <Presionable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }} accessibilityRole="button" accessibilityLabel={`Ver ${nombreProducto(p.nombre)}`}>
-            <LinearGradient colors={['#FFD60A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 2, borderRadius: 40 }}>
-              <View style={{ width: 48, height: 48, borderRadius: 24, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
-                <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={48} radio={24} />
+          <Presionable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }} accessibilityRole="button" accessibilityLabel={`Ver ${nombreProducto(p.nombre)}`}
+            style={{ alignItems: 'center', width: 76, gap: 6 }}>
+            <LinearGradient colors={['#FFD60A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 3, borderRadius: 40 }}>
+              <View style={{ width: 69, height: 69, borderRadius: 34.5, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+                <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={69} radio={34.5} />
               </View>
             </LinearGradient>
+            <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto }}>
+              {nombreProducto(p.nombre).split(/\s+/)[0]}
+            </Text>
           </Presionable>
         ))}
       </ScrollView>
@@ -132,26 +136,24 @@ export default function Historias({ generacion = 0, compacta = false }) {
 
   return (
     <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={compacta ? { flexGrow: 0, flexShrink: 1, maxWidth: '50%', marginLeft: 10 } : undefined}
-        contentContainerStyle={{ gap: compacta ? 8 : 14, paddingHorizontal: 2, paddingVertical: 2 }}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ gap: 14, paddingHorizontal: 2, paddingVertical: 2 }}>
         {orden.map((h, i) => {
           const vista = vistas.has(String(h.id));
           return (
             <Presionable key={h.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta({ i, lista: orden }); }}
               accessibilityRole="button" accessibilityLabel={`Historia: ${h.titulo}`}
-              style={({ pressed }) => ({ alignItems: 'center', width: compacta ? undefined : 76, gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+              style={({ pressed }) => ({ alignItems: 'center', width: 76, gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
               <LinearGradient colors={vista ? ['#9A9AA2', '#9A9AA2'] : ['#FFD60A', t.color.magenta, '#5B1E9C']}
-                start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: compacta ? 2 : 3, borderRadius: 40 }}>
-                <View style={{ padding: compacta ? 2 : 2.5, borderRadius: 37, backgroundColor: t.oscuro ? '#121016' : '#F5F4F8' }}>
-                  <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" transition={150} style={{ width: compacta ? 44 : 64, height: compacta ? 44 : 64, borderRadius: compacta ? 22 : 32 }} />
+                start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 3, borderRadius: 40 }}>
+                <View style={{ padding: 2.5, borderRadius: 37, backgroundColor: t.oscuro ? '#121016' : '#F5F4F8' }}>
+                  <ImagenCache source={{ uri: h.imagen, cacheKey: h.imagen_clave ?? undefined }} cachePolicy="memory-disk" transition={150} style={{ width: 64, height: 64, borderRadius: compacta ? 22 : 32 }} />
                 </View>
               </LinearGradient>
               {/* El rótulo corto (o la primera palabra): el título entero no cabía. */}
-              {compacta ? null : (
-                <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: vista ? '500' : '700', color: vista ? colorSistema.texto3 : colorSistema.texto }}>
-                  {h.rotulo || String(h.titulo ?? '').split(/\s+/)[0]}
-                </Text>
-              )}
+              <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: vista ? '500' : '700', color: vista ? colorSistema.texto3 : colorSistema.texto }}>
+                {h.rotulo || String(h.titulo ?? '').split(/\s+/)[0]}
+              </Text>
             </Presionable>
           );
         })}

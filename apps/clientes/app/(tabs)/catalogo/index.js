@@ -77,6 +77,8 @@ export default function Catalogo() {
   // elegido: se busca como `lab:<id>` (app_catalogo, 2026-11-05).
   const [labs, setLabs] = useState([]);
   const [lab, setLab] = useState(null);
+  // Los laboratorios cuyo nombre coincide con lo buscado, con su logo.
+  const [labsHallados, setLabsHallados] = useState([]);
   // La lista ya no se alarga sola al llegar al final (usuario, 2026-11-05: «que
   // sea una lista interminable se me hace mucho, no tengo opción de volver
   // arriba de forma fácil»): crece con «Ver más productos», y pasada la
@@ -142,6 +144,7 @@ export default function Catalogo() {
     if (n !== pedido.current) return; // llegó tarde: ya se pidió otra cosa
     if (!r?.ok) { setError(true); return; }
     const productos = r.productos ?? [];
+    if (inicio === 0) setLabsHallados(r.labs_encontrados ?? []);
     if (primera) { setAhorro(mayorAhorro(productos)); if (r.laboratorios?.length) setLabs(r.laboratorios); }
     // Sin repetidos: entre una tanda y la otra el orden de «lo más vendido»
     // puede moverse, y una llave repetida rompe la lista.
@@ -229,7 +232,15 @@ export default function Catalogo() {
             <Icono sf="chevron.left" respaldo="‹" tam={13} color={t.color.magentaTexto} />
             <Text style={{ fontSize: 15, fontWeight: '800', color: t.color.magentaTexto }}>Volver a la tienda</Text>
           </Presionable>
-          <Text accessibilityRole="header" numberOfLines={2} style={{ marginLeft: 4, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{tituloFiltro}</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginLeft: 4 }}>
+            {labActivo?.foto ? (
+              <View style={{ width: 44, height: 44, borderRadius: 22, overflow: 'hidden', alignItems: 'center', justifyContent: 'center', backgroundColor: '#FFFFFF' }}>
+                <Image source={{ uri: labActivo.foto }} resizeMode="contain" style={{ width: 38, height: 38 }} accessible={false} />
+              </View>
+            ) : null}
+            <Text accessibilityRole="header" numberOfLines={2} style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{tituloFiltro}</Text>
+          </View>
+          {!labActivo ? <FilaLaboratorios labs={labsHallados} alElegir={elegirLab} /> : null}
         </View>
       ) : (
         <>
@@ -238,7 +249,7 @@ export default function Catalogo() {
         </>
       )}
     </View>
-  ), [q, tituloFiltro, volverALaTienda, categorias, filas, t, ahorro]);
+  ), [q, tituloFiltro, volverALaTienda, categorias, filas, t, ahorro, labActivo, labsHallados, elegirLab]);
   // Estable: con una función nueva en cada render, la lista redibujaba todas
   // las tarjetas a cada tecla.
   const renderItem = useCallback(({ item, index }) => {

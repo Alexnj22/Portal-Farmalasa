@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1494.1 — Tienda: buscar por laboratorio, con su logo
+
+- App de clientes: el buscador de la Tienda encuentra productos por nombre de laboratorio y muestra el logo del laboratorio que coincide.
+
 ## v2.1494.0 — Laboratorios sugeridos en la app
 
 - Laboratorios: nuevo interruptor «Sugerir primero en la app». Los productos de esos laboratorios salen antes en «Mismo principio activo», y dentro de cada grupo por precio.

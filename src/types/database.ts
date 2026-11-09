@@ -17947,6 +17947,7 @@ export type Database = {
       laboratorios: {
         Row: {
           acumula_puntos: boolean
+          foto: string | null
           id: number
           nombre: string
           nombre_busq: string | null
@@ -17956,6 +17957,7 @@ export type Database = {
         }
         Insert: {
           acumula_puntos?: boolean
+          foto?: string | null
           id: number
           nombre: string
           nombre_busq?: string | null
@@ -17965,6 +17967,7 @@ export type Database = {
         }
         Update: {
           acumula_puntos?: boolean
+          foto?: string | null
           id?: number
           nombre?: string
           nombre_busq?: string | null

@@ -4,9 +4,27 @@
 import { supabase } from '../supabaseClient';
 import { anotar, conBitacora } from './audit';
 import { fetchAllRows } from '../utils/supabaseUtils';
+import { subirArchivo } from '../utils/storageFiles';
 
 export function fetchLaboratoriosBasic() {
-    return supabase.from('laboratorios').select('id, nombre').order('nombre');
+    return supabase.from('laboratorios').select('id, nombre, foto').order('nombre');
+}
+
+// La foto del laboratorio para la Tienda de la app. Con `.select` para notar
+// el caso en que el RLS no deja escribir: un update así devuelve cero filas y
+// ningún error.
+export async function guardarFotoLaboratorio(id, foto, contexto = {}) {
+    const { data, error } = await supabase.from('laboratorios').update({ foto }).eq('id', id).select('id');
+    if (error) throw error;
+    if (!data?.length) throw new Error('No tienes permiso para cambiar este laboratorio.');
+    anotar('FOTO_LABORATORIO', id, { quitada: !foto, ...contexto });
+}
+
+export async function subirFotoLaboratorio(id, blob, contexto = {}) {
+    const url = await subirArchivo('product-photos', `laboratorios/${id}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
+    const foto = `${url}?t=${Date.now()}`;
+    await guardarFotoLaboratorio(id, foto, contexto);
+    return foto;
 }
 
 export function fetchProveedores() {

@@ -13,7 +13,7 @@
 // vidrio de iOS 26 cuesta por cada una. Un fondo translúcido sólido se ve igual
 // de limpio y se desplaza fluido.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { ActivityIndicator, FlatList, Image, Platform, RefreshControl, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
 import Presionable from '../../../componentes/Presionable';
 import { Stack } from 'expo-router';
@@ -26,6 +26,8 @@ import BannerPromos from '../../../componentes/BannerPromos';
 import { useOfertas } from '../../../lib/ofertas';
 import FilaProductos from '../../../componentes/FilaProductos';
 import BotonAgregar from '../../../componentes/BotonAgregar';
+import HojaAgregar, { AvisoAgregado } from '../../../componentes/HojaAgregar';
+import { Entrada } from '../../../componentes/animacion';
 import { PortadaOferta } from '../../../componentes/TarjetaOferta';
 import { llamar } from '../../../lib/api';
 import { dolares } from '../../../lib/formato';
@@ -179,6 +181,8 @@ export default function Catalogo() {
   ), [q, texto, t]);
   const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>
+      <Image source={require('../../../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
+        style={{ width: 190, height: 26, marginLeft: 4, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
       {/* Promociones arriba (las mismas ofertas del portal), sólo sin buscar. */}
       {!q ? <BannerPromos productos={ahorro} /> : null}
       {/* Debajo del banner (usuario, 2026-10-07: «la categoría siempre abajo del banner»). */}
@@ -206,7 +210,12 @@ export default function Catalogo() {
   ), [q, categorias, filas, labActivo, t, ahorro]);
   // Estable: con una función nueva en cada render, la lista redibujaba todas
   // las tarjetas a cada tecla.
-  const renderItem = useCallback(({ item }) => <TarjetaProducto p={item} sola={columnas === 1} />, [columnas]);
+  const renderItem = useCallback(({ item, index }) => {
+    const tarjeta = <TarjetaProducto p={item} />;
+    const celda = { flex: 1, maxWidth: columnas === 1 ? '100%' : '50%' };
+    // Sólo la primera pantalla entra escalonada; lo demás aparece sin esperar.
+    return index < 6 ? <Entrada indice={index} estilo={celda}>{tarjeta}</Entrada> : <View style={celda}>{tarjeta}</View>;
+  }, [columnas]);
 
   return (
     <>
@@ -265,12 +274,14 @@ export default function Catalogo() {
                 : lista.length > 12 ? <VerMas texto="Volver arriba" sf="arrow.up" alTocar={arriba} />
                   : null}
       />
+      <HojaAgregar />
+      <AvisoAgregado />
     </>
   );
 }
 
 // `memo`: con el mismo producto no se redibuja al escribir en la búsqueda.
-const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
+const TarjetaProducto = memo(function TarjetaProducto({ p }) {
   const t = useTema();
   const final = precioFinal(p);
   const ahorro = final < p.precio ? p.precio - final : 0;
@@ -287,13 +298,12 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
         `Precio ${dolares(p.precio)}${suyo ? `, ${suyo} ${dolares(p.precio_tuyo)}` : p.precio_vip != null ? `, Preferente ${dolares(p.precio_vip)}` : ''}`,
         ahorro >= 0.01 ? `${Math.round((ahorro / p.precio) * 100)}% de descuento` : null,
       ].filter(Boolean).join('. ')}
-      style={({ pressed }) => ({ flex: 1, maxWidth: sola ? '100%' : '50%', borderRadius: 22, padding: 10, gap: 8,
+      style={({ pressed }) => ({ flex: 1, borderRadius: 22, padding: 10, gap: 8,
         backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.82)',
         borderWidth: 0.5, borderColor: t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.06)',
         opacity: p.disponible ? 1 : 0.6, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
       <View>
-        <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={sola ? 160 : 118} />
-        <BotonAgregar p={p} />
+        <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={118} />
         {p.bajo_receta ? (
           <View style={{ position: 'absolute', top: 6, left: 6, backgroundColor: 'rgba(0,0,0,0.6)', borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
             <Text maxFontSizeMultiplier={1.2} style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800' }}>Bajo Receta</Text>
@@ -348,6 +358,9 @@ const TarjetaProducto = memo(function TarjetaProducto({ p, sola = false }) {
           </Text>
         )}
       </View>
+      {/* Al fondo de la tarjeta: los botones de una fila quedan alineados. */}
+      <View style={{ flex: 1 }} />
+      <BotonAgregar p={p} bloque />
     </Presionable>
   );
 });

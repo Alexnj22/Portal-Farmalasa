@@ -12,10 +12,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Text, View } from 'react-native';
 import Presionable from './Presionable';
-import Animated, { Easing, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
+import Animated, { Easing, FadeInDown, useAnimatedStyle, useSharedValue, withDelay, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Tarjeta, Texto, Titulo } from './ui';
-import { Latido, NumeroAnimado } from './animacion';
+import { Tarjeta, Texto } from './ui';
+import { FlechaDesplegable, Latido, NumeroAnimado } from './animacion';
 import { colorSistema } from './sistema';
 import { diasHasta, dolares, entero, fecha } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
@@ -24,7 +24,7 @@ import Icono from './Icono';
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 const VENTANA_DIAS = 90;
 const MESES_GRAFICA = 6;
-const ALTO = 120;
+const ALTO = 64;
 const NARANJA = '#FF9F0A';
 
 function hoySV() {
@@ -58,78 +58,72 @@ export default function Vencimientos({ vencimientos }) {
     };
   }, [vencimientos]);
   const [elegido, setElegido] = useState(null);
+  const [abierto, setAbierto] = useState(false);
 
   if (!proximo) return null;
   const hayGrafica = barras.some((b) => b.puntos > 0);
   const diasProximo = diasHasta(proximo.vence);
   const detalle = elegido != null ? barras[elegido] : null;
 
+  const hayPronto = pronto.puntos > 0;
+  const urge = hayPronto && diasProximo != null && diasProximo <= 30;
+  const tono = hayPronto ? NARANJA : t.color.magenta;
   return (
-    <Tarjeta estilo={{ gap: 14 }}>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, justifyContent: 'space-between', alignItems: 'center' }}>
-        <Titulo estilo={{ flexShrink: 1 }}>Puntos por vencer</Titulo>
-        {pronto.puntos > 0 && diasProximo != null && diasProximo <= 30 ? (
+    // Compacta (2026-11-09): una fila con la respuesta; el detalle, al tocarla.
+    <Tarjeta estilo={{ gap: 10, paddingVertical: 10 }}>
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierto((a) => !a); }} accessibilityRole="button"
+        accessibilityState={{ expanded: abierto }}
+        accessibilityLabel={hayPronto ? `${entero(pronto.puntos)} puntos por vencer en 3 meses, ${dolares(pronto.puntos / 100)}. Ver detalle` : 'Nada vence en los próximos 3 meses. Ver detalle'}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 44 }}>
+        <View style={{ width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(tono, t.oscuro ? 0.26 : 0.13) }}>
+          <Icono sf={hayPronto ? 'clock.badge.exclamationmark.fill' : 'checkmark.shield.fill'} respaldo={hayPronto ? '⏰' : '✓'} tam={17} color={hayPronto ? (t.oscuro ? NARANJA : '#B35C00') : t.color.magentaTexto} />
+        </View>
+        <View style={{ flex: 1 }}>
+          {hayPronto ? (
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 5 }}>
+              <NumeroAnimado valor={pronto.puntos} formato="entero" estilo={{ fontSize: 18, fontWeight: '900', color: t.oscuro ? NARANJA : '#B35C00' }} />
+              <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>pts por vencer</Text>
+            </View>
+          ) : <Text style={{ fontSize: 15, fontWeight: '800', color: colorSistema.texto }}>Nada vence pronto</Text>}
+          <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
+            {hayPronto ? `${dolares(pronto.puntos / 100)} en los próximos 3 meses` : `Próximo: ${entero(proximo.puntos)} pts el ${fecha(proximo.vence)}`}
+          </Text>
+        </View>
+        {urge ? (
           <Latido>
-            <View style={{ backgroundColor: NARANJA, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-              <Text style={{ fontSize: 12, fontWeight: '800', color: '#2A1600' }}>
-                {diasProximo === 0 ? 'Vence hoy' : diasProximo === 1 ? 'Vence mañana' : `En ${diasProximo} días`}
+            <View style={{ backgroundColor: NARANJA, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+              <Text maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: '800', color: '#2A1600' }}>
+                {diasProximo === 0 ? 'Hoy' : diasProximo === 1 ? 'Mañana' : `${diasProximo} días`}
               </Text>
             </View>
           </Latido>
         ) : null}
-      </View>
+        <FlechaDesplegable abierto={abierto} color={colorSistema.texto3} tam={13} />
+      </Presionable>
 
-      {pronto.puntos > 0 ? (
-        <View style={{ gap: 2 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-            <NumeroAnimado valor={pronto.puntos} formato="entero" estilo={{ fontSize: 34, fontWeight: '900', color: t.oscuro ? NARANJA : '#B35C00', letterSpacing: -0.5 }} />
-            <Texto nivel={2} estilo={{ flexShrink: 1 }}>pts · {dolares(pronto.puntos / 100)}</Texto>
-          </View>
-          <Texto nivel={2} estilo={{ fontSize: 14 }}>
-            vencen en los próximos 3 meses. Úsalos en tu próxima compra.
-          </Texto>
-        </View>
-      ) : (
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          {/* El recuadro de la marca, como las demás tarjetas del Inicio
-              (2026-11-04, «unifica pero que no pierdan la identidad»); el
-              naranja queda sólo para lo que vence pronto, que es un aviso. */}
-          <View style={{ width: 40, height: 40, borderRadius: 12, backgroundColor: suave(t.color.magenta, t.oscuro ? 0.26 : 0.11), alignItems: 'center', justifyContent: 'center' }}>
-            <Icono sf="checkmark.shield.fill" respaldo="✓" tam={19} color={t.color.magentaTexto} />
-          </View>
-          <View style={{ flex: 1 }}>
-            <Texto estilo={{ fontWeight: '700' }}>Nada vence en los próximos 3 meses</Texto>
-            <Texto nivel={2} estilo={{ fontSize: 14 }}>
-              {hayGrafica ? `Lo próximo: ${entero(proximo.puntos)} pts el ${fecha(proximo.vence)}.` : 'Tus puntos están a salvo por ahora.'}
-            </Texto>
-          </View>
-        </View>
-      )}
-
-      {/* Sin nada en los próximos 6 meses la gráfica quedaría vacía
-          (2026-11-04, «siento extraño que… sólo sean cards de texto»): en su
-          lugar, la línea del tiempo de lo que viene, hasta tres fechas. */}
-      {!hayGrafica ? <LineaDelTiempo lista={siguientes} t={t} /> : null}
-
-      {hayGrafica ? (
-        <View style={{ gap: 8 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: ALTO + 40, gap: 8 }}>
-            {barras.map((b, i) => (
-              <Barra key={b.clave} barra={b} indice={i} maximo={maximo} elegida={elegido === i}
-                color={b.pronto ? NARANJA : t.color.magenta} alTocar={() => {
-                  Haptics.selectionAsync().catch(() => {});
-                  setElegido(elegido === i ? null : i);
-                }} />
-            ))}
-          </View>
-          <Texto nivel={3} estilo={{ fontSize: 13 }}>
-            {detalle
-              ? detalle.puntos
-                ? `${detalle.mes} ${detalle.anio}: ${entero(detalle.puntos)} pts (${detalle.fechas.map((f) => fecha(f.vence)).join(', ')})`
-                : `${detalle.mes} ${detalle.anio}: no vence nada.`
-              : 'Próximos 6 meses. Toca un mes para ver el detalle.'}
-          </Texto>
-        </View>
+      {abierto ? (
+        <Animated.View entering={FadeInDown.duration(220)} style={{ gap: 8 }}>
+          {hayGrafica ? (
+            <>
+              <View style={{ flexDirection: 'row', alignItems: 'flex-end', height: ALTO + 40, gap: 8 }}>
+                {barras.map((b, i) => (
+                  <Barra key={b.clave} barra={b} indice={i} maximo={maximo} elegida={elegido === i}
+                    color={b.pronto ? NARANJA : t.color.magenta} alTocar={() => {
+                      Haptics.selectionAsync().catch(() => {});
+                      setElegido(elegido === i ? null : i);
+                    }} />
+                ))}
+              </View>
+              <Texto nivel={3} estilo={{ fontSize: 13 }}>
+                {detalle
+                  ? detalle.puntos
+                    ? `${detalle.mes} ${detalle.anio}: ${entero(detalle.puntos)} pts (${detalle.fechas.map((f) => fecha(f.vence)).join(', ')})`
+                    : `${detalle.mes} ${detalle.anio}: no vence nada.`
+                  : 'Próximos 6 meses. Toca un mes para ver el detalle.'}
+              </Texto>
+            </>
+          ) : <LineaDelTiempo lista={siguientes} t={t} />}
+        </Animated.View>
       ) : null}
     </Tarjeta>
   );

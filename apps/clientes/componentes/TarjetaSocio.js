@@ -514,7 +514,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
     <>
     {activa && !reducir ? <Sensor key={despierta ? 'viva' : 'reposo'} salidaX={sx} salidaY={sy} enReposo={!despierta} pausa={moviendo} /> : null}
     <GestureDetector gesture={gestos}>
-      <Animated.View style={[{ aspectRatio: 1.586, width: '100%' }, ladeo]}
+      <Animated.View style={[{ aspectRatio: 1.85, width: '100%' }, ladeo]}
         onLayout={(e) => {
           const { width: w, height: h } = e.nativeEvent.layout;
           tam.value = { w, h };
@@ -576,14 +576,14 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
           {/* El logo al centro: llena el espacio entre el chip y el nombre
               (pedido del usuario, 2026-10-06), con un halo suave. */}
           <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFill, { alignItems: 'center', justifyContent: 'center' }, capaLogo]}>
-            <LogoEnRelieve tam={84} x={frenteX} y={frenteY} estilo={estiloLogo} />
+            <LogoEnRelieve tam={66} x={frenteX} y={frenteY} estilo={estiloLogo} />
           </Animated.View>
 
           <Animated.View style={[estilos.contenido, capaTexto]}>
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {/* El efecto es sólo del logo central; éste va plano. */}
-                <Image source={require('../assets/icono.png')} style={{ width: 30, height: 30, tintColor: '#FFFFFF' }} />
+                <Image source={require('../assets/icono.png')} style={{ width: 26, height: 26, tintColor: '#FFFFFF' }} />
                 <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
               </View>
               {/* Qué tarjeta es, siempre en dos renglones (2026-10-09): «CLIENTE» sobre
@@ -973,12 +973,12 @@ const estilos = StyleSheet.create({
   cara: { borderRadius: RADIO, overflow: 'hidden', backfaceVisibility: 'hidden' },
   placa: { position: 'absolute', top: '3%', bottom: '3%', left: '4%', right: '4%' },
   sombra: { shadowColor: '#2B0B3A', shadowRadius: 22, borderRadius: 22 },
-  contenido: { flex: 1, padding: 20, justifyContent: 'space-between' },
+  contenido: { flex: 1, paddingHorizontal: 18, paddingVertical: 14, justifyContent: 'space-between' },
   // Sombras de texto marcadas (2026-10-09): sobre metal claro (plata, oro) los
   // textos casi no se distinguían.
   marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
   socio: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 2.5, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
-  chip: { width: 46, height: 34, borderRadius: 7 },
+  chip: { width: 38, height: 28, borderRadius: 6 },
   halo: {
     padding: 6, borderRadius: 22, backgroundColor: 'rgba(255,255,255,0.14)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.25)',
     shadowColor: '#000', shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },

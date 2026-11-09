@@ -143,6 +143,8 @@ const EXCEPTIONS = {
   // `AvatarConEstado` lo buscaría entre los empleados por id y no encontraría a
   // nadie. Los del equipo, en esa misma vista, sí van con `AvatarConEstado`.
   'src/views/chat-clientes/ClienteAvatar.jsx': ['foto-sin-aro'],
+  // El logo de un laboratorio, no la foto de una persona: no lleva aro de estado.
+  'src/views/productos/TabLaboratorios.jsx': ['foto-sin-aro'],
 
   // La torta de cumpleaños es BLANCA en los dos temas (decisión del usuario,
   // 2026-11-05): con el fondo rosa sólido chocaba con el aro de «En

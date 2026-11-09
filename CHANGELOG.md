@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1483.0 — Tienda con hoja de presentaciones, fotos de laboratorios y app más compacta
+
+App de clientes: la tarjeta de socio ocupa menos alto; los accesos rápidos sostienen tres columnas en Android; el logo de Farmacias La Popular y La Salud va en Inicio y Tienda; «Puntos por vencer» es una fila que se despliega; la Tienda pregunta la presentación en una hoja inferior y confirma con un aviso. Portal: en Laboratorios se sube la foto que se ve en la Tienda (`laboratorios.foto`, `app_catalogo`).
+
 ## v2.1482.1 — App de empleados: «Tarjetas» en vez de «Widgets» y texto del permiso de ubicación
 
 - Personalizar el Inicio dice «Tarjetas»: Apple rechazó la app por la guía 4.4

@@ -1,20 +1,22 @@
 import useMediaQuery from '../../plataforma/useMediaQuery';
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import ListRow from '../../components/common/ListRow';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { fetchLaboratoriosBasic, fetchLabLocations, upsertLabLocation } from '@nucleo/data/laboratorios';
+import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
+import { fotoDeCatalogo } from '../../plataforma/imagenes';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
     FlaskConical, MapPin, Check, X, Pencil, Loader2,
-    ChevronDown, Building2, Package, ShoppingBag,
+    ChevronDown, Building2, Package, ShoppingBag, ImagePlus,
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 
@@ -199,6 +201,7 @@ export default function TabLaboratorios({ searchTerm = '' }) {
                                                         isOpen={expanded === lab.id}
                                                         onToggle={() => toggle(lab.id)}
                                                         onSave={(branchId, fields) => handleSave(lab.id, branchId, fields)}
+                                                        onFoto={(foto) => setLabs(prev => prev.map(l => l.id === lab.id ? { ...l, foto } : l))}
                                                     />
                                                 ))}
                                             </div>
@@ -239,7 +242,49 @@ function SummaryCard({ icon: Icon, label, value, color, className = '' }) {
 
 // ─── Lab row ──────────────────────────────────────────────────────────────────
 
-function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
+// La foto que se ve en la Tienda de la app de clientes.
+function FotoLaboratorio({ lab, onFoto }) {
+    const [ocupado, setOcupado] = useState(false);
+    const selector = useRef(null);
+    const avisar = useToastStore.getState().showToast;
+    const trabajar = async (accion, exito) => {
+        setOcupado(true);
+        try {
+            onFoto(await accion());
+            avisar('Guardado', exito, 'success');
+        } catch (err) {
+            avisar('No se pudo guardar', mensajeAmigable(err), 'error');
+        } finally {
+            setOcupado(false);
+        }
+    };
+    const subir = (archivo) => trabajar(async () => {
+        const blob = await fotoDeCatalogo(archivo, 400, 0.85);
+        return subirFotoLaboratorio(lab.id, blob, { lab: lab.nombre });
+    }, 'Foto del laboratorio actualizada.');
+    const quitar = () => trabajar(async () => {
+        await guardarFotoLaboratorio(lab.id, null, { lab: lab.nombre });
+        return null;
+    }, 'Foto quitada.');
+
+    return (
+        <div className="flex items-center gap-3 mb-3">
+            {lab.foto
+                ? <img src={lab.foto} alt={`Logo de ${lab.nombre}`} className="w-14 h-14 shrink-0 rounded-full object-contain p-1 bg-surface-card border border-divider" />
+                : <IconoEnCaja tamano="lg" forma="circulo"><ImagePlus size={20} aria-hidden="true" /></IconoEnCaja>}
+            <div className="min-w-0 flex-1">
+                <p className="text-body font-semibold text-content-1">Foto en la tienda</p>
+                <p className="text-caption text-content-3">La ven los clientes en la app.</p>
+            </div>
+            <input ref={selector} type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" tabIndex={-1} aria-hidden="true"
+                onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ''; if (f) subir(f); }} />
+            <Button variant="secondary" size="sm" loading={ocupado} onClick={() => selector.current?.click()}>{lab.foto ? 'Cambiar' : 'Subir'}</Button>
+            {lab.foto && <Button variant="ghost" size="sm" disabled={ocupado} onClick={quitar}>Quitar</Button>}
+        </div>
+    );
+}
+
+function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto }) {
     const filledCount = branches.filter(b => hasAny(locationMap[b.id] || {})).length;
 
     return (
@@ -323,6 +368,7 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave }) {
                     >
                         {/* Inner panel with subtle glass bg */}
                         <div className="mx-3 mb-3 rounded-xl bg-surface-card-hover/80 border border-divider p-3">
+                            <FotoLaboratorio lab={lab} onFoto={onFoto} />
                             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-2.5">
                                 {branches.map((branch, idx) => (
                                     <BranchLocationCard

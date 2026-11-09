@@ -2,7 +2,7 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, AppState, Platform, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, AppState, Image, Platform, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
@@ -162,6 +162,10 @@ export default function Puntos() {
           <Text style={{ flexShrink: 1, fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Presionable>
       ) : null}
+      <Entrada indice={0}>
+        <Image source={require('../../../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
+          style={{ width: 190, height: 26, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
+      </Entrada>
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel || false} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
         forzarRango={verRango || false} forzarPrecio={verPrecio || false} forzarBienvenida={verMayoreo || false} forzarTuNivel={verTuNivel || false} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
@@ -628,8 +632,13 @@ function Menu({ resumen, urgentes }) {
   const [ancho, setAncho] = useState(anchoVentana - 32);
   const [palabra, setPalabra] = useState(0);
   const tope = fontScale > 1.6 ? 1 : fontScale > 1.3 ? 2 : 3;
-  const cabe = (n) => (ancho - GAP_MENU * (n - 1)) / n - RELLENO_CASILLA * 2 >= palabra;
+  // La letra de Android es más ancha: «Tratamientos» no cabía por pocos puntos
+  // y la cuadrícula caía a dos columnas (2026-11-09). Se admite achicar la
+  // letra hasta ESCALA_MINIMA para sostener las tres, sin partir la palabra.
+  const disponible = (n) => (ancho - GAP_MENU * (n - 1)) / n - RELLENO_CASILLA * 2;
+  const cabe = (n) => disponible(n) >= palabra * ESCALA_MINIMA;
   const columnas = palabra ? ([3, 2, 1].find((n) => n <= tope && cabe(n)) ?? 1) : tope;
+  const escala = palabra ? Math.min(1, disponible(columnas) / palabra) : 1;
   const r = resumen;
   const tratamientos = Array.isArray(r.tratamientos) ? r.tratamientos.length : 0;
   const sexta = r.creditos?.pendientes > 0
@@ -661,7 +670,7 @@ function Menu({ resumen, urgentes }) {
       <MedirPalabras casillas={casillas} alMedir={setPalabra} />
       {filas.map((fila) => (
         <View key={fila[0].ruta} style={{ flexDirection: 'row', gap: GAP_MENU }}>
-          {fila.map((c) => <Casilla key={c.ruta} {...c} />)}
+          {fila.map((c, i) => <Entrada key={c.ruta} indice={filas.indexOf(fila) + i} estilo={{ flex: 1 }}><Casilla {...c} escala={escala} /></Entrada>)}
           {/* Huecos de la última fila, para que no se ensanchen las que quedan. */}
           {Array.from({ length: columnas - fila.length }, (_, i) => <View key={`h${i}`} style={{ flex: 1 }} />)}
         </View>
@@ -671,7 +680,8 @@ function Menu({ resumen, urgentes }) {
 }
 
 const GAP_MENU = 8;
-const RELLENO_CASILLA = 11;
+const RELLENO_CASILLA = 9;
+const ESCALA_MINIMA = 0.84;
 const ESTILO_TITULO = { fontSize: 14, fontWeight: '800', letterSpacing: -0.2 };
 const ESTILO_DETALLE = { fontSize: 13, lineHeight: 17 };
 const ESTILO_DETALLE_FUERTE = { ...ESTILO_DETALLE, fontWeight: '700' };
@@ -715,7 +725,7 @@ function MedirPalabras({ casillas, alMedir }) {
 // línea en negrita. Sin `numberOfLines` ni letra que se encoge: si no cabe,
 // envuelve entre palabras y la ficha crece (usuario: «en ningún lado se debe
 // ocultar el contenido»). Más de 44 pt de alto; al tocarla se hunde un poco.
-function Casilla({ sf, titulo, detalle, resaltar, ruta }) {
+function Casilla({ sf, titulo, detalle, resaltar, ruta, escala = 1 }) {
   const t = useTema();
   return (
     <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(ruta); }} accessibilityRole="button"
@@ -737,8 +747,8 @@ function Casilla({ sf, titulo, detalle, resaltar, ruta }) {
           ) : null}
         </View>
         <View style={{ gap: 2 }}>
-          <Text style={[ESTILO_TITULO, { color: colorSistema.texto }]}>{titulo}</Text>
-          <Text style={[ESTILO_DETALLE, { color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }]}>{detalle}</Text>
+          <Text style={[ESTILO_TITULO, { fontSize: ESTILO_TITULO.fontSize * escala, color: colorSistema.texto }]}>{titulo}</Text>
+          <Text style={[ESTILO_DETALLE, { fontSize: ESTILO_DETALLE.fontSize * escala, lineHeight: ESTILO_DETALLE.lineHeight * escala, color: resaltar ? colorSistema.texto : colorSistema.texto2, fontWeight: resaltar ? '700' : '400' }]}>{detalle}</Text>
         </View>
       </View>
       </Vidrio>

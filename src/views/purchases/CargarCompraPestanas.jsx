@@ -3,7 +3,7 @@
 // aparte y se cargan al abrirlas: la pantalla abre en «Facturas» (2026-11-06).
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { AlertTriangle, CheckCircle2, BookMarked, HelpCircle, ListChecks, RefreshCw, EyeOff, Layers, FileText, Plus, Trash2 } from 'lucide-react';
+import { AlertTriangle, CheckCircle2, BookMarked, HelpCircle, ListChecks, RefreshCw, EyeOff, Layers, FileText, Plus, Trash2, Undo2 } from 'lucide-react';
 import FilterBar from '../../components/common/FilterBar';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard from '../../components/common/StatCard';
@@ -21,7 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import TablePagination, { PAGE_SIZE_OPTIONS } from '../../components/common/TablePagination';
-import { confirmarProducto, fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos, fetchProveedoresParaPapel, guardarFacturaEnPapel, fetchRegistroDeCompras, fetchPorLlegar, marcarPorLlegar, adjuntarNotaAFaltante, adjuntarNotaEnPapelAFaltante, darSalidaFaltante, comprobarSalidaFaltante } from '@nucleo/data/cargarCompra';
+import { confirmarProducto, fetchProductosPorConfirmar, barrerDocumentos, apartarRenglon, fetchErroneos, adjuntarNotaDeCredito, adjuntarNotaEnPapel, darSalidaErroneo, deshacerErroneo, comprobarSalidaErroneo, erroneoYaEnVencidos, fetchProveedoresParaPapel, guardarFacturaEnPapel, fetchRegistroDeCompras, fetchPorLlegar, marcarPorLlegar, adjuntarNotaAFaltante, adjuntarNotaEnPapelAFaltante, darSalidaFaltante, comprobarSalidaFaltante } from '@nucleo/data/cargarCompra';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -102,6 +102,7 @@ const ESTADO_ERRONEO = {
     saliendo:    { label: 'Saliendo…', variant: 'warning' },
     salio:       { label: 'Ya salió', variant: 'neutral' },
     sin_verificar: { label: 'Comprobar si salió', variant: 'danger' },
+    deshaciendo: { label: 'Volviendo al estante…', variant: 'warning' },
 };
 
 /**
@@ -455,6 +456,16 @@ export function TabErroneos({ puedeEditar }) {
         cargar();
     };
     const [confirmaSalida, setConfSal] = useState(null);
+    // «No era error» (2026-11-09): lo marcaron como error del proveedor y era el
+    // producto correcto. Vuelve de vencidos al estante y sale de la lista.
+    const [confirmaDeshacer, setConfDes] = useState(null);
+    const deshacer = async (fila) => {
+        setG(fila.id); setError('');
+        const { error: e } = await deshacerErroneo(fila.id);
+        setG(null); setConfDes(null);
+        if (e) setError(e);
+        cargar();
+    };
     const conSistema = async (fila, fn) => {
         setG(fila.id); setError('');
         const { error: e } = await fn(fila.id);
@@ -486,6 +497,13 @@ export function TabErroneos({ puedeEditar }) {
                     title="Dar salida"
                     message={`Se registra la nota de crédito ${confirmaSalida.nota_numero} en el libro de compras y se descargan ${Number(confirmaSalida.unidades)} unidades de «${confirmaSalida.descripcion}» de Bodega de vencidos. No se puede deshacer.`}
                     confirmText="Dar salida" />
+            )}
+            {confirmaDeshacer && (
+                <ConfirmModal isOpen onClose={() => guardando !== confirmaDeshacer.id && setConfDes(null)} onConfirm={() => deshacer(confirmaDeshacer)}
+                    isProcessing={guardando === confirmaDeshacer.id} isDestructive={false}
+                    title="No era error"
+                    message={`${Number(confirmaDeshacer.unidades)} ${Number(confirmaDeshacer.unidades) === 1 ? 'unidad' : 'unidades'} de «${confirmaDeshacer.descripcion}» vuelven de Bodega de vencidos al estante y el producto sale de esta lista. La compra no cambia.`}
+                    confirmText="Devolver al estante" />
             )}
             {filas.map(f => {
                 const est = ESTADO_ERRONEO[f.estado] ?? ESTADO_ERRONEO.por_mover;
@@ -580,6 +598,11 @@ export function TabErroneos({ puedeEditar }) {
                             <Button size="xs" variant="ghost" icon={FileText} className="mt-1" onClick={() => setEnPapel(f.id)}>
                                 La nota vino en papel
                             </Button>
+                            {f.estado === 'en_vencidos' && f.en_vencidos_at && !f.motivo && (
+                                <Button size="xs" variant="ghost" icon={Undo2} className="mt-1" disabled={guardando === f.id} onClick={() => setConfDes(f)}>
+                                    No era error
+                                </Button>
+                            )}
                         </>)}
                     </div>
                 );

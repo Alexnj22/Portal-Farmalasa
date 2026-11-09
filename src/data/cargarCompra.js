@@ -391,6 +391,22 @@ export async function darSalidaErroneo(id) {
 }
 
 /**
+ * «No era error»: el renglón marcado como error del proveedor era el producto
+ * correcto. Sus unidades vuelven de Bodega de vencidos al estante y sale de la
+ * lista de erróneos. La compra no se toca.
+ */
+export async function deshacerErroneo(id) {
+    const { data, error } = await supabase.functions.invoke('cargar-compra-erp', { body: { accion: 'erroneo_deshacer', id } });
+    let msg = null;
+    if (error) {
+        msg = error.message;
+        try { msg = (await error.context?.json?.())?.error ?? msg; } catch { /* sin cuerpo */ }
+    } else if (data?.error) msg = data.error;
+    anotar('COMPRA_ERRONEO_DESHECHO', id, { ok: !msg, traslado: data?.traslado ?? null, error: msg });
+    return { resultado: msg ? null : data, error: msg };
+}
+
+/**
  * Lo que Bodega repartió a las salas al cargar una compra (`compra_reparto`):
  * lo que está en camino y lo recibido en los últimos 30 días. El RLS recorta
  * a la sala propia.

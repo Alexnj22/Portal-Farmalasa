@@ -321,6 +321,9 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
     const [guardando, setG]   = useState(null);
     // El renglón cuyo «Siempre así» pide la segunda confirmación.
     const [duda, setDuda]     = useState(null);
+    // Marcar un renglón como error del proveedor lo manda a vencidos al cargar:
+    // se confirma (2026-11-09, ATROLIP se marcó por error y era el correcto).
+    const [confErroneo, setConfErroneo] = useState(null);   // { i, nombre }
     const [partiendo, setPartiendo] = useState(null);   // índice del renglón en «Partir renglón»
     // ── Para armar la carga ──
     const [uso, setUso]         = useState('venta');
@@ -1133,7 +1136,8 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                                                 )}
                                                 {!aj.servicio && (
                                                     <Button size="xs" variant={aj.erroneo ? 'secondary' : 'ghost'}
-                                                        onClick={() => ajustar(i, 'erroneo', !aj.erroneo)}>
+                                                        onClick={() => (aj.erroneo ? ajustar(i, 'erroneo', false)
+                                                            : setConfErroneo({ i, nombre: elegido?.nombre ?? r.producto ?? r.descripcion }))}>
                                                         {aj.erroneo ? 'No es erróneo' : 'Producto erróneo'}
                                                     </Button>
                                                 )}
@@ -1247,6 +1251,12 @@ export default function Propuesta({ doc, puedeEditar, estadoCarga, pista, onCerr
                 title="¿Quitar todo lo de este proveedor?"
                 message={`Las facturas de ${doc.emisor_nombre} salen de esta lista: las de hoy y todas las que lleguen después.`}
                 confirmText="Sí, sacarlas" />
+            <ConfirmModal isOpen={!!confErroneo} onClose={() => setConfErroneo(null)}
+                onConfirm={() => { ajustar(confErroneo.i, 'erroneo', true); setConfErroneo(null); }}
+                isDestructive={false}
+                title="¿El proveedor lo mandó por error?"
+                message={confErroneo ? `«${confErroneo.nombre}» entra con la compra y pasa a Bodega de vencidos hasta que llegue la nota de crédito. Márcalo sólo si NO es lo que pedimos.` : ''}
+                confirmText="Sí, vino por error" />
             <ConfirmModal isOpen={confirmando} onClose={() => !enviando && setConf(false)} onConfirm={enviar}
                 isProcessing={enviando} isDestructive={false}
                 title="¿Cargar esta compra en Bodega?"

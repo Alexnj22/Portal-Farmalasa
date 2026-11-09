@@ -7689,6 +7689,9 @@ export type Database = {
           costo_unitario: number
           created_at: string
           descripcion: string
+          deshecho_at: string | null
+          deshecho_por: string | null
+          deshecho_traslado_id: string | null
           document_id: number | null
           emisor_nit: string | null
           emisor_nombre: string | null
@@ -7717,6 +7720,9 @@ export type Database = {
           costo_unitario: number
           created_at?: string
           descripcion: string
+          deshecho_at?: string | null
+          deshecho_por?: string | null
+          deshecho_traslado_id?: string | null
           document_id?: number | null
           emisor_nit?: string | null
           emisor_nombre?: string | null
@@ -7745,6 +7751,9 @@ export type Database = {
           costo_unitario?: number
           created_at?: string
           descripcion?: string
+          deshecho_at?: string | null
+          deshecho_por?: string | null
+          deshecho_traslado_id?: string | null
           document_id?: number | null
           emisor_nit?: string | null
           emisor_nombre?: string | null
@@ -7773,6 +7782,20 @@ export type Database = {
             columns: ["compra_carga_id"]
             isOneToOne: false
             referencedRelation: "compra_carga"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_deshecho_por_fkey"
+            columns: ["deshecho_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "compra_renglon_erroneo_deshecho_por_fkey"
+            columns: ["deshecho_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
             referencedColumns: ["id"]
           },
           {

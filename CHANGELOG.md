@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.5 — Producto erróneo: confirmar al marcarlo y «No era error» para devolverlo al estante
+
+- Cargar compra: marcar un renglón como «Producto erróneo» ahora pide confirmación, porque ese renglón pasa a Bodega de vencidos al cargar la compra. Pasó con ATROLIP 20 mg (compra 6534): lo marcaron por error y era el producto correcto.
+- Productos erróneos: nuevo botón «No era error» (con confirmación) en lo que ya está en vencidos y todavía no tiene nota de crédito. Devuelve las unidades de vencidos al estante, comprueba que llegaron y saca el producto de la lista. La compra no cambia.
+
 ## v2.1500.4 — El abono por aprobar dice exactamente por qué espera firma
 
 - Cuentas por cobrar: la nota de un abono que espera firma ya no dice «No se pudo comprobar la lectura del comprobante» cuando nada falló. Dice la causa real: cobro con tarjeta sin foto del voucher que quien cobró mandó a aprobación, lectura vencida, lectura de otra forma de pago, lectura cambiada o beneficiario ajeno. Además dice qué revisar, con el monto («Revisar en el estado de cuenta que entraron los $52.15…»), y el motivo de quien cobró, entre comillas.

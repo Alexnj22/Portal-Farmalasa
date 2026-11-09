@@ -1922,6 +1922,76 @@ async function comprobarErroneo(admin: any, id: number) {
 }
 
 /**
+ * «No era error» (2026-11-09): Bodega marcó un renglón como error del
+ * proveedor y el producto sí era el correcto (ATROLIP, compra 6534). La
+ * compra entró bien; lo único equivocado es el traslado a vencidos. Se
+ * devuelven sus unidades de vencidos al estante, con el mismo mecanismo que
+ * `vencidosAEstante`, y el renglón queda `deshecho` (sale de la lista).
+ *
+ * Sólo desde `en_vencidos` comprobado: con nota adjunta ya hay un crédito del
+ * proveedor de por medio, y `por_mover` todavía no llegó a vencidos. La fila
+ * se «toma» (`deshaciendo`) antes de mandar: dos clics no devuelven dos veces.
+ */
+async function deshacerErroneo(admin: any, id: number, quien: string) {
+  if (!Number.isFinite(id)) return { error: "Falta el renglón." };
+  const { data: tomadas, error: eT } = await admin.from("compra_renglon_erroneo")
+    .update({ estado: "deshaciendo", updated_at: new Date().toISOString() })
+    .eq("id", id).eq("estado", "en_vencidos").not("en_vencidos_at", "is", null).select("*");
+  if (eT) throw eT;
+  const e = tomadas?.[0];
+  if (!e) return { error: "Sólo se puede deshacer un producto que ya está en vencidos y sin nota de crédito." };
+  const anotar = async (cambios: Record<string, unknown>) => {
+    const { error } = await admin.from("compra_renglon_erroneo").update({ ...cambios, updated_at: new Date().toISOString() }).eq("id", id);
+    if (error) throw error;
+  };
+  const volver = async (error: string) => { await anotar({ estado: "en_vencidos", nota: error }); return { error }; };
+
+  const estante = await ubicacionDeBodega(admin, false);
+  const vencidosUbic = await ubicacionDeBodega(admin, true);
+  if (!estante || !vencidosUbic) return await volver("No se conoce el estante o el área de vencidos.");
+  const unidades = Number(e.unidades);
+  if (!(unidades > 0)) return await volver("El renglón no tiene unidades.");
+
+  let mov;
+  try {
+    const cookie = await sesionEn(ERP_BODEGA, login);
+    const f = await traerFila(cookie, Number(e.product_id), vencidosUbic);
+    if (!f.encontrado) return await volver("El producto ya no está en vencidos.");
+    // Las unidades del renglón son sueltas: se mueven en una presentación de 1.
+    const pres = await resolverPresentacion(cookie, f, "UNIDAD", 1, { porFactor: true });
+    if (!pres) return await volver("En vencidos no hay una presentación por unidad para devolverlo.");
+    let idLote = "0";
+    let vence = f.vence ?? "";
+    if (f.regulado) {
+      const lote = f.lotes.find((z) => z.numero === String(e.numero_lote ?? ""));
+      if (!lote || lote.stock < unidades - 1e-6) return await volver(`El lote ${e.numero_lote ?? "(sin lote)"} ya no está completo en vencidos.`);
+      idLote = lote.id; vence = lote.vence || vence;
+    } else if (f.existencia < unidades - 1e-6) {
+      return await volver(`En vencidos quedan ${f.existencia} unidades.`);
+    }
+    mov = await moverAlAreaDeVencidos(cookie, {
+      partes: [[e.product_id, pres.costo, pres.precio, unidades, pres.unidad, vence, pres.id, idLote].join("|")],
+      total: Number(pres.costo) * unidades,
+      esperado: new Map([[Number(e.product_id), unidades]]),
+      // El ayudante lleva los nombres del camino de ida; acá van al revés.
+      estante: vencidosUbic, vencidosUbic: estante,
+      concepto: armarConcepto(`PORTAL NO ERA ERROR DEL PROVEEDOR COMPRA ${e.erp_compra_id ?? ""} AL ESTANTE (TRASLADO ${e.erp_traslado_id ?? ""})`).concepto,
+      conceptoRecibir: (idT) => `PORTAL DEVUELVE AL ESTANTE (TRASLADO ${idT})`,
+    });
+  } catch (err) {
+    await anotar({ nota: `Se cortó al devolverlo al estante: ${(err as Error)?.message ?? err}. Revisarlo antes de seguir.` });
+    return { error: "Se cortó a medio camino. Quedó anotado; no lo vuelvas a mandar." };
+  }
+  if (!mov.ok) {
+    if (!mov.salio) return await volver(mov.error);
+    await anotar({ deshecho_traslado_id: mov.traslado, nota: mov.nota.replaceAll("en vencidos", "en el estante") });
+    return { error: "Salió de vencidos pero no se comprobó en el estante. No lo vuelvas a mandar.", traslado: mov.traslado };
+  }
+  await anotar({ estado: "deshecho", deshecho_traslado_id: mov.traslado, deshecho_at: new Date().toISOString(), deshecho_por: quien, nota: null });
+  return { ok: true, traslado: mov.traslado };
+}
+
+/**
  * Un erróneo cuyo traslado a vencidos se recibió A MANO: se pregunta al
  * sistema si ese traslado ya entró y, si sí, queda comprobado en vencidos.
  */
@@ -2222,7 +2292,7 @@ Deno.serve(async (req: Request) => {
   // no el de cargar compras, así que va antes de ese freno.
   const cuerpo = await req.clone().json().catch(() => ({}));
   const escribe = cuerpo?.enviar === true || cuerpo?.accion === "reparto_recibir" || cuerpo?.accion === "reparto_reintentar"
-    || cuerpo?.accion === "erroneo_salida" || cuerpo?.accion === "faltante_salida" || cuerpo?.accion === "estante_a_vencidos" || cuerpo?.accion === "vencidos_a_estante" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
+    || cuerpo?.accion === "erroneo_salida" || cuerpo?.accion === "erroneo_deshacer" || cuerpo?.accion === "faltante_salida" || cuerpo?.accion === "estante_a_vencidos" || cuerpo?.accion === "vencidos_a_estante" || (cuerpo?.accion === "producto_nuevo" && cuerpo?.crear === true);
   if (escribe) {
     const p = await pausa(admin);
     if (p) return responder({ error: p, pausada: true }, 409);
@@ -2264,6 +2334,10 @@ Deno.serve(async (req: Request) => {
       return responder({ error: "El envío a Bodega todavía no está encendido." }, 409);
     }
     if (body?.accion === "erroneo_salida") return responder(await darSalidaErroneo(admin, Number(body?.id), quien.id));
+    if (body?.accion === "erroneo_deshacer") {
+      const r = await deshacerErroneo(admin, Number(body?.id), quien.id);
+      return responder(r, "error" in r ? 409 : 200);
+    }
     if (body?.accion === "vencidos_a_estante") {
       const r = await vencidosAEstante(admin, String(body?.traslado ?? ""), quien.id);
       return responder(r, "error" in r ? 409 : 200);

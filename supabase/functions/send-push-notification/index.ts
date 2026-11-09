@@ -125,20 +125,12 @@ serve(async (req) => {
       if (valores.length === 0) return sinNadie();
       // Sin este chequeo, un error acá devuelve `sent: 0` con cara de éxito:
       // la sucursal entera se queda sin push y nadie se entera.
-      let q = supabase.from('employees').select('id').eq('status', 'ACTIVO');
-      if (target_type === 'BRANCH') {
-        q = q.in('branch_id', valores);
-      } else {
-        // El cargo por su nombre, como lo lee la policy de `announcements`.
-        const { data: roles, error: rolesErr } = await supabase.from('roles').select('id').in('name', valores);
-        if (rolesErr) throw new Error(`roles por nombre: ${rolesErr.message}`);
-        const ids = (roles || []).map((r: { id: number }) => r.id);
-        if (ids.length === 0) return sinNadie();
-        q = q.in('role_id', ids);
-      }
-      const { data: emps, error: empsErr } = await q;
-      if (empsErr) throw new Error(`employees por ${target_type === 'BRANCH' ? 'sucursal' : 'cargo'}: ${empsErr.message}`);
-      destinatarios = (emps || []).map((e: { id: string }) => e.id);
+      // La audiencia la decide la base: ahí un apoyo vigente cuenta con la sala
+      // y el cargo que cubre.
+      const { data: ids, error: audErr } = await supabase
+        .rpc('audiencia_de_aviso', { p_target_type: target_type, p_target_value: valores });
+      if (audErr) throw new Error(`audiencia por ${target_type === 'BRANCH' ? 'sucursal' : 'cargo'}: ${audErr.message}`);
+      destinatarios = (ids || []) as string[];
       if (destinatarios.length === 0) return sinNadie();
     } else if (target_type != null && target_type !== 'GLOBAL') {
       console.error(`send-push-notification: target_type desconocido «${target_type}», no se manda a nadie`);

@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-07T16:56:27.592Z",
+ "generado": "2026-11-09T15:39:51.020Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -239,8 +239,8 @@
    "por": "código"
   },
   "apoyo_vigente": {
-   "area": "acceso",
-   "por": "código"
+   "area": "personal",
+   "por": "tablas"
   },
   "app_borrar_datos_de_cuenta": {
    "area": "app-clientes",
@@ -3961,7 +3961,7 @@
   },
   "mapfre_ya_cobrada": {
    "area": "cortes-efectivo",
-   "por": "código"
+   "por": "tablas"
   },
   "marcar_abonos_impresos": {
    "area": "cortes-efectivo",
@@ -4547,6 +4547,10 @@
   "productos_por_codigo": {
    "area": "productos",
    "por": "tablas"
+  },
+  "products_changelog_sin_repetir": {
+   "area": "productos",
+   "por": "trigger"
   },
   "programar_entrega_sala": {
    "area": "pedidos",
@@ -5628,8 +5632,8 @@
    "por": "código"
   },
   "roles_efectivos_de": {
-   "area": "acceso",
-   "por": "código"
+   "area": "personal",
+   "por": "tablas"
   },
   "ruta_parada_no_entregada": {
    "area": "pedidos",
@@ -6073,7 +6077,7 @@
   },
   "validar_cargo_de_apoyo": {
    "area": "personal",
-   "por": "código"
+   "por": "trigger"
   },
   "validar_envio_producto": {
    "area": "solicitudes",

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1485.1 — Todos los avisos siguen al apoyo
+
+_(pendiente de redactar)_
+
 ## v2.1485.0 — App de clientes: volver a pedir desde Inicio, mismo principio activo y mosaicos por necesidad
 
 En Inicio, «Se te acaba pronto» pone el medicamento en el carrito con un toque. La ficha muestra otras opciones disponibles con exactamente el mismo principio activo, de menor a mayor precio. La Tienda vuelve a tener mosaicos «¿Qué necesitas?» en lugar de píldoras.

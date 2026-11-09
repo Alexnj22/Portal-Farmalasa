@@ -32,7 +32,7 @@
 // al dedo, y con «Reducir movimiento» o en un teléfono liviano ni eso — cambian
 // de golpe.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, BackHandler, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { Alert, BackHandler, Image, Platform, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 import Animated, { Extrapolation, interpolate, runOnJS, useAnimatedScrollHandler, useAnimatedStyle, useReducedMotion, useSharedValue } from 'react-native-reanimated';
 import { router, useLocalSearchParams } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -495,7 +495,7 @@ function Tarjeta({ resumen, activa, ancho }) {
   return (
     <LinearGradient colors={p.frente} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
       style={{ width: lado, aspectRatio: 1.586, borderRadius: 18, padding: 20, justifyContent: 'space-between' }}>
-      <Text style={{ color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 1.2 }}>PUNTOS SALUD</Text>
+      <Image source={require('../assets/logo-farmacias.png')} accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: 177, height: 24, tintColor: '#FFFFFF' }} />
       <View style={{ gap: 2 }}>
         <Text style={{ color: p.acento, fontSize: 12, fontWeight: '700', letterSpacing: 1 }}>{p.rotulo}</Text>
         <Text style={{ color: '#FFFFFF', fontSize: 26, fontWeight: '800' }}>0 pts</Text>

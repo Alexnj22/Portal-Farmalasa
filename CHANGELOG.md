@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.7 — App de clientes: logo de la farmacia en la tarjeta de socio
+
+La tarjeta de socio lleva el logo completo de la farmacia en blanco.
+
 ## v2.1492.6 — App de clientes: logo de Puntos Salud en la pantalla de carga
 
 La pantalla de carga de la app muestra el logo de Puntos Salud.

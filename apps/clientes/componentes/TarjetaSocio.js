@@ -583,8 +583,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                 {/* El efecto es sólo del logo central; éste va plano. */}
-                <Image source={require('../assets/icono.png')} style={{ width: 26, height: 26, tintColor: '#FFFFFF' }} />
-                <Text maxFontSizeMultiplier={1.3} style={estilos.marca}>PUNTOS SALUD</Text>
+                <Image source={require('../assets/logo-farmacias.png')} accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: 177, height: 24, tintColor: '#FFFFFF' }} />
               </View>
               {/* Qué tarjeta es, siempre en dos renglones (2026-10-09): «CLIENTE» sobre
                   el nivel (Bronce…Platino) o «MAYOREO» sobre el rango (Jade…Diamante). */}
@@ -642,8 +641,7 @@ function TarjetaSocio({ nombre, saldo, equivale, codigo, socioDesde, nivel: nive
               {/* Arriba, como el frente: la marca y qué tarjeta es. */}
               <View pointerEvents="none" style={{ position: 'absolute', left: MARGEN_REVERSO, right: MARGEN_REVERSO, top: medidas.m, height: medidas.arriba, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
-                  <Image source={require('../assets/icono.png')} style={{ width: 18, height: 18, tintColor: '#FFFFFF' }} />
-                  <Text maxFontSizeMultiplier={1.15} style={[estilos.marca, { fontSize: 12 }]}>PUNTOS SALUD</Text>
+                  <Image source={require('../assets/logo-farmacias.png')} accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: 133, height: 18, tintColor: '#FFFFFF' }} />
                 </View>
                 <Text maxFontSizeMultiplier={1.15} style={[estilos.socio, { fontSize: 10, letterSpacing: 2.2, color: paleta.acento }]}>
                   {['jade', 'zafiro', 'rubi', 'diamante'].includes(nivel) ? 'MAYOREO' : 'CLIENTE'} · {paleta.rotulo}
@@ -976,7 +974,6 @@ const estilos = StyleSheet.create({
   contenido: { flex: 1, paddingHorizontal: 18, paddingVertical: 14, justifyContent: 'space-between' },
   // Sombras de texto marcadas (2026-10-09): sobre metal claro (plata, oro) los
   // textos casi no se distinguían.
-  marca: { color: '#FFFFFF', fontSize: 15, fontWeight: '800', letterSpacing: 2, textShadowColor: 'rgba(0,0,0,0.6)', textShadowRadius: 6, textShadowOffset: { width: 0, height: 1 } },
   socio: { color: '#FFFFFF', fontSize: 11, fontWeight: '900', letterSpacing: 2.5, textShadowColor: 'rgba(0,0,0,0.65)', textShadowRadius: 5, textShadowOffset: { width: 0, height: 1 } },
   chip: { width: 38, height: 28, borderRadius: 6 },
   halo: {

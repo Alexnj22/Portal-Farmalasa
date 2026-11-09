@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1488.2 — Muestra de fichas con la sesión correcta
+
+La muestra temporal de códigos usa la cuenta que puede abrir las fichas.
+
 ## v2.1488.1 — Muestra temporal de códigos por presentación
 
 Muestra temporal de solo lectura sobre los 100 productos más vendidos, para decidir cómo reconocer códigos de barras.

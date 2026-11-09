@@ -1,6 +1,7 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
 import { leerFichaDe } from "../_shared/erp-regulado.ts";
+import { login } from "../_shared/erp-dte.ts";
 
 const LOGIN_URL    = 'https://clientesdte3.oss.com.sv/farma_salud/login.php';
 const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_productos_json.php';
@@ -595,7 +596,8 @@ Deno.serve(async (req) => {
 
     // Con plazo propio y sin lanzar: la medición no puede tumbar el sync.
     const muestraFichas = await Promise.race([
-      muestraDeFichas(cookie).catch((e) => [{ error: String((e as Error)?.message ?? e).slice(0, 80) }]),
+      // La cuenta del catálogo no abre la ficha: 10 de 10 «no se pudo leer».
+      login().then(muestraDeFichas).catch((e) => [{ error: String((e as Error)?.message ?? e).slice(0, 80) }]),
       new Promise<unknown[]>((r) => setTimeout(() => r([{ error: "plazo" }]), 40_000)),
     ]);
 

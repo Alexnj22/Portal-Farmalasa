@@ -951,7 +951,7 @@ export const AREAS = [
         rutas: ['/productos', '/laboratorios', '/fotos-productos'],
         archivos: [
             'src/views/ProductosView.jsx', 'src/views/productos/TabCatalogo.jsx',
-            'src/views/productos/TabLaboratorios.jsx', 'src/views/productos/TabPresentaciones.jsx',
+            'src/views/productos/TabLaboratorios.jsx', 'src/components/common/MenuPegarFoto.jsx', 'src/views/productos/TabPresentaciones.jsx',
             'src/views/productos/TabPoliticaVencimiento.jsx', 'src/views/productos/TabRentabilidad.jsx',
             // Revisión de factor (2026-10-15): lo que no cuadra en el tamaño de
             // una presentación y la existencia que dejó un cambio.

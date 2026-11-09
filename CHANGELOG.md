@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1493.3 — Foto de laboratorio: pegar y editar a la vista
+
+El bloque de la foto del laboratorio ahora se ve como el de un producto: recuadro con clic derecho para pegar, botones «Pegar» y «Editar foto» a la vista, y la foto guardada se puede volver a recortar o quitarle el fondo.
+
 ## v2.1493.2 — App de clientes: buscador de la Tienda con vidrio
 
 El buscador de la Tienda recupera el efecto de vidrio en iPhone.

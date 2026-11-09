@@ -133,3 +133,20 @@ export async function enCuadroBlanco(archivo, { ladoMaximo = 1600, margen = 0.08
     });
     return new File([blob], 'logo.jpg', { type: 'image/jpeg' });
 }
+
+/** La imagen copiada como `File`, o `null` si no hay o el navegador no deja. */
+export async function imagenDelPortapapeles() {
+    if (!navigator.clipboard?.read) return null;
+    try {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+            for (const type of item.types) {
+                if (type.startsWith('image/')) {
+                    const blob = await item.getType(type);
+                    return new File([blob], 'paste.png', { type });
+                }
+            }
+        }
+    } catch { /* Permiso denegado o sin imagen */ }
+    return null;
+}

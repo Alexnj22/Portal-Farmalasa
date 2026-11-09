@@ -3,7 +3,6 @@ import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar, ubicacion
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
-import { createPortal } from 'react-dom';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -11,7 +10,7 @@ import {
     Package, FlaskConical, Check, Loader2,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
-    Sparkles, History, MapPin, Search, Clipboard, Eye, RotateCcw, Ban, EyeOff, Smartphone, PackageSearch, ImagePlus,
+    Sparkles, History, MapPin, Search, Eye, RotateCcw, Ban, EyeOff, Smartphone, PackageSearch, ImagePlus,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import FilterBar from '../../components/common/FilterBar';
@@ -41,6 +40,7 @@ import {
 import PortalInput from '../../components/common/PortalInput';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
 import PhotoLightbox from '../../components/common/PhotoLightbox';
+import MenuPegarFoto from '../../components/common/MenuPegarFoto';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
@@ -52,7 +52,7 @@ import {
     clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir,
 } from '@nucleo/utils/preciosDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
-import { fotoDeCatalogo } from '../../plataforma/imagenes';
+import { fotoDeCatalogo, imagenDelPortapapeles } from '../../plataforma/imagenes';
 
 
 // Los niveles de precio y cuáles ve cada cargo viven en el núcleo
@@ -497,50 +497,12 @@ const LocationGrid = forwardRef(function LocationGrid({ productId, initial, bran
     );
 });
 
-// ── PhotoContextMenu ──────────────────────────────────────────────────────────
-// Right-click context menu for photo areas; reads image from clipboard.
-
-function PhotoContextMenu({ pos, onPaste, onClose }) {
-    useEffect(() => {
-        const close = () => onClose();
-        document.addEventListener('mousedown', close);
-        return () => document.removeEventListener('mousedown', close);
-    }, [onClose]);
-
-    return createPortal(
-        <div
-            className="fixed z-confirm bg-surface-card rounded-xl shadow-xl border border-divider py-1 min-w-[170px] overflow-hidden"
-            style={{ top: pos.y, left: pos.x }}
-            onMouseDown={e => e.stopPropagation()}>
-            <Button variant="secondary" icon={Clipboard} onClick={onPaste}>Pegar imagen
-                <span className="ml-auto text-caption text-content-3">Ctrl+V</span></Button>
-        </div>,
-        document.body
-    );
-}
-
 // inject lightbox keyframe once
 if (typeof document !== 'undefined' && !document.getElementById('lb-style')) {
     const s = document.createElement('style');
     s.id = 'lb-style';
     s.textContent = '@keyframes lightbox-in { from { opacity:0; transform:scale(0.88) } to { opacity:1; transform:scale(1) } }';
     document.head.appendChild(s);
-}
-
-async function pasteImageFromClipboard() {
-    if (!navigator.clipboard?.read) return null;
-    try {
-        const items = await navigator.clipboard.read();
-        for (const item of items) {
-            for (const type of item.types) {
-                if (type.startsWith('image/')) {
-                    const blob = await item.getType(type);
-                    return new File([blob], 'paste.png', { type });
-                }
-            }
-        }
-    } catch { /* Permission denied or no image */ }
-    return null;
 }
 
 // ── Purchase history helpers ──────────────────────────────────────────────────
@@ -901,7 +863,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     }, []);
 
     const handlePhotoContextMenu = (e) => { e.preventDefault(); setCtxMenu({ x: e.clientX + 2, y: e.clientY + 2 }); };
-    const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await pasteImageFromClipboard(); if (f) setPendingFile(f); };
+    const handlePasteFromMenu = async () => { setCtxMenu(null); const f = await imagenDelPortapapeles(); if (f) setPendingFile(f); };
 
     // En escritorio, la foto puede venir del teléfono (2026-10-29): entra por el
     // mismo editor que una elegida del disco.
@@ -1400,7 +1362,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
     // viajan igual en los dos envases.
     const flotantes = (
         <>
-        {ctxMenu && <PhotoContextMenu pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
+        {ctxMenu && <MenuPegarFoto pos={ctxMenu} onPaste={handlePasteFromMenu} onClose={() => setCtxMenu(null)} />}
         <PhotoLightbox src={lightboxSrc} alt="Foto del producto" onClose={() => setLightboxSrc(null)} />
         </>
     );

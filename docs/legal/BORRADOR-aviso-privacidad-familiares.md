@@ -7,18 +7,23 @@ y definir el secreto `FAMILIA_ABIERTA=1` en `app-clientes`.
 
 ## Cláusula propuesta: datos de personas a su cargo
 
-Si usted usa «Mi familia», nos indica el nombre o apodo y el parentesco de
+Si usted usa «Mi familia», nos indica el nombre y el parentesco de
 personas a su cargo, y qué tratamientos corresponden a cada una. No solicitamos
 su documento de identidad.
 
-Usted declara que la persona es menor de edad bajo su cuidado o que le autorizó
-a gestionar estos datos. Usamos esta información únicamente para organizar los
+Si la persona es menor de edad, usted declara que la tiene bajo su cuidado. Si es mayor de edad, como su madre, su padre u otro familiar, usted declara que esa persona le autorizó a gestionar estos datos. Usamos esta información únicamente para organizar los
 tratamientos y recordatorios dentro de su cuenta. Solo es visible en su cuenta;
 no se comparte con terceros ni se usa con fines publicitarios.
 
 Puede quitar a una persona en cualquier momento: sus datos en «Mi familia» se
 borran definitivamente y sus tratamientos quedan asociados a usted. También se
 borran al eliminar su cuenta.
+
+## Frase que se agrega a la cláusula 9.1
+
+También se tratan los datos de un menor de edad que su padre, su madre o quien
+tenga su cuidado registre en «Mi familia», según la cláusula 10, y solo para
+organizar sus tratamientos y recordatorios.
 
 ## Puntos para el abogado
 

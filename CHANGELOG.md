@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1489.0 — App de clientes: escáner de productos
+
+En la Tienda, el cliente escanea el código de barras y abre la ficha del producto. Si el código no se reconoce, se ofrece buscar por nombre o preguntar. Requiere la próxima versión de la app.
+
 ## v2.1488.4 — App del personal: últimos filtros y enlace roto
 
 **Por qué.** Lo que faltaba de la auditoría de colocación de la app del personal.

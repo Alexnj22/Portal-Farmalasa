@@ -1,4 +1,4 @@
-// Mi familia (2026-11-09): personas a cargo del titular —nombre o apodo y
+// Mi familia (2026-11-09): personas a cargo del titular —nombre y
 // parentesco, sin DUI— para indicar de quién es cada tratamiento. La cuenta y
 // los puntos siguen siendo del titular. Quitar a alguien borra su fila.
 // Cerrada hasta publicar el aviso de privacidad: el servidor manda
@@ -72,8 +72,8 @@ export default function Familia() {
         <>
           <Seccion>Agregar</Seccion>
           <Tarjeta estilo={{ gap: 12 }}>
-            <TextInput value={nombre} onChangeText={setNombre} placeholder="Nombre o apodo" placeholderTextColor={colorSistema.texto3} maxLength={40}
-              accessibilityLabel="Nombre o apodo" style={{ minHeight: 48, borderRadius: 14, paddingHorizontal: 14, fontSize: 16, color: colorSistema.texto, backgroundColor: superficie }} />
+            <TextInput value={nombre} onChangeText={setNombre} placeholder="Nombre" placeholderTextColor={colorSistema.texto3} maxLength={40}
+              accessibilityLabel="Nombre" style={{ minHeight: 48, borderRadius: 14, paddingHorizontal: 14, fontSize: 16, color: colorSistema.texto, backgroundColor: superficie }} />
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
               {PARENTESCOS.map(([v, l]) => {
                 const si = parentesco === v;
@@ -88,7 +88,7 @@ export default function Familia() {
             <Presionable onPress={() => setAutoriza((a) => !a)} accessibilityRole="checkbox" accessibilityState={{ checked: autoriza }}
               style={{ flexDirection: 'row', gap: 10, alignItems: 'center', minHeight: 44 }}>
               <Icono sf={autoriza ? 'checkmark.square.fill' : 'square'} respaldo={autoriza ? '☑' : '☐'} tam={22} color={t.color.magentaTexto} />
-              <Text style={{ flex: 1, fontSize: 14, color: colorSistema.texto }}>Es menor de edad a mi cargo, o me autorizó a gestionar sus medicamentos.</Text>
+              <Text style={{ flex: 1, fontSize: 14, color: colorSistema.texto }}>Es menor de edad a mi cargo o, si es adulto, me autorizó a gestionar sus medicamentos.</Text>
             </Presionable>
             <Boton alTocar={agregar} cargando={guardando} deshabilitado={!listo}>Agregar</Boton>
           </Tarjeta>

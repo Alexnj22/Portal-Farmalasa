@@ -400,6 +400,7 @@ function Raiz() {
             <Stack.Screen name="encuesta" options={{ title: 'Encuesta' }} />
             <Stack.Screen name="tratamientos" options={{ title: 'Mis tratamientos' }} />
             <Stack.Screen name="familia" options={{ title: 'Mi familia' }} />
+            <Stack.Screen name="escaner" options={{ title: 'Escanear producto' }} />
             <Stack.Screen name="creditos" options={{ title: 'Mis créditos' }} />
             {/* El chat (2026-10-14): barra transparente sobre la aurora, como antes,
                 pero SIN los «scroll edge effects» de iOS 26 (difuminaban el hilo,

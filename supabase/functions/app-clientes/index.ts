@@ -1330,6 +1330,24 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const d: any = data ?? {};
       return json({ ok: true, ...d, productos: (Array.isArray(d.productos) ? d.productos : []).map(conPrecioTuyo(cond)) });
     }
+    // Escáner de la Tienda (2026-11-09): de un código de barras al producto. Un
+    // UPC puede llegar con un cero de más o de menos según el teléfono.
+    if (accion === "catalogo_por_codigo") {
+      const codigo = String(body?.codigo ?? "").trim();
+      if (!/^\d{6,14}$/.test(codigo)) return json({ ok: true, id: null });
+      const sinCeros = codigo.replace(/^0+/, "");
+      const variantes = [...new Set([codigo, sinCeros, `0${sinCeros}`])];
+      const { data, error } = await admin.from("products").select("id, activo, oculto_en_ventas")
+        .in("codigo_barras", variantes).limit(10);
+      if (error) throw error;
+      const vivos = (data ?? []).filter((p) => p.activo !== false && !p.oculto_en_ventas);
+      if (!vivos.length) return json({ ok: true, id: null });
+      const { data: ocultos, error: eO } = await admin.from("app_catalogo_ocultos").select("product_id").in("product_id", vivos.map((p) => p.id));
+      if (eO) throw eO;
+      const fuera = new Set((ocultos ?? []).map((o) => o.product_id));
+      return json({ ok: true, id: vivos.find((p) => !fuera.has(p.id))?.id ?? null });
+    }
+
     if (accion === "catalogo_producto") {
       const id = Number(body?.id);
       if (!Number.isInteger(id) || id <= 0) return json({ ok: false, mensaje: "Producto no válido." });
@@ -3180,7 +3198,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (accion === "familia_agregar") {
         const nombre = String(body?.nombre ?? "").trim();
         const parentesco = String(body?.parentesco ?? "");
-        if (nombre.length < 1 || nombre.length > 40) return json({ ok: false, mensaje: "Escribe un nombre o apodo." });
+        if (nombre.length < 1 || nombre.length > 40) return json({ ok: false, mensaje: "Escribe su nombre." });
         if (!["hijo", "padre_madre", "abuelo", "conyuge", "otro"].includes(parentesco)) return json({ ok: false, mensaje: "Elige el parentesco." });
         if (body?.autoriza !== true) return json({ ok: false, mensaje: "Confirma que puedes gestionar sus medicamentos." });
         const { count, error: eC } = await admin.from("app_cliente_familiares").select("id", { count: "exact", head: true }).eq("customer_id", customerId);

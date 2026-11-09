@@ -232,13 +232,23 @@ export default function Catalogo() {
           onChangeText: (e) => setTexto(e.nativeEvent.text ?? ''),
           onCancelButtonPress: () => setTexto(''),
         },
-        headerRight: lejos ? () => (
+        headerRight: () => (
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            {lejos ? (
           <Presionable onPress={arriba} hitSlop={8} accessibilityRole="button" accessibilityLabel="Volver arriba"
             style={({ pressed }) => ({ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 10, opacity: pressed ? 0.6 : 1 })}>
             <Icono sf="arrow.up" respaldo="↑" tam={14} color={t.color.magentaTexto} />
             <Text style={{ fontSize: 15, fontWeight: '700', color: t.color.magentaTexto }}>Arriba</Text>
           </Presionable>
-        ) : undefined,
+            ) : null}
+            {Platform.OS !== 'web' ? (
+              <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar('/escaner'); }} hitSlop={8} accessibilityRole="button" accessibilityLabel="Escanear un producto"
+                style={({ pressed }) => ({ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+                <Icono sf="barcode.viewfinder" respaldo="▮" tam={22} color={t.color.magentaTexto} />
+              </Presionable>
+            ) : null}
+          </View>
+        ),
       }} />
       <FlatList
         ref={listaRef}

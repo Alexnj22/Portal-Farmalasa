@@ -253,6 +253,12 @@
         }
       ],
       [
+        "expo-camera",
+        {
+          "cameraPermission": "Puntos Salud usa la cámara sólo cuando tú la abres, para escanear el código de un producto o tomar la foto de tu receta."
+        }
+      ],
+      [
         "expo-audio",
         {
           "microphonePermission": "Puntos Salud usa el micrófono sólo para grabar las notas de voz que mandas en el chat con la farmacia.",

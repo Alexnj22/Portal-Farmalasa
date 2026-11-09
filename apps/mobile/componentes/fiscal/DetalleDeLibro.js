@@ -21,7 +21,7 @@ import { debitoDeConsumidor } from '@nucleo/utils/librosIva';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { etiquetaMes } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
@@ -184,7 +184,7 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
         );
       })}
       {vistas.length > paginas * PAGINA ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto={`Ver más · quedan ${vistas.length - paginas * PAGINA}`} borde color={MARCA.azulClaro} onPress={() => setPaginas((p) => p + 1)} /></View> : null}
-      {!filas.length ? <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600', textAlign: 'center', marginTop: 12 }}>Sin renglones este mes</Text> : null}
+      {!filas.length ? <Vacio enSeccion>Sin renglones este mes</Vacio> : null}
       {filas.length > 0 && !vistas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>{`Sin coincidencias para «${busqueda.trim()}»`}</Text> : null}
     </View>
   );

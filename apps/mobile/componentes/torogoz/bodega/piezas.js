@@ -7,9 +7,11 @@ import Vidrio from '../../Vidrio';
 import { colorSistema } from '../../Formulario';
 import { colorDeVariante } from '../../colorDeVariante';
 import { FONDO_CONTROL } from '../../inicio/marca';
+import { PETROLEO as COLOR_PETROLEO } from '../../inicio/marca';
+import { Vacio as VacioBase } from '../../formulario/Piezas';
 
 // COLORES_DISTRIBUIDORA.petroleo — el mismo del menú de Torogoz.
-export const PETROLEO = '#0f6e7d';
+export const PETROLEO = COLOR_PETROLEO;
 
 /** Una insignia con la variante que nombra el núcleo. */
 export function Chapa({ variante = 'neutral', texto }) {
@@ -39,12 +41,7 @@ export function Ficha({ onPress, onLongPress, tinte, children }) {
 
 /** El texto vacío de una lista. */
 export function Vacio({ titulo, texto }) {
-  return (
-    <View style={{ alignItems: 'center', paddingVertical: 32, paddingHorizontal: 24, gap: 4 }}>
-      <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', textAlign: 'center' }}>{titulo}</Text>
-      {texto ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>{texto}</Text> : null}
-    </View>
-  );
+  return <VacioBase titulo={titulo} detalle={texto} />;
 }
 
 /** La confirmación del sistema antes de escribir. Resuelve `true` si se aceptó. */

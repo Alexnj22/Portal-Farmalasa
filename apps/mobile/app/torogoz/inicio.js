@@ -124,7 +124,7 @@ export default function TorogozInicio() {
           <Kpi icono="Users" rotulo="Clientes" color={MARCA.verde} valor={cargando ? '…' : formatQty(num(r.clientes))} apoyo={<Variacion actual={r.clientes} antes={a.clientes} />} />
         </FilaDeKpis>
         <FilaDeKpis>
-          <Kpi icono="Package" rotulo="Unidades" color="#1192E8" valor={cargando ? '…' : formatQty(num(r.unidades))} apoyo="Vendidas en el período" />
+          <Kpi icono="Package" rotulo="Unidades" color={MARCA.azulInfo} valor={cargando ? '…' : formatQty(num(r.unidades))} apoyo="Vendidas en el período" />
           <Kpi icono="ClipboardList" rotulo="Preventas" color={MARCA.ambar} pide={num(datos?.preventas?.total) > 0}
             valor={cargando ? '…' : formatMoneyCorto(num(datos?.preventas?.monto))} apoyo={`${formatQty(num(datos?.preventas?.total))} por facturar`}
             onPress={() => router.push('/torogoz/pedidos?vista=pendientes')} />
@@ -188,15 +188,15 @@ export default function TorogozInicio() {
           )) : <Vacio texto="Sin ventas en el período." />}
         </Widget>
 
-        <Widget titulo="Mejores clientes" icono="Users" color="#6929C4" {...verTodos('clientes', clientes)}>
+        <Widget titulo="Mejores clientes" icono="Users" color={MARCA.violeta} {...verTodos('clientes', clientes)}>
           {cargando && !datos ? <Esqueleto /> : clientes.length ? recorte('clientes', clientes).map((c, i) => (
-            <FilaRanking key={c.id} primero={i === 0} color="#6929C4" izquierda={<Puesto n={i + 1} />}
+            <FilaRanking key={c.id} primero={i === 0} color={MARCA.violeta} izquierda={<Puesto n={i + 1} />}
               titulo={c.nombre} valor={formatMoneyCorto(num(c.ventas))} proporcion={num(c.ventas) / maximoDe(clientes)}
               detalle={`${rotuloTipoCliente(c.tipo)} · ${formatQty(num(c.documentos))} compras · última ${fechaNumerica(c.ultima)}`} />
           )) : <Vacio texto="Sin ventas en el período." />}
         </Widget>
 
-        <Widget titulo="Cuándo se vende" icono="Clock" color="#1192E8">
+        <Widget titulo="Cuándo se vende" icono="Clock" color={MARCA.azulInfo}>
           <View style={{ gap: 10 }}>
             <Segmentos margen={0} opciones={[{ id: 'dia', label: 'Por día' }, { id: 'hora', label: 'Por hora' }]} activa={cuando} onCambiar={setCuando} />
             {cargando && !datos ? <Esqueleto /> : cuando === 'dia' ? (

@@ -11,7 +11,7 @@ import { formatQty } from '@nucleo/utils/formatNumber';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import ConAurora from '../../ConAurora';
 import { colorSistema } from '../../Formulario';
-import { Campo, Seccion } from '../../formulario/Piezas';
+import { Campo, Seccion, Vacio } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
 import { fallo, listo } from '../../Progreso';
 import { PETROLEO, confirmar } from './piezas';
@@ -56,7 +56,7 @@ export default function Cuarentena({ filas, puedeResolver, onCerrar, onCambio })
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
             Lo devuelto que no volvió a la venta. No cuenta en la existencia hasta que se decide qué hacer.
           </Text>
-          {visibles.length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 16 }}>Nada esperando decisión.</Text> : null}
+          {visibles.length === 0 ? <Vacio enSeccion>Nada esperando decisión.</Vacio> : null}
           {visibles.map((q) => (
             <Seccion key={q.id}>
               <View style={{ flexDirection: 'row', gap: 10 }}>

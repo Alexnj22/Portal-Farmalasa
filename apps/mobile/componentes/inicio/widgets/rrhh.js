@@ -95,7 +95,7 @@ export function Tendencia({ ctx }) {
 const ESTADOS = [
   { id: 'WORKING', rotulo: 'En labores', color: MARCA.verde },
   { id: 'LUNCH', rotulo: 'Almuerzo', color: MARCA.ambar },
-  { id: 'LACTATION', rotulo: 'Lactancia', color: '#E0457B' },
+  { id: 'LACTATION', rotulo: 'Lactancia', color: MARCA.rosa },
   { id: 'BUSINESS', rotulo: 'Gestión externa', color: MARCA.azul },
   { id: 'OUT', rotulo: 'Salió', color: MARCA.gris },
   { id: 'ABSENT', rotulo: 'Sin marcar', color: MARCA.rojo },
@@ -259,7 +259,7 @@ export function Cumpleanos({ ctx }) {
     .sort((a, b) => a.dia - b.dia);
   const nombreSala = (e) => (ctx.sucursales || []).find((b) => String(b.id) === String(e.branchId ?? e.branch_id))?.name;
   return (
-    <Widget titulo="Cumpleaños del mes" icono="Cake" color="#E0457B" cuenta={lista.filter((x) => x.md === hoy.slice(5)).length}>
+    <Widget titulo="Cumpleaños del mes" icono="Cake" color={MARCA.rosa} cuenta={lista.filter((x) => x.md === hoy.slice(5)).length}>
       {lista.length ? lista.slice(0, 6).map(({ e, dia, md, edad }, i) => {
         const esHoy = md === hoy.slice(5);
         const esManana = md === manana.slice(5);
@@ -269,7 +269,7 @@ export function Cumpleanos({ ctx }) {
             <Renglon primero={!i} titulo={shortEmployeeName(e)} detalle={[nombreSala(e), `día ${dia}`].filter(Boolean).join(' · ')}
               izquierda={<Avatar empleado={e} tamano={36} />}
               derecha={esHoy ? '🎂 Hoy' : esManana ? 'Mañana' : `${edad} años`}
-              colorDerecha={esHoy ? '#E0457B' : esManana ? MARCA.ambar : undefined} />
+              colorDerecha={esHoy ? MARCA.rosa : esManana ? MARCA.ambar : undefined} />
           </View>
         );
       }) : <Vacio texto="Nadie cumple este mes" />}

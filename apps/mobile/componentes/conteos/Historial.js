@@ -15,7 +15,7 @@ import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import ConAurora from '../ConAurora';
 import { colorSistema } from '../Formulario';
-import { Aviso, Cargando } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { FONDO, Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
@@ -53,7 +53,7 @@ export default function Historial({ item, simple = false, onCerrar }) {
           </View>
           {error ? <Aviso tono="freno" texto={error} /> : null}
           {filas == null ? <Cargando /> : !filas.length ? (
-            <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 20 }}>Sin registros todavía.</Text>
+            <Vacio enSeccion>Sin registros todavía.</Vacio>
           ) : filas.map((h, i) => {
             const ev = EVENTO_DE_CONTEO[h.evento] ?? EVENTO_DE_CONTEO.EDICION;
             const dif = h.diferencia;

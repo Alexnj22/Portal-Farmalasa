@@ -5,8 +5,9 @@ import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { colorSistema } from '../../Formulario';
 import { MARCA } from '../../inicio/marca';
+import { PETROLEO as COLOR_PETROLEO } from '../../inicio/marca';
 
-export const PETROLEO = '#0f6e7d';
+export const PETROLEO = COLOR_PETROLEO;
 
 /** Abre la hoja de opciones del sistema (iPhone) o una alerta con botones. */
 export function elegirDe({ titulo, mensaje, opciones, onElegir }) {

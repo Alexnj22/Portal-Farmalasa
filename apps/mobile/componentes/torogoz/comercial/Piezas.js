@@ -19,11 +19,12 @@ import { Campo } from '../../formulario/Piezas';
 import { MARCA, FONDO_CONTROL } from '../../inicio/marca';
 import { Rotulo } from '../../personas/Formulario';
 import HojaDeEleccion from '../../HojaDeEleccion';
+import { PETROLEO as COLOR_PETROLEO } from '../../inicio/marca';
 
 const ANDROID = Platform.OS === 'android';
 
 /** El color de la distribuidora (COLORES_DISTRIBUIDORA.petroleo). */
-export const PETROLEO = '#0f6e7d';
+export const PETROLEO = COLOR_PETROLEO;
 
 /** La empresa que factura (una sola fila). Se relee al volver a la pantalla. */
 export function useEmisor() {

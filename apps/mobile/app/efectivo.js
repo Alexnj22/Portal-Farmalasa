@@ -30,7 +30,7 @@
 //      — o que no se pudo medir, que también frena.
 // El servidor los vuelve a aplicar (`hacer-corte-caja` / `operar-caja`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -317,17 +317,46 @@ export default function Efectivo() {
 
   const grupos = todas ? [{ id: 'sala', titulo: 'Sala', activa: sala, porDefecto: sala, onCambiar: setElegida, opciones: salas.map((b) => ({ id: String(b.id), label: b.name })) }] : [];
   const abierta = estado?.abierta && !turnoParado && !noSePudo;
+  // Cerrar el día no se deshace y es una vez al día: en el menú, no junto a «Hacer corte».
+  const abrirMas = () => ActionSheetIOS.showActionSheetWithOptions({ options: ['Cerrar el día', 'Cancelar'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+    (i) => { if (i === 0) cerrar(); });
 
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Efectivo', headerLargeTitle: true }} />
-      <MenuDeFiltros grupos={grupos} />
+      <MenuDeFiltros grupos={grupos} extra={accion === 'operar' && estado && !estado.error ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 16, gap: 16, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await cargar(); setRecargando(false); }} />}>
         {puedeVerCortes ? <View style={{ marginHorizontal: 16 }}><Secciones /></View> : null}
         {!sala ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu usuario no tiene una sala con caja." /></View> : null}
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 20 }}>{nombre}</Text> : null}
+
+        {/* Lo que se viene a hacer va primero, no debajo del día entero (2026-11-09). */}
+        {accion ? (
+          <View style={{ marginHorizontal: 16, gap: 10 }}>
+          {accion === 'abrir' ? (
+            abriendo == null ? <BotonGrande texto="Abrir la caja" color={MARCA.verde} onPress={() => setAbriendo('')} /> : (
+              <Seccion titulo="Abrir la caja" pie="Con cuánto efectivo arranca la caja. Si arranca en cero, déjalo vacío.">
+                <Campo multiline={false} value={abriendo} onChangeText={(v) => setAbriendo(v.replace(/[^\d.,]/g, ''))}
+                  keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
+                <BotonGrande texto="Abrir" color={MARCA.verde} onPress={abrir} />
+                <BotonGrande texto="Cancelar" borde onPress={() => setAbriendo(null)} />
+              </Seccion>
+            )
+          ) : null}
+          {accion === 'iniciar-turno' ? <BotonGrande texto="Iniciar el turno" color={MARCA.verde} onPress={iniciar} /> : null}
+          {accion === 'operar' ? (
+            <View style={{ gap: 10 }}>
+              <BotonGrande texto="Hacer corte" color={MARCA.azul} onPress={() => router.push({ pathname: '/hacer-corte', params: { sala } })} />
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}><BotonGrande texto="Meter dinero" color={MARCA.verde} onPress={() => router.push({ pathname: '/meter-dinero', params: { sala } })} /></View>
+                <View style={{ flex: 1 }}><BotonGrande texto="Sacar dinero" color={MARCA.azul} onPress={() => router.push({ pathname: '/sacar-dinero', params: { sala } })} /></View>
+              </View>
+            </View>
+          ) : null}
+          </View>
+        ) : null}
 
         {sala ? (
           <>
@@ -398,28 +427,6 @@ export default function Efectivo() {
                 );
               })}
             </Seccion>
-          ) : null}
-
-          {accion === 'abrir' ? (
-            abriendo == null ? <BotonGrande texto="Abrir la caja" color={MARCA.verde} onPress={() => setAbriendo('')} /> : (
-              <Seccion titulo="Abrir la caja" pie="Con cuánto efectivo arranca la caja. Si arranca en cero, déjalo vacío.">
-                <Campo multiline={false} value={abriendo} onChangeText={(v) => setAbriendo(v.replace(/[^\d.,]/g, ''))}
-                  keyboardType="decimal-pad" placeholder="$0.00" style={{ textAlign: 'center' }} />
-                <BotonGrande texto="Abrir" color={MARCA.verde} onPress={abrir} />
-                <BotonGrande texto="Cancelar" borde onPress={() => setAbriendo(null)} />
-              </Seccion>
-            )
-          ) : null}
-          {accion === 'iniciar-turno' ? <BotonGrande texto="Iniciar el turno" color={MARCA.verde} onPress={iniciar} /> : null}
-          {accion === 'operar' ? (
-            <View style={{ gap: 10 }}>
-              <BotonGrande texto="Hacer corte" color={MARCA.azul} onPress={() => router.push({ pathname: '/hacer-corte', params: { sala } })} />
-              <View style={{ flexDirection: 'row', gap: 10 }}>
-                <View style={{ flex: 1 }}><BotonGrande texto="Meter dinero" color={MARCA.verde} onPress={() => router.push({ pathname: '/meter-dinero', params: { sala } })} /></View>
-                <View style={{ flex: 1 }}><BotonGrande texto="Sacar dinero" color={MARCA.azul} onPress={() => router.push({ pathname: '/sacar-dinero', params: { sala } })} /></View>
-              </View>
-              <BotonGrande texto="Cerrar el día" borde color={MARCA.rojo} deshabilitado={!estado || !!estado.error} onPress={cerrar} />
-            </View>
           ) : null}
 
           {sala && !cargando && !noSePudo ? (

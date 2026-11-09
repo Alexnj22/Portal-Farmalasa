@@ -33,8 +33,9 @@ import { guardarOferta } from '../ofertas/acentos';
 import { fallo, listo } from '../Progreso';
 import Tocable from '../Tocable';
 import { compartirCsv } from '../fiscal/csv';
+import { Vacio as VacioBase } from '../formulario/Piezas';
 
-const Vacio = ({ texto }) => <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24 }}>{texto}</Text>;
+const Vacio = ({ texto }) => <VacioBase titulo={texto} />;
 // «Descargar CSV» de lo que se ve, con el mismo archivo del portal (núcleo).
 export function DescargarCsv({ cuenta, csv }) {
   const compartir = () => { compartirCsv({ ...csv(), modulo: 'promociones' }).catch((e) => fallo('No se pudo compartir', e?.message || '')); };

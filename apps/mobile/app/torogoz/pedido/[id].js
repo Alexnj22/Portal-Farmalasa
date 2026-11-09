@@ -211,7 +211,7 @@ export default function DetallePedido() {
           {anulando ? (
             <>
               <BotonGrande texto={ocupado === 'anular' ? 'Anulando…' : 'Confirmar anulación'} color={MARCA.rojo} deshabilitado={!!ocupado || !motivo.trim()} onPress={anular} />
-              <BotonGrande borde texto="No anular" color="#8D8D99" deshabilitado={!!ocupado} onPress={() => { setAnulando(false); setMotivo(''); }} />
+              <BotonGrande borde texto="No anular" color={MARCA.gris} deshabilitado={!!ocupado} onPress={() => { setAnulando(false); setMotivo(''); }} />
             </>
           ) : null}
         </View>

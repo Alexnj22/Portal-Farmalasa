@@ -26,6 +26,7 @@ import * as Clipboard from 'expo-clipboard';
 import { useCodigoDeKiosco } from '../../../componentes/perfil/codigoDeKiosco';
 import { ESTILOS, MODOS, usePreferenciaDeTema } from '../../../tema/preferencia';
 import { listo } from '../../../componentes/Progreso';
+import { MARCA } from '../../../componentes/inicio/marca';
 
 const ES_IOS = Platform.OS === 'ios';
 
@@ -152,7 +153,7 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
       {biometria.nombre ? (
         <Vidrio radio={20}>
           <View style={{ paddingVertical: 2 }}>
-            <Renglon primero icono={iconoDe('Lock')} color="#12B76A" texto={`Entrar con ${biometria.nombre}`}
+            <Renglon primero icono={iconoDe('Lock')} color={MARCA.verde} texto={`Entrar con ${biometria.nombre}`}
               derecha={<Interruptor value={biometria.activa} onValueChange={cambiarBiometria} />} />
           </View>
         </Vidrio>
@@ -169,10 +170,10 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
       ) : null}
       <Vidrio radio={20}>
         <View style={{ paddingVertical: 2 }}>
-          <Renglon primero icono={iconoDe(oscuro ? 'Moon' : 'Sun')} color="#6929C4" texto="Modo" alTocar={elegirModo}
+          <Renglon primero icono={iconoDe(oscuro ? 'Moon' : 'Sun')} color={MARCA.violeta} texto="Modo" alTocar={elegirModo}
             derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloModo}</Text>} />
           {ES_IOS ? (
-            <Renglon icono={iconoDe('Layers')} color="#6929C4" texto="Estilo" alTocar={elegirEstilo}
+            <Renglon icono={iconoDe('Layers')} color={MARCA.violeta} texto="Estilo" alTocar={elegirEstilo}
               derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloEstilo}</Text>} />
           ) : null}
         </View>

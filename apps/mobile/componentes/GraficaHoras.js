@@ -14,6 +14,7 @@ import * as Haptics from 'expo-haptics';
 import Svg, { Line, Rect } from 'react-native-svg';
 import Vidrio from './Vidrio';
 import { colorSistema } from './Formulario';
+import { MARCA } from './inicio/marca';
 
 const etiquetaDeHora = (h) => (h === 12 ? '12 m.' : h < 12 ? `${h} a. m.` : `${h - 12} p. m.`);
 const corta = (h) => (h === 12 ? '12' : h < 12 ? `${h}a` : `${h - 12}p`);
@@ -23,7 +24,7 @@ const corta = (h) => (h === 12 ? '12' : h < 12 ? `${h}a` : `${h - 12}p`);
  * @param extra    opcional, un texto por hora para la etiqueta («8 tickets»)
  * @param formato  cómo se escribe un valor
  */
-export default function GraficaHoras({ valores = [], desde = 7, color = '#12B76A', alto = 180, formato = (v) => String(v), extra, resumen }) {
+export default function GraficaHoras({ valores = [], desde = 7, color = MARCA.verde, alto = 180, formato = (v) => String(v), extra, resumen }) {
   const [ancho, setAncho] = useState(0);
   const [elegida, setElegida] = useState(null);
   const ultima = useRef(null);

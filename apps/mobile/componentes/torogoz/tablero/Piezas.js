@@ -10,10 +10,10 @@ import Svg, { G, Path } from 'react-native-svg';
 import { formatMoney, formatMoneyCorto } from '@nucleo/utils/formatNumber';
 import { variacionPct } from '@nucleo/utils/distribucionTablero';
 import { colorSistema } from '../../Formulario';
-import { MARCA } from '../../inicio/marca';
+import { MARCA, PETROLEO } from '../../inicio/marca';
 
 /** La paleta del tablero, por posición: la misma lista que la dona y sus filas. */
-export const PALETA = ['#0f6e7d', MARCA.verde, MARCA.violeta, '#1192E8', '#FA4D56', '#B28600', MARCA.ambar, MARCA.gris];
+export const PALETA = [PETROLEO, MARCA.verde, MARCA.violeta, '#1192E8', '#FA4D56', '#B28600', MARCA.ambar, MARCA.gris];
 export const colorDe = (i) => PALETA[i % PALETA.length];
 
 const tocar = (fn) => () => { Haptics.selectionAsync().catch(() => {}); fn(); };

@@ -33,7 +33,7 @@ const EN_LA_BARRA = new Set(['overview', 'emp_announcements', 'emp_profile', 'em
 
 // Un color por grupo, como los íconos de Ajustes: ayuda a encontrar la zona
 // del menú sin leer. Son los de la marca y los de gráficas del portal.
-const COLORES = ['#0052CC', '#12B76A', '#F79009', MARCA.violeta, '#E0457B', '#0BA5EC', '#F04438', '#8EC30F', '#981D97'];
+const COLORES = [MARCA.azul, MARCA.verde, MARCA.ambar, MARCA.violeta, MARCA.rosa, '#0BA5EC', MARCA.rojo, '#8EC30F', '#981D97'];
 
 // El petróleo de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
 const COLOR_TOROGOZ = PETROLEO;

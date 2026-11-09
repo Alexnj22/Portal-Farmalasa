@@ -17,7 +17,9 @@ export function Cargando() {
 }
 
 /** Una pantalla o lista sin nada que mostrar. Título (o hijos) y detalle opcional. */
-export function Vacio({ titulo, detalle, children }) {
+export function Vacio({ titulo, detalle, children, enSeccion = false }) {
+  // Dentro de una sección o una lista corta: una línea discreta, no un título.
+  if (enSeccion) return <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>{titulo ?? children}</Text>;
   return (
     <View style={{ alignItems: 'center', marginTop: 40, gap: 6, paddingHorizontal: 32 }}>
       <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>{titulo ?? children}</Text>

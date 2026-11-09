@@ -17,6 +17,7 @@ import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
+import { MARCA } from './marca';
 
 const tocar = (fn) => (fn ? () => { Haptics.selectionAsync().catch(() => {}); fn(); } : undefined);
 
@@ -74,7 +75,7 @@ export function Renglon({ izquierda, titulo, detalle, derecha, colorDerecha, onP
 
 export function Vacio({ texto, bien = false }) {
   return (
-    <Text style={{ color: bien ? '#12B76A' : colorSistema.texto2, fontSize: 15, paddingVertical: 4 }}>
+    <Text style={{ color: bien ? MARCA.verde : colorSistema.texto2, fontSize: 15, paddingVertical: 4 }}>
       {texto}{bien ? ' ✓' : ''}
     </Text>
   );

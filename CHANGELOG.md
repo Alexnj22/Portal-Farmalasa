@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1489.1 — App del personal: Efectivo, colores y vacíos
+
+**Por qué.** Cierre de lo pendiente de la auditoría de la app del personal.
+
+- **Efectivo:** Abrir, Iniciar turno, Hacer corte, Meter y Sacar dinero suben arriba de los datos del día; Cerrar el día pasa al menú «⋯».
+- **Apoyo no es ausencia, también en la base:** `get_estados_de_personas` devuelve `SUPPORT` a quien no puede ver motivos (antes `AUSENTE`, aro «No está hoy»). La fecha de fin sigue tapada. Verificado en producción con la sesión de un dependiente sin permisos.
+- **Colores:** los tonos repetidos salen de `MARCA`; quedan a propósito temas, medallas, mapas y paletas de gráficas.
+- **Vacíos:** todo por `Vacio`, con `enSeccion` para los que van dentro de una sección.
+- **Topes de filas, medidos sin cambio:** reclamos 0, incidentes 0, solicitudes de datos 4, anonimizados 0, historial de mayoristas 4; lejos de sus techos de 300 a 1000.
+
+Verificado en simulador iPad la pantalla de Efectivo; los botones de operar no se ven con la cuenta de revisión, que no opera.
+
 ## v2.1489.0 — App de clientes: escáner de productos
 
 En la Tienda, el cliente escanea el código de barras y abre la ficha del producto. Si el código no se reconoce, se ofrece buscar por nombre o preguntar. Requiere la próxima versión de la app.

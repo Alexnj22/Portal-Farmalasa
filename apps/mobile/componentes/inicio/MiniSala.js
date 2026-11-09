@@ -16,12 +16,13 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { nivelDeVolumen } from '@nucleo/utils/inicio';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
+import { MARCA } from './marca';
 
 const T = tokens.temas.dark;
 export const COLOR_VOLUMEN = {
   muerta: T['txvol-muerta'], normal: T['txvol-normal'], pico: T['txvol-pico'], critica: T['txvol-critica'],
 };
-export const VERDE = '#12B76A';
+export const VERDE = MARCA.verde;
 
 const corta = (h) => (h === 12 ? '12p' : h < 12 ? `${h}a` : `${h - 12}p`);
 

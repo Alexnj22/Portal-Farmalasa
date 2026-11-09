@@ -39,7 +39,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 
-const TONO = { peligro: MARCA.rojo, aviso: MARCA.ambar, dano: '#E0457B', interno: MARCA.violeta, exito: MARCA.verde };
+const TONO = { peligro: MARCA.rojo, aviso: MARCA.ambar, dano: MARCA.rosa, interno: MARCA.violeta, exito: MARCA.verde };
 const FALTA = { cantidad: 'la cantidad', 'sin existencia': 'no alcanza la existencia', lote: 'el lote', vence: 'el vencimiento' };
 let contador = 0;
 

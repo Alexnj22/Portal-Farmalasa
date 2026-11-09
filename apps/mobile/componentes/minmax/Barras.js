@@ -45,7 +45,7 @@ export function BarraDeExistencia({ existencia, min, max, alto = 8 }) {
 export function Cobertura({ dias, ciclo }) {
   if (dias == null) return <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin venta</Text>;
   const pct = Math.min(100, (dias / ciclo) * 100);
-  const color = dias === 0 ? MARCA.rojo : dias < ciclo * 0.2 ? MARCA.ambar : dias < ciclo * 0.5 ? '#EAB308' : MARCA.verde;
+  const color = dias === 0 ? MARCA.rojo : dias < ciclo * 0.2 ? MARCA.ambar : dias < ciclo * 0.5 ? MARCA.amarillo : MARCA.verde;
   return (
     <View style={{ gap: 4 }}>
       <Text style={{ color, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{dias >= 999 ? '+999 días' : `${Math.round(dias)} días`}</Text>

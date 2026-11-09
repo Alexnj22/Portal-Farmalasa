@@ -32,7 +32,7 @@ import { descuentoDeSuspension } from '@nucleo/utils/planilla';
 import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { elegirArchivo } from '../../componentes/sucursal/elegirArchivo';
@@ -279,7 +279,7 @@ export default function Historial() {
                 </Pressable>
               );
             })}
-            {solicitudes && !solicitudes.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>Sin solicitudes.</Text> : null}
+            {solicitudes && !solicitudes.length ? <Vacio enSeccion>Sin solicitudes.</Vacio> : null}
             <View style={{ marginHorizontal: 16 }}>
               <BotonGrande texto="Nueva solicitud a su nombre" borde color={MARCA.azulClaro}
                 onPress={() => router.push({ pathname: '/nueva/personal', params: { empleado: String(emp.id) } })} />

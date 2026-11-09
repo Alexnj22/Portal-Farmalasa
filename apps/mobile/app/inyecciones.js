@@ -325,7 +325,7 @@ function Bitacora({ busqueda, limpiarBusqueda, sala, periodo, libre, setLibre, e
               {f.venta_sala || f.asignada_a_mano || f.sin_ficha ? (
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {f.venta_sala ? <Pildora texto={`Venta de ${f.venta_sala}`} color={MARCA.azulClaro} /> : null}
-                  {f.asignada_a_mano ? <Pildora texto="Asignada después" color="#8E8E93" /> : null}
+                  {f.asignada_a_mano ? <Pildora texto="Asignada después" color={MARCA.gris} /> : null}
                   {f.sin_ficha ? <Pildora texto="Sin ficha · no sale en su app" color={MARCA.ambar} /> : null}
                 </View>
               ) : null}

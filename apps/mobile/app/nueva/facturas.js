@@ -35,7 +35,7 @@ function Fila({ f, onPress }) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{f.correlativo}</Text>
             <Pildora texto={f.tipo_documento} color={f.tipo_documento === 'CCF' ? MARCA.rojo : MARCA.azulClaro} />
-            {anulada ? <Pildora texto="Anulada" color="#8E8E93" /> : null}
+            {anulada ? <Pildora texto="Anulada" color={MARCA.gris} /> : null}
             <View style={{ flex: 1 }} />
             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(f.total)}</Text>
           </View>

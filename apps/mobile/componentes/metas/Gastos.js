@@ -10,7 +10,7 @@ import { anularMetaGasto, fetchMetasGastos } from '@nucleo/data/metas';
 import { resumenDeGastos, ymHoySV, ymLabel, ymLabelCorto } from '@nucleo/utils/metasUtils';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { Aviso, BotonGrande, Cargando } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -127,7 +127,7 @@ export default function Gastos({ canEdit, onCambio }) {
           </View>
         );
       })}
-      {!gastos.length && !error ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 8 }}>Sin gastos cargados.</Text> : null}
+      {!gastos.length && !error ? <Vacio enSeccion>Sin gastos cargados.</Vacio> : null}
     </View>
   );
 }

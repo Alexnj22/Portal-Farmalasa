@@ -50,7 +50,7 @@ import { fallo, listo, trabajando } from '../componentes/Progreso';
 // Los rótulos son los del núcleo (los mismos chips del portal); el color, el
 // de su estado.
 const COLOR_ALERTA = {
-  out_of_stock: MARCA.rojo, below_min: MARCA.ambar, approaching: '#EAB308', ok: MARCA.verde,
+  out_of_stock: MARCA.rojo, below_min: MARCA.ambar, approaching: MARCA.amarillo, ok: MARCA.verde,
   overstocked: MARCA.azulClaro, dead_stock: colorSistema.texto2, no_data: colorSistema.texto2,
 };
 const COLUMNAS = 'abc_class, demand_variability, daily_velocity, velocity_30d, draft_abc_class, draft_status, draft_min, draft_max, min_units, max_units, manual_min, manual_max, calc_min, calc_max, is_hidden';

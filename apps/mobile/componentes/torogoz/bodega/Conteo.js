@@ -26,7 +26,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import Escaner from '../../Escaner';
 import { FiltrosActivos, MenuDeFiltros } from '../../Filtros';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, Vacio } from '../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { MARCA } from '../../inicio/marca';
 import { fallo, listo, trabajando } from '../../Progreso';
@@ -251,7 +251,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
           <BotonGrande borde texto="Pedir una baja" color={MARCA.rojo} onPress={() => setPidiendoBaja(true)} deshabilitado={!lotes.length} />
         </View>
       ) : null}
-      {bajas.length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>Sin bajas.</Text> : bajas.slice(0, 20).map((b) => (
+      {bajas.length === 0 ? <Vacio enSeccion>Sin bajas.</Vacio> : bajas.slice(0, 20).map((b) => (
         <Ficha key={b.id}>
           <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start' }}>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{b.products?.nombre}</Text>

@@ -82,7 +82,7 @@ function TarjetaDeNivel({ fila, tipo, conRaspable, esEntrada, onAbrir }) {
         <View style={{ padding: 14, gap: 6 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800', marginRight: 4 }}>{fila.nombre}</Text>
-            {esEntrada ? <Pildora texto="Entrada" color="#8E8E93" /> : null}
+            {esEntrada ? <Pildora texto="Entrada" color={MARCA.gris} /> : null}
             {conRaspable ? <Pildora texto="Con raspable" color={MARCA.azulClaro} /> : null}
           </View>
           {tipo === 'nivel' ? (

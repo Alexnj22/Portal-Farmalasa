@@ -67,13 +67,15 @@ export function barraAndroid(principal = false) {
 // iOS pinta de azul (el tinte del sistema) una imagen dentro de la barra, así
 // que el logo va en capas, cada una con su color explícito. El borde blanco lo
 // hace legible también en modo oscuro.
-const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: 86, height: 42 };
+// Versión horizontal (2026-11-09): «PUNTOS Salud» en una línea, armada con las
+// mismas capas del logo apilado (proporción 925×149).
+const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: 168, height: 27 };
 function LogoEncabezado() {
   return (
-    <View accessible accessibilityRole="image" accessibilityLabel="Puntos Salud" style={{ width: 86, height: 42 }}>
-      <Image source={require('../assets/logo-puntos-salud-blanco.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#FFFFFF' }]} />
-      <Image source={require('../assets/logo-puntos-salud-verde.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#8EC30F' }]} />
-      <Image source={require('../assets/logo-puntos-salud-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#981D97' }]} />
+    <View accessible accessibilityRole="image" accessibilityLabel="Puntos Salud" style={{ width: 168, height: 27 }}>
+      <Image source={require('../assets/logo-puntos-salud-horizontal-blanco.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#FFFFFF' }]} />
+      <Image source={require('../assets/logo-puntos-salud-horizontal-verde.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#8EC30F' }]} />
+      <Image source={require('../assets/logo-puntos-salud-horizontal-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#981D97' }]} />
     </View>
   );
 }

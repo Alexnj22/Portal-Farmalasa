@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.6 — Logo horizontal de Puntos Salud en el encabezado
+
+- App de clientes: versión horizontal del logo de Puntos Salud («PUNTOS Salud» en una línea), centrada en el encabezado de cada pestaña.
+
 ## v2.1500.5 — Producto erróneo: confirmar al marcarlo y «No era error» para devolverlo al estante
 
 - Cargar compra: marcar un renglón como «Producto erróneo» ahora pide confirmación, porque ese renglón pasa a Bodega de vencidos al cargar la compra. Pasó con ATROLIP 20 mg (compra 6534): lo marcaron por error y era el producto correcto.

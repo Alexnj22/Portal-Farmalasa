@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.8 — Borde del logo horizontal redondeado
+
+- App de clientes: el borde blanco del logo horizontal se rehízo redondo y suavizado (antes salía con esquinas cuadradas).
+
 ## v2.1500.7 — Barra del chat visible en Android
 
 - App de clientes (Android): la barra para escribir del chat había quedado detrás de la barra de navegación (sólo se veían los atajos) y no subía con el teclado. Ahora se comporta como en iPhone.

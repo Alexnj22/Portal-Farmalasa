@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1489.2 — Escáner: un código de ceros no es un producto
+
+El escáner ya no confunde un código de puros ceros con un producto.
+
 ## v2.1489.1 — App del personal: Efectivo, colores y vacíos
 
 **Por qué.** Cierre de lo pendiente de la auditoría de la app del personal.

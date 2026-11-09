@@ -1336,6 +1336,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const codigo = String(body?.codigo ?? "").trim();
       if (!/^\d{6,14}$/.test(codigo)) return json({ ok: true, id: null });
       const sinCeros = codigo.replace(/^0+/, "");
+      // Hay fichas con «0» como código: sin esto, un código de ceros las encontraba.
+      if (sinCeros.length < 6) return json({ ok: true, id: null });
       const variantes = [...new Set([codigo, sinCeros, `0${sinCeros}`])];
       const { data, error } = await admin.from("products").select("id, activo, oculto_en_ventas")
         .in("codigo_barras", variantes).limit(10);

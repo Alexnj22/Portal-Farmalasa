@@ -1342,6 +1342,48 @@ export type Database = {
           },
         ]
       }
+      app_cliente_familiares: {
+        Row: {
+          autorizado_at: string
+          created_at: string
+          customer_id: number
+          id: number
+          nombre: string
+          parentesco: string
+        }
+        Insert: {
+          autorizado_at?: string
+          created_at?: string
+          customer_id: number
+          id?: never
+          nombre: string
+          parentesco: string
+        }
+        Update: {
+          autorizado_at?: string
+          created_at?: string
+          customer_id?: number
+          id?: never
+          nombre?: string
+          parentesco?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "app_cliente_familiares_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "app_cliente_familiares_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "dte_rechazos_vigentes"
+            referencedColumns: ["customer_id"]
+          },
+        ]
+      }
       app_cliente_fotos: {
         Row: {
           created_at: string
@@ -2603,6 +2645,7 @@ export type Database = {
           dura_cliente: number | null
           dura_dias: number | null
           estado: string
+          familiar_id: number | null
           id: number
           intervalo_dias: number
           motivo: string | null
@@ -2624,6 +2667,7 @@ export type Database = {
           dura_cliente?: number | null
           dura_dias?: number | null
           estado?: string
+          familiar_id?: number | null
           id?: number
           intervalo_dias: number
           motivo?: string | null
@@ -2645,6 +2689,7 @@ export type Database = {
           dura_cliente?: number | null
           dura_dias?: number | null
           estado?: string
+          familiar_id?: number | null
           id?: number
           intervalo_dias?: number
           motivo?: string | null
@@ -2671,6 +2716,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "dte_rechazos_vigentes"
             referencedColumns: ["customer_id"]
+          },
+          {
+            foreignKeyName: "app_tratamientos_familiar_id_fkey"
+            columns: ["familiar_id"]
+            isOneToOne: false
+            referencedRelation: "app_cliente_familiares"
+            referencedColumns: ["id"]
           },
         ]
       }

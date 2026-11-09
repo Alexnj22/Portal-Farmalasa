@@ -235,6 +235,27 @@ async function avisarFueraDeCatalogo(
   return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados, callados };
 }
 
+// deno-lint-ignore no-explicit-any
+function medirCodigos(productos: any[]) {
+  const campos = new Set<string>();
+  let conDistinto = 0, conVarios = 0;
+  for (const p of productos) {
+    const general = String(p.codigo_barras ?? '').trim();
+    const propios = new Set<string>();
+    for (const pres of (p.presentaciones ?? [])) {
+      for (const k of Object.keys(pres)) {
+        if (!/barra|barcode/i.test(k)) continue;
+        campos.add(k);
+        const v = String(pres[k] ?? '').trim();
+        if (v && v !== '0' && v !== general) propios.add(v);
+      }
+    }
+    if (propios.size) conDistinto++;
+    if (propios.size > 1) conVarios++;
+  }
+  return { productos: productos.length, campos: [...campos], con_distinto: conDistinto, con_varios: conVarios };
+}
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === 'OPTIONS') return new Response('ok', { headers: corsHeaders });
@@ -584,6 +605,9 @@ Deno.serve(async (req) => {
         // log: es la única forma de mirar el estado de este control sin buscar
         // en los registros de una corrida vieja.
         fuera_de_catalogo: fueraDeCatalogo,
+        // Medición temporal (2026-11-09): cuántos productos traen por presentación
+        // un código distinto del general. Se quita al decidir el escáner.
+        medicion_codigos: medirCodigos(productos),
         errors:           upsertErrors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

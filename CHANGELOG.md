@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1488.0 — App de clientes: Mi familia (cerrada) y medición de códigos
+
+Base de «Mi familia»: personas a cargo y de quién es cada tratamiento. Queda cerrada a los clientes hasta publicar el aviso de privacidad aprobado. El sync de productos mide los códigos de barras por presentación.
+
 ## v2.1487.0 — La app del personal se actualiza por aire
 
 - La app del personal podrá recibir cambios de pantalla sin pasar por la tienda,

@@ -278,6 +278,8 @@ async function borrarLoPersonal(admin: any, customerId: number) {
   const { error: eCa } = await admin.rpc("app_cancelar_reservas_abiertas_sin_pago", { p_customer: customerId });
   if (eCa) throw eCa;
 
+  const { error: eFa } = await admin.from("app_cliente_familiares").delete().eq("customer_id", customerId);
+  if (eFa) throw eFa;
   const { error: eAv } = await admin.from("app_cliente_avisame").delete().eq("customer_id", customerId);
   if (eAv) throw eAv;
   const { data: hecho, error: eB } = await admin.rpc("app_borrar_datos_de_cuenta", { p_customer: customerId });
@@ -517,6 +519,9 @@ const VERSION_AVISO = `${TEXTOS.version} · ${TEXTOS.aviso}`;
 // reglamento cambia solo el día que rige el nuevo, y un isolate vivo desde la
 // víspera seguiría pidiendo el viejo. Subir una = la app le vuelve a pedir la
 // aceptación (sólo esa página) a todo el mundo.
+
+// «Mi familia» se abre con este secreto, después de publicar el aviso aprobado.
+const FAMILIA_ABIERTA = Deno.env.get("FAMILIA_ABIERTA") === "1";
 
 async function vigentesHoy(admin: any) {
   // La fecha del v2 sale de la base, la misma que enciende el resto del
@@ -1736,7 +1741,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["avisame_ver", "avisame", "solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["familia_lista", "familia_agregar", "familia_quitar", "tratamiento_asignar", "avisame_ver", "avisame", "solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -3163,11 +3168,55 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       });
     }
 
+    // ── Mi familia (2026-11-09) ─────────────────────────────────────────
+    // Cerrada hasta publicar el aviso: docs/legal/BORRADOR-aviso-privacidad-familiares.md.
+    if (["familia_lista", "familia_agregar", "familia_quitar", "tratamiento_asignar"].includes(accion)) {
+      if (!FAMILIA_ABIERTA) return json({ ok: false, mensaje: "Esta opción todavía no está disponible." });
+      if (accion === "familia_lista") {
+        const { data, error } = await admin.from("app_cliente_familiares").select("id, nombre, parentesco").eq("customer_id", customerId).order("id");
+        if (error) throw error;
+        return json({ ok: true, familiares: data ?? [] });
+      }
+      if (accion === "familia_agregar") {
+        const nombre = String(body?.nombre ?? "").trim();
+        const parentesco = String(body?.parentesco ?? "");
+        if (nombre.length < 1 || nombre.length > 40) return json({ ok: false, mensaje: "Escribe un nombre o apodo." });
+        if (!["hijo", "padre_madre", "abuelo", "conyuge", "otro"].includes(parentesco)) return json({ ok: false, mensaje: "Elige el parentesco." });
+        if (body?.autoriza !== true) return json({ ok: false, mensaje: "Confirma que puedes gestionar sus medicamentos." });
+        const { count, error: eC } = await admin.from("app_cliente_familiares").select("id", { count: "exact", head: true }).eq("customer_id", customerId);
+        if (eC) throw eC;
+        if ((count ?? 0) >= 10) return json({ ok: false, mensaje: "Puedes agregar hasta 10 personas." });
+        const { error } = await admin.from("app_cliente_familiares").insert({ customer_id: customerId, nombre, parentesco });
+        if (error) throw error;
+        return json({ ok: true });
+      }
+      if (accion === "familia_quitar") {
+        const { error } = await admin.from("app_cliente_familiares").delete().eq("id", Number(body?.id)).eq("customer_id", customerId);
+        if (error) throw error;
+        return json({ ok: true });
+      }
+      const familiarId = body?.familiar_id == null ? null : Number(body.familiar_id);
+      if (familiarId !== null) {
+        const { data: fam, error: eF } = await admin.from("app_cliente_familiares").select("id").eq("id", familiarId).eq("customer_id", customerId).maybeSingle();
+        if (eF) throw eF;
+        if (!fam) return json({ ok: false, mensaje: "Esa persona ya no está en tu familia." });
+      }
+      const { error } = await admin.from("app_tratamientos").update({ familiar_id: familiarId }).eq("id", Number(body?.id)).eq("customer_id", customerId);
+      if (error) throw error;
+      return json({ ok: true });
+    }
+
     // ── Recordatorios de tratamiento (2026-10-07) ───────────────────────
     if (accion === "mis_tratamientos") {
       const { data, error } = await admin.rpc("app_tratamientos_de", { p_customer: customerId });
       if (error) throw error;
-      return json({ ok: true, tratamientos: data ?? [] });
+      let familiares: unknown[] = [];
+      if (FAMILIA_ABIERTA) {
+        const { data: fam, error: eF } = await admin.from("app_cliente_familiares").select("id, nombre").eq("customer_id", customerId).order("id");
+        if (eF) throw eF;
+        familiares = fam ?? [];
+      }
+      return json({ ok: true, tratamientos: data ?? [], familiares });
     }
     if (accion === "tratamiento_cambiar") {
       const { error } = await admin.rpc("app_tratamiento_cambiar", {
@@ -4373,6 +4422,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // Empleado activo (por DUI): tarjeta de Equipo, precio Mayoreo Plus (2026-10-08).
         empleado,
         // Los tratamientos activos, los que se acaban primero (Inicio, 2026-10-08).
+        familia_abierta: FAMILIA_ABIERTA,
         tratamientos,
         // Encuestas por responder (para la tarjeta del Inicio).
         encuesta,

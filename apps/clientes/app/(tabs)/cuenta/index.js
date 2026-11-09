@@ -441,6 +441,7 @@ export default function Cuenta() {
           <FilaAccion sf="syringe.fill" tinte={t.acentos.verde.fuerte} texto="Mis inyecciones" insignia={inyecciones}
             detalle={inyecciones ? `${plural(inyecciones, 'por aplicar', 'por aplicar')}` : 'Al día'}
             alTocar={() => navegar('/inyecciones')} />
+          {resumen?.familia_abierta ? <FilaAccion sf="person.3.fill" tinte={t.color.magenta} texto="Mi familia" detalle="Organiza los tratamientos de quienes cuidas" alTocar={() => navegar('/familia')} /> : null}
         </Grupo>
       ) : null}
 

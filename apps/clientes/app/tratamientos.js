@@ -20,7 +20,7 @@
 // no al recordatorio»), y al agregar un medicamento se puede pasar directo a
 // «Recordarme tomarlo».
 import { useCallback, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, ScrollView, Text, View } from 'react-native';
 import Presionable from '../componentes/Presionable';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -92,6 +92,12 @@ export default function Tratamientos() {
       cargar();
     } },
   ]);
+  const asignar = async (t, familiarId) => {
+    Haptics.selectionAsync().catch(() => {});
+    setD((a) => ({ ...a, tratamientos: a.tratamientos.map((x) => (x.id === t.id ? { ...x, familiar_id: familiarId } : x)) }));
+    const r = await pedir('tratamiento_asignar', { id: t.id, familiar_id: familiarId });
+    if (!r?.ok) { Alert.alert('No se pudo guardar', r?.mensaje ?? 'Revisa tu conexión.'); cargar(); }
+  };
   const yaNo = (t) => {
     const elegir = (i) => {
       if (i == null || i >= MOTIVOS.length) return;
@@ -140,7 +146,7 @@ export default function Tratamientos() {
         <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí. Si tomas uno que no aparece, agrégalo.</Vacio>
       ) : null}
       <View style={{ flexDirection: 'row' }}><Boton texto="Agregar un medicamento que tomo" sf="plus" alTocar={() => setAgregando(true)} /></View>
-      {activos.map((t) => <Fila key={t.id} t={t} alVer={() => (TOMAS ? setTomas(t) : navegar(`/producto/${t.product_id}`))} alVolver={() => volverAPedir(t)}
+      {activos.map((t) => <Fila key={t.id} t={t} familiares={d.familiares} alAsignar={asignar} alVer={() => (TOMAS ? setTomas(t) : navegar(`/producto/${t.product_id}`))} alVolver={() => volverAPedir(t)}
         volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
         alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined} />)}
       {apagados.length ? <Seccion estilo={{ marginTop: 8 }}>Ya no lo tomo</Seccion> : null}
@@ -151,7 +157,7 @@ export default function Tratamientos() {
   );
 }
 
-function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDeLaLista }) {
+function Fila({ t, familiares = [], alAsignar, apagado, alVer, alVolver, volviendo, alApagar, alEncender, alRecordar, alPreguntar, alQuitarDeLaLista }) {
   const tema = useTema();
   const pid = String(t.product_id);
   const recordatorio = useTomas((s) => s.config[pid]);
@@ -171,6 +177,20 @@ function Fila({ t, apagado, alVer, alVolver, volviendo, alApagar, alEncender, al
   const color = urgente ? tema.color.magenta : tema.color.verde;
   return (
     <Tarjeta estilo={{ gap: 12, opacity: apagado ? 0.65 : 1 }}>
+      {/* De quién es (2026-11-09): sólo con «Mi familia» abierta y alguien agregado. */}
+      {familiares.length && alAsignar ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
+          {[{ id: null, nombre: 'Para mí' }, ...familiares].map((f) => {
+            const si = (t.familiar_id ?? null) === f.id;
+            return (
+              <Presionable key={f.id ?? 'yo'} onPress={() => alAsignar(t, f.id)} accessibilityRole="button" accessibilityState={{ selected: si }}
+                style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12, borderRadius: 999, backgroundColor: si ? tema.color.magenta : suave(tema.color.magenta, tema.oscuro ? 0.22 : 0.1) }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: si ? '#FFFFFF' : tema.color.magentaTexto }}>{f.nombre}</Text>
+              </Presionable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
       <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
         <View style={{ width: 42, height: 42, borderRadius: 13, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(color, tema.oscuro ? 0.26 : 0.15) }}>
           <Icono sf="pills.fill" respaldo="💊" tam={19} color={urgente ? tema.color.magentaTexto : tema.color.verdeTexto} />

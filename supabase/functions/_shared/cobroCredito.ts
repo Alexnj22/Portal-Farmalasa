@@ -208,3 +208,71 @@ export function decidirAprobacion(p: {
     porLecturaSinFirma,
   };
 }
+
+// ── La nota de la solicitud: decir EXACTAMENTE por qué espera firma ──────────
+//
+// Pedido del usuario (2026-11-09), ante un abono de tarjeta de $52.15 cuya nota
+// decía «No se pudo comprobar la lectura del comprobante»: «debe ser mucho más
+// exacto, si no no entiendo». Nada había fallado — quien cobró eligió «Solicitar
+// aprobación» sin foto del voucher, y como la lectura faltaba, el servidor le
+// pegaba el texto pensado para una lectura vencida o alterada. Cada causa tiene
+// ahora su frase, y lo que tiene que hacer quien firma va con el monto.
+
+const PAPEL: Record<string, string> = {
+  Tarjeta: "el voucher de la tarjeta",
+  Transferencia: "el comprobante de la transferencia",
+  Cheque: "el cheque",
+};
+
+export function notaDeAprobacion(p: {
+  forma: string;
+  monto: number;
+  pideElNavegador: boolean;
+  /** ¿Llegó alguna lectura? (`body.lectura` no nulo) */
+  hayLectura: boolean;
+  lectura: { valida: true; forma?: string } | { valida: false; motivo: string };
+  /** La forma que dice la lectura, aunque no haya pasado la firma. */
+  formaLeida?: string | null;
+  decision: { porBeneficiario: boolean; porLecturaSinFirma: boolean };
+  beneficiarioLeido?: string;
+  motivo?: string;
+  documento?: string;
+}): string {
+  const papel = PAPEL[p.forma] ?? "el comprobante";
+  // «de el voucher» → «del voucher».
+  const dePapel = papel.startsWith("el ") ? `del ${papel.slice(3)}` : `de ${papel}`;
+  const monto = `$${Number(p.monto).toFixed(2)}`;
+  const motivo = String(p.motivo ?? "").trim();
+  const dijo = motivo ? ` Quien cobró escribió: «${motivo}».` : "";
+  const comprobar = ` Revisar en el estado de cuenta que entraron los ${monto} antes de confirmar.`;
+
+  if (p.decision.porBeneficiario) {
+    const benef = String(p.beneficiarioLeido ?? "").trim();
+    return (benef
+      ? `${cap(papel)} no está a nombre de la empresa: dice «${benef}».`
+      : `En ${papel} no se pudo leer a quién se le pagó.`) + comprobar + dijo;
+  }
+
+  if (p.decision.porLecturaSinFirma) {
+    let porque: string;
+    if (!p.hayLectura) {
+      porque = p.pideElNavegador
+        ? `Cobro con ${p.forma.toLowerCase()} sin foto ${dePapel}: quien cobró lo mandó a aprobación.`
+        : `Cobro con ${p.forma.toLowerCase()} que llegó sin foto ${dePapel}.`;
+    } else {
+      const m = (p.lectura as { motivo?: string }).motivo;
+      porque = m === "vencida"
+        ? `La foto ${dePapel} se leyó hace más de 6 horas y esa lectura ya no vale.`
+        : m === "otra_forma"
+        ? `La foto se leyó como ${String(p.formaLeida ?? "otra forma").toLowerCase()}, pero el cobro se registró con ${p.forma.toLowerCase()}.`
+        : m === "no_coincide"
+        ? `La lectura ${dePapel} llegó cambiada: no coincide con la que hizo el portal.`
+        : `La lectura ${dePapel} llegó sin la marca del portal.`;
+    }
+    return porque + comprobar + dijo;
+  }
+
+  return motivo || String(p.documento ?? "").trim() || "Sin detalle";
+}
+
+function cap(s: string): string { return s.charAt(0).toUpperCase() + s.slice(1); }

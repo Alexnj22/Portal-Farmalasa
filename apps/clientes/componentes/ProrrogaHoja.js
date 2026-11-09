@@ -6,7 +6,7 @@
 // La acción es `pedir_prorroga` de `app-clientes`; la base valida que sea del
 // cliente, que esté lista y que no tenga ya una prórroga.
 import { useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -72,7 +72,7 @@ export default function ProrrogaHoja({ tipo, ids, titulo, vence, alCerrar, alPed
   const campo = { minHeight: 52, borderRadius: 16, paddingHorizontal: 14, fontSize: 16, color: colorSistema.texto, backgroundColor: superficie };
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior="padding">
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
           <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>Pedir más tiempo</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>

@@ -7,7 +7,7 @@ import {
 } from "../_shared/creditos.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import {
-  abonoQueYaEntro, decidirAprobacion, revisarContraElSaldoVivo, verificarLectura,
+  abonoQueYaEntro, decidirAprobacion, notaDeAprobacion, revisarContraElSaldoVivo, verificarLectura,
   type CreditoVivo,
 } from "../_shared/cobroCredito.ts";
 
@@ -1233,14 +1233,17 @@ Deno.serve(async (req) => {
              * DICE: quien firma tiene que saber qué se le está preguntando. Sin
              * esto le llega un abono normal y no hay nada que le indique que lo
              * que se le pide es comprobar que el dinero entró. */
-            note: dudaDeBeneficiario
-              ? ((decision.porBeneficiario
-                  ? "El comprobante no está a nombre de la empresa"
-                    + (beneficiarioLeido ? `: dice «${beneficiarioLeido}»` : " y no se leyó a quién se le pagó")
-                  : "No se pudo comprobar la lectura del comprobante")
-                 + ". Comprobar que el pago entró antes de confirmarlo."
-                 + (String(body.motivo ?? "").trim() ? ` — ${String(body.motivo).trim()}` : ""))
-              : (String(body.motivo ?? "").trim() || documento || "Sin detalle"),
+            /* La frase exacta por causa vive en `notaDeAprobacion`
+             * (_shared/cobroCredito.ts), probada en tests/unit. */
+            note: notaDeAprobacion({
+              forma, monto: montoDoc,
+              pideElNavegador: body.requiereAprobacion === true,
+              hayLectura: body.lectura != null,
+              lectura: lecturaFirmada,
+              formaLeida: (body.lectura as { forma?: string } | null)?.forma ?? null,
+              decision, beneficiarioLeido,
+              motivo: String(body.motivo ?? ""), documento,
+            }),
             metadata: {
               branch_id: sala, cliente: ficha?.cliente ?? renglones[0].cliente,
               customer_id: ficha?.customer_id ?? null,

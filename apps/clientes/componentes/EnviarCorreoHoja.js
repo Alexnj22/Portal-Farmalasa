@@ -7,7 +7,7 @@
 // El envío lo hace la función (`facturas_enviar`): valida que las facturas
 // sean de esta cuenta, el correo y los topes (30 facturas, 10 correos al día).
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, KeyboardAvoidingView, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -103,7 +103,7 @@ export default function EnviarCorreoHoja({ ids, resumen, alCerrar, alEnviar }) {
   const n = ids.length;
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior="padding">
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
           <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Enviado!' : 'Enviar por correo'}</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>

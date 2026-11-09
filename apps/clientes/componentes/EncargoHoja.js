@@ -3,7 +3,7 @@
 // solicitud y confirman precio y fecha. El cliente paga el anticipo después,
 // cuando ya sabe cuánto cuesta y cuándo llega.
 import { useRef, useState } from 'react';
-import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, KeyboardAvoidingView, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import Presionable from './Presionable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -53,7 +53,7 @@ export default function EncargoHoja({ producto, presentacion, salas, alCerrar })
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={alCerrar}>
       {/* El teclado de la nota tapaba la nota y el botón (2026-11-04): la hoja
           se ENCOGE con el teclado, como ProrrogaHoja. */}
-      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <KeyboardAvoidingView style={{ flex: 1, backgroundColor: fondo }} behavior="padding">
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 12, padding: 18 }}>
           <Text style={{ flex: 1, fontSize: 20, fontWeight: '800', color: colorSistema.texto }}>{hecho ? '¡Solicitud enviada!' : 'Pedir por encargo'}</Text>
           <Presionable onPress={alCerrar} hitSlop={12} accessibilityRole="button"><Text style={{ fontSize: 17, fontWeight: '600', color: colorSistema.texto }}>Cerrar</Text></Presionable>

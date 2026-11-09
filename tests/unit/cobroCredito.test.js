@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-    abonoQueYaEntro, decidirAprobacion, firmarLectura, revisarContraElSaldoVivo,
+    abonoQueYaEntro, decidirAprobacion, firmarLectura, notaDeAprobacion, revisarContraElSaldoVivo,
     verificarLectura, VIGENCIA_LECTURA_MS,
 } from '../../supabase/functions/_shared/cobroCredito.ts';
 
@@ -136,5 +136,45 @@ describe('decidirAprobacion — la exigencia la decide el servidor', () => {
 
     it('el efectivo no tiene papel: sin lectura no se inventa una duda', () => {
         expect(decidirAprobacion({ forma: 'Efectivo', pideElNavegador: false, lectura: invalida }).pide).toBe(false);
+    });
+});
+
+describe('notaDeAprobacion — quien firma entiende por qué espera', () => {
+    const sinFirma = { valida: false, motivo: 'sin_firma' };
+    const duda = { porBeneficiario: false, porLecturaSinFirma: true };
+
+    it('tarjeta sin foto que pidió aprobación quien cobró (el caso de los $52.15)', () => {
+        const n = notaDeAprobacion({
+            forma: 'Tarjeta', monto: 52.15, pideElNavegador: true, hayLectura: false,
+            lectura: sinFirma, decision: duda, motivo: 'se abono en tarjeta el resto',
+        });
+        expect(n).toBe('Cobro con tarjeta sin foto del voucher de la tarjeta: quien cobró lo mandó a aprobación.'
+            + ' Revisar en el estado de cuenta que entraron los $52.15 antes de confirmar.'
+            + ' Quien cobró escribió: «se abono en tarjeta el resto».');
+        expect(n).not.toMatch(/No se pudo comprobar/);
+    });
+
+    it('lectura vencida, cambiada o de otra forma: cada una dice la suya', () => {
+        const base = { forma: 'Transferencia', monto: 10, pideElNavegador: false, hayLectura: true, decision: duda };
+        expect(notaDeAprobacion({ ...base, lectura: { valida: false, motivo: 'vencida' } })).toMatch(/más de 6 horas/);
+        expect(notaDeAprobacion({ ...base, lectura: { valida: false, motivo: 'no_coincide' } })).toMatch(/llegó cambiada/);
+        expect(notaDeAprobacion({ ...base, lectura: { valida: false, motivo: 'otra_forma' }, formaLeida: 'Tarjeta' }))
+            .toMatch(/se leyó como tarjeta, pero el cobro se registró con transferencia/);
+    });
+
+    it('beneficiario ajeno: dice a nombre de quién', () => {
+        const n = notaDeAprobacion({
+            forma: 'Transferencia', monto: 35.57, pideElNavegador: false, hayLectura: true,
+            lectura: { valida: true }, decision: { porBeneficiario: true, porLecturaSinFirma: false },
+            beneficiarioLeido: 'JUAN PEREZ',
+        });
+        expect(n).toMatch(/^El comprobante de la transferencia no está a nombre de la empresa: dice «JUAN PEREZ»/);
+    });
+
+    it('sin duda: queda sólo el motivo de quien cobró', () => {
+        expect(notaDeAprobacion({
+            forma: 'Otro', monto: 5, pideElNavegador: true, hayLectura: false, lectura: sinFirma,
+            decision: { porBeneficiario: false, porLecturaSinFirma: false }, motivo: 'pago con cupón',
+        })).toBe('pago con cupón');
     });
 });

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.4 — El abono por aprobar dice exactamente por qué espera firma
+
+- Cuentas por cobrar: la nota de un abono que espera firma ya no dice «No se pudo comprobar la lectura del comprobante» cuando nada falló. Dice la causa real: cobro con tarjeta sin foto del voucher que quien cobró mandó a aprobación, lectura vencida, lectura de otra forma de pago, lectura cambiada o beneficiario ajeno. Además dice qué revisar, con el monto («Revisar en el estado de cuenta que entraron los $52.15…»), y el motivo de quien cobró, entre comillas.
+
+## v2.1500.3 — Encargo, prórroga y correo sobre el teclado en Android
+
+- App de clientes (Android): las hojas de Encargar, Prórroga y Enviar por correo suben con el teclado.
+
 ## v2.1500.2 — Pantallas y hojas de la app sobre el teclado
 
 - App de clientes: todas las pantallas con campos (carrito, encuesta, familia), la hoja de tomas y los cuadros de texto de Android se acomodan al teclado; en iPhone las listas largas desplazan el campo a la vista.

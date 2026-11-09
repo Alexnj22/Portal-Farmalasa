@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1499.0 — Fotos de productos sin margen blanco
+
+- Fotos de productos y logos de laboratorios: al subirlos desde el portal se recorta solo el margen blanco, para que el producto llene su espacio.
+- Las 516 fotos que tenían mucho margen se recortaron; los originales se conservan.
+
 ## v2.1498.2 — Compras: un documento sin sello de Hacienda no se carga (2026-11-09)
 
 - «Revisar carga» frena un DTE sin sello de recepción válido (40 caracteres):

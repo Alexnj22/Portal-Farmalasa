@@ -95,16 +95,58 @@ export async function comprimirFotoDeEmpleado(file, maxWidth = 400) {
  * dentro de la ficha del catálogo; salió el 2026-10-30 porque Fotos de
  * productos sube al mismo bucket y la foto tiene que salir igual.
  */
+// El recuadro del producto sin el margen blanco (2026-11-09): en la app, el
+// margen dentro del archivo hacía ver chico al producto. Una fila o columna
+// cuenta si tiene al menos 4 píxeles oscuros, para no agrandar el recorte por
+// una mota suelta. Deja 2 % de aire. Sin nada que recortar, la imagen entera.
+function recuadroSinMargen(img) {
+    const entera = { x: 0, y: 0, ancho: img.width, alto: img.height };
+    const escala = Math.min(1, 400 / Math.max(img.width, img.height));
+    const w = Math.max(1, Math.round(img.width * escala));
+    const h = Math.max(1, Math.round(img.height * escala));
+    const c = document.createElement('canvas');
+    c.width = w;
+    c.height = h;
+    const ctx = c.getContext('2d', { willReadFrequently: true });
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, w, h);
+    ctx.drawImage(img, 0, 0, w, h);
+    const { data } = ctx.getImageData(0, 0, w, h);
+    const filas = new Array(h).fill(0);
+    const columnas = new Array(w).fill(0);
+    for (let y = 0; y < h; y++) {
+        for (let x = 0; x < w; x++) {
+            const i = (y * w + x) * 4;
+            if (0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2] < 238) { filas[y]++; columnas[x]++; }
+        }
+    }
+    const conProducto = (v) => v >= 4;
+    const y0 = filas.findIndex(conProducto);
+    const x0 = columnas.findIndex(conProducto);
+    if (y0 < 0 || x0 < 0) return entera;
+    const y1 = filas.findLastIndex(conProducto) + 1;
+    const x1 = columnas.findLastIndex(conProducto) + 1;
+    const aire = 0.02 * Math.max(img.width, img.height);
+    const x = Math.max(0, x0 / w * img.width - aire);
+    const y = Math.max(0, y0 / h * img.height - aire);
+    return {
+        x, y,
+        ancho: Math.min(img.width, x1 / w * img.width + aire) - x,
+        alto: Math.min(img.height, y1 / h * img.height + aire) - y,
+    };
+}
+
 export async function fotoDeCatalogo(archivo, ladoMaximo = 800, calidad = 0.85) {
     const img = await abrirImagen(archivo);
-    const escala = Math.min(1, ladoMaximo / Math.max(img.width, img.height));
+    const r = recuadroSinMargen(img);
+    const escala = Math.min(1, ladoMaximo / Math.max(r.ancho, r.alto));
     const c = document.createElement('canvas');
-    c.width = Math.round(img.width * escala);
-    c.height = Math.round(img.height * escala);
+    c.width = Math.max(1, Math.round(r.ancho * escala));
+    c.height = Math.max(1, Math.round(r.alto * escala));
     const ctx = c.getContext('2d');
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(img, 0, 0, c.width, c.height);
+    ctx.drawImage(img, r.x, r.y, r.ancho, r.alto, 0, 0, c.width, c.height);
     return new Promise((resolve, reject) => {
         c.toBlob((blob) => (blob ? resolve(blob) : reject(new Error('No se pudo preparar la foto.'))), 'image/jpeg', calidad);
     });

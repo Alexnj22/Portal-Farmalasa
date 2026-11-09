@@ -1,11 +1,13 @@
 #!/usr/bin/env node
-// Publica una actualización POR AIRE de la app de clientes (2026-10-29): el
+// Publica una actualización POR AIRE de una app (clientes por omisión; la del
+// personal con --app=personal): el
 // JavaScript y las imágenes de la app, sin pasar por la tienda. La app lo baja
 // al abrir y lo usa la próxima vez que se abre.
 //
 //   npm run app:actualizar -- "Qué cambia"                 → iPhone y Android
 //   npm run app:actualizar -- "Qué cambia" --plataforma=ios
 //   npm run app:actualizar -- --ver                         → qué saldría, sin publicar
+//   npm run app:actualizar -- "Qué cambia" --app=personal   → la app del personal
 //
 // ── Qué NO puede ir por aire ────────────────────────────────────────────────
 // Lo nativo: un módulo nuevo, un permiso, el widget, un cambio en app.json que
@@ -33,10 +35,13 @@ import { exigirHuellaEstable } from './lib/huella-estable.mjs';
 const PROYECTO = 'sacecdkdmsdvgqnrsett';
 const URL_BASE = `https://${PROYECTO}.supabase.co`;
 const BUCKET = 'app-actualizaciones';
-const CARPETA = resolve('apps/clientes');
-const PERFIL = 'clientes';
-
 const args = process.argv.slice(2);
+const APPS = { clientes: { carpeta: 'apps/clientes', perfil: 'clientes' }, personal: { carpeta: 'apps/mobile', perfil: 'interna' } };
+const APP = args.find((a) => a.startsWith('--app='))?.split('=')[1] ?? 'clientes';
+if (!APPS[APP]) { console.error('--app=clientes|personal'); process.exit(1); }
+const CARPETA = resolve(APPS[APP].carpeta);
+const PERFIL = APPS[APP].perfil;
+
 const ver = args.includes('--ver');
 const forzar = args.includes('--forzar');
 const plataformaArg = args.find((a) => a.startsWith('--plataforma='))?.split('=')[1];
@@ -48,9 +53,9 @@ if (!existsSync(join(CARPETA, 'app.json'))) { console.error('Correr desde la ra�
 exigirHuellaEstable(CARPETA);
 
 // ── Código commiteado ───────────────────────────────────────────────────────
-const sucio = execSync('git status --porcelain -- apps/clientes', { encoding: 'utf8' }).trim();
+const sucio = execSync(`git status --porcelain -- ${APPS[APP].carpeta}`, { encoding: 'utf8' }).trim();
 if (sucio && !forzar && !ver) {
-  console.error(`apps/clientes tiene cambios sin commitear:\n${sucio}\nCommitealos primero (o --forzar).`);
+  console.error(`${APPS[APP].carpeta} tiene cambios sin commitear:\n${sucio}\nCommitealos primero (o --forzar).`);
   process.exit(1);
 }
 const commit = execSync('git rev-parse --short HEAD', { encoding: 'utf8' }).trim();
@@ -95,7 +100,7 @@ const llave = ver ? null : llaveDelServidor();
 const cab = (extra = {}) => ({ apikey: llave, ...(String(llave).startsWith('sb_') ? {} : { Authorization: `Bearer ${llave}` }), ...extra });
 
 async function ultimaHuella(plataforma) {
-  const r = await fetch(`${URL_BASE}/rest/v1/app_actualizaciones?select=runtime_version,created_at&app=eq.clientes&plataforma=eq.${plataforma}&order=created_at.desc&limit=1`, { headers: cab() });
+  const r = await fetch(`${URL_BASE}/rest/v1/app_actualizaciones?select=runtime_version,created_at&app=eq.${APP}&plataforma=eq.${plataforma}&order=created_at.desc&limit=1`, { headers: cab() });
   if (!r.ok) throw new Error(`leer la última publicación: ${r.status} ${await r.text()}`);
   return (await r.json())[0] ?? null;
 }
@@ -137,7 +142,7 @@ try {
       const buf = readFileSync(join(salida, rel));
       const key = createHash('md5').update(buf).digest('hex');
       const hash = createHash('sha256').update(buf).digest('base64url');
-      const path = `clientes/${key}`;
+      const path = `${APP}/${key}`;
       await subir(path, buf);
       return { path, hash, key, contentType, fileExtension };
     };
@@ -150,7 +155,7 @@ try {
     const r = await fetch(`${URL_BASE}/rest/v1/app_actualizaciones`, {
       method: 'POST',
       headers: cab({ 'Content-Type': 'application/json', Prefer: 'return=representation' }),
-      body: JSON.stringify({ app: 'clientes', plataforma: p, runtime_version: huellas[p], manifiesto: { launchAsset, assets, expoClient }, mensaje, commit_git: commit }),
+      body: JSON.stringify({ app: APP, plataforma: p, runtime_version: huellas[p], manifiesto: { launchAsset, assets, expoClient }, mensaje, commit_git: commit }),
     });
     if (!r.ok) throw new Error(`registrar ${p}: ${r.status} ${await r.text()}`);
     const [fila] = await r.json();

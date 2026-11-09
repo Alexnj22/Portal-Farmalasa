@@ -1,5 +1,6 @@
 // supabase/functions/app-actualizaciones/index.ts
-// Actualizaciones por aire de la app de clientes (2026-10-29): el servidor del
+// Actualizaciones por aire de las apps (clientes y, desde el 2026-11-09, la del
+// personal, que pregunta con `?app=personal`): el servidor del
 // protocolo de expo-updates (versión 1), en vez del de Expo (EAS Update).
 //
 // La app pregunta al abrir, con `expo-platform` y `expo-runtime-version` (la
@@ -31,12 +32,15 @@ Deno.serve(async (req) => {
   const runtime = req.headers.get("expo-runtime-version") ?? new URL(req.url).searchParams.get("runtime-version");
   if (plataforma !== "ios" && plataforma !== "android") return mal("expo-platform no válido");
   if (!runtime) return mal("Falta expo-runtime-version");
+  // Sin el parámetro es clientes: así preguntan los binarios ya instalados.
+  const app = new URL(req.url).searchParams.get("app") ?? "clientes";
+  if (app !== "clientes" && app !== "personal") return mal("app no válida");
   if (req.headers.get("expo-protocol-version") === "0") return mal("Sólo el protocolo 1");
 
   const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
   const { data: fila, error } = await admin.from("app_actualizaciones")
     .select("id, created_at, runtime_version, manifiesto")
-    .eq("app", "clientes").eq("plataforma", plataforma).eq("runtime_version", runtime).eq("activa", true)
+    .eq("app", app).eq("plataforma", plataforma).eq("runtime_version", runtime).eq("activa", true)
     .order("created_at", { ascending: false }).limit(1).maybeSingle();
   if (error) { console.error("app-actualizaciones:", error.message); return mal("No se pudo consultar", 500); }
   if (!fila || req.headers.get("expo-current-update-id") === fila.id) return nada();

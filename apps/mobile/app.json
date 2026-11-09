@@ -123,6 +123,15 @@
         "projectId": "5ee44446-9513-4ab9-b738-761a6d550187"
       }
     },
-    "owner": "farmasalud"
+    "owner": "farmasalud",
+    "runtimeVersion": {
+      "policy": "fingerprint"
+    },
+    "updates": {
+      "url": "https://sacecdkdmsdvgqnrsett.supabase.co/functions/v1/app-actualizaciones?app=personal",
+      "enabled": true,
+      "checkAutomatically": "ON_LOAD",
+      "fallbackToCacheTimeout": 0
+    }
   }
 }

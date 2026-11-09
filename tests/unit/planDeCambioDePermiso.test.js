@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { HIJOS_DE_APROBAR, filasCopiadasDe, planDeCambioDePermiso } from '@nucleo/utils/permisosDeCargo';
+import { HIJOS_DE_APROBAR, filasCopiadasDe, filasParaActivarTodo, planDeCambioDePermiso } from '@nucleo/utils/permisosDeCargo';
+import { MODULE_GROUPS } from '@nucleo/constants/permissionModules';
 
 const G = [
     { group: 'A', modules: [
@@ -8,6 +9,32 @@ const G = [
         { key: 'requests' },
     ] },
 ];
+
+describe('una capacidad tiene un solo interruptor y da «Gestionar»', () => {
+    const C = [{ group: 'A', modules: [{ key: 'bolsas', sub: [
+        { key: 'bolsas_conteo', tipo: 'cap' }, { key: 'bolsas_tab', tipo: 'tab' },
+    ] }] }];
+    const cambio = (permisos, moduleKey, value) => planDeCambioDePermiso({ permisos, roleId: 1, moduleKey, permType: 'can_view', value, moduleGroups: C });
+
+    it('encender una capacidad guarda ver y gestionar; apagarla, ninguno', () => {
+        expect(cambio({}, 'bolsas_conteo', true).principal).toMatchObject({ can_view: true, can_edit: true });
+        expect(cambio({ '1:bolsas_conteo': { can_view: true, can_edit: true } }, 'bolsas_conteo', false).principal)
+            .toMatchObject({ can_view: false, can_edit: false });
+    });
+    it('una pestaña sigue sin gestionar', () => {
+        expect(cambio({}, 'bolsas_tab', true).principal).toMatchObject({ can_view: true, can_edit: false });
+    });
+    it('«Activar todo» da gestionar a las capacidades y no a las pestañas', () => {
+        const filas = Object.fromEntries(filasParaActivarTodo({}, 1, C).map((f) => [f.module_key, f]));
+        expect(filas.bolsas.can_edit).toBe(true);
+        expect(filas.bolsas_conteo).toMatchObject({ can_view: true, can_edit: true });
+        expect(filas.bolsas_tab).toMatchObject({ can_view: true, can_edit: false });
+    });
+    it('el registro real declara «Recibir y contar» como capacidad', () => {
+        const fila = planDeCambioDePermiso({ permisos: {}, roleId: 1, moduleKey: 'bolsas_conteo', permType: 'can_view', value: true, moduleGroups: MODULE_GROUPS }).principal;
+        expect(fila.can_edit).toBe(true);
+    });
+});
 
 describe('planDeCambioDePermiso', () => {
     it('apagar «Ver» apaga gestionar, aprobar y los sub-permisos', () => {

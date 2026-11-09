@@ -42,7 +42,7 @@ import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // operaciones bulk (activate all, copy from). `isTab` conserva el nombre viejo
 // porque lo único que expresa es "no es un módulo principal".
 const MODULES = MODULE_GROUPS.flatMap(g =>
-    g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: true }))])
+    g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: true, esCapacidad: s.tipo === 'cap' }))])
 );
 /* ─── El orden de las tarjetas dentro de un grupo ───────────────────────────
  *
@@ -828,7 +828,7 @@ const PermissionsView = () => {
                     next[`${selectedRoleId}:${m.key}`] = {
                         ...prev[`${selectedRoleId}:${m.key}`],
                         can_view: true,
-                        can_edit: m.isTab ? false : true,
+                        can_edit: m.isTab ? !!m.esCapacidad : true,
                         can_approve: m.hasApprove ? true : false,
                         scope: prev[`${selectedRoleId}:${m.key}`]?.scope || 'ALL',
                     };

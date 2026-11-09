@@ -60,6 +60,10 @@ export const subsDeModulos = (moduleGroups) => Object.fromEntries(
     (moduleGroups || []).flatMap(g => g.modules.map(m => [m.key, (m.sub || []).map(s => s.key)])),
 );
 
+/** ¿Esta clave es una capacidad (`tipo: 'cap'`) y no una pestaña ni un módulo? */
+const esCapacidad = (moduleGroups, key) => (moduleGroups || [])
+    .some(g => g.modules.some(m => (m.sub || []).some(s => s.key === key && s.tipo === 'cap')));
+
 /**
  * El plan de un cambio. `permisos` es el mapa `"<rol>:<módulo>" → permiso`
  * (como lo arma `mapaDePermisos`). Devuelve:
@@ -110,6 +114,11 @@ export function planDeCambioDePermiso({ permisos, roleId, moduleKey, permType, v
     const cur = { ...p[k] };
     cur[permType] = value;
     if (permType === 'can_view' && !value) { cur.can_edit = false; cur.can_approve = false; }
+    /* Una capacidad tiene UN solo interruptor, y varias se consultan con
+     * `can_edit` («Recibir y contar el dinero» es la que lo destapó, 2026-11-09:
+     * se veía encendida y el cargo no podía contar). El interruptor escribía
+     * sólo `can_view` y `can_edit` no tenía control en ninguna pantalla. */
+    if (permType === 'can_view' && value && esCapacidad(moduleGroups, moduleKey)) cur.can_edit = true;
     estado[k] = cur;
     for (const sk of arrastra) {
         estado[`${roleId}:${sk}`] = { ...(p[`${roleId}:${sk}`] || {}), can_view: false, can_edit: false, can_approve: false };
@@ -196,9 +205,9 @@ export function filasDeSeccion(permisos, roleId, modulos, activar, ahora = new D
     }));
 }
 
-/** «Activar todo»: todo encendido —las pestañas y capacidades sin «Gestionar»—, con su alcance. */
+/** «Activar todo»: todo encendido —las pestañas sin «Gestionar», las capacidades con él—, con su alcance. */
 export function filasParaActivarTodo(permisos, roleId, moduleGroups, ahora = new Date().toISOString()) {
-    return (moduleGroups || []).flatMap(g => g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: true }))]))
+    return (moduleGroups || []).flatMap(g => g.modules.flatMap(m => [m, ...(m.sub || []).map(s => ({ key: s.key, hasApprove: false, isTab: s.tipo !== 'cap' }))]))
         .map(m => ({
             role_id: roleId, module_key: m.key,
             can_view: true, can_edit: !m.isTab, can_approve: !!m.hasApprove,

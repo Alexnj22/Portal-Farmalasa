@@ -21,6 +21,29 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1498.1 — Permisos: una capacidad encendida da también Gestionar (2026-11-09)
+
+«Recibir y contar el dinero» se veía encendida para Supervisor/a de Ventas y
+el cargo no podía contar bolsas: la capacidad tiene un solo interruptor, que
+guardaba sólo «Ver», y contar exige «Gestionar» (en la pantalla y en
+`marcar_conteo_bolsa`/`confirmar_conteo`). Funcionaba mientras el cargo era
+Super Usuario, que se salta la revisión; al apagarlo el 6-nov quedó a la vista.
+«Activar todo» tampoco lo daba.
+
+- El interruptor de una capacidad (`tipo: 'cap'`) enciende «Ver» y «Gestionar»
+  juntos, en el portal y en la app (misma regla del núcleo,
+  `planDeCambioDePermiso`). Las pestañas siguen sólo con «Ver».
+- «Activar todo» da «Gestionar» a las capacidades.
+- Las filas existentes no se reescriben: las que tienen «Ver» sin «Gestionar»
+  (p. ej. Revisión de tienda, Jefe/a de Compras) siguen igual hasta que alguien
+  toque el interruptor.
+- Datos: `bolsas_conteo` del Supervisor/a de Ventas con «Gestionar» (anotado en
+  la bitácora).
+- Mismo caso en otras seis capacidades que se consultan con «Gestionar»:
+  `bitacoras_confirmar_aware`, `bitacoras_confirmar_lote`,
+  `bitacoras_editar_antibioticos`, `distribucion_config`,
+  `distribucion_descuentos`, `inyecciones_confirmar`.
+
 ## v2.1498.0 — Partir un renglón de compra en varios productos (2026-11-09)
 
 Diszasa factura «PACK OFF FAMILY + OFF SPRAY» en un renglón y son dos productos

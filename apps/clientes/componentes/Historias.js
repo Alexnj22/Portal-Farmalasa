@@ -29,6 +29,9 @@ import { llamar } from '../lib/api';
 import { idDispositivo } from '../lib/dispositivo';
 import { useTema } from '../tema/tema';
 import Icono from './Icono';
+import FotoProducto from './FotoProducto';
+import { nombreProducto } from '../lib/catalogo';
+import { datosDePrecio } from '../lib/precioTuyo';
 import IconoWhatsapp from './IconoWhatsapp';
 import { navegar } from '../lib/navegar';
 import { useOfertas } from '../lib/ofertas';
@@ -68,6 +71,7 @@ export default function Historias({ generacion = 0, compacta = false }) {
   const token = useSesion((s) => s.token);
   const pedir = useSesion((s) => s.pedir);
   const [lista, setLista] = useState([]);
+  const [muestras, setMuestras] = useState([]);
   const [vistas, setVistas] = useState(new Set());
   const [abierta, setAbierta] = useState(null);
   // Bloqueada con Face ID: el visor se oculta (un Modal queda por encima del bloqueo).
@@ -81,6 +85,13 @@ export default function Historias({ generacion = 0, compacta = false }) {
     (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) { setLista(r.historias ?? []); if (r.whatsapp) whatsapp = r.whatsapp; } });
     leerVistas().then((l) => setVistas(new Set(l.map(String)))).catch(() => {});
   }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
+
+  useEffect(() => {
+    if (!compacta || lista.length || muestras.length) return;
+    llamar('catalogo', { q: '', desde: 0, limite: 24, ...datosDePrecio() }).then((r) => {
+      if (r?.ok) setMuestras((r.productos ?? []).filter((p) => p.foto).slice(0, 6));
+    }).catch(() => {});
+  }, [compacta, lista.length, muestras.length]);
 
   // Anota en el servidor que se vio (o que se tocó un botón), para que el
   // portal sepa cuántos la vieron. Sin cuenta, con el id aleatorio del teléfono.
@@ -97,17 +108,23 @@ export default function Historias({ generacion = 0, compacta = false }) {
     return nuevo;
   });
 
-  // PLACEHOLDER TEMPORAL (2026-11-09, para ver el acomodo): sin historias reales.
+  // Sin historias publicadas, productos del catálogo: igual que las promociones
+  // de la Tienda (2026-11-09). Tocar uno abre su ficha.
   if (!lista.length) {
-    if (!compacta) return null;
+    if (!compacta || !muestras.length) return null;
     return (
-      <View style={{ flexDirection: 'row', gap: 8, marginLeft: 10 }}>
-        {[1, 2, 3].map((n) => (
-          <LinearGradient key={n} colors={['#FFD60A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 2, borderRadius: 40 }}>
-            <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: t.oscuro ? '#2A2630' : '#FFFFFF' }} />
-          </LinearGradient>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, flexShrink: 1, maxWidth: '50%', marginLeft: 10 }}
+        contentContainerStyle={{ gap: 8, paddingHorizontal: 2, paddingVertical: 2 }}>
+        {muestras.map((p) => (
+          <Presionable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }} accessibilityRole="button" accessibilityLabel={`Ver ${nombreProducto(p.nombre)}`}>
+            <LinearGradient colors={['#FFD60A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 2, borderRadius: 40 }}>
+              <View style={{ width: 48, height: 48, borderRadius: 24, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
+                <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={48} radio={24} />
+              </View>
+            </LinearGradient>
+          </Presionable>
         ))}
-      </View>
+      </ScrollView>
     );
   }
   // Las sin ver primero.

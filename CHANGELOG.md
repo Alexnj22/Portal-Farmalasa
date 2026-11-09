@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1488.1 — Muestra temporal de códigos por presentación
+
+Muestra temporal de solo lectura sobre los 100 productos más vendidos, para decidir cómo reconocer códigos de barras.
+
 ## v2.1488.0 — App de clientes: Mi familia (cerrada) y medición de códigos
 
 Base de «Mi familia»: personas a cargo y de quién es cada tratamiento. Queda cerrada a los clientes hasta publicar el aviso de privacidad aprobado. El sync de productos mide los códigos de barras por presentación.

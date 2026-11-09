@@ -163,15 +163,16 @@ export default function Puntos() {
           <Text style={{ flexShrink: 1, fontSize: 12, fontWeight: '800', color: '#1A1000' }}>MODO DE PRUEBA · {String(`${mayorista ? `Mayoreo ${rangoDePrueba(mayorista, real?.programa).nombre}` : resumen.nivel?.nombre ?? ''}${empleado ? ' · Team' : ''}`).toUpperCase()}</Text>
         </Presionable>
       ) : null}
-      <Entrada indice={0}>
+      {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
+      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
         <Image source={require('../../../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
           style={{ width: 190, height: 26, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
+        <Campana generacion={generacion} />
       </Entrada>
       <SubisteDeNivel nivel={resumen.nivel} forzar={verNivel || false} mayoreo={mayorista ? (mayoristaReal ?? rangoDePrueba(mayorista, real?.programa)) : null}
         forzarRango={verRango || false} forzarPrecio={verPrecio || false} forzarBienvenida={verMayoreo || false} forzarTuNivel={verTuNivel || false} />
       <Cumpleanos activo={!!resumen.cumpleanos} forzar={cumple ? String(cumple) : false} nombre={primerNombre} puntos={resumen.regalo_cumpleanos} />
-      {/* Encima de todo (zIndex): la tarjeta de abajo gira y se escala, y no puede tapar la campana. */}
-      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 2 }}>
+      <Entrada indice={0} estilo={{ flexDirection: 'row', alignItems: 'center' }}>
         {/* La foto junto al saludo (2026-10-20): más personal; sin foto, la
             invitación a ponerla. Con la sesión de código no hay foto. */}
         {!conCodigo && !resumen.pendiente ? (
@@ -185,7 +186,6 @@ export default function Puntos() {
           style={{ flex: 1, fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: colorSistema.texto }}>
           {resumen.cumpleanos ? `¡Feliz cumpleaños, ${primerNombre}!` : `Hola, ${primerNombre}`}
         </Text>
-        <Campana generacion={generacion} />
       </Entrada>
 
       {/* Mis créditos (2026-10-15): si alguno pasó su fecha límite, la alerta

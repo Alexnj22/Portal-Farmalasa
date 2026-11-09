@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1490.1 — App de clientes: campana junto al logo
+
+En el Inicio de la app, la campana de notificaciones pasa a la línea del logo.
+
 ## v2.1490.0 — Aviso de privacidad v3: Mi familia
 
 Aviso de privacidad versión 3: agrega «Mi familia». Los clientes lo aceptan de nuevo al abrir la app.

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.1 — Bodega: su regla de envío vale sin excepciones
+
+El mínimo de envío de Bodega también aplica al área de próximos a vencer y a lo que se aparta para un cliente; si no se cumple, se dice por qué.
+
 ## v2.1492.0 — App de clientes: encabezado con logo centrado y campana
 
 Las pestañas de la app llevan el logo centrado y la campana en el encabezado. Se agregan círculos de muestra para ver las historias junto al saludo.

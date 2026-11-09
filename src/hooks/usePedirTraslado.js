@@ -25,11 +25,9 @@ import { avisosDelPedido, claveOrigen, diasHasta, fmtVence } from '../utils/pedi
 // terminar de enviar. Los comentarios de abajo son los del modal original.
 // ═══════════════════════════════════════════════════════════════════════════
 /**
- * `aplicarMinimoDeBodega: false`: apartar para un cliente pide lo que el cliente
- * lleva, no un envío de reposición.
- * @param {{ productoInicial?: any, alCerrar?: () => void, alTerminar?: () => void, aplicarMinimoDeBodega?: boolean }} [opciones]
+ * @param {{ productoInicial?: any, alCerrar?: () => void, alTerminar?: () => void }} [opciones]
  */
-export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar, aplicarMinimoDeBodega = true } = {}) {
+export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar } = {}) {
     const { user } = useAuth();
     /* Lo elegido en el primer paso, cuando hubo primer paso. La fila del
        catálogo trae `{ id, nombre }` y el resto del archivo habla de
@@ -264,12 +262,13 @@ export function usePedirTraslado({ productoInicial = null, alCerrar, alTerminar,
     const unidadesPedidas = pres ? Number(cantidad || 0) * Number(pres.factor || 1) : 0;
 
     /* Bodega tiene reglas de cómo envía cada producto: si sale por caja, pedirle
-     * dos blísteres es pedir algo que no puede mandar. Sólo el estante de
-     * operación: el área de próximos a vencer guarda saldos sueltos.
+     * dos blísteres es pedir algo que no puede mandar. Vale para todo lo que
+     * sale de Bodega, sin excepciones (decisión del usuario, 2026-11-09): también
+     * el área de próximos a vencer y lo que se aparta para un cliente.
      * El estado lleva el id del producto para que la regla del ANTERIOR no
      * conteste por éste mientras viaja la consulta; y sin saber la regla, el
      * renglón no se da por listo. */
-    const aplicaMinimo = aplicarMinimoDeBodega && Number(sala?.erp_sucursal_id) === ERP_BODEGA && !sala?.vencidos;
+    const aplicaMinimo = Number(sala?.erp_sucursal_id) === ERP_BODEGA;
     const [reglaBodega, setReglaBodega] = useState(null);   // { id, minimo?, fallo? }
     useEffect(() => {
         if (!aplicaMinimo || !producto?.erp_product_id) return;

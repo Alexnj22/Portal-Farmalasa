@@ -142,7 +142,7 @@ function PrecioDeBodega({ r, ocupado, hacer }) {
 function PedirAOtraSala({ r, falta, ocupado, hacer }) {
   const factor = Number(r.factor ?? 1);
   const productoInicial = useMemo(() => ({ erp_product_id: r.producto_id, descripcion: r.producto }), [r.producto_id, r.producto]);
-  const h = usePedirTraslado({ productoInicial, aplicarMinimoDeBodega: false });
+  const h = usePedirTraslado({ productoInicial });
   const { setCantidad, setPresIdx, setOrigenId, presentaciones } = h;
   const necesita = falta * factor;
   // Sólo el estante de operación y sólo quien alcanza (igual que `DeOtraSala`).
@@ -167,6 +167,7 @@ function PedirAOtraSala({ r, falta, ocupado, hacer }) {
         <Opciones valor={efectiva} onCambiar={setEleccion}
           opciones={candidatos.map((d) => ({ id: String(d.erp_sucursal_id), label: d.sala, detalle: `Tiene ${Number(d.unidades)} unidades` }))} />
       </Seccion>
+      {elegido && h.avisos.minimoBodega ? <Aviso tono="freno" texto={h.avisos.minimoBodega.texto} /> : null}
       {elegido && h.avisoVence ? <Aviso tono={h.avisoVence.grave ? 'freno' : 'cuidado'} texto={h.avisoVence.texto} /> : null}
       <BotonGrande texto={ocupado ? 'Pidiendo…' : elegido ? `Pedir ${falta} a ${elegido.sala}` : 'Pedir'} color={MARCA.azulClaro}
         deshabilitado={ocupado || !lista}

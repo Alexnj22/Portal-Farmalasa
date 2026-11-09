@@ -14,8 +14,8 @@ vi.mock('@nucleo/data/traslados', () => ({ crearSolicitudTraslado: vi.fn(), fetc
 import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 
 const bodega = { erp_sucursal_id: 6, sala: 'Bodega', unidades: 100 };
-const armar = (donde, op = {}) => renderHook(() => usePedirTraslado({
-    productoInicial: { erp_product_id: 7, descripcion: 'X', donde, lotesPorSala: {} }, ...op,
+const armar = (donde) => renderHook(() => usePedirTraslado({
+    productoInicial: { erp_product_id: 7, descripcion: 'X', donde, lotesPorSala: {} },
 }));
 const conPresentaciones = (h) => waitFor(() => expect(h.result.current.pres?.tipo).toBe('BLISTER'));
 
@@ -37,12 +37,14 @@ describe('pedir a Bodega respeta su regla de envío', () => {
         await waitFor(() => expect(h.result.current.avisos.minimoBodega?.texto).toContain('No se pudo comprobar'));
         expect(h.result.current.lineaLista).toBe(false);
     });
-    it.each([
-        ['otra sala', [{ erp_sucursal_id: 2, sala: 'Salud 2', unidades: 100 }], {}],
-        ['área de próximos a vencer', [{ ...bodega, vencidos: true }], {}],
-        ['apartado para cliente', [bodega], { aplicarMinimoDeBodega: false }],
-    ])('%s no aplica', async (_, donde, op) => {
-        const h = armar(donde, op);
+    it('el área de próximos a vencer de Bodega también', async () => {
+        const h = armar([{ ...bodega, vencidos: true }]);
+        await conPresentaciones(h);
+        await waitFor(() => expect(h.result.current.avisos.minimoBodega?.tono).toBe('danger'));
+        expect(h.result.current.lineaLista).toBe(false);
+    });
+    it('a otra sala no aplica', async () => {
+        const h = armar([{ erp_sucursal_id: 2, sala: 'Salud 2', unidades: 100 }]);
         await conPresentaciones(h);
         await waitFor(() => expect(h.result.current.lineaLista).toBe(true));
         expect(fallo.minimo).not.toHaveBeenCalled();

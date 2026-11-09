@@ -65,11 +65,16 @@ export function barraAndroid(principal = false) {
 // `sinBarra` (2026-10-20, Inicio): sin barra de título; la pantalla pone su
 // propio encabezado (ver `Pantalla`).
 // El encabezado de marca (2026-11-09): logo centrado y campana en cada pestaña.
+// iOS pinta de azul (el tinte del sistema) una imagen dentro de la barra, así
+// que el logo va en dos capas, cada una con su color explícito.
+const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: 150, height: 22 };
 function LogoEncabezado() {
   const t = useTema();
   return (
-    <Image source={require('../assets/logo-farmacias.png')} resizeMode="contain" accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud"
-      style={{ width: 150, height: 22, ...(t.oscuro ? { tintColor: '#FFFFFF' } : null) }} />
+    <View accessible accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: 150, height: 22 }}>
+      <Image source={require('../assets/logo-farmacias-verde.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: t.oscuro ? '#FFFFFF' : '#8EC30F' }]} />
+      <Image source={require('../assets/logo-farmacias-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: t.oscuro ? '#FFFFFF' : '#981D97' }]} />
+    </View>
   );
 }
 const ENCABEZADO_MARCA = { headerTitle: () => <LogoEncabezado />, headerTitleAlign: 'center', headerRight: () => <Campana /> };

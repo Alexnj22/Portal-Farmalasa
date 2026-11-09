@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1492.4 — App de clientes: logo con sus colores en el encabezado
+
+El logo del encabezado de la app se ve con sus colores en iPhone.
+
 ## v2.1492.3 — App de clientes: notificaciones de muestra
 
 La bandeja vacía de la app muestra notificaciones de ejemplo.

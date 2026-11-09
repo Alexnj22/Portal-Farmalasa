@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1484.0 — Apoyo con cargo: quién lo asigna, jefatura y avisos
+
+- Nadie puede asignarse a sí mismo un apoyo con cargo, ni asignar un cargo de
+  mayor rango que el suyo.
+- Quien cubre a un jefe de sala cuenta como jefatura esos días, y los avisos de
+  sala le llegan a quien está de apoyo ahí.
+- Trasladar y devolver pedidos toman el cargo y la sala del apoyo.
+
 ## v2.1483.0 — Tienda con hoja de presentaciones, fotos de laboratorios y app más compacta
 
 App de clientes: la tarjeta de socio ocupa menos alto; los accesos rápidos sostienen tres columnas en Android; el logo de Farmacias La Popular y La Salud va en Inicio y Tienda; «Puntos por vencer» es una fila que se despliega; la Tienda pregunta la presentación en una hoja inferior y confirma con un aviso. Portal: en Laboratorios se sube la foto que se ve en la Tienda (`laboratorios.foto`, `app_catalogo`).

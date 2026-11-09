@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { cargosYSalaDelDia, getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { anotar, estadoDeRecepcion, leerBien, sesionEn } from "../_shared/erp-traslado.ts";
 
@@ -88,7 +88,9 @@ Deno.serve(async (req) => {
       "tu ficha de empleado",
     );
     if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
-    const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+    const delDia = await cargosYSalaDelDia(admin, usuario.id, emp);
+    if (delDia.roto) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: delDia.roto }, 503);
+    const roles = delDia.roles;
     const { dato: permisos, roto: rotoPerm } = await leerBien<{ can_edit: boolean; scope: string }[]>(
       admin.from("role_permissions").select("can_edit, scope")
         .in("role_id", roles.length ? roles : [-1]).eq("module_key", "pedidos"),
@@ -106,7 +108,7 @@ Deno.serve(async (req) => {
     if (!mapaBodega) return json({ ok: false, error: "No hay una bodega marcada en el mapa de salas." }, 422);
     if (!(mapas ?? []).some((m) => Number(m.erp_sucursal_id) === sucId))
       return json({ ok: false, error: "Esa sala no está en el mapa." }, 422);
-    if (!alcanceTodo && Number(emp?.branch_id ?? 0) !== Number(mapaBodega.branch_id ?? -1))
+    if (!alcanceTodo && Number(delDia.branch_id ?? 0) !== Number(mapaBodega.branch_id ?? -1))
       return json({ ok: false, error: "Esto lo decide Bodega, que es a donde regresa el producto." }, 403);
 
     // ── Qué cajas, de qué renglones ───────────────────────────────────────

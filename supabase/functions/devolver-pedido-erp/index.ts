@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { cargosYSalaDelDia, getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   // Con alias: más abajo hay una función local `anotar` que reparte cantidades
@@ -204,7 +204,9 @@ Deno.serve(async (req) => {
     // El concepto es el único lugar del sistema donde aparece la persona real:
     // su columna «usuario» muestra siempre la cuenta del portal.
     const yo = nombreCorto({ ...(emp ?? {}), name: quien.name });
-    const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+    const delDia = await cargosYSalaDelDia(admin, quien.id, emp);
+    if (delDia.roto) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: delDia.roto }, 503);
+    const roles = delDia.roles;
     const { dato: permisos, roto: rotoPerm } = await leerBien<{ can_edit: boolean; scope: string }[]>(
       admin.from("role_permissions").select("can_edit, scope")
         .in("role_id", roles.length ? roles : [-1])
@@ -243,7 +245,7 @@ Deno.serve(async (req) => {
     // sacarse existencia a sí misma desde el estante de Bodega—. Es la misma
     // regla del traslado entre salas dicha para las dos direcciones: manda
     // quien tiene el producto del lado que se descarga.
-    if (!alcanceTodo && Number(emp?.branch_id ?? 0) !== Number(mapaBodega.branch_id ?? -1))
+    if (!alcanceTodo && Number(delDia.branch_id ?? 0) !== Number(mapaBodega.branch_id ?? -1))
       return json({
         ok: false,
         error: "La devolución la maneja Bodega, que es donde entra el producto.",

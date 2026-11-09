@@ -322,6 +322,33 @@ export async function permisoDeModulo(
   };
 }
 
+/**
+ * Los cargos y la sala que valen HOY para quien tiene un apoyo: los del apoyo
+ * mientras dure, los de la ficha el resto de los días. Para las funciones que
+ * leen el permiso a mano en vez de usar `permisoDeModulo`. Con `roto`, la
+ * función tiene que contestar 503: no se adivina un permiso.
+ */
+export async function cargosYSalaDelDia(
+  admin: { rpc: (fn: string, args: Record<string, unknown>) => any },
+  employeeId: string,
+  ficha: { role_id?: number | null; secondary_role_id?: number | null; branch_id?: number | null } | null | undefined,
+): Promise<{ roles: number[]; branch_id: number | null; roto: string | null }> {
+  const [cargo, sala] = await Promise.all([
+    admin.rpc("cargo_de_apoyo_vigente", { p_employee_id: employeeId }),
+    admin.rpc("sala_de_apoyo_vigente", { p_employee_id: employeeId }),
+  ]);
+  if (cargo.error || sala.error) {
+    console.error(`[cargosYSalaDelDia] ${cargo.error?.message || sala.error?.message}`);
+    return { roles: [], branch_id: null, roto: "No se pudieron leer tus permisos." };
+  }
+  const deLaFicha = [ficha?.role_id, ficha?.secondary_role_id].filter((r) => r != null).map(Number);
+  return {
+    roles: cargo.data != null ? [Number(cargo.data)] : deLaFicha,
+    branch_id: sala.data != null ? Number(sala.data) : (ficha?.branch_id == null ? null : Number(ficha.branch_id)),
+    roto: null,
+  };
+}
+
 // ── ¿Puede quien llama tocar la CUENTA de esta persona? (2026-10-14) ─────────
 //
 // Cambiar la contraseña, renombrar el usuario, bloquear la cuenta o emitir un

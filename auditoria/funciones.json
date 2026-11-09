@@ -6071,6 +6071,10 @@
    "area": "bitacoras",
    "por": "llamada"
   },
+  "validar_cargo_de_apoyo": {
+   "area": "personal",
+   "por": "código"
+  },
   "validar_envio_producto": {
    "area": "solicitudes",
    "por": "trigger"

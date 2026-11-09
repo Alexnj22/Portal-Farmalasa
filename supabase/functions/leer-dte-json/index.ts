@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
-import { requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
+import { cargosYSalaDelDia, requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
 import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
@@ -71,7 +71,9 @@ async function tienePermiso(admin: any, emp: any): Promise<boolean> {
   const { data: ficha, error: errFicha } = await admin
     .from("employees").select("role_id, secondary_role_id").eq("id", emp?.id).maybeSingle();
   if (errFicha) throw errFicha;
-  const roles = [ficha?.role_id, ficha?.secondary_role_id].filter(Boolean);
+  const delDia = await cargosYSalaDelDia(admin, emp?.id, ficha);
+  if (delDia.roto) throw new Error(delDia.roto);
+  const roles = delDia.roles;
   if (!roles.length) return false;
   const { data, error } = await admin
     .from("role_permissions")

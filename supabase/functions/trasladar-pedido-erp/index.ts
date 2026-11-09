@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { type ClienteAdmin, getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
+import { cargosYSalaDelDia, type ClienteAdmin, getCorsHeaders, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import {
   anotar,
@@ -431,7 +431,9 @@ Deno.serve(async (req) => {
       );
       if (rotoEmp) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: rotoEmp }, 503);
       yo = nombreCorto({ ...(emp ?? {}), name: usuario.name });
-      const roles = [emp?.role_id, emp?.secondary_role_id].filter((r) => r != null);
+      const delDia = await cargosYSalaDelDia(admin, usuario.id, emp);
+      if (delDia.roto) return json({ ok: false, codigo: "NO_SE_PUDO_LEER", error: delDia.roto }, 503);
+      const roles = delDia.roles;
       const { dato: permisos, roto: rotoPerm } = await leerBien<{ can_edit: boolean; scope: string }[]>(
         admin.from("role_permissions").select("can_edit, scope")
           .in("role_id", roles.length ? roles : [-1])
@@ -446,7 +448,7 @@ Deno.serve(async (req) => {
       if (!puede)
         return json({ ok: false, error: "No tienes permiso de edición en Pedidos." }, 403);
       alcanceTodo = (permisos ?? []).some((p) => p.can_edit && p.scope === "ALL");
-      empBranchId = emp?.branch_id == null ? null : Number(emp.branch_id);
+      empBranchId = delDia.branch_id;
     }
 
     // ── Despachar es de Bodega ────────────────────────────────────────────

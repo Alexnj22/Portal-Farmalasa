@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { cargosYSalaDelDia, getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 
 // Manifiesto de descarga masiva de facturas de compra: devuelve la LISTA de
 // archivos con su URL firmada, sin mover un solo byte. El navegador los baja
@@ -104,13 +104,14 @@ Deno.serve(async (req) => {
   // ver y para guardar, y ahí la separación es de la interfaz, no del byte.
   const { data: empRole, error: empErr } = await admin.from("employees").select("role_id").eq("id", employee.id).single();
   // Una lectura caída no es «no tenés permiso»: un 403 se lee como decisión.
-  if (empErr) {
+  const delDia = empErr ? null : await cargosYSalaDelDia(admin, employee.id, empRole);
+  if (empErr || delDia?.roto) {
     return new Response(JSON.stringify({ error: "No se pudo verificar el permiso. Vuelve a intentar." }), {
       status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
   const { data: perms, error: permErr } = await admin.from("role_permissions").select("module_key, can_view")
-    .eq("role_id", empRole?.role_id ?? -1)
+    .in("role_id", delDia?.roles?.length ? delDia.roles : [-1])
     .in("module_key", ["facturas_compra", "facturas_compra_descargar"]);
   const puede = (key: string) => (perms ?? []).some((p) => p.module_key === key && p.can_view === true);
   if (permErr) {

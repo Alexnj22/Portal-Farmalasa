@@ -159,25 +159,29 @@ export default function Catalogo() {
         accion={{ texto: 'Limpiar', alTocar: olvidarVistos }} />
     </>
   )), [q, ahorro, vistos, labs, elegirLab]);
-  // Categorías en píldoras (2026-11-05, Tienda «Vitrina»): una fila baja en
-  // vez de los mosaicos de 60 px. Tocar una busca; tocarla otra vez la quita.
+  // Compra por necesidad (2026-11-09): mosaicos con su ícono, con el color de
+  // la marca; tocar uno busca y tocarlo otra vez lo quita. Vuelven a ser
+  // mosaicos porque las píldoras se perdían entre las demás filas.
   const categorias = useMemo(() => (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2, paddingVertical: 2 }}>
-      {[{ q: '', texto: 'Todo', sf: 'square.grid.2x2.fill' }, ...BUSQUEDAS].map((b) => {
-        const activa = b.q ? q === b.q && texto === b.q : !texto;
-        return (
-          <Presionable key={b.q || 'todo'} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa && b.q ? '' : b.q); }}
-            accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
-            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 38, paddingHorizontal: 14, borderRadius: 999,
-              backgroundColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.85)'),
-              borderWidth: 0.5, borderColor: activa ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.07)'),
-              transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-            <Icono sf={b.sf} respaldo="" tam={13} color={activa ? '#FFFFFF' : t.color.magentaTexto} />
-            <Text maxFontSizeMultiplier={1.3} style={{ fontSize: 14, fontWeight: '700', color: activa ? '#FFFFFF' : colorSistema.texto }}>{b.texto}</Text>
-          </Presionable>
-        );
-      })}
-    </ScrollView>
+    <View style={{ gap: 10 }}>
+      <Text accessibilityRole="header" style={{ marginLeft: 4, fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>¿Qué necesitas?</Text>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingHorizontal: 2 }}>
+        {BUSQUEDAS.map((b) => {
+          const activa = q === b.q && texto === b.q;
+          return (
+            <Presionable key={b.q} onPress={() => { Haptics.selectionAsync().catch(() => {}); setTexto(activa ? '' : b.q); }}
+              accessibilityRole="button" accessibilityLabel={b.texto} accessibilityState={{ selected: activa }}
+              style={({ pressed }) => ({ width: 82, alignItems: 'center', gap: 6, transform: [{ scale: pressed ? 0.94 : 1 }] })}>
+              <View style={{ width: 56, height: 56, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+                backgroundColor: activa ? t.color.magenta : suave(t.color.magenta, t.oscuro ? 0.26 : 0.12) }}>
+                <Icono sf={b.sf} respaldo="" tam={24} color={activa ? '#FFFFFF' : t.color.magentaTexto} />
+              </View>
+              <Text maxFontSizeMultiplier={1.3} numberOfLines={2} style={{ fontSize: 12, lineHeight: 15, fontWeight: activa ? '800' : '700', textAlign: 'center', color: colorSistema.texto }}>{b.texto}</Text>
+            </Presionable>
+          );
+        })}
+      </ScrollView>
+    </View>
   ), [q, texto, t]);
   const encabezado = useMemo(() => (
     <View style={{ gap: 12, marginBottom: 6 }}>

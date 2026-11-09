@@ -14,7 +14,7 @@ import { nombreProducto } from '../lib/catalogo';
 import { useTema } from '../tema/tema';
 import { precioFinal } from '../lib/precioTuyo';
 
-export default function FilaProductos({ titulo, sf, productos, accion }) {
+export default function FilaProductos({ titulo, sf, productos, accion, sinAgregar = false }) {
   const t = useTema();
   if (!productos?.length) return null;
   return (
@@ -52,7 +52,7 @@ export default function FilaProductos({ titulo, sf, productos, accion }) {
                     <Text style={{ color: '#1A2600', fontSize: 12, fontWeight: '900' }}>−{ahorro}%</Text>
                   </View>
                 ) : null}
-                <BotonAgregar p={p} />
+                {sinAgregar ? null : <BotonAgregar p={p} />}
               </View>
               <Text style={{ fontSize: 13, fontWeight: '700', lineHeight: 17, color: colorSistema.texto, minHeight: 34 }}>{nombreProducto(p.nombre)}</Text>
               {p.precio != null ? (

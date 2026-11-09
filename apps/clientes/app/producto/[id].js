@@ -15,6 +15,7 @@ import Presionable from '../../componentes/Presionable';
 import { MAX_UNIDADES, useCarrito } from '../../lib/carrito';
 import EncargoHoja from '../../componentes/EncargoHoja';
 import DondeLoHay from '../../componentes/DondeLoHay';
+import MismoPrincipio from '../../componentes/MismoPrincipio';
 import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
@@ -226,6 +227,7 @@ export default function Producto() {
         <Text style={{ fontSize: 13, color: colorSistema.texto3, marginHorizontal: 32, marginTop: 8 }}>
           Las existencias se actualizan cada pocos minutos; confírmalo antes de ir.
         </Text>
+        {p.principio_activo ? <MismoPrincipio id={p.id} principio={p.principio_activo} /> : null}
       </ScrollView>
 
       {/* Abajo, fijos: agregar al carrito (la presentación mayor) y consultar. */}

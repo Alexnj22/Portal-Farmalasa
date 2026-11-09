@@ -2,6 +2,7 @@
 // «420 puntos» no— y el número de puntos va como el detalle de la cifra.
 // Misma decisión que /mis-puntos de la web.
 import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
+import { useVolverAPedir } from '../../../componentes/VolverAPedir';
 import { Alert, AppState, Image, Platform, Text, useWindowDimensions, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -564,6 +565,9 @@ function AlertaCreditos({ vencidos }) {
 // Desde el 2026-11-03 sólo recibe los que se acaban en 3 días o menos.
 function TratamientosInicio({ lista }) {
   const t = useTema();
+  const { volver, ocupado } = useVolverAPedir();
+  const [volviendo, setVolviendo] = useState(null);
+  const pedirOtraVez = async (x) => { setVolviendo(x.id); await volver({ productos: [x.product_id] }); setVolviendo(null); };
   return (
     <Tarjeta estilo={{ gap: 10 }}>
       <Presionable onPress={() => navegar('/tratamientos')} accessibilityRole="button" accessibilityLabel="Mis tratamientos, ver todos"
@@ -592,11 +596,12 @@ function TratamientosInicio({ lista }) {
                 </Text>
               ) : null}
             </View>
-            <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${x.product_id}`); }} accessibilityRole="button"
-              accessibilityLabel={`Reservar ${nombrePropio(x.nombre)}`} hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
+            {/* Un toque y al carrito (2026-11-09), con la presentación y cantidad de la última compra. */}
+            <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); pedirOtraVez(x); }} disabled={ocupado} accessibilityRole="button"
+              accessibilityLabel={`Volver a pedir ${nombrePropio(x.nombre)}`} hitSlop={{ top: 5, bottom: 5, left: 4, right: 4 }}
               style={({ pressed }) => ({ minHeight: 34, paddingHorizontal: 14, borderRadius: 999, justifyContent: 'center',
                 backgroundColor: urge ? t.color.magenta : (t.oscuro ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.06)'), transform: [{ scale: pressed ? 0.95 : 1 }] })}>
-              <Text style={{ fontSize: 13, fontWeight: '800', color: urge ? '#FFFFFF' : colorSistema.texto }}>Reservar</Text>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: urge ? '#FFFFFF' : colorSistema.texto }}>{ocupado && volviendo === x.id ? 'Agregando…' : 'Volver a pedir'}</Text>
             </Presionable>
           </View>
         );

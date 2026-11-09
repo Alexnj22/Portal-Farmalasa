@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1485.0 — App de clientes: volver a pedir desde Inicio, mismo principio activo y mosaicos por necesidad
+
+En Inicio, «Se te acaba pronto» pone el medicamento en el carrito con un toque. La ficha muestra otras opciones disponibles con exactamente el mismo principio activo, de menor a mayor precio. La Tienda vuelve a tener mosaicos «¿Qué necesitas?» en lugar de píldoras.
+
 ## v2.1484.0 — Apoyo con cargo: quién lo asigna, jefatura y avisos
 
 - Nadie puede asignarse a sí mismo un apoyo con cargo, ni asignar un cargo de

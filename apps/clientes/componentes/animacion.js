@@ -253,7 +253,7 @@ export function Latido({ children, estilo, escala = 1.05 }) {
  */
 export function FlechaDesplegable({ abierto, color, tam = 14 }) {
   const g = useSharedValue(abierto ? 1 : 0);
-  useEffect(() => { g.value = withSpring(abierto ? 1 : 0, { damping: 16, stiffness: 220 }); }, [abierto, g]);
+  useEffect(() => { g.value = withSpring(abierto ? 1 : 0, { damping: 28, stiffness: 220 }) /* razón ~0.94: gira sin pasarse (2026-11-10) */; }, [abierto, g]);
   const estilo = useAnimatedStyle(() => ({ transform: [{ rotate: `${g.value * 180}deg` }] }));
   return (
     <Animated.View style={estilo}>

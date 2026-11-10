@@ -316,7 +316,7 @@ export default function Notificaciones() {
         keyExtractor={(f) => f.clave}
         contentInsetAdjustmentBehavior="automatic"
         initialNumToRender={12}
-        itemLayoutAnimation={LinearTransition.springify().damping(22).stiffness(200)}
+        itemLayoutAnimation={LinearTransition.springify().damping(28).stiffness(200)}
         refreshControl={<RefreshControl refreshing={refrescando} onRefresh={refrescar}
           colors={[t.color.magenta]} progressBackgroundColor={ANDROID ? colorSistema.superficieAlta : undefined} />}
         style={ANDROID ? { backgroundColor: colorSistema.fondo } : undefined}

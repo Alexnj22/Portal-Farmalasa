@@ -26,7 +26,9 @@ import { suave, useTema } from '../tema/tema';
 
 const DURACION = 5500;
 const FUERA = -180;
-const RESORTE = { damping: 20, stiffness: 220, mass: 0.8 };
+// Sin pasarse (2026-11-10, «que sea fluida y elegante»): con damping 20 la razón
+// era 0.75 y el aviso rebotaba al bajar; 26 la deja en ~0.98.
+const RESORTE = { damping: 26, stiffness: 220, mass: 0.8 };
 
 export default function AvisoEnApp() {
   const token = useSesion((s) => s.token);

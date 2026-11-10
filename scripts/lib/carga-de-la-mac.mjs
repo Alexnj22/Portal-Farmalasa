@@ -74,10 +74,14 @@ export function medirCarga() {
     const m = p.cmd.match(/\/([^/]+)\.app\//);
     const nombre = /gradle|\.gradle\/|\/jbr\/.*\/java /.test(p.cmd) ? 'Gradle (compilación)'
       : m ? m[1] : p.cmd.split(' ')[0].split('/').pop();
-    porApp.set(nombre, (porApp.get(nombre) || 0) + p.mb);
+    const legible = { claude: 'Sesiones de Claude', 'com.apple.WebKit.WebContent': 'Páginas web (Safari y apps)', node: 'Node (servidores y scripts)' }[nombre] || nombre;
+    porApp.set(legible, (porApp.get(legible) || 0) + p.mb);
   }
-  const apps = [...porApp].sort((a, b) => b[1] - a[1]).slice(0, 5)
-    .map(([n, mb]) => `${n} · ${(mb / 1024).toFixed(1)} GB`);
+  const masPesadas = [...porApp].sort((a, b) => b[1] - a[1]).slice(0, 5);
+  const apps = masPesadas.map(([n, mb]) => `${n} · ${(mb / 1024).toFixed(1)} GB`);
+  // La sugerencia nombra las apps: la versión breve (hook de inicio de sesión)
+  // no muestra la lista de detalle, así que «las de arriba» no decía nada.
+  const tresMasPesadas = masPesadas.slice(0, 3).map(([n, mb]) => `${n} ${(mb / 1024).toFixed(1)} GB`).join(', ');
 
   const porNucleo = l1 / nucleos;
   const sugCarga = compilando.length
@@ -86,7 +90,7 @@ export function medirCarga() {
   if (porNucleo >= UMBRAL.cargaRojo) add('rojo', `Carga ${l1.toFixed(0)} en ${nucleos} núcleos (${porNucleo.toFixed(1)} por núcleo).`, [], sugCarga);
   else if (porNucleo >= UMBRAL.cargaAviso) add('aviso', `Carga ${l1.toFixed(0)} en ${nucleos} núcleos.`, [], sugCarga);
 
-  const sugMemoria = 'Cerrá las aplicaciones que no estés usando (las que más ocupan, arriba). '
+  const sugMemoria = `Cerrá las aplicaciones que no estés usando (las que más ocupan: ${tresMasPesadas}). `
     + 'Lo que ya se fue al swap no vuelve solo: reiniciá la Mac cuando no haya una compilación corriendo.';
   if (swapGB >= UMBRAL.swapRojoGB) add('rojo', `Swap: ${swapGB.toFixed(1)} GB usados (RAM ${(totalmem() / 2 ** 30).toFixed(0)} GB).`, apps, sugMemoria);
   else if (swapGB >= UMBRAL.swapAvisoGB) add('aviso', `Swap: ${swapGB.toFixed(1)} GB usados.`, apps, sugMemoria);

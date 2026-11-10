@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.33 — mac:carga nombra las apps que más memoria ocupan
+
+- La sugerencia del swap nombra las tres apps que más memoria ocupan, con nombres legibles. El aviso de inicio de sesión decía «las de arriba» y no mostraba ninguna lista.
+
 ## v2.1500.32 — Promociones: limpieza de dos funciones de la base
 
 - `descuentos_espejo_borrar` pasa a plpgsql (plan por llamada) y se borra

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.13 — Crons con el secreto de su circuito
+
+Los 38 crons que mandaban `admin_invoke_secret` ahora mandan el de su circuito
+(`sync` 23, `fiscal` 7, `avisos` 5; las tres funciones que validan
+`x-cron-secret` mandan `cron_invoke_secret`). `puntos_encender` también.
+Verificado: corridas posteriores todas en 200/202, ningún 401. Las funciones
+siguen aceptando el secreto viejo hasta migrar las llamadas entre funciones.
+
 ## v2.1500.12 — Puntos: el personal ve su nivel con ×1
 
 - El personal gana siempre 1 punto por $1 en cualquier compra; su nivel sube con

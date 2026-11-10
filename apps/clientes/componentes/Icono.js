@@ -16,6 +16,13 @@ if (Platform.OS === 'ios' || Platform.OS === 'android') {
 }
 
 const MATERIAL = {
+  // Ruido blanco (2026-11-10).
+  'moon.stars.fill': 'bedtime',
+  'fan.fill': 'mode_fan',
+  'cloud.rain.fill': 'rainy',
+  'water.waves': 'waves',
+  'checkmark.circle': 'check_circle',
+  'sparkle': 'star',
   'arrow.clockwise': 'refresh',
   'arrow.counterclockwise': 'undo',
   'arrow.right': 'arrow_forward',

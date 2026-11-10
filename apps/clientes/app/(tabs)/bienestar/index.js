@@ -29,6 +29,8 @@ const DESTACADO = { ruta: '/botiquin', sf: 'cross.case.fill', titulo: 'Botiquín
 const CALMA = [
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
   { ruta: '/anclaje', sf: 'hand.raised.fill', titulo: '5 · 4 · 3 · 2 · 1', detalle: 'Calma los nervios buscando cosas con tus sentidos.', escena: 'anclaje' },
+  // 2026-11-10: «en bienestar, podemos agregar ruido blanco?»
+  { ruta: '/ruido', sf: 'waveform', titulo: 'Ruido blanco', detalle: 'Sonidos de fondo para concentrarte o dormir.', escena: 'ruido' },
 ];
 const JUEGOS = [
   { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },
@@ -93,15 +95,15 @@ export default function Bienestar() {
       </Entrada>
       <Grilla lista={CALMA} desde={2} />
 
-      <Entrada indice={4}>
+      <Entrada indice={5}>
         <Seccion estilo={{ marginTop: 6 }}>Juegos</Seccion>
       </Entrada>
-      <Entrada indice={5}>
+      <Entrada indice={6}>
         <TarjetaJuego e={DESTACADO} grande />
       </Entrada>
-      <Grilla lista={JUEGOS} desde={6} />
+      <Grilla lista={JUEGOS} desde={7} />
 
-      <Entrada indice={9}>
+      <Entrada indice={10}>
         <Tarjeta estilo={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Icono sf="heart.text.square.fill" respaldo="♥" tam={22} color={t.color.magentaTexto} />
           <Text style={{ flex: 1, fontSize: 14, lineHeight: 19, color: colorSistema.texto2 }}>

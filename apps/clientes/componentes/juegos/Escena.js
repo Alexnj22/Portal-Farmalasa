@@ -33,6 +33,8 @@ export const ESCENAS = {
   torre: ['#0A1240', '#26308A', '#7A3B9A'],
   // Pastillero (2026-11-04): verde de farmacia, oscuro para que el blanco se lea.
   botiquin: ['#04262A', '#0B4E4C', '#3B5E12'],
+  // Ruido blanco (2026-11-10): azul de noche.
+  ruido: ['#06142B', '#123A5A', '#2C4F7C'],
 };
 
 // Todas las luces son UN dibujo (un `Picture`) que se rehace a 30 cuadros: un

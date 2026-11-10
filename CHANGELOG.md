@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.21 — App de clientes: Leído animado, frase como imagen y ruido blanco
+
+- App de clientes: «Leído» en la frase del día se despide con una animación (palomita verde que rebota, ráfaga de chispas de colores, la tarjeta se inclina y se va, y el hueco se cierra).
+- App de clientes: «Compartir» en Bienestar manda la frase como imagen 4:5 con el logo de Farmacias La Popular y La Salud.
+- App de clientes: nueva pantalla «Ruido blanco» en Bienestar → Relájate: blanco, rosa, profundo, lluvia y olas, con volumen y temporizador (15, 30, 60 min o sin límite). Los sonidos se generan en el teléfono.
+
 ## v2.1500.20 — Secreto de cron: cada función acepta sólo el de su circuito
 
 Paso 2 del reparto: una función que declara su circuito acepta SOLO ese

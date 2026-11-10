@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.1 — Pago en línea «en preparación» hasta tener n1co
+
+- Wompi se quita de producción antes de tener las credenciales de n1co (decisión del dueño). Mientras falte `N1CO_SECRET_KEY`, todo cobro en línea contesta «El pago en línea estará disponible muy pronto. Por ahora se paga en la sucursal.» ANTES de crear filas o apartar producto (reserva, encargo, crédito, varios créditos, apartado desde la caja).
+- El pedido del carrito queda reservado y se paga al retirar; en la app, «En línea ahora» sale deshabilitado con «Próximamente» (lo dice `pago_preparar`).
+
 ## v2.1501.0 — Pagos en línea con n1co: se quita Wompi
 
 - Decisión del dueño: el cobro en línea pasa a n1co (links de pago) y Wompi se quita entero. Wompi nunca cobró dinero real: un solo cobro, de prueba.
@@ -30,6 +35,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - Base: `app_reservas_pagos` gana `pasarela` y `enlace_codigo`; `apartado_enlace_guardar` acepta el código.
 - Textos: la caja ya no nombra a la pasarela; el carrito dice «Tarjeta Visa o Mastercard».
 - Pendiente: credenciales de n1co, registrar el aviso en su portal, devoluciones y el aviso de privacidad.
+
+## v2.1500.43 — Fotos: la copia chica se guarda al subir; sin el servidor de imágenes que cobra
+
+- El servidor de imágenes del almacenamiento (`/render/image/…`) cobra por cada foto distinta que achica en el mes: el plan trae 100 y se llegó a 208 con el tope de gasto encendido, así que Supabase podía empezar a negarlas.
+- Catálogo: la foto se sube con su copia chica al lado (`product-photos/chicas/<ruta>`, 400 px, JPEG): `subirFotoDeCatalogo` en `src/plataforma/fotoConMiniatura.js`, usada por Fotos de productos, la ficha del catálogo y Laboratorios; `recortar-foto-producto` escribe la suya. La app de clientes pide la chica para tarjetas y listas, y si no existe cae a la original.
+- Personal: `webpSignedUrl` deja de reescribir al render; las 46 fotos en uso se convirtieron a WebP en su lugar (≈170 → 23 kB), como ya salen las nuevas.
+- Las que ya estaban: `scripts/miniaturas-catalogo.py` (1.413 copias chicas, 46 kB → 16 kB de promedio).
+- Transformaciones de imagen desde hoy: cero.
 
 ## v2.1500.42 — Base: un solo cron por minuto para los siete que sólo encolan HTTP
 

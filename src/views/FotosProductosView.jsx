@@ -18,7 +18,7 @@ import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { PRINCIPIO_PRESETS, editorDePrincipios, principiosParaGuardar } from '@nucleo/utils/edicionDeProducto';
-import { subirArchivo } from '@nucleo/utils/storageFiles';
+import { subirFotoDeCatalogo } from '@plataforma/fotoConMiniatura';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { formatQty } from '@nucleo/utils/formatNumber';
@@ -429,7 +429,7 @@ function FichaDeCarga({ producto, puedeEditar, nombres, quedan, onGuardado, onSa
         try {
             let fotoUrl = null;
             if (fotoNueva) {
-                const url = await subirArchivo('product-photos', `${producto.id}.jpg`, fotoNueva, { upsert: true, contentType: 'image/jpeg' });
+                const url = await subirFotoDeCatalogo(`${producto.id}.jpg`, fotoNueva);
                 fotoUrl = `${url}?t=${Date.now()}`;
             }
             await guardarCarga(producto.id, { fotoUrl, principios: principiosValidos },

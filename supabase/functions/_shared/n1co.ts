@@ -46,8 +46,11 @@ async function api(metodo: string, ruta: string, cuerpo?: unknown) {
   return texto ? JSON.parse(texto) : null;
 }
 
-/** ¿Hay con qué cobrar? Sin llave no se intenta crear nada. */
+/** ¿Hay con qué cobrar? Sin llave no se intenta crear nada ni se aparta nada:
+ *  el pago en línea está «en preparación» (2026-11-10: Wompi se quitó antes de
+ *  tener las credenciales de n1co). */
 export const pasarelaLista = () => !!Deno.env.get("N1CO_SECRET_KEY");
+export const EN_PREPARACION = "El pago en línea estará disponible muy pronto. Por ahora se paga en la sucursal.";
 
 export type EnlaceNuevo = { idEnlace: number; codigo: string; url: string; prueba: boolean };
 

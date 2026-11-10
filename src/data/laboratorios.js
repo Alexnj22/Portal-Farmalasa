@@ -4,7 +4,7 @@
 import { supabase } from '../supabaseClient';
 import { anotar, conBitacora } from './audit';
 import { fetchAllRows } from '../utils/supabaseUtils';
-import { subirArchivo } from '../utils/storageFiles';
+import { subirFotoDeCatalogo } from '@plataforma/fotoConMiniatura';
 
 export function fetchLaboratoriosBasic() {
     return supabase.from('laboratorios').select('id, nombre, foto, sugerir_en_app, ocultar_en_app, nombre_app, nombre_tienda').order('nombre');
@@ -30,7 +30,7 @@ export async function guardarFotoLaboratorio(id, foto, contexto = {}) {
 }
 
 export async function subirFotoLaboratorio(id, blob, contexto = {}) {
-    const url = await subirArchivo('product-photos', `laboratorios/${id}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
+    const url = await subirFotoDeCatalogo(`laboratorios/${id}.jpg`, blob);
     const foto = `${url}?t=${Date.now()}`;
     await guardarFotoLaboratorio(id, foto, contexto);
     return foto;

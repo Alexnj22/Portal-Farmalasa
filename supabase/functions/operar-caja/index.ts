@@ -3,7 +3,7 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
-import { crearEnlace } from "../_shared/n1co.ts";
+import { crearEnlace, EN_PREPARACION, pasarelaLista } from "../_shared/n1co.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los actos de caja que faltaban en el portal: ABRIR, anotar un INGRESO o una
@@ -523,6 +523,8 @@ Deno.serve(async (req) => {
       const monto = Math.round(Number(body.monto) * 100) / 100;
       if (!apartado) return json({ ok: false, error: "Falta qué se aparta." }, 400);
       if (!(monto > 0)) return json({ ok: false, error: "Falta cuánto se cobra." }, 400);
+      // En preparación (2026-11-10): sin llave de n1co no se aparta nada.
+      if (!pasarelaLista()) return json({ ok: false, error: EN_PREPARACION }, 503);
       const { data: prep, error: errPrep } = await supabase.rpc("apartado_enlace_preparar", {
         p_branch_id: sala, p_apartado: apartado, p_monto: monto, p_employee: quien.id,
       });

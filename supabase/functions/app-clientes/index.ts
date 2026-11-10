@@ -34,7 +34,7 @@ import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.t
 import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_shared/paseGoogle.ts";
 import { escaleraDeNiveles, nivelDeCliente, nivelDelEquipo, programaParaApp } from "../_shared/nivel.ts";
 import { duiValido, validarFiscales } from "../_shared/fiscal.ts";
-import { crearEnlace, pasarelaLista } from "../_shared/n1co.ts";
+import { crearEnlace, EN_PREPARACION, pasarelaLista } from "../_shared/n1co.ts";
 import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
 import { getErpBranchMap } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
@@ -2831,6 +2831,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // cierra antes de que llegue el pago, lo suyo queda a favor; uno que no
     // estaba en la lista no entró en el monto (`app_reserva_pago_confirmar`).
     async function enlaceDePago({ pedido, total, branchId, descripcion, reservas }: { pedido: string; total: number; branchId: any; descripcion: string; reservas: number[] }) {
+      // En preparación: el pedido queda reservado y se paga al retirar.
+      if (!pasarelaLista()) return null;
       const vigente = await enlaceVigente("pedido", pedido, total);
       if (vigente) return { url: vigente.url, total, prueba: vigente.prueba, reutilizado: true };
       const identificador = `${pedido}-${Date.now().toString(36)}`;
@@ -2960,6 +2962,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (error) throw error;
       if (!e || e.estado !== "confirmado") return json({ ok: false, mensaje: "Este encargo todavía no está confirmado por la sucursal." });
       if (e.pago_estado === "pagado") return json({ ok: false, mensaje: "Este encargo ya está pagado." });
+      if (!pasarelaLista()) return json({ ok: false, mensaje: EN_PREPARACION });
       const codigo = `E-${String(e.id).padStart(6, "0")}`;
       const vigenteE = await enlaceVigente("encargo_id", e.id, Number(e.anticipo));
       if (vigenteE) return json({ ok: true, url: vigenteE.url, total: Number(e.anticipo), prueba: vigenteE.prueba, reutilizado: true });
@@ -3037,6 +3040,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const vigente = await enlaceVigente("credito_id", c.id, total);
       if (vigente) return json({ ok: true, url: vigente.url, total, prueba: vigente.prueba, reutilizado: true });
       const numero = String(c.numero_doc ?? c.credito_erp).split("_")[0].replace(/^0+(?=\d)/, "");
+      if (!pasarelaLista()) return json({ ok: false, mensaje: EN_PREPARACION });
       const identificador = `CR-${c.id}-${Date.now().toString(36)}`;
       const { error: eP } = await admin.from("app_reservas_pagos").insert({
         identificador, monto: total, credito_id: c.id, credito_branch_id: c.branch_id, credito_erp: String(c.credito_erp), customer_id: customerId,
@@ -3070,6 +3074,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!customerId) return json({ ok: false, mensaje: "Para pagar, entra con tu DUI y teléfono." });
       const ids = [...new Set<number>((Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0))];
       if (ids.length < 2 || ids.length > 30) return json({ ok: false, mensaje: "Elige los créditos que quieres pagar." });
+      if (!pasarelaLista()) return json({ ok: false, mensaje: EN_PREPARACION });
       const { data: lista, error } = await admin.from("creditos_de_clientes")
         .select("id, branch_id, credito_erp, numero_doc, fecha, saldo")
         .in("id", ids).eq("customer_id", customerId).gt("saldo", 0.004);
@@ -4092,6 +4097,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (!(Number(cuenta.falta_pagar) > 0.004)) return json({ ok: false, mensaje: "Esta reserva ya está pagada." });
       const total = Math.round(Number(cuenta.falta_pagar) * 100) / 100;
       if (!(total > 0)) return json({ ok: false, mensaje: "Esta reserva se paga al retirarla en la sucursal." });
+      if (!pasarelaLista()) return json({ ok: false, mensaje: EN_PREPARACION });
       const codigo = `R-${String(r.id).padStart(6, "0")}`;
       const faltanR = await sinExistenciaParaCobrar([r]);
       if (faltanR.length) return json(SIN_EXISTENCIA_PAGO(faltanR));

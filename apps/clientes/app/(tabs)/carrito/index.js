@@ -76,6 +76,8 @@ function Carrito() {
   const conReceta = items.some((x) => x.receta || recetaIds.has(x.id));
   // Cómo paga y qué documento quiere (2026-10-07).
   const [pago, setPago] = useState('en_linea');
+  // ¿Hay con qué cobrar en línea? (2026-11-10: en preparación hasta tener n1co.)
+  const [enLineaLista, setEnLineaLista] = useState(true);
   // Entrega (2026-10-07): retiro en sucursal o a domicilio (sale de esa sucursal).
   const [entrega, setEntrega] = useState('retiro');
   const [direccion, setDireccion] = useState('');
@@ -136,11 +138,13 @@ function Carrito() {
   // A la sucursal elegida le falta algo: no se cobra; se envía para confirmar.
   const faltan = salas?.find((x) => x.id === sala)?.faltan ?? 0;
   // Con receta no se cobra antes de que la sucursal la apruebe.
-  const pagoReal = faltan || conReceta ? 'al_retirar' : pago;
+  const pagoReal = faltan || conReceta || !enLineaLista ? 'al_retirar' : pago;
 
   useFocusEffect(useCallback(() => { cargarSalas(); }, [cargarSalas]));
   // Deja listo el cobro en línea mientras se elige (pregunta si hay con qué cobrar en línea).
-  useFocusEffect(useCallback(() => { if (llaves) pedir('pago_preparar'); }, [llaves, pedir]));
+  useFocusEffect(useCallback(() => {
+    if (llaves) pedir('pago_preparar').then((r) => setEnLineaLista(r?.ok !== false)).catch(() => {});
+  }, [llaves, pedir]));
 
   const normal = items.reduce((s, x) => s + x.precio * x.cantidad, 0);
   const subtotal = items.reduce((s, x) => s + precioFinal(x) * x.cantidad, 0);
@@ -396,8 +400,8 @@ function Carrito() {
       {/* Cómo pagas. */}
       <Seccion texto="Cómo pagas" />
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={conReceta ? 'Después de revisar tu receta' : faltan ? 'No disponible: falta existencia' : 'Tarjeta Visa o Mastercard'}
-          elegida={pagoReal === 'en_linea'} deshabilitada={faltan > 0 || conReceta} alTocar={() => setPago('en_linea')} />
+        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={!enLineaLista ? 'Próximamente' : conReceta ? 'Después de revisar tu receta' : faltan ? 'No disponible: falta existencia' : 'Tarjeta Visa o Mastercard'}
+          elegida={pagoReal === 'en_linea'} deshabilitada={!enLineaLista || faltan > 0 || conReceta} alTocar={() => setPago('en_linea')} />
         <Opcion sf="banknote.fill" titulo={aDomicilio ? 'Al recibir' : 'Al retirar'} detalle={aDomicilio ? 'Efectivo al entregarte' : 'Efectivo o tarjeta en caja'} elegida={pagoReal === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
       </View>
       {faltan ? (

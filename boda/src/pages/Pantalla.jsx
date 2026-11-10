@@ -47,7 +47,7 @@ export default function Pantalla() {
       {!f && <div style={{ display: 'grid', placeItems: 'center', height: '100%' }}><p className="script" style={{ fontSize: '4rem' }}>{boda.novios.firma}</p></div>}
       <div className="rotulo">
         <div className="script">{boda.novios.firma}</div>
-        {f?.autor && <div>📸 {f.autor}{f.momento ? ` · ${f.momento}` : ''}</div>}
+        {f?.autor && <div style={{ fontSize: '1.125rem', marginTop: 6 }}>{f.autor}{f.momento ? ` · ${f.momento}` : ''}</div>}
       </div>
       <div className="qr-esquina">
         <QR texto={enlace} tam={130} />

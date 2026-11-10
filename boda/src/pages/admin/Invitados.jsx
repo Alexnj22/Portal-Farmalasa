@@ -168,7 +168,20 @@ function EditarGrupo({ grupo, alCerrar, alGuardar }) {
       for (const p of nombres) {
         await api.guardarPersona({
           ...(p.id ? { id: p.id } : {}), grupo_id: fila.id, nombre: p.nombre.trim(), es_nino: !!p.es_nino,
-          ...(p.id ? {} : { asistira: null }),
+          asistira: p.asistira ?? null,
+        });
+      }
+      // Respuesta anotada por ustedes (llegó por teléfono o en persona): el
+      // estado de la invitación se recalcula igual que cuando responde el invitado.
+      const respondidas = nombres.filter((p) => p.asistira != null);
+      const cambioRespuesta = nombres.some((p) => (grupo.personas.find((x) => x.id === p.id)?.asistira ?? null) !== (p.asistira ?? null));
+      if (cambioRespuesta || borradas.length) {
+        const si = nombres.filter((p) => p.asistira).length;
+        const estado = !respondidas.length ? 'pendiente'
+          : respondidas.length < nombres.length ? (si ? 'parcial' : 'pendiente')
+          : si === 0 ? 'declinado' : si < nombres.length ? 'parcial' : 'confirmado';
+        await api.actualizarGrupo(fila.id, {
+          estado, respondido_at: respondidas.length ? (grupo.respondido_at || new Date().toISOString()) : null,
         });
       }
       alGuardar();
@@ -199,13 +212,18 @@ function EditarGrupo({ grupo, alCerrar, alGuardar }) {
         <label className="campo"><span>Notas internas</span><input value={g.notas || ''} onChange={(e) => set('notas', e.target.value)} /></label>
 
         <b className="chico">Personas ({personas.filter((p) => p.nombre.trim()).length} de {g.pases})</b>
-        <p className="chico suave" style={{ margin: '2px 0 8px' }}>Los pases sin nombre los completa el invitado al confirmar (acompañantes).</p>
+        <p className="chico suave" style={{ margin: '2px 0 8px' }}>Los pases sin nombre los completa el invitado al confirmar (acompañantes). Si alguien les respondió por teléfono, anótenlo con «Asiste» / «No».</p>
         {personas.map((p, i) => (
-          <div key={p.id ?? i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
-            <input value={p.nombre} onChange={(e) => setP(i, 'nombre', e.target.value)} placeholder="Nombre y apellido" aria-label="Nombre" />
+          <div key={p.id ?? i} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8, flexWrap: 'wrap' }}>
+            <input value={p.nombre} onChange={(e) => setP(i, 'nombre', e.target.value)} placeholder="Nombre y apellido" aria-label="Nombre" style={{ flex: '1 1 180px', width: 'auto' }} />
             <label className="chico" style={{ display: 'flex', gap: 4, alignItems: 'center', whiteSpace: 'nowrap' }}>
               <input type="checkbox" checked={!!p.es_nino} onChange={(e) => setP(i, 'es_nino', e.target.checked)} /> niño
             </label>
+            <div className="asistencia-admin" role="group" aria-label={`Respuesta de ${p.nombre || 'la persona'}`}>
+              {[[null, '—'], [true, 'Asiste'], [false, 'No']].map(([v, r]) => (
+                <button key={r} type="button" aria-pressed={(p.asistira ?? null) === v} onClick={() => setP(i, 'asistira', v)} title={v == null ? 'Sin respuesta' : r}>{r}</button>
+              ))}
+            </div>
             <button type="button" className="btn claro icono" aria-label="Quitar" onClick={() => { if (p.id) setBorradas((b) => [...b, p.id]); setPersonas((ps) => ps.filter((_, n) => n !== i)); }}>×</button>
           </div>
         ))}

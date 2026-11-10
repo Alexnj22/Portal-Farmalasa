@@ -16,8 +16,8 @@ export default function Mapa({ lugares, enfocado }) {
     }).addTo(m);
     const icono = (n) => L.divIcon({
       className: '',
-      html: `<div style="background:#9a7b4f;color:#fff;width:34px;height:34px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);display:grid;place-items:center;border:3px solid #fff;box-shadow:0 4px 12px rgba(0,0,0,.3)"><span style="transform:rotate(45deg);font:600 14px Inter,sans-serif">${n}</span></div>`,
-      iconSize: [34, 34], iconAnchor: [17, 34], popupAnchor: [0, -30],
+      html: `<div style="background:oklch(0.45 0.072 118);color:oklch(0.955 0.017 85);width:36px;height:36px;border-radius:50%;display:grid;place-items:center;border:2px solid oklch(0.955 0.017 85);box-shadow:0 4px 14px oklch(0.2 0.03 118 / .35);font:600 15px 'Hanken Grotesk',sans-serif">${n}</div>`,
+      iconSize: [36, 36], iconAnchor: [18, 18], popupAnchor: [0, -18],
     });
     lugares.forEach((l, i) => {
       marcas.current[l.id] = L.marker([l.lat, l.lng], { icon: icono(i + 1) })
@@ -36,5 +36,5 @@ export default function Mapa({ lugares, enfocado }) {
     }
   }, [enfocado, lugares]);
 
-  return <div ref={nodo} className="mapa" role="region" aria-label="Mapa de los lugares" />;
+  return <div ref={nodo} className="mapa" role="region" aria-label="Mapa" />;
 }

@@ -100,6 +100,10 @@ create index if not exists subidas_fecha_idx on subidas(created_at);
 -- Columnas agregadas después de la primera versión (el script se puede volver a correr).
 alter table fotos  add column if not exists miniatura text;
 alter table grupos add column if not exists llegada_at timestamptz;  -- registrada en la entrada
+-- Acompañante que escribió el propio invitado al confirmar: es el único que
+-- el invitado puede renombrar o quitar. A los que cargaron los novios sólo
+-- puede marcarlos como «no asiste».
+alter table personas add column if not exists agregado_por_invitado boolean not null default false;
 
 -- Clave del álbum (va en el QR de las mesas). Cambiarla desde el panel.
 insert into ajustes (clave, valor) values ('clave_album', upper(substr(md5(random()::text), 1, 6)))
@@ -177,13 +181,16 @@ begin
     'personas', coalesce((
       select json_agg(json_build_object(
         'id', p.id, 'nombre', p.nombre, 'es_nino', p.es_nino, 'asistira', p.asistira,
-        'restriccion', p.restriccion, 'mesa', m.nombre) order by p.created_at)
+        'restriccion', p.restriccion, 'mesa', m.nombre, 'agregado', p.agregado_por_invitado) order by p.created_at)
       from personas p left join mesas m on m.id = p.mesa_id where p.grupo_id = g.id), '[]'::json)
   ) into r;
   return r;
 end $$;
 
--- p_personas: [{ id?, nombre, asistira, restriccion }]
+-- p_personas: [{ id?, nombre, asistira, restriccion, quitar? }]
+--   · con id: actualiza a esa persona (el nombre sólo si la agregó el invitado);
+--   · con id y quitar=true: borra a un acompañante que agregó el invitado;
+--   · sin id y con nombre: agrega un acompañante (cuenta contra los pases).
 create or replace function responder_invitacion(
   p_codigo text, p_personas json, p_mensaje text default null, p_cancion text default null
 ) returns json
@@ -195,9 +202,15 @@ begin
   if plazo_vencido() then
     raise exception 'El plazo para confirmar ya terminó. Escríbenos directamente.';
   end if;
-  if json_typeof(p_personas) <> 'array' or json_array_length(p_personas) > g.pases then
-    raise exception 'La invitación tiene % pases', g.pases;
+  if json_typeof(p_personas) <> 'array' or json_array_length(p_personas) > 60 then
+    raise exception 'Respuesta inválida';
   end if;
+
+  -- Primero se quitan los acompañantes que el invitado retiró: liberan su pase.
+  delete from personas
+  where grupo_id = g.id and agregado_por_invitado
+    and id in (select (e->>'id')::uuid from json_array_elements(p_personas) e
+               where nullif(e->>'id', '') is not null and coalesce((e->>'quitar')::boolean, false));
 
   -- Los pases se cuentan contra lo GUARDADO más lo nuevo: contar sólo lo que
   -- llega en cada envío dejaba sumar acompañantes de a uno, sin límite.
@@ -209,21 +222,25 @@ begin
   end if;
 
   for x in select * from json_array_elements(p_personas) loop
-    if nullif(x->>'id', '') is not null then
+    if coalesce((x->>'quitar')::boolean, false) then
+      continue;
+    elsif nullif(x->>'id', '') is not null then
       update personas set
-        nombre = coalesce(nullif(left(trim(x->>'nombre'), 80), ''), nombre),
+        nombre = case when agregado_por_invitado
+                      then coalesce(nullif(left(trim(x->>'nombre'), 80), ''), nombre) else nombre end,
         asistira = (x->>'asistira')::boolean,
         restriccion = nullif(left(trim(x->>'restriccion'), 200), '')
       where id = (x->>'id')::uuid and grupo_id = g.id;
     elsif nullif(trim(x->>'nombre'), '') is not null then
-      insert into personas (grupo_id, nombre, asistira, restriccion)
+      insert into personas (grupo_id, nombre, asistira, restriccion, agregado_por_invitado)
       values (g.id, left(trim(x->>'nombre'), 80), (x->>'asistira')::boolean,
-              nullif(left(trim(x->>'restriccion'), 200), ''));
+              nullif(left(trim(x->>'restriccion'), 200), ''), true);
     end if;
   end loop;
 
   select count(*) filter (where asistira), count(*) into n_si, n_total
   from personas where grupo_id = g.id;
+  if n_total = 0 then raise exception 'Indica quién asistirá'; end if;
 
   update grupos set
     estado = case when n_si = 0 then 'declinado' when n_si < n_total then 'parcial' else 'confirmado' end,

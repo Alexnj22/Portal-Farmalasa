@@ -4,6 +4,9 @@ import Inicio from './pages/Inicio';
 import Album from './pages/Album';
 import { modoDemo } from './lib/api';
 import { boda } from './config';
+import { pruebasDisponibles } from './lib/reloj';
+
+const PanelPruebas = lazy(() => import('./components/PanelPruebas'));
 
 // El panel y la pantalla en vivo no los descarga ningún invitado que no entre ahí.
 const Admin = lazy(() => import('./pages/admin/Admin'));
@@ -21,10 +24,7 @@ export default function App() {
   return (
     <>
       {modoDemo && !esPantalla && (
-        <div className="cinta-demo">
-          Modo demo: los datos se guardan sólo en este navegador. Prueba la invitación <a href="/i/DEMO01">/i/DEMO01</a>,
-          el álbum con clave <b>BODA27</b> o el <a href="/admin">panel</a> (contraseña «demo»).
-        </div>
+        <div className="cinta-demo">Versión de prueba: lo que hagas se guarda sólo en este navegador.</div>
       )}
       <Suspense fallback={<p className="centro suave" style={{ padding: 60 }}>Cargando…</p>}>
         <Routes>
@@ -36,6 +36,7 @@ export default function App() {
           <Route path="*" element={<Inicio />} />
         </Routes>
       </Suspense>
+      {pruebasDisponibles && !esPantalla && <Suspense fallback={null}><PanelPruebas /></Suspense>}
     </>
   );
 }

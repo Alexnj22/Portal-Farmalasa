@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { fechaBoda } from '../config';
 import { t } from '../lib/idioma';
+import { ahora } from '../lib/reloj';
 
 function partes() {
-  const ms = Math.max(0, fechaBoda - Date.now());
+  const ms = Math.max(0, fechaBoda - ahora());
   return {
     [t('días', 'days')]: Math.floor(ms / 864e5),
     [t('horas', 'hours')]: Math.floor(ms / 36e5) % 24,

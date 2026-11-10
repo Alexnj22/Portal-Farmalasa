@@ -17,6 +17,7 @@ Para ver cualquier fase sin esperar: agregar `?fase=boda` (o `save-the-date`, `i
 cd boda
 npm install
 npm run dev        # http://localhost:5180
+npm run dev:red    # además en el wifi: abre en el teléfono la dirección «Network» que imprime
 ```
 
 Sin configurar nada corre en **modo demo**: todo se guarda en el navegador y trae invitados de ejemplo.
@@ -26,6 +27,13 @@ Sin configurar nada corre en **modo demo**: todo se guarda en el navegador y tra
 - Panel: `/admin`, contraseña **demo**
 - Pantalla en vivo: `/pantalla`
 - Inglés: botón **EN** arriba a la derecha, o `?lang=en`
+- **Panel de pruebas** (botón «Pruebas», sólo en modo demo): cambiar la fase del sitio, fingir la fecha
+  de hoy (plazo por vencer, plazo vencido, día de la boda), abrir cada invitación de ejemplo y borrar
+  todo para empezar de nuevo.
+
+Invitaciones de ejemplo: `DEMO01` familia de 4 con 3 nombres (sobra un lugar para acompañante),
+`DEMO02` un pase, `DEMO03` ya confirmada con mesa, `DEMO04` familia con un niño, `DEMO05` invitada con +1,
+`DEMO06` ya declinada, `DEMO07` dos pases sin nombres cargados.
 
 ## Personalizarlo
 

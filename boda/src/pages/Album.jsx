@@ -129,72 +129,69 @@ export default function Album() {
           <BotonIdioma />
         </div>
       </nav>
-      <section className="seccion" style={{ paddingTop: 40 }}>
-        <div className="contenedor">
-          <div className="titulo centro">
-            <span className="script" style={{ color: 'var(--oro)', fontSize: '2rem' }}>{t('Álbum compartido', 'Shared album')}</span>
-            <h2>{boda.novios.firma}</h2>
-            <p className="suave">{n} {n === 1 ? t('recuerdo', 'memory') : t('recuerdos', 'memories')} · {boda.novios.hashtag}</p>
-          </div>
+      <main className="contenedor" style={{ paddingBottom: 'var(--aire)' }}>
+        <header className="album-cabeza">
+          <p className="versalita suave" style={{ marginBottom: 12 }}>{boda.novios.firma} · {boda.novios.hashtag}</p>
+          <h1>{t('Álbum compartido', 'Shared album')}</h1>
+          <p>{n} {n === 1 ? t('recuerdo', 'memory') : t('recuerdos', 'memories')}{n ? '' : t(', por ahora', ' so far')}</p>
+        </header>
 
-          <div className="angosto" style={{ marginBottom: 24 }}>
-            {claveOk === false && (
-              <form className="tarjeta centro" onSubmit={(e) => { e.preventDefault(); setClave(claveEscrita.trim().toUpperCase()); }}>
-                <p>{t('Para subir fotos escanea el código QR de tu mesa, o escribe la clave del álbum:', "To upload photos, scan the QR code on your table or type the album's code:")}</p>
-                {clave && <p className="aviso error">{t('Esa clave no es correcta.', "That code isn't correct.")}</p>}
-                <div style={{ display: 'flex', gap: 8, maxWidth: 320, margin: '0 auto' }}>
-                  <input value={claveEscrita} onChange={(e) => setClaveEscrita(e.target.value)} placeholder={t('Clave', 'Code')} aria-label={t('Clave del álbum', 'Album code')} style={{ textTransform: 'uppercase', textAlign: 'center' }} />
-                  <button className="btn">{t('Entrar', 'Enter')}</button>
-                </div>
-              </form>
-            )}
-            {claveOk && (
-              <div className="subida">
-                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', textAlign: 'left' }}>
-                  <label className="campo" style={{ margin: 0 }}><span>{t('Tu nombre (opcional)', 'Your name (optional)')}</span>
-                    <input value={autor} onChange={(e) => setAutor(e.target.value)} maxLength={60} placeholder={t('Para saber quién la tomó', 'So we know who took it')} />
-                  </label>
-                  <label className="campo" style={{ margin: 0 }}><span>{t('Momento', 'Moment')}</span>
-                    <select value={momento} onChange={(e) => setMomento(e.target.value)}>
-                      {boda.momentos.map((m) => <option key={m} value={m}>{rotuloMomento(m)}</option>)}
-                    </select>
-                  </label>
-                </div>
-                <input ref={entrada} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => subir(e.target.files)} />
-                <button className="btn oro" style={{ marginTop: 16, fontSize: '1rem' }} disabled={subiendo} onClick={() => entrada.current.click()}>
-                  📷 {t('Elegir o tomar fotos', 'Choose or take photos')}
-                </button>
-                {subida && (
-                  <div style={{ marginTop: 14 }} aria-live="polite">
-                    <div className="barra"><div style={{ width: `${((subida.hechas + subida.fallas) / subida.total) * 100}%` }} /></div>
-                    <p className="chico suave" style={{ margin: '6px 0 0' }}>
-                      {subiendo
-                        ? `${t('Subiendo', 'Uploading')} ${subida.hechas + subida.fallas + 1} ${t('de', 'of')} ${subida.total}…`
-                        : `${t('¡Listo!', 'Done!')} ${subida.hechas} ${subida.hechas === 1 ? t('subida', 'uploaded') : t('subidas', 'uploaded')}${subida.fallas ? `, ${subida.fallas} ${t('con error', 'failed')}` : ''}. ${t('Gracias', 'Thank you')} 💛`}
-                    </p>
-                    {subiendo && subida.reintentando > 0 && (
-                      <p className="chico suave" style={{ margin: '4px 0 0' }}>
-                        {t('La señal está débil: reintentando solo. No cierres esta página.', "Weak signal: retrying automatically. Don't close this page.")}
-                      </p>
-                    )}
-                  </div>
+        {claveOk === false && (
+          <form className="clave-album" onSubmit={(e) => { e.preventDefault(); setClave(claveEscrita.trim().toUpperCase()); }}>
+            <p style={{ maxWidth: '48ch' }}>{t('Para subir fotos, escanea el código QR de tu mesa o escribe la clave del álbum.', "To upload photos, scan the QR code on your table or type the album's code.")}</p>
+            {clave && <p className="aviso error">{t('Esa clave no es correcta.', "That code isn't correct.")}</p>}
+            <div className="buscar-codigo">
+              <input value={claveEscrita} onChange={(e) => setClaveEscrita(e.target.value)} placeholder={t('Clave', 'Code')} aria-label={t('Clave del álbum', 'Album code')} autoComplete="off" />
+              <button className="btn">{t('Entrar', 'Enter')}</button>
+            </div>
+          </form>
+        )}
+        {claveOk && (
+          <div className="subida sobre-oliva">
+            <div className="campos">
+              <label className="campo" style={{ margin: 0 }}><span>{t('Tu nombre (opcional)', 'Your name (optional)')}</span>
+                <input value={autor} onChange={(e) => setAutor(e.target.value)} maxLength={60} placeholder={t('Para saber quién la tomó', 'So we know who took it')} />
+              </label>
+              <label className="campo" style={{ margin: 0 }}><span>{t('Momento', 'Moment')}</span>
+                <select value={momento} onChange={(e) => setMomento(e.target.value)}>
+                  {boda.momentos.map((m) => <option key={m} value={m}>{rotuloMomento(m)}</option>)}
+                </select>
+              </label>
+            </div>
+            <input ref={entrada} type="file" accept="image/*,video/*" multiple hidden onChange={(e) => subir(e.target.files)} />
+            <button className="btn btn-subir" disabled={subiendo} onClick={() => entrada.current.click()}>
+              {t('Elegir o tomar fotos', 'Choose or take photos')}
+            </button>
+            {subida && (
+              <div style={{ marginTop: 16 }} aria-live="polite">
+                <div className="barra"><div style={{ width: `${((subida.hechas + subida.fallas) / subida.total) * 100}%` }} /></div>
+                <p className="chico" style={{ margin: '8px 0 0' }}>
+                  {subiendo
+                    ? `${t('Subiendo', 'Uploading')} ${subida.hechas + subida.fallas + 1} ${t('de', 'of')} ${subida.total}…`
+                    : `${t('¡Listo!', 'Done!')} ${subida.hechas} ${subida.hechas === 1 ? t('subida', 'uploaded') : t('subidas', 'uploaded')}${subida.fallas ? `, ${subida.fallas} ${t('con error', 'failed')}` : ''}. ${t('Gracias.', 'Thank you.')}`}
+                </p>
+                {subiendo && subida.reintentando > 0 && (
+                  <p className="chico" style={{ margin: '4px 0 0', color: 'var(--oliva-claro)' }}>
+                    {t('La señal está débil: reintentando solo. No cierres esta página.', "Weak signal: retrying automatically. Don't close this page.")}
+                  </p>
                 )}
               </div>
             )}
             {error && <p className="aviso error" style={{ marginTop: 12 }}>{error}</p>}
           </div>
+        )}
+        {!claveOk && error && <p className="aviso error">{error}</p>}
 
-          <div className="filtros" role="tablist">
-            {filtros.map(([valor, rotulo]) => (
-              <button key={valor} role="tab" aria-selected={filtro === valor} className={filtro === valor ? 'activo' : ''} onClick={() => setFiltro(valor)}>{rotulo}</button>
-            ))}
-          </div>
-
-          {visibles.length
-            ? <Mosaico items={visibles} conPie />
-            : <p className="centro suave" style={{ padding: 40 }}>{t('Aún no hay fotos aquí. ¡Sé el primero en compartir una!', 'No photos here yet. Be the first to share one!')}</p>}
+        <div className="filtros" role="tablist" aria-label={t('Filtrar por momento', 'Filter by moment')}>
+          {filtros.map(([valor, rotulo]) => (
+            <button key={valor} role="tab" aria-selected={filtro === valor} className={filtro === valor ? 'activo' : ''} onClick={() => setFiltro(valor)}>{rotulo}</button>
+          ))}
         </div>
-      </section>
+
+        {visibles.length
+          ? <Mosaico items={visibles} conPie />
+          : <p className="suave" style={{ padding: '48px 0' }}>{t('Aún no hay fotos aquí. Sé el primero en compartir una.', 'No photos here yet. Be the first to share one.')}</p>}
+      </main>
     </>
   );
 }

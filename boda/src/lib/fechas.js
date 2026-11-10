@@ -1,5 +1,6 @@
 import { boda, fechaBoda } from '../config';
 import { locale, t } from './idioma';
+import { ahora } from './reloj';
 
 const tz = boda.zonaHoraria;
 
@@ -18,7 +19,13 @@ export const limiteConfirmar = (fecha = boda.confirmarAntesDe) =>
 
 /** ¿Ya pasó la fecha límite? Con la fecha del LUGAR de la boda, no la del teléfono. */
 export const plazoVencido = (fecha = boda.confirmarAntesDe) =>
-  new Date().toLocaleDateString('en-CA', { timeZone: tz }) > fecha;
+  ahora().toLocaleDateString('en-CA', { timeZone: tz }) > fecha;
+
+/** Días que faltan (incluido hoy) para la fecha límite; negativo si ya pasó. */
+export function diasParaConfirmar(fecha = boda.confirmarAntesDe) {
+  const hoy = ahora().toLocaleDateString('en-CA', { timeZone: tz });
+  return Math.round((Date.parse(`${fecha}T00:00:00Z`) - Date.parse(`${hoy}T00:00:00Z`)) / 864e5);
+}
 
 function ics(d) {
   return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');

@@ -47,7 +47,8 @@ const reciente = (f) => !f || (Date.now() - Date.parse(`${String(f).slice(0, 10)
 const beneficiosRango = (m) => [`${m.puntos} pts por cada $1 a tu precio de mayoreo`, '1 punto por cada $1 a precio Preferente',
   `${m.cumpleanos} puntos en tu cumpleaños`, ...(m.raspable ? [`Raspable mensual ${m.raspable}`] : [])];
 const pantallaNivel = (n) => ({ clave: n.clave, etiqueta: '¡SUBISTE DE NIVEL!', titulo: n.nombre, icono: ['crown.fill', '👑'],
-  texto: 'Gracias por tu preferencia. Desde ahora ganas más con cada compra:', beneficios: beneficiosDeNivel(n) });
+  // El personal gana siempre 1 punto por $1 (`n.equipo`, 2026-11-10): subir no le da más por compra.
+  texto: n.equipo ? 'Gracias por tu preferencia. Estos son los beneficios de tu nivel:' : 'Gracias por tu preferencia. Desde ahora ganas más con cada compra:', beneficios: beneficiosDeNivel(n) });
 // La primera vez que se ven los niveles encendidos: cuál le tocó con lo que
 // compró en 12 meses, sin decir que «subió».
 const pantallaTuNivel = (n) => ({ clave: n.clave, etiqueta: 'TU NIVEL', titulo: n.nombre, icono: ['crown.fill', '👑'],

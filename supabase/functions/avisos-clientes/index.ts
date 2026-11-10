@@ -224,8 +224,13 @@ Deno.serve(async (req) => {
       const { data: sub, error: eN } = await admin.rpc("puntos_subieron_de_nivel", { p_invoices: facturas });
       if (eN) console.error("no se pudo saber quién subió de nivel:", eN.message);
       for (const n of (sub ?? []) as { customer_id: number; invoice_id: number; clave: string; nombre: string }[]) {
+        // El personal gana siempre 1 punto por $1: subir no le da más puntos
+        // por compra, sólo los demás beneficios del nivel (2026-11-10).
+        const { data: esEquipo, error: eEq } = await admin.rpc("cliente_es_empleado", { p_customer: n.customer_id });
+        if (eEq) console.error("no se pudo saber si es del personal:", eEq.message);
         candidatos.push({ customer_id: n.customer_id, tipo: "nivel", ref: `nivel:${n.clave}:${n.invoice_id}`,
-          titulo: `¡Subiste a ${n.nombre}! 👑`, cuerpo: "Desde ahora ganas más puntos con cada compra. Mira tus beneficios.",
+          titulo: `¡Subiste a ${n.nombre}! 👑`,
+          cuerpo: esEquipo === true ? "Mira los beneficios de tu nivel." : "Desde ahora ganas más puntos con cada compra. Mira tus beneficios.",
           url: "/puntos?nivel=1" });
       }
     }

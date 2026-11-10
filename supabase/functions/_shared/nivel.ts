@@ -22,6 +22,8 @@ export type NivelFila = {
 
 export type Nivel = {
   clave: string; nombre: string; factor: number; cumpleanos: number; horas_reserva: number;
+  /** Personal: el factor es siempre 1 (ver `nivelDelEquipo`). */
+  equipo?: boolean;
   /** Puntos del raspable por defecto (0 si el nivel no tiene). */
   cupon_mensual: number;
   /** ¿Este nivel recibe el raspable del mes? */
@@ -125,6 +127,21 @@ export async function nivelDeCliente(admin: any, customerId: number): Promise<Ni
       falta: Math.max(0, Math.round((s.desde - real) * 100) / 100),
       beneficios: beneficiosDe(s, base),
     } : null,
+  };
+}
+
+/**
+ * El nivel visto por el PERSONAL (2026-11-10, usuario): gana siempre 1 punto
+ * por $1 en cualquier compra —el factor del nivel no le aplica (lo decide
+ * `puntos_acumular`, regla `personal`)— y el nivel le da sólo los demás
+ * beneficios (cumpleaños, raspable). Sin esto la app le mostraba «×1.5» en Oro
+ * mientras acumulaba ×1. La política vive en `docs/legal/politica-interna-puntos-personal.md`.
+ */
+export function nivelDelEquipo(n: Nivel): Nivel {
+  const uno = (b: string[]) => b.map((x) => (/^\d+(?:\.\d+)? puntos? por cada \$1$/.test(x) ? "1 punto por cada $1" : x));
+  return {
+    ...n, factor: 1, equipo: true, beneficios: uno(n.beneficios),
+    siguiente: n.siguiente ? { ...n.siguiente, factor: 1, beneficios: uno(n.siguiente.beneficios) } : null,
   };
 }
 

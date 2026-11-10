@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.12 — Puntos: el personal ve su nivel con ×1
+
+- El personal gana siempre 1 punto por $1 en cualquier compra; su nivel sube con
+  sus compras y le da los demás beneficios (cumpleaños, raspable). La app le
+  mostraba el factor del nivel (p. ej. ×1.5 en Oro): ahora lo ve con ×1
+  (`nivelDelEquipo`), y el aviso de subida ya no le promete «más puntos».
+- Política interna anotada en `docs/legal/politica-interna-puntos-personal.md`.
+
 ## v2.1500.11 — Secreto de cron repartido por circuito (código)
 
 Cada cron de las edge functions podrá mandar el secreto de **su** circuito

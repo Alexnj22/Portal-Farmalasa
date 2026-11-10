@@ -32,7 +32,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { TEXTOS_CONSENTIMIENTO as TEXTOS, documentosVigentes } from "../_shared/consentimientoPuntos.ts";
 import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.ts";
 import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_shared/paseGoogle.ts";
-import { escaleraDeNiveles, nivelDeCliente, programaParaApp } from "../_shared/nivel.ts";
+import { escaleraDeNiveles, nivelDeCliente, nivelDelEquipo, programaParaApp } from "../_shared/nivel.ts";
 import { duiValido, validarFiscales } from "../_shared/fiscal.ts";
 import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
 import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
@@ -4452,8 +4452,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         wallet_serial: `socio-${customerId}`,
         // Android: la app ofrece «Agregar a Google Wallet» sólo si el emisor está configurado.
         google_wallet: googleWalletListo(),
-        // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente.
-        nivel,
+        // El nivel (Plata/Oro/Platino) y cuánto falta para el siguiente. El
+        // personal lo ve con factor 1: es lo que gana (2026-11-10).
+        nivel: empleado && nivel ? nivelDelEquipo(nivel) : nivel,
         // Inyecciones por aplicar: el Inicio las muestra (ya no son pestaña).
         // Cliente Mayorista (2026-10-08): estado, precio y rango (Condiciones).
         mayorista,

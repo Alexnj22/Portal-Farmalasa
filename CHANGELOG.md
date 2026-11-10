@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.10 — Avisos de saldo a favor sólo a la sucursal y a supervisión
+
+- Pedido del usuario: los avisos de saldo a favor no van a Bodega, sólo a la sucursal y a supervisión. Nueva `destinatarios_de_saldo_favor` (la sala o quien la cubre, con permiso de Reservas, más Supervisor/a de Ventas) y su gemelo `reserva_avisar_saldo`. Cambian «El saldo a favor no se descontó», «Saldo a favor: posible intento indebido», «Devolución en efectivo autorizada» y «… no autorizada»; el resto de cada función queda igual (se reemplazó sólo la llamada, con verificación de que estuviera exactamente una vez). «Devolución en efectivo por autorizar» sigue yendo a quien la autoriza.
+
 ## v2.1501.9 — La base calcula la identidad una vez por consulta
 
 Cada consulta del portal pagaba 50–60 ms en comprobar permisos antes de leer un

@@ -1861,6 +1861,10 @@
    "area": "personal",
    "por": "tablas"
   },
+  "destinatarios_de_saldo_favor": {
+   "area": "personal",
+   "por": "tablas"
+  },
   "detalle_sin_ingresar": {
    "area": "pedidos",
    "por": "código"
@@ -5427,6 +5431,10 @@
    "por": "código"
   },
   "reserva_avisar_sala": {
+   "area": "app-clientes",
+   "por": "tablas"
+  },
+  "reserva_avisar_saldo": {
    "area": "app-clientes",
    "por": "tablas"
   },

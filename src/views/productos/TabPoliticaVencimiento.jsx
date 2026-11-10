@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import ListRow from '../../components/common/ListRow';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, LoadingState } from '../../components/common/StateViews';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -10,7 +10,7 @@ import TablePagination from '../../components/common/TablePagination';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import ConfirmModal from '../../components/common/ConfirmModal';
 import {
-    FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, Loader2, ChevronDown, Ban,
+    FlaskConical, Truck, RotateCcw, Plus, Pencil, Trash2, Check, X, ChevronDown, Ban,
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
 import {
@@ -318,11 +318,8 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
     return (
         <motion.div
             layout
-            className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden ${
-                isOpen
-                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card'
-                    : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card'
-            }`}
+            data-surface="card"
+            className="overflow-hidden"
         >
             <ListRow
                 density="lg"
@@ -474,7 +471,9 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
         <motion.div
             initial={{ opacity: 0, y: 4 }}
             animate={{ opacity: 1, y: 0 }}
-            className="rounded-xl bg-surface-card border border-chart-9/30 shadow-md shadow-chart-9/20 p-2.5"
+            data-surface="card"
+            data-tono="warning"
+            className="p-2.5"
         >
             <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
                 <div className="flex-1 min-w-[160px]">
@@ -547,7 +546,7 @@ function ProveedorForm({ initial, proveedorNameOptions, onCancel, onSave }) {
 
                 <div className="w-4 h-4 flex items-center justify-center shrink-0">
                     {saving ? (
-                        <Loader2 className="w-3.5 h-3.5 animate-spin text-chart-9-text" />
+                        <LoadingState variant="inline" size="sm" />
                     ) : justSaved ? (
                         <Check className="w-3.5 h-3.5 text-success" />
                     ) : null}

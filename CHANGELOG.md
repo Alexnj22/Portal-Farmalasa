@@ -21,9 +21,28 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.26 — Diseño: tarjetas, ruedas chicas y puntos por sus canónicos
+
+- 15 tarjetas escritas a mano pasan a la tarjeta del tema (`data-surface="card"`):
+  Permisos (cargos y módulos), Laboratorios y Política de vencimiento, encuestas,
+  avisos del empleado, relevo de líder, candidatos SRS, retención de Cotizaciones
+  y el selector de widgets del Inicio. La seleccionada o la que se edita se marca
+  con `data-tono`; la que se tiñe de relleno deja de ser superficie (§5.1).
+- `LoadingState variant="inline" size="sm"`: la rueda de 11px para chips y filas
+  densas (documentada en DESIGN.md §18.3). Reemplaza 14 ruedas a mano en
+  Permisos, Catálogo, Mín·Máx, Pedidos, Ficha de empleado, Política de
+  vencimiento y Encuestas de clientes. El «Guardar» de una ubicación de
+  laboratorio usa `Button loading`.
+- Puntos de estado por `PuntoDeEstado` (encabezado en vivo, sucursal, grabación
+  de nota de voz), dos cajas por `IconoEnCaja` y tres brillos que copiaban el
+  radio de su contenedor ahora lo heredan (`rounded-t-[inherit]`).
+- Gate de diseño: tarjeta 18→3, cargando 28→13, radio 19→16, punto 5→2,
+  ícono en caja 7→5 (baseline bajado).
+
 ## v2.1500.25 — App de clientes: control de bloqueo sólo con permiso
 
 - App de clientes: Sonidos sólo muestra el control de la pantalla de bloqueo si la versión instalada trae el permiso de audio en segundo plano (en Android, sin él la app se cerraría).
+
 
 ## v2.1500.24 — App de clientes: Sonidos rediseñado, ocho ambientes inmersivos
 

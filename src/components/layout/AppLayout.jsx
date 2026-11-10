@@ -1052,7 +1052,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                         shadow-[var(--shadow-glass-2)]
                                         group-hover/logo:border-logo-magenta/35 group-hover/logo:bg-[rgb(var(--sidebar-realce)/0.18)]
                                         ${isExpanded ? 'w-10 h-10' : 'w-11 h-11'}`}>
-                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.2)] to-transparent pointer-events-none rounded-t-[1.25rem]" />
+                                        <div className="absolute inset-x-0 top-0 h-1/2 bg-gradient-to-b from-[rgb(var(--sidebar-ink)/0.2)] to-transparent pointer-events-none rounded-t-[inherit]" />
                                         <img src="/Logo192.png" alt="FLS"
                                             className={`object-contain relative z-base transition-transform duration-[var(--dur-slow)] group-hover/logo:scale-105 ${isExpanded ? 'w-6 h-6' : 'w-7 h-7'}`} />
                                     </div>

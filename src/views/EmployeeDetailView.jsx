@@ -3,7 +3,7 @@ import CuerpoDialogo from '../components/common/CuerpoDialogo';
 import Button from '../components/common/Button';
 import SegmentedControl from '../components/common/SegmentedControl';
 import Badge from '../components/common/Badge';
-import { EmptyState } from '../components/common/StateViews';
+import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { useNavigate } from 'react-router-dom';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import {
@@ -11,7 +11,7 @@ import {
     Clock, FileText, Paperclip,
     CheckCircle2, Plus, UploadCloud, Activity, ShieldAlert,
     MapPin, Briefcase, HeartPulse,
-    Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban, Loader2,
+    Cake, AlertCircle, AlertTriangle, Wallet, CalendarDays, Coffee, User, ArrowLeft, ArrowRightLeft, Ban,
     KeyRound, Camera, ClipboardList, Palmtree, RefreshCw, DollarSign, FileCheck, Check, X, Search, Stethoscope, ChevronLeft, ChevronRight,
     Copy, Printer
 } from 'lucide-react';
@@ -682,7 +682,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                                                 <Clock size={18} className="text-brand-text"/> Historial Operativo
                                             </TituloDeSeccion>
                                             <div className="px-3 py-1 bg-surface-card text-content-3 rounded-full text-micro font-black uppercase tracking-widest border border-border-card shadow-sm flex items-center gap-1.5">
-                                                {isLoadingTimeline && <Loader2 size={10} className="animate-spin"/>}
+                                                {isLoadingTimeline && <LoadingState variant="inline" size="sm" />}
                                                 {timeline.length} Eventos
                                             </div>
                                         </div>

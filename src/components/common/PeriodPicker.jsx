@@ -351,6 +351,10 @@ export default function PeriodPicker({ value, onChange, placeholder = 'Período.
                         <div className="grid grid-cols-3 gap-1.5">
                             {presets.map(p => {
                                 const active = dayPhase === 'idle' && fini === p.start && ffin === p.end;
+                                // `tarjeta-a-mano` lo cuenta por el `hover:bg-surface-card`,
+                                // pero no es una tarjeta: es una pastilla de atajo dentro de
+                                // un desplegable. Como tarjeta llevaría vidrio y lift dentro de
+                                // un `data-surface="dropdown"`. Queda contado, a propósito.
                                 return (
                                     <button key={p.label} type="button" onClick={() => handlePreset(p.start, p.end)}
                                         className={`px-2 py-2 rounded-xl text-label font-bold transition-all text-center leading-tight

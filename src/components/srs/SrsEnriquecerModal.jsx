@@ -384,10 +384,11 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                         <button key={cand.srs.id}
                                                             aria-pressed={isSelected}
                                                             onClick={() => handlePickCandidate(currentReview, ci)}
-                                                            className={`w-full text-left rounded-xl border p-3 transition-all ${
-                                                                isSelected
-                                                                    ? 'border-chart-3/50 bg-chart-3/10'
-                                                                    : 'border-divider bg-surface-card hover:border-chart-3/30 hover:bg-chart-3/10'
+                                                            // §5.1: el elegido se tiñe de RELLENO, así que deja de ser
+                                                            // `data-surface` (la superficie le ganaría al tinte).
+                                                            data-surface={isSelected ? undefined : 'card'}
+                                                            className={`w-full text-left p-3 ${
+                                                                isSelected ? 'rounded-card border border-chart-3/50 bg-chart-3/10' : ''
                                                             }`}>
                                                             <div className="flex items-start justify-between gap-2">
                                                                 <p className="text-label font-bold text-content-2 leading-snug flex-1">

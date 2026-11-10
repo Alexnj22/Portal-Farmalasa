@@ -4,6 +4,7 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 import ModuleLockNotice, { ModuleLockChip } from './common/ModuleLockBanner';
 import useLayoutCompacto from '@nucleo/hooks/useLayoutCompacto';
 import BarraFlotante from './common/BarraFlotante';
+import PuntoDeEstado from './common/PuntoDeEstado';
 import {
     CanalDeVistaCtx, useCanalesDeVista,
     useBuscadorDeVista, useHayBarraDeFiltros, usePublicarBarraDeBusqueda,
@@ -367,9 +368,10 @@ const GlassViewLayout = ({
                                     <div className="bg-gradient-to-tr from-brand to-brand-purple rounded-xl shadow-[var(--shadow-glow-brand)] p-2 flex-shrink-0 relative">
                                         <Icon className="text-white" size={16} strokeWidth={1.5} />
                                         {liveIndicator && (
-                                            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
+                                            // §16.3: el punto en vivo, con el aro que late como hermano.
+                                            <span className="absolute -top-0.5 -right-0.5 flex h-2 w-2">
                                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-danger opacity-75" />
-                                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-danger border-[1.5px] border-border-card" />
+                                                <PuntoDeEstado className="relative bg-danger ring-[1.5px] ring-border-card" />
                                             </span>
                                         )}
                                     </div>

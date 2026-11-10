@@ -4,7 +4,7 @@ import { MODULE_GROUPS, pestanasDe, capacidadesDe } from '../components/common/c
 import SegmentedControl from '../components/common/SegmentedControl';
 import FilterBar from '../components/common/FilterBar';
 import ViewTabBar from '../components/common/ViewTabBar';
-import { EmptyState } from '../components/common/StateViews';
+import { EmptyState, LoadingState } from '../components/common/StateViews';
 import Button from '../components/common/Button';
 import {
     ShieldCheck, Monitor, Calendar, Building2, Megaphone, ClipboardList,
@@ -441,7 +441,7 @@ const TarjetaDecidirSolicitudes = ({ roleId, permissions, onChange, onDelegar, l
                                     {f.label}
                                 </span>
                                 <div className="flex items-center gap-1.5">
-                                    {saving[`${roleId}:${f.key}`] && <Loader2 size={9} className="text-content-3 animate-spin" />}
+                                    {saving[`${roleId}:${f.key}`] && <LoadingState variant="inline" size="sm" />}
                                     <Toggle value={on} color="bg-success" disabled={locked}
                                         onChange={(v) => onChange(f.key, 'can_approve', v)} />
                                 </div>
@@ -469,21 +469,23 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
     };
 
     return (
-        <div className={`rounded-3xl border transition-all duration-[var(--dur-lento)] ease-out ${
+        // Encendida o «próximamente» es la tarjeta canónica; el destello de
+        // guardado va por `data-tono` porque un `ring-*` no le gana a la
+        // superficie (§5.1). Sin acceso se tiñe de RELLENO y por eso deja de
+        // ser `data-surface`.
+        <div data-surface={isComing || hasAnyPerm ? 'card' : undefined}
+            data-tono={hasAnyPerm && !isComing && flash ? 'brand' : undefined}
+            className={`transition-all duration-[var(--dur-lento)] ease-out ${
             isComing
-                ? 'bg-surface-card border-border-card opacity-40 select-none'
+                ? 'opacity-40 select-none'
                 : hasAnyPerm
-                    ? `bg-surface-card border-border-card
-                       shadow-[var(--shadow-glass-2)]
-                       hover:shadow-[var(--shadow-glass-4)]
-                       hover:translate-y-[var(--lift-card)] hover:scale-[1.018] hover:bg-surface-card
-                       ${flash ? 'ring-2 ring-chart-1/45 shadow-[var(--shadow-glass-3)]' : ''}`
+                    ? ''
                     /* Sin acceso. NO se usa opacidad sobre la tarjeta entera: eso
                        bajaba el texto junto con el fondo y dejaba el nombre y la
                        descripción por debajo del contraste AA que fija PRODUCT.md.
                        El estado se comunica con la superficie y el borde; las
                        letras se leen igual que en una tarjeta encendida. */
-                    : 'bg-surface-card-hover/40 border-divider shadow-[var(--shadow-shine)] hover:translate-y-[var(--lift-card)] hover:bg-surface-card'
+                    : 'rounded-card border bg-surface-card-hover/40 border-divider shadow-[var(--shadow-shine)] hover:bg-surface-card'
         }`}>
             <div className="p-4">
                 {/* Header */}
@@ -499,17 +501,17 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                             <p className={`text-body-sm font-black leading-tight transition-colors duration-[var(--dur-slow)] ${hasAnyPerm ? 'text-content' : 'text-content-2'}`}>
                                 {module.label}
                             </p>
-                            {saving && <Loader2 size={10} className="text-content-3 animate-spin flex-shrink-0" />}
+                            {saving && <LoadingState variant="inline" size="sm" />}
                         </div>
                         <p className="text-caption text-content-3 font-medium mt-0.5 leading-snug line-clamp-2">{module.desc}</p>
                     </div>
                 </div>
 
                 {/* Toggles */}
-                <div className={`rounded-xl p-2.5 space-y-1.5 border transition-all duration-[var(--dur-slow)] ${
-                    hasAnyPerm
-                        ? 'bg-surface-card border-border-card shadow-[var(--shadow-shine)]'
-                        : 'bg-surface-card border-border-card'
+                {/* Franja DENTRO de la tarjeta: `bg-surface-card-hover` + borde,
+                    no otra tarjeta (§5.1). */}
+                <div className={`rounded-xl p-2.5 space-y-1.5 border border-divider bg-surface-card-hover transition-all duration-[var(--dur-slow)] ${
+                    hasAnyPerm ? 'shadow-[var(--shadow-shine)]' : ''
                 }`}>
                     {PERMISSION_TYPES.map(pt => {
                         if (pt.key === 'can_approve' && !module.hasApprove) return null;
@@ -607,7 +609,7 @@ const ModuleCard = ({ module, perms, onChange, locked, saving, flash, tabs, tabP
                                             {tab.label}
                                         </span>
                                         <div className="flex items-center gap-1.5">
-                                            {tabSaving?.[tab.key] && <Loader2 size={9} className="text-content-3 animate-spin" />}
+                                            {tabSaving?.[tab.key] && <LoadingState variant="inline" size="sm" />}
                                             <Toggle
                                                 value={!!tabPerm.can_view}
                                                 onChange={v => onTabChange(tab.key, 'can_view', v)}
@@ -1147,10 +1149,13 @@ const PermissionsView = () => {
                                     // lo anuncia — sin ella, el toggle existe y nadie
                                     // lo descubre.
                                     onClick={() => setSelectedRoleId(isActive ? null : r.id)}
-                                    className={`w-full text-left rounded-3xl border p-3.5 transition-all duration-[var(--dur-slow)] hover:translate-y-[var(--lift-hover)] active:scale-[0.98] transform-gpu ${
+                                    // En reposo es la tarjeta canónica; elegido se tiñe
+                                    // de RELLENO (`cs.fondo`) y deja de ser superficie (§5.1).
+                                    data-surface={isActive ? undefined : 'card'}
+                                    className={`w-full text-left p-3.5 active:scale-[0.98] ${
                                         isActive
-                                            ? `${cs.fondo} ${cs.borde} shadow-[var(--shadow-elevation-md)]`
-                                            : 'bg-surface-card border-border-card hover:bg-surface-card hover:shadow-[var(--shadow-elevation-sm)]'
+                                            ? `rounded-card border transition-all duration-[var(--dur-slow)] ${cs.fondo} ${cs.borde} shadow-[var(--shadow-elevation-md)]`
+                                            : ''
                                     }`}
                                 >
                                     <div className="flex items-center gap-3">

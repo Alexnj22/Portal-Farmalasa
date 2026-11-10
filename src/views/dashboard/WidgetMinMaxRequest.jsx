@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import { SkeletonText, LoadingState } from '../../components/common/StateViews';
-import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock, Boxes } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock, Boxes } from 'lucide-react';
 import Notice from '../../components/common/Notice';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import PortalInput from '../../components/common/PortalInput';
@@ -237,7 +237,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                   <div className="flex flex-col items-end leading-tight">
                     <span className="text-micro text-content-3 font-semibold">este mes</span>
                     <span className="text-label font-bold text-content-2 tabular-nums">
-                      {ventas === null ? <Loader2 size={11} className="animate-spin text-content-3" />
+                      {ventas === null ? <LoadingState variant="inline" size="sm" />
                         : ventas.unidadesMes != null ? Number(ventas.unidadesMes).toLocaleString('es-SV') : '—'}
                     </span>
                   </div>
@@ -266,7 +266,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                   <Boxes size={11} className="text-chart-1-text" /> En sala
                 </span>
                 {ventas === null
-                  ? <Loader2 size={11} className="animate-spin text-content-3" />
+                  ? <LoadingState variant="inline" size="sm" />
                   : (
                     <div className="text-right">
                       <span className="text-label font-bold text-content-2 tabular-nums">
@@ -290,7 +290,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
                   <CalendarClock size={11} className="text-chart-4-text" /> Última venta
                 </span>
                 {ventas === null
-                  ? <Loader2 size={11} className="animate-spin text-content-3" />
+                  ? <LoadingState variant="inline" size="sm" />
                   : <span className={`text-label font-bold text-right ${ventas.ultimaVenta ? 'text-content-2' : 'text-content-3'}`}>
                       {fmtUltimaVenta(ventas.ultimaVenta)}
                     </span>}

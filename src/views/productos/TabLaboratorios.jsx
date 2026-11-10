@@ -8,7 +8,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { fetchLaboratoriosBasic, fetchLabLocations, guardarFotoLaboratorio, guardarNombreAppLaboratorio, guardarOcultarLaboratorio, guardarSugerirLaboratorio, subirFotoLaboratorio, upsertLabLocation } from '@nucleo/data/laboratorios';
 import { filaDeUbicacion, seccionDeLaboratorio, tieneBodega, tieneSala, tieneUbicacion, ubicacionVacia } from '@nucleo/utils/ubicacionLaboratorio';
 import {
-    FlaskConical, MapPin, Check, X, Pencil, Loader2,
+    FlaskConical, MapPin, Check, X, Pencil,
     ChevronDown, Building2, Package, ShoppingBag,
 } from 'lucide-react';
 import { m as motion, AnimatePresence } from 'framer-motion';
@@ -389,12 +389,8 @@ function LabRow({ lab, branches, locationMap, isOpen, onToggle, onSave, onFoto, 
             //
             // Safari lo entiende desde la 18; donde no, se ignora y todo sigue
             // igual que antes.
-            className={`rounded-2xl border transition-all duration-[var(--dur-base)] overflow-hidden
-                [content-visibility:auto] [contain-intrinsic-size:auto_68px] ${
-                isOpen
-                    ? 'border-chart-9/30 shadow-lg shadow-chart-9/10 bg-surface-card'
-                    : 'border-border-card hover:border-chart-9/30 hover:shadow-md bg-surface-card'
-            }`}
+            data-surface="card"
+            className="overflow-hidden [content-visibility:auto] [contain-intrinsic-size:auto_68px]"
         >
             <ListRow
                 density="lg"
@@ -512,13 +508,11 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
             initial={{ opacity: 0, y: 8, scale: 0.97 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.2, delay: index * 0.035, ease: [0.4, 0, 0.2, 1] }}
-            className={`relative rounded-xl overflow-hidden transition-shadow duration-[var(--dur-base)] ${
-                editing
-                    ? isBodegaBranch
-                        ? 'shadow-lg shadow-warning/10 ring-1 ring-warning/30'
-                        : 'shadow-lg shadow-chart-9/10 ring-1 ring-chart-9/30'
-                    : 'shadow-sm hover:shadow-md cursor-pointer'
-            } bg-surface-card border border-border-card`}
+            // La que se está editando lleva `data-tono="warning"` (§5.1): un
+            // `ring-*` no le gana a la superficie.
+            data-surface="card"
+            data-tono={editing ? 'warning' : undefined}
+            className={`relative overflow-hidden ${editing ? '' : 'cursor-pointer'}`}
             onClick={editing ? undefined : () => setEditing(true)}
         >
             {/* Top accent bar */}
@@ -638,15 +632,9 @@ function BranchLocationCard({ branch, index, initial, onSave }) {
 
                             {/* Actions */}
                             <div className="flex gap-2 mt-3">
-                                <motion.button
-                                    whileTap={{ scale: 0.96 }}
-                                    onClick={save}
-                                    disabled={saving}
-                                    className="flex-1 flex items-center justify-center gap-1.5 py-1.5 rounded-xl bg-chart-9-solid hover:bg-chart-9/80 text-white text-body-sm font-bold shadow-md shadow-chart-9/30 transition-all disabled:opacity-50"
-                                >
-                                    {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                                <Button tone="chart-9" size="sm" icon={Check} loading={saving} onClick={save} className="flex-1">
                                     Guardar
-                                </motion.button>
+                                </Button>
                                 <motion.button
                                     whileTap={{ scale: 0.96 }}
                                     onClick={cancel}

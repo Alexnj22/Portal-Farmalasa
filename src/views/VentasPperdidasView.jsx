@@ -186,10 +186,10 @@ export default function VentasPperdidasView() {
 
                                     <div className="flex items-start gap-3 px-4 py-3">
                                         {/* Quantity bubble */}
-                                        <div className="shrink-0 w-10 h-10 rounded-xl bg-surface-card-hover border border-divider flex flex-col items-center justify-center">
+                                        <IconoEnCaja className="flex-col border border-divider">
                                             <span className="text-body-lg font-black text-content leading-none tabular-nums">{r.cantidad}</span>
                                             <span className="text-micro font-bold text-content-3 leading-none mt-0.5">uds</span>
-                                        </div>
+                                        </IconoEnCaja>
 
                                         <div className="flex-1 min-w-0">
                                             {/* Product name */}

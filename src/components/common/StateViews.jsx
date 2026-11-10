@@ -135,9 +135,20 @@ export const EmptyState = memo(({
    `route` cubre el árbol entero (tarjeta centrada); `content` solo el área
    de contenido dentro del shell; `inline` va dentro de un contenedor propio.
    El spinner es siempre Loader2 — antes coexistía con un borde rotatorio
-   bespoke en UnifiedModal. */
-export const LoadingState = memo(({ variant = 'content', label, className = '' }) => {
-    const spinner = <Loader2 className="text-brand-text animate-spin" size={variant === 'inline' ? 16 : 28} strokeWidth={2.5} />;
+   bespoke en UnifiedModal.
+
+   `size="sm"` (sólo con `inline`, 2026-11-10): la rueda de 11px para lo que
+   gira DENTRO de un chip o de una fila densa —el «guardando» al lado de un
+   interruptor de Permisos, el dato que todavía no llegó en la tarjeta de
+   Mín·Máx—. Había catorce escritas a mano en tres tamaños (9, 10 y 11) y
+   cuatro colores; la de 16 del `inline` normal no entra en una línea de
+   `text-micro` sin empujarla. El rótulo baja a `text-micro`, que es la letra
+   de esos chips. */
+const SPINNER_PX = { content: 28, route: 28, inline: 16, 'inline-sm': 11 };
+
+export const LoadingState = memo(({ variant = 'content', size = 'md', label, className = '' }) => {
+    const chico = variant === 'inline' && size === 'sm';
+    const spinner = <Loader2 className="text-brand-text animate-spin shrink-0" size={SPINNER_PX[chico ? 'inline-sm' : variant] ?? 28} strokeWidth={2.5} />;
 
     if (variant === 'route') {
         return (
@@ -153,9 +164,9 @@ export const LoadingState = memo(({ variant = 'content', label, className = '' }
     }
     if (variant === 'inline') {
         return (
-            <span data-cargando className={`inline-flex items-center gap-2 text-content-3 ${className}`}>
+            <span data-cargando className={`inline-flex items-center ${chico ? 'gap-1' : 'gap-2'} text-content-3 ${className}`}>
                 {spinner}
-                {label && <span className="text-body-sm font-bold">{label}</span>}
+                {label && <span className={chico ? 'text-micro font-semibold' : 'text-body-sm font-bold'}>{label}</span>}
             </span>
         );
     }

@@ -263,6 +263,11 @@ const EmployeeScheduleRow = memo(({ emp, roster, shifts, calendarDates, onEditCe
                         const rect = e.currentTarget.getBoundingClientRect();
                         onEditCell(emp.id, dId, date, dayData, rect);
                     })}>
+                        {/* `tarjeta-a-mano` la cuenta y queda contada a propósito: es la
+                            CELDA de una matriz empleado × día (cientos por semana), no un
+                            registro. Como `data-surface="card"` cada una pagaría vidrio y
+                            levantaría con `--lift-card` encima de su propia escala de
+                            celda. Su gemela en la vista por sucursal, más abajo, igual. */}
                         <div className={`h-full rounded-2xl mx-0.5 p-1.5 relative transition-transform duration-[var(--dur-fast)] flex flex-col
                             ${(!isReadOnly && !apoyoBranch) ? 'group-hover/cell:scale-[1.03]' : ''}
                             ${apoyoBranch ? 'bg-chart-3/10 border border-chart-3/30 shadow-[var(--shadow-glow-chart-3)]' :

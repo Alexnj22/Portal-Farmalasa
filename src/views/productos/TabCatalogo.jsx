@@ -7,7 +7,7 @@ import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
-    Package, FlaskConical, Check, Loader2,
+    Package, FlaskConical, Check,
     ChevronLeft, ChevronRight, ChevronDown, AlertTriangle, Info,
     Camera, TrendingDown, ShieldAlert, Plus, X, Building2, Tag,
     Sparkles, History, MapPin, Search, Eye, RotateCcw, Ban, EyeOff, Smartphone, PackageSearch, ImagePlus,
@@ -299,9 +299,7 @@ const PrincipiosEditor = forwardRef(function PrincipiosEditor({ productId, initi
                     <div className="flex items-center gap-2 pt-1">
                         <Button variant="ghost" icon={Plus} className={addCls} onClick={addItem}>Agregar principio</Button>
                         {savingPA && (
-                            <span className="flex items-center gap-1 text-micro font-semibold text-content-3">
-                                <Loader2 size={9} className="animate-spin" /> Guardando…
-                            </span>
+                            <LoadingState variant="inline" size="sm" label="Guardando…" />
                         )}
                     </div>
                 </>
@@ -365,9 +363,7 @@ const CategoryEditor = forwardRef(function CategoryEditor({ productId, initial, 
                 onCreateOption={handleCreate}
             />
             {savingCat && (
-                <span className="flex items-center gap-1 text-micro font-semibold text-content-3 mt-1.5">
-                    <Loader2 size={9} className="animate-spin" /> Guardando…
-                </span>
+                <LoadingState variant="inline" size="sm" label="Guardando…" className="mt-1.5" />
             )}
         </div>
     );

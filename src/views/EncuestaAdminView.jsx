@@ -962,13 +962,9 @@ export default function EncuestaAdminView() {
                             const globalAvg = isExpanded ? avgBlockScore(respuestas, allIndices, invertedIndices) : null;
 
                             return (
-                                <div key={s.id} className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] ease-[var(--ease-spring)] group relative ${
-                                    isExpanded
-                                        ? 'border-brand/20 shadow-[var(--shadow-elevation-md)] bg-surface-card z-base'
-                                        : isEditing
-                                            ? 'bg-surface-card border-warning/40 shadow-[var(--shadow-elevation-sm)]'
-                                            : 'border-border-card shadow-[var(--shadow-elevation-xs)] hover:shadow-[var(--shadow-elevation-md)] hover:translate-y-[var(--lift-card)] bg-surface-card'
-                                }`}>
+                                <div key={s.id} data-surface="card"
+                                    data-tono={isEditing && !isExpanded ? 'warning' : undefined}
+                                    className={`flex flex-col group relative ${isExpanded ? 'z-base' : ''}`}>
 
                                     {/* ── Card header ── */}
                                     <div className={`p-6 flex flex-col gap-4 ${!isExpanded ? 'cursor-pointer' : ''}`}

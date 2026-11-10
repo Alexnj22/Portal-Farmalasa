@@ -4195,7 +4195,8 @@ const DashboardView = ({ openModal }) => {
                           aria-pressed={enabled && hasAccess}
                           disabled={!hasAccess}
                           onClick={() => hasAccess && toggleWidget(w.id)}
-                          className={`flex items-center gap-2.5 p-3 rounded-2xl border text-left transition-[background-color,border-color] duration-[var(--dur-fast)] ${!hasAccess ? 'opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'bg-brand/5 border-brand/20 hover:bg-brand/8' : 'bg-surface-card border-divider hover:bg-surface-card-hover'}`}>
+                          data-surface={hasAccess && !enabled ? 'card' : undefined}
+                          className={`flex items-center gap-2.5 p-3 text-left transition-[background-color,border-color] duration-[var(--dur-fast)] ${!hasAccess ? 'rounded-card border opacity-40 cursor-not-allowed bg-surface-card-hover border-divider' : enabled ? 'rounded-card border bg-brand/5 border-brand/20 hover:bg-brand/8' : ''}`}>
                           <WIcon size={14} className={enabled && hasAccess ? 'text-brand-text' : 'text-content-3'}/>
                           <span className={`text-label font-semibold flex-1 ${enabled && hasAccess ? 'text-content' : 'text-content-3'}`}>{w.label}</span>
                           {/* Indicador, no control: la fila entera ya es el botón.

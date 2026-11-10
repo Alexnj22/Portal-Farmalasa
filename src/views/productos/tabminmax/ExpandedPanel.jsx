@@ -5,7 +5,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { Loader2, Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
+import { Package, Building2, CheckCircle2, TrendingDown } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { ERP_NAMES, ERP_ORDER, ALERT } from './constants';
@@ -421,7 +421,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                     <div className="px-4 py-2.5 flex flex-col gap-2">
                                         <span className="text-micro font-black uppercase tracking-widest text-chart-3-text">MIN · MAX red</span>
                                         {!branchReady
-                                            ? <Loader2 size={10} className="animate-spin text-content-3" />
+                                            ? <LoadingState variant="inline" size="sm" />
                                             : <div className="flex flex-col gap-1">
                                                 {ERP_ORDER.filter(id => id !== 6).map(erpId => {
                                                     const bd = branchData?.find(b => b.erp_sucursal_id === erpId);

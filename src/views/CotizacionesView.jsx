@@ -510,7 +510,8 @@ export default function CotizacionesView() {
                         {/* Retención */}
                         <div className="flex flex-col gap-2">
                             <div {...clickable(() => isCCFMode && setAppliesRetention(p => !p))}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-2xl border cursor-pointer select-none transition-all ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'bg-warning/10 border-warning/40' : 'bg-surface-card border-border-card hover:bg-surface-card'}`}>
+                                data-surface={appliesRetention ? undefined : 'card'}
+                                className={`flex items-center gap-3 px-4 py-3 cursor-pointer select-none ${!isCCFMode ? 'opacity-40 cursor-not-allowed' : ''} ${appliesRetention ? 'rounded-card border bg-warning/10 border-warning/40' : ''}`}>
                                 <div className={`w-5 h-5 rounded-lg border-2 flex items-center justify-center transition-all ${appliesRetention ? 'bg-warning border-warning' : 'border-border-card'}`}>
                                     {appliesRetention && <CheckCircle2 size={12} strokeWidth={3} className="text-white" />}
                                 </div>

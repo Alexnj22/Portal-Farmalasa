@@ -38,6 +38,7 @@ import { MOTIVOS_ANULACION, FORMAS_DE_PAGO, ROTULO_PAGO, esDeHoy, estadoDeLaCaja
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import PuntosDelCambio from '../solicitudes/PuntosDelCambio';
 import Notice from '../../components/common/Notice';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 const findTargetEmployee = supervisorQueResuelve;
 
 const REASONS = MOTIVOS_ANULACION;
@@ -727,9 +728,9 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
         <div data-surface="card" className="px-3 py-2">
           <p className="text-micro font-black text-content-2 uppercase tracking-widest mb-1.5">Cliente actual</p>
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-full bg-surface-card-hover flex items-center justify-center shrink-0">
-              <span className="text-content-2 font-black text-label leading-none">{(inv.cliente || '?').charAt(0)}</span>
-            </div>
+            <IconoEnCaja tamano="sm" forma="circulo">
+              <span className="font-black text-label leading-none">{(inv.cliente || '?').charAt(0)}</span>
+            </IconoEnCaja>
             <p className="text-body font-black text-content-2 truncate">{inv.cliente || 'Sin nombre'}</p>
           </div>
         </div>

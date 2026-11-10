@@ -424,13 +424,9 @@ const UnreadStack = memo(({ list, onRead }) => {
                     )}
 
                     <div
-                        className={`rounded-header border flex flex-col transition-all duration-[var(--dur-lento)] group/card hover:translate-y-[var(--lift-card)] ${
-                            phase === 'check'
-                                ? 'border-success/50 shadow-[var(--shadow-glow-success-lg)] bg-surface-card'
-                                : isUrgent
-                                ? 'border-danger/30   shadow-[var(--shadow-glow-danger-lg)] hover:shadow-[var(--shadow-glow-danger-lg)] bg-surface-card'
-                                : 'border-divider shadow-[var(--shadow-elevation-xl)] hover:shadow-[var(--shadow-elevation-xl)] bg-surface-card'
-                        }`}
+                        data-surface="card"
+                        data-tono={phase === 'check' ? 'success' : isUrgent ? 'danger' : undefined}
+                        className="flex flex-col group/card"
                     >
                         <div className="p-7 flex flex-col gap-5">
                             {/* Badges + fecha */}

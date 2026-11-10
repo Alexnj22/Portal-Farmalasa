@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
     ArrowLeft, Send, ThumbsUp, Undo2, Rocket, Square, Archive, Copy, Trash2, AlertTriangle, CheckCircle2,
-    Loader2, Cloud, BookmarkPlus,
+    Cloud, BookmarkPlus,
 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -355,13 +355,16 @@ function IndicadorGuardado({ estado }) {
     const m = {
         listo:     { icon: CheckCircle2, texto: 'Guardado', cls: 'text-content-3' },
         pendiente: { icon: Cloud, texto: 'Cambios sin guardar', cls: 'text-content-3' },
-        guardando: { icon: Loader2, texto: 'Guardando…', cls: 'text-content-3', spin: true },
+        guardando: null,
         error:     { icon: AlertTriangle, texto: 'Sin guardar', cls: 'text-danger' },
     }[estado];
+    if (estado === 'guardando') {
+        return <span aria-live="polite"><LoadingState variant="inline" size="sm" label="Guardando…" /></span>;
+    }
     const I = m.icon;
     return (
         <span className={`inline-flex items-center gap-1 text-micro font-semibold ${m.cls}`} aria-live="polite">
-            <I size={13} className={m.spin ? 'animate-spin' : ''} />{m.texto}
+            <I size={13} />{m.texto}
         </span>
     );
 }

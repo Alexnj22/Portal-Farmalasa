@@ -4,9 +4,9 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
-import { SkeletonText } from '../../../components/common/StateViews';
+import { SkeletonText, LoadingState } from '../../../components/common/StateViews';
 import { AnimatePresence, m as motion } from 'framer-motion';
-import { ChevronDown, ChevronRight, Search, X, Loader2, Check, RotateCcw, ShieldAlert } from 'lucide-react';
+import { ChevronDown, ChevronRight, Search, X, Check, RotateCcw, ShieldAlert } from 'lucide-react';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { DataTable, DataRow, DataCell } from '../../../components/common/DataTable';
@@ -536,7 +536,7 @@ export default function ItemSections({ allItems, loading, canEditMinMax = false 
                             compact
                             inputClassName="text-center font-bold tabular-nums"
                         />
-                        {isSaving && <Loader2 size={10} className="animate-spin text-brand-text shrink-0" />}
+                        {isSaving && <LoadingState variant="inline" size="sm" />}
                         {!isSaving && isSaved && <Check size={10} className="text-success shrink-0" />}
                         <Button icon={RotateCcw} disabled={isSaving} title="Restaurar MIN/MAX original" onClick={() => restoreMinMax(row)}>Restaurar</Button>
                         <Button variant="destructive" icon={X} disabled={isSaving} title="Dejar en 0/0 — excluye del próximo pedido" onClick={() => resetZero(row)}>0 / 0</Button>

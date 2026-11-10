@@ -23,6 +23,7 @@ import {
 } from '@nucleo/data/chatClientes';
 import { FranjaDeRespuesta } from './AccionesDeMensaje';
 import useGrabadora from './useGrabadora';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 import useFotoDelTelefono from '../../components/common/useFotoDelTelefono';
 import useCoarsePointer from '../../plataforma/useCoarsePointer';
 import { guardarBorrador, leerBorrador } from '@nucleo/utils/chatBorradores';
@@ -163,7 +164,7 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
                     <Button variant="ghost" size="md" iconOnly icon={Trash2} title="Descartar la nota de voz" onClick={grabadora.cancelar}
                         className="shrink-0" />
                     <span className="flex-1 min-w-0 flex items-center gap-2 rounded-input bg-surface-card border border-border-card px-3 h-10" role="status">
-                        <span className="size-2.5 rounded-full bg-danger animate-pulse shrink-0" aria-hidden="true" />
+                        <PuntoDeEstado className="bg-danger animate-pulse" />
                         <span className="text-body-sm font-semibold tabular-nums text-content">
                             {Math.floor(grabadora.segundos / 60)}:{String(grabadora.segundos % 60).padStart(2, '0')}
                         </span>

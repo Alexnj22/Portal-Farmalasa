@@ -4,9 +4,10 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import {
-    XCircle, RotateCcw, History, Eye, EyeOff, Loader2, Trash2, Upload, MoreHorizontal, MessageSquareText } from 'lucide-react';
+    XCircle, RotateCcw, History, Eye, EyeOff, Trash2, Upload, MoreHorizontal, MessageSquareText } from 'lucide-react';
 import useCapaFlotante from '../../../plataforma/capaFlotante';
 import { useEnHojaDeAcciones } from '../../../components/common/hojaDeAcciones';
+import { LoadingState } from '../../../components/common/StateViews';
 
 export default function RowActions({ row, filterHidden, hasDraft, dead, noHistory, canManage, puedeCeroEnTodas, publishing, hidingIds, onOpenMotivo,
     isBodegaRow,
@@ -91,7 +92,7 @@ export default function RowActions({ row, filterHidden, hasDraft, dead, noHistor
                 cls: `${B} text-chart-3-text hover:text-chart-3-text hover:bg-chart-3/10`,
                 dropCls: 'text-chart-3-text hover:text-chart-3-text hover:bg-chart-3/10',
                 onClick: () => onUnhide() }
-            : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <Loader2 size={13} className="animate-spin"/> : <EyeOff size={13}/>,
+            : { key: 'hide', icon: hidingIds.has(row.erp_product_id) ? <LoadingState variant="inline" size="sm" /> : <EyeOff size={13}/>,
                 label: 'Ocultar',
                 cls: `${B} text-content-3 hover:text-content-2 hover:bg-surface-card-hover disabled:pointer-events-none`,
                 dropCls: 'text-content-3 hover:text-content-2 hover:bg-surface-card-hover',

@@ -2409,6 +2409,20 @@ import { Skeleton, SkeletonText } from '../common/StateViews';
 todavía no se sabe la forma del contenido. `AiThinkingState` es el estado de las
 vistas con resumen generado.
 
+**`size="sm"` — la rueda dentro de un chip o una fila densa** (sólo con
+`inline`): 11px y rótulo en `text-micro`. Es el «guardando» al lado de un
+interruptor, el dato que todavía no llegó en una línea de `text-label`. La de
+16px del `inline` normal empuja esas líneas; antes había catorce escritas a mano
+en 9, 10 y 11px y cuatro colores.
+
+```jsx
+{guardando && <LoadingState variant="inline" size="sm" />}
+<LoadingState variant="inline" size="sm" label="Guardando…" />
+```
+
+No es para un botón (`Button loading`) ni para una sección (`LoadingState` a
+secas o esqueleto, §18.2).
+
 ## 20. Scrollbar
 
 La barra del navegador no se ve nunca. Definición en `src/index.css`:

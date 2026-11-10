@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.35 — App de clientes: portadas vivas en la pantalla bloqueada del iPhone
+
+- App de clientes · Sonidos en iPhone: portada ANIMADA en la pantalla bloqueada (iOS 26): un video en bucle por ambiente, vertical para la pantalla completa y cuadrado para el reproductor chico, con el logo nítido. Antes de iOS 26 queda la portada fija, ahora sin el tope de 1024 px de la librería de audio.
+- Módulo nativo nuevo `modules/portada-viva` (sólo iPhone): maneja lo que suena y sus botones (reproducir, pausa, detener). Requiere binario nuevo; los anteriores siguen con el aviso de antes.
+
 ## v2.1500.34 — Puntos: el aviso de canje sin saldo dice la cuenta completa
 
 - El aviso «Canje sin saldo suficiente» decía sólo «Faltaron 148». Ahora explica la cuenta: «Tenía 552 puntos y en caja se aplicaron 700 ($7.00 de descuento). Se descontaron los 552 que tenía y faltaron 148: $1.48 se dieron sin puntos.», y la columna Puntos dice «Faltaron 148 de 700». La frase sale de `puntos_panel_avisos` (nuevos campos `pedidos`, `tenia`, `descuento`), así que la app la muestra igual sin publicarla.

@@ -22,6 +22,8 @@ import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { Asset } from 'expo-asset';
+import PortadaViva from '../modules/portada-viva';
+import VIVAS from './portadasVivas';
 
 let AudioAPI = null;
 try { AudioAPI = require('react-native-audio-api'); } catch { AudioAPI = null; }
@@ -372,15 +374,37 @@ const PORTADAS = {
   rosa: require('../assets/sonidos/portadas/rosa.jpg'),
   cafe: require('../assets/sonidos/portadas/cafe.jpg'),
 };
-async function portada(tipo) {
+async function archivo(modulo) {
+  if (!modulo) return undefined;
   try {
-    const a = Asset.fromModule(PORTADAS[tipo]);
+    const a = Asset.fromModule(modulo);
     if (!a.localUri) await a.downloadAsync();
     return a.localUri ?? a.uri ?? undefined;
   } catch { return undefined; }
 }
+const portada = (tipo) => archivo(PORTADAS[tipo]);
+
+// iPhone con el módulo propio (binario desde 2026-11-10): portada viva y fija
+// a resolución completa. Sin él, el aviso de react-native-audio-api.
+let subsViva = null;
+async function mostrarViva(tipo, pausado) {
+  if (!subsViva) {
+    subsViva = [
+      PortadaViva.addListener('alPausar', () => pausarRuido()),
+      PortadaViva.addListener('alReanudar', () => { reanudarRuido(); }),
+      PortadaViva.addListener('alDetener', () => pararRuido()),
+    ];
+  }
+  const [alto, cuadrado] = VIVAS[tipo] ?? [];
+  const [p, va, vc] = await Promise.all([portada(tipo), archivo(alto), archivo(cuadrado)]);
+  await PortadaViva.mostrar({
+    clave: tipo, titulo: SONIDOS[tipo].nombre, artista: 'Sonidos · Puntos Salud',
+    portada: p, videoAlto: va, videoCuadrado: vc, sonando: !pausado,
+  });
+}
 
 async function mostrarAviso(tipo, pausado = false) {
+  if (PortadaViva) { mostrarViva(tipo, pausado).catch(() => {}); return; }
   const A = Aviso();
   if (!A) return;
   try {
@@ -400,6 +424,7 @@ async function mostrarAviso(tipo, pausado = false) {
   } catch { /* sin aviso: suena igual */ }
 }
 function ocultarAviso() {
+  if (PortadaViva) { PortadaViva.ocultar().catch(() => {}); return; }
   const A = Aviso();
   if (!A) return;
   A.hide().catch(() => {});

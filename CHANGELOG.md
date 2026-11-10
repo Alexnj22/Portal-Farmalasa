@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.24 — App de clientes: Sonidos rediseñado, ocho ambientes inmersivos
+
+- App de clientes: la pantalla de ruido blanco ahora es «Sonidos», con ocho ambientes que suenan distinto: lluvia (gotas con tono), olas que crecen y rompen, fogata que cruje, noche melancólica (grillos, acorde lejano y un búho), ventilador, blanco, rosa y profundo.
+- Cada sonido es un paisaje animado de pantalla completa (lluvia que cae, mar, brasas, estrellas y luciérnagas, aspas…) que se funde con el siguiente. Tocar la escena deja una onda; deslizar arriba o abajo cambia el volumen.
+
 ## v2.1500.23 — App de clientes: ruido blanco con el teléfono bloqueado
 
 - App de clientes (versión nueva de tienda): el ruido blanco sigue sonando con el teléfono bloqueado, con control en la pantalla de bloqueo de iPhone y notificación con pausa/detener en Android. El temporizador se cumple aunque la pantalla esté apagada.

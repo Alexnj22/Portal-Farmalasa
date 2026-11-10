@@ -1,89 +1,117 @@
-// Ruido blanco (Bienestar, 2026-11-10). Cinco sonidos de fondo para
-// concentrarse, calmarse o dormir, fabricados en el teléfono (lib/ruido.js):
-// no gastan datos ni piden cuenta.
+// Sonidos de fondo (Bienestar, 2026-11-10). Ocho ambientes —lluvia, olas,
+// fogata, noche, ventilador y tres ruidos— fabricados en el teléfono
+// (lib/ruido.js): no gastan datos ni piden cuenta, y siguen sonando con el
+// teléfono bloqueado, con su control en la pantalla de bloqueo.
 //
-// Un sonido se elige tocándolo y empieza solo; tocar el mismo, o «Detener»,
-// lo apaga. El temporizador lo apaga despacio —medio minuto de fundido— para
-// no despertar a nadie. Sigue sonando con el teléfono bloqueado, con su
-// control en la pantalla de bloqueo (lib/ruido.js); el estado vive allá, así
-// que pausar desde la notificación también se ve aquí.
-import { useEffect, useState } from 'react';
-import { Text, View } from 'react-native';
-import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
+// Rehecha el mismo día («más moderna, más interactiva, más inmersiva según el
+// ruido»): cada sonido es un LUGAR de pantalla completa (componentes/
+// PaisajeRuido.js) que se funde con el siguiente al cambiar. La escena se
+// toca: deja una onda donde cae el dedo, y deslizar hacia arriba o hacia abajo
+// sube o baja el volumen, con una barra que lo muestra. Sin sonar, la escena
+// sigue viva pero casi quieta; al sonar, se despierta.
+//
+// El temporizador apaga despacio —medio minuto de fundido— para no despertar
+// a nadie; está programado dentro del audio, así que se cumple bloqueado.
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { InteractionManager, PanResponder, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useHeaderHeight } from 'expo-router/react-navigation';
+import Animated, {
+  Easing, FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming,
+} from 'react-native-reanimated';
+import * as Haptics from 'expo-haptics';
 import { Tocable, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
-import { BLANCO, BLANCO_2, BLANCO_3, BotonJuego, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
+import PaisajeRuido from '../componentes/PaisajeRuido';
 import { tacto } from '../lib/sensaciones';
-import { SONIDOS, pararRuido, ruidoDisponible, sonarRuido, temporizadorRuido, useRuido, volumenRuido } from '../lib/ruido';
+import {
+  SONIDOS, pararRuido, prepararRuido, ruidoDisponible, sonarRuido, temporizadorRuido, useRuido, volumenActual, volumenRuido,
+} from '../lib/ruido';
 
-const MINUTOS = [15, 30, 60, 0];
-const VOLUMENES = [{ valor: 0.3, texto: 'Bajo' }, { valor: 0.6, texto: 'Medio' }, { valor: 1, texto: 'Alto' }];
-
+const MINUTOS = [0, 15, 30, 60, 90];
+const BLANCO = '#FFFFFF';
 const reloj = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
-// Tres anillos que respiran mientras suena: el pulso lento del sonido.
-function Anillo({ i, sonando, quieta }) {
-  const p = useSharedValue(0);
-  useEffect(() => {
-    if (sonando && !quieta) {
-      p.value = 0;
-      p.value = withRepeat(withTiming(1, { duration: 4200, easing: Easing.out(Easing.quad) }), -1, false);
-    } else {
-      cancelAnimation(p);
-      p.value = withTiming(0, { duration: 400 });
-    }
-  }, [sonando, quieta, p]);
-  const estilo = useAnimatedStyle(() => {
-    const f = (p.value + i / 3) % 1;
-    return { opacity: sonando ? (1 - f) * 0.5 : 0, transform: [{ scale: 0.7 + f * 0.75 }] };
-  });
-  return <Animated.View pointerEvents="none" style={[{ position: 'absolute', width: 210, height: 210, borderRadius: 105, borderWidth: 2, borderColor: BLANCO }, estilo]} />;
-}
-
-function Centro({ tipo, sonando, quieta }) {
+// El botón grande: un círculo de vidrio con el color del lugar, que respira
+// mientras suena (dos anillos que salen y se apagan).
+function BotonPlay({ sonando, preparando, acento, alTocar }) {
+  const quieta = useSinMovimiento();
+  const pulso = useSharedValue(0);
   const s = useSharedValue(1);
   useEffect(() => {
-    s.value = withSpring(sonando ? 1.06 : 1, { damping: 9, stiffness: 140 });
-  }, [sonando, tipo, s]);
-  const estilo = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
-  const x = SONIDOS[tipo];
+    if (sonando && !quieta) pulso.value = withRepeat(withTiming(1, { duration: 2600, easing: Easing.out(Easing.quad) }), -1, false);
+    else pulso.value = withTiming(0, { duration: 300 });
+  }, [sonando, quieta, pulso]);
+  const a1 = useAnimatedStyle(() => {
+    const f = pulso.value % 1;
+    return { opacity: sonando ? (1 - f) * 0.5 : 0, transform: [{ scale: 1 + f * 0.9 }] };
+  });
+  const a2 = useAnimatedStyle(() => {
+    const f = (pulso.value + 0.5) % 1;
+    return { opacity: sonando ? (1 - f) * 0.5 : 0, transform: [{ scale: 1 + f * 0.9 }] };
+  });
+  const boton = useAnimatedStyle(() => ({ transform: [{ scale: s.value }] }));
+  const tocar = () => {
+    s.value = withSequence(withTiming(0.9, { duration: 80 }), withSpring(1, { damping: 8, stiffness: 300 }));
+    alTocar();
+  };
   return (
-    <View style={{ height: 250, alignItems: 'center', justifyContent: 'center' }}>
-      {[0, 1, 2].map((i) => <Anillo key={i} i={i} sonando={sonando} quieta={quieta} />)}
-      <Animated.View style={[{ width: 170, height: 170, borderRadius: 85, alignItems: 'center', justifyContent: 'center', gap: 6,
-        backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' }, estilo]}>
-        <Icono sf={x.sf} respaldo="" tam={52} color={BLANCO} />
-        <Text style={{ fontSize: 18, fontWeight: '800', color: BLANCO }}>{x.nombre}</Text>
-      </Animated.View>
+    <View style={{ width: 112, height: 112, alignItems: 'center', justifyContent: 'center' }}>
+      <Animated.View pointerEvents="none" style={[estilos.anillo, { borderColor: acento }, a1]} />
+      <Animated.View pointerEvents="none" style={[estilos.anillo, { borderColor: acento }, a2]} />
+      <Tocable etiqueta={sonando ? 'Pausar' : 'Reproducir'} alTocar={tocar} estilo={{ borderRadius: 56 }}>
+        <Animated.View style={[{ width: 104, height: 104, borderRadius: 52, alignItems: 'center', justifyContent: 'center',
+          backgroundColor: 'rgba(255,255,255,0.16)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.4)',
+          shadowColor: acento, shadowOpacity: sonando ? 0.8 : 0.3, shadowRadius: 30, shadowOffset: { width: 0, height: 0 } }, boton]}>
+          {preparando
+            ? <Text style={{ fontSize: 13, fontWeight: '800', color: BLANCO }}>…</Text>
+            : <Icono sf={sonando ? 'pause.fill' : 'play.fill'} respaldo={sonando ? 'II' : '▶'} tam={40} color={BLANCO} />}
+        </Animated.View>
+      </Tocable>
     </View>
   );
 }
 
-function Opcion({ id, activo, sonando, alTocar }) {
+// Un sonido en la tira de abajo: un círculo con los colores de su lugar.
+function Orbe({ id, activo, sonando, alTocar }) {
   const x = SONIDOS[id];
+  const s = useSharedValue(activo ? 1 : 0);
+  useEffect(() => { s.value = withSpring(activo ? 1 : 0, { damping: 12, stiffness: 180 }); }, [activo, s]);
+  const estilo = useAnimatedStyle(() => ({ transform: [{ scale: 0.88 + 0.12 * s.value }], opacity: 0.7 + 0.3 * s.value }));
   return (
-    <Tocable etiqueta={`${x.nombre}. ${x.detalle}`} alTocar={alTocar} estilo={{ width: '47.5%', flexGrow: 1 }}>
-      <View accessibilityRole="radio" accessibilityState={{ selected: activo }}
-        style={{ minHeight: 76, borderRadius: 20, padding: 14, gap: 4, flexDirection: 'row', alignItems: 'center',
-          backgroundColor: activo ? BLANCO : 'rgba(255,255,255,0.12)', borderWidth: 1, borderColor: activo ? BLANCO : 'rgba(255,255,255,0.22)' }}>
-        <Icono sf={activo && sonando ? 'speaker.wave.2.fill' : x.sf} respaldo="" tam={22} color={activo ? '#12304A' : BLANCO} />
-        <View style={{ flex: 1, marginLeft: 8 }}>
-          <Text style={{ fontSize: 15, fontWeight: '800', color: activo ? '#12304A' : BLANCO }}>{x.nombre}</Text>
-          <Text style={{ fontSize: 12, fontWeight: '600', color: activo ? 'rgba(18,48,74,0.65)' : BLANCO_3 }}>{x.detalle}</Text>
-        </View>
-      </View>
+    <Tocable etiqueta={`${x.nombre}. ${x.detalle}`} alTocar={alTocar} estilo={{ borderRadius: 20 }}>
+      <Animated.View accessibilityRole="radio" accessibilityState={{ selected: activo }} style={[{ alignItems: 'center', gap: 6, width: 72 }, estilo]}>
+        <LinearGradient colors={[x.colores[2], x.colores[0]]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }}
+          style={{ width: 60, height: 60, borderRadius: 30, alignItems: 'center', justifyContent: 'center',
+            borderWidth: activo ? 2 : 1, borderColor: activo ? x.acento : 'rgba(255,255,255,0.25)' }}>
+          <Icono sf={activo && sonando ? 'speaker.wave.2.fill' : x.sf} respaldo="" tam={24} color={activo ? x.acento : BLANCO} />
+        </LinearGradient>
+        <Text numberOfLines={1} style={{ fontSize: 12, fontWeight: activo ? '800' : '600', color: BLANCO }}>{x.nombre}</Text>
+      </Animated.View>
     </Tocable>
   );
 }
 
 export default function Ruido() {
-  const quieta = useSinMovimiento();
+  const ins = useSafeAreaInsets();
+  const barra = useHeaderHeight();
   const { sonando, tipo, finEn } = useRuido();
+  const x = SONIDOS[tipo];
   const [minutos, setMinutos] = useState(30);
-  const [volumen, setVolumen] = useState(0.6);
+  const [volumen, setVolumen] = useState(volumenActual());
+  const [ajustando, setAjustando] = useState(false);
+  const [preparando, setPreparando] = useState(false);
   const [resta, setResta] = useState(null);
+  const energia = useSharedValue(sonando ? 1 : 0);
+  const relojEscena = useSharedValue(0);
+  const toque = useSharedValue({ x: 0, y: 0, t: -10 });
 
-  // La cuenta en pantalla. El apagado de verdad está programado en el audio.
+  useEffect(() => { energia.value = withTiming(sonando ? 1 : 0, { duration: 1400 }); }, [sonando, energia]);
+  // El sonido elegido se fabrica en cuanto la pantalla termina de entrar.
+  useEffect(() => { const h = InteractionManager.runAfterInteractions(() => prepararRuido(tipo)); return () => h.cancel(); }, [tipo]);
+
   useEffect(() => {
     if (!sonando || !finEn) { setResta(null); return undefined; }
     const tic = () => setResta(Math.max(0, Math.round((finEn - Date.now()) / 1000)));
@@ -94,54 +122,120 @@ export default function Ruido() {
 
   const empezar = async (t = tipo) => {
     tacto.toque();
-    volumenRuido(volumen);
+    setPreparando(true);
+    // Un cuadro para que se vea «…» antes de fabricar el sonido.
+    await new Promise((ok) => setTimeout(ok, 30));
     await sonarRuido(t, minutos);
+    setPreparando(false);
   };
-  const parar = () => { tacto.roce(); pararRuido(); };
+  const alternar = () => (sonando ? (tacto.roce(), pararRuido()) : empezar());
   const elegir = (t) => {
-    if (t === tipo && sonando) { parar(); return; }
+    if (t === tipo && sonando) return;
+    Haptics.selectionAsync().catch(() => {});
     empezar(t);
   };
-  const cambiarMinutos = (m) => { setMinutos(m); if (sonando) temporizadorRuido(m); };
+  const cambiarMinutos = (m) => { tacto.roce(); setMinutos(m); if (sonando) temporizadorRuido(m); };
+
+  // La escena se toca: una onda; y se desliza: el volumen.
+  const vol = useRef(volumen);
+  const inicio = useRef(volumen);
+  const gestos = useMemo(() => PanResponder.create({
+    onStartShouldSetPanResponder: () => true,
+    onMoveShouldSetPanResponder: (_, g) => Math.abs(g.dy) > 8,
+    onPanResponderGrant: (e) => {
+      inicio.current = vol.current;
+      toque.value = { x: e.nativeEvent.pageX, y: e.nativeEvent.pageY, t: relojEscena.value };
+    },
+    onPanResponderMove: (_, g) => {
+      if (Math.abs(g.dy) < 8) return;
+      setAjustando(true);
+      const v = Math.max(0.05, Math.min(1, inicio.current - g.dy / 320));
+      if (Math.round(v * 20) !== Math.round(vol.current * 20)) Haptics.selectionAsync().catch(() => {});
+      vol.current = v;
+      setVolumen(v);
+      volumenRuido(v);
+    },
+    onPanResponderRelease: (_, g) => {
+      setTimeout(() => setAjustando(false), 700);
+      if (Math.abs(g.dy) < 8 && Math.abs(g.dx) < 8) tacto.roce();
+    },
+  }), [toque, relojEscena]);
 
   return (
-    <Escena colores={ESCENAS.ruido}>
-      <View style={{ flexDirection: 'row', justifyContent: 'center', minHeight: 36 }}>
-        {resta != null ? <Marcador sf="timer" texto={reloj(resta)} etiqueta={`Se apaga en ${Math.ceil(resta / 60)} minutos`} /> : null}
+    <View style={{ flex: 1, backgroundColor: x.colores[0] }}>
+      {/* El lugar: degradado y paisaje, que se funden al cambiar de sonido. */}
+      <Animated.View key={tipo} entering={FadeIn.duration(900)} exiting={FadeOut.duration(900)} style={StyleSheet.absoluteFill}>
+        <LinearGradient colors={x.colores} start={{ x: 0.2, y: 0 }} end={{ x: 0.8, y: 1 }} style={StyleSheet.absoluteFill} />
+        <PaisajeRuido tipo={tipo} acento={x.acento} energia={energia} toque={toque} reloj={relojEscena} />
+      </Animated.View>
+
+      <View style={StyleSheet.absoluteFill} {...gestos.panHandlers} accessible={false} />
+
+      {/* La barra del volumen, a la derecha. Aparece al deslizar. */}
+      <View pointerEvents="none" style={{ position: 'absolute', right: 14, top: barra + 70, bottom: 330, width: 6, borderRadius: 3,
+        backgroundColor: 'rgba(255,255,255,0.15)', opacity: ajustando ? 1 : 0.35, justifyContent: 'flex-end', overflow: 'hidden' }}>
+        <View style={{ height: `${Math.round(volumen * 100)}%`, backgroundColor: x.acento, borderRadius: 3 }} />
       </View>
 
-      <Centro tipo={tipo} sonando={sonando} quieta={quieta} />
+      <View pointerEvents="box-none" style={{ flex: 1, paddingTop: barra + 10, paddingBottom: ins.bottom + 12 }}>
+        <View pointerEvents="none" style={{ alignItems: 'center', minHeight: 32 }}>
+          {ajustando ? (
+            <Text style={estilos.pildora}>Volumen {Math.round(volumen * 100)} %</Text>
+          ) : resta != null ? (
+            <Text accessibilityLabel={`Se apaga en ${Math.ceil(resta / 60)} minutos`} style={estilos.pildora}>Se apaga en {reloj(resta)}</Text>
+          ) : null}
+        </View>
 
-      {ruidoDisponible() ? null : (
-        <PanelVidrio><Text style={textoAyuda}>Este teléfono no puede reproducir los sonidos de fondo.</Text></PanelVidrio>
-      )}
+        <View pointerEvents="box-none" style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14, paddingHorizontal: 24 }}>
+          <Animated.View key={`t-${tipo}`} entering={FadeIn.duration(600)} pointerEvents="none" style={{ alignItems: 'center', gap: 4 }}>
+            <Text accessibilityRole="header" style={{ fontSize: 44, fontWeight: '800', letterSpacing: -1, color: BLANCO,
+              textShadowColor: 'rgba(0,0,0,0.35)', textShadowRadius: 16 }}>{x.nombre}</Text>
+            <Text style={{ fontSize: 16, fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>{x.detalle}</Text>
+          </Animated.View>
+          <BotonPlay sonando={sonando} preparando={preparando} acento={x.acento} alTocar={alternar} />
+          {ruidoDisponible() ? (
+            <Text pointerEvents="none" style={{ fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
+              Desliza hacia arriba o hacia abajo para el volumen
+            </Text>
+          ) : (
+            <Text style={{ fontSize: 14, color: BLANCO, textAlign: 'center' }}>Este teléfono no puede reproducir los sonidos de fondo.</Text>
+          )}
+        </View>
 
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }} accessibilityRole="radiogroup">
-        {Object.keys(SONIDOS).map((id) => (
-          <Opcion key={id} id={id} activo={id === tipo} sonando={sonando} alTocar={() => elegir(id)} />
-        ))}
+        {/* Abajo, en vidrio: los lugares y el temporizador. */}
+        <BlurView intensity={30} tint="dark" style={{ marginHorizontal: 12, borderRadius: 28, overflow: 'hidden', borderWidth: 1, borderColor: 'rgba(255,255,255,0.14)' }}>
+          <View style={{ paddingVertical: 14, gap: 12, backgroundColor: 'rgba(0,0,0,0.18)' }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 12, gap: 4 }}
+              accessibilityRole="radiogroup">
+              {Object.keys(SONIDOS).map((id) => (
+                <Orbe key={id} id={id} activo={id === tipo} sonando={sonando} alTocar={() => elegir(id)} />
+              ))}
+            </ScrollView>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, paddingHorizontal: 12, flexWrap: 'wrap' }}
+              accessibilityRole="radiogroup" accessibilityLabel="Apagar en">
+              <Icono sf="timer" respaldo="" tam={15} color="rgba(255,255,255,0.7)" />
+              {MINUTOS.map((m) => {
+                const activo = m === minutos;
+                return (
+                  <Tocable key={m} etiqueta={m ? `Apagar en ${m} minutos` : 'Sin límite'} alTocar={() => cambiarMinutos(m)} estilo={{ borderRadius: 999 }}>
+                    <View accessibilityRole="radio" accessibilityState={{ selected: activo }}
+                      style={{ minHeight: 36, minWidth: 44, paddingHorizontal: 12, borderRadius: 999, alignItems: 'center', justifyContent: 'center',
+                        backgroundColor: activo ? BLANCO : 'rgba(255,255,255,0.1)' }}>
+                      <Text style={{ fontSize: 13, fontWeight: '800', color: activo ? '#111' : BLANCO }}>{m ? `${m} min` : '∞'}</Text>
+                    </View>
+                  </Tocable>
+                );
+              })}
+            </View>
+          </View>
+        </BlurView>
       </View>
-
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, fontWeight: '800', letterSpacing: 0.6, color: BLANCO_2, textAlign: 'center' }}>VOLUMEN</Text>
-        <OpcionesJuego valor={volumen} alCambiar={(v) => { setVolumen(v); volumenRuido(v); }} opciones={VOLUMENES} />
-      </View>
-      <View style={{ gap: 8 }}>
-        <Text style={{ fontSize: 13, fontWeight: '800', letterSpacing: 0.6, color: BLANCO_2, textAlign: 'center' }}>APAGAR EN</Text>
-        <OpcionesJuego valor={minutos} alCambiar={cambiarMinutos}
-          opciones={MINUTOS.map((m) => ({ valor: m, texto: m ? `${m} min` : 'Sin límite' }))} />
-      </View>
-
-      <BotonJuego sf={sonando ? 'stop.fill' : 'play.fill'} secundario={sonando} alTocar={sonando ? parar : () => empezar()}>
-        {sonando ? 'Detener' : 'Reproducir'}
-      </BotonJuego>
-
-      <PanelVidrio>
-        <Text style={textoAyuda}>
-          El ruido de fondo tapa los sonidos que distraen y ayuda a concentrarse o a dormir. Úsalo a un volumen cómodo,
-          sin audífonos muy fuertes. Sigue sonando aunque bloquees el teléfono; lo detienes desde aquí o desde la pantalla de bloqueo.
-        </Text>
-      </PanelVidrio>
-    </Escena>
+    </View>
   );
 }
+
+const estilos = StyleSheet.create({
+  anillo: { position: 'absolute', width: 104, height: 104, borderRadius: 52, borderWidth: 2 },
+  pildora: { overflow: 'hidden', paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.3)',
+    fontSize: 14, fontWeight: '800', color: BLANCO },
+});

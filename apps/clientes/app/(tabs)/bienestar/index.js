@@ -30,7 +30,7 @@ const CALMA = [
   { ruta: '/respira', sf: 'wind', titulo: 'Respira', detalle: 'Tres técnicas guiadas con sonido.', escena: 'respira' },
   { ruta: '/anclaje', sf: 'hand.raised.fill', titulo: '5 · 4 · 3 · 2 · 1', detalle: 'Calma los nervios buscando cosas con tus sentidos.', escena: 'anclaje' },
   // 2026-11-10: «en bienestar, podemos agregar ruido blanco?»
-  { ruta: '/ruido', sf: 'waveform', titulo: 'Ruido blanco', detalle: 'Sonidos de fondo para concentrarte o dormir.', escena: 'ruido' },
+  { ruta: '/ruido', sf: 'waveform', titulo: 'Sonidos', detalle: 'Lluvia, olas, fogata, noche… para dormir o concentrarte.', escena: 'ruido' },
 ];
 const JUEGOS = [
   { ruta: '/torre', sf: 'square.stack.3d.up.fill', titulo: 'Torre', detalle: 'Suelta cada bloque justo encima y sube hasta las estrellas.', escena: 'torre' },

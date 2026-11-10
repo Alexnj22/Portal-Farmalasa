@@ -23,6 +23,8 @@ const MATERIAL = {
   'water.waves': 'waves',
   'checkmark.circle': 'check_circle',
   'sparkle': 'star',
+  'flame.fill': 'local_fire_department',
+  'airplane': 'flight',
   'arrow.clockwise': 'refresh',
   'arrow.counterclockwise': 'undo',
   'arrow.right': 'arrow_forward',

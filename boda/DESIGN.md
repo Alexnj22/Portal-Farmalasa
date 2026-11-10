@@ -39,7 +39,7 @@ Moderno y minimalista, beige lino con verde oliva. Estrategia de color **Committ
 ## Motion
 Curva `cubic-bezier(0.22, 1, 0.36, 1)`. Nada rebota y todo se apaga con `prefers-reduced-motion`.
 - **Telón** (`Telon.jsx`): monograma y «Para …», sube a los 2 s. Una vez por visita y sin bloquear toques.
-- **Portada**: los nombres suben letra por letra; la foto se acerca despacio una sola vez. Sin paralaje: en el teléfono trababa el scroll.
+- **Portada**: los nombres suben letra por letra; la foto se acerca despacio y baja más lento que la página (paralaje). El paralaje es una animación CSS ligada al scroll (`animation-timeline`), que el navegador corre fuera del hilo principal; donde no existe, un rAF escribe una variable CSS. Nunca estado de React por cuadro.
 - **Cinta** oliva con los nombres y la fecha en movimiento continuo.
 - **Frase** (`FraseRevelada.jsx`): las palabras se iluminan al leer bajando.
 - **Galería** (`GaleriaHorizontal.jsx`): tira que se desliza de lado con el dedo (scroll nativo con imán), flechas en computadora. Bajar nunca mueve las fotos de lado: el usuario lo encontró raro.

@@ -112,7 +112,14 @@ p { margin: 0 0 1em; text-wrap: pretty; }
   color: var(--lino); background: var(--oliva-noche); overflow: hidden;
   display: flex; flex-direction: column; justify-content: flex-end;
 }
-.portada-foto { position: absolute; inset: 0; }
+.portada-foto { position: absolute; inset: 0; will-change: transform; transform: translate3d(0, var(--paralaje, 0px), 0); backface-visibility: hidden; }
+/* Paralaje: la foto baja más lento que la página. Donde el navegador sabe
+   ligar una animación al scroll, la mueve él solo (sin JavaScript, sin
+   trabarse). Donde no, Inicio.jsx escribe --paralaje en un rAF. */
+@supports (animation-timeline: scroll()) {
+  .portada-foto { animation: paralaje linear both; animation-timeline: scroll(root block); animation-range: 0 100svh; }
+}
+@keyframes paralaje { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(0, 38svh, 0); } }
 .portada-foto img { width: 100%; height: 100%; object-fit: cover; animation: acercar 6s var(--salida) both; }
 .portada::after {
   content: ''; position: absolute; inset: 0; pointer-events: none;

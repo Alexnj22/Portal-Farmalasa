@@ -8,6 +8,7 @@ import Countdown from '../components/Countdown';
 import Mapa from '../components/Mapa';
 import Seccion, { Titulo } from '../components/Seccion';
 import Telon from '../components/Telon';
+import { sinMovimiento } from '../lib/movimiento';
 import FraseRevelada from '../components/FraseRevelada';
 import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
@@ -40,6 +41,24 @@ export default function Inicio({ codigo }) {
   const [lugar, setLugar] = useState(null);
   const [arriba, setArriba] = useState(true);
   const portada = useRef(null);
+
+  // Paralaje para navegadores sin animaciones ligadas al scroll (Safari < 26):
+  // un solo rAF por cuadro que escribe una variable CSS, sin estado de React,
+  // y sólo mientras la portada se ve.
+  useEffect(() => {
+    const el = portada.current;
+    if (!el || CSS.supports?.('animation-timeline: scroll()') || sinMovimiento()) return undefined;
+    const foto = el.querySelector('.portada-foto');
+    let cuadro = 0;
+    const mover = () => {
+      cuadro = 0;
+      const y = window.scrollY;
+      if (y <= window.innerHeight) foto.style.setProperty('--paralaje', `${(y * 0.38).toFixed(1)}px`);
+    };
+    const pedir = () => { if (!cuadro) cuadro = requestAnimationFrame(mover); };
+    window.addEventListener('scroll', pedir, { passive: true });
+    return () => { window.removeEventListener('scroll', pedir); cancelAnimationFrame(cuadro); };
+  }, []);
 
   // La barra de navegación es transparente mientras se ve la portada y lino
   // al dejarla. Un IntersectionObserver: no corre nada en cada cuadro de scroll.

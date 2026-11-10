@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.5 — App del personal: vuelve a compilar (adaptador de fotos del catálogo)
+
+- v2.1500.43 hizo que `src/data/laboratorios.js` importe `@plataforma/fotoConMiniatura`, que sólo existía en la web: la app del personal no compilaba (ni binario ni actualización por aire). Su gemelo del teléfono sube la foto como antes, sin la copia chica (quien la muestra cae a la original).
+
 ## v2.1501.4 — Entorno de pruebas: una migración que lanza sin los secretos ya no lo rompe
 
 - El entorno de pruebas se arma repitiendo el texto de cada migración guardado en producción, sobre una base sin los secretos de la bóveda. `20261110145948_cron_secreto_por_circuito` hacía `RAISE EXCEPTION` si faltaban: el branch quedó en `MIGRATIONS_FAILED` con 14 migraciones sin aplicar, y rehacerlo no lo arreglaba.

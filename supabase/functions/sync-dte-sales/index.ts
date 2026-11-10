@@ -145,6 +145,25 @@ async function resolverIdCliente(cookie: string, erpInvoiceId: string): Promise<
   return id;
 }
 
+// La sesión con la que se pregunta de quién es una factura. NO la de la
+// sucursal: medido el 2026-11-10, con el usuario de cada sala
+// `reimprimir_factura.php` devuelve una cabecera de 445 B sin el selector del
+// cliente, y TODO cliente nuevo quedaba como ficha suelta (16 de 16 el 5-nov,
+// 5 de 5 el 10-nov). Con el usuario de facturación la misma factura trae el
+// `id_cliente`. Si ese secreto no está, se queda con la de la sucursal (lo de
+// antes): nunca peor que hoy.
+async function cookieParaClientes(cache: Map<string, string>, deLaSucursal: string): Promise<string> {
+  const raw = Deno.env.get("ERP_FACTURACION_CREDS");
+  if (!raw) return deLaSucursal;
+  try {
+    const { username, password } = JSON.parse(raw);
+    return await getCachedCookie(cache, username, password);
+  } catch (e) {
+    console.error("cookieParaClientes: se usa la de la sucursal —", e instanceof Error ? e.message : String(e));
+    return deLaSucursal;
+  }
+}
+
 function parseTipoDoc(correlativo: string): string {
   if (!correlativo) return 'UNKNOWN';
   const parts = correlativo.split('_');
@@ -482,7 +501,7 @@ async function syncBranch(
       // RPC hace exactamente lo de antes (crear por nombre). El peor caso es el
       // comportamiento actual — nunca una factura sin cliente.
       try {
-        fila.erp_id = await resolverIdCliente(cookie, facturaEjemplo);
+        fila.erp_id = await resolverIdCliente(await cookieParaClientes(cookieCache, cookie), facturaEjemplo);
       } catch (e) {
         sinReconocer++;
         console.error(`resolverIdCliente(${facturaEjemplo}) «${fila.nombre}»:`,

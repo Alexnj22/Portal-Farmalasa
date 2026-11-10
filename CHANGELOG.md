@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.15 — Clientes nuevos: se reconocen con la sesión de facturación
+
+Todo cliente nuevo quedaba como ficha suelta (16 de 16 el 5-nov, 5 de 5 hoy):
+con el usuario de cada sala, la página de la factura viene sin el cliente.
+`sync-dte-sales` ahora pregunta con la sesión de facturación, que sí lo trae
+(verificado con la factura 410021 → cliente 29186). Sin desplegar.
+
 ## v2.1500.14 — Actualización por aire de la app del personal sin mezclar worklets
 
 - App del personal: la actualización por aire del 9-nov cerraba la app al abrir en iPhone. Causa: al exportar, Metro reusó archivos traducidos con el plugin de worklets de la app de clientes (0.10.1 contra 0.13.0). `app:actualizar` ahora exporta con `--clear` y se niega a publicar si encuentra worklets de otra versión.

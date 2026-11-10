@@ -167,13 +167,50 @@ export async function fotoParaApp(id) {
 }
 
 /**
- * Los descuentos ligados de una promoción, leídos del origen (para reactivarla
- * y mover también su descuento). Vivía en `ReactivarPromocionModal`; la app
- * reactiva con lo mismo.
+ * Los descuentos de una promoción, leídos del origen (para reactivarla y mover
+ * también su descuento). Vivía en `ReactivarPromocionModal`; la app reactiva
+ * con lo mismo.
+ *
+ * Trae los LIGADOS y, además, los que todavía no lo están pero son de ella
+ * (2026-11-10, Rinokem: el descuento se había cargado aparte, la promoción no
+ * lo conocía y reactivarla no bajó el precio). Quién es de quién no se decide
+ * acá: lo dice la base (`promocion_descuentos_por_ligar`, mismo juez que el
+ * cron que liga solo). Cada uno vuelve con:
+ *   · `ligado` — ya era de la promoción;
+ *   · `candidatas` — en cuántas promociones encaja uno sin ligar. Con más de
+ *     una, la pantalla no lo marca sola: que decida quien mira.
  */
 export async function fetchDescuentosDePromocion(promocionId) {
-    const ids = await fetchIdsDeDescuentosDePromocion(promocionId);
-    return Promise.all(ids.map((id) => fetchDescuento(id)));
+    const [ids, porLigar] = await Promise.all([
+        fetchIdsDeDescuentosDePromocion(promocionId),
+        fetchDescuentosPorLigar(promocionId),
+    ]);
+    const ligados = new Set(ids);
+    const sueltos = porLigar.filter((p) => !ligados.has(p.id));
+    const leer = (id, extra) => fetchDescuento(id).then((d) => ({ ...d, ...extra }));
+    return Promise.all([
+        ...ids.map((id) => leer(id, { ligado: true, candidatas: 1 })),
+        ...sueltos.map((p) => leer(p.id, { ligado: false, candidatas: p.candidatas })),
+    ]);
+}
+
+/** Los descuentos de la caja que son de esta promoción y no están ligados. */
+export async function fetchDescuentosPorLigar(promocionId) {
+    const { data, error } = await supabase.rpc('promocion_descuentos_por_ligar', { p_id: Number(promocionId) });
+    if (error) throw error;
+    return (/** @type {any[]} */ (data) ?? []).map((r) => ({ id: Number(r.id), candidatas: Number(r.candidatas) }));
+}
+
+/**
+ * Liga un descuento a su promoción. La base sólo acepta lo que su juez propone
+ * (`NO_CORRESPONDE` si no): no es una puerta para ligar cualquier cosa.
+ */
+export async function ligarDescuentoAPromocion(promocionId, descuentoId) {
+    const { data, error } = await supabase.rpc('ligar_descuento_a_promocion', {
+        p_promocion: Number(promocionId), p_descuento: Number(descuentoId),
+    });
+    if (error) throw error;
+    return data;
 }
 
 /**
@@ -182,13 +219,24 @@ export async function fetchDescuentosDePromocion(promocionId) {
  * cada uno es una escritura aparte. Sólo se fuerza lo que ya mostró avisos y
  * quien aprieta leyó; un reintento por error de red vuelve a pasar por los
  * avisos. `mensaje(e)` traduce el error para la pantalla.
+ *
+ * Con `promocionId`, el que todavía no estaba ligado (`ligado: false`) se liga
+ * DESPUÉS de moverlo —también si ya llegaba a esa fecha y no hubo que
+ * moverlo—, para que la próxima vez la promoción lo conozca sola. Un vínculo
+ * que falla no deshace el movimiento ni se presenta como falla del precio: lo
+ * recupera el cron que liga solo.
  */
-export async function moverDescuentosA(lista, fin, mensaje = (e) => e?.message || 'No se pudo mover el descuento.') {
+export async function moverDescuentosA(lista, fin, mensaje = (e) => e?.message || 'No se pudo mover el descuento.', { promocionId = null } = {}) {
     const quedan = [];
     for (const d of lista || []) {
         try {
             const r = await moverFinDeDescuento(d.id, fin, { forzar: !!d.avisos });
-            if (r.avisos) quedan.push({ ...d, avisos: r.avisos.map((a) => a.texto), error: undefined });
+            if (r.avisos) { quedan.push({ ...d, avisos: r.avisos.map((a) => a.texto), error: undefined }); continue; }
+            if (promocionId && d.ligado === false) {
+                await ligarDescuentoAPromocion(promocionId, d.id).catch((e) => {
+                    console.error('[descuentos] ligar a la promoción:', e?.message ?? e);
+                });
+            }
         } catch (e) {
             quedan.push({ ...d, error: mensaje(e) });
         }

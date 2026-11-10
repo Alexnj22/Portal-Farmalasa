@@ -168,6 +168,7 @@ export default function PromocionesView() {
     const [matriz, setMatriz] = useState(null);       // id de la de laboratorio que se mira
     const [duplicando, setDuplicando] = useState(null);  // la promoción que se copia
     const [reactivando, setReactivando] = useState(null); // la terminada que se reabre
+    const [moviendoDescuento, setMoviendoDescuento] = useState(null); // la viva cuyo descuento venció
     const [recarga, setRecarga] = useState(0);
     const cargando = cargaLista.recarga !== recarga;
     const error = cargaLista.recarga === recarga ? cargaLista.error : null;
@@ -606,6 +607,7 @@ export default function PromocionesView() {
                 onVerMatriz={setMatriz}
                 onDuplicar={setDuplicando}
                 onSeguir={(id) => { setSeguida(String(id)); setTab('seguimiento'); }}
+                onMoverDescuento={setMoviendoDescuento}
             />
         );
     };
@@ -854,6 +856,16 @@ export default function PromocionesView() {
                         setSeguida(String(id));
                         setTab('seguimiento');
                     }}
+                />
+            )}
+
+            {moviendoDescuento && (
+                <ReactivarPromocionModal
+                    modo="descuento"
+                    promo={moviendoDescuento}
+                    open
+                    onClose={() => setMoviendoDescuento(null)}
+                    onReactivada={() => { setMoviendoDescuento(null); recargar(); }}
                 />
             )}
 

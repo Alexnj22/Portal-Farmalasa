@@ -784,3 +784,22 @@ export function csvPagosBono(promos) {
         nombre: `promociones_pagos_${hoySV()}`,
     };
 }
+
+/**
+ * Los descuentos de una promoción, partidos en lo que se mueve con ella y lo
+ * que se deja para que alguien lo mire (2026-11-10).
+ *
+ * `aMover`: los ligados, y los sin ligar que encajan en UNA sola promoción —el
+ * mismo juez de la base que liga solo—. `dudosos`: los sin ligar que encajan en
+ * más de una. Ésos no se mueven sin que alguien elija: moverlos le bajaría el
+ * precio a la campaña de otra promoción.
+ */
+export function separarDescuentosDePromocion(descuentos = []) {
+    const aMover = [];
+    const dudosos = [];
+    for (const d of descuentos || []) {
+        if (d.ligado !== false || Number(d.candidatas) <= 1) aMover.push(d);
+        else dudosos.push(d);
+    }
+    return { aMover, dudosos };
+}

@@ -445,20 +445,51 @@ Deno.serve(async (req) => {
       /* El vínculo se escribe ACÁ y no desde el navegador: si el navegador se
          cierra entre las dos llamadas, el descuento quedaría vivo en el sistema
          de ventas sin que nadie sepa de qué promoción es. */
+      let vinculoPendiente = false;
       if (promocionId > 0) {
         /* Se AGREGA a la lista, no se reemplaza: una promoción marcada en tres
            salas manda tres veces —el sistema de ventas acepta una sala o todas,
            nunca un conjunto— y cada llamada trae su propio id. Con un solo
            campo, la tercera borraba a las dos anteriores y quedaban descuentos
-           vivos que el portal ya no sabía de quién eran. */
+           vivos que el portal ya no sabía de quién eran.
+
+           Si la LECTURA falla no se escribe (2026-11-10): con `pr` vacío la
+           lista quedaba sólo con el nuevo y borraba los vínculos que había.
+           Un vínculo que no se pudo escribir no es un error del guardado —el
+           descuento ya está en la caja—, pero tampoco se calla: vuelve como
+           `vinculo_pendiente` y lo recupera el cron de la copia
+           (`ligar_descuentos_sin_ligar`), que reconoce a un descuento nacido
+           de su promoción por los mismos productos y el mismo arranque. */
         const { data: pr, error: leerErr } = await admin
           .from("promociones").select("descuentos_erp").eq("id", promocionId).maybeSingle();
-        if (leerErr) console.error("[descuentos-erp] leer promoción:", leerErr.message);
-        const lista = [...new Set([...(pr?.descuentos_erp ?? []), idNuevo])];
-        const { error: ligarErr } = await admin
-          .from("promociones").update({ descuentos_erp: lista }).eq("id", promocionId);
-        if (ligarErr) console.error("[descuentos-erp] ligar promoción:", ligarErr.message);
+        if (leerErr || !pr) {
+          console.error("[descuentos-erp] leer promoción:", leerErr?.message ?? "no existe");
+          vinculoPendiente = true;
+        } else {
+          const lista = [...new Set([...(pr.descuentos_erp ?? []), idNuevo])];
+          const { error: ligarErr } = await admin
+            .from("promociones").update({ descuentos_erp: lista }).eq("id", promocionId);
+          if (ligarErr) {
+            console.error("[descuentos-erp] ligar promoción:", ligarErr.message);
+            vinculoPendiente = true;
+          }
+        }
       }
+
+      /* La copia de la caja (`descuentos_espejo`) se pone al día con ESTE
+         descuento ya, sin esperar al cron (corre 3 veces al día): con la copia
+         vieja, la lista de promociones seguía diciendo «el precio no bajó»
+         horas después de haberlo movido. `completa: false` = sólo esta fila,
+         no borra nada ni liga nada. Si falla, el cron la trae igual. */
+      const { error: espejoErr } = await admin.rpc("descuentos_espejo_sync", {
+        p: [{
+          id: idNuevo, descripcion, tipo, monto, inicio, fin, todas_las_salas: todas,
+          branch_id: todas ? null : (mapa.find((e) => e.erpId === erpSucursal)?.branchId ?? null),
+          productos,
+        }],
+        completa: false,
+      });
+      if (espejoErr) console.error("[descuentos-erp] copia del descuento:", espejoErr.message);
 
       /* Quién lo hizo NO queda en el sistema de la caja —allá todo va a nombre
          de la cuenta con la que el portal entra—, así que la firma vive acá. */
@@ -488,7 +519,7 @@ Deno.serve(async (req) => {
         productos,
       }]);
 
-      return responder({ ok: true, id: idNuevo });
+      return responder({ ok: true, id: idNuevo, vinculo_pendiente: vinculoPendiente });
     }
 
     // ── SINCRONIZAR PRODUCTOS ──────────────────────────────────────────────

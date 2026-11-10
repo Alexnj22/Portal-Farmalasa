@@ -21,6 +21,25 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.22 — Descuentos de la caja ligados solos a su promoción
+
+Reactivar Rinokem no bajó el precio: su descuento se había cargado aparte y la
+promoción no lo conocía (2 de 4 promociones por producto estaban así).
+
+- **Un juez en la base** (`promociones_descuentos_sin_ligar`): un descuento es
+  de una promoción si TODOS sus productos están en ella, arrancan con ≤3 días de
+  diferencia y no es de otra. «Mismo producto y fechas que se cruzan» ligaba mal
+  (Abbott #36 contra Leche #33).
+- **El cron de la copia liga solo** cuando hay una sola promoción posible, y lo
+  anota en el historial. Medilasa #43 quedó ligada al aplicarlo.
+- **Reactivar** también mueve (y liga) los descuentos sin ligar; los que encajan
+  en dos promociones se nombran y no se mueven.
+- **Aviso «El precio no está bajando en caja»** en la tarjeta de una promoción
+  viva cuyo descuento venció, con «Mover el descuento».
+- `descuentos-erp`: una lectura fallida ya no borra los vínculos que había, un
+  vínculo que no se escribe vuelve como `vinculo_pendiente`, y al guardar se
+  actualiza la copia del descuento sin esperar al cron.
+
 ## v2.1500.21 — App de clientes: Leído animado, frase como imagen y ruido blanco
 
 - App de clientes: «Leído» en la frase del día se despide con una animación (palomita verde que rebota, ráfaga de chispas de colores, la tarjeta se inclina y se va, y el hueco se cierra).

@@ -9,6 +9,11 @@
 // (`moverDescuentosA`, núcleo). Va DESPUÉS de reactivar y por separado: si la
 // caja devuelve avisos o falla, la promoción ya quedó reactivada y la pantalla
 // deja reintentar sólo lo que faltó.
+//
+// También trae los descuentos SIN LIGAR que la base reconoce como de esta
+// promoción (2026-11-10, Rinokem: se había cargado aparte y reactivar no bajó
+// el precio): los mueve y los liga. Los que encajan en más de una promoción se
+// nombran y no se mueven.
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import Interruptor from '../../componentes/Interruptor';
@@ -18,7 +23,7 @@ import { reactivarPromocion } from '@nucleo/data/promociones';
 import { fetchDescuentosDePromocion, moverDescuentosA } from '@nucleo/data/descuentos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto, hoySV, mesSV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
-import { fmtVigencia } from '@nucleo/utils/promocionesUtils';
+import { fmtVigencia, separarDescuentosDePromocion } from '@nucleo/utils/promocionesUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -36,7 +41,8 @@ export default function ReactivarPromocion() {
   const promo = promocionElegida(id);
   const hoy = hoySV();
   const [fin, setFin] = useState(() => ultimoDiaDelMes(mesSV()));
-  const [descuentos, setDescuentos] = useState(Number(promo?.descuentos) > 0 ? null : []);
+  // Siempre se buscan: el que falta es justo el que la promoción no conoce.
+  const [descuentos, setDescuentos] = useState(null);
   const [falloDescuentos, setFalloDescuentos] = useState(null);
   const [mover, setMover] = useState(true);
   const [reactivada, setReactivada] = useState(false);
@@ -45,17 +51,18 @@ export default function ReactivarPromocion() {
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    if (!(Number(promo?.descuentos) > 0)) return undefined;
+    if (!promo?.id) return undefined;
     let vivo = true;
     fetchDescuentosDePromocion(promo.id)
       .then((d) => { if (vivo) setDescuentos(d); })
       .catch((e) => { if (vivo) { setDescuentos([]); setFalloDescuentos(mensajeAmigable(e, 'No se pudo leer el descuento de esta promoción.')); } });
     return () => { vivo = false; };
-  }, [promo?.id, promo?.descuentos]);
+  }, [promo?.id]);
 
   if (!promo) return <View style={{ margin: 16 }}><Aviso tono="freno" texto="Vuelve a abrir la promoción desde la lista." /></View>;
   const fechaValida = !!fin && fin >= hoy;
-  const hayDescuentos = descuentos?.length > 0;
+  const { aMover, dudosos } = separarDescuentosDePromocion(descuentos ?? []);
+  const hayDescuentos = aMover.length > 0;
   const terminar = () => {
     // La promoción abierta en el detalle es la misma fila: queda activa hasta
     // la fecha nueva sin esperar a releer la lista.
@@ -76,7 +83,7 @@ export default function ReactivarPromocion() {
         listo('Promoción reactivada', `Hasta el ${fechaLarga(fin)}`);
       }
       if (hayDescuentos && mover) {
-        const quedan = await moverDescuentosA(descuentos, fin, mensaje);
+        const quedan = await moverDescuentosA(aMover, fin, mensaje, { promocionId: promo.id });
         if (quedan.length) { setPendientes(quedan); return; }
       }
       terminar();
@@ -89,7 +96,7 @@ export default function ReactivarPromocion() {
   const moverIgual = async () => {
     setOcupado(true);
     try {
-      const quedan = await moverDescuentosA(pendientes, fin, mensaje);
+      const quedan = await moverDescuentosA(pendientes, fin, mensaje, { promocionId: promo.id });
       if (quedan.length) { setPendientes(quedan); return; }
       listo('Descuento movido', `Hasta el ${fechaLarga(fin)}`);
       terminar();
@@ -128,13 +135,17 @@ export default function ReactivarPromocion() {
               </View>
               <Interruptor value={mover} onValueChange={setMover} disabled={reactivada} />
             </View>
-            {descuentos.map((d) => (
+            {aMover.map((d) => (
               <Text key={d.id} style={{ color: colorSistema.texto2, fontSize: 13 }}>
                 <Text style={{ fontWeight: '700', color: colorSistema.texto }}>{d.descripcion}</Text>
                 {` · ${d.tipo === '%' ? `${Number(d.monto)} %` : `${formatMoney(Number(d.monto))} por unidad`} · ${d.productos?.length ?? 0} producto(s) · hoy ${fmtVigencia(d.inicio, d.fin)}`}
+                {d.ligado === false ? ' · se cargó aparte; queda ligado a esta promoción' : ''}
               </Text>
             ))}
           </Seccion>
+        ) : null}
+        {dudosos.length && !pendientes.length ? (
+          <Aviso tono="cuidado" texto={`${dudosos.map((d) => d.descripcion).join(', ')}: podría ser de esta promoción o de otra que arrancó igual, así que no se mueve solo. Si es de esta, cambia su fecha en la pestaña Descuentos.`} />
         ) : null}
         {pendientes.length ? (
           <>

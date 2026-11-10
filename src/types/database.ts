@@ -36573,6 +36573,11 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      ligar_descuento_a_promocion: {
+        Args: { p_descuento: number; p_promocion: number }
+        Returns: Json
+      }
+      ligar_descuentos_sin_ligar: { Args: never; Returns: number }
       ligar_notas_a_compras: { Args: never; Returns: Json }
       linea_telefonica_de: { Args: { p_texto: string }; Returns: string }
       list_sessions: { Args: never; Returns: Json }
@@ -37182,6 +37187,7 @@ export type Database = {
           u_excedente: number
         }[]
       }
+      promocion_descuentos_por_ligar: { Args: { p_id: number }; Returns: Json }
       promocion_laboratorio_avance: {
         Args: { p_id: number; p_year_month: string }
         Returns: {
@@ -37280,6 +37286,14 @@ export type Database = {
       }
       promociones_cerrar_meses_de_laboratorio: { Args: never; Returns: number }
       promociones_ciclo_diario: { Args: never; Returns: string }
+      promociones_descuentos_sin_ligar: {
+        Args: never
+        Returns: {
+          candidatas: number
+          descuento_id: number
+          promocion_id: number
+        }[]
+      }
       promociones_registrar_excedentes: { Args: never; Returns: number }
       prorroga_aprobadores: { Args: never; Returns: string[] }
       prorroga_de: { Args: { p_id: number; p_tipo: string }; Returns: Json }

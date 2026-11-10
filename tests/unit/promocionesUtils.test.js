@@ -143,3 +143,21 @@ describe('esLaboratorio', () => {
         expect(esLaboratorio(undefined)).toBe(false);
     });
 });
+
+describe('separarDescuentosDePromocion', () => {
+    it('mueve los ligados y los sin ligar de una sola promoción; deja los dudosos', async () => {
+        const { separarDescuentosDePromocion } = await import('@nucleo/utils/promocionesUtils');
+        const r = separarDescuentosDePromocion([
+            { id: 1, ligado: true, candidatas: 1 },
+            { id: 32, ligado: false, candidatas: 1 },   // Rinokem: cargado aparte
+            { id: 50, ligado: false, candidatas: 2 },   // encaja en dos promociones
+        ]);
+        expect(r.aMover.map((d) => d.id)).toEqual([1, 32]);
+        expect(r.dudosos.map((d) => d.id)).toEqual([50]);
+    });
+    it('un ligado nunca es dudoso, aunque encaje en más de una', async () => {
+        const { separarDescuentosDePromocion } = await import('@nucleo/utils/promocionesUtils');
+        expect(separarDescuentosDePromocion([{ id: 1, ligado: true, candidatas: 3 }]).dudosos).toEqual([]);
+        expect(separarDescuentosDePromocion(null)).toEqual({ aMover: [], dudosos: [] });
+    });
+});

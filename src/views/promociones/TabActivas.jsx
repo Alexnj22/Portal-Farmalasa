@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent, History } from 'lucide-react';
+import { Tag, Search, Plus, Power, PauseCircle, Pencil, FlaskConical, BarChart3, Copy, Percent, History, AlertTriangle } from 'lucide-react';
 import OjoDeTarjeta from '../../components/common/OjoDeTarjeta';
 import { clickable } from '@nucleo/utils/clickable';
 import Button from '../../components/common/Button';
@@ -25,7 +25,7 @@ import TituloDeSeccion from '../../components/common/TituloDeSeccion';
  */
 export default function TabActivas({
     promos, busqueda, filtrando = false, terminadas = 0, onVerTerminadas,
-    puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar, onSeguir,
+    puedeEditar, onCambio, onNueva, onEditar, onVerMatriz, onDuplicar, onSeguir, onMoverDescuento,
 }) {
     if (!promos.length) {
         // Buscar o filtrar sin resultados NO es un vacío: uno se arregla
@@ -81,6 +81,7 @@ export default function TabActivas({
                     onEditar={() => onEditar?.({ id: p.id, tipo: p.tipo || 'producto' })}
                     onVerMatriz={() => onVerMatriz?.(p.id)}
                     onDuplicar={() => onDuplicar?.(p)}
+                    onMoverDescuento={onMoverDescuento ? () => onMoverDescuento(p) : undefined}
                     onSeguir={onSeguir ? () => onSeguir(p.id) : undefined}
                 />
             ))}
@@ -88,7 +89,7 @@ export default function TabActivas({
     );
 }
 
-function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz, onDuplicar, onSeguir }) {
+function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz, onDuplicar, onSeguir, onMoverDescuento }) {
     const [ocupado, setOcupado] = useState(false);
     const [fallo, setFallo] = useState(null);
     const [confirmarPausa, setConfirmarPausa] = useState(false);
@@ -179,6 +180,24 @@ function TarjetaPromocion({ promo, puedeEditar, onCambio, onEditar, onVerMatriz,
                     </>
                 )}
             </div>
+
+            {/* El precio no bajó (usuario, 2026-11-10): la promoción cuenta pero
+                su descuento en la caja ya venció. Lo decide la base
+                (`descuento_por_mover` en `get_promociones`) con la copia de la
+                caja; antes sólo lo notaba quien estaba vendiendo. */}
+            {promo.descuento_por_mover && (
+                <div onClick={(e) => e.stopPropagation()}>
+                    <Notice variant="warning" icon={AlertTriangle}>
+                        <p>El precio no está bajando en caja: el descuento de esta promoción ya venció.</p>
+                        {puedeEditar && onMoverDescuento && (
+                            <Button variant="secondary" size="sm" icon={Percent} className="mt-2"
+                                onClick={onMoverDescuento}>
+                                Mover el descuento
+                            </Button>
+                        )}
+                    </Notice>
+                </div>
+            )}
 
             {fallo && <Notice variant="danger">{fallo}</Notice>}
 

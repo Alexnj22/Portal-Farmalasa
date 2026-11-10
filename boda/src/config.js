@@ -1,0 +1,120 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// TODO el contenido del sitio vive acá. Cambiar nombres, fechas, lugares, fotos
+// y textos en este archivo; los componentes no tienen texto de la boda escrito.
+// Los valores de abajo son de EJEMPLO.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export const boda = {
+  novios: {
+    el: 'Daniel',
+    ella: 'Valeria',
+    // Cómo se firma en el sitio y en el WhatsApp
+    firma: 'Daniel & Valeria',
+    hashtag: '#DanielYValeria2027',
+  },
+
+  // Hora local del lugar. El desfase (-06:00 = El Salvador) evita que el
+  // contador cambie según la zona del invitado.
+  fecha: '2027-04-17T15:00:00-06:00',
+  zonaHoraria: 'America/El_Salvador',
+
+  // Fases del sitio. Con 'auto' se decide por fecha:
+  //   antes de `invitacionesDesde`   → save-the-date
+  //   hasta el día de la boda         → invitacion
+  //   el día de la boda (y el sig.)   → boda (álbum abierto, pantalla en vivo)
+  //   después                         → recuerdos
+  // Para forzar una: 'save-the-date' | 'invitacion' | 'boda' | 'recuerdos'.
+  // (Para previsualizar sin tocar esto: agregar ?fase=boda a la dirección.)
+  fase: 'auto',
+  invitacionesDesde: '2027-01-15',
+  confirmarAntesDe: '2027-03-15',
+
+  frase: 'Con la bendición de Dios y de nuestros padres, queremos compartir con ustedes el día más feliz de nuestras vidas.',
+
+  // Fotos: ponerlas en /public/fotos/ y referirlas como '/fotos/archivo.jpg'.
+  // Las de ejemplo vienen de Unsplash (libres de uso).
+  portada: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1800&q=80',
+  galeria: [
+    'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1200&q=80',
+    'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80',
+    'https://images.unsplash.com/photo-1465495976277-4387d4b0b4c6?w=1200&q=80',
+    'https://images.unsplash.com/photo-1529636798458-92182e662485?w=1200&q=80',
+    'https://images.unsplash.com/photo-1606216794074-735e91aa2c92?w=1200&q=80',
+    'https://images.unsplash.com/photo-1583939003579-730e3918a45a?w=1200&q=80',
+  ],
+
+  historia: [
+    { fecha: '2018', titulo: 'Nos conocimos', texto: 'Un amigo en común, una fiesta y una conversación que no terminó.' },
+    { fecha: '2019', titulo: 'Primera cita', texto: 'Pupusas, lluvia y la certeza de que había algo especial.' },
+    { fecha: '2023', titulo: 'Nuestro primer viaje', texto: 'Descubrimos que también somos buenos compañeros de aventura.' },
+    { fecha: '2026', titulo: '¡Dijo que sí!', texto: 'Frente al mar, con el corazón a mil.' },
+  ],
+
+  // Lugares: lat/lng se sacan de Google Maps (clic derecho → copiar coordenadas).
+  lugares: [
+    {
+      id: 'ceremonia',
+      tipo: 'Ceremonia religiosa',
+      nombre: 'Iglesia (por definir)',
+      direccion: 'Dirección de la iglesia, San Salvador',
+      hora: '3:00 p. m.',
+      lat: 13.6929,
+      lng: -89.2182,
+    },
+    {
+      id: 'recepcion',
+      tipo: 'Recepción',
+      nombre: 'Salón de eventos (por definir)',
+      direccion: 'Dirección del salón, Antiguo Cuscatlán',
+      hora: '5:30 p. m.',
+      lat: 13.6764,
+      lng: -89.2516,
+    },
+  ],
+
+  itinerario: [
+    { hora: '3:00 p. m.', titulo: 'Ceremonia', icono: '⛪' },
+    { hora: '4:30 p. m.', titulo: 'Sesión de fotos', icono: '📸' },
+    { hora: '5:30 p. m.', titulo: 'Cóctel de bienvenida', icono: '🥂' },
+    { hora: '7:00 p. m.', titulo: 'Entrada de los novios y cena', icono: '🍽️' },
+    { hora: '8:30 p. m.', titulo: 'Primer baile', icono: '💃' },
+    { hora: '9:00 p. m.', titulo: '¡A bailar!', icono: '🎶' },
+    { hora: '1:00 a. m.', titulo: 'Despedida', icono: '✨' },
+  ],
+
+  vestimenta: {
+    codigo: 'Formal',
+    detalle: 'Caballeros: traje oscuro. Damas: vestido largo o de cóctel. Les pedimos reservar el color blanco para la novia.',
+    paleta: ['#6b7f5e', '#c9a77c', '#8c6a5d', '#3f4a5a', '#e7d8c9'],
+  },
+
+  regalos: {
+    texto: 'Su presencia es nuestro mejor regalo. Si desean tener un detalle con nosotros, les compartimos estas opciones:',
+    opciones: [
+      { titulo: 'Lluvia de sobres', detalle: 'Habrá un buzón el día de la boda.' },
+      { titulo: 'Transferencia', detalle: 'Banco Ejemplo · Cuenta de ahorro', copiar: '0000-0000-0000' },
+      // { titulo: 'Mesa de regalos', detalle: 'Tienda X', enlace: 'https://...' },
+    ],
+  },
+
+  hospedaje: [
+    { nombre: 'Hotel cercano (ejemplo)', detalle: 'A 5 minutos del salón. Mencionar la boda para tarifa especial.', enlace: '' },
+  ],
+
+  preguntas: [
+    { p: '¿Puedo llevar acompañante?', r: 'Tu invitación indica cuántos pases tiene. Si tienes dudas, escríbenos.' },
+    { p: '¿Habrá niños?', r: 'Amamos a los niños, pero esta será una celebración para adultos (salvo los que aparecen en la invitación).' },
+    { p: '¿Hay parqueo?', r: 'Sí, el salón cuenta con parqueo gratuito y vigilado.' },
+    { p: '¿Cómo comparto mis fotos?', r: 'El día de la boda verás códigos QR en cada mesa. Escanéalo y sube tus fotos al álbum compartido.' },
+  ],
+
+  // Momentos para etiquetar las fotos del álbum
+  momentos: ['Ceremonia', 'Cóctel', 'Fiesta', 'Detalles', 'Selfies'],
+
+  contacto: { whatsapp: '50370000000', nombre: 'Daniel' },
+
+  // Lista de canciones (opcional): enlace a una playlist colaborativa
+  playlist: '',
+};
+
+export const fechaBoda = new Date(boda.fecha);

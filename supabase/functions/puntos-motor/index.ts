@@ -48,7 +48,7 @@ Deno.serve(async (req) => {
   const json = (body: unknown, status = 200) =>
     new Response(JSON.stringify(body), { status, headers: { ...cors, 'Content-Type': 'application/json' } });
 
-  if (!requireInvokeSecret(req)) return json({ ok: false, error: 'no autorizado' }, 401);
+  if (!requireInvokeSecret(req, "sync")) return json({ ok: false, error: 'no autorizado' }, 401);
 
   const supabase = createClient(
     Deno.env.get('SUPABASE_URL')!,

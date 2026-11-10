@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.11 — Secreto de cron repartido por circuito (código)
+
+Cada cron de las edge functions podrá mandar el secreto de **su** circuito
+(sincronización, Hacienda y escrituras al origen, avisos) en vez de uno solo que
+abría las 28. `requireInvokeSecret(req, circuito)` acepta el del circuito y,
+durante la transición, el viejo (lo siguen usando las llamadas entre funciones).
+Sin desplegar todavía: falta cargar los secretos y cambiar los crons.
+
 ## v2.1500.10 — Vuelve el logo vertical al encabezado
 
 - App de clientes: el encabezado vuelve al logo vertical original de Puntos Salud; se retira la versión horizontal (salía con las letras incompletas).

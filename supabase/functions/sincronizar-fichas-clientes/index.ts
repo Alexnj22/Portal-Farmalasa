@@ -173,7 +173,7 @@ Deno.serve(async (req) => {
   const queda = () => Date.now() - arranque < PRESUPUESTO;
 
   try {
-    const esCron = requireInvokeSecret(req);
+    const esCron = requireInvokeSecret(req, "fiscal");
     let actor = "Corrida automática";
     if (!esCron) {
       const emp = await requireActiveEmployeeUser(req, admin);

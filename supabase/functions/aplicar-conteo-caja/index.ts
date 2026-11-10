@@ -18,7 +18,7 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
   // Nadie de afuera: lo llama el cron.
-  if (!requireInvokeSecret(req)) return json({ ok: false, error: "No autorizado." }, 401);
+  if (!requireInvokeSecret(req, "sync")) return json({ ok: false, error: "No autorizado." }, 401);
 
   const admin = createClient(Deno.env.get("SUPABASE_URL") ?? "", Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "");
   const arranque = Date.now();

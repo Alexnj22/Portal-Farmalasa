@@ -5,6 +5,7 @@
 // Retención: elimina backups de más de 60 días.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { requireInvokeSecret } from "../_shared/security.ts";
 
 const TABLES = [
   "employees", "roles", "role_permissions", "branches", "shifts", "holidays",
@@ -68,9 +69,7 @@ async function gzip(data: string): Promise<Uint8Array> {
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405);
 
-  const secret = Deno.env.get("ADMIN_INVOKE_SECRET");
-  const auth = req.headers.get("Authorization") ?? "";
-  if (!secret || auth !== `Bearer ${secret}`) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+  if (!requireInvokeSecret(req, "sync")) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";

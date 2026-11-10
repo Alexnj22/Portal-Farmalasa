@@ -263,7 +263,7 @@ Deno.serve(async (req) => {
     //
     // El cron la invoca con el secreto de siempre y SOLO un `run_id`: ni el
     // pedido ni la sucursal ni el actor vienen de afuera, salen de la corrida.
-    const interno = requireInvokeSecret(req);
+    const interno = requireInvokeSecret(req, "fiscal");
     let quien: { id: string; name: string } | null = null;
     let alcanceTodo = false;
     // El nombre que va al concepto. Es el único lugar del sistema donde aparece

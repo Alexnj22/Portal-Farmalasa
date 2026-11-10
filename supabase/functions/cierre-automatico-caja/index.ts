@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
     status, headers: { ...corsHeaders, "Content-Type": "application/json" },
   });
 
-  if (!requireInvokeSecret(req)) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+  if (!requireInvokeSecret(req, "fiscal")) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
 
   try {
     const body = await req.json().catch(() => ({}));

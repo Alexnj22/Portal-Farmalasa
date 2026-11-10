@@ -61,7 +61,7 @@ Deno.serve(async (req) => {
   const responder = (b: unknown, s = 200) => json(b, s, cors);
 
   // La llama un cron, no un navegador: se autentica con el secreto de invocación.
-  if (!requireInvokeSecret(req)) return responder({ ok: false, error: "No autorizado." }, 401);
+  if (!requireInvokeSecret(req, "sync")) return responder({ ok: false, error: "No autorizado." }, 401);
 
   const supabase = createClient(
     Deno.env.get("SUPABASE_URL")!,

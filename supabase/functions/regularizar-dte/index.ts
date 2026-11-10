@@ -195,7 +195,7 @@ Deno.serve(async (req) => {
     const graciaCcf = new Date(Date.now() - GRACIA_CCF_MIN * 60_000).toISOString();
 
     // ── Quién llama ────────────────────────────────────────────────────
-    const esCron = requireInvokeSecret(req);
+    const esCron = requireInvokeSecret(req, "fiscal");
     let actorId: string | null = null;
     let actorNombre = "Barrido automático";
 

@@ -6,6 +6,7 @@
 // (mismo mapeo que registerEmployeeEvent en el frontend).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { requireInvokeSecret } from "../_shared/security.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -13,9 +14,7 @@ const json = (body: unknown, status = 200) =>
 Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ ok: false, error: "METHOD_NOT_ALLOWED" }, 405);
 
-  const secret = Deno.env.get("ADMIN_INVOKE_SECRET");
-  const auth = req.headers.get("Authorization") ?? "";
-  if (!secret || auth !== `Bearer ${secret}`) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
+  if (!requireInvokeSecret(req, "sync")) return json({ ok: false, error: "UNAUTHORIZED" }, 401);
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -177,7 +176,7 @@ Deno.serve(async (req: Request) => {
         try {
           const r = await fetch(`${supabaseUrl}/functions/v1/disable-employee-auth`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${secret}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET") ?? ""}` },
             body: JSON.stringify({ employeeId: ev.employee_id, action: "disable" }),
           });
           const cuerpo = await r.json().catch(() => null) as { ok?: boolean; error?: string } | null;

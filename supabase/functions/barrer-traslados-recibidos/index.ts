@@ -56,7 +56,7 @@ Deno.serve(async (req) => {
     new Response(JSON.stringify(body), { status, headers: { ...cors, "Content-Type": "application/json" } });
 
   // Nadie de afuera. No hay camino de navegador para esto: lo llama el cron.
-  if (!requireInvokeSecret(req)) return json({ ok: false, error: "No autorizado." }, 401);
+  if (!requireInvokeSecret(req, "sync")) return json({ ok: false, error: "No autorizado." }, 401);
 
   const admin = createClient(
     Deno.env.get("SUPABASE_URL") ?? "",

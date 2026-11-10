@@ -37,7 +37,7 @@ Deno.serve(async (req) => {
   /* Sólo la llama el cron, con el secreto de invocación. Hasta el 2026-10-02
    * no validaba nada y estaba desplegada sin verify_jwt: cualquiera en internet
    * la podía disparar y repartir avisos. Ver PLAN-ALCANCE-POR-SUCURSAL F1. */
-  if (!requireInvokeSecret(req)) return json({ ok: false, error: 'UNAUTHORIZED' }, 401);
+  if (!requireInvokeSecret(req, "avisos")) return json({ ok: false, error: 'UNAUTHORIZED' }, 401);
 
   try {
     const supabase = createClient(

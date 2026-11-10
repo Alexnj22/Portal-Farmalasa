@@ -21,11 +21,22 @@ export function getCorsHeaders(req: Request): Record<string, string> {
 }
 
 // ── ADMIN INVOKE SECRET (for cron / internal calls without user session) ─────
-export function requireInvokeSecret(req: Request): boolean {
-  const secret = Deno.env.get("ADMIN_INVOKE_SECRET");
-  if (!secret) return false; // secret not set → deny
+// Reparto por circuito (2026-11-10). Un solo secreto abría las ~28 funciones
+// de cron: quien lo tuviera podía mandar a Hacienda, escribir en el sistema de
+// origen y disparar avisos a toda la red. Ahora cada cron manda el secreto de
+// SU circuito (`SYNC_`, `FISCAL_`, `AVISOS_INVOKE_SECRET`, gemelos en el vault
+// como `sync_invoke_secret`…), y la función que declara su circuito lo acepta.
+// ADMIN_INVOKE_SECRET se sigue aceptando mientras dure la transición: lo usan
+// también las llamadas entre funciones (hacer-corte-caja → sync-cortes-caja,
+// cargar-compra-erp → sync-erp-purchases…). Retirarlo es el paso siguiente.
+export type Circuito = "sync" | "fiscal" | "avisos";
+
+export function requireInvokeSecret(req: Request, circuito?: Circuito): boolean {
   const auth = req.headers.get("Authorization") ?? "";
-  return auth === `Bearer ${secret}`;
+  const aceptados = [Deno.env.get("ADMIN_INVOKE_SECRET")];
+  if (circuito) aceptados.push(Deno.env.get(`${circuito.toUpperCase()}_INVOKE_SECRET`));
+  // Un secreto sin definir nunca abre: `Bearer undefined` no se compara.
+  return aceptados.some((s) => !!s && auth === `Bearer ${s}`);
 }
 
 // ── JWT user validation (for calls from authenticated frontend users) ─────────

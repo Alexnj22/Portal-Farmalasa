@@ -23,6 +23,7 @@
 // quien no tiene el termómetro en la mano.
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { hora12 } from '../_shared/hora.ts';
+import { requireInvokeSecret } from '../_shared/security.ts';
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -43,8 +44,7 @@ Deno.serve(async (req) => {
   // La llama un cron, así que va desplegada con `--no-verify-jwt` y no hay
   // sesión que presentar: la puerta la pone ella misma. Sin esto, una función
   // sin JWT que manda notificaciones y push es un megáfono abierto.
-  const secreto = Deno.env.get('ADMIN_INVOKE_SECRET');
-  if (!secreto || (req.headers.get('Authorization') ?? '') !== `Bearer ${secreto}`) {
+  if (!requireInvokeSecret(req, 'avisos')) {
     return json({ ok: false, error: 'UNAUTHORIZED' }, 401);
   }
 

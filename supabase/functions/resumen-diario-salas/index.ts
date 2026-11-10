@@ -17,6 +17,7 @@
 // de servidor. Va desplegada con `--no-verify-jwt`.
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { callGemini } from "../_shared/gemini.ts";
+import { requireInvokeSecret } from "../_shared/security.ts";
 
 type Novedad = { clave: string; nivel: string; texto: string; productos?: string[]; insiste?: boolean };
 type Pendiente = { id: number; sala: string; fecha: string; feriado: string | null; novedades: Novedad[] };
@@ -53,8 +54,7 @@ function textoAceptable(t: unknown): t is string {
 }
 
 Deno.serve(async (req) => {
-  const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
-  if (!secreto || (req.headers.get("Authorization") ?? "") !== `Bearer ${secreto}`) {
+  if (!requireInvokeSecret(req, "avisos")) {
     return json({ error: "UNAUTHORIZED" }, 401);
   }
 

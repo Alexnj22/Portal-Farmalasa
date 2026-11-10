@@ -99,7 +99,7 @@ Deno.serve(async (req) => {
 
   try {
     const { customer_id } = await req.json().catch(() => ({}));
-    const esCron = requireInvokeSecret(req);
+    const esCron = requireInvokeSecret(req, "fiscal");
 
     // El formulario usa el JWT de la persona: así los RPC aplican su permiso de
     // módulo y esta función no es una puerta trasera para escribir en el ERP.

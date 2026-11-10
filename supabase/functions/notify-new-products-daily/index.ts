@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
 
-  if (!requireInvokeSecret(req)) {
+  if (!requireInvokeSecret(req, "avisos")) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { ...cors, "Content-Type": "application/json" },

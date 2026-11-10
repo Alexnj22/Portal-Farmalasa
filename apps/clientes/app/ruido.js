@@ -27,7 +27,7 @@ import Icono from '../componentes/Icono';
 import PaisajeRuido from '../componentes/PaisajeRuido';
 import { tacto } from '../lib/sensaciones';
 import {
-  SONIDOS, pararRuido, prepararRuido, ruidoDisponible, sonarRuido, temporizadorRuido, useRuido, volumenActual, volumenRuido,
+  SONIDOS, pararRuido, pausarRuido, prepararRuido, reanudarRuido, ruidoDisponible, sonarRuido, temporizadorRuido, useRuido, volumenActual, volumenRuido,
 } from '../lib/ruido';
 
 const MINUTOS = [0, 15, 30, 60, 90];
@@ -97,7 +97,7 @@ function Orbe({ id, activo, sonando, alTocar }) {
 export default function Ruido() {
   const ins = useSafeAreaInsets();
   const barra = useHeaderHeight();
-  const { sonando, tipo, finEn } = useRuido();
+  const { sonando, pausado, tipo, finEn } = useRuido();
   const x = SONIDOS[tipo];
   const [minutos, setMinutos] = useState(30);
   const [volumen, setVolumen] = useState(volumenActual());
@@ -113,12 +113,13 @@ export default function Ruido() {
   useEffect(() => { const h = InteractionManager.runAfterInteractions(() => prepararRuido(tipo)); return () => h.cancel(); }, [tipo]);
 
   useEffect(() => {
+    if (pausado && finEn) { setResta(Math.max(0, Math.round((finEn - Date.now()) / 1000))); return undefined; }
     if (!sonando || !finEn) { setResta(null); return undefined; }
     const tic = () => setResta(Math.max(0, Math.round((finEn - Date.now()) / 1000)));
     tic();
     const id = setInterval(tic, 1000);
     return () => clearInterval(id);
-  }, [sonando, finEn]);
+  }, [sonando, pausado, finEn]);
 
   const empezar = async (t = tipo) => {
     tacto.toque();
@@ -128,9 +129,14 @@ export default function Ruido() {
     await sonarRuido(t, minutos);
     setPreparando(false);
   };
-  const alternar = () => (sonando ? (tacto.roce(), pararRuido()) : empezar());
+  // El botón grande pausa y reanuda (como en la pantalla de bloqueo);
+  // «Detener» lo apaga del todo y quita el reproductor.
+  const alternar = () => {
+    if (sonando) { tacto.roce(); pausarRuido(); } else if (pausado) { tacto.toque(); reanudarRuido(); } else empezar();
+  };
+  const detener = () => { tacto.roce(); pararRuido(); };
   const elegir = (t) => {
-    if (t === tipo && sonando) return;
+    if (t === tipo && (sonando || pausado)) { if (pausado) reanudarRuido(); return; }
     Haptics.selectionAsync().catch(() => {});
     empezar(t);
   };
@@ -193,6 +199,14 @@ export default function Ruido() {
             <Text style={{ fontSize: 16, fontWeight: '600', color: 'rgba(255,255,255,0.8)' }}>{x.detalle}</Text>
           </Animated.View>
           <BotonPlay sonando={sonando} preparando={preparando} acento={x.acento} alTocar={alternar} />
+          {sonando || pausado ? (
+            <Tocable etiqueta="Detener" alTocar={detener} estilo={{ borderRadius: 999 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 40, paddingHorizontal: 16, borderRadius: 999, backgroundColor: 'rgba(0,0,0,0.25)' }}>
+                <Icono sf="stop.fill" respaldo="■" tam={13} color={BLANCO} />
+                <Text style={{ fontSize: 14, fontWeight: '800', color: BLANCO }}>{pausado ? 'En pausa · Detener' : 'Detener'}</Text>
+              </View>
+            </Tocable>
+          ) : null}
           {ruidoDisponible() ? (
             <Text pointerEvents="none" style={{ fontSize: 13, fontWeight: '600', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
               Desliza hacia arriba o hacia abajo para el volumen

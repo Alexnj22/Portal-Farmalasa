@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.27 — App de clientes: pausa de verdad y portada en la pantalla de bloqueo
+
+- App de clientes · Sonidos: pausar (desde la app o la pantalla de bloqueo) congela el sonido y el temporizador; reanudar sigue desde ahí. «Detener» lo apaga del todo y quita el reproductor.
+- La pantalla de bloqueo muestra una portada por ambiente (lluvia, olas, fogata, noche…) con el logo de Puntos Salud.
+
 ## v2.1500.26 — Diseño: tarjetas, ruedas chicas y puntos por sus canónicos
 
 - 15 tarjetas escritas a mano pasan a la tarjeta del tema (`data-surface="card"`):

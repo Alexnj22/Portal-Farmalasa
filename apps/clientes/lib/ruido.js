@@ -21,6 +21,7 @@
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
+import { Asset } from 'expo-asset';
 
 let AudioAPI = null;
 try { AudioAPI = require('react-native-audio-api'); } catch { AudioAPI = null; }
@@ -255,7 +256,7 @@ let relojFin = null;
 let subsAviso = [];
 // Lo que ve la pantalla: también cambia desde la notificación o al vencer el
 // temporizador con la pantalla apagada.
-let estado = { sonando: false, tipo: 'lluvia', finEn: null };
+let estado = { sonando: false, pausado: false, tipo: 'lluvia', finEn: null };
 const oyentes = new Set();
 function poner(cambio) {
   estado = { ...estado, ...cambio };
@@ -358,20 +359,42 @@ function programarFin() {
   }
 }
 
-async function mostrarAviso(tipo) {
+// La portada de cada lugar en la pantalla de bloqueo (2026-11-10, «en iOS no
+// se ve foto de lo que se reproduce»). El reproductor pide un archivo: el
+// módulo de la imagen se baja a disco una vez y se pasa su `file://`.
+const PORTADAS = {
+  lluvia: require('../assets/sonidos/portadas/lluvia.jpg'),
+  olas: require('../assets/sonidos/portadas/olas.jpg'),
+  fuego: require('../assets/sonidos/portadas/fuego.jpg'),
+  noche: require('../assets/sonidos/portadas/noche.jpg'),
+  ventilador: require('../assets/sonidos/portadas/ventilador.jpg'),
+  blanco: require('../assets/sonidos/portadas/blanco.jpg'),
+  rosa: require('../assets/sonidos/portadas/rosa.jpg'),
+  cafe: require('../assets/sonidos/portadas/cafe.jpg'),
+};
+async function portada(tipo) {
+  try {
+    const a = Asset.fromModule(PORTADAS[tipo]);
+    if (!a.localUri) await a.downloadAsync();
+    return a.localUri ?? a.uri ?? undefined;
+  } catch { return undefined; }
+}
+
+async function mostrarAviso(tipo, pausado = false) {
   const A = Aviso();
   if (!A) return;
   try {
-    await A.show({ title: `Ruido blanco · ${SONIDOS[tipo].nombre}`, artist: 'Puntos Salud', isLiveStream: true, state: 'playing' });
+    const artwork = await portada(tipo);
+    await A.show({ title: SONIDOS[tipo].nombre, artist: 'Sonidos · Puntos Salud', artwork, state: pausado ? 'paused' : 'playing' });
     for (const [c, on] of [['play', true], ['pause', true], ['stop', true], ['nextTrack', false], ['previousTrack', false], ['skipForward', false], ['skipBackward', false], ['seekTo', false]]) {
       await A.enableControl(c, on).catch(() => {});
     }
     if (!subsAviso.length) {
       subsAviso = [
-        A.addEventListener('playbackNotificationPause', () => pausar()),
+        A.addEventListener('playbackNotificationPause', () => pausarRuido()),
+        A.addEventListener('playbackNotificationPlay', () => { reanudarRuido(); }),
         A.addEventListener('playbackNotificationStop', () => pararRuido()),
         A.addEventListener('playbackNotificationDismissed', () => pararRuido()),
-        A.addEventListener('playbackNotificationPlay', () => { sonarRuido(estado.tipo); }),
       ];
     }
   } catch { /* sin aviso: suena igual */ }
@@ -400,7 +423,7 @@ export async function sonarRuido(tipo, minutos) {
   nodo = n;
   rampa(volumen, 1.2);
   const finEn = minutos === undefined ? estado.finEn : minutos ? Date.now() + minutos * 60_000 : null;
-  poner({ sonando: true, tipo, finEn });
+  poner({ sonando: true, pausado: false, tipo, finEn });
   programarFin();
   mostrarAviso(tipo);
   return true;
@@ -430,31 +453,47 @@ function terminar() {
   const n = nodo;
   nodo = null;
   soltar(n, 0);
-  poner({ sonando: false, finEn: null });
+  poner({ sonando: false, pausado: false, finEn: null });
   ocultarAviso();
   sesion(false);
 }
 
-// Pausa desde la pantalla de bloqueo: para, pero el aviso queda para reanudar.
-function pausar() {
-  if (!nodo || !ctx) return;
-  const n = nodo;
-  nodo = null;
+// Pausa DE VERDAD (2026-11-10, «si lo pauso, no se pausa si no que se cancela
+// y se mantiene el reproductor»): antes paraba el sonido. Ahora el bucle se
+// queda donde está y el motor se suspende; reanudar sigue desde ahí. El
+// temporizador se congela con él: al reanudar le quedan los mismos minutos.
+let quedabaMs = null;
+export function pausarRuido() {
+  if (!nodo || !ctx || estado.pausado) return;
   clearTimeout(relojFin);
-  rampa(0, 0.4);
-  soltar(n, 0.4);
-  poner({ sonando: false });
-  Aviso()?.show({ state: 'paused' }).catch(() => {});
+  quedabaMs = estado.finEn ? Math.max(0, estado.finEn - Date.now()) : null;
+  rampa(0, 0.3);
+  setTimeout(() => { if (estado.pausado && ctx?.state === 'running') ctx.suspend().catch(() => {}); }, 350);
+  poner({ sonando: false, pausado: true });
+  mostrarAviso(estado.tipo, true);
 }
 
-/** Para, apagándose en `seg` segundos. */
+export async function reanudarRuido() {
+  if (!estado.pausado) return;
+  if (!nodo || !ctx) { await sonarRuido(estado.tipo); return; }
+  sesion(true);
+  if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
+  rampa(volumen, 0.6);
+  poner({ sonando: true, pausado: false, finEn: quedabaMs != null ? Date.now() + quedabaMs : null });
+  programarFin();
+  mostrarAviso(estado.tipo, false);
+}
+
+/** Para del todo y quita el reproductor de la pantalla de bloqueo. */
 export function pararRuido(seg = 0.6) {
   clearTimeout(relojFin);
   ocultarAviso();
-  poner({ sonando: false, finEn: null });
+  const pausadoAntes = estado.pausado;
+  poner({ sonando: false, pausado: false, finEn: null });
   if (!nodo || !ctx) { sesion(false); return; }
   const n = nodo;
   nodo = null;
+  if (pausadoAntes) { soltar(n, 0); sesion(false); return; }
   rampa(0, seg);
   soltar(n, seg);
   sesion(false);

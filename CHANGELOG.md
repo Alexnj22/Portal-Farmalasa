@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.17 — Frase del día: Leído la quita del Inicio
+
+- App de clientes: la frase del día en Inicio tiene «Leído»; al tocarlo sale del Inicio hasta la frase siguiente (8:00). En Bienestar se sigue viendo.
+
 ## v2.1500.16 — Puntos: un producto sin precio ya no deja la compra sin puntos
 
 - Desde el reglamento v2 (15-nov), un producto sin precio en el portal ya no deja

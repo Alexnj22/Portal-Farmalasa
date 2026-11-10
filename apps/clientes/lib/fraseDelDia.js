@@ -375,6 +375,36 @@ export function fechaDeDia(dia) {
   return new Date(dia * DIA).toISOString().slice(0, 10);
 }
 
+// «Leído» (2026-11-10): la frase que el cliente marcó sale del Inicio hasta
+// que cambia (a las 8:00). Se guarda el DÍA leído, no un sí/no: la de mañana
+// vuelve a salir sola. Bienestar la sigue mostrando siempre.
+const CLAVE_LEIDA = 'puntos_salud_frase_leida';
+let leidaEnMemoria = null;
+const avisarLeida = new Set();
+
+export function marcarFraseLeida(dia) {
+  leidaEnMemoria = dia;
+  avisarLeida.forEach((f) => f(dia));
+  SecureStore.setItemAsync(CLAVE_LEIDA, String(dia)).catch(() => {});
+}
+
+/** El día de la última frase marcada como leída (o null). */
+export function useFraseLeida() {
+  const [dia, setDia] = useState(leidaEnMemoria);
+  useEffect(() => {
+    let vivo = true;
+    if (leidaEnMemoria == null) {
+      SecureStore.getItemAsync(CLAVE_LEIDA).then((v) => {
+        const n = v == null ? null : Number(v);
+        if (n != null && Number.isFinite(n)) { leidaEnMemoria = n; if (vivo) setDia(n); }
+      }).catch(() => {});
+    }
+    avisarLeida.add(setDia);
+    return () => { vivo = false; avisarLeida.delete(setDia); };
+  }, []);
+  return dia;
+}
+
 const CLAVE = 'puntos_salud_frase_portal';
 // Lo que el portal mandó, por día: `{ dia, frase }` (frase null = no había).
 let delPortal = null;

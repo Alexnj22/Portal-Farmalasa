@@ -8,7 +8,7 @@
 // mismo vidrio que las demás tarjetas, con el recuadro de la marca y la comilla
 // grande de fondo en magenta suave — la comilla es lo que la hace reconocible.
 // El degradado se queda en Bienestar (`grande`), donde la frase es la portada.
-import { Share, Text, View } from 'react-native';
+import { LayoutAnimation, Share, Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Icono from './Icono';
@@ -17,7 +17,7 @@ import { Tocable } from './animacion';
 import { RADIO, Tarjeta } from './ui';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
-import { CATEGORIAS, useFraseDelDia } from '../lib/fraseDelDia';
+import { CATEGORIAS, marcarFraseLeida, useFraseDelDia, useFraseLeida } from '../lib/fraseDelDia';
 import { navegar } from '../lib/navegar';
 import { OndasFrase } from './IlustracionesInicio';
 
@@ -42,6 +42,7 @@ function colores(t, categoria) {
 export default function FraseDelDia({ grande = false }) {
   const t = useTema();
   const frase = useFraseDelDia();
+  const leida = useFraseLeida();
   const cat = CATEGORIAS[frase.categoria];
   const compartir = () => {
     Haptics.selectionAsync().catch(() => {});
@@ -95,6 +96,13 @@ export default function FraseDelDia({ grande = false }) {
   );
 
   if (grande) return cuerpo;
+  // Marcada como leída: fuera del Inicio hasta la frase siguiente.
+  if (leida === frase.dia) return null;
+  const leer = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    marcarFraseLeida(frase.dia);
+  };
   // El compacto del Inicio (2026-11-04, «siento extraño que… sólo sean cards
   // de texto»): ondas de calma dibujadas en la esquina, la comilla grande
   // encima, el rótulo como antetítulo, la frase con más cuerpo y la invitación
@@ -124,11 +132,20 @@ export default function FraseDelDia({ grande = false }) {
             {frase.texto}
           </Text>
         </View>
-        <View style={{ alignSelf: 'flex-start', maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
-          backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
-          <Icono sf="sparkles" respaldo="" tam={13} color={t.color.magentaTexto} />
-          <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '800', color: t.color.magentaTexto }}>Tu momento de bienestar</Text>
-          <Icono sf="chevron.right" respaldo="›" tam={11} color={t.color.magentaTexto} />
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+          <View style={{ flexShrink: 1, maxWidth: '100%', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 36, paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+            backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.12) }}>
+            <Icono sf="sparkles" respaldo="" tam={13} color={t.color.magentaTexto} />
+            <Text style={{ flexShrink: 1, fontSize: 14, fontWeight: '800', color: t.color.magentaTexto }}>Tu momento de bienestar</Text>
+            <Icono sf="chevron.right" respaldo="›" tam={11} color={t.color.magentaTexto} />
+          </View>
+          {/* «Leído»: la quita del Inicio hasta la de mañana. */}
+          <Presionable onPress={leer} accessibilityRole="button" accessibilityLabel="Marcar la frase como leída" hitSlop={6}
+            style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 5, minHeight: 44, paddingHorizontal: 12, borderRadius: 999,
+              opacity: pressed ? 0.6 : 1, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+            <Icono sf="checkmark.circle" respaldo="✓" tam={15} color={colorSistema.texto2} />
+            <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>Leído</Text>
+          </Presionable>
         </View>
       </Tarjeta>
     </Tocable>

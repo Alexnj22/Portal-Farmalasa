@@ -252,7 +252,7 @@ input[type=checkbox] { width: 20px; min-height: 20px; accent-color: var(--oliva)
 
 /* ── Galería horizontal (bajar = recorrer) ──────────────────── */
 .galeria-h { position: relative; background: var(--oliva-noche); color: var(--lino); scroll-margin-top: 0; }
-.galeria-h .pegada { position: sticky; top: var(--nav); height: calc(100svh - var(--nav)); padding: clamp(24px, 5vh, 56px) 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: clamp(20px, 4vh, 40px); }
+.galeria-h .pegada { position: sticky; top: var(--nav); height: calc(100svh - var(--nav)); height: calc(100dvh - var(--nav)); padding: clamp(24px, 5vh, 56px) 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: clamp(20px, 4vh, 40px); }
 .galeria-cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
 .galeria-cabeza h2 { margin: 0; font-size: clamp(3.2rem, 12vw, 8rem); }
 .galeria-cabeza h2 em { color: var(--oliva-claro); }

@@ -54,7 +54,7 @@ export default function GaleriaHorizontal({ titulo, fotos }) {
         <div className="pista" ref={pista}>
           {items.map((f, n) => (
             <button type="button" key={f.url} className={`foto-h ${n % 3 === 1 ? 'ancha' : ''}`} onClick={() => setAbierta(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
-              <img src={f.url} alt="" loading="lazy" decoding="async" />
+              <img src={f.url} alt="" decoding="async" />
               <span className="num">{String(n + 1).padStart(2, '0')}</span>
             </button>
           ))}

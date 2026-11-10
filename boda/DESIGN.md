@@ -18,16 +18,17 @@ Moderno y minimalista, beige lino con verde oliva. Estrategia de color **Committ
 | `--terracota` | `oklch(0.5 0.12 40)` | errores |
 
 ## Typography
-- **Italiana** (display): nombres, títulos de sección, números grandes. Nunca por debajo de 1.75rem.
+- **Instrument Serif** (display, con cursiva): nombres, títulos de sección, números grandes. El último término de cada título va en cursiva («Nuestra *historia*»). Nunca por debajo de 1.75rem.
 - **Hanken Grotesk** (texto e interfaz): 400 / 500 / 600. Cuerpo 1.0625rem, interlineado 1.6, máximo 68ch.
-- Escala: 0.875 · 1.0625 · 1.33 · 1.75 · 2.5 · clamp(2.75rem, 9vw, 6rem) · clamp(3.25rem, 15vw, 9.5rem).
+- Escala: 0.75 (versalitas) · 1.0625 · 1.25 · 2–3.25rem (filas) · clamp(3.4rem, 13vw, 8.5rem) (títulos) · clamp(4.6rem, 21.5vw, 17rem) (nombres).
 - Sin letra manuscrita. Mayúsculas espaciadas sólo para fechas y horas cortas.
 
 ## Layout
 - Encabezado de sección alineado a la izquierda, título grande y un filete; en escritorio, título a la izquierda (columna de 1/3) y contenido a la derecha.
 - Ritmo: secciones con `clamp(72px, 12vw, 152px)` de aire; grupos internos apretados.
 - Filas separadas por filetes en lugar de tarjetas. Tarjetas sólo en el panel.
-- Radio pequeño: 4px en botones y campos, 2px en fotos.
+- Botones y selectores en píldora; campos con 14px; fotos con 18px.
+- Portada a pantalla completa con la foto debajo de la navegación (transparente arriba, lino al bajar).
 
 ## Components
 - **Botón**: rectangular, 48px de alto, radio 4px. Primario oliva sobre lino; sobre oliva, lino.
@@ -36,4 +37,10 @@ Moderno y minimalista, beige lino con verde oliva. Estrategia de color **Committ
 - **Resumen de confirmación**: barra fija al pie del formulario con «Asisten 2 de 4» y el botón con la acción exacta.
 
 ## Motion
-Entradas con `cubic-bezier(0.25, 1, 0.5, 1)` (ease-out-quart), 600–900ms, desplazamiento de 16px. Portada con aparición escalonada. Nada rebota. Todo se apaga con `prefers-reduced-motion`.
+Curva `cubic-bezier(0.22, 1, 0.36, 1)`. Nada rebota y todo se apaga con `prefers-reduced-motion`.
+- **Telón** (`Telon.jsx`): monograma y «Para …», sube a los 2 s. Una vez por visita y sin bloquear toques.
+- **Portada**: los nombres suben letra por letra; la foto se acerca despacio y baja más lento que la página (paralaje).
+- **Cinta** oliva con los nombres y la fecha en movimiento continuo.
+- **Frase** (`FraseRevelada.jsx`): las palabras se iluminan al leer bajando.
+- **Galería** (`GaleriaHorizontal.jsx`): sección fija mientras la tira avanza de lado al bajar.
+- Todo el movimiento sólo escribe `transform` y `opacity`, un cuadro por evento de scroll.

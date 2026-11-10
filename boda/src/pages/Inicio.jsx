@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { faseActual, faseAlMenos } from '../lib/fase';
 import { fechaLarga, fechaCorta, descargarIcs, enlaceGoogleCalendar } from '../lib/fechas';
@@ -6,13 +6,31 @@ import { api } from '../lib/api';
 import { t, useIdioma, contenido, BotonIdioma } from '../lib/idioma';
 import Countdown from '../components/Countdown';
 import Mapa from '../components/Mapa';
-import Visor from '../components/Visor';
-import Seccion from '../components/Seccion';
+import Seccion, { Titulo } from '../components/Seccion';
+import Telon from '../components/Telon';
+import FraseRevelada from '../components/FraseRevelada';
+import GaleriaHorizontal from '../components/GaleriaHorizontal';
+import { sinMovimiento } from '../lib/movimiento';
+import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
 import Copiar from '../components/Copiar';
 import CintaEntrada from '../components/CintaEntrada';
 import Rsvp from './Rsvp';
 import LibroFirmas from './LibroFirmas';
+
+/** Una palabra que entra letra por letra (cada letra sube desde su renglón). */
+function Letras({ texto, desde = 0 }) {
+  return (
+    <span className="renglon" aria-hidden>
+      {[...texto].map((c, i) => <span key={i} className="letra" style={{ '--i': desde + i }}>{c === ' ' ? '\u00a0' : c}</span>)}
+    </span>
+  );
+}
+
+const fechaPuntos = () => {
+  const [a, m, d] = fechaBoda.toLocaleDateString('en-CA', { timeZone: 'America/El_Salvador' }).split('-');
+  return `${d} · ${m} · ${a}`;
+};
 
 export default function Inicio({ codigo }) {
   const idioma = useIdioma();
@@ -21,6 +39,25 @@ export default function Inicio({ codigo }) {
   const fase = faseActual();
   const [inv, setInv] = useState(undefined); // undefined = cargando, null = no existe
   const [lugar, setLugar] = useState(null);
+  const [arriba, setArriba] = useState(true);
+  const foto = useRef(null);
+
+  // La foto de portada baja más lento que la página (paralaje) y la barra
+  // de navegación pasa de transparente a lino al dejar la portada.
+  useEffect(() => {
+    const quieta = sinMovimiento();
+    let cuadro = 0;
+    const mover = () => {
+      cuadro = 0;
+      const y = window.scrollY;
+      setArriba(y < window.innerHeight * 0.75);
+      if (!quieta && foto.current && y < window.innerHeight * 1.2) foto.current.style.transform = `translate3d(0, ${y * 0.35}px, 0)`;
+    };
+    const pedir = () => { if (!cuadro) cuadro = requestAnimationFrame(mover); };
+    mover();
+    window.addEventListener('scroll', pedir, { passive: true });
+    return () => { window.removeEventListener('scroll', pedir); cancelAnimationFrame(cuadro); };
+  }, []);
 
   useEffect(() => {
     if (!codigo) { setInv(null); return; }
@@ -46,7 +83,8 @@ export default function Inicio({ codigo }) {
 
   return (
     <>
-      <nav className="nav">
+      <Telon monograma={`${novios.ella[0]} & ${novios.el[0]}`} para={inv?.grupo ? `${t('Para', 'For')} ${inv.grupo.nombre}` : ''} />
+      <nav className={`nav ${arriba ? 'sobre-foto' : ''}`}>
         <div className="contenedor">
           <a href="#inicio" className="marca">{novios.ella[0]} & {novios.el[0]}</a>
           <ul>
@@ -61,24 +99,55 @@ export default function Inicio({ codigo }) {
 
       {/* ── Portada ── */}
       <header id="inicio" className="portada">
-        <div className="portada-foto"><img src={boda.portada} alt={t(`${novios.ella} y ${novios.el}`, `${novios.ella} and ${novios.el}`)} fetchpriority="high" /></div>
+        <div className="portada-foto" ref={foto}><img src={boda.portada} alt="" fetchpriority="high" /></div>
         <div className="portada-texto">
-          {inv?.grupo && <p className="saludo">{t('Para', 'For')} {inv.grupo.nombre}</p>}
-          <p className="etiqueta versalita">{titulo}</p>
-          <h1><span>{novios.ella}</span><span className="y" aria-label={t('y', 'and')}>&</span><span>{novios.el}</span></h1>
-          <p className="fecha">{fase === 'save-the-date' ? fechaCorta() : fechaLarga()}</p>
-          {fase !== 'recuerdos' && <Countdown />}
-          <div className="acciones">
-            {fase === 'boda' && <Link className="btn" to="/album">{t('Subir fotos al álbum', 'Upload photos to the album')}</Link>}
-            {fase === 'recuerdos' && <Link className="btn" to="/album">{t('Ver el álbum', 'See the album')}</Link>}
-            {fase === 'invitacion' && <a className="btn" href="#confirmar">{t('Confirmar asistencia', 'RSVP')}</a>}
-            {(fase === 'save-the-date' || fase === 'invitacion') && <>
-              <a className="btn claro" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
-              <button className="btn claro" onClick={descargarIcs}>Apple / Outlook</button>
-            </>}
+          <div className="portada-arriba">
+            <p className="versalita">{titulo}</p>
+            {inv?.grupo && <p className="saludo">{t('Para', 'For')} {inv.grupo.nombre}</p>}
+          </div>
+          <h1 aria-label={`${novios.ella} ${t('y', 'and')} ${novios.el}`}>
+            <Letras texto={novios.ella} />
+            <span className="segundo"><Letras texto={`& ${novios.el}`} desde={novios.ella.length} /></span>
+          </h1>
+          <div className="portada-pie">
+            <p className="fecha-puntos">{fechaPuntos()}</p>
+            <div className="acciones">
+              {fase === 'boda' && <Link className="btn" to="/album">{t('Subir fotos al álbum', 'Upload photos')}</Link>}
+              {fase === 'recuerdos' && <Link className="btn" to="/album">{t('Ver el álbum', 'See the album')}</Link>}
+              {fase === 'invitacion' && <a className="btn" href="#confirmar">{t('Confirmar asistencia', 'RSVP')}</a>}
+              {fase === 'save-the-date' && <a className="btn" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">{t('Guardar la fecha', 'Save the date')}</a>}
+            </div>
           </div>
         </div>
       </header>
+
+      <div className="cinta-desfile" aria-hidden>
+        <div className="pista-desfile">
+          {[0, 1].map((k) => (
+            <span key={k}>
+              {[0, 1, 2].map((j) => <span key={j}>{novios.ella} <em>&</em> {novios.el}<i>✦</i>{fechaLarga()}<i>✦</i></span>)}
+            </span>
+          ))}
+        </div>
+      </div>
+
+      {fase !== 'recuerdos' && (
+        <section id="faltan" className="faltan">
+          <div className="contenedor">
+            <Revelar as="p" className="versalita suave">{t('Faltan', 'Countdown')}</Revelar>
+            <Countdown />
+            <Revelar className="faltan-pie">
+              <p className="grande-fecha">{fase === 'save-the-date' ? fechaCorta() : fechaLarga()}</p>
+              {(fase === 'save-the-date' || fase === 'invitacion') && (
+                <div className="acciones">
+                  <a className="btn claro" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">Google Calendar</a>
+                  <button className="btn claro" onClick={descargarIcs}>Apple / Outlook</button>
+                </div>
+              )}
+            </Revelar>
+          </div>
+        </section>
+      )}
 
       {fase === 'boda' && (
         <Seccion id="hoy" titulo={t('Hoy', 'Today')} bajada={t('Toma fotos y súbelas al álbum compartido: así juntamos los momentos que nosotros no alcanzamos a ver.',
@@ -108,7 +177,7 @@ export default function Inicio({ codigo }) {
 
       {/* ── Historia ── */}
       <Seccion id="historia" titulo={t('Nuestra historia', 'Our story')} dividida>
-        <Revelar as="p" className="frase">{boda.frase}</Revelar>
+        <FraseRevelada texto={boda.frase} className="frase" />
         <ol className="hitos">
           {boda.historia.map((h, i) => (
             <Revelar as="li" key={i} className="hito">
@@ -119,9 +188,7 @@ export default function Inicio({ codigo }) {
         </ol>
       </Seccion>
 
-      <Seccion id="fotos" titulo={t('Nosotros', 'Us')} variante="alterna">
-        <GaleriaNosotros fotos={boda.galeria} />
-      </Seccion>
+      <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
 
       {faseAlMenos(fase, 'invitacion') && <>
         {/* ── Evento y mapa ── */}
@@ -214,35 +281,23 @@ export default function Inicio({ codigo }) {
 
       <footer className="pie-sitio">
         <div className="contenedor">
-          <p className="nombres">{novios.ella} & {novios.el}</p>
-          <p>{fechaLarga()}</p>
-          <p>{novios.hashtag}</p>
-          {boda.contacto?.whatsapp && (
-            <p style={{ marginTop: 24 }}>
-              {t('¿Dudas?', 'Questions?')} <a href={`https://wa.me/${boda.contacto.whatsapp}`} target="_blank" rel="noreferrer">
-                {t(`Escríbele a ${boda.contacto.nombre} por WhatsApp`, `Message ${boda.contacto.nombre} on WhatsApp`)}
-              </a>
-            </p>
-          )}
+          <p className="versalita" style={{ color: 'var(--oliva-claro)' }}>{t('Los esperamos', 'We hope to see you')}</p>
+          <p className="nombres-gigantes" aria-label={`${novios.ella} ${t('y', 'and')} ${novios.el}`}>
+            <span aria-hidden>{novios.ella}</span><span aria-hidden className="segundo"><em>&</em> {novios.el}</span>
+          </p>
+          <div className="pie-filas">
+            <p>{fechaLarga()}</p>
+            <p>{novios.hashtag}</p>
+            {boda.contacto?.whatsapp && (
+              <p>
+                <a href={`https://wa.me/${boda.contacto.whatsapp}`} target="_blank" rel="noreferrer">
+                  {t(`¿Dudas? Escríbele a ${boda.contacto.nombre}`, `Questions? Message ${boda.contacto.nombre}`)}
+                </a>
+              </p>
+            )}
+          </div>
         </div>
       </footer>
-    </>
-  );
-}
-
-function GaleriaNosotros({ fotos }) {
-  const [i, setI] = useState(null);
-  const items = fotos.map((url) => ({ url }));
-  return (
-    <>
-      <div className="galeria-nosotros">
-        {items.map((f, n) => (
-          <Revelar as="button" key={f.url} type="button" onClick={() => setI(n)} aria-label={t(`Ver foto ${n + 1}`, `View photo ${n + 1}`)}>
-            <img src={f.url} alt="" loading="lazy" decoding="async" />
-          </Revelar>
-        ))}
-      </div>
-      {i != null && <Visor items={items} indice={i} alCambiar={setI} alCerrar={() => setI(null)} />}
     </>
   );
 }

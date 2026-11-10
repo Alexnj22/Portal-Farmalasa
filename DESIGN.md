@@ -706,7 +706,16 @@ una de las superficies con tratamiento propio de §25.4.
 
 **El rótulo en mayúsculas es uno solo**: `font-black uppercase tracking-widest` en `text-micro`, `text-caption` o `text-label`; cambian el tamaño y el color, nunca el peso ni el espaciado (gate `rotulo-a-mano`). El de un campo de formulario sale de `rotuloCampo()`.
 
-**El título de un bloque es `TituloDeSeccion`**, en tres niveles: `modal` (`text-title-sm font-black`, el de un modal o un panel), `tarjeta` (`text-body-lg font-black`, el de una tarjeta) y `seccion` (el rótulo en mayúsculas de arriba). El nivel decide tamaño, peso y color; `className` sólo lleva la disposición (gate `titulo-a-mano`).
+**El título de un bloque es `TituloDeSeccion`**, en tres niveles: `modal` (`text-title-sm font-black`, el de un modal o un panel), `tarjeta` (`text-body-lg font-black`, el de una tarjeta) y `seccion` (el rótulo en mayúsculas de arriba). El nivel decide tamaño, peso y color; `className` sólo lleva la disposición (gate `titulo-a-mano`, en cero).
+
+**Cuando el color del título significa algo, va `tono`** (2026-11-10): `brand`, `success`, `warning`, `danger`, los categóricos `chart-1/3/4/6/9` (cada uno en su `-text`), `tenue` (`text-content-3`, el grupo que ya no pide atención) e `inverso` (blanco, SÓLO sobre una superficie de color fijo como el kiosco). Sin `tono`, el color es el del nivel. Los doce títulos que seguían a mano lo estaban sólo por el color: el rojo del contacto de emergencia, el verde de un pago, el color del tipo de pago o del grupo de pedidos.
+
+```jsx
+<TituloDeSeccion nivel="seccion" tono="danger" className="flex items-center gap-2">
+    <HeartPulse size={14} /> Contacto de Emergencia
+</TituloDeSeccion>
+<TituloDeSeccion tono={g.tono}>{g.label}</TituloDeSeccion>
+```
 
 **El punto de estado es `PuntoDeEstado`**, en dos tamaños: `md` (8px, el de una fila o una leyenda) y `sm` (6px, pegado a un texto chico). `className` lleva el color y la disposición. Lo de 12px o más no es un punto: es un indicador con aro o una muestra de gráfico (gate `punto-a-mano`).
 
@@ -2403,7 +2412,7 @@ import { Skeleton, SkeletonText } from '../common/StateViews';
 
 ### 18.3 `LoadingState` y `AiThinkingState`
 
-**Una vista no escribe su spinner.** Sección → `LoadingState`, dentro de una línea → `variant="inline"`, botón → `Button loading`. `animate-spin` sólo vive en `components/common/` (gate `cargando-a-mano`, trinquete).
+**Una vista no escribe su spinner.** Sección → `LoadingState`, dentro de una línea → `variant="inline"`, botón → `Button loading`. `animate-spin` sólo vive en `components/common/` (gate `cargando-a-mano`, en cero). Los giros que quedan fuera están en `EXCEPTIONS` con su motivo: el arranque, el login y el kiosco (superficies propias), los anillos decorativos de IA, la espera larga con barra de la caja y la rueda blanca sobre una caja sólida.
 
 `LoadingState` cubre tres escalas —`route`, `content`, `inline`— para cuando
 todavía no se sabe la forma del contenido. `AiThinkingState` es el estado de las
@@ -3535,15 +3544,15 @@ por archivo viven en `EXCEPTIONS`, cada una con su motivo escrito.
 | `foto-sin-identidad` | `AvatarConEstado` sin `id`: sin él no hay estado | §5.4 |
 | `avatar-fuera-de-escala` | un tamaño de foto fuera de `TAMANOS_DE_AVATAR` (20, 28, 36, 48, 64, 104) | §5.4 |
 | `aviso-a-mano` | `{error && <p className="…text-danger…">{error}</p>}` en vez de `<Notice variant="danger">` (cero absoluto) | §29 |
-| `radio-a-mano` | `rounded-[Npx]`/`rounded-[Nrem]` en vez de los radios del tema (trinquete) | §8 |
-| `punto-a-mano` | punto de estado `w-2 h-2 rounded-full bg-…` a mano en vez de `PuntoDeEstado` (trinquete) | §7 |
+| `radio-a-mano` | `rounded-[Npx]`/`rounded-[Nrem]` en vez de los radios del tema (cero absoluto; barras de gráfico, burbujas del chat, el brillo del panel lateral y la caja chica de `Checkbox` van en `EXCEPTIONS`) | §8 |
+| `punto-a-mano` | punto de estado `w-2 h-2 rounded-full bg-…` a mano en vez de `PuntoDeEstado` (cero absoluto) | §7 |
 | `ancho-de-modal` | `maxWidth` de un modal fuera de la escala sm · md · lg · 2xl · 4xl · 6xl · none (cero absoluto) | §14 · ModalShell |
-| `icono-en-caja-a-mano` | ícono en cuadro o círculo de fondo neutro o teñido escrito a mano en vez de `IconoEnCaja` (trinquete) | §7 |
+| `icono-en-caja-a-mano` | ícono en cuadro o círculo de fondo neutro o teñido escrito a mano en vez de `IconoEnCaja` (cero absoluto) | §7 |
 | `popover-a-mano` | panel anclado a un botón escrito a mano (`data-panel=`, o una copia del cierre por clic afuera) en vez de `Popover` + `useAnclaje` (cero absoluto) | §14 |
 | `texto-de-origen` | texto visible que nombra el ERP o dice «sincronizar»/«sync» (cero absoluto; lo armado con variables se verifica barriendo el DOM) | §34 |
-| `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion` (trinquete; quedan colores con significado y clases dinámicas) | §7 |
+| `titulo-a-mano` | `<h3>` con el tamaño escrito a mano en vez de `TituloDeSeccion`; el color con significado va en `tono` (cero absoluto) | §7 |
 | `rotulo-a-mano` | rótulo en mayúsculas chico con un peso o espaciado que no es `font-black tracking-widest` (cero absoluto) | §7 |
-| `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (trinquete) | §18.3 |
+| `cargando-a-mano` | `animate-spin` en una vista en vez de `LoadingState` / `Button loading` (cero absoluto) | §18.3 |
 | `editor-dos-veces` | abrir el editor de foto sin mirar `yaPreparado`: la foto del teléfono se cuadra dos veces | §14 |
 | `copy-vacio` | un vacío que no dice `Sin <sustantivo>`, Title Case o punto final en una etiqueta | §34.1, §34.4, §34.5 |
 | `copy-trato` | voseo — el portal tutea | §34.7 |

@@ -8,6 +8,7 @@ import { hoySV, fechaTexto } from '@nucleo/utils/fecha';
 import { semanasDelMes, piezasPorDia, DIAS_SEMANA, fechasEspecialesDelMes, ESTADOS_PIEZA } from '@nucleo/utils/marketing';
 import FichaDePieza from './FichaDePieza';
 import { tonoDeEstado } from './iconos';
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 
 /**
  * El mes completo. En escritorio, la grilla de siete columnas; en el teléfono,
@@ -43,9 +44,9 @@ export default function TabCalendario({
                 {dias.map((d) => (
                     <section key={d} className="space-y-2">
                         <div className="flex items-center justify-between gap-2">
-                            <h3 className={`text-label uppercase tracking-widest font-black ${d === hoy ? 'text-brand' : 'text-content-2'}`}>
+                            <TituloDeSeccion nivel="seccion" tono={d === hoy ? 'brand' : undefined}>
                                 {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'long' })}
-                            </h3>
+                            </TituloDeSeccion>
                             {puedeEditar && (
                                 <Button variant="ghost" size="xs" iconOnly icon={Plus}
                                     title={`Agregar pieza el ${fechaTexto(d, { day: 'numeric', month: 'long' })}`}

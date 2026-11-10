@@ -6,6 +6,7 @@ import PortalTextarea from '../common/PortalTextarea';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import AvatarConEstado from '../common/AvatarConEstado';
+import TituloDeSeccion from '../common/TituloDeSeccion';
 
 const EARLY_EXIT_OPTIONS = [
   'Permiso Médico / Consulta',
@@ -60,7 +61,7 @@ function EarlyExitForm({
             {/* La foto canónica (2026-11-05), a 48: uno de los cinco tamaños. */}
             <AvatarConEstado emp={employee} px={48} />
             <div className="text-left flex-1 overflow-hidden">
-              <h3 className="text-white font-semibold text-body-lg sm:text-body-xl leading-tight truncate" title={employee.name}>{shortEmployeeName(employee)}</h3>
+              <TituloDeSeccion tono="inverso" className="truncate" title={employee.name}>{shortEmployeeName(employee)}</TituloDeSeccion>
               <p className="text-white/40 text-micro sm:text-micro font-black uppercase tracking-widest mt-0.5 truncate [@media(max-height:640px)]:hidden">
                 Perfil a autorizar
               </p>

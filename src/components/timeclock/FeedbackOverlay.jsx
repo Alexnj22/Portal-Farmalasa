@@ -3,6 +3,7 @@ import Button from '../common/Button';
 import { Baby, CheckSquare, Clock, Megaphone, AlertTriangle, CheckCircle2, TimerReset } from 'lucide-react';
 import { shortEmployeeName, employeeInitials } from '@nucleo/utils/nameUtils';
 import { IconoDelKiosco } from './iconosDelKiosco';
+import TituloDeSeccion from '../common/TituloDeSeccion';
 
 // 🚨 MAPA DE TEMAS LIQUIDGLASS DARK (Glows, Bordes e Íconos)
 const THEME_MAP = {
@@ -173,9 +174,9 @@ export default function FeedbackOverlay({
                     <span className={`text-caption font-black uppercase tracking-widest mb-0.5 ${isBirthday ? 'text-chart-6' : isUrgent ? 'text-danger' : 'text-white/40'}`}>
                       {isBirthday ? '🎉 ¡Celebración!' : isUrgent ? '🚨 Aviso Urgente' : 'Mensaje Administrativo'}
                     </span>
-                    <h3 className={`font-semibold text-title leading-tight tracking-tight ${isBirthday ? 'text-white' : 'text-white/90'}`}>
+                    <TituloDeSeccion nivel="modal" tono="inverso">
                       {announcement.title}
-                    </h3>
+                    </TituloDeSeccion>
                   </div>
                 </div>
 

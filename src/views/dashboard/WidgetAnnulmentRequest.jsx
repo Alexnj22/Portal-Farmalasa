@@ -749,9 +749,9 @@ function ClientChangeForm({ inv, onBack, onSuccess, user, activeBranch, activeBr
           {/* Seleccionado */}
           {newClient && (
             <div data-surface="card" data-tono="brand" className="flex items-center gap-2.5 px-3 py-2">
-              <div className="w-7 h-7 rounded-full bg-brand/10 flex items-center justify-center shrink-0">
-                <span className="text-brand-text font-black text-caption leading-none">{newClient.name?.charAt(0)}</span>
-              </div>
+              <IconoEnCaja tamano="sm" forma="circulo" tono="brand">
+                <span className="font-black text-caption leading-none">{newClient.name?.charAt(0)}</span>
+              </IconoEnCaja>
               <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-black text-brand-text truncate">{newClient.name}</p>
                 {(newClient.nit || newClient.dui) && (

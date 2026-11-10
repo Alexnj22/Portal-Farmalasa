@@ -266,7 +266,11 @@ const EXCEPTIONS = {
   // 'shadow-literal': el filo del ítem activo es el único glow BICOLOR del
   // portal (verde + magenta del logo). La escala --shadow-glow-* es de un color
   // por token; un token propio para esto sería una escala de uno.
-  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index', 'shadow-literal', 'white', 'hex', 'inline-color'],
+  // El brillo del panel lateral (2026-11-10): `rounded-t-[2.6rem]` es la forma
+  // de un resplandor difuminado con `blur-3xl` dentro del `sidebar-ambient`,
+  // superficie siempre oscura. No es el radio de ninguna superficie y no tiene
+  // que seguir al tema.
+  'src/components/layout/AppLayout.jsx': ['color', 'search-toggle', 'z-index', 'shadow-literal', 'white', 'hex', 'inline-color', 'radio-a-mano'],
   // `input-a-mano` (2026-07-29): los 4 que quedaban NO son deuda, son las
   // superficies bespoke de DESIGN.md §25.4 —lista CERRADA— más la paleta de
   // comandos. Pasan de ratchet a excepción nombrada para que la categoría
@@ -282,7 +286,10 @@ const EXCEPTIONS = {
   // abajo — este objeto NO admite la misma clave dos veces: la segunda pisa a
   // la primera en silencio. Lo verifica `assertSinClavesDuplicadas`.)
   'src/components/layout/MenuSearchModal.jsx': ['input-a-mano'],
-  'src/views/branch-tabs/TabStaff.jsx': ['color'], // panel WFM dark + shimmer IA
+  // Giro decorativo (2026-11-10): el anillo de IA (degradado difuminado que
+  // gira detrás del ícono de Sparkles) es la marca visual del panel de
+  // análisis, no una espera.
+  'src/views/branch-tabs/TabStaff.jsx': ['color', 'cargando-a-mano'], // panel WFM dark + shimmer IA
   // `color`: tooltip flotante dark. `icono-stroke`: el `Sparkles size={100}
   // strokeWidth={0.5}` es la marca de agua del panel (`text-[#F79009]/15`,
   // `pointer-events-none`) — a 100px un trazo de la escala se ve como un dibujo,
@@ -293,11 +300,17 @@ const EXCEPTIONS = {
   // segmentado largo deja de comparar; un carril de filtros compara justamente
   // eso, y esconder los rangos en un desplegable los vuelve invisibles. Es el
   // mismo motivo por el que las píldoras de filtro son su propio patrón.
-  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke', 'white', 'hex', 'segmentado-largo'],
+  // Giro decorativo (2026-11-10): el degradado que gira detrás del ícono de
+  // Saly es adorno del encabezado, siempre en movimiento, y no indica que algo
+  // esté cargando.
+  'src/components/forms/FormWfmAnalytics.jsx': ['color', 'icono-stroke', 'white', 'hex', 'segmentado-largo', 'cargando-a-mano'],
   // El check y el guion del Checkbox van a `strokeWidth={4}`: dentro de una caja
   // de 16px un trazo de 2.5 se pierde, y ese glifo ES el estado del control —
   // si no se ve, el checkbox no comunica nada. No es un ícono de interfaz más.
-  'src/components/common/Checkbox.jsx': ['icono-stroke'],
+  // Es el propio canónico (2026-11-10): la caja `sm` de 16px lleva
+  // `rounded-[5px]` porque `rounded-md` (6px) en 16px la vuelve casi un
+  // círculo. Lo decide el componente una vez para todo el portal.
+  'src/components/common/Checkbox.jsx': ['icono-stroke', 'radio-a-mano'],
   'src/components/timeclock/IdleScanPanel.jsx': ['material-a-mano', 'white', 'vidrio-a-mano'], // kiosco
   'src/views/AttendanceMonitorView.jsx': ['color'], // wallboard isDarkConcept
   // Shimmer decorativo de IA idéntico (DESIGN.md §6)
@@ -310,8 +323,12 @@ const EXCEPTIONS = {
   // no divergir — y ya habían divergido, dos de las tres copias usaban
   // `border-purple-400` donde la tercera usaba el token `chart-3`.
   'src/components/common/BotonIA.jsx': ['color'],
-  'src/views/branch-tabs/TabHistory.jsx': ['color'],
-  'src/views/branch-tabs/TabExpediente.jsx': ['color'],
+  // Giro decorativo (2026-11-10): el mismo anillo de IA que TabStaff, detrás
+  // del ícono del panel de análisis. No es una espera.
+  'src/views/branch-tabs/TabHistory.jsx': ['color', 'cargando-a-mano'],
+  // Giro decorativo (2026-11-10): el anillo de IA chiquito del encabezado del
+  // tooltip de análisis. Adorno, no espera.
+  'src/views/branch-tabs/TabExpediente.jsx': ['color', 'cargando-a-mano'],
   // Mapas/canvas/PDF — colores hex directos por naturaleza de la tecnología
   'src/utils/cotizacionPapel.js': ['hex'],   // el papel de la cotización (se mudó de CotizacionesView): no tiene tema
   'src/views/pedidos/CrearRutaModal.jsx': ['white', 'hex', 'inline-color'], // marcadores Leaflet (L.divIcon HTML)
@@ -339,14 +356,27 @@ const EXCEPTIONS = {
   // ALTO de cada monitor (1.5 a 3.5rem) y está muy por encima de la escala
   // (`text-display` = 26px): no es texto de interfaz, es el reloj.
   'src/views/TimeClockView.jsx': ['material-a-mano', 'vidrio-a-mano', 'color', 'white', 'hex', 'inline-color', 'typography'], // 2026-07-25: fondo/blobs migrados a bg-surface-page + tokens del tema dark; excepción ya solo cubre los 3 micro-acentos azules bespoke de la card del reloj (from-blue-950/from-blue-400/via-blue-400 — hero accent deliberado, no base surface)
-  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'hex', 'inline-color'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
-  'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'white', 'hex', 'vidrio-a-mano'],
+  // Superficie propia (2026-11-10): las tres ruedas viven dentro de
+  // `LoginButton` y de la tarjeta del lector, que tienen su propia paleta
+  // `--lgn-*` y no son `Button`, así que `Button loading` no aplica. El «punto»
+  // es el aro que late sobre el lector activo (`animate-ping` + borde), un
+  // indicador con aro y no un `PuntoDeEstado`.
+  'src/views/LoginView.jsx': ['color', 'z-index', 'input-a-mano', 'hex', 'inline-color', 'cargando-a-mano', 'punto-a-mano'], // scanner de cámara + fondo splash bespoke (comparte gradiente con App.jsx)
+  // Kiosco (2026-11-10): la rueda de Guardar sobre la superficie oscura fija de
+  // la configuración del dispositivo, del color del botón (chart-1). Superficie
+  // propia, sin tema.
+  'src/components/timeclock/KioskConfigModal.jsx': ['material-a-mano', 'white', 'hex', 'vidrio-a-mano', 'cargando-a-mano'],
   // Ilustraciones / branding de terceros — no son superficies del sistema de tokens
   // 'relleno-sin-solid': `selection:bg-success/30 selection:text-white` es el
   // resaltado de SELECCIÓN de texto, no un relleno de control — el usuario ve
   // ese par solo mientras arrastra sobre el bloque de código.
   'src/components/forms/FormAuditDetail.jsx': ['relleno-sin-solid', 'hex'], // mockup de ventana macOS (colores reales del semáforo Apple)
-  'src/App.jsx': ['hex'], // fondo splash bespoke (comparte gradiente con LoginView)
+  // El ARRANQUE (2026-11-10): los dos anillos SVG que giran alrededor del logo
+  // y los cuatro puntitos que rebotan debajo son la pantalla de carga propia
+  // del splash, con el mismo fondo bespoke que LoginView. No es una sección
+  // esperando datos —todavía no hay portal donde poner un `LoadingState`— y los
+  // puntos no son estado de nada: son la animación.
+  'src/App.jsx': ['hex', 'cargando-a-mano', 'punto-a-mano'], // fondo splash bespoke (comparte gradiente con LoginView)
   // Vistas de diagnóstico/QA, no UI real de negocio
   // Franja de aviso del tope del portal. Sólo su variante `obra` es bespoke
   // (rayado ámbar/naranja con texto oscuro fijo, no reactivo al tema — ver
@@ -448,7 +478,10 @@ const EXCEPTIONS = {
   // bespoke de esa superficie, que ya está documentada en DESIGN.md §6.
   'src/components/timeclock/AuthPromptPanel.jsx': ['material-a-mano', 'white', 'input-a-mano', 'vidrio-a-mano'],
   'src/components/timeclock/SelfDeclareShiftPanel.jsx': ['material-a-mano', 'white', 'vidrio-a-mano'],
-  'src/components/timeclock/EarlyExitForm.jsx': ['material-a-mano', 'white', 'vidrio-a-mano'],
+  // Kiosco (2026-11-10): la rueda va dentro del botón de confirmar de la
+  // superficie oscura fija del reloj, del color del botón (chart-4). La de
+  // `LoadingState` va en color de marca y la del kiosco no tiene tema.
+  'src/components/timeclock/EarlyExitForm.jsx': ['material-a-mano', 'white', 'vidrio-a-mano', 'cargando-a-mano'],
   // ListRow lleva la paleta `onDark` para las filas de los flyouts del sidebar,
   // que se quedan oscuras en los 4 temas (si no, cuelga un panel claro de un
   // panel oscuro). Antes esa paleta estaba escrita a mano en cada archivo; que
@@ -478,7 +511,11 @@ const EXCEPTIONS = {
   // una clase partiría la decisión de apilamiento en dos mecanismos — peor que
   // dejarla junta. Se excepciona con motivo para que la categoría llegue a 0 y
   // quede BLOQUEANTE: a partir de acá, cualquier zIndex inline NUEVO falla.
-  'src/views/DashboardView.jsx': ['z-index'],
+  // Barras de gráfico (2026-11-10): el radio de la punta de cada barra (y de su
+  // esqueleto) es parte de la forma del dato, de 2 a 6px según el ancho de la
+  // barra. Los radios del tema (`rounded-sm…3xl`, que cada tema redefine)
+  // deformarían barras de pocos píxeles.
+  'src/views/DashboardView.jsx': ['z-index', 'radio-a-mano'],
   // `z-index` y `capa-flotante` se fueron el 2026-08-26: los dos existían por el
   // tooltip de «Información pendiente», que esta vista se escribía a mano con su
   // propio `createPortal` y un `zIndex: 99999` inline. Ahora es `LiquidTooltip`
@@ -512,6 +549,38 @@ const EXCEPTIONS = {
   'src/views/pedidos/RutaMapModal.jsx': ['hex', 'inline-color'],
   'src/views/employee/EmployeeAnnouncementsView.jsx': ['typography', 'z-index'],
   'src/views/RawTestView.jsx': ['z-index', 'hex', 'inline-color'],
+  // ── Lo que quedó de `gate:design` en cero (2026-11-10) ──────────────────
+  // La espera larga de la caja (2026-11-10): la rueda de 40px va arriba del
+  // paso que se está haciendo y de una barra de avance con el tiempo estimado
+  // (una estimación, no un avance medido). `LoadingState` es una rueda con
+  // rótulo y no tiene lugar para la barra ni los pasos.
+  'src/components/caja/EsperaDeLaCaja.jsx': ['cargando-a-mano'],
+  // Rueda blanca sobre una caja sólida (2026-11-10): reemplaza al ícono blanco
+  // dentro del cuadro `bg-chart-3` mientras se generan las páginas. La de
+  // `LoadingState` va en color de marca y sobre ese fondo no contrastaría.
+  'src/views/pedidos/FinalizarCajasModal.jsx': ['cargando-a-mano'],
+  // Barras de gráfico (2026-11-10): como en DashboardView, el radio de la punta
+  // de cada barra (y de su esqueleto) es parte de la forma del dato.
+  'src/views/schedule-tabs/components/ScheduleChart.jsx': ['radio-a-mano'],
+  // Burbujas del chat (2026-11-10): 1.25rem de radio y 0.375rem en las esquinas
+  // que se pegan a la burbuja vecina del mismo grupo. Es la forma de una
+  // conversación —la misma en el teléfono del cliente— y no una superficie del
+  // portal que deba seguir al tema.
+  'src/views/chat-clientes/Conversacion.jsx': ['radio-a-mano'],
+  // Pastilla de atajo (2026-11-10): los botones «Hoy», «Este mes»… del selector
+  // de período son pastillas dentro de un `data-surface="dropdown"`. El
+  // detector las lee como tarjeta por el padding y el radio, pero una tarjeta
+  // dentro de un menú sería una superficie anidada.
+  'src/components/common/PeriodPicker.jsx': ['tarjeta-a-mano'],
+  // Celdas de la matriz de horarios (2026-11-10): cientos de celdas (empleados
+  // × días) con su propio relleno por turno y su escala al pasar.
+  // `data-surface="card"` les sumaría borde, sombra y el `--lift-card` a cada
+  // una: es una matriz, no una lista de tarjetas.
+  'src/views/schedule-tabs/components/ScheduleCalendar.jsx': ['tarjeta-a-mano'],
+  // Marco de foto (2026-11-10): el cuadro de 40px es el marco de la foto del
+  // producto (`overflow-hidden` + `object-contain`), con un ícono sólo cuando
+  // no hay foto. `IconoEnCaja` documenta que las fotos con marco no son esto.
+  'src/views/dashboard/WidgetMinMaxRequest.jsx': ['icono-en-caja-a-mano'],
 };
 
 // EXCEPTIONS es un objeto literal: repetir una clave NO es un error de JS, la
@@ -1611,6 +1680,11 @@ function scanFile(path) {
   // quedan llevan un color con significado (rojo de alerta, blanco sobre
   // foto), clases dinámicas o son la cifra de un estado vacío: contados, no
   // pueden crecer. Los canónicos de `components/common/` no cuentan.
+  //
+  // EN CERO desde el 2026-11-10 (y las otras cinco que quedaban en el
+  // baseline: cargando, radio, punto, ícono en caja y tarjeta). El color con
+  // significado pasó a la prop `tono` de `TituloDeSeccion`; lo que no tenía
+  // reemplazo canónico está en `EXCEPTIONS` con su motivo, archivo por archivo.
   if (!path.includes('components/common/') && !hasException(path, 'titulo-a-mano')) {
     lines.forEach((line, i) => {
       if (isComment[i]) return;
@@ -2619,7 +2693,11 @@ function scanFile(path) {
     // que de verdad separa una tarjeta de un envoltorio de campo (`h-[40px]`)
     // o una caja de ícono (`w-10 h-10`). Medido sobre los 147 sitios crudos:
     // 61 son eso y se descartan por esa señal sola.
-    if (!/timeclock\/|LoginView|AppLayout/.test(path)) {
+    //
+    // Hasta el 2026-11-10 la categoría no consultaba `EXCEPTIONS`: lo que no
+    // era tarjeta quedaba contado en el baseline como si fuera deuda. Ahora
+    // se declara por archivo con su motivo, como las demás.
+    if (!/timeclock\/|LoginView|AppLayout/.test(path) && !hasException(path, 'tarjeta-a-mano')) {
       // Un contenedor, no una hoja: `input`, `img` y `svg` no pueden ser una
       // tarjeta ni aunque lleven las clases.
       const HOJAS = new Set(['input', 'img', 'svg', 'br', 'hr', 'path', 'circle', 'rect', 'textarea']);

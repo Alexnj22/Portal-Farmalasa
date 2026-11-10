@@ -13,6 +13,7 @@ import Button from '../../components/common/Button';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useVentasSinSenal } from './sinSenal';
 import { useRastreoDeRuta } from './rastreo';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 // La casa de la distribuidora: su menú, su marca y nada del portal de las
 // farmacias (decisión del usuario, 2026-09-28: «parecen independientes, así
@@ -165,9 +166,9 @@ export default function TorogozLayout({ children, handleLogout }) {
     const pie = (
         <div className="flex flex-col gap-2 pt-3 border-t border-divider">
             <div className="flex items-center gap-2.5 px-1 min-w-0">
-                <span className="w-9 h-9 rounded-full bg-brand/10 text-brand-text font-black text-caption flex items-center justify-center shrink-0">
+                <IconoEnCaja tamano="md" forma="circulo" tono="brand" className="font-black text-caption">
                     {(nombre || '?').slice(0, 1).toUpperCase()}
-                </span>
+                </IconoEnCaja>
                 <p className="text-body-sm font-bold text-content-2 truncate flex-1">{nombre}</p>
                 <button type="button" onClick={salir} aria-label="Cerrar sesión"
                     className="w-10 h-10 rounded-xl flex items-center justify-center text-danger-text hover:bg-danger/10 active:scale-[0.95] transition-transform">

@@ -182,9 +182,9 @@ const BranchCard = memo(({
                 </div>
                 <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2">
-                        <h3 className="text-subtitle font-black text-content leading-tight truncate group-hover:text-brand-text transition-colors duration-[var(--dur-base)]">
+                        <TituloDeSeccion className="truncate group-hover:text-brand-text transition-colors duration-[var(--dur-base)]">
                             <Link to={`/sucursales/${branch.id}`} onClick={(e) => e.stopPropagation()} tabIndex={-1} className="outline-none">{branch.name}</Link>
-                        </h3>
+                        </TituloDeSeccion>
                         {branch.type && branch.type !== 'FARMACIA' && (
                             <Badge variant={BRANCH_TYPE_META[branch.type]?.variante || 'neutral'} size="sm">
                                 {BRANCH_TYPE_META[branch.type]?.label}

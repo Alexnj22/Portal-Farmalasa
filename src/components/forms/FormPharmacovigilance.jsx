@@ -7,6 +7,7 @@ import FileField from '../common/FileField';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 import IconoEnCaja from '../common/IconoEnCaja';
+import TituloDeSeccion from '../common/TituloDeSeccion';
 const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
     const legalData = formData?.settings?.legal || {};
@@ -43,7 +44,7 @@ const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
                     <div className="absolute inset-0 bg-warning/10 animate-pulse"></div>
                     <AlertCircle size={28} strokeWidth={2} className="relative z-base" />
                 </div>
-                <h3 className="text-body-xl font-black text-warning-text mb-2 tracking-tight">Ningún Referente Disponible</h3>
+                <TituloDeSeccion nivel="modal" tono="warning" className="mb-2">Ningún Referente Disponible</TituloDeSeccion>
                 <p className="text-body-sm font-bold text-warning-text/80 max-w-[300px] mb-6 leading-relaxed">
                     Debes registrar la contratación del Referente de Farmacovigilancia en el módulo de Personal antes de poder asignarlo a esta sucursal.
                 </p>

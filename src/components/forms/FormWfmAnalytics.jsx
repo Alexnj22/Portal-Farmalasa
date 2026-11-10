@@ -13,6 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { AiThinkingState } from '../common/StateViews';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV } from '@nucleo/utils/fecha';
+import TituloDeSeccion from '../common/TituloDeSeccion';
 
 // El dibujo arrastra `recharts` (95 kB gzip): 95 de los 119 kB que pesaba este
 // modal. Leer el encabezado de `GraficaAfluencia.jsx` antes de tocarlo.
@@ -251,11 +252,11 @@ const FormWfmAnalytics = ({ branches }) => {
                             <div className="absolute inset-0 bg-gradient-to-br from-brand to-brand-hover rounded-full opacity-100 group-hover/calendar:scale-110 transition-transform duration-[var(--dur-slow)]"></div>
                             <CalendarIcon size={18} strokeWidth={2.5} className="text-white relative z-base transition-colors duration-[var(--dur-slow)]" />
                         </div>
-                        <h3 className="text-body-xl font-black text-content uppercase tracking-tight leading-none group-hover/branch:text-brand-text transition-colors">
+                        <TituloDeSeccion nivel="modal">
                             {activeView === 'DAYS' ? 'Afluencia Histórica por Día' :
                                 activeView === 'GENERAL_HOURS' ? (timeRange === '0' ? 'Afluencia por Hora (Hoy)' : 'Afluencia General (Hr)') :
                                     `Afluencia por Hora - ${DAYS_MAP[activeView]}`}
-                        </h3>
+                        </TituloDeSeccion>
                     </div>
 
                     <div className="flex flex-col items-end gap-2.5">

@@ -30,6 +30,7 @@ import { autocalificacion, bloqueDeLaBase, conteoDeOpciones, distribucionDePregu
 import AvatarConEstado from '../components/common/AvatarConEstado';
 
 import TituloDeSeccion from '../components/common/TituloDeSeccion';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // Jefe inmediato de cada sucursal: `SUPERVISOR_DE_JEFE` vive en el núcleo
 // (`climaLaboral`), el mismo que lee la app.
@@ -119,9 +120,9 @@ function PreguntaRow({ pregunta, rows, showDetail, onToggle }) {
             <button className="w-full text-left px-4 py-3 hover:bg-surface-card-hover/60 transition-colors flex items-start gap-3"
                 aria-expanded={showDetail}
                 onClick={onToggle}>
-                <span className="shrink-0 w-7 h-7 rounded-lg bg-surface-card-hover flex items-center justify-center text-caption font-black text-content-3 mt-0.5">
+                <IconoEnCaja tamano="sm" className="text-caption font-black mt-0.5">
                     P{pregunta.id}
-                </span>
+                </IconoEnCaja>
                 <div className="flex-1 min-w-0">
                     <p className="text-label font-semibold text-content-2 leading-snug mb-1.5">{pregunta.texto}</p>
                     <DistBar dist={dist} invertida={pregunta.invertida} />

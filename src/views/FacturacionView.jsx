@@ -133,11 +133,11 @@ const CATEGORIA_CLIENTE_VARIANTE = {
 };
 
 const TIPO_PAGO_THEME = {
- tarjeta:       { ico: 'bg-chart-1/10 text-chart-1-text', texto: 'text-chart-1-text' },
- credito:       { ico: 'bg-chart-3/10 text-chart-3-text', texto: 'text-chart-3-text' },
- transferencia: { ico: 'bg-chart-9/10 text-chart-9-text', texto: 'text-chart-9-text' },
- cheque:        { ico: 'bg-chart-9/10 text-chart-9-text', texto: 'text-chart-9-text' },
- bitcoin:       { ico: 'bg-chart-4/10 text-chart-4-text', texto: 'text-chart-4-text' },
+ tarjeta:       { ico: 'bg-chart-1/10 text-chart-1-text', texto: 'text-chart-1-text', tono: 'chart-1' },
+ credito:       { ico: 'bg-chart-3/10 text-chart-3-text', texto: 'text-chart-3-text', tono: 'chart-3' },
+ transferencia: { ico: 'bg-chart-9/10 text-chart-9-text', texto: 'text-chart-9-text', tono: 'chart-9' },
+ cheque:        { ico: 'bg-chart-9/10 text-chart-9-text', texto: 'text-chart-9-text', tono: 'chart-9' },
+ bitcoin:       { ico: 'bg-chart-4/10 text-chart-4-text', texto: 'text-chart-4-text', tono: 'chart-4' },
 };
 
 // SV time
@@ -558,9 +558,9 @@ function BloqueFormaPago({
                 <span className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${t.ico}`}>
                     <CreditCard size={15} strokeWidth={2.5} />
                 </span>
-                <h3 className={`text-label font-black uppercase tracking-widest ${t.texto}`}>
+                <TituloDeSeccion nivel="seccion" tono={t.tono}>
                     {TIPO_PAGO_LABELS[tipo] || tipo}
-                </h3>
+                </TituloDeSeccion>
                 <Badge uppercase={false}>{filas.length} transacci{filas.length !== 1 ? 'ones' : 'ón'}</Badge>
                 <div className="ml-auto text-right">
                     <div className="text-micro font-black uppercase tracking-widest text-content-3">Total pendiente</div>

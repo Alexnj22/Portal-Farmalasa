@@ -31,6 +31,7 @@ import { rotuloTipoCliente } from './comun';
 import { DIAS_RUTA, ROTULO_RESULTADO, avanceDeRuta, comoLlegar, diasDeRuta, alternarDia, moverEnLista, enElMapa } from '@nucleo/utils/distribucionRutas';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 // Rutas y visitas (borrador 0027). «Hoy»: los clientes de las rutas que tocan
 // ese día, en su orden, con lo que conviene saber antes de entrar —qué debe,
 // si está atrasado, cuándo compró— y qué pasó en la visita. «Armar rutas»
@@ -164,7 +165,7 @@ function Hoy({ puedeConfigurar }) {
                     <li key={c.id} data-surface="card" className={`p-3 flex flex-col gap-2 ${c.estado !== 'pendiente' ? 'opacity-75' : ''}`} data-cliente-ruta={c.estado}>
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0 flex gap-3">
-                                <span className="w-7 h-7 rounded-full bg-surface-card-hover flex items-center justify-center text-caption font-black text-content-2 shrink-0">{i + 1}</span>
+                                <IconoEnCaja tamano="sm" forma="circulo" className="text-caption font-black">{i + 1}</IconoEnCaja>
                                 <div className="min-w-0">
                                     <p className="text-body-sm font-black text-content truncate">{c.nombre}</p>
                                     <p className="text-caption text-content-3 truncate">{rotuloTipoCliente(c.tipo)}{c.direccion ? ` · ${c.direccion}` : ''}</p>

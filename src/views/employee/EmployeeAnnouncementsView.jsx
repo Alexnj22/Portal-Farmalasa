@@ -286,7 +286,7 @@ const UnreadStack = memo(({ list, onRead }) => {
                     <div className="relative z-base w-28 h-28 rounded-modal flex items-center justify-center mb-6 bg-gradient-to-br from-success to-chart-9 text-white shadow-[var(--shadow-glow-success)] hover:scale-105 transition-transform duration-[var(--dur-lento)]">
                         <Sparkles size={40} strokeWidth={1.5} />
                     </div>
-                    <h3 className="font-black text-display text-content tracking-tight mb-2">¡Todo al día!</h3>
+                    <TituloDeSeccion nivel="modal" className="mb-2">¡Todo al día!</TituloDeSeccion>
                     <p className="font-medium text-body-lg text-content-3 max-w-[260px] leading-relaxed">
                         Leíste todos tus avisos. Nada se te escapa.
                     </p>

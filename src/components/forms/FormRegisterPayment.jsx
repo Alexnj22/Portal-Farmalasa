@@ -7,6 +7,7 @@ import FileField from '../common/FileField';
 import PortalInput from '../common/PortalInput';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { SERVICIOS_DE_PAGO, auditoriaDelPago, datosDelServicio, mesInicialDelPago, yaEstabaPagado } from '@nucleo/utils/pagoDeSucursal';
+import TituloDeSeccion from '../common/TituloDeSeccion';
 
 const SERVICE_LABELS = SERVICIOS_DE_PAGO;
 
@@ -78,7 +79,7 @@ const FormRegisterPayment = ({ formData, setFormData }) => {
                         <Receipt size={26} strokeWidth={2} />
                     </div>
                     <div>
-                        <h3 className="text-title font-black text-success-text tracking-tight leading-none mb-1.5">Pago de {serviceName}</h3>
+                        <TituloDeSeccion nivel="modal" tono="success" className="mb-1.5">Pago de {serviceName}</TituloDeSeccion>
                         <div className="flex items-center gap-2">
                             <Badge size="sm">Sede: {formData.name}</Badge>
                             {currentPaidThrough && (

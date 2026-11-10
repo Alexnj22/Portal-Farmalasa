@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.29 — gate:design en cero: excepciones con motivo y títulos con tono
+
+- `npm run gate:design` queda en **cero** en todas las categorías: `scripts/design-gate-baseline.json` ya no guarda deuda.
+- `TituloDeSeccion` gana la prop `tono` (brand, success, warning, danger, chart-1/3/4/6/9, `tenue`, `inverso`), documentada en DESIGN.md §7. Los 12 títulos que seguían a mano pasan al canónico, con el cambio visual aceptado: el contacto de emergencia del expediente, el pago de servicios, los avisos de regente y referente sin candidato, el título de la gráfica de afluencia, las tarjetas de sucursal (15 → 14px), los grupos de No Efectivo en Facturación, los grupos de la lista de pedidos, el día del calendario de marketing, «¡Todo al día!» de avisos (26 → 18px) y los dos títulos del kiosco.
+- Cuatro íconos en caja de 28/36px pasan a `IconoEnCaja` (32 o 40px): el número de pregunta del clima organizacional, el número de parada de Rutas, la inicial del cliente elegido al pedir una anulación y la inicial del usuario al pie de Torogoz.
+- Lo que no tenía reemplazo canónico va a `EXCEPTIONS`, archivo por archivo y con su motivo escrito: el arranque, el login y el kiosco; los giros decorativos de IA; la espera larga de la caja; la rueda blanca sobre la caja sólida; la caja chica de `Checkbox`; las barras de gráfico; las burbujas del chat; el brillo del panel lateral; las pastillas de `PeriodPicker`; las celdas del calendario de horarios y el marco de foto de Mín·Máx. La categoría `tarjeta-a-mano` no consultaba `EXCEPTIONS`; ahora sí.
+
 ## v2.1500.28 — Gate de carga de la Mac (mac:carga)
 
 - `npm run mac:carga` (sólo lectura): carga por núcleo, swap, memoria libre, compilaciones corriendo, servidores de desarrollo viejos, sesiones de Claude viejas y días sin reiniciar — cada hallazgo con qué hacer. Sale 1 en rojo. Nunca mata nada.

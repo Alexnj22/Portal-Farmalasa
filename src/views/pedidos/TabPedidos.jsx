@@ -1,5 +1,6 @@
 import React from 'react';
 import CarrilCards from '../../components/common/CarrilCards';
+import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import { EmptyState } from '../../components/common/StateViews';
 import Button from '../../components/common/Button';
 import StatCard from '../../components/common/StatCard';
@@ -125,15 +126,15 @@ const GRUPOS_LISTA = [
     // Lo que sigue abierto de un período anterior (2026-10-09): arriba de todo,
     // porque es lo más atrasado, y con su propio nombre para que no se confunda
     // con lo del mes.
-    { key: 'anteriores',  label: 'Pendientes de meses anteriores', Icono: History, tono: 'text-warning-text' },
-    { key: 'problemas',   label: 'Con problemas',     Icono: AlertTriangle, tono: 'text-danger-text' },
-    { key: 'pausado',     label: 'En pausa',          Icono: Pause,         tono: 'text-warning-text' },
-    { key: 'sin_iniciar', label: 'Por preparar',      Icono: ClipboardList, tono: 'text-content' },
-    { key: 'preparando',  label: 'En preparación',    Icono: Package,       tono: 'text-content' },
-    { key: 'preparado',   label: 'Listos para salir', Icono: PackageCheck,  tono: 'text-content' },
-    { key: 'transito',    label: 'En camino',         Icono: Truck,         tono: 'text-content' },
-    { key: 'contando',    label: 'En la sala',        Icono: Store,         tono: 'text-content' },
-    { key: 'erp',         label: 'Completados',       Icono: CheckCircle2,  tono: 'text-content-3' },
+    { key: 'anteriores',  label: 'Pendientes de meses anteriores', Icono: History, tono: 'warning' },
+    { key: 'problemas',   label: 'Con problemas',     Icono: AlertTriangle, tono: 'danger' },
+    { key: 'pausado',     label: 'En pausa',          Icono: Pause,         tono: 'warning' },
+    { key: 'sin_iniciar', label: 'Por preparar',      Icono: ClipboardList },
+    { key: 'preparando',  label: 'En preparación',    Icono: Package },
+    { key: 'preparado',   label: 'Listos para salir', Icono: PackageCheck },
+    { key: 'transito',    label: 'En camino',         Icono: Truck },
+    { key: 'contando',    label: 'En la sala',        Icono: Store },
+    { key: 'erp',         label: 'Completados',       Icono: CheckCircle2,  tono: 'tenue' },
 ];
 
 // Las acciones que la fila puede pedir. `acc` las expone con identidad FIJA y
@@ -1216,12 +1217,12 @@ export default function TabPedidos({ searchTerm = '' }) {
                                         {/* Encabezado de sección con ícono, nombre, cuenta y una
                                             línea que la separa: antes era un rótulo gris chico y
                                             las secciones casi no se distinguían. */}
-                                        <h3 className={`flex items-center gap-2.5 px-1 pt-1 text-body-sm font-bold ${g.tono}`}>
+                                        <TituloDeSeccion tono={g.tono} className="flex items-center gap-2.5 px-1 pt-1">
                                             <g.Icono size={16} aria-hidden="true" />
                                             {g.label}
                                             <span className="px-2 py-0.5 rounded-full bg-surface-card-hover text-caption font-semibold text-content-2 tabular-nums">{filas.length}</span>
                                             <span aria-hidden="true" className="flex-1 h-px bg-divider" />
-                                        </h3>
+                                        </TituloDeSeccion>
                                         {porRuta ? porRuta.map(({ ruta, enVivo, filas: fr }) => {
                                             const conductor = ruta?.conductor_id ? empMap.get(ruta.conductor_id) : null;
                                             const entregadas = (ruta?.ruta_pedidos ?? []).filter(rp => rp.entregado_at).length;

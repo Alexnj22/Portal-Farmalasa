@@ -15,19 +15,52 @@ import React from 'react';
  *   seccion  → el rótulo en mayúsculas que encabeza un grupo (§7: el rótulo es
  *              uno solo).
  *
+ * `tono` (2026-11-10) — el color cuando el título SIGNIFICA algo: el rojo del
+ * contacto de emergencia, el verde de un pago, el color de la categoría de un
+ * grupo, el blanco sobre la superficie oscura del kiosco. Sin `tono`, el nivel
+ * pone el suyo (`text-content` o `text-content-2` en `seccion`). Los doce
+ * títulos que quedaron escritos a mano lo estaban sólo por esto.
+ *   brand · success · warning · danger · chart-1/3/4/6/9 → su `-text`
+ *   tenue   → `text-content-3` (el grupo que ya no pide atención)
+ *   inverso → blanco: SÓLO sobre una superficie de color fijo (kiosco, foto)
+ *
  * `className` es para la DISPOSICIÓN (flex, gap, márgenes, truncate), nunca
- * para el tamaño, el peso o el color: eso lo decide el nivel. El gate
- * `titulo-a-mano` vigila que nadie vuelva a escribirlo a mano.
+ * para el tamaño, el peso o el color: eso lo deciden el nivel y el tono. El
+ * gate `titulo-a-mano` vigila que nadie vuelva a escribirlo a mano.
  */
 const NIVEL = {
-    modal: 'text-title-sm font-black text-content tracking-tight leading-snug',
-    tarjeta: 'text-body-lg font-black text-content tracking-tight leading-snug',
-    seccion: 'text-label font-black uppercase tracking-widest text-content-2',
+    modal: 'text-title-sm font-black tracking-tight leading-snug',
+    tarjeta: 'text-body-lg font-black tracking-tight leading-snug',
+    seccion: 'text-label font-black uppercase tracking-widest',
 };
 
-export default function TituloDeSeccion({ nivel = 'tarjeta', as: Tag = 'h3', className = '', children, ...rest }) {
+const COLOR_DEL_NIVEL = {
+    modal: 'text-content',
+    tarjeta: 'text-content',
+    seccion: 'text-content-2',
+};
+
+// Las clases van ESCRITAS enteras: Tailwind sólo genera lo que encuentra
+// literal en el fuente.
+const TONO = {
+    brand: 'text-brand-text',
+    success: 'text-success-text',
+    warning: 'text-warning-text',
+    danger: 'text-danger-text',
+    'chart-1': 'text-chart-1-text',
+    'chart-3': 'text-chart-3-text',
+    'chart-4': 'text-chart-4-text',
+    'chart-6': 'text-chart-6-text',
+    'chart-9': 'text-chart-9-text',
+    tenue: 'text-content-3',
+    inverso: 'text-white',
+};
+
+export default function TituloDeSeccion({ nivel = 'tarjeta', tono, as: Tag = 'h3', className = '', children, ...rest }) {
+    const n = NIVEL[nivel] ? nivel : 'tarjeta';
+    const color = TONO[tono] || COLOR_DEL_NIVEL[n];
     return (
-        <Tag className={`${NIVEL[nivel] || NIVEL.tarjeta}${className ? ` ${className}` : ''}`} {...rest}>
+        <Tag className={`${NIVEL[n]} ${color}${className ? ` ${className}` : ''}`} {...rest}>
             {children}
         </Tag>
     );

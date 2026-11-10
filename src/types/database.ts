@@ -31881,6 +31881,7 @@ export type Database = {
       auth_no_bloqueado: { Args: never; Returns: boolean }
       auth_rango: { Args: never; Returns: number }
       auth_ve_costos: { Args: never; Returns: boolean }
+      auth_yo: { Args: never; Returns: Json }
       avisar_a_empleados: {
         Args: {
           p_body?: string

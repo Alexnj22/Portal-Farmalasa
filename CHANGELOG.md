@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.9 — La base calcula la identidad una vez por consulta
+
+Cada consulta del portal pagaba 50–60 ms en comprobar permisos antes de leer un
+dato: `auth_employee_role_id`, `…_secondary_role_id`, `…_branch_id` y
+`auth_employee_id` volvían a buscar al empleado, su cuenta ligada y su apoyo
+vigente 10–20 veces por consulta. Ahora `auth_yo()` hace esa búsqueda una vez y
+la recuerda dentro de la transacción (por usuario); una escritura en
+`employees`, `employee_auth_accounts`, `employee_events` o `roles` la olvida.
+
+- Ventas por hora de hoy (cuenta de sala): 57 ms → 17 ms.
+- Por llamada: `auth_module_scope` 13.4 → 0.7 ms; `auth_has_module_permission`
+  5.8 → 0.5 ms; rol 1.4 → 0.05 ms.
+- Resultados idénticos: huella de identidad de los 148 usuarios y de permisos
+  por módulo (8 cargos, 1,648 combinaciones) igual antes y después, en pruebas y
+  en producción.
+- Migración `20261110221411_identidad_una_vez_por_consulta` (su archivo lo guardó v2.1501.8).
+
 ## v2.1501.8 — Archivo de la migración identidad_una_vez_por_consulta
 
 - La migración `20261110221411_identidad_una_vez_por_consulta` estaba aplicada en producción sin su archivo en el repo; se guardó desde `schema_migrations.statements`, sin cambios.

@@ -252,19 +252,16 @@ input[type=checkbox] { width: 20px; min-height: 20px; accent-color: var(--oliva)
 
 /* ── Galería horizontal (bajar = recorrer) ──────────────────── */
 .galeria-h { position: relative; background: var(--oliva-noche); color: var(--lino); scroll-margin-top: 0; }
-.galeria-h .pegada { position: sticky; top: 0; height: 100svh; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: clamp(20px, 4vh, 40px); }
+.galeria-h .pegada { position: sticky; top: var(--nav); height: calc(100svh - var(--nav)); padding: clamp(24px, 5vh, 56px) 0; overflow: hidden; display: flex; flex-direction: column; justify-content: center; gap: clamp(20px, 4vh, 40px); }
 .galeria-cabeza { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; }
 .galeria-cabeza h2 { margin: 0; font-size: clamp(3.2rem, 12vw, 8rem); }
 .galeria-cabeza h2 em { color: var(--oliva-claro); }
 .galeria-cabeza .suave { color: var(--oliva-claro); }
-.pista { display: flex; gap: clamp(12px, 2vw, 24px); padding: 0 20px; width: max-content; will-change: transform; }
+.pista { flex: 1 1 auto; min-height: 0; max-height: 680px; display: flex; align-items: center; gap: clamp(12px, 2vw, 24px); padding: 0 20px; width: max-content; will-change: transform; }
 @media (min-width: 1320px) { .pista { padding: 0 calc((100vw - 1280px) / 2); } }
-.foto-h { position: relative; flex: none; width: min(74vw, 44svh); aspect-ratio: 3 / 4; border: 0; padding: 0; background: var(--oliva-profundo); border-radius: var(--radio-foto); overflow: hidden; cursor: zoom-in; }
-.foto-h.ancha { aspect-ratio: 4 / 3; width: min(88vw, 78svh); align-self: center; }
-@media (min-width: 720px) {
-  .foto-h { width: auto; height: min(58svh, 640px); }
-  .foto-h.ancha { width: auto; }
-}
+.foto-h { position: relative; flex: none; height: 100%; width: auto; max-width: 82vw; aspect-ratio: 3 / 4; border: 0; padding: 0; background: var(--oliva-profundo); border-radius: var(--radio-foto); overflow: hidden; cursor: zoom-in; }
+.foto-h.ancha { aspect-ratio: 4 / 3; height: auto; width: 88vw; max-width: none; }
+@media (min-width: 720px) { .foto-h.ancha { height: 100%; width: auto; } }
 .foto-h img { width: 100%; height: 100%; object-fit: cover; transition: transform 1.2s var(--salida); }
 .foto-h:hover img { transform: scale(1.04); }
 .foto-h .num { position: absolute; left: 14px; bottom: 12px; font-size: 0.75rem; letter-spacing: 0.2em; color: var(--lino); text-shadow: 0 1px 8px oklch(0.2 0.03 118 / 0.6); }
@@ -272,6 +269,7 @@ input[type=checkbox] { width: 20px; min-height: 20px; accent-color: var(--oliva)
 .progreso div { height: 100%; background: var(--lino); transform-origin: left; transform: scaleX(0); }
 .galeria-h.quieta { padding: var(--aire) 0; }
 .galeria-h.quieta .pegada { position: static; height: auto; }
+.galeria-h.quieta .pista { height: 60svh; flex: none; }
 .galeria-h.quieta .pista { overflow-x: auto; width: auto; scroll-snap-type: x mandatory; }
 .galeria-h.quieta .foto-h { scroll-snap-align: center; }
 

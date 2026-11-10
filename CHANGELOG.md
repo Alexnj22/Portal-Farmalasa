@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.3 — Wompi borrado de producción
+
+- Borrada la función `wompi-pagos` y sus tres secretos (`WOMPI_*`); desplegadas `n1co-pagos`, `app-clientes`, `sync-creditos` y `operar-caja`. El pago en línea queda «en preparación» hasta cargar la llave de n1co.
+
 ## v2.1501.2 — Base: columnas de la pasarela en los pagos en línea
 
 - Migración `20261110212530_pagos_en_linea_con_n1co` aplicada en producción: `app_reservas_pagos.pasarela` (la fila vieja queda 'wompi', las nuevas 'n1co') y `enlace_codigo`; `apartado_enlace_guardar` con `p_codigo`. Tipos de la base regenerados.
@@ -39,6 +43,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - Base: `app_reservas_pagos` gana `pasarela` y `enlace_codigo`; `apartado_enlace_guardar` acepta el código.
 - Textos: la caja ya no nombra a la pasarela; el carrito dice «Tarjeta Visa o Mastercard».
 - Pendiente: credenciales de n1co, registrar el aviso en su portal, devoluciones y el aviso de privacidad.
+
+## v2.1500.44 — Puntos: la jefatura ve los avisos de su sala que guardan el nombre y no el código
+
+- El filtro por sala de Avisos comparaba sólo el código (FLS2), pero «mismo vendedor», «venta a su propia ficha» y «acumulación alta» guardan el nombre (Salud 2): la jefatura no los veía aunque fueran de su sala. Ahora se reconocen las dos formas, en el panel y en la policy de `puntos_irregularidad`.
+- Probado: la jefa de Salud 4 ve sus 2 avisos de esos tipos, la de Salud 2 los suyos, y el supervisor todos.
 
 ## v2.1500.43 — Fotos: la copia chica se guarda al subir; sin el servidor de imágenes que cobra
 

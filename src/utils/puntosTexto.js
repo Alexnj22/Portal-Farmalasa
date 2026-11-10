@@ -84,7 +84,7 @@ const ptsDe = (a) => puntosTexto(a.puntos);
 
 /** Qué dice cada aviso del programa. Los de movimientos fuera de lo normal traen su `nota` escrita en la base. */
 export const AVISOS_DE_PUNTOS = {
-    canje_sin_saldo:             { rotulo: 'Canje sin saldo suficiente', severidad: 'danger', puntos: (a) => `Faltaron ${puntosTexto(a.faltaron)}` },
+    canje_sin_saldo:             { rotulo: 'Canje sin saldo suficiente', severidad: 'danger', puntos: (a) => (a.pedidos ? `Faltaron ${puntosTexto(a.faltaron)} de ${puntosTexto(a.pedidos)}` : `Faltaron ${puntosTexto(a.faltaron)}`) },
     canje_devuelto:              { rotulo: 'Canje devuelto: la factura se anuló', severidad: 'info', puntos: (a) => `${ptsDe(a)} devueltos` },
     canje_venta_en_cero:         { rotulo: 'Canje dejó la venta bajo el mínimo', severidad: 'danger', puntos: (a) => `${ptsDe(a)} canjeados` },
     anulada_con_puntos_gastados: { rotulo: 'Anulada con puntos ya canjeados', severidad: 'warning', puntos: (a) => `${ptsDe(a)} no recuperados` },

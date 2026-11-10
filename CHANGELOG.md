@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.34 — Puntos: el aviso de canje sin saldo dice la cuenta completa
+
+- El aviso «Canje sin saldo suficiente» decía sólo «Faltaron 148». Ahora explica la cuenta: «Tenía 552 puntos y en caja se aplicaron 700 ($7.00 de descuento). Se descontaron los 552 que tenía y faltaron 148: $1.48 se dieron sin puntos.», y la columna Puntos dice «Faltaron 148 de 700». La frase sale de `puntos_panel_avisos` (nuevos campos `pedidos`, `tenia`, `descuento`), así que la app la muestra igual sin publicarla.
+
 ## v2.1500.33 — mac:carga nombra las apps que más memoria ocupan
 
 - La sugerencia del swap nombra las tres apps que más memoria ocupan, con nombres legibles. El aviso de inicio de sesión decía «las de arriba» y no mostraba ninguna lista.

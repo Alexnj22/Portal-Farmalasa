@@ -34,7 +34,7 @@ import { clienteDelEnlace, enlaceDePase, paseDeCliente } from "../_shared/pase.t
 import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_shared/paseGoogle.ts";
 import { escaleraDeNiveles, nivelDeCliente, nivelDelEquipo, programaParaApp } from "../_shared/nivel.ts";
 import { duiValido, validarFiscales } from "../_shared/fiscal.ts";
-import { calentarWompi, crearEnlace } from "../_shared/wompi.ts";
+import { crearEnlace, pasarelaLista } from "../_shared/n1co.ts";
 import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
 import { getErpBranchMap } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
@@ -2778,8 +2778,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     const costoDeEnvio = (cfg: { costo: number; gratis_desde: number | null }, subtotal: number) =>
       cfg.gratis_desde != null && subtotal >= cfg.gratis_desde ? 0 : cfg.costo;
 
-    // Abrir el carrito o Mis reservas deja el cobro listo (token de Wompi).
-    if (accion === "pago_preparar") return json({ ok: await calentarWompi() });
+    // Abrir el carrito o Mis reservas pregunta si hay con qué cobrar en línea.
+    if (accion === "pago_preparar") return json({ ok: pasarelaLista() });
 
     if (accion === "carrito_existencias") {
       const ids = (Array.isArray(body?.ids) ? body.ids : []).map(Number).filter((n: number) => Number.isInteger(n) && n > 0).slice(0, 20);
@@ -2809,8 +2809,8 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     }
 
     // (2026-10-12, auditoría) Un enlace que sigue vivo se REUSA: antes cada
-    // toque en «Pagar» creaba un cobro nuevo en Wompi y una fila más en
-    // `app_reservas_pagos`. Vale si se creó hace menos de 25 min (Wompi lo
+    // toque en «Pagar» creaba un cobro nuevo en n1co y una fila más en
+    // `app_reservas_pagos`. Vale si se creó hace menos de 25 min (n1co lo
     // deja vivo 30: el margen es para que no venza con la hoja abierta), sigue
     // sin pagar y es por el MISMO monto — si el total cambió, se crea otro.
     // (2026-10-19) Devuelve también si el enlace es de PRUEBA (`enlace_prueba`,
@@ -2825,7 +2825,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return data && Math.abs(Number(data.monto) - monto) < 0.005 ? { url: String(data.enlace_url), prueba: data.enlace_prueba === true } : null;
     }
 
-    // Un enlace de Wompi por el total de un PEDIDO (una sola transacción).
+    // Un enlace de n1co por el total de un PEDIDO (una sola transacción).
     // deno-lint-ignore no-explicit-any
     // `reservas` (2026-10-19): los renglones que este cobro cubre. Si uno se
     // cierra antes de que llegue el pago, lo suyo queda a favor; uno que no
@@ -2834,29 +2834,28 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const vigente = await enlaceVigente("pedido", pedido, total);
       if (vigente) return { url: vigente.url, total, prueba: vigente.prueba, reutilizado: true };
       const identificador = `${pedido}-${Date.now().toString(36)}`;
-      // En paralelo (2026-10-08): la sala, la fila del pago y el token de Wompi.
+      // En paralelo (2026-10-08): la sala y la fila del pago.
       const [{ data: salaFila, error: eS }, { error: eP }] = await Promise.all([
         admin.from("branches").select("name").eq("id", branchId).maybeSingle(),
         admin.from("app_reservas_pagos").insert({ pedido, identificador, monto: total, reservas_ids: reservas.length ? reservas : null }),
-        calentarWompi(),
       ]);
       if (eS) throw eS;
       if (eP) throw eP;
-      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/n1co-pagos`;
       try {
         const enlace = await crearEnlace({
           identificador, monto: total, producto: `Pedido ${pedido} (${descripcion})`,
           descripcion: `Pedido ${pedido} · retiro en ${sucursal(salaFila?.name) ?? "sucursal"}`,
-          urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+          urlVuelta: `${base}?ref=${encodeURIComponent(identificador)}`, minutos: 30,
         });
-        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const url = enlace.url;
         // Anotar el enlace no hace esperar al cliente: el pago se reconoce por el identificador.
-        const anotar = admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador)
+        const anotar = admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_codigo: enlace.codigo, enlace_url: url, enlace_prueba: enlace.prueba }).eq("identificador", identificador)
           .then(({ error: eU }: any) => { if (eU) console.error("app-clientes: no se guardó el enlace del pedido:", eU.message); });
         try { (globalThis as any).EdgeRuntime?.waitUntil(anotar); } catch { /* sin waitUntil se termina igual */ }
-        return { url, total, prueba: !enlace.estaProductivo };
+        return { url, total, prueba: enlace.prueba };
       } catch (e) {
-        console.error("app-clientes: wompi no creó el enlace del pedido:", (e as Error)?.message ?? e);
+        console.error("app-clientes: n1co no creó el enlace del pedido:", (e as Error)?.message ?? e);
         return null;
       }
     }
@@ -2967,18 +2966,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const identificador = `${codigo}-${Date.now().toString(36)}`;
       const { error: eP } = await admin.from("app_reservas_pagos").insert({ encargo_id: e.id, identificador, monto: Number(e.anticipo) });
       if (eP) throw eP;
-      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/n1co-pagos`;
       try {
         const enlace = await crearEnlace({
           identificador, monto: Number(e.anticipo), producto: `Encargo ${codigo}: ${e.producto_nombre}`.slice(0, 120),
-          descripcion: `Anticipo del encargo ${codigo}`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+          descripcion: `Anticipo del encargo ${codigo}`, urlVuelta: `${base}?ref=${encodeURIComponent(identificador)}`, minutos: 30,
         });
-        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
-        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador);
+        const url = enlace.url;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_codigo: enlace.codigo, enlace_url: url, enlace_prueba: enlace.prueba }).eq("identificador", identificador);
         if (eU) console.error("app-clientes: no se guardó el enlace del encargo:", eU.message);
-        return json({ ok: true, url, total: Number(e.anticipo), prueba: !enlace.estaProductivo });
+        return json({ ok: true, url, total: Number(e.anticipo), prueba: enlace.prueba });
       } catch (err) {
-        console.error("app-clientes: wompi no creó el enlace del encargo:", (err as Error)?.message ?? err);
+        console.error("app-clientes: n1co no creó el enlace del encargo:", (err as Error)?.message ?? err);
         return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato." });
       }
     }
@@ -2999,9 +2998,9 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json(data);
     }
 
-    // ── Pagar un crédito con Wompi (2026-10-20) ─────────────────────────
+    // ── Pagar un crédito con n1co (2026-10-20) ─────────────────────────
     // Decisiones del dueño: por el saldo TOTAL, y se abona solo en la caja
-    // apenas Wompi lo aprueba (`wompi-pagos` → `_shared/creditoEnLinea.ts`).
+    // apenas n1co lo aprueba (`n1co-pagos` → `_shared/creditoEnLinea.ts`).
     // El crédito se busca en la ficha de la SESIÓN, nunca por un id suelto
     // que mande el teléfono. El saldo se relee de la caja antes de cobrar:
     // cobrarle a alguien lo que ya pagó en sala obliga a devolverle el dinero.
@@ -3043,25 +3042,25 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         identificador, monto: total, credito_id: c.id, credito_branch_id: c.branch_id, credito_erp: String(c.credito_erp), customer_id: customerId,
       });
       if (eP) throw eP;
-      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/n1co-pagos`;
       try {
         const enlace = await crearEnlace({
           identificador, monto: total, producto: `Pago de crédito ${numero}`,
-          descripcion: `Pago total del crédito ${numero}`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+          descripcion: `Pago total del crédito ${numero}`, urlVuelta: `${base}?ref=${encodeURIComponent(identificador)}`, minutos: 30,
         });
-        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
-        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador);
+        const url = enlace.url;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_codigo: enlace.codigo, enlace_url: url, enlace_prueba: enlace.prueba }).eq("identificador", identificador);
         if (eU) console.error("app-clientes: no se guardó el enlace del crédito:", eU.message);
-        return json({ ok: true, url, total, prueba: !enlace.estaProductivo });
+        return json({ ok: true, url, total, prueba: enlace.prueba });
       } catch (err) {
-        console.error("app-clientes: wompi no creó el enlace del crédito:", (err as Error)?.message ?? err);
+        console.error("app-clientes: n1co no creó el enlace del crédito:", (err as Error)?.message ?? err);
         return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato." });
       }
     }
 
     // ── Pagar VARIOS créditos con un solo cobro (2026-11-05) ────────────
     // Usuario: «que haya una opción de pagar todos o seleccionar para pagar
-    // unos». Un enlace de Wompi por la SUMA; en la base, una fila lote
+    // unos». Un enlace de n1co por la SUMA; en la base, una fila lote
     // (`es_lote`, identificador «CL-…») y una hija por crédito con su saldo.
     // Las hijas son las que se abonan en la caja, cada una con la maquinaria
     // de un pago suelto (ver la migración 20261105170725). Las mismas reglas
@@ -3131,18 +3130,18 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         credito_id: x.c.id, credito_branch_id: x.c.branch_id, credito_erp: String(x.c.credito_erp),
       })));
       if (eHi) throw eHi;
-      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/n1co-pagos`;
       try {
         const enlace = await crearEnlace({
           identificador, monto: total, producto: `Pago de ${partes.length} créditos`,
-          descripcion: `Pago total de ${partes.length} créditos`, urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`, urlWebhook: base, minutos: 30,
+          descripcion: `Pago total de ${partes.length} créditos`, urlVuelta: `${base}?ref=${encodeURIComponent(identificador)}`, minutos: 30,
         });
-        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
-        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_url: url, enlace_prueba: !enlace.estaProductivo }).eq("id", lote.id);
+        const url = enlace.url;
+        const { error: eU } = await admin.from("app_reservas_pagos").update({ enlace_id: enlace.idEnlace, enlace_codigo: enlace.codigo, enlace_url: url, enlace_prueba: enlace.prueba }).eq("id", lote.id);
         if (eU) console.error("app-clientes: no se guardó el enlace del lote:", eU.message);
-        return json({ ok: true, url, total, prueba: !enlace.estaProductivo });
+        return json({ ok: true, url, total, prueba: enlace.prueba });
       } catch (err) {
-        console.error("app-clientes: wompi no creó el enlace del lote:", (err as Error)?.message ?? err);
+        console.error("app-clientes: n1co no creó el enlace del lote:", (err as Error)?.message ?? err);
         return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato." });
       }
     }
@@ -3967,7 +3966,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const { data: nuevas, error: eI } = await admin.from("app_reservas").insert(filas.map((f) => ({ ...f, pedido, costo_envio: envio }))).select("id");
       if (eI) throw eI;
       const total = Math.round((subtotal + envio) * 100) / 100;
-      // Pagar en línea: UN cobro por todo el pedido. Si Wompi no responde, el
+      // Pagar en línea: UN cobro por todo el pedido. Si n1co no responde, el
       // pedido queda igual (se paga al retirar o luego desde Mis reservas).
       let pago = null;
       if (pagoEnLinea && !conReceta && total > 0) pago = await enlaceDePago({ pedido, total, branchId, descripcion: `${filas.length} productos`, reservas: (nuevas ?? []).map((n: any) => Number(n.id)) });
@@ -4014,10 +4013,10 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, mensaje: "Pedimos tu prórroga. Te avisamos cuando la sucursal la revise; mientras tanto, tu reserva sigue separada." });
     }
 
-    // ── Pagar una reserva en línea, con Wompi (2026-10-07) ────────────────
+    // ── Pagar una reserva en línea, con n1co (2026-10-07) ────────────────
     // Crea un enlace de pago de UN cobro con el total de la reserva —calculado
     // acá, nunca el que mande la app— y devuelve su URL. La app la abre en una
-    // hoja del navegador; el pago se confirma en `wompi-pagos`, que es la
+    // hoja del navegador; el pago se confirma en `n1co-pagos`, que es la
     // única que marca «pagado». Se puede pagar apenas reservada o ya lista.
     // ¿Alcanza la existencia para cobrar estos renglones? (2026-10-19,
     // decisión 5). Lo apartado se reparte por ORDEN DE LLEGADA: una reserva
@@ -4098,35 +4097,33 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (faltanR.length) return json(SIN_EXISTENCIA_PAGO(faltanR));
       const vigenteR = await enlaceVigente("reserva_id", r.id, total);
       if (vigenteR) return json({ ok: true, url: vigenteR.url, total, prueba: vigenteR.prueba, reutilizado: true });
-      // Un identificador por INTENTO: Wompi no deja repetirlo, y el cliente
+      // Un identificador por INTENTO: cada link lleva su referencia, y el cliente
       // puede cerrar la hoja y volver a tocar «Pagar».
       const identificador = `${codigo}-${Date.now().toString(36)}`;
       const [{ data: salaFila, error: eS }, { error: eP }] = await Promise.all([
         admin.from("branches").select("name").eq("id", r.branch_id).maybeSingle(),
         admin.from("app_reservas_pagos").insert({ reserva_id: r.id, identificador, monto: total, reservas_ids: [r.id] }),
-        calentarWompi(),
       ]);
       if (eS) throw eS;
       if (eP) throw eP;
-      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/n1co-pagos`;
       let enlace;
       try {
         enlace = await crearEnlace({
           identificador, monto: total,
           producto: `${r.producto_nombre}${r.cantidad > 1 ? ` (${r.cantidad} unidades)` : ""}`,
           descripcion: `Reserva ${codigo} · retiro en ${sucursal(salaFila?.name) ?? "sucursal"}`,
-          urlRedirect: `${base}?ref=${encodeURIComponent(identificador)}`,
-          urlWebhook: base,
+          urlVuelta: `${base}?ref=${encodeURIComponent(identificador)}`,
           minutos: 30,
         });
       } catch (e) {
-        console.error("app-clientes: wompi no creó el enlace:", (e as Error)?.message ?? e);
+        console.error("app-clientes: n1co no creó el enlace:", (e as Error)?.message ?? e);
         return json({ ok: false, mensaje: "El pago en línea no está disponible ahora. Intenta en un rato o paga al retirar." });
       }
       const { error: eU } = await admin.from("app_reservas_pagos")
-        .update({ enlace_id: enlace.idEnlace, enlace_url: enlace.urlEnlaceLargo || enlace.urlEnlace, enlace_prueba: !enlace.estaProductivo }).eq("identificador", identificador);
+        .update({ enlace_id: enlace.idEnlace, enlace_codigo: enlace.codigo, enlace_url: enlace.url, enlace_prueba: enlace.prueba }).eq("identificador", identificador);
       if (eU) console.error("app-clientes: no se guardó el enlace:", eU.message);
-      return json({ ok: true, url: enlace.urlEnlaceLargo || enlace.urlEnlace, total, prueba: !enlace.estaProductivo });
+      return json({ ok: true, url: enlace.url, total, prueba: enlace.prueba });
     }
 
     // La BANDEJA: los avisos que ya se le mandaron, para verlos en la app.

@@ -246,7 +246,7 @@ export default function Reservas() {
       }
     } finally { pidiendo.current = false; setMasCargando(false); }
   }, [pedir, filtro, porFiltro]);
-  // Pagar el anticipo de un encargo confirmado (Wompi, como las reservas).
+  // Pagar el anticipo de un encargo confirmado (n1co, como las reservas).
   // Con candado (2026-10-12): dos toques abrían dos cobros. La ref corta el
   // segundo toque al instante; el estado deshabilita el botón.
   const pagandoYa = useRef(false);
@@ -464,11 +464,11 @@ export default function Reservas() {
     } },
   ]);
 
-  // Pagar en línea (Wompi, 2026-10-07): el servidor arma el cobro con el total
-  // de la reserva y la pantalla de Wompi se abre en una hoja sobre la app.
-  // Al pagar, Wompi vuelve a `puntossalud://reservas` y la hoja se cierra
+  // Pagar en línea (n1co, 2026-10-07): el servidor arma el cobro con el total
+  // de la reserva y la pantalla de n1co se abre en una hoja sobre la app.
+  // Al pagar, n1co vuelve a `puntossalud://reservas` y la hoja se cierra
   // sola. Quien marca «pagado» es el servidor, nunca esta pantalla: acá sólo
-  // se vuelve a leer, un par de veces, por si el aviso de Wompi se atrasa.
+  // se vuelve a leer, un par de veces, por si el aviso de n1co se atrasa.
   const [pagando, setPagando] = useState(null);
   const pagar = async (r) => {
     if (esDeMuestra(r)) { pagarMuestra(r); return; }

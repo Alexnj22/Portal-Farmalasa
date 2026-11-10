@@ -1,6 +1,6 @@
-// ─── Abonar en la caja un crédito que el cliente pagó con Wompi ────────────
+// ─── Abonar en la caja un crédito que el cliente pagó con n1co ────────────
 //
-// 2026-10-20. Lo llaman `wompi-pagos` (apenas Wompi aprueba el cobro, después
+// 2026-10-20. Lo llaman `n1co-pagos` (apenas n1co aprueba el cobro, después
 // de contestar) y `sync-creditos` (cada 10 minutos, los que quedaron sin
 // abonar). Escrito una vez: dos copias de un abono son dos maneras de abonar
 // dos veces.
@@ -8,12 +8,12 @@
 // Decisiones del dueño: el pago es por el saldo TOTAL; queda en el sistema de
 // la caja como «Transferencia» en la sala del crédito; si al llegar el dinero
 // el crédito ya no debía (lo pagaron en caja mientras tanto), se le devuelve
-// en caja — Wompi no anula cobros de enlace de pago.
+// en caja.
 //
 // ── Por qué no se abona dos veces ──────────────────────────────────────────
 // 1. `credito_pago_tomar` reclama el pago de forma atómica: dos procesos a la
 //    vez no lo toman los dos.
-// 2. El documento del abono es `WOMPI-<transacción>`. Antes de abonar se leen
+// 2. El documento del abono es `N1CO-<orden>` (antes de 2026-11-10, `WOMPI-…`). Antes de abonar se leen
 //    los abonos del crédito EN LA CAJA y, si ya está, no se abona: cubre el
 //    caso de un proceso que abonó y se cayó antes de anotarlo.
 // 3. `creditos_abonos_portal.app_pago_id` es único: un pago, una anotación.
@@ -22,7 +22,7 @@ import { abonarEnOrigen, abonosDelCredito, creditosDeLaSala, getCortesCreds, get
 
 const FORMA = "Transferencia";
 const MAX_INTENTOS = 8;
-export const documentoWompi = (idTransaccion: string) => `WOMPI-${idTransaccion}`;
+export const documentoDelPago = (idTransaccion: string) => `N1CO-${idTransaccion}`;
 
 // deno-lint-ignore no-explicit-any
 type Admin = any;
@@ -47,7 +47,7 @@ export async function aplicarPagoDeCredito(admin: Admin, pagoId: number): Promis
     const entrada = getErpBranchMap().find((e) => e.branchId === Number(p.credito_branch_id));
     if (!entrada) throw new Error(`la sala ${p.credito_branch_id} no está configurada`);
     const credito = String(p.credito_erp);
-    const doc = documentoWompi(String(p.id_transaccion));
+    const doc = documentoDelPago(String(p.id_transaccion));
     const monto = Number(p.monto);
 
     const { data: espejo, error: eE } = await admin.from("creditos_de_clientes")
@@ -121,7 +121,7 @@ export async function aplicarPagoDeCredito(admin: Admin, pagoId: number): Promis
       await avisar("CREDITO_PAGO_POR_DEVOLVER",
         `${vivo.cliente || espejo.cliente} pagó $${monto.toFixed(2)} en la app por el crédito ${credito}, que ya `
         + (abonado > 0.004 ? `sólo debía $${abonado.toFixed(2)}` : "estaba pagado")
-        + `. Hay que devolverle $${devolver.toFixed(2)} en caja (transacción Wompi ${p.id_transaccion}).`);
+        + `. Hay que devolverle $${devolver.toFixed(2)} en caja (orden n1co ${p.id_transaccion}).`);
       return { estado: "por_devolver" };
     }
     await fin({ abono_estado: "aplicado", devolver_monto: null, abono_at: new Date().toISOString(), abono_error: null });

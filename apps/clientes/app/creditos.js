@@ -7,8 +7,8 @@
 // el aviso del teléfono); si se entra igual sin deuda, se dice que está al día.
 //
 // Pagar en línea (2026-10-20, decisión del dueño): cada crédito se paga por su
-// saldo TOTAL con Wompi (`pagar_credito`). Quien abona en la caja es el
-// servidor apenas Wompi aprueba, nunca esta pantalla: acá sólo se vuelve a
+// saldo TOTAL con n1co (`pagar_credito`). Quien abona en la caja es el
+// servidor apenas n1co aprueba, nunca esta pantalla: acá sólo se vuelve a
 // leer. Los pagos hechos quedan abajo con su comprobante, también después de
 // que el crédito sale de la lista por estar pagado.
 import { useCallback, useRef, useState } from 'react';
@@ -52,7 +52,7 @@ export default function Creditos() {
   useFocusEffect(useCallback(() => { cargar(); pedir('pago_preparar'); }, [cargar, pedir]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
-  // Pagar con Wompi. La hoja vuelve sola a `puntossalud://creditos`; después
+  // Pagar con n1co. La hoja vuelve sola a `puntossalud://creditos`; después
   // se relee un par de veces porque el abono en la caja tarda unos segundos.
   //
   // Elegir cuáles (2026-11-05, «que haya una opción de pagar todos o

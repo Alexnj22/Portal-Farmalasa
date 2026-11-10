@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.0 — Pagos en línea con n1co: se quita Wompi
+
+- Decisión del dueño: el cobro en línea pasa a n1co (links de pago) y Wompi se quita entero. Wompi nunca cobró dinero real: un solo cobro, de prueba.
+- `_shared/n1co.ts` reemplaza a `_shared/wompi.ts`: crea el link (`POST /paymentlink/checkout`), consulta la orden y valida la firma del aviso (`X-H4B-Hmac-Sha256`, Base64).
+- `n1co-pagos` reemplaza a `wompi-pagos`: el veredicto sale de consultar a n1co la orden cuyo código se guardó al crear el link (`enlace_codigo`), nunca de la petición. El aviso sin firma válida se rechaza.
+- Los siete puntos que cobraban (pedido, reserva, encargo, crédito, varios créditos, apartado desde la sala) usan n1co. El abono del crédito en la caja se anota como `N1CO-<orden>`; el portal sigue reconociendo los `WOMPI-…` del historial.
+- Base: `app_reservas_pagos` gana `pasarela` y `enlace_codigo`; `apartado_enlace_guardar` acepta el código.
+- Textos: la caja ya no nombra a la pasarela; el carrito dice «Tarjeta Visa o Mastercard».
+- Pendiente: credenciales de n1co, registrar el aviso en su portal, devoluciones y el aviso de privacidad.
+
 ## v2.1500.42 — Base: un solo cron por minuto para los siete que sólo encolan HTTP
 
 - Cada corrida de cron abría un proceso nuevo de la base (~170 ms y memoria para cargar el catálogo), ~15 por minuto en el segundo :00: el pico de memoria de cada minuto en un servidor de 2 GB (plan de memoria, fase 2a).

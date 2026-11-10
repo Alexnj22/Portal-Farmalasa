@@ -139,7 +139,7 @@ function Carrito() {
   const pagoReal = faltan || conReceta ? 'al_retirar' : pago;
 
   useFocusEffect(useCallback(() => { cargarSalas(); }, [cargarSalas]));
-  // Deja listo el cobro en línea mientras se elige (Wompi responde más rápido al tocar «Pagar»).
+  // Deja listo el cobro en línea mientras se elige (pregunta si hay con qué cobrar en línea).
   useFocusEffect(useCallback(() => { if (llaves) pedir('pago_preparar'); }, [llaves, pedir]));
 
   const normal = items.reduce((s, x) => s + x.precio * x.cantidad, 0);
@@ -238,7 +238,7 @@ function Carrito() {
       vaciar();
       useCuenta.getState().cargar({ forzar: true }).catch(() => {});
       setDireccion('');
-      // Pagar en línea: la hoja de Wompi; el pago lo confirma el servidor.
+      // Pagar en línea: la hoja de n1co; el pago lo confirma el servidor.
       if (conCobro) {
         try {
           await sinBloquear(() => WebBrowser.openAuthSessionAsync(r.pago.url, 'puntossalud://reservas'));
@@ -396,7 +396,7 @@ function Carrito() {
       {/* Cómo pagas. */}
       <Seccion texto="Cómo pagas" />
       <View style={{ flexDirection: 'row', gap: 10 }}>
-        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={conReceta ? 'Después de revisar tu receta' : faltan ? 'No disponible: falta existencia' : 'Tarjeta, seguro con Wompi'}
+        <Opcion sf="creditcard.fill" titulo="En línea ahora" detalle={conReceta ? 'Después de revisar tu receta' : faltan ? 'No disponible: falta existencia' : 'Tarjeta Visa o Mastercard'}
           elegida={pagoReal === 'en_linea'} deshabilitada={faltan > 0 || conReceta} alTocar={() => setPago('en_linea')} />
         <Opcion sf="banknote.fill" titulo={aDomicilio ? 'Al recibir' : 'Al retirar'} detalle={aDomicilio ? 'Efectivo al entregarte' : 'Efectivo o tarjeta en caja'} elegida={pagoReal === 'al_retirar'} alTocar={() => setPago('al_retirar')} />
       </View>

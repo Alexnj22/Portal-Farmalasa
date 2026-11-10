@@ -466,11 +466,11 @@ export function fetchCobrosDelPortal({ desde, hasta, branchId = null }) {
     });
 }
 
-/** Si el cliente lo pagó solo, desde la app y con tarjeta (Wompi, 2026-10-20).
- *  Se mira también el documento —`WOMPI-<transacción>`— porque el historial
+/** Si el cliente lo pagó solo, desde la app y con tarjeta (n1co, 2026-10-20).
+ *  Se mira también el documento —`N1CO-<orden>` (o `WOMPI-…` del historial anterior)— porque el historial
  *  que viene de la caja no trae la columna `origen` del portal. */
 export const pagadoEnLaApp = (a) =>
-    a?.origen === 'app' || /^WOMPI-/i.test(String(a?.documento ?? ''));
+    a?.origen === 'app' || /^(N1CO|WOMPI)-/i.test(String(a?.documento ?? ''));
 
 /** Si un cobro entró al CAJÓN. Lo decide la forma, y por eso se escribe una
  *  sola vez: el efectivo lo va a pedir el corte en billetes; lo demás no

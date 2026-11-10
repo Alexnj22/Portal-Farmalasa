@@ -627,7 +627,7 @@ export default function WidgetReservas({ todas = false, completa = false, soloLe
                                             Receta por revisar · {espera.texto}
                                         </Badge>
                                     )}
-                                    {/* Pagada en línea desde la app (Wompi): en caja NO se cobra.
+                                    {/* Pagada en línea desde la app (n1co): en caja NO se cobra.
                                         Si el cobro fue de PRUEBA (2026-10-19) no entró dinero: se cobra en caja. */}
                                     {esPagoDePrueba(r) ? (
                                         <Badge variant="danger" uppercase={false}

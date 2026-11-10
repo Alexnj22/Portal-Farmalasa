@@ -538,8 +538,8 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
             ].filter(Boolean),
             datos: [
                 ...datosDelCobro(cb),
-                app && ['Se pagó', 'el cliente, desde la app con tarjeta (Wompi)'],
-                app && ['Dónde está el dinero', 'en la cuenta de Wompi, no en el cajón'],
+                app && ['Se pagó', 'el cliente, desde la app con tarjeta'],
+                app && ['Dónde está el dinero', 'en la cuenta de pagos en línea, no en el cajón'],
             ].filter(Boolean),
         };
     }

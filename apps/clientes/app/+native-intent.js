@@ -3,7 +3,7 @@
 // es una pantalla.
 //
 // La vuelta del pago. Al cobrar en línea (Mis reservas, el carrito y Mis
-// créditos) la hoja de Wompi se abre con `WebBrowser.openAuthSessionAsync(url,
+// créditos) la hoja de n1co se abre con `WebBrowser.openAuthSessionAsync(url,
 // 'puntossalud://reservas')` y, al terminar, el banco vuelve a esa dirección.
 // En iPhone la sesión de autenticación se la queda y el enrutador no la ve.
 // En Android NO: la dirección llega además como un enlace normal, el enrutador

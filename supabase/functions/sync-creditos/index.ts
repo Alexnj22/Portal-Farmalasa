@@ -87,7 +87,7 @@ Deno.serve(async (req) => {
     const desde = String(body?.desde ?? (modo === "completo" ? DESDE : hasta));
 
     /* Los créditos pagados en la app que todavía no se abonaron en la caja
-     * (2026-10-20): `wompi-pagos` los abona apenas Wompi aprueba; si la caja
+     * (2026-10-20): `n1co-pagos` los abona apenas n1co aprueba; si la caja
      * no respondió, se reintentan acá. Sin pendientes es UNA lectura de la
      * base y ninguna petición a la caja. Va antes de leer, para que esta
      * misma corrida ya traiga el saldo nuevo. */

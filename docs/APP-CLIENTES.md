@@ -187,7 +187,7 @@ Opcionalmente retira los dos permisos en el mismo gesto.
 1. **Enviar avisos** — hecho: `avisos-clientes` (ver «Avisos al teléfono» abajo).
 2. **Inyecciones TRAÍDAS**: guardan sólo el nombre escrito, sin ficha. No
    aparecen en la app y no se adivinan por nombre. (No se volvió a revisar.)
-3. **Pagos en línea** — hecho para reservas y créditos: `wompi-pagos` (abajo).
+3. **Pagos en línea** — hecho para reservas, pedidos, encargos, apartados y créditos: `n1co-pagos` (abajo). Hasta el 2026-11-10 fue Wompi; se quitó entero (nunca cobró dinero real: un solo cobro, de prueba).
 4. **Ficha en la tienda**: política de privacidad pública, capturas, cuenta
    de prueba para la revisión de Apple. (No se volvió a revisar.)
 
@@ -197,7 +197,7 @@ Opcionalmente retira los dos permisos en el mismo gesto.
 
 Esta segunda parte se escribió leyendo el código del área `app-clientes`
 (`auditoria/areas.mjs`): la app (`apps/clientes/`), las funciones
-`app-clientes`, `avisos-clientes`, `wallet-pases`, `wompi-pagos` y
+`app-clientes`, `avisos-clientes`, `wallet-pases`, `n1co-pagos` y
 `preventa-caja`, y la capa del portal que la atiende (`src/data/reservas.js`,
 `ofertasClientes.js`, `chatClientes.js`, `chatHilo.js`, `horarios.js`,
 `mayoristas.js`; `src/utils/apartar.js`, `preventa.js`, `reservasDeSala.js`,
@@ -211,13 +211,28 @@ código.
 | `app-clientes` | la app, con el token de la sesión | todo lo que el cliente ve y pide: puntos, ofertas, reservas, chat, cuenta |
 | `avisos-clientes` | crons `avisos-clientes-minuto` y `avisos-clientes-diario` | los avisos al teléfono, de 8:00 a 20:00 de El Salvador |
 | `wallet-pases` | el iPhone (rutas de PassKit) y un cron cada minuto | la tarjeta de Puntos Salud en Apple Wallet se actualiza sola |
-| `wompi-pagos` | Wompi (aviso) y el navegador del cliente (vuelta) | confirma un cobro en línea contra la API de Wompi, nunca contra lo que dice la petición |
+| `n1co-pagos` | n1co (aviso firmado con HMAC) y el navegador del cliente (vuelta) | confirma un cobro en línea consultando a n1co la orden cuyo código guardamos al crear el link, nunca lo que dice la petición |
 | `preventa-caja` | el portal, con la sesión de quien envía | deja la venta de una reserva armada en la caja |
 
-En `wompi-pagos`, una misma transacción no puede pagar dos reservas
+En `n1co-pagos`, una misma orden no puede pagar dos cobros
 (`app_reservas_pagos.id_transaccion` es UNIQUE). En `wallet-pases`, el token de
 cada tarjeta se DERIVA del serial con HMAC: no se guarda y no se puede adivinar
 el de otra persona.
+
+### Pagos en línea con n1co (2026-11-10)
+
+- Link de pago (CheckoutLink): `_shared/n1co.ts` crea la orden con
+  `orderReference` = nuestro identificador y guarda `orderId` en `enlace_id` y
+  `orderCode` en `enlace_codigo`. La tarjeta se escribe en la página de n1co:
+  el portal nunca la ve.
+- Secretos: `N1CO_SECRET_KEY`, `N1CO_WEBHOOK_SECRET`, `N1CO_AMBIENTE`
+  (`produccion` para cobrar de verdad; cualquier otro valor = pruebas) y
+  `N1CO_ACEPTA_PRUEBAS` (`1` sólo mientras se prueba; se borra al salir).
+- El aviso se registra en el portal de n1co (Configuración → Webhook) con la
+  URL `…/functions/v1/n1co-pagos`. Sin firma válida se rechaza.
+- Pendiente con n1co: devoluciones (la API de devoluciones usa otras
+  credenciales y no está claro que aplique a links), y el `locationCode` por
+  sucursal.
 
 ## Niveles y ofertas exclusivas
 
@@ -496,7 +511,7 @@ y —peor— una afirmación falsa al cliente.
   no se pide el IDFA (sin `NSUserTrackingUsageDescription`), no se cruzan datos
   con terceros para publicidad.
 - **Proveedores que procesan por cuenta nuestra** (Supabase, Expo push, Sentry,
-  Resend, Wompi) **no son «compartir»** en el sentido de Google ni «tracking» en
+  Resend, n1co) **no son «compartir»** en el sentido de Google ni «tracking» en
   el de Apple.
 - **Sentry**: `tracesSampleRate: 0` → **no** se recogen datos de rendimiento;
   sólo fallos. `sendDefaultPii: false` y se limpian DUI y tokens antes de enviar.
@@ -517,7 +532,7 @@ rastreo: No**.
 | Contact Info | Other User Contact Info | No | — | |
 | Health & Fitness | **Health** | Sí | App Functionality · Product Personalization | fotos de receta; recordatorios de recompra (`app_tratamientos`) |
 | Health & Fitness | Fitness | No | — | |
-| Financial Info | Payment Info | **No** (ver nota 1) | — | la tarjeta se escribe en la página de Wompi |
+| Financial Info | Payment Info | **No** (ver nota 1) | — | la tarjeta se escribe en la página de n1co |
 | Financial Info | Credit Info | No | — | |
 | Financial Info | Other Financial Info | No | — | |
 | Location | Precise Location | **No** | — | se usa sólo en el teléfono |
@@ -566,7 +581,7 @@ Preguntas generales:
 | URL para pedir el borrado de la cuenta | `https://portal.farmasalud.lat/privacidad#borrar-cuenta` |
 | ¿Puede pedir que se borren algunos datos sin borrar la cuenta? | **Sí**: foto de perfil, correos guardados, permiso de avisos y de promociones |
 
-**Compartidos con terceros: NINGUNO.** Expo, Sentry, Resend, Wompi y Supabase son
+**Compartidos con terceros: NINGUNO.** Expo, Sentry, Resend, n1co y Supabase son
 proveedores que procesan por cuenta nuestra (Google los excluye de «compartir»);
 Google Wallet / Apple Wallet los activa el propio usuario.
 

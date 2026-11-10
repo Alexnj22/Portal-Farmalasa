@@ -3,7 +3,7 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
-import { crearEnlace } from "../_shared/wompi.ts";
+import { crearEnlace } from "../_shared/n1co.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Los actos de caja que faltaban en el portal: ABRIR, anotar un INGRESO o una
@@ -512,11 +512,11 @@ Deno.serve(async (req) => {
 
     // ── EL ENLACE DE PAGO DE UN APARTADO (reglamento v3, 2026-10-22) ────────
     //
-    // La sala no cobra: le manda al cliente un enlace de Wompi por el anticipo
+    // La sala no cobra: le manda al cliente un enlace de n1co por el anticipo
     // (o por el encargo confirmado). No toca la caja —el dinero no entra al
     // cajón— y por eso no pide la caja abierta. La base prepara el cobro y, en
     // un apartado nuevo, separa el producto con el plazo de una reserva sin
-    // pagar; cuando Wompi lo aprueba, `wompi-pagos` lo suma al anticipo. El
+    // pagar; cuando n1co lo aprueba, `n1co-pagos` lo suma al anticipo. El
     // permiso y la sala ya se miraron arriba (`caja_vales`, su propia sala).
     if (accion === "enlace_apartado") {
       const apartado = (body.apartado && typeof body.apartado === "object") ? body.apartado : null;
@@ -528,7 +528,7 @@ Deno.serve(async (req) => {
       });
       if (errPrep || !prep) return json({ ok: false, error: errPrep?.message || "No se pudo preparar el cobro." }, 409);
       const p = prep as { identificador: string; codigo: string; monto: number; detalle?: string; cliente?: string };
-      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/wompi-pagos`;
+      const base = `${Deno.env.get("SUPABASE_URL")}/functions/v1/n1co-pagos`;
       try {
         // 24 h para pagar desde el enlace: se manda por WhatsApp y el cliente
         // lo abre cuando puede. El plazo del apartado sin pagar es aparte.
@@ -536,16 +536,16 @@ Deno.serve(async (req) => {
           identificador: p.identificador, monto: Number(p.monto),
           producto: `${p.codigo}: ${p.detalle ?? "Apartado"}`.slice(0, 120),
           descripcion: `Anticipo de ${p.codigo} en Farmacia Salud`,
-          urlRedirect: `${base}?ref=${encodeURIComponent(p.identificador)}`, urlWebhook: base, minutos: 24 * 60,
+          urlVuelta: `${base}?ref=${encodeURIComponent(p.identificador)}`, minutos: 24 * 60,
         });
-        const url = enlace.urlEnlaceLargo || enlace.urlEnlace;
+        const url = enlace.url;
         const { error: errG } = await supabase.rpc("apartado_enlace_guardar", {
-          p_identificador: p.identificador, p_enlace_id: enlace.idEnlace, p_url: url, p_prueba: !enlace.estaProductivo,
+          p_identificador: p.identificador, p_enlace_id: enlace.idEnlace, p_codigo: enlace.codigo, enlace_codigo: enlace.codigo, p_url: url, p_prueba: enlace.prueba,
         });
         if (errG) console.error("operar-caja: no se guardó el enlace:", errG.message);
-        return json({ ok: true, ...prep, url, prueba: !enlace.estaProductivo });
+        return json({ ok: true, ...prep, url, prueba: enlace.prueba });
       } catch (e) {
-        console.error("operar-caja: wompi no creó el enlace del apartado:", (e as Error)?.message ?? e);
+        console.error("operar-caja: n1co no creó el enlace del apartado:", (e as Error)?.message ?? e);
         const { error: errA } = await supabase.rpc("apartado_enlace_anular", { p_identificador: p.identificador });
         if (errA) console.error("operar-caja: no se anuló el cobro sin enlace:", errA.message);
         return json({ ok: false, error: "El pago en línea no está disponible ahora. Cóbralo en caja o intenta en un rato." }, 503);

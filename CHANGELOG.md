@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.41 — Seguridad: el alcance por sala, aplicado donde el permiso ya lo decía
+
+- Auditoría de alcance por sala (pedida por el usuario: «que nadie, menos admin, vea lo de otras sucursales»). Se cruzaron las policies de las tablas con sala y las funciones de la base contra los cargos que no son admin.
+- Ocho tablas pedían el permiso pero no su alcance: cobros por aprobar y lecturas de cartera, aplicaciones de apartados, cierres con diferencia, saldo a favor, devoluciones de pedido, lotes diarios de antibióticos y puntos de cada venta. Ahora ALL ve todas y el resto sólo su sala.
+- `get_bolsa_eventos`, `get_salidas_de_bolsa` y `get_operacion_de_bolsa` devolvían una bolsa de otra sala por su número; ahora exigen que sea de la propia.
+- `set_traslado_interruptor` (pausa los traslados de toda la red) exige alcance ALL en pedidos; antes bastaba editar pedidos de una sala.
+- Médico Consultante, Auxiliar de Servicios Generales y Técnico de Mantenimiento: sin pestañas de Facturación ni de Ventas (decisión del usuario); el Inicio pasa a su sala.
+- Probado como Dependiente (La Popular), Jefe/a de Sala (Salud 1) y supervisor: los cargos de sala ven una sala en cada tabla, el supervisor varias, y el interruptor rechaza al cargo de sala.
+- Siguen viendo toda la red a propósito: Clientes, Puntos e inventario (decisión del usuario), Bodega y Compras (asignado en Acceso), consultas de existencia y retiros entre salas.
+
+## v2.1500.40 — App de clientes: temporizador de Sonidos y reproductor sincronizados
+
+- App de clientes · Sonidos: el temporizador elegido vive en el estado del sonido y no en la pantalla; cambiarlo funciona sonando, en pausa o antes de empezar, y al volver a la pantalla se ve el que corre.
+- El reproductor de la pantalla bloqueada queda igual a lo que suena: tras cada toque de reproducir/pausa se re-sincroniza, el pedido más nuevo gana, y al volver a la app se alinea.
+
 ## v2.1500.39 — Base: el vigía del chat sólo arma listas si hay a quién avisar, y plan de memoria
 
 - La base se congeló ~60 s el 2026-11-10 (y se reinició el 09-11): el servidor de 2 GB vive con 700–900 MB de swap. Plan sin subir de plan en `docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md`.

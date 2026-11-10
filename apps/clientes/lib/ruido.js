@@ -19,7 +19,7 @@
 // con la app abierta, se pausa al bloquear y no muestra el control
 // (`conSegundoPlano`).
 import { useEffect, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { Asset } from 'expo-asset';
 import PortadaViva from '../modules/portada-viva';
@@ -258,7 +258,11 @@ let relojFin = null;
 let subsAviso = [];
 // Lo que ve la pantalla: también cambia desde la notificación o al vencer el
 // temporizador con la pantalla apagada.
-let estado = { sonando: false, pausado: false, tipo: 'lluvia', finEn: null };
+// `minutos` es el temporizador ELEGIDO (0 = sin límite) y vive acá, no en la
+// pantalla: al volver a Sonidos, o tras pausar y reanudar desde la pantalla
+// bloqueada, la pantalla lo lee de aquí (2026-11-10, «el temporizador no
+// cambia… no se sincronizan»). `restaMs` es lo que le quedaba al pausar.
+let estado = { sonando: false, pausado: false, tipo: 'lluvia', finEn: null, minutos: 30, restaMs: null };
 const oyentes = new Set();
 function poner(cambio) {
   estado = { ...estado, ...cambio };
@@ -387,21 +391,39 @@ const portada = (tipo) => archivo(PORTADAS[tipo]);
 // iPhone con el módulo propio (binario desde 2026-11-10): portada viva y fija
 // a resolución completa. Sin él, el aviso de react-native-audio-api.
 let subsViva = null;
+let turnoViva = 0;
 async function mostrarViva(tipo, pausado) {
   if (!subsViva) {
     subsViva = [
-      PortadaViva.addListener('alPausar', () => pausarRuido()),
-      PortadaViva.addListener('alReanudar', () => { reanudarRuido(); }),
+      PortadaViva.addListener('alPausar', () => { pausarRuido(); sincronizarAviso(); }),
+      PortadaViva.addListener('alReanudar', () => { reanudarRuido().finally(sincronizarAviso); }),
       PortadaViva.addListener('alDetener', () => pararRuido()),
     ];
   }
+  const yo = ++turnoViva;
   const [alto, cuadrado] = VIVAS[tipo] ?? [];
   const [p, va, vc] = await Promise.all([portada(tipo), archivo(alto), archivo(cuadrado)]);
+  // Pausar y reanudar rápido dispara dos pedidos; sin esto el más viejo podía
+  // llegar último y dejar el reproductor al revés de lo que suena.
+  if (yo !== turnoViva) return;
+  pausado = estado.pausado;
   await PortadaViva.mostrar({
     clave: tipo, titulo: SONIDOS[tipo].nombre, artista: 'Sonidos · Puntos Salud',
     portada: p, videoAlto: va, videoCuadrado: vc, sonando: !pausado,
-    resta: estado.finEn ? Math.max(0, (estado.finEn - Date.now()) / 1000) : null,
+    resta: restaMs() != null ? restaMs() / 1000 : null,
   });
+}
+
+/** Lo que le queda al temporizador, en ms (congelado si está en pausa). */
+function restaMs() {
+  if (estado.pausado) return estado.restaMs;
+  return estado.finEn ? Math.max(0, estado.finEn - Date.now()) : null;
+}
+
+/** Pone el reproductor de la pantalla bloqueada igual a lo que de verdad pasa. */
+function sincronizarAviso() {
+  if (estado.sonando || estado.pausado) mostrarAviso(estado.tipo, estado.pausado);
+  else ocultarAviso();
 }
 
 async function mostrarAviso(tipo, pausado = false) {
@@ -416,8 +438,8 @@ async function mostrarAviso(tipo, pausado = false) {
     }
     if (!subsAviso.length) {
       subsAviso = [
-        A.addEventListener('playbackNotificationPause', () => pausarRuido()),
-        A.addEventListener('playbackNotificationPlay', () => { reanudarRuido(); }),
+        A.addEventListener('playbackNotificationPause', () => { pausarRuido(); sincronizarAviso(); }),
+        A.addEventListener('playbackNotificationPlay', () => { reanudarRuido().finally(sincronizarAviso); }),
         A.addEventListener('playbackNotificationStop', () => pararRuido()),
         A.addEventListener('playbackNotificationDismissed', () => pararRuido()),
       ];
@@ -448,18 +470,28 @@ export async function sonarRuido(tipo, minutos) {
   n.start();
   nodo = n;
   rampa(volumen, 1.2);
-  const finEn = minutos === undefined ? estado.finEn : minutos ? Date.now() + minutos * 60_000 : null;
-  poner({ sonando: true, pausado: false, tipo, finEn });
+  const m = minutos === undefined ? estado.minutos : minutos;
+  const finEn = m ? Date.now() + m * 60_000 : null;
+  poner({ sonando: true, pausado: false, tipo, finEn, minutos: m, restaMs: null });
   programarFin();
   mostrarAviso(tipo);
   return true;
 }
 
-/** Cambia el temporizador del sonido que ya suena. */
+/** Elige el temporizador (0 = sin límite); si algo suena o está en pausa, cuenta desde ahora. */
 export function temporizadorRuido(minutos) {
-  poner({ finEn: minutos ? Date.now() + minutos * 60_000 : null });
-  if (nodo) { rampa(volumen, 0.3); programarFin(); }
-  if (estado.sonando) mostrarAviso(estado.tipo); // la barra del reproductor, al día
+  const ms = minutos ? minutos * 60_000 : null;
+  if (estado.pausado) {
+    quedabaMs = ms;
+    poner({ minutos, restaMs: ms, finEn: ms ? Date.now() + ms : null });
+  } else if (estado.sonando) {
+    poner({ minutos, finEn: ms ? Date.now() + ms : null });
+    if (nodo) { rampa(volumen, 0.3); programarFin(); }
+  } else {
+    poner({ minutos });
+    return;
+  }
+  sincronizarAviso(); // la barra del reproductor, al día
 }
 
 export function volumenRuido(v) {
@@ -506,7 +538,7 @@ export function pausarRuido() {
   rampa(0, 0.3);
   clearTimeout(relojPausa);
   relojPausa = setTimeout(() => { if (estado.pausado) pararRuido(0); }, PAUSA_MAXIMA_MS);
-  poner({ sonando: false, pausado: true });
+  poner({ sonando: false, pausado: true, restaMs: quedabaMs });
   mostrarAviso(estado.tipo, true);
 }
 
@@ -517,7 +549,7 @@ export async function reanudarRuido() {
   sesion(true);
   if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
   rampa(volumen, 0.6);
-  poner({ sonando: true, pausado: false, finEn: quedabaMs != null ? Date.now() + quedabaMs : null });
+  poner({ sonando: true, pausado: false, restaMs: null, finEn: quedabaMs != null ? Date.now() + quedabaMs : null });
   programarFin();
   mostrarAviso(estado.tipo, false);
 }
@@ -528,7 +560,7 @@ export function pararRuido(seg = 0.6) {
   clearTimeout(relojPausa);
   ocultarAviso();
   const pausadoAntes = estado.pausado;
-  poner({ sonando: false, pausado: false, finEn: null });
+  poner({ sonando: false, pausado: false, finEn: null, restaMs: null });
   if (!nodo || !ctx) { sesion(false); return; }
   const n = nodo;
   nodo = null;
@@ -537,3 +569,7 @@ export function pararRuido(seg = 0.6) {
   soltar(n, seg);
   sesion(false);
 }
+
+// Al volver a la app, el reproductor de la pantalla bloqueada se alinea con lo
+// que de verdad suena (por si se perdió un toque mientras estaba en segundo plano).
+AppState.addEventListener('change', (e) => { if (e === 'active' && (estado.sonando || estado.pausado)) sincronizarAviso(); });

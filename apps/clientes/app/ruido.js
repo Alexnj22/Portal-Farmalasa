@@ -97,9 +97,8 @@ function Orbe({ id, activo, sonando, alTocar }) {
 export default function Ruido() {
   const ins = useSafeAreaInsets();
   const barra = useHeaderHeight();
-  const { sonando, pausado, tipo, finEn } = useRuido();
+  const { sonando, pausado, tipo, finEn, minutos, restaMs } = useRuido();
   const x = SONIDOS[tipo];
-  const [minutos, setMinutos] = useState(30);
   const [volumen, setVolumen] = useState(volumenActual());
   const [ajustando, setAjustando] = useState(false);
   const [preparando, setPreparando] = useState(false);
@@ -113,20 +112,20 @@ export default function Ruido() {
   useEffect(() => { const h = InteractionManager.runAfterInteractions(() => prepararRuido(tipo)); return () => h.cancel(); }, [tipo]);
 
   useEffect(() => {
-    if (pausado && finEn) { setResta(Math.max(0, Math.round((finEn - Date.now()) / 1000))); return undefined; }
+    if (pausado) { setResta(restaMs != null ? Math.round(restaMs / 1000) : null); return undefined; }
     if (!sonando || !finEn) { setResta(null); return undefined; }
     const tic = () => setResta(Math.max(0, Math.round((finEn - Date.now()) / 1000)));
     tic();
     const id = setInterval(tic, 1000);
     return () => clearInterval(id);
-  }, [sonando, pausado, finEn]);
+  }, [sonando, pausado, finEn, restaMs]);
 
   const empezar = async (t = tipo) => {
     tacto.toque();
     setPreparando(true);
     // Un cuadro para que se vea «…» antes de fabricar el sonido.
     await new Promise((ok) => setTimeout(ok, 30));
-    await sonarRuido(t, minutos);
+    await sonarRuido(t);
     setPreparando(false);
   };
   // El botón grande pausa y reanuda (como en la pantalla de bloqueo);
@@ -140,7 +139,7 @@ export default function Ruido() {
     Haptics.selectionAsync().catch(() => {});
     empezar(t);
   };
-  const cambiarMinutos = (m) => { tacto.roce(); setMinutos(m); if (sonando) temporizadorRuido(m); };
+  const cambiarMinutos = (m) => { tacto.roce(); temporizadorRuido(m); };
 
   // La escena se toca: una onda; y se desliza: el volumen.
   const vol = useRef(volumen);

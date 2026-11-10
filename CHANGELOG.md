@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.16 — Puntos: un producto sin precio ya no deja la compra sin puntos
+
+- Desde el reglamento v2 (15-nov), un producto sin precio en el portal ya no deja
+  la compra entera sin puntos. La compra espera dos días a que llegue el precio
+  (lo normal es un producto nuevo); si llega, acumula completa; si no, acumula
+  sin ese producto, el lote lo dice y `puntos-motor` avisa a quien vigila el
+  programa con el nombre del producto. Medido: 12 de 18,399 compras en 30 días.
+- Migración `20261110152245`; probada en el branch de pruebas.
+
 ## v2.1500.15 — Clientes nuevos: se reconocen con la sesión de facturación
 
 Todo cliente nuevo quedaba como ficha suelta (16 de 16 el 5-nov, 5 de 5 hoy):

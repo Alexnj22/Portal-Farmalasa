@@ -215,6 +215,31 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ── Compras que acumularon sin un producto que no tenía precio ──────────
+    // (2026-11-10, usuario). `ventas_elegibles_puntos` espera dos días a que el
+    // precio llegue (lo normal es un producto nuevo); si no llega, la compra
+    // acumula sin ese producto y se avisa a quien vigila el programa, con el
+    // nombre de cada producto, para que le carguen el precio. Una por compra.
+    const sinPrecio = (acumulacion?.sin_precio ?? []) as Array<Record<string, unknown>>;
+    if (!simular && sinPrecio.length && cfg?.avisar_fallas_a) {
+      const ids = [...new Set(sinPrecio.flatMap((s) => (s.productos as number[] | null) ?? []))];
+      const { data: prods, error: e6 } = await supabase.from('products').select('id, nombre').in('id', ids);
+      if (e6) fallidos.push(`productos sin precio: ${e6.message}`);
+      const nombre = new Map((prods ?? []).map((p: any) => [Number(p.id), String(p.nombre)]));
+      for (const s of sinPrecio) {
+        const lista = ((s.productos as number[] | null) ?? []).map((id) => nombre.get(Number(id)) ?? `producto ${id}`).join(', ');
+        const { error: e7 } = await supabase.rpc('notify_employees', {
+          p_recipients: [String(cfg.avisar_fallas_a)], p_type: 'PUNTOS_SIN_PRECIO',
+          p_title: 'Producto sin precio: la compra acumuló sin él',
+          p_body: `Venta ${s.documento ?? ''} (${s.sucursal ?? ''}): ${lista} no tiene precio en el portal y no sumó puntos. `
+            + `La compra acumuló ${s.puntos} puntos con lo demás. Hay que cargarle el precio.`,
+          p_link: '/puntos?tab=avisos', p_metadata: { check_key: `puntos_sin_precio:${s.invoice_id}`, invoice_id: s.invoice_id },
+          p_push: true, p_branch_id: null,
+        });
+        if (e7) fallidos.push(`puntos_sin_precio:${s.invoice_id}: ${e7.message}`);
+      }
+    }
+
     // `ok: false` cuando algo quedó a medias, y con el detalle. Una corrida que
     // devuelve 200 sobre trabajo incompleto es como un fallo vive meses sin que
     // nadie lo mire.

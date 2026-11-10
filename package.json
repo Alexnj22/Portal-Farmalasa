@@ -80,6 +80,7 @@
     "medir:pdf": "node scripts/medir-hojas-en-pdf.mjs",
     "logos": "node scripts/preparar-logos.mjs",
     "portal:lento": "node scripts/portal-lento.mjs",
+    "mac:carga": "node scripts/mac-carga.mjs",
     "medir:como-usuario": "node scripts/medir-como-usuario.mjs",
     "gate:cortes": "node scripts/cortes-gate.mjs",
     "gate:receta": "node scripts/receta-gate.mjs",

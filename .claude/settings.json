@@ -1,8 +1,4 @@
 {
-  "enabledPlugins": {
-    "claude-code-setup@claude-plugins-official": true,
-    "andrej-karpathy-skills@karpathy-skills": true
-  },
   "hooks": {
     "SessionStart": [
       {
@@ -13,6 +9,12 @@
             "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm run -s main:al-dia -- --aplicar 2>&1 | tail -n 5 || true",
             "timeout": 60,
             "statusMessage": "Poniendo main al día con origin/main…"
+          },
+          {
+            "type": "command",
+            "command": "cd \"$CLAUDE_PROJECT_DIR\" && npm run -s mac:carga -- --breve 2>/dev/null || true",
+            "timeout": 15,
+            "statusMessage": "Mirando la carga de la Mac…"
           }
         ]
       }
@@ -28,6 +30,15 @@
           }
         ]
       }
+    ]
+  },
+  "enabledPlugins": {
+    "claude-code-setup@claude-plugins-official": true,
+    "andrej-karpathy-skills@karpathy-skills": true
+  },
+  "permissions": {
+    "allow": [
+      "Bash(gh secret set *)"
     ]
   }
 }

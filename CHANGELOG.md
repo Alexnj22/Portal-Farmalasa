@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.28 — Gate de carga de la Mac (mac:carga)
+
+- `npm run mac:carga` (sólo lectura): carga por núcleo, swap, memoria libre, compilaciones corriendo, servidores de desarrollo viejos, sesiones de Claude viejas y días sin reiniciar — cada hallazgo con qué hacer. Sale 1 en rojo. Nunca mata nada.
+- Corre al iniciar cada sesión (`--breve`, hook de SessionStart): calla si la Mac está bien.
+- `subir-ios`/`subir-android` esperan a que la carga baje de 1.5 por núcleo antes de compilar (tope 30 min; `SIN_ESPERAR_CARGA=1` lo salta): el turno era por app y dos apps distintas compilaban juntas.
+- Permiso `gh secret set` en `.claude/settings.json`.
+
 ## v2.1500.27 — App de clientes: pausa de verdad y portada en la pantalla de bloqueo
 
 - App de clientes · Sonidos: pausar (desde la app o la pantalla de bloqueo) congela el sonido y el temporizador; reanudar sigue desde ahí. «Detener» lo apaga del todo y quita el reproductor.

@@ -16,6 +16,7 @@
 import { mkdirSync, readFileSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
+import { esperarCarga } from './carga-de-la-mac.mjs';
 
 const DIR = join(tmpdir(), 'farmalasa-turno-de-compilacion');
 
@@ -74,4 +75,8 @@ export async function esperarTurno(carpetaApp, plataforma) {
     process.once(senal, () => { soltar(); process.exit(130); });
   }
   if (avisado) console.log(`▶ ${app}: turno tomado para ${plataforma}.`);
+
+  // Y además, que la Mac no esté ya saturada por OTRA app (2026-11-10): el
+  // turno es por app, así que dos apps distintas compilaban juntas igual.
+  await esperarCarga({ que: `la compilación de ${app} (${plataforma})` });
 }

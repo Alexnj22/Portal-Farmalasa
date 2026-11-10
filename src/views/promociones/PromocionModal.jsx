@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Trash2, AlertTriangle, Check, Tag, Pencil, Plus, ChevronRight, Power } from 'lucide-react';
+import { Trash2, AlertTriangle, Check, Pencil, ChevronRight, Power } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -11,7 +11,6 @@ import Badge from '../../components/common/Badge';
 import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
 import ConfirmModal from '../../components/common/ConfirmModal';
-import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -24,14 +23,14 @@ import AgregarProductos from './AgregarProductos';
 import { guardarDescuento } from '@nucleo/data/descuentos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import DescuentoEnVentas from './DescuentoEnVentas';
-import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Campo from './Campo';
+import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { AvisosDelDescuento } from './PiezasDelDescuento';
 import {
-    fmtUnidades, rotuloPresentacion, descuentoDesdeLaPromocion, problemasDelDescuento,
-    problemasDeLaPromocion,
-    generalDePromocionNuevo, renglonDePromocionNuevo, renglonesParaCrear, destinoDelDescuento,
+    fmtUnidades, rotuloPresentacion, problemasDelDescuentoDeLaPromocion, problemasDeLaPromocion,
+    generalDePromocionNuevo, renglonDePromocionNuevo, guardarPromocionNueva, avisoDelGuardado,
 } from '@nucleo/utils/promocionesUtils';
-import { hoySV } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 
 const CLAVE_BORRADOR = 'promocion_nueva';
@@ -66,10 +65,12 @@ const useSalasDeVenta = () => {
  * llegar en fechas distintas—. Lo que cambia es de dónde salen: se rellenan
  * desde acá, y el que necesite otra cosa se ajusta uno por uno.
  */
-// Lo general, cómo nace un producto, el cuerpo de `crear_promocion` y la sala
-// del descuento: núcleo (`promocionesUtils`), lo mismo que usa la app.
-const generalNuevo = generalDePromocionNuevo;
-const renglonNuevo = (prod, _salas, general) => renglonDePromocionNuevo(prod, general);
+// Lo general, cómo nace un producto, el cuerpo de `crear_promocion`, la sala
+// del descuento y la secuencia de guardado: núcleo (`promocionesUtils`), lo
+// mismo que usa la app.
+
+/** «31 de agosto de 2026»: la fecha que lee una persona, no la de la base. */
+const fechaLegible = (dia) => fechaTexto(dia, { day: 'numeric', month: 'long', year: 'numeric' }, dia);
 
 /**
  * Nueva promoción.
@@ -86,7 +87,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     const [nombre, setNombre] = useState('');
     const [nota, setNota] = useState('');
     const [renglones, setRenglones] = useState([]);
-    const [general, setGeneral] = useState(() => generalNuevo(salas));
+    const [general, setGeneral] = useState(() => generalDePromocionNuevo(salas));
     const [laboratorios, setLaboratorios] = useState([]);
     const [guardando, setGuardando] = useState(false);
     const [fallo, setFallo] = useState(null);
@@ -102,9 +103,11 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         (campo, v) => setDesc((d) => ({ ...d, [campo]: v })), [],
     );
 
-    /* La promoción ya se creó y el descuento no: sólo falta reintentar ESA
-       mitad. Sin esto, el único camino sería crear la promoción de nuevo. */
-    const [promoCreada, setPromoCreada] = useState(null);
+    /* La promoción ya se creó (`{ id }`): otro clic no puede crearla de nuevo,
+       y si el descuento quedó pendiente se reintenta sólo ESA mitad. */
+    const [creada, setCreada] = useState(null);
+    const promoCreada = creada?.id ?? null;
+    const [descPendiente, setDescPendiente] = useState(false);
     const [avisosDesc, setAvisosDesc] = useState([]);
 
     /* El ALCANCE, no el permiso: con una sola sala el descuento va a la propia
@@ -173,7 +176,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
         const vistos = new Set(rs.map((r) => Number(r.erp_product_id)));
         const nuevos = (Array.isArray(prods) ? prods : [prods])
             .filter((p) => !vistos.has(Number(p.id)))
-            .map((p) => renglonNuevo(p, salas, general));
+            .map((p) => renglonDePromocionNuevo(p, general));
         return nuevos.length ? [...rs, ...nuevos] : rs;
     });
 
@@ -226,137 +229,51 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
 
     const [vaciando, setVaciando] = useState(false);
 
-    /* Sólo el descuento, para el caso en que la promoción ya se creó y esta
-       mitad falló. Devuelve `true` si quedó. */
-    /**
-     * Manda el descuento al sistema de ventas.
-     *
-     * **Una llamada POR SALA MARCADA**, porque allá un descuento vale para UNA
-     * sala o para TODAS, nunca para un conjunto (medido el 2026-09-05). Sin
-     * salas marcadas va una sola, «en todas».
-     *
-     * Se mandan EN SERIE y no en paralelo: cada una relee la lista del sistema
-     * de ventas para confirmar y para detectar solapes, y dos escrituras a la
-     * vez leerían un estado a medio escribir.
-     */
-    const mandarDescuento = async (promoId, forzar = false) => {
-        /* UNA sola llamada, y no una por sala: el sistema de ventas admite un
-           descuento por producto y ventana de fechas EN TODA LA CADENA —medido
-           el 2026-09-05: el mismo producto con las mismas fechas en otra sala
-           lo rechaza—. Con una sala marcada va ahí; con ninguna, a todas; con
-           varias, manda lo que se eligió en el bloque del descuento. */
-        const destino = destinoDelDescuento(salas, general.salas, desc);
-        const r = await guardarDescuento({
-            ...descuentoDesdeLaPromocion(renglones, desc),
-            descripcion: nombre.trim(),
-            ...destino,
-            promocion_id: promoId,
-            forzar,
-        });
-        if (r.avisos) { setAvisosDesc(r.avisos); return false; }
-        setAvisosDesc([]);
-        return true;
-    };
-
-    /**
-     * Guarda.
-     *
-     * **La promoción PRIMERO y el descuento después, y el orden no es
-     * arbitrario.** Al revés, si la promoción fallara quedaría un descuento
-     * vivo en el sistema de ventas que nadie pidió, bajándole el precio a
-     * productos reales sin que ninguna pantalla del portal lo nombre. Así, lo
-     * peor que puede pasar es una promoción sin su descuento — visible,
-     * corregible, y sin tocar ningún precio.
-     */
     /* Activar al guardar (2026-10-01): la promoción nacía SIEMPRE en borrador
        y había que ir a buscarla a Activas para encenderla — un paso que casi
        siempre se daba enseguida. Sigue existiendo guardar en borrador. */
     const [activarAlGuardar, setActivarAlGuardar] = useState(false);
 
+    /**
+     * Guarda: crear → activar (si se pidió) → descuento (si lo tiene), en
+     * `guardarPromocionNueva` del núcleo, la misma secuencia que la app. Acá
+     * sólo se pinta lo que devuelve.
+     *
+     * El descuento va UNA sola llamada, no una por sala: el sistema de ventas
+     * admite un descuento por producto y ventana EN TODA LA CADENA (medido el
+     * 2026-09-05), así que la sala la decide `destinoDelDescuento`.
+     *
+     * Si la activación falla, NO se cierra: la promoción quedó en borrador y la
+     * ventana lo dice. Antes, con descuento, el flujo seguía y cerraba con el
+     * aviso sin que nadie lo viera.
+     */
     const guardar = async (forzarDescuento = false, activar = activarAlGuardar) => {
         setFallo(null);
         setGuardando(true);
         try {
-            /* Si ya se creó en un intento anterior, no se vuelve a crear:
-               reintentar entero dejaría dos promociones iguales. */
-            if (promoCreada) {
-                let ok = false;
-                try {
-                    ok = await mandarDescuento(promoCreada, forzarDescuento);
-                } catch (e) {
-                    // La promoción YA existe: el genérico «no se pudo crear la
-                    // promoción» de abajo invitaba a crearla otra vez.
-                    setFallo(`La promoción «${nombre.trim()}» ya está creada; el descuento sigue sin quedar: `
-                        + `${mensajeAmigable(e, 'no se pudo guardar')}.`);
-                    return;
-                }
-                if (!ok) return;
+            const res = await guardarPromocionNueva({
+                nombre, nota, renglones, activar, desc, salas, marcadas: general.salas,
+                promoCreada, forzarDescuento,
+            }, { crearPromocion, activarPromocion, guardarDescuento });
+            /* En un reintento del descuento la activación no se repite, pero si
+               había fallado se sigue diciendo: cerrar después como si nada
+               dejaría creer que quedó activa. */
+            const total = creada ? { ...res, activada: creada.activada, errorActivar: creada.errorActivar } : res;
+            const aviso = avisoDelGuardado(total, nombre);
+            if (res.creada && !creada) {
+                /* La promoción YA existe: el borrador se suelta ahora. Vivo,
+                   ofrecía recuperarla al reabrir — y guardarla de nuevo creaba
+                   una segunda promoción igual. */
                 descartar();
-                onGuardada?.();
-                return;
+                setCreada({ id: res.id, activada: res.activada, errorActivar: res.errorActivar });
             }
-
-            const creada = await crearPromocion({
-                nombre,
-                nota,
-                renglones: renglonesParaCrear(renglones),
-            });
-
-            /* Encenderla, si se pidió. Si esto falla la promoción ya existe en
-               borrador: se dice así, y no como «no se pudo crear». */
-            if (activar && creada?.id) {
-                try {
-                    await activarPromocion(creada.id, true);
-                } catch (e) {
-                    descartar();
-                    // Se recuerda como creada: otro clic no puede crearla de nuevo.
-                    setPromoCreada(Number(creada.id) || null);
-                    setFallo(`La promoción «${nombre.trim()}» quedó creada en borrador, pero no se pudo activar: `
-                        + `${mensajeAmigable(e, 'vuelve a intentar desde Activas')}.`);
-                    if (!desc.activo) return;
-                }
-            }
-
-            /* La promoción YA existe: el borrador se suelta ahora, no al final.
-               Si el descuento falla y se cierra con «Dejarlo así», el borrador
-               vivo ofrecía recuperarla al reabrir — y guardarla de nuevo creaba
-               una segunda promoción igual. */
-            descartar();
-
-            if (!desc.activo) {
-                descartar();
-                onGuardada?.();
-                return;
-            }
-
-            /* Desde acá la promoción YA EXISTE. Se recuerda para que un fallo
-               del descuento no obligue a crearla de nuevo. */
-            const promoId = Number(creada?.id) || null;
-            setPromoCreada(promoId);
-            if (!promoId) {
-                setFallo('La promoción se creó pero el portal no supo con qué número, '
-                    + 'así que el descuento no se pudo ligar. Créalo desde Descuentos.');
-                return;
-            }
-
-            let ok = false;
-            try {
-                ok = await mandarDescuento(promoId, forzarDescuento);
-            } catch (e) {
-                /* El mensaje dice las DOS cosas: que la promoción sí quedó y que
-                   el descuento no. Un «no se pudo guardar» a secas haría creer
-                   que no quedó nada y llevaría a crearla otra vez. */
-                setFallo(`La promoción «${nombre.trim()}» quedó creada, pero el descuento no: `
-                    + `${mensajeAmigable(e, 'no se pudo guardar')}. `
-                    + 'Puedes reintentar sólo el descuento.');
-                return;
-            }
-            if (!ok) return;
-
-            descartar();
-            onGuardada?.();
+            setAvisosDesc(res.descuento === 'avisos' ? res.avisos : []);
+            setDescPendiente(res.descuento === 'avisos' || (res.descuento === 'error' && !!res.id));
+            if (aviso.fallos.length) setFallo(aviso.fallos.join(' '));
+            if (aviso.cerrar) onGuardada?.();
         } catch (e) {
-            setFallo(mensajeAmigable(e, 'No se pudo crear la promoción.'));
+            // `guardarPromocionNueva` no lanza; esto cubre lo imprevisto al pintar.
+            setFallo(mensajeAmigable(e, 'No se pudo guardar la promoción.'));
         } finally {
             setGuardando(false);
         }
@@ -365,14 +282,9 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
     /* La sala del descuento tiene que ser una de las marcadas: desmarcar arriba
        la sala elegida dejaba `branchId` apuntando a una donde la promoción no
        aplica, y el descuento se mandaba ahí. */
-    const marcadasGen = salas.filter((x) => general.salas?.[x.id]);
-    const descSalaFuera = desc.activo && marcadasGen.length > 1 && !desc.todas && desc.branchId
-        && !marcadasGen.some((x) => String(x.id) === String(desc.branchId));
-    const problemasDesc = [
-        ...problemasDelDescuento(renglones, desc, alcanceTodo),
-        ...(descSalaFuera ? ['La sala del descuento ya no está entre las salas de la promoción.'] : []),
-    ];
-    const problemasPromo = promoCreada ? [] : problemasDeLaPromocion(renglones);
+    const problemasDesc = problemasDelDescuentoDeLaPromocion(renglones, desc,
+        { alcanceTodo, salas, marcadas: general.salas });
+    const problemasPromo = creada ? [] : problemasDeLaPromocion(renglones);
     const listo = nombre.trim() && renglones.length > 0 && !hayEditando
         && problemasDesc.length === 0 && problemasPromo.length === 0;
 
@@ -537,23 +449,7 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                         botón de guardar a tres pantallas de desplazamiento.
                         Y la nota del solape sólo sale si hay un solape: una
                         explicación que aparece siempre deja de leerse. */}
-                    {avisosDesc.length > 0 && (
-                        <Notice variant="warning" icon={AlertTriangle}>
-                            {avisosDesc.length === 1 ? (
-                                <p>{avisosDesc[0].texto}</p>
-                            ) : (
-                                <ul className="list-disc pl-4 space-y-0.5">
-                                    {avisosDesc.map((a) => <li key={a.texto}>{a.texto}</li>)}
-                                </ul>
-                            )}
-                            {avisosDesc.some((a) => a.tipo === 'solape') && (
-                                <p className="mt-1.5 text-caption">
-                                    Cuando dos descuentos toman el mismo producto en las mismas fechas,
-                                    la venta aplica uno solo y no dice cuál.
-                                </p>
-                            )}
-                        </Notice>
-                    )}
+                    <AvisosDelDescuento avisos={avisosDesc} />
 
                     {/* Avisa, no frena: una campaña terminada se carga a
                         propósito para el histórico y la liquidación. Lo que
@@ -567,8 +463,8 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                             </span>
                             <span className="block mt-0.5 font-normal">
                                 {vencidos.length === 1
-                                    ? `Termina el ${vencidos[0].fin} y hoy es ${hoySV()}.`
-                                    : `El último termina el ${vencidos.map((r) => r.fin).sort().pop()} y hoy es ${hoySV()}.`}
+                                    ? `Termina el ${fechaLegible(vencidos[0].fin)} y hoy es ${fechaLegible(hoySV())}.`
+                                    : `El último termina el ${fechaLegible(vencidos.map((r) => r.fin).sort().pop())} y hoy es ${fechaLegible(hoySV())}.`}
                                 {' '}Se puede guardar igual —sirve para el histórico y la
                                 liquidación— pero el cierre diario la va a dar por terminada
                                 apenas la actives.
@@ -594,21 +490,22 @@ export default function PromocionModal({ open, onClose, onGuardada }) {
                     {hayEditando
                         ? 'Termina el producto para poder guardar.'
                         : (problemasPromo[0] || problemasDesc[0]
-                            || (promoCreada ? 'La promoción ya quedó: falta el descuento.'
+                            || (creada
+                                ? (descPendiente ? 'La promoción ya quedó: falta el descuento.' : 'La promoción ya quedó creada.')
                                 : 'En borrador no cuenta ventas hasta activarla.'))}
                 </span>
             )}>
                 {/* Con la promoción ya creada, cerrar también recarga la lista:
                     con `onClose` a secas la nueva no aparecía hasta refrescar. */}
-                <Button variant="secondary" onClick={promoCreada ? onGuardada : onClose} disabled={guardando}>
-                    {promoCreada ? 'Dejarlo así' : 'Cancelar'}
+                <Button variant="secondary" onClick={creada ? onGuardada : onClose} disabled={guardando}>
+                    {creada ? 'Dejarlo así' : 'Cancelar'}
                 </Button>
                 {avisosDesc.length > 0 ? (
                     <Button variant="destructive" icon={Check} loading={guardando}
                         onClick={() => guardar(true)}>
                         Guardar de todos modos
                     </Button>
-                ) : promoCreada && !desc.activo ? null : promoCreada ? (
+                ) : creada && !descPendiente ? null : creada ? (
                     <Button icon={Check} loading={guardando} disabled={!listo}
                         onClick={() => guardar(false)}>
                         Reintentar el descuento

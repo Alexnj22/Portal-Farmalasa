@@ -19,9 +19,15 @@ import {
 import { guardarDescuento, sincronizarProductosDelDescuento } from '@nucleo/data/descuentos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useStaffStore } from '@nucleo/store/staffStore';
+import { useAuth } from '@nucleo/context/AuthContext';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
-import { fmtUnidades, fmtVigencia, MOTIVO_CIERRE, descuentoDesdeLaPromocion, estadoVisible, mensajeDeCarga, numeroEscrito, renglonesParaAgregar, OPCIONES_RESUMEN_DIARIO, alternarResumen, resumenElegido } from '@nucleo/utils/promocionesUtils';
+import {
+    fmtUnidades, fmtVigencia, motivoDeCierre, descuentoDesdeLaPromocion, destinoDelDescuento, estadoVisible,
+    mensajeDeCarga, numeroEscrito, renglonesParaAgregar, problemasDelDescuentoDeLaPromocion, proveedorDelRenglon,
+    OPCIONES_RESUMEN_DIARIO, alternarResumen, resumenElegido,
+} from '@nucleo/utils/promocionesUtils';
 import DescuentoEnVentas from './DescuentoEnVentas';
+import { AvisosDelDescuento } from './PiezasDelDescuento';
 import AgregarProductos from './AgregarProductos';
 import Campo from './Campo';
 
@@ -49,9 +55,18 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
         [branches],
     );
 
+    /* El ALCANCE, no el permiso: con una sola sala el descuento va a la propia
+       y el servidor lo fija ahí igual (lo mismo que el alta). */
+    const { getScope } = useAuth();
+    const alcanceTodo = getScope('promociones') === 'ALL';
+
     const [promo, setPromo] = useState(null);
-    const [cargando, setCargando] = useState(true);
     const [error, setError] = useState(null);
+    /* El cargador tapa la ventana sólo en la PRIMERA carga. Antes se encendía
+       en cada recarga —o sea después de cada guardado— y el contenido se
+       desmontaba: parpadeaba, perdía el scroll, replegaba los renglones y
+       desmontaba el resumen diario. Ahora la ficha se refresca detrás. */
+    const cargando = !promo && !error;
     const [fallo, setFallo] = useState(null);
     const [proveedores, setProveedores] = useState([]);
     const [laboratorios, setLaboratorios] = useState([]);
@@ -77,10 +92,17 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     const [avisosDesc, setAvisosDesc] = useState([]);
     const [mandando, setMandando] = useState(false);
 
+    /* A la vista se le avisa UNA vez, al cerrar, y sólo si algo cambió: cada
+       escritura le hacía recargar la lista entera detrás de la ventana. */
+    const [huboCambios, setHuboCambios] = useState(false);
     const recargar = useCallback(() => {
         setRecarga((n) => n + 1);
-        onCambio?.();
-    }, [onCambio]);
+        setHuboCambios(true);
+    }, []);
+    const cerrar = () => {
+        if (huboCambios) onCambio?.();
+        onClose?.();
+    };
 
     useEffect(() => {
         if (!open) return;
@@ -91,12 +113,9 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     useEffect(() => {
         if (!open || !promocionId) return undefined;
         let vivo = true;
-        setCargando(true);
-        setError(null);
         fetchPromocion(promocionId)
-            .then((d) => { if (vivo) setPromo(d); })
-            .catch((e) => { if (vivo) setError(e); })
-            .finally(() => { if (vivo) setCargando(false); });
+            .then((d) => { if (vivo) { setPromo(d); setError(null); } })
+            .catch((e) => { if (vivo) setError(e); });
         return () => { vivo = false; };
     }, [open, promocionId, recarga]);
 
@@ -121,18 +140,11 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
         setFallo(null);
         setMandando(true);
         try {
-            const marcadas = salas.filter((x) => salasDeLaPromocion[x.id]);
-            const unaSola = marcadas.length === 1 ? marcadas[0] : null;
-            const todas = unaSola ? false : (marcadas.length === 0 ? true : !!desc.todas);
-            const branchId = unaSola
-                ? unaSola.id
-                : (todas ? (salas[0]?.id ?? null) : Number(desc.branchId) || null);
-
+            // La sala: la misma regla que el alta (`destinoDelDescuento`).
             const r2 = await guardarDescuento({
                 ...descuentoDesdeLaPromocion(promo.renglones ?? [], desc),
                 descripcion: (promo.nombre || '').trim(),
-                todas_las_salas: todas,
-                branch_id: branchId,
+                ...destinoDelDescuento(salas, salasDeLaPromocion, desc),
                 promocion_id: promocionId,
                 forzar,
             });
@@ -168,6 +180,12 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
        que ya no es de ninguna campaña. */
     const conDescuento = (promo?.descuentos ?? 0) > 0;
 
+    /* Lo que impide crear el descuento: lo MISMO que el alta —monto, tope del
+       porcentaje, fecha de fin, sala elegida y que esa sala sea de la
+       promoción—. Antes el botón sólo miraba que el monto fuera mayor que 0. */
+    const problemasDesc = problemasDelDescuentoDeLaPromocion(promo?.renglones ?? [], desc,
+        { alcanceTodo, salas, marcadas: salasDeLaPromocion });
+
     /* El ORDEN de estos cinco no es estético: los que preguntan leen a los que
        escriben, y `gate:tdz` cuenta como deuda toda lectura que viva antes de su
        `const` —hoy no lanza porque el cuerpo de una función corre después, pero
@@ -193,18 +211,20 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
         }
     };
 
+    /* Devuelve `true` si los productos quedaron: el bloque de agregar borra
+       sus marcas sólo entonces. */
     const agregarYa = async (prods, tambienElDescuento) => {
         setFallo(null);
         setAgregando(true);
         try {
-            // El cuerpo (vigencia, salas y bono heredados; el proveedor
-            // resuelto por nombre): núcleo, `renglonesParaAgregar`, igual que la app.
+            // El cuerpo (vigencia, salas y bono heredados; el proveedor por su
+            // id): núcleo, `renglonesParaAgregar`, igual que la app.
             const cuerpo = renglonesParaAgregar(promo, prods, proveedores);
-            if (cuerpo.error) { setFallo(cuerpo.error); return; }
+            if (cuerpo.error) { setFallo(cuerpo.error); return false; }
             const r2 = await agregarRenglonesAPromocion(promocionId, cuerpo.renglones);
             if (!r2.agregados) {
                 setFallo('Esos productos ya estaban en la promoción.');
-                return;
+                return false;
             }
             /* El descuento DESPUÉS de la promoción, igual que al crearla: si la
                promoción fallara, un descuento nuevo quedaría vivo bajándole el
@@ -213,8 +233,10 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                visible, y con el aviso que lo nombra. */
             if (tambienElDescuento) await sincronizar({ agregar: prods.map((p) => p.id) });
             recargar();
+            return true;
         } catch (e) {
             setFallo(mensajeAmigable(e, 'No se pudieron agregar los productos.'));
+            return false;
         } finally {
             setAgregando(false);
         }
@@ -232,9 +254,25 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
         }
     };
 
-    const agregarProductos = async (prods) => {
-        if (conDescuento) { setPendiente({ tipo: 'agregar', prods }); return; }
-        await agregarYa(prods, false);
+    /* Con descuento, la respuesta llega cuando se contesta la pregunta: el
+       `resolver` de la promesa viaja en `pendiente` y se llama ahí. Cancelar
+       devuelve `false` y las marcas se conservan — antes había que volver a
+       marcar todo. */
+    const agregarProductos = (prods) => {
+        if (conDescuento) {
+            return new Promise((resolver) => setPendiente({ tipo: 'agregar', prods, resolver }));
+        }
+        return agregarYa(prods, false);
+    };
+
+    /* Contestar la pregunta del descuento. `tambien === null` es cancelar. */
+    const contestarPendiente = (tambien) => {
+        const p = pendiente;
+        setPendiente(null);
+        if (!p) return;
+        if (tambien === null) { p.resolver?.(false); return; }
+        if (p.tipo === 'quitar') quitarYa(p.renglon, tambien);
+        else agregarYa(p.prods, tambien).then((ok) => p.resolver?.(ok));
     };
 
     /** Quitar un producto: con descuento, pregunta antes. */
@@ -264,8 +302,8 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
     };
 
     return (
-        <LiquidModal open={open} onClose={onClose} maxWidth="max-w-4xl" ariaLabel="Editar promoción">
-            <LiquidModal.Header titulo={promo?.nombre || 'Editar promoción'} onClose={onClose}
+        <LiquidModal open={open} onClose={cerrar} maxWidth="max-w-4xl" ariaLabel="Editar promoción">
+            <LiquidModal.Header titulo={promo?.nombre || 'Editar promoción'} onClose={cerrar}
                 subtitulo={promo ? `${fmtVigencia(promo.inicio, promo.fin)} · ${estadoVisible(promo).rotulo}` : undefined} />
 
             <LiquidModal.Body>
@@ -277,8 +315,9 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                     </Notice>
                 )}
 
-                {!cargando && !error && promo && (
-                    <div className="space-y-4">
+                <div className="space-y-4">
+                {promo && (
+                    <>
                         {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
 
                         {/* Qué se escribió en el sistema de ventas, dicho. Un
@@ -315,9 +354,15 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 )}
                             </Notice>
                         )}
+                    </>
+                )}
 
-                        <ResumenDiario promocionId={promocionId} />
+                {/* Fuera del condicional de la ficha: refrescarla no lo desmonta
+                    (antes volvía a pedir su dato después de cada guardado). */}
+                {promocionId && <ResumenDiario promocionId={promocionId} />}
 
+                {promo && (
+                    <>
                         <Notice variant="info" compact>
                             Si corriges el <span className="font-semibold">lote</span>, la{' '}
                             <span className="font-semibold">presentación</span> o el{' '}
@@ -408,22 +453,10 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
 
                                     {/* Confirmación, no informe: la lista de
                                         arriba ya dice en cuánto queda cada uno. */}
-                                    {avisosDesc.length > 0 && (
-                                        <Notice variant="warning" icon={AlertTriangle}>
-                                            {avisosDesc.length === 1 ? (
-                                                <p>{avisosDesc[0].texto}</p>
-                                            ) : (
-                                                <ul className="list-disc pl-4 space-y-0.5">
-                                                    {avisosDesc.map((a) => <li key={a.texto}>{a.texto}</li>)}
-                                                </ul>
-                                            )}
-                                            {avisosDesc.some((a) => a.tipo === 'solape') && (
-                                                <p className="mt-1.5 text-caption">
-                                                    Cuando dos descuentos toman el mismo producto en las
-                                                    mismas fechas, la venta aplica uno solo y no dice cuál.
-                                                </p>
-                                            )}
-                                        </Notice>
+                                    <AvisosDelDescuento avisos={avisosDesc} />
+
+                                    {desc.activo && problemasDesc.length > 0 && (
+                                        <p className="text-caption text-warning-text">{problemasDesc[0]}</p>
                                     )}
 
                                     {desc.activo && (
@@ -431,7 +464,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                             variant={avisosDesc.length > 0 ? 'danger' : 'primary'}
                                             icon={Check}
                                             loading={mandando}
-                                            disabled={!(Number(desc.monto) > 0)}
+                                            disabled={problemasDesc.length > 0}
                                             onClick={() => crearDescuento(avisosDesc.length > 0)}
                                             className="w-full"
                                         >
@@ -443,8 +476,9 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                                 </div>
                             )
                         )}
-                    </div>
+                    </>
                 )}
+                </div>
             </LiquidModal.Body>
 
             <LiquidModal.Footer>
@@ -454,7 +488,7 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                         Borrar promoción
                     </Button>
                 )}
-                <Button variant="secondary" onClick={onClose}>Cerrar</Button>
+                <Button variant="secondary" onClick={cerrar}>Cerrar</Button>
             </LiquidModal.Footer>
 
             <ConfirmModal
@@ -498,11 +532,11 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
                 bajo es lo que cuesta dinero. */}
             <LiquidModal
                 open={!!pendiente}
-                onClose={() => !(agregando || sincronizando) && setPendiente(null)}
+                onClose={() => !(agregando || sincronizando) && contestarPendiente(null)}
                 maxWidth="max-w-md"
                 ariaLabel="¿También en el descuento?"
             >
-                <LiquidModal.Header onClose={() => !(agregando || sincronizando) && setPendiente(null)}
+                <LiquidModal.Header onClose={() => !(agregando || sincronizando) && contestarPendiente(null)}
                     titulo={pendiente?.tipo === 'quitar'
                         ? '¿También le quito el descuento?'
                         : '¿También le bajo el precio?'} />
@@ -531,25 +565,15 @@ export default function EditarPromocionModal({ promocionId, open, onClose, onCam
 
                 <PieDeModal>
                     <Button variant="secondary" disabled={agregando || sincronizando}
-                        onClick={() => setPendiente(null)}>
+                        onClick={() => contestarPendiente(null)}>
                         Cancelar
                     </Button>
                     <Button variant="secondary" disabled={agregando || sincronizando}
-                        onClick={() => {
-                            const p = pendiente;
-                            setPendiente(null);
-                            if (p?.tipo === 'quitar') quitarYa(p.renglon, false);
-                            else agregarYa(p.prods, false);
-                        }}>
+                        onClick={() => contestarPendiente(false)}>
                         Sólo en la promoción
                     </Button>
                     <Button icon={Check} loading={agregando || sincronizando}
-                        onClick={() => {
-                            const p = pendiente;
-                            setPendiente(null);
-                            if (p?.tipo === 'quitar') quitarYa(p.renglon, true);
-                            else agregarYa(p.prods, true);
-                        }}>
+                        onClick={() => contestarPendiente(true)}>
                         {pendiente?.tipo === 'quitar' ? 'Quitar de los dos' : 'Agregar a los dos'}
                     </Button>
                 </PieDeModal>
@@ -569,7 +593,11 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
     const [factor, setFactor] = useState(r.factor_unidades == null ? '' : String(r.factor_unidades));
     const [tieneBono, setTieneBono] = useState(!!r.tiene_bono);
     const [paga, setPaga] = useState(r.paga || 'proveedor');
-    const [prov, setProv] = useState('');
+    /* Preseleccionado con el proveedor ACTUAL, por su id (`proveedorDelRenglon`;
+       el nombre sólo de respaldo). Mientras nadie lo toque se deriva, así que
+       aparece en cuanto llega la lista de proveedores. */
+    const [provElegido, setProv] = useState(null);
+    const prov = provElegido ?? proveedorDelRenglon(r, proveedores) ?? '';
     const repartoOriginal = useMemo(() => Object.fromEntries(
         salas.map((s) => {
             const fila = (r.reparto || []).find((x) => Number(x.branch_id) === Number(s.id));
@@ -645,7 +673,7 @@ function RenglonEditable({ r, salas, proveedores, onCambio, onFallo, onQuitar, a
                 </button>
                 {r.estado === 'cerrado' && (
                     <Badge variant="neutral" size="sm">
-                        {MOTIVO_CIERRE[r.cerrado_motivo] || 'Terminado'}
+                        {motivoDeCierre(r.cerrado_motivo)}
                     </Badge>
                 )}
                 <Button variant="ghost" size="sm" iconOnly icon={Trash2} title="Quitar de la promoción"

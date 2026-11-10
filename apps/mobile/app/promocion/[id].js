@@ -17,7 +17,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPromocion } from '@nucleo/data/promociones';
 import {
-  estadoVisible, fmtMoneda, fmtUnidades, fmtVigencia, mensajeDeCarga, MOTIVO_CIERRE, porLaboratorio,
+  estadoVisible, fmtMoneda, fmtUnidades, fmtVigencia, mensajeDeCarga, rotuloDeCierre, porLaboratorio,
   resumenDeSeguimiento, rotuloMes, rotuloPresentacion, vendedoresPorSala, csvVendedoresDePromocion,
 } from '@nucleo/utils/promocionesUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -36,6 +36,7 @@ import { compartirCsv } from '../../componentes/fiscal/csv';
 import { fallo } from '../../componentes/Progreso';
 import { alternarPromocion, duplicarConPreguntas } from '../../componentes/promociones/acciones';
 import { promocionElegida } from '../../componentes/promociones/elegida';
+import AvisoDescuentoPorMover from '../../componentes/promociones/AvisoDescuentoPorMover';
 
 const Titulo = ({ texto, sub }) => (
   <View style={{ marginHorizontal: 4, marginTop: 6 }}>
@@ -63,7 +64,7 @@ function Renglon({ r }) {
         <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
           <Pildora texto={rotuloPresentacion(r.factor_unidades)} color={r.factor_unidades == null ? colorSistema.texto2 : MARCA.azulClaro} />
           {!r.tiene_bono ? <Pildora texto="Sólo mide" color={colorSistema.texto2} /> : null}
-          {r.estado === 'cerrado' ? <Pildora texto={`Terminado · ${MOTIVO_CIERRE[r.cerrado_motivo] || r.cerrado_motivo || ''}`} color={colorSistema.texto2} /> : null}
+          {r.estado === 'cerrado' ? <Pildora texto={rotuloDeCierre(r.cerrado_motivo)} color={colorSistema.texto2} /> : null}
         </View>
         {r.tiene_bono && r.paga ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Lo paga ${r.paga === 'empresa' ? 'la empresa' : (r.proveedor || 'un proveedor sin nombre')}`}</Text> : null}
         <AvanceDelLote vendido={r.vendido_base} lote={r.lote_total} pct={pct} />
@@ -163,6 +164,8 @@ export default function Promocion() {
               {Number(p.descuentos) > 0 ? <Pildora texto="Baja el precio" color={MARCA.azulClaro} /> : null}
             </View>
             {p.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{p.nota}</Text> : null}
+            {/* La marca viene de la LISTA (`get_promociones`): el detalle no la trae. */}
+            {fila && fila.estado !== 'finalizada' ? <AvisoDescuentoPorMover p={fila} puedeEditar={puedeEditar} /> : null}
           </View>
         ) : null}
         {puedeEditar && fila ? (

@@ -214,12 +214,28 @@ export async function reactivarPromocion(id, fin) {
  * como `CAJA 1x100` y `CAJA 1X100`. Agrupar por el texto partiría en dos una
  * presentación que es una sola.
  */
-export async function fetchPresentacionesDeProducto(erpProductId) {
-    const { data, error } = await supabase.rpc('get_presentaciones_de_producto', {
-        p_erp_product_id: Number(erpProductId),
+/* Se guardan por producto unos minutos: abrir y cerrar un renglón —en el
+   alta, en la edición y en la app— volvía a pedirlas cada vez, y lo que se
+   vendió en el pasado no cambia mientras se arma una promoción. Una consulta
+   que falla se suelta para que el próximo intento vuelva a preguntar. */
+const presentacionesPorProducto = new Map();   // id → { promesa, desde }
+export function fetchPresentacionesDeProducto(erpProductId) {
+    const id = Number(erpProductId);
+    const guardada = presentacionesPorProducto.get(id);
+    if (guardada && Date.now() - guardada.desde <= VIGENCIA_CATALOGO_MS) return guardada.promesa;
+    const entrada = { promesa: null, desde: Date.now() };
+    entrada.promesa = (async () => {
+        const { data, error } = await supabase.rpc('get_presentaciones_de_producto', {
+            p_erp_product_id: id,
+        });
+        if (error) throw error;
+        return data ?? [];
+    })().catch((err) => {
+        if (presentacionesPorProducto.get(id) === entrada) presentacionesPorProducto.delete(id);
+        throw err;
     });
-    if (error) throw error;
-    return data ?? [];
+    presentacionesPorProducto.set(id, entrada);
+    return entrada.promesa;
 }
 
 /**
@@ -301,16 +317,6 @@ export async function editarRenglon({
         p_borrar_lote:     !!borrarLote,
         p_cualquier_pres:  !!cualquierPresentacion,
         p_reparto:         reparto,
-    });
-    if (error) throw error;
-    return data ?? null;
-}
-
-/** Reemplaza el reparto de un renglón. Reemplaza y no parchea: tiene que sumar. */
-export async function editarReparto(renglonId, reparto) {
-    const { data, error } = await supabase.rpc('editar_reparto', {
-        p_renglon_id: Number(renglonId),
-        p_reparto: reparto,
     });
     if (error) throw error;
     return data ?? null;
@@ -418,8 +424,8 @@ export async function editarPromocionLaboratorio({
  * `fetchLaboratoriosBasic` en vez de repetir su consulta: escribirla otra vez
  * es cómo dos lecturas de la misma tabla terminan ordenando distinto.
  */
-export async function fetchLaboratorios() {
+export const fetchLaboratorios = enCache(async () => {
     const { data, error } = await fetchLaboratoriosBasic();
     if (error) throw error;
     return data ?? [];
-}
+});

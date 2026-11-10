@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
-    mesesRecientes, mesAnterior, rotuloMes, fmtVigencia, diasRestantes,
+    mesesRecientes, rotuloMes, fmtVigencia, diasRestantes,
     estadoVisible, esLaboratorio,
 } from '@nucleo/utils/promocionesUtils';
 
@@ -59,24 +59,6 @@ describe('mesesRecientes', () => {
         const v = mesesRecientes().map((x) => x.value);
         expect(v).toContain('2025-12');
         expect(v.at(-1)).toBe('2025-10');
-    });
-});
-
-describe('mesAnterior', () => {
-    it('es el mes anterior al de hoy', () => {
-        congelarReloj();
-        expect(mesAnterior()).toBe('2026-08');
-    });
-
-    it('coincide con el tercer elemento de la lista, que es de donde salía antes', () => {
-        congelarReloj();
-        expect(mesAnterior()).toBe(mesesRecientes()[2].value);
-    });
-
-    it('cruza el año: en enero, el anterior es diciembre del año pasado', () => {
-        vi.useFakeTimers();
-        vi.setSystemTime(new Date('2027-01-15T18:00:00Z'));
-        expect(mesAnterior()).toBe('2026-12');
     });
 });
 

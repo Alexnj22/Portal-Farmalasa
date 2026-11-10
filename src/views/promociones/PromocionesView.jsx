@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent, CalendarClock, CheckCircle2, Package, Users, DollarSign, FileText, Download, BadgePercent } from 'lucide-react';
+import { Tag, Layers, History, Plus, AlertTriangle, Scale, FlaskConical, Wallet, Percent, CalendarClock, CheckCircle2, Package, FileText, Download, BadgePercent } from 'lucide-react';
 import PeriodStepper from '../../components/common/PeriodStepper';
 import GlassViewLayout from '../../components/GlassViewLayout';
 import ViewTabBar from '../../components/common/ViewTabBar';
@@ -16,7 +16,7 @@ import { fetchDescuentos } from '@nucleo/data/descuentos';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { conteoDePromociones, csvListaDePromociones, estadoVisible, esLaboratorio, textoBuscable, mensajeDeCarga, estadoDescuento } from '@nucleo/utils/promocionesUtils';
+import { conteoDePromociones, csvListaDePromociones, esLaboratorio, filtrarPromociones, mensajeDeCarga, estadoDescuento, OPCIONES_ESTADO_PROMOCION } from '@nucleo/utils/promocionesUtils';
 import { hoySV, correrMes, etiquetaMes, mesSV } from '@nucleo/utils/fecha';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
@@ -75,34 +75,19 @@ const Cargando = () => <LoadingState className="flex-1 min-h-[320px]" />;
  * Por eso se carga sólo cuando se abre su pestaña — cada visita son varias
  * peticiones a un sistema ajeno.
  */
-/* Los estados que la pantalla PINTA, en el orden en que se buscan. Salen de
-   `estadoVisible`, que es quien los decide: escribirlos aparte los dejaría
-   desincronizados de las tarjetas el día que se agregue uno. */
-/* La opción vacía se llama como el FILTRO, no como su estado vacío. Es el
-   canon que `FilterBar.Sucursal` ya trae escrito —«nombra el filtro en vez de
-   describir su estado vacío, que es lo que hace que se lea igual esté puesto o
-   no»— y de paso ocupa la mitad, que es ancho que la píldora le devuelve a lo
-   demás. Reportado el 2026-09-05: la barra mostraba «Cualquiera» y «Todos», dos
-   palabras que no dicen de qué son. */
-/* «Terminada» NO está, y es el arreglo del 2026-10-01 («aunque cambie el
-   filtro, no me salen las finalizadas»). Activas y Seguimiento listan sólo las
-   vivas, así que la opción daba vacío SIEMPRE: un filtro que no puede devolver
-   nada. Las terminadas viven en Histórico, y ahí el estado no se ofrece porque
-   todas son la misma. */
-const ESTADOS = [
-    { value: '',           label: 'Estado' },
-    { value: 'activa',     label: 'Activa' },
-    { value: 'por_vencer', label: 'Por vencer' },
-    { value: 'vencida',    label: 'Vencida' },
-    { value: 'borrador',   label: 'Borrador' },
-];
+/* Los estados que la pantalla PINTA salen del núcleo
+   (`OPCIONES_ESTADO_PROMOCION`, derivado del mismo catálogo que `estadoVisible`):
+   escritos aparte se desincronizaban de las tarjetas. «Terminada» no está
+   —arreglo del 2026-10-01—: Activas y Seguimiento listan sólo las vivas, y las
+   terminadas viven en Histórico.
 
-/* La opción vacía nombra el filtro, igual que Estado. Y con `umbral={0}` va
-   como desplegable: tres opciones serían un segmentado en MAYÚSCULAS con
-   tracking —«TODAS · PRODUCTO · LABORATORIO», ~500px— y ésa era la mitad del
-   ancho de la píldora en el reporte «el filterbar es enorme». */
+   SIN opción vacía (2026-11-10): el rótulo del filtro («Estado», «Tipo»,
+   «Laboratorio») va en el `placeholder` y se vuelve a vacío con la ✕ de la
+   ranura o «Limpiar». La opción vacía con el mismo texto era el placeholder
+   copiado en la lista. Con `umbral={0}` va como desplegable: tres opciones
+   serían un segmentado en MAYÚSCULAS de ~500px, la mitad de la píldora en el
+   reporte «el filterbar es enorme». */
 const TIPOS = [
-    { value: '',            label: 'Tipo' },
     { value: 'producto',    label: 'Por producto' },
     { value: 'laboratorio', label: 'Por laboratorio' },
 ];
@@ -183,13 +168,12 @@ export default function PromocionesView() {
        Se borra al cambiar de pestaña: una fila de métricas que describe otra
        cosa es peor que no tenerla. */
     const [resumenTab, setResumenTab] = useState(null);
-    useEffect(() => { setResumenTab(null); }, [tab]); // eslint-disable-line react-hooks/set-state-in-effect -- el resumen es DE una pestaña; conservarlo al cambiar mostraría números de la anterior
 
     /* Lo que exporta la pestaña que tiene sus propios datos (Pagos,
        Excedentes). Lo publica ella con `onExportable`, igual que sus tarjetas,
-       y se suelta al cambiar de pestaña por el mismo motivo. */
+       y se suelta al cambiar de pestaña por el mismo motivo (abajo, junto con
+       el resumen, al cambiar `tab`). */
     const [exportadorTab, setExportadorTab] = useState(null);
-    useEffect(() => { setExportadorTab(null); }, [tab]); // eslint-disable-line react-hooks/set-state-in-effect -- el exportador es DE una pestaña
     const publicarExportador = useCallback((fn) => setExportadorTab(() => fn), []);
 
     const [descuentos, setDescuentos] = useState([]);
@@ -240,10 +224,16 @@ export default function PromocionesView() {
        olvida —se ajusta en el render al cambiar `tab`, sin efecto—, así que
        volver a entrar reintenta, que es lo que promete «vuelve a intentar». */
     const [descFallo, setDescFallo] = useState(null);
+    /* Al cambiar de pestaña también se sueltan el resumen y el exportador: son
+       DE una pestaña, y conservarlos mostraría números o exportaría la lista de
+       la anterior. Se ajusta en el render y no en un efecto: el efecto corría
+       después de pintar, con un cuadro de números ajenos. */
     const [tabVisto, setTabVisto] = useState(tab);
     if (tabVisto !== tab) {
         setTabVisto(tab);
         if (descFallo) setDescFallo(null);
+        if (resumenTab) setResumenTab(null);
+        if (exportadorTab) setExportadorTab(null);
     }
     const errorDesc = descFallo && descFallo.recarga === recargaDesc ? descFallo.error : null;
     // Los descuentos viven en un sistema ajeno: no hay forma de tenerlos
@@ -273,16 +263,6 @@ export default function PromocionesView() {
         for (const p of promos) for (const l of (p.laboratorios || [])) vistos.add(l);
         return [...vistos].sort((a, b) => a.localeCompare(b, 'es'));
     }, [promos]);
-
-    const filtradas = useMemo(() => {
-        const q = busqueda.trim();
-        return promos.filter((p) => {
-            if (q && !tokenMatch(q, textoBuscable(p))) return false;
-            if (fTipo && (esLaboratorio(p) ? 'laboratorio' : 'producto') !== fTipo) return false;
-            if (fLab && !(p.laboratorios || []).includes(fLab)) return false;
-            return true;
-        });
-    }, [promos, busqueda, fTipo, fLab]);
 
     /* El estado sólo recorta las VIVAS. En Histórico no se ofrece, así que
        tampoco puede filtrar: un «Activa» que quedó puesto desde la otra pestaña
@@ -315,14 +295,13 @@ export default function PromocionesView() {
         });
     }, [descuentos, busqueda, fDescSala, fDescEstado]);
 
-    /* Por el estado VISIBLE y no por `p.estado`: la pantalla pinta «Vencida» y
-       «Por vencer», que no son estados guardados sino una lectura de la fecha. */
-    const vivas = useMemo(
-        () => filtradas.filter((p) => p.estado !== 'finalizada'
-            && (!fEstado || estadoVisible(p).clave === fEstado)),
-        [filtradas, fEstado],
+    /* La búsqueda, el tipo, el laboratorio y el estado VISIBLE —«Vencida» y
+       «Por vencer» no son estados guardados sino una lectura de la fecha—: en
+       el núcleo (`filtrarPromociones`), el mismo recorte que la app. */
+    const { vivas, terminadas } = useMemo(
+        () => filtrarPromociones(promos, { q: busqueda, tipo: fTipo, lab: fLab, estado: fEstado }),
+        [promos, busqueda, fTipo, fLab, fEstado],
     );
-    const terminadas = useMemo(() => filtradas.filter((p) => p.estado === 'finalizada'), [filtradas]);
 
     /* Lo que se puede seguir: las vivas primero y DESPUÉS las terminadas. Una
        terminada también tiene un avance que mirar —lo que dejó—, y antes no
@@ -340,15 +319,13 @@ export default function PromocionesView() {
 
     /* La primera de la lista, para que Seguimiento abra con algo y no con un
        desplegable vacío que parece un error. Y si la elegida dejó de estar
-       —la búsqueda o un filtro la escondieron—, se pasa a la primera visible:
+       —la búsqueda o un filtro la escondieron—, se muestra la primera visible:
        quedarse con ella dejaba el desplegable sin valor y un detalle de algo
-       que ya no está en la lista. */
-    useEffect(() => {
-        if (!seguibles.length) return;
-        if (!seguida || !seguibles.some((p) => String(p.id) === String(seguida))) {
-            setSeguida(String(seguibles[0].id)); // eslint-disable-line react-hooks/set-state-in-effect -- la lista llega asincrónica; el default no se puede fijar antes de tenerla
-        }
-    }, [seguibles, seguida]);
+       que ya no está en la lista. Se DERIVA, no se escribe con un efecto: el
+       efecto pintaba un cuadro sin promoción antes de corregirse. */
+    const seguidaVisible = seguibles.some((p) => String(p.id) === String(seguida))
+        ? String(seguida)
+        : (seguibles.length ? String(seguibles[0].id) : '');
 
     /* ── Las tarjetas de la fila de arriba ────────────────────────────────
        Describen LO QUE SE ESTÁ MIRANDO, no la vista entera: se calculan sobre
@@ -552,7 +529,7 @@ export default function PromocionesView() {
                     todas={promos}
                     busqueda={busqueda}
                     filtrando={filtrosPuestos > 0}
-                    elegida={seguida}
+                    elegida={seguidaVisible}
                     onElegir={setSeguida}
                     onResumen={setResumenTab}
                     cache={cacheDetalle}
@@ -665,7 +642,7 @@ export default function PromocionesView() {
                                 {tab === 'seguimiento' && (
                                     <FilterBar.Section label="promoción" fija>
                                         <FilterBar.Opciones
-                                            value={String(seguida || '')}
+                                            value={seguidaVisible}
                                             onChange={(v) => setSeguida(v || '')}
                                             label="Promoción"
                                             options={opcionesSeguimiento}
@@ -694,7 +671,6 @@ export default function PromocionesView() {
                                             placeholder="Estado"
                                             umbral={0}
                                             options={[
-                                                { value: '', label: 'Estado' },
                                                 { value: 'activos', label: 'Descontando' },
                                                 { value: 'programados', label: 'Programados' },
                                                 { value: 'terminados', label: 'Terminados' },
@@ -770,8 +746,9 @@ export default function PromocionesView() {
                                         value={fEstado}
                                         onChange={(v) => setFEstado(v || '')}
                                         label="Estado"
-                                        options={ESTADOS}
+                                        options={OPCIONES_ESTADO_PROMOCION}
                                         placeholder="Estado"
+                                        umbral={0}
                                     />
                                 </FilterBar.Section>
                                 )}
@@ -783,11 +760,9 @@ export default function PromocionesView() {
                                             value={fLab}
                                             onChange={(v) => setFLab(v || '')}
                                             label="Laboratorio"
-                                            options={[
-                                                { value: '', label: 'Laboratorio' },
-                                                ...labsDisponibles.map((l) => ({ value: l, label: l })),
-                                            ]}
+                                            options={labsDisponibles.map((l) => ({ value: l, label: l }))}
                                             placeholder="Laboratorio"
+                                            umbral={0}
                                         />
                                     </FilterBar.Section>
                                 )}

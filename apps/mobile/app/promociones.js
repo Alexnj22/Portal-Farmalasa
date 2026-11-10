@@ -8,6 +8,11 @@
 // portal—: una fila de números que ignora el filtro dice 30 mientras la
 // pantalla muestra 4. Estado, Tipo y Laboratorio van en el menú de filtros.
 //
+// Si la base dice que el precio no está bajando en caja (`descuento_por_mover`:
+// la promoción sigue viva pero su descuento ya venció), la tarjeta lo avisa y
+// lleva a `promocion-reactivar` en modo «sólo descuento» — lo mismo que el
+// portal en Activas.
+//
 // Mantener presionada una tarjeta: Volver a borrador / Activar (con la misma
 // confirmación del portal), Duplicar, Reactivar y Editar (desde el editor, borrar
 // un borrador y elegir a quién le llega el resumen diario). Crear
@@ -21,10 +26,9 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPromociones } from '@nucleo/data/promociones';
 import {
-  conteoDePromociones, csvListaDePromociones, diasRestantes, esLaboratorio, estadoVisible, fmtLote, fmtUnidades, fmtVigencia,
-  mensajeDeCarga, rotuloMes, textoBuscable,
+  conteoDePromociones, csvListaDePromociones, diasRestantes, esLaboratorio, estadoVisible, filtrarPromociones, fmtLote, fmtUnidades, fmtVigencia,
+  mensajeDeCarga, OPCIONES_ESTADO_PROMOCION, rotuloMes,
 } from '@nucleo/utils/promocionesUtils';
-import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import Segmentos from '../componentes/Segmentos';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
@@ -40,6 +44,7 @@ import { Icono, TresDatos } from '../componentes/promociones/Piezas';
 import { alternarPromocion, duplicarConPreguntas } from '../componentes/promociones/acciones';
 import { DescargarCsv, Descuentos, Excedentes, Pagos } from '../componentes/promociones/Listas';
 import { guardarPromocion } from '../componentes/promociones/elegida';
+import AvisoDescuentoPorMover from '../componentes/promociones/AvisoDescuentoPorMover';
 
 function TarjetaPromocion({ p, puedeEditar, onAbrir, onMenu }) {
   const e = estadoVisible(p);
@@ -80,6 +85,7 @@ function TarjetaPromocion({ p, puedeEditar, onAbrir, onMenu }) {
             { rotulo: 'Lote', valor: p.lote_total == null ? '—' : `${fmtLote(p.lote_total)} u.` },
           ]} />
           {p.nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontStyle: 'italic' }}>{p.nota}</Text> : null}
+          <AvisoDescuentoPorMover p={p} puedeEditar={puedeEditar} />
         </View>
       </Vidrio>
     </Pressable>
@@ -115,21 +121,18 @@ export default function Promociones() {
 
   const q = texto.trim();
   const labsDisponibles = useMemo(() => [...new Set((promos || []).flatMap((p) => p.laboratorios || []))].sort((a, b) => a.localeCompare(b, 'es')), [promos]);
-  const filtradas = useMemo(() => (promos || []).filter((p) => {
-    if (q && !tokenMatch(q, textoBuscable(p))) return false;
-    if (fTipo !== 'todos' && (esLaboratorio(p) ? 'laboratorio' : 'producto') !== fTipo) return false;
-    if (fLab !== 'todos' && !(p.laboratorios || []).includes(fLab)) return false;
-    return true;
-  }), [promos, q, fTipo, fLab]);
-  const vivas = useMemo(() => filtradas.filter((p) => p.estado !== 'finalizada' && (fEstado === 'todos' || estadoVisible(p).clave === fEstado)), [filtradas, fEstado]);
-  const terminadas = useMemo(() => filtradas.filter((p) => p.estado === 'finalizada'), [filtradas]);
+  // El recorte es el del portal (`filtrarPromociones`, núcleo); «todos» es sin filtro.
+  const sinTodos = (v) => (v === 'todos' ? '' : v);
+  const { vivas, terminadas } = useMemo(() => filtrarPromociones(promos, {
+    q, tipo: sinTodos(fTipo), lab: sinTodos(fLab), estado: sinTodos(fEstado),
+  }), [promos, q, fTipo, fLab, fEstado]);
   const c = conteoDePromociones(vivas);
   const salaDe = useCallback((id) => (branches || []).find((b) => String(b.id) === String(id))?.name ?? null, [branches]);
 
   const recortaLista = pestana === 'activas' || pestana === 'historico';
   const grupos = [
     ...(pestana === 'activas' ? [{ id: 'estado', titulo: 'Estado', activa: fEstado, porDefecto: 'todos', onCambiar: setFEstado,
-      opciones: [{ id: 'todos', label: 'Todos los estados' }, { id: 'activa', label: 'Activa' }, { id: 'por_vencer', label: 'Por vencer' }, { id: 'vencida', label: 'Vencida' }, { id: 'borrador', label: 'Borrador' }] }] : []),
+      opciones: [{ id: 'todos', label: 'Todos los estados' }, ...OPCIONES_ESTADO_PROMOCION.map((o) => ({ id: o.value, label: o.label }))] }] : []),
     ...(recortaLista ? [
       { id: 'tipo', titulo: 'Tipo', activa: fTipo, porDefecto: 'todos', onCambiar: setFTipo,
         opciones: [{ id: 'todos', label: 'Todos los tipos' }, { id: 'producto', label: 'Por producto' }, { id: 'laboratorio', label: 'Por laboratorio' }] },

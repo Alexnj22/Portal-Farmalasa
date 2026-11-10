@@ -114,11 +114,21 @@ export default function AgregarProductos({ yaElegidos = [], onAgregar, laborator
         return n;
     });
 
-    const agregar = () => {
+    /* Las marcas se borran sólo si el llamador dice que entraron. `onAgregar`
+       puede devolver una promesa: `false` (o un fallo) es «no entraron» —en la
+       edición, cancelar «¿También le bajo el precio?» o un error— y las marcas
+       se quedan para reintentar sin volver a elegir todo. Sin respuesta
+       (el alta, que sólo agrega a la lista) cuenta como que entraron. */
+    const agregar = async () => {
         const elegidos = [...marcados.values()].filter((p) => !yaSet.has(Number(p.id)));
         if (!elegidos.length) return;
-        onAgregar?.(elegidos);
-        setMarcados(new Map());
+        let entraron = true;
+        try {
+            entraron = (await onAgregar?.(elegidos)) !== false;
+        } catch {
+            entraron = false;
+        }
+        if (entraron) setMarcados(new Map());
     };
 
     const alternarTodos = () => setMarcados((s2) => {

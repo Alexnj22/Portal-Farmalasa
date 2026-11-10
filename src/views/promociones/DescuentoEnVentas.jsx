@@ -7,8 +7,9 @@ import Checkbox from '../../components/common/Checkbox';
 import Notice from '../../components/common/Notice';
 import { fetchPreciosDeProductos } from '@nucleo/data/descuentos';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { fmtVigencia, ordenarPorPerdida, precioConDescuento } from '@nucleo/utils/promocionesUtils';
+import { TIPOS_DE_DESCUENTO, descuentoDesdeLaPromocion, fmtVigencia, ordenarPorPerdida } from '@nucleo/utils/promocionesUtils';
 import Campo from './Campo';
+import { FilaPrecioDelProducto } from './PiezasDelDescuento';
 
 /**
  * «¿Esta promoción además le baja el precio al cliente?»
@@ -65,20 +66,18 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
     }, [renglones]);
 
     /* La promoción tiene una vigencia POR RENGLÓN; el descuento es uno solo, así
-       que toma la ventana que las cubre a todas. */
-    const inicio = useMemo(() => {
-        const fs = renglones.map((r) => r.inicio).filter(Boolean).sort();
-        return fs[0] || '';
-    }, [renglones]);
+       que toma la ventana que las cubre a todas. La cuenta es la MISMA que se
+       manda al guardar (`descuentoDesdeLaPromocion`): escrita dos veces, la
+       pantalla podía mostrar una ventana y mandar otra.
 
-    /* El `fin` de un renglón puede estar vacío a propósito —«todavía no se
+       El `fin` de un renglón puede estar vacío a propósito —«todavía no se
        sabe» es un estado válido en la promoción—. Pero el sistema de ventas
        EXIGE una fecha de fin, así que cuando ninguno la tiene se pide acá en
        vez de inventar una: un descuento sin fecha de corte no se apaga solo. */
-    const finHeredado = useMemo(() => {
-        const fs = renglones.map((r) => r.fin).filter(Boolean).sort();
-        return fs[fs.length - 1] || '';
-    }, [renglones]);
+    const { inicio, fin: finHeredado } = useMemo(
+        () => descuentoDesdeLaPromocion(renglones, {}),
+        [renglones],
+    );
 
     const fin = finHeredado || valor.finPropio || '';
 
@@ -129,10 +128,7 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                                     <LiquidSelect
                                         value={valor.tipo || '%'}
                                         onChange={(v) => onCambiar('tipo', v)}
-                                        options={[
-                                            { value: '%', label: 'Porcentaje del renglón' },
-                                            { value: '$', label: 'Monto por cada unidad' },
-                                        ]}
+                                        options={TIPOS_DE_DESCUENTO}
                                         clearable={false}
                                         icon={Percent}
                                         ariaLabel="Cómo descuenta"
@@ -258,13 +254,14 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
                             {monto > 0 && (
                                 <ul className="divide-y divide-border-card rounded-lg border border-border-card">
                                     {enOrden.map((p) => (
-                                        <FilaPrecio
-                                            key={p.id}
-                                            producto={p}
-                                            datos={porProducto.get(p.id)}
-                                            tipo={valor.tipo || '%'}
-                                            monto={monto}
-                                        />
+                                        <li key={p.id}>
+                                            <FilaPrecioDelProducto
+                                                producto={p}
+                                                datos={porProducto.get(p.id)}
+                                                tipo={valor.tipo || '%'}
+                                                monto={monto}
+                                            />
+                                        </li>
                                     ))}
                                 </ul>
                             )}
@@ -275,51 +272,3 @@ export default function DescuentoEnVentas({ renglones, salas, valor, onCambiar, 
         </div>
     );
 }
-
-function FilaPrecio({ producto, datos, tipo, monto }) {
-    const precio = Number(datos?.precio) || 0;
-    /* El costo llega YA con IVA desde `get_precios_para_descuento`. Tiene que
-       ser así: `vineta` es el precio al público —con IVA— y la columna `costo`
-       es el precio neto de la factura de compra, o sea 13 % más barato. Sin la
-       conversión, «bajo el costo» dejaba pasar descuentos que venden
-       perdiendo. */
-    const costo = Number(datos?.costo_con_iva) || 0;
-    const queda = precio ? precioConDescuento(precio, tipo, monto) : null;
-    const bajoCosto = queda !== null && costo > 0 && queda < costo;
-    /* Cuánto se pierde POR UNIDAD. El «bajo el costo» a secas no dice si son
-       tres centavos o dos dólares, y la decisión no es la misma: una campaña
-       puede aceptar perder poco por mover volumen, no perder el doble de lo que
-       cuesta. Va por unidad porque es la única cifra que se puede multiplicar
-       por lo que se espera vender. */
-    const pierde = bajoCosto ? costo - queda : 0;
-
-    return (
-        <li className="flex items-center gap-2 px-3 py-2">
-            <div className="min-w-0 flex-1">
-                <p className="text-body-sm text-content truncate">{producto.nombre}</p>
-                <p className="text-caption text-content-3 tabular-nums">
-                    {!precio ? 'Sin precio registrado' : (
-                        <>
-                            {formatMoney(precio)} →{' '}
-                            <span className={bajoCosto ? 'text-danger font-semibold' : 'text-success font-semibold'}>
-                                {formatMoney(queda)}
-                            </span>
-                            {costo > 0 && <> · cuesta {formatMoney(costo)} con IVA</>}
-                        </>
-                    )}
-                </p>
-            </div>
-            {bajoCosto && (
-                <span className="text-caption text-danger font-semibold shrink-0 text-right leading-tight">
-                    <span className="flex items-center gap-1 justify-end">
-                        <AlertTriangle size={13} aria-hidden /> bajo el costo
-                    </span>
-                    <span className="block tabular-nums font-normal">
-                        pierde {formatMoney(pierde)} por unidad
-                    </span>
-                </span>
-            )}
-        </li>
-    );
-}
-

@@ -5,7 +5,6 @@ import LiquidSelect from '../../components/common/LiquidSelect';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import Button from '../../components/common/Button';
-import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
 import AvisoDeBorrador from '../../components/common/AvisoDeBorrador';
 import { LoadingState } from '../../components/common/StateViews';

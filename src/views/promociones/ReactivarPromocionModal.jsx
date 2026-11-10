@@ -8,9 +8,9 @@ import Checkbox from '../../components/common/Checkbox';
 import { reactivarPromocion } from '@nucleo/data/promociones';
 import { fetchDescuentosDePromocion, moverDescuentosA } from '@nucleo/data/descuentos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { hoySV, mesSV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
+import { fechaTexto, hoySV, mesSV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { fmtVigencia, separarDescuentosDePromocion } from '@nucleo/utils/promocionesUtils';
-import { formatMoney } from '@nucleo/utils/formatNumber';
+import { comoDescuenta } from '@nucleo/utils/rebajasVenta';
 import Campo from './Campo';
 
 /**
@@ -50,13 +50,8 @@ import Campo from './Campo';
  * que ella (la lista lo avisa con «El precio no bajó»): no reactiva nada,
  * sólo lleva el descuento hasta el fin de la promoción.
  */
-/** «31 oct 2026». Con componentes: una fecha sin hora leída como UTC retrocede un día. */
-function fechaCorta(iso) {
-    if (!iso) return '—';
-    const [y, m, d] = String(iso).split('-').map(Number);
-    return new Intl.DateTimeFormat('es-SV', { day: 'numeric', month: 'short', year: 'numeric' })
-        .format(new Date(y, m - 1, d));
-}
+/** «31 oct 2026», con el canónico de fechas (`fechaTexto`). */
+const fechaCorta = (iso) => fechaTexto(iso, { day: 'numeric', month: 'short', year: 'numeric' }, '—');
 
 export default function ReactivarPromocionModal({ promo, open, onClose, onReactivada, modo = 'reactivar' }) {
     const soloDescuento = modo === 'descuento';
@@ -205,7 +200,7 @@ export default function ReactivarPromocionModal({ promo, open, onClose, onReacti
                                 {aMover.map((d) => (
                                     <li key={d.id} className="text-caption text-content-2 break-words">
                                         <span className="font-semibold">{d.descripcion}</span>
-                                        {' · '}{d.tipo === '%' ? `${Number(d.monto)} %` : `${formatMoney(Number(d.monto))} por unidad`}
+                                        {' · '}{comoDescuenta(d)}
                                         {' · '}{d.productos?.length ?? 0} producto{d.productos?.length === 1 ? '' : 's'}
                                         {' · '}hoy {fmtVigencia(d.inicio, d.fin)}
                                         {d.ligado === false && (

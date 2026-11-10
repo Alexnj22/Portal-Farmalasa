@@ -1,6 +1,8 @@
 import { formatMoney, formatQty } from './formatNumber';
-import { correrMes, hoySV, mesSV } from './fecha';
+import { diasHasta, hoySV } from './fecha';
 import { mensajeAmigable } from './errorMessages';
+import { tokenMatch } from './searchUtils';
+import { normalizarCargo as normalizarNombre } from './roles';
 
 /**
  * Promociones — lo que comparten las pestañas.
@@ -49,13 +51,35 @@ export function fmtVigencia(inicio, fin) {
     return `${f(a, a.getFullYear() !== b.getFullYear())} – ${f(b, true)}`;
 }
 
-/** Cuántos días le quedan a una vigencia. Negativo si ya venció. */
-export function diasRestantes(fin) {
-    if (!fin) return null;
-    const [y, m, d] = String(fin).split('-').map(Number);
-    const [hy, hm, hd] = hoySV().split('-').map(Number);
-    return Math.round((new Date(y, m - 1, d) - new Date(hy, hm - 1, hd)) / 86400000);
-}
+/**
+ * Cuántos días le quedan a una vigencia. Negativo si ya venció.
+ * Alias delgado de `diasHasta` (fecha.js), que es quien cuenta; `null` sin fecha.
+ */
+export const diasRestantes = (fin) => (fin ? diasHasta(fin) : null);
+
+/**
+ * Los estados que se PINTAN, en el orden en que se buscan. Es el catálogo del
+ * que sale `estadoVisible` y también el filtro de Estado de la lista (portal y
+ * app): escritos aparte, el filtro y la tarjeta se desincronizan el día que se
+ * agregue uno.
+ */
+const ESTADOS_VISIBLES = {
+    activa:     { clave: 'activa',     rotulo: 'Activa',     variant: 'success' },
+    por_vencer: { clave: 'por_vencer', rotulo: 'Por vencer', variant: 'warning' },
+    vencida:    { clave: 'vencida',    rotulo: 'Vencida',    variant: 'warning' },
+    borrador:   { clave: 'borrador',   rotulo: 'Borrador',   variant: 'neutral' },
+    finalizada: { clave: 'finalizada', rotulo: 'Terminada',  variant: 'neutral' },
+};
+
+/**
+ * Las opciones del filtro de Estado. «Terminada» NO está: Activas y Seguimiento
+ * listan sólo las vivas, así que la opción daría vacío siempre — las
+ * terminadas viven en Histórico. Sin opción vacía: el rótulo del filtro va en
+ * el `placeholder` (el placeholder nunca es una opción).
+ */
+export const OPCIONES_ESTADO_PROMOCION = Object.values(ESTADOS_VISIBLES)
+    .filter((e) => e.clave !== 'finalizada')
+    .map((e) => ({ value: e.clave, label: e.rotulo }));
 
 /**
  * El estado que se PINTA, que no es siempre el que guarda la base: «por vencer»
@@ -63,12 +87,12 @@ export function diasRestantes(fin) {
  * un proceso que lo mantenga al día y a que alguien lo mire cuando se atrase.
  */
 export function estadoVisible(promo) {
-    if (promo?.estado === 'finalizada') return { clave: 'finalizada', rotulo: 'Terminada', variant: 'neutral' };
-    if (promo?.estado === 'borrador')   return { clave: 'borrador',   rotulo: 'Borrador',  variant: 'neutral' };
+    if (promo?.estado === 'finalizada') return { ...ESTADOS_VISIBLES.finalizada };
+    if (promo?.estado === 'borrador')   return { ...ESTADOS_VISIBLES.borrador };
     const dias = diasRestantes(promo?.fin);
-    if (dias !== null && dias < 0)  return { clave: 'vencida',    rotulo: 'Vencida',    variant: 'warning' };
-    if (dias !== null && dias <= 7) return { clave: 'por_vencer', rotulo: 'Por vencer', variant: 'warning' };
-    return { clave: 'activa', rotulo: 'Activa', variant: 'success' };
+    if (dias !== null && dias < 0)  return { ...ESTADOS_VISIBLES.vencida };
+    if (dias !== null && dias <= 7) return { ...ESTADOS_VISIBLES.por_vencer };
+    return { ...ESTADOS_VISIBLES.activa };
 }
 
 /** El rótulo de la presentación de un renglón. NULL = cualquiera. */
@@ -85,6 +109,12 @@ export const MOTIVO_CIERRE = {
     lote_agotado:     'Se vendió el lote',
     fin_de_vigencia:  'Se cumplió la fecha',
 };
+
+/** El motivo del cierre de un renglón; una clave que no se conoce se dice «Terminado», nunca cruda. */
+export const motivoDeCierre = (clave) => MOTIVO_CIERRE[clave] || 'Terminado';
+
+/** «Terminado · Se vendió el lote», o «Terminado» a secas si el motivo no se conoce. */
+export const rotuloDeCierre = (clave) => (MOTIVO_CIERRE[clave] ? `Terminado · ${MOTIVO_CIERRE[clave]}` : 'Terminado');
 
 /** Agrupa los renglones por laboratorio, que es como se leen. */
 export function porLaboratorio(renglones = []) {
@@ -150,19 +180,32 @@ export function mesesRecientes(cuantos = 13) {
     return out;
 }
 
-/**
- * El mes anterior al de hoy, en AAAA-MM.
- *
- * Existe para que nadie lo saque de una POSICIÓN de `mesesRecientes`: un
- * `meses[1]` se lee como «el anterior» y deja de serlo el día que la lista
- * cambia de orden, que es exactamente lo que pasó.
- */
-export function mesAnterior() {
-    return correrMes(mesSV(), -1);
-}
-
 /** El resumen de una promoción de laboratorio para la tarjeta. */
 export const esLaboratorio = (p) => p?.tipo === 'laboratorio';
+
+/**
+ * La lista recortada por la barra y los filtros, partida en lo que se mira:
+ * `filtradas` (búsqueda, tipo y laboratorio), `vivas` (las que no terminaron,
+ * además por el estado VISIBLE —«Vencida» y «Por vencer» no son estados
+ * guardados—) y `terminadas`. Portal y app la usan igual.
+ *
+ * @param {any[]} promos
+ * @param {{ q?: string, tipo?: string, lab?: string, estado?: string }} filtros  vacío = sin recorte
+ */
+export function filtrarPromociones(promos, { q = '', tipo = '', lab = '', estado = '' } = {}) {
+    const texto = String(q ?? '').trim();
+    const filtradas = (promos || []).filter((p) => {
+        if (texto && !tokenMatch(texto, textoBuscable(p))) return false;
+        if (tipo && (esLaboratorio(p) ? 'laboratorio' : 'producto') !== tipo) return false;
+        if (lab && !(p.laboratorios || []).includes(lab)) return false;
+        return true;
+    });
+    return {
+        filtradas,
+        vivas: filtradas.filter((p) => p.estado !== 'finalizada' && (!estado || estadoVisible(p).clave === estado)),
+        terminadas: filtradas.filter((p) => p.estado === 'finalizada'),
+    };
+}
 
 /**
  * En cuánto queda UNA unidad con un descuento aplicado.
@@ -190,7 +233,7 @@ export function precioConDescuento(precio, tipo, monto) {
  * y la columna `costo` es el precio neto de la factura de compra, así que
  * crudos no se pueden comparar.
  */
-export function perdidaPorUnidad(datos, tipo, monto) {
+function perdidaPorUnidad(datos, tipo, monto) {
     const precio = Number(datos?.precio) || 0;
     const costo = Number(datos?.costo_con_iva) || 0;
     if (!precio || !costo) return 0;
@@ -242,6 +285,30 @@ export function descuentoDesdeLaPromocion(renglones, valor) {
            salas manda tres veces con distinta sala. Ver `mandarDescuento`. */
         productos,
     };
+}
+
+/**
+ * La sala elegida para el descuento ya no está entre las de la promoción.
+ * Desmarcar arriba la sala elegida dejaba `branchId` apuntando a una donde la
+ * promoción no aplica, y el descuento se mandaba ahí. Sólo cuenta con VARIAS
+ * marcadas: con una va ahí y con ninguna a todas (`destinoDelDescuento`).
+ * `marcadas` es `{ [branchId]: true }`.
+ */
+export function descSalaFuera(salas, marcadas, desc) {
+    const elegidas = (salas || []).filter((x) => marcadas?.[x.id]);
+    return !!(desc?.activo && elegidas.length > 1 && !desc.todas && desc.branchId
+        && !elegidas.some((x) => String(x.id) === String(desc.branchId)));
+}
+
+/**
+ * Todo lo que impide mandar el descuento de una promoción —el del formulario y
+ * el de la sala fuera de la promoción—. Lo usan el alta, la edición y la app.
+ */
+export function problemasDelDescuentoDeLaPromocion(renglones, desc, { alcanceTodo = false, salas = [], marcadas = {} } = {}) {
+    return [
+        ...problemasDelDescuento(renglones, desc, alcanceTodo),
+        ...(descSalaFuera(salas, marcadas, desc) ? ['La sala del descuento ya no está entre las salas de la promoción.'] : []),
+    ];
 }
 
 /** Lo que impide guardar el descuento, dicho antes de intentarlo. */
@@ -575,15 +642,34 @@ export function destinoDelDescuento(salas, marcadas, desc) {
 }
 
 /**
+ * El id del proveedor que paga un renglón leído de `get_promocion`.
+ *
+ * Por `supplier_id` cuando la base lo trae: es la clave. El NOMBRE es sólo el
+ * respaldo para la ficha que todavía no lo trae, y se cruza exacto primero y
+ * normalizado después (sin tildes ni espacios de sobra, como `buscarCargo`):
+ * un rótulo no es una clave, y comparado crudo falla en silencio. `null` si no
+ * da con ninguno. Devuelve el `value` de la lista (texto), como el desplegable.
+ */
+export function proveedorDelRenglon(renglon, proveedores = []) {
+    if (renglon?.supplier_id != null && renglon.supplier_id !== '') return String(renglon.supplier_id);
+    const nombre = renglon?.proveedor;
+    if (!nombre) return null;
+    const exacto = (proveedores || []).find((x) => x.label === nombre);
+    if (exacto) return exacto.value;
+    const norm = normalizarNombre(nombre);
+    return (proveedores || []).find((x) => normalizarNombre(x.label) === norm)?.value ?? null;
+}
+
+/**
  * Los productos que se AGREGAN a una promoción que ya existe, con la forma de
  * `agregar_renglones_a_promocion`. Heredan la vigencia de la promoción (el
  * primer inicio y el último fin de sus renglones), sus salas en 0 («aplica
  * acá, sin lote») y el bono del primer renglón: es la misma campaña, y nacer en
  * $0 con «tiene bono» diría que paga algo cuando no paga nada.
  *
- * La ficha trae el NOMBRE del proveedor, no su id, así que se resuelve contra
- * la lista; si no da con uno, devuelve `{ error }` y no se escribe (la base lo
- * rechazaría con un mensaje que no dice nada).
+ * El proveedor se resuelve con `proveedorDelRenglon` (por id; por nombre sólo
+ * de respaldo); si no da con uno, devuelve `{ error }` y no se escribe (la base
+ * lo rechazaría con un mensaje que no dice nada).
  */
 export function renglonesParaAgregar(promo, prods, proveedores = []) {
     const renglones = promo?.renglones ?? [];
@@ -593,7 +679,7 @@ export function renglonesParaAgregar(promo, prods, proveedores = []) {
     const reparto = (promo?.salas ?? []).map((b) => ({ branch_id: Number(b), unidades: 0 }));
     const modelo = renglones[0] ?? {};
     const pagaProveedor = modelo.tiene_bono && (modelo.paga || 'proveedor') === 'proveedor';
-    const proveedorId = pagaProveedor ? (proveedores.find((x) => x.label === modelo.proveedor)?.value ?? null) : null;
+    const proveedorId = pagaProveedor ? proveedorDelRenglon(modelo, proveedores) : null;
     if (pagaProveedor && proveedorId == null) {
         return { error: `No se pudo identificar al proveedor «${modelo.proveedor || 'sin nombre'}» del primer producto. Revisa ese producto y vuelve a agregar.` };
     }
@@ -802,4 +888,121 @@ export function separarDescuentosDePromocion(descuentos = []) {
         else dudosos.push(d);
     }
     return { aMover, dudosos };
+}
+
+// ── Guardar una promoción nueva: crear → activar → descuento (2026-11-10) ──
+// La secuencia vivía dos veces —`PromocionModal` y la pantalla nueva de la
+// app— y las dos se equivocaban: el portal, si la activación fallaba pero
+// había descuento, seguía y cerraba sin que se viera el aviso; la app decía
+// «Quedó en borrador» y en la línea siguiente «Ya está activa». Ahora vive UNA
+// vez y las pantallas sólo pintan lo que devuelve.
+
+/**
+ * Crea la promoción, la activa si se pidió y manda su descuento si lo tiene.
+ *
+ * **La promoción PRIMERO y el descuento después**: al revés, si la promoción
+ * fallara quedaría un descuento vivo bajándole el precio a productos reales.
+ * Con `promoCreada` (el id de un intento anterior) no se vuelve a crear ni a
+ * activar: se reintenta sólo el descuento. Nunca lanza: todo lo que pasó
+ * vuelve en el resultado.
+ *
+ * Las funciones de datos llegan inyectadas (`datos`): el núcleo de reglas no
+ * le habla a la base, y así la secuencia se prueba sin red.
+ *
+ * @param {object} p
+ * @param {string} p.nombre
+ * @param {string} [p.nota]
+ * @param {any[]} p.renglones      los del formulario (`renglonDePromocionNuevo`)
+ * @param {boolean} [p.activar]
+ * @param {object} p.desc          `{ activo, tipo, monto, todas, branchId, finPropio }`
+ * @param {any[]} p.salas          las salas de venta
+ * @param {object} p.marcadas      `{ [branchId]: true }` — las de la promoción
+ * @param {number|null} [p.promoCreada]
+ * @param {boolean} [p.forzarDescuento]
+ * @param {{ crearPromocion: Function, activarPromocion: Function, guardarDescuento: Function }} datos
+ * @returns {Promise<{ creada: boolean, id: number|null, errorCrear: any, activada: boolean|null,
+ *   errorActivar: any, descuento: 'ok'|'avisos'|'error'|'ninguno', avisos: any[], errorDescuento: any }>}
+ *   `activada`: `true`/`false` si se intentó; `null` si no se pidió o la promoción ya existía.
+ */
+export async function guardarPromocionNueva(p, datos) {
+    const res = {
+        creada: !!p.promoCreada, id: Number(p.promoCreada) || null, errorCrear: null,
+        activada: null, errorActivar: null,
+        descuento: 'ninguno', avisos: [], errorDescuento: null,
+    };
+    if (!res.creada) {
+        let creada;
+        try {
+            creada = await datos.crearPromocion({ nombre: p.nombre, nota: p.nota, renglones: renglonesParaCrear(p.renglones) });
+        } catch (e) {
+            res.errorCrear = e;
+            return res;
+        }
+        res.creada = true;
+        res.id = Number(creada?.id) || null;
+        if (p.activar) {
+            if (!res.id) {
+                res.activada = false;
+                res.errorActivar = Object.assign(new Error('el portal no supo con qué número quedó'), { userFacing: true });
+            } else {
+                try {
+                    await datos.activarPromocion(res.id, true);
+                    res.activada = true;
+                } catch (e) {
+                    res.activada = false;
+                    res.errorActivar = e;
+                }
+            }
+        }
+    }
+    if (!p.desc?.activo) return res;
+    if (!res.id) {
+        res.descuento = 'error';
+        res.errorDescuento = Object.assign(new Error('el portal no supo con qué número quedó la promoción, así que no se pudo ligar; créalo desde Descuentos'), { userFacing: true });
+        return res;
+    }
+    try {
+        const r = await datos.guardarDescuento({
+            ...descuentoDesdeLaPromocion(p.renglones, p.desc),
+            descripcion: String(p.nombre ?? '').trim(),
+            ...destinoDelDescuento(p.salas, p.marcadas, p.desc),
+            promocion_id: res.id,
+            forzar: p.forzarDescuento === true,
+        });
+        if (r?.avisos) { res.descuento = 'avisos'; res.avisos = r.avisos; }
+        else res.descuento = 'ok';
+    } catch (e) {
+        res.descuento = 'error';
+        res.errorDescuento = e;
+    }
+    return res;
+}
+
+/**
+ * Lo que la pantalla dice de un guardado, en palabras del negocio.
+ *
+ * `cerrar`: todo salió como se pidió y se puede cerrar. Si la activación
+ * falló NO se cierra en silencio: la promoción queda en borrador y se dice.
+ * `fallos`: las frases de lo que quedó a medias (vacío si nada).
+ * `exito`: la frase de cierre; dice «activa» sólo si de verdad se activó.
+ */
+export function avisoDelGuardado(res, nombre = '') {
+    const n = String(nombre ?? '').trim();
+    if (res.errorCrear) {
+        return { cerrar: false, fallos: [mensajeAmigable(res.errorCrear, 'No se pudo crear la promoción.')], exito: null };
+    }
+    const fallos = [];
+    if (res.activada === false) {
+        fallos.push(`La promoción «${n}» quedó creada en borrador, pero no se pudo activar: `
+            + `${mensajeAmigable(res.errorActivar, 'vuelve a intentar desde Activas')}.`);
+    }
+    if (res.descuento === 'error') {
+        fallos.push(`La promoción «${n}» quedó creada, pero el descuento no: `
+            + `${mensajeAmigable(res.errorDescuento, 'no se pudo guardar')}. Puedes reintentar sólo el descuento.`);
+    }
+    const cerrar = res.creada && res.activada !== false
+        && (res.descuento === 'ok' || res.descuento === 'ninguno');
+    const estado = res.activada === true ? 'Ya está activa.' : 'Quedó en borrador.';
+    const exito = res.descuento === 'ok' ? `${estado} Con su descuento en la venta.` : estado;
+    return { cerrar, fallos, exito };
 }

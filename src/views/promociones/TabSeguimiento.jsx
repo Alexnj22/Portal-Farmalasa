@@ -13,7 +13,7 @@ import { exportCsv } from '@nucleo/utils/csvExport';
 import MatrizLaboratorio from './MatrizLaboratorio';
 import TituloSeccion from './TituloSeccion';
 import {
-    fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, MOTIVO_CIERRE,
+    fmtMoneda, fmtUnidades, porLaboratorio, rotuloPresentacion, rotuloDeCierre, resumenDeSeguimiento, tonoDeAvance,
     esLaboratorio, estadoVisible, fmtVigencia, rotuloMes, mensajeDeCarga, vendedoresPorSala, csvVendedoresDePromocion,
 } from '@nucleo/utils/promocionesUtils';
 
@@ -82,7 +82,9 @@ export default function TabSeguimiento({
     const sinDueno   = detalle?.sin_dueno;
     const grupos     = useMemo(() => porLaboratorio(renglones), [renglones]);
     const salasVend  = useMemo(() => vendedoresPorSala(vendedores), [vendedores]);
-    const conBono    = useMemo(() => renglones.some((r) => r.tiene_bono), [renglones]);
+    // Las cuatro cifras y «paga bono» salen del núcleo: las mismas de la app.
+    const resumen    = useMemo(() => resumenDeSeguimiento(detalle), [detalle]);
+    const conBono    = resumen.conBono;
 
     /* Las tarjetas de arriba las pinta la vista, pero los números salen de ACÁ:
        son de la promoción elegida, y pedir `get_promocion` otra vez desde el
@@ -93,16 +95,14 @@ export default function TabSeguimiento({
         if (esLab) return;
         if (!detalle) { onResumen?.([]); return; }
         onResumen?.([
-            { key: 'u', icon: Package, label: 'Unidades vendidas',
-              value: fmtUnidades(renglones.reduce((a, r) => a + (r.vendido_base || 0), 0)) },
-            { key: 'd', icon: FileText, label: 'Documentos',
-              value: fmtUnidades(renglones.reduce((a, r) => a + (r.documentos || 0), 0)) },
-            { key: 'v', icon: Users, label: 'Vendedores', value: vendedores.length },
+            { key: 'u', icon: Package, label: 'Unidades vendidas', value: fmtUnidades(resumen.unidades) },
+            { key: 'd', icon: FileText, label: 'Documentos', value: fmtUnidades(resumen.documentos) },
+            { key: 'v', icon: Users, label: 'Vendedores', value: resumen.vendedores },
             { key: 'b', icon: DollarSign, label: 'Bono ganado',
-              value: fmtMoneda(vendedores.reduce((a, v) => a + Number(v.bono || 0), 0)),
+              value: fmtMoneda(resumen.bono),
               iconBg: 'bg-brand/10', iconCls: 'text-brand-text', valueCls: 'text-brand' },
         ]);
-    }, [detalle, renglones, vendedores, onResumen, esLab]);
+    }, [detalle, resumen, onResumen, esLab]);
 
     /* Las tarjetas de una de laboratorio salen de su matriz. Antes publicaba
        `null` y la fila de arriba caía a los números de Activas. */
@@ -235,7 +235,8 @@ export default function TabSeguimiento({
 
 function TarjetaRenglon({ r }) {
     const pct = Number(r.pct) || 0;
-    const tono = pct >= 100 ? 'bg-success' : pct >= 80 ? 'bg-warning' : 'bg-brand';
+    // El tono lo decide el núcleo (`tonoDeAvance`, el mismo de la app); acá, su color.
+    const tono = { success: 'bg-success', warning: 'bg-warning', info: 'bg-brand' }[tonoDeAvance(pct)];
 
     return (
         <div
@@ -268,7 +269,7 @@ function TarjetaRenglon({ r }) {
 
             {r.estado === 'cerrado' && (
                 <p className="text-caption text-content-3">
-                    Terminado · {MOTIVO_CIERRE[r.cerrado_motivo] || r.cerrado_motivo}
+                    {rotuloDeCierre(r.cerrado_motivo)}
                 </p>
             )}
 

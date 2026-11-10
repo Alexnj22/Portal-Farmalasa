@@ -17,6 +17,7 @@ import {
   mensajeDeCarga, ofertaDesdeDescuento, pagoBonoPendiente,
 } from '@nucleo/utils/promocionesUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
+import { comoDescuenta } from '@nucleo/utils/rebajasVenta';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { hoySV } from '@nucleo/utils/fecha';
@@ -127,7 +128,7 @@ export function Descuentos({ busqueda, salaDe, sala = '', estado = '', onAlcance
                   <Pildora texto={e.rotulo} color={colorDeVariante(e.variant)} />
                 </View>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-                  {[d.tipo === '%' ? `${d.monto}%` : d.monto != null ? `${formatMoney(d.monto)} por unidad` : null, fmtVigencia(d.inicio, d.fin), d.todas_las_salas ? 'Todas las salas' : (salaDe(d.branch_id) ?? d.sala_rotulo), `${productos.length} producto${productos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
+                  {[d.monto != null ? comoDescuenta(d) : null, fmtVigencia(d.inicio, d.fin), d.todas_las_salas ? 'Todas las salas' : (salaDe(d.branch_id) ?? d.sala_rotulo), `${productos.length} producto${productos.length === 1 ? '' : 's'}`].filter(Boolean).join(' · ')}
                 </Text>
                 {d.promocion ? <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '600' }}>{`De la promoción «${d.promocion}»`}</Text> : null}
                 {/* `en_app`: null = sin oferta; true publicada; false armada sin publicar. */}

@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, Check, Percent, Trash2, Tag, Plus, Info } from 'lucide-react';
+import { AlertTriangle, Check, Percent, Tag, Plus, Info } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
 import LiquidDatePicker from '../../components/common/LiquidDatePicker';
@@ -20,10 +20,11 @@ import {
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import {
-    TIPOS_DE_DESCUENTO, cuentaDelProducto, formaDeDescuento, ordenarPorPerdida, payloadDeDescuento, problemasAlCorregirDescuento,
+    TIPOS_DE_DESCUENTO, formaDeDescuento, ordenarPorPerdida, payloadDeDescuento, problemasAlCorregirDescuento,
 } from '@nucleo/utils/promocionesUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import Campo from './Campo';
+import { AvisosDelDescuento, FilaPrecioDelProducto } from './PiezasDelDescuento';
 
 /**
  * Los dos tipos, dichos como los aplica la venta.
@@ -99,7 +100,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
     useEffect(() => {
         if (!open || !editando) return undefined;
         let vivo = true;
-        setCargando(true); // eslint-disable-line react-hooks/set-state-in-effect -- el descuento vive en un sistema ajeno: no hay forma de tenerlo antes de pedirlo
+        setCargando(true);
         setFallo(null);
         fetchDescuento(descuentoId)
             .then((d) => {
@@ -114,7 +115,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
     // ── Los precios de los productos elegidos ──────────────────────────────
     const ids = useMemo(() => f.productos.map((p) => p.id).join(','), [f.productos]);
     useEffect(() => {
-        if (!open || !ids) { setPrecios([]); return undefined; } // eslint-disable-line react-hooks/set-state-in-effect -- sin productos no hay precios que mostrar
+        if (!open || !ids) { setPrecios([]); return undefined; }
         let vivo = true;
         fetchPreciosDeProductos(ids.split(',').map(Number))
             .then((r) => { if (vivo) setPrecios(r || []); })
@@ -262,12 +263,13 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                         {f.productos.length > 0 && (
                             <div className="rounded-lg border border-border-card divide-y divide-border-card">
                                 {enOrden.map((p) => (
-                                    <FilaProducto
+                                    <FilaPrecioDelProducto
                                         key={p.id}
                                         producto={p}
                                         datos={porProducto.get(p.id)}
                                         tipo={f.tipo}
                                         monto={monto}
+                                        destacado
                                         onQuitar={() => quitar(p.id)}
                                     />
                                 ))}
@@ -293,23 +295,7 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
                         {/* Confirmación, no informe: la lista de productos de
                             arriba ya dice en cuánto queda cada uno y cuánto se
                             pierde, ordenada por el que más pierde. */}
-                        {avisos.length > 0 && (
-                            <Notice variant="warning" icon={AlertTriangle}>
-                                {avisos.length === 1 ? (
-                                    <p>{avisos[0].texto}</p>
-                                ) : (
-                                    <ul className="list-disc pl-4 space-y-0.5">
-                                        {avisos.map((a) => <li key={a.texto}>{a.texto}</li>)}
-                                    </ul>
-                                )}
-                                {avisos.some((a) => a.tipo === 'solape') && (
-                                    <p className="mt-1.5 text-caption">
-                                        Cuando dos descuentos toman el mismo producto en las mismas fechas,
-                                        la venta aplica uno solo y no dice cuál.
-                                    </p>
-                                )}
-                            </Notice>
-                        )}
+                        <AvisosDelDescuento avisos={avisos} />
 
                         {fallo && <Notice variant="danger" icon={AlertTriangle}>{fallo}</Notice>}
                     </div>
@@ -345,52 +331,3 @@ export default function DescuentoModal({ open, descuentoId, alcanceTodo, onClose
         </LiquidModal>
     );
 }
-
-/**
- * Un producto del descuento, con en cuánto le queda el precio.
- *
- * El precio que se muestra es el MÁS BAJO de sus presentaciones y el costo el
- * MÁS ALTO: el peor caso es el que decide. Un promedio escondería justo la
- * presentación que se vendería perdiendo.
- */
-function FilaProducto({ producto, datos, tipo, monto, onQuitar }) {
-    /* El costo llega YA con IVA desde `get_precios_para_descuento`. Tiene que
-       ser así: `vineta` es el precio al público —con IVA— y la columna `costo`
-       es el precio neto de la factura de compra, o sea 13 % más barato. Sin la
-       conversión, «bajo el costo» dejaba pasar descuentos que venden
-       perdiendo. La cuenta sale del núcleo (`cuentaDelProducto`). */
-    const { precio, costo, queda, bajoCosto, pierde } = cuentaDelProducto(datos, tipo, monto);
-    /* Cuánto se pierde POR UNIDAD. El «bajo el costo» a secas no dice si son
-       tres centavos o dos dólares, y la decisión no es la misma: una campaña
-       puede aceptar perder poco por mover volumen, no perder el doble de lo que
-       cuesta. Va por unidad porque es la única cifra que se puede multiplicar
-       por lo que se espera vender. */
-
-    return (
-        <div className="flex items-center gap-2 px-3 py-2.5">
-            <div className="min-w-0 flex-1">
-                <p className="text-body-sm font-semibold text-content truncate">{producto.nombre}</p>
-                <p className="text-caption text-content-3 tabular-nums">
-                    {!precio ? 'Sin precio registrado' : (
-                        <>
-                            {formatMoney(precio)} → <span className={bajoCosto ? 'text-danger font-semibold' : 'text-success font-semibold'}>{formatMoney(queda)}</span>
-                            {costo > 0 && <> · cuesta {formatMoney(costo)} con IVA</>}
-                        </>
-                    )}
-                </p>
-            </div>
-            {bajoCosto && (
-                <span className="text-caption text-danger font-semibold shrink-0 text-right leading-tight">
-                    <span className="flex items-center gap-1 justify-end">
-                        <AlertTriangle size={13} aria-hidden /> bajo el costo
-                    </span>
-                    <span className="block tabular-nums font-normal">
-                        pierde {formatMoney(pierde)} por unidad
-                    </span>
-                </span>
-            )}
-            <Button variant="ghost" size="sm" iconOnly icon={Trash2} onClick={onQuitar} title="Quitar" />
-        </div>
-    );
-}
-

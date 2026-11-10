@@ -121,7 +121,7 @@ export default function Album() {
     <>
       <nav className="nav">
         <div className="contenedor">
-          <Link to="/" className="marca">{boda.novios.el[0]} & {boda.novios.ella[0]}</Link>
+          <Link to="/" className="marca">{boda.novios.ella[0]} & {boda.novios.el[0]}</Link>
           <ul>
             <li><Link to="/">{t('Inicio', 'Home')}</Link></li>
             <li><a className="activo" href="#">{t('Álbum', 'Album')}</a></li>

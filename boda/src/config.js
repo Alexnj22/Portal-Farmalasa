@@ -15,11 +15,11 @@ export const boda = {
   idiomas: ['es', 'en'],
 
   novios: {
-    el: 'Daniel',
-    ella: 'Valeria',
+    el: 'Eduardo',
+    ella: 'Alessandra',
     // Cómo se firma en el sitio y en el WhatsApp
-    firma: 'Daniel & Valeria',
-    hashtag: '#DanielYValeria2027',
+    firma: 'Alessandra & Eduardo',
+    hashtag: '#AlessandraYEduardo2027',
   },
 
   // Hora local del lugar. El desfase (-06:00 = El Salvador) evita que el
@@ -123,7 +123,7 @@ export const boda = {
   // Momentos para etiquetar las fotos del álbum
   momentos: ['Ceremonia', 'Cóctel', 'Fiesta', 'Detalles', 'Selfies'],
 
-  contacto: { whatsapp: '50370000000', nombre: 'Daniel' },
+  contacto: { whatsapp: '50370000000', nombre: 'Eduardo' },
 
   // Lista de canciones (opcional): enlace a una playlist colaborativa
   playlist: '',

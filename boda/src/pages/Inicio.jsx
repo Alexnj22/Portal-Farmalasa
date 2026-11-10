@@ -46,7 +46,7 @@ export default function Inicio({ codigo }) {
     <>
       <nav className="nav">
         <div className="contenedor">
-          <a href="#inicio" className="marca">{novios.el[0]} & {novios.ella[0]}</a>
+          <a href="#inicio" className="marca">{novios.ella[0]} & {novios.el[0]}</a>
           <ul>
             {secciones.map(([id, txt]) => <li key={id}><a href={`#${id}`}>{txt}</a></li>)}
             {faseAlMenos(fase, 'boda') && <li><Link to="/album">{t('Álbum', 'Album')}</Link></li>}
@@ -65,7 +65,7 @@ export default function Inicio({ codigo }) {
             {t('Querida', 'Dear')} {inv.grupo.nombre}:
           </p>}
           <div className="etiqueta">{titulo}</div>
-          <h1>{novios.el} <span style={{ fontSize: '0.6em' }}>&</span> {novios.ella}</h1>
+          <h1>{novios.ella} <span style={{ fontSize: '0.6em' }}>&</span> {novios.el}</h1>
           <div className="fecha">{fase === 'save-the-date' ? fechaCorta() : fechaLarga()}</div>
           {fase !== 'recuerdos' && <Countdown />}
           <div className="acciones">

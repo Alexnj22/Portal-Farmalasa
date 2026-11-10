@@ -74,7 +74,7 @@ Sin configurar nada corre en **modo demo**: todo se guarda en el navegador y tra
 
 1. Importar el repo en Vercel, con **Root Directory = `boda`**.
 2. Variables de entorno: `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` (ver `.env.example`).
-3. Opcional: un dominio propio (p. ej. `danielyvaleria.com`).
+3. Opcional: un dominio propio (p. ej. `alessandrayeduardo.com`).
 
 ## Seguridad, en corto
 

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.37 — Puntos: Avisos con alcance de sala también en sus tablas y en cambios de cliente
+
+- El permiso de la pestaña Avisos que recibió la jefatura (v2.1500.36) abría además `puntos_cambios_pendientes` y tres tablas (`puntos_irregularidad`, `puntos_anulacion_gastada`, `puntos_cambio_pendiente`) sin mirar la sala. Ahora las cuatro aplican el alcance: ALL ve todas; BRANCH, su sala. Probado: supervisor 24 de 24 irregularidades, jefa de Salud 1 ninguna ajena.
+
 ## v2.1500.36 — Puntos: el aviso de canje sin saldo dice qué pasó y cuál es el error; la jefatura lo ve en Avisos con su sala
 
 - La notificación y la nota de Puntos → Avisos dicen lo mismo, armado por `puntos_aviso_sin_saldo_texto`: «En la venta 0000093719_COF, a ELVA SALAZAR MENJIVAR se le aplicaron 700 puntos ($7.00 de descuento), pero sólo tenía 552. Faltaron 148 puntos: $1.48 de descuento se dio sin puntos que lo respaldaran. Vendió: BLANCA ZELAYA. Hay que revisar con quien vendió…». Título: «Canje de puntos de más en Salud 1».

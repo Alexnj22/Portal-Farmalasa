@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.39 — Base: el vigía del chat sólo arma listas si hay a quién avisar, y plan de memoria
+
+- La base se congeló ~60 s el 2026-11-10 (y se reinició el 09-11): el servidor de 2 GB vive con 700–900 MB de swap. Plan sin subir de plan en `docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md`.
+- Fase 0 (configuración, sin código): la reserva de conexiones de la API pasó de 31 a 15.
+- Fase 1a: `chat_vigilar_espera` (cada minuto) arma la lista del equipo y la de supervisión sólo cuando un chat las necesita. Mismos avisos: comparado en pruebas sobre seis casos, avisos idénticos por md5. Sin nadie esperando: 28 ms → 1 ms.
+
 ## v2.1500.38 — App de clientes: Sonidos pausa de verdad y sin burbuja
 
 - App de clientes · Sonidos: pausar desde la pantalla bloqueada ya no quita el reproductor. Se marcaba como «en vivo» y a eso iOS no le ofrece pausa (su botón detiene); además el motor ya no se suspende en pausa (iOS daba la reproducción por terminada). En pausa más de 30 minutos, se apaga solo.

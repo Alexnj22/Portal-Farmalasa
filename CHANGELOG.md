@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.7 — Avisos de reservas y encargos sólo a la sala y Bodega; varias salas sólo supervisión
+
+- Pedido del usuario: los avisos de reservas y encargos (confirmaciones, cambios de fecha, prórrogas, cancelaciones, pagos) ya no llegan a la administración, sólo a los involucrados. `destinatarios_de_reservas` sumaba a todo el que tuviera Reservas con alcance de red (los cuatro cargos de admin); ahora es la sala de la reserva (o quien la cubre hoy) más Bodega. «Devolución en efectivo por autorizar» sigue yendo a quien la autoriza.
+- «Compró en 3 salas o más» vuelve a ser sólo de supervisión (se deshace lo de v2.1501.6 en el panel y la policy).
+
 ## v2.1501.6 — Seguridad: el alcance por sala también en lo que se escribe; avisos de varias salas para la jefatura
 
 - Segunda parte de la auditoría de alcance: las funciones que escriben. Se cruzaron las ~180 funciones DEFINER que escriben con sala contra los cargos que no ven toda la red. Pedidos, encargos, reservas, traslados, bolsas, cortes y conteos ya validaban la sala. Las escrituras directas a tablas también (salvo MIN·MAX para Jefe/a de Compras, por decisión).

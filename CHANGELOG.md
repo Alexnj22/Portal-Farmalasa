@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.25 — App de clientes: control de bloqueo sólo con permiso
+
+- App de clientes: Sonidos sólo muestra el control de la pantalla de bloqueo si la versión instalada trae el permiso de audio en segundo plano (en Android, sin él la app se cerraría).
+
 ## v2.1500.24 — App de clientes: Sonidos rediseñado, ocho ambientes inmersivos
 
 - App de clientes: la pantalla de ruido blanco ahora es «Sonidos», con ocho ambientes que suenan distinto: lluvia (gotas con tono), olas que crecen y rompen, fogata que cruje, noche melancólica (grillos, acorde lejano y un búho), ventilador, blanco, rosa y profundo.

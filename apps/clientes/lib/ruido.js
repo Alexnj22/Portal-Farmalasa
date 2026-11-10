@@ -16,9 +16,11 @@
 // aunque el teléfono esté bloqueado y JavaScript dormido.
 //
 // Un binario viejo, sin el permiso, sigue funcionando igual que antes: suena
-// con la app abierta y se pausa al bloquear.
+// con la app abierta, se pausa al bloquear y no muestra el control
+// (`conSegundoPlano`).
 import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 let AudioAPI = null;
 try { AudioAPI = require('react-native-audio-api'); } catch { AudioAPI = null; }
@@ -267,7 +269,18 @@ export function useRuido() {
   return e;
 }
 
-const Aviso = () => AudioAPI?.PlaybackNotificationManager ?? null;
+// El control de la pantalla de bloqueo SÓLO si este binario trae el permiso.
+// En Android, mostrarlo arranca un servicio de primer plano: en un binario sin
+// él declarado, la app se cierra. La configuración que se lee es la que viajó
+// con este paquete, que siempre es la del binario (misma huella).
+function conSegundoPlano() {
+  try {
+    const pl = (Constants.expoConfig?.plugins ?? []).find((x) => Array.isArray(x) && x[0] === 'react-native-audio-api');
+    const op = pl?.[1] ?? {};
+    return Platform.OS === 'ios' ? op.iosBackgroundMode === true : op.androidForegroundService === true;
+  } catch { return false; }
+}
+const Aviso = () => (conSegundoPlano() ? AudioAPI?.PlaybackNotificationManager ?? null : null);
 
 // En iPhone, mientras suena, la sesión NO se mezcla con otras apps: es lo que
 // le da el control en la pantalla de bloqueo. Al parar vuelve a mezclarse,

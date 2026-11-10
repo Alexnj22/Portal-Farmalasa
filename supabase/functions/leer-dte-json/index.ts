@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { extractText, getDocumentProxy } from "npm:unpdf@1.6.2";
-import { cargosYSalaDelDia, requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders } from "../_shared/security.ts";
+import { cargosYSalaDelDia, requireInvokeSecret, requireActiveEmployeeUser, getCorsHeaders, secretoDeCircuito } from "../_shared/security.ts";
 import { loteYVence, nombreLimpio } from "../_shared/loteVencimiento.ts";
 import { elegirFactor, esFleteOServicio, factorEnLaDescripcion, factorDebilEnLaDescripcion, tamanosEnLaDescripcion, empaqueEnLaDescripcion, envaseUnitarioEnLaDescripcion, tamanoDeCajaEnLaDescripcion, factorDescuentoDeFactura } from "../_shared/compraSobre.ts";
 import { dteDeManual } from "../_shared/compraManual.ts";
@@ -179,7 +179,7 @@ Deno.serve(async (req: Request) => {
       }
       const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-products`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET")}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${secretoDeCircuito("sync")}` },
         body: "{}", signal: AbortSignal.timeout(90_000),
       });
       const j = await r.json().catch(() => null);

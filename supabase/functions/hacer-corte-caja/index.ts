@@ -1,7 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
-} from "../_shared/security.ts";
+  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
 import { leerReferencias } from "../_shared/preventaCaja.ts";
 
@@ -619,7 +618,7 @@ Deno.serve(async (req) => {
     const automatico = body.automatico === true;
     let quien: Awaited<ReturnType<typeof requireActiveEmployeeUser>> = null;
     if (automatico) {
-      const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+      const secreto = secretoDeCircuito("fiscal");
       if (!secreto || req.headers.get("x-cierre-automatico") !== secreto) {
         return json({ ok: false, error: "UNAUTHORIZED" }, 401);
       }
@@ -1786,8 +1785,8 @@ Deno.serve(async (req) => {
      * 23:10 esperaría hasta las 7 de la mañana. */
     if (ok && idCorte && !simular) {
       const disparar = async () => {
-        const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
-        if (!secreto) { console.error("hacer-corte-caja: sin ADMIN_INVOKE_SECRET, no se avisó al sync"); return; }
+        const secreto = secretoDeCircuito("sync");
+        if (!secreto) { console.error("hacer-corte-caja: sin SYNC_INVOKE_SECRET, no se avisó al sync"); return; }
         const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-cortes-caja`, {
           method: "POST",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` },

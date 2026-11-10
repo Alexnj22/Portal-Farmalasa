@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvokeSecret } from "../_shared/security.ts";
+import { type ClienteAdmin, getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, requireInvokeSecret, secretoDeCircuito } from "../_shared/security.ts";
 // `anular_factura.php` NO se usa acá a propósito: estas facturas ya están
 // anuladas en el ERP —eso es lo que las puso en la bolsa— y lo único que
 // falta es el trámite ante Hacienda.
@@ -529,7 +529,7 @@ Deno.serve(async (req) => {
     //
     // Se le pide al sync que relea ESA fecha y ESA sucursal. El valor sigue
     // viniendo de donde tiene que venir.
-    const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+    const secreto = secretoDeCircuito("sync");
     for (const clave of aResincronizar) {
       const [suc, fecha] = clave.split("|");
       try {

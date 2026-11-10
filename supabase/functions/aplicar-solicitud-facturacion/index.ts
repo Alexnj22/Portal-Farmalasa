@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
 import {
   BASE, ANULAR, login, pedir, leerRespuesta, formatearDui, estaAnulada, enviarDteAlMH,
   RechazoMH, leerFicha,
@@ -98,7 +98,7 @@ declare const EdgeRuntime: { waitUntil(p: Promise<unknown>): void };
  */
 function refrescarVentaDelDia(branchId: number | null, fecha: unknown): void {
   const dia = String(fecha ?? "").slice(0, 10);
-  const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+  const secreto = secretoDeCircuito("sync");
   if (!branchId || !/^\d{4}-\d{2}-\d{2}$/.test(dia) || !secreto) return;
   EdgeRuntime.waitUntil(
     fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-dte-sales`, {
@@ -437,7 +437,7 @@ Deno.serve(async (req) => {
           // No se transmite: se anula tal cual (ver el bloque de arriba).
           avisos.push("No se transmite a Hacienda por decisión escrita.");
         } else if (!selloValido(previa?.recibido_mh)) {
-          const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+          const secreto = secretoDeCircuito("fiscal");
           if (!secreto)
             return json({
               ok: false,

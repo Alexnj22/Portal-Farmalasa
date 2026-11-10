@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.20 — Secreto de cron: cada función acepta sólo el de su circuito
+
+Paso 2 del reparto: una función que declara su circuito acepta SOLO ese
+secreto; `ADMIN_INVOKE_SECRET` queda para las herramientas manuales sin
+circuito. Las 13 llamadas entre funciones mandan el secreto del circuito del
+destino (`secretoDeCircuito`). Desplegadas 36 funciones en orden (quien llama
+primero); verificado: crons en 200/202 y ningún 401 real en los registros.
+
 ## v2.1500.19 — App de clientes: logo horizontal de Puntos Salud en el encabezado
 
 - App de clientes: el encabezado lleva el logo horizontal de Puntos Salud («PUNTOS» y «Salud» en cursiva, en una línea, con borde blanco). Armado de nuevo, sin letras cortadas.

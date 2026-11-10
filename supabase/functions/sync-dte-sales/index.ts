@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, getErpBranchMap, getErpInvMap, requireInvokeSecret } from "../_shared/security.ts";
+import { getCorsHeaders, getErpBranchMap, getErpInvMap, requireInvokeSecret, secretoDeCircuito } from "../_shared/security.ts";
 import { selectAllByIn } from "../_shared/db.ts";
 
 // ERP credentials are loaded from Supabase Secret ERP_BRANCH_MAP and ERP_INV_BRANCH_MAP (JSON arrays).
@@ -52,7 +52,7 @@ function pedirCatalogoPorProductosNuevos(nuevos: number, origen: string) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
+      Authorization: `Bearer ${secretoDeCircuito('sync') ?? ''}`,
     },
     body: '{}',
     signal: AbortSignal.timeout(90_000),

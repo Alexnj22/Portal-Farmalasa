@@ -1,5 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
+import { getCorsHeaders, requireInvokeSecret, secretoDeCircuito } from "../_shared/security.ts";
 
 // ═══════════════════════════════════════════════════════════════════════════
 // El día que nadie cerró se cierra solo — una hora después del cierre.
@@ -102,7 +102,7 @@ Deno.serve(async (req) => {
 
     const url = Deno.env.get("SUPABASE_URL")!;
     const servicio = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const secreto = Deno.env.get("ADMIN_INVOKE_SECRET")!;
+    const secreto = secretoDeCircuito("fiscal")!;
     const supabase = createClient(url, servicio);
 
     const { data: decisiones, error } = await supabase.rpc("caja_cierre_automatico_salas");

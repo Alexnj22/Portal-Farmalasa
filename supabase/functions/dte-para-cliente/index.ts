@@ -39,7 +39,7 @@
 //
 // Ni una línea de esto habla del sistema de origen en lo que ve el usuario.
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
 
 const EMISOR = "https://clientesdte3.oss.com.sv/farma_salud/downloads";
 const CORREO_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
@@ -135,7 +135,7 @@ Deno.serve(async (req) => {
     if (!selloValido(f.recibido_mh)) {
       const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
         method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET")}` },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${secretoDeCircuito("fiscal")}` },
         body: JSON.stringify({ alcance: "una", invoice_id: invoiceId, forzar_cof_noche: true }),
         signal: AbortSignal.timeout(140_000),
       });

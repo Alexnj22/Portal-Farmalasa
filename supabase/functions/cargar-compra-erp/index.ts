@@ -19,7 +19,7 @@
 // el documento no dice.
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
 import { BASE, login, pedir } from "../_shared/erp-dte.ts";
 import { descartarUnaLinea } from "../_shared/erp-descarte.ts";
 import { dteDeManual, validarManual } from "../_shared/compraManual.ts";
@@ -306,7 +306,7 @@ async function enviarCompra(admin: any, x: {
   // barrido del domingo (10 días) o nunca. Después de responder, sin esperarla.
   EdgeRuntime.waitUntil(fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-erp-purchases`, {
     method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET") ?? ""}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${secretoDeCircuito("sync") ?? ""}` },
     body: JSON.stringify({ fini: x.sobre.fecha, ffin: x.sobre.fecha, branchId: BODEGA_BRANCH_ID }),
     signal: AbortSignal.timeout(140_000),
   }).then((r) => { if (!r.ok) console.error("[cargar-compra-erp] traerla al portal:", r.status); })
@@ -2226,7 +2226,7 @@ async function productoNuevo(admin: any, body: any, creaQuien: string | null = n
   if (creaQuien) {
     const ok = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-products`, {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET") ?? ""}` },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${secretoDeCircuito("sync") ?? ""}` },
       body: "{}", signal: AbortSignal.timeout(60_000),
     }).then(async (r) => r.ok && (await r.json().catch(() => ({})))?.ok !== false)
       .catch((e) => { console.error("[cargar-compra-erp] catálogo al día:", e?.message ?? e); return false; });

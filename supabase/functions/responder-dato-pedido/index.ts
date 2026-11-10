@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser } from "../_shared/security.ts";
+import { getCorsHeaders, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito } from "../_shared/security.ts";
 import { login, leerFicha, escribirCampos, correoValido, repararCorreo } from "../_shared/erp-clientes.ts";
 
 // La sala contesta el dato que el portal le pidió, y el portal cierra el asunto.
@@ -134,7 +134,7 @@ Deno.serve(async (req) => {
     // sabría si sirvió. El resultado se informa tal cual: puede volver a
     // rechazarse por otra cosa, y decir «listo» sobre eso sería mentir.
     let documento: Record<string, unknown> | null = null;
-    const secreto = Deno.env.get("ADMIN_INVOKE_SECRET");
+    const secreto = secretoDeCircuito("fiscal");
     if (secreto) {
       const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/regularizar-dte`, {
         method: "POST",

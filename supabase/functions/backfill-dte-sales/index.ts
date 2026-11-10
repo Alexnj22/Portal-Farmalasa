@@ -4,7 +4,7 @@ import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
 const SYNC_URL = `${Deno.env.get('SUPABASE_URL') ?? ''}/functions/v1/sync-dte-sales`;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 // sync-dte-sales valida requireInvokeSecret → enviar ADMIN_INVOKE_SECRET, no el service key.
-const INVOKE_SECRET = Deno.env.get('ADMIN_INVOKE_SECRET') ?? '';
+const INVOKE_SECRET = Deno.env.get('SYNC_INVOKE_SECRET') ?? '';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const fmt = (d: Date) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;

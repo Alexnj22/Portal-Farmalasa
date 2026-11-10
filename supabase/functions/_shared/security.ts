@@ -31,12 +31,20 @@ export function getCorsHeaders(req: Request): Record<string, string> {
 // cargar-compra-erp → sync-erp-purchases…). Retirarlo es el paso siguiente.
 export type Circuito = "sync" | "fiscal" | "avisos";
 
+export function secretoDeCircuito(circuito: Circuito): string | undefined {
+  return Deno.env.get(`${circuito.toUpperCase()}_INVOKE_SECRET`);
+}
+
+// Paso 2 (2026-11-10, el mismo día): una función que declara su circuito acepta
+// SOLO ese secreto. ADMIN_INVOKE_SECRET (rotado ese día) queda para las
+// herramientas que se corren a mano y no declaran circuito (erp-csv-probe,
+// backfill de proveedores…). Quien llama a otra función manda el secreto del
+// circuito del DESTINO: `secretoDeCircuito("sync")`.
 export function requireInvokeSecret(req: Request, circuito?: Circuito): boolean {
   const auth = req.headers.get("Authorization") ?? "";
-  const aceptados = [Deno.env.get("ADMIN_INVOKE_SECRET")];
-  if (circuito) aceptados.push(Deno.env.get(`${circuito.toUpperCase()}_INVOKE_SECRET`));
+  const secreto = circuito ? secretoDeCircuito(circuito) : Deno.env.get("ADMIN_INVOKE_SECRET");
   // Un secreto sin definir nunca abre: `Bearer undefined` no se compara.
-  return aceptados.some((s) => !!s && auth === `Bearer ${s}`);
+  return !!secreto && auth === `Bearer ${secreto}`;
 }
 
 // ── JWT user validation (for calls from authenticated frontend users) ─────────

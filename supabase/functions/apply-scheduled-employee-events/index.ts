@@ -6,7 +6,7 @@
 // (mismo mapeo que registerEmployeeEvent en el frontend).
 
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { requireInvokeSecret } from "../_shared/security.ts";
+import { requireInvokeSecret, secretoDeCircuito } from "../_shared/security.ts";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -176,7 +176,7 @@ Deno.serve(async (req: Request) => {
         try {
           const r = await fetch(`${supabaseUrl}/functions/v1/disable-employee-auth`, {
             method: "POST",
-            headers: { "Content-Type": "application/json", Authorization: `Bearer ${Deno.env.get("ADMIN_INVOKE_SECRET") ?? ""}` },
+            headers: { "Content-Type": "application/json", Authorization: `Bearer ${secretoDeCircuito("sync") ?? ""}` },
             body: JSON.stringify({ employeeId: ev.employee_id, action: "disable" }),
           });
           const cuerpo = await r.json().catch(() => null) as { ok?: boolean; error?: string } | null;

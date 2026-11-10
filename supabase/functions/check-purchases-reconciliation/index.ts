@@ -1,5 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
-import { checkCronSecret, getCorsHeaders, getErpBranchMap } from "../_shared/security.ts";
+import { checkCronSecret, getCorsHeaders, getErpBranchMap, secretoDeCircuito } from "../_shared/security.ts";
 import { selectAllPaged } from "../_shared/db.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 
@@ -250,7 +250,7 @@ Deno.serve(async (req) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `Bearer ${Deno.env.get('ADMIN_INVOKE_SECRET') ?? ''}`,
+            Authorization: `Bearer ${secretoDeCircuito('sync') ?? ''}`,
           },
           body: JSON.stringify({ fini: h.desde, ffin: h.hasta, branchId: h.branchId, incremental: true }),
           signal: AbortSignal.timeout(restante - MARGEN_MS),

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.8 — Archivo de la migración identidad_una_vez_por_consulta
+
+- La migración `20261110221411_identidad_una_vez_por_consulta` estaba aplicada en producción sin su archivo en el repo; se guardó desde `schema_migrations.statements`, sin cambios.
+
 ## v2.1501.7 — Avisos de reservas y encargos sólo a la sala y Bodega; varias salas sólo supervisión
 
 - Pedido del usuario: los avisos de reservas y encargos (confirmaciones, cambios de fecha, prórrogas, cancelaciones, pagos) ya no llegan a la administración, sólo a los involucrados. `destinatarios_de_reservas` sumaba a todo el que tuviera Reservas con alcance de red (los cuatro cargos de admin); ahora es la sala de la reserva (o quien la cubre hoy) más Bodega. «Devolución en efectivo por autorizar» sigue yendo a quien la autoriza.

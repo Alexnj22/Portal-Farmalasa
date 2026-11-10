@@ -66,42 +66,6 @@ export async function guardarDescuento(payload) {
     throw new Error(data.error || 'No se pudo guardar el descuento.');
 }
 
-/** Los ids de los descuentos que una promoción tiene ligados en la caja. */
-export async function fetchIdsDeDescuentosDePromocion(promocionId) {
-    const { data, error } = await supabase
-        .from('promociones').select('descuentos_erp').eq('id', Number(promocionId)).maybeSingle();
-    if (error) throw error;
-    return (data?.descuentos_erp ?? []).map(Number);
-}
-
-/**
- * Mueve la fecha de fin de un descuento y nada más.
- *
- * Relee el descuento en el momento de escribir, no usa lo que la pantalla leyó
- * al abrirse: el origen guarda el descuento ENTERO —productos incluidos—, y
- * entre que se abrió la ventana y se apretó alguien pudo agregarle un producto
- * desde el sistema de ventas. Mandar la foto vieja se lo llevaría sin error.
- *
- * Devuelve lo mismo que `guardarDescuento`: `{ ok }` o `{ avisos }`.
- */
-export async function moverFinDeDescuento(id, fin, { forzar = false } = {}) {
-    const d = await fetchDescuento(id);
-    // Nunca lo acorta: si ya llega hasta esa fecha o más, se deja como está.
-    if (d.fin >= fin) return { ok: true, sinCambio: true };
-    return guardarDescuento({
-        id: Number(id),
-        descripcion: d.descripcion,
-        tipo: d.tipo,
-        monto: Number(d.monto),
-        inicio: d.inicio,
-        fin,
-        todas_las_salas: d.todas_las_salas === true,
-        branch_id: d.branch_id ?? null,
-        productos: (d.productos ?? []).map((p) => Number(p.id)),
-        forzar,
-    });
-}
-
 /** Borra. El origen no tiene «apagar»: o se mueve la fecha de fin, o se borra. */
 export async function borrarDescuento(id) {
     const data = await llamar({ accion: 'borrar', id: Number(id) });
@@ -131,6 +95,14 @@ export async function sincronizarProductosDelDescuento(promocionId, { agregar = 
         quitar: quitar.map(Number),
     });
     if (data.ok !== true) throw new Error(data.error || 'No se pudo actualizar el descuento.');
+    /* Los que no se pudieron leer o escribir no se callan: antes la respuesta
+       decía «listo» aunque uno no se hubiera tocado. */
+    const fallidos = Array.isArray(data.fallidos) ? data.fallidos : [];
+    if (fallidos.length) {
+        const cuales = fallidos.map((f) => `«${f.descripcion}»: ${f.error}`).join(' ');
+        const hechos = (data.cambiados ?? []).length;
+        throw new Error(`${hechos ? `Se actualizaron ${hechos}, pero no` : 'No'} se pudo actualizar ${fallidos.length === 1 ? 'un descuento' : `${fallidos.length} descuentos`}. ${cuales}`);
+    }
     return data;
 }
 
@@ -167,45 +139,45 @@ export async function fotoParaApp(id) {
 }
 
 /**
- * Los descuentos de una promoción, leídos del origen (para reactivarla y mover
- * también su descuento). Vivía en `ReactivarPromocionModal`; la app reactiva
- * con lo mismo.
+ * Los descuentos de una promoción (para reactivarla y mover también su
+ * descuento). La web y la app reactivan con lo mismo.
+ *
+ * Salen de la COPIA de la caja (`promocion_descuentos`), en una sola llamada:
+ * antes se pedía cada uno a la caja, con su login, sólo para mostrarlo. La
+ * escritura (`moverDescuentosA`) igual relee la caja antes de tocar nada, así
+ * que lo que se muestra no decide lo que se escribe. Uno ligado que la copia
+ * todavía no tiene se pide a la caja como antes; uno que la copia sabe borrado
+ * no se ofrece.
  *
  * Trae los LIGADOS y, además, los que todavía no lo están pero son de ella
- * (2026-11-10, Rinokem: el descuento se había cargado aparte, la promoción no
- * lo conocía y reactivarla no bajó el precio). Quién es de quién no se decide
- * acá: lo dice la base (`promocion_descuentos_por_ligar`, mismo juez que el
- * cron que liga solo). Cada uno vuelve con:
+ * (2026-11-10, Rinokem). Quién es de quién lo dice la base, con el mismo juez
+ * que el cron que liga solo. Cada uno vuelve con:
  *   · `ligado` — ya era de la promoción;
  *   · `candidatas` — en cuántas promociones encaja uno sin ligar. Con más de
  *     una, la pantalla no lo marca sola: que decida quien mira.
  */
 export async function fetchDescuentosDePromocion(promocionId) {
-    const [ids, porLigar] = await Promise.all([
-        fetchIdsDeDescuentosDePromocion(promocionId),
-        fetchDescuentosPorLigar(promocionId),
-    ]);
-    const ligados = new Set(ids);
-    const sueltos = porLigar.filter((p) => !ligados.has(p.id));
-    const leer = (id, extra) => fetchDescuento(id).then((d) => ({ ...d, ...extra }));
-    return Promise.all([
-        ...ids.map((id) => leer(id, { ligado: true, candidatas: 1 })),
-        ...sueltos.map((p) => leer(p.id, { ligado: false, candidatas: p.candidatas })),
-    ]);
-}
-
-/** Los descuentos de la caja que son de esta promoción y no están ligados. */
-export async function fetchDescuentosPorLigar(promocionId) {
-    const { data, error } = await supabase.rpc('promocion_descuentos_por_ligar', { p_id: Number(promocionId) });
+    const { data, error } = await supabase.rpc('promocion_descuentos', { p_id: Number(promocionId) });
     if (error) throw error;
-    return (/** @type {any[]} */ (data) ?? []).map((r) => ({ id: Number(r.id), candidatas: Number(r.candidatas) }));
+    const filas = /** @type {any[]} */ (data) ?? [];
+    return Promise.all(filas
+        .filter((d) => !d.borrado)
+        .map((d) => {
+            const extra = { ligado: d.ligado === true, candidatas: Number(d.candidatas) || 1 };
+            if (!d.en_copia) return fetchDescuento(d.id).then((x) => ({ ...x, ...extra }));
+            return {
+                id: Number(d.id), descripcion: d.descripcion, tipo: d.tipo, monto: Number(d.monto),
+                inicio: d.inicio, fin: d.fin, todas_las_salas: d.todas_las_salas === true,
+                branch_id: d.branch_id ?? null, productos: d.productos ?? [], ...extra,
+            };
+        }));
 }
 
 /**
  * Liga un descuento a su promoción. La base sólo acepta lo que su juez propone
  * (`NO_CORRESPONDE` si no): no es una puerta para ligar cualquier cosa.
  */
-export async function ligarDescuentoAPromocion(promocionId, descuentoId) {
+async function ligarDescuentoAPromocion(promocionId, descuentoId) {
     const { data, error } = await supabase.rpc('ligar_descuento_a_promocion', {
         p_promocion: Number(promocionId), p_descuento: Number(descuentoId),
     });
@@ -227,18 +199,40 @@ export async function ligarDescuentoAPromocion(promocionId, descuentoId) {
  * recupera el cron que liga solo.
  */
 export async function moverDescuentosA(lista, fin, mensaje = (e) => e?.message || 'No se pudo mover el descuento.', { promocionId = null } = {}) {
+    const pedidos = (lista || []).filter((d) => d?.id);
+    if (!pedidos.length) return [];
+    let resultados;
+    try {
+        /* UNA llamada para todos (`mover_fin`): el servidor lee la lista una
+           vez, relee cada descuento justo antes de escribirlo y confirma al
+           final. Antes eran dos llamadas por descuento, cada una con su login. */
+        const data = await llamar({
+            accion: 'mover_fin',
+            fin,
+            promocion_id: promocionId ? Number(promocionId) : null,
+            items: pedidos.map((d) => ({ id: Number(d.id), forzar: !!d.avisos })),
+        });
+        if (data.ok !== true) throw new Error(data.error || 'No se pudo mover el descuento.');
+        resultados = new Map((data.resultados ?? []).map((r) => [Number(r.id), r]));
+    } catch (e) {
+        // Si la llamada entera falló, faltan todos, con el mismo motivo.
+        const texto = mensaje(e);
+        return pedidos.map((d) => ({ ...d, avisos: undefined, error: texto }));
+    }
+
     const quedan = [];
-    for (const d of lista || []) {
-        try {
-            const r = await moverFinDeDescuento(d.id, fin, { forzar: !!d.avisos });
-            if (r.avisos) { quedan.push({ ...d, avisos: r.avisos.map((a) => a.texto), error: undefined }); continue; }
-            if (promocionId && d.ligado === false) {
-                await ligarDescuentoAPromocion(promocionId, d.id).catch((e) => {
-                    console.error('[descuentos] ligar a la promoción:', e?.message ?? e);
-                });
-            }
-        } catch (e) {
-            quedan.push({ ...d, error: mensaje(e) });
+    for (const d of pedidos) {
+        const r = resultados.get(Number(d.id));
+        if (!r) { quedan.push({ ...d, avisos: undefined, error: mensaje(new Error('La caja no contestó por este descuento.')) }); continue; }
+        if (Array.isArray(r.avisos) && r.avisos.length) {
+            quedan.push({ ...d, avisos: r.avisos.map((a) => a.texto), error: undefined });
+            continue;
+        }
+        if (r.error) { quedan.push({ ...d, avisos: undefined, error: mensaje(new Error(r.error)) }); continue; }
+        if (promocionId && d.ligado === false) {
+            await ligarDescuentoAPromocion(promocionId, d.id).catch((e) => {
+                console.error('[descuentos] ligar a la promoción:', e?.message ?? e);
+            });
         }
     }
     return quedan;

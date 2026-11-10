@@ -289,11 +289,18 @@ export async function detalleDelDescuento(
   cookie: string,
   id: number,
   salas: Map<string, number>,
+  /** La fila de la lista, si quien llama ya la leyó: ahorra volver a pedirla. */
+  fila?: DescuentoDelOrigen,
 ): Promise<DetalleDelOrigen | null> {
-  const html = await (await fetch(`${FORM_URL}?id=${id}`, {
-    headers: { Cookie: cookie },
-    signal: AbortSignal.timeout(TIEMPO),
-  })).text();
+  /* El formulario y los productos no dependen entre sí: van a la vez. Si el
+     formulario dice «no existe», los productos se descartan. */
+  const [html, productosLeidos] = await Promise.all([
+    fetch(`${FORM_URL}?id=${id}`, {
+      headers: { Cookie: cookie },
+      signal: AbortSignal.timeout(TIEMPO),
+    }).then((r) => r.text()),
+    productosDelDescuento(cookie, id).then((p) => ({ p }), (e) => ({ e })),
+  ]);
 
   /* «No existe» y «no pude leer la pantalla» son dos problemas distintos y sólo
      uno tiene arreglo del lado de quien lo usa. El formulario se reconoce por
@@ -316,16 +323,17 @@ export async function detalleDelDescuento(
   const checkbox = /<input[^>]*id=['"]multi_sucursal['"][^>]*>/i.exec(html)?.[0] ?? "";
   const todas = /checked/i.test(checkbox);
 
-  const productos = await productosDelDescuento(cookie, id);
+  if ("e" in productosLeidos) throw productosLeidos.e;
+  const productos = productosLeidos.p;
 
   /* La sala concreta no viaja en el formulario —su campo oculto `id_sucursal`
      es la de la SESIÓN, no la del descuento—, así que sale de la lista. */
   let erpId: number | null = null;
   let rotulo = todas ? "Multi sucursal" : "";
   if (!todas) {
-    const fila = (await listarDescuentos(cookie, salas)).find((d) => d.id === id);
-    erpId = fila?.erp_sucursal_id ?? null;
-    rotulo = fila?.sala_rotulo ?? "";
+    const deLaLista = fila ?? (await listarDescuentos(cookie, salas)).find((d) => d.id === id);
+    erpId = deLaLista?.erp_sucursal_id ?? null;
+    rotulo = deLaLista?.sala_rotulo ?? "";
   }
 
   return {
@@ -417,4 +425,49 @@ export async function borrarDescuento(
   id: number,
 ): Promise<{ success: boolean; msg: string }> {
   return await postForm(cookie, { process: "delete", id: String(id) });
+}
+
+// ── La copia de la caja (`descuentos_espejo`) ──────────────────────────────
+//
+// La escriben dos funciones —el cron `espejo-descuentos` y `descuentos-erp` al
+// listar, guardar, mover y sincronizar—, así que la regla de qué se relee y la
+// forma de cada fila viven acá, una vez.
+
+/** La sala del portal que corresponde a una del origen; `null` si no se sabe. */
+export function salaDelPortal(
+  erpId: number | null,
+  mapa: { erpId: number; branchId: number }[],
+): number | null {
+  return erpId === null ? null : (mapa.find((e) => e.erpId === erpId)?.branchId ?? null);
+}
+
+/**
+ * La fecha de El Salvador (UTC-6) con un día de margen hacia atrás. Una campaña
+ * que terminó antes de esto ya no cambia: sus productos se toman de la copia.
+ */
+export function ayerSV(): string {
+  return new Date(Date.now() - 30 * 3600_000).toISOString().slice(0, 10);
+}
+
+/**
+ * ¿Hay que volver a pedir los productos de este descuento a la caja? Sí si la
+ * copia no lo conoce, o si sigue vigente o es futuro. El `fin` sale de la lista
+ * recién leída, así que uno que alguien extendió allá vuelve a releerse solo.
+ */
+export function hayQueReleer(d: DescuentoDelOrigen, conocidos: Set<number>, ayer = ayerSV()): boolean {
+  return !conocidos.has(d.id) || d.fin >= ayer;
+}
+
+/** Una fila para `descuentos_espejo_sync`. `productos: null` = conservar los de la copia. */
+export function filaDeLaCopia(
+  d: Pick<DescuentoDelOrigen, "id" | "descripcion" | "tipo" | "monto" | "inicio" | "fin" | "todas_las_salas" | "erp_sucursal_id">,
+  productos: number[] | null,
+  mapa: { erpId: number; branchId: number }[],
+) {
+  return {
+    id: d.id, descripcion: d.descripcion, tipo: d.tipo, monto: d.monto,
+    inicio: d.inicio, fin: d.fin, todas_las_salas: d.todas_las_salas,
+    branch_id: d.todas_las_salas ? null : salaDelPortal(d.erp_sucursal_id, mapa),
+    productos,
+  };
 }

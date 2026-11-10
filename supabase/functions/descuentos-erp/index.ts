@@ -2,9 +2,10 @@ import {
   getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
 } from "../_shared/security.ts";
 import {
-  borrarDescuento, contextoDelFormulario, detalleDelDescuento, getPromosCreds,
-  getSessionCookie, guardarDescuento, listarDescuentos, productosDelDescuento,
-  salasDelOrigen, type DescuentoDelOrigen, type TipoDescuento,
+  ayerSV, borrarDescuento, contextoDelFormulario, detalleDelDescuento, filaDeLaCopia,
+  getPromosCreds, getSessionCookie, guardarDescuento, hayQueReleer, listarDescuentos,
+  productosDelDescuento, salaDelPortal, salasDelOrigen, type DescuentoDelOrigen,
+  type TipoDescuento,
 } from "../_shared/descuentos.ts";
 import {
   camposDeLaFoto, refrescarOfertas, retirarOfertasDe, type DescuentoParaFoto,
@@ -59,6 +60,26 @@ function seCruzan(a1: string, a2: string, b1: string, b2: string): boolean {
   return a1 <= b2 && b1 <= a2;
 }
 
+/** Una lectura de la base que falló y sin la cual no se puede decidir: 503. */
+class LecturaFallida extends Error {}
+
+/** De a 100: `product_precios` trae una fila por PRESENTACIÓN y corta en 1000. */
+function enTandas<T>(lista: T[], n = 100): T[][] {
+  const out: T[][] = [];
+  for (let i = 0; i < lista.length; i += n) out.push(lista.slice(i, i + n));
+  return out;
+}
+
+/** ¿La lista dice lo que se acaba de escribir? Fechas, tipo y monto: el nombre
+ *  no, porque el origen lo puede devolver con otras mayúsculas o espacios. */
+function quedoComoSePidio(
+  d: DescuentoDelOrigen | undefined,
+  p: { tipo: TipoDescuento; monto: number; inicio: string; fin: string },
+): boolean {
+  return !!d && d.tipo === p.tipo && Math.abs(d.monto - p.monto) < 0.005
+    && d.inicio === p.inicio && d.fin === p.fin;
+}
+
 Deno.serve(async (req) => {
   const cors = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: cors });
@@ -76,7 +97,7 @@ Deno.serve(async (req) => {
     if (!quien) return responder({ ok: false, error: "Sesión inválida o empleado inactivo." }, 401);
 
     const escribe = accion === "guardar" || accion === "borrar"
-      || accion === "sincronizar_productos";
+      || accion === "sincronizar_productos" || accion === "mover_fin";
     const permiso = await permisoDeModulo(
       admin, quien.id, MODULO, escribe ? "can_edit" : "can_view",
     );
@@ -106,9 +127,7 @@ Deno.serve(async (req) => {
     /** Traduce la sala del origen a la del portal para que la pantalla no vea ids ajenos. */
     const conSala = (d: DescuentoDelOrigen) => ({
       ...d,
-      branch_id: d.erp_sucursal_id === null
-        ? null
-        : (mapa.find((e) => e.erpId === d.erp_sucursal_id)?.branchId ?? null),
+      branch_id: salaDelPortal(d.erp_sucursal_id, mapa),
     });
 
     /** Lo que la oferta de la app necesita de un descuento (ver `_shared/ofertaDeDescuento.ts`). */
@@ -121,20 +140,168 @@ Deno.serve(async (req) => {
     const visible = (d: DescuentoDelOrigen) =>
       permiso.alcanceTodo || d.todas_las_salas || d.erp_sucursal_id === miSala!.erpId;
 
+    /** Los que puede TOCAR. Uno «de todas» lo ve cualquiera, pero cambiarlo
+     *  cambia el precio en las siete salas: eso exige alcance de toda la red.
+     *  Sin esto, editarlo desde una sala lo convertía en uno de esa sala. */
+    const puedeEscribir = (d: DescuentoDelOrigen) =>
+      permiso.alcanceTodo || (!d.todas_las_salas && d.erp_sucursal_id === miSala!.erpId);
+    const noEsSuyo = (d: DescuentoDelOrigen) => d.todas_las_salas
+      ? "Ese descuento vale en todas las salas: sólo lo cambia quien ve toda la red."
+      : "Ese descuento no es de tu sala.";
+
+    /** La copia de la caja al día con lo que se acaba de escribir. Si falla, la
+     *  trae el cron (3 veces al día); no es un error del guardado. */
+    const reflejar = async (filas: ReturnType<typeof filaDeLaCopia>[]) => {
+      if (!filas.length) return;
+      const { error } = await admin.rpc("descuentos_espejo_sync", { p: filas, completa: false });
+      if (error) console.error("[descuentos-erp] copia del descuento:", error.message);
+    };
+
+    /** Quién lo hizo NO queda en la caja —allá todo va a nombre de la cuenta
+     *  con la que el portal entra—, así que la firma vive acá. */
+    const firmar = async (action: string, target: number, details: Record<string, unknown>, severity = "INFO") => {
+      const { error } = await admin.from("audit_logs").insert({
+        action, target_id: String(target), user_id: quien.id, user_name: quien.name,
+        source: "ADMIN_PANEL", severity, branch_id: permiso.emp?.branch_id ?? null, details,
+      });
+      if (error) console.error("[descuentos-erp] audit_logs:", error.message);
+    };
+
+    /**
+     * Los dos avisos —precio bajo el costo y otro descuento sobre los mismos
+     * productos—. Se confirman, no bloquean. `lista` es la que quien llama ya
+     * leyó: no se vuelve a pedir.
+     *
+     * Una lectura que falla NO se traga: sin precios desaparecía en silencio el
+     * aviso de vender bajo el costo (2026-11-10). Corta con 503.
+     */
+    const avisosDe = async (
+      p: { id: number; productos: number[]; tipo: TipoDescuento; monto: number;
+           inicio: string; fin: string; todas: boolean; erpSucursal: number },
+      lista: DescuentoDelOrigen[],
+    ): Promise<{ tipo: string; texto: string }[]> => {
+      const avisos: { tipo: string; texto: string }[] = [];
+
+      const [tandasPrecios, prodsRes] = await Promise.all([
+        Promise.all(enTandas(p.productos).map((ids) => admin
+          .from("product_precios").select("product_id, vineta, costo, activo").in("product_id", ids))),
+        admin.from("products").select("id, nombre").in("id", p.productos),
+      ]);
+      const preciosErr = tandasPrecios.find((r) => r.error)?.error;
+      if (preciosErr) {
+        console.error("[descuentos-erp] product_precios:", preciosErr.message);
+        throw new LecturaFallida("No se pudieron leer los precios para revisar el descuento. Vuelve a intentar en un momento.");
+      }
+      /* Acá el nombre ES el aviso: «quedaría en $1.29 y cuesta $6.21» sólo
+         sirve si dice de QUÉ producto. */
+      if (prodsRes.error) {
+        console.error("[descuentos-erp] products (avisos):", prodsRes.error.message);
+        throw new LecturaFallida("No se pudo leer el catálogo para revisar el descuento. Vuelve a intentar en un momento.");
+      }
+      const nombres = new Map((prodsRes.data ?? []).map((x: { id: number; nombre: string }) => [Number(x.id), String(x.nombre)]));
+
+      // 1 · el precio queda bajo el costo
+      /* Se mira el precio MÁS BAJO de cada producto y el costo más ALTO: el
+         peor caso decide. El costo va × 1.13 porque `vineta` es el precio al
+         público CON IVA y `costo` el neto de la compra (misma cuenta que
+         `get_precios_para_descuento`: si una cambia, cambian las dos). */
+      const porProducto = new Map<number, { precio: number; costo: number }>();
+      for (const fila of tandasPrecios.flatMap((r) => r.data ?? [])) {
+        if (fila.activo === false) continue;
+        const pid = Number(fila.product_id);
+        const precio = Number(fila.vineta) || 0;
+        const costo = (Number(fila.costo) || 0) * 1.13;
+        const antes = porProducto.get(pid);
+        porProducto.set(pid, {
+          precio: antes ? Math.min(antes.precio, precio) : precio,
+          costo: antes ? Math.max(antes.costo, costo) : costo,
+        });
+      }
+      /* UNA línea, no una por producto: la pantalla ya muestra el detalle; acá
+         se pide confirmación diciendo cuántos son y cuál es el peor. */
+      const perdidas: { nombre: string; pierde: number }[] = [];
+      for (const [pid, { precio, costo }] of porProducto) {
+        if (!precio || !costo) continue;
+        const queda = precioConDescuento(precio, p.tipo, p.monto);
+        if (queda < costo) perdidas.push({ nombre: nombres.get(pid) ?? `Producto ${pid}`, pierde: costo - queda });
+      }
+      if (perdidas.length) {
+        perdidas.sort((a, b) => b.pierde - a.pierde);
+        const peor = perdidas[0];
+        avisos.push({
+          tipo: "bajo_costo",
+          texto: perdidas.length === 1
+            ? `${peor.nombre} queda bajo el costo: se pierden $${peor.pierde.toFixed(2)} por unidad.`
+            : `${perdidas.length} productos quedan bajo el costo. El que más pierde es `
+              + `${peor.nombre}, con $${peor.pierde.toFixed(2)} por unidad.`,
+        });
+      }
+
+      // 2 · otro descuento ya toma ese producto en esas fechas
+      /* Los productos de los que se cruzan se piden A LA VEZ (antes, en serie).
+         Uno que no se pudo leer se dice: callarlo era dar por bueno un solape
+         que nadie miró. */
+      const otros = lista
+        .filter((d) => d.id !== p.id)
+        .filter((d) => seCruzan(p.inicio, p.fin, d.inicio, d.fin))
+        .filter((d) => d.todas_las_salas || p.todas || d.erp_sucursal_id === p.erpSucursal);
+      const suyos = await Promise.all(otros.map((o) => productosDelDescuento(cookie, o.id).catch(() => null)));
+      otros.forEach((otro, i) => {
+        const prods = suyos[i];
+        if (prods === null) {
+          avisos.push({ tipo: "solape", texto: `No se pudo revisar si «${otro.descripcion}» (${otro.inicio} a ${otro.fin}) ya descuenta estos productos.` });
+          return;
+        }
+        const chocan = prods.filter((x) => p.productos.includes(x));
+        if (!chocan.length) return;
+        const nombresChocan = chocan.map((x) => nombres.get(x) ?? `Producto ${x}`).join(", ");
+        avisos.push({ tipo: "solape", texto: `«${otro.descripcion}» (${otro.inicio} a ${otro.fin}) ya descuenta: ${nombresChocan}.` });
+      });
+
+      return avisos;
+    };
+
     // ── LISTAR ─────────────────────────────────────────────────────────────
     //
-    // Los productos se piden en paralelo —una petición por descuento— porque la
-    // lista sin ellos no sirve para decidir: «5 productos» y cuáles es lo que
-    // se mira antes de crear el siguiente. Hoy son 13.
+    // Los productos de cada descuento: de la COPIA para los que ya terminaron y
+    // la copia conoce (los de una campaña terminada no cambian), y de la caja
+    // para los vigentes, futuros y nuevos. Es la misma regla del cron. Antes se
+    // pedían todos, también los terminados: 17 de las 20 peticiones de abrir la
+    // pestaña, y crecía con cada promoción.
     if (accion === "listar") {
       const filas = (await listarDescuentos(cookie, salas)).filter(visible);
+
+      const copia = new Map<number, number[]>();
+      if (filas.length) {
+        const { data: enCopia, error: copiaErr } = await admin
+          .from("descuentos_espejo").select("id, productos").in("id", filas.map((d) => d.id));
+        // Sin copia se leen todos de la caja, como antes: es más lento, no peor.
+        if (copiaErr) console.error("[descuentos-erp] copia (listar):", copiaErr.message);
+        for (const c of enCopia ?? []) copia.set(Number(c.id), (c.productos ?? []).map(Number));
+      }
+      const conocidos = new Set(copia.keys());
+      const ayer = ayerSV();
+      const releidos = filas.map((d) => hayQueReleer(d, conocidos, ayer));
 
       const productos = await Promise.all(
         /* `null` = no se pudo leer. NO es lo mismo que «sin productos»: con
            una lista vacía la oferta de la app quedaría sin productos por una
            lectura que falló. */
-        filas.map((d) => productosDelDescuento(cookie, d.id).catch(() => null)),
+        filas.map((d, i) => releidos[i]
+          ? productosDelDescuento(cookie, d.id).catch(() => null)
+          : Promise.resolve(copia.get(d.id) ?? null)),
       );
+
+      /* Con alcance de toda la red la lista está COMPLETA: la copia se pone al
+         día con ella (mismo camino que el cron, borrados y ligados incluidos).
+         Con alcance de una sala es parcial y no se puede concluir nada. */
+      if (permiso.alcanceTodo && filas.length) {
+        const { error: syncErr } = await admin.rpc("descuentos_espejo_sync", {
+          p: filas.map((d, i) => filaDeLaCopia(d, releidos[i] ? productos[i] : null, mapa)),
+          completa: true,
+        });
+        if (syncErr) console.error("[descuentos-erp] copia completa (listar):", syncErr.message);
+      }
 
       const todosLosIds = [...new Set(productos.flatMap((p) => p ?? []))];
       const nombres = new Map<number, string>();
@@ -292,124 +459,31 @@ Deno.serve(async (req) => {
       if (!erpSucursal) falta.push("Elige la sala.");
       if (falta.length) return responder({ ok: false, error: falta.join(" "), campos: falta }, 400);
 
-      /* Si es una corrección, tiene que existir y ser suya. Sin esto,
+      /* La lista se lee UNA vez y sirve para todo: si la corrección existe y
+         es suya, los solapes y los ids que había antes de crear. Antes se leía
+         tres veces por guardado, más el formulario entero sólo para tirarlo. */
+      const lista = await listarDescuentos(cookie, salas);
+
+      /* Si es una corrección, tiene que existir y poder tocarla. Sin esto,
          `promocion.php?id=<inexistente>` abre un formulario vacío y un `edit`
          sobre un id ajeno pasaría sin decir nada. */
       if (id > 0) {
-        const previo = await detalleDelDescuento(cookie, id, salas);
+        const previo = lista.find((d) => d.id === id);
         if (!previo) return responder({ ok: false, error: "Ese descuento ya no existe." }, 404);
-        if (!visible(previo)) {
-          return responder({ ok: false, error: "Ese descuento no es de tu sala." }, 403);
-        }
+        if (!puedeEscribir(previo)) return responder({ ok: false, error: noEsSuyo(previo) }, 403);
       }
 
       // ── Los dos avisos: se confirman, no bloquean ────────────────────────
-      const avisos: { tipo: string; texto: string }[] = [];
-
       if (!forzar) {
-        // 1 · el precio queda bajo el costo
-        const { data: precios, error: preciosErr } = await admin
-          .from("product_precios")
-          .select("product_id, vineta, costo, activo")
-          .in("product_id", productos);
-        if (preciosErr) console.error("[descuentos-erp] product_precios:", preciosErr.message);
-
-        /* Acá el nombre ES el aviso: «quedaría en $1.29 y cuesta $6.21» sólo
-           sirve si dice de QUÉ producto. Con la consulta fallada en silencio,
-           el aviso saldría nombrando «Producto 4792» y quien decide no tendría
-           cómo saber cuál mirar — así que si falla, se corta. */
-        const { data: prods, error: prodsErr } = await admin
-          .from("products").select("id, nombre").in("id", productos);
-        if (prodsErr) {
-          console.error("[descuentos-erp] products (guardar):", prodsErr.message);
-          return responder({
-            ok: false,
-            error: "No se pudo leer el catálogo para revisar el descuento. Vuelve a intentar en un momento.",
-          }, 503);
-        }
-        const nombres = new Map((prods ?? []).map((p) => [Number(p.id), String(p.nombre)]));
-
-        /* Se mira el precio MÁS BAJO de cada producto: si el que menos margen
-           tiene aguanta, todos aguantan. Y el costo más alto, por el mismo
-           motivo — el peor caso es el que decide. */
-        const porProducto = new Map<number, { precio: number; costo: number }>();
-        for (const p of precios ?? []) {
-          if (p.activo === false) continue;
-          const pid = Number(p.product_id);
-          const precio = Number(p.vineta) || 0;
-          /* × 1.13 porque los dos números tienen que vivir en la misma escala:
-             `vineta` es el precio al público —CON IVA— y `costo` es tal cual el
-             precio neto de la factura de compra. Comparados crudos, el costo
-             salía 13 % más barato y este aviso dejaba pasar descuentos que sí
-             venden perdiendo. La tasa es 13 % y no una columna: de 3,039
-             recibos de 2026 ninguno tiene otra. Misma cuenta que hace
-             `get_precios_para_descuento` para la pantalla — si una cambia,
-             cambian las dos. */
-          const costo = (Number(p.costo) || 0) * 1.13;
-          const antes = porProducto.get(pid);
-          porProducto.set(pid, {
-            precio: antes ? Math.min(antes.precio, precio) : precio,
-            costo: antes ? Math.max(antes.costo, costo) : costo,
-          });
-        }
-
-        /* UNA línea, no una por producto. La pantalla ya muestra producto por
-           producto en cuánto queda, cuánto cuesta y cuánto se pierde, ordenado
-           por el que más pierde: repetirlo acá convertía la confirmación en un
-           listado de 36 renglones que hay que desplazar para llegar al botón.
-           Lo que este paso tiene que hacer es PEDIR CONFIRMACIÓN, no volver a
-           informar — así que se dice cuántos son y cuál es el peor, que es lo
-           único que la pantalla no resume. */
-        const perdidas: { nombre: string; pierde: number }[] = [];
-        for (const [pid, { precio, costo }] of porProducto) {
-          if (!precio || !costo) continue;
-          const queda = precioConDescuento(precio, tipo, monto);
-          if (queda < costo) {
-            perdidas.push({
-              nombre: nombres.get(pid) ?? `Producto ${pid}`,
-              pierde: costo - queda,
-            });
-          }
-        }
-        if (perdidas.length) {
-          perdidas.sort((a, b) => b.pierde - a.pierde);
-          const peor = perdidas[0];
-          avisos.push({
-            tipo: "bajo_costo",
-            texto: perdidas.length === 1
-              ? `${peor.nombre} queda bajo el costo: se pierden $${peor.pierde.toFixed(2)} por unidad.`
-              : `${perdidas.length} productos quedan bajo el costo. El que más pierde es `
-                + `${peor.nombre}, con $${peor.pierde.toFixed(2)} por unidad.`,
-          });
-        }
-
-        // 2 · otro descuento ya toma ese producto en esas fechas
-        const otros = (await listarDescuentos(cookie, salas))
-          .filter((d) => d.id !== id)
-          .filter((d) => seCruzan(inicio, fin, d.inicio, d.fin))
-          .filter((d) => d.todas_las_salas || todas || d.erp_sucursal_id === erpSucursal);
-
-        for (const otro of otros) {
-          const suyos = await productosDelDescuento(cookie, otro.id).catch(() => [] as number[]);
-          const chocan = suyos.filter((p) => productos.includes(p));
-          if (!chocan.length) continue;
-          const lista = chocan.map((p) => nombres.get(p) ?? `Producto ${p}`).join(", ");
-          avisos.push({
-            tipo: "solape",
-            texto: `«${otro.descripcion}» (${otro.inicio} a ${otro.fin}) ya descuenta: ${lista}.`,
-          });
-        }
-
+        const avisos = await avisosDe(
+          { id, productos, tipo, monto, inicio, fin, todas, erpSucursal: erpSucursal! }, lista,
+        );
         if (avisos.length) return responder({ ok: false, avisos });
       }
 
-      /* Los ids que HABÍA antes de escribir. Sólo al crear, y sólo para poder
-         anotar cuál nació: el origen contesta «guardada correctamente» y no
-         devuelve el id. Sin esto el alta queda en la bitácora sin número y no
-         se puede cruzar con su propia corrección ni con su borrado. */
-      const idsAntes = id > 0
-        ? null
-        : new Set((await listarDescuentos(cookie, salas)).map((d) => d.id));
+      /* Los ids que HABÍA antes de escribir, para saber cuál nació: el origen
+         contesta «guardada correctamente» y no devuelve el id. */
+      const idsAntes = id > 0 ? null : new Set(lista.map((d) => d.id));
 
       const ctx = await contextoDelFormulario(cookie);
       const r = await guardarDescuento(cookie, ctx, {
@@ -422,104 +496,191 @@ Deno.serve(async (req) => {
         return responder({ ok: false, error: r.msg || "No se pudo guardar el descuento. Vuelve a intentar." }, 502);
       }
 
-      /* Se relee para saber el id y para CONFIRMAR: el mensaje del origen es
-         genérico —contesta lo mismo al borrar—, así que lo que prueba que
-         quedó es encontrarlo en la lista. Si no aparece, se dice; suponerlo
-         guardado sería informar un éxito que nadie verificó. */
+      /* Se relee para CONFIRMAR, también al corregir: el mensaje del origen es
+         genérico —contesta lo mismo al borrar—, así que lo que prueba que quedó
+         es encontrarlo en la lista como se pidió. Al corregir no se miraba, y
+         una corrección rechazada quedaba anotada como hecha. */
+      const despues = await listarDescuentos(cookie, salas);
       let idNuevo = id;
+      let ambiguo = false;
       if (idsAntes) {
-        const despues = await listarDescuentos(cookie, salas);
         const nacidos = despues.filter((d) => !idsAntes.has(d.id));
         if (!nacidos.length) {
-          return responder({
-            ok: false,
-            error: "El descuento no quedó guardado. Vuelve a intentar.",
-          }, 502);
+          return responder({ ok: false, error: "El descuento no quedó guardado. Vuelve a intentar." }, 502);
         }
-        /* Si dos sesiones crearon a la vez puede haber más de uno nacido: se
-           toma el mayor, que es el propio, y nunca se adivina por el nombre —
-           dos descuentos pueden llamarse igual. */
-        idNuevo = Math.max(...nacidos.map((d) => d.id));
+        /* El propio es el que coincide con lo que se mandó —fechas, tipo,
+           monto y sala—, no «el mayor»: con dos altas a la vez, las dos
+           sesiones veían los dos nacidos y se quedaban con el mismo. Si aun así
+           hay más de uno igual, no se adivina: no se liga (lo liga el cron, que
+           sólo liga lo que encaja en una sola promoción). */
+        const propios = nacidos.filter((d) => quedoComoSePidio(d, { tipo, monto, inicio, fin })
+          && d.todas_las_salas === todas && (todas || d.erp_sucursal_id === erpSucursal));
+        const elegibles = propios.length ? propios : nacidos;
+        idNuevo = Math.max(...elegibles.map((d) => d.id));
+        ambiguo = propios.length !== 1;
+      } else if (!quedoComoSePidio(despues.find((d) => d.id === id), { tipo, monto, inicio, fin })) {
+        return responder({
+          ok: false,
+          error: "La caja no tomó el cambio: el descuento sigue como estaba. Vuelve a intentar.",
+        }, 502);
       }
 
       /* El vínculo se escribe ACÁ y no desde el navegador: si el navegador se
-         cierra entre las dos llamadas, el descuento quedaría vivo en el sistema
-         de ventas sin que nadie sepa de qué promoción es. */
+         cierra entre las dos llamadas, el descuento quedaría vivo en la caja
+         sin que nadie sepa de qué promoción es. Se AGREGA en la base, de una
+         vez (`promocion_agregar_descuento_erp`): leer la lista acá y
+         reescribirla entera perdía un vínculo escrito en el medio por el cron
+         o por otra ventana. Si falla, vuelve como `vinculo_pendiente` y lo
+         recupera el cron de la copia (`ligar_descuentos_sin_ligar`). */
       let vinculoPendiente = false;
       if (promocionId > 0) {
-        /* Se AGREGA a la lista, no se reemplaza: una promoción marcada en tres
-           salas manda tres veces —el sistema de ventas acepta una sala o todas,
-           nunca un conjunto— y cada llamada trae su propio id. Con un solo
-           campo, la tercera borraba a las dos anteriores y quedaban descuentos
-           vivos que el portal ya no sabía de quién eran.
-
-           Si la LECTURA falla no se escribe (2026-11-10): con `pr` vacío la
-           lista quedaba sólo con el nuevo y borraba los vínculos que había.
-           Un vínculo que no se pudo escribir no es un error del guardado —el
-           descuento ya está en la caja—, pero tampoco se calla: vuelve como
-           `vinculo_pendiente` y lo recupera el cron de la copia
-           (`ligar_descuentos_sin_ligar`), que reconoce a un descuento nacido
-           de su promoción por los mismos productos y el mismo arranque. */
-        const { data: pr, error: leerErr } = await admin
-          .from("promociones").select("descuentos_erp").eq("id", promocionId).maybeSingle();
-        if (leerErr || !pr) {
-          console.error("[descuentos-erp] leer promoción:", leerErr?.message ?? "no existe");
+        if (ambiguo) {
           vinculoPendiente = true;
         } else {
-          const lista = [...new Set([...(pr.descuentos_erp ?? []), idNuevo])];
-          const { error: ligarErr } = await admin
-            .from("promociones").update({ descuentos_erp: lista }).eq("id", promocionId);
-          if (ligarErr) {
-            console.error("[descuentos-erp] ligar promoción:", ligarErr.message);
+          const { data: ligado, error: ligarErr } = await admin.rpc("promocion_agregar_descuento_erp", {
+            p_promocion: promocionId, p_descuento: idNuevo,
+          });
+          if (ligarErr || ligado !== true) {
+            console.error("[descuentos-erp] ligar promoción:", ligarErr?.message ?? "la promoción no existe");
             vinculoPendiente = true;
           }
         }
       }
 
-      /* La copia de la caja (`descuentos_espejo`) se pone al día con ESTE
-         descuento ya, sin esperar al cron (corre 3 veces al día): con la copia
-         vieja, la lista de promociones seguía diciendo «el precio no bajó»
-         horas después de haberlo movido. `completa: false` = sólo esta fila,
-         no borra nada ni liga nada. Si falla, el cron la trae igual. */
-      const { error: espejoErr } = await admin.rpc("descuentos_espejo_sync", {
-        p: [{
-          id: idNuevo, descripcion, tipo, monto, inicio, fin, todas_las_salas: todas,
-          branch_id: todas ? null : (mapa.find((e) => e.erpId === erpSucursal)?.branchId ?? null),
-          productos,
-        }],
-        completa: false,
-      });
-      if (espejoErr) console.error("[descuentos-erp] copia del descuento:", espejoErr.message);
+      const escrito = {
+        id: idNuevo, descripcion, tipo, monto, inicio, fin, todas_las_salas: todas,
+        erp_sucursal_id: todas ? null : erpSucursal!,
+      };
+      /* La copia de la caja se pone al día con ESTE descuento ya, sin esperar
+         al cron: con la copia vieja la lista de promociones seguía diciendo
+         «el precio no bajó» horas después de haberlo movido. */
+      await reflejar([filaDeLaCopia(escrito, productos, mapa)]);
 
-      /* Quién lo hizo NO queda en el sistema de la caja —allá todo va a nombre
-         de la cuenta con la que el portal entra—, así que la firma vive acá. */
-      const { error: auditErr } = await admin.from("audit_logs").insert({
-        action: id > 0 ? "DESCUENTO_EDITADO" : "DESCUENTO_CREADO",
-        target_id: String(idNuevo),
-        user_id: quien.id,
-        user_name: quien.name,
-        source: "ADMIN_PANEL",
-        severity: forzar && !permiso.alcanceTodo ? "WARNING" : "INFO",
-        branch_id: permiso.emp?.branch_id ?? null,
-        details: {
-          descripcion, tipo, monto, inicio, fin,
-          todas_las_salas: todas,
-          erp_sucursal_id: erpSucursal,
-          productos,
-          confirmo_avisos: forzar,
-          promocion_id: promocionId || null,
-        },
-      });
-      if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);
+      await firmar(id > 0 ? "DESCUENTO_EDITADO" : "DESCUENTO_CREADO", idNuevo, {
+        descripcion, tipo, monto, inicio, fin,
+        todas_las_salas: todas,
+        erp_sucursal_id: erpSucursal,
+        productos,
+        confirmo_avisos: forzar,
+        promocion_id: promocionId || null,
+      }, forzar && !permiso.alcanceTodo ? "WARNING" : "INFO");
 
       // La oferta de la app ligada a este descuento sigue sus fechas y productos.
       await refrescarOfertas(admin, [{
         id: idNuevo, tipo, monto, inicio, fin, todas_las_salas: todas,
-        branch_id: todas ? null : (mapa.find((e) => e.erpId === erpSucursal)?.branchId ?? null),
+        branch_id: todas ? null : salaDelPortal(erpSucursal!, mapa),
         productos,
       }]);
 
       return responder({ ok: true, id: idNuevo, vinculo_pendiente: vinculoPendiente });
+    }
+
+    // ── MOVER EL FIN ───────────────────────────────────────────────────────
+    //
+    // Lleva el fin de uno o varios descuentos hasta una fecha, sin tocar nada
+    // más. Es lo que hace reactivar una promoción, o «Mover el descuento»
+    // cuando la promoción sigue viva y su descuento venció.
+    //
+    // Antes eran dos llamadas por descuento (leerlo y guardarlo), cada una con
+    // su login, y el guardado lo volvía a leer: 15–18 peticiones a la caja por
+    // descuento. Acá: una lista para todos, y por cada uno su formulario y sus
+    // productos (a la vez), la escritura, y una relectura al final.
+    //
+    // Se relee cada descuento en el momento de escribir, nunca lo que la
+    // pantalla mostró: el origen guarda el descuento ENTERO —productos
+    // incluidos— y entre que se abrió la ventana y se apretó alguien pudo
+    // cambiarlo desde la caja. Nunca acorta: si ya llega a esa fecha, se deja.
+    //
+    // Responde un resultado por descuento —`ok`, `sin_cambio`, `avisos` o
+    // `error`—: uno que falla no frena a los demás.
+    if (accion === "mover_fin") {
+      const fin = String(body.fin ?? "");
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(fin)) {
+        return responder({ ok: false, error: "Falta la fecha hasta la que se mueve." }, 400);
+      }
+      const items: { id: number; forzar: boolean }[] = (Array.isArray(body.items) ? body.items : [])
+        .map((x: { id?: unknown; forzar?: unknown }) => ({ id: Number(x?.id), forzar: x?.forzar === true }))
+        .filter((x: { id: number }) => Number.isInteger(x.id) && x.id > 0);
+      if (!items.length) return responder({ ok: false, error: "No viene ningún descuento que mover." }, 400);
+
+      const lista = await listarDescuentos(cookie, salas);
+      let ctx: { idUsuario: string; admin: string } | null = null;
+      type Resultado = { id: number; ok?: true; sin_cambio?: true; avisos?: { tipo: string; texto: string }[]; error?: string };
+      const resultados: Resultado[] = [];
+      const escritos: { fila: DescuentoDelOrigen; productos: number[]; forzar: boolean }[] = [];
+
+      /* EN SERIE: cada escritura relee el formulario del origen y dos a la vez
+         leerían un estado a medio escribir. Son uno o dos por promoción. */
+      for (const { id, forzar } of items) {
+        try {
+          const fila = lista.find((d) => d.id === id);
+          if (!fila) { resultados.push({ id, error: "Ese descuento ya no existe." }); continue; }
+          if (!puedeEscribir(fila)) { resultados.push({ id, error: noEsSuyo(fila) }); continue; }
+          if (fila.fin >= fin) { resultados.push({ id, ok: true, sin_cambio: true }); continue; }
+
+          const d = await detalleDelDescuento(cookie, id, salas, fila);
+          if (!d) { resultados.push({ id, error: "Ese descuento ya no existe." }); continue; }
+          const erpSucursal = d.todas_las_salas ? mapa[0].erpId : d.erp_sucursal_id;
+          if (!erpSucursal) {
+            resultados.push({ id, error: `No se pudo saber de qué sala es «${d.descripcion}» («${d.sala_rotulo}»).` });
+            continue;
+          }
+          if (!d.productos.length) {
+            resultados.push({ id, error: `«${d.descripcion}» no tiene productos en la caja.` });
+            continue;
+          }
+
+          if (!forzar) {
+            const avisos = await avisosDe({
+              id, productos: d.productos, tipo: d.tipo, monto: d.monto,
+              inicio: d.inicio, fin, todas: d.todas_las_salas, erpSucursal,
+            }, lista);
+            if (avisos.length) { resultados.push({ id, avisos }); continue; }
+          }
+
+          ctx ??= await contextoDelFormulario(cookie);
+          const r = await guardarDescuento(cookie, ctx, {
+            id, descripcion: d.descripcion, tipo: d.tipo, monto: d.monto,
+            inicio: d.inicio, fin, todas_las_salas: d.todas_las_salas,
+            erp_sucursal_id: erpSucursal, productos: d.productos,
+          });
+          if (!r.success) {
+            resultados.push({ id, error: r.msg || `La caja no aceptó el cambio de «${d.descripcion}».` });
+            continue;
+          }
+          escritos.push({ fila: { ...d, fin }, productos: d.productos, forzar });
+          resultados.push({ id, ok: true });
+        } catch (e) {
+          if (e instanceof LecturaFallida) { resultados.push({ id, error: e.message }); continue; }
+          resultados.push({ id, error: e instanceof Error ? e.message : String(e) });
+        }
+      }
+
+      if (escritos.length) {
+        // Lo que confirma que quedó es la lista, no el «guardado» del origen.
+        const despues = await listarDescuentos(cookie, salas);
+        const confirmados = escritos.filter(({ fila }) =>
+          quedoComoSePidio(despues.find((x) => x.id === fila.id), fila));
+        for (const { fila } of escritos) {
+          if (confirmados.some((c) => c.fila.id === fila.id)) continue;
+          const i = resultados.findIndex((x) => x.id === fila.id);
+          resultados[i] = { id: fila.id, error: `La caja no tomó el cambio de «${fila.descripcion}». Vuelve a intentar.` };
+        }
+
+        await reflejar(confirmados.map(({ fila, productos }) => filaDeLaCopia(fila, productos, mapa)));
+        for (const { fila, productos, forzar } of confirmados) {
+          await firmar("DESCUENTO_EDITADO", fila.id, {
+            descripcion: fila.descripcion, tipo: fila.tipo, monto: fila.monto,
+            inicio: fila.inicio, fin: fila.fin, todas_las_salas: fila.todas_las_salas,
+            erp_sucursal_id: fila.erp_sucursal_id, productos,
+            confirmo_avisos: forzar, solo_fin: true,
+            promocion_id: Number(body.promocion_id) || null,
+          }, forzar && !permiso.alcanceTodo ? "WARNING" : "INFO");
+        }
+        await refrescarOfertas(admin, confirmados.map(({ fila, productos }) => paraFoto(fila, productos)));
+      }
+
+      return responder({ ok: true, resultados });
     }
 
     // ── SINCRONIZAR PRODUCTOS ──────────────────────────────────────────────
@@ -577,30 +738,57 @@ Deno.serve(async (req) => {
       const ids: number[] = [...new Set(numeros(pr?.descuentos_erp))];
       if (!ids.length) return responder({ ok: true, cambiados: [], sin_cambio: 0, sin_productos: [] });
 
-      const ctx = await contextoDelFormulario(cookie);
+      /* Una lista para todos: existencia, sala y si puede tocarlo salen de
+         ahí. El formulario de cada uno se lee igual —el origen guarda el
+         descuento entero y hay que mandar lo que tiene HOY—, pero ya sin volver
+         a pedir la lista por cada uno. */
+      const lista = await listarDescuentos(cookie, salas);
+      let ctx: { idUsuario: string; admin: string } | null = null;
       const cambiados: { id: number; descripcion: string; productos: number }[] = [];
       const sinProductos: { id: number; descripcion: string }[] = [];
+      /* Los que no se pudieron leer o escribir se DICEN. Antes, una lectura que
+         fallaba se trataba como «ya no existe» y la respuesta decía ok. */
+      const fallidos: { id: number; descripcion: string; error: string }[] = [];
+      const escritos: { fila: DescuentoDelOrigen; productos: number[]; agregados: number[]; quitados: number[] }[] = [];
       let sinCambio = 0;
 
       /* EN SERIE y no en paralelo: cada guardado relee el formulario del origen
          y dos escrituras a la vez leerían un estado a medio escribir. Son uno o
          dos descuentos por promoción, así que no cuesta nada. */
       for (const id of ids) {
-        const d = await detalleDelDescuento(cookie, id, salas).catch(() => null);
-        if (!d) continue;                 // ya no existe allá: no hay qué sincronizar
-        if (!visible(d)) continue;        // no es de su sala: no se toca
+        const fila = lista.find((d) => d.id === id);
+        if (!fila) continue;                 // ya no existe allá: no hay qué sincronizar
+        if (!puedeEscribir(fila)) continue;  // no es de su sala (o es de todas y no ve la red)
 
-        const lista: number[] = [...new Set([...d.productos, ...agregar])]
-          .filter((p) => !quitar.has(p));
-        const igual = lista.length === d.productos.length
-          && lista.every((p) => d.productos.includes(p));
+        let d;
+        try {
+          d = await detalleDelDescuento(cookie, id, salas, fila);
+        } catch (e) {
+          fallidos.push({ id, descripcion: fila.descripcion, error: e instanceof Error ? e.message : String(e) });
+          continue;
+        }
+        if (!d) continue;
+
+        const listaNueva: number[] = [...new Set([...d.productos, ...agregar])]
+          .filter((x) => !quitar.has(x));
+        const igual = listaNueva.length === d.productos.length
+          && listaNueva.every((x) => d.productos.includes(x));
         if (igual) { sinCambio++; continue; }
 
-        if (!lista.length) {
+        if (!listaNueva.length) {
           sinProductos.push({ id, descripcion: d.descripcion });
           continue;
         }
 
+        /* La sala: la misma regla que «guardar». Uno de una sala cuyo rótulo no
+           se pudo traducir NO se escribe —mandar 0 lo movía a otra sala—. */
+        const erpSucursal = d.todas_las_salas ? mapa[0].erpId : d.erp_sucursal_id;
+        if (!erpSucursal) {
+          fallidos.push({ id, descripcion: d.descripcion, error: `No se pudo saber de qué sala es («${d.sala_rotulo}»).` });
+          continue;
+        }
+
+        ctx ??= await contextoDelFormulario(cookie);
         const r = await guardarDescuento(cookie, ctx, {
           id,
           descripcion: d.descripcion,
@@ -609,8 +797,8 @@ Deno.serve(async (req) => {
           inicio: d.inicio,
           fin: d.fin,
           todas_las_salas: d.todas_las_salas,
-          erp_sucursal_id: d.erp_sucursal_id ?? 0,
-          productos: lista,
+          erp_sucursal_id: erpSucursal,
+          productos: listaNueva,
         });
         if (!r.success) {
           return responder({
@@ -618,29 +806,36 @@ Deno.serve(async (req) => {
             error: r.msg || `No se pudo aplicar el cambio en «${d.descripcion}».`,
           }, 502);
         }
-        cambiados.push({ id, descripcion: d.descripcion, productos: lista.length });
-        await refrescarOfertas(admin, [paraFoto(d, lista)]);
-
-        const { error: auditErr } = await admin.from("audit_logs").insert({
-          action: "DESCUENTO_PRODUCTOS_SINCRONIZADOS",
-          target_id: String(id),
-          user_id: quien.id,
-          user_name: quien.name,
-          source: "ADMIN_PANEL",
-          severity: "INFO",
-          branch_id: permiso.emp?.branch_id ?? null,
-          details: {
-            promocion_id: promocionId,
-            descripcion: d.descripcion,
-            agregados: agregar.filter((p) => !d.productos.includes(p)),
-            quitados: d.productos.filter((p) => quitar.has(p)),
-            productos: lista,
-          },
+        escritos.push({
+          fila: d, productos: listaNueva,
+          agregados: agregar.filter((x) => !d.productos.includes(x)),
+          quitados: d.productos.filter((x) => quitar.has(x)),
         });
-        if (auditErr) console.error("[descuentos-erp] audit_logs (sync):", auditErr.message);
       }
 
-      return responder({ ok: true, cambiados, sin_cambio: sinCambio, sin_productos: sinProductos });
+      /* Lo que confirma un cambio de productos es releerlos: el «guardado» del
+         origen es genérico. Una petición por descuento escrito, a la vez. */
+      const releidos = await Promise.all(escritos.map(({ fila }) =>
+        productosDelDescuento(cookie, fila.id).catch(() => null)));
+      const confirmados = escritos.filter(({ productos }, i) => {
+        const r = releidos[i];
+        return r !== null && r.length === productos.length && r.every((x) => productos.includes(x));
+      });
+      escritos.forEach(({ fila }, i) => {
+        if (confirmados.includes(escritos[i])) return;
+        fallidos.push({ id: fila.id, descripcion: fila.descripcion, error: "La caja no tomó el cambio de productos." });
+      });
+
+      await reflejar(confirmados.map(({ fila, productos }) => filaDeLaCopia(fila, productos, mapa)));
+      if (confirmados.length) await refrescarOfertas(admin, confirmados.map(({ fila, productos }) => paraFoto(fila, productos)));
+      for (const { fila, productos, agregados, quitados } of confirmados) {
+        cambiados.push({ id: fila.id, descripcion: fila.descripcion, productos: productos.length });
+        await firmar("DESCUENTO_PRODUCTOS_SINCRONIZADOS", fila.id, {
+          promocion_id: promocionId, descripcion: fila.descripcion, agregados, quitados, productos,
+        });
+      }
+
+      return responder({ ok: true, cambiados, sin_cambio: sinCambio, sin_productos: sinProductos, fallidos });
     }
 
     // ── BORRAR ─────────────────────────────────────────────────────────────
@@ -650,14 +845,16 @@ Deno.serve(async (req) => {
         return responder({ ok: false, error: "Falta el descuento que se quiere borrar." }, 400);
       }
 
-      /* Se lee ANTES de borrar: para comprobar que existe, que es de su sala, y
-         para poder escribir en la bitácora QUÉ se borró. Después del borrado ya
-         no hay a quién preguntárselo. */
-      const previo = await detalleDelDescuento(cookie, id, salas);
+      /* Se mira ANTES de borrar: que existe, que puede tocarlo, y QUÉ era
+         para la bitácora (después ya no hay a quién preguntárselo). Basta la
+         lista; los productos salen de la copia, que la caja ya no tiene después. */
+      const antes = await listarDescuentos(cookie, salas);
+      const previo = antes.find((d) => d.id === id);
       if (!previo) return responder({ ok: false, error: "Ese descuento ya no existe." }, 404);
-      if (!visible(previo)) {
-        return responder({ ok: false, error: "Ese descuento no es de tu sala." }, 403);
-      }
+      if (!puedeEscribir(previo)) return responder({ ok: false, error: noEsSuyo(previo) }, 403);
+      const { data: enCopia, error: copiaErr } = await admin
+        .from("descuentos_espejo").select("productos").eq("id", id).maybeSingle();
+      if (copiaErr) console.error("[descuentos-erp] copia (borrar):", copiaErr.message);
 
       const r = await borrarDescuento(cookie, id);
       if (!r.success) {
@@ -673,47 +870,35 @@ Deno.serve(async (req) => {
         return responder({ ok: false, error: "El descuento no se borró. Vuelve a intentar." }, 502);
       }
 
-      const { error: auditErr } = await admin.from("audit_logs").insert({
-        action: "DESCUENTO_BORRADO",
-        target_id: String(id),
-        user_id: quien.id,
-        user_name: quien.name,
-        source: "ADMIN_PANEL",
-        severity: "WARNING",
-        branch_id: permiso.emp?.branch_id ?? null,
-        details: {
-          descripcion: previo.descripcion, tipo: previo.tipo, monto: previo.monto,
-          inicio: previo.inicio, fin: previo.fin,
-          todas_las_salas: previo.todas_las_salas,
-          productos: previo.productos,
-        },
-      });
-      if (auditErr) console.error("[descuentos-erp] audit_logs:", auditErr.message);
+      await firmar("DESCUENTO_BORRADO", id, {
+        descripcion: previo.descripcion, tipo: previo.tipo, monto: previo.monto,
+        inicio: previo.inicio, fin: previo.fin,
+        todas_las_salas: previo.todas_las_salas,
+        productos: enCopia?.productos ?? null,
+      }, "WARNING");
 
       // Sin descuento no hay oferta que anunciar: sale de la app.
       await retirarOfertasDe(admin, [id]);
 
-      /* El id sale también de la promoción que lo creó. Sin esto la promoción
-         seguía marcada «Baja el precio» —ese distintivo cuenta
-         `promociones.descuentos_erp`— sobre un descuento que ya no existe
-         (auditoría 2026-10-01). No se falla el borrado si esto falla: el
-         descuento YA se borró y decir lo contrario sería peor; queda en log. */
-      const { data: duenas, error: duenasErr } = await admin
-        .from("promociones").select("id, descuentos_erp").contains("descuentos_erp", [id]);
-      if (duenasErr) console.error("[descuentos-erp] promociones dueñas:", duenasErr.message);
-      for (const p of duenas ?? []) {
-        const resto = (Array.isArray(p.descuentos_erp) ? p.descuentos_erp : [])
-          .map(Number).filter((x: number) => Number.isInteger(x) && x !== id);
-        const { error: updErr } = await admin
-          .from("promociones").update({ descuentos_erp: resto }).eq("id", p.id);
-        if (updErr) console.error("[descuentos-erp] soltar descuento de la promoción:", updErr.message);
-      }
+      /* La copia se entera ya: con la copia vieja, «Rebajas en ventas» seguía
+         atribuyendo ventas a una campaña borrada hasta el próximo cron. */
+      const { error: borrarCopiaErr } = await admin.rpc("descuentos_espejo_borrar", { p_id: id });
+      if (borrarCopiaErr) console.error("[descuentos-erp] copia (borrado):", borrarCopiaErr.message);
+
+      /* El id sale también de la promoción que lo tenía, en la base y de una
+         vez (antes se leía y se reescribía el arreglo entero, y se perdía un
+         vínculo escrito en el medio). Sin esto la promoción seguía marcada
+         «Baja el precio» sobre un descuento que ya no existe. No se falla el
+         borrado si esto falla: el descuento YA se borró; queda en log. */
+      const { error: soltarErr } = await admin.rpc("promocion_soltar_descuento_erp", { p_descuento: id });
+      if (soltarErr) console.error("[descuentos-erp] soltar descuento de la promoción:", soltarErr.message);
 
       return responder({ ok: true });
     }
 
     return responder({ ok: false, error: `Acción desconocida: ${accion}` }, 400);
   } catch (e) {
+    if (e instanceof LecturaFallida) return responder({ ok: false, error: e.message }, 503);
     return responder({ ok: false, error: e instanceof Error ? e.message : String(e) }, 500);
   }
 });

@@ -33288,6 +33288,7 @@ export type Database = {
         Args: { p_deshacer?: boolean; p_id: number }
         Returns: undefined
       }
+      descuentos_espejo_borrar: { Args: { p_id: number }; Returns: boolean }
       descuentos_espejo_sync: {
         Args: { completa: boolean; p: Json }
         Returns: Json
@@ -37163,6 +37164,10 @@ export type Database = {
         }
         Returns: Json
       }
+      promocion_agregar_descuento_erp: {
+        Args: { p_descuento: number; p_promocion: number }
+        Returns: boolean
+      }
       promocion_avance: {
         Args: { p_solo_abiertos?: boolean }
         Returns: {
@@ -37187,6 +37192,7 @@ export type Database = {
           u_excedente: number
         }[]
       }
+      promocion_descuentos: { Args: { p_id: number }; Returns: Json }
       promocion_descuentos_por_ligar: { Args: { p_id: number }; Returns: Json }
       promocion_laboratorio_avance: {
         Args: { p_id: number; p_year_month: string }
@@ -37202,6 +37208,21 @@ export type Database = {
           siguiente_nivel: number
           siguiente_umbral: number
           venta: number
+        }[]
+      }
+      promocion_lineas: {
+        Args: { p_promocion_id?: number; p_solo_abiertos?: boolean }
+        Returns: {
+          branch_id: number
+          cod_vendedor: string
+          fecha: string
+          invoice_id: number
+          item_id: number
+          lote_total: number
+          promocion_id: number
+          renglon_id: number
+          u_base: number
+          u_pago: number
         }[]
       }
       promocion_log: {
@@ -37226,6 +37247,10 @@ export type Database = {
           p_ref?: string
           p_unidades: number
         }
+        Returns: number
+      }
+      promocion_soltar_descuento_erp: {
+        Args: { p_descuento: number }
         Returns: number
       }
       promocional_ajustar: {

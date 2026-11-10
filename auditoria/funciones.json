@@ -1,6 +1,6 @@
 {
  "nota": "Área de cada función de `public`. La propone `npm run auditoria:funciones` según quién la usa (trigger > cron > código > tablas > policy > quien la llama). Lo marcado \"manual\": true lo decidió una persona y el script no lo pisa. gate:auditoria falla si una función de producción no está acá.",
- "generado": "2026-11-09T21:04:05.521Z",
+ "generado": "2026-11-10T16:33:38.040Z",
  "funciones": {
   "_docs_sin_numero_control": {
    "area": "ventas",
@@ -1823,6 +1823,10 @@
    "area": "facturacion-dte",
    "por": "código"
   },
+  "descuentos_espejo_borrar": {
+   "area": "promociones",
+   "por": "código"
+  },
   "descuentos_espejo_sync": {
    "area": "promociones",
    "por": "código"
@@ -3617,6 +3621,10 @@
    "area": "minmax",
    "por": "código"
   },
+  "guardar_particion_renglon": {
+   "area": "compras",
+   "por": "código"
+  },
   "guardar_principios_activos": {
    "area": "productos",
    "por": "código"
@@ -3930,6 +3938,14 @@
   },
   "ligar_abono_a_ingreso": {
    "area": "cortes-efectivo",
+   "por": "código"
+  },
+  "ligar_descuento_a_promocion": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "ligar_descuentos_sin_ligar": {
+   "area": "promociones",
    "por": "código"
   },
   "ligar_notas_a_compras": {
@@ -4573,15 +4589,31 @@
    "area": "pedidos",
    "por": "código"
   },
+  "promocion_agregar_descuento_erp": {
+   "area": "promociones",
+   "por": "código"
+  },
   "promocion_avance": {
    "area": "promociones",
-   "por": "tablas"
+   "por": "llamada"
   },
   "promocion_corte_del_lote": {
    "area": "promociones",
    "por": "código"
   },
+  "promocion_descuentos": {
+   "area": "promociones",
+   "por": "código"
+  },
+  "promocion_descuentos_por_ligar": {
+   "area": "promociones",
+   "por": "tablas"
+  },
   "promocion_laboratorio_avance": {
+   "area": "promociones",
+   "por": "tablas"
+  },
+  "promocion_lineas": {
    "area": "promociones",
    "por": "tablas"
   },
@@ -4592,6 +4624,10 @@
   "promocion_mover_lote": {
    "area": "promociones",
    "por": "tablas"
+  },
+  "promocion_soltar_descuento_erp": {
+   "area": "promociones",
+   "por": "código"
   },
   "promocion_trg_envio_recibido": {
    "area": "traslados",
@@ -4648,6 +4684,10 @@
   "promociones_ciclo_diario": {
    "area": "promociones",
    "por": "cron"
+  },
+  "promociones_descuentos_sin_ligar": {
+   "area": "promociones",
+   "por": "tablas"
   },
   "promociones_registrar_excedentes": {
    "area": "promociones",
@@ -6145,8 +6185,8 @@
    "por": "código"
   },
   "ventas_elegibles_puntos": {
-   "area": "productos",
-   "por": "tablas"
+   "area": "ventas",
+   "por": "código"
   },
   "ventas_para_puntos": {
    "area": "productos",

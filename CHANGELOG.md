@@ -21,6 +21,33 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.31 — Promociones: la pantalla cuenta lo mismo que el pago, excedentes de vuelta y menos viajes a la caja
+
+Auditoría del módulo (2026-11-10).
+
+- **La pantalla y el pago cuentan lo mismo.** Las ventas de cada producto viven
+  en una sola función (`promocion_lineas`) que leen la ficha, el avance diario y
+  el corte del pago. La ficha no filtraba las salas del reparto: «Leche y
+  suplementos» mostraba 668 unidades y el pago reconocía 76. Verificado en las
+  cuatro promociones: pantalla = pago.
+- **Más rápido.** Esas consultas leían toda la historia de cada producto; ahora
+  sólo el período (52,766 → 11,265 bloques en el corte). Lo mismo en Rebajas.
+- **Excedentes de lote de vuelta.** El cierre diario había dejado de anotarlos
+  (se perdió en septiembre). Hoy no había ninguno pasado.
+- **Excedentes por sala:** con alcance de una sala se ven sólo los de la sala.
+- **Guardar y activar** ya no cierra ni dice «activa» si la activación falló
+  (web y app), con el flujo escrito una vez en el núcleo.
+- **Descuentos:** abrir la pestaña pide a la caja sólo los vigentes (20 → 3
+  peticiones hoy); mover la fecha de un descuento es una sola llamada; cada
+  corrección se verifica releyendo; si falla la lectura de precios se corta en
+  vez de callar el aviso de «bajo el costo»; dos altas a la vez ya no se quedan
+  con el mismo número; ligar y soltar un descuento es atómico; un descuento «de
+  todas las salas» sólo lo cambia quien ve toda la red.
+- **Editar promoción** no parpadea ni repliega todo en cada guardado; el
+  proveedor se cruza por id; «Crear el descuento» valida como el alta.
+- App: aviso «El precio no está bajando en caja» con «Mover el descuento».
+- Limpieza: filtros, avisos y filas de precio escritos una vez; código muerto.
+
 ## v2.1500.30 — App de clientes: portadas de Sonidos en alta resolución
 
 - App de clientes · Sonidos: las portadas de la pantalla de bloqueo pasan a 1024 px (el máximo que usa iOS) con el logo regenerado en alta resolución; a pantalla completa ya no se ven borrosas.

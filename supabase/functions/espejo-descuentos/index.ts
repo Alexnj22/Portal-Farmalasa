@@ -14,7 +14,8 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { checkCronSecret, getErpBranchMap } from "../_shared/security.ts";
 import {
-  getPromosCreds, getSessionCookie, listarDescuentos, productosDelDescuento, salasDelOrigen,
+  ayerSV, filaDeLaCopia, getPromosCreds, getSessionCookie, hayQueReleer, listarDescuentos,
+  productosDelDescuento, salasDelOrigen,
 } from "../_shared/descuentos.ts";
 
 const json = (body: unknown, status = 200) =>
@@ -28,25 +29,25 @@ Deno.serve(async (req) => {
     const cookie = await getSessionCookie(username, password);
     const lista = await listarDescuentos(cookie, await salasDelOrigen(cookie));
 
-    const { data: ya, error: eYa } = await admin.from("descuentos_espejo").select("id").limit(5000);
-    if (eYa) throw eYa;
-    const conocidas = new Set((ya ?? []).map((r) => Number(r.id)));
-    // La fecha de El Salvador (UTC-6), con un día de margen hacia atrás.
-    const ayer = new Date(Date.now() - 30 * 3600_000).toISOString().slice(0, 10);
+    /* Los ids que la copia ya conoce, por páginas: PostgREST corta en 1000
+       filas sin avisar, y un `.limit(5000)` no lo evita. */
+    const conocidas = new Set<number>();
+    for (let desde = 0; ; desde += 1000) {
+      const { data: ya, error: eYa } = await admin.from("descuentos_espejo")
+        .select("id").order("id").range(desde, desde + 999);
+      if (eYa) throw eYa;
+      for (const r of ya ?? []) conocidas.add(Number(r.id));
+      if (!ya || ya.length < 1000) break;
+    }
+    const ayer = ayerSV();
 
     const mapa = getErpBranchMap();
     const filas = await Promise.all(lista.map(async (d) => {
-      const releer = !conocidas.has(d.id) || d.fin >= ayer;
       // `null` = no se releyó (o falló): la base conserva los que tenía.
-      const productos = releer
-        ? await productosDelDescuento(cookie, d.id).then((p) => p.filter((x) => x > 0)).catch(() => null)
+      const productos = hayQueReleer(d, conocidas, ayer)
+        ? await productosDelDescuento(cookie, d.id).catch(() => null)
         : null;
-      return {
-        id: d.id, descripcion: d.descripcion, tipo: d.tipo, monto: d.monto,
-        inicio: d.inicio, fin: d.fin, todas_las_salas: d.todas_las_salas,
-        branch_id: d.erp_sucursal_id === null ? null : (mapa.find((e) => e.erpId === d.erp_sucursal_id)?.branchId ?? null),
-        productos,
-      };
+      return filaDeLaCopia(d, productos, mapa);
     }));
 
     const { data, error } = await admin.rpc("descuentos_espejo_sync", { p: filas, completa: true });

@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { comprimirImagen } from './imagen';
+import { prepararFoto, portadaDeVideo } from './imagen';
 import { nuevoCodigo } from './codigo';
 
 const URL_SB = import.meta.env.VITE_SUPABASE_URL;
@@ -13,7 +13,8 @@ const ok = ({ data, error }) => {
 };
 
 const urlPublica = (ruta) => sb.storage.from('album').getPublicUrl(ruta).data.publicUrl;
-const conUrl = (f) => ({ ...f, url: urlPublica(f.ruta) });
+// `mini` es la miniatura (para mosaicos); sin ella, la grande.
+const conUrl = (f) => ({ ...f, url: urlPublica(f.ruta), mini: f.miniatura ? urlPublica(f.miniatura) : urlPublica(f.ruta) });
 
 // ── Invitados ──────────────────────────────────────────────────────────────
 export const getInvitacion = async (codigo) => ok(await sb.rpc('invitacion', { p_codigo: codigo }));
@@ -40,17 +41,23 @@ export async function listarFotos({ incluirOcultas = false } = {}) {
   return todas.map(conUrl);
 }
 
+// Tres pasos: la base da el permiso (y la ruta), se suben archivo y miniatura,
+// y la base registra la foto gastando el permiso. Ver autorizar_subida.
 export async function subirFoto(file, { autor, momento, clave }) {
   const video = file.type.startsWith('video/');
-  const { blob, ancho, alto } = video ? { blob: file } : await comprimirImagen(file);
-  const ext = video ? (file.name.split('.').pop() || 'mp4').toLowerCase() : 'jpg';
-  const ruta = `fotos/${new Date().toISOString().slice(0, 10)}/${crypto.randomUUID()}.${ext}`;
-  ok(await sb.storage.from('album').upload(ruta, blob, {
-    contentType: video ? file.type : 'image/jpeg', cacheControl: '31536000',
-  }));
+  const p = video
+    ? { blob: file, tipo: file.type, ext: (file.name.split('.').pop() || 'mp4').toLowerCase(), ...(await portadaDeVideo(file)) }
+    : await prepararFoto(file);
+  const permiso = ok(await sb.rpc('autorizar_subida', { p_clave: clave, p_ext: p.ext }));
+  const bucket = sb.storage.from('album');
+  ok(await bucket.upload(permiso.ruta, p.blob, { contentType: p.tipo, cacheControl: '31536000' }));
+  if (p.miniatura) {
+    // Si la miniatura falla no se pierde la foto: el álbum usa la grande.
+    await bucket.upload(permiso.miniatura, p.miniatura, { contentType: 'image/jpeg', cacheControl: '31536000' }).catch(() => {});
+  }
   ok(await sb.rpc('registrar_foto', {
-    p_clave: clave, p_ruta: ruta, p_autor: autor, p_momento: momento,
-    p_ancho: ancho ?? null, p_alto: alto ?? null,
+    p_ruta: permiso.ruta, p_autor: autor, p_momento: momento,
+    p_ancho: p.ancho ?? null, p_alto: p.alto ?? null,
   }));
 }
 
@@ -68,6 +75,7 @@ export const listarMensajes = async ({ incluirOcultos = false } = {}) => {
   if (!incluirOcultos) q = q.eq('oculto', false);
   return ok(await q);
 };
+// Devuelve true si el mensaje ya se ve; false si espera aprobación.
 export const firmar = async ({ autor, texto }) => ok(await sb.rpc('firmar_libro', { p_autor: autor, p_texto: texto }));
 
 // ── Admin ──────────────────────────────────────────────────────────────────
@@ -121,7 +129,7 @@ export const borrarMesa = async (id) => ok(await sb.from('mesas').delete().eq('i
 
 export const ocultarFoto = async (id, oculta) => ok(await sb.from('fotos').update({ oculta }).eq('id', id));
 export async function borrarFoto(foto) {
-  ok(await sb.storage.from('album').remove([foto.ruta]));
+  ok(await sb.storage.from('album').remove([foto.ruta, ...(foto.miniatura ? [foto.miniatura] : [])]));
   ok(await sb.from('fotos').delete().eq('id', foto.id));
 }
 export const ocultarMensaje = async (id, oculto) => ok(await sb.from('mensajes').update({ oculto }).eq('id', id));
@@ -132,4 +140,24 @@ export async function leerClaveAlbum() {
 export const cambiarClaveAlbum = async (valor) =>
   ok(await sb.from('ajustes').upsert({ clave: 'clave_album', valor: valor.toUpperCase().trim() }));
 
+// Ajustes que la base hace cumplir (fecha límite, moderación…).
+export async function leerAjustes() {
+  const filas = ok(await sb.from('ajustes').select('clave, valor'));
+  return Object.fromEntries(filas.map((f) => [f.clave, f.valor]));
+}
+export const guardarAjuste = async (clave, valor) => ok(await sb.from('ajustes').upsert({ clave, valor: String(valor) }));
+
+// Entrada: marca (o desmarca) que la familia ya llegó.
+export const registrarLlegada = async (grupoId, llego) =>
+  ok(await sb.from('grupos').update({ llegada_at: llego ? new Date().toISOString() : null }).eq('id', grupoId));
+
 export const reiniciarDemo = () => {};
+
+// Para la entrada: el grupo por su código, con quiénes confirmaron y su mesa.
+export async function grupoPorCodigo(codigo) {
+  const g = ok(await sb.from('grupos')
+    .select('id, nombre, pases, llegada_at, personas(nombre, asistira, mesas(nombre))')
+    .eq('codigo', codigo.trim().toUpperCase()).maybeSingle());
+  if (!g) return null;
+  return { ...g, personas: g.personas.map((p) => ({ nombre: p.nombre, asistira: p.asistira, mesa: p.mesas?.nombre ?? null })) };
+}

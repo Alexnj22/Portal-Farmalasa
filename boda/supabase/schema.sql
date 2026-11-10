@@ -85,9 +85,37 @@ create table if not exists mensajes (
   created_at timestamptz not null default now()
 );
 
+-- Permisos de subida al álbum. El invitado pide uno con la clave del álbum y
+-- recibe una ruta generada acá; el almacenamiento sólo acepta archivos en una
+-- ruta con permiso vigente. Sin esto, la clave se revisaba DESPUÉS de subir y
+-- cualquiera con la clave pública del sitio podía llenar el espacio.
+create table if not exists subidas (
+  ruta text primary key,                -- archivo principal
+  miniatura text not null unique,       -- versión chica (jpg)
+  usada boolean not null default false, -- ya se registró la foto
+  created_at timestamptz not null default now()
+);
+create index if not exists subidas_fecha_idx on subidas(created_at);
+
+-- Columnas agregadas después de la primera versión (el script se puede volver a correr).
+alter table fotos  add column if not exists miniatura text;
+alter table grupos add column if not exists llegada_at timestamptz;  -- registrada en la entrada
+
 -- Clave del álbum (va en el QR de las mesas). Cambiarla desde el panel.
 insert into ajustes (clave, valor) values ('clave_album', upper(substr(md5(random()::text), 1, 6)))
 on conflict (clave) do nothing;
+-- Fecha límite y zona horaria: las copia el panel desde src/config.js cada vez
+-- que se abre (el archivo es la única fuente; esto es lo que la base hace cumplir).
+insert into ajustes (clave, valor) values
+  ('confirmar_antes_de', '2099-12-31'),
+  ('zona_horaria', 'America/El_Salvador'),
+  ('moderar_mensajes', 'no')
+on conflict (clave) do nothing;
+
+create or replace function ajuste(p_clave text) returns text
+language sql stable security definer set search_path = public as $$
+  select valor from ajustes where clave = p_clave;
+$$;
 
 -- ── Admin ────────────────────────────────────────────────────────────────────
 create or replace function es_admin() returns boolean
@@ -103,11 +131,12 @@ alter table grupos   enable row level security;
 alter table personas enable row level security;
 alter table fotos    enable row level security;
 alter table mensajes enable row level security;
+alter table subidas  enable row level security;
 
 do $$
 declare t text;
 begin
-  foreach t in array array['ajustes','mesas','grupos','personas','fotos','mensajes'] loop
+  foreach t in array array['ajustes','mesas','grupos','personas','fotos','mensajes','subidas'] loop
     execute format('drop policy if exists %I on %I', t || '_admin', t);
     execute format(
       'create policy %I on %I for all to authenticated using ((select es_admin())) with check ((select es_admin()))',
@@ -125,6 +154,14 @@ drop policy if exists mensajes_publicos on mensajes;
 create policy mensajes_publicos on mensajes for select to anon, authenticated using (not oculto);
 
 -- ── Funciones para invitados ────────────────────────────────────────────────
+-- ¿Ya pasó la fecha límite para confirmar? Se juzga con la hora del LUGAR de la
+-- boda, no con la del teléfono del invitado.
+create or replace function plazo_vencido() returns boolean
+language sql stable security definer set search_path = public as $$
+  select (now() at time zone coalesce(ajuste('zona_horaria'), 'America/El_Salvador'))::date
+         > coalesce(ajuste('confirmar_antes_de'), '2099-12-31')::date;
+$$;
+
 create or replace function invitacion(p_codigo text) returns json
 language plpgsql security definer set search_path = public as $$
 declare g grupos; r json;
@@ -136,6 +173,7 @@ begin
     'grupo', json_build_object('codigo', g.codigo, 'nombre', g.nombre, 'pases', g.pases,
                                'estado', g.estado, 'mensaje', g.mensaje, 'cancion', g.cancion,
                                'respondido_at', g.respondido_at),
+    'limite', ajuste('confirmar_antes_de'),
     'personas', coalesce((
       select json_agg(json_build_object(
         'id', p.id, 'nombre', p.nombre, 'es_nino', p.es_nino, 'asistira', p.asistira,
@@ -150,11 +188,23 @@ create or replace function responder_invitacion(
   p_codigo text, p_personas json, p_mensaje text default null, p_cancion text default null
 ) returns json
 language plpgsql security definer set search_path = public as $$
-declare g grupos; x json; n_si int; n_total int;
+declare g grupos; x json; n_si int; n_total int; n_nuevas int;
 begin
   select * into g from grupos where codigo = upper(trim(p_codigo)) for update;
   if not found then raise exception 'Invitación no encontrada'; end if;
-  if json_array_length(p_personas) > g.pases then
+  if plazo_vencido() then
+    raise exception 'El plazo para confirmar ya terminó. Escríbenos directamente.';
+  end if;
+  if json_typeof(p_personas) <> 'array' or json_array_length(p_personas) > g.pases then
+    raise exception 'La invitación tiene % pases', g.pases;
+  end if;
+
+  -- Los pases se cuentan contra lo GUARDADO más lo nuevo: contar sólo lo que
+  -- llega en cada envío dejaba sumar acompañantes de a uno, sin límite.
+  select count(*) into n_nuevas from json_array_elements(p_personas) e
+  where nullif(e->>'id', '') is null and nullif(trim(e->>'nombre'), '') is not null;
+  select count(*) into n_total from personas where grupo_id = g.id;
+  if n_total + n_nuevas > g.pases then
     raise exception 'La invitación tiene % pases', g.pases;
   end if;
 
@@ -190,35 +240,83 @@ language sql stable security definer set search_path = public as $$
   select exists (select 1 from ajustes where clave = 'clave_album' and valor = upper(trim(p_clave)));
 $$;
 
-create or replace function registrar_foto(
-  p_clave text, p_ruta text, p_autor text, p_momento text, p_ancho int, p_alto int
-) returns uuid
+-- Paso 1 de una subida: con la clave del álbum, la base inventa la ruta.
+create or replace function autorizar_subida(p_clave text, p_ext text) returns json
 language plpgsql security definer set search_path = public as $$
-declare v uuid;
+declare v_ext text := lower(trim(p_ext)); v_base text; v_ruta text; v_mini text;
 begin
   if not verificar_clave_album(p_clave) then raise exception 'Clave del álbum incorrecta'; end if;
-  if p_ruta !~ '^fotos/[A-Za-z0-9/_.-]+$' then raise exception 'Ruta inválida'; end if;
-  insert into fotos (ruta, autor, momento, ancho, alto)
-  values (p_ruta, nullif(left(trim(p_autor), 60), ''), nullif(left(trim(p_momento), 30), ''), p_ancho, p_alto)
+  if v_ext not in ('jpg','jpeg','png','webp','heic','heif','mp4','mov') then
+    raise exception 'Ese tipo de archivo no se puede subir';
+  end if;
+  -- Freno contra abuso: muy por encima de lo que sube un salón lleno.
+  if (select count(*) from subidas where created_at > now() - interval '10 minutes') >= 1500 then
+    raise exception 'Hay demasiadas fotos subiéndose en este momento. Intenta en unos minutos.';
+  end if;
+  delete from subidas where created_at < now() - interval '1 day';
+  v_base := 'fotos/' || to_char(now() at time zone coalesce(ajuste('zona_horaria'), 'UTC'), 'YYYY-MM-DD')
+            || '/' || gen_random_uuid();
+  v_ruta := v_base || '.' || v_ext;
+  v_mini := v_base || '_m.jpg';
+  insert into subidas (ruta, miniatura) values (v_ruta, v_mini);
+  return json_build_object('ruta', v_ruta, 'miniatura', v_mini);
+end $$;
+
+-- La consulta la policy del almacenamiento: ¿hay permiso vigente para este nombre?
+create or replace function subida_autorizada(p_nombre text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (
+    select 1 from subidas
+    where not usada and created_at > now() - interval '30 minutes'
+      and (ruta = p_nombre or miniatura = p_nombre));
+$$;
+
+-- Paso 3: el archivo ya está; se registra la foto y el permiso se gasta.
+drop function if exists registrar_foto(text, text, text, text, int, int);
+create or replace function registrar_foto(
+  p_ruta text, p_autor text, p_momento text, p_ancho int, p_alto int
+) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare s subidas; v uuid;
+begin
+  select * into s from subidas where ruta = p_ruta and not usada for update;
+  if not found then raise exception 'El permiso de subida venció. Intenta de nuevo.'; end if;
+  if not exists (select 1 from storage.objects where bucket_id = 'album' and name = s.ruta) then
+    raise exception 'El archivo no llegó completo. Intenta de nuevo.';
+  end if;
+  update subidas set usada = true where ruta = s.ruta;
+  insert into fotos (ruta, miniatura, autor, momento, ancho, alto)
+  values (s.ruta,
+          case when exists (select 1 from storage.objects where bucket_id = 'album' and name = s.miniatura)
+               then s.miniatura end,
+          nullif(left(trim(p_autor), 60), ''), nullif(left(trim(p_momento), 30), ''), p_ancho, p_alto)
   returning id into v;
   return v;
 end $$;
 
-create or replace function firmar_libro(p_autor text, p_texto text) returns void
+-- Devuelve si el mensaje ya se ve (false = espera aprobación de los novios).
+drop function if exists firmar_libro(text, text);
+create or replace function firmar_libro(p_autor text, p_texto text) returns boolean
 language plpgsql security definer set search_path = public as $$
+declare v_moderar boolean := coalesce(ajuste('moderar_mensajes'), 'no') = 'si';
 begin
   if length(trim(coalesce(p_autor, ''))) < 2 or length(trim(coalesce(p_texto, ''))) < 2 then
     raise exception 'Escribe tu nombre y tu mensaje';
   end if;
-  insert into mensajes (autor, texto) values (left(trim(p_autor), 60), left(trim(p_texto), 600));
+  if (select count(*) from mensajes where created_at > now() - interval '10 minutes') >= 100 then
+    raise exception 'Llegaron muchos mensajes seguidos. Intenta en unos minutos.';
+  end if;
+  insert into mensajes (autor, texto, oculto) values (left(trim(p_autor), 60), left(trim(p_texto), 600), v_moderar);
+  return not v_moderar;
 end $$;
 
 revoke execute on function invitacion(text), responder_invitacion(text, json, text, text),
-  verificar_clave_album(text), registrar_foto(text, text, text, text, int, int),
-  firmar_libro(text, text), es_admin() from public;
+  verificar_clave_album(text), autorizar_subida(text, text), subida_autorizada(text),
+  registrar_foto(text, text, text, int, int), firmar_libro(text, text), es_admin(),
+  ajuste(text), plazo_vencido() from public, anon, authenticated;
 grant execute on function invitacion(text), responder_invitacion(text, json, text, text),
-  verificar_clave_album(text), registrar_foto(text, text, text, text, int, int),
-  firmar_libro(text, text) to anon, authenticated;
+  verificar_clave_album(text), autorizar_subida(text, text), subida_autorizada(text),
+  registrar_foto(text, text, text, int, int), firmar_libro(text, text) to anon, authenticated;
 grant execute on function es_admin() to authenticated;
 
 -- ── Storage: bucket del álbum ───────────────────────────────────────────────
@@ -228,9 +326,10 @@ values ('album', 'album', true, 26214400,
 on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 
+-- Sólo se sube a una ruta que la base autorizó (ver autorizar_subida).
 drop policy if exists album_subir on storage.objects;
 create policy album_subir on storage.objects for insert to anon, authenticated
-  with check (bucket_id = 'album' and name like 'fotos/%');
+  with check (bucket_id = 'album' and public.subida_autorizada(name));
 
 drop policy if exists album_admin_borrar on storage.objects;
 create policy album_admin_borrar on storage.objects for delete to authenticated

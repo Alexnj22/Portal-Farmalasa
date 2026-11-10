@@ -41,7 +41,7 @@ export default function Pantalla() {
       {f && (esVideo(f.ruta)
         ? <video key={f.id} src={f.url} autoPlay muted playsInline loop />
         : <>
-            <img key={`b${f.id}`} className="fondo-borroso" src={f.url} alt="" />
+            <img key={`b${f.id}`} className="fondo-borroso" src={f.mini || f.url} alt="" />
             <img key={f.id} src={f.url} alt="" />
           </>)}
       {!f && <div style={{ display: 'grid', placeItems: 'center', height: '100%' }}><p className="script" style={{ fontSize: '4rem' }}>{boda.novios.firma}</p></div>}

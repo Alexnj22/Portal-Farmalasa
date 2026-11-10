@@ -1,6 +1,7 @@
 // MODO DEMO: misma interfaz que supabaseApi, guardado en localStorage. Sirve
 // para ver y probar el sitio completo sin crear nada. Nada sale del navegador.
 import { comprimirImagen, blobADataUrl } from './imagen';
+import { boda } from '../config';
 import { nuevoCodigo } from './codigo';
 
 const CLAVE = 'boda-demo-v1';
@@ -39,6 +40,7 @@ function semilla() {
   lista[2].personas[1].restriccion = 'Vegetariana';
   return {
     claveAlbum: 'BODA27',
+    ajustes: { moderar_mensajes: 'no' },
     mesas,
     grupos: lista.map((x) => x.grupo),
     personas: lista.flatMap((x) => x.personas),
@@ -76,11 +78,18 @@ export function reiniciarDemo() {
 }
 
 // ── Invitados ──────────────────────────────────────────────────────────────
+// Mismo juicio que plazo_vencido() en la base: la fecha del LUGAR de la boda.
+function plazoVencido() {
+  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: boda.zonaHoraria });
+  return hoy > boda.confirmarAntesDe;
+}
+
 function armarInvitacion(s, g) {
   const mesas = Object.fromEntries(s.mesas.map((m) => [m.id, m.nombre]));
   return {
     grupo: { codigo: g.codigo, nombre: g.nombre, pases: g.pases, estado: g.estado, mensaje: g.mensaje,
       cancion: g.cancion, respondido_at: g.respondido_at },
+    limite: boda.confirmarAntesDe,
     personas: s.personas.filter((p) => p.grupo_id === g.id).map((p) => ({
       id: p.id, nombre: p.nombre, es_nino: p.es_nino, asistira: p.asistira, restriccion: p.restriccion,
       mesa: mesas[p.mesa_id] ?? null,
@@ -100,7 +109,10 @@ export async function responder(codigo, { personas, mensaje, cancion }) {
   const s = leer();
   const g = s.grupos.find((x) => x.codigo === codigo.trim().toUpperCase());
   if (!g) throw new Error('Invitación no encontrada');
-  if (personas.length > g.pases) throw new Error(`La invitación tiene ${g.pases} pases`);
+  if (plazoVencido()) throw new Error('El plazo para confirmar ya terminó. Escríbenos directamente.');
+  const guardadas = s.personas.filter((p) => p.grupo_id === g.id).length;
+  const nuevas = personas.filter((x) => !x.id && x.nombre?.trim()).length;
+  if (personas.length > g.pases || guardadas + nuevas > g.pases) throw new Error(`La invitación tiene ${g.pases} pases`);
   for (const x of personas) {
     const p = x.id && s.personas.find((y) => y.id === x.id && y.grupo_id === g.id);
     if (p) Object.assign(p, { nombre: x.nombre?.trim() || p.nombre, asistira: x.asistira, restriccion: x.restriccion?.trim() || null });
@@ -135,7 +147,7 @@ export async function subirFoto(file, { autor, momento, clave }) {
   const url = await blobADataUrl(blob);
   const s = leer();
   const id = uid();
-  s.fotos.push({ id, ruta: `fotos/${id}.jpg`, url, autor: autor?.trim() || null, momento: momento || null,
+  s.fotos.push({ id, ruta: `fotos/${id}.jpg`, url, mini: url, autor: autor?.trim() || null, momento: momento || null,
     ancho, alto, oculta: false, created_at: ahora() });
   guardar(s);
 }
@@ -161,9 +173,10 @@ export async function listarMensajes({ incluirOcultos = false } = {}) {
 export async function firmar({ autor, texto }) {
   if ((autor?.trim().length ?? 0) < 2 || (texto?.trim().length ?? 0) < 2) throw new Error('Escribe tu nombre y tu mensaje');
   const s = leer();
-  s.mensajes.push({ id: uid(), autor: autor.trim().slice(0, 60), texto: texto.trim().slice(0, 600), oculto: false, created_at: ahora() });
+  const moderar = (s.ajustes?.moderar_mensajes ?? 'no') === 'si';
+  s.mensajes.push({ id: uid(), autor: autor.trim().slice(0, 60), texto: texto.trim().slice(0, 600), oculto: moderar, created_at: ahora() });
   guardar(s);
-  return espera();
+  return espera(!moderar);
 }
 
 // ── Admin ──────────────────────────────────────────────────────────────────
@@ -255,4 +268,26 @@ export async function cambiarClaveAlbum(valor) {
   const s = leer();
   s.claveAlbum = valor.trim().toUpperCase();
   guardar(s);
+}
+
+export async function leerAjustes() {
+  const s = leer();
+  return espera({ clave_album: s.claveAlbum, confirmar_antes_de: boda.confirmarAntesDe, zona_horaria: boda.zonaHoraria, moderar_mensajes: 'no', ...s.ajustes });
+}
+export async function guardarAjuste(clave, valor) {
+  const s = leer();
+  s.ajustes = { ...s.ajustes, [clave]: String(valor) };
+  guardar(s);
+}
+export const registrarLlegada = (grupoId, llego) => actualizarGrupo(grupoId, { llegada_at: llego ? ahora() : null });
+
+export async function grupoPorCodigo(codigo) {
+  const s = leer();
+  const g = s.grupos.find((x) => x.codigo === codigo.trim().toUpperCase());
+  if (!g) return espera(null);
+  const mesas = Object.fromEntries(s.mesas.map((m) => [m.id, m.nombre]));
+  return espera(clonar({
+    id: g.id, nombre: g.nombre, pases: g.pases, llegada_at: g.llegada_at ?? null,
+    personas: s.personas.filter((p) => p.grupo_id === g.id).map((p) => ({ nombre: p.nombre, asistira: p.asistira, mesa: mesas[p.mesa_id] ?? null })),
+  }));
 }

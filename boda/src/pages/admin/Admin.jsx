@@ -8,10 +8,11 @@ import Mesas from './Mesas';
 import FotosAdmin from './FotosAdmin';
 import MensajesAdmin from './MensajesAdmin';
 import Compartir from './Compartir';
+import Entrada from './Entrada';
 
 const PESTANAS = [
   ['resumen', 'Resumen'], ['invitados', 'Invitados'], ['mesas', 'Mesas'],
-  ['album', 'Álbum'], ['mensajes', 'Mensajes'], ['compartir', 'QR y enlaces'],
+  ['album', 'Álbum'], ['mensajes', 'Mensajes'], ['compartir', 'QR y enlaces'], ['entrada', 'Entrada'],
 ];
 
 export default function Admin() {
@@ -30,6 +31,17 @@ export default function Admin() {
     } catch (e) { setError(e.message); }
   }, []);
   useEffect(() => { if (usuario) recargar(); }, [usuario, recargar]);
+
+  // La fecha límite y la zona horaria viven en src/config.js; la base guarda una
+  // copia para hacerlas cumplir. Cada vez que se abre el panel se copian.
+  useEffect(() => {
+    if (!usuario) return;
+    (async () => {
+      const a = await api.leerAjustes();
+      const deseado = { confirmar_antes_de: boda.confirmarAntesDe, zona_horaria: boda.zonaHoraria };
+      for (const [k, v] of Object.entries(deseado)) if (a[k] !== v) await api.guardarAjuste(k, v);
+    })().catch((e) => setError(`No se pudo guardar la fecha límite en la base: ${e.message}`));
+  }, [usuario]);
 
   const irA = (p) => {
     setPestana(p);
@@ -65,6 +77,7 @@ export default function Admin() {
       {pestana === 'album' && <FotosAdmin />}
       {pestana === 'mensajes' && <MensajesAdmin grupos={grupos} />}
       {pestana === 'compartir' && <Compartir mesas={mesas} />}
+      {pestana === 'entrada' && <Entrada {...props} />}
       {modoDemo && (
         <p className="chico suave centro" style={{ marginTop: 40 }}>
           <button className="btn peligro chico" onClick={() => { if (confirm('¿Borrar todo y volver a los datos de ejemplo?')) { api.reiniciarDemo(); recargar(); } }}>Reiniciar la demo</button>

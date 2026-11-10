@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { boda } from '../config';
 import { api } from '../lib/api';
-import { limiteConfirmar } from '../lib/fechas';
-
-const vencido = () => new Date() > new Date(`${boda.confirmarAntesDe}T23:59:59`);
+import { limiteConfirmar, plazoVencido } from '../lib/fechas';
+import { t } from '../lib/idioma';
+import { enlaceInvitacion } from '../lib/codigo';
+import QR from '../components/QR';
 
 export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
   const { grupo, personas } = invitacion;
+  // La fecha límite la manda la base (es la que hace cumplir); el config es el respaldo.
+  const limite = invitacion.limite || undefined;
+  const vencido = plazoVencido(limite);
   const [editando, setEditando] = useState(!grupo.respondido_at);
   const [filas, setFilas] = useState(() => {
     const f = personas.map((p) => ({ ...p, restriccion: p.restriccion || '' }));
@@ -25,8 +28,8 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
     e.preventDefault();
     setError('');
     const validas = filas.filter((f) => !f.extra || f.nombre.trim());
-    if (validas.some((f) => f.asistira == null)) { setError('Indica si cada persona asistirá.'); return; }
-    if (filas.some((f) => f.extra && !f.nombre.trim() && f.asistira)) { setError('Escribe el nombre de tu acompañante.'); return; }
+    if (validas.some((f) => f.asistira == null)) { setError(t('Indica si cada persona asistirá.', 'Please tell us whether each person will attend.')); return; }
+    if (filas.some((f) => f.extra && !f.nombre.trim() && f.asistira)) { setError(t('Escribe el nombre de tu acompañante.', "Please write your guest's name.")); return; }
     setEnviando(true);
     try {
       const r = await api.responder(codigo, {
@@ -37,7 +40,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
       setEditando(false);
       window.scrollTo({ top: document.getElementById('confirmar').offsetTop - 60, behavior: 'smooth' });
     } catch (err) {
-      setError(err.message || 'No se pudo enviar. Intenta de nuevo.');
+      setError(err.message || t('No se pudo enviar. Intenta de nuevo.', 'Could not send. Please try again.'));
     } finally {
       setEnviando(false);
     }
@@ -45,9 +48,11 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
 
   const sobre = (
     <div className="sobre" style={{ marginBottom: 20 }}>
-      <p className="suave chico" style={{ letterSpacing: '.2em', textTransform: 'uppercase' }}>Invitación para</p>
+      <p className="suave chico" style={{ letterSpacing: '.2em', textTransform: 'uppercase' }}>{t('Invitación para', 'Invitation for')}</p>
       <p className="script" style={{ fontSize: '2.4rem', color: 'var(--oro)', margin: 0 }}>{grupo.nombre}</p>
-      <p className="suave">Hemos reservado <b>{grupo.pases} {grupo.pases === 1 ? 'lugar' : 'lugares'}</b> en tu honor.</p>
+      <p className="suave">
+        {t('Hemos reservado', 'We have reserved')} <b>{grupo.pases} {grupo.pases === 1 ? t('lugar', 'seat') : t('lugares', 'seats')}</b> {t('en tu honor.', 'in your honor.')}
+      </p>
     </div>
   );
 
@@ -59,56 +64,65 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
         {sobre}
         <div className="tarjeta centro">
           {van.length ? <>
-            <h3>¡Gracias por confirmar! 🎉</h3>
-            <p>Te esperamos: {van.map((p) => p.nombre).join(', ')}.</p>
+            <h3>{t('¡Gracias por confirmar! 🎉', 'Thank you for confirming! 🎉')}</h3>
+            <p>{t('Te esperamos', 'We look forward to seeing you')}: {van.map((p) => p.nombre).join(', ')}.</p>
             {mesas.length > 0 && (
-              <p style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem' }}>Tu mesa: <b>{mesas.join(' y ')}</b></p>
+              <p style={{ fontFamily: 'var(--serif)', fontSize: '1.5rem' }}>{t('Tu mesa', 'Your table')}: <b>{mesas.join(t(' y ', ' and '))}</b></p>
             )}
-            {!mesas.length && <p className="suave chico">Unos días antes de la boda verás aquí tu mesa asignada.</p>}
+            {!mesas.length && <p className="suave chico">{t('Unos días antes de la boda verás aquí tu mesa asignada.', 'A few days before the wedding you will see your table here.')}</p>}
+            <div className="pase-entrada">
+              <QR texto={enlaceInvitacion(codigo)} tam={140} />
+              <p className="chico suave" style={{ margin: '8px 0 0' }}>
+                {t('Tu pase de entrada: muéstralo al llegar.', 'Your entry pass: show it when you arrive.')} <b style={{ letterSpacing: '.15em' }}>{codigo}</b>
+              </p>
+            </div>
           </> : <>
-            <h3>Gracias por avisarnos</h3>
-            <p className="suave">Lamentamos que no puedas acompañarnos. ¡Te vamos a extrañar!</p>
+            <h3>{t('Gracias por avisarnos', 'Thank you for letting us know')}</h3>
+            <p className="suave">{t('Lamentamos que no puedas acompañarnos. ¡Te vamos a extrañar!', "We're sorry you can't join us. We'll miss you!")}</p>
           </>}
-          {!cerrado && !vencido() && <button className="btn claro" onClick={() => setEditando(true)}>Cambiar mi respuesta</button>}
-          {!cerrado && vencido() && <p className="suave chico">Si necesitas cambiar algo, escríbenos.</p>}
+          {!cerrado && !vencido && <button className="btn claro" onClick={() => setEditando(true)}>{t('Cambiar mi respuesta', 'Change my answer')}</button>}
+          {!cerrado && vencido && <p className="suave chico">{t('Si necesitas cambiar algo, escríbenos.', 'If you need to change anything, message us.')}</p>}
         </div>
       </>
     );
   }
 
-  if (vencido() || cerrado) {
-    return <>{sobre}<p className="aviso centro">El plazo para confirmar terminó el {limiteConfirmar()}. Si aún quieres confirmar, escríbenos directamente.</p></>;
+  if (vencido || cerrado) {
+    return <>{sobre}<p className="aviso centro">
+      {t(`El plazo para confirmar terminó el ${limiteConfirmar(limite)}. Si aún quieres confirmar, escríbenos directamente.`,
+        `The RSVP deadline was ${limiteConfirmar(limite)}. If you still want to confirm, please message us directly.`)}
+    </p></>;
   }
 
   return (
     <form onSubmit={enviar}>
       {sobre}
-      <p className="centro suave">Por favor confirma antes del <b>{limiteConfirmar()}</b>.</p>
+      <p className="centro suave">{t('Por favor confirma antes del', 'Please reply by')} <b>{limiteConfirmar(limite)}</b>.</p>
       {filas.map((f, i) => (
         <div className="persona" key={f.id ?? `extra-${i}`}>
           <div className="fila">
             {f.extra
-              ? <input value={f.nombre} onChange={(e) => cambiar(i, 'nombre', e.target.value)} placeholder="Nombre de tu acompañante" aria-label="Nombre del acompañante" style={{ flex: '1 1 180px' }} />
+              ? <input value={f.nombre} onChange={(e) => cambiar(i, 'nombre', e.target.value)} placeholder={t('Nombre de tu acompañante', "Your guest's name")} aria-label={t('Nombre del acompañante', "Guest's name")} style={{ flex: '1 1 180px' }} />
               : <b>{f.nombre}</b>}
-            <div className="eleccion" role="group" aria-label={`¿${f.nombre || 'Acompañante'} asistirá?`}>
-              <button type="button" className={f.asistira === true ? 'si' : ''} onClick={() => cambiar(i, 'asistira', true)}>Asistiré</button>
-              <button type="button" className={f.asistira === false ? 'no' : ''} onClick={() => cambiar(i, 'asistira', false)}>No podré</button>
+            <div className="eleccion" role="group" aria-label={`${f.nombre || t('Acompañante', 'Guest')}: ${t('¿asistirá?', 'attending?')}`}>
+              <button type="button" className={f.asistira === true ? 'si' : ''} onClick={() => cambiar(i, 'asistira', true)}>{t('Asistiré', 'Attending')}</button>
+              <button type="button" className={f.asistira === false ? 'no' : ''} onClick={() => cambiar(i, 'asistira', false)}>{t('No podré', "Can't make it")}</button>
             </div>
           </div>
           {f.asistira && (
-            <input value={f.restriccion} onChange={(e) => cambiar(i, 'restriccion', e.target.value)} placeholder="Alergias o restricción alimentaria (opcional)" aria-label="Restricción alimentaria" />
+            <input value={f.restriccion} onChange={(e) => cambiar(i, 'restriccion', e.target.value)} placeholder={t('Alergias o restricción alimentaria (opcional)', 'Allergies or dietary restrictions (optional)')} aria-label={t('Restricción alimentaria', 'Dietary restriction')} />
           )}
         </div>
       ))}
-      {filas.length > 1 && <p className="centro"><button type="button" className="btn claro chico" onClick={todosNo}>Ninguno podrá asistir</button></p>}
-      <label className="campo"><span>Una canción que no puede faltar 🎶</span>
-        <input value={cancion} onChange={(e) => setCancion(e.target.value)} placeholder="Canción – Artista" />
+      {filas.length > 1 && <p className="centro"><button type="button" className="btn claro chico" onClick={todosNo}>{t('Ninguno podrá asistir', 'None of us can attend')}</button></p>}
+      <label className="campo"><span>{t('Una canción que no puede faltar 🎶', 'A song that must be played 🎶')}</span>
+        <input value={cancion} onChange={(e) => setCancion(e.target.value)} placeholder={t('Canción – Artista', 'Song – Artist')} />
       </label>
-      <label className="campo"><span>Un mensaje para los novios</span>
+      <label className="campo"><span>{t('Un mensaje para los novios', 'A message for the couple')}</span>
         <textarea value={mensaje} onChange={(e) => setMensaje(e.target.value)} maxLength={1000} />
       </label>
       {error && <p className="aviso error">{error}</p>}
-      <div className="centro"><button className="btn oro" disabled={enviando}>{enviando ? 'Enviando…' : 'Enviar confirmación'}</button></div>
+      <div className="centro"><button className="btn oro" disabled={enviando}>{enviando ? t('Enviando…', 'Sending…') : t('Enviar confirmación', 'Send RSVP')}</button></div>
     </form>
   );
 }

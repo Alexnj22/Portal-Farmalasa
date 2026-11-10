@@ -47,6 +47,18 @@ export default function Mesas({ grupos, mesas, recargar }) {
   const sentar = intentar(async (ids) => { for (const id of ids) await api.asignarMesa(id, sel); });
   const levantar = intentar((id) => api.asignarMesa(id, null));
 
+  // Platillos especiales por mesa, para el banquete: sólo confirmados con restricción.
+  const especiales = useMemo(() => mesas
+    .map((m) => ({ mesa: m.nombre, personas: personas.filter((p) => p.mesa_id === m.id && p.asistira && p.restriccion) }))
+    .concat([{ mesa: 'Sin mesa', personas: personas.filter((p) => !p.mesa_id && p.asistira && p.restriccion) }])
+    .filter((x) => x.personas.length), [mesas, personas]);
+
+  function exportarEspeciales() {
+    descargarCsv('platillos-especiales.csv', especiales.flatMap((x) => x.personas.map((p) => ({
+      mesa: x.mesa, persona: p.nombre, invitacion: p.grupo, restriccion: p.restriccion,
+    }))));
+  }
+
   function exportar() {
     descargarCsv('mesas.csv', mesas.flatMap((m) => personas.filter((p) => p.mesa_id === m.id && p.asistira !== false)
       .map((p) => ({ mesa: m.nombre, persona: p.nombre, invitacion: p.grupo, confirmado: p.asistira ? 'sí' : 'pendiente', restriccion: p.restriccion || '' }))));
@@ -83,7 +95,9 @@ export default function Mesas({ grupos, mesas, recargar }) {
             <ul style={{ listStyle: 'none', padding: 0, margin: '10px 0' }}>
               {sentados.map((p) => (
                 <li key={p.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '4px 0', borderBottom: '1px solid var(--linea)' }}>
-                  <span>{p.asistira ? '✅' : '⏳'} {p.nombre} <span className="chico suave">· {p.grupo}</span></span>
+                  <span>{p.asistira ? '✅' : '⏳'} {p.nombre} <span className="chico suave">· {p.grupo}</span>
+                    {p.restriccion && <span className="pastilla" style={{ marginLeft: 6 }} title="Restricción alimentaria">🍽 {p.restriccion}</span>}
+                  </span>
                   <button className="btn claro icono" aria-label={`Quitar a ${p.nombre}`} onClick={() => levantar(p.id)}>×</button>
                 </li>
               ))}
@@ -92,6 +106,21 @@ export default function Mesas({ grupos, mesas, recargar }) {
             <button className="btn peligro chico" onClick={borrar}>Borrar mesa</button>
           </>}
         </div>
+      </div>
+
+      <div className="tarjeta" style={{ marginTop: 28 }}>
+        <div className="herramientas" style={{ margin: 0, justifyContent: 'space-between' }}>
+          <h3 style={{ margin: 0 }}>Platillos especiales por mesa ({especiales.reduce((s, x) => s + x.personas.length, 0)})</h3>
+          {especiales.length > 0 && <button className="btn claro chico" onClick={exportarEspeciales}>Exportar para el banquete</button>}
+        </div>
+        {especiales.length ? especiales.map((x) => (
+          <div key={x.mesa} style={{ marginTop: 12 }}>
+            <b>{x.mesa}</b>
+            <ul style={{ margin: '4px 0 0', paddingLeft: 18 }}>
+              {x.personas.map((p) => <li key={p.id}>{p.nombre} — {p.restriccion}</li>)}
+            </ul>
+          </div>
+        )) : <p className="suave chico" style={{ margin: '8px 0 0' }}>Ningún confirmado ha indicado alergias o restricciones.</p>}
       </div>
 
       <h3 style={{ marginTop: 28 }}>Sin mesa ({sinMesa.length})</h3>

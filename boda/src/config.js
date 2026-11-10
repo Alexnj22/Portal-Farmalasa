@@ -5,6 +5,15 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const boda = {
+  // Dirección pública del sitio (sin / al final). La usa la vista previa de
+  // WhatsApp/Facebook, que necesita la URL completa de la foto de portada.
+  sitio: 'https://boda.ejemplo.com',
+
+  // Idiomas del sitio para los invitados. Con ['es'] no aparece el botón de
+  // idioma. El inglés toma sus textos del bloque `en` (al final del archivo);
+  // lo que no esté traducido ahí se muestra en español.
+  idiomas: ['es', 'en'],
+
   novios: {
     el: 'Daniel',
     ella: 'Valeria',
@@ -34,6 +43,9 @@ export const boda = {
   // Fotos: ponerlas en /public/fotos/ y referirlas como '/fotos/archivo.jpg'.
   // Las de ejemplo vienen de Unsplash (libres de uso).
   portada: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1800&q=80',
+  // Foto para la vista previa del enlace en WhatsApp (opcional; si no, la portada).
+  // Ideal: horizontal, 1200×630, menos de 300 KB.
+  portadaCompartir: 'https://images.unsplash.com/photo-1519741497674-611481863552?w=1200&h=630&fit=crop&q=75',
   galeria: [
     'https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=1200&q=80',
     'https://images.unsplash.com/photo-1511285560929-80b456fea0bc?w=1200&q=80',
@@ -115,6 +127,44 @@ export const boda = {
 
   // Lista de canciones (opcional): enlace a una playlist colaborativa
   playlist: '',
+
+  // ── Inglés ────────────────────────────────────────────────────────────────
+  // Misma forma que arriba y en el MISMO orden (se cruza por posición). Sólo
+  // los textos: fechas, horas, coordenadas y enlaces salen de la versión en
+  // español. Lo que falte acá se muestra en español.
+  en: {
+    frase: 'With the blessing of God and our parents, we want to share with you the happiest day of our lives.',
+    historia: [
+      { titulo: 'We met', texto: 'A mutual friend, a party and a conversation that never ended.' },
+      { titulo: 'First date', texto: 'Pupusas, rain and the certainty that this was something special.' },
+      { titulo: 'Our first trip', texto: 'We found out we are great travel partners too.' },
+      { titulo: 'She said yes!', texto: 'By the sea, with our hearts racing.' },
+    ],
+    lugares: [{ tipo: 'Religious ceremony' }, { tipo: 'Reception' }],
+    itinerario: [
+      { titulo: 'Ceremony' }, { titulo: 'Photo session' }, { titulo: 'Welcome cocktail' },
+      { titulo: 'Grand entrance and dinner' }, { titulo: 'First dance' }, { titulo: "Let's dance!" }, { titulo: 'Farewell' },
+    ],
+    vestimenta: {
+      codigo: 'Formal',
+      detalle: 'Gentlemen: dark suit. Ladies: long or cocktail dress. Please leave white for the bride.',
+    },
+    regalos: {
+      texto: 'Your presence is our greatest gift. If you wish to give us something, here are some options:',
+      opciones: [
+        { titulo: 'Envelope box', detalle: 'There will be a box at the reception.' },
+        { titulo: 'Bank transfer', detalle: 'Banco Ejemplo · Savings account' },
+      ],
+    },
+    hospedaje: [{ detalle: '5 minutes from the venue. Mention the wedding for a special rate.' }],
+    preguntas: [
+      { p: 'Can I bring a plus-one?', r: 'Your invitation shows how many seats it includes. If in doubt, message us.' },
+      { p: 'Are children invited?', r: 'We love kids, but this will be an adults-only celebration (except those named on the invitation).' },
+      { p: 'Is there parking?', r: 'Yes, the venue has free, guarded parking.' },
+      { p: 'How do I share my photos?', r: 'On the wedding day you will find QR codes on each table. Scan it and upload your photos to the shared album.' },
+    ],
+    momentos: ['Ceremony', 'Cocktail', 'Party', 'Details', 'Selfies'],
+  },
 };
 
 export const fechaBoda = new Date(boda.fecha);

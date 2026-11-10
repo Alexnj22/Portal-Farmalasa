@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.30 — App de clientes: portadas de Sonidos en alta resolución
+
+- App de clientes · Sonidos: las portadas de la pantalla de bloqueo pasan a 1024 px (el máximo que usa iOS) con el logo regenerado en alta resolución; a pantalla completa ya no se ven borrosas.
+
 ## v2.1500.29 — gate:design en cero: excepciones con motivo y títulos con tono
 
 - `npm run gate:design` queda en **cero** en todas las categorías: `scripts/design-gate-baseline.json` ya no guarda deuda.

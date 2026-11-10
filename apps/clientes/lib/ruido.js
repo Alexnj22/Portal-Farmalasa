@@ -400,6 +400,7 @@ async function mostrarViva(tipo, pausado) {
   await PortadaViva.mostrar({
     clave: tipo, titulo: SONIDOS[tipo].nombre, artista: 'Sonidos · Puntos Salud',
     portada: p, videoAlto: va, videoCuadrado: vc, sonando: !pausado,
+    resta: estado.finEn ? Math.max(0, (estado.finEn - Date.now()) / 1000) : null,
   });
 }
 
@@ -409,7 +410,7 @@ async function mostrarAviso(tipo, pausado = false) {
   if (!A) return;
   try {
     const artwork = await portada(tipo);
-    await A.show({ title: SONIDOS[tipo].nombre, artist: 'Sonidos · Puntos Salud', artwork, state: pausado ? 'paused' : 'playing' });
+    await A.show({ title: SONIDOS[tipo].nombre, artist: 'Sonidos · Puntos Salud', artwork, isLiveStream: false, state: pausado ? 'paused' : 'playing' });
     for (const [c, on] of [['play', true], ['pause', true], ['stop', true], ['nextTrack', false], ['previousTrack', false], ['skipForward', false], ['skipBackward', false], ['seekTo', false]]) {
       await A.enableControl(c, on).catch(() => {});
     }
@@ -458,6 +459,7 @@ export async function sonarRuido(tipo, minutos) {
 export function temporizadorRuido(minutos) {
   poner({ finEn: minutos ? Date.now() + minutos * 60_000 : null });
   if (nodo) { rampa(volumen, 0.3); programarFin(); }
+  if (estado.sonando) mostrarAviso(estado.tipo); // la barra del reproductor, al día
 }
 
 export function volumenRuido(v) {
@@ -485,21 +487,32 @@ function terminar() {
 
 // Pausa DE VERDAD (2026-11-10, «si lo pauso, no se pausa si no que se cancela
 // y se mantiene el reproductor»): antes paraba el sonido. Ahora el bucle se
-// queda donde está y el motor se suspende; reanudar sigue desde ahí. El
-// temporizador se congela con él: al reanudar le quedan los mismos minutos.
+// queda donde está, en silencio; reanudar sube el volumen. El temporizador
+// se congela con él: al reanudar le quedan los mismos minutos.
+//
+// El motor NO se suspende (2026-11-10, en la compilación 103 «al pausar no
+// pausa, si no que se cancela de nuevo»): sin audio en curso iOS da por
+// terminada la reproducción, quita el reproductor de la pantalla bloqueada y
+// duerme la app, y el botón de reanudar ya no tiene a quién avisar. En pausa
+// el motor sigue andando con volumen 0 —lo que hace cualquier reproductor—, y
+// para no gastar batería toda la noche, a los 30 minutos en pausa se apaga.
+const PAUSA_MAXIMA_MS = 30 * 60_000;
 let quedabaMs = null;
+let relojPausa = null;
 export function pausarRuido() {
   if (!nodo || !ctx || estado.pausado) return;
   clearTimeout(relojFin);
   quedabaMs = estado.finEn ? Math.max(0, estado.finEn - Date.now()) : null;
   rampa(0, 0.3);
-  setTimeout(() => { if (estado.pausado && ctx?.state === 'running') ctx.suspend().catch(() => {}); }, 350);
+  clearTimeout(relojPausa);
+  relojPausa = setTimeout(() => { if (estado.pausado) pararRuido(0); }, PAUSA_MAXIMA_MS);
   poner({ sonando: false, pausado: true });
   mostrarAviso(estado.tipo, true);
 }
 
 export async function reanudarRuido() {
   if (!estado.pausado) return;
+  clearTimeout(relojPausa);
   if (!nodo || !ctx) { await sonarRuido(estado.tipo); return; }
   sesion(true);
   if (ctx.state === 'suspended') await ctx.resume().catch(() => {});
@@ -512,6 +525,7 @@ export async function reanudarRuido() {
 /** Para del todo y quita el reproductor de la pantalla de bloqueo. */
 export function pararRuido(seg = 0.6) {
   clearTimeout(relojFin);
+  clearTimeout(relojPausa);
   ocultarAviso();
   const pausadoAntes = estado.pausado;
   poner({ sonando: false, pausado: false, finEn: null });

@@ -28,6 +28,8 @@ struct DatosAviso: Record {
   @Field var videoAlto: String? = nil
   @Field var videoCuadrado: String? = nil
   @Field var sonando: Bool = true
+  /// Segundos que le quedan al temporizador; sin temporizador, nada.
+  @Field var resta: Double? = nil
 }
 
 private func archivo(_ uri: String?) -> URL? {
@@ -52,6 +54,7 @@ public class PortadaVivaModule: Module {
   private var sonando = false
   private var titulo = ""
   private var artista = ""
+  private var resta: Double? = nil
   private var clavePortada: String? = nil
   private var portada: UIImage? = nil
   private var claveVivas: String? = nil
@@ -81,6 +84,7 @@ public class PortadaVivaModule: Module {
     sonando = d.sonando
     titulo = d.titulo
     artista = d.artista
+    resta = d.resta
     if d.portada != clavePortada {
       clavePortada = d.portada
       portada = archivo(d.portada).flatMap { UIImage(contentsOfFile: $0.path) }
@@ -116,11 +120,16 @@ public class PortadaVivaModule: Module {
     var info: [String: Any] = [
       MPMediaItemPropertyTitle: titulo,
       MPMediaItemPropertyArtist: artista,
-      MPNowPlayingInfoPropertyIsLiveStream: true,
+      // NUNCA «en vivo» (2026-11-10, compilación 103: «dice en vivo, así al
+      // pausar se quita»): a una transmisión en vivo iOS no le ofrece pausa,
+      // su botón la DETIENE y quita el reproductor.
+      MPNowPlayingInfoPropertyIsLiveStream: false,
       MPNowPlayingInfoPropertyElapsedPlaybackTime: 0.0,
       // En pausa la tasa es 0: el sistema pinta el botón de reproducir.
       MPNowPlayingInfoPropertyPlaybackRate: sonando ? 1.0 : 0.0,
     ]
+    // Con temporizador, la barra cuenta lo que falta para que se apague.
+    if let r = resta, r > 0 { info[MPMediaItemPropertyPlaybackDuration] = r }
     if let img = portada {
       info[MPMediaItemPropertyArtwork] = MPMediaItemArtwork(boundsSize: img.size) { _ in img }
     }

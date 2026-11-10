@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.38 — App de clientes: Sonidos pausa de verdad y sin burbuja
+
+- App de clientes · Sonidos: pausar desde la pantalla bloqueada ya no quita el reproductor. Se marcaba como «en vivo» y a eso iOS no le ofrece pausa (su botón detiene); además el motor ya no se suspende en pausa (iOS daba la reproducción por terminada). En pausa más de 30 minutos, se apaga solo.
+- Con temporizador, la barra del reproductor muestra lo que falta para que se apague.
+- La burbuja del chat ya no aparece en Sonidos.
+
 ## v2.1500.37 — Puntos: Avisos con alcance de sala también en sus tablas y en cambios de cliente
 
 - El permiso de la pestaña Avisos que recibió la jefatura (v2.1500.36) abría además `puntos_cambios_pendientes` y tres tablas (`puntos_irregularidad`, `puntos_anulacion_gastada`, `puntos_cambio_pendiente`) sin mirar la sala. Ahora las cuatro aplican el alcance: ALL ve todas; BRANCH, su sala. Probado: supervisor 24 de 24 irregularidades, jefa de Salud 1 ninguna ajena.

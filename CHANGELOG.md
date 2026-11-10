@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.2 — Base: columnas de la pasarela en los pagos en línea
+
+- Migración `20261110212530_pagos_en_linea_con_n1co` aplicada en producción: `app_reservas_pagos.pasarela` (la fila vieja queda 'wompi', las nuevas 'n1co') y `enlace_codigo`; `apartado_enlace_guardar` con `p_codigo`. Tipos de la base regenerados.
+
 ## v2.1501.1 — Pago en línea «en preparación» hasta tener n1co
 
 - Wompi se quita de producción antes de tener las credenciales de n1co (decisión del dueño). Mientras falte `N1CO_SECRET_KEY`, todo cobro en línea contesta «El pago en línea estará disponible muy pronto. Por ahora se paga en la sucursal.» ANTES de crear filas o apartar producto (reserva, encargo, crédito, varios créditos, apartado desde la caja).

@@ -2497,6 +2497,7 @@ export type Database = {
           detalle: Json | null
           devolver_monto: number | null
           encargo_id: number | null
+          enlace_codigo: string | null
           enlace_id: number | null
           enlace_prueba: boolean | null
           enlace_url: string | null
@@ -2511,6 +2512,7 @@ export type Database = {
           lote_de: number | null
           monto: number
           pagado_at: string | null
+          pasarela: string
           pedido: string | null
           reserva_id: number | null
           reservas_ids: number[] | null
@@ -2531,6 +2533,7 @@ export type Database = {
           detalle?: Json | null
           devolver_monto?: number | null
           encargo_id?: number | null
+          enlace_codigo?: string | null
           enlace_id?: number | null
           enlace_prueba?: boolean | null
           enlace_url?: string | null
@@ -2545,6 +2548,7 @@ export type Database = {
           lote_de?: number | null
           monto: number
           pagado_at?: string | null
+          pasarela?: string
           pedido?: string | null
           reserva_id?: number | null
           reservas_ids?: number[] | null
@@ -2565,6 +2569,7 @@ export type Database = {
           detalle?: Json | null
           devolver_monto?: number | null
           encargo_id?: number | null
+          enlace_codigo?: string | null
           enlace_id?: number | null
           enlace_prueba?: boolean | null
           enlace_url?: string | null
@@ -2579,6 +2584,7 @@ export type Database = {
           lote_de?: number | null
           monto?: number
           pagado_at?: string | null
+          pasarela?: string
           pedido?: string | null
           reserva_id?: number | null
           reservas_ids?: number[] | null
@@ -31568,6 +31574,7 @@ export type Database = {
       }
       apartado_enlace_guardar: {
         Args: {
+          p_codigo?: string
           p_enlace_id: number
           p_identificador: string
           p_prueba: boolean
@@ -33108,6 +33115,7 @@ export type Database = {
           detalle: Json | null
           devolver_monto: number | null
           encargo_id: number | null
+          enlace_codigo: string | null
           enlace_id: number | null
           enlace_prueba: boolean | null
           enlace_url: string | null
@@ -33122,6 +33130,7 @@ export type Database = {
           lote_de: number | null
           monto: number
           pagado_at: string | null
+          pasarela: string
           pedido: string | null
           reserva_id: number | null
           reservas_ids: number[] | null
@@ -33177,6 +33186,11 @@ export type Database = {
         Returns: boolean
       }
       cron_auth_headers: { Args: never; Returns: Json }
+      cron_horario_coincide: {
+        Args: { p_horario: string; p_t: string }
+        Returns: boolean
+      }
+      cron_tick_minuto: { Args: never; Returns: Json }
       cuenta_de_carne_temporal: { Args: { p_email: string }; Returns: string }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       customer_ficha_estado: {
@@ -37434,6 +37448,10 @@ export type Database = {
           p_por?: string
           p_simular?: boolean
         }
+        Returns: Json
+      }
+      puntos_aviso_sin_saldo_texto: {
+        Args: { p_invoice_id: number; p_pedidos: number; p_tenia: number }
         Returns: Json
       }
       puntos_barrer_anulaciones: {

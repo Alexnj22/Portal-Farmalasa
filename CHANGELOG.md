@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.19 — App de clientes: logo horizontal de Puntos Salud en el encabezado
+
+- App de clientes: el encabezado lleva el logo horizontal de Puntos Salud («PUNTOS» y «Salud» en cursiva, en una línea, con borde blanco). Armado de nuevo, sin letras cortadas.
+
 ## v2.1500.18 — Diseño: spinners, íconos en caja, puntos y radios por sus canónicos
 
 - Los botones que guardan, envían o confirman muestran la rueda con el `loading`

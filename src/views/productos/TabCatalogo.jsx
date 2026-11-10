@@ -46,7 +46,7 @@ import {
     calcMargin, worstMarginOf, specialLossKeys, specialLossLabel, marginLabel,
     clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir,
 } from '@nucleo/utils/preciosDeProducto';
-import { subirArchivo } from '@nucleo/utils/storageFiles';
+import { subirFotoDeCatalogo } from '@plataforma/fotoConMiniatura';
 import { LoadingState } from '../../components/common/StateViews';
 
 
@@ -826,7 +826,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
 
     const handlePhotoConfirm = async (blob) => {
-        const publicUrl = await subirArchivo('product-photos', `${product.id}.jpg`, blob, { upsert: true, contentType: 'image/jpeg' });
+        const publicUrl = await subirFotoDeCatalogo(`${product.id}.jpg`, blob);
         const cacheBust = `${publicUrl}?t=${Date.now()}`;
         conError(await updateProductFoto(product.id, cacheBust, { producto: product.nombre }));
         setLocalFoto(cacheBust);

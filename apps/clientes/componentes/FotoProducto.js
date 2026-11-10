@@ -2,20 +2,20 @@
 // iniciales: casi todo el catálogo está sin foto y no puede verse vacío.
 //
 // 2026-11-04 (auditoría de rendimiento): la miniatura de 40-160 pt bajaba la
-// foto ORIGINAL del almacenamiento (cientos de kB, a veces más de 1000 px) y
-// el teléfono la achicaba en memoria — en el catálogo, una por tarjeta.
-// Ahora pide la versión achicada al servidor de imágenes del almacenamiento
-// (`/render/image/public/…?height=…`). Que ese servidor está encendido en el
-// proyecto no es una suposición: el portal ya lo usa en producción
-// (src/utils/storageFiles.js, `aRender`, medido 168 kB PNG → 20 kB WEBP). Lo
-// que no está medido es la ruta PÚBLICA con `height` (allá son firmadas), así
-// que si la versión achicada falla por lo que sea, se cae a la original: en el
-// peor caso se ve como antes. Sólo se reescribe una dirección pública del
-// almacenamiento; cualquier otra va tal cual.
+// foto ORIGINAL y el teléfono la achicaba en memoria — una por tarjeta.
+//
+// 2026-11-10: esa miniatura se pedía al servidor de imágenes del almacenamiento
+// (`/render/image/…`), que cobra por cada foto distinta que achica en el mes;
+// el plan trae 100 y la app lo llevó a 208. Ahora la copia chica se hace UNA vez
+// al subir la foto y se guarda al lado, en `product-photos/chicas/<ruta>` a 400
+// px de lado mayor (src/plataforma/fotoConMiniatura.js, la función
+// recortar-foto-producto y, para las que ya estaban,
+// scripts/miniaturas-catalogo.py). Si una copia no existe, se cae a la original:
+// en el peor caso se ve como antes. Sólo se reescribe una dirección pública del
+// catálogo; cualquier otra va tal cual.
 //
 // Además: `recyclingKey` para que una celda reciclada de la lista no muestre un
-// instante la foto de otro producto, y el alto pedido redondeado a pocos
-// tamaños (×densidad de la pantalla) para que el caché sirva entre pantallas.
+// instante la foto de otro producto.
 import { useState } from 'react';
 import { PixelRatio, Text, View } from 'react-native';
 import { Image as ImagenCache } from 'expo-image';
@@ -23,15 +23,14 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Icono from './Icono';
 import { iniciales, tonoDe } from '../lib/catalogo';
 
-const PUBLICA = '/storage/v1/object/public/';
-const ALTOS = [96, 192, 320, 480, 720];
+const CATALOGO = '/storage/v1/object/public/product-photos/';
+const LADO_CHICA = 400;   // el de fotoConMiniatura.js
 
 function achicada(url, altoPt) {
-  if (typeof url !== 'string' || !url.includes(PUBLICA)) return null;
-  const px = Math.ceil(altoPt * PixelRatio.get());
-  const alto = ALTOS.find((a) => a >= px) ?? ALTOS[ALTOS.length - 1];
-  const sep = url.includes('?') ? '&' : '?';
-  return `${url.replace(PUBLICA, '/storage/v1/render/image/public/')}${sep}height=${alto}&resize=contain&quality=80`;
+  if (typeof url !== 'string' || !url.includes(CATALOGO) || url.includes(`${CATALOGO}chicas/`)) return null;
+  // Más grande que la copia chica (la ficha del producto), la original.
+  if (Math.ceil(altoPt * PixelRatio.get()) > LADO_CHICA) return null;
+  return url.replace(CATALOGO, `${CATALOGO}chicas/`);
 }
 
 export default function FotoProducto({ id, nombre, foto, alto = 120, radio = 16, grande = false }) {

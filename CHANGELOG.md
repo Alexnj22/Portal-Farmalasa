@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.43 — Fotos: la copia chica se guarda al subir; sin el servidor de imágenes que cobra
+
+- El servidor de imágenes del almacenamiento (`/render/image/…`) cobra por cada foto distinta que achica en el mes: el plan trae 100 y se llegó a 208 con el tope de gasto encendido, así que Supabase podía empezar a negarlas.
+- Catálogo: la foto se sube con su copia chica al lado (`product-photos/chicas/<ruta>`, 400 px, JPEG): `subirFotoDeCatalogo` en `src/plataforma/fotoConMiniatura.js`, usada por Fotos de productos, la ficha del catálogo y Laboratorios; `recortar-foto-producto` escribe la suya. La app de clientes pide la chica para tarjetas y listas, y si no existe cae a la original.
+- Personal: `webpSignedUrl` deja de reescribir al render; las 46 fotos en uso se convirtieron a WebP en su lugar (≈170 → 23 kB), como ya salen las nuevas.
+- Las que ya estaban: `scripts/miniaturas-catalogo.py` (1.413 copias chicas, 46 kB → 16 kB de promedio).
+- Transformaciones de imagen desde hoy: cero.
+
 ## v2.1500.42 — Base: un solo cron por minuto para los siete que sólo encolan HTTP
 
 - Cada corrida de cron abría un proceso nuevo de la base (~170 ms y memoria para cargar el catálogo), ~15 por minuto en el segundo :00: el pico de memoria de cada minuto en un servidor de 2 GB (plan de memoria, fase 2a).

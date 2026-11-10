@@ -76,6 +76,18 @@ Deno.serve(async (req) => {
     const { error: eS } = await db.storage.from("product-photos")
       .upload(`recortadas/${id}.jpg`, salida, { upsert: true, contentType: "image/jpeg" });
     if (eS) throw eS;
+    // La copia chica, con la convención de src/plataforma/fotoConMiniatura.js
+    // (`chicas/<ruta>`, 400 px de lado mayor): la app la pide en vez de usar el
+    // servidor de imágenes, que cobra por foto. Si falla, la app cae a la grande.
+    try {
+      const e = Math.min(1, 400 / Math.max(fondo.width, fondo.height));
+      const chica = fondo.resize(Math.max(1, Math.round(fondo.width * e)), Math.max(1, Math.round(fondo.height * e)));
+      const { error: eM } = await db.storage.from("product-photos")
+        .upload(`chicas/recortadas/${id}.jpg`, await chica.encodeJPEG(80), { upsert: true, contentType: "image/jpeg" });
+      if (eM) console.error("recortar-foto-producto: miniatura", eM.message);
+    } catch (eM) {
+      console.error("recortar-foto-producto: miniatura", eM instanceof Error ? eM.message : eM);
+    }
 
     // Si mientras tanto alguien puso otra foto, ésa gana.
     const { data: ahora, error: eA } = await db.from("products").select("foto_url").eq("id", id).maybeSingle();

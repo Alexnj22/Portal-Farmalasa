@@ -199,12 +199,14 @@ export const getStoragePathFromUrl = (storedUrl) => {
 // (`createSignedUrl(path, exp, { transform })`), y eso firma de a una: volverían
 // las 25 peticiones para ahorrar unos pocos kB más. No vale la pena — las fotos
 // ya se suben comprimidas a 400×400.
-export const webpSignedUrl = (signedUrl) => {
-    if (!signedUrl || typeof signedUrl !== 'string') return signedUrl;
-    if (!signedUrl.includes('/storage/v1/object/sign/')) return signedUrl;   // pública, externa o ya render
-    if (!signedUrl.includes('token=')) return signedUrl;                     // sin token no hay render
-    return signedUrl.replace('/storage/v1/object/sign/', '/storage/v1/render/image/sign/');
-};
+//
+// 2026-11-10: APAGADO — devuelve la URL tal cual. El render cobra por cada foto
+// distinta del mes (el plan trae 100 y se llegó a 208 con el tope de gasto
+// encendido). Las fotos de personal ya se suben en WebP a 400 px
+// (`comprimirFotoDeEmpleado`) y las PNG viejas se convirtieron en su lugar con
+// `scripts/miniaturas-catalogo.py --empleados`: el original pesa lo mismo que
+// lo que devolvía el render. Se deja la función para no tocar a quien la llama.
+export const webpSignedUrl = (signedUrl) => signedUrl;
 
 export const getSignedFileUrl = async (storedUrl, expiresIn = 3600) => {
     if (!storedUrl) return null;

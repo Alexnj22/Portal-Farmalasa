@@ -3,12 +3,13 @@
 // variantes en hoja inferior de las apps de compras. Pide los mismos datos y
 // agrega con los mismos campos que la ficha (app/producto/[id].js).
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
-import Animated, { FadeIn, FadeInDown, FadeOutDown, SlideInDown } from 'react-native-reanimated';
+import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import Animated, { Easing, FadeIn, FadeInDown, FadeOutDown, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import Presionable from './Presionable';
 import Icono from './Icono';
+import { useSinMovimiento } from './animacion';
 import FotoProducto from './FotoProducto';
 import { colorSistema } from './sistema';
 import { useHojaAgregar } from '../lib/agregarRapido';
@@ -30,13 +31,37 @@ export default function HojaAgregar() {
 function Hoja({ p }) {
   const t = useTema();
   const ins = useSafeAreaInsets();
-  const cerrar = useHojaAgregar((s) => s.cerrar);
+  const cerrarYa = useHojaAgregar((s) => s.cerrar);
   const avisar = useHojaAgregar((s) => s.avisar);
   const [prod, setProd] = useState(null);
   const [factor, setFactor] = useState(null);
   const [cant, setCant] = useState(1);
   // Ref y no estado: dos toques antes del render no agregan dos veces.
   const ocupado = useRef(false);
+
+  // Entrada y salida (2026-11-10, «rebota mucho, que sea fluida y
+  // elegante»): antes entraba con un resorte que rebotaba y se iba de golpe.
+  // Ahora sube con la curva de las hojas del sistema (sin pasarse) y baja
+  // un poco más rápido, con el fondo acompañando. Todo en el hilo de la
+  // interfaz; con «Reducir movimiento», sólo un fundido corto.
+  const { height: altoPantalla } = useWindowDimensions();
+  const sinMovimiento = useSinMovimiento();
+  const avance = useSharedValue(0);
+  const altoHoja = useSharedValue(altoPantalla);
+  const saliendo = useRef(false);
+  useEffect(() => {
+    avance.value = withTiming(1, { duration: sinMovimiento ? 160 : 380, easing: Easing.bezier(0.32, 0.72, 0, 1) });
+  }, [avance, sinMovimiento]);
+  const cerrar = () => {
+    if (saliendo.current) return;
+    saliendo.current = true;
+    avance.value = withTiming(0, { duration: sinMovimiento ? 120 : 240, easing: Easing.bezier(0.4, 0, 1, 1) },
+      (fin) => { if (fin) runOnJS(cerrarYa)(); });
+  };
+  const estiloFondo = useAnimatedStyle(() => ({ opacity: avance.value }));
+  const estiloHoja = useAnimatedStyle(() => (sinMovimiento
+    ? { opacity: avance.value }
+    : { transform: [{ translateY: (1 - avance.value) * (altoHoja.value + 24) }] }));
 
   useEffect(() => {
     let vivo = true;
@@ -45,7 +70,7 @@ function Hoja({ p }) {
       const pres = r?.ok ? mayoreoSoloEnCaja(r.producto.presentaciones) ?? [] : [];
       // Sin datos, o sin existencia (encargo, receta): lo resuelve la ficha.
       if (!pres.length || !(r.producto.existencias ?? []).length) {
-        cerrar();
+        cerrarYa();
         navegar(`/producto/${p.id}`);
         return;
       }
@@ -54,7 +79,7 @@ function Hoja({ p }) {
       setFactor(orden[0].factor ?? 1);
     });
     return () => { vivo = false; };
-  }, [p.id, cerrar]);
+  }, [p.id, cerrarYa]);
 
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
   const elegida = prod?.presentaciones.find((x) => (x.factor ?? 1) === factor) ?? null;
@@ -68,7 +93,7 @@ function Hoja({ p }) {
     ocupado.current = true;
     try {
       const seguir = await seguirSiYaReservado(prod.id, {
-        alVer: (res) => { cerrar(); navegar(`/reservas?resaltar=${res.id}`); },
+        alVer: (res) => { cerrarYa(); navegar(`/reservas?resaltar=${res.id}`); },
       });
       if (!seguir) return;
       const ok = useCarrito.getState().agregar({ id: prod.id, nombre: prod.nombre, foto: prod.foto, tipo: elegida.tipo, factor: elegida.factor ?? 1,
@@ -86,11 +111,11 @@ function Hoja({ p }) {
   return (
     <Modal visible transparent animationType="none" statusBarTranslucent onRequestClose={cerrar}>
       <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <Animated.View entering={FadeIn.duration(180)} style={{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)' }}>
+        <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.45)' }, estiloFondo]}>
           <Pressable style={{ flex: 1 }} onPress={cerrar} accessibilityRole="button" accessibilityLabel="Cerrar" />
         </Animated.View>
-        <Animated.View entering={SlideInDown.springify().damping(20).stiffness(190)}
-          style={{ maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: colorSistema.fondo, paddingTop: 8, paddingBottom: ins.bottom + 14 }}>
+        <Animated.View onLayout={(e) => { altoHoja.value = e.nativeEvent.layout.height; }}
+          style={[estiloHoja, { maxHeight: '82%', borderTopLeftRadius: 28, borderTopRightRadius: 28, backgroundColor: colorSistema.fondo, paddingTop: 8, paddingBottom: ins.bottom + 14 }]}>
           <View style={{ alignSelf: 'center', width: 38, height: 5, borderRadius: 3, backgroundColor: colorSistema.separador, marginBottom: 12 }} />
 
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: 18 }}>
@@ -114,7 +139,7 @@ function Hoja({ p }) {
                   const final = precioFinal(x);
                   const suyo = rotuloPrecioTuyo(x);
                   return (
-                    <Animated.View key={x.factor ?? i} entering={FadeInDown.delay(40 + i * 45).duration(220)}>
+                    <Animated.View key={x.factor ?? i} entering={FadeIn.delay(120 + i * 40).duration(260)}>
                       <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); setFactor(x.factor ?? 1); }}
                         accessibilityRole="radio" accessibilityState={{ selected: activa }}
                         accessibilityLabel={`${nombreProducto(x.tipo)}, ${dolares(final)}`}
@@ -182,7 +207,7 @@ export function AvisoAgregado() {
   }, [a, soltar]);
   if (!a) return null;
   return (
-    <Animated.View key={a.id} entering={FadeInDown.springify().damping(18)} exiting={FadeOutDown.duration(180)} accessibilityLiveRegion="polite"
+    <Animated.View key={a.id} entering={FadeInDown.duration(280).easing(Easing.out(Easing.cubic))} exiting={FadeOutDown.duration(180)} accessibilityLiveRegion="polite"
       style={{ position: 'absolute', left: 16, right: 16, bottom: 104, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56, paddingLeft: 14, paddingRight: 6, borderRadius: 18,
         backgroundColor: t.oscuro ? '#2A2630' : '#1F1B24', shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
       <Icono sf="checkmark.circle.fill" respaldo="✓" tam={20} color={t.color.verde} />

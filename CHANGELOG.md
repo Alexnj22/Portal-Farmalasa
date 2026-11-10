@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.6 — Seguridad: el alcance por sala también en lo que se escribe; avisos de varias salas para la jefatura
+
+- Segunda parte de la auditoría de alcance: las funciones que escriben. Se cruzaron las ~180 funciones DEFINER que escriben con sala contra los cargos que no ven toda la red. Pedidos, encargos, reservas, traslados, bolsas, cortes y conteos ya validaban la sala. Las escrituras directas a tablas también (salvo MIN·MAX para Jefe/a de Compras, por decisión).
+- Cuatro escribían con sólo permiso de ver y sin mirar la sala: `encuesta_cliente_guardar_lectura`, `encuesta_cliente_guardar_resumen`, `inyeccion_vincular_cobro` y la muestra de `avisar_productos_sin_venta`, que mandaba los productos parados de TODAS las salas. Ahora exigen la sala propia sin alcance de red. El cron de productos sin venta no cambia.
+- Puntos → Avisos: «Compró en 3 salas o más» lo ve también la jefatura de cada sala nombrada (antes sólo admin).
+- Probado: la jefa de Salud 3 ve el aviso de Salud 2/3/5 y la de Salud 1 no. Guardar la encuesta de otra sala da FORBIDDEN.
+
 ## v2.1501.5 — App del personal: vuelve a compilar (adaptador de fotos del catálogo)
 
 - v2.1500.43 hizo que `src/data/laboratorios.js` importe `@plataforma/fotoConMiniatura`, que sólo existía en la web: la app del personal no compilaba (ni binario ni actualización por aire). Su gemelo del teléfono sube la foto como antes, sin la copia chica (quien la muestra cae a la original).

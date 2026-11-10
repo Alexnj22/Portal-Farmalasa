@@ -25,6 +25,7 @@ import { aplicarTemaGuardado } from '../tema/preferencia';
 // para entregar posiciones, y la tarea tiene que existir desde el arranque.
 import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
 import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
+import { vigilarActualizacionesPorAire } from '../plataforma/actualizacionAire';
 
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
@@ -91,6 +92,9 @@ const ANDROID = Platform.OS === 'android';
 
 export default function Raiz() {
   const tema = useTema();
+  // Una actualización por aire se aplica al abrir o al volver a la app, sin
+  // tener que cerrarla dos veces (ver plataforma/actualizacionAire).
+  useEffect(() => vigilarActualizacionesPorAire(), []);
   const oscuro = useColorScheme() === 'dark';
   return (
     <ThemeProvider value={oscuro ? OSCURO : CLARO}>

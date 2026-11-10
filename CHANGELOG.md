@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.14 — Actualización por aire de la app del personal sin mezclar worklets
+
+- App del personal: la actualización por aire del 9-nov cerraba la app al abrir en iPhone. Causa: al exportar, Metro reusó archivos traducidos con el plugin de worklets de la app de clientes (0.10.1 contra 0.13.0). `app:actualizar` ahora exporta con `--clear` y se niega a publicar si encuentra worklets de otra versión.
+- App del personal: se actualiza sola al abrirla o al volver a ella, como la de clientes.
+
 ## v2.1500.13 — Crons con el secreto de su circuito
 
 Los 38 crons que mandaban `admin_invoke_secret` ahora mandan el de su circuito

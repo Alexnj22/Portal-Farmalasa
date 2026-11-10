@@ -119,9 +119,33 @@ try {
   if (ver) { rmSync(salida, { recursive: true, force: true }); process.exit(0); }
 
   console.log('→ Exportando el JavaScript de la app…');
-  execFileSync('npx', ['expo', 'export', ...plataformas.flatMap((p) => ['--platform', p]), '--output-dir', salida],
+  // `--clear` SIEMPRE (2026-11-10). Las dos apps se exportan en esta Mac y
+  // Metro guarda lo ya traducido en una memoria común: un archivo idéntico en
+  // las dos se tomó traducido por el plugin de worklets de la OTRA app (0.10.1
+  // en clientes, 0.13.0 en la del personal). El paquete de la app del personal
+  // salió con worklets en el formato viejo y se cerraba al abrir, en todos los
+  // iPhone que lo bajaron (TestFlight, compilación 72).
+  execFileSync('npx', ['expo', 'export', '--clear', ...plataformas.flatMap((p) => ['--platform', p]), '--output-dir', salida],
     { cwd: CARPETA, env: conEnv, stdio: 'inherit' });
   const meta = JSON.parse(readFileSync(join(salida, 'metadata.json'), 'utf8'));
+  // Y se comprueba, por si la memoria vuelve a colarse por otro lado: cada
+  // worklet del paquete tiene que estar escrito como lo escribe el plugin de
+  // ESTA app (el 0.13 desarma el cierre con `[...]`, el 0.10 con `{...}`).
+  {
+    const plugin = readFileSync(join(CARPETA, 'node_modules', 'react-native-worklets', 'plugin', 'index.js'), 'utf8');
+    const esperado = plugin.includes('arrayPattern') ? '[' : '{';
+    const ajeno = esperado === '[' ? '{' : '[';
+    for (const p of plataformas) {
+      const archivo = meta.fileMetadata?.[p]?.bundle;
+      if (!archivo) continue;
+      const texto = readFileSync(join(salida, archivo)).toString('latin1');
+      const malos = (texto.match(new RegExp(`const\\${ajeno}[^=]{1,200}\\${ajeno === '[' ? ']' : '}'}=this\\.__closure`, 'g')) || []).length;
+      if (malos) {
+        console.error(`✗ ${p}: ${malos} worklet(s) traducidos con el plugin de OTRA versión de worklets. No se publica.`);
+        process.exit(1);
+      }
+    }
+  }
   // La configuración pública de la app viaja en el manifiesto como
   // `extra.expoClient` (2026-11-05): sin ella `Constants.expoConfig` queda
   // vacío en el paquete bajado, el arranque falla y expo-updates vuelve solo al

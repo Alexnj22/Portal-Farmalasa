@@ -924,10 +924,7 @@ export const AREAS = [
                  'app_version_publicada',
                  // Actualizaciones por aire publicadas (2026-10-29).
                  'app_actualizaciones'],
-        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'n1co-pagos',
-               // `wompi-pagos`: retirada el 2026-11-10 (se pasó a n1co). Sigue
-               // desplegada hasta borrarla; al borrarla, sale de esta lista.
-               'wompi-pagos', 'preventa-caja', 'purgar-chat-clientes', 'app-actualizaciones'],
+        edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'n1co-pagos', 'preventa-caja', 'purgar-chat-clientes', 'app-actualizaciones'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'mayoristas-resumen-diario', 'purge-app-errores-diario',

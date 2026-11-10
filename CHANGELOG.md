@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.36 — Puntos: el aviso de canje sin saldo dice qué pasó y cuál es el error; la jefatura lo ve en Avisos con su sala
+
+- La notificación y la nota de Puntos → Avisos dicen lo mismo, armado por `puntos_aviso_sin_saldo_texto`: «En la venta 0000093719_COF, a ELVA SALAZAR MENJIVAR se le aplicaron 700 puntos ($7.00 de descuento), pero sólo tenía 552. Faltaron 148 puntos: $1.48 de descuento se dio sin puntos que lo respaldaran. Vendió: BLANCA ZELAYA. Hay que revisar con quien vendió…». Título: «Canje de puntos de más en Salud 1».
+- Jefe/a y Subjefe/a de Sala reciben la pestaña Avisos con alcance BRANCH: la notificación los llevaba a una pestaña que no podían abrir. `puntos_panel_avisos` filtra por `auth_module_scope`; ALL sigue viendo todas las salas. Probado como la jefa de Salud 1 (1 aviso, sólo su sala) y como supervisor (27, todas).
+
 ## v2.1500.35 — App de clientes: portadas vivas en la pantalla bloqueada del iPhone
 
 - App de clientes · Sonidos en iPhone: portada ANIMADA en la pantalla bloqueada (iOS 26): un video en bucle por ambiente, vertical para la pantalla completa y cuadrado para el reproductor chico, con el logo nítido. Antes de iOS 26 queda la portada fija, ahora sin el tope de 1024 px de la librería de audio.

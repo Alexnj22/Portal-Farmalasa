@@ -4782,6 +4782,10 @@
    "area": "ventas",
    "por": "tablas"
   },
+  "puntos_aviso_sin_saldo_texto": {
+   "area": "ventas",
+   "por": "código"
+  },
   "puntos_barrer_anulaciones": {
    "area": "ventas",
    "por": "código"

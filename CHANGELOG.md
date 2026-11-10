@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.32 — Promociones: limpieza de dos funciones de la base
+
+- `descuentos_espejo_borrar` pasa a plpgsql (plan por llamada) y se borra
+  `promocion_descuentos_por_ligar`, que ya no usa nadie. Tipos de la base al día.
+
 ## v2.1500.31 — Promociones: la pantalla cuenta lo mismo que el pago, excedentes de vuelta y menos viajes a la caja
 
 Auditoría del módulo (2026-11-10).

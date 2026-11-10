@@ -37193,7 +37193,6 @@ export type Database = {
         }[]
       }
       promocion_descuentos: { Args: { p_id: number }; Returns: Json }
-      promocion_descuentos_por_ligar: { Args: { p_id: number }; Returns: Json }
       promocion_laboratorio_avance: {
         Args: { p_id: number; p_year_month: string }
         Returns: {

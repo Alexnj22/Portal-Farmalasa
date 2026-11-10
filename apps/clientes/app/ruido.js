@@ -4,22 +4,20 @@
 //
 // Un sonido se elige tocándolo y empieza solo; tocar el mismo, o «Detener»,
 // lo apaga. El temporizador lo apaga despacio —medio minuto de fundido— para
-// no despertar a nadie. Mientras suena, la pantalla no se apaga: el sonido
-// sólo vive con la app abierta.
-import { useEffect, useRef, useState } from 'react';
+// no despertar a nadie. Sigue sonando con el teléfono bloqueado, con su
+// control en la pantalla de bloqueo (lib/ruido.js); el estado vive allá, así
+// que pausar desde la notificación también se ve aquí.
+import { useEffect, useState } from 'react';
 import { Text, View } from 'react-native';
-import { useKeepAwake } from 'expo-keep-awake';
 import Animated, { Easing, cancelAnimation, useAnimatedStyle, useSharedValue, withRepeat, withSpring, withTiming } from 'react-native-reanimated';
 import { Tocable, useSinMovimiento } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
 import { BLANCO, BLANCO_2, BLANCO_3, BotonJuego, ESCENAS, Escena, Marcador, OpcionesJuego, PanelVidrio, textoAyuda } from '../componentes/juegos/Escena';
 import { tacto } from '../lib/sensaciones';
-import { SONIDOS, pararRuido, ruidoDisponible, sonarRuido, volumenRuido } from '../lib/ruido';
+import { SONIDOS, pararRuido, ruidoDisponible, sonarRuido, temporizadorRuido, useRuido, volumenRuido } from '../lib/ruido';
 
 const MINUTOS = [15, 30, 60, 0];
 const VOLUMENES = [{ valor: 0.3, texto: 'Bajo' }, { valor: 0.6, texto: 'Medio' }, { valor: 1, texto: 'Alto' }];
-
-function NoApagar() { useKeepAwake(); return null; }
 
 const reloj = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 
@@ -80,46 +78,34 @@ function Opcion({ id, activo, sonando, alTocar }) {
 
 export default function Ruido() {
   const quieta = useSinMovimiento();
-  const [tipo, setTipo] = useState('blanco');
-  const [sonando, setSonando] = useState(false);
+  const { sonando, tipo, finEn } = useRuido();
   const [minutos, setMinutos] = useState(30);
   const [volumen, setVolumen] = useState(0.6);
   const [resta, setResta] = useState(null);
-  const fin = useRef(null);
 
-  // Al salir de la pantalla no queda nada sonando.
-  useEffect(() => () => pararRuido(0.3), []);
-
-  // El temporizador: cuenta en pantalla y, al llegar, se apaga en 30 s.
+  // La cuenta en pantalla. El apagado de verdad está programado en el audio.
   useEffect(() => {
-    if (!sonando || !minutos) { setResta(null); fin.current = null; return undefined; }
-    fin.current = Date.now() + minutos * 60_000;
-    const tic = () => {
-      const s = Math.max(0, Math.round((fin.current - Date.now()) / 1000));
-      setResta(s);
-      if (s <= 0) { pararRuido(30); setSonando(false); }
-    };
+    if (!sonando || !finEn) { setResta(null); return undefined; }
+    const tic = () => setResta(Math.max(0, Math.round((finEn - Date.now()) / 1000)));
     tic();
     const id = setInterval(tic, 1000);
     return () => clearInterval(id);
-  }, [sonando, minutos]);
+  }, [sonando, finEn]);
 
   const empezar = async (t = tipo) => {
     tacto.toque();
-    setTipo(t);
-    setSonando(true);
     volumenRuido(volumen);
-    if (!(await sonarRuido(t))) setSonando(false);
+    await sonarRuido(t, minutos);
   };
-  const parar = () => { tacto.roce(); pararRuido(); setSonando(false); };
+  const parar = () => { tacto.roce(); pararRuido(); };
   const elegir = (t) => {
     if (t === tipo && sonando) { parar(); return; }
     empezar(t);
   };
+  const cambiarMinutos = (m) => { setMinutos(m); if (sonando) temporizadorRuido(m); };
 
   return (
     <Escena colores={ESCENAS.ruido}>
-      {sonando ? <NoApagar /> : null}
       <View style={{ flexDirection: 'row', justifyContent: 'center', minHeight: 36 }}>
         {resta != null ? <Marcador sf="timer" texto={reloj(resta)} etiqueta={`Se apaga en ${Math.ceil(resta / 60)} minutos`} /> : null}
       </View>
@@ -142,7 +128,7 @@ export default function Ruido() {
       </View>
       <View style={{ gap: 8 }}>
         <Text style={{ fontSize: 13, fontWeight: '800', letterSpacing: 0.6, color: BLANCO_2, textAlign: 'center' }}>APAGAR EN</Text>
-        <OpcionesJuego valor={minutos} alCambiar={setMinutos}
+        <OpcionesJuego valor={minutos} alCambiar={cambiarMinutos}
           opciones={MINUTOS.map((m) => ({ valor: m, texto: m ? `${m} min` : 'Sin límite' }))} />
       </View>
 
@@ -153,7 +139,7 @@ export default function Ruido() {
       <PanelVidrio>
         <Text style={textoAyuda}>
           El ruido de fondo tapa los sonidos que distraen y ayuda a concentrarse o a dormir. Úsalo a un volumen cómodo,
-          sin audífonos muy fuertes. Suena mientras la app está abierta.
+          sin audífonos muy fuertes. Sigue sonando aunque bloquees el teléfono; lo detienes desde aquí o desde la pantalla de bloqueo.
         </Text>
       </PanelVidrio>
     </Escena>

@@ -7,9 +7,17 @@
 // juegos, en su propio contexto para que el `callar` de un juego no lo duerma).
 // El final de cada bucle se funde con su principio: sin el «clic» del empalme.
 //
-// Suena mientras la app está abierta: el binario no pide audio en segundo
-// plano (app.json, `iosBackgroundMode: false`), así que al bloquear el
-// teléfono iOS lo pausa. Por eso la pantalla de ruido no deja que se apague.
+// Con el teléfono bloqueado (2026-11-10, «puedes hacer que funcione
+// bloqueado?»): el binario pide audio en segundo plano (app.json,
+// `iosBackgroundMode` y el servicio de primer plano de Android) y, mientras
+// suena, `PlaybackNotificationManager` pone el control en la pantalla de
+// bloqueo de iPhone y la notificación fija que Android exige. El temporizador
+// se programa DENTRO del audio (una rampa de volumen hasta cero): se cumple
+// aunque el teléfono esté bloqueado y JavaScript dormido.
+//
+// Un binario viejo, sin el permiso, sigue funcionando igual que antes: suena
+// con la app abierta y se pausa al bloquear.
+import { useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 
 let AudioAPI = null;
@@ -98,14 +106,41 @@ let ctx = null;
 let salida = null;
 const buffers = {};
 let nodo = null;
-let actual = null;
+let volumen = 0.6;
+let relojFin = null;
+let subsAviso = [];
+// Lo que ve la pantalla: también cambia desde la notificación o al vencer el
+// temporizador con la pantalla apagada.
+let estado = { sonando: false, tipo: 'blanco', finEn: null };
+const oyentes = new Set();
+function poner(cambio) {
+  estado = { ...estado, ...cambio };
+  oyentes.forEach((f) => f(estado));
+}
+
+/** El estado del ruido, para la pantalla. */
+export function useRuido() {
+  const [e, setE] = useState(estado);
+  useEffect(() => { oyentes.add(setE); setE(estado); return () => { oyentes.delete(setE); }; }, []);
+  return e;
+}
+
+const Aviso = () => AudioAPI?.PlaybackNotificationManager ?? null;
+
+// En iPhone, mientras suena, la sesión NO se mezcla con otras apps: es lo que
+// le da el control en la pantalla de bloqueo. Al parar vuelve a mezclarse,
+// como la quieren los juegos (lib/sensaciones.js).
+function sesion(propia) {
+  if (Platform.OS !== 'ios') return;
+  try {
+    AudioAPI.AudioManager?.setSystemOptions?.({ ios: { category: 'playback', options: propia ? [] : ['mixWithOthers'] } });
+  } catch { /* sin opciones de sesión, suena igual */ }
+}
 
 function contexto() {
   if (ctx || !AudioAPI) return ctx;
   try {
-    if (Platform.OS === 'ios') {
-      AudioAPI.AudioManager?.setSystemOptions?.({ ios: { category: 'playback', options: ['mixWithOthers'] } });
-    }
+    sesion(true);
     ctx = new AudioAPI.AudioContext();
     salida = ctx.createGain();
     salida.gain.value = 0;
@@ -137,12 +172,55 @@ function rampa(valor, seg) {
   } catch { salida.gain.value = valor; }
 }
 
-let volumen = 0.6;
+// El temporizador, dentro del audio: el volumen se queda donde está hasta 30 s
+// antes del final y de ahí baja a cero. El reloj de JavaScript sólo limpia.
+function programarFin() {
+  clearTimeout(relojFin);
+  if (!nodo || !ctx) return;
+  const t = ctx.currentTime;
+  try {
+    salida.gain.cancelScheduledValues(t + 1.3);
+    if (estado.finEn) {
+      const quedan = Math.max(2, (estado.finEn - Date.now()) / 1000);
+      const bajar = Math.min(30, quedan - 1);
+      salida.gain.setValueAtTime(volumen, t + Math.max(1.3, quedan - bajar));
+      salida.gain.linearRampToValueAtTime(0, t + quedan);
+      relojFin = setTimeout(() => terminar(), quedan * 1000 + 200);
+    }
+  } catch { /* sin automatización: lo apaga el reloj */
+    if (estado.finEn) relojFin = setTimeout(() => pararRuido(), Math.max(0, estado.finEn - Date.now()));
+  }
+}
 
-/** Empieza (o cambia a) un sonido, entrando suave. */
-export async function sonarRuido(tipo) {
+async function mostrarAviso(tipo) {
+  const A = Aviso();
+  if (!A) return;
+  try {
+    await A.show({ title: `Ruido blanco · ${SONIDOS[tipo].nombre}`, artist: 'Puntos Salud', isLiveStream: true, state: 'playing' });
+    for (const [c, on] of [['play', true], ['pause', true], ['stop', true], ['nextTrack', false], ['previousTrack', false], ['skipForward', false], ['skipBackward', false], ['seekTo', false]]) {
+      await A.enableControl(c, on).catch(() => {});
+    }
+    if (!subsAviso.length) {
+      subsAviso = [
+        A.addEventListener('playbackNotificationPause', () => pausar()),
+        A.addEventListener('playbackNotificationStop', () => pararRuido()),
+        A.addEventListener('playbackNotificationDismissed', () => pararRuido()),
+        A.addEventListener('playbackNotificationPlay', () => { sonarRuido(estado.tipo); }),
+      ];
+    }
+  } catch { /* sin aviso: suena igual */ }
+}
+function ocultarAviso() {
+  const A = Aviso();
+  if (!A) return;
+  A.hide().catch(() => {});
+}
+
+/** Empieza (o cambia a) un sonido, entrando suave. `minutos` 0 = sin límite. */
+export async function sonarRuido(tipo, minutos) {
   const c = contexto();
   if (!c) return false;
+  sesion(true);
   if (c.state === 'suspended') await c.resume().catch(() => {});
   const b = buffer(tipo);
   if (!b) return false;
@@ -153,26 +231,65 @@ export async function sonarRuido(tipo) {
   n.loop = true;
   n.connect(salida);
   n.start();
-  nodo = n; actual = tipo;
+  nodo = n;
   rampa(volumen, 1.2);
+  const finEn = minutos === undefined ? estado.finEn : minutos ? Date.now() + minutos * 60_000 : null;
+  poner({ sonando: true, tipo, finEn });
+  programarFin();
+  mostrarAviso(tipo);
   return true;
+}
+
+/** Cambia el temporizador del sonido que ya suena. */
+export function temporizadorRuido(minutos) {
+  poner({ finEn: minutos ? Date.now() + minutos * 60_000 : null });
+  if (nodo) { rampa(volumen, 0.3); programarFin(); }
 }
 
 export function volumenRuido(v) {
   volumen = v;
-  if (nodo && ctx) rampa(v, 0.3);
+  if (nodo && ctx) { rampa(v, 0.3); programarFin(); }
 }
 
-/** Para, apagándose en `seg` segundos (al terminar el temporizador, más lento). */
-export function pararRuido(seg = 0.6) {
-  if (!nodo || !ctx) return;
-  const n = nodo;
-  nodo = null; actual = null;
-  rampa(0, seg);
+function soltar(n, seg) {
   setTimeout(() => {
     try { n.stop(); } catch { /* ya paró */ }
     if (!nodo && ctx?.state === 'running') ctx.suspend().catch(() => {});
   }, seg * 1000 + 100);
 }
 
-export const ruidoActual = () => actual;
+// Al vencer el temporizador: la rampa ya lo dejó en silencio.
+function terminar() {
+  if (!nodo) return;
+  const n = nodo;
+  nodo = null;
+  soltar(n, 0);
+  poner({ sonando: false, finEn: null });
+  ocultarAviso();
+  sesion(false);
+}
+
+// Pausa desde la pantalla de bloqueo: para, pero el aviso queda para reanudar.
+function pausar() {
+  if (!nodo || !ctx) return;
+  const n = nodo;
+  nodo = null;
+  clearTimeout(relojFin);
+  rampa(0, 0.4);
+  soltar(n, 0.4);
+  poner({ sonando: false });
+  Aviso()?.show({ state: 'paused' }).catch(() => {});
+}
+
+/** Para, apagándose en `seg` segundos. */
+export function pararRuido(seg = 0.6) {
+  clearTimeout(relojFin);
+  ocultarAviso();
+  poner({ sonando: false, finEn: null });
+  if (!nodo || !ctx) { sesion(false); return; }
+  const n = nodo;
+  nodo = null;
+  rampa(0, seg);
+  soltar(n, seg);
+  sesion(false);
+}

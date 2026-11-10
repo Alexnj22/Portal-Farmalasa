@@ -388,6 +388,13 @@ export function marcarFraseLeida(dia) {
   SecureStore.setItemAsync(CLAVE_LEIDA, String(dia)).catch(() => {});
 }
 
+/** Deshace «Leído»: la frase de hoy vuelve al Inicio (botón en Bienestar). */
+export function desmarcarFraseLeida() {
+  leidaEnMemoria = -1;
+  avisarLeida.forEach((f) => f(-1));
+  SecureStore.setItemAsync(CLAVE_LEIDA, '-1').catch(() => {});
+}
+
 /** El día de la última frase marcada como leída (o null). */
 export function useFraseLeida() {
   const [dia, setDia] = useState(leidaEnMemoria);

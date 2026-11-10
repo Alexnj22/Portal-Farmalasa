@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.23 — App de clientes: ruido blanco con el teléfono bloqueado
+
+- App de clientes (versión nueva de tienda): el ruido blanco sigue sonando con el teléfono bloqueado, con control en la pantalla de bloqueo de iPhone y notificación con pausa/detener en Android. El temporizador se cumple aunque la pantalla esté apagada.
+- App de clientes: en Bienestar, «Volver a mostrar en Inicio» devuelve la frase del día marcada como leída.
+
 ## v2.1500.22 — Descuentos de la caja ligados solos a su promoción
 
 Reactivar Rinokem no bajó el precio: su descuento se había cargado aparte y la

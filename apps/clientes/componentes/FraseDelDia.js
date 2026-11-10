@@ -25,7 +25,7 @@ import { TarjetaFrase, compartirFraseComoImagen } from './FraseImagen';
 import { RADIO, Tarjeta } from './ui';
 import { colorSistema } from './sistema';
 import { suave, useTema } from '../tema/tema';
-import { CATEGORIAS, marcarFraseLeida, useFraseDelDia, useFraseLeida } from '../lib/fraseDelDia';
+import { CATEGORIAS, desmarcarFraseLeida, marcarFraseLeida, useFraseDelDia, useFraseLeida } from '../lib/fraseDelDia';
 import { navegar } from '../lib/navegar';
 import { OndasFrase } from './IlustracionesInicio';
 
@@ -109,6 +109,16 @@ export default function FraseDelDia({ grande = false }) {
           </Presionable>
         </View>
       </LinearGradient>
+      {/* Marcada como leída en el Inicio: aquí se puede devolver. */}
+      {leida === frase.dia ? (
+        <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); desmarcarFraseLeida(); }}
+          accessibilityRole="button" accessibilityLabel="Volver a mostrar la frase en Inicio" hitSlop={6}
+          style={({ pressed }) => ({ alignSelf: 'center', flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 44, paddingHorizontal: 14, marginTop: 6,
+            opacity: pressed ? 0.6 : 1 })}>
+          <Icono sf="arrow.uturn.backward" respaldo="↩" tam={13} color={colorSistema.texto2} />
+          <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto2 }}>Volver a mostrar en Inicio</Text>
+        </Presionable>
+      ) : null}
     </View>
   );
 }

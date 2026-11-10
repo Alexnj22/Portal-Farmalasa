@@ -269,9 +269,14 @@
       [
         "react-native-audio-api",
         {
-          "iosBackgroundMode": false,
-          "androidPermissions": [],
-          "androidForegroundService": false,
+          "iosBackgroundMode": true,
+          "androidPermissions": [
+            "android.permission.FOREGROUND_SERVICE",
+            "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK",
+            "android.permission.POST_NOTIFICATIONS"
+          ],
+          "androidForegroundService": true,
+          "androidFSTypes": ["mediaPlayback"],
           "enableFFmpeg": false
         }
       ]

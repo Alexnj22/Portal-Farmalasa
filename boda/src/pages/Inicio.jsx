@@ -10,7 +10,6 @@ import Seccion, { Titulo } from '../components/Seccion';
 import Telon from '../components/Telon';
 import FraseRevelada from '../components/FraseRevelada';
 import GaleriaHorizontal from '../components/GaleriaHorizontal';
-import { sinMovimiento } from '../lib/movimiento';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
 import Copiar from '../components/Copiar';
@@ -40,23 +39,16 @@ export default function Inicio({ codigo }) {
   const [inv, setInv] = useState(undefined); // undefined = cargando, null = no existe
   const [lugar, setLugar] = useState(null);
   const [arriba, setArriba] = useState(true);
-  const foto = useRef(null);
+  const portada = useRef(null);
 
-  // La foto de portada baja más lento que la página (paralaje) y la barra
-  // de navegación pasa de transparente a lino al dejar la portada.
+  // La barra de navegación es transparente mientras se ve la portada y lino
+  // al dejarla. Un IntersectionObserver: no corre nada en cada cuadro de scroll.
   useEffect(() => {
-    const quieta = sinMovimiento();
-    let cuadro = 0;
-    const mover = () => {
-      cuadro = 0;
-      const y = window.scrollY;
-      setArriba(y < window.innerHeight * 0.75);
-      if (!quieta && foto.current && y < window.innerHeight * 1.2) foto.current.style.transform = `translate3d(0, ${y * 0.35}px, 0)`;
-    };
-    const pedir = () => { if (!cuadro) cuadro = requestAnimationFrame(mover); };
-    mover();
-    window.addEventListener('scroll', pedir, { passive: true });
-    return () => { window.removeEventListener('scroll', pedir); cancelAnimationFrame(cuadro); };
+    const el = portada.current;
+    if (!el || !('IntersectionObserver' in window)) { setArriba(false); return undefined; }
+    const io = new IntersectionObserver(([e]) => setArriba(e.isIntersecting), { rootMargin: '-64px 0px -70% 0px' });
+    io.observe(el);
+    return () => io.disconnect();
   }, []);
 
   useEffect(() => {
@@ -98,8 +90,8 @@ export default function Inicio({ codigo }) {
       {codigo && <CintaEntrada codigo={codigo} />}
 
       {/* ── Portada ── */}
-      <header id="inicio" className="portada">
-        <div className="portada-foto" ref={foto}><img src={boda.portada} alt="" fetchpriority="high" /></div>
+      <header id="inicio" className="portada" ref={portada}>
+        <div className="portada-foto"><img src={boda.portada} alt="" fetchpriority="high" /></div>
         <div className="portada-texto">
           <div className="portada-arriba">
             <p className="versalita">{titulo}</p>

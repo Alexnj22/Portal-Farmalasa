@@ -39,8 +39,8 @@ Moderno y minimalista, beige lino con verde oliva. Estrategia de color **Committ
 ## Motion
 Curva `cubic-bezier(0.22, 1, 0.36, 1)`. Nada rebota y todo se apaga con `prefers-reduced-motion`.
 - **Telón** (`Telon.jsx`): monograma y «Para …», sube a los 2 s. Una vez por visita y sin bloquear toques.
-- **Portada**: los nombres suben letra por letra; la foto se acerca despacio y baja más lento que la página (paralaje).
+- **Portada**: los nombres suben letra por letra; la foto se acerca despacio una sola vez. Sin paralaje: en el teléfono trababa el scroll.
 - **Cinta** oliva con los nombres y la fecha en movimiento continuo.
 - **Frase** (`FraseRevelada.jsx`): las palabras se iluminan al leer bajando.
-- **Galería** (`GaleriaHorizontal.jsx`): sección fija mientras la tira avanza de lado al bajar.
-- Todo el movimiento sólo escribe `transform` y `opacity`, un cuadro por evento de scroll.
+- **Galería** (`GaleriaHorizontal.jsx`): tira que se desliza de lado con el dedo (scroll nativo con imán), flechas en computadora. Bajar nunca mueve las fotos de lado: el usuario lo encontró raro.
+- Nada corre en cada cuadro de scroll salvo la frase. El grano de papel sólo en computadora (en el teléfono costaba cada cuadro).

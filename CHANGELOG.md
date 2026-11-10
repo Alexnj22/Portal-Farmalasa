@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.44 — Puntos: la jefatura ve los avisos de su sala que guardan el nombre y no el código
+
+- El filtro por sala de Avisos comparaba sólo el código (FLS2), pero «mismo vendedor», «venta a su propia ficha» y «acumulación alta» guardan el nombre (Salud 2): la jefatura no los veía aunque fueran de su sala. Ahora se reconocen las dos formas, en el panel y en la policy de `puntos_irregularidad`.
+- Probado: la jefa de Salud 4 ve sus 2 avisos de esos tipos, la de Salud 2 los suyos, y el supervisor todos.
+
 ## v2.1500.43 — Fotos: la copia chica se guarda al subir; sin el servidor de imágenes que cobra
 
 - El servidor de imágenes del almacenamiento (`/render/image/…`) cobra por cada foto distinta que achica en el mes: el plan trae 100 y se llegó a 208 con el tope de gasto encendido, así que Supabase podía empezar a negarlas.

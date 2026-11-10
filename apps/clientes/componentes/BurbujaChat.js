@@ -31,6 +31,7 @@ import { colorSistema } from './sistema';
 import { M3, IOS } from './movimiento';
 import { alLlegarAviso, esAvisoDeChat } from '../lib/avisos';
 import { useCuenta } from '../lib/cuenta';
+import { alturaOcupada, useEspacioAbajo } from '../lib/espacioAbajo';
 import { precargarChat } from '../lib/chatHilo';
 import { useConCodigo, useSesion } from '../lib/sesion';
 import { useTapadaPorBloqueo } from '../lib/bloqueo';
@@ -132,11 +133,16 @@ export default function BurbujaChat() {
   // así que la burbuja saltaba ~46 pt mientras la pantalla todavía se
   // deslizaba. Ahora se queda anclada abajo y SUBE o BAJA con la misma curva y
   // duración que la transición del sistema, como si viajara con la barra.
+  // Un aviso temporal abajo (2026-11-10, «la burbuja cubre cuando salen
+  // avisos»): la burbuja sube por encima de él, con la misma curva, y vuelve
+  // a bajar cuando se va (`lib/espacioAbajo`).
+  const ocupado = useEspacioAbajo(alturaOcupada);
   const sobre = useSharedValue(enPestanas ? SOBRE_PESTANAS - 16 : 0);
   useEffect(() => {
-    const destino = enPestanas ? SOBRE_PESTANAS - 16 : 0;
+    const base = enPestanas ? SOBRE_PESTANAS - 16 : 0;
+    const destino = ocupado > 0 ? Math.max(base, ocupado + 12 - (ins.bottom + 16)) : base;
     sobre.value = reducir ? destino : withTiming(destino, { duration: ANDROID ? 300 : 380, easing: Easing.bezier(0.2, 0.9, 0.25, 1) });
-  }, [enPestanas, reducir, sobre]);
+  }, [enPestanas, reducir, sobre, ocupado, ins.bottom]);
   const animado = useAnimatedStyle(() => ({ opacity: opac.value, transform: [{ translateY: -sobre.value }, { scale: escala.value }] }));
   const animadoNumero = useAnimatedStyle(() => ({ transform: [{ scale: numero.value }] }));
   const forma = useAnimatedStyle(() => ({ borderRadius: radio.value }));

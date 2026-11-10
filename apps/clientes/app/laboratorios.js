@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import Icono from '../componentes/Icono';
 import Presionable from '../componentes/Presionable';
 import Vidrio from '../componentes/Vidrio';
-import { Boton } from '../componentes/ui';
+import { Boton, ESPACIO_BURBUJA } from '../componentes/ui';
 import { colorSistema } from '../componentes/sistema';
 import { useTema } from '../tema/tema';
 import { llamar } from '../lib/api';
@@ -71,7 +71,7 @@ export default function Laboratorios() {
   return (
     <FlatList data={lista} keyExtractor={(l) => String(l.id)} renderItem={({ item }) => <Fila l={item} alElegir={alElegir} />}
       contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }} stickyHeaderIndices={[0]}
+      contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 + ESPACIO_BURBUJA }} stickyHeaderIndices={[0]}
       ListHeaderComponent={(
         <View style={{ paddingVertical: 8 }}>
           <Vidrio radio={23} elevacion={3} style={{ height: 46, flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 14 }}>

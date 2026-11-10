@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.42 — Base: un solo cron por minuto para los siete que sólo encolan HTTP
+
+- Cada corrida de cron abría un proceso nuevo de la base (~170 ms y memoria para cargar el catálogo), ~15 por minuto en el segundo :00: el pico de memoria de cada minuto en un servidor de 2 GB (plan de memoria, fase 2a).
+- `cron_tick_minuto()` (cron `tick-minuto`) corre en UN proceso los siete crons que sólo encolan `net.http_post` (sync de ventas e inventario, refresco de inventario, motor de puntos, conteo de caja, traslados, avisos a clientes, Wallet). Lee comando y horario de la fila de cada uno y la corre sólo si está apagada: deshacer es reactivarlas. Mismas llamadas, mismos horarios.
+- Interpretación del horario contrastada contra pg_cron real: 53.342 comparaciones, cero desajustes. En el entorno de pruebas no corre (sin la llave para llamar afuera, y lo apagan sus herramientas).
+- `gate:eficiencia` entiende `via: 'tick-minuto'`: falla sólo si una fila está apagada y el despachador no.
+- Procesos de cron por minuto: 15 → 8.
+
 ## v2.1500.41 — Seguridad: el alcance por sala, aplicado donde el permiso ya lo decía
 
 - Auditoría de alcance por sala (pedida por el usuario: «que nadie, menos admin, vea lo de otras sucursales»). Se cruzaron las policies de las tablas con sala y las funciones de la base contra los cargos que no son admin.

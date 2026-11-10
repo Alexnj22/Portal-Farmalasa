@@ -67,7 +67,7 @@ corrige lo que se separe.
   el día que alguien cambie esa regla. Si se retoma, es por la espera en pantalla,
   no por la base.
 
-### Fase 2a — un solo cron por minuto en vez de nueve · hoy por la tarde
+### Fase 2a — un solo cron por minuto para los que sólo encolan HTTP · HECHA 2026-11-10 18:25 UTC
 
 Hoy corren cada minuto nueve crons: siete sólo encolan una llamada HTTP
 (`net.http_post`, asíncrono) y dos son SQL (`chat_vigilar_espera`,
@@ -95,6 +95,24 @@ los avisos emitidos y las filas nuevas de la bitácora: **mismas cuentas**.
   Con ~170 ms de arranque cada uno: **~30 min de CPU/día**, y el pico de memoria
   del segundo :00 de cada minuto baja a menos de la mitad.
 - Tiempo: ~2,5 h.
+
+**Cómo quedó (difiere de lo de arriba en dos cosas, a propósito):**
+- Entran sólo los **siete que encolan `net.http_post`**; chat y bitácora siguen con
+  su cron, porque `gate:eficiencia` juzga la tasa de fallos por cron y esos dos sí
+  pueden fallar.
+- `cron_tick_minuto()` **no copia** los comandos: lee comando y horario de la fila
+  de cada uno en `cron.job` y la corre sólo si esa fila está APAGADA. Activa = la
+  corre pg_cron. Deshacer = reactivar las siete filas.
+- Frenos para el entorno de pruebas: el despachador no corre sin `admin_invoke_secret`
+  en la bóveda, y su comando nombra `net.http_post` y el proyecto de producción para
+  que la semilla y `mantener_al_dia.mjs` lo apaguen como a los demás.
+- El horario se interpreta con `cron_horario_coincide()`: contrastada contra pg_cron
+  real, 53.342 comparaciones (149 crons × 6 h), cero desajustes.
+- Migraciones `20261110182432` (funciones + despachador) y `20261110182532` (apagar las
+  siete). `gate:eficiencia`: `via: 'tick-minuto'` en los siete y fila propia del
+  despachador.
+- **Resultado:** procesos de cron por minuto 15 → 8 (150 en los 10 min previos). El
+  despachador tarda 50–160 ms por los siete juntos.
 
 ### Fase 2b — caché de la base de 512 a 384 MB · esta noche, SÓLO si hace falta
 
@@ -135,7 +153,7 @@ Sólo si 1 h después de la fase 2a el swap sigue por encima de ~300 MB.
 |---|---|---|---|
 | hecho | Fase 0 | — | API, segundos |
 | hecho | Fase 1a (1b descartada) | — | no |
-| hoy por la tarde | Fase 2a | ~2,5 h | no |
+| hecho | Fase 2a | — | no |
 | esta noche, si hace falta | Fase 2b | 15 min + vigilar | base, 1–3 min |
 | mañana | revisión de 24 h con capturas del panel | 30 min | no |
 | si hace falta | Fase 3 | días, plan propio | — |
@@ -144,4 +162,4 @@ Sólo si 1 h después de la fase 2a el swap sigue por encima de ~300 MB.
 
 | fase | fecha | swap antes → después | commitment | notas |
 |---|---|---|---|---|
-| 0 | 2026-11-10 | 700–900 MB → ? | 3,02 GB → ? | |
+| 0 | 2026-11-10 | 700–900 MB → ~300–350 MB (picos ~550) | 2,8–3,45 GB → 2,06–2,7 GB | panel, hora antes vs hora después; sigue «SEVERE» en los picos |

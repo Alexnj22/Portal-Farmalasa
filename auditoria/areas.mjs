@@ -1267,10 +1267,13 @@ export const AREAS = [
                 'check-sync-health-alerts-20min', 'backup-critical-tables-weekly', 'purge-sync-logs-daily',
                 'purge-cron-history-daily', 'vigilar-reinicio-de-la-base', 'vigilar-servicios',
                 // 2026-10-28: la vigilancia de seguridad (PENDIENTES 13).
-                'seguridad-vigilancia-diaria'],
+                'seguridad-vigilancia-diaria',
+                // 2026-11-10: el despachador de los crons que sólo encolan HTTP.
+                'tick-minuto'],
         docs: ['docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md',
                'docs/SEGURIDAD-Y-ACCESO.md',
-               'docs/INCIDENTE-CAIDA-2026-09-14.md'],
+               'docs/INCIDENTE-CAIDA-2026-09-14.md',
+               'docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md'],
     },
     {
         id: 'datos-personales',

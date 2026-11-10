@@ -128,6 +128,15 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'tick-minuto', slug: null, cadencia: '* * * * *',
+    corridasDia: 1440, sistema: 0,
+    motivo: 'El despachador (2026-11-10, docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md fase 2a): en UN proceso '
+          + 'corre los crons marcados `via: \'tick-minuto\'` —siete que sólo encolan un net.http_post—, '
+          + 'leyendo comando y horario de su propia fila y sólo si esa fila está apagada. No toca el sistema '
+          + 'por sí mismo: lo que cada trabajo cuesta sigue en su propia fila. Ahorra ~6 procesos nuevos de la '
+          + 'base por minuto, que eran el pico de memoria de cada minuto en un servidor de 2 GB.',
+  },
+  {
     job: 'traslados-propuestas-al-dia', slug: null, cadencia: '1-59/5 * * * *',
     corridasDia: 288, sistema: 0,
     motivo: 'Traslados (2026-11-05): a la hora le recuerda a la sala que pidió la propuesta de un lote '
@@ -224,7 +233,7 @@ const CRONS = [
           + 'ninguna petición afuera.',
   },
   {
-    job: 'wallet-pases-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
+    job: 'wallet-pases-minuto', via: 'tick-minuto', slug: 'wallet-pases', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'La tarjeta de Wallet que se actualiza sola: cada minuto busca tarjetas cuyo saldo '
           + 'cambió y le avisa a Apple (APNs). El propio cron sólo dispara si hay ALGÚN teléfono '
@@ -232,7 +241,7 @@ const CRONS = [
           + 'el ERP; APNs es gratis.',
   },
   {
-    job: 'avisos-clientes-minuto', slug: 'avisos-clientes', cadencia: '* 13-23,0-3 * * *',
+    job: 'avisos-clientes-minuto', via: 'tick-minuto', slug: 'avisos-clientes', cadencia: '* 13-23,0-3 * * *',
     corridasDia: 900, sistema: 0,
     motivo: 'Avisos INMEDIATOS de la app de clientes: puntos ganados y oferta nueva, cada minuto '
           + 'de 7:00 a 22:00 SV desde el 2026-10-12 (horario de atención del chat; antes 8:00 a 20:00 — decisión del usuario, 2026-10-06: la venta tarda ~1 min en llegar '
@@ -428,7 +437,7 @@ const CRONS = [
           + 'Sólo llama a send-push-notification cuando hay algo que entregar.',
   },
   {
-    job: 'puntos-motor-1min', slug: 'puntos-motor', cadencia: '* 12-23,0-5 * * *',
+    job: 'puntos-motor-1min', via: 'tick-minuto', slug: 'puntos-motor', cadencia: '* 12-23,0-5 * * *',
     corridasDia: 1080, sistema: 0,
     motivo: 'El programa de puntos desde el 2026-10-01: acumula las ventas del día, detecta los '
           + 'canjes y devuelve los puntos de una venta anulada. `sistema: 0`: lee y escribe sólo '
@@ -577,7 +586,7 @@ const CRONS = [
           + 'todavía no existen. Cada hora y no más seguido: alimenta un reloj de seis meses.',
   },
   {
-    job: 'conteo-caja-cada-minuto', slug: 'aplicar-conteo-caja', cadencia: '* * * * *',
+    job: 'conteo-caja-cada-minuto', via: 'tick-minuto', slug: 'aplicar-conteo-caja', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'El cron sólo llama a la función si hay productos en cola (WHERE EXISTS en el propio '
           + 'SQL del cron): sin un conteo que corrige la caja recién aprobado, cero peticiones al '
@@ -585,7 +594,7 @@ const CRONS = [
           + 'cola, ~6 por producto (sesión, lectura, carga, relectura, descargo) y sólo esos días.',
   },
   {
-    job: 'continuar-traslados-pedido', slug: 'trasladar-pedido-erp', cadencia: '* * * * *',
+    job: 'continuar-traslados-pedido', via: 'tick-minuto', slug: 'trasladar-pedido-erp', cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'Cada minuto, pero sin corrida en curso contesta NADA_QUE_CONTINUAR mirando SOLO la '
           + 'base: cero peticiones al sistema. Cuando hay un despacho a medias, esa corrida sí '
@@ -771,13 +780,13 @@ const CRONS = [
           + 'sistema, pero no está comprobado.',
   },
   {
-    job: 'sync-dte-inv-all-1min', slug: 'sync-dte-sales', cadencia: '* 12-23,0-5 * * *',
+    job: 'sync-dte-inv-all-1min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '* 12-23,0-5 * * *',
     corridasDia: 1080, sistema: null,
     motivo: 'SIN MEDIR, y es el segundo candidato después de los cortes: cada minuto, 18 h al día, '
           + 'recorriendo sucursales para ventas e inventario.',
   },
   {
-    job: 'refresh-inv-mv-2min', slug: 'sync-dte-sales', cadencia: '*/2 12-23,0-5 * * *',
+    job: 'refresh-inv-mv-2min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '*/2 12-23,0-5 * * *',
     corridasDia: 540, sistema: null, motivo: 'SIN MEDIR.',
   },
   {
@@ -1157,12 +1166,40 @@ if (!SOLO_LOCAL) {
     // B2 · Cadencia y existencia de lo declarado
     for (const d of CRONS) {
       const p = porNombre.get(d.job);
+      /* ── Los que corre el despachador (`via: 'tick-minuto'`) ─────────────
+       *
+       * Desde el 2026-11-10 (docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md, fase
+       * 2a) siete crons que sólo encolan un net.http_post los corre UN proceso
+       * por minuto: `cron_tick_minuto()` lee el comando y el horario de SU fila
+       * de cron.job y lo ejecuta sólo si esa fila está APAGADA. Así las dos
+       * situaciones son seguras —activa: la corre pg_cron; apagada: la corre el
+       * despachador— y la única rota es apagada SIN despachador vivo, que es
+       * exactamente «nadie la corre». Sus llamadas se siguen midiendo por
+       * función en B3 (net._http_response), y su cadencia, contra la fila. */
+      if (d.via) {
+        const despachador = porNombre.get(d.via);
+        if (!p) {
+          fallos.push(`el cron ${d.job} (lo corre ${d.via}) no existe en producción: el despachador no tiene qué leer.`);
+          continue;
+        }
+        if (!p.active && !(despachador && despachador.active)) {
+          fallos.push(`el cron ${d.job} está APAGADO y su despachador ${d.via} no está activo: nadie lo corre.`);
+          continue;
+        }
+        if (p.schedule !== d.cadencia)
+          fallos.push(`el cron ${d.job} cambió de cadencia: declarada «${d.cadencia}», en producción «${p.schedule}». `
+                    + 'Si el cambio es a propósito, el manifiesto y su motivo se actualizan en el mismo commit.');
+        // Apagada, su fila no acumula corridas propias: la tasa y el «no corrió
+        // ni una vez» se juzgan sobre el despachador, que tiene su propia fila
+        // en el manifiesto.
+        if (!p.active) continue;
+      }
       if (!p || !p.active) {
         fallos.push(`el cron ${d.job} está declarado y NO está activo en producción. `
                   + 'Una protección que se apagó sola no avisa: hay que decidir si vuelve o se borra del manifiesto.');
         continue;
       }
-      if (p.schedule !== d.cadencia)
+      if (!d.via && p.schedule !== d.cadencia)
         fallos.push(`el cron ${d.job} cambió de cadencia: declarada «${d.cadencia}», en producción «${p.schedule}». `
                   + 'Si el cambio es a propósito, el manifiesto y su motivo se actualizan en el mismo commit.');
       /* ── Fallar por una tasa, no por un tropiezo ────────────────────────

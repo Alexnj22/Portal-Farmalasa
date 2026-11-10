@@ -1700,6 +1700,16 @@
    "area": "traslados",
    "por": "cron"
   },
+  "cron_horario_coincide": {
+   "area": "sistema",
+   "por": "cron",
+   "manual": true
+  },
+  "cron_tick_minuto": {
+   "area": "sistema",
+   "por": "cron",
+   "manual": true
+  },
   "cuenta_de_carne_temporal": {
    "area": "acceso",
    "por": "código"

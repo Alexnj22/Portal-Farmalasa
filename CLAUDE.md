@@ -234,6 +234,10 @@ mantiene al día se rompe sin decir por qué.
 `WHERE EXISTS (SELECT 1 FROM cron.job WHERE jobname = 'x')`—: `cron.unschedule('x')`
 lanza si `x` no existe (en prod hay crons creados a mano), y eso rompe la
 construcción del próximo branch.
+Lo mismo con un `DO` que hace `RAISE EXCEPTION` si falta un secreto de la
+bóveda o un cron: el branch repite la historia en una base SIN ellos. Ahí se
+sale (`RAISE NOTICE …; RETURN;`), no se lanza — lo vigila `gate:migrations`
+(«falla-en-pruebas»). Pasó el 2026-11-10 y cortó 11 migraciones.
 
 ### Una función con parámetros se mide SEIS veces, no una
 

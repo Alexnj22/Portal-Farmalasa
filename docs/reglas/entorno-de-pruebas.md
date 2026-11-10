@@ -195,3 +195,24 @@ generarlo en prod y escribirlo a disco con
 `supabase db query --linked -o json | node -e '...' > archivo`, meterlo en
 `schema_migrations` con SQL server-side, y **crear el branch de nuevo** — lo
 replica solo. Detalle en la memoria `reference_branches_de_supabase_son_solo_ipv6`.
+
+## El branch se arma con el texto GUARDADO en producción (2026-11-10)
+
+El branch no lee `supabase/migrations/`: repite, en orden, el `statements` de
+cada fila de `supabase_migrations.schema_migrations` de producción, sobre una
+base que **no tiene** los secretos de la bóveda ni los crons creados a mano.
+Toda migración que lance cuando eso falta lo deja en `MIGRATIONS_FAILED`, y
+rehacerlo no sirve: se rehace con la misma historia y cae en el mismo lugar.
+
+Pasó con `20261110145948_cron_secreto_por_circuito` («falta sync_invoke_secret
+en el vault»): el branch quedó en 1.758 de 1.770 a las pocas horas.
+
+- **Prevención:** `gate:migrations` («falla-en-pruebas») rechaza un `DO` que
+  hace `RAISE EXCEPTION` y lee `vault.` o `cron.job`, salvo
+  `-- falla-en-pruebas: <motivo>`. En una base sin eso, se sale sin tocar nada.
+- **Arreglo, si vuelve a pasar:** corregir el archivo para que salga en vez de
+  lanzar, copiar ese texto EXACTO al `statements` de su fila en producción
+  (`UPDATE … WHERE version = '…' AND md5(...) = '<el viejo>'`: no ejecuta nada,
+  sólo cambia la receta) y correr el workflow «Entorno de pruebas al día».
+  Comprobar con md5 que archivo y fila quedaron iguales.
+

@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.4 — Entorno de pruebas: una migración que lanza sin los secretos ya no lo rompe
+
+- El entorno de pruebas se arma repitiendo el texto de cada migración guardado en producción, sobre una base sin los secretos de la bóveda. `20261110145948_cron_secreto_por_circuito` hacía `RAISE EXCEPTION` si faltaban: el branch quedó en `MIGRATIONS_FAILED` con 14 migraciones sin aplicar, y rehacerlo no lo arreglaba.
+- La migración ahora SALE sin tocar nada si faltan los secretos (en producción ya había corrido con ellos). Archivo y texto guardado en producción, idénticos (md5). El workflow lo puso al día por `push`, sin rehacerlo: 1.772 de 1.772.
+- Para que no vuelva: `gate:migrations` («falla-en-pruebas») rechaza un `DO` que lanza y lee `vault.` o `cron.job`, salvo `-- falla-en-pruebas: <motivo>`. Probado con una migración fabricada. Regla en CLAUDE.md y `docs/reglas/entorno-de-pruebas.md`.
+
 ## v2.1501.3 — Wompi borrado de producción
 
 - Borrada la función `wompi-pagos` y sus tres secretos (`WOMPI_*`); desplegadas `n1co-pagos`, `app-clientes`, `sync-creditos` y `operar-caja`. El pago en línea queda «en preparación» hasta cargar la llave de n1co.

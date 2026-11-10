@@ -463,6 +463,43 @@ for (const archivo of locales) {
   }
 }
 
+// ── 5.bis.b. Un bloque que LANZA si falta un secreto o un cron: «falla-en-pruebas»
+// La misma enfermedad que 5.bis, con otra cara. El entorno de pruebas se arma
+// REPITIENDO la historia guardada en producción sobre una base que no tiene los
+// secretos de la bóveda ni los crons creados a mano. Un `DO` que verifica eso y
+// hace `RAISE EXCEPTION` pasa en producción —donde todo existe— y en el branch
+// lo deja en MIGRATIONS_FAILED con todas las migraciones siguientes sin aplicar.
+//
+// Pasó el 2026-11-10 con `20261110145948_cron_secreto_por_circuito` («falta
+// sync_invoke_secret en el vault»): el entorno de pruebas quedó roto a las pocas
+// horas y lo descubrió otra sesión que lo necesitaba. Y no se arregla rehaciendo
+// el branch: se rehace con la MISMA historia y vuelve a caer en el mismo lugar.
+//
+// Lo correcto en una base sin eso es SALIR sin tocar nada (`RAISE NOTICE …;
+// RETURN;`), no lanzar. Si lanzar es de verdad lo que hace falta, se escribe por
+// qué no rompe el entorno de pruebas: `-- falla-en-pruebas: <motivo>`.
+const CORTE_FALLA_EN_PRUEBAS = '20261110220000';
+for (const archivo of locales) {
+  const version = (archivo.match(NOMBRE) || [])[1];
+  if (!version || version < CORTE_FALLA_EN_PRUEBAS) continue;
+  const texto = readFileSync(`${DIR}/${archivo}`, 'utf8');
+  if (/--\s*falla-en-pruebas:\s*\S/.test(texto)) continue;
+  const sinComentarios = texto.replace(/--.*$/gm, '');
+  // Sólo los DO de nivel superior: el cuerpo de una función corre cuando la
+  // llaman, no al reproducir la historia.
+  for (const m of sinComentarios.matchAll(/\bDO\s+(\$[A-Za-z_]*\$)([\s\S]*?)\1/g)) {
+    const cuerpo = m[2];
+    if (!/\bRAISE\s+EXCEPTION\b/i.test(cuerpo)) continue;
+    if (!/\bvault\.|\bcron\.job\b/i.test(cuerpo)) continue;
+    err(`${DIR}/${archivo}: un DO que lanza y depende de la bóveda o de cron.job`,
+      ['El entorno de pruebas repite esta migración en una base SIN esos secretos ni',
+       'esos crons: si lanza, queda en MIGRATIONS_FAILED y no recibe las siguientes.',
+       'En una base que no los tiene, salí sin tocar nada:',
+       "  RAISE NOTICE 'falta …: no se cambia nada'; RETURN;",
+       'o escribí por qué no rompe el entorno: `-- falla-en-pruebas: <motivo>`.']);
+  }
+}
+
 // ── 5.ter. Un REVOKE que se olvida de `authenticated` no revoca nada ──────────
 // Supabase concede EXECUTE por DEFECTO a `anon, authenticated, service_role`
 // sobre toda función nueva. El patrón que usa todo este repo —

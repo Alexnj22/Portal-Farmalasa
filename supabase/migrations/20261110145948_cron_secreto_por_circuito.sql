@@ -16,9 +16,17 @@ DECLARE
 BEGIN
   -- Sin el secreto en el vault, el header saldría NULL y el cron quedaría en
   -- 401: mejor no tocar nada.
+  --
+  -- 2026-11-10: NO tocar nada es SALIR, no lanzar. El entorno de pruebas se arma
+  -- repitiendo esta historia en una base sin esos secretos, y un RAISE acá lo
+  -- dejaba en MIGRATIONS_FAILED (le cortó las 11 migraciones siguientes). En
+  -- producción los cuatro existían y esta migración ya corrió: el cambio sólo
+  -- afecta a una base que no los tiene. Regla en docs/reglas/entorno-de-pruebas.md
+  -- y la vigila gate:migrations («falla-en-pruebas»).
   FOREACH c IN ARRAY ARRAY['sync','fiscal','avisos','cron'] LOOP
     IF NOT EXISTS (SELECT 1 FROM vault.secrets WHERE name = c || '_invoke_secret') THEN
-      RAISE EXCEPTION 'falta % en el vault', c || '_invoke_secret';
+      RAISE NOTICE 'falta % en el vault: no se cambia ningún cron', c || '_invoke_secret';
+      RETURN;
     END IF;
   END LOOP;
 

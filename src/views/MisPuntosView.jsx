@@ -41,7 +41,7 @@
  */
 import React, { useState, useEffect, useRef } from 'react';
 import {
-    Loader2, AlertTriangle, ArrowLeft, ShoppingBag, Gift, ShieldCheck,
+    AlertTriangle, ArrowLeft, ShoppingBag, Gift, ShieldCheck,
     CalendarClock, ChevronDown, ChevronUp, ChevronRight, CreditCard, Phone, UserRound, ScrollText,
     KeyRound, Cake, SlidersHorizontal, Undo2, CalendarX, Wallet,
 } from 'lucide-react';
@@ -495,10 +495,8 @@ export default function MisPuntosView() {
                             )}
 
                             <Button type="submit" variant="primary" className="w-full"
-                                disabled={!puedeConsultar}>
-                                {cargando
-                                    ? <><Loader2 size={16} className="animate-spin" /> Consultando…</>
-                                    : 'Ver mis puntos'}
+                                loading={cargando} disabled={!puedeConsultar}>
+                                {cargando ? 'Consultando…' : 'Ver mis puntos'}
                             </Button>
 
                             <p className="text-caption text-content-3 text-center">

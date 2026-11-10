@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Notice from '../common/Notice';
 import Button from '../common/Button';
-import { KeyRound, Lock, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { KeyRound, Lock, CheckCircle2, AlertCircle } from 'lucide-react';
 import { useToastStore } from '@nucleo/store/toastStore';
 import PortalInput from '../common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -97,10 +97,8 @@ const FormSetPassword = ({ formData, onClose }) => {
             )}
 
             {/* Submit */}
-            <Button size="lg" disabled={loading || !password || !confirm} onClick={handleSubmit}>{loading
-                    ? <><Loader2 size={18} className="animate-spin" /> Guardando...</>
-                    : <><KeyRound size={16} strokeWidth={2.5} /> Guardar Contraseña</>
-                }</Button>
+            <Button size="lg" icon={KeyRound} loading={loading} disabled={!password || !confirm} onClick={handleSubmit}>
+                {loading ? 'Guardando...' : 'Guardar Contraseña'}</Button>
         </div>
     );
 };

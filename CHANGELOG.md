@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1500.18 — Diseño: spinners, íconos en caja, puntos y radios por sus canónicos
+
+- Los botones que guardan, envían o confirman muestran la rueda con el `loading`
+  de `Button` en vez de una escrita a mano (unas 50 pantallas: pedidos,
+  recepción, traslados, productos, vacaciones, formularios de clientes y
+  proveedores…). El botón queda deshabilitado mientras trabaja y conserva su
+  ícono y su texto.
+- Los avisos de «Cargando…», «Guardando…», «Buscando…» dentro de una pantalla
+  usan `LoadingState variant="inline"`: misma rueda y misma letra en todo el portal.
+- En Catálogo, el botón Devolutivo / No devolutivo dibujaba dos íconos; ahora uno.
+- Íconos en caja (Clientes, Equipos, Marketing, Puntos, Inventario, Encuestas) por
+  `IconoEnCaja`; puntos de estado (Sucursal, Chat, vencimientos) por `PuntoDeEstado`;
+  radios a mano en Cargos y Feriados por los del tema.
+- Gate de diseño: cargando 104→28, ícono en caja 16→7, punto 9→5, radio 22→19,
+  título 13→12 (baseline bajado).
+
 ## v2.1500.17 — Frase del día: Leído la quita del Inicio
 
 - App de clientes: la frase del día en Inicio tiene «Leído»; al tocarlo sale del Inicio hasta la frase siguiente (8:00). En Bienestar se sigue viendo.

@@ -47,6 +47,7 @@ import {
     clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir,
 } from '@nucleo/utils/preciosDeProducto';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
+import { LoadingState } from '../../components/common/StateViews';
 
 
 // Los niveles de precio y cuáles ve cada cargo viven en el núcleo
@@ -839,9 +840,7 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
 
     if (loadingRow) {
         const cargando = (
-            <div className={`flex items-center gap-2 text-label ${xk.loadingText}`}>
-                <Loader2 size={12} className="animate-spin text-chart-1-text" /> Cargando detalle…
-            </div>
+            <LoadingState variant="inline" label="Cargando detalle…" />
         );
         if (comoPanel) return <div className="px-5 py-6">{cargando}</div>;
         return (
@@ -926,7 +925,6 @@ function ExpandedProductRow({ product, data, loadingRow, onPhotoUpdated, onPrinc
                             ? 'Este producto SÍ puede devolverse al proveedor antes de vencer. Clic para marcarlo como No Devolutivo (ND).'
                             : 'Este producto NO puede devolverse al proveedor (ND). Clic para marcarlo como Devolutivo.'}
                     >
-                        {savingDevolutivo ? <Loader2 size={12} className="animate-spin" /> : !devolutivo ? <Ban size={12} /> : <RotateCcw size={12} />}
                         {!devolutivo ? 'No devolutivo (ND)' : 'Devolutivo'}
                     </Button>
 
@@ -1742,7 +1740,7 @@ export default function TabCatalogo({
                                     </DataCell>
                                     <DataCell className="w-10 text-center">
                                         {isLoadingThis
-                                            ? <Loader2 size={13} className="animate-spin text-chart-1-text mx-auto" />
+                                            ? <LoadingState variant="inline" />
                                             : <ChevronDown size={13} className={`transition-transform duration-[var(--dur-base)] mx-auto ${isExpanded ? 'rotate-180 text-chart-1-text' : tk.textMid}`} />
                                         }
                                     </DataCell>

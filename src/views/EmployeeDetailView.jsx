@@ -1266,9 +1266,8 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                     subtitulo={isCancelling
                         ? 'No cierres esta ventana.'
                         : 'Quedará registrada como cancelada. No se puede deshacer.'}
-                    icono={isCancelling ? Loader2 : AlertTriangle}
+                    icono={AlertTriangle}
                     tono="danger"
-                    className={isCancelling ? '[&_svg:first-of-type]:animate-spin' : ''}
                     pie={<>
                         <Button variant="destructive" disabled={!cancelReason.trim() || isCancelling}
                             loading={isCancelling}

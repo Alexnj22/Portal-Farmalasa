@@ -5,10 +5,10 @@ import Button from '../../components/common/Button';
 import Switch from '../../components/common/Switch';
 import StatCard from '../../components/common/StatCard';
 import CarrilCards from '../../components/common/CarrilCards';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, LoadingState } from '../../components/common/StateViews';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import {
-    Loader2, Check, X, Ban, AlertTriangle, Package, ShieldAlert,
+    Check, X, Ban, AlertTriangle, Package, ShieldAlert,
     Sparkles, FlaskConical, Box, Layers, Sigma, ArrowRight, Building2,
 } from 'lucide-react';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../../components/common/DataTable';
@@ -232,9 +232,7 @@ function EditPanel({ product, rule, vals, setVals, saving, justSaved, saveError,
     // El acuse de guardado baja al pie, junto a la acción destructiva: estaba a
     // 600px de distancia del control que lo dispara.
     const acuse = saving ? (
-        <span className="flex items-center gap-1 text-label text-content-3">
-            <Loader2 size={11} className="animate-spin" /> Guardando…
-        </span>
+        <LoadingState variant="inline" label="Guardando…" />
     ) : justSaved ? (
         <span className="flex items-center gap-1 text-label text-success-text font-semibold">
             <Check size={11} /> Guardado

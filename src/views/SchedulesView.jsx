@@ -148,7 +148,7 @@ const HolidaysPanel = ({
                             Recurrente
                         </Button>
                     </div>
-                    <Button tone="warning" disabled={hSaving || !hDate || !hName.trim()} onClick={onSave}>{hSaving ? <Loader2 size={13} strokeWidth={3} className="animate-spin" /> : <Save size={13} strokeWidth={2.5} />}
+                    <Button tone="warning" icon={Save} loading={hSaving} disabled={!hDate || !hName.trim()} onClick={onSave}>
                         {hSaving ? 'Guardando...' : 'Guardar feriado'}</Button>
                 </div>
             )}
@@ -190,7 +190,7 @@ const HolidaysPanel = ({
                                             className="group relative flex items-center overflow-hidden
                                                 transition-all duration-[var(--dur-slow)]">
                                             {/* Color stripe */}
-                                            <div className={`w-1.5 self-stretch shrink-0 rounded-l-[1.5rem] ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />
+                                            <div className={`w-1.5 self-stretch shrink-0 rounded-l-card ${isNat ? 'bg-gradient-to-b from-warning to-chart-4' : 'bg-gradient-to-b from-chart-1 to-brand'}`} />
                                             <div className="flex items-center gap-3 px-4 py-3.5 flex-1 min-w-0">
                                                 {/* Date badge */}
                                                 <div className={`w-11 h-11 rounded-xl flex flex-col items-center justify-center flex-shrink-0 ${isNat ? 'bg-warning/10 border border-warning/30' : 'bg-chart-1/10 border border-chart-1/30'}`}>
@@ -213,7 +213,7 @@ const HolidaysPanel = ({
                                                 </div>
                                                 {/* Delete */}
                                                 {canEdit && (
-                                                    <Button variant="destructive" size="sm" disabled={hDeleting === h.id} onClick={() => onDelete(h.id)}>{hDeleting === h.id ? <Loader2 size={14} strokeWidth={2.5} className="animate-spin text-danger" /> : <Trash2 size={14} strokeWidth={2} />}</Button>
+                                                    <Button variant="destructive" size="sm" iconOnly icon={Trash2} aria-label="Eliminar feriado" loading={hDeleting === h.id} onClick={() => onDelete(h.id)} />
                                                 )}
                                             </div>
                                         </div>

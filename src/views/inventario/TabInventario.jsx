@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useRef, lazy, Suspense } from 
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import {
-    AlertTriangle, Calendar, CalendarClock, Loader2, Package, PackageX,
+    AlertTriangle, Calendar, CalendarClock, Package, PackageX,
     Building2, X, ChevronLeft, ChevronRight, ChevronDown, DollarSign, ScanSearch,
 } from 'lucide-react';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -25,6 +25,7 @@ import { loteAMostrar, unidadesDeUbicacion, unidadesVencidasPorProducto, vencimi
 
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { LoadingState } from '../../components/common/StateViews';
 
 // Pedirle a una o varias salas que cuenten el producto (Consultas de
 // existencia). Diferido: sólo hace falta al apretar el botón.
@@ -98,10 +99,7 @@ function PanelUbicaciones({ cargando, regulares, vencidos, comoPanel = false, on
     const hayVencidos  = (vencidos  || []).length > 0;
 
     const cuerpo = cargando ? (
-        <div className="flex items-center gap-2 text-content-3 py-2">
-            <Loader2 size={14} className="animate-spin" />
-            <span className="text-body-sm">Cargando...</span>
-        </div>
+        <LoadingState variant="inline" label="Cargando..." className="py-2" />
     ) : !hayRegulares && !hayVencidos ? (
         <p className="text-body-sm text-content-3 py-2">Sin datos</p>
     ) : (

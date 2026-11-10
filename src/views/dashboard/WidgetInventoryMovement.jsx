@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import {
-    AlertTriangle, Archive, ArchiveRestore, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, Loader2,
-    ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
+    AlertTriangle, Archive, ArchiveRestore, ArrowLeft, CalendarX2, Check, CheckCircle2, ChevronRight, ClipboardList, PackageMinus, PackagePlus, Pencil, Plus, Stethoscope, Trash2, X,
 } from 'lucide-react';
 import ListRow from '../../components/common/ListRow';
 import AvisoParecidos from '../../components/common/AvisoParecidos';
@@ -13,7 +12,7 @@ import LanzadorSolicitud, { PieModal, EncabezadoModal } from './LanzadorSolicitu
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import SearchInput from '../../components/common/SearchInput';
-import { EmptyState, SkeletonText } from '../../components/common/StateViews';
+import { EmptyState, SkeletonText, LoadingState } from '../../components/common/StateViews';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useBorrador from '@nucleo/hooks/useBorrador';
@@ -743,9 +742,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                     {/* Los lotes todavía viajando. Se dice, en vez de dibujar un
                         formulario sin el campo que quizá haga falta. */}
                     {lotesBorrador === null && (
-                        <p className="flex items-center gap-1.5 text-micro text-content-3 font-semibold px-1">
-                            <Loader2 size={11} className="animate-spin" /> Buscando los lotes…
-                        </p>
+                        <LoadingState variant="inline" label="Buscando los lotes…" className="px-1" />
                     )}
 
                     {lotesBorrador !== null && lotesBorrador.length > 0 && (
@@ -1251,8 +1248,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             {pestana === 'banco' && totales.lineas > 0 && (
                 <PieModal>
                     <Button variant="secondary" onClick={volver}>Volver</Button>
-                    <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
-                        {enviando && <Loader2 size={14} className="animate-spin" />}
+                    <Button loading={enviando} disabled={!puedeEnviar} onClick={enviar}>
                         {/* La subida de la foto es el tramo largo y va primero:
                             decirlo evita que se lea como que se colgó. */}
                         {subiendo ? 'Subiendo la foto...'

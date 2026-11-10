@@ -12,6 +12,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { fetchDevolucionDisponible, emitirNotaCredito, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { totalDevolucion, DESTINOS_DEVOLUCION } from './devolucion';
+import { LoadingState } from '../../components/common/StateViews';
 
 // Devolución parcial de un Crédito Fiscal: el cliente regresa parte de lo que
 // compró y sale una Nota de Crédito por eso (borrador 0017).
@@ -76,7 +77,7 @@ export default function DevolucionModal({ dteId, onClose, onEmitida }) {
             <LiquidModal.Body>
                 <div className="flex flex-col gap-4" data-devolucion>
                     {error && <Notice variant="danger" icon={AlertTriangle} bloque>{error}</Notice>}
-                    {!datos && !error && <p className="text-caption text-content-3 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Cargando…</p>}
+                    {!datos && !error && <LoadingState variant="inline" label="Cargando…" />}
                     {datos && !datos.puede && <Notice variant="warning" icon={Info} bloque>{datos.motivo}</Notice>}
                     {datos?.notas?.length > 0 && (
                         <Notice variant="info" icon={FileMinus} bloque>

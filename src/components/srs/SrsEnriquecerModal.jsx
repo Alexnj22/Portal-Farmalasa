@@ -2,7 +2,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import Button from '../common/Button';
 import LiquidModal from '../common/LiquidModal';
 import {
-    X, FlaskConical, Loader2, Check, SkipForward,
+    X, FlaskConical, Check, SkipForward,
     ChevronRight, AlertTriangle, Zap, Search, Package, Plus,
 } from 'lucide-react';
 import SrsBuscadorWidget from './SrsBuscadorWidget';
@@ -15,6 +15,7 @@ import PortalInput from '../common/PortalInput';
 import { aplicarPrincipiosDeSrs, buscarEnSrsParaProducto } from '@nucleo/data/srs';
 
 import PuntoDeEstado from '../common/PuntoDeEstado';
+import { LoadingState } from '../common/StateViews';
 // ── La cuenta y las escrituras: núcleo (2026-10-15) ──────────────────────────
 // Búsquedas, parecido y principios en `utils/enriquecerSrs`; leer y guardar en
 // `data/srs`. La app recorre lo mismo. Acá quedan los nombres de siempre.
@@ -253,7 +254,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                     {phase === PHASE.SCANNING && (
                         <div className="flex flex-col gap-4">
                             <div className="flex items-center gap-3">
-                                <Loader2 size={18} className="text-chart-3-text animate-spin shrink-0" />
+                                <LoadingState variant="inline" className="shrink-0" />
                                 <div className="flex-1 min-w-0">
                                     <p className="text-body font-black text-content-2">Escaneando productos…</p>
                                     <p className="text-label text-content-3">{scanned} de {total} procesados</p>
@@ -313,7 +314,7 @@ export default function SrsEnriquecerModal({ onClose }) {
                                                 {autoQueue.length - autoRejected.size} de {autoQueue.length} seleccionados · toca ✗ para excluir
                                             </p>
                                         </div>
-                                        <Button tone="success" disabled={applying || autoQueue.length === autoRejected.size} onClick={handleApplyAuto}>{applying ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} />}
+                                        <Button tone="success" icon={Check} loading={applying} disabled={autoQueue.length === autoRejected.size} onClick={handleApplyAuto}>
                                             Aplicar {autoQueue.length - autoRejected.size}</Button>
                                     </div>
                                     <div className="max-h-52 overflow-y-auto divide-y divide-divider bg-surface-card">
@@ -417,7 +418,7 @@ export default function SrsEnriquecerModal({ onClose }) {
 
                                         {/* Actions */}
                                         <div className="flex items-center gap-2 pt-1 flex-wrap">
-                                            <Button tone="chart-3" disabled={reviewApplying || currentReview.principios.length === 0} onClick={() => handleReviewApply(currentReview)}>{reviewApplying ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />}
+                                            <Button tone="chart-3" icon={Check} loading={reviewApplying} disabled={currentReview.principios.length === 0} onClick={() => handleReviewApply(currentReview)}>
                                                 Aplicar</Button>
                                             <Button tone="chart-4" icon={Package} disabled={reviewApplying} onClick={() => handleReviewMarkSinPA(currentReview)}>Insumo/Equipo</Button>
                                             <Button variant="secondary" icon={SkipForward} disabled={reviewApplying} onClick={handleReviewSkip}>Saltar</Button>

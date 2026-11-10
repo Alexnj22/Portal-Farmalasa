@@ -21,8 +21,8 @@ import React, { useState, useRef, useEffect, useCallback, useMemo, lazy, Suspens
 import AvisoParecidos from '../../../components/common/AvisoParecidos';
 import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
-import { EmptyState } from '../../../components/common/StateViews';
-import { Loader2, X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
+import { EmptyState, LoadingState } from '../../../components/common/StateViews';
+import { X, Package, ArrowLeft, ZoomIn, ChevronRight, FlaskConical, PackageMinus, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {
   fetchProductPhotoMap,
@@ -1197,10 +1197,7 @@ function PanelInventario({ query = '', onQueryChange, onSolicitado }) {
 
             {/* SRS loading */}
             {srsLoading && (
-              <div className="flex items-center gap-2 px-1">
-                <Loader2 size={11} className="text-chart-3-text animate-spin shrink-0" />
-                <p className="text-caption text-content-3 font-medium">Consultando Registro SRS...</p>
-              </div>
+              <LoadingState variant="inline" label="Consultando Registro SRS..." className="px-1" />
             )}
 
             {/* SRS results — each card has its own report button */}

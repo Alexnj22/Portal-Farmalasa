@@ -46,7 +46,7 @@ import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import Badge from '../common/Badge';
 import Notice from '../common/Notice';
-import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Loader2, Banknote, Smartphone, ArrowRight } from 'lucide-react';
+import { User, Users, Briefcase, CreditCard, ShieldCheck, Phone, MapPin, Hash, Building2, Fingerprint, Lock, RefreshCw, AtSign, HeartPulse, Clock, DollarSign, GraduationCap, Camera, AlertCircle, RotateCcw, Trash2, Map as MapIcon, Navigation, AlertTriangle, CheckCircle2, Mail, Copy, Plus, X, Car, Bike, Globe, ShieldAlert, FileText, Link2, Wrench, CalendarClock, Banknote, Smartphone, ArrowRight } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import PortalInput from '../common/PortalInput';
@@ -101,6 +101,7 @@ import { NOMBRES_DE_MES, fechaTexto, fechaNumerica, hoySV } from '@nucleo/utils/
 import { analizarDocumento, leerDui } from '@nucleo/data/ia';
 import SeccionDeLaPractica from '../practicantes/SeccionDeLaPractica';
 import { TIPO_FICHA_PRACTICANTE } from '@nucleo/utils/practicanteFormulario';
+import { LoadingState } from '../common/StateViews';
 
 // ============================================================================
 // 🚀 CATÁLOGOS Y CONSTANTES
@@ -2744,9 +2745,7 @@ const EmployeeFormModal = ({ formData, setFormData, branches, roles, isEditMode 
                             )}
 
                             {leyendoDui && (
-                                <p className="mt-3 text-label font-bold text-brand-text flex items-center gap-2">
-                                    <Loader2 size={14} className="animate-spin" /> Leyendo el documento…
-                                </p>
+                                <LoadingState variant="inline" label="Leyendo el documento…" className="mt-3" />
                             )}
 
                             {duiFallo && !leyendoDui && (

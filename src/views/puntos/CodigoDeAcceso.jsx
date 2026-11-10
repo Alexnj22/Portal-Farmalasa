@@ -21,6 +21,7 @@ import { estadoCodigoAcceso, verCodigoAcceso, emitirCodigoAcceso, salaDeHoy } fr
 import { fechaTexto } from '@nucleo/utils/fecha';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 /**
  * El código de acceso a «Mis puntos», en la ficha.
  *
@@ -207,9 +208,9 @@ export default function CodigoDeAcceso({ customerId, nombre, telefono, puedeEdit
     return (
         <div data-surface="card" className="p-4 sm:p-5 flex flex-col gap-4 min-w-0">
             <div className="flex items-start gap-3 min-w-0">
-                <span className="w-10 h-10 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
+                <IconoEnCaja tono="brand">
                     <KeyRound size={18} aria-hidden="true" />
-                </span>
+                </IconoEnCaja>
                 <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                         <TituloDeSeccion nivel="tarjeta">Acceso a Mis puntos</TituloDeSeccion>

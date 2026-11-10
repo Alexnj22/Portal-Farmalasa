@@ -4,7 +4,7 @@ import HojaMovil from '../../../components/common/HojaMovil';
 import useMediaQuery from '../../../plataforma/useMediaQuery';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
-import { Settings2, X, Loader2, CheckCircle2, Save } from 'lucide-react';
+import { Settings2, X, CheckCircle2, Save } from 'lucide-react';
 import { updateStockConfig } from '@nucleo/data/stockParams';
 import PortalInput from '../../../components/common/PortalInput';
 import { usuarioDeLaSesion } from '@nucleo/data/auth';
@@ -79,7 +79,7 @@ export default function ConfigPanel({ config, onSave, onClose }) {
     // Un `display: contents` tampoco sirve: no cambia quién es hijo directo
     // para el selector, solo cómo se dibuja.
     const acciones = <>
-        <Button disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={12} className="animate-spin" /> : saved ? <CheckCircle2 size={12} /> : <Save size={12} />}
+        <Button icon={saved ? CheckCircle2 : Save} loading={saving} onClick={handleSave}>
             {saved ? 'Guardado' : 'Guardar'}</Button>
         <Button variant="secondary" onClick={onClose}>Cerrar</Button>
     </>;

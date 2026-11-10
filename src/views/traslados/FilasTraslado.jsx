@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { ArrowLeftRight, CalendarClock, Hash, Loader2, PackageCheck, Printer, Truck } from 'lucide-react';
+import { ArrowLeftRight, CalendarClock, Hash, PackageCheck, Printer, Truck } from 'lucide-react';
 import { Trayecto, PildoraEspera } from './PiezasTraslado';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -717,8 +717,7 @@ export function DecisionTraslado({ fila, onHecho }) {
 
             {modo !== 'rechazo' ? (
                 <div className="flex gap-2">
-                    <Button size="sm" disabled={ocupado || !puedeConfirmar} onClick={confirmar}>
-                        {ocupado && <Loader2 size={13} className="animate-spin" />}
+                    <Button size="sm" loading={ocupado} disabled={!puedeConfirmar} onClick={confirmar}>
                         {ocupado ? 'Enviando...' : recortado ? 'Enviar lo que hay' : 'Confirmar y enviar'}
                     </Button>
                     <Button size="sm" variant="ghost" disabled={ocupado} onClick={() => setModo('rechazo')}>
@@ -748,8 +747,7 @@ export function DecisionTraslado({ fila, onHecho }) {
                         placeholder={motivo === 'Otro' ? 'Escribe el motivo' : 'Algo más que agregar (opcional)'}
                     />
                     <div className="flex gap-2">
-                        <Button size="sm" variant="destructive" disabled={ocupado || !puedeRechazar} onClick={rechazar}>
-                            {ocupado && <Loader2 size={13} className="animate-spin" />}
+                        <Button size="sm" variant="destructive" loading={ocupado} disabled={!puedeRechazar} onClick={rechazar}>
                             Rechazar
                         </Button>
                         {/* Sin «Volver» cuando ya no queda nada: no hay a dónde

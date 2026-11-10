@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    Loader2, Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
+    Check, IdCard, MapPin, Phone, ShieldCheck, Receipt,
     History, AlertTriangle, Store, Building2,
 } from 'lucide-react';
 import Button from '../common/Button';
@@ -634,13 +634,11 @@ const FormClienteDetail = ({ formData }) => {
                             declaran a Hacienda. Confirma para guardar.
                         </Notice>
                     )}
-                    <Button size="lg" disabled={guardando || !hayCambios || !v.ok}
+                    <Button size="lg" icon={Check} loading={guardando} disabled={!hayCambios || !v.ok}
                         title={!hayCambios ? 'No hay cambios que guardar'
                             : !v.ok ? 'Hay datos incompletos o mal escritos' : undefined}
                         onClick={() => guardar(false)}>
-                        {guardando
-                            ? <><Loader2 size={18} className="animate-spin" /> Guardando…</>
-                            : <><Check size={16} strokeWidth={2.5} /> Guardar cambios{hayCambios ? ` (${Object.keys(cambios).length})` : ''}</>}
+                        {guardando ? 'Guardando…' : <>Guardar cambios{hayCambios ? ` (${Object.keys(cambios).length})` : ''}</>}
                     </Button>
                 </div>
             )}

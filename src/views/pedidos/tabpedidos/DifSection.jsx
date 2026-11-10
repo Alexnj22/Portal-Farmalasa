@@ -2,7 +2,7 @@
 // section shown inside an expanded pedido card.
 import { useState, useEffect, useMemo } from 'react';
 import Button from '../../../components/common/Button';
-import { AlertCircle, CheckCircle2, X, Loader2, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
+import { AlertCircle, CheckCircle2, X, Check, ChevronDown, ChevronUp, ArrowRight, Clock } from 'lucide-react';
 import { calcSolicitado, fmtRelative, fmtDia, fmtHM, TIPO_DE_DIFERENCIA, RESOLUCION_DE_DIFERENCIA, EVENTO_DE_DIFERENCIA } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import Badge from '../../../components/common/Badge';
@@ -349,7 +349,7 @@ export default function DifSection({ row, difItems = [], eventos = [], devolucio
                                     value={corrNota} onChange={e => setCorrNota(e.target.value)}
                                     placeholder="Nota (opcional)…"
                                 />
-                                <Button tone="success" disabled={busyAction === 'corr_bodega'} onClick={() => onCorregirBodega?.(corrNota || null)}>{busyAction === 'corr_bodega' ? <Loader2 size={10} className="animate-spin" /> : 'Marcar corregido'}</Button>
+                                <Button tone="success" loading={busyAction === 'corr_bodega'} onClick={() => onCorregirBodega?.(corrNota || null)}>Marcar corregido</Button>
                             </div>
                         </div>
                     )}

@@ -23,6 +23,7 @@ import { fetchLotes } from '@nucleo/data/distribucionInventario';
 import { MOTIVOS_BAJA, leerEntero, resumenDeConteo, renglonesDeConteo, rotuloMotivoBaja, estadoDeBaja, valorDeBajas } from '@nucleo/utils/distribucionBodega';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import { LoadingState } from '../../components/common/StateViews';
 // Conteo físico y bajas (borrador 0026).
 //
 // Conteo A CIEGAS: quien cuenta no ve lo que dice el sistema —si lo ve, tiende
@@ -61,7 +62,7 @@ function RenglonConteo({ it, veSistema, abierto, onGuardado }) {
                     compact placeholder="Contado" hasError={valor !== '' && n == null} />
             </div>
             <div className="sm:col-span-2 flex items-center justify-end gap-1">
-                {guardando && <Loader2 size={14} className="animate-spin text-content-3" />}
+                {guardando && <LoadingState variant="inline" />}
                 {!guardando && it.contado != null && dif === null && <CheckCircle2 size={16} className="text-success-text" aria-label="Contado" />}
                 {dif != null && (dif === 0
                     ? <Badge size="sm" variant="success" uppercase={false}>cuadra</Badge>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import Button from '../common/Button';
-import { Phone, Loader2, Check } from 'lucide-react';
+import { Phone, Check } from 'lucide-react';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import PortalInput from '../common/PortalInput';
@@ -41,7 +41,7 @@ const FormEditContact = ({ formData, onClose }) => {
                     onChange={e => setForm(p => ({ ...p, [key]: e.target.value }))}
                 />
             ))}
-            <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
+            <Button size="lg" icon={Check} loading={loading} onClick={save}>{loading ? 'Guardando…' : 'Guardar Cambios'}</Button>
         </div>
     );
 };

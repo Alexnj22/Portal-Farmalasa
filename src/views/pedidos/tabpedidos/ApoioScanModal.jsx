@@ -11,7 +11,7 @@ import Button from '../../../components/common/Button';
 import Badge from '../../../components/common/Badge';
 import EsperaDeCarne from '../../../components/common/EsperaDeCarne';
 import AvatarConEstado from '../../../components/common/AvatarConEstado';
-import { Users, Loader2, AlertTriangle, Check } from 'lucide-react';
+import { Users, AlertTriangle, Check } from 'lucide-react';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import useCapturaDeCarne from '../../../plataforma/useCapturaDeCarne';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -166,7 +166,7 @@ export default function ApoioScanModal({ open, onClose, pedidoId, sucId, current
                                 no deshace nada. */}
                             <Button variant="secondary" onClick={onClose}>{anotados.length > 0 ? 'Listo' : 'Cancelar'}</Button>
                             {reconocido && (
-                                <Button disabled={loading} onClick={confirmApoyo}>{loading ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                                <Button icon={Check} loading={loading} onClick={confirmApoyo}>
                                     Confirmar</Button>
                             )}
                         </div>

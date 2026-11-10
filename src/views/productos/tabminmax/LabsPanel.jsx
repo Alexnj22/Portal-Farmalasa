@@ -6,8 +6,8 @@ import Badge from '../../../components/common/Badge';
 import Button from '../../../components/common/Button';
 import ModalShell from '../../../components/common/ModalShell';
 import Switch from '../../../components/common/Switch';
-import { SkeletonText } from '../../../components/common/StateViews';
-import { FlaskConical, X, Search, Loader2 } from 'lucide-react';
+import { SkeletonText, LoadingState } from '../../../components/common/StateViews';
+import { FlaskConical, X, Search } from 'lucide-react';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import {
     fetchLaboratoriosMinMaxVisibility, fetchActiveProductLabCounts, cambiarVisibilidadLaboratorioMinMax,
@@ -174,7 +174,7 @@ export default function LabsPanel({ onClose, onChanged }) {
                                 </div>
                                 <div className="shrink-0">
                                     {saving === lab.id ? (
-                                        <Loader2 size={12} className="animate-spin text-content-3" />
+                                        <LoadingState variant="inline" />
                                     ) : (
                                         /* Indicador, no control: la fila ya es el botón (ver DashboardView). */
                                         <Switch checked={!hidden} size="sm"

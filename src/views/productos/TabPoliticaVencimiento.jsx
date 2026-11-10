@@ -19,6 +19,7 @@ import {
 } from '@nucleo/data/laboratorios';
 import PortalInput from '../../components/common/PortalInput';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 
 let rowIdSeq = 0;
 const nextRowId = () => `new-${Date.now()}-${rowIdSeq++}`;
@@ -352,7 +353,7 @@ function LabProveedoresRow({ lab, canEdit, proveedorNameOptions, proveedores, is
                             {canEdit && (
                                 <div className="flex items-center justify-between gap-2 px-0.5 mb-1">
                                     <span className="text-caption font-black uppercase tracking-widest text-content-2">Proveedores</span>
-                                    <Button tone="warning" disabled={markingND} title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos" onClick={onMarkND}>{markingND ? <Loader2 className="w-3 h-3 animate-spin" /> : <Ban className="w-3 h-3" />}
+                                    <Button tone="warning" icon={Ban} loading={markingND} title="Marca todos los productos de este laboratorio como No Devolutivo (ND) — poco común, la mayoría de laboratorios tienen productos mixtos" onClick={onMarkND}>
                                         Marcar todo como ND</Button>
                                 </div>
                             )}
@@ -405,7 +406,7 @@ function ProveedorRow({ proveedor, canEdit, proveedorNameOptions, onUpdate, onDe
             <div className="flex-1 min-w-0">
                 <p className="text-body-sm font-semibold text-content-2 truncate flex items-center gap-1.5">
                     {isCofarsal(proveedor.nombre) && (
-                        <span role="img" title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+                        <PuntoDeEstado tamano="sm" role="img" title="COFARSAL" className="bg-danger" />
                     )}
                     {proveedor.nombre}
                 </p>

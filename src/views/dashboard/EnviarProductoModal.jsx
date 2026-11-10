@@ -8,7 +8,7 @@ import SearchInput from '../../components/common/SearchInput';
 import SegmentedControl from '../../components/common/SegmentedControl';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
-import { EmptyState } from '../../components/common/StateViews';
+import { EmptyState, LoadingState } from '../../components/common/StateViews';
 import FotosDeEvidencia from '../../components/common/FotosDeEvidencia';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
@@ -1015,9 +1015,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                     </p>
                                 )}
                                 {buscando && (
-                                    <p className="text-label text-content-3 font-medium px-1 flex items-center gap-1.5">
-                                        <Loader2 size={13} className="animate-spin" /> Buscando…
-                                    </p>
+                                    <LoadingState variant="inline" label="Buscando…" className="px-1" />
                                 )}
                                 {!buscando && resultados?.length === 0 && (
                                     <EmptyState linea title="Tu sala no tiene ese producto" />
@@ -1199,9 +1197,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                 {pestana === 'lista' && (
                     <div className="flex flex-col gap-3">
                         {precargando && (
-                            <p className="flex items-center gap-2 text-label text-content-3 font-medium py-8 justify-center">
-                                <Loader2 size={14} className="animate-spin" /> Armando el envío…
-                            </p>
+                            <div className="flex justify-center py-8"><LoadingState variant="inline" label="Armando el envío…" /></div>
                         )}
                         {sinArmar.length > 0 && (
                             <div className="rounded-xl bg-warning/10 border border-warning/30 px-3 py-2 text-label text-warning-text leading-snug">

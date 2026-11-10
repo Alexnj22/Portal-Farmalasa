@@ -1,4 +1,4 @@
-import { Undo2, Check, X, Loader2, Truck, PackageCheck, AlertTriangle } from 'lucide-react';
+import { Undo2, Check, X, Truck, PackageCheck, AlertTriangle } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import PortalInput from '../../../components/common/PortalInput';
 import Badge from '../../../components/common/Badge';
@@ -130,9 +130,9 @@ export default function DevolucionBloque({
                 {/* ── Salió: falta que entre ── */}
                 {(dev.estado === 'enviada' || dev.estado === 'error') && !isBranch && dev.id_traslado && (
                     <div className="space-y-1.5">
-                        <Button tone="warning" icon={PackageCheck} disabled={recibiendo}
+                        <Button tone="warning" icon={PackageCheck} loading={recibiendo}
                             onClick={() => onRecibir?.(dev.id)}>
-                            {recibiendo ? <Loader2 size={10} className="animate-spin" /> : 'Confirmar entrada'}
+                            Confirmar entrada
                         </Button>
                         <p className="text-micro text-content-3 leading-snug">
                             {dev.viaja
@@ -161,11 +161,10 @@ export default function DevolucionBloque({
                         {/* Cuando no viaja nada, «Sacarlo de bodega» se leía
                             como mover cajas: lo que hace es pasar las
                             existencias de un lado al otro (2026-10-21). */}
-                        <Button tone="chart-3" icon={Truck} disabled={moviendo}
+                        <Button tone="chart-3" icon={Truck} loading={moviendo}
                             onClick={() => onMover?.(dev.id)}>
-                            {moviendo ? <Loader2 size={10} className="animate-spin" />
-                                      : dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')
-                                                  : `Pasar existencias a ${aDonde}`}
+                            {dev.viaja ? (aLaSala ? 'Sacarlo de bodega' : 'Sacarlo de la sala')
+                                       : `Pasar existencias a ${aDonde}`}
                         </Button>
                     </div>
                     <p className="text-micro text-content-3 leading-snug">

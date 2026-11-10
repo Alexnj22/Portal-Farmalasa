@@ -11,7 +11,7 @@ import ListRow from '../components/common/ListRow';
 import PortalInput from '../components/common/PortalInput';
 import SegmentedControl from '../components/common/SegmentedControl';
 import AvatarConEstado from '../components/common/AvatarConEstado';
-import { EmptyState, SkeletonText } from '../components/common/StateViews';
+import { EmptyState, SkeletonText, LoadingState } from '../components/common/StateViews';
 import CargadorDeFoto from '../components/common/CargadorDeFoto';
 import useCoarsePointer from '../plataforma/useCoarsePointer';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -604,7 +604,7 @@ function SugerenciasSrs({ producto, onUsar, autoAplicar }) {
                 </Button>
             </div>
             {estado.cargando ? (
-                <p className="text-caption text-content-3 flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Buscando coincidencias…</p>
+                <LoadingState variant="inline" label="Buscando coincidencias…" />
             ) : estado.error ? (
                 <Notice variant="warning" compact>{`No se pudo consultar el registro: ${estado.error}`}</Notice>
             ) : estado.candidatos.length === 0 ? (

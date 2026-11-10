@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, LoadingState } from '../../components/common/StateViews';
 import { Loader2, ArrowLeft, CheckCircle2, Package, TrendingUp, Building2, CircleSlash, EyeOff, CalendarClock, Boxes } from 'lucide-react';
 import Notice from '../../components/common/Notice';
 import BuscadorDeProducto from '../../components/common/BuscadorDeProducto';
@@ -202,7 +202,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
           <div className="rounded-2xl border border-divider bg-surface-card-hover/60 px-3.5 py-2.5 flex flex-col gap-1.5">
             <div className="flex items-center justify-between">
               <span className="text-caption font-black text-content-2 uppercase tracking-widest">En uso ahora</span>
-              {loadingCur ? <Loader2 size={13} className="animate-spin text-content-3" /> : (
+              {loadingCur ? <LoadingState variant="inline" /> : (
                 <div className="text-right">
                   <span className="text-label font-bold text-content-2">
                     MIN <span className="text-chart-4-text">{current?.min ?? '—'}</span> · MAX <span className="text-chart-1-text">{current?.max ?? '—'}</span> <span className="text-content-3 font-medium">und</span>
@@ -399,7 +399,7 @@ function RequestForm({ product, erp, user, onBack, onSuccess }) {
           teclado abierto en el teléfono quedaba fuera de la vista. */}
       <PieModal>
         <Button variant="secondary" onClick={onBack}>Volver</Button>
-        <Button disabled={submitting || bloqueado} onClick={submit}>{submitting && <Loader2 size={14} className="animate-spin" />}
+        <Button loading={submitting} disabled={bloqueado} onClick={submit}>
           {submitting ? 'Enviando…' : 'Enviar a aprobación'}</Button>
       </PieModal>
     </div>

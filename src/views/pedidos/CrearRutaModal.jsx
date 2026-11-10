@@ -4,7 +4,7 @@ import ListRow from '../../components/common/ListRow';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import { SkeletonText, EmptyState } from '../../components/common/StateViews';
-import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Loader2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle, RotateCcw } from 'lucide-react';
+import { X, Truck, ChevronUp, ChevronDown, MapPin, User, Package, Clock, ArrowRight, CheckCircle2, Navigation, Warehouse, Plus, Trash2, Building2, AlertTriangle, RotateCcw } from 'lucide-react';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import { useAuth } from '@nucleo/context/AuthContext';
 import PedidoModal from './PedidoModal';
@@ -954,10 +954,8 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
         {step === 1 ? (
           <>
             <Button variant="secondary" onClick={onClose}>Cancelar</Button>
-            <Button tone="chart-3" disabled={selectedItems.length === 0 || optimizing || !!loadError} onClick={handleOptimize}>{optimizing
-                ? <><Loader2 size={14} className="animate-spin" />Calculando ruta…</>
-                : <><ArrowRight size={14} />Ver ruta optimizada</>
-              }</Button>
+            <Button tone="chart-3" icon={ArrowRight} loading={optimizing} disabled={selectedItems.length === 0 || !!loadError} onClick={handleOptimize}>
+                {optimizing ? 'Calculando ruta…' : 'Ver ruta optimizada'}</Button>
           </>
         ) : (
           <>
@@ -969,7 +967,7 @@ export default function CrearRutaModal({ open, onClose, onCreated, initialKeys =
                 </p>
               )}
             </div>
-            <Button tone="chart-3" disabled={submitting} onClick={handleSubmit}>{submitting ? <Loader2 size={14} className="animate-spin" /> : <Truck size={14} />}
+            <Button tone="chart-3" icon={Truck} loading={submitting} onClick={handleSubmit}>
               {salida === 'ahora' ? 'Crear y salir' : 'Crear ruta'}</Button>
           </>
         )}

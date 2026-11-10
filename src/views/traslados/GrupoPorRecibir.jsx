@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Loader2, PackageCheck } from 'lucide-react';
+import { PackageCheck } from 'lucide-react';
 import Button from '../../components/common/Button';
 import { recibirTraslado } from '@nucleo/data/traslados';
 import Notice from '../../components/common/Notice';
@@ -94,8 +94,7 @@ export default function GrupoPorRecibir({ grupo, filas, onHecho, children }) {
                 nadie lo eligió—. */}
             {puedeTodas && (
                 <div className="px-1">
-                    <Button size="sm" icon={PackageCheck} disabled={ocupado} onClick={recibirTodas}>
-                        {ocupado && <Loader2 size={13} className="animate-spin" />}
+                    <Button size="sm" icon={PackageCheck} loading={ocupado} onClick={recibirTodas}>
                         {avance
                             ? `Recibiendo ${avance.sala}… (${avance.hechas} de ${avance.total})`
                             : `Ya llegaron las ${filas.length} completas`}

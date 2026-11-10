@@ -231,8 +231,8 @@ function FormularioSolventar({ encabezado, comment, setComment, saving, onConfir
                     onChange={e => setComment(e.target.value)}
                 />
                 <div className="flex sm:flex-col gap-1.5 shrink-0">
-                    <Button tone="success" disabled={saving} onClick={onConfirmar} className="flex-1 sm:flex-none justify-center">
-                        {saving ? <Loader2 size={10} className="animate-spin" /> : <Check size={10} />} Confirmar
+                    <Button tone="success" icon={Check} loading={saving} onClick={onConfirmar} className="flex-1 sm:flex-none justify-center">
+                        Confirmar
                     </Button>
                     <Button variant="secondary" icon={X} onClick={onCancelar} className="flex-1 sm:flex-none justify-center">Cancelar</Button>
                 </div>
@@ -512,9 +512,9 @@ function FilaConfirmar({ colSpan, notas, setNotas, archivo, setArchivo, guardand
                     file={archivo} onChange={setArchivo} hint={textoArchivo} />
             </div>
             <div className={comoPanel ? 'flex flex-col gap-2' : 'flex flex-col gap-2 shrink-0'}>
-                <Button tone="success" disabled={guardando} onClick={onConfirmar}
+                <Button tone="success" icon={Check} loading={guardando} onClick={onConfirmar}
                     className={comoPanel ? 'w-full justify-center' : ''}>
-                    {guardando ? <Loader2 size={12} className="animate-spin" /> : <Check size={12} />} Confirmar
+                    Confirmar
                 </Button>
                 <Button variant="secondary" icon={X} onClick={onCancelar}
                     className={comoPanel ? 'w-full justify-center' : ''}>Cancelar</Button>

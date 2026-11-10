@@ -22,7 +22,7 @@
  * lectura queda sin seguro sin que nadie lo note — justo el día que importa.
  */
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { ShieldCheck, X, Check, UserCheck, UserPlus, Loader2, AlertTriangle, FileText, FileWarning, Save, Pencil, Plus } from 'lucide-react';
+import { ShieldCheck, X, Check, UserCheck, UserPlus, AlertTriangle, FileText, FileWarning, Save, Pencil, Plus } from 'lucide-react';
 import LiquidModal from '../../components/common/LiquidModal';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
@@ -46,6 +46,7 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { saveDraft, loadDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { LoadingState } from '../../components/common/StateViews';
 
 const dinero = (n) => formatMoney(n === '' ? null : n);
 
@@ -101,9 +102,7 @@ export default function SeguroDeVidaColectivo({ open, onClose, canEdit }) {
                     {fallo && <Notice variant="danger" compact>{fallo}</Notice>}
 
                     {pagos === null ? (
-                        <div className="flex items-center gap-2 text-content-3 text-label py-8 justify-center">
-                            <Loader2 size={16} className="animate-spin" /> Cargando…
-                        </div>
+                        <div className="flex justify-center py-8"><LoadingState variant="inline" label="Cargando…" /></div>
                     ) : registrando !== null ? (
                         <RegistrarPago
                             anio={registrando}

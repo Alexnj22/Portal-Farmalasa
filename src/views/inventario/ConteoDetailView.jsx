@@ -8,7 +8,7 @@ import Badge from '../../components/common/Badge';
 import { SkeletonText } from '../../components/common/StateViews';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
-    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Loader2, Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff, FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle, ChevronUp,
+    ClipboardCheck, ChevronLeft, Printer, CheckCircle2, ShieldCheck, Plus, X, Package, FlaskConical, Radio, Pencil, PackageX, EyeOff, FileSpreadsheet, Download, PackagePlus, Trash2, Clock, AlertTriangle, ChevronUp,
 } from 'lucide-react';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -1510,7 +1510,7 @@ function EditLoteModal({ open, item, onClose, onSave }) {
                         <LiquidDatePicker value={fecha} onChange={setFecha} />
                     </CajaFecha>
                 </div>
-                <Button tone="chart-9" disabled={saving} onClick={handleSave}>{saving ? <Loader2 size={13} className="animate-spin" /> : <CheckCircle2 size={13} />} Guardar corrección</Button>
+                <Button tone="chart-9" icon={CheckCircle2} loading={saving} onClick={handleSave}>Guardar corrección</Button>
             </div>
         </LiquidModal>
     );

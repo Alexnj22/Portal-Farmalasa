@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { Download, Loader2, Mail, FileText } from 'lucide-react';
+import { Download, Mail, FileText } from 'lucide-react';
 import Button from '../common/Button';
 import PortalInput from '../common/PortalInput';
 import { avisoDeEntregaDeDte, correoDeLaFichaDeLaVenta, correoDelClienteValido, entregarDteAlCliente } from '@nucleo/data/facturacion';
+import { LoadingState } from '../common/StateViews';
 
 /* ─── El documento electrónico, para el cliente que lo pide (2026-10-19) ──────
    Directo, sin solicitud: el cliente está enfrente. Si la venta no tiene sello
@@ -70,9 +71,7 @@ export default function DocumentoParaCliente({ inv }) {
         </div>
       )}
       {trabajando && (
-        <p className="text-micro text-content-3 flex items-center gap-1">
-          <Loader2 size={10} className="animate-spin" aria-hidden="true" /> Puede tardar hasta un minuto si hay que enviarlo a Hacienda.
-        </p>
+        <LoadingState variant="inline" label="Puede tardar hasta un minuto si hay que enviarlo a Hacienda." />
       )}
       {aviso && (
         <p role="status" className={`text-label font-bold leading-snug ${aviso.ok ? 'text-success-text' : 'text-danger-text'}`}>

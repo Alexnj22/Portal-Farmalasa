@@ -5,6 +5,7 @@ import Button from '../../components/common/Button';
 import { LoadingState } from '../../components/common/StateViews';
 import { fetchEncuestaPublica, responderEncuestaPublica } from '@nucleo/data/encuestasClientes';
 import FormularioEncuesta from './FormularioEncuesta';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 /**
  * La encuesta que abre el cliente al escanear el QR —o la tablet de sala—,
@@ -82,9 +83,9 @@ export default function EncuestaPublicaView() {
         cuerpo = (
             <>
                 <header className="flex items-center gap-3 mb-5">
-                    <span className="w-10 h-10 rounded-xl bg-brand/10 text-brand flex items-center justify-center shrink-0">
+                    <IconoEnCaja tono="brand">
                         <ClipboardCheck size={20} />
-                    </span>
+                    </IconoEnCaja>
                     <div className="min-w-0">
                         <h1 className="text-body-lg font-semibold text-content">{encuesta.nombre}</h1>
                         {encuesta.sucursal && <p className="text-micro text-content-3">{encuesta.sucursal}</p>}

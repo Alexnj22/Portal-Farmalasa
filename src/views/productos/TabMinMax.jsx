@@ -8,8 +8,7 @@ import { SkeletonText, EmptyState} from '../../components/common/StateViews';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, m as motion } from 'framer-motion';
 import {
-    RefreshCw, AlertTriangle, Loader2,
-    Building2, Package, X, Download,
+    RefreshCw, AlertTriangle, Building2, Package, X, Download,
     CheckCircle2, Check, Info, RotateCcw, ChevronRight, History,
     TrendingUp, TrendingDown, Layers, Settings2, Save, Clock, XCircle, Eye, BarChart2, FlaskConical, Search, MoreHorizontal, Filter,
 } from 'lucide-react';
@@ -675,7 +674,7 @@ export default function TabMinMax({ searchTerm = '', config, onConfigChange, loc
                             ? 'Bodega se actualiza automáticamente cuando las sucursales publican sus MIN/MAX. Selecciona una sucursal para calcular.'
                             : `Haz clic en Calcular para analizar ${config?.analysis_days ?? 180} días de ventas y generar los MIN/MAX.`}
                         action={!isBodega ? (
-                            <Button disabled={calculating} onClick={handleRecalcular}>{calculating ? <Loader2 size={14} className="animate-spin" /> : null}
+                            <Button loading={calculating} onClick={handleRecalcular}>
                                 Calcular {ERP_NAMES[selectedErp]}</Button>
                         ) : undefined}
                     />

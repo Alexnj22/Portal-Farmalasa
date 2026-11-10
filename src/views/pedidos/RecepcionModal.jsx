@@ -8,7 +8,7 @@ import { m as motion, AnimatePresence } from 'framer-motion';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import useCapaFlotante from '../../plataforma/capaFlotante';
 import {
-    Loader2, X, PackageCheck, AlertTriangle, Search,
+    X, PackageCheck, AlertTriangle, Search,
     Plus, Trash2, PackagePlus, Check, ChevronLeft, FileText, Truck, Star,
     ListChecks, Pencil,
 } from 'lucide-react';
@@ -1881,7 +1881,7 @@ export default function RecepcionModal({
                             {/* Pregunta antes: esto da por bueno TODO sin contar nada, y
                                 además ingresa el pedido entero al sistema. Es la acción
                                 más cara de la pantalla y estaba a un solo clic. */}
-                            <Button tone="success" disabled={saving} onClick={() => setConfirmarTodoOpen(true)}>{saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+                            <Button tone="success" icon={Check} loading={saving} onClick={() => setConfirmarTodoOpen(true)}>
                                 Confirmar todo
                                 {(faltaCajas.length > 0 || hojasAlertadas.size > 0) && (
                                     <span className="text-caption font-medium text-success">
@@ -1911,7 +1911,7 @@ export default function RecepcionModal({
                             </div>
                         )}
                         <div className="flex justify-end">
-                            <Button tone="success" disabled={saving} onClick={handleFinalizar}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                            <Button tone="success" icon={PackageCheck} loading={saving} onClick={handleFinalizar}>
                                 Finalizar recepción</Button>
                         </div>
                     </PedidoModal.Footer>
@@ -2618,7 +2618,7 @@ export default function RecepcionModal({
                         {!hojaEnAlerta && (
                             <Button variant="secondary" icon={Check} disabled={saving} title="Confirma recibido exactamente como se envió, sin revisar línea por línea" onClick={() => setConfirmarHoja('todook')}>Todo OK</Button>
                         )}
-                        <Button tone="success" disabled={saving} onClick={() => setConfirmarHoja('contado')}>{saving ? <Loader2 size={14} className="animate-spin" /> : <PackageCheck size={14} />}
+                        <Button tone="success" icon={PackageCheck} loading={saving} onClick={() => setConfirmarHoja('contado')}>
                             {alcance === 'especial' ? `Confirmar ${selectedEspecial.label}`
                                 : alcance === 'hoja'  ? `Confirmar Hoja ${selectedHoja}`
                                 :                       'Confirmar recepción'}</Button>

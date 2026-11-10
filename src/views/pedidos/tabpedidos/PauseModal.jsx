@@ -1,5 +1,5 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
-import { Pause, Coffee, Clock, ClipboardList, Bell, MessageSquare, Loader2 } from 'lucide-react';
+import { Pause, Coffee, Clock, ClipboardList, Bell, MessageSquare } from 'lucide-react';
 import Button from '../../../components/common/Button';
 import PedidoModal from '../PedidoModal';
 import { ERP_NAMES } from '@nucleo/constants/erp';
@@ -88,7 +88,7 @@ export default function PauseModal({ modal, history, kioskLunch, razonSel, setRa
                 <PedidoModal.Footer>
                     <div className="flex justify-end gap-2">
                         <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
-                        <Button tone="warning" disabled={!canConfirm || busy} onClick={onConfirm}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Pause size={13} />}
+                        <Button tone="warning" icon={Pause} loading={busy} disabled={!canConfirm} onClick={onConfirm}>
                             Confirmar pausa</Button>
                     </div>
                 </PedidoModal.Footer>

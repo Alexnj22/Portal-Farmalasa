@@ -46,6 +46,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import { SIN_ASIGNAR } from '../../components/common/catalogos/constantes';
 import { fetchPoliza, fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { periodoVigente, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 /*
  * Equipos por sucursal — BOCETO (2026-08-26).
@@ -540,9 +541,9 @@ function FranjaDelSeguro({ personas, onAbrir, version }) {
       {...clickable(onAbrir, { label: 'Abrir el seguro de vida colectivo' })}
       className="group flex min-h-[var(--tap-min)] items-center gap-3 px-3.5 py-2.5
         transition-all duration-[var(--dur-base)] active:scale-[0.99]">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-btn bg-chart-9/10">
-        <ShieldCheck size={18} strokeWidth={2.5} className="text-chart-9-text" />
-      </span>
+      <IconoEnCaja tono="chart-9">
+        <ShieldCheck size={18} strokeWidth={2.5} />
+      </IconoEnCaja>
       <div className="min-w-0 flex-1">
         <p className="truncate text-label font-black text-content">Seguro de vida colectivo</p>
         {/* El estado va DEBAJO del título y no al lado: al lado, en el teléfono,

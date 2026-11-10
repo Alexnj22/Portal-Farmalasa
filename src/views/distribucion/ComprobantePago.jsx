@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CheckCircle2, AlertTriangle, ScanLine, Loader2, RotateCcw } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, ScanLine, RotateCcw } from 'lucide-react';
 import FileField from '../../components/common/FileField';
 import Notice from '../../components/common/Notice';
 import Button from '../../components/common/Button';
@@ -8,6 +8,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { leerComprobante } from '@nucleo/data/distribucion';
 import { leerMonto } from './comun';
 import { revisionDelComprobante, TEXTO_FORMA_COMPROBANTE as TEXTO_FORMA } from '@nucleo/utils/distribucionFacturacion';
+import { LoadingState } from '../../components/common/StateViews';
 
 // Adjuntar el comprobante de un pago y decidir qué pasa si no cuadra.
 //
@@ -62,7 +63,7 @@ export default function ComprobantePago({ forma, montoEsperado, puedeCambiarMont
                 file={archivo} hint="Foto del voucher, captura de la transferencia o del cheque" density="sm"
                 onChange={leer} busy={leyendo} busyLabel="Leyendo el comprobante…" />
 
-            {leyendo && <p className="text-caption text-content-3 flex items-center gap-1.5"><Loader2 size={12} className="animate-spin" /> Leyendo el monto…</p>}
+            {leyendo && <LoadingState variant="inline" label="Leyendo el monto…" />}
 
             {noEsComprobante && (
                 <Notice variant="warning" icon={AlertTriangle} compact action={<Button size="sm" variant="ghost" icon={RotateCcw} onClick={() => leer(null)}>Otra foto</Button>}>

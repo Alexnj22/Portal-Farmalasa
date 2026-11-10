@@ -33,6 +33,7 @@ import { DecisionMesModal, DatosDelMesModal } from './MesModales';
 import { dialogoDiferido } from '@nucleo/utils/dialogoDiferido';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 // Las pestañas que no son la de entrada llegan por `lazy()` (2026-10-24): se
 // ve UNA a la vez y viajaban todas en el trozo de la vista. El calendario y la
 // conversación del mes se quedan estáticos: son lo que se ve al entrar.
@@ -516,9 +517,9 @@ export default function MarketingView() {
                 {(mesFila || puedeEditar) && (
                     <section data-surface="card" className="p-4 md:p-5 space-y-4">
                         <header className="flex items-start gap-3">
-                            <span className="w-9 h-9 rounded-xl bg-brand/10 text-brand-text flex items-center justify-center shrink-0">
+                            <IconoEnCaja tono="brand">
                                 <MessageSquare size={18} aria-hidden />
-                            </span>
+                            </IconoEnCaja>
                             <div className="min-w-0 flex-1">
                                 <TituloDeSeccion nivel="tarjeta" className="flex items-center gap-2">
                                     Conversación del mes

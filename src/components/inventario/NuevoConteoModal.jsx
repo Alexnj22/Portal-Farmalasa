@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../common/Button';
 import Badge from '../common/Badge';
-import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Loader2, Layers, Hash, Printer, Radio, Wrench, Eye } from 'lucide-react';
+import { ClipboardCheck, X, Check, Building2, FlaskConical, ShieldAlert, ListChecks, Search, Repeat, Layers, Hash, Printer, Radio, Wrench, Eye } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import LiquidSelect from '../common/LiquidSelect';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -19,6 +19,7 @@ import {
 } from '@nucleo/utils/conteoDeInventario';
 
 import TituloDeSeccion from '../common/TituloDeSeccion';
+import { LoadingState } from '../common/StateViews';
 // Etiquetas de UNA línea: en `layout="block"` la píldora es de alto fijo (h-11),
 // así que un label que envuelve no crece — se desborda. Van en text-caption
 // uppercase con tracking-widest, que ensancha mucho: lo que en prosa parece
@@ -283,10 +284,7 @@ export default function NuevoConteoModal({ isOpen, onClose, onCreated }) {
                                     // que tarda el sorteo — peor que no poner nada.
                                     <div className="rounded-2xl bg-surface-card-hover border border-border-card p-3">
                                         <p className="text-caption font-black uppercase tracking-widest text-content-3 mb-2">Vista previa de la muestra</p>
-                                        <p className="text-label text-content-2 flex items-center gap-2">
-                                            <Loader2 size={13} className="animate-spin shrink-0" />
-                                            Sorteando la muestra de esta sucursal…
-                                        </p>
+                                        <LoadingState variant="inline" label="Sorteando la muestra de esta sucursal…" />
                                     </div>
                                 ) : preview?.muestra ? (
                                     // Recuadro liviano, no `islandClass`: esto vive DENTRO

@@ -19,7 +19,7 @@
  * su liquidación y su causal del Art. 50.
  */
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { ShieldAlert, Loader2, AlertTriangle, Info } from 'lucide-react';
+import { ShieldAlert, AlertTriangle, Info } from 'lucide-react';
 import LiquidModal from '../common/LiquidModal';
 import Button from '../common/Button';
 import LiquidSelect from '../common/LiquidSelect';
@@ -34,6 +34,7 @@ import { useToastStore } from '@nucleo/store/toastStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { hoySV } from '@nucleo/utils/fecha';
 import { esSuspension as suspende, diasAlElegir, hastaDeLaSuspension, sancionCompleta, codigoDeSancion, motivoDeLaPropuesta } from '@nucleo/utils/sancion';
+import { LoadingState } from '../common/StateViews';
 
 const fmtFecha = (iso) => {
     if (!iso) return '';
@@ -236,9 +237,7 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
                 />
 
                 {cargando && (
-                    <p className="flex items-center gap-2 text-body-sm text-content-3">
-                        <Loader2 size={15} className="animate-spin" /> Revisando los antecedentes…
-                    </p>
+                    <LoadingState variant="inline" label="Revisando los antecedentes…" />
                 )}
 
                 {escalera && !cargando && (
@@ -359,8 +358,8 @@ export default function SancionModal({ open, onClose, empleado, sala, firmante, 
 
             <LiquidModal.Footer className="gap-3">
                 <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
-                <Button variant="primary" onClick={guardar} disabled={!puedeGuardar}>
-                    {guardando ? <><Loader2 size={16} className="animate-spin" /> Guardando…</> : 'Registrar sanción'}
+                <Button variant="primary" onClick={guardar} loading={guardando} disabled={!puedeGuardar}>
+                    {guardando ? 'Guardando…' : 'Registrar sanción'}
                 </Button>
             </LiquidModal.Footer>
         </LiquidModal>

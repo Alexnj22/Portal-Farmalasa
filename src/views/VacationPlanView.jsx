@@ -3,12 +3,12 @@ import AvatarConEstado from '../components/common/AvatarConEstado';
 import Notice from '../components/common/Notice';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
-import { EmptyState } from '../components/common/StateViews';
+import { EmptyState, LoadingState } from '../components/common/StateViews';
 import { DataTable, DataRow, DataCell } from '../components/common/DataTable';
 import useMediaQuery from '../plataforma/useMediaQuery';
 import {
     Palmtree, Plus, Check, X, User, Calendar, AlertCircle, Search,
-    ChevronLeft, ChevronRight, Loader2, CheckCircle2, Clock, Ban, Pencil,
+    ChevronLeft, ChevronRight, CheckCircle2, Clock, Ban, Pencil,
     Building2, ListFilter, Trash2, Sparkles, ShieldCheck, ArrowRight,
     MessageSquare, RefreshCw
 } from 'lucide-react';
@@ -944,10 +944,8 @@ const VacationPlanView = () => {
                                     <div className="flex items-center gap-2 flex-wrap">
                                         {/* Generate / Regenerate with AI */}
                                         {(!activeHeader || activeHeader.status === 'DRAFT') && (
-                                            <Button disabled={isGeneratingPlan} onClick={handleGenerateAI}>{isGeneratingPlan
-                                                    ? <><Loader2 size={12} className="animate-spin" /> Generando…</>
-                                                    : <><Sparkles size={12} strokeWidth={2.5} /> {activeHeader ? 'Rehacer propuesta' : 'Generar propuesta'}</>
-                                                }</Button>
+                                            <Button icon={Sparkles} loading={isGeneratingPlan} onClick={handleGenerateAI}>
+                                                    {isGeneratingPlan ? 'Generando…' : activeHeader ? 'Rehacer propuesta' : 'Generar propuesta'}</Button>
                                         )}
                                         {/* Pre-approve */}
                                         {activeHeader?.status === 'DRAFT' && vacationPlans.filter(vp => vp.status === 'DRAFT').length > 0 && (
@@ -967,7 +965,7 @@ const VacationPlanView = () => {
                                 <p className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5">
                                     <Calendar size={10} /> Línea de tiempo {year}
                                 </p>
-                                {isLoadingVacationPlans && <Loader2 size={14} className="animate-spin text-content-3" />}
+                                {isLoadingVacationPlans && <LoadingState variant="inline" />}
                             </div>
                             <GanttChart plans={filtered} year={year} />
                         </div>
@@ -1122,7 +1120,7 @@ const VacationPlanView = () => {
                                                     </div>
                                                     {canEdit && (
                                                         <div className="flex items-center gap-2">
-                                                            <Button tone="success" disabled={isProcessing} onClick={() => handleProcessRequest(req, 'APPROVED')}>{isProcessing ? <Loader2 size={11} className="animate-spin" /> : <Check size={11} strokeWidth={3} />}
+                                                            <Button tone="success" icon={Check} loading={isProcessing} onClick={() => handleProcessRequest(req, 'APPROVED')}>
                                                                 Aprobar</Button>
                                                             <Button variant="destructive" icon={X} disabled={isProcessing} onClick={() => setRechazandoCambio(req)}>Rechazar</Button>
                                                         </div>

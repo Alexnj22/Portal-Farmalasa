@@ -1,12 +1,12 @@
 {
   "_comment": "Ratchet del gate de diseño. El gate falla si una categoría SUBE respecto a estos números. Cada fase del plan (docs/planes-cerrados/AUDITORIA-DISENO-2026-07-26.md) baja los suyos; al llegar a 0 la categoría queda bloqueante. Regenerar solo al BAJAR deuda: npm run gate:design -- --update-baseline",
-  "updated": "2026-11-06",
+  "updated": "2026-11-10",
   "categories": {
     "tarjeta-a-mano": 18,
-    "cargando-a-mano": 104,
-    "radio-a-mano": 22,
-    "titulo-a-mano": 13,
-    "punto-a-mano": 9,
-    "icono-en-caja-a-mano": 16
+    "cargando-a-mano": 28,
+    "radio-a-mano": 19,
+    "titulo-a-mano": 12,
+    "punto-a-mano": 5,
+    "icono-en-caja-a-mano": 7
   }
 }

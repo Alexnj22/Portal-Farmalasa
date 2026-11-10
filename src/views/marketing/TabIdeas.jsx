@@ -23,6 +23,7 @@ import { ICONOS_FORMATO, ICONO_DESCONOCIDO, puntoDeMarca } from './iconos';
 import { Quien } from './Historial';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 // Estados, vistas y conteos: núcleo (`marketing`), los mismos que la app.
 const ESTADO_IDEA = Object.fromEntries(Object.entries(ESTADOS_IDEA).map(([k, v]) => [k, {
     ...v, tono: k === 'en_trabajo' ? 'brand' : k === 'usada' ? 'success' : undefined,
@@ -102,9 +103,9 @@ export default function TabIdeas({
         <div className="space-y-5">
             <section data-surface="card" className="p-4 md:p-5 space-y-4">
                 <header className="flex items-start gap-3">
-                    <span className="w-9 h-9 rounded-xl bg-chart-8/15 text-chart-8-text flex items-center justify-center shrink-0">
+                    <IconoEnCaja tono="chart-8">
                         <Lightbulb size={18} aria-hidden />
-                    </span>
+                    </IconoEnCaja>
                     <div className="min-w-0">
                         <TituloDeSeccion nivel="tarjeta">Deja una idea</TituloDeSeccion>
                         <p className="text-caption text-content-3">

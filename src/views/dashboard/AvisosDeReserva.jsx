@@ -11,6 +11,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useToastStore } from '@nucleo/store/toastStore';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Reglamento de reservas v2 (rige desde `reglas_v2_desde()`, 2026-11-15).
@@ -58,7 +59,7 @@ export function HistorialDeAvisos({ avisos, avisoApp }) {
                 return (
                     <li key={`${a.canal}-${a.at}-${i}`} className="flex items-start gap-2.5 min-w-0">
                         {persona ? <AvatarConEstado emp={persona} px={28} mostrarChip={false} />
-                            : <span className="w-7 h-7 rounded-xl bg-surface-card-hover flex items-center justify-center shrink-0"><Icono size={14} aria-hidden /></span>}
+                            : <IconoEnCaja tamano="sm"><Icono size={14} aria-hidden /></IconoEnCaja>}
                         <div className="min-w-0 flex-1">
                             <p className="text-body-sm text-content">
                                 <span className="font-semibold">{c.texto}</span>

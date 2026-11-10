@@ -1,5 +1,5 @@
 import React, { useCallback, useState, lazy, Suspense } from 'react';
-import { Plus, X, PackagePlus, ScanLine, Camera, Search, Check, Loader2, AlertTriangle } from 'lucide-react';
+import { Plus, X, PackagePlus, ScanLine, Camera, Search, Check, AlertTriangle } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
@@ -13,6 +13,8 @@ import { Campo, CajaFecha } from './camposDeConteo';
 import { searchActiveProductsForConteo, opcionesParaAgregarAlConteo } from '@nucleo/data/conteoInventario';
 import { esLoteGenerico, reglaDeLoteYVence, pluralDePresentacion } from '@nucleo/utils/conteoDeInventario';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { LoadingState } from '../../components/common/StateViews';
+import IconoEnCaja from '../../components/common/IconoEnCaja';
 
 // Mismo motivo que en la vista: `@zxing` sólo hace falta al tocar «Escanear», y
 // este formulario ya viaja diferido. Estático lo volvería a meter en el paquete
@@ -242,9 +244,9 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                 lo tiene delante. */}
             <div className="flex items-start justify-between gap-3">
                 <div className="flex items-start gap-2.5 min-w-0">
-                    <span className="shrink-0 mt-0.5 w-9 h-9 rounded-btn bg-chart-9/15 flex items-center justify-center">
-                        <PackagePlus size={18} strokeWidth={2.5} className="text-chart-9-text" />
-                    </span>
+                    <IconoEnCaja tono="chart-9" className="mt-0.5">
+                        <PackagePlus size={18} strokeWidth={2.5} />
+                    </IconoEnCaja>
                     <div className="min-w-0">
                         <p className="text-body-sm font-black text-content">Agregar al conteo</p>
                         <p className="text-caption text-content-2">
@@ -299,7 +301,7 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                         sabe que funciona se ven igual. */}
                     <p className="text-micro text-content-3 flex items-center gap-1.5 ml-1">
                         {buscandoCodigo
-                            ? <><Loader2 size={12} className="animate-spin" /> Buscando el código…</>
+                            ? <LoadingState variant="inline" label="Buscando el código…" />
                             : <><ScanLine size={12} /> …o pasa el lector por el código de la caja: no hace falta tocar nada.</>}
                     </p>
 
@@ -337,9 +339,9 @@ export default function AddManualItemForm({ branchId, onAdd, onCancel, simple = 
                         la caja que se tiene en la mano: cuando el escaneo eligió
                         solo, ésta es la única oportunidad de ver que eligió bien. */}
                     <div data-surface="card" className="p-3 flex items-center gap-3">
-                        <span className="shrink-0 w-8 h-8 rounded-full bg-success/15 flex items-center justify-center">
-                            <Check size={16} strokeWidth={3} className="text-success" />
-                        </span>
+                        <IconoEnCaja tamano="sm" forma="circulo" tono="success">
+                            <Check size={16} strokeWidth={3} />
+                        </IconoEnCaja>
                         <div className="min-w-0 flex-1">
                             <p className="text-label font-black text-content truncate">{selected.nombre}</p>
                             <p className="text-micro text-content-3 truncate">

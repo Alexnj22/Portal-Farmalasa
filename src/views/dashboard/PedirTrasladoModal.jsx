@@ -3,7 +3,7 @@ import { usePedirTraslado } from '@nucleo/hooks/usePedirTraslado';
 import { claveOrigen, diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
 import { esLoteGenerico, rotuloDeLote } from '@nucleo/utils/unidadesInventario';
-import { ArrowLeft, ArrowLeftRight, Check, Loader2, Pencil, Trash2 } from 'lucide-react';
+import { ArrowLeft, ArrowLeftRight, Check, Pencil, Trash2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import LiquidModal from '../../components/common/LiquidModal';
 import LiquidSelect from '../../components/common/LiquidSelect';
@@ -594,8 +594,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                                     <Button variant="secondary" disabled={enviando} onClick={agregar}>
                                         Agregar otro
                                     </Button>
-                                    <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
-                                        {enviando && <Loader2 size={14} className="animate-spin" />}
+                                    <Button loading={enviando} disabled={!puedeEnviar} onClick={enviar}>
                                         {enviando ? 'Enviando...' : 'Solicitar'}
                                     </Button>
                                 </>
@@ -604,8 +603,7 @@ export default function PedirTrasladoModal({ producto: productoInicial = null, o
                             )
                         )
                     ) : (
-                        <Button disabled={!puedeEnviar || enviando} onClick={enviar}>
-                            {enviando && <Loader2 size={14} className="animate-spin" />}
+                        <Button loading={enviando} disabled={!puedeEnviar} onClick={enviar}>
                             {enviando
                                 ? 'Enviando...'
                                 // Se dice cuántas van a salir ANTES de apretar: que

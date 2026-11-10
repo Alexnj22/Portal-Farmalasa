@@ -22,6 +22,7 @@ import {
 import { excesoGrande } from '@nucleo/utils/recepcionDePedido';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import { LoadingState } from '../../components/common/StateViews';
 /**
  * Lo que sale y lo asignado, en unidades del sistema. Para el aviso de una
  * cantidad muy grande: la misma trampa que en la recepción —cambiar la
@@ -465,7 +466,7 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
                         </Notice>
                     ) : !simu || simu.estado === 'en_curso' ? (
                         <div className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-chart-3/10 border border-chart-3/20">
-                            <Loader2 size={16} className="animate-spin text-chart-3-text shrink-0" />
+                            <LoadingState variant="inline" />
                             <p className="text-label text-content-2">
                                 Revisando la existencia de {despachables.length} productos…
                             </p>
@@ -639,19 +640,14 @@ export default function FinalizarCajasModal({ open, onClose, onConfirm, items = 
             <div className="px-5 pb-5 pt-3 flex items-center justify-between gap-2 border-t border-border-card">
                 <Button variant="secondary" disabled={submitting} onClick={handleClose}>Cancelar</Button>
                 {screen === 1 ? (
-                    <Button tone="chart-3" disabled={loadingPages || !totalCajasInput || parsedCajas < 1 || totalPages === 0} onClick={handleGoScreen2}>{loadingPages
-                            ? <Loader2 size={12} className="animate-spin" />
-                            : <>Siguiente <span className="opacity-60">→</span></>
-                        }</Button>
+                    <Button tone="chart-3" loading={loadingPages} disabled={!totalCajasInput || parsedCajas < 1 || totalPages === 0} onClick={handleGoScreen2}>
+                        Siguiente <span className="opacity-60">→</span></Button>
                 ) : screen === 2 ? (
                     <Button tone="chart-3" disabled={!isValid} onClick={() => setScreen(3)}>
                         Siguiente <span className="opacity-60">→</span>
                     </Button>
                 ) : (
-                    <Button tone="chart-3" disabled={submitting || !isValid || verificando || excesosPendientes > 0} onClick={handleConfirm}>{submitting || verificando
-                            ? <Loader2 size={12} className="animate-spin" />
-                            : <PackageCheck size={13} />
-                        }
+                    <Button tone="chart-3" icon={PackageCheck} loading={submitting || verificando} disabled={!isValid || excesosPendientes > 0} onClick={handleConfirm}>
                         {verificando ? 'Revisando existencias…' : 'Confirmar y Finalizar'}</Button>
                 )}
             </div>

@@ -24,7 +24,7 @@ const FormRoleEmployees = ({ formData }) => {
     return (
         <div className="flex flex-col w-full">
             {/* Header Interno Decorativo */}
-            <div className="relative p-8 md:p-10 pb-8 overflow-hidden bg-gradient-to-b from-brand/5 to-transparent border-b border-divider rounded-t-[2.5rem]">
+            <div className="relative p-8 md:p-10 pb-8 overflow-hidden bg-gradient-to-b from-brand/5 to-transparent border-b border-divider rounded-t-modal">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-brand/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
                 <div className="relative flex items-center gap-5">
                     <div className="w-16 h-16 rounded-2xl bg-brand text-white flex items-center justify-center shadow-[var(--shadow-glow-brand)] shrink-0">
@@ -42,7 +42,7 @@ const FormRoleEmployees = ({ formData }) => {
             </div>
 
             {/* Lista de Empleados */}
-            <div className="p-8 md:p-10 space-y-3 bg-surface-card-hover/30 rounded-b-[2.5rem]">
+            <div className="p-8 md:p-10 space-y-3 bg-surface-card-hover/30 rounded-b-modal">
                 {employeesInRole.length > 0 ? (
                     employeesInRole.map(emp => (
                         <div 

@@ -34,7 +34,7 @@
  */
 import React, { Suspense, lazy, useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
-import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Loader2, Plus, QrCode, Send, X } from 'lucide-react';
+import { Camera, CheckCircle2, AlertTriangle, ChevronDown, ChevronUp, Image as ImageIcon, Plus, QrCode, Send, X } from 'lucide-react';
 import { capturaVigente, mandarFoto, mandarTexto } from '@nucleo/data/capturaDesdeElTelefono';
 import { PROPS_CAMARA } from '@nucleo/utils/capturaDeFoto';
 import Button from '../components/common/Button';
@@ -45,6 +45,7 @@ import Button from '../components/common/Button';
 // lo que el editor sabe abrir.
 const ACCEPT_GALERIA = 'image/jpeg,image/png,image/webp';
 import Badge from '../components/common/Badge';
+import { LoadingState } from '../components/common/StateViews';
 
 /* ── El teléfono también AJUSTA, no sólo dispara ────────────────────────────
  *
@@ -234,9 +235,7 @@ export default function CapturaDeFotoView() {
             )}
 
             {estado === 'comprobando' && (
-                <p className="text-body text-content-3 font-bold flex items-center gap-2">
-                    <Loader2 size={16} className="animate-spin" /> Comprobando el código…
-                </p>
+                <LoadingState variant="inline" label="Comprobando el código…" />
             )}
 
             {estado === 'listo' && modo === 'qr' && (
@@ -390,11 +389,7 @@ export default function CapturaDeFotoView() {
             )}
 
             {caraPorAjustar && (
-                <Suspense fallback={
-                    <p className="text-body text-content-3 font-bold flex items-center gap-2">
-                        <Loader2 size={16} className="animate-spin" /> Abriendo el editor…
-                    </p>
-                }>
+                <Suspense fallback={<LoadingState variant="inline" label="Abriendo el editor…" />}>
                     <EditorDeDocumento
                         tipo={modo === 'dui' ? 'dui' : 'documento'}
                         file={caraPorAjustar.file}
@@ -544,11 +539,8 @@ export default function CapturaDeFotoView() {
             )}
 
             {estado === 'mandando' && (
-                <p className="text-body font-black text-brand-text flex items-center gap-2">
-                    <Loader2 size={18} className="animate-spin" />
-                    {modo === 'qr' ? 'Mandando el código…' : dosCaras ? 'Mandando las dos caras…'
-                        : hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'}
-                </p>
+                <LoadingState variant="inline" label={modo === 'qr' ? 'Mandando el código…' : dosCaras ? 'Mandando las dos caras…'
+                    : hojas.length > 1 ? `Mandando las ${hojas.length} fotos…` : 'Mandando la foto…'} />
             )}
 
             {estado === 'hecho' && (
@@ -562,11 +554,7 @@ export default function CapturaDeFotoView() {
             )}
 
             {porAjustar && (
-                <Suspense fallback={
-                    <p className="text-body text-content-3 font-bold flex items-center gap-2">
-                        <Loader2 size={16} className="animate-spin" /> Abriendo el editor…
-                    </p>
-                }>
+                <Suspense fallback={<LoadingState variant="inline" label="Abriendo el editor…" />}>
                     <EditorDeDocumento
                         tipo="documento"
                         file={porAjustar}

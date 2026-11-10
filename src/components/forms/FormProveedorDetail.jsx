@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import Button from '../common/Button';
 import { useNavigate } from 'react-router-dom';
-import { Loader2, Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
+import { Check, Phone, Mail, MapPin, FileText, ExternalLink, Tag, Building2, CheckCircle2, Scale, Landmark } from 'lucide-react';
 import { guardarCondicionesProveedor } from '@nucleo/data/cuentasPorPagar';
 import { CLASE_LABELS, optionToPercibe, PERCIBE_OPTIONS, percibeToOption, REGIMEN_HINT, REGIMEN_LABELS } from '@nucleo/utils/proveedorFicha';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -462,15 +462,15 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                         <div className="sm:col-span-2">
                             <Button
                                 variant="secondary"
-                                disabled={savingFiscal || fiscal.iva_deducible === null}
+                                icon={Check}
+                                loading={savingFiscal}
+                                disabled={fiscal.iva_deducible === null}
                                 title={fiscal.iva_deducible === null
                                     ? 'Primero decide si da crédito fiscal'
                                     : 'Queda confirmada con tu nombre y la fecha'}
                                 onClick={guardarFiscal}
                             >
-                                {savingFiscal
-                                    ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
-                                    : <><Check size={15} strokeWidth={2.5} /> Confirmar clasificación</>}
+                                {savingFiscal ? 'Guardando…' : 'Confirmar clasificación'}
                             </Button>
                         </div>
                     )}
@@ -519,10 +519,8 @@ const FormProveedorDetail = ({ formData, onClose }) => {
                     {creditoError && <Notice variant="danger" className="sm:col-span-3">{creditoError}</Notice>}
                     {canEdit && (
                         <div className="sm:col-span-3">
-                            <Button variant="secondary" disabled={savingCredito} onClick={guardarCredito}>
-                                {savingCredito
-                                    ? <><Loader2 size={16} className="animate-spin" /> Guardando…</>
-                                    : <><Check size={15} strokeWidth={2.5} /> Guardar condiciones</>}
+                            <Button variant="secondary" icon={Check} loading={savingCredito} onClick={guardarCredito}>
+                                {savingCredito ? 'Guardando…' : 'Guardar condiciones'}
                             </Button>
                         </div>
                     )}
@@ -642,7 +640,7 @@ const FormProveedorDetail = ({ formData, onClose }) => {
             {canEdit && (
             <div data-pegajoso className="sticky bottom-0 -mx-1 px-1 pt-4 pb-1 mt-2 border-t border-divider">
                 {error && <Notice variant="danger" className="mb-2">{error}</Notice>}
-                <Button size="lg" disabled={loading} onClick={save}>{loading ? <><Loader2 size={18} className="animate-spin" /> Guardando…</> : <><Check size={16} strokeWidth={2.5} /> Guardar Cambios</>}</Button>
+                <Button size="lg" icon={Check} loading={loading} onClick={save}>{loading ? 'Guardando…' : 'Guardar Cambios'}</Button>
             </div>
             )}
         </div>

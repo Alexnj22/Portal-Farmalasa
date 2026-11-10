@@ -7,7 +7,7 @@ import Checkbox from '../../components/common/Checkbox';
 import Badge from '../../components/common/Badge';
 import { EmptyState, SkeletonText } from '../../components/common/StateViews';
 import {
-  Search, Loader2, AlertTriangle, CheckCircle2, Clock,
+  Search, AlertTriangle, CheckCircle2, Clock,
   Eye, ArrowLeft, AlertCircle, Ban, CreditCard, UserCog,
   ChevronRight, Info, ShieldAlert, User, CalendarDays, Contact, Receipt,
 } from 'lucide-react';
@@ -141,8 +141,7 @@ function InvoiceHeader({ inv, onBack, vendor }) {
 function StickySubmit({ label, onClick, disabled, loading: isLoading }) {
   return (
     <PieModal>
-      <Button className="ml-auto" disabled={disabled || isLoading} onClick={onClick}>
-        {isLoading && <Loader2 size={14} className="animate-spin" />}
+      <Button className="ml-auto" loading={isLoading} disabled={disabled} onClick={onClick}>
         {isLoading ? 'Enviando...' : label}</Button>
     </PieModal>
   );

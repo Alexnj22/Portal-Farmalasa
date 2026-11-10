@@ -5,6 +5,7 @@ import Badge from '../../components/common/Badge';
 import { nombreDeCliente } from '@nucleo/utils/chatClientes';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ESTADOS, esperaDe, estadoDeConversacion } from './estados';
+import PuntoDeEstado from '../../components/common/PuntoDeEstado';
 
 // El estado de una conversación como chip —«Nuevo», «En atención · Ana»,
 // «Esperando al cliente», «Resuelta»— y, para las nuevas, cuánto llevan
@@ -55,7 +56,7 @@ export function EstadoEnTexto({ conversacion: c, atiende, ahora }) {
                 </>
             ) : (
                 <>
-                    <span aria-hidden="true" className={`size-1.5 shrink-0 rounded-full ${PUNTO[estado.variant] ?? 'bg-content-3'}`} />
+                    <PuntoDeEstado tamano="sm" className={PUNTO[estado.variant] ?? 'bg-content-3'} />
                     <span className="truncate">{estado.label}</span>
                 </>
             )}

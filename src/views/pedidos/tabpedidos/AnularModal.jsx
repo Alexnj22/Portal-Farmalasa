@@ -1,7 +1,7 @@
 // Extracted from TabPedidos.jsx (Bloque 6.C)
 import { useState } from 'react';
 import Button from '../../../components/common/Button';
-import { Ban, AlertTriangle, Loader2 } from 'lucide-react';
+import { Ban, AlertTriangle } from 'lucide-react';
 import PedidoModal from '../PedidoModal';
 import PortalTextarea from '../../../components/common/PortalTextarea';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
@@ -77,7 +77,7 @@ export default function AnularModal({ modal, onCancel, onConfirm, busy }) {
             <PedidoModal.Footer>
                 <div className="flex justify-end gap-2">
                     <Button variant="secondary" onClick={onCancel}>Cancelar</Button>
-                    <Button variant="destructive" disabled={!canConfirm || busy} onClick={() => onConfirm(pideMotivo ? motivo.trim() : null)}>{busy ? <Loader2 size={13} className="animate-spin" /> : <Ban size={13} />}
+                    <Button variant="destructive" icon={Ban} loading={busy} disabled={!canConfirm} onClick={() => onConfirm(pideMotivo ? motivo.trim() : null)}>
                         {deSala ? `Anular ${modal.sala}` : 'Anular pedido'}</Button>
                 </div>
             </PedidoModal.Footer>

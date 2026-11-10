@@ -25,6 +25,7 @@ import { fetchCustomersPage, fetchCustomersStats } from '@nucleo/data/customers'
 import { documentoAnonimizado } from '@nucleo/data/solicitudesDatos';
 import { EL_SALVADOR_GEO, municipiosDe } from '@nucleo/data/elSalvadorGeo';
 import { fechaNumerica } from '@nucleo/utils/fecha';
+import IconoEnCaja from '../components/common/IconoEnCaja';
 
 const CATEGORIAS = CATEGORIAS_CLIENTE;
 const SIN_CATEGORIA = '__sin__';
@@ -69,11 +70,11 @@ const fmtDate = (d) => fechaNumerica(d, { vacio: '—' });
 function ClienteCell({ row }) {
     return (
         <div className="flex items-center gap-2 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-surface-card-hover/80 border border-divider flex items-center justify-center shrink-0">
+            <IconoEnCaja tamano="sm" className="border border-divider">
                 {row.mostrador
                     ? <Store size={14} className="text-content-3" strokeWidth={2} />
                     : <Contact size={14} className="text-content-3" strokeWidth={2} />}
-            </div>
+            </IconoEnCaja>
             <div className="min-w-0 max-w-[132px] sm:max-w-[168px]">
                 <p className="text-body-sm font-bold text-content-2 truncate" title={row.name}>{row.name}</p>
                 <div className="flex items-center gap-1.5 min-w-0">

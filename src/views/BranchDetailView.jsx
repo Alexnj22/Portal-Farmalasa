@@ -27,6 +27,7 @@ import { alertaDelExpediente, personalNormativoDeSucursal } from '@nucleo/utils/
 import { esInmuebleAlquilado } from '@nucleo/utils/gastosDeSucursal';
 
 import IconoEnCaja from '../components/common/IconoEnCaja';
+import PuntoDeEstado from '../components/common/PuntoDeEstado';
 // ============================================================================
 // 🚀 COMPONENTE PRINCIPAL
 // ============================================================================
@@ -306,8 +307,8 @@ const BranchDetailView = ({ branch, setActiveEmployee, openModal }) => {
                                                 («Perso●al», «Gast●s»). Sin `animate-pulse`: cuatro
                                                 pestañas latiendo a la vez no dicen más que una quieta. */}
                                             {alertStatus && (
-                                                <span aria-label={alertStatus === 'critical' ? 'requiere atención' : 'con avisos'}
-                                                    className={`inline-block w-2 h-2 rounded-full shrink-0 ${alertStatus === 'critical' ? 'bg-danger' : 'bg-warning'}`} />
+                                                <PuntoDeEstado aria-label={alertStatus === 'critical' ? 'requiere atención' : 'con avisos'}
+                                                    className={alertStatus === 'critical' ? 'bg-danger' : 'bg-warning'} />
                                             )}
                                         </Button>
                                     );

@@ -19,6 +19,7 @@ import { avisoDeLote } from '@nucleo/utils/plazoDeDevolucion';
 import { estadoDeProyeccion } from '@nucleo/utils/minmaxGuardar';
 
 import PuntoDeEstado from '../../../components/common/PuntoDeEstado';
+import { LoadingState } from '../../../components/common/StateViews';
 export default function ExpandedPanel({ row, cycleDays }) {
     const { hasPermission } = useAuth();
     // El día de la sala, que cambia solo a medianoche con la pantalla abierta.
@@ -136,7 +137,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         transition={{ duration: 0.12 }}
                         className="flex items-center justify-center py-5">
-                        <Loader2 size={14} className="animate-spin text-content-3" />
+                        <LoadingState variant="inline" />
                     </motion.div>
                 ) : (
                     <motion.div key="branch-grid"
@@ -314,7 +315,7 @@ export default function ExpandedPanel({ row, cycleDays }) {
                                 {policyData && (
                                     <span className="flex items-center gap-1 text-micro font-bold text-content-3">
                                         {policyData.es_cofarsal && (
-                                            <span role="img" title="COFARSAL" className="w-1.5 h-1.5 rounded-full bg-danger shrink-0" />
+                                            <PuntoDeEstado tamano="sm" role="img" title="COFARSAL" className="bg-danger" />
                                         )}
                                         {policyData.proveedor_nombre}
                                         {policyData.es_devolutivo

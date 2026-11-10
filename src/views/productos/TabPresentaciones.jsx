@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
-    Boxes, Package, Copy, Sigma, Loader2, Search, CheckCircle2, CircleSlash,
+    Boxes, Package, Copy, Sigma, Search, CheckCircle2, CircleSlash,
 } from 'lucide-react';
 import CarrilCards from '../../components/common/CarrilCards';
 import StatCard    from '../../components/common/StatCard';
@@ -12,7 +12,7 @@ import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell, useExpandStyle } from '../../components/common/DataTable';
 import ExpedienteMovil from '../../components/common/ExpedienteMovil';
 import { useExpedienteMovil } from '../../components/common/usarExpediente';
-import { SkeletonText } from '../../components/common/StateViews';
+import { SkeletonText, LoadingState } from '../../components/common/StateViews';
 import { fetchPresentacionesMaestro, fetchProductosPorPresentacion } from '@nucleo/data/presentaciones';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatQty } from '@nucleo/utils/formatNumber';
@@ -335,10 +335,7 @@ function PanelProductos({ tipo, total }) {
 
     if (productos === null) {
         return (
-            <div className="flex items-center gap-2 py-6 justify-center text-content-3">
-                <Loader2 size={14} className="animate-spin" />
-                <span className="text-body-sm font-bold">Cargando los productos…</span>
-            </div>
+            <div className="flex justify-center py-6"><LoadingState variant="inline" label="Cargando los productos…" /></div>
         );
     }
 

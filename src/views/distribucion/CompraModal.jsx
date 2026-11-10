@@ -29,6 +29,7 @@ import {
 } from '@nucleo/utils/distribucionComercial';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
+import { LoadingState } from '../../components/common/StateViews';
 // Una compra a proveedor, de la captura a la bodega.
 //
 // El ERP la carga como una lista de productos y un total escrito a mano, y
@@ -220,7 +221,7 @@ export default function CompraModal({ compraId = null, emisor, proveedores, cata
                 {!c && error ? (
                     <Notice variant="danger" icon={AlertTriangle} bloque>{error}</Notice>
                 ) : !c ? (
-                    <p className="text-caption text-content-3 flex items-center gap-2"><Loader2 size={14} className="animate-spin" /> Cargando…</p>
+                    <LoadingState variant="inline" label="Cargando…" />
                 ) : (
                     <div className="flex flex-col gap-5" data-compra>
                         {error && <Notice variant="danger" icon={AlertTriangle} bloque>{error}</Notice>}

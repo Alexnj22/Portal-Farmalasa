@@ -18,6 +18,8 @@ import { duiValido } from '../lib/fiscal';
 import FechaNacimiento from '../componentes/FechaNacimiento';
 import { useBloqueo } from '../lib/bloqueo';
 import { navegar } from '../lib/navegar';
+import { idDispositivo } from '../lib/dispositivo';
+import PasoCodigoWhatsapp from '../componentes/PasoCodigoWhatsapp';
 
 // El teclado numérico de iOS no tiene tecla de «siguiente»: una barra encima
 // pasa del DUI al teléfono y del teléfono al correo (2026-10-15).
@@ -36,6 +38,9 @@ export default function Registro() {
   const [error, setError] = useState(null);
   const [soporte, setSoporte] = useState(false);
   const [enviando, setEnviando] = useState(false);
+  // Ya tenía ficha y entra desde un teléfono nuevo (2026-11-11): el servidor
+  // pidió el código por WhatsApp. Con el interruptor apagado, nunca se llena.
+  const [paso, setPaso] = useState(null);
   const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
   const duiRef = useRef(null);
   const telRef = useRef(null);
@@ -60,17 +65,21 @@ export default function Registro() {
   const listo = f.nombre.trim().length >= 3 && duiValido(f.documento)
     && telefonoValido(f.telefono) && programa && !!textos && !fechaMala;
 
+  const pedirRegistro = async () => llamar('registrar', {
+    ...f, fecha_nacimiento: nacimiento || null, acepta_programa: programa, acepta_promociones: promos,
+    plataforma, dispositivo: Device.modelName ?? null, id_dispositivo: await idDispositivo(),
+  });
+
   async function enviar() {
     if (!listo || enviando) return;
     setError(null);
     setSoporte(false);
     setEnviando(true);
-    const r = await llamar('registrar', {
-      ...f, fecha_nacimiento: nacimiento || null, acepta_programa: programa, acepta_promociones: promos,
-      plataforma, dispositivo: Device.modelName ?? null,
-    });
+    const r = await pedirRegistro();
     setEnviando(false);
     if (r?.ok && r.token) { useBloqueo.setState({ bloqueada: false }); await abrir(r.token); }
+    // Ya tenía ficha y entra desde un teléfono nuevo: el código de WhatsApp.
+    else if (r?.ok && r.pide_codigo) setPaso(r);
     else {
       setError(r?.mensaje ?? 'No se pudo completar el registro.');
       // Ese documento no se puede registrar desde acá (H9, 2026-10-22): lo
@@ -78,6 +87,15 @@ export default function Registro() {
       // WhatsApp de cada sucursal.
       setSoporte(r?.motivo === 'soporte');
     }
+  }
+
+  if (paso) {
+    return (
+      <PasoCodigoWhatsapp reto={paso.reto} telefono={paso.telefono} segundos={paso.segundos_para_reenviar}
+        alVerificado={async (r) => { useBloqueo.setState({ bloqueada: false }); await abrir(r.token); }}
+        alReenviar={async () => { const r = await pedirRegistro(); if (r?.pide_codigo) { setPaso(r); return null; } return r?.mensaje ?? 'No se pudo mandar otro código.'; }}
+        alVolver={() => setPaso(null)} />
+    );
   }
 
   return (

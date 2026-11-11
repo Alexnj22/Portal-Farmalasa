@@ -35,6 +35,7 @@ import { enlaceGoogleWallet, expirarObjetoGoogle, googleWalletListo } from "../_
 import { escaleraDeNiveles, nivelDeCliente, nivelDelEquipo, programaParaApp } from "../_shared/nivel.ts";
 import { duiValido, validarFiscales } from "../_shared/fiscal.ts";
 import { crearEnlace, EN_PREPARACION, pasarelaLista } from "../_shared/n1co.ts";
+import { codigoNuevo, enviarCodigoWhatsapp, recibeWhatsapp, whatsappListo } from "../_shared/whatsapp.ts";
 import { creditosDeLaSala, getCortesCreds, getSessionCookie } from "../_shared/creditos.ts";
 import { getErpBranchMap } from "../_shared/security.ts";
 import { mensajePush } from "../_shared/avisoPrivado.ts";
@@ -840,6 +841,105 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     return token;
   }
 
+  // ── Código por WhatsApp al entrar desde un teléfono nuevo (2026-11-11) ──
+  // El interruptor es la fila `clientes_codigo_whatsapp` de security_config:
+  //   observar → sólo se anotan los teléfonos de cada cliente (lo de hoy);
+  //   exigir   → un teléfono que el cliente nunca usó recibe un código por
+  //              WhatsApp antes de abrir la sesión, si además están las llaves
+  //              de WhatsApp (`whatsappListo()`). Sin llaves, entra como siempre.
+  // Sin fila o sin poder leerla, NO exige (regla de security_config).
+  // El teléfono se reconoce por el id ALEATORIO que la app manda en
+  // `id_dispositivo` (apps/clientes/lib/dispositivo.js). Sólo cuenta la entrada
+  // COMPLETA (DUI + teléfono): el código del ticket no prueba nada del teléfono.
+  const idDispositivo = (v: unknown) => (typeof v === "string" && /^[a-z0-9]{16,64}$/.test(v) ? v : null);
+
+  async function exigeCodigoWhatsapp(): Promise<boolean> {
+    const { data, error } = await admin.from("security_config").select("estado")
+      .eq("key", "clientes_codigo_whatsapp").maybeSingle();
+    if (error) { console.error("codigo-whatsapp: no se leyó el interruptor:", error.message); return false; }
+    return data?.estado === "exigir";
+  }
+
+  async function dispositivoConocido(customerId: number, idDisp: string): Promise<boolean> {
+    const { data, error } = await admin.from("app_cliente_dispositivos").select("id")
+      .eq("customer_id", customerId).eq("dispositivo_id", idDisp).maybeSingle();
+    // Si no se puede leer, se lo trata como NUEVO: con el interruptor en
+    // «exigir» eso pide el código, nunca lo salta.
+    if (error) { console.error("codigo-whatsapp: no se leyó el dispositivo:", error.message); return false; }
+    return !!data;
+  }
+
+  // Nunca lanza: anotar el teléfono no puede impedir la entrada.
+  async function anotarDispositivo(customerId: number, idDisp: string | null, por: "conocido" | "whatsapp") {
+    if (!idDisp) return;
+    const fila: Record<string, unknown> = {
+      customer_id: customerId, dispositivo_id: idDisp, ultimo_uso_at: new Date().toISOString(),
+      modelo: body?.dispositivo ? String(body.dispositivo).slice(0, 80) : null,
+      plataforma: plataformaValida(body?.plataforma),
+    };
+    // Re-entrar desde un teléfono ya verificado no le borra el «whatsapp».
+    if (por === "whatsapp") fila.verificado_por = "whatsapp";
+    const { error } = await admin.from("app_cliente_dispositivos").upsert(fila, { onConflict: "customer_id,dispositivo_id" });
+    if (error) console.error("codigo-whatsapp: no se anotó el dispositivo:", error.message);
+  }
+
+  /** Si este teléfono necesita el código, lo manda y devuelve la respuesta
+   *  para la app; si no, null y se sigue entrando. `alVerificar` guarda lo que
+   *  hay que hacer después del código (los permisos del registro). */
+  async function pedirCodigoSiHaceFalta(customerId: number, tel: string, alVerificar: Record<string, unknown> | null = null): Promise<Response | null> {
+    const idDisp = idDispositivo(body?.id_dispositivo);
+    if (idDisp && await dispositivoConocido(customerId, idDisp)) return null;
+    if (!whatsappListo() || !(await exigeCodigoWhatsapp())) return null;
+    // Una app sin el paso del código no manda el id: no puede entrar desde un
+    // teléfono nuevo. Mejor eso que dejarla pasar sin verificar.
+    if (!idDisp) return json({ ok: false, motivo: "actualizar", mensaje: "Actualiza la app para entrar desde este teléfono." });
+    if (!recibeWhatsapp(tel)) {
+      return json({ ok: false, motivo: "sin_whatsapp", mensaje: "Para entrar desde un teléfono nuevo te mandamos un código por WhatsApp, y ese número no lo recibe. Pide en cualquiera de nuestras salas que actualicen tu teléfono." });
+    }
+    const hace15 = new Date(Date.now() - 15 * 60_000).toISOString();
+    const { count, error: eC } = await admin.from("app_cliente_codigos_entrada")
+      .select("id", { count: "exact", head: true }).eq("customer_id", customerId).gte("created_at", hace15);
+    if (eC) throw eC;
+    if ((count ?? 0) >= 3) {
+      return json({ ok: false, motivo: "muchos_intentos", mensaje: "Ya te mandamos varios códigos. Espera unos minutos." }, 429);
+    }
+    // Retención: un código vive 10 minutos; lo de más de un día se borra aquí.
+    const { error: eDel } = await admin.from("app_cliente_codigos_entrada").delete()
+      .lt("created_at", new Date(Date.now() - 86400_000).toISOString());
+    if (eDel) console.error("codigo-whatsapp: limpieza:", eDel.message);
+
+    const reto = crypto.randomUUID();
+    const codigo = codigoNuevo();
+    const { error: eIns } = await admin.from("app_cliente_codigos_entrada").insert({
+      id: reto, customer_id: customerId, dispositivo_id: idDisp,
+      codigo_hash: await sha256(`${reto}:${codigo}`),
+      vence_at: new Date(Date.now() + 10 * 60_000).toISOString(),
+      al_verificar: alVerificar,
+    });
+    if (eIns) throw eIns;
+    try {
+      await enviarCodigoWhatsapp(tel, codigo);
+    } catch (e) {
+      console.error("codigo-whatsapp: no salió el mensaje:", (e as Error).message);
+      const { error: eB } = await admin.from("app_cliente_codigos_entrada").delete().eq("id", reto);
+      if (eB) console.error("codigo-whatsapp: no se borró el código sin enviar:", eB.message);
+      return json({ ok: false, motivo: "no_enviado", mensaje: "No pudimos mandarte el código por WhatsApp. Intenta en un rato." });
+    }
+    return json({ ok: true, pide_codigo: true, reto, telefono: `••••-${tel.slice(-4)}`, segundos_para_reenviar: 60 });
+  }
+
+  // «Para ver esto, entra con tu DUI y teléfono» (2026-10-19): la app completa
+  // la entrada SIN cerrar antes la sesión de código y manda su token en
+  // `reemplaza`. Entrando completo, esa sesión limitada se revoca — y sólo si
+  // era de esta misma ficha: un token ajeno no revoca nada.
+  async function revocarReemplazada(customerId: number) {
+    if (typeof body?.reemplaza !== "string" || body.reemplaza.length < 30) return;
+    const { error } = await admin.from("app_cliente_sesiones")
+      .update({ revocada_at: new Date().toISOString(), push_token: null })
+      .eq("token_hash", await sha256(body.reemplaza)).eq("customer_id", customerId).is("revocada_at", null);
+    if (error) console.error("entrar: no se revocó la sesión de código:", error.message);
+  }
+
   async function guardarPermisos(customerId: number, programa: boolean | null, promociones: boolean | null) {
     const { data, error } = await admin.rpc("puntos_guardar_consentimiento", {
       p_customer_id: customerId,
@@ -915,17 +1015,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       if (cli) {
         await anotarAcierto(doc);
         const alcance = esCodigo ? "codigo" : "completo";
+        // Teléfono nuevo con el interruptor en «exigir»: primero el código.
+        if (!esCodigo) {
+          const pide = await pedirCodigoSiHaceFalta(cli.id, tel);
+          if (pide) return pide;
+        }
         const nuevo = await abrirSesion({ customer_id: cli.id, alcance });
-        // «Para ver esto, entra con tu DUI y teléfono» (2026-10-19): la app
-        // completa la entrada SIN cerrar antes la sesión de código, y manda
-        // su token en `reemplaza`. Entrando completo, esa sesión limitada se
-        // revoca aquí — y sólo si era de esta misma ficha: un token ajeno no
-        // revoca nada.
-        if (!esCodigo && typeof body?.reemplaza === "string" && body.reemplaza.length >= 30) {
-          const { error: eR } = await admin.from("app_cliente_sesiones")
-            .update({ revocada_at: new Date().toISOString(), push_token: null })
-            .eq("token_hash", await sha256(body.reemplaza)).eq("customer_id", cli.id).is("revocada_at", null);
-          if (eR) console.error("entrar: no se revocó la sesión de código:", eR.message);
+        if (!esCodigo) {
+          await anotarDispositivo(cli.id, idDispositivo(body?.id_dispositivo), "conocido");
+          await revocarReemplazada(cli.id);
         }
         return json({ ok: true, token: nuevo, alcance });
       }
@@ -942,6 +1040,40 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         // DATOS_RETIRADOS): el camino a soporte sale al registrarse.
       }
       return json(NO_ENCONTRADO);
+    }
+
+    // El código de WhatsApp (ver `pedirCodigoSiHaceFalta`). El intento se
+    // cuenta ANTES de comparar y en la base (`app_cliente_codigo_intento`):
+    // cinco por código, también si llegan en paralelo.
+    if (accion === "verificar_entrada") {
+      const reto = String(body?.reto ?? "");
+      const codigo = String(body?.codigo ?? "").replace(/\D/g, "");
+      const idDisp = idDispositivo(body?.id_dispositivo);
+      const VENCIDO = { ok: false, motivo: "codigo_vencido", mensaje: "Ese código ya no sirve. Pide otro." };
+      if (!/^[0-9a-f-]{36}$/.test(reto) || codigo.length !== 6 || !idDisp) {
+        return json({ ok: false, motivo: "codigo", mensaje: "Escribe los 6 números del mensaje." });
+      }
+      const { data: filas, error } = await admin.rpc("app_cliente_codigo_intento", { p_id: reto, p_dispositivo: idDisp });
+      if (error) throw error;
+      const fila = Array.isArray(filas) ? filas[0] : null;
+      if (!fila) return json(VENCIDO);
+      if (await sha256(`${reto}:${codigo}`) !== fila.codigo_hash) {
+        return json(fila.intentos >= 5 ? VENCIDO
+          : { ok: false, motivo: "codigo", mensaje: "Ese código no es. Revisa el mensaje de WhatsApp." });
+      }
+      // Usarlo una sola vez: si dos llegan a la vez, entra uno.
+      const { data: usado, error: eU } = await admin.from("app_cliente_codigos_entrada")
+        .update({ usado_at: new Date().toISOString() }).eq("id", reto).is("usado_at", null).select("id");
+      if (eU) throw eU;
+      if (!usado?.length) return json(VENCIDO);
+      const customerId = Number(fila.customer_id);
+      if (fila.al_verificar && typeof fila.al_verificar.promociones === "boolean") {
+        await guardarPermisos(customerId, true, fila.al_verificar.promociones);
+      }
+      const token = await abrirSesion({ customer_id: customerId, alcance: "completo" });
+      await anotarDispositivo(customerId, idDisp, "whatsapp");
+      await revocarReemplazada(customerId);
+      return json({ ok: true, token, alcance: "completo", ...(fila.al_verificar ? { ya_era_cliente: true } : {}) });
     }
 
     if (accion === "registrar") {
@@ -976,8 +1108,14 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       const cli = await buscarCliente(doc, tel);
       if (cli) {
         await anotarAcierto(doc);
+        // Registrarse con los datos de una ficha que ya existe es ENTRAR: pasa
+        // por el mismo código. Los permisos se guardan recién al verificar.
+        const pide = await pedirCodigoSiHaceFalta(cli.id, tel, { promociones: aceptaPromos });
+        if (pide) return pide;
         await guardarPermisos(cli.id, true, aceptaPromos);
-        return json({ ok: true, token: await abrirSesion({ customer_id: cli.id }), ya_era_cliente: true });
+        const token = await abrirSesion({ customer_id: cli.id });
+        await anotarDispositivo(cli.id, idDispositivo(body?.id_dispositivo), "conocido");
+        return json({ ok: true, token, ya_era_cliente: true });
       }
 
       if (await documentoAnonimizado(admin, doc)) return json(DATOS_RETIRADOS);

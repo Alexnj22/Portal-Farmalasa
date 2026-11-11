@@ -219,6 +219,35 @@ En `n1co-pagos`, una misma orden no puede pagar dos cobros
 cada tarjeta se DERIVA del serial con HMAC: no se guarda y no se puede adivinar
 el de otra persona.
 
+### Código por WhatsApp al entrar desde un teléfono nuevo (2026-11-11)
+
+Construido y **apagado**. Entrar con DUI y teléfono no prueba que el teléfono
+sea de quien escribe; el código por WhatsApp sí.
+
+- **Interruptor**: fila `clientes_codigo_whatsapp` de `security_config`.
+  `observar` (hoy) anota en `app_cliente_dispositivos` cada teléfono desde el
+  que un cliente entra completo, sin pedir nada. `exigir` pide el código a un
+  teléfono que no está ahí — **sólo si además** están los secretos
+  `WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID` y `WHATSAPP_PLANTILLA` en `app-clientes`
+  (`_shared/whatsapp.ts`). Marcha atrás: volver la fila a `observar`.
+- **Teléfono** = el id aleatorio de `apps/clientes/lib/dispositivo.js`, que la
+  app manda en `id_dispositivo`. La entrada con el código del ticket no cuenta
+  ni anota (no prueba nada del teléfono). Una app sin el paso no manda el id y,
+  con el código exigido, se le pide actualizar.
+- **Flujo**: `entrar` (o `registrar` con una ficha que ya existe) contesta
+  `{ ok, pide_codigo, reto, telefono }`; la app muestra
+  `componentes/PasoCodigoWhatsapp.js` y llama `verificar_entrada` con `reto` y
+  `codigo`. El intento se cuenta en la base antes de comparar
+  (`app_cliente_codigo_intento`: 5 por código, vence en 10 min); se usa una vez.
+  Tope de 3 códigos por cliente cada 15 min. Los códigos de más de un día se
+  borran al mandar uno nuevo (`app_cliente_codigos_entrada`).
+- **Para encenderlo**: WhatsApp Business (Cloud API) con la empresa verificada,
+  un número propio y una plantilla de **autenticación** en `es` con botón de
+  copiar código; cargar los tres secretos; dejar unos días en `observar` para
+  que se anoten los teléfonos de quien ya usa la app; recién ahí `exigir`.
+- Los fijos (empiezan con 2) no reciben WhatsApp: con el código exigido, ese
+  cliente actualiza su teléfono en sala.
+
 ### Pagos en línea con n1co (2026-11-10)
 
 - Link de pago (CheckoutLink): `_shared/n1co.ts` crea la orden con

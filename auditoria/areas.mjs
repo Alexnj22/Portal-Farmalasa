@@ -892,6 +892,8 @@ export const AREAS = [
             'supabase/functions/_shared/consentimientoPuntos.ts',
             'supabase/functions/n1co-pagos/',
             'supabase/functions/_shared/n1co.ts',
+            // Código por WhatsApp al entrar desde un teléfono nuevo (2026-11-11).
+            'supabase/functions/_shared/whatsapp.ts',
         ],
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
@@ -923,7 +925,9 @@ export const AREAS = [
                  // La última compilación subida, para el aviso de actualizar (2026-10-29).
                  'app_version_publicada',
                  // Actualizaciones por aire publicadas (2026-10-29).
-                 'app_actualizaciones'],
+                 'app_actualizaciones',
+                 // Teléfonos de cada cliente y códigos por WhatsApp al entrar desde uno nuevo (2026-11-11).
+                 'app_cliente_dispositivos', 'app_cliente_codigos_entrada'],
         edge: ['app-clientes', 'avisos-clientes', 'wallet-pases', 'n1co-pagos', 'preventa-caja', 'purgar-chat-clientes', 'app-actualizaciones'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.

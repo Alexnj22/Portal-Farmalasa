@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.0 — App de clientes: código por WhatsApp al entrar desde un teléfono nuevo (apagado)
+
+La app de clientes ya sabe pedir un código de 6 números por WhatsApp cuando alguien entra con DUI y teléfono desde un teléfono que ese cliente nunca usó (también al «registrarse» con una ficha que ya existe). Viene **apagado**: mientras no se encienda, se entra igual que hoy y sólo se van anotando los teléfonos de cada cliente, para que el día que se encienda no se le pida el código a quien ya entraba.
+
+- Se enciende con la fila `clientes_codigo_whatsapp` de `security_config` en `exigir`, y además hacen falta las llaves de WhatsApp Business en `app-clientes` (`WHATSAPP_TOKEN`, `WHATSAPP_PHONE_ID`, `WHATSAPP_PLANTILLA`). Sin cualquiera de las dos, no se pide nada.
+- El código vence en 10 minutos, admite 5 intentos (contados en la base, también en paralelo) y se mandan como mucho 3 por cliente cada 15 minutos. Se guarda su huella, nunca el código.
+- Un teléfono fijo no recibe WhatsApp: con el código exigido, a ese cliente se le pide actualizar su teléfono en sala.
+- La pantalla del código viaja en la compilación de la tienda a propósito: una instalación nueva arranca con el código del build, no con la actualización por aire.
+
 ## v2.1503.3 — App: subfiltros en píldoras y Pedidos con Generar a la vista
 
 - **Sección vs. subfiltro** (decisión del usuario): la sección de una pantalla es el control segmentado del sistema y va fija arriba; el subfiltro dentro de una sección son píldoras que se desplazan con el contenido. Nuevo `componentes/Subfiltro.js`, usado en Pedidos › Tiempos (7 · 30 · 90 días), Puntos › Resumen (Puntos · Dólares), Inyecciones › Por cobrar (Todas · Con cobro · Sin cobro), Marketing › Ideas (Abiertas · Usadas · Descartadas) y Reportes de la distribuidora (libros de ventas y año de Relacionadas).

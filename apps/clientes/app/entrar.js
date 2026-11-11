@@ -17,6 +17,8 @@ import { duiValido } from '../lib/fiscal';
 import { conBiometria, useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
 import { useCuenta } from '../lib/cuenta';
+import { idDispositivo } from '../lib/dispositivo';
+import PasoCodigoWhatsapp from '../componentes/PasoCodigoWhatsapp';
 
 // El alfabeto del código no tiene letras ni números que se confundan
 // (sin O/0, I/1, S/5…), igual que el que emite la sala.
@@ -67,20 +69,47 @@ export default function Entrar() {
   const duiMalo = documento.replace(/\D/g, '').length === 9 && !duiValido(documento);
   const telMalo = telefono.replace(/\D/g, '').length === 8 && !telefonoValido(telefono);
 
+  // Teléfono nuevo (2026-11-11): el servidor pidió el código por WhatsApp.
+  // Mientras el interruptor esté apagado, `paso` nunca se llena.
+  const [paso, setPaso] = useState(null);
+  if (paso) {
+    return (
+      <PasoCodigoWhatsapp reto={paso.r.reto} telefono={paso.r.telefono} segundos={paso.r.segundos_para_reenviar}
+        extra={paso.reemplaza ? { reemplaza: paso.reemplaza } : null}
+        alVerificado={(r) => alEntrar(r, paso.datos)}
+        alReenviar={async () => { const r = await pedirEntrada(paso.datos); if (r?.pide_codigo) { setPaso({ ...paso, r }); return null; } return r?.mensaje ?? 'No se pudo mandar otro código.'; }}
+        alVolver={() => setPaso(null)} />
+    );
+  }
+
+  async function pedirEntrada(datos) {
+    const reemplaza = completando ? useSesion.getState().token : undefined;
+    return llamar('entrar', { ...datos, plataforma, dispositivo: Device.modelName ?? null, id_dispositivo: await idDispositivo(), ...(reemplaza ? { reemplaza } : {}) });
+  }
+
+  async function alEntrar(r, datos) {
+    await guardarEntrada(datos);
+    // Recién entró con sus datos o su cara: no se le pide Face ID otra vez.
+    useBloqueo.setState({ bloqueada: false });
+    // De código a completa: el resumen recortado no sirve, se pide de nuevo.
+    if (completando) useCuenta.getState().limpiar();
+    await abrir(r.token, r.alcance);
+  }
+
+  // true = entró; 'codigo' = falta el código de WhatsApp (los datos SÍ eran
+  // buenos: la entrada guardada no se olvida); false = no entró.
   async function entrarCon(datos) {
     setError(null);
     setEnviando(true);
-    const reemplaza = completando ? useSesion.getState().token : undefined;
-    const r = await llamar('entrar', { ...datos, plataforma, dispositivo: Device.modelName ?? null, ...(reemplaza ? { reemplaza } : {}) });
+    const r = await pedirEntrada(datos);
     setEnviando(false);
     if (r?.ok && r.token) {
-      await guardarEntrada(datos);
-      // Recién entró con sus datos o su cara: no se le pide Face ID otra vez.
-      useBloqueo.setState({ bloqueada: false });
-      // De código a completa: el resumen recortado no sirve, se pide de nuevo.
-      if (completando) useCuenta.getState().limpiar();
-      await abrir(r.token, r.alcance);
+      await alEntrar(r, datos);
       return true;
+    }
+    if (r?.ok && r.pide_codigo) {
+      setPaso({ r, datos, reemplaza: completando ? useSesion.getState().token : null });
+      return 'codigo';
     }
     setError(r?.mensaje ?? 'No se pudo entrar.');
     return false;

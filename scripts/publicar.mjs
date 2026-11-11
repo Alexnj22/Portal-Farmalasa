@@ -5,6 +5,8 @@
 //   npm run publicar            → publica si hay cambios de la web desde la última vez
 //   npm run publicar -- --ver   → sólo dice qué se publicaría
 //   npm run publicar -- --no-esperar → publica aunque Vercel esté armando otro
+//   npm run publicar -- --urgente "motivo" → saltea el freno de 30 minutos
+//                                (sólo emergencia o error crítico)
 //
 // No hace commits ni toca el árbol de trabajo: mueve una rama del remoto. Lo
 // que no está pusheado a `main` no se publica.
@@ -56,6 +58,50 @@ function enCurso() {
     return null;
   }
 }
+// ── Un despliegue cada 30 minutos como mucho (2026-11-10) ──────────────────
+// Vercel cobra los minutos de compilación, y eran ~$20 de los ~$43 del mes: el
+// plan trae ~$30 y lo demás se factura (octubre: $13). Del 5 al 10 de noviembre
+// hubo 95 despliegues de producción, 42 en un solo día, muchos a minutos uno del
+// otro. Con el freno, lo que llega antes de los 30 minutos espera y sale junto
+// en la próxima publicación: nada se pierde, se compila menos. El usuario lo
+// pidió así, «a no ser que sea emergencia o error crítico»: para eso está
+// `--urgente "qué se rompió"`. Sin la CLI de Vercel no se frena (se avisa).
+const ESPACIO_MIN = 30;
+const urgente = (() => {
+  const i = process.argv.indexOf('--urgente');
+  return i === -1 ? null : (process.argv[i + 1] || '').trim();
+})();
+if (urgente === '') {
+  console.error('✗ `--urgente` lleva el motivo: npm run publicar -- --urgente "el login no entra"');
+  process.exit(1);
+}
+function ultimoDespliegue() {
+  try {
+    const r = JSON.parse(sh(`vercel api "/v6/deployments?projectId=${PROYECTO}&teamId=${EQUIPO}`
+      + '&target=production&limit=1"'));
+    return r.deployments?.[0]?.created ?? 0;
+  } catch {
+    return null;
+  }
+}
+const hora12 = (ms) => new Date(ms).toLocaleTimeString('es-SV',
+  { hour: 'numeric', minute: '2-digit', hour12: true, timeZone: 'America/El_Salvador' });
+if (urgente) {
+  console.log(`⚡ Publicación urgente: ${urgente}`);
+} else {
+  const ultimo = ultimoDespliegue();
+  if (ultimo === null) {
+    console.warn('⚠ No se pudo consultar el último despliegue (¿`vercel login`?): se publica sin el freno de 30 min.');
+  } else if (Date.now() - ultimo < ESPACIO_MIN * 60_000) {
+    const desde = hora12(ultimo + ESPACIO_MIN * 60_000);
+    const hace = Math.floor((Date.now() - ultimo) / 60_000);
+    console.log(`⏸ El último despliegue fue hace ${hace} min. Lo de ahora queda en main y sale en la`
+      + ` próxima publicación, desde las ${desde}`);
+    console.log('  Si es una emergencia o un error crítico: npm run publicar -- --urgente "qué se rompió"');
+    process.exit(0);
+  }
+}
+
 let destino = main;
 if (!process.argv.includes('--no-esperar')) {
   const hasta = Date.now() + 15 * 60_000;

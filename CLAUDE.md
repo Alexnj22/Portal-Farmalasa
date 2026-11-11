@@ -634,6 +634,11 @@ y pushean en el medio. Historia y mediciones:
 - Producción es la rama **`produccion`** (portal.farmasalud.lat). Se mueve con
   **`npm run publicar`** (`scripts/publicar.mjs`): la adelanta a `origin/main`
   sólo si hay cambios de la web, sin tocar el árbol. `-- --ver` dice qué saldría.
+- **Un despliegue cada 30 minutos como mucho** (2026-11-10, lo pidió el usuario
+  por el sobrecargo de compilación de Vercel). Si el anterior fue hace menos,
+  `publicar` no despliega y dice desde qué hora sale: lo de ahora queda en
+  `main` y va en la próxima. Saltearlo SÓLO por emergencia o error crítico:
+  `npm run publicar -- --urgente "qué se rompió"`. Nunca para apurar un ajuste.
 - **Después de un arreglo de web verificado, `npm run publicar` sin
   preguntar; los commits de una misma tarea se juntan en una publicación** (cada
   despliegue cuesta minutos de compilación: no uno por commit). Avisar después

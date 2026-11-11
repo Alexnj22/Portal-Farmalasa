@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1507.1 — App: Solicitudes sin envíos ni traslados ajenos; secciones bajo el buscador
+
+- **Solicitudes:** los envíos y traslados entre salas sólo le salen a los involucrados: quien lo pidió, a quien espera, o la sala de origen o de destino. Para verlos todos se eligen en Filtros › Tipo. Las pantallas de Traslados y Envíos no cambian.
+- **Secciones fijas con buscador:** en iPhone, una pantalla con secciones fijas lleva la barra sin transparencia de layout (sigue sin fondo): la pantalla empieza debajo de la barra y del buscador, y el sistema la coloca. Orden: barra, buscador siempre visible, secciones a 8 pt, lista. Antes el selector quedaba pegado o encima del buscador. Lo hace `FijoArriba` solo, en las 74 pantallas. Va por aire.
+
 ## v2.1507.0 — App: pestaña rápida en la barra, a elegir en Cuenta
 
 El lugar que dejó Notificaciones lo ocupa una pestaña con UN módulo, entre Menú y Cuenta. Por defecto: Efectivo para las salas, Pedidos para Bodega y Solicitudes para los cuatro cargos de administración. Cada persona la cambia en Cuenta › Pestaña rápida, entre los módulos que su cargo puede ver (Efectivo, Pedidos, Solicitudes, Traslados, Bitácoras, Ventas, Clientes, Reservas, Inventario, Productos, Personal, Inyecciones); se guarda en el teléfono. Muestra la misma pantalla que abre el Menú. Si el cargo no ve ninguno, la pestaña no aparece. Va por aire.

@@ -35,7 +35,8 @@ import {
   motivoDeRechazoCorto, personasDe, salaQueEspera,
 } from '@nucleo/utils/movimientoTexto';
 import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSolicitud';
-import { reglasDeBandeja, ordenarCola, salaDeSolicitud, deQuienEs } from '@nucleo/utils/bandejaDeSolicitudes';
+import { reglasDeBandeja, ordenarCola, salaDeSolicitud, deQuienEs, paraQuien } from '@nucleo/utils/bandejaDeSolicitudes';
+import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { enLaSemanaDe, getLocalMonday } from '@nucleo/utils/semana';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -159,6 +160,8 @@ function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
   );
 }
 
+const ENTRE_SALAS = new Set(['INVENTORY_TRANSFER_PUSH', 'INVENTORY_TRANSFER_REQUEST']);
+
 export default function Solicitudes() {
   const { user, hasPermission, getScope } = useAuth();
   const requests = useStaffStore((s) => s.requests);
@@ -242,8 +245,22 @@ export default function Solicitudes() {
     return (operativa ? reglas.sala : reglas.personal).visible(r);
   }), [requests, minmax, reglas, hasPermission, miId]);
 
+  // Envíos y traslados entre salas, sólo a los involucrados (2026-11-11,
+  // usuario: «que en solicitud no me salgan los envíos entre salas ni los
+  // traslados, que sólo le salgan a los involucrados»). Involucrado: quien lo
+  // pidió, a quien espera, o la sala de origen o de destino es la suya. Quien
+  // necesite verlos todos los elige en Filtros › Tipo; las pantallas de
+  // Traslados y Envíos siguen mostrando todo.
+  const miSala = String(salaDelUsuario(user) ?? '');
+  const involucrado = (r) => {
+    if (!ENTRE_SALAS.has(r.type) || familia === r.type) return true;
+    if (deQuienEs(r) === miId || paraQuien(r) === miId) return true;
+    const m = (typeof r.metadata === 'object' && r.metadata) || {};
+    return !!miSala && [m.branch_id, m.origen_branch_id, m.destino_branch_id].some((b) => b != null && String(b) === miSala);
+  };
+
   // La semana recorta el HISTORIAL y deja pasar lo pendiente.
-  const enFiltro = (r) => (!filtrandoMias || deQuienEs(r) === miId)
+  const enFiltro = (r) => involucrado(r) && (!filtrandoMias || deQuienEs(r) === miId)
     && (sala === 'todas' || salaDeSolicitud(r) === sala)
     && (familia === 'todas' || r.type === familia)
     && (r.status === 'PENDING' || enLaSemanaDe(semana, r.created_at));
@@ -311,7 +328,7 @@ export default function Solicitudes() {
         title: 'Solicitudes',
         headerSearchBarOptions: {
           placeholder: 'Persona, producto, factura…',
-          hideWhenScrolling: true,
+          hideWhenScrolling: false,
           onChangeText: (e) => setBusqueda(e.nativeEvent.text),
           onCancelButtonPress: () => setBusqueda(''),
         },

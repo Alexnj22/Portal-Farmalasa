@@ -22,24 +22,28 @@
 // grande de iOS sólo se encoge si la lista es lo primero de la pantalla; con
 // esto encima se quedaría grande para siempre, comiéndose la pantalla.
 //
-// ── Cuánto bajar ────────────────────────────────────────────────────────────
-// Depende de la barra: la transparente (BARRA_NATIVA, las pestañas y casi
-// todas las pantallas de iOS) deja la pantalla empezar DETRÁS de ella; la
-// opaca (Android, y las pantallas sin BARRA_NATIVA) la deja empezar debajo.
-// Se MIDE: dónde quedó esto en la ventana contra dónde termina la barra
-// (`useHeaderHeight`, que la pila nativa actualiza con lo que mide el sistema,
-// buscador y título grande incluidos).
+// ── La barra con secciones fijas (2026-11-11, segunda vuelta) ──────────────
+// En iOS la barra de marca es TRANSPARENTE (BARRA_NATIVA): la pantalla empieza
+// detrás de ella y la lista se mete por debajo. Con un buscador además, la
+// altura de la barra cambia (el campo aparece, se encoge al buscar) y ninguna
+// medición desde JavaScript la sigue bien: primero el selector quedó debajo de
+// la barra y se tragaba los toques; después, pegado al buscador
+// (captura del usuario: «define cómo quedará cuando hay pestañas y hay
+// buscador»).
 //
-// ⚠️ NO usar `SafeAreaView` para esto (se probó el 2026-11-11 y salió mal): el
-// de react-native-safe-area-context calcula el área segura contra el
-// `SafeAreaProvider` de la raíz, que sólo conoce la barra de estado, no la
-// barra de navegación. El selector quedaba montado DEBAJO de la barra
-// transparente y la barra se tragaba los toques («quedan montadas de forma
-// rara y no funcionan bien»).
+// La forma definitiva: con secciones fijas la barra NO es transparente (sigue
+// sin fondo, así que la aurora se ve igual): la pantalla empieza DEBAJO de la
+// barra, buscador incluido, y el que la coloca es el sistema. El orden queda:
 //
-// Como el ScrollView empieza debajo de esto, su
-// `contentInsetAdjustmentBehavior="automatic"` ya no suma el margen de
-// arriba: sólo el de la barra de pestañas de abajo.
+//   [ foto · logo · botones ]   ← la barra
+//   [ buscador ]                ← en la barra, siempre visible (hideWhenScrolling: false)
+//   [ secciones ]               ← FijoArriba, 8 pt debajo
+//   [ la lista ]                ← lo único que se desplaza
+//
+// Esto lo pone FijoArriba solo (va después del `Stack.Screen` de la pantalla,
+// así que sus opciones se aplican encima; y se reaplican en cada render porque
+// la pantalla las vuelve a poner con las suyas). La medición queda como red,
+// para la barra que siga siendo transparente.
 //
 // Por qué no `stickyHeaderIndices`: el encabezado pegajoso de React Native se
 // pega al borde del ScrollView, que en iOS queda DETRÁS de la barra
@@ -48,13 +52,13 @@
 // `conBarra={false}`: en una hoja o modal sin barra.
 import { useCallback, useRef, useState } from 'react';
 import { Platform, View } from 'react-native';
+import { Stack } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 
 export default function FijoArriba({ children, conBarra = true }) {
   const alto = useHeaderHeight();
   const caja = useRef(null);
-  // Primera suposición, antes de medir: en iOS casi todas las barras son transparentes.
-  const [tope, setTope] = useState(conBarra && Platform.OS === 'ios' ? alto : 0);
+  const [tope, setTope] = useState(0);
   const medir = useCallback(() => {
     if (!conBarra) return;
     caja.current?.measureInWindow?.((_x, y) => {
@@ -64,10 +68,15 @@ export default function FijoArriba({ children, conBarra = true }) {
     });
   }, [alto, conBarra]);
   return (
-    <View ref={caja} onLayout={medir} collapsable={false}>
-      <View style={{ paddingTop: (conBarra ? tope : 0) + 8, paddingBottom: 8 }}>
-        {children}
+    <>
+      {conBarra && Platform.OS === 'ios'
+        ? <Stack.Screen options={{ headerTransparent: false, headerStyle: { backgroundColor: 'transparent' }, headerShadowVisible: false }} />
+        : null}
+      <View ref={caja} onLayout={medir} collapsable={false}>
+        <View style={{ paddingTop: (conBarra ? tope : 0) + 8, paddingBottom: 8 }}>
+          {children}
+        </View>
       </View>
-    </View>
+    </>
   );
 }

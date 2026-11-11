@@ -23,6 +23,8 @@ import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { Host, Icon } from '@expo/ui';
 import { fetchPuntosDelCambioDeCliente } from '@nucleo/data/puntos';
 import { avisoDeCambioDeCliente } from '@nucleo/utils/puntosTexto';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { Dato } from '../formulario/Piezas';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
@@ -68,38 +70,72 @@ function PuntosDelCambio({ invoiceId, customerNuevo, aplicado }) {
   );
 }
 
-/** Lo que la sala dijo de un movimiento sin comprobante (`DetalleSolicitud` del portal). */
+/** Lo que la sala dijo de un movimiento sin comprobante (`DetalleSolicitud` del portal).
+ *  Rediseño del 2026-11-11 (usuario: «que los datos sean completos y toda la
+ *  información muy bien organizada»): el monto grande arriba y después cada
+ *  dato en su renglón — de qué, para qué, sala, cómo, cuándo, comprobante. */
 function MovimientoSinComprobante({ meta }) {
-  const forma = meta.forma_pago === 'TRANSFERENCIA' ? 'Por transferencia' : meta.forma_pago === 'TARJETA' ? 'Con tarjeta' : 'En efectivo';
+  const sucursales = useStaffStore((s) => s.branches);
+  const forma = meta.forma_pago === 'TRANSFERENCIA' ? 'Transferencia' : meta.forma_pago === 'TARJETA' ? 'Tarjeta' : 'Efectivo';
   const sale = meta.sentido === 'SALIDA';
-  const linea = [forma, meta.fecha ? fechaTexto(meta.fecha) : null, meta.numero_boleta ? `comprobante ${meta.numero_boleta}` : null,
-    meta.operacion_bolsa ? 'de una bolsa' : null].filter(Boolean).join(' · ');
+  const color = sale ? MARCA.rojo : MARCA.verde;
+  // «Gasto o compra urgente · ENCARGO DE …»: el tipo y lo que escribió la sala.
+  const texto = String(meta.detalle || meta.concepto || '');
+  const corte = texto.indexOf(' · ');
+  const tipo = corte > 0 ? texto.slice(0, corte) : null;
+  const para = corte > 0 ? texto.slice(corte + 3) : texto;
+  const sala = (sucursales ?? []).find((b) => String(b.id) === String(meta.branch_id))?.name ?? null;
   const foto = meta.foto_url || meta.foto_nueva || null;
+  const datos = [
+    tipo ? ['Tipo', tipo] : null,
+    para ? ['Detalle', para] : null,
+    sala ? ['Sala', sala] : null,
+    ['Forma de pago', forma],
+    meta.fecha ? ['Fecha', fechaTexto(meta.fecha)] : null,
+    ['Comprobante', meta.numero_boleta || 'No tiene'],
+    meta.operacion_bolsa ? ['De dónde', 'De una bolsa'] : null,
+  ].filter(Boolean);
   return (
     <>
-      <Bloque rotulo={sale ? 'Salida sin comprobante' : 'Ingreso sin comprobante'} color={MARCA.ambar}>
-        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{meta.detalle || meta.concepto || 'Sin concepto'}</Text>
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(meta.monto)}</Text>
+      <Vidrio radio={20} tinte={`${color}14`}>
+        <View style={{ padding: 16, gap: 12 }}>
+          <View style={{ alignItems: 'center', gap: 2 }}>
+            <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+              {sale ? 'Salió de la caja' : 'Dice que entró'}
+            </Text>
+            <Text style={{ color: colorSistema.texto, fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
+              {`${sale ? '−' : '+'}${formatMoney(meta.monto)}`}
+            </Text>
+          </View>
+          <View style={{ gap: 0 }}>
+            {datos.map(([r, v], i) => <Dato key={r} rotulo={r} valor={v} primero={i === 0} />)}
+          </View>
+          {foto ? (
+            <Pressable onPress={() => Promise.resolve(openStoredFile(foto)).catch(() => {})} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center', alignItems: 'center' }}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Ver la foto</Text>
+            </Pressable>
+          ) : null}
         </View>
-        {linea ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{linea}</Text> : null}
-        {foto ? (
-          <Pressable onPress={() => Promise.resolve(openStoredFile(foto)).catch(() => {})} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Ver la foto</Text>
-          </Pressable>
-        ) : null}
-      </Bloque>
+      </Vidrio>
       {meta.reenvio && meta.rechazo_anterior ? (
-        <Bloque rotulo="Se reenvía. Antes no se autorizó porque">
+        <Bloque rotulo="Se reenvía. Antes no se autorizó porque" color={MARCA.ambar}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{meta.rechazo_anterior}</Text>
         </Bloque>
       ) : null}
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, lineHeight: 18, marginHorizontal: 4 }}>
-        {sale
-          ? 'El dinero ya salió. Autorizarlo dice que la salida está bien; rechazarlo la anula y el dinero vuelve a contar donde estaba.'
-          : 'No entra al cajón. Autorizarlo dice que el dinero sí llegó; si no, explica qué prueba hace falta y la sala lo puede volver a mandar.'}
-      </Text>
     </>
+  );
+}
+
+/** Lo que significa decidir sobre un movimiento sin comprobante: va justo antes de los botones. */
+export function QueSignificaDecidir({ req }) {
+  if (req?.type !== 'CAJA_INGRESO_AUTORIZACION' || req.status !== 'PENDING') return null;
+  const sale = req.metadata?.sentido === 'SALIDA';
+  return (
+    <Text style={{ color: colorSistema.texto2, fontSize: 13, lineHeight: 18, marginHorizontal: 4 }}>
+      {sale
+        ? 'El dinero ya salió. Autorizarlo dice que la salida está bien; rechazarlo la anula y el dinero vuelve a contar donde estaba.'
+        : 'No entra al cajón. Autorizarlo dice que el dinero sí llegó; si no, explica qué prueba hace falta y la sala lo puede volver a mandar.'}
+    </Text>
   );
 }
 
@@ -122,7 +158,7 @@ export default function ExtrasDelDetalle({ req }) {
       ) : null}
       {t === 'CAJA_INGRESO_AUTORIZACION' ? <MovimientoSinComprobante meta={meta} /> : null}
       {req?.note ? (
-        <Bloque rotulo="Motivo de quien la envió">
+        <Bloque rotulo={t === 'CAJA_INGRESO_AUTORIZACION' ? 'Por qué no hay comprobante' : 'Motivo de quien la envió'}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, lineHeight: 21 }}>{req.note}</Text>
         </Bloque>
       ) : null}

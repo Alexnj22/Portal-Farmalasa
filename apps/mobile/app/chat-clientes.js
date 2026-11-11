@@ -42,7 +42,7 @@ import { estrellas } from '@nucleo/utils/chatPersonal';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Encabezado from '../componentes/chat/Encabezado';
-import { Cargando } from '../componentes/formulario/Piezas';
+import { Cargando, Vacio } from '../componentes/formulario/Piezas';
 
 const Fila = memo(function Fila({ c, tomadaPor, atiende, ahora, columnas, equipo }) {
   const sinLeer = Number(c.sin_leer_equipo) || 0;
@@ -171,14 +171,9 @@ export default function ChatClientes() {
         )}
         ListFooterComponent={cargandoMas ? <ActivityIndicator style={{ marginVertical: 16 }} /> : null}
         ListEmptyComponent={error ? <ErrorConReintento mensaje={error} onReintentar={cargar} /> : !conversaciones ? null : (
-          <View style={{ alignItems: 'center', marginTop: 40, marginHorizontal: 24, gap: 6 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700', textAlign: 'center' }}>
-              {busqueda ? 'Sin resultados' : preferentes === 'si' && etiqueta === 'todas' ? 'Sin clientes preferentes' : etiqueta !== 'todas' ? `Nadie con «${ETIQUETAS[etiqueta].label}»` : `Sin conversaciones: ${FILTROS[filtro]?.label.toLowerCase() ?? ''}`}
-            </Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {busqueda ? 'Prueba con otro nombre o teléfono.' : filtrosActivos > 0 ? 'Quita los filtros para ver las demás.' : 'Cuando un cliente escriba desde la app, aparece aquí.'}
-            </Text>
-          </View>
+          <Vacio icono={busqueda ? 'Search' : 'MessageSquare'}
+            titulo={busqueda ? 'Sin resultados' : preferentes === 'si' && etiqueta === 'todas' ? 'Sin clientes preferentes' : etiqueta !== 'todas' ? `Nadie con «${ETIQUETAS[etiqueta].label}»` : `Sin conversaciones: ${FILTROS[filtro]?.label.toLowerCase() ?? ''}`}
+            detalle={busqueda ? 'Prueba con otro nombre o teléfono.' : filtrosActivos > 0 ? 'Quita los filtros para ver las demás.' : 'Cuando un cliente escriba desde la app, aparece aquí.'} />
         )} />
     </>
   );

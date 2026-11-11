@@ -20,7 +20,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
@@ -183,14 +183,9 @@ export default function Cobros() {
           </View>
         ) : null}
         {datos && !visibles.length ? (
-          <View style={{ alignItems: 'center', paddingTop: 32, gap: 6, marginHorizontal: 24 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>
-              {texto || tramo ? 'Sin resultados' : vista === 'vencidos' ? 'Sin atrasos' : vista === 'limite' ? 'Sin clientes sobre el límite' : 'Sin saldos'}
-            </Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {texto || tramo ? 'Ningún cliente coincide con la búsqueda o el tramo.' : vista === 'vencidos' ? 'Ningún cliente está pasado del plazo.' : vista === 'limite' ? 'Todos deben menos que su crédito aprobado.' : 'Nadie le debe a la distribuidora.'}
-            </Text>
-          </View>
+          <Vacio tono={texto || tramo ? 'neutro' : 'bien'} icono={texto || tramo ? 'Search' : undefined}
+            titulo={texto || tramo ? 'Sin resultados' : vista === 'vencidos' ? 'Sin atrasos' : vista === 'limite' ? 'Sin clientes sobre el límite' : 'Sin saldos'}
+            detalle={texto || tramo ? 'Ningún cliente coincide con la búsqueda o el tramo.' : vista === 'vencidos' ? 'Ningún cliente está pasado del plazo.' : vista === 'limite' ? 'Todos deben menos que su crédito aprobado.' : 'Nadie le debe a la distribuidora.'} />
         ) : null}
       </ScrollView>
     </>

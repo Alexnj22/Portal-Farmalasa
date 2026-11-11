@@ -24,7 +24,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -195,9 +195,9 @@ export default function Mayoristas() {
           </View>
         )}
         ListEmptyComponent={cargando ? null : error ? <ErrorConReintento mensaje={error} onReintentar={() => { setFilas(null); cargar(); }} /> : (
-          <Text style={{ color: colorSistema.texto2, fontSize: 16, textAlign: 'center', marginTop: 40, marginHorizontal: 24 }}>
-            {tab === 'solicitudes' ? 'No hay solicitudes por resolver' : tab === 'historial' ? 'Sin movimientos. Aquí queda cada solicitud, aprobación, cambio de precio y retiro.' : 'Nadie con ese filtro'}
-          </Text>
+          tab === 'solicitudes' ? <Vacio tono="bien" titulo="Todo al día" detalle="No hay solicitudes por resolver." />
+            : tab === 'historial' ? <Vacio titulo="Sin movimientos" detalle="Aquí queda cada solicitud, aprobación, cambio de precio y retiro." />
+              : <Vacio titulo="Nadie con ese filtro" />
         )} />
     </>
   );

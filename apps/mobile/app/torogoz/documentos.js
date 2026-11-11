@@ -28,7 +28,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
@@ -264,14 +264,9 @@ export default function Facturacion() {
           </View>
         ) : null}
         {docs && !visibles.length ? (
-          <View style={{ alignItems: 'center', paddingTop: 32, gap: 6, marginHorizontal: 24 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>
-              {texto || tipo ? 'Sin resultados' : cubeta === 'accion' ? 'Sin pendientes' : 'Sin documentos'}
-            </Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {texto || tipo ? 'Ningún documento coincide con la búsqueda o el filtro.' : cubeta === 'accion' ? 'Todo lo facturado está recibido por Hacienda.' : 'Se crean al facturar un pedido.'}
-            </Text>
-          </View>
+          <Vacio tono={!(texto || tipo) && cubeta === 'accion' ? 'bien' : 'neutro'} icono={texto || tipo ? 'Search' : undefined}
+            titulo={texto || tipo ? 'Sin resultados' : cubeta === 'accion' ? 'Sin pendientes' : 'Sin documentos'}
+            detalle={texto || tipo ? 'Ningún documento coincide con la búsqueda o el filtro.' : cubeta === 'accion' ? 'Todo lo facturado está recibido por Hacienda.' : 'Se crean al facturar un pedido.'} />
         ) : null}
       </ScrollView>
     </>

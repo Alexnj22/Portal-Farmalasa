@@ -5,7 +5,9 @@
 import { useState } from 'react';
 import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
+import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';
+import { iconoDe } from '../../tema/iconos';
 import { colorSistema } from '../Formulario';
 import { FONDO_CONTROL, MARCA } from '../inicio/marca';
 
@@ -16,14 +18,45 @@ export function Cargando() {
   return <ActivityIndicator style={{ marginTop: 32 }} />;
 }
 
-/** Una pantalla o lista sin nada que mostrar. Título (o hijos) y detalle opcional. */
-export function Vacio({ titulo, detalle, children, enSeccion = false }) {
-  // Dentro de una sección o una lista corta: una línea discreta, no un título.
+/**
+ * Una pantalla o lista sin nada que mostrar — LA forma de toda la app
+ * (2026-11-11, usuario: «estandaricemos todas las pantallas en cómo muestran
+ * que todo está al día; que se vean bonitos»). Un ícono grande en un círculo
+ * teñido, el título y el detalle, centrados.
+ *
+ *   tono 'bien'   → al día / nada pendiente: verde, sello de palomita.
+ *   tono 'neutro' → lista vacía o sin resultados: gris, el ícono que se pida
+ *                   (`Search` para una búsqueda sin coincidencias).
+ *   accion        → { texto, onPress }: un botón discreto debajo.
+ *   enSeccion     → dentro de una sección o lista corta: una línea discreta.
+ */
+// Sin `tono` ni `icono`, se deducen del texto: así los ~120 vacíos que ya
+// existían quedaron con la forma nueva sin tocar cada pantalla.
+const AL_DIA = /al d[ií]a|nada pendiente|sin pendientes|todo confirmado|nada que revisar|sin incumplimientos|sin atrasos|sin saltos/i;
+const BUSQUEDA = /b[uú]squeda|coincid|sin resultados|con ese nombre|para «/i;
+const FILTRO = /filtro/i;
+
+export function Vacio({ titulo, detalle, children, enSeccion = false, icono, tono, accion }) {
   if (enSeccion) return <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center', marginTop: 12 }}>{titulo ?? children}</Text>;
+  const texto = typeof (titulo ?? children) === 'string' ? (titulo ?? children) : '';
+  const bien = (tono ?? (AL_DIA.test(texto) ? 'bien' : 'neutro')) === 'bien';
+  const color = bien ? MARCA.verde : colorSistema.texto2;
+  const nombre = icono ?? (bien ? 'AlDia' : BUSQUEDA.test(texto) ? 'Search' : FILTRO.test(texto) ? 'Filtro' : 'Bandeja');
   return (
-    <View style={{ alignItems: 'center', marginTop: 40, gap: 6, paddingHorizontal: 32 }}>
-      <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center' }}>{titulo ?? children}</Text>
-      {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>{detalle}</Text> : null}
+    <View style={{ alignItems: 'center', marginTop: 56, paddingHorizontal: 32, gap: 8 }} accessibilityRole="summary">
+      <View style={{ width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 8,
+        backgroundColor: bien ? `${MARCA.verde}24` : FONDO_CONTROL, borderWidth: 1, borderColor: bien ? `${MARCA.verde}40` : colorSistema.separador }}>
+        <Host matchContents><Icon name={iconoDe(nombre)} size={40} color={color} /></Host>
+      </View>
+      <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{titulo ?? children}</Text>
+      {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 15, lineHeight: 20, textAlign: 'center' }}>{detalle}</Text> : null}
+      {accion ? (
+        <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); accion.onPress?.(); }} accessibilityRole="button" hitSlop={8}
+          style={({ pressed }) => ({ marginTop: 10, minHeight: 44, paddingHorizontal: 20, borderRadius: 22, justifyContent: 'center',
+            backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.6 : 1 })}>
+          <Text style={{ color: colorSistema.acento, fontSize: 16, fontWeight: '600' }}>{accion.texto}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

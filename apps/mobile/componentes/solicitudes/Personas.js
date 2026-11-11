@@ -10,6 +10,7 @@
 //   · un Min/Max no tiene aprobador asignado: lo resuelve quien administre Min/Max;
 //   · ya decidida, `aprobador` es quien de verdad la firmó, con su cara y su hora.
 import { Text, View } from 'react-native';
+import { Host, Icon } from '@expo/ui';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import {
   areaQueDecide, cuandoSeDecidio, cuantoTardo, desdeHace, fmtFechaHora, personasDe, salaQueEspera,
@@ -19,6 +20,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
+import { iconoDe } from '../../tema/iconos';
 
 const TONO = { warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde, card: colorSistema.texto2 };
 
@@ -29,7 +31,13 @@ function Ficha({ rotulo, persona, sala, vacio, cuando, apunte, tono = 'card', pr
     <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 10,
       borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
       {persona && !sala ? <Avatar empleado={persona} tamano={36} />
-        : <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${color}26` }} />}
+        : (
+          // Sin persona (un área, una sala, sin registro): un ícono que dice
+          // qué es, no un círculo vacío que parece una foto que no cargó.
+          <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${color}26`, alignItems: 'center', justifyContent: 'center' }}>
+            <Host matchContents><Icon name={iconoDe(sala ? 'Building2' : 'Users')} size={18} color={color} /></Host>
+          </View>
+        )}
       <View style={{ flex: 1, gap: 2 }}>
         <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text>
         <Text style={{ color: sala || persona ? colorSistema.texto : colorSistema.texto2, fontSize: 16, fontWeight: sala || persona ? '700' : '500',
@@ -70,7 +78,9 @@ export default function PersonasDeSolicitud({ req, empleadosPorId }) {
             : req.type === 'MINMAX_CHANGE_REQUEST' ? 'Quien administre Min/Max'
             : area || 'Sin asignar'}
           cuando={cancelada ? req.updated_at : cerro}
-          apunte={pendiente ? `Esperando ${desdeHace(req.created_at, ahora)}` : cuantoTardo(req.created_at, cancelada ? req.updated_at : cerro)}
+          apunte={pendiente
+            ? [`Esperando ${desdeHace(req.created_at, ahora)}`, area && Number(req.metadata?.aprobadores_n) > 0 ? `${req.metadata.aprobadores_n} personas pueden decidir` : null].filter(Boolean).join(' · ')
+            : cuantoTardo(req.created_at, cancelada ? req.updated_at : cerro)}
           tono={pendiente ? 'warning' : cancelada ? 'card' : rechazada ? 'danger' : 'success'} />
       </View>
     </Vidrio>

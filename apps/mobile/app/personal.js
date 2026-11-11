@@ -46,7 +46,7 @@ import { tablaDelDirectorio } from '@nucleo/utils/directorioCsv';
 import { compartirCsv } from '../componentes/fiscal/csv';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import Vidrio from '../componentes/Vidrio';
@@ -264,11 +264,8 @@ export default function Personal() {
           return <TarjetaPersona emp={f.emp} roles={roles} destacada={f.destacada} conSuperior={f.conSuperior} />;
         }}
         ListEmptyComponent={(
-          <View style={{ alignItems: 'center', paddingTop: 60 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>
-              {texto ? 'Nadie con ese nombre' : vista === 'ausentes' ? 'Hoy están todos' : 'Sin personas'}
-            </Text>
-          </View>
+          <Vacio tono={!texto && vista === 'ausentes' ? 'bien' : 'neutro'} icono={texto ? 'Search' : 'Users'}
+            titulo={texto ? 'Nadie con ese nombre' : vista === 'ausentes' ? 'Hoy están todos' : 'Sin personas'} />
         )}
       />
     </>

@@ -46,11 +46,10 @@ import { Campo } from '../../componentes/formulario/Piezas';
 import { usePorDecidir } from '../../componentes/porDecidir';
 import DetalleDeAviso from '../../componentes/avisos/DetalleDeAviso';
 import PersonasDeSolicitud from '../../componentes/solicitudes/Personas';
-import ExtrasDelDetalle from '../../componentes/solicitudes/ExtrasDelDetalle';
+import ExtrasDelDetalle, { QueSignificaDecidir } from '../../componentes/solicitudes/ExtrasDelDetalle';
 import QueEntra from '../../componentes/solicitudes/QueEntra';
 import { cancelarPropia, decidirConAjustes } from '../../componentes/solicitudes/decidir';
 import { ICONO } from '../../componentes/solicitudes/iconos';
-import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 
@@ -224,13 +223,12 @@ export default function Solicitud() {
 
             <PersonasDeSolicitud req={req} empleadosPorId={porId} />
 
-            <Vidrio radio={20}>
-              <View style={{ padding: 12 }}>
-                <DetalleDeAviso key={vuelta} n={aviso} />
-              </View>
-            </Vidrio>
+            {/* Cada bloque es su propia tarjeta (`suelto`): sin un marco común
+                que quedaba vacío en los tipos sin bloque propio. */}
+            <DetalleDeAviso key={vuelta} n={aviso} suelto />
 
             <ExtrasDelDetalle req={req} />
+            <QueSignificaDecidir req={req} />
 
             {editable ? (
               <QueEntra esAbono={abono} lineas={lineas} seleccion={vigente.seleccion} cantidades={vigente.cantidades}

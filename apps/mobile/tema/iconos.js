@@ -84,6 +84,9 @@ export const ICONOS = {
   ScanLine: i('barcode.viewfinder', require('@expo/material-symbols/barcode_scanner.xml')),
   Check: i('checkmark', require('@expo/material-symbols/check.xml')),
   CheckCircle2: i('checkmark.circle', require('@expo/material-symbols/check_circle.xml')),
+  // Los estados vacíos (`Vacio` de componentes/formulario/Piezas.js, 2026-11-11).
+  AlDia: i('checkmark.seal.fill', require('@expo/material-symbols/task_alt.xml')),
+  Bandeja: i('tray', require('@expo/material-symbols/inbox.xml')),
   Image: i('photo', require('@expo/material-symbols/image.xml')),
   ImagePlus: i('photo.badge.plus', require('@expo/material-symbols/add_photo_alternate.xml')),
   ImageOff: i('photo.badge.exclamationmark', require('@expo/material-symbols/hide_image.xml')),

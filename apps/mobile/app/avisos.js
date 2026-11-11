@@ -48,6 +48,7 @@ import Tocable from '../componentes/Tocable';
 import { MARCA } from '../componentes/inicio/marca';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
+import { Vacio } from '../componentes/formulario/Piezas';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -273,10 +274,7 @@ export default function Notificaciones() {
             bandeja y queda en el historial, como cualquier aviso leído. */}
 
         {vacio ? (
-          <View style={{ alignItems: 'center', paddingTop: 80, gap: 6, paddingHorizontal: 32 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Todo al día</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>No tienes nada por decidir ni avisos sin leer.</Text>
-          </View>
+          <Vacio tono="bien" titulo="Todo al día" detalle="No tienes nada por decidir ni notificaciones sin leer." />
         ) : null}
       </ScrollView>
 

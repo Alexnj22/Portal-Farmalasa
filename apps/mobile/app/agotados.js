@@ -22,7 +22,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
@@ -127,9 +127,9 @@ export default function Agotados() {
           </View>
         )}
         ListEmptyComponent={resp == null || resp.error ? null : (
-          <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 24, marginHorizontal: 24 }}>
-            {texto.trim() || estado !== 'todos' || conMinMax !== 'si' ? 'Nada coincide con el filtro.' : `Sin agotados con venta reciente en ${ERP_NAMES[erp]}.`}
-          </Text>
+          texto.trim() || estado !== 'todos' || conMinMax !== 'si'
+            ? <Vacio icono={texto.trim() ? 'Search' : 'Filtro'} titulo="Nada coincide con el filtro" />
+            : <Vacio tono="bien" titulo="Sin agotados" detalle={`Ningún producto con venta reciente está agotado en ${ERP_NAMES[erp]}.`} />
         )} />
     </>
   );

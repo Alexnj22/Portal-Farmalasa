@@ -14,7 +14,7 @@
 // por `adaptarMinMax`, el mismo adaptador del centro de solicitudes. Este
 // componente se monta al abrir y se desmonta al cerrar: no viaja por cada
 // fila de la lista.
-import { useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Image, Modal, Pressable, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
@@ -34,6 +34,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Avatar from '../Avatar';
+import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { Advertencia, FONDO, Fichas, Pildora, Rotulo } from './Piezas';
@@ -48,10 +49,25 @@ const SIGNO_POR_TIPO = { INVENTORY_LOAD_REQUEST: '+', INVENTORY_DISCARD_REQUEST:
 // ── Piezas ───────────────────────────────────────────────────────────────────
 
 /** Un bloque con fondo, rótulo opcional y su contenido. */
+// `suelto` (la pantalla de la solicitud): cada caja es su propia tarjeta de
+// vidrio, como las de `ExtrasDelDetalle`. Antes la pantalla envolvía todo el
+// detalle en UN vidrio, y en los tipos que no traen bloque propio (un
+// movimiento sin comprobante) quedaba un recuadro vacío (usuario, 2026-11-11).
+const Suelto = createContext(false);
+
 function Caja({ rotulo, color, children, tinte }) {
+  const suelto = useContext(Suelto);
+  const rot = rotulo ? <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text> : null;
+  if (suelto) {
+    return (
+      <Vidrio radio={20} tinte={tinte ? `${tinte}1A` : undefined}>
+        <View style={{ padding: 14, gap: 4 }}>{rot}{children}</View>
+      </Vidrio>
+    );
+  }
   return (
     <View style={{ borderRadius: 14, backgroundColor: tinte ? `${tinte}1F` : FONDO, paddingHorizontal: 12, paddingVertical: 9, gap: 4 }}>
-      {rotulo ? <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text> : null}
+      {rot}
       {children}
     </View>
   );
@@ -649,7 +665,7 @@ function BloqueRecibido({ req, recibido, despachado, porId }) {
 
 // ── El detalle ───────────────────────────────────────────────────────────────
 
-export default function DetalleDeAviso({ n }) {
+export default function DetalleDeAviso({ n, suelto = false }) {
   const empleados = useStaffStore((s) => s.employees);
   const personasDeSolicitudes = useStaffStore((s) => s.personasDeSolicitudes);
   const resolverPersonas = useStaffStore((s) => s.resolverPersonasDeSolicitudes);
@@ -704,7 +720,8 @@ export default function DetalleDeAviso({ n }) {
   const isRejected = req.status === 'REJECTED';
 
   return (
-    <View style={{ gap: 8 }}>
+    <Suelto.Provider value={suelto}>
+    <View style={{ gap: suelto ? 14 : 8 }}>
       <BloquePorTipo req={req} meta={meta} empleados={empleados} />
       <BloqueAplicado req={req} aplicado={meta.erp_aplicado ?? meta.erp_traslado} porId={porId} />
       <BloqueRecibido req={req} recibido={meta.erp_recibido} despachado={meta.erp_traslado} porId={porId} />
@@ -737,5 +754,6 @@ export default function DetalleDeAviso({ n }) {
         </Caja>
       ) : null}
     </View>
+    </Suelto.Provider>
   );
 }

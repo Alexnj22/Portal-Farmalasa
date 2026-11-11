@@ -29,7 +29,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande } from '../componentes/formulario/Piezas';
+import { BotonGrande, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -194,12 +194,9 @@ export default function Comunicados() {
         )}
         renderItem={({ item }) => <Tarjeta a={item} userId={user?.id} onLeer={leer} />}
         ListEmptyComponent={(
-          <View style={{ alignItems: 'center', marginTop: 28, gap: 6, paddingHorizontal: 32 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700' }}>{pestana === 'UNREAD' && !texto.trim() ? '¡Todo al día!' : 'Nada por aquí'}</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 15, textAlign: 'center' }}>
-              {pestana === 'UNREAD' && !texto.trim() ? 'Leíste todos tus avisos. Nada se te escapa.' : texto.trim() ? 'Ningún aviso con ese texto.' : 'No hay avisos leídos este mes.'}
-            </Text>
-          </View>
+          <Vacio tono={pestana === 'UNREAD' && !texto.trim() ? 'bien' : 'neutro'} icono={texto.trim() ? 'Search' : undefined}
+            titulo={pestana === 'UNREAD' && !texto.trim() ? 'Todo al día' : texto.trim() ? 'Sin resultados' : 'Nada por aquí'}
+            detalle={pestana === 'UNREAD' && !texto.trim() ? 'Leíste todos tus avisos.' : texto.trim() ? 'Ningún aviso con ese texto.' : 'No hay avisos leídos este mes.'} />
         )}
         ListFooterComponent={(
           <View style={{ gap: 12, marginTop: 12 }}>

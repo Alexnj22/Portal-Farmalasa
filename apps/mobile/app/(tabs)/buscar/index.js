@@ -33,6 +33,7 @@ import Vidrio from '../../../componentes/Vidrio';
 import { useTema } from '../../../tema/tema';
 import { iconoDe } from '../../../tema/iconos';
 import { abrirModulo, abrirRuta, abrirSolicitud } from '../../../pantallas';
+import { Vacio } from '../../../componentes/formulario/Piezas';
 
 const POR_GRUPO = 5;
 
@@ -189,10 +190,7 @@ export default function Buscar() {
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30 }}>Escribe al menos {MIN_LETRAS_BUSQUEDA} letras.</Text>
         ) : null}
         {nada ? (
-          <View style={{ alignItems: 'center', paddingTop: 50, gap: 6 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Sin resultados para «{q}»</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Revisa la ortografía o prueba otra palabra.</Text>
-          </View>
+          <Vacio icono="Search" titulo={`Sin resultados para «${q}»`} detalle="Revisa la ortografía o prueba otra palabra." />
         ) : null}
       </ScrollView>
     </>

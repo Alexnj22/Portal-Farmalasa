@@ -54,6 +54,7 @@ import PasoDeSemana from '../componentes/solicitudes/PasoDeSemana';
 import { ICONO } from '../componentes/solicitudes/iconos';
 import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
+import { Vacio } from '../componentes/formulario/Piezas';
 
 /* Qué se le pide a la base. El portal lo pide por ámbito; acá los dos ámbitos
  * van en una sola lista, así que se pide lo más ancho que alguno de los dos
@@ -355,11 +356,15 @@ export default function Solicitudes() {
           <View style={{ paddingTop: 12, gap: 12, paddingBottom: 6 }}>
             {estado !== 'PENDING' ? <PasoDeSemana semana={semana} onCambiar={setSemana} /> : null}
             <FiltrosActivos grupos={grupos} />
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
-              {estado === 'PENDING'
-                ? (pendientes ? `${pendientes} pendiente${pendientes === 1 ? '' : 's'} — se ven todas, sean de la semana que sean` : 'Nada pendiente')
-                : `${results.length} solicitud${results.length === 1 ? '' : 'es'}${estado === 'ALL' && pendientes ? ` · ${pendientes} pendiente${pendientes === 1 ? '' : 's'} de cualquier semana` : ''}`}
-            </Text>
+            {/* Vacío, el conteo no dice nada que no diga ya el `Vacio` de abajo
+                (usuario, 2026-11-11: «dice nada pendiente, y abajo lo otro»). */}
+            {vacio ? null : (
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
+                {estado === 'PENDING'
+                  ? `${pendientes} pendiente${pendientes === 1 ? '' : 's'} — se ven todas, sean de la semana que sean`
+                  : `${results.length} solicitud${results.length === 1 ? '' : 'es'}${estado === 'ALL' && pendientes ? ` · ${pendientes} pendiente${pendientes === 1 ? '' : 's'} de cualquier semana` : ''}`}
+              </Text>
+            )}
             {isFuzzy && busqueda.trim() ? (
               <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '600', marginHorizontal: 20 }}>{`Resultados parecidos a «${busqueda.trim()}»: no hubo coincidencias exactas.`}</Text>
             ) : null}
@@ -386,15 +391,11 @@ export default function Solicitudes() {
           <Tarjeta r={r} detalle={detalleDe(r)} teToca={teToca(r)} porId={porId} ahora={ahora} onAbrir={() => abrirSolicitud(r.id)} />
         )}
         ListEmptyComponent={vacio ? (
-          <View style={{ alignItems: 'center', paddingTop: 60, gap: 6, paddingHorizontal: 32 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>
-              {busqueda ? 'Sin resultados' : estado === 'PENDING' ? 'Todo al día' : 'Sin solicitudes'}
-            </Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {busqueda ? 'Prueba con otro nombre o producto.'
-                : estado === 'PENDING' ? 'No hay solicitudes pendientes de revisión.' : 'Nada en esta semana. Usa las flechas para mirar otra.'}
-            </Text>
-          </View>
+          <Vacio tono={!busqueda && estado === 'PENDING' ? 'bien' : 'neutro'}
+            icono={busqueda ? 'Search' : estado === 'PENDING' ? undefined : 'ClipboardList'}
+            titulo={busqueda ? 'Sin resultados' : estado === 'PENDING' ? 'Todo al día' : 'Sin solicitudes'}
+            detalle={busqueda ? 'Prueba con otro nombre o producto.'
+              : estado === 'PENDING' ? 'No hay solicitudes pendientes de revisión.' : 'Nada en esta semana. Usa las flechas para mirar otra.'} />
         ) : null}
       />
     </>

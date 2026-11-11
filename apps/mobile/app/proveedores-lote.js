@@ -14,7 +14,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Vacio } from '../componentes/formulario/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -114,7 +114,7 @@ export default function ProveedoresEnLote() {
             {filas == null ? <ActivityIndicator /> : null}
           </View>
         )}
-        ListEmptyComponent={filas == null ? null : <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24, fontSize: 15 }}>Ningún proveedor con este filtro.</Text>} />
+        ListEmptyComponent={filas == null ? null : <Vacio icono="Filtro" titulo="Ningún proveedor con este filtro" />} />
       {puede && sel.size ? (
         <View style={{ position: 'absolute', left: 16, right: 16, bottom: 16 + margen.bottom, flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}><BotonGrande texto={`Asignar (${sel.size})`} color={MARCA.azul} onPress={asignar} /></View>

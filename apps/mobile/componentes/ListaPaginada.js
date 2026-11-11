@@ -122,7 +122,7 @@ export default function ListaPaginada({
       ListHeaderComponent={cabecera}
       ListEmptyComponent={estado === 'cargando' ? <Cargando />
         : estado === 'error' ? <ErrorConReintento mensaje={error} onReintentar={() => { setEstado('cargando'); desdeCero(); }} />
-          : <Text style={{ color: colorSistema.texto2, fontSize: 16, textAlign: 'center', marginTop: 40, marginHorizontal: 24 }}>{vacio}</Text>}
+          : <Vacio>{vacio}</Vacio>}
       ListFooterComponent={pie}
       ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
       contentContainerStyle={{ paddingTop: 12 }}

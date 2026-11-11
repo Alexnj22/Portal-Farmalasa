@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1511.0 — App: vacíos con ícono en toda la app y la solicitud ordenada
+
+Dos pedidos del usuario con capturas.
+
+- **«Estandaricemos cómo se muestra que todo está al día; que se vean bonitos».** El `Vacio` canónico (`componentes/formulario/Piezas.js`) ahora lleva un ícono grande en un círculo teñido, título y detalle centrados. Tono `bien` (verde, sello de palomita) para «al día / nada pendiente»; `neutro` con lupa, filtro o bandeja para lo demás. Sin `tono` ni `icono` se deducen del texto, así que los ~120 usos que ya había tomaron la forma nueva. Los vacíos escritos a mano en 13 pantallas (Mis avisos, Notificaciones, Solicitudes, Mayoristas, Personal, Chat, Agotados, Mín·Máx de sala, Proveedores, Torogoz cobros y documentos, Buscar, y `ListaPaginada`) pasaron a `Vacio`. En Solicitudes ya no sale el rótulo «Nada pendiente» encima del vacío.
+- **El detalle de una solicitud: «datos completos, no sé por qué sale una vacía, todo bien organizado».** El recuadro vacío era el marco común del detalle, que en un movimiento sin comprobante no trae bloque propio. Ahora `DetalleDeAviso` acepta `suelto` y cada bloque es su propia tarjeta. El movimiento sin comprobante muestra el monto grande con su signo y, renglón por renglón, tipo, detalle, sala, forma de pago, fecha y comprobante. El motivo se rotula «Por qué no hay comprobante» y la explicación de qué significa decidir va justo antes de los botones. «Pendiente de» un área lleva un ícono en vez del círculo vacío y dice cuántas personas pueden decidir. Va por aire.
+
 ## v2.1510.6 — App de clientes: deslizar para volver también con un filtro en la Tienda
 
 Con un filtro puesto en la Tienda (laboratorio, necesidad o búsqueda), deslizar desde el borde no hacía nada: la Tienda es la raíz de su pestaña, el filtro es un estado y no una pantalla, y no había a dónde volver. `componentes/VolverConGesto.js` escucha el deslizar desde el borde izquierdo (y el «atrás» de Android) mientras hay filtro, y vuelve a la tienda igual que el botón.

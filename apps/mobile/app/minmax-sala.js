@@ -47,7 +47,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -517,7 +517,7 @@ export default function MinMaxSala() {
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={20} windowSize={9}
           contentContainerStyle={{ paddingBottom: 48 }}
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
-          ListEmptyComponent={<Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30, fontSize: 15 }}>Ningún producto con este filtro.</Text>}
+          ListEmptyComponent={<Vacio icono="Filtro" titulo="Ningún producto con este filtro" />}
           renderItem={({ item: r }) => (
             <Fila r={r} esBodega={esBodega}
               onAbrir={() => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/minmax-producto', params: { producto: String(r.erp_product_id), nombre: r.product_name } }); }}

@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.12 — Inyecciones por número de control del ticket · Ventas y Facturación de su sala
+
+### Inyecciones: buscar la venta de otra sucursal por el número de control del ticket
+
+- Reclamo del usuario: un ticket de otra sucursal no aparecía en Aplicación de inyección. El ticket impreso trae el número de control (`DTE-01-S003P001-…47959`) y el buscador lo comparaba con el correlativo interno (93759 en ese caso): son contadores distintos, así que traía otras ventas o nada.
+- `inyeccion_venta_por_comprobante` acepta el número de control completo o sólo su número final, además del correlativo, el código de generación y el nombre.
+- El número de control de las ventas con inyección se trae solo: `sync-numero-control` acepta `alcance` (`inyecciones` = últimos 3 días, `inyecciones_90` = relleno de la ventana del buscador) y el cron nuevo `sync-numero-control-inyecciones` corre cada 10 min en horario de sala. Relleno de los 90 días hecho a mano.
+- Índice `idx_si_numero_control_num` (creado con CONCURRENTLY). La consulta de pendientes por inyección bajó de 6 s a 57 ms (la regex corría sobre los 700,000 renglones).
+- Pantalla (portal y app): el texto pide el número de control del ticket, cada venta encontrada muestra «Ticket 47959» en lugar del correlativo, y «DTE-01-…» ya no se confunde con un nombre.
+
+### Ventas y Facturación de su sala para cargos de sala y regencia
+
+- Pedido del usuario: las pestañas de Ventas y Facturación, y las vistas completas de meta de sala y Vendedores, pasan de «toda la red» a «su sucursal» para Dependiente, Regente de Enfermería, Jefe/a y Subjefe/a de Sala, Regente y Referente de Farmacovigilancia (64 permisos). El módulo Ventas de esos cargos ya era de su sala.
+- El historial de Pedidos también pasa a «su sucursal» para los cargos de sala; Bodega y la administración siguen viendo todas.
+
 ## v2.1501.11 — Avisos a quien le tocan: pedidos, antibióticos, sistema, chat y marketing
 
 - Pedido del usuario, sobre lo que le llegaba a la administración:

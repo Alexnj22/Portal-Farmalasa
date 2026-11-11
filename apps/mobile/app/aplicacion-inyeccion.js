@@ -40,6 +40,16 @@ import { comprobanteDelMovimiento } from '../componentes/cortes/papel';
 
 const MODOS = [{ id: 'COMPRADA', label: 'Compró aquí' }, { id: 'OTRA', label: 'Otra sucursal' }, { id: 'TRAIDA', label: 'La trajo' }, { id: 'CANJEAR', label: 'Ya la pagó' }];
 const factura = (c) => String(c || '').replace(/^0+/, '');
+/* El número que trae el TICKET es el final del número de control
+ * (DTE-01-S003P001-000000000047959 → 47959), no el correlativo interno: son
+ * contadores distintos (2026-11-10). Si la venta ya lo tiene, se muestra ése,
+ * que es el que la persona tiene en la mano. */
+const numeroDeTicket = (v) => {
+  const control = String(v?.numero_control || '').split('-')[3];
+  return control ? `Ticket ${control.replace(/^0+/, '')}` : `Factura ${factura(v?.correlativo)}`;
+};
+/* «DTE-01-…» trae letras pero es un número de control, no un nombre. */
+const esNombre = (t) => !/^\s*DTE-/i.test(t) && /[a-zñáéíóú]/i.test(t);
 
 function Contador({ etiqueta, valor, min = 0, max = 99, onCambiar }) {
   const b = (t, n, off) => (
@@ -65,7 +75,7 @@ function Venta({ v, activa, onElegir }) {
         <View style={{ padding: 12, gap: 4, opacity: agotada ? 0.5 : 1 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{v.cliente || 'Sin nombre'}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
-            {[`${fechaNumerica(v.fecha, { anio: false })} · ${hora12(v.hora)}`, v.sala && !v.propia ? v.sala : null, `Factura ${factura(v.correlativo)}`, v.vendedor_nombre ? shortEmployeeName({ name: v.vendedor_nombre }) : null].filter(Boolean).join(' · ')}
+            {[`${fechaNumerica(v.fecha, { anio: false })} · ${hora12(v.hora)}`, v.sala && !v.propia ? v.sala : null, numeroDeTicket(v), v.vendedor_nombre ? shortEmployeeName({ name: v.vendedor_nombre }) : null].filter(Boolean).join(' · ')}
           </Text>
           {(v.renglones || []).map((r) => (
             <Text key={r.linea_num} style={{ color: colorSistema.texto2, fontSize: 13 }}>
@@ -264,19 +274,19 @@ export default function AplicacionInyeccion() {
                 </>
               ) : (
                 <>
-                  <Aviso texto="Escribe el número de comprobante del ticket o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal." />
+                  <Aviso texto="Escribe el número de control del ticket (el final, por ejemplo 47959) o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal." />
                   <Campo multiline={false} value={comprobante} maxLength={60} autoCapitalize="words" returnKeyType="search"
                     onChangeText={(v) => { setComprobante(v); setEncontradas(null); }} onSubmitEditing={() => { if (comprobante.trim()) buscarComp(); }}
-                    placeholder="88134 o María López" accessibilityLabel="Comprobante o nombre del cliente" />
+                    placeholder="47959 o María López" accessibilityLabel="Número de control o nombre del cliente" />
                   <BotonGrande texto="Buscar" borde deshabilitado={!comprobante.trim()} onPress={buscarComp} />
                   {encontradas && !encontradas.length ? (
-                    <Aviso texto={/[a-zñáéíóú]/i.test(comprobante)
+                    <Aviso texto={esNombre(comprobante)
                       ? 'Ningún cliente con ese nombre tiene una venta con inyección en los últimos 90 días. Revisa cómo se escribió.'
-                      : 'No hay una venta con ese comprobante en los últimos 90 días. Revisa el número del ticket.'} />
+                      : 'No hay una venta con ese número en los últimos 90 días. Revisa el número de control del ticket; una venta de hoy puede tardar unos minutos en aparecer.'} />
                   ) : null}
                   {(encontradas || []).map((v) => (v.estado === 'ok'
                     ? <Venta key={v.id} v={v} activa={false} onElegir={() => elegirVenta(v, true)} />
-                    : <Aviso key={v.id ?? v.correlativo} tono="cuidado" texto={`Factura ${factura(v.correlativo)} · ${v.sala}${v.cliente ? ` · ${v.cliente}` : ''}: ${v.estado === 'sin_inyeccion' ? 'esa venta no tiene inyecciones.' : v.estado === 'pagada' ? 'ya tiene todas sus aplicaciones pagadas.' : 'esa venta está anulada.'}`} />))}
+                    : <Aviso key={v.id ?? v.correlativo} tono="cuidado" texto={`${numeroDeTicket(v)} · ${v.sala}${v.cliente ? ` · ${v.cliente}` : ''}: ${v.estado === 'sin_inyeccion' ? 'esa venta no tiene inyecciones.' : v.estado === 'pagada' ? 'ya tiene todas sus aplicaciones pagadas.' : 'esa venta está anulada.'}`} />))}
                 </>
               )
             ) : null}

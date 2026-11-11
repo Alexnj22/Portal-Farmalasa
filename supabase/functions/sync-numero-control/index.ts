@@ -112,13 +112,19 @@ Deno.serve(async (req) => {
     const maxMs        = Math.min(Number(body.maxMs) || MAX_MS_DEFAULT, 140_000);
     const concurrencia = Math.min(Math.max(Number(body.concurrencia) || CONCURRENCIA_DEFAULT, 1), 12);
     const alertar      = body.alertar !== false;
+    // 'libros' (el cron diario), 'inyecciones' (las ventas con inyección de los
+    // últimos 3 días, cron cada 10 min) o 'inyecciones_90' (la ventana entera del
+    // buscador, para rellenar a mano). Para que la caja encuentre la venta por el
+    // número de control del ticket (2026-11-10). Qué entra lo decide la base.
+    const ALCANCES     = ['libros', 'inyecciones', 'inyecciones_90'];
+    const alcance      = ALCANCES.includes(body.alcance) ? body.alcance : 'libros';
 
     let traidos = 0, fallidos = 0, rondas = 0;
     const motivos: Record<string, number> = {};
 
     while (Date.now() - t0 < maxMs) {
       const { data: docs, error: errDocs } = await supabase
-        .rpc('get_docs_sin_numero_control', { p_limit: porRonda });
+        .rpc('get_docs_sin_numero_control', { p_limit: porRonda, p_alcance: alcance });
 
       // Un select que falla en silencio deja el lote vacío y la función
       // reportaría "listo, no queda nada" con el trabajo sin hacer.
@@ -158,7 +164,7 @@ Deno.serve(async (req) => {
     // trunca en 1000 sin avisar — con 7000 pendientes reportaría 1000 y el
     // bucle del backfill no sabría nunca si terminó.
     const { data: restantes, error: errCount } =
-      await supabase.rpc('count_docs_sin_numero_control');
+      await supabase.rpc('count_docs_sin_numero_control', { p_alcance: alcance });
     if (errCount) throw new Error(`count_docs_sin_numero_control: ${errCount.message}`);
 
     // Avisar cuando falla, en vez de devolver 200 y dejar un libro incompleto

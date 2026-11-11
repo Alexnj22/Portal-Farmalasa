@@ -773,7 +773,7 @@ export const AREAS = [
                // escribe el correo en la ficha de origen y retransmite el DTE.
                'responder-dato-pedido'],
         crons: ['regularizar-dte-2230-sv', 'reenviar-ccf-10min', 'sincronizar-fichas-clientes-2130-sv', 'drain-cliente-erp-queue',
-                'ccf-repaso-22h-sv', 'alerta-barrido-dte-8am-sv', 'sync-numero-control-daily',
+                'ccf-repaso-22h-sv', 'alerta-barrido-dte-8am-sv', 'sync-numero-control-daily', 'sync-numero-control-inyecciones',
                 'refresh-customer-activity-daily', 'avisar-rechazos-mh-8am-sv', 'avisar-ventas-sin-sello-8am-sv',
                 // Vigila que las ventas reconozcan al cliente y que no queden
                 // puntos partidos entre dos fichas (2026-11-05).

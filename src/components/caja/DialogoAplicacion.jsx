@@ -93,6 +93,16 @@ const fechaCorta = (f) => fechaNumerica(f, { anio: false });
  * ventas con inyección) no sirve para reclamar una pendiente — lo decide
  * `esClienteGenerico` del núcleo, dentro de `seleccionDeVenta`. */
 const factura = (c) => String(c || '').replace(/^0+/, '');
+/* El número que trae el TICKET es el final del número de control
+ * (DTE-01-S003P001-000000000047959 → 47959), no el correlativo interno: son
+ * contadores distintos (2026-11-10). Si la venta ya lo tiene, se muestra ése,
+ * que es el que la persona tiene en la mano. */
+const numeroDeTicket = (v) => {
+    const control = String(v?.numero_control || '').split('-')[3];
+    return control ? `Ticket ${control.replace(/^0+/, '')}` : `Factura ${factura(v?.correlativo)}`;
+};
+/* «DTE-01-…» trae letras pero es un número de control, no un nombre. */
+const esNombre = (t) => !/^\s*DTE-/i.test(t) && /[a-zñáéíóú]/i.test(t);
 
 /**
  * El lote y el vencimiento de la ampolla, escritos mirándola (PENDIENTES 20).
@@ -369,7 +379,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                     <p className="text-caption font-bold text-content-2">Comprada en {v.sala}</p>
                                                 )}
                                                 <p className="text-caption text-content-3 flex items-center gap-1.5 flex-wrap">
-                                                    <span>Factura {factura(v.correlativo)} ·</span>
+                                                    <span>{numeroDeTicket(v)} ·</span>
                                                     {v.vendedor_nombre ? (
                                                         <span className="inline-flex items-center gap-1.5">
                                                             <AvatarConEstado emp={{ id: v.vendedor_id, name: v.vendedor_nombre }} px={20} marco="" />
@@ -460,16 +470,16 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                         </>) : (
                         <div className="space-y-2">
                             <p className="text-body-sm text-content-2">
-                                Escribe el número de comprobante del ticket o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal.
+                                Escribe el número de control del ticket (el final, por ejemplo 47959) o, si no lo trae, el nombre del cliente. Sólo así aparece una venta de otra sucursal.
                             </p>
                                 <>
                                     <div className="flex items-end gap-2">
                                         <div className="flex-1">
-                                            <PortalInput label="Comprobante o nombre del cliente" name="comprobante_inyeccion"
+                                            <PortalInput label="Número de control o nombre del cliente" name="comprobante_inyeccion"
                                                 value={comprobante} maxLength={60}
                                                 onChange={(e) => { setComprobante(e.target.value); setEncontradas(null); }}
                                                 onKeyDown={(e) => { if (e.key === 'Enter') buscarComprobante(); }}
-                                                placeholder="88134 o María López" />
+                                                placeholder="47959 o María López" />
                                         </div>
                                         <Button variant="secondary" loading={buscandoComp} disabled={!comprobante.trim()}
                                             onClick={buscarComprobante}>
@@ -478,9 +488,9 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                     </div>
                                     {encontradas && encontradas.length === 0 && (
                                         <p className="text-body-sm text-content-3">
-                                            {/[a-zñáéíóú]/i.test(comprobante)
+                                            {esNombre(comprobante)
                                                 ? 'Ningún cliente con ese nombre tiene una venta con inyección en los últimos 90 días. Revisa cómo se escribió.'
-                                                : 'No hay una venta con ese comprobante en los últimos 90 días. Revisa el número del ticket.'}
+                                                : 'No hay una venta con ese número en los últimos 90 días. Revisa el número de control del ticket; una venta de hoy puede tardar unos minutos en aparecer.'}
                                         </p>
                                     )}
                                     {encontradas && encontradas.length > 0 && (
@@ -493,7 +503,7 @@ export default function DialogoAplicacion({ abierto, ocupado, sala, onClose, onC
                                                 : (
                                                     <li key={v.id} data-surface="card" className="rounded-xl p-3 ring-1 ring-border-card opacity-70">
                                                         <p className="text-body-sm font-bold text-content">
-                                                            Factura {factura(v.correlativo)} · {v.sala}{v.cliente ? ` · ${v.cliente}` : ''}
+                                                            {numeroDeTicket(v)} · {v.sala}{v.cliente ? ` · ${v.cliente}` : ''}
                                                         </p>
                                                         <p className="text-caption text-content-2">
                                                             {v.estado === 'sin_inyeccion' ? 'Esa venta no tiene inyecciones: no corresponde a una aplicación.'

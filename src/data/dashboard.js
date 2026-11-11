@@ -56,8 +56,14 @@ export function upsertUserTheme(userId, theme, columna) {
         .upsert({ user_id: userId, [columna]: theme }, { onConflict: 'user_id' });
 }
 
-export function fetchSalesBranchIdsSince(sinceDateStr) {
-    return supabase.from('branch_hourly_sales').select('branch_id').gte('sale_date', sinceDateStr);
+// Las salas que vendieron desde una fecha. Antes bajaba las filas de la vista
+// (una por sala·día·hora, ~565 en 7 días y acercándose al techo de 1000) para
+// quedarse con 7 números; ahora la base devuelve sólo los números
+// (`salas_con_venta_desde`, INVOKER: el RLS decide igual). Misma forma de
+// respuesta que antes: `{ data: [{ branch_id }], error }`.
+export async function fetchSalesBranchIdsSince(sinceDateStr) {
+    const { data, error } = await supabase.rpc('salas_con_venta_desde', { p_desde: sinceDateStr });
+    return { data: error ? null : (data || []).map((branch_id) => ({ branch_id })), error };
 }
 
 // Los traslados NO son «solicitudes» del widget: tienen su baldosa y su
@@ -69,12 +75,13 @@ export const NO_SON_SOLICITUDES = ['INVENTORY_TRANSFER_REQUEST', 'INVENTORY_TRAN
 // Tope de la LISTA, no del conteo: el número sale de `contarSolicitudesPendientes`.
 // Con `.limit(8)` el tablero decía 8 teniendo 12, y el filtro por sala se
 // aplicaba DESPUÉS del tope — «los de mi sala entre los 8 más nuevos».
+export const TOPE_SOLICITUDES_PENDIENTES = 100;
 export function fetchPendingApprovalRequests() {
     return supabase.from('approval_requests')
         .select('id, type, employee_id, metadata, created_at')
         .eq('status', 'PENDING')
         .not('type', 'in', `(${NO_SON_SOLICITUDES.join(',')})`)
-        .order('created_at', { ascending: false }).limit(100);
+        .order('created_at', { ascending: false }).limit(TOPE_SOLICITUDES_PENDIENTES);
 }
 
 /**
@@ -162,13 +169,20 @@ export function fetchTodayHourlySales(dateStr) {
  * La usan también los dos «Monitor de ventas» (portal y app), que con «1 año»
  * leen ~4,700 filas: el `.limit(10000)` que tenían no pasaba de 1000.
  */
+//
+// 2026-11-10: de páginas a UNA lectura (`ventas_por_hora_de_sala`, patrón C:
+// devuelve json, sin techo de 1000). La vista agrupa las facturas y PostgREST
+// pagina SOBRE ella, así que cada página volvía a agrupar todo: 90 días eran
+// dos agrupaciones completas y un año, seis. Mismas filas, columnas y orden.
 export async function fetchBranchHourlySalesRange(branchId, sinceDateStr) {
-    const data = await fetchAllRows(() => supabase.from('branch_hourly_sales')
-        .select('sale_hour, transaction_count, total_sales, sale_date')
-        .eq('branch_id', branchId).gte('sale_date', sinceDateStr)
-        .order('sale_date', { ascending: true })
-        .order('sale_hour', { ascending: true }));
-    return data === null ? { data: [], error: new Error('No se pudieron leer las ventas por hora.') } : { data, error: null };
+    const { data, error } = await supabase.rpc('ventas_por_hora_de_sala', {
+        p_branch_id: Number(branchId), p_desde: sinceDateStr,
+    });
+    if (error) {
+        console.error('dashboard: ventas_por_hora_de_sala failed:', error.message);
+        return { data: [], error: new Error('No se pudieron leer las ventas por hora.') };
+    }
+    return { data: /** @type {any[]} */ (data || []), error: null };
 }
 
 /**

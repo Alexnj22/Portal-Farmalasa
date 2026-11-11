@@ -38760,6 +38760,7 @@ export type Database = {
         Args: { p_branch: number; p_momento?: string }
         Returns: boolean
       }
+      salas_con_venta_desde: { Args: { p_desde: string }; Returns: number[] }
       salas_con_caja_de_impresion: {
         Args: never
         Returns: {
@@ -39259,6 +39260,10 @@ export type Database = {
           p_reevaluar?: boolean
           p_tope?: number
         }
+        Returns: Json
+      }
+      ventas_por_hora_de_sala: {
+        Args: { p_branch_id: number; p_desde: string }
         Returns: Json
       }
       ventas_por_mes_de_producto: {

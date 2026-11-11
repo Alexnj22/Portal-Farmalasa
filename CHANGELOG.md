@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.16 — El Inicio pide menos y la base revisa permisos más rápido
+
+- **Ventas por hora en una lectura** (`20261111033434`): «qué salas vendieron en 7 días» bajaba ~565 filas de `branch_hourly_sales` para quedarse con 7 números (y se acercaba al techo de 1000); ahora `salas_con_venta_desde` devuelve los números. El historial de 90 días de una sala iba en páginas, y cada página volvía a agrupar las facturas: `ventas_por_hora_de_sala` (json, una ejecución) lo trae de una vez — también el Monitor de ventas, que con un año eran seis agrupaciones. Las dos son INVOKER (el RLS decide igual). Verificado en producción como usuario de sala: 1,208 filas, contenido idéntico.
+- **Conteo de solicitudes**: el Inicio pedía la lista de pendientes y además un conteo aparte. Si la lista no llega a su tope (100), su largo ya es el número exacto: el conteo sólo se pide con la lista llena.
+- **`auth_yo` busca el apoyo vigente una vez y no tres** (`20261111033613`): corre en cada pedido al portal; de 3,1 a 1,1 ms. Huella de identidad y permisos de los 150 usuarios idéntica antes y después; 0 diferencias en 135 casos día·empleado con y sin apoyo.
+- Inicio medido en pruebas: 58 → 56 pedidos, y la agrupación de 90 días se hace una vez en vez de dos.
+
 ## v2.1501.15 — Regencia: un químico farmacéutico en varias salas, con sus horas
 
 - Pedido del usuario (auditoría de sucursales): un regente cubre varias salas (uno tiene 4 y otro 2), y la Guía del Regente de la SRS lo permite mientras los horarios no choquen.

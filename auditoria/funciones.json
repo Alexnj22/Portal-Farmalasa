@@ -5746,6 +5746,10 @@
    "area": "acceso",
    "por": "código"
   },
+  "salas_con_venta_desde": {
+   "area": "tablero",
+   "por": "código"
+  },
   "salas_que_cubre_ahora": {
    "area": "traslados",
    "por": "código"
@@ -6213,6 +6217,10 @@
   "ventas_para_puntos": {
    "area": "productos",
    "por": "tablas"
+  },
+  "ventas_por_hora_de_sala": {
+   "area": "tablero",
+   "por": "código"
   },
   "ventas_por_mes_de_producto": {
    "area": "plataforma",

@@ -88,7 +88,7 @@ import ListRow from '../components/common/ListRow';
 import {
     fetchUserDashboardPrefs, upsertUserDashboardPrefs, fetchSalesBranchIdsSince,
     fetchPendingApprovalRequests, fetchAusenciasDeHoy, fetchTodayHourlySales, fetchAlertasOperativas,
-    fetchBranchHourlySalesRange, fetchCotizacionesActivas, fetchTodayInvoicesSummary, contarSolicitudesPendientes, NO_SON_SOLICITUDES,
+    fetchBranchHourlySalesRange, fetchCotizacionesActivas, fetchTodayInvoicesSummary, contarSolicitudesPendientes, NO_SON_SOLICITUDES, TOPE_SOLICITUDES_PENDIENTES,
     fetchDashboardCanon, upsertDashboardCanon, fetchBajoMinimo } from '@nucleo/data/dashboard';
 import { fetchRolesForPermissions, fetchRolePermissions } from '@nucleo/data/permissions';
 import { clickable } from '@nucleo/utils/clickable';
@@ -1979,13 +1979,19 @@ const DashboardView = ({ openModal }) => {
   useEffect(() => {
     // El error ya no se convierte en «Sin solicitudes» y una red caída ya no
     // deja el esqueleto girando para siempre.
-    Promise.all([
-      fetchPendingApprovalRequests(),
-      contarSolicitudesPendientes({ excepto: NO_SON_SOLICITUDES }).catch(() => null),
-    ]).then(([{ data, error }, total]) => {
+    //
+    // El conteo aparte sólo hace falta cuando la lista llegó LLENA (el tope de
+    // `fetchPendingApprovalRequests`): con menos filas, la lista ya es todo lo
+    // pendiente —mismos filtros, mismo RLS— y su largo es el número exacto.
+    // Ahorra una consulta en cada apertura del Inicio (medido el 2026-11-10).
+    fetchPendingApprovalRequests().then(async ({ data, error }) => {
+      const filas = data || [];
+      const total = error ? null
+        : filas.length < TOPE_SOLICITUDES_PENDIENTES ? filas.length
+        : await contarSolicitudesPendientes({ excepto: NO_SON_SOLICITUDES }).catch(() => null);
       setReqError(!!error);
-      setPendingReqs(data || []);
-      setReqTotal(error ? null : total);
+      setPendingReqs(filas);
+      setReqTotal(total);
     }).catch(() => setReqError(true))
       .finally(() => setReqLoading(false));
   }, []);

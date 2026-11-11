@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { jefaturaDeSucursal } from '@nucleo/utils/edicionDeSucursal';
 import { personalNormativoDeSucursal } from '@nucleo/utils/expedienteDeSucursal';
-import { useAuth } from '@nucleo/context/AuthContext';
-import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import BotonIA from '../../components/common/BotonIA';
@@ -12,19 +10,17 @@ import { AiThinkingState } from '../../components/common/StateViews';
 import {
     ShieldCheck, Award, AlertTriangle, User, Pencil,
     Star, HeartPulse, Briefcase, CalendarDays, Phone, MapPin,
-    Copy, Check, MessageCircle, ShieldAlert, Calculator, Plus, FileX, Zap,
+    Copy, Check, MessageCircle, ShieldAlert, Calculator, Plus, FileX,
     CircleUserRound, BarChart3, TrendingUp, Clock, Hourglass, Sparkles, ArrowLeft, Activity, X
 } from 'lucide-react';
-import ConfirmModal from '../../components/common/ConfirmModal';
 import AlertModal from '../../components/common/AlertModal';
 import Notice from '../../components/common/Notice';
 import { calculateMinimumStaff } from '@nucleo/utils/staffHelpers';
 
 import { fetchBranchHourlySalesAll } from '@nucleo/data/schedules';
 import { clickable } from '@nucleo/utils/clickable';
-import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
+import { fechaTexto } from '@nucleo/utils/fecha';
 import { analizarSucursal } from '@nucleo/data/ia';
-import { sincronizarVentasDeSucursal } from '@nucleo/data/branches';
 
 import TituloDeSeccion from '../../components/common/TituloDeSeccion';
 import PuntoDeEstado from '../../components/common/PuntoDeEstado';
@@ -177,194 +173,11 @@ const ProfileCard = ({ employee, roleLabel, colorTheme, onClick, onEditRole, isM
     );
 };
 
-// ============================================================================
-// ⚠️ BOTÓN SECRETO TEMPORAL: VOLCADO HISTÓRICO WFM 
-// ============================================================================
-// Reescribe el histórico de ventas de la sala: sólo para quien EDITA
-// sucursales (lo decide `TabStaff`, que no lo monta sin `branches.can_edit`),
-// queda en la bitácora al empezar y al terminar, y se corta si la pestaña se
-// desmonta — antes el bucle seguía pidiendo meses al sistema de origen con la
-// pantalla cerrada, y cada vuelta hacía `setState` sobre un componente muerto.
-const HistoricalSyncButton = ({ liveBranch, onSyncComplete }) => {
-    const [isSyncing, setIsSyncing] = useState(false);
-    const [syncConfirm, setSyncConfirm] = useState(false);
-    const [progress, setProgress] = useState(0);
-    const [log, setLog] = useState('');
-    const montado = useRef(true);
-    useEffect(() => {
-        montado.current = true;
-        return () => { montado.current = false; };
-    }, []);
-
-    // Credentials are resolved server-side from Supabase Secrets (ERP_BRANCH_MAP).
-    // The client only passes branchId — never username/password.
-
-    const generateChunks = (startStr, endStr, daysPerChunk) => {
-        let chunks = [];
-        let current = new Date(`${startStr}T00:00:00`);
-        const end = new Date(`${endStr}T00:00:00`);
-
-        while (current <= end) {
-            let chunkStart = current.toISOString().split('T')[0];
-            let nextDate = new Date(current);
-            nextDate.setDate(nextDate.getDate() + daysPerChunk - 1);
-            if (nextDate > end) nextDate = end;
-            let chunkEnd = nextDate.toISOString().split('T')[0];
-            let monthName = current.toLocaleDateString('es-SV', { month: 'short', year: 'numeric' }).toUpperCase();
-            chunks.push({ i: chunkStart, f: chunkEnd, label: monthName });
-            current.setDate(current.getDate() + daysPerChunk);
-        }
-        return chunks;
-    };
-
-    // El `window.confirm` nativo que había acá era el último del portal: bloquea
-    // el hilo, ignora el tema y en móvil apenas se lee. Este archivo YA importaba
-    // `ConfirmModal` y lo usaba 500 líneas más abajo — el nativo quedó por
-    // olvido, no por falta de canónico.
-    const startHistoricalSync = () => setSyncConfirm(true);
-
-    const runHistoricalSync = async () => {
-        setSyncConfirm(false);
-        setIsSyncing(true);
-        setProgress(0);
-        setLog('Preparando los meses a recargar…');
-
-        const todayStr = hoySV();
-        const chunksToSync = generateChunks("2025-01-01", todayStr, 30);
-        let successCount = 0;
-        let fallo = null;
-        const anotar = useStaff.getState().appendAuditLog;
-        anotar?.('RECARGA_HISTORICO_VENTAS_INICIADA', String(liveBranch.id), {
-            timeline_title: 'Recarga del histórico de ventas',
-            dimension: 'OPERATIVE',
-            branch_id: liveBranch.id,
-            desde: chunksToSync[0]?.i ?? null,
-            hasta: todayStr,
-            bloques: chunksToSync.length,
-        });
-
-        for (let i = 0; i < chunksToSync.length; i++) {
-            if (!montado.current) break;
-            const chunk = chunksToSync[i];
-            setLog(`Trayendo ${chunk.label} (${chunk.i} al ${chunk.f})…`);
-
-            try {
-                const payload = {
-                    branchId: liveBranch.id,
-                    fechaI: chunk.i,
-                    fechaF: chunk.f,
-                };
-
-                const { data, error } = await sincronizarVentasDeSucursal(payload);
-
-                if (error) {
-                    let errorMsg = error.message;
-                    if (error.context && error.context.error) errorMsg = error.context.error;
-                    console.error("Detalle del fallo:", errorMsg);
-                    throw new Error(errorMsg);
-                }
-
-                successCount++;
-                if (montado.current) setLog(`✅ ${chunk.label} listo (${data?.processed || data?.processed_hours || data?.count || 0} hrs).`);
-            } catch (err) {
-                console.error(`Error en bloque ${chunk.label}:`, err);
-                fallo = chunk.label;
-                if (montado.current) setLog(`❌ Falló ${chunk.label}. Se detiene aquí.`);
-                break;
-            }
-
-            if (!montado.current) break;
-            setProgress(Math.round(((i + 1) / chunksToSync.length) * 100));
-            if (i < chunksToSync.length - 1) {
-                await new Promise(resolve => setTimeout(resolve, 3500));
-            }
-        }
-
-        const interrumpida = !montado.current && !fallo && successCount < chunksToSync.length;
-        anotar?.('RECARGA_HISTORICO_VENTAS_TERMINADA', String(liveBranch.id), {
-            timeline_title: 'Fin de la recarga del histórico de ventas',
-            dimension: 'OPERATIVE',
-            branch_id: liveBranch.id,
-            bloques: chunksToSync.length,
-            recargados: successCount,
-            resultado: fallo ? 'fallo' : interrumpida ? 'interrumpida' : 'completa',
-            ...(fallo ? { fallo_en: fallo } : {}),
-        });
-
-        if (!montado.current) return;
-        setIsSyncing(false);
-        setLog(fallo
-            ? `Se recargaron ${successCount} de ${chunksToSync.length} meses; se detuvo en ${fallo}.`
-            : `🎉 Listo. Se recargaron ${successCount} de ${chunksToSync.length} meses.`);
-        if (onSyncComplete) onSyncComplete();
-    };
-
-    return (
-        // 2026-07-28 — este panel estaba en oscuro fijo (`bg-slate-900` +
-        // `border-slate-700`) pero el texto de adentro usaba tokens que SÍ
-        // siguen el tema. En los dos temas claros el subtítulo quedaba gris
-        // oscuro sobre casi negro: 2.88:1 en liquid y 3.75:1 en sólido, los dos
-        // por debajo de AA. Mismo bug que tenían los tooltips.
-        //
-        // Sigue el tema como cualquier tarjeta. La señal de "cuidado, esto
-        // inyecta datos" no se pierde: pasa a un `Notice` de tono warning, que
-        // es color CON significado y que el tema sabe adaptar — a diferencia de
-        // un rectángulo negro, que además no se leía.
-        //
-        // La consola del log sí se queda oscura más abajo, y eso es deliberado:
-        // ahí lo oscuro no es decoración, es lo que hace que se lea como salida
-        // de terminal.
-        <div data-surface="card" className="mt-8 p-5 rounded-card flex flex-col gap-4 no-print">
-            <div className="flex justify-between items-center gap-4">
-                <div>
-                    <h4 className="text-content font-black uppercase tracking-widest text-body-sm flex items-center gap-2">
-                        <Zap size={14} className="text-warning-text" /> Recargar el histórico de ventas
-                    </h4>
-                    <p className="text-content-3 font-bold text-caption mt-1">Vuelve a traer las ventas de esta sala desde enero de 2025, mes por mes.</p>
-                </div>
-                <Button disabled={isSyncing} onClick={startHistoricalSync}>{isSyncing ? `Recargando ${progress}%` : 'Recargar'}</Button>
-            </div>
-
-            <Notice variant="warning">
-                Reescribe el histórico de ventas de esta sucursal desde enero de 2025. Ejecútalo solo si sabes que faltan datos.
-            </Notice>
-
-            {isSyncing && (
-                <div className="w-full bg-surface-card-hover h-2.5 rounded-full overflow-hidden shadow-inner"
-                     role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}
-                     aria-label="Progreso de la recarga">
-                    <div className="bg-gradient-to-r from-chart-1 to-brand h-full transition-all duration-[var(--dur-slow)]" style={{ width: `${progress}%` }}></div>
-                </div>
-            )}
-
-            {syncConfirm && (
-                <ConfirmModal
-                    isOpen={syncConfirm}
-                    title="Recargar el histórico"
-                    message={`Se descargarán las ventas de ${liveBranch?.name ?? 'la sucursal'} desde enero de 2025, en bloques mensuales para mayor velocidad. Puede tardar varios minutos.`}
-                    onClose={() => setSyncConfirm(false)}
-                    onConfirm={runHistoricalSync}
-                    confirmText="Descargar"
-                />
-            )}
-
-            {log && (
-                <div className="bg-scrim rounded-lg p-3 border border-border-card">
-                    <p className="text-caption font-mono text-success tracking-wide leading-relaxed">{log}</p>
-                </div>
-            )}
-        </div>
-    );
-};
 
 // ============================================================================
 // 📊 COMPONENTE PRINCIPAL: TAB STAFF
 // ============================================================================
 const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal }) => {
-    // El permiso se resuelve como en el resto del módulo (`BranchDetailView`,
-    // `BranchesView`): `branches.can_edit`.
-    const { hasPermission } = useAuth();
-    const canEdit = hasPermission('branches', 'can_edit');
     const [infoAlert, setInfoAlert] = useState({ isOpen: false, title: '', message: '' });
 
     const [historicalSales, setHistoricalSales] = useState([]);
@@ -847,7 +660,7 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             {/* SECCIÓN 3: CUMPLIMIENTO REGULATORIO — solo farmacias */}
                             {isFarmacia && <div className="space-y-3 pt-2 border-t border-border-card mt-6 pt-6">
                                 <h4 className="text-caption font-black uppercase tracking-widest text-content-2 flex items-center gap-1.5 ml-1">
-                                    <ShieldCheck size={12} className="text-success-text" strokeWidth={3} /> Cumplimiento SRS (DNM/CSSP)
+                                    <ShieldCheck size={12} className="text-success-text" strokeWidth={3} /> Cumplimiento SRS
                                 </h4>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                                     {regentEmp ? <ProfileCard employee={regentEmp} roleLabel="Regente Farmacéutico" colorTheme="emerald" missingDocs={regentMissingDocs} onClick={goToProfile} onEditRole={() => openModal('editPharmacyRegent', liveBranch)} /> : <ProfileCard isMissing missingText="Falta Regente" missingSub="Requerido (SRS)" onEditRole={() => openModal('editPharmacyRegent', liveBranch)} />}
@@ -856,7 +669,6 @@ const TabStaff = ({ liveBranch, currentStaff, employees, goToProfile, openModal 
                             </div>}
 
                             {/* Reescribe datos: sólo con `branches.can_edit`. */}
-                            {isFarmacia && canEdit && <HistoricalSyncButton liveBranch={liveBranch} onSyncComplete={fetchHistoricalSales} />}
                         </div>
                     )}
                 </div>

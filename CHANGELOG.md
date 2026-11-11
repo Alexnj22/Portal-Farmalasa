@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1503.1 — Sucursal: sin el botón de recargar el histórico de ventas
+
+En la pestaña Personal de cada sala ya no aparece «Recargar el histórico de ventas». Reescribía las ventas desde enero de 2025 y no hace falta: las ventas se mantienen al día solas. El título «Cumplimiento SRS (DNM/CSSP)» queda como «Cumplimiento SRS».
+
 ## v2.1503.0 — App: las secciones de cada pantalla quedan fijas arriba (canon)
 
 Pedido del usuario: «eso de las secciones debe estar en todo, debe ser canónico». En la app del personal, el selector de secciones de una pantalla (Pendientes · Aprobadas, Planilla · Practicantes · Externos…) ya no se va con el contenido al desplazar: queda fijo debajo de la barra.

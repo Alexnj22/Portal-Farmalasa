@@ -38,13 +38,6 @@ function textoParaLeer(boda, inv) {
 // una, y se avisa si en dos segundos no empezó (en el iPhone, el interruptor
 // de silencio apaga esta voz).
 const frasesDe = (txt) => txt.match(/[^.!?]+[.!?]*/g)?.map((x) => x.trim()).filter(Boolean) || [txt];
-const vocesListas = () => new Promise((ok) => {
-  const s = window.speechSynthesis;
-  if (s.getVoices().length) { ok(s.getVoices()); return; }
-  const listo = () => { s.removeEventListener?.('voiceschanged', listo); ok(s.getVoices()); };
-  s.addEventListener?.('voiceschanged', listo);
-  setTimeout(listo, 1200);
-});
 const PREFERIDAS = { es: ['es-MX', 'es-US', 'es-419', 'es-ES', 'es'], en: ['en-US', 'en-GB', 'en'] };
 function elegirVoz(voces, lengua) {
   for (const l of PREFERIDAS[lengua]) {
@@ -60,19 +53,19 @@ export function BotonEscuchar({ boda, inv, className = 'btn' }) {
   const turno = useRef(0);
   const frases = useRef([]);
   const puede = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
-  useEffect(() => () => { turno.current++; if (puede) window.speechSynthesis.cancel(); }, [puede]);
+  useEffect(() => { if (puede) window.speechSynthesis.getVoices(); return () => { turno.current++; if (puede) window.speechSynthesis.cancel(); }; }, [puede]);
   if (!puede) return null;
 
   const parar = () => { turno.current++; window.speechSynthesis.cancel(); setHablando(false); };
-  const alternar = async () => {
+  // Todo sincrónico dentro del toque: Safari en el iPhone sólo deja hablar si
+  // speak() se llama en el mismo gesto; un await antes lo bloquea en silencio.
+  const alternar = () => {
     if (hablando) { parar(); return; }
     const s = window.speechSynthesis;
     const mio = ++turno.current;
     setAviso(''); setHablando(true);
-    if (s.speaking || s.pending) { s.cancel(); await new Promise((r) => setTimeout(r, 120)); }
     const lengua = idioma() === 'en' ? 'en' : 'es';
-    const voz = elegirVoz(await vocesListas(), lengua);
-    if (mio !== turno.current) return;
+    const voz = elegirVoz(s.getVoices(), lengua);
     let empezo = false;
     frases.current = frasesDe(textoParaLeer(boda, inv)).map((txt, i, todas) => {
       const u = new SpeechSynthesisUtterance(txt);
@@ -84,7 +77,7 @@ export function BotonEscuchar({ boda, inv, className = 'btn' }) {
       u.onerror = (e) => { if (mio === turno.current && e.error !== 'interrupted' && e.error !== 'canceled') { setHablando(false); setAviso(t('No se pudo leer en voz alta en este teléfono.', "This phone couldn't read it aloud.")); } };
       return u;
     });
-    s.resume();
+    if (s.paused) s.resume();
     frases.current.forEach((u) => s.speak(u));
     setTimeout(() => {
       if (mio === turno.current && !empezo && !s.speaking) {

@@ -5,7 +5,7 @@
 // sistema cuando el contenido pasa por debajo, como Ajustes o Mensajes. Con un
 // fondo de color fijo (lo que había) se veía blanca al desplazar, y el título
 // grande salía oscuro sobre oscuro en modo oscuro (usuario, 2026-09-30).
-import { Image, Platform, useColorScheme, View } from 'react-native';
+import { Image, Platform, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -30,16 +30,20 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
 //
 // iOS pinta con el tinte del sistema una imagen dentro de la barra, así que el
 // logo va en dos capas (las mismas de apps/clientes/assets), cada una con su
-// color explícito. En modo oscuro el morado de la marca no se lee sobre negro:
-// esa capa va en un magenta claro.
-const ANCHO_LOGO = 170;
+// color explícito.
+//
+// EL LOGO ES SIEMPRE EL ORIGINAL (usuario, 2026-11-11, después de ver borde
+// blanco, borde redondeado, sólo el símbolo y el símbolo con el nombre en una
+// línea: «el logo siempre debe ser el original»). Sus colores en claro y en
+// oscuro, sin borde, sin recomponerlo. Sólo el tamaño se ajusta: 200 pt de
+// ancho, lo más grande que cabe entre la foto y la campana.
+const ANCHO_LOGO = 200;
 const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: ANCHO_LOGO, height: Math.round(ANCHO_LOGO * 119 / 880) };
 function LogoEncabezado() {
-  const oscuro = useColorScheme() === 'dark';
   return (
     <View accessible accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: CAPA_LOGO.width, height: CAPA_LOGO.height }}>
       <Image source={require('../assets/logo-farmacias-verde.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#8EC30F' }]} />
-      <Image source={require('../assets/logo-farmacias-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: oscuro ? '#E07FDF' : '#981D97' }]} />
+      <Image source={require('../assets/logo-farmacias-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#981D97' }]} />
     </View>
   );
 }

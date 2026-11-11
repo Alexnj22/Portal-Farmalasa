@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.1 — App: el logo de la barra es el original, en claro y en oscuro
+
+Decisión del usuario: «el logo siempre debe ser el original». En la barra de la app del personal, el logo de Farmacias La Popular y La Salud va con sus colores de marca también en modo oscuro (antes el morado se aclaraba), sin borde ni recomposición, y pasa de 170 a 200 pt de ancho. Va por aire.
+
 ## v2.1504.0 — App de clientes: código por WhatsApp al entrar desde un teléfono nuevo (apagado)
 
 La app de clientes ya sabe pedir un código de 6 números por WhatsApp cuando alguien entra con DUI y teléfono desde un teléfono que ese cliente nunca usó (también al «registrarse» con una ficha que ya existe). Viene **apagado**: mientras no se encienda, se entra igual que hoy y sólo se van anotando los teléfonos de cada cliente, para que el día que se encienda no se le pida el código a quien ya entraba.

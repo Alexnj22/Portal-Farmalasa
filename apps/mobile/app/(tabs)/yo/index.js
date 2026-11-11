@@ -54,7 +54,7 @@ function elegir(titulo, opciones, onElegir) {
   );
 }
 
-const PERSONALES = ['emp_profile', 'emp_documents', 'requests_personales'];
+const PERSONALES = ['emp_announcements', 'emp_profile', 'emp_documents', 'requests_personales'];
 
 export default function Yo() {
   const { user, hasPermission, logout } = useAuth();

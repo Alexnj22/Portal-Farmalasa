@@ -29,7 +29,9 @@ import { anotar, leerUso } from '../../../componentes/inicio/uso';
 import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 
 // Lo que ya vive en otra pestaña (Inicio, Avisos, Yo) no se repite acá.
-const EN_LA_BARRA = new Set(['overview', 'emp_announcements', 'emp_profile', 'emp_documents', 'requests_personales']);
+// «Mis avisos» vuelve al Menú (2026-11-11): vivía dentro de la pestaña
+// Notificaciones, que se quitó, y quedó sin entrada.
+const EN_LA_BARRA = new Set(['overview', 'emp_profile', 'emp_documents', 'requests_personales']);
 
 // Un color por grupo, como los íconos de Ajustes: ayuda a encontrar la zona
 // del menú sin leer. Son los de la marca y los de gráficas del portal.

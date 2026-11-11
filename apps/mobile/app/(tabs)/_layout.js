@@ -3,12 +3,14 @@
 // usuario del 2026-09-29: «que se vea nativa con los elementos nativos», y que
 // la app ABRA en Inicio.
 import { useEffect } from 'react';
+import { router } from 'expo-router';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { usePestanaRapida } from '../../componentes/pestanaRapida';
+import { avisosSinLeer } from '../leer-avisos';
 import { usePorDecidir } from '../../componentes/porDecidir';
 
 const CADA = 2 * 60 * 1000;
@@ -31,6 +33,23 @@ function useMantenerPorDecidir() {
   }, [auth.user?.id, cargar]);
 }
 
+// Los avisos sin leer se muestran al entrar, una vez por sesión (por persona:
+// si sale y entra otra, a ella también). Espera a que el arranque haya traído
+// los comunicados; si no hay ninguno sin leer, no hace nada.
+let yaMostradosA = null;
+function useAvisosAlEntrar() {
+  const { user } = useAuth();
+  const comunicados = useStaffStore((s) => s.announcements);
+  const roles = useStaffStore((s) => s.roles);
+  useEffect(() => {
+    if (!user?.id || yaMostradosA === user.id || !comunicados?.length || !roles?.length) return;
+    if (!avisosSinLeer(comunicados, user, roles).length) { yaMostradosA = user.id; return; }
+    yaMostradosA = user.id;
+    const t = setTimeout(() => router.push('/leer-avisos'), 400);
+    return () => clearTimeout(t);
+  }, [user, comunicados, roles]);
+}
+
 // Transparente: detrás de cada pestaña está la aurora de la raíz.
 const TRANSPARENTE = { backgroundColor: 'transparent' };
 
@@ -38,6 +57,7 @@ export default function Pestanas() {
   // El globo vive ahora en la campana de la barra (BotonCampana): esto sólo
   // mantiene «Por decidir» al día.
   useMantenerPorDecidir();
+  useAvisosAlEntrar();
   const { user, hasPermission } = useAuth();
   const salas = useStaffStore((s) => s.branches);
   const { actual: rapida } = usePestanaRapida(user, hasPermission, salas);

@@ -122,6 +122,8 @@ export default function Raiz() {
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            {/* Los avisos sin leer, al entrar: no se cierra sin confirmarlos (app/leer-avisos.js). */}
+            <Stack.Screen name="leer-avisos" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }} />
           </Stack>
           {/* La burbuja del chat con clientes, como la del portal: flota sobre todo. */}
           <BurbujaFlotante />

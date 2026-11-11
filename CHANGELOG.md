@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1508.0 — App: los avisos sin leer salen al entrar; Mis avisos vuelve al Menú
+
+- **Al entrar:** si la persona tiene avisos sin leer, la app los muestra a pantalla completa, uno por uno (urgentes primero), y no se cierra sin confirmar cada uno con «Entendido», que lo marca leído con la misma escritura de Mis avisos. Una vez por sesión. Si la marca falla por falta de señal, se avisa y se sigue: el aviso vuelve a salir la próxima vez. Antes nada obligaba a leerlos: en 60 días, menos de un lector por aviso.
+- **Mis avisos** vuelve al Menú y a Cuenta: vivía dentro de la pestaña Notificaciones, que se quitó, y quedó sin entrada. «Gestionar avisos» (todos los avisos, para quien los administra) sigue aparte. Va por aire.
+
 ## v2.1507.5 — Sucursales: del documento también se toman la fecha de emisión y su número
 
 - Al subir un documento fijo del Expediente ahora se toman del papel, además del vencimiento, **la fecha de emisión** (se ve como «Emisión» en la tarjeta) y **su número propio**: resolución del permiso SRS, número JVPQF de la credencial del regente, número del permiso de inyecciones, cuenta municipal de la solvencia y resolución de los libros controlados. En la renovación, el dato viejo que nadie tocó se reemplaza por el del papel nuevo; lo que la persona escribió a mano en ese mismo guardado se respeta. El anterior queda en el histórico.

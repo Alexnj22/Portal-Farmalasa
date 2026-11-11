@@ -9,6 +9,7 @@ import Notice from '../common/Notice';
 import { EmptyState } from '../common/StateViews';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 import { fechaTexto } from '@nucleo/utils/fecha';
+import { FRECUENCIAS_DE_FUMIGACION, proximaFumigacion } from '@nucleo/utils/expedienteDeSucursal';
 
 const safeParse = (obj) => {
     if (typeof obj === 'object' && obj !== null) return obj;
@@ -220,6 +221,10 @@ const BranchTabInmueble = ({
                             onChange={(val) => updateNestedSetting('legal', 'extinguisherExpiration', val)}
                         />
                     </div>
+                    <PieDocumento>
+                        <FileUploader label="Constancia de recarga (PDF)" file={legal.extinguisherFile} url={legal.extinguisherUrl}
+                            onChange={archivo('extinguisherFile', 'extinguisherUrl')} />
+                    </PieDocumento>
                 </SeccionDeFormulario>
 
                 <SeccionDeFormulario icon={BugOff} titulo="Control de plagas" tono="success">
@@ -237,6 +242,23 @@ const BranchTabInmueble = ({
                             value={legal.lastFumigationDate || ""}
                             onChange={(val) => updateNestedSetting('legal', 'lastFumigationDate', val)}
                         />
+                    </div>
+                    <div>
+                        <span id="suc-fumigacion-frecuencia" className={rotuloCampo('text-content-3')}>Frecuencia</span>
+                        <LiquidSelect
+                            ariaLabelledBy="suc-fumigacion-frecuencia"
+                            value={legal.fumigationEveryDays ? String(legal.fumigationEveryDays) : ""}
+                            onChange={(val) => updateNestedSetting('legal', 'fumigationEveryDays', val ? Number(val) : null)}
+                            options={FRECUENCIAS_DE_FUMIGACION}
+                            placeholder="¿Cada cuánto se fumiga?"
+                            clearable
+                            clearLabel="Sin frecuencia"
+                        />
+                        {proximaFumigacion(legal) && (
+                            <p className="text-caption font-bold text-content-3 mt-1.5">
+                                Próxima fumigación: {fechaTexto(proximaFumigacion(legal), { day: 'numeric', month: 'long', year: 'numeric' })}. Se avisa antes de que toque.
+                            </p>
+                        )}
                     </div>
                     <PieDocumento>
                         <FileUploader label="Certificado de fumigación (PDF)" file={legal.fumigationFile} url={legal.fumigationUrl}

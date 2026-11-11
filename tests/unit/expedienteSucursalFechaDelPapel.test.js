@@ -118,7 +118,7 @@ describe('updateBranch lee la fecha de los papeles nuevos', () => {
 
     it('todos los archivos legales con fecha están mapeados a un campo', () => {
         expect(Object.keys(FECHA_DEL_ARCHIVO_LEGAL).sort()).toEqual([
-            'controlledBooksFile', 'farmacovigilanciaAuthFile', 'fumigationFile', 'municipalFile',
+            'controlledBooksFile', 'extinguisherFile', 'farmacovigilanciaAuthFile', 'fumigationFile', 'municipalFile',
             'nursingServicePermitFile', 'regentCredentialFile', 'srsPermitFile', 'wasteFile',
         ]);
     });
@@ -137,5 +137,33 @@ describe('limpiarAjustes no destruye el archivo adjunto', () => {
         limpiarAjustes(original).legal.a = 2;
         expect(original.legal.a).toBe(1);
         expect(limpiarAjustes('{"legal":{"x":1}}')).toEqual({ legal: { x: 1 } });
+    });
+});
+
+describe('extintores y fumigación en el expediente', () => {
+    it('extintores es un renglón con su fecha y se edita en el inmueble', async () => {
+        const { documentosDeSucursal, ajustesConArchivo } = await import('@nucleo/utils/expedienteDeSucursal');
+        const d = documentosDeSucursal({ settings: { legal: { extinguisherExpiration: '2027-02-01', extinguisherCount: 3 } } });
+        const ext = d.infra.find((x) => x.id === 'extintores');
+        expect(ext).toMatchObject({ expDate: '2027-02-01', hasExpiration: true, modal: 'editBranchInmueble' });
+        expect(ajustesConArchivo({}, 'extintores', { name: 'a.pdf' }).legal.extinguisherFile).toEqual({ name: 'a.pdf' });
+    });
+    it('la fumigación vence según su frecuencia', async () => {
+        const { documentosDeSucursal, proximaFumigacion, estadoDeDocumento, vencimientoEfectivo } = await import('@nucleo/utils/expedienteDeSucursal');
+        expect(proximaFumigacion({ lastFumigationDate: '2026-08-01', fumigationEveryDays: 90 })).toBe('2026-10-30');
+        expect(proximaFumigacion({ lastFumigationDate: '2026-08-01' })).toBeNull();
+        expect(proximaFumigacion({ fumigationEveryDays: 30 })).toBeNull();
+        const fum = documentosDeSucursal({ settings: { legal: { fumigationUrl: 'u', lastFumigationDate: '2026-08-01', fumigationEveryDays: 90 } } })
+            .infra.find((x) => x.id === 'fumigacion');
+        expect(estadoDeDocumento(fum.url, vencimientoEfectivo(fum), new Date('2026-11-11T18:00:00Z')).type).toBe('EXPIRED');
+        const sinFrecuencia = documentosDeSucursal({ settings: { legal: { fumigationUrl: 'u', lastFumigationDate: '2020-01-01' } } })
+            .infra.find((x) => x.id === 'fumigacion');
+        expect(vencimientoEfectivo(sinFrecuencia)).toBeNull();
+    });
+    it('el calendario no repite los extintores', async () => {
+        const { documentosDeSucursal } = await import('@nucleo/utils/expedienteDeSucursal');
+        const { calendarioDeVencimientos } = await import('@nucleo/utils/cumplimiento');
+        const filas = calendarioDeVencimientos([{ id: 1, name: 'A', type: 'FARMACIA', settings: { legal: { extinguisherExpiration: '2027-01-01' } } }], documentosDeSucursal, '2026-11-11');
+        expect(filas.filter((f) => f.docId === 'extintores')).toHaveLength(1);
     });
 });

@@ -295,8 +295,8 @@ const ROTULO_DE_CAMPO = {
     nursingRegents: 'equipo de enfermería', nurses: 'equipo de enfermería',
     controlledBooks: 'libros controlados', controlledBooksRes: 'resolución de libros', controlledBooksExp: 'vencimiento de libros', controlledBooksUrl: 'documento de libros',
     municipalAccount: 'cuenta municipal', municipalExpiration: 'vencimiento solvencia municipal', municipalUrl: 'solvencia municipal',
-    extinguisherCount: 'extintores', extinguisherType: 'tipo de extintor', extinguisherExpiration: 'recarga de extintores',
-    pestControlCompany: 'empresa de fumigación', lastFumigationDate: 'última fumigación', fumigationUrl: 'certificado de fumigación',
+    extinguisherCount: 'extintores', extinguisherType: 'tipo de extintor', extinguisherExpiration: 'recarga de extintores', extinguisherUrl: 'constancia de recarga de extintores',
+    pestControlCompany: 'empresa de fumigación', lastFumigationDate: 'última fumigación', fumigationUrl: 'certificado de fumigación', fumigationEveryDays: 'frecuencia de fumigación',
     wasteManagement: 'manejo de desechos', wasteExpiration: 'vencimiento contrato de desechos', wasteUrl: 'contrato de desechos',
     propertyType: 'tipo de inmueble', amount: 'monto', landlordName: 'arrendante', landlordPhone: 'teléfono del arrendante', contract: 'contrato',
     light: 'energía eléctrica', water: 'agua potable', internet: 'internet', mobile: 'telefonía móvil',
@@ -305,7 +305,7 @@ const ROTULO_DE_CAMPO = {
 
 // Claves del legal que se editan en la pestaña de inmueble.
 const LEGAL_DEL_INMUEBLE = new Set([
-    'extinguisherCount', 'extinguisherType', 'extinguisherExpiration', 'pestControlCompany', 'lastFumigationDate',
+    'extinguisherCount', 'extinguisherType', 'extinguisherExpiration', 'extinguisherUrl', 'pestControlCompany', 'lastFumigationDate', 'fumigationEveryDays',
     'fumigationUrl', 'wasteManagement', 'wasteExpiration', 'wasteUrl', 'municipalAccount', 'municipalExpiration', 'municipalUrl',
 ]);
 // Ya tienen su entrada propia en `updateBranch`.

@@ -318,8 +318,10 @@ export function calendarioDeVencimientos(branches, documentosDeSucursal, hoyIso)
             const iso = String(vence).slice(0, 10);
             filas.push({ branchId: b.id, sala: b.name, docId: d.id, documento: d.title, vence: iso, dias: diasHasta(iso, hoyIso), tieneArchivo: !!d.url });
         }
+        // Los extintores ya salen como renglón del expediente; esto queda para
+        // quien pase otra fuente de documentos sin ellos.
         const ext = b?.settings?.legal?.extinguisherExpiration;
-        if (ext) {
+        if (ext && !filas.some((f) => f.branchId === b.id && f.docId === 'extintores')) {
             const iso = String(ext).slice(0, 10);
             filas.push({ branchId: b.id, sala: b.name, docId: 'extintores', documento: 'Recarga de extintores', vence: iso, dias: diasHasta(iso, hoyIso), tieneArchivo: true });
         }

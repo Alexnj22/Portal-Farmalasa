@@ -101,7 +101,7 @@ describe('punto de la pestaña Expediente', () => {
     const completo = {
         srsPermitUrl: 'u', srsExpiration: '2027-12-01', municipalUrl: 'u', municipalExpiration: '2027-12-01',
         regentCredentialUrl: 'u', regentCredentialExp: '2027-12-01', regentInscriptionUrl: 'u',
-        farmacovigilanciaAuthUrl: 'u', pharmacovigilanceExp: '2027-12-01', fumigationUrl: 'u',
+        farmacovigilanciaAuthUrl: 'u', pharmacovigilanceExp: '2027-12-01', fumigationUrl: 'u', extinguisherUrl: 'u',
     };
     it('todo al día → sin punto', () => {
         expect(alertaDelExpediente({ settings: { legal: completo } }, hoy)).toBeNull();
@@ -127,7 +127,7 @@ describe('el expediente mira lo mismo que el aviso diario', () => {
     });
     it('la recarga de extintores vencida enciende el punto', async () => {
         const { alertaDelExpediente } = await import('@nucleo/utils/expedienteDeSucursal');
-        const legal = { srsPermitUrl: 'u', regentCredentialUrl: 'u', farmacovigilanciaAuthUrl: 'u', municipalUrl: 'u', regentInscriptionUrl: 'u', fumigationUrl: 'u' };
+        const legal = { srsPermitUrl: 'u', regentCredentialUrl: 'u', farmacovigilanciaAuthUrl: 'u', municipalUrl: 'u', regentInscriptionUrl: 'u', fumigationUrl: 'u', extinguisherUrl: 'u' };
         const hoy = new Date('2026-10-29T18:00:00Z');
         expect(alertaDelExpediente({ settings: { legal } }, hoy)).toBe(null);
         expect(alertaDelExpediente({ settings: { legal: { ...legal, extinguisherExpiration: '2026-10-01' } } }, hoy)).toBe('critical');

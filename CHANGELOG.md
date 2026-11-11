@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1507.2 — Sucursales: extintores en el expediente y la fumigación con frecuencia
+
+- **Recarga de Extintores es un documento del Expediente**: tarjeta propia con su vencimiento y su constancia, que se adjunta en «Gestión del inmueble» (también con el teléfono) y de la que se lee la fecha. Antes sólo tenía la fecha: el aviso diario la vigilaba, pero no salía en el expediente.
+- **La fumigación vence**: nuevo campo «Frecuencia» (mensual, cada 2 meses, trimestral, semestral, anual) en Control de plagas. La próxima fecha es la última fumigación más la frecuencia, aparece en el expediente y la avisa `check-doc-expiry` (`fumigationNext`, desplegado). Sin frecuencia no vence, como antes.
+- Auditoría: el hallazgo «branches legible por anon sin escribir» ya no se acusa cuando está declarado en `superficie-anon.json` (lo está desde el 2026-08-31; verificado hoy: anon ve sólo `id` y `name`).
+- Se borraron dos cierres de mes de bitácoras que eran de prueba (agosto de La Popular y septiembre de la sala 4).
+
 ## v2.1507.1 — App: Solicitudes sin envíos ni traslados ajenos; secciones bajo el buscador
 
 - **Solicitudes:** los envíos y traslados entre salas sólo le salen a los involucrados: quien lo pidió, a quien espera, o la sala de origen o de destino. Para verlos todos se eligen en Filtros › Tipo. Las pantallas de Traslados y Envíos no cambian.

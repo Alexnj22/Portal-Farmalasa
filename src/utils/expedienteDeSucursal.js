@@ -23,6 +23,36 @@ export const SIN_DATO = 'Sin dato';
 /** Faltan 45 días o menos: se avisa. */
 export const DIAS_DE_AVISO_DOCUMENTO = 45;
 
+/** Cada cuánto se fumiga la sala (`legal.fumigationEveryDays`). */
+export const FRECUENCIAS_DE_FUMIGACION = [
+    { value: '30', label: 'Mensual' },
+    { value: '60', label: 'Cada 2 meses' },
+    { value: '90', label: 'Trimestral' },
+    { value: '180', label: 'Semestral' },
+    { value: '365', label: 'Anual' },
+];
+const rotuloDeFrecuencia = (v) => FRECUENCIAS_DE_FUMIGACION.find((f) => f.value === String(v ?? ''))?.label ?? null;
+
+/** Los días entre fumigaciones, o null si no se eligió una frecuencia válida. */
+export function frecuenciaDeFumigacion(legal) {
+    const n = Number(legal?.fumigationEveryDays);
+    return Number.isInteger(n) && n > 0 && n <= 366 ? n : null;
+}
+
+/**
+ * Cuándo toca la próxima fumigación (`AAAA-MM-DD`): la última más la
+ * frecuencia, en días de calendario. null si falta cualquiera de las dos. La
+ * misma cuenta vive en `check-doc-expiry` (`proximaFumigacion`): cambiar una
+ * exige cambiar la otra.
+ */
+export function proximaFumigacion(legal) {
+    const cada = frecuenciaDeFumigacion(legal);
+    const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(legal?.lastFumigationDate || ''));
+    if (!cada || !m) return null;
+    const d = new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + cada));
+    return d.toISOString().slice(0, 10);
+}
+
 /**
  * El estado de un documento: MISSING · EXPIRED · WARNING · OK.
  *
@@ -110,8 +140,9 @@ export function alertaDelExpediente(b, hoy = new Date()) {
         if (type === 'EXPIRED' || (type === 'MISSING' && DOCUMENTOS_CRITICOS.includes(doc.id))) return 'critical';
         if (type === 'MISSING' || type === 'WARNING') nivel = 'warning';
     }
-    // La recarga de extintores no es un documento —no hay archivo que subir—
-    // pero vence y la avisa `check-doc-expiry`: cuenta para el punto igual.
+    // La recarga de extintores ya es un renglón del expediente, pero sin su
+    // constancia el renglón dice «falta» y no mira la fecha: una recarga
+    // VENCIDA tiene que encender el punto igual, haya papel o no.
     const extintores = b?.settings?.legal?.extinguisherExpiration;
     if (extintores) {
         const { type } = estadoDeDocumento(true, extintores, hoy);
@@ -187,7 +218,25 @@ export function documentosDeSucursal(b) {
     if (hasInjections) {
         infra.push({ id: 'desechos', title: 'Contrato Desechos Bioinfecciosos', url: legal.wasteUrl, expDate: legal.wasteExpiration, hasExpiration: true, modal: 'editBranchInmueble' });
     }
-    infra.push({ id: 'fumigacion', title: 'Certificado de Fumigación', url: legal.fumigationUrl, issueDate: legal.lastFumigationDate, hasIssueDate: true, modal: 'editBranchInmueble' });
+    // La fumigación se lleva por la fecha en que se hizo; con frecuencia
+    // elegida, además vence (`proximaFumigacion`). Sin frecuencia no vence:
+    // nadie sabría cuándo avisar.
+    const proxima = proximaFumigacion(legal);
+    infra.push({
+        id: 'fumigacion', title: 'Certificado de Fumigación', url: legal.fumigationUrl,
+        issueDate: legal.lastFumigationDate, hasIssueDate: true,
+        expDate: proxima, hasExpiration: !!proxima,
+        modal: 'editBranchInmueble',
+        datos: [{ rotulo: 'Frecuencia', valor: rotuloDeFrecuencia(legal.fumigationEveryDays) }],
+    });
+    // La recarga de extintores: vence, y su papel es la constancia de recarga.
+    // Hasta el 2026-11-11 sólo tenía fecha —la avisaba el cron, pero no salía
+    // en el expediente ni se podía adjuntar la constancia—.
+    infra.push({
+        id: 'extintores', title: 'Recarga de Extintores', url: legal.extinguisherUrl,
+        expDate: legal.extinguisherExpiration, hasExpiration: true, modal: 'editBranchInmueble',
+        datos: [{ rotulo: 'Cantidad', valor: texto(legal.extinguisherCount) }],
+    });
 
     const propios = customDocs.map((doc) => ({
         id: doc.id, title: doc.title, url: doc.url,
@@ -216,7 +265,7 @@ export function documentosDeSucursal(b) {
 const CAMPO_LEGAL = {
     srs: 'srsPermit', alcaldia: 'municipal', libros: 'controlledBooks', inyecciones: 'nursingServicePermit',
     regente_cred: 'regentCredential', regente_insc: 'regentInscription', farmaco: 'farmacovigilanciaAuth',
-    desechos: 'waste', fumigacion: 'fumigation',
+    desechos: 'waste', fumigacion: 'fumigation', extintores: 'extinguisher',
 };
 
 // Lo que acepta el bucket `documents` (su `allowed_mime_types` y `file_size_limit`).
@@ -297,6 +346,7 @@ export const FECHA_DEL_ARCHIVO_LEGAL = {
     wasteFile: { campo: 'wasteExpiration', lee: 'expDate' },
     fumigationFile: { campo: 'lastFumigationDate', lee: 'issueDate' },
     controlledBooksFile: { campo: 'controlledBooksExp', lee: 'expDate' },
+    extinguisherFile: { campo: 'extinguisherExpiration', lee: 'expDate' },
 };
 /** Archivo de una fila de `legal.nursingRegents` → su campo de fecha. */
 export const FECHA_DEL_ARCHIVO_DE_ENFERMERA = { anualidadFile: { campo: 'anualidadExp', lee: 'expDate' } };

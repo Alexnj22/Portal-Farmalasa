@@ -1,7 +1,7 @@
 {
   "nota": "Puntajes derivados por auditoria/puntuar.mjs. Las reglas del cálculo viven ahí, no acá.",
   "iniciado": "2026-08-23",
-  "recalculado": "2026-10-26",
+  "recalculado": "2026-11-11",
   "areas": {
     "plataforma": {
       "ejes": {
@@ -38,10 +38,10 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
           "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
+            "tests/unit/reservasDatos.test.js:145 — no-unused-vars: 'listas' is defined but never used."
           ]
         },
         "movil": {
@@ -63,7 +63,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "154 de 212 módulo(s) de lógica (.js) del área nombrados por alguna prueba (73%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "162 de 220 módulo(s) de lógica (.js) del área nombrados por alguna prueba (74%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -77,7 +77,7 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] el trabón al girar el teléfono está EN PAUSA",
-        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[vista] tests/unit/reservasDatos.test.js:145 — no-unused-vars: 'listas' is defined but never used.",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -156,12 +156,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "15 de 20 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "15 de 20 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/PLAN-CREDENCIAL-DE-CARNE-2026-08-12.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/SEGURIDAD-Y-ACCESO.md, docs/planes-cerrados/PLAN-SESIONES-SEGURAS-2026-08-08.md, docs/planes-cerrados/SEGURIDAD-AUTORIZACION-2026-08-04.md, docs/planes-cerrados/PLAN-CERRAR-AUTORIZACION-2026-08-09.md",
           "hallazgos": []
         }
       },
@@ -219,11 +219,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 89,
-          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -244,7 +242,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -257,7 +255,6 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -310,11 +307,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -335,7 +330,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "6 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -349,7 +344,6 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] la vista de venta por hora está lista y APAGADA hasta que se publiquen los horarios",
-        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -376,7 +370,7 @@
           "pct": 90,
           "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
           "hallazgos": [
-            "src/components/forms/EmployeeFormModal.jsx:3402"
+            "src/components/forms/EmployeeFormModal.jsx:3533"
           ]
         },
         "bd": {
@@ -400,11 +394,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -425,7 +417,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "40 de 49 módulo(s) de lógica (.js) del área nombrados por alguna prueba (82%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "41 de 49 módulo(s) de lógica (.js) del área nombrados por alguna prueba (84%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -434,13 +426,12 @@
           "hallazgos": []
         }
       },
-      "pct": 94,
-      "estado": "en-curso",
+      "pct": 95,
+      "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] falta el APK nuevo de la cámara en Android y probarlo en sala",
-        "[datos] src/components/forms/EmployeeFormModal.jsx:3402",
-        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
+        "[datos] src/components/forms/EmployeeFormModal.jsx:3533",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -510,7 +501,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -575,11 +566,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 92,
-          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -600,7 +589,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (83%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "6 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -614,7 +603,6 @@
       "sello_sala": null,
       "hallazgos": [
         "[seguridad] holidays y shifts: legibles por anon con USING(true), sin motivo escrito",
-        "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -684,7 +672,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "3 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "3 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -766,7 +754,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "9 de 12 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "11 de 13 módulo(s) de lógica (.js) del área nombrados por alguna prueba (85%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -831,11 +819,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 92,
-          "evidencia": "gate:design en verde · 2 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "2 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -856,7 +842,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "12 de 17 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "13 de 17 módulo(s) de lógica (.js) del área nombrados por alguna prueba (76%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -870,7 +856,6 @@
       "sello_sala": null,
       "hallazgos": [
         "[flujo] push llega a 4 de 59 — la mayoría de los avisos no salen del portal",
-        "[vista] 2 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -906,11 +891,9 @@
           "hallazgos": []
         },
         "seguridad": {
-          "pct": 96,
+          "pct": 98,
           "evidencia": "0 policies llamando auth_* fuera de (SELECT …) en las 176 tablas · 0 USING(true) de escritura para authenticated · 0 advisor ERROR · 3 funciones anon abiertas a mano y verificadas: las tres se defienden solas · barrido de EXECUTE 2026-08-24: 131 funciones con `authenticated` que ninguna migración concede, clasificadas una por una — 7 eran reales (DEFINER sin guarda que el navegador no llama) y quedaron cerradas a service_role, entre ellas notify_employees, que aceptaba avisos y push arbitrarios contra toda la empresa. Lo vigila gate:migrations por estado final de cada función.",
-          "hallazgos": [
-            "branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado"
-          ]
+          "hallazgos": []
         },
         "resiliencia": {
           "pct": 95,
@@ -923,11 +906,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 89,
-          "evidencia": "gate:design en verde · 3 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "3 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -948,7 +929,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "4 de 6 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -961,8 +942,6 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
-        "[seguridad] branches: legible por anon con USING(true). La necesita el kiosco antes del login; no está escrito en ningún lado",
-        "[vista] 3 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1038,12 +1017,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md, docs/PUNTOS-EL-CIRCUITO-Y-LO-QUE-FALTA-2026-08-29.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md, docs/planes-cerrados/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md",
           "hallazgos": []
         }
       },
@@ -1128,12 +1107,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "2 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md, docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md",
+          "evidencia": "2 documento(s) vivos, 1 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/PLAN-METAS-CIERRE-Y-GASTOS-2026-08-05.md, docs/planes-cerrados/PLAN-BONOS-DOS-CALENDARIOS-2026-09-22.md",
           "hallazgos": []
         }
       },
@@ -1186,9 +1165,11 @@
           "hallazgos": []
         },
         "observabilidad": {
-          "pct": 96,
-          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
-          "hallazgos": []
+          "pct": 87,
+          "evidencia": "barrido: 1 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": [
+            "src/data/promociones.js: fetchPresentacionesDeProducto() — la llaman 2, ninguna audita: views/promociones/EditarPromocionModal.jsx, views/promociones/PromocionModal.jsx"
+          ]
         },
         "vista": {
           "pct": 98,
@@ -1213,8 +1194,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 85,
-          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4406 pruebas en 362 archivos, todas verdes",
+          "pct": 79,
+          "evidencia": "2 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (40%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1223,10 +1204,11 @@
           "hallazgos": []
         }
       },
-      "pct": 95,
-      "estado": "completo",
+      "pct": 94,
+      "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
+        "[observabilidad] src/data/promociones.js: fetchPresentacionesDeProducto() — la llaman 2, ninguna audita: views/promociones/EditarPromocionModal.jsx, views/promociones/PromocionModal.jsx",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1283,7 +1265,10 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "tests/unit/bolsaComprobante.test.js:66 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+            "tests/unit/corteComprobante.test.js:48 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b."
+          ]
         },
         "movil": {
           "pct": 95,
@@ -1304,12 +1289,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "16 de 23 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "16 de 23 módulo(s) de lógica (.js) del área nombrados por alguna prueba (70%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/CORTES-DE-CAJA-COMO-FUNCIONA-2026-08-14.md, docs/planes-cerrados/PLAN-BOLSAS-DE-EFECTIVO-2026-08-15.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/CAJA-CORTES-Y-BOLSAS.md, docs/FALTANTES-DE-CAJA-Y-DE-INVENTARIO-2026-08-27.md",
           "hallazgos": []
         }
       },
@@ -1320,6 +1305,8 @@
         "[flujo] falta probar en sala",
         "[flujo] falta probar las bolsas en sala",
         "[flujo] falta el PRIMER cobro de crédito real con el código nuevo (reclamo atómico y firma del servidor, b596827ce)",
+        "[vista] tests/unit/bolsaComprobante.test.js:66 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+        "[vista] tests/unit/corteComprobante.test.js:48 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1372,11 +1359,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -1397,12 +1382,12 @@
         },
         "pruebas": {
           "pct": 94,
-          "evidencia": "9 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "9 de 14 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/resumen-dte-el-salvador.md, docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/RETOMAR-FACTURACION-Y-DTE-2026-08-09.md, docs/planes-cerrados/RETOMAR-CLIENTES-2026-08-01.md",
           "hallazgos": []
         }
       },
@@ -1411,7 +1396,6 @@
       "sello_sala": null,
       "hallazgos": [
         "[bd] índice sin lecturas en la ventana de 4 días: idx_customers_erp_id (968 kB)",
-        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1466,11 +1450,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 86,
-          "evidencia": "gate:design en verde · 4 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "4 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -1491,7 +1473,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "6 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "9 de 13 módulo(s) de lógica (.js) del área nombrados por alguna prueba (69%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1507,7 +1489,6 @@
         "[bd] índice sin lecturas en la ventana de 4 días: idx_products_pa_trgm (592 kB)",
         "[bd] índice sin lecturas en la ventana de 4 días: idx_products_pactivo_norm_trgm (592 kB)",
         "[bd] índice sin lecturas en la ventana de 4 días: idx_product_precios_history_pres (448 kB)",
-        "[vista] 4 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1558,9 +1539,11 @@
           "hallazgos": []
         },
         "observabilidad": {
-          "pct": 96,
-          "evidencia": "barrido: 0 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
-          "hallazgos": []
+          "pct": 87,
+          "evidencia": "barrido: 1 acción(es) que escriben y no quedan en la bitácora (detector que sigue la cadena de llamada, no el archivo)",
+          "hallazgos": [
+            "src/data/inventory.js: fetchFaltantesConStockEnOtraSala() — la llaman 2, ninguna audita: views/dashboard/WidgetInventorySearch.jsx, views/dashboard/inventario/PanelDeInventario.jsx"
+          ]
         },
         "vista": {
           "pct": 98,
@@ -1585,8 +1568,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 93,
-          "evidencia": "7 de 11 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4406 pruebas en 362 archivos, todas verdes",
+          "pct": 95,
+          "evidencia": "8 de 12 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1603,6 +1586,7 @@
         "[bd] índice sin lecturas en la ventana de 4 días: idx_igmv_desc_norm_trgm (1976 kB)",
         "[bd] índice sin lecturas en la ventana de 4 días: idx_conteo_items_source_sync_key (768 kB)",
         "[bd] índice sin lecturas en la ventana de 4 días: idx_mv_stock_analysis_sucursal (224 kB)",
+        "[observabilidad] src/data/inventory.js: fetchFaltantesConStockEnOtraSala() — la llaman 2, ninguna audita: views/dashboard/WidgetInventorySearch.jsx, views/dashboard/inventario/PanelDeInventario.jsx",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -1679,12 +1663,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (78%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "7 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (78%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
+          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 1 citado(s) desde el código: docs/planes-cerrados/PLAN-FACTOR-Y-MINMAX-2026-08-13.md, docs/planes-cerrados/PLAN-MINMAX-AJUSTE-A-MANO-2026-08-20.md, docs/planes-cerrados/PLAN-MINMAX-Y-CANDADO-2026-07-29.md",
           "hallazgos": []
         }
       },
@@ -1772,7 +1756,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "20 de 30 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "20 de 30 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1868,7 +1852,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "7 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (88%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "7 de 8 módulo(s) de lógica (.js) del área nombrados por alguna prueba (88%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -1917,9 +1901,11 @@
           ]
         },
         "datos": {
-          "pct": 95,
+          "pct": 90,
           "evidencia": "gate:data en verde (techo de 1000 filas, tipos, errores tragados) + barrido de fechas y montos",
-          "hallazgos": []
+          "hallazgos": [
+            "src/views/purchases/PropuestaDeCompra.jsx:1466"
+          ]
         },
         "bd": {
           "pct": 98,
@@ -1964,17 +1950,17 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "5 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (71%) · 4406 pruebas en 362 archivos, todas verdes",
+          "pct": 89,
+          "evidencia": "4 de 7 módulo(s) de lógica (.js) del área nombrados por alguna prueba (57%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/planes-cerrados/CONTABILIDAD-ALCANCE-2026-08-01.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
+          "evidencia": "2 documento(s) vivos, 2 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/CONTABILIDAD.md, docs/LECTURA-DE-COMPROBANTES-Y-RECETAS-2026-08-20.md",
           "hallazgos": []
         }
       },
-      "pct": 92,
+      "pct": 91,
       "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
@@ -1983,6 +1969,7 @@
         "[flujo] 2 compras duplicadas (LUO 5184/5830, COFARSAL 4986/5059) esperando al contador",
         "[flujo] la compra 6188 tiene mal el número de documento en el sistema de origen",
         "[flujo] las recetas están medidas (5 reales) y sin construir",
+        "[datos] src/views/purchases/PropuestaDeCompra.jsx:1466",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -2060,12 +2047,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "10 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "10 de 10 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "5 documento(s) vivos, 5 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/planes-cerrados/RETENCION-EN-LOS-LIBROS-2026-08-12.md, docs/ANEXOS-HACIENDA-2026-08-11.md, docs/planes-cerrados/AUDITORIA-CONTABLE-COMPLETA-2026-08-12.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/LIBROS-IVA-FORMATO-Y-HALLAZGOS-2026-08-01.md, docs/planes-cerrados/BLOQUE-D-CIERRE-DE-PERIODO.md, docs/CONTABILIDAD.md, docs/ANEXOS-HACIENDA-2026-08-11.md",
           "hallazgos": []
         }
       },
@@ -2130,11 +2117,9 @@
           "hallazgos": []
         },
         "vista": {
-          "pct": 95,
-          "evidencia": "gate:design en verde · 1 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": [
-            "1 tarjeta(s) escritas a mano en vez de data-surface=\"card\""
-          ]
+          "pct": 98,
+          "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
+          "hallazgos": []
         },
         "movil": {
           "pct": 95,
@@ -2155,12 +2140,12 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "8 de 11 módulo(s) de lógica (.js) del área nombrados por alguna prueba (73%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "6 documento(s) vivos, 6 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/planes-cerrados/PLAN-BITACORAS-SRS-2026-08-16.md, docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md, docs/planes-cerrados/BITACORAS-SOLO-DIGITAL-QUE-PIDE-LA-SRS-2026-09-03.md, docs/planes-cerrados/VERIFICACION-PROCEDIMIENTOS-DIGITALES-2026-09-03.md, docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md, docs/legal/procedimientos/",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 2 citado(s) desde el código: docs/BITACORAS-SRS.md, docs/planes-cerrados/AUDITORIA-BITACORAS-SRS-2026-08-25.md, docs/planes-cerrados/AUDITORIA-LIBRO-BAJO-RECETA-2026-09-03.md, docs/legal/procedimientos/",
           "hallazgos": []
         }
       },
@@ -2171,7 +2156,6 @@
         "[flujo] falta la consulta al CSSP desde el portal",
         "[flujo] falta el aviso de franja por vencerse",
         "[flujo] 51 productos del libro bajo receta sin principio activo (gate:receta en rojo, tope 47)",
-        "[vista] 1 tarjeta(s) escritas a mano en vez de data-surface=\"card\"",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -2228,7 +2212,15 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "src/utils/ticketPrint.js:983 — no-unused-vars: 'filaDeItem' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.",
+            "src/utils/ticketPrint.js:1058 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+            "src/utils/ticketPrint.js:1105 — no-unused-vars: 'encabezadoDeItems' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.",
+            "tests/unit/bolsaComprobante.test.js:66 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+            "tests/unit/corteComprobante.test.js:48 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+            "tests/unit/ticketPrint.test.js:122 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+            "tests/unit/ticketPrint.test.js:344 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b."
+          ]
         },
         "movil": {
           "pct": 95,
@@ -2251,7 +2243,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "3 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (75%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "4 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (80%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2267,6 +2259,13 @@
         "[flujo] el camino directo NO saca papel en la caja de Salud 4 (probado 19-ago)",
         "[flujo] falta medir el ancho del rollo",
         "[flujo] sigue sin probarse en otra sala",
+        "[vista] src/utils/ticketPrint.js:983 — no-unused-vars: 'filaDeItem' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.",
+        "[vista] src/utils/ticketPrint.js:1058 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+        "[vista] src/utils/ticketPrint.js:1105 — no-unused-vars: 'encabezadoDeItems' is defined but never used. Allowed unused vars must match /^[A-Z_]/u.",
+        "[vista] tests/unit/bolsaComprobante.test.js:66 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+        "[vista] tests/unit/corteComprobante.test.js:48 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+        "[vista] tests/unit/ticketPrint.test.js:122 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
+        "[vista] tests/unit/ticketPrint.test.js:344 — no-control-regex: Unexpected control character(s) in regular expression: \\x1b.",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar",
         "[eficiencia] 402 escrituras/h sobre 6 filas de impresion_dispositivos — es el latido de las 6 cajas, y es 100% HOT (no rehace índices): 152 kB en total, nada que ver con el churn de inventory"
       ],
@@ -2339,18 +2338,18 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 95,
-          "evidencia": "6 de 9 módulo(s) de lógica (.js) del área nombrados por alguna prueba (67%) · 4406 pruebas en 362 archivos, todas verdes",
+          "pct": 87,
+          "evidencia": "9 de 17 módulo(s) de lógica (.js) del área nombrados por alguna prueba (53%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
           "pct": 95,
-          "evidencia": "3 documento(s) vivos, 3 con cuerpo (≥120 líneas), 3 citado(s) desde el código: docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md, docs/planes-cerrados/PLAN-BLINDAJE-ANTE-TERCEROS-2026-08-13.md, docs/INCIDENTE-CAIDA-2026-09-14.md",
+          "evidencia": "4 documento(s) vivos, 4 con cuerpo (≥120 líneas), 4 citado(s) desde el código: docs/SISTEMA-LA-BITACORA-LOS-RESPALDOS-Y-LA-SALUD-2026-08-24.md, docs/SEGURIDAD-Y-ACCESO.md, docs/INCIDENTE-CAIDA-2026-09-14.md, docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md",
           "hallazgos": []
         }
       },
-      "pct": 95,
-      "estado": "completo",
+      "pct": 94,
+      "estado": "en-curso",
       "sello_sala": null,
       "hallazgos": [
         "[flujo] auditoría 2026-07-30: quedan puntos abiertos",
@@ -2424,7 +2423,7 @@
         },
         "pruebas": {
           "pct": 85,
-          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "1 de 2 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2488,7 +2487,9 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "src/utils/encuestasClientes.js:173 — no-unused-vars: 'exclusiva' is defined but never used."
+          ]
         },
         "movil": {
           "pct": 95,
@@ -2508,8 +2509,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 85,
-          "evidencia": "2 de 4 módulo(s) de lógica (.js) del área nombrados por alguna prueba (50%) · 4406 pruebas en 362 archivos, todas verdes",
+          "pct": 91,
+          "evidencia": "3 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (60%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2522,6 +2523,7 @@
       "estado": "completo",
       "sello_sala": null,
       "hallazgos": [
+        "[vista] src/utils/encuestasClientes.js:173 — no-unused-vars: 'exclusiva' is defined but never used.",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -2596,8 +2598,8 @@
           "hallazgos": []
         },
         "pruebas": {
-          "pct": 93,
-          "evidencia": "28 de 44 módulo(s) de lógica (.js) del área nombrados por alguna prueba (64%) · 4406 pruebas en 362 archivos, todas verdes",
+          "pct": 95,
+          "evidencia": "29 de 44 módulo(s) de lógica (.js) del área nombrados por alguna prueba (66%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2658,7 +2660,9 @@
         "vista": {
           "pct": 98,
           "evidencia": "gate:design en verde · 0 hallazgo(s) de tarjeta-a-mano bajo baseline · barrido: 0 pantalla(s) vacías dibujadas a mano",
-          "hallazgos": []
+          "hallazgos": [
+            "tests/unit/reservasDatos.test.js:145 — no-unused-vars: 'listas' is defined but never used."
+          ]
         },
         "movil": {
           "pct": 95,
@@ -2679,7 +2683,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "17 de 25 módulo(s) de lógica (.js) del área nombrados por alguna prueba (68%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "17 de 25 módulo(s) de lógica (.js) del área nombrados por alguna prueba (68%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {
@@ -2694,6 +2698,7 @@
       "hallazgos": [
         "[flujo] faltan confirmar niveles, mayoreo y reservas de medicamentos antes de enviarla a las tiendas",
         "[flujo] el escáner de sala no lee el código desde la pantalla: falta probar con otro teléfono",
+        "[vista] tests/unit/reservasDatos.test.js:145 — no-unused-vars: 'listas' is defined but never used.",
         "[movil] el entorno de pruebas está 130 migraciones atrás de producción: lo medido vale para la MAQUETA (que no depende del esquema) y no para una vista cuyo dato no llegó a cargar"
       ],
       "verificaciones": [
@@ -2762,7 +2767,7 @@
         },
         "pruebas": {
           "pct": 95,
-          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · 4406 pruebas en 362 archivos, todas verdes",
+          "evidencia": "5 de 5 módulo(s) de lógica (.js) del área nombrados por alguna prueba (100%) · la batería no se pudo ejecutar acá: el tamaño no se midió",
           "hallazgos": []
         },
         "doc": {

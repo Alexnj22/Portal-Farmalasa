@@ -23,6 +23,17 @@ import { checkCronSecret, getCorsHeaders } from "../_shared/security.ts";
  * antiduplicado, y cambiarlos volvería a publicar todo lo ya avisado. */
 interface DocConFecha { id: string; label: string; expDate: unknown }
 
+/* La próxima fumigación: la última más la frecuencia (`fumigationEveryDays`).
+ * Gemela de `proximaFumigacion` en `src/utils/expedienteDeSucursal.js`:
+ * cambiar una exige cambiar la otra. Sin frecuencia, no vence (2026-11-11). */
+// deno-lint-ignore no-explicit-any
+function proximaFumigacion(legal: any): string | null {
+  const cada = Number(legal?.fumigationEveryDays);
+  const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(legal?.lastFumigationDate || ''));
+  if (!Number.isInteger(cada) || cada <= 0 || cada > 366 || !m) return null;
+  return new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]) + cada)).toISOString().slice(0, 10);
+}
+
 // deno-lint-ignore no-explicit-any
 function documentosConVencimiento(branch: any): DocConFecha[] {
   const settings = branch?.settings || {};
@@ -37,6 +48,7 @@ function documentosConVencimiento(branch: any): DocConFecha[] {
     { id: 'regentCredentialExp',  label: 'Credencial JVQF (Regente)',       expDate: legal.regentCredentialExp },
     { id: 'pharmacovigilanceExp', label: 'Autorización Farmacovigilancia',  expDate: legal.pharmacovigilanceExp },
     { id: 'extinguisherExpiration', label: 'Recarga de extintores',         expDate: legal.extinguisherExpiration },
+    { id: 'fumigationNext',       label: 'Fumigación',                      expDate: proximaFumigacion(legal) },
   ];
   if (hasControlledBooks) {
     docs.push({ id: 'controlledBooksExp', label: 'Resolución Libros Controlados', expDate: legal.controlledBooksExp });

@@ -279,6 +279,7 @@ export const createBranchSlice = (set, get) => ({
                     { file: 'wasteFile', url: 'wasteUrl', type: 'CONTRATO_DESECHOS', label: 'Contrato de Desechos', dbType: 'contrato_desechos' },
                     { file: 'fumigationFile', url: 'fumigationUrl', type: 'CERTIFICADO_FUMIGACION', label: 'Certificado de Fumigación', dbType: 'certificado_fumigacion' },
                     { file: 'controlledBooksFile', url: 'controlledBooksUrl', type: 'LIBROS_CONTROLADOS', label: 'Resolución Libros Controlados', dbType: 'libros_controlados' },
+                    { file: 'extinguisherFile', url: 'extinguisherUrl', type: 'RECARGA_EXTINTORES', label: 'Recarga de Extintores', dbType: 'recarga_extintores' },
                 ];
 
                 for (const f of fileFields) {

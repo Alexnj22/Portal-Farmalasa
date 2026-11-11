@@ -15,9 +15,9 @@ describe('expedienteDeSucursal', () => {
         const e = documentosDeSucursal(b);
         expect(e.permisos.map((d) => d.id)).toEqual(['srs', 'alcaldia', 'inyecciones']);
         expect(e.personal).toHaveLength(6);
-        expect(e.infra.map((d) => d.id)).toEqual(['arrendamiento', 'desechos', 'fumigacion']);
+        expect(e.infra.map((d) => d.id)).toEqual(['arrendamiento', 'desechos', 'fumigacion', 'extintores']);
         expect(e.propios[0].category).toBe('PERMISOS');
         expect(e.subidos).toBe(2);
-        expect(e.total).toBe(13);
+        expect(e.total).toBe(14);
     });
 });

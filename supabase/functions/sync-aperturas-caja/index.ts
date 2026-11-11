@@ -336,9 +336,16 @@ Deno.serve(async (req) => {
       }
     }
 
+    /* `{"branchId": N}` acota la corrida a UNA sala. Lo manda `operar-caja`
+     * apenas abre una caja (2026-11-11): 257 de las 258 aperturas de seis
+     * semanas salieron del portal, así que la fila nace en el momento y el
+     * barrido de reloj quedó como red de lo que se hace directo en la caja
+     * —por eso pasó de cada 30 minutos a cada hora—. Cuesta un ingreso y tres
+     * peticiones, contra las 19 de barrer las seis salas. */
+    const unaSala = Number(body.branchId);
     const soloEstas = manana
       ? new Set(((estadoManana?.faltan_ids as number[]) ?? []).map(Number))
-      : null;
+      : Number.isFinite(unaSala) && unaSala > 0 ? new Set([unaSala]) : null;
     const objetivo = getErpBranchMap().filter(({ branchId, erpId }) =>
       erpId !== ERP_BODEGA && (soloEstas === null || soloEstas.has(branchId)));
 

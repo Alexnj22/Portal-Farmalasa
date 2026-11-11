@@ -485,8 +485,8 @@ const CRONS = [
           + 'madrugada también hay que verla, y casi siempre no encuentra nada que hacer.',
   },
   {
-    job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '*/30 12-23,0-4 * * *',
-    corridasDia: 34, sistema: 19,
+    job: 'aperturas-caja-30min', slug: 'sync-aperturas-caja', cadencia: '0 12-23,0-4 * * *',
+    corridasDia: 17, sistema: 19,
     motivo: 'Quién tiene la caja abierta en cada sala, a qué hora la abrió y cuánto espera el '
           + 'sistema. Existe porque ese dato hoy no está en ningún lado: tres de las seis salas '
           + 'cortan bajo una cuenta compartida («MI CAJA LA POPULAR») —185 de 452 cortes desde el '
@@ -494,7 +494,10 @@ const CRONS = [
           + 'Son 19 peticiones: un ingreso + tres por sala (cambiar de sala, la pantalla con las '
           + 'cajas, y el panel de cada caja). No se cachea la caja de cada sala a propósito: una '
           + 'caja nueva tiene que aparecer sola. '
-          + 'CADA 30 MINUTOS y no más seguido porque la hora de apertura que se guarda es EXACTA '
+          + 'CADA HORA desde el 2026-11-11 (antes 30 min): 257 de 258 aperturas salen del portal y '
+          + '`operar-caja` le pide a esta función que mire ESA sala apenas abre (`branchId`, ~4 '
+          + 'peticiones), así que el reloj es sólo la red de lo hecho directo en la caja. Antes, '
+          + 'cada 30 minutos y no más seguido porque la hora de apertura que se guarda es EXACTA '
           + '—la da el panel, no el reloj de la corrida—, así que mirar más veces no la mejora; lo '
           + 'único que gana precisión es el cierre, y el turno se cierra una vez al día. La '
           + 'ventana va en el cron Y en la función: acá acota el disparo, allá porque `forzar` la '

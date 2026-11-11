@@ -1,6 +1,6 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import {
-  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser,
+  getCorsHeaders, getErpBranchMap, permisoDeModulo, requireActiveEmployeeUser, secretoDeCircuito,
 } from "../_shared/security.ts";
 import { hora12 } from "../_shared/hora.ts";
 import { crearEnlace, EN_PREPARACION, pasarelaLista } from "../_shared/n1co.ts";
@@ -1602,6 +1602,35 @@ Deno.serve(async (req) => {
         caja_erp: Number(estado.idCaja), monto_apertura: monto,
         erp_apertura_id: Number.isFinite(aperturaNueva) ? aperturaNueva : null,
       });
+
+      /* ── El espejo de la apertura, en el momento y no en el próximo barrido ─
+       *
+       * `cortes_caja_aperturas` lo llena `sync-aperturas-caja`, que desde el
+       * 2026-11-11 barre cada HORA (antes cada 30 min): 257 de las 258
+       * aperturas de seis semanas salieron de este botón, así que es acá donde
+       * hay que avisarle. Sin esto la fila tardaría hasta una hora, y la leen
+       * `iniciar_turno` (con qué empleado está abierta), las fichas de caja y
+       * `caja_falta_por_contar` (el monto de apertura).
+       *
+       * Se le pide al barrido y no se escribe la fila acá: el panel lo lee
+       * `leerPanel` de esa función y tener dos lectores del mismo HTML es como
+       * se llega a dos respuestas. Va DESPUÉS de anotar quién abrió, para que
+       * el barrido ya encuentre `caja_aperturas_del_portal` y firme con la
+       * persona. En segundo plano: la caja ya abrió y la respuesta no espera
+       * por el espejo; si falla, la fila llega con el barrido de reloj. */
+      // @ts-ignore — EdgeRuntime es global del runtime de Supabase
+      EdgeRuntime.waitUntil((async () => {
+        const secreto = secretoDeCircuito("sync");
+        if (!secreto) { console.error("[operar-caja] abrir: sin SYNC_INVOKE_SECRET, el espejo espera al barrido"); return; }
+        const r = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/sync-aperturas-caja`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${secreto}` },
+          body: JSON.stringify({ branchId: sala, forzar: true }),
+          signal: AbortSignal.timeout(60_000),
+        });
+        if (!r.ok) console.error(`[operar-caja] abrir sala=${sala}: el barrido de aperturas contestó ${r.status}`);
+      })().catch((e: unknown) =>
+        console.error(`[operar-caja] abrir sala=${sala}: no se pudo avisar al barrido:`, (e as Error)?.message ?? e)));
       // La caja YA está abierta cuando llegamos acá. Si la anotación falla, la
       // apertura existe y el portal no sabe quién la hizo — que es justo el dato
       // que esta función existe para guardar. Se contesta que abrió (es verdad)
@@ -3013,14 +3042,12 @@ Deno.serve(async (req) => {
      *
      * `cortes_caja_aperturas` es lo que ahora contesta «¿está abierta?» —la
      * pantalla dejó de raspar el panel para pintarse (`caja_estado`)— y quien
-     * lo mantiene es un barrido cada 30 minutos. Sin esta línea, la sala que
-     * acaba de cerrar el día vería «Abierta» hasta media hora después, y el
-     * cierre es justo el momento en que se mira la pantalla para comprobar que
-     * pasó.
+     * lo mantiene es un barrido cada hora. Sin esta línea, la sala que acaba
+     * de cerrar el día vería «Abierta» hasta una hora después, y el cierre es
+     * justo el momento en que se mira la pantalla para comprobar que pasó.
      *
-     * Abrir no necesita su gemela: con la caja figurando cerrada, el portal le
-     * pregunta al origen igual (ver `hayQuePreguntarleAlOrigen`). Cerrar sí,
-     * porque ahí el espejo dice «abierta» y esa respuesta no se revalida.
+     * Abrir tiene su gemela desde el 2026-11-11: le pide al barrido que mire
+     * esa sala apenas abre (ver la acción `abrir`).
      *
      * El error se registra y NO corta: la caja YA cerró, y devolver un fallo
      * acá invitaría a cerrar de nuevo sobre un día que ya emitió su Z. */

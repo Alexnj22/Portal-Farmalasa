@@ -16,6 +16,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Image, Keyboard, Platform, RefreshControl, ScrollView, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import FilaLaboratorios from '../../../componentes/FilaLaboratorios';
+import VolverConGesto from '../../../componentes/VolverConGesto';
 import Presionable from '../../../componentes/Presionable';
 import { Stack } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
@@ -327,6 +328,8 @@ export default function Catalogo() {
       </Animated.View>
       <HojaAgregar />
       <AvisoAgregado />
+      {/* Con un filtro puesto, deslizar desde el borde (y «atrás» en Android) vuelve a la tienda. */}
+      <VolverConGesto activo={!!q} alVolver={volverALaTienda} />
     </>
   );
 }

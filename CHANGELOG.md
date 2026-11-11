@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.6 — App de clientes: deslizar para volver también con un filtro en la Tienda
+
+Con un filtro puesto en la Tienda (laboratorio, necesidad o búsqueda), deslizar desde el borde no hacía nada: la Tienda es la raíz de su pestaña, el filtro es un estado y no una pantalla, y no había a dónde volver. `componentes/VolverConGesto.js` escucha el deslizar desde el borde izquierdo (y el «atrás» de Android) mientras hay filtro, y vuelve a la tienda igual que el botón.
+
+Revisadas las demás pestañas (Inicio, Bienestar, Carrito, Cuenta): ninguna cambia de modo sin navegar. Las pantallas con pasos internos (entrar, registro, juegos) están dentro de una pila, así que el gesto ya las cierra.
+
 ## v2.1510.5 — App de clientes: el final del Carrito alcanzable y la receta dice qué productos cubre
 
 - **El botón final quedaba debajo de las pestañas** (iPhone): al apagar el ajuste automático del Carrito también se fue su margen de abajo. `Pantalla bajoBarra` ahora pone ese margen explícito (barra de pestañas más área segura).

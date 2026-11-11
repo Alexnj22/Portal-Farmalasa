@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.6 — App: el código del logo blanco en oscuro
+
+El cambio que describe v2.1504.5. Esa entrada y su versión entraron en un commit de otra sesión (el índice de git es compartido) sin el código; acá va el código: `PilaDePestana.js`, las capas verde y morada de vuelta a 880×119 y el borrado de `logo-farmacias-blanco.png`.
+
 ## v2.1504.5 — App: logo blanco en modo oscuro, sin borde
 
 A pedido del usuario se quita el borde blanco del logo de la barra (v2.1504.3). En modo oscuro el logo de Farmacias La Popular y La Salud va todo en blanco; en modo claro, el original en sus colores, porque el blanco no se vería sobre la barra clara. Se borra `apps/mobile/assets/logo-farmacias-blanco.png` y las capas verde y morada vuelven a las de la app de clientes (880×119). Va por aire.

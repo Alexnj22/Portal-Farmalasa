@@ -74,7 +74,7 @@ export function ConTeclado({ children }) {
 // Carrito ese ajuste a veces no se aplica (el contenido arrancaba en y=16 con
 // una barra de 116) y la primera tarjeta quedaba medio tapada. Con el número,
 // el hueco de arriba es fijo y siempre el mismo.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0 }) {
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0, encima = null }) {
   const fijo = Platform.OS === 'ios' && bajoBarra > 0;
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
@@ -127,6 +127,8 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       {children}
     </ScrollView>
     </ConTeclado>
+    {/* Lo que flota sobre la lista (un aviso con «Deshacer»), fuera del desplazamiento. */}
+    {encima}
     {sinBarra && velo ? (
       Platform.OS === 'ios'
         ? <BlurView pointerEvents="none" intensity={60} tint="systemChromeMaterial" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: ins.top }} />

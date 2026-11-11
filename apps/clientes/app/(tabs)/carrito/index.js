@@ -25,6 +25,7 @@ import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Pantalla, RADIO, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import Animated, { FadeInDown, FadeOutDown } from 'react-native-reanimated';
 import { colorSistema } from '../../../componentes/sistema';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
@@ -284,7 +285,7 @@ function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} encima={<AvisoQuitado />}>
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
@@ -318,7 +319,7 @@ function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} encima={<AvisoQuitado />}>
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ir a la Tienda</Boton>
@@ -327,7 +328,7 @@ function Carrito() {
   }
 
   return (
-    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
+    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} encima={<AvisoQuitado />}>
       <TusReservas resumen={resumen} />
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];
@@ -671,5 +672,31 @@ function Campo({ etiqueta, valor, alCambiar, teclado, multilinea }) {
         style={{ fontSize: 16, color: colorSistema.texto, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10, minHeight: multilinea ? 64 : 44,
           backgroundColor: t.oscuro ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)' }} />
     </View>
+  );
+}
+
+// «Quitaste … · Deshacer» (2026-11-11): al quitar un producto (con la X o
+// deslizando), 5 s para devolverlo con su cantidad y en su lugar.
+function AvisoQuitado() {
+  const t = useTema();
+  const q = useCarrito((s) => s.quitado);
+  useEffect(() => {
+    if (!q) return undefined;
+    const id = setTimeout(() => useCarrito.getState().soltarQuitado(), 5000);
+    return () => clearTimeout(id);
+  }, [q]);
+  if (!q) return null;
+  return (
+    <Animated.View key={q.en} entering={FadeInDown.duration(240)} exiting={FadeOutDown.duration(160)} accessibilityLiveRegion="polite"
+      style={{ position: 'absolute', left: 16, right: 16, bottom: Platform.OS === 'ios' ? 104 : 24, flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 56,
+        paddingLeft: 14, paddingRight: 6, borderRadius: 18, backgroundColor: t.oscuro ? '#2A2630' : '#1F1B24',
+        shadowColor: '#000', shadowOpacity: 0.25, shadowRadius: 12, shadowOffset: { width: 0, height: 5 }, elevation: 8 }}>
+      <Icono sf="trash.fill" respaldo="✕" tam={17} color="rgba(255,255,255,0.75)" />
+      <Text style={{ flex: 1, fontSize: 14, fontWeight: '700', lineHeight: 18, color: '#FFFFFF' }} numberOfLines={2}>Quitaste {nombreProducto(q.item.nombre)}</Text>
+      <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); useCarrito.getState().deshacer(); }} accessibilityRole="button" accessibilityLabel="Deshacer"
+        style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>
+        <Text style={{ fontSize: 14, fontWeight: '800', color: t.color.verde }}>Deshacer</Text>
+      </Presionable>
+    </Animated.View>
   );
 }

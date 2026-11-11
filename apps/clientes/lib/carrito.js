@@ -52,10 +52,25 @@ export const useCarrito = create((set, get) => ({
     const items = get().items.map((x) => (llave(x) === llave(p) ? { ...x, cantidad: Math.max(1, Math.min(MAX_UNIDADES, n)) } : x));
     set({ items }); guardar(items);
   },
-  quitar: (p) => { const items = get().items.filter((x) => llave(x) !== llave(p)); set({ items }); guardar(items); },
+  // Lo último que se quitó, para «Deshacer» (2026-11-11): el producto tal
+  // cual (con su cantidad) y en qué lugar estaba.
+  quitado: null,
+  quitar: (p) => {
+    const antes = get().items;
+    const indice = antes.findIndex((x) => llave(x) === llave(p));
+    const items = antes.filter((x) => llave(x) !== llave(p));
+    set({ items, quitado: indice >= 0 ? { item: antes[indice], indice, en: Date.now() } : get().quitado }); guardar(items);
+  },
+  deshacer: () => {
+    const q = get().quitado; if (!q) return;
+    const items = get().items.filter((x) => llave(x) !== llave(q.item));
+    items.splice(Math.min(q.indice, items.length), 0, q.item);
+    set({ items, quitado: null }); guardar(items);
+  },
+  soltarQuitado: () => set({ quitado: null }),
   // Al cerrar sesión también se borra la copia VIEJA de SecureStore, si quedó:
   // si no, la mudanza la traería de vuelta para la cuenta siguiente.
-  vaciar: () => { set({ items: [] }); guardar(null); SecureStore.deleteItemAsync(CLAVE).catch(() => {}); },
+  vaciar: () => { set({ items: [], quitado: null }); guardar(null); SecureStore.deleteItemAsync(CLAVE).catch(() => {}); },
 }));
 
 useCarrito.getState().cargar();

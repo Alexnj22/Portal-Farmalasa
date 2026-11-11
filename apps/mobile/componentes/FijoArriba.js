@@ -49,13 +49,17 @@
 // bajo la barra, así que iOS no le agrega margen arriba.
 //
 // `conBarra={false}`: una hoja sin barra; no se deja lugar.
+import { useContext } from 'react';
 import { View, useWindowDimensions } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { BARRA_FIJA_TRANSPARENTE } from './PilaDePestana';
+import { BARRA_FIJA_TRANSPARENTE, RaizFija } from './PilaDePestana';
 
 export default function FijoArriba({ children, conBarra = true }) {
   const { top } = useSafeAreaInsets();
+  // En la raíz de una pestaña la barra es opaca (ver `RaizFija`): el sistema ya
+  // deja el lugar de la barra y del buscador.
+  const enRaiz = useContext(RaizFija);
   const { width, height } = useWindowDimensions();
-  const barra = BARRA_FIJA_TRANSPARENTE && conBarra ? top + (width > height ? 32 : 44) : 0;
+  const barra = BARRA_FIJA_TRANSPARENTE && conBarra && !enRaiz ? top + (width > height ? 32 : 44) : 0;
   return <View style={{ paddingTop: barra + 8, paddingBottom: 8 }}>{children}</View>;
 }

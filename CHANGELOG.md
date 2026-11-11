@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1511.3 — App: secciones en su lugar también en la pestaña rápida
+
+El arreglo de iOS 26 (lugar fijo bajo una barra transparente) rompió Solicitudes como pestaña rápida (captura del usuario): en la raíz de una pestaña el buscador va arriba, dentro de la barra, y la altura fija no lo contaba, así que las secciones quedaban encima del buscador. Ahora `BARRA_FIJA` en iOS 26 no fija la transparencia y la hereda de la pila: la raíz (`app/_layout.js`, `PILA_RAIZ`) la pone transparente para las pantallas que se abren encima, con el lugar fijo y sin salto; la pila de una pestaña `fija` (Inicio, la pestaña rápida) la pone opaca y avisa a `FijoArriba` por `RaizFija`, así el sistema deja el lugar de la barra y del buscador. `portal` y las dos de venta de Torogoz, que no declaraban barra, quedan explícitamente opacas como antes. Va por aire.
+
 ## v2.1511.2 — Los selects de formulario ya no ofrecen «Todos»; la liquidación permite el total acordado
 
 - **Selects:** un campo de formulario con una opción elegida abría la lista con una fila «Todos» arriba (por ejemplo en «Motivo legal de la baja»). Venía del valor por defecto del componente y pasaba en todos los formularios que no le ponían texto propio. Ahora esa fila sólo aparece en los filtros, que es donde «Todos» tiene sentido, o cuando el campo la nombra («Ninguno»). Para borrar un campo sigue estando la ✕.

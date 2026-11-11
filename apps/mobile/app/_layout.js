@@ -26,6 +26,7 @@ import { aplicarTemaGuardado } from '../tema/preferencia';
 import { revisarRastreoDeFondo } from '../plataforma/rastreoDeFondo';
 import { escucharVisibilidad, soltarVisibilidad, visibilidad } from '../plataforma/cicloDeVida';
 import { vigilarActualizacionesPorAire } from '../plataforma/actualizacionAire';
+import { PILA_RAIZ } from '../componentes/PilaDePestana';
 
 // Android no trae la hoja de opciones ni el prompt de iOS: se instalan antes de
 // que cualquier pantalla los pida (ver componentes/HojasAndroid).
@@ -117,10 +118,16 @@ export default function Raiz() {
               // barra de pestañas, que no significa nada para quien la usa.
               headerBackButtonDisplayMode: 'minimal',
               headerRight: () => <BotonCampana />,
+              // Transparente por defecto en iOS 26: lo hereda BARRA_FIJA (ver
+              // componentes/PilaDePestana.js). Las demás barras lo dicen solas.
+              ...PILA_RAIZ,
             }}
           >
             <Stack.Screen name="index" options={{ headerShown: false }} />
             <Stack.Screen name="entrar" options={{ headerShown: false }} />
+            {/* Sin opciones propias: con la barra opaca de siempre. */}
+            <Stack.Screen name="torogoz/venta" options={{ headerTransparent: false }} />
+            <Stack.Screen name="torogoz/venta/[id]" options={{ headerTransparent: false }} />
             <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
             {/* Los avisos sin leer, al entrar: no se cierra sin confirmarlos (app/leer-avisos.js). */}
             <Stack.Screen name="leer-avisos" options={{ headerShown: false, presentation: 'fullScreenModal', gestureEnabled: false }} />

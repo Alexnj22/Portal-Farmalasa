@@ -7,7 +7,7 @@ export default function Portal() {
   // lee como dos pantallas. La barra queda para la flecha de regreso.
   return (
     <>
-      <Stack.Screen options={{ title: '' }} />
+      <Stack.Screen options={{ title: '', headerTransparent: false }} />
       <PortalIncrustado ruta={String(ruta)} />
     </>
   );

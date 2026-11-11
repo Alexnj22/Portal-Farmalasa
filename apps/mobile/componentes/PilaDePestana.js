@@ -5,6 +5,7 @@
 // sistema cuando el contenido pasa por debajo, como Ajustes o Mensajes. Con un
 // fondo de color fijo (lo que había) se veía blanca al desplazar, y el título
 // grande salía oscuro sobre oscuro en modo oscuro (usuario, 2026-09-30).
+import { createContext } from 'react';
 import { Image, Platform, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
@@ -33,10 +34,23 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
 // después baja a la barra de abajo— y las secciones arrancan ~60 pt más abajo.
 // Ahí la barra queda TRANSPARENTE y `FijoArriba` se coloca solo, a una altura
 // fija (área segura + barra), que no cambia durante la animación.
+//
+// Pero en la RAÍZ de una pestaña (la pestaña rápida, Inicio) el buscador va
+// arriba, dentro de la barra, y la altura fija no lo cuenta: las secciones
+// quedaban encima del buscador (usuario, mismo día). Ahí no hay animación de
+// entrada, así que la barra opaca sirve. Por eso BARRA_FIJA, en iOS 26, NO
+// dice si la barra es transparente: lo hereda de la pila. La pila raíz
+// (app/_layout.js) la pone transparente; la de una pestaña con `fija`, opaca,
+// y avisa a FijoArriba por `RaizFija` para que no deje el lugar fijo.
 export const BARRA_FIJA_TRANSPARENTE = IOS26;
+export const RaizFija = createContext(false);
+const { headerTransparent: _sinTransparencia, ...BARRA_NATIVA_SIN_TRANSPARENCIA } = BARRA_NATIVA;
+const OPACA = { headerTransparent: false, headerStyle: { backgroundColor: 'transparent' } };
 export const BARRA_FIJA = Platform.OS === 'ios'
-  ? (IOS26 ? BARRA_NATIVA : { ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: 'transparent' } })
+  ? (IOS26 ? BARRA_NATIVA_SIN_TRANSPARENCIA : { ...BARRA_NATIVA, ...OPACA })
   : {};
+/** La transparencia por defecto de la pila raíz (la hereda BARRA_FIJA en iOS 26). */
+export const PILA_RAIZ = IOS26 ? { headerTransparent: true } : {};
 
 // `sinBarra`: la pestaña muestra el portal, que ya trae su propio título.
 // El encabezado de marca (2026-11-11, a pedido del usuario: «como la app de
@@ -98,9 +112,11 @@ export default function PilaDePestana({ titulo, sinBarra = false, conMarca = tru
   };
   return (
     <ConAurora>
-    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? BARRA_FIJA : BARRA_NATIVA) }}>
+    <RaizFija.Provider value={fija}>
+    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? { ...BARRA_NATIVA, ...(Platform.OS === 'ios' ? OPACA : {}) } : BARRA_NATIVA) }}>
       <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra, ...marca }} />
     </Stack>
+    </RaizFija.Provider>
     </ConAurora>
   );
 }

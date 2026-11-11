@@ -20,6 +20,7 @@ import Presionable from '../../../componentes/Presionable';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
@@ -70,6 +71,13 @@ function Carrito() {
   const [enviando, setEnviando] = useState(false);
   const [terminos, setTerminos] = useState(null);
   const [hecho, setHecho] = useState(null);
+  // La altura de la barra, para que la primera tarjeta nunca quede debajo de
+  // ella (ver `arriba` en Pantalla). Y al pasar del formulario a «¡Listo!» (o
+  // de vuelta), arriba de todo: el desplazamiento del formulario largo quedaba
+  // y la confirmación aparecía a media altura.
+  const barra = useHeaderHeight();
+  const refLista = useRef(null);
+  useEffect(() => { refLista.current?.scrollTo({ y: 0, animated: false }); }, [!!hecho]); // eslint-disable-line react-hooks/exhaustive-deps
   // Bajo receta (2026-10-12).
   const [recetaIds, setRecetaIds] = useState(() => new Set());
   const [fotoReceta, setFotoReceta] = useState(null);
@@ -267,7 +275,7 @@ function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla conBurbuja={false}>
+      <Pantalla conBurbuja={false} arriba={barra} refLista={refLista}>
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
@@ -301,7 +309,7 @@ function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla conBurbuja={false}>
+      <Pantalla conBurbuja={false} arriba={barra} refLista={refLista}>
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ir a la Tienda</Boton>
@@ -310,7 +318,7 @@ function Carrito() {
   }
 
   return (
-    <Pantalla conBurbuja={false}>
+    <Pantalla conBurbuja={false} arriba={barra} refLista={refLista}>
       <TusReservas resumen={resumen} />
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];

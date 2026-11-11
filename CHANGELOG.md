@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.5 — App: logo blanco en modo oscuro, sin borde
+
+A pedido del usuario se quita el borde blanco del logo de la barra (v2.1504.3). En modo oscuro el logo de Farmacias La Popular y La Salud va todo en blanco; en modo claro, el original en sus colores, porque el blanco no se vería sobre la barra clara. Se borra `apps/mobile/assets/logo-farmacias-blanco.png` y las capas verde y morada vuelven a las de la app de clientes (880×119). Va por aire.
+
+## v2.1504.4 — App de clientes: el carrito ya no queda tapado por la barra
+
+En iPhone, a veces al entrar al Carrito (sobre todo desde «Agregar al carrito») la primera tarjeta quedaba medio escondida debajo de la barra de arriba. El espacio de la barra ahora es fijo en esa pantalla. Además, al reservar, la confirmación aparece desde arriba y no a media altura del formulario.
+
 ## v2.1504.3 — App: el logo de la barra con su borde blanco
 
 El logo original de Farmacias La Popular y La Salud en la barra de la app del personal lleva ahora un borde blanco detrás, elegido por el usuario después de varias vueltas: fino y redondeado, cada renglón relleno de punta a punta con aire a los lados, el blanco de «FARMACIAS» unido al renglón de abajo con su mismo ancho y el ícono sobre un círculo blanco. Las letras y sus colores no cambian, en claro ni en oscuro. Tres capas nuevas en `apps/mobile/assets/logo-farmacias-{blanco,verde,morado}.png`. Va por aire.

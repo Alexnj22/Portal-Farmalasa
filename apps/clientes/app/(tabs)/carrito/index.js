@@ -21,6 +21,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
+import { reportarError } from '../../../lib/errores';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
@@ -85,6 +86,25 @@ function Carrito() {
     requestAnimationFrame(() => refLista.current?.scrollTo({ y, animated: false }));
   }, [barra]);
   const vacio = items.length === 0;
+  // DIAGNÓSTICO TEMPORAL (2026-11-11): la tarjeta medio escondida al abrir
+  // la pestaña por primera vez. Mide en el teléfono dónde queda el borde de
+  // arriba del contenido respecto de la barra y lo manda a `app_errores`
+  // (mensaje «diag-carrito»). Una vez por arranque. Se quita al resolverlo.
+  const refMarca = useRef(null);
+  const diagHecho = useRef(false);
+  useFocusEffect(useCallback(() => {
+    if (diagHecho.current) return;
+    diagHecho.current = true;
+    const medir = (cuando) => {
+      const lista = refLista.current; const marca = refMarca.current;
+      if (!lista?.measureInWindow || !marca?.measureInWindow) return;
+      lista.measureInWindow((lx, ly, lw, lh) => marca.measureInWindow((mx, my) => {
+        reportarError(new Error(`diag-carrito ${JSON.stringify({ cuando, vacio, barra: Math.round(barra), listaY: Math.round(ly), listaAlto: Math.round(lh), marcaY: Math.round(my) })}`), { pantalla: 'carrito-diag' });
+      }));
+    };
+    setTimeout(() => medir(400), 400);
+    setTimeout(() => medir(2500), 2500);
+  }, [vacio, barra]));
   useEffect(() => { alBordeDeArriba(); }, [vacio, !!hecho]); // eslint-disable-line react-hooks/exhaustive-deps
   useFocusEffect(useCallback(() => { if (vacio || hecho) alBordeDeArriba(); }, [vacio, hecho, alBordeDeArriba]));
   // Bajo receta (2026-10-12).
@@ -285,6 +305,7 @@ function Carrito() {
   if (hecho) {
     return (
       <Pantalla conBurbuja={false} refLista={refLista}>
+        <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
@@ -319,6 +340,7 @@ function Carrito() {
   if (!items.length) {
     return (
       <Pantalla conBurbuja={false} refLista={refLista}>
+        <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ir a la Tienda</Boton>
@@ -328,6 +350,7 @@ function Carrito() {
 
   return (
     <Pantalla conBurbuja={false} refLista={refLista}>
+        <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
       <TusReservas resumen={resumen} />
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];

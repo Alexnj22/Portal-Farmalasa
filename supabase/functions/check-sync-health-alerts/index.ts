@@ -43,6 +43,14 @@ const DOMAINS = Object.keys(STALE_THRESHOLD_MIN);
 // Medir staleness con reloj de pared les daría 6h de antigüedad a las 12:00 y
 // una falsa alarma TODAS las mañanas, así que se cuentan minutos "activos".
 const WINDOWED = new Set(['dte', 'inventory']);
+
+// Los que duermen en la misma ventana pero corren cada 10 min y NO comparten
+// las otras reglas de los de cada minuto (400 filas, 2 fallos seguidos). Compras
+// entra el 2026-11-10: en 30 días no apareció NI UNA compra nueva entre las
+// 00:00 y las 06:00 SV, y dejarla dormir ahorra 36 corridas × ~21 peticiones al
+// sistema de origen por día. Sin esto, a las 06:01 SV tendría seis horas de
+// antigüedad y avisaría «sin correr» todas las mañanas.
+const DUERMEN_DE_NOCHE = new Set([...WINDOWED, 'purchases']);
 const INACTIVE_START_H = 6;   // 06:00 UTC inclusive
 const INACTIVE_END_H   = 12;  // 12:00 UTC exclusive
 
@@ -177,7 +185,7 @@ serve(async (req) => {
     for (const [key, row] of latestByScope) {
       const [domain, scopeKey] = key.split('|');
       const checkedMs = new Date(row.checked_at).getTime();
-      const ageMin = WINDOWED.has(domain)
+      const ageMin = DUERMEN_DE_NOCHE.has(domain)
         ? activeMinutesBetween(checkedMs, now)
         : (now - checkedMs) / 60_000;
       const thresholdMin = STALE_THRESHOLD_MIN[domain] ?? 60;
@@ -204,7 +212,7 @@ serve(async (req) => {
           alertKey: `stale-${dayBucket}`,
           title: `Sync ${domain} sin correr`,
           message: `[${scopeKey}] última corrida hace ${fmt(ageMin)}`
-            + `${WINDOWED.has(domain) ? ' de actividad' : ''}`
+            + `${DUERMEN_DE_NOCHE.has(domain) ? ' de actividad' : ''}`
             + ` (esperado cada ≤${fmt(thresholdMin)})`,
         });
       }

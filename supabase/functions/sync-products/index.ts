@@ -1,7 +1,5 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireInvokeSecret } from "../_shared/security.ts";
-import { leerFichaDe } from "../_shared/erp-regulado.ts";
-import { login } from "../_shared/erp-dte.ts";
 
 const LOGIN_URL    = 'https://clientesdte3.oss.com.sv/farma_salud/login.php';
 const PRODUCTS_URL = 'https://clientesdte3.oss.com.sv/farma_salud/descargar_productos_json.php';
@@ -237,27 +235,16 @@ async function avisarFueraDeCatalogo(
   return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados, callados };
 }
 
-// Medición temporal (2026-11-09): los 100 productos más vendidos, 10 por corrida,
-// para saber si las fichas llevan un código por presentación distinto del
-// general. Sólo lectura y sin devolver los códigos. Se quita al decidir el escáner.
-const MUESTRA_FICHAS = [3856,2215,2963,3703,3702,2805,2165,2224,2372,2807,2537,4647,363,2811,686,2818,2806,2812,2932,1338,2258,2132,1422,3667,2350,1507,3140,3827,1060,684,3033,1541,2375,2965,482,1099,1505,685,3120,1807,1522,3485,4193,3101,3674,2131,1812,2,360,2768,3689,2054,1032,389,2173,367,2363,615,4192,267,1423,3870,2546,4206,3100,2509,2934,2734,3706,3196,1852,386,1828,3484,1873,364,1823,2548,2733,3515,2486,1405,4648,2362,1691,2308,3705,3331,912,3445,638,1903,612,1816,3482,3919,361,3156,1627,379];
-async function muestraDeFichas(cookie: string) {
-  const tanda = Math.floor(Date.now() / 600_000) % 10;
-  const salida: Record<string, unknown>[] = [];
-  for (const id of MUESTRA_FICHAS.slice(tanda * 10, tanda * 10 + 10)) {
-    try {
-      const f = await leerFichaDe(cookie, id);
-      const general = f.barcode.trim();
-      const propios = f.presentaciones.map((p) => p.bar.replace(/<[^>]*>/g, "").trim()).filter((b) => b && b !== "0");
-      salida.push({ id, general: !!general, presentaciones: f.presentaciones.length, con_codigo: propios.length,
-        distintos: new Set(propios.filter((b) => b !== general)).size });
-    } catch (e) {
-      salida.push({ id, error: String((e as Error)?.message ?? e).slice(0, 80) });
-    }
-    await new Promise((r) => setTimeout(r, 400));
-  }
-  return salida;
-}
+// Medición de códigos por presentación (2026-11-09 → 2026-11-10), ya retirada.
+// Leyó en cada corrida 10 fichas de los 100 productos más vendidos para saber
+// si las presentaciones llevan un código de barras distinto del general. Costaba
+// 11 peticiones de más cada 10 min (~1.580 al día) y se quitó con la muestra
+// completa. Resultado (100 de 100 productos, 0 errores, 360 lecturas):
+//   · 94 tienen código general;
+//   · 240 presentaciones, 213 con código propio;
+//   · 31 productos tienen UNA presentación con un código distinto del general
+//     (31 códigos distintos en total) — el resto repite el general.
+// Es el dato para decidir el escáner; el código vive en d4a280812.
 
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
@@ -594,13 +581,6 @@ Deno.serve(async (req) => {
     });
     if (logErr) console.error('[sync-products] products_sync_log:', logErr.message);
 
-    // Con plazo propio y sin lanzar: la medición no puede tumbar el sync.
-    const muestraFichas = await Promise.race([
-      // La cuenta del catálogo no abre la ficha: 10 de 10 «no se pudo leer».
-      login().then(muestraDeFichas).catch((e) => [{ error: String((e as Error)?.message ?? e).slice(0, 80) }]),
-      new Promise<unknown[]>((r) => setTimeout(() => r([{ error: "plazo" }]), 40_000)),
-    ]);
-
     return new Response(
       JSON.stringify({
         success:          syncSuccess,
@@ -615,7 +595,6 @@ Deno.serve(async (req) => {
         // log: es la única forma de mirar el estado de este control sin buscar
         // en los registros de una corrida vieja.
         fuera_de_catalogo: fueraDeCatalogo,
-        muestra_fichas: muestraFichas,
         errors:           upsertErrors,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

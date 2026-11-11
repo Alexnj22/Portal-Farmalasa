@@ -647,11 +647,19 @@ async function completarFichasDeProveedor(
 // Lo que NO ve: una compra que ya existe y a la que le corrigen un renglón —la
 // lista no cambia—. Eso lo recoge la pasada completa de cada hora (el cron
 // manda `incremental: false` en el minuto 0).
+//
+// La sesión la pone quien llama y se COMPARTE entre las siete sucursales de una
+// corrida (2026-11-10): las siete usan la misma cuenta, corren una detrás de la
+// otra y cada una fija su sucursal con `set_sucursal` antes de pedir la lista,
+// así que no hay forma de que una lea la de otra. Antes eran siete logins por
+// corrida, 120 corridas al día: 720 peticiones al sistema de origen sólo en
+// entrar. La descarga pesada (`syncBranch`) sigue con su propia sesión: ésa
+// lee la sucursal del parámetro, y no se probó qué pasa con una sesión que ya
+// tiene otra sucursal fijada.
 async function diasConCompraNueva(
-  supabase: any, erpId: number, username: string, password: string,
+  supabase: any, erpId: number, cookie: string,
   startDate: string, endDate: string,
 ): Promise<{ dias: string[]; lista: number; nuevas: number }> {
-  const cookie = await withRetry(() => getSessionCookie(username, password));
   // La sucursal es estado de SESIÓN en este endpoint (ver fastBackfill).
   await withRetry(() => fetch(SESION_URL, {
     method: 'POST',
@@ -879,6 +887,11 @@ Deno.serve(async (req) => {
       // ayer+hoy de un día grande de Bodega (638 renglones el 2026-10-08) pasaba
       // del timeout de la descarga, y un día solo cabe. El log sigue siendo una
       // fila por sucursal con el rango completo: el éxito exige todos los días.
+      // Una sesión para todas las listas de la corrida (ver `diasConCompraNueva`).
+      // Si una lista falla se tira y la sucursal siguiente entra de nuevo: una
+      // sesión vencida a mitad de corrida no arrastra a las demás.
+      let sesionLista: string | null = null;
+
       for (const { branchId, erpId } of purchaseBranches) {
         let lastErr: string | null = null;
         let result: any = { total: 0, new: 0, items: 0 };
@@ -888,10 +901,12 @@ Deno.serve(async (req) => {
         let dias: string[] = [...dayRange(startDate, endDate)];
         if (incremental) {
           try {
-            const d = await diasConCompraNueva(supabase, erpId, username, password, startDate, endDate);
+            sesionLista ??= await withRetry(() => getSessionCookie(username, password));
+            const d = await diasConCompraNueva(supabase, erpId, sesionLista, startDate, endDate);
             dias = d.dias;
             result.lista = d.lista;
           } catch (e: any) {
+            sesionLista = null;
             console.error(`incremental ${branchId}: la lista falló, pasada completa —`, e.message);
           }
         }

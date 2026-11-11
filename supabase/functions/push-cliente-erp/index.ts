@@ -53,6 +53,10 @@ const A_SELECT: Record<string, string> = {
   departamento: "departamento", municipio: "municipio", distrito: "distrito",
   categoria: "categoria", giro: "sel_giro", retencion_pct: "porcentaje",
 };
+// Gemela del `campo NOT IN ('notes')` de `cola_espejo_portal_erp()`: se mueven
+// juntas. Si un campo está acá y no allá, la entrada vuelve a la cola en cada
+// pasada del cron y cuesta un login + una lectura de ficha cada 10 min (pasó
+// con la ficha 20434, del 2026-10-02 al 2026-11-10).
 const SOLO_PORTAL = new Set(["notes"]);
 
 const sinTildes = (s: string) => (s ?? "")

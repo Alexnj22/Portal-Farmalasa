@@ -769,26 +769,35 @@ const CRONS = [
   },
   {
     job: 'sync-dte-inv-all-1min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '* 12-23,0-5 * * *',
-    corridasDia: 1033, sistema: null,
-    motivo: 'SIN DECLARAR (medido el 2026-11-10: 13 llamadas y ~27 peticiones por corrida, 13 de '
-          + 'ellas logins — ~28.000/día, la deuda más grande del manifiesto). Desde ese día la hora '
+    corridasDia: 1033, sistema: 18,
+    motivo: 'Ventas e inventario de las seis salas cada minuto: el usuario quiere el inventario lo más '
+          + 'al día posible (2026-11-11), así que la cadencia no se toca. Medido el 2026-11-11 sobre 6 h '
+          + '(198 corridas): 13 llamadas, 14 descargas y ~3,7 ingresos por corrida = ~18. Hasta el '
+          + '2026-11-10 eran ~27, 13 de ellas ingresos: desde ese día la sesión vive entre corridas '
+          + '(`pedirJson`, ~72% reusadas). Declarado el 2026-11-11 por pedido del usuario: era la deuda '
+          + 'que tapaba el consumo real (el tope decía ~4.400 con ~24.000 reales). Desde el 2026-11-10 la hora '
           + '23 SV corre cada 5 min más la de las 23:59 (0 ventas y 0 cambios de inventario a esa '
           + 'hora en 60 días): 1.033 corridas en vez de 1.080. El freno vive en el comando, porque '
           + 'el horario de la fila lo lee `cron_tick_minuto()`.',
   },
   {
     job: 'refresh-inv-mv-2min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '*/2 12-23,0-5 * * *',
-    corridasDia: 540, sistema: null, motivo: 'SIN MEDIR.',
+    corridasDia: 540, sistema: 0,
+    motivo: 'No toca el sistema de la caja: `refreshMvOnly` refresca la vista materializada del '
+          + 'inventario en la base y contesta antes de cualquier ingreso o descarga.',
   },
   {
     job: 'dte-resync-mes-hora', slug: 'sync-dte-sales', cadencia: '7 12-23,0-5 * * *',
-    corridasDia: 18, sistema: null, motivo: 'SIN MEDIR.',
+    corridasDia: 18, sistema: 8,
+    motivo: 'Relee el mes en curso (del 1 a ayer) de las seis salas cada hora: es lo que trae las '
+          + 'invalidaciones y correcciones de días anteriores, que el sync de cada minuto no ve porque '
+          + 'pide sólo «hoy». Verificado el 2026-11-11: ~30 facturas corregidas en 30 días, 11 de ellas '
+          + 'invalidadas en Hacienda. Medido ese día: 6 descargas + ~1,5 ingresos por corrida = 8.'
   },
   {
     job: 'sync-products-10min', slug: 'sync-products', cadencia: '6-59/10 * * * *',
-    corridasDia: 144, sistema: null,
-    motivo: 'SIN DECLARAR (medido: 2 por corrida, login + catálogo = 288/día; declararlo sube el '
-          + 'tope, que sólo baja). Hasta el 2026-11-10 eran 13: una muestra temporal de fichas '
+    corridasDia: 144, sistema: 2,
+    motivo: 'Medido: 2 por corrida, login + catálogo = 288/día (declarado el 2026-11-11). Hasta el 2026-11-10 eran 13: una muestra temporal de fichas '
           + 'sumaba 11 por corrida (~1.580/día) y se retiró con la muestra completa.',
   },
   {

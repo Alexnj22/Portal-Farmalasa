@@ -82,7 +82,7 @@ function Carrito() {
   const barra = useHeaderHeight();
   const refLista = useRef(null);
   const alBordeDeArriba = useCallback(() => {
-    requestAnimationFrame(() => refLista.current?.scrollTo({ y: 0, animated: false }));
+    requestAnimationFrame(() => refLista.current?.scrollTo({ y: Platform.OS === 'ios' ? -barra : 0, animated: false }));
   }, [barra]);
   const vacio = items.length === 0;
   // DIAGNÓSTICO TEMPORAL (2026-11-11): la tarjeta del carrito se va

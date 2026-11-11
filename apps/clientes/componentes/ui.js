@@ -90,6 +90,11 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     <ScrollView
       ref={refLista}
       contentInsetAdjustmentBehavior={fijo ? 'never' : 'automatic'}
+      // Con `bajoBarra`, el margen es explícito y el reposo es «menos la
+      // barra», que es justo donde iOS lo lleva al volver a tocar la pestaña:
+      // así abrir y volver a tocar dejan la tarjeta en el mismo lugar.
+      contentInset={fijo ? { top: bajoBarra } : undefined}
+      contentOffset={fijo ? { x: 0, y: -bajoBarra } : undefined}
       scrollIndicatorInsets={fijo ? { top: bajoBarra } : undefined}
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.

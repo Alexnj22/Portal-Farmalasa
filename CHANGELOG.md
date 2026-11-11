@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1509.3 — App de clientes: el carrito queda siempre en el mismo lugar
+
+Con la medición en el tiempo: al volver a tocar la pestaña, iOS lleva la lista a «menos la altura de la barra», y el Carrito, que quedaba en 0, saltaba 116 puntos hacia abajo. Ahora, con `bajoBarra`, `Pantalla` declara ese margen explícito y arranca ya en esa posición, así que abrir la pestaña y volver a tocarla dejan la tarjeta en el mismo lugar: el de abajo, el que eligió el usuario.
+
 ## v2.1509.2 — App: lo ya decidido sale de Notificaciones
 
 Reporte del usuario: «cuando me llega una solicitud, la apruebo, siempre queda como ya decidida, no se elimina». La base ya daba por leída la notificación al decidir (`marcar_notificacion_solicitud_resuelta` pone `read_at`), pero la app la seguía mostrando en una sección «Ya decididas» y la campana la contaba, porque contaba todo lo cargado en vez de lo no leído. Ahora lo decidido sale de la bandeja y queda en el historial, y la campana (y su globo en la barra) cuenta sólo lo no leído. Va por aire.

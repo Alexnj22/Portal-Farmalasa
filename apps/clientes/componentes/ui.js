@@ -74,7 +74,7 @@ export function ConTeclado({ children }) {
 // Carrito ese ajuste a veces no se aplica (el contenido arrancaba en y=16 con
 // una barra de 116) y la primera tarjeta quedaba medio tapada. Con el número,
 // el hueco de arriba es fijo y siempre el mismo.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0 }) {
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0, alDesplazarDiag = null }) {
   const fijo = Platform.OS === 'ios' && bajoBarra > 0;
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
@@ -107,8 +107,9 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       onScrollEndDrag={d.soltar}
       onMomentumScrollBegin={d.inercia}
       onMomentumScrollEnd={d.terminar}
-      scrollEventThrottle={sinBarra ? 32 : alFinal ? 250 : undefined}
-      onScroll={alFinal || sinBarra ? ({ nativeEvent: e }) => {
+      scrollEventThrottle={alDesplazarDiag ? 16 : sinBarra ? 32 : alFinal ? 250 : undefined}
+      onScroll={alFinal || sinBarra || alDesplazarDiag ? ({ nativeEvent: e }) => {
+        alDesplazarDiag?.(e);
         if (sinBarra) { const v = e.contentOffset.y > 4; if (v !== velo) setVelo(v); }
         if (alFinal && e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
       } : undefined}

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1509.1 — App de clientes: medición del carrito en el tiempo
+
+Temporal: con el hueco fijo, la tarjeta arranca bien pero después baja otros 116 puntos. Durante 4 segundos desde que se abre el Carrito, la app anota dónde está el contenido cada 250 ms y cada desplazamiento que reporta iOS («diag-carrito2» en `app_errores`), para ver qué lo empuja. Se quita al resolverlo.
+
 ## v2.1509.0 — Lo automático es notificación, no aviso
 
 Decisión del usuario: «no debe haber aviso nuevo, mejor notificación; debemos ver cuáles son avisos y cuáles son notificación». De 112 avisos activos, 111 los generaba el sistema solo; uno lo había escrito una persona.

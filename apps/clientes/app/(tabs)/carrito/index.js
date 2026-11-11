@@ -85,24 +85,29 @@ function Carrito() {
     requestAnimationFrame(() => refLista.current?.scrollTo({ y: 0, animated: false }));
   }, [barra]);
   const vacio = items.length === 0;
-  // DIAGNÓSTICO TEMPORAL (2026-11-11): la tarjeta medio escondida al abrir
-  // la pestaña por primera vez. Mide en el teléfono dónde queda el borde de
-  // arriba del contenido respecto de la barra y lo manda a `app_errores`
-  // (mensaje «diag-carrito»). Una vez por arranque. Se quita al resolverlo.
+  // DIAGNÓSTICO TEMPORAL (2026-11-11): la tarjeta del carrito se va
+  // corriendo hacia abajo después de abrir la pestaña. Toma, durante 4 s
+  // desde que la pestaña recibe el foco, dónde está el contenido cada 250 ms y
+  // cada evento de desplazamiento (desplazamiento y margen que reporta iOS), y
+  // lo manda en UN mensaje a `app_errores` («diag-carrito2»). Una vez por
+  // arranque. Se quita al resolverlo.
   const refMarca = useRef(null);
-  const diagHecho = useRef(false);
+  const diag = useRef(null);
+  const alDesplazarDiag = useCallback((e) => {
+    const d = diag.current; if (!d || d.listo) return;
+    if (d.ev.length < 40) d.ev.push([Date.now() - d.t0, Math.round(e.contentOffset?.y ?? 0), Math.round(e.contentInset?.top ?? -1)]);
+  }, []);
   useFocusEffect(useCallback(() => {
-    if (diagHecho.current) return;
-    diagHecho.current = true;
-    const medir = (cuando) => {
-      const lista = refLista.current; const marca = refMarca.current;
-      if (!lista?.measureInWindow || !marca?.measureInWindow) return;
-      lista.measureInWindow((lx, ly, lw, lh) => marca.measureInWindow((mx, my) => {
-        reportarError(new Error(`diag-carrito ${JSON.stringify({ cuando, vacio, barra: Math.round(barra), listaY: Math.round(ly), listaAlto: Math.round(lh), marcaY: Math.round(my) })}`), { pantalla: 'carrito-diag' });
-      }));
-    };
-    setTimeout(() => medir(400), 400);
-    setTimeout(() => medir(2500), 2500);
+    if (diag.current) return;
+    const d = { t0: Date.now(), ev: [], pos: [], listo: false };
+    diag.current = d;
+    const tomar = () => refMarca.current?.measureInWindow?.((mx, my) => { d.pos.push([Date.now() - d.t0, Math.round(my)]); });
+    const ids = [];
+    for (let k = 0; k <= 16; k++) ids.push(setTimeout(tomar, k * 250));
+    ids.push(setTimeout(() => {
+      d.listo = true;
+      reportarError(new Error(`diag-carrito2 ${JSON.stringify({ vacio, barra: Math.round(barra), pos: d.pos, ev: d.ev })}`), { pantalla: 'carrito-diag' });
+    }, 4300));
   }, [vacio, barra]));
   useEffect(() => { alBordeDeArriba(); }, [vacio, !!hecho]); // eslint-disable-line react-hooks/exhaustive-deps
   useFocusEffect(useCallback(() => { if (vacio || hecho) alBordeDeArriba(); }, [vacio, hecho, alBordeDeArriba]));
@@ -303,7 +308,7 @@ function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} alDesplazarDiag={alDesplazarDiag}>
         <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
@@ -338,7 +343,7 @@ function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} alDesplazarDiag={alDesplazarDiag}>
         <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
@@ -348,7 +353,7 @@ function Carrito() {
   }
 
   return (
-    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
+    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} alDesplazarDiag={alDesplazarDiag}>
         <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
       <TusReservas resumen={resumen} />
       {items.map((x) => {

@@ -109,7 +109,8 @@ export default function AccionDePersonal() {
 
   const plaza = plazaOcupada({ type: f.type, formData: f, empleado: emp, empleados: empleados || [], roles: roles || [] });
   const asueto = asuetoDelDia(f.date, asuetos || []);
-  const { ok, motivo } = validarNovedad({ formData: f, empleado: emp, empleados: empleados || [], roles: roles || [], asuetos: asuetos || [] });
+  // Al corregir, la marca de edición para que una baja ya aplicada no se frene como «ya salió».
+  const { ok, motivo } = validarNovedad({ formData: eventoAEditar ? { ...f, _editingEventId: eventoAEditar.id } : f, empleado: emp, empleados: empleados || [], roles: roles || [], asuetos: asuetos || [] });
   const faltaRespaldo = respaldoObligatorio(f.type) && !archivo && !eventoAEditar;
   const otrasSalas = (sucursales || []).filter((b) => String(b.id) !== String(emp.branchId || emp.branch_id));
   const cargos = [...(roles || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'))
@@ -309,7 +310,7 @@ export default function AccionDePersonal() {
 
               {eventoAEditar ? null : (
                 <Seccion titulo={`Respaldo ${respaldoObligatorio(f.type) ? '(obligatorio)' : '(opcional)'}`}
-                  pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'El finiquito' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
+                  pie={`${r.esIncapacidad ? 'La boleta médica' : r.esBaja ? 'La carta de renuncia, la de despido o el finiquito' : 'El respaldo'} — PDF, JPG o PNG, hasta 10 MB.`}>
                   <Fila rotulo={archivo ? archivo.name : 'Sin archivo'}>
                     <Pressable hitSlop={8} onPress={adjuntar} style={{ minHeight: 44, justifyContent: 'center' }}>
                       <Text style={{ color: MARCA.azulClaro, fontSize: 16, fontWeight: '700' }}>{archivo ? 'Cambiar' : 'Adjuntar'}</Text>

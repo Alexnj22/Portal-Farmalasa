@@ -69,7 +69,13 @@ export function ConTeclado({ children }) {
 }
 
 // `refLista` (2026-11-11): el ScrollView, para que la pantalla pueda volver arriba.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null }) {
+// `bajoBarra` (2026-11-11, medido en un iPhone 17 Pro Max): la altura de la
+// barra transparente, para no depender del ajuste automático de iOS. En el
+// Carrito ese ajuste a veces no se aplica (el contenido arrancaba en y=16 con
+// una barra de 116) y la primera tarjeta quedaba medio tapada. Con el número,
+// el hueco de arriba es fijo y siempre el mismo.
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0 }) {
+  const fijo = Platform.OS === 'ios' && bajoBarra > 0;
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
   const t = useTema();
@@ -83,7 +89,8 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     <ConTeclado>
     <ScrollView
       ref={refLista}
-      contentInsetAdjustmentBehavior="automatic"
+      contentInsetAdjustmentBehavior={fijo ? 'never' : 'automatic'}
+      scrollIndicatorInsets={fijo ? { top: bajoBarra } : undefined}
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.
       contentContainerStyle={{
@@ -91,6 +98,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
         // Sin barra, iOS ya corre el contenido bajo la barra de estado
         // (`automatic`); Android no: se suma a mano.
         ...(sinBarra ? { paddingTop: (Platform.OS === 'ios' ? 4 : ins.top + 8) } : null),
+        ...(fijo ? { paddingTop: bajoBarra + 16 } : null),
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"

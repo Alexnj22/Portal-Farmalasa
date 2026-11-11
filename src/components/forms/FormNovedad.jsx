@@ -12,7 +12,7 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
 import { EVENT_TYPES, TERMINATION_REASONS, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '@nucleo/data/constants';
 import { formatDate } from '@nucleo/utils/helpers';
-import { plazaOcupada, asuetoDelDia, finPorLey, diasDelPeriodo, validarNovedad, opcionesDeNovedad, antiguedad } from '@nucleo/utils/novedadDePersonal';
+import { plazaOcupada, asuetoDelDia, finPorLey, diasDelPeriodo, validarNovedad, opcionesDeNovedad, antiguedad, respaldoObligatorio } from '@nucleo/utils/novedadDePersonal';
 import { pinDeKiosco } from '@nucleo/utils/pinDeKiosco';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -131,7 +131,11 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     useEffect(() => {
         if (typeof onValidationChange !== 'function') return;
         const { ok, motivo } = validarNovedad({ formData, empleado: activeEmployee, empleados: employees, roles, asuetos: holidays });
-        onValidationChange(ok, motivo);
+        // El respaldo decía «(Obligatorio)» y se podía guardar sin él: la app
+        // ya lo exigía y la web no (2026-11-11). Al corregir una novedad no se
+        // pide de nuevo: el archivo ya está en el historial.
+        const faltaRespaldo = ok && respaldoObligatorio(formData?.type) && !formData?.file && !formData?._editingEventId;
+        onValidationChange(ok && !faltaRespaldo, faltaRespaldo ? 'Falta adjuntar el respaldo.' : motivo);
     }, [formData, activeEmployee, employees, roles, holidays, onValidationChange]);
     const actionOptions = useMemo(() => opcionesDeNovedad(), []);
     const branchOptions = useMemo(() => {
@@ -618,7 +622,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
                         file={formData?.file}
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
-                        hint={`Adjuntá ${isDisability ? 'la boleta médica' : isTermination ? 'el finiquito' : 'el respaldo'} — PDF, JPG o PNG`}
+                        hint={`Adjuntá ${isDisability ? 'la boleta médica' : isTermination ? 'la carta de renuncia, la de despido o el finiquito' : 'el respaldo'} — PDF, JPG o PNG`}
                     />
                 </>
             )}

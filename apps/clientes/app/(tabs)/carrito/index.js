@@ -82,8 +82,7 @@ function Carrito() {
   const barra = useHeaderHeight();
   const refLista = useRef(null);
   const alBordeDeArriba = useCallback(() => {
-    const y = Platform.OS === 'ios' ? -barra : 0;
-    requestAnimationFrame(() => refLista.current?.scrollTo({ y, animated: false }));
+    requestAnimationFrame(() => refLista.current?.scrollTo({ y: 0, animated: false }));
   }, [barra]);
   const vacio = items.length === 0;
   // DIAGNÓSTICO TEMPORAL (2026-11-11): la tarjeta medio escondida al abrir
@@ -304,7 +303,7 @@ function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista}>
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
         <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
@@ -339,7 +338,7 @@ function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista}>
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
         <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
@@ -349,7 +348,7 @@ function Carrito() {
   }
 
   return (
-    <Pantalla conBurbuja={false} refLista={refLista}>
+    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
         <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
       <TusReservas resumen={resumen} />
       {items.map((x) => {

@@ -419,7 +419,7 @@ const EmployeeDetailView = ({ activeEmployee, openModal, setView, activeTab, set
                 el botón quedaba como un ícono mudo para el lector de pantalla
                 (prueba en vivo, 2026-10-22). */}
             {canEdit && (
-                <Button size="sm" icon={Plus} disabled={!canEdit} onClick={handleNewHRAction} aria-label="Acción de RRHH"><span className="hidden sm:inline">Acción RRHH</span></Button>
+                <Button size="sm" tone="warning" icon={AlertTriangle} disabled={!canEdit} onClick={handleNewHRAction} aria-label="Acciones de personal: traslado, ascenso, salario, incapacidad o baja" title="Traslado, ascenso, salario, incapacidad, baja…"><span className="hidden sm:inline">Acciones</span></Button>
             )}
             {/* Sanciona quien puede editar la ficha — el mismo permiso que exige
                 `registrar_sancion` en la base. Que los dos coincidan importa: un

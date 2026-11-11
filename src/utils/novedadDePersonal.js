@@ -105,6 +105,10 @@ export function avisoDeDiasDeLey(type, tipoDeIncapacidad, inicio, fin) {
 /** Cambios de ficha que pueden programarse: con fecha futura se aplican ese día a las 5:00 a.m. */
 export const TIPOS_PROGRAMABLES = ['PROMOTION', 'TRANSFER', 'SALARY', 'CODE_CHANGE', 'TERMINATION'];
 
+/** ¿Ya salió? La ficha guarda `INACTIVO`; la lista trae `effectiveStatus: 'Inactivo'`. */
+export const estaDadoDeBaja = (empleado) =>
+    String(empleado?.status || '').toUpperCase() === 'INACTIVO' || empleado?.effectiveStatus === 'Inactivo';
+
 /** ¿Este archivo es obligatorio? (la boleta de la incapacidad y el finiquito). */
 export const respaldoObligatorio = (type) => type === 'DISABILITY' || type === 'TERMINATION';
 
@@ -129,6 +133,12 @@ export function validarNovedad({ formData = {}, empleado, empleados = [], roles 
     if (r.esCargo && !formData.newRole) return { ok: false, motivo: null };
     if (r.esSalario && !formData.newSalary) return { ok: false, motivo: null };
     if (r.esIncapacidad && (!formData.disabilityType || !formData.certificateNumber)) return { ok: false, motivo: null };
+    // Una segunda baja sobre quien ya salió pisaba la fecha de salida y dejaba
+    // dos «Liquidación/Renuncia» en el historial (2026-11-11). Para volver a
+    // tenerlo, es una recontratación. Al CORREGIR la baja que ya tiene, sí pasa.
+    if (r.esBaja && !formData._editingEventId && estaDadoDeBaja(empleado)) {
+        return { ok: false, motivo: 'Esta persona ya está dada de baja. Para que vuelva, usa Recontratar.' };
+    }
     if (r.esBaja && !formData.terminationReason) return { ok: false, motivo: null };
     if (r.esCodigo && !formData.newCode) return { ok: false, motivo: null };
     if (r.esCodigo && formData.hasConflict) return { ok: false, motivo: 'El código ya está en uso por otro empleado.' };

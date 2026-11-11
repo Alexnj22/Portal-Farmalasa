@@ -169,3 +169,18 @@ describe('tanda 2: permisos, clima, mín·máx, horarios', () => {
         expect(r[0].horas).toBe(7);
     });
 });
+
+describe('baja sobre quien ya salió', () => {
+    const base = { type: 'TERMINATION', date: '2026-11-11', terminationReason: 'RENUNCIA', note: 'x' };
+    it('se frena y dice cómo seguir', () => {
+        const r = validarNovedad({ formData: base, empleado: { id: 1, status: 'INACTIVO' } });
+        expect(r.ok).toBe(false);
+        expect(r.motivo).toMatch(/Recontratar/);
+    });
+    it('corregir la baja que ya tiene sí pasa', () => {
+        expect(validarNovedad({ formData: { ...base, _editingEventId: 'e1' }, empleado: { id: 1, effectiveStatus: 'Inactivo' } }).ok).toBe(true);
+    });
+    it('un activo se puede dar de baja', () => {
+        expect(validarNovedad({ formData: base, empleado: { id: 1, status: 'ACTIVO' } }).ok).toBe(true);
+    });
+});

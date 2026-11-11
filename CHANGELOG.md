@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1508.2 — Personal: botón Acciones y la baja exige su respaldo
+
+- En el perfil del empleado, el botón «Acción RRHH» pasa a llamarse **Acciones**, con ícono y color de advertencia.
+- La baja y la incapacidad decían «respaldo (Obligatorio)» y en la web se podían guardar sin él (la app sí lo exigía). Ahora no se guardan sin el archivo; al corregir una ya registrada no se pide de nuevo.
+- Una baja sobre alguien que ya está dado de baja se frena: para que vuelva, Recontratar.
+
+## v2.1508.1 — App de clientes: el carrito ya no queda tapado por la barra al abrirlo
+
+Medido en un iPhone 17 Pro Max con la medición temporal: al abrir el Carrito, iOS no aplicaba el ajuste automático bajo la barra transparente, y el contenido arrancaba en y=16 con una barra de 116, así que la primera tarjeta quedaba medio tapada. `Pantalla` acepta `bajoBarra` (la altura de la barra): en iOS el hueco de arriba pasa a ser fijo en lugar de depender de ese ajuste. Lo usa el Carrito. La medición sigue un paso más para confirmarlo.
+
 ## v2.1508.0 — App: los avisos sin leer salen al entrar; Mis avisos vuelve al Menú
 
 - **Al entrar:** si la persona tiene avisos sin leer, la app los muestra a pantalla completa, uno por uno (urgentes primero), y no se cierra sin confirmar cada uno con «Entendido», que lo marca leído con la misma escritura de Mis avisos. Una vez por sesión. Si la marca falla por falta de señal, se avisa y se sigue: el aviso vuelve a salir la próxima vez. Antes nada obligaba a leerlos: en 60 días, menos de un lector por aviso.

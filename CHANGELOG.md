@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.4 — App de clientes: la actualización por aire se aplica al abrir
+
+`lib/actualizacionAire.js` recargaba sólo si `fetchUpdateAsync` decía `isNew`. Pero expo-updates baja el paquete por su cuenta al arrancar (`checkAutomatically: ON_LOAD`) y casi siempre llegaba primero: `isNew` daba false, la app no recargaba y el cambio recién se veía al cerrar y volver a abrir. Ahora también recarga cuando el paquete que corre no es el último que publicó el servidor.
+
 ## v2.1510.3 — Personal: quien está de baja sale en su última sucursal, con el motivo y la fecha
 
 - La baja le borra la sucursal y el cargo a la ficha, así que en el listado toda la gente dada de baja caía en «Sin sucursal asignada», con el aviso amarillo de que faltaba elegirles una sede. Ahora cada persona sale en la última sucursal que tuvo, bajo «Ya no trabajan aquí».

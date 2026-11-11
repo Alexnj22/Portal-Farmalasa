@@ -38,7 +38,13 @@ async function revisar() {
     const hay = await Updates.checkForUpdateAsync();
     if (!hay.isAvailable) return;
     const r = await Updates.fetchUpdateAsync();
-    if (!r.isNew) return;
+    // `isNew` es false si el paquete YA estaba bajado (2026-11-11): la propia
+    // librería lo baja sola al arrancar (`checkAutomatically: ON_LOAD`) y casi
+    // siempre le gana a esta revisión. Entonces nunca recargaba y el cambio
+    // recién se veía al cerrar y abrir. Lo que importa es si el paquete que
+    // corre es el último: si no lo es, se recarga igual.
+    const ultimo = hay.manifest?.id ?? r.manifest?.id ?? null;
+    if (!r.isNew && (!ultimo || ultimo === Updates.updateId)) return;
     if (Date.now() - desde <= VENTANA && AppState.currentState === 'active') await recargar();
     else pendiente = true;
   } catch { /* sin red o sin servidor: lo bajará el próximo arranque */ }

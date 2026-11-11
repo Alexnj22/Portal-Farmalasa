@@ -170,7 +170,7 @@ export function documentosDeSucursal(b) {
     /** @type {Array<{ id: string, title: string, url: any, expDate: any, hasExpiration?: boolean, modal: string, datos?: Array<{ rotulo: string, valor: string | null }> }>} */
     const permisos = [
         {
-            id: 'srs', title: 'Permiso de funcionamiento SRS', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit',
+            id: 'srs', title: 'Permiso de funcionamiento SRS', url: legal.srsPermitUrl, expDate: legal.srsExpiration, issueDate: legal.srsPermitIssueDate || null, hasExpiration: true, modal: 'editSrsPermit',
             datos: [
                 { rotulo: 'Resolución', valor: texto(legal.srsPermit) },
                 { rotulo: 'Categoría SRS', valor: rotuloCategoriaSrs(legal.srsCategoria) },
@@ -180,26 +180,29 @@ export function documentosDeSucursal(b) {
         // Solvencia, desechos y fumigación se editan en «Gestión del inmueble»
         // (`BranchTabInmueble`), no en «Configuración legal»: el botón abría el
         // formulario que no tiene ni su archivo ni su fecha (2026-11-11).
-        { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, hasExpiration: true, modal: 'editBranchInmueble' },
+        { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, issueDate: legal.municipalIssueDate || null, hasExpiration: true, modal: 'editBranchInmueble',
+            datos: [{ rotulo: 'Cuenta municipal', valor: texto(legal.municipalAccount) }] },
     ];
     if (hasControlledBooks) permisos.push({
-        id: 'libros', title: 'Resolución Libros Controlados', url: legal.controlledBooksUrl, expDate: legal.controlledBooksExp || null, hasExpiration: true, modal: 'editBranchLegal',
+        id: 'libros', title: 'Resolución Libros Controlados', url: legal.controlledBooksUrl, expDate: legal.controlledBooksExp || null, issueDate: legal.controlledBooksIssueDate || null, hasExpiration: true, modal: 'editBranchLegal',
         datos: [{ rotulo: 'Resolución', valor: texto(legal.controlledBooksRes) }],
     });
-    if (hasInjections) permisos.push({ id: 'inyecciones', title: 'Permiso Área Inyecciones', url: legal.nursingServicePermitUrl, expDate: legal.nursingServicePermitExp, hasExpiration: true, modal: 'editNursingRegents' });
+    if (hasInjections) permisos.push({ id: 'inyecciones', title: 'Permiso Área Inyecciones', url: legal.nursingServicePermitUrl, expDate: legal.nursingServicePermitExp, issueDate: legal.nursingServicePermitIssueDate || null, hasExpiration: true, modal: 'editNursingRegents',
+        datos: [{ rotulo: 'Permiso', valor: texto(legal.nursingServicePermit) }] });
 
     const personal = [
         {
-            id: 'regente_cred', title: 'Credencial JVQF (Regente)', url: legal.regentCredentialUrl, expDate: legal.regentCredentialExp, hasExpiration: true, modal: 'editPharmacyRegent',
+            id: 'regente_cred', title: 'Credencial JVQF (Regente)', url: legal.regentCredentialUrl, expDate: legal.regentCredentialExp, issueDate: legal.regentCredentialIssueDate || null, hasExpiration: true, modal: 'editPharmacyRegent',
             // Horas del regente en esta sala contra el mínimo de su categoría
             // (Guía del Regente, SRS): la sala puede tener el papel y no las horas.
             datos: [
+                { rotulo: 'JVPQF', valor: texto(legal.regentJvpqf) },
                 { rotulo: 'Horas al mes', valor: legal.regentHorasMes ? `${legal.regentHorasMes} h` : null },
                 { rotulo: 'Mínimo de la categoría', valor: horasMinimasDeRegencia(legal.srsCategoria) ? `${horasMinimasDeRegencia(legal.srsCategoria)} h` : null },
             ],
         },
         { id: 'regente_insc', title: 'Inscripción CSSP (Regente)', url: legal.regentInscriptionUrl, expDate: null, modal: 'editPharmacyRegent' },
-        { id: 'farmaco', title: 'Autorización Farmacovigilancia', url: legal.farmacovigilanciaAuthUrl, expDate: legal.pharmacovigilanceExp, hasExpiration: true, modal: 'editPharmacovigilance' },
+        { id: 'farmaco', title: 'Autorización Farmacovigilancia', url: legal.farmacovigilanciaAuthUrl, expDate: legal.pharmacovigilanceExp, issueDate: legal.pharmacovigilanceIssueDate || null, hasExpiration: true, modal: 'editPharmacovigilance' },
     ];
     if (hasInjections) {
         nurses.forEach((nurse, i) => {
@@ -207,16 +210,16 @@ export function documentosDeSucursal(b) {
             personal.push({ id: `nurse_lic_${i}`, title: `Licencia (Enfermería ${i + 1})`, url: nurse.licenciaUrl, expDate: null, modal: 'editNursingRegents' });
             // La anualidad vence (`anualidadExp`): el aviso diario ya la miraba
             // y la pantalla no, así que avisaba algo que acá salía «Al día».
-            personal.push({ id: `nurse_anualidad_${i}`, title: `Anualidad (Enfermería ${i + 1})`, url: nurse.anualidadUrl, expDate: nurse.anualidadExp || null, hasExpiration: true, modal: 'editNursingRegents' });
+            personal.push({ id: `nurse_anualidad_${i}`, title: `Anualidad (Enfermería ${i + 1})`, url: nurse.anualidadUrl, expDate: nurse.anualidadExp || null, issueDate: nurse.anualidadIssueDate || null, hasExpiration: true, modal: 'editNursingRegents' });
         });
     }
 
     const infra = [];
     if (propertyType === 'RENTED' || propertyType === 'ALQUILADO') {
-        infra.push({ id: 'arrendamiento', title: 'Contrato de Arrendamiento', url: rent.contract?.documentUrl, expDate: rent.contract?.endDate, hasExpiration: true, modal: 'editBranchInmueble' });
+        infra.push({ id: 'arrendamiento', title: 'Contrato de Arrendamiento', url: rent.contract?.documentUrl, expDate: rent.contract?.endDate, issueDate: rent.contract?.startDate || null, hasExpiration: true, modal: 'editBranchInmueble' });
     }
     if (hasInjections) {
-        infra.push({ id: 'desechos', title: 'Contrato Desechos Bioinfecciosos', url: legal.wasteUrl, expDate: legal.wasteExpiration, hasExpiration: true, modal: 'editBranchInmueble' });
+        infra.push({ id: 'desechos', title: 'Contrato Desechos Bioinfecciosos', url: legal.wasteUrl, expDate: legal.wasteExpiration, issueDate: legal.wasteIssueDate || null, hasExpiration: true, modal: 'editBranchInmueble' });
     }
     // La fumigación se lleva por la fecha en que se hizo; con frecuencia
     // elegida, además vence (`proximaFumigacion`). Sin frecuencia no vence:
@@ -234,7 +237,7 @@ export function documentosDeSucursal(b) {
     // en el expediente ni se podía adjuntar la constancia—.
     infra.push({
         id: 'extintores', title: 'Recarga de Extintores', url: legal.extinguisherUrl,
-        expDate: legal.extinguisherExpiration, hasExpiration: true, modal: 'editBranchInmueble',
+        expDate: legal.extinguisherExpiration, issueDate: legal.extinguisherIssueDate || null, hasExpiration: true, modal: 'editBranchInmueble',
         datos: [{ rotulo: 'Cantidad', valor: texto(legal.extinguisherCount) }],
     });
 
@@ -336,22 +339,61 @@ export function ajustesConArchivo(settings, docId, archivo) {
 // papeles sin fecha propia (inscripción del regente, carné y licencia de
 // enfermería) no se mandan a leer: sería pagar una llamada para nada.
 
-/** Archivo de `settings.legal` → el campo de fecha que llena. */
+/**
+ * Archivo de `settings.legal` → lo que se lee de él y dónde se guarda:
+ *   - `campo`/`lee`: la fecha principal (el vencimiento; en la fumigación, la
+ *     fecha en que se hizo);
+ *   - `emision`: el campo de la fecha de expedición del papel (2026-11-11);
+ *   - `numero`: el número propio del documento, y `que` le dice al modelo
+ *     CUÁL buscar: un permiso trae varios números (2026-11-11).
+ */
 export const FECHA_DEL_ARCHIVO_LEGAL = {
-    srsPermitFile: { campo: 'srsExpiration', lee: 'expDate' },
-    regentCredentialFile: { campo: 'regentCredentialExp', lee: 'expDate' },
-    farmacovigilanciaAuthFile: { campo: 'pharmacovigilanceExp', lee: 'expDate' },
-    nursingServicePermitFile: { campo: 'nursingServicePermitExp', lee: 'expDate' },
-    municipalFile: { campo: 'municipalExpiration', lee: 'expDate' },
-    wasteFile: { campo: 'wasteExpiration', lee: 'expDate' },
+    srsPermitFile: { campo: 'srsExpiration', lee: 'expDate', emision: 'srsPermitIssueDate',
+        numero: { campo: 'srsPermit', que: 'El numero de resolucion o de licencia de funcionamiento del establecimiento' } },
+    regentCredentialFile: { campo: 'regentCredentialExp', lee: 'expDate', emision: 'regentCredentialIssueDate',
+        numero: { campo: 'regentJvpqf', que: 'El numero de inscripcion del quimico farmaceutico en la Junta de Vigilancia de la Profesion Quimico Farmaceutica (JVPQF)' } },
+    farmacovigilanciaAuthFile: { campo: 'pharmacovigilanceExp', lee: 'expDate', emision: 'pharmacovigilanceIssueDate' },
+    nursingServicePermitFile: { campo: 'nursingServicePermitExp', lee: 'expDate', emision: 'nursingServicePermitIssueDate',
+        numero: { campo: 'nursingServicePermit', que: 'El numero del permiso o de la resolucion del area de inyecciones' } },
+    municipalFile: { campo: 'municipalExpiration', lee: 'expDate', emision: 'municipalIssueDate',
+        numero: { campo: 'municipalAccount', que: 'El numero de cuenta municipal del contribuyente' } },
+    wasteFile: { campo: 'wasteExpiration', lee: 'expDate', emision: 'wasteIssueDate' },
     fumigationFile: { campo: 'lastFumigationDate', lee: 'issueDate' },
-    controlledBooksFile: { campo: 'controlledBooksExp', lee: 'expDate' },
-    extinguisherFile: { campo: 'extinguisherExpiration', lee: 'expDate' },
+    controlledBooksFile: { campo: 'controlledBooksExp', lee: 'expDate', emision: 'controlledBooksIssueDate',
+        numero: { campo: 'controlledBooksRes', que: 'El numero de la resolucion que autoriza los libros controlados' } },
+    extinguisherFile: { campo: 'extinguisherExpiration', lee: 'expDate', emision: 'extinguisherIssueDate' },
 };
 /** Archivo de una fila de `legal.nursingRegents` → su campo de fecha. */
-export const FECHA_DEL_ARCHIVO_DE_ENFERMERA = { anualidadFile: { campo: 'anualidadExp', lee: 'expDate' } };
-/** El contrato de arrendamiento: su fin. */
-export const FECHA_DEL_CONTRATO = { campo: 'endDate', lee: 'expDate' };
+export const FECHA_DEL_ARCHIVO_DE_ENFERMERA = { anualidadFile: { campo: 'anualidadExp', lee: 'expDate', emision: 'anualidadIssueDate' } };
+/** El contrato de arrendamiento: su fin, y su inicio como fecha de emisión. */
+export const FECHA_DEL_CONTRATO = { campo: 'endDate', lee: 'expDate', emision: 'startDate' };
+
+/**
+ * Los campos que se leen de un papel según su entrada en los mapas de arriba:
+ * cada uno con qué se lee (`lee`), lo que trae el formulario (`puesta`), lo que
+ * había (`anterior`) y cómo se escribe en `destino`. `numeroBuscado` va al
+ * modelo sólo si el papel tiene número propio.
+ */
+export function lecturaDelPapel(mapa, destino, base) {
+    const b = base || {};
+    const campo = (tipo, lee, nombre) => ({
+        tipo, lee, campo: nombre, puesta: destino[nombre], anterior: b[nombre],
+        aplicar: (v) => { destino[nombre] = v; },
+    });
+    const campos = [campo('fecha', mapa.lee, mapa.campo)];
+    if (mapa.emision) campos.push(campo('emision', 'issueDate', mapa.emision));
+    if (mapa.numero) campos.push(campo('numero', 'numeroDelDocumento', mapa.numero.campo));
+    return { campos, numeroBuscado: mapa.numero?.que || null };
+}
+
+/** El número leído que se aplica, con la misma regla que la fecha. */
+export function numeroLeidoQueSeAplica({ leida, puesta, anterior }) {
+    const v = typeof leida === 'string' || typeof leida === 'number' ? String(leida).trim() : '';
+    if (!v || v.length > 60 || !/[0-9]/.test(v) || /^(null|n\/a|ninguno)$/i.test(v)) return null;
+    if ((texto(puesta) ?? null) !== (texto(anterior) ?? null)) return null;
+    if (texto(puesta) === v) return null;
+    return v;
+}
 
 /** ¿Es una fecha `AAAA-MM-DD` que existe en el calendario y es razonable? */
 export function esFechaDelPapel(v) {

@@ -21,6 +21,7 @@ import { analizarDocumento } from '../../data/ia';
 import { fechaTexto } from '../../utils/fecha';
 import {
     FECHA_DEL_ARCHIVO_LEGAL, FECHA_DEL_ARCHIVO_DE_ENFERMERA, FECHA_DEL_CONTRATO, fechaLeidaQueSeAplica,
+    lecturaDelPapel, numeroLeidoQueSeAplica,
 } from '../../utils/expedienteDeSucursal';
 
 const persistBranches = (branches) => {
@@ -68,27 +69,34 @@ const subirVersion = async (branchId, categoryFolder, fileType, newFile) => {
 const handleDocumentVersioning = async (...args) => (await subirVersion(...args)).url;
 
 /**
- * Lee la fecha de cada papel recién subido y la pone donde corresponde
- * (`fechaLeidaQueSeAplica` decide si se pone). Las lecturas van en paralelo y
+ * Lee cada papel recién subido —su vencimiento, su fecha de emisión y su número
+ * propio— y pone cada dato donde corresponde (`fechaLeidaQueSeAplica` /
+ * `numeroLeidoQueSeAplica` deciden si se pone). Las lecturas van en paralelo y
  * NUNCA frenan el guardado: si el modelo falla, el documento se guarda igual
- * con la fecha que traía el formulario. Devuelve lo que se aplicó, para avisar.
+ * con lo que traía el formulario. Devuelve lo que se aplicó, para avisar.
  */
 const leerFechasDeLosPapeles = async (lecturas) => {
     if (lecturas.length === 0) return [];
     // `async` a propósito: si la llamada LANZA en vez de rechazar, el
     // `allSettled` la recoge igual y el guardado sigue.
     const resultados = await Promise.allSettled(lecturas.map(async l =>
-        analizarDocumento({ filePath: l.path, bucketName: 'documents', sinResumen: true })));
+        analizarDocumento({
+            filePath: l.path, bucketName: 'documents', sinResumen: true,
+            ...(l.numeroBuscado ? { numeroBuscado: l.numeroBuscado } : {}),
+        })));
     const aplicadas = [];
     resultados.forEach((r, i) => {
         const l = lecturas[i];
-        if (r.status !== 'fulfilled') { console.warn('No se pudo leer la fecha de', l.rotulo, r.reason); return; }
+        if (r.status !== 'fulfilled') { console.warn('No se pudo leer', l.rotulo, r.reason); return; }
         const { data, error } = r.value || {};
-        if (error || !data?.success) { console.warn('No se pudo leer la fecha de', l.rotulo, error || data?.error); return; }
-        const fecha = fechaLeidaQueSeAplica({ leida: data.aiData?.[l.lee], puesta: l.puesta, anterior: l.anterior });
-        if (!fecha) return;
-        l.aplicar(fecha);
-        aplicadas.push({ rotulo: l.rotulo, fecha, lee: l.lee });
+        if (error || !data?.success) { console.warn('No se pudo leer', l.rotulo, error || data?.error); return; }
+        for (const c of l.campos) {
+            const regla = c.tipo === 'numero' ? numeroLeidoQueSeAplica : fechaLeidaQueSeAplica;
+            const valor = regla({ leida: data.aiData?.[c.lee], puesta: c.puesta, anterior: c.anterior });
+            if (!valor) continue;
+            c.aplicar(valor);
+            aplicadas.push({ rotulo: l.rotulo, tipo: c.tipo, lee: c.lee, valor, fecha: valor });
+        }
     });
     return aplicadas;
 };
@@ -259,9 +267,8 @@ export const createBranchSlice = (set, get) => ({
                 const subido = await subirVersion(id, 'inmueble', 'contrato_alquiler', contrato.documentFile);
                 contrato.documentUrl = subido.url;
                 lecturas.push({
-                    path: subido.path, rotulo: 'Contrato de Arrendamiento', lee: FECHA_DEL_CONTRATO.lee,
-                    puesta: contrato[FECHA_DEL_CONTRATO.campo], anterior: baseSettings.rent?.contract?.[FECHA_DEL_CONTRATO.campo],
-                    aplicar: (f) => { contrato[FECHA_DEL_CONTRATO.campo] = f; },
+                    path: subido.path, rotulo: 'Contrato de Arrendamiento',
+                    ...lecturaDelPapel(FECHA_DEL_CONTRATO, contrato, baseSettings.rent?.contract),
                 });
             } else if (contrato && contrato.documentUrl === null && baseSettings.rent?.contract?.documentUrl) {
                 archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento (Histórico - Eliminado)', contratoVivo);
@@ -289,11 +296,9 @@ export const createBranchSlice = (set, get) => ({
                         ajustes.legal[f.url] = subido.url;
                         const fecha = FECHA_DEL_ARCHIVO_LEGAL[f.file];
                         if (fecha) {
-                            const legal = ajustes.legal;
                             lecturas.push({
-                                path: subido.path, rotulo: f.label, lee: fecha.lee,
-                                puesta: legal[fecha.campo], anterior: baseLegal[fecha.campo],
-                                aplicar: (v) => { legal[fecha.campo] = v; },
+                                path: subido.path, rotulo: f.label,
+                                ...lecturaDelPapel(fecha, ajustes.legal, baseLegal),
                             });
                         }
                     } else if (ajustes.legal[f.url] === null && baseLegal[f.url]) {
@@ -330,11 +335,10 @@ export const createBranchSlice = (set, get) => ({
                             fila[f.url] = subido.url;
                             const fecha = FECHA_DEL_ARCHIVO_DE_ENFERMERA[f.file];
                             if (fecha) {
-                                lecturas.push({
-                                    path: subido.path, rotulo: f.label, lee: fecha.lee,
-                                    puesta: n[fecha.campo], anterior: enLaBase[fecha.campo],
-                                    aplicar: (v) => { fila[fecha.campo] = v; },
-                                });
+                                // `puesta` sale de `n` (lo del formulario) y se
+                                // escribe en `fila`, que es la que se guarda.
+                                const lectura = lecturaDelPapel(fecha, fila, enLaBase);
+                                lecturas.push({ path: subido.path, rotulo: f.label, ...lectura });
                             }
                         }
                         delete fila[f.file];
@@ -481,9 +485,10 @@ export const createBranchSlice = (set, get) => ({
             // guardó tiene que saber qué fecha revisar.
             if (fechasLeidas.length > 0) {
                 useToastStore.getState().showToast(
-                    fechasLeidas.length === 1 ? 'Fecha tomada del documento' : 'Fechas tomadas de los documentos',
-                    fechasLeidas.map(f => `${f.rotulo}: ${f.lee === 'issueDate' ? 'del' : 'vence el'} ${fechaTexto(f.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}`).join(' · ')
-                        + '. Revísala en el expediente.',
+                    'Datos tomados del documento',
+                    fechasLeidas.map(f => `${f.rotulo}: ${f.tipo === 'numero' ? `número ${f.valor}`
+                        : `${f.tipo === 'emision' || f.lee === 'issueDate' ? 'emitido el' : 'vence el'} ${fechaTexto(f.valor, { day: 'numeric', month: 'long', year: 'numeric' })}`}`).join(' · ')
+                        + '. Revísalos en el expediente.',
                     'success'
                 );
             }

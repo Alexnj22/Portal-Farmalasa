@@ -17,7 +17,7 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { filePath, bucketName, buscarPersonas, sinResumen } = await req.json()
+    const { filePath, bucketName, buscarPersonas, sinResumen, numeroBuscado } = await req.json()
 
     // Auditoría 2026-07: whitelist de buckets. La descarga usa service_role
     // (bypasea RLS), así que sin esto cualquier usuario autenticado podía pedir
@@ -72,13 +72,27 @@ Deno.serve(async (req) => {
       "personas": ["Nombre completo de CADA TRABAJADOR listado en el documento, tal como está escrito. SOLO trabajadores: NO incluyas al representante legal, ni al patrono, ni a la empresa, ni a funcionarios o firmantes del Ministerio. Si el documento nombra a una sola persona, devuelve esa. Si no puedes distinguir con seguridad quiénes son los trabajadores, devuelve una lista vacía."]`
       : ''
 
+    /* El número PROPIO de un papel de sucursal (2026-11-11): la resolución del
+     * permiso SRS, el número de cuenta de la solvencia… `numeroDeRegistro`
+     * pregunta por el número de la PERSONA, y en un permiso de la sala eso es
+     * otro dato. Quien llama dice cuál busca (`numeroBuscado`), porque un
+     * permiso trae varios números y sin decirle cuál el modelo elige uno. Texto
+     * corto y sin saltos: va dentro del prompt. */
+    const queNumero = typeof numeroBuscado === 'string'
+      ? numeroBuscado.replace(/[\r\n"`$\\]/g, ' ').trim().slice(0, 160)
+      : ''
+    const bloqueNumero = queNumero
+      ? `,
+      "numeroDelDocumento": "${queNumero}. Devuelve SOLO el numero o codigo tal como esta escrito, sin la palabra que lo antecede. Usa null si el documento no lo trae o si no estas seguro de cual es."`
+      : ''
+
     const prompt = `Eres un auditor legal experto. Analiza este documento.
     Extrae la siguiente información y devuelve ÚNICAMENTE un JSON válido (sin markdown, solo las llaves y valores):
     {
 ${sinResumen ? '' : `      "aiSummary": "Un resumen muy profesional y directo de máximo 2 líneas destacando lo más importante.",
 `}      "issueDate": "Fecha de expedición en formato YYYY-MM-DD. Usa null si no existe.",
       "expDate": "Fecha de vencimiento en formato YYYY-MM-DD. Usa null si no existe.",
-      "numeroDeRegistro": "El numero de inscripcion, registro o junta que identifica a la persona en el documento — por ejemplo el numero de la Junta de Vigilancia (JVPQF, JVPE, JVPM) o del Consejo de Vigilancia de la Profesion de Contaduria Publica. Devuelve SOLO el numero o codigo, sin la palabra que lo antecede. Usa null si el documento no lo trae o si no estas seguro de cual de los numeros del documento es."${bloquePersonas}
+      "numeroDeRegistro": "El numero de inscripcion, registro o junta que identifica a la persona en el documento — por ejemplo el numero de la Junta de Vigilancia (JVPQF, JVPE, JVPM) o del Consejo de Vigilancia de la Profesion de Contaduria Publica. Devuelve SOLO el numero o codigo, sin la palabra que lo antecede. Usa null si el documento no lo trae o si no estas seguro de cual de los numeros del documento es."${bloqueNumero}${bloquePersonas}
     }`
 
     const rawText = await callGemini({

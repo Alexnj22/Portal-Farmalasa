@@ -301,12 +301,19 @@ const ROTULO_DE_CAMPO = {
     propertyType: 'tipo de inmueble', amount: 'monto', landlordName: 'arrendante', landlordPhone: 'teléfono del arrendante', contract: 'contrato',
     light: 'energía eléctrica', water: 'agua potable', internet: 'internet', mobile: 'telefonía móvil',
     customDocs: 'documentos propios',
+    // Fechas de emisión leídas de cada papel (2026-11-11).
+    srsPermitIssueDate: 'emisión de la licencia', regentCredentialIssueDate: 'emisión credencial regente',
+    pharmacovigilanceIssueDate: 'emisión de la designación de farmacovigilancia', nursingServicePermitIssueDate: 'emisión permiso de inyectables',
+    municipalIssueDate: 'emisión solvencia municipal', wasteIssueDate: 'emisión contrato de desechos',
+    controlledBooksIssueDate: 'emisión de libros', extinguisherIssueDate: 'fecha de la recarga de extintores',
+    regentJvpqf: 'número JVPQF del regente',
 };
 
 // Claves del legal que se editan en la pestaña de inmueble.
 const LEGAL_DEL_INMUEBLE = new Set([
     'extinguisherCount', 'extinguisherType', 'extinguisherExpiration', 'extinguisherUrl', 'pestControlCompany', 'lastFumigationDate', 'fumigationEveryDays',
     'fumigationUrl', 'wasteManagement', 'wasteExpiration', 'wasteUrl', 'municipalAccount', 'municipalExpiration', 'municipalUrl',
+    'wasteIssueDate', 'municipalIssueDate', 'extinguisherIssueDate',
 ]);
 // Ya tienen su entrada propia en `updateBranch`.
 const LEGAL_CON_ENTRADA_PROPIA = new Set(['regentEmployeeId', 'pharmacovigilanceEmployeeId', 'farmacovigilanciaId']);

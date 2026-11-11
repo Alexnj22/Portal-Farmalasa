@@ -40,6 +40,16 @@ describe('fechaLeidaQueSeAplica', () => {
     });
 });
 
+describe('numeroLeidoQueSeAplica', () => {
+    it('reemplaza el viejo si no se tocó; respeta lo escrito', async () => {
+        const { numeroLeidoQueSeAplica } = await import('@nucleo/utils/expedienteDeSucursal');
+        expect(numeroLeidoQueSeAplica({ leida: ' 123-A ', puesta: '99', anterior: '99' })).toBe('123-A');
+        expect(numeroLeidoQueSeAplica({ leida: '123', puesta: '77', anterior: '99' })).toBeNull();
+        expect(numeroLeidoQueSeAplica({ leida: 'null', puesta: '', anterior: '' })).toBeNull();
+        expect(numeroLeidoQueSeAplica({ leida: 'sin número', puesta: '', anterior: '' })).toBeNull();
+    });
+});
+
 describe('documento propio: la fecha puede esperar al papel', () => {
     const datos = { title: 'Rótulo', hasExpiration: true, expDate: '' };
     it('sin archivo, falta la fecha', () => expect(problemaDelDocumentoPropio(datos)).toMatch(/vencimiento/));
@@ -93,7 +103,22 @@ describe('updateBranch lee la fecha de los papeles nuevos', () => {
         const parches = await correr({ municipalFile: archivo() });
         expect(analizar).toHaveBeenCalledWith(expect.objectContaining({ bucketName: 'documents', sinResumen: true }));
         expect(JSON.stringify(parches)).toContain('2027-01-31');
-        expect(toast).toHaveBeenCalledWith(expect.stringMatching(/Fecha tomada/), expect.stringMatching(/Solvencia Municipal/), 'success');
+        expect(toast).toHaveBeenCalledWith(expect.stringMatching(/Datos tomados/), expect.stringMatching(/Solvencia Municipal/), 'success');
+    });
+
+    it('lee también la emisión y el número propio del papel', async () => {
+        analizar.mockResolvedValue({ data: { success: true, aiData: { expDate: '2027-01-31', issueDate: '2026-02-01', numeroDelDocumento: 'CM-4471' } }, error: null });
+        const parches = JSON.stringify(await correr({ municipalFile: archivo() }));
+        expect(analizar).toHaveBeenCalledWith(expect.objectContaining({ numeroBuscado: expect.stringMatching(/cuenta municipal/i) }));
+        expect(parches).toContain('2026-02-01');
+        expect(parches).toContain('CM-4471');
+        expect(toast).toHaveBeenCalledWith(expect.anything(), expect.stringMatching(/número CM-4471/), 'success');
+    });
+
+    it('un papel sin número propio no pide número', async () => {
+        analizar.mockResolvedValue({ data: { success: true, aiData: { expDate: '2027-01-31' } }, error: null });
+        await correr({ wasteFile: archivo() });
+        expect(analizar.mock.calls[0][0].numeroBuscado).toBeUndefined();
     });
 
     it('si la persona escribió otra fecha, se respeta', async () => {

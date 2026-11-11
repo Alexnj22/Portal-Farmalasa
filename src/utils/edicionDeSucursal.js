@@ -22,8 +22,31 @@ const desenvolver = (raw) => {
         }
     }
     if (!v || typeof v !== 'object') v = {};
-    return JSON.parse(JSON.stringify(v));
+    return copiaProfunda(v);
 };
+
+/*
+ * Copia los objetos y listas, y deja POR REFERENCIA lo que no es un objeto
+ * plano: el `File` que el formulario guarda en `legal.<campo>File` hasta el
+ * guardado, un `Blob`, un `ArrayBuffer` (el archivo de la app).
+ *
+ * Era `JSON.parse(JSON.stringify(v))`, y eso convierte un `File` en `{}`. Como
+ * cada cambio de «Configuración legal» y «Gestión del inmueble» pasa por acá,
+ * adjuntar el papel y DESPUÉS escribir su fecha dejaba el adjunto en `{}`:
+ * `updateBranch` no lo reconocía como archivo, no subía nada y el guardado
+ * cerraba el diálogo sin error (2026-11-11, visto en el entorno de pruebas).
+ */
+function copiaProfunda(v) {
+    if (Array.isArray(v)) return v.map(copiaProfunda);
+    if (v && typeof v === 'object') {
+        const proto = Object.getPrototypeOf(v);
+        if (proto !== Object.prototype && proto !== null) return v;
+        const r = {};
+        for (const [k, x] of Object.entries(v)) if (x !== undefined && typeof x !== 'function') r[k] = copiaProfunda(x);
+        return r;
+    }
+    return v;
+}
 
 export const limpiarAjustes = (raw) => desenvolver(raw);
 

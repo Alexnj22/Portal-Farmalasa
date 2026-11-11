@@ -23,7 +23,7 @@ import { SENSITIVE_FIELDS } from '@nucleo/store/utils';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import { analizarDocumento } from '@nucleo/data/ia';
 import { problemaDelPago, registroDelPago } from '@nucleo/utils/pagoDeSucursal';
-import { ajustesConDocumentoPropio, documentoPropio, problemaDelDocumentoPropio, rutaDelDocumentoPropio } from '@nucleo/utils/expedienteDeSucursal';
+import { ajustesConDocumentoPropio, documentoPropio, fechaLeidaQueSeAplica, problemaDelDocumentoPropio, rutaDelDocumentoPropio } from '@nucleo/utils/expedienteDeSucursal';
 import { faltaParaRecontratar, datosDeRecontratacion, ingresoCompleto } from '@nucleo/utils/reingresoYRecontratacion';
 
 // -------------------------
@@ -725,7 +725,7 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
         if (type === "addCustomDocument" || type === "editCustomDocument") {
             const docData = formData.newDocData;
 
-            const problemaDelDoc = docData ? problemaDelDocumentoPropio(docData) : 'El nombre del documento es obligatorio.';
+            const problemaDelDoc = docData ? problemaDelDocumentoPropio(docData, { seLeeDelArchivo: !!docData.file }) : 'El nombre del documento es obligatorio.';
             if (problemaDelDoc) {
                 setValidationError(problemaDelDoc);
                 return;
@@ -755,8 +755,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                             if (!aiError && aiResponse?.success && aiResponse.aiData) {
                                 aiSummary = aiResponse.aiData.aiSummary;
-                                if (aiResponse.aiData.issueDate && !docData.issueDate) docData.issueDate = aiResponse.aiData.issueDate;
-                                if (aiResponse.aiData.expDate && !docData.expDate) docData.expDate = aiResponse.aiData.expDate;
+                                // La misma regla que los documentos fijos: si quien
+                                // guarda no tocó la fecha, manda el papel — también al
+                                // reemplazar por la renovación, que trae la fecha vieja.
+                                const anterior = (originalBranch.settings?.customDocs || []).find(d => d.id === docId) || {};
+                                const emision = fechaLeidaQueSeAplica({ leida: aiResponse.aiData.issueDate, puesta: docData.issueDate, anterior: anterior.issueDate });
+                                if (emision) docData.issueDate = emision;
+                                const vence = fechaLeidaQueSeAplica({ leida: aiResponse.aiData.expDate, puesta: docData.expDate, anterior: anterior.expDate });
+                                if (vence) docData.expDate = vence;
                             }
                         } catch (aiCatchedError) {
                             console.error("Error AI:", aiCatchedError);
@@ -764,6 +770,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
 
                     } catch (uploadFail) {
                         setValidationError(`Error al subir: ${uploadFail.message}.`);
+                        setIsSaving(false);
+                        return;
+                    }
+
+                    // La fecha se dejó vacía para que la leyera el papel y el papel
+                    // no la trajo: se pide, no se guarda un documento sin ella.
+                    if (problemaDelDocumentoPropio(docData)) {
+                        setValidationError(`${problemaDelDocumentoPropio(docData)} No se pudo leer del documento: escríbela y vuelve a guardar.`);
                         setIsSaving(false);
                         return;
                     }

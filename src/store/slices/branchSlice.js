@@ -17,6 +17,11 @@ import {
     documentosDeEnfermeriaQueSalen, idsDeEnfermeria,
 } from '../../utils/edicionDeSucursal';
 import { shortEmployeeName } from '../../utils/nameUtils';
+import { analizarDocumento } from '../../data/ia';
+import { fechaTexto } from '../../utils/fecha';
+import {
+    FECHA_DEL_ARCHIVO_LEGAL, FECHA_DEL_ARCHIVO_DE_ENFERMERA, FECHA_DEL_CONTRATO, fechaLeidaQueSeAplica,
+} from '../../utils/expedienteDeSucursal';
 
 const persistBranches = (branches) => {
     almacen.guardar(CACHE_KEYS.BRANCHES, JSON.stringify(branches));
@@ -40,7 +45,7 @@ const sanitizeForJsonb = (obj) => {
 };
 
 // 🚨 HELPER PARA VERSIONADO
-const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newFile) => {
+const subirVersion = async (branchId, categoryFolder, fileType, newFile) => {
     const timestamp = Date.now();
     // Sólo `[a-z0-9]`: un archivo sin punto (posible desde la app) usaba el
     // nombre entero —con espacios o tildes— y el almacén rechazaba la clave.
@@ -58,7 +63,34 @@ const handleDocumentVersioning = async (branchId, categoryFolder, fileType, newF
     const { error } = await supabase.storage.from('documents').upload(newPath, cuerpo, { upsert: true, ...tipo });
     if (error) throw error;
     const { data: publicUrlData } = supabase.storage.from('documents').getPublicUrl(newPath);
-    return publicUrlData.publicUrl;
+    return { url: publicUrlData.publicUrl, path: newPath };
+};
+const handleDocumentVersioning = async (...args) => (await subirVersion(...args)).url;
+
+/**
+ * Lee la fecha de cada papel recién subido y la pone donde corresponde
+ * (`fechaLeidaQueSeAplica` decide si se pone). Las lecturas van en paralelo y
+ * NUNCA frenan el guardado: si el modelo falla, el documento se guarda igual
+ * con la fecha que traía el formulario. Devuelve lo que se aplicó, para avisar.
+ */
+const leerFechasDeLosPapeles = async (lecturas) => {
+    if (lecturas.length === 0) return [];
+    // `async` a propósito: si la llamada LANZA en vez de rechazar, el
+    // `allSettled` la recoge igual y el guardado sigue.
+    const resultados = await Promise.allSettled(lecturas.map(async l =>
+        analizarDocumento({ filePath: l.path, bucketName: 'documents', sinResumen: true })));
+    const aplicadas = [];
+    resultados.forEach((r, i) => {
+        const l = lecturas[i];
+        if (r.status !== 'fulfilled') { console.warn('No se pudo leer la fecha de', l.rotulo, r.reason); return; }
+        const { data, error } = r.value || {};
+        if (error || !data?.success) { console.warn('No se pudo leer la fecha de', l.rotulo, error || data?.error); return; }
+        const fecha = fechaLeidaQueSeAplica({ leida: data.aiData?.[l.lee], puesta: l.puesta, anterior: l.anterior });
+        if (!fecha) return;
+        l.aplicar(fecha);
+        aplicadas.push({ rotulo: l.rotulo, fecha, lee: l.lee });
+    });
+    return aplicadas;
 };
 
 export const createBranchSlice = (set, get) => ({
@@ -214,13 +246,23 @@ export const createBranchSlice = (set, get) => ({
                 });
             };
 
+            // Los papeles recién subidos que traen una fecha que leer (se leen
+            // todos juntos antes de armar los parches, ver `leerFechasDeLosPapeles`).
+            const lecturas = [];
+
             // 1. CONTRATO DE ALQUILER: se sube, o se quita. Quitarlo también
             // deja el anterior en el histórico: antes sólo la subida lo hacía.
             const contrato = ajustes.rent?.contract;
             const contratoVivo = vivaSettings.rent?.contract?.documentUrl;
             if (esArchivoPorSubir(contrato?.documentFile)) {
                 archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento Anterior', contratoVivo);
-                contrato.documentUrl = await handleDocumentVersioning(id, 'inmueble', 'contrato_alquiler', contrato.documentFile);
+                const subido = await subirVersion(id, 'inmueble', 'contrato_alquiler', contrato.documentFile);
+                contrato.documentUrl = subido.url;
+                lecturas.push({
+                    path: subido.path, rotulo: 'Contrato de Arrendamiento', lee: FECHA_DEL_CONTRATO.lee,
+                    puesta: contrato[FECHA_DEL_CONTRATO.campo], anterior: baseSettings.rent?.contract?.[FECHA_DEL_CONTRATO.campo],
+                    aplicar: (f) => { contrato[FECHA_DEL_CONTRATO.campo] = f; },
+                });
             } else if (contrato && contrato.documentUrl === null && baseSettings.rent?.contract?.documentUrl) {
                 archiveOldDoc('CONTRATO_ALQUILER', 'Contrato de Arrendamiento (Histórico - Eliminado)', contratoVivo);
             }
@@ -242,7 +284,17 @@ export const createBranchSlice = (set, get) => ({
                 for (const f of fileFields) {
                     if (esArchivoPorSubir(ajustes.legal[f.file])) {
                         archiveOldDoc(f.type, `${f.label} (Histórico)`, vivaLegal[f.url]);
-                        ajustes.legal[f.url] = await handleDocumentVersioning(id, 'legal', f.dbType, ajustes.legal[f.file]);
+                        const subido = await subirVersion(id, 'legal', f.dbType, ajustes.legal[f.file]);
+                        ajustes.legal[f.url] = subido.url;
+                        const fecha = FECHA_DEL_ARCHIVO_LEGAL[f.file];
+                        if (fecha) {
+                            const legal = ajustes.legal;
+                            lecturas.push({
+                                path: subido.path, rotulo: f.label, lee: fecha.lee,
+                                puesta: legal[fecha.campo], anterior: baseLegal[fecha.campo],
+                                aplicar: (v) => { legal[fecha.campo] = v; },
+                            });
+                        }
                     } else if (ajustes.legal[f.url] === null && baseLegal[f.url]) {
                         // Quien guarda lo vio y lo quitó: se archiva el que hay
                         // HOY en la base, que es el que se va.
@@ -265,13 +317,24 @@ export const createBranchSlice = (set, get) => ({
                     { file: 'anualidadFile', url: 'anualidadUrl', type: 'ANUALIDAD_ENFERMERIA', label: 'Recibo de Anualidad de Enfermería', dbType: 'anualidad_enfermeria' },
                 ];
                 const resultado = [];
+                const deLaBase = Array.isArray(baseLegal.nursingRegents) ? baseLegal.nursingRegents : [];
                 for (const n of enfermeras) {
                     const vieja = viejas.find(v => String(v.id) === String(n.id)) || {};
+                    const enLaBase = deLaBase.find(v => String(v.id) === String(n.id)) || {};
                     const fila = { ...n };
                     for (const f of ARCHIVOS_DE_ENFERMERA) {
                         if (esArchivoPorSubir(n[f.file])) {
                             archiveOldDoc(f.type, `${f.label} (Histórico)`, vieja[f.url], { enfermera: n.employeeId || null });
-                            fila[f.url] = await handleDocumentVersioning(id, 'legal', `${f.dbType}_${n.id}`, n[f.file]);
+                            const subido = await subirVersion(id, 'legal', `${f.dbType}_${n.id}`, n[f.file]);
+                            fila[f.url] = subido.url;
+                            const fecha = FECHA_DEL_ARCHIVO_DE_ENFERMERA[f.file];
+                            if (fecha) {
+                                lecturas.push({
+                                    path: subido.path, rotulo: f.label, lee: fecha.lee,
+                                    puesta: n[fecha.campo], anterior: enLaBase[fecha.campo],
+                                    aplicar: (v) => { fila[fecha.campo] = v; },
+                                });
+                            }
                         }
                         delete fila[f.file];
                     }
@@ -285,6 +348,10 @@ export const createBranchSlice = (set, get) => ({
                 }
                 ajustes.legal.nursingRegents = resultado;
             }
+
+            // La fecha que trae cada papel, antes de calcular qué cambió: así
+            // viaja en el mismo parche que el archivo.
+            const fechasLeidas = await leerFechasDeLosPapeles(lecturas);
 
             // Lo que cambió, y nada más. Sin binarios: un `File` dentro del
             // `jsonb` lo vuelve inserializable.
@@ -408,6 +475,17 @@ export const createBranchSlice = (set, get) => ({
                 const next = state.branches.map((b) => (String(b.id) === String(id) ? appBranch : b));
                 return { branches: persistBranches(next) };
             });
+
+            // Lo que se tomó del papel se dice: si la lectura se equivocó, quien
+            // guardó tiene que saber qué fecha revisar.
+            if (fechasLeidas.length > 0) {
+                useToastStore.getState().showToast(
+                    fechasLeidas.length === 1 ? 'Fecha tomada del documento' : 'Fechas tomadas de los documentos',
+                    fechasLeidas.map(f => `${f.rotulo}: ${f.lee === 'issueDate' ? 'del' : 'vence el'} ${fechaTexto(f.fecha, { day: 'numeric', month: 'long', year: 'numeric' })}`).join(' · ')
+                        + '. Revísala en el expediente.',
+                    'success'
+                );
+            }
 
             return true;
         } catch (err) {

@@ -140,6 +140,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                                 value={data.issueDate}
                                 onChange={(date) => updateField('issueDate', date)}
                                 />
+                            {data.file && <p className="text-caption font-bold text-content-3 mt-1.5">Si no la cambias, al guardar se toma la que trae el documento.</p>}
                         </div>
                     )}
                 </div>
@@ -163,6 +164,7 @@ const FormAddCustomDocument = ({ formData, setFormData, type }) => {
                                 value={data.expDate}
                                 onChange={(date) => updateField('expDate', date)}
                                 />
+                            {data.file && <p className="text-caption font-bold text-content-3 mt-1.5">Si no la cambias, al guardar se toma la que trae el documento.</p>}
                         </div>
                     )}
                 </div>

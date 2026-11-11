@@ -146,7 +146,10 @@ export function documentosDeSucursal(b) {
                 { rotulo: 'Inscripción SRS', valor: texto(legal.srsInscripcion) },
             ],
         },
-        { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, hasExpiration: true, modal: 'editBranchLegal' },
+        // Solvencia, desechos y fumigación se editan en «Gestión del inmueble»
+        // (`BranchTabInmueble`), no en «Configuración legal»: el botón abría el
+        // formulario que no tiene ni su archivo ni su fecha (2026-11-11).
+        { id: 'alcaldia', title: 'Solvencia Municipal', url: legal.municipalUrl, expDate: legal.municipalExpiration, hasExpiration: true, modal: 'editBranchInmueble' },
     ];
     if (hasControlledBooks) permisos.push({
         id: 'libros', title: 'Resolución Libros Controlados', url: legal.controlledBooksUrl, expDate: legal.controlledBooksExp || null, hasExpiration: true, modal: 'editBranchLegal',
@@ -182,9 +185,9 @@ export function documentosDeSucursal(b) {
         infra.push({ id: 'arrendamiento', title: 'Contrato de Arrendamiento', url: rent.contract?.documentUrl, expDate: rent.contract?.endDate, hasExpiration: true, modal: 'editBranchInmueble' });
     }
     if (hasInjections) {
-        infra.push({ id: 'desechos', title: 'Contrato Desechos Bioinfecciosos', url: legal.wasteUrl, expDate: legal.wasteExpiration, hasExpiration: true, modal: 'editBranchLegal' });
+        infra.push({ id: 'desechos', title: 'Contrato Desechos Bioinfecciosos', url: legal.wasteUrl, expDate: legal.wasteExpiration, hasExpiration: true, modal: 'editBranchInmueble' });
     }
-    infra.push({ id: 'fumigacion', title: 'Certificado de Fumigación', url: legal.fumigationUrl, issueDate: legal.lastFumigationDate, hasIssueDate: true, modal: 'editBranchLegal' });
+    infra.push({ id: 'fumigacion', title: 'Certificado de Fumigación', url: legal.fumigationUrl, issueDate: legal.lastFumigationDate, hasIssueDate: true, modal: 'editBranchInmueble' });
 
     const propios = customDocs.map((doc) => ({
         id: doc.id, title: doc.title, url: doc.url,
@@ -273,6 +276,59 @@ export function ajustesConArchivo(settings, docId, archivo) {
     return null;
 }
 
+// ── La fecha que trae el papel ──────────────────────────────────────────────
+// Al subir un documento fijo del expediente, `updateBranch` lo manda a leer
+// (`analyze-document`) y pone la fecha que el papel dice en el campo que le
+// corresponde, igual que el expediente del empleado (2026-11-11). Hasta ese
+// día sólo los documentos «Nuevo» se leían; los fijos había que teclearlos.
+//
+// `lee` es qué fecha del papel: el vencimiento, salvo la fumigación, que se
+// lleva por la fecha en que se hizo (la de expedición del certificado). Los
+// papeles sin fecha propia (inscripción del regente, carné y licencia de
+// enfermería) no se mandan a leer: sería pagar una llamada para nada.
+
+/** Archivo de `settings.legal` → el campo de fecha que llena. */
+export const FECHA_DEL_ARCHIVO_LEGAL = {
+    srsPermitFile: { campo: 'srsExpiration', lee: 'expDate' },
+    regentCredentialFile: { campo: 'regentCredentialExp', lee: 'expDate' },
+    farmacovigilanciaAuthFile: { campo: 'pharmacovigilanceExp', lee: 'expDate' },
+    nursingServicePermitFile: { campo: 'nursingServicePermitExp', lee: 'expDate' },
+    municipalFile: { campo: 'municipalExpiration', lee: 'expDate' },
+    wasteFile: { campo: 'wasteExpiration', lee: 'expDate' },
+    fumigationFile: { campo: 'lastFumigationDate', lee: 'issueDate' },
+    controlledBooksFile: { campo: 'controlledBooksExp', lee: 'expDate' },
+};
+/** Archivo de una fila de `legal.nursingRegents` → su campo de fecha. */
+export const FECHA_DEL_ARCHIVO_DE_ENFERMERA = { anualidadFile: { campo: 'anualidadExp', lee: 'expDate' } };
+/** El contrato de arrendamiento: su fin. */
+export const FECHA_DEL_CONTRATO = { campo: 'endDate', lee: 'expDate' };
+
+/** ¿Es una fecha `AAAA-MM-DD` que existe en el calendario y es razonable? */
+export function esFechaDelPapel(v) {
+    if (typeof v !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+    const [a, m, d] = v.split('-').map(Number);
+    if (a < 2000 || a > 2100) return false;
+    const f = new Date(Date.UTC(a, m - 1, d));
+    return f.getUTCFullYear() === a && f.getUTCMonth() === m - 1 && f.getUTCDate() === d;
+}
+
+/**
+ * La fecha leída del papel que se aplica, o null si no se toca nada.
+ *
+ * - `leida` es lo que devolvió la lectura; si no es una fecha válida, nada.
+ * - Si quien guarda CAMBIÓ esa fecha en este mismo guardado (`puesta` distinta
+ *   de `anterior`), manda lo que escribió: la persona tiene el papel en la mano.
+ * - Si no la tocó, manda el papel — también cuando ya había una fecha: al
+ *   subir la renovación, la fecha vieja es justamente la que hay que cambiar.
+ *   Por eso no alcanza con «sólo si está vacía».
+ */
+export function fechaLeidaQueSeAplica({ leida, puesta, anterior }) {
+    if (!esFechaDelPapel(leida)) return null;
+    if ((texto(puesta) ?? null) !== (texto(anterior) ?? null)) return null;
+    if (texto(puesta) === leida) return null;
+    return leida;
+}
+
 // ── Documentos propios (los que la sala agrega a mano) ──────────────────────
 // La misma forma que arma el portal (`addCustomDocument`/`editCustomDocument`
 // en `UnifiedModal`) y la misma ruta en el bucket, para que un documento
@@ -308,9 +364,16 @@ export function ajustesConDocumentoPropio(settings, doc) {
 export const ajustesSinDocumentoPropio = (settings, docId) =>
     ({ ...(settings || {}), customDocs: (settings?.customDocs || []).filter(d => d.id !== docId) });
 
-/** Por qué no se puede guardar el documento propio, o null. */
-export const problemaDelDocumentoPropio = (datos) => (!String(datos?.title || '').trim()
+/**
+ * Por qué no se puede guardar el documento propio, o null.
+ *
+ * `seLeeDelArchivo`: viene un archivo que se va a leer, así que una fecha vacía
+ * todavía puede llenarse sola — se vuelve a preguntar sin la opción DESPUÉS de
+ * leerlo. Sin esto la lectura nunca llenaba nada: el formulario exigía la fecha
+ * antes de subir, y la lectura sólo llenaba la que estuviera vacía.
+ */
+export const problemaDelDocumentoPropio = (datos, { seLeeDelArchivo = false } = {}) => (!String(datos?.title || '').trim()
     ? 'El nombre del documento es obligatorio.'
-    : datos.hasExpiration && !datos.expDate ? 'Falta la fecha de vencimiento.'
-    : datos.hasIssueDate && !datos.issueDate ? 'Falta la fecha de emisión.'
+    : datos.hasExpiration && !datos.expDate && !seLeeDelArchivo ? 'Falta la fecha de vencimiento.'
+    : datos.hasIssueDate && !datos.issueDate && !seLeeDelArchivo ? 'Falta la fecha de emisión.'
     : null);

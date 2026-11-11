@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users, Search, MapPin, Phone, MessageCircle, AlertCircle, ShieldAlert,
   Cake, Medal, CornerDownRight, UserPlus, Download, GraduationCap,
-  Pencil, Trash2, RefreshCw, ShieldCheck, CalendarDays, AlertTriangle, ChevronRight, KeyRound, IdCard,
+  Pencil, Trash2, RefreshCw, ShieldCheck, UserMinus, CalendarDays, AlertTriangle, ChevronRight, KeyRound, IdCard,
 } from 'lucide-react';
 
 import GlassViewLayout from '../../components/GlassViewLayout';
@@ -36,7 +36,10 @@ import { alertasDePersona, antiguedadDePersona, pesoDeSucursal } from '@nucleo/u
 import { soloPersonalEnPlanilla, soloNoEmpleados, esFichaQueNoEsEmpleado } from '@nucleo/utils/tipoDeFicha';
 import { TIPO_FICHA_PRACTICANTE, PASANTIA_VACIA, pasantiaDe, fichaConPasantia, finDeLaPractica } from '@nucleo/utils/practicanteFormulario';
 import { fetchHorasDePracticantes } from '@nucleo/data/practicantes';
-import { fetchCredenciales } from '@nucleo/data/employees';
+import { fetchCredenciales, fetchUltimasBajas } from '@nucleo/data/employees';
+import { ultimaBajaPorPersona } from '@nucleo/utils/bajaLegal';
+import { TERMINATION_REASONS } from '@nucleo/data/constants';
+import { formatDate } from '@nucleo/utils/helpers';
 import { exportarDirectorio } from '@nucleo/utils/directorioCsv';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { usePestanaEnUrl } from '../../plataforma/usePestanaEnUrl';
@@ -111,6 +114,14 @@ const cargosDe = (emp) => [emp.role, emp.secondary_role || emp.secondaryRole].fi
 // Quien ya no trabaja acá. Estaba escrita tres veces con la misma lista.
 const BAJAS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const esDeBaja = (emp) => BAJAS.includes(emp?.status);
+// El motivo en la tarjeta, corto: el rótulo legal completo («Despido SIN
+// responsabilidad») no cabe en una píldora y se salía de la tarjeta.
+const MOTIVO_CORTO = {
+  RENUNCIA: 'Renuncia',
+  DESPIDO_SIN_RESPONSABILIDAD: 'Despido justificado',
+  DESPIDO_CON_RESPONSABILIDAD: 'Despido con indemnización',
+  ABANDONO: 'Abandono',
+};
 
 // ── ¿Trabaja en esta sala? ────────────────────────────────────────────────
 // La principal o cualquiera de las que cubre (`employee_branches`, que el
@@ -154,7 +165,7 @@ function useEstadoDe(personas) {
 // `data-surface="card"` y no un `<div>` con borde y radio a mano: dibujarla a
 // mano deja el radio FIJO cuando `--card-radius` cambia por tema, y falla la
 // categoría `tarjeta-a-mano` de `gate:design`.
-function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir, editar, recontratar, puedeEditar }) {
+function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, destacada = false, conSuperior = false, lugar, abrir, editar, recontratar, puedeEditar, baja = null }) {
   const estado = useMemo(() => estadoDe(emp), [estadoDe, emp]);
   // `!!estado` ya no alcanza: durante la cuenta regresiva hay estado y la
   // persona está en la sala. Ver `estaAusenteHoy`.
@@ -237,11 +248,22 @@ function TarjetaPersona({ emp, estadoDe, sucursal, roles, nombreDeSucursal, dest
           </Badge>
         )}
 
+        {/* De baja: POR QUÉ y DESDE CUÁNDO. «Inactivo» a secas no distingue una
+            renuncia de un despido, y es lo primero que se pregunta al buscarla. */}
+        {inactiva && baja && (
+          <Badge variant="danger" size="sm" icon={UserMinus} uppercase={false} data-baja={baja.motivo || ''}
+            className="max-w-full overflow-hidden text-ellipsis" title={TERMINATION_REASONS[baja.motivo]?.label}>
+            {MOTIVO_CORTO[baja.motivo] || 'Baja'}{baja.fecha ? ` · ${formatDate(baja.fecha)}` : ''}
+          </Badge>
+        )}
+
         <div className={`flex flex-wrap items-center gap-1 ${ausente ? 'opacity-65' : ''}`}>
           {cargos.map((c, i) => (
             <Badge key={i} variant={getRoleTheme(c).variante} size="sm">{c}</Badge>
           ))}
-          {!cargos.length && <Badge variant="neutral" size="sm">Sin cargo</Badge>}
+          {!cargos.length && (inactiva && baja?.cargoId
+            ? <Badge variant="neutral" size="sm" uppercase={false}>Era {(roles || []).find(r => String(r.id) === String(baja.cargoId))?.name || 'sin cargo'}</Badge>
+            : <Badge variant="neutral" size="sm">Sin cargo</Badge>)}
         </div>
 
         {cobertura && (
@@ -565,13 +587,15 @@ function FranjaDelSeguro({ personas, onAbrir, version }) {
   );
 }
 
-function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, editar, recontratar, puedeEditar }) {
+function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, editar, recontratar, puedeEditar, bajaDe }) {
   const { sucursal, sinSede, personas, activas, bajas, jefe, segundos, vacantesDeSegundo, equipo, adscritos } = seccion;
 
   // `every` sobre una lista vacía es `true`, y una sección sin personas no
   // existe (se arma agrupando lo que hay) — pero el guard queda escrito para que
   // el aviso no cambie de significado si algún día se pinta una sala vacía.
-  const soloCuentasDelSistema = personas.length > 0 && personas.every(esFichaQueNoEsEmpleado);
+  // Se mira sobre quien TRABAJA: la baja borra la sede a propósito, así que
+  // una sección sin sede hecha sólo de bajas no es un pendiente.
+  const soloCuentasDelSistema = activas.length > 0 && activas.every(esFichaQueNoEsEmpleado);
 
   return (
     <section className="space-y-3">
@@ -597,7 +621,7 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
           hallazgo permanente que nadie puede cerrar. Un aviso así se aprende a
           ignorar, y el día que ahí caiga una persona real no lo va a distinguir
           nadie. */}
-      {sinSede && (
+      {sinSede && activas.length > 0 && (
         soloCuentasDelSistema ? (
           <Notice variant="neutral">
             Son cuentas del portal, no personas: no trabajan en ninguna sala, así
@@ -661,7 +685,7 @@ function SeccionSucursal({ seccion, estadoDe, roles, nombreDeSucursal, abrir, ed
           </p>
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
             {bajas.map(emp => (
-              <TarjetaPersona key={emp.id} emp={emp} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="baja" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} />
+              <TarjetaPersona key={emp.id} emp={emp} estadoDe={estadoDe} sucursal={sucursal} roles={roles} nombreDeSucursal={nombreDeSucursal} lugar="baja" abrir={abrir} editar={editar} recontratar={recontratar} puedeEditar={puedeEditar} baja={bajaDe?.(emp)} />
             ))}
           </div>
         </>
@@ -756,6 +780,22 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
 
   const estadoDe = useEstadoDe(enAlcance);
 
+  // La baja borra la sede y el cargo de la ficha; lo que tenía está en el
+  // evento. Se pide sólo si en el alcance hay alguien de baja.
+  const hayBajas = useMemo(() => enAlcance.some(esDeBaja), [enAlcance]);
+  const [bajasPorPersona, setBajasPorPersona] = useState(() => new Map());
+  useEffect(() => {
+    if (!hayBajas) return undefined;
+    let vivo = true;
+    fetchUltimasBajas().then(filas => { if (vivo) setBajasPorPersona(ultimaBajaPorPersona(filas)); });
+    return () => { vivo = false; };
+  }, [hayBajas, employees]);
+  const bajaDe = useCallback(emp => (esDeBaja(emp) ? bajasPorPersona.get(String(emp.id)) || null : null), [bajasPorPersona]);
+  // La sala en la que se la muestra: la suya, o —si está de baja— la última que tuvo.
+  const salaDe = useCallback(emp => (esDeBaja(emp)
+    ? (bajaDe(emp)?.sucursalId || 0)
+    : (Number(emp.branchId || emp.branch_id) || 0)), [bajaDe]);
+
   const visibles = useMemo(() => {
     const base = enAlcance;
     // Las cuentas externas y del sistema no son personal y no arman equipo.
@@ -783,13 +823,15 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
         const ausente = !!est && !est.faltan && est.clave !== 'SUPPORT';
         return vista === 'ausentes' ? ausente : !ausente;
       })
-      .filter(e => !selectedBranch || selectedBranch === 'ALL' || cubreLaSala(e, selectedBranch));
+      .filter(e => !selectedBranch || selectedBranch === 'ALL' || cubreLaSala(e, selectedBranch)
+        || (esDeBaja(e) && String(salaDe(e)) === String(selectedBranch)));
     if (!busqueda) return personas;
     return smartFilter(busqueda, personas, e => [
       e?.name, e?.role, e?.secondary_role,
-      nombreDeSucursal.get(Number(e?.branchId || e?.branch_id)),
+      nombreDeSucursal.get(salaDe(e)),
+      bajaDe(e) ? TERMINATION_REASONS[bajaDe(e).motivo]?.label : null,
     ]).results;
-  }, [enAlcance, estadoDe, busqueda, selectedBranch, vista, esExternos, nombreDeSucursal]);
+  }, [enAlcance, estadoDe, busqueda, selectedBranch, vista, esExternos, nombreDeSucursal, salaDe, bajaDe]);
 
   // ── El reparto ────────────────────────────────────────────────────────
   // Las tres reglas —y por qué el primer boceto las tenía mal— viven en
@@ -800,7 +842,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
   const secciones = useMemo(() => {
     const porSucursal = new Map();
     visibles.forEach(e => {
-      const id = Number(e.branchId || e.branch_id) || 0;
+      const id = salaDe(e);
       if (!porSucursal.has(id)) porSucursal.set(id, []);
       porSucursal.get(id).push(e);
     });
@@ -830,7 +872,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
         if (pa !== pb) return pa - pb;
         return a.sucursal.localeCompare(b.sucursal);
       });
-  }, [visibles, plantilla, roles, nombreDeSucursal]);
+  }, [visibles, plantilla, roles, nombreDeSucursal, salaDe]);
 
   // Acá vivía un aviso que listaba los puestos intermedios sin cubrir
   // —«Supervisor del Departamento Médico (7 personas) · Asistente de Logística
@@ -1163,7 +1205,7 @@ export default function EquiposView({ searchTerm, setSearchTerm, selectedBranch,
         {!cargando && !esPracticantes && secciones.map(s => (
           <SeccionSucursal
             key={s.id} seccion={s} estadoDe={estadoDe} roles={roles} nombreDeSucursal={nombreDeSucursal}
-            abrir={abrir} editar={editarRapido} recontratar={recontratar} puedeEditar={canEdit}
+            abrir={abrir} editar={editarRapido} recontratar={recontratar} puedeEditar={canEdit} bajaDe={bajaDe}
           />
         ))}
 

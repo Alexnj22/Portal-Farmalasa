@@ -350,3 +350,21 @@ export async function traerLoQueFaltaDeLaFicha(id) {
     // que alguien acabe de escribir mientras esto viajaba por la red.
     return Object.fromEntries(Object.entries(fuera).filter(([, v]) => v !== null && v !== undefined && v !== ''));
 }
+
+/**
+ * La última baja de cada persona: motivo, fecha y la sucursal y el cargo que
+ * tenía. Hace falta porque la baja BORRA `branch_id` y `role_id` de la ficha
+ * (para que no cuente en ninguna sala), y el listado quedaba agrupando a toda
+ * la gente dada de baja bajo «Sin sucursal asignada» con el aviso de «falta
+ * elegirles una sede» (2026-11-11). Lo que tenía vive en `previousValues` del
+ * evento, que es lo mismo que usa la reversión.
+ *
+ * Paginada aunque hoy sean pocas: el historial no se purga. Sin permiso para
+ * leer eventos ajenos devuelve lo que el RLS deje, y la tarjeta cae a «Inactivo».
+ */
+export async function fetchUltimasBajas() {
+    const filas = await fetchAllRows(() => supabase.from('employee_events')
+        .select('id, employee_id, date, motivo:metadata->>terminationReason, estado:metadata->>status, sucursal:metadata->previousValues->>branch_id, cargo:metadata->previousValues->>role_id')
+        .eq('type', 'TERMINATION').order('id'));
+    return filas || [];
+}

@@ -85,3 +85,15 @@ describe('liquidación estimada', () => {
         expect([diasDeAguinaldo(1), diasDeAguinaldo(3), diasDeAguinaldo(10)]).toEqual([15, 19, 21]);
     });
 });
+
+describe('ultimaBajaPorPersona', () => {
+    it('toma la más reciente vigente y descarta las canceladas', async () => {
+        const { ultimaBajaPorPersona } = await import('@nucleo/utils/bajaLegal');
+        const m = ultimaBajaPorPersona([
+            { id: 1, employee_id: 7, date: '2025-01-10', motivo: 'RENUNCIA', sucursal: '3', cargo: '5' },
+            { id: 2, employee_id: 7, date: '2026-11-30', motivo: 'ABANDONO', estado: 'CANCELLED', sucursal: '4' },
+            { id: 3, employee_id: 7, date: '2026-10-01', motivo: 'DESPIDO_SIN_RESPONSABILIDAD', sucursal: '2', cargo: null },
+        ]);
+        expect(m.get('7')).toEqual({ id: 3, motivo: 'DESPIDO_SIN_RESPONSABILIDAD', fecha: '2026-10-01', sucursalId: 2, cargoId: null });
+    });
+});

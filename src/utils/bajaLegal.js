@@ -225,3 +225,25 @@ export function liquidacionEstimada({ motivo, salarioMensual, ingreso, baja, sal
     const total = redondear(rubros.filter((r) => r.aplica === true).reduce((s, r) => s + r.monto, 0));
     return { rubros, total, aniosDeServicio: Math.round(anios * 100) / 100 };
 }
+
+/**
+ * `Map(employee_id → { motivo, fecha, sucursalId, cargoId })` con la baja
+ * vigente de cada persona: la más reciente que no se canceló ni se reemplazó.
+ * Las filas vienen de `fetchUltimasBajas`.
+ */
+export function ultimaBajaPorPersona(filas) {
+    const porPersona = new Map();
+    for (const f of filas || []) {
+        if (f?.estado === 'CANCELLED' || f?.estado === 'SUPERSEDED') continue;
+        const previa = porPersona.get(String(f.employee_id));
+        if (previa && (previa.fecha > f.date || (previa.fecha === f.date && previa.id > f.id))) continue;
+        porPersona.set(String(f.employee_id), {
+            id: f.id,
+            motivo: f.motivo || null,
+            fecha: f.date,
+            sucursalId: f.sucursal ? Number(f.sucursal) : null,
+            cargoId: f.cargo ? Number(f.cargo) : null,
+        });
+    }
+    return porPersona;
+}

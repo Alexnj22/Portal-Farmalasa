@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.3 — Personal: quien está de baja sale en su última sucursal, con el motivo y la fecha
+
+- La baja le borra la sucursal y el cargo a la ficha, así que en el listado toda la gente dada de baja caía en «Sin sucursal asignada», con el aviso amarillo de que faltaba elegirles una sede. Ahora cada persona sale en la última sucursal que tuvo, bajo «Ya no trabajan aquí».
+- La tarjeta dice el motivo y la fecha (por ejemplo «Renuncia · 30/11/2026») y el cargo que tenía («Era Dependiente»). Se la encuentra buscando por su nombre, por la sucursal o por el motivo.
+- En «Activos» no aparece; en «Todos» y «Ausentes», sí.
+
 ## v2.1510.2 — App: las secciones arrancan en su lugar también en iOS 26
 
 El arreglo anterior no alcanzó: el usuario mandó capturas de Mis avisos al entrar y un segundo después. En iOS 26, durante la animación de entrada, la barra opaca reserva el lugar del buscador (que después baja a la barra de abajo) y las secciones arrancaban ~60 pt más abajo. Ahora en iOS 26 la barra queda transparente y `FijoArriba` se coloca a una altura fija (área segura + 44 pt, 32 acostado), que no cambia durante la animación. En iOS anteriores sigue la barra opaca. Va por aire.

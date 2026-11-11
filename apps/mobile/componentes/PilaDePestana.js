@@ -29,19 +29,25 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
 // lo dice la barra de abajo.
 //
 // iOS pinta con el tinte del sistema una imagen dentro de la barra, así que el
-// logo va en dos capas (las mismas de apps/clientes/assets), cada una con su
-// color explícito.
+// logo va en TRES capas, cada una con su color explícito: el blanco de abajo,
+// el verde y el morado. Las tres miden lo mismo (932×171, con margen) y se
+// apilan.
 //
-// EL LOGO ES SIEMPRE EL ORIGINAL (usuario, 2026-11-11, después de ver borde
-// blanco, borde redondeado, sólo el símbolo y el símbolo con el nombre en una
-// línea: «el logo siempre debe ser el original»). Sus colores en claro y en
-// oscuro, sin borde, sin recomponerlo. Sólo el tamaño se ajusta: 200 pt de
-// ancho, lo más grande que cabe entre la foto y la campana.
-const ANCHO_LOGO = 200;
-const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: ANCHO_LOGO, height: Math.round(ANCHO_LOGO * 119 / 880) };
+// EL LOGO ES EL ORIGINAL (usuario, 2026-11-11: «el logo siempre debe ser el
+// original») con un borde blanco detrás, que el usuario eligió después de
+// varias vueltas: borde fino y redondeado; cada renglón relleno de blanco de
+// punta a punta, con aire a los lados (sin huecos entre letra y letra); el
+// blanco de «FARMACIAS» unido al renglón de abajo con su mismo ancho; y el
+// ícono sobre un círculo blanco. Las letras y sus colores no se tocan, en
+// claro ni en oscuro. Las capas verde y morada son las de apps/clientes/assets
+// con margen; la blanca se generó de ellas (dilatación redonda de 6 px sobre
+// los renglones macizos y el círculo del ícono).
+const ANCHO_LOGO = 204;
+const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: ANCHO_LOGO, height: Math.round(ANCHO_LOGO * 171 / 932) };
 function LogoEncabezado() {
   return (
     <View accessible accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: CAPA_LOGO.width, height: CAPA_LOGO.height }}>
+      <Image source={require('../assets/logo-farmacias-blanco.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#FFFFFF' }]} />
       <Image source={require('../assets/logo-farmacias-verde.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#8EC30F' }]} />
       <Image source={require('../assets/logo-farmacias-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: '#981D97' }]} />
     </View>

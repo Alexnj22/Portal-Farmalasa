@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.3 — App: el logo de la barra con su borde blanco
+
+El logo original de Farmacias La Popular y La Salud en la barra de la app del personal lleva ahora un borde blanco detrás, elegido por el usuario después de varias vueltas: fino y redondeado, cada renglón relleno de punta a punta con aire a los lados, el blanco de «FARMACIAS» unido al renglón de abajo con su mismo ancho y el ícono sobre un círculo blanco. Las letras y sus colores no cambian, en claro ni en oscuro. Tres capas nuevas en `apps/mobile/assets/logo-farmacias-{blanco,verde,morado}.png`. Va por aire.
+
 ## v2.1504.2 — App de clientes: historias y promociones sólo con lo publicado
 
 La app de clientes ya no rellena con productos de la Tienda. Sin historias publicadas en el portal, el Inicio no muestra el carrusel de historias; sin banners ni ofertas publicadas, la Tienda no muestra «Promociones». Antes, en los dos casos, aparecían productos del catálogo como si fueran historias o promociones.

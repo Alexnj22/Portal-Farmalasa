@@ -342,13 +342,19 @@ Deno.serve(async (req) => {
         : `Horarios de la próxima semana para revisar (${nextWeekStr})`;
       const message = partes.join('\n');
 
-      const { error: errEscritura } = await supabase.from('announcements').insert({
-        title,
-        message,
-        target_type:  recipientIds.length > 0 ? 'EMPLOYEE' : 'ALL',
-        target_value: recipientIds.length > 0 ? recipientIds : null,
-        priority:     'HIGH',
-        metadata:     {
+      // A la CAMPANA, no a los avisos (2026-11-11, usuario: «no debe haber
+      // aviso nuevo, mejor notificación»): lo automático es notificación; un
+      // aviso lo escribe una persona y la app lo muestra obligatorio al entrar.
+      // Sin destinatarios ya no cae a «todos» (eso era un aviso a la red
+      // entera): se dice en el log.
+      if (recipientIds.length === 0) console.warn('[auto-copy-weekly-roster] sin destinatarios para la notificación de horarios');
+      const { error: errEscritura } = recipientIds.length === 0 ? { error: null } : await supabase.rpc('notify_employees', {
+        p_recipients: recipientIds,
+        p_type: 'SYSTEM',
+        p_title: title,
+        p_body: message,
+        p_link: '/horarios',
+        p_metadata: {
           source:            'auto-copy-weekly-roster',
           next_week_start:   nextWeekStr,
           conflicted_count:  conflicted.length,
@@ -357,6 +363,8 @@ Deno.serve(async (req) => {
           notified_group:    recipientLabel + thUnavailableNote,
           th_available:      availableTH.length,
         },
+        p_push: true,
+        p_branch_id: null,
       });
       if (errEscritura) console.error("[auto-copy-weekly-roster] aviso de horarios:", errEscritura.message);
 

@@ -200,6 +200,8 @@ export const createSystemSlice = (set, get) => ({
                                 date: a.created_at,
                                 readBy: a.read_by || [],
                                 prevReadBy: a.prev_read_by || [],
+                        // null = lo generó el sistema (una notificación con forma de aviso); undefined = la consulta no lo trajo.
+                        createdBy: a.created_by,
                                 isArchived: a.is_archived,
                                 editedAt: a.edited_at,
                                 scheduledFor: a.scheduled_for,
@@ -536,6 +538,8 @@ export const createSystemSlice = (set, get) => ({
                         date: a.created_at,
                         readBy: a.read_by || [],
                         prevReadBy: a.prev_read_by || [],
+                        // null = lo generó el sistema (una notificación con forma de aviso); undefined = la consulta no lo trajo.
+                        createdBy: a.created_by,
                         isArchived: a.is_archived,
                         editedAt: a.edited_at,
                         scheduledFor: a.scheduled_for,
@@ -1696,6 +1700,8 @@ export const createSystemSlice = (set, get) => ({
                         priority: a.priority || 'NORMAL',
                         readBy: a.read_by || [],
                         prevReadBy: a.prev_read_by || [],
+                        // null = lo generó el sistema (una notificación con forma de aviso); undefined = la consulta no lo trajo.
+                        createdBy: a.created_by,
                         editedAt: a.edited_at,
                         scheduledFor: a.scheduled_for,
                         metadata: a.metadata || null,

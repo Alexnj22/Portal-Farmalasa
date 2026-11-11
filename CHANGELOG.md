@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1509.0 — Lo automático es notificación, no aviso
+
+Decisión del usuario: «no debe haber aviso nuevo, mejor notificación; debemos ver cuáles son avisos y cuáles son notificación». De 112 avisos activos, 111 los generaba el sistema solo; uno lo había escrito una persona.
+
+- **La regla:** un **aviso** (comunicado) lo escribe una persona para que se lea y se confirme, y la app lo muestra obligatorio al entrar. Una **notificación** es lo que genera el sistema: va a la campana, con push, y no obliga a nada.
+- **Base** (`20261111184220_lo_automatico_es_notificacion_no_aviso`): `avisar_dui_por_vencer`, `notify_missing_roster` y `avisar_pago_seguro_vida` notifican por `notify_employees` en vez de insertar en `announcements`. La deduplicación mira las notificaciones y también los avisos de antes, para no repetirle a nadie lo que ya se le dijo. Probado dentro de una transacción con rollback: 0 personas notificadas de nuevo, el resumen diario sale como notificación y el seguro de vida ya figuraba avisado.
+- **Funciones** (desplegadas con `--no-verify-jwt`, como estaban): `check-doc-expiry`, `sync-products` (producto fuera de catálogo), `notify-new-products-daily`, `auto-copy-weekly-roster` y `auto-calculate-minmax`.
+- **Datos:** se archivaron los 111 avisos automáticos activos; siguen en Gestionar avisos › Archivados.
+- **App:** la pantalla obligatoria al entrar sólo muestra avisos con autor (`createdBy`, que ahora trae el store), como segunda red.
+
 ## v2.1508.2 — Personal: botón Acciones y la baja exige su respaldo
 
 - En el perfil del empleado, el botón «Acción RRHH» pasa a llamarse **Acciones**, con ícono y color de advertencia.

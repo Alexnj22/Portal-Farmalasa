@@ -146,11 +146,16 @@ async function avisarFueraDeCatalogo(
   // así la consulta queda acotada por lo que se está mirando ahora y no por
   // cuántos avisos se acumularon desde siempre, que es la lista que un día cruza
   // el corte de 1000 filas sin decirlo.
-  const { data: yaAvisados, error: avErr } = await supabase
-    .from('announcements')
+  // Desde el 2026-11-11 se avisa por NOTIFICACIÓN; los avisos de antes también
+  // cuentan como «ya se avisó».
+  const idsMirados = conExistencia.map((p: any) => String(p.id));
+  const [porNotif, porAviso] = await Promise.all(['notifications', 'announcements'].map((t) => supabase
+    .from(t)
     .select('metadata')
     .eq('metadata->>type', 'PRODUCTO_FUERA_DE_CATALOGO')
-    .in('metadata->>product_id', conExistencia.map((p: any) => String(p.id)));
+    .in('metadata->>product_id', idsMirados)));
+  const avErr = porNotif.error || porAviso.error;
+  const yaAvisados = [...(porNotif.data ?? []), ...(porAviso.data ?? [])];
   if (avErr) { console.error('[fuera-de-catalogo] anuncios:', avErr.message); return { fuera: fuera.length, con_existencia: todosConExistencia.length, avisados: 0, callados, motivo: 'anuncios_ilegibles' }; }
   const yaVistos = new Set((yaAvisados ?? []).map((a: any) => Number(a.metadata?.product_id)));
   const nuevos = conExistencia.filter((p: any) => !yaVistos.has(Number(p.id)));
@@ -208,26 +213,27 @@ async function avisarFueraDeCatalogo(
       + `${acc.unidades} unidad${acc.unidades === 1 ? '' : 'es'} en existencia. `
       + `Hay que decidir qué se hace con lo que queda antes de que el producto deje de poder moverse.`;
 
-    // El push lo manda el trigger de `announcements` (trg_push_on_announcement)
-    // al insertar el anuncio. Mandarlo también desde acá llegaba DOBLE a cada
-    // destinatario (H25; pasó el 8-sep y el 8-oct), y si el anuncio fallaba el
-    // push suelto ya había salido y la corrida siguiente lo repetía.
-    const { error: annErr } = await supabase.from('announcements').insert({
-      title, message,
-      target_type: 'EMPLOYEE', target_value: destinatarios,
-      read_by: [], is_archived: false, created_by: null, priority: 'NORMAL',
-      metadata: {
+    // A la CAMPANA, no a los avisos (2026-11-11, usuario: «no debe haber aviso
+    // nuevo, mejor notificación»). `notify_employees` manda el push una vez;
+    // por eso tampoco se manda otro desde acá (H25: llegaba doble).
+    const { error: annErr } = await supabase.rpc('notify_employees', {
+      p_recipients: destinatarios,
+      p_type: 'SYSTEM',
+      p_title: title,
+      p_body: message,
+      p_link: '/inventario',
+      p_metadata: {
         type: 'PRODUCTO_FUERA_DE_CATALOGO',
         product_id: Number(p.id),
         nombre: p.nombre,
         unidades: acc.unidades,
         salas: [...acc.salas],
-        url: '/inventario',
       },
+      p_push: true,
+      p_branch_id: null,
     });
-    // El anuncio ES la marca de «ya se avisó». Si no entra, el push salió y la
-    // próxima corrida volvería a mandarlo: se dice en el log en vez de contarlo
-    // como avisado.
+    // La notificación ES la marca de «ya se avisó». Si no entra, se dice en el
+    // log en vez de contarlo como avisado.
     if (annErr) console.error('[fuera-de-catalogo] anuncio:', annErr.message);
     else avisados++;
   }

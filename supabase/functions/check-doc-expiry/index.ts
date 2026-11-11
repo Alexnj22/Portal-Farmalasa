@@ -210,28 +210,44 @@ Deno.serve(async (req) => {
 
     /* Antes el INSERT no leía `error` y `created++` sumaba igual: un aviso que
      * no se publicó se contaba como publicado y el cron veía 200. Ahora se
-     * cuenta el fallo, se sigue con los demás, y la respuesta sale 500. */
+     * cuenta el fallo, se sigue con los demás, y la respuesta sale 500.
+     *
+     * Desde el 2026-11-11 va a la CAMPANA (`notify_employees`), no a los avisos:
+     * lo que genera el sistema es notificación; un aviso es lo que escribe una
+     * persona y la app lo muestra obligatorio al entrar (usuario: «no debe
+     * haber aviso nuevo, mejor notificación»). La fila conserva su forma de
+     * antes para que las llamadas de abajo no cambien. */
     // deno-lint-ignore no-explicit-any
     const publicar = async (fila: Record<string, any>, checkKey: string) => {
-      const { error } = await supabase.from('announcements').insert([fila]);
+      const { error } = await supabase.rpc('notify_employees', {
+        p_recipients: fila.target_value,
+        p_type: 'DOCUMENT_EXPIRY',
+        p_title: fila.title,
+        p_body: fila.message,
+        p_link: '/sucursales',
+        p_metadata: { ...fila.metadata, prioridad: fila.priority },
+        p_push: true,
+        p_branch_id: fila.metadata?.branch_id ?? null,
+      });
       if (error) {
-        console.error(`check-doc-expiry: insert ${checkKey}: ${error.message}`);
+        console.error(`check-doc-expiry: notificar ${checkKey}: ${error.message}`);
         fallos.push(`${checkKey}: ${error.message}`);
       } else {
         created++;
       }
     };
 
-    // Este query ES el antiduplicado. Si falla en silencio, el aviso se vuelve
-    // a publicar y se repite en cada corrida del cron.
+    // Este query ES el antiduplicado. Si falla en silencio, la notificación se
+    // vuelve a mandar en cada corrida del cron. Mira las notificaciones y los
+    // avisos de antes (lo ya avisado así no se repite).
     const yaAvisado = async (checkKey: string) => {
-      const { data: existing, error: existingErr } = await supabase
-        .from('announcements')
-        .select('id')
-        .filter('metadata->>check_key', 'eq', checkKey)
-        .limit(1);
-      if (existingErr) throw new Error(`announcements(${checkKey}): ${existingErr.message}`);
-      return !!existing && existing.length > 0;
+      const [n, a] = await Promise.all([
+        supabase.from('notifications').select('id').filter('metadata->>check_key', 'eq', checkKey).limit(1),
+        supabase.from('announcements').select('id').filter('metadata->>check_key', 'eq', checkKey).limit(1),
+      ]);
+      if (n.error) throw new Error(`notifications(${checkKey}): ${n.error.message}`);
+      if (a.error) throw new Error(`announcements(${checkKey}): ${a.error.message}`);
+      return (n.data?.length ?? 0) > 0 || (a.data?.length ?? 0) > 0;
     };
 
     for (const branch of branches || []) {

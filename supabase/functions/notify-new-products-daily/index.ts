@@ -42,15 +42,21 @@ Deno.serve(async (req) => {
   };
   const hoy  = diaSV(0);
   const ayer = diaSV(-1);
-  const { data: ultimo, error: ultErr } = await supabase
-    .from("announcements")
+  // La marca de hasta dónde se avisó: la última notificación (desde el
+  // 2026-11-11) o, si todavía no hay, el último aviso de antes.
+  const ultimoDe = (tabla: string) => supabase
+    .from(tabla)
     .select("metadata")
     .eq("metadata->>type", "NEW_PRODUCTS_DAILY")
     .order("created_at", { ascending: false })
     .limit(1)
     .maybeSingle();
+  const [porNotif, porAviso] = await Promise.all([ultimoDe("notifications"), ultimoDe("announcements")]);
+  const ultErr = porNotif.error || porAviso.error;
+  const hastaDe = (r: any) => String(r?.data?.metadata?.hasta ?? r?.data?.metadata?.fecha ?? "");
+  const ultimo = { metadata: { hasta: [hastaDe(porNotif), hastaDe(porAviso)].sort().pop() } };
   if (ultErr) console.error("[notify-new-products] Error al leer el último aviso:", ultErr.message);
-  const ultimoCubierto = String(ultimo?.metadata?.hasta ?? ultimo?.metadata?.fecha ?? "");
+  const ultimoCubierto = String(ultimo.metadata.hasta ?? "");
   let desdeDia = /^\d{4}-\d{2}-\d{2}$/.test(ultimoCubierto) ? sumarDia(ultimoCubierto, 1) : ayer;
   if (desdeDia < diaSV(-7)) desdeDia = diaSV(-7);
   if (desdeDia > ayer) {
@@ -115,23 +121,19 @@ Deno.serve(async (req) => {
   const cuando  = desdeDia === ayer ? `el ${ayer}` : `entre el ${desdeDia} y el ${ayer}`;
   const message = `Se agregaron ${total} producto${total > 1 ? "s" : ""} al catálogo ${cuando}. Revisá MinMax para asignarlos a las sucursales que corresponda.\n\n${listaCorta}${resto}`;
 
-  // 4. El push lo manda el trigger `trg_push_on_announcement` al crear el
-  // anuncio. Hasta el 2026-10-08 esta función mandaba OTRO push por su cuenta
-  // y cada destinatario recibía dos por el mismo aviso.
+  // 4. A la CAMPANA, no a los avisos (2026-11-11, usuario: «no debe haber
+  // aviso nuevo, mejor notificación»): lo que genera el sistema es una
+  // notificación; un aviso es lo que escribe una persona y la app lo muestra
+  // obligatorio al entrar. `notify_employees` manda el push (una sola vez).
   let notified = 0;
-
-  // 5. Anuncio persistente
   try {
-    const { error: annErr } = await supabase.from("announcements").insert({
-      title,
-      message,
-      target_type: "EMPLOYEE",
-      target_value: ids,
-      read_by:      [],
-      is_archived:  false,
-      created_by:   null,
-      priority:     "NORMAL",
-      metadata: {
+    const { error: annErr } = await supabase.rpc("notify_employees", {
+      p_recipients: ids,
+      p_type: "SYSTEM",
+      p_title: title,
+      p_body: message,
+      p_link: "/minmax",
+      p_metadata: {
         type:    "NEW_PRODUCTS_DAILY",
         // `fecha` es el último día cubierto (lo leían así antes); `desde` y
         // `hasta` dicen el rango entero y `hasta` es la marca del próximo.
@@ -140,14 +142,15 @@ Deno.serve(async (req) => {
         hasta:   ayer,
         total,
         ids:     (nuevos ?? []).map((p) => p.id),
-        url:     "/minmax",
       },
+      p_push: true,
+      p_branch_id: null,
     });
-    // Es el ÚNICO canal (el push sale de su trigger): si falla, que se vea.
-    if (annErr) console.error("[notify-new-products] Error al crear anuncio:", annErr.message);
+    // Es el ÚNICO canal: si falla, que se vea.
+    if (annErr) console.error("[notify-new-products] Error al notificar:", annErr.message);
     else notified = ids.length;
   } catch (err) {
-    console.error("[notify-new-products] Error al crear anuncio:", err);
+    console.error("[notify-new-products] Error al notificar:", err);
   }
 
   console.log(`[notify-new-products] notified=${notified} ids=${ids.length}`);

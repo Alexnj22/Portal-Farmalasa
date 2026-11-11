@@ -145,36 +145,34 @@ serve(async (req) => {
 
     const pushTitle = "Recálculo mensual MIN/MAX";
 
-    // El push lo manda el trigger `trg_push_on_announcement` al crear el
-    // anuncio de abajo. Hasta el 2026-10-08 esta función mandaba OTRO push por
-    // su cuenta y cada aprobador recibía dos por el mismo aviso.
-
-    // Anuncio persistente con trazabilidad de lectura (read_by[])
+    // A la CAMPANA, no a los avisos (2026-11-11, usuario: «no debe haber aviso
+    // nuevo, mejor notificación»): lo automático es notificación; un aviso lo
+    // escribe una persona y la app lo muestra obligatorio al entrar.
+    // `notify_employees` manda el push una sola vez.
     try {
-      const { error: annErr } = await supabase.from("announcements").insert({
-        title: pushTitle,
-        message,
-        target_type: "EMPLOYEE",
-        target_value: empIds,
-        read_by: [],
-        is_archived: false,
-        created_by: null,
-        // Que no se recalculara NADA es tan urgente como un error: en los dos
-        // casos el MIN/MAX se quedó viejo.
-        priority: (failed.length > 0 || nadaSeCalculo) ? "HIGH" : "NORMAL",
-        metadata: {
+      const { error: annErr } = await supabase.rpc("notify_employees", {
+        p_recipients: empIds,
+        p_type: "SYSTEM",
+        p_title: pushTitle,
+        p_body: message,
+        p_link: "/minmax",
+        p_metadata: {
           type: "MINMAX_AUTO_CALCULATE",
+          // Que no se recalculara NADA es tan urgente como un error: en los dos
+          // casos el MIN/MAX se quedó viejo.
+          prioridad: (failed.length > 0 || nadaSeCalculo) ? "HIGH" : "NORMAL",
           totalRows,
           totalAutoApplied,
           totalDrafted,
           succeeded: succeeded.length,
           failed,
           skipped: skipped.map((s) => ({ name: s.name, reason: s.skipped })),
-          url: "/minmax",
         },
+        p_push: true,
+        p_branch_id: null,
       });
-      // Es el ÚNICO canal (el push sale de su trigger): si falla, que se vea.
-      if (annErr) console.error("[auto-calculate-minmax] Error al crear anuncio:", annErr.message);
+      // Es el ÚNICO canal: si falla, que se vea.
+      if (annErr) console.error("[auto-calculate-minmax] Error al notificar:", annErr.message);
       else notified = empIds.length;
     } catch (err) {
       console.error("[auto-calculate-minmax] Error al crear anuncio:", err);

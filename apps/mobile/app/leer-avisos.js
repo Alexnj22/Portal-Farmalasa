@@ -27,7 +27,12 @@ import { MARCA } from '../componentes/inicio/marca';
 
 export function avisosSinLeer(comunicados, user, roles) {
   if (!user) return [];
-  return comunicadosDeLaPersona(comunicados || [], user, roles || []).filter((a) => !yaLoLeyo(a, user.id));
+  // Sólo los que escribió una PERSONA (2026-11-11, usuario: «no debe haber
+  // aviso nuevo, mejor notificación»): lo que genera el sistema va a la campana
+  // y no obliga. `createdBy === null` es el sistema; undefined (la consulta no
+  // lo trajo) se muestra, por las dudas.
+  return comunicadosDeLaPersona(comunicados || [], user, roles || [])
+    .filter((a) => a.createdBy !== null && !yaLoLeyo(a, user.id));
 }
 
 export default function LeerAvisos() {

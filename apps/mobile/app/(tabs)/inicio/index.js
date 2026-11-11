@@ -17,14 +17,14 @@
 // (`user_dashboard_prefs.widgets`).
 import { useCallback, useMemo, useState } from 'react';
 import { LayoutAnimation, Pressable, RefreshControl, ScrollView, Text } from 'react-native';
-import { router, Stack, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { leer, guardar } from '@plataforma/almacen';
 import { fetchUserDashboardPrefs } from '@nucleo/data/dashboard';
 import { colorSistema } from '../../../componentes/Formulario';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import Encabezado, { FotoDeCuenta, saludo } from '../../../componentes/inicio/Encabezado';
+import Encabezado, { saludo } from '../../../componentes/inicio/Encabezado';
 import Segmentos from '../../../componentes/Segmentos';
 import useDatosInicio from '../../../componentes/inicio/useDatosInicio';
 import { anotar, ordenar } from '../../../componentes/inicio/uso';
@@ -96,13 +96,12 @@ export default function Inicio() {
 
   return (
     <Recarga.Provider value={recarga}>
-    <Stack.Screen options={{ title: saludo(user), headerRight: () => <FotoDeCuenta user={user} /> }} />
     <ScrollView style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
       <FranjaDelPortal />
-      <Encabezado sala={nombreSala} />
+      <Encabezado sala={nombreSala} saludo={saludo(user)} />
       {/* El control segmentado del sistema, como en el resto de la app: las
           píldoras que se desplazan quedan sólo para cuando los rótulos no
           caben, y eso lo decide `Segmentos` (2026-11-11). */}

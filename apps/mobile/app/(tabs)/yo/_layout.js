@@ -1,5 +1,5 @@
 import PilaDePestana from '../../../componentes/PilaDePestana';
 
 export default function Layout() {
-  return <PilaDePestana titulo="Cuenta" grande />;
+  return <PilaDePestana titulo="Cuenta" />;
 }

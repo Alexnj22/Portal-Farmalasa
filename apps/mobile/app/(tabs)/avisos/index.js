@@ -26,7 +26,7 @@
 // —no sólo lo cargado—, con la misma ventana de «Deshacer» que uno suelto.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, LayoutAnimation, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, Stack, useFocusEffect } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
@@ -231,13 +231,6 @@ export default function Notificaciones() {
 
   return (
     <>
-      <Stack.Screen options={{
-        headerRight: sinLeer.length ? () => (
-          <Tocable onPress={leerTodas} hitSlop={8} accessibilityRole="button" style={{ paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
-            <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: ANDROID ? '600' : '400' }}>Leer todas</Text>
-          </Tocable>
-        ) : undefined,
-      }} />
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: aviso ? 96 : 24, gap: 8 }}
         contentInsetAdjustmentBehavior="automatic"
@@ -248,6 +241,8 @@ export default function Notificaciones() {
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
           <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />
           <Enlace texto="Comunicados" onPress={() => abrirRuta('/mis-avisos')} />
+          {/* Antes iba arriba a la derecha; ese lugar es ahora de la campana, en todas las pestañas (2026-11-11). */}
+          {sinLeer.length ? <Enlace texto="Leer todas" onPress={leerTodas} /> : null}
           {visibles.length ? <Enlace texto="Borrar todas" onPress={borrarTodas} /> : null}
         </View>
 

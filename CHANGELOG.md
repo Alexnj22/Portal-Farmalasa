@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1502.1 — App: encabezado con el logo, la foto y la campana en cada pestaña
+
+La app del personal toma el encabezado de la app de clientes: en las cinco pestañas, el logo de Farmacias La Popular y La Salud va al centro, la foto de la cuenta a la izquierda (lleva a Cuenta) y la campana a la derecha, siempre a la vista y con el número de lo que falta leer. El logo reemplaza al título grande. En Inicio, el saludo («Buenos días, …») baja al contenido, encima de sala · día. En Notificaciones, «Leer todas» pasa a la fila de Historial · Comunicados, porque arriba a la derecha va ahora la campana. Va por aire.
+
 ## v2.1502.0 — Cumplimiento sanitario: farmacovigilancia, bajas, retiros, autoinspección, capacitación y vencimientos
 
 Módulo nuevo **Cumplimiento sanitario** (`/cumplimiento`, junto a Bitácoras), con los registros que la norma pide en cada sala y el portal no llevaba. Sale de la auditoría de sucursales.

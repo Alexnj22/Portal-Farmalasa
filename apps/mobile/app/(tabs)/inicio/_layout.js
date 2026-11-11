@@ -1,7 +1,7 @@
 import PilaDePestana from '../../../componentes/PilaDePestana';
 
-// Con la barra del sistema y título grande: el saludo es el título, y al
-// desplazar se encoge y el sistema difumina el borde (iOS 26), como Mail.
+// La barra lleva el logo, la foto y la campana (ver PilaDePestana); el saludo
+// va en el contenido (componentes/inicio/Encabezado).
 export default function Layout() {
-  return <PilaDePestana titulo="Inicio" grande />;
+  return <PilaDePestana titulo="Inicio" />;
 }

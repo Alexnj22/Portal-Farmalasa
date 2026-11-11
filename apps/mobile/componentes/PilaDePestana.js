@@ -5,7 +5,7 @@
 // sistema cuando el contenido pasa por debajo, como Ajustes o Mensajes. Con un
 // fondo de color fijo (lo que había) se veía blanca al desplazar, y el título
 // grande salía oscuro sobre oscuro en modo oscuro (usuario, 2026-09-30).
-import { Image, Platform, useColorScheme, View } from 'react-native';
+import { Image, Platform, useColorScheme, useWindowDimensions, View } from 'react-native';
 import { Stack } from 'expo-router';
 import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -37,14 +37,20 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
 // con borde». En OSCURO el logo va TODO en blanco (las dos capas). En CLARO el
 // blanco no se vería sobre la barra casi blanca, así que va el original en sus
 // colores. Sin borde en ningún modo.
-const ANCHO_LOGO = 200;
-const CAPA_LOGO = { position: 'absolute', left: 0, top: 0, width: ANCHO_LOGO, height: Math.round(ANCHO_LOGO * 119 / 880) };
+// El ancho se adapta a la pantalla (2026-11-11, usuario: «se ve todo pegado…
+// imagínate en un SE»): como mucho 200 pt y nunca más de la mitad del ancho,
+// así entre la foto y el logo, y entre el logo y la campana, queda aire
+// también en un iPhone SE (375 pt → 187 pt de logo, ~45 pt libres por lado).
+const PROPORCION_LOGO = 119 / 880;
 function LogoEncabezado() {
   const oscuro = useColorScheme() === 'dark';
+  const { width } = useWindowDimensions();
+  const ancho = Math.round(Math.min(200, width * 0.5));
+  const capa = { position: 'absolute', left: 0, top: 0, width: ancho, height: Math.round(ancho * PROPORCION_LOGO) };
   return (
-    <View accessible accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: CAPA_LOGO.width, height: CAPA_LOGO.height }}>
-      <Image source={require('../assets/logo-farmacias-verde.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: oscuro ? '#FFFFFF' : '#8EC30F' }]} />
-      <Image source={require('../assets/logo-farmacias-morado.png')} resizeMode="contain" style={[CAPA_LOGO, { tintColor: oscuro ? '#FFFFFF' : '#981D97' }]} />
+    <View accessible accessibilityRole="image" accessibilityLabel="Farmacias La Popular y La Salud" style={{ width: capa.width, height: capa.height }}>
+      <Image source={require('../assets/logo-farmacias-verde.png')} resizeMode="contain" style={[capa, { tintColor: oscuro ? '#FFFFFF' : '#8EC30F' }]} />
+      <Image source={require('../assets/logo-farmacias-morado.png')} resizeMode="contain" style={[capa, { tintColor: oscuro ? '#FFFFFF' : '#981D97' }]} />
     </View>
   );
 }
@@ -59,9 +65,14 @@ function fotoEnEncabezado(user) {
     : { headerLeft: () => foto };
 }
 
-export default function PilaDePestana({ titulo, sinBarra = false }) {
+// `conMarca={false}`: la pestaña rápida. Muestra una pantalla de módulo que
+// trae SUS botones (filtros, nueva, campana): con la foto y el logo además, la
+// barra quedaba apretada y el logo se corría contra los botones. Ahí va lo
+// mismo que al abrir el módulo desde el Menú: su título y sus botones, sin
+// foto ni logo (la foto ya está en Cuenta, una pestaña al lado).
+export default function PilaDePestana({ titulo, sinBarra = false, conMarca = true }) {
   const { user } = useAuth();
-  const marca = {
+  const marca = !conMarca ? {} : {
     headerTitle: () => <LogoEncabezado />,
     headerTitleAlign: 'center',
     headerRight: () => <View style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center' }}><BotonCampana /></View>,

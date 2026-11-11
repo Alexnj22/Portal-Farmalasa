@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1507.3 — App: la barra ya no queda apretada (logo adaptable; pestaña rápida sin logo)
+
+Reporte del usuario con un iPhone 17 Pro Max: foto, logo y botones «todo pegado… imagínate en un SE». Dos causas: en la pestaña rápida la pantalla del módulo suma sus propios botones (filtros, nueva, campana) a la foto y al logo; y el logo medía 200 pt fijos. Ahora la pestaña rápida lleva lo mismo que el módulo abierto desde el Menú (su título y sus botones, sin foto ni logo), y el logo de las demás pestañas mide como mucho 200 pt y nunca más de la mitad del ancho (187 pt en un SE). Va por aire.
+
 ## v2.1507.2 — Sucursales: extintores en el expediente y la fumigación con frecuencia
 
 - **Recarga de Extintores es un documento del Expediente**: tarjeta propia con su vencimiento y su constancia, que se adjunta en «Gestión del inmueble» (también con el teléfono) y de la que se lee la fecha. Antes sólo tenía la fecha: el aviso diario la vigilaba, pero no salía en el expediente.

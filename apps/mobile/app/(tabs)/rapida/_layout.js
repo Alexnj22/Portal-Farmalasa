@@ -1,6 +1,7 @@
 import PilaDePestana from '../../../componentes/PilaDePestana';
 
-// La pestaña rápida: el título lo pone la pantalla elegida (componentes/pestanaRapida.js).
+// La pestaña rápida: título y botones los pone la pantalla elegida, sin la
+// foto ni el logo (ver `conMarca` en PilaDePestana y componentes/pestanaRapida.js).
 export default function Layout() {
-  return <PilaDePestana titulo="" />;
+  return <PilaDePestana titulo="" conMarca={false} />;
 }

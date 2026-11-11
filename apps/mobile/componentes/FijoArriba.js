@@ -25,12 +25,17 @@
 // ── Cuánto bajar ────────────────────────────────────────────────────────────
 // Depende de la barra: la transparente (BARRA_NATIVA, las pestañas y casi
 // todas las pantallas de iOS) deja la pantalla empezar DETRÁS de ella; la
-// opaca (Android, y las pantallas sin BARRA_NATIVA) la deja empezar debajo. Y
-// encima la barra crece con el buscador (`headerSearchBarOptions`).
-// `useHeaderHeight` no siempre cuenta el buscador, así que no se calcula: lo
-// dice el SISTEMA con el área segura de ESTA vista (`SafeAreaView` nativo de
-// react-native-safe-area-context, borde de arriba), que es exactamente lo que
-// la barra le tapa — barra, buscador y título, transparente u opaca.
+// opaca (Android, y las pantallas sin BARRA_NATIVA) la deja empezar debajo.
+// Se MIDE: dónde quedó esto en la ventana contra dónde termina la barra
+// (`useHeaderHeight`, que la pila nativa actualiza con lo que mide el sistema,
+// buscador y título grande incluidos).
+//
+// ⚠️ NO usar `SafeAreaView` para esto (se probó el 2026-11-11 y salió mal): el
+// de react-native-safe-area-context calcula el área segura contra el
+// `SafeAreaProvider` de la raíz, que sólo conoce la barra de estado, no la
+// barra de navegación. El selector quedaba montado DEBAJO de la barra
+// transparente y la barra se tragaba los toques («quedan montadas de forma
+// rara y no funcionan bien»).
 //
 // Como el ScrollView empieza debajo de esto, su
 // `contentInsetAdjustmentBehavior="automatic"` ya no suma el margen de
@@ -40,12 +45,29 @@
 // pega al borde del ScrollView, que en iOS queda DETRÁS de la barra
 // transparente, y el selector se escondía bajo el título.
 //
-// `conBarra={false}`: en una hoja o modal sin barra, sin área segura.
-import { View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+// `conBarra={false}`: en una hoja o modal sin barra.
+import { useCallback, useRef, useState } from 'react';
+import { Platform, View } from 'react-native';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 
 export default function FijoArriba({ children, conBarra = true }) {
-  const cuerpo = <View style={{ paddingTop: 8, paddingBottom: 8 }}>{children}</View>;
-  if (!conBarra) return cuerpo;
-  return <SafeAreaView edges={['top']} mode="padding">{cuerpo}</SafeAreaView>;
+  const alto = useHeaderHeight();
+  const caja = useRef(null);
+  // Primera suposición, antes de medir: en iOS casi todas las barras son transparentes.
+  const [tope, setTope] = useState(conBarra && Platform.OS === 'ios' ? alto : 0);
+  const medir = useCallback(() => {
+    if (!conBarra) return;
+    caja.current?.measureInWindow?.((_x, y) => {
+      if (typeof y !== 'number') return;
+      const falta = Math.max(0, Math.round(alto - y));
+      setTope((t) => (Math.abs(t - falta) > 1 ? falta : t));
+    });
+  }, [alto, conBarra]);
+  return (
+    <View ref={caja} onLayout={medir} collapsable={false}>
+      <View style={{ paddingTop: (conBarra ? tope : 0) + 8, paddingBottom: 8 }}>
+        {children}
+      </View>
+    </View>
+  );
 }

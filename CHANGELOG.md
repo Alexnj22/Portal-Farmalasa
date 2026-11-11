@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.8 — App: las secciones fijas ya no quedan debajo de la barra
+
+Reporte del usuario: las pestañas «quedan montadas de forma rara y no funcionan bien». Causa: `FijoArriba` usaba `SafeAreaView`, que calcula contra el `SafeAreaProvider` de la raíz y sólo conoce la barra de estado; el selector quedaba debajo de la barra de navegación transparente y la barra se tragaba los toques. Vuelve a medir contra la altura real de la barra (`useHeaderHeight` y `measureInWindow`), que incluye el buscador y el título. Va por aire.
+
+## v2.1504.7 — App de clientes: el carrito vuelve a como estaba
+
+Se deshace el cambio de la versión anterior: con el espacio fijo para la barra, en el teléfono la primera tarjeta del Carrito quedaba demasiado abajo. El Carrito queda como antes de ese cambio.
+
 ## v2.1504.6 — App: el código del logo blanco en oscuro
 
 El cambio que describe v2.1504.5. Esa entrada y su versión entraron en un commit de otra sesión (el índice de git es compartido) sin el código; acá va el código: `PilaDePestana.js`, las capas verde y morada de vuelta a 880×119 y el borrado de `logo-farmacias-blanco.png`.

@@ -68,18 +68,9 @@ export function ConTeclado({ children }) {
   return <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">{children}</KeyboardAvoidingView>;
 }
 
-// `arriba` (2026-11-11, carrito: «a veces la tarjeta queda media oculta
-// arriba»): en iPhone la barra es transparente y el hueco de arriba lo calcula
-// el sistema (`contentInsetAdjustmentBehavior="automatic"`). Al entrar a una
-// pestaña que todavía no estaba montada —desde «Agregar al carrito», por
-// ejemplo— a veces lo calcula sin la barra y la primera tarjeta queda debajo.
-// Con `arriba` (la altura de la barra, `useHeaderHeight()` de la pantalla) el
-// hueco es fijo y no depende de ese cálculo. Sólo iOS: en Android la barra es
-// opaca y el contenido empieza debajo de ella.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, arriba = null, refLista = null }) {
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false }) {
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
-  const fijo = Platform.OS === 'ios' && !sinBarra && Number(arriba) > 0;
   const t = useTema();
   const desp = useRef(null);
   if (!desp.current) desp.current = crearDesplazamiento();
@@ -90,9 +81,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     <SinVidrio.Provider value={sinVidrio}>
     <ConTeclado>
     <ScrollView
-      ref={refLista}
-      contentInsetAdjustmentBehavior={fijo ? 'never' : 'automatic'}
-      scrollIndicatorInsets={fijo ? { top: arriba } : undefined}
+      contentInsetAdjustmentBehavior="automatic"
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.
       contentContainerStyle={{
@@ -100,7 +89,6 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
         // Sin barra, iOS ya corre el contenido bajo la barra de estado
         // (`automatic`); Android no: se suma a mano.
         ...(sinBarra ? { paddingTop: (Platform.OS === 'ios' ? 4 : ins.top + 8) } : null),
-        ...(fijo ? { paddingTop: arriba + 16 } : null),
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"

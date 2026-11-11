@@ -99,16 +99,94 @@ async function getSessionCookie(username: string, password: string): Promise<str
   return cookie;
 }
 
-// Caché de cookie por-invocación, keyed por credenciales. Evita re-login por cada
-// sucursal cuando comparten el mismo usuario ERP. El Map se crea por request, así
-// que no hay riesgo de cookie vieja entre corridas ni carreras entre invocaciones.
-async function getCachedCookie(cache: Map<string, string>, username: string, password: string): Promise<string> {
-  const key = `${username}|${password}`;
+// ── La sesión con el origen, viva entre corridas (2026-11-10) ──────────────
+//
+// Antes la caché era sólo de la invocación, y el cron dispara 13 invocaciones
+// por minuto (6 de ventas + 7 de inventario), cada una con su login: 13 de las
+// ~27 peticiones de cada minuto eran entrar, ~14.000 al día. Ahora la sesión
+// queda guardada en el proceso y la próxima invocación que caiga en él la usa.
+// Es el mismo patrón que `sync-cortes-caja` usa desde agosto con estos mismos
+// usuarios.
+//
+// Lo que se cuidó, medido antes de cambiarlo:
+//   · una sesión vencida NO pasa en silencio: el origen contesta 302 a
+//     `login.php`, `fetch` sigue la redirección y llega HTML, que no es JSON.
+//     `pedirJson` lo reconoce, tira la sesión, entra de nuevo y pregunta UNA
+//     vez más (antes eran tres reintentos con la misma sesión muerta);
+//   · ventas e inventario usan sesiones SEPARADAS aunque sea el mismo usuario
+//     (`tipo` en la clave), como hasta ahora: compartida, el origen atendería
+//     sus pedidos de a uno y una descarga del día entero podría pasar del plazo;
+//   · la sesión de facturación (`cookieParaClientes`) NO se guarda entre
+//     corridas: `resolverIdCliente` convierte una sesión caída en «sin cliente»
+//     y no en un error, así que guardarla podría dejar fichas sueltas;
+//   · una sesión no se usa más de `VIDA_MAXIMA_SESION_MS`, aunque siga viva.
+//
+// La respuesta dice cuántas fueron nuevas, reusadas o rehechas (`sesiones`):
+// así se mide el ahorro real, que depende de cuántas invocaciones caen en el
+// mismo proceso.
+const SESIONES_VIVAS = new Map<string, { cookie: string; desde: number }>();
+const VIDA_MAXIMA_SESION_MS = 20 * 60_000;
+
+type TipoSesion = 'dte' | 'inv' | 'clientes';
+type UsoSesion = { nuevas: number; reusadas: number; rehechas: number };
+const USO_SESIONES = new WeakMap<Map<string, string>, UsoSesion>();
+
+function usoDe(cache: Map<string, string>): UsoSesion {
+  let uso = USO_SESIONES.get(cache);
+  if (!uso) { uso = { nuevas: 0, reusadas: 0, rehechas: 0 }; USO_SESIONES.set(cache, uso); }
+  return uso;
+}
+
+async function getCachedCookie(
+  cache: Map<string, string>, username: string, password: string, tipo: TipoSesion = 'dte',
+): Promise<string> {
+  const key = `${tipo}|${username}|${password}`;
   const hit = cache.get(key);
   if (hit) return hit;
+  const persiste = tipo !== 'clientes';
+  const viva = persiste ? SESIONES_VIVAS.get(key) : undefined;
+  if (viva && Date.now() - viva.desde < VIDA_MAXIMA_SESION_MS) {
+    cache.set(key, viva.cookie);
+    usoDe(cache).reusadas++;
+    return viva.cookie;
+  }
   const cookie = await withRetry(() => getSessionCookie(username, password));
   cache.set(key, cookie);
+  if (persiste) SESIONES_VIVAS.set(key, { cookie, desde: Date.now() });
+  usoDe(cache).nuevas++;
   return cookie;
+}
+
+function olvidarSesion(cache: Map<string, string>, username: string, password: string, tipo: TipoSesion) {
+  const key = `${tipo}|${username}|${password}`;
+  cache.delete(key);
+  SESIONES_VIVAS.delete(key);
+}
+
+/** GET de un JSON del origen con la sesión guardada; si llegó la pantalla de
+ *  ingreso (sesión vencida), entra de nuevo y pregunta una sola vez más. */
+async function pedirJson(
+  cache: Map<string, string>, username: string, password: string, tipo: TipoSesion, url: string,
+): Promise<{ payload: any; cookie: string }> {
+  for (let vuelta = 0; ; vuelta++) {
+    const cookie = await getCachedCookie(cache, username, password, tipo);
+    const res = await withRetry(() => fetch(url, {
+      headers: { Cookie: cookie },
+      signal: AbortSignal.timeout(30_000),
+    }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }));
+    const texto = await res.text();
+    try {
+      return { payload: JSON.parse(texto), cookie };
+    } catch {
+      const esIngreso = res.url.includes('login.php') || /<html|<form/i.test(texto.slice(0, 2000));
+      if (vuelta === 0 && esIngreso) {
+        olvidarSesion(cache, username, password, tipo);
+        usoDe(cache).rehechas++;
+        continue;
+      }
+      throw new Error(`la respuesta no es JSON (${texto.length} bytes${esIngreso ? ', pantalla de ingreso' : ''})`);
+    }
+  }
 }
 
 const REIMPRIMIR = "https://clientesdte3.oss.com.sv/farma_salud/reimprimir_factura.php";
@@ -157,7 +235,7 @@ async function cookieParaClientes(cache: Map<string, string>, deLaSucursal: stri
   if (!raw) return deLaSucursal;
   try {
     const { username, password } = JSON.parse(raw);
-    return await getCachedCookie(cache, username, password);
+    return await getCachedCookie(cache, username, password, 'clientes');
   } catch (e) {
     console.error("cookieParaClientes: se usa la de la sucursal —", e instanceof Error ? e.message : String(e));
     return deLaSucursal;
@@ -246,16 +324,9 @@ async function syncBranch(
   cookieCache: Map<string, string>,
 ): Promise<{ total: number; new: number; changes: number; items: number; idMin: number | null; idMax: number | null }> {
 
-  // 1. Login (cacheado por credenciales) + fetch con reintentos
-  const cookie = await getCachedCookie(cookieCache, username, password);
-
+  // 1. Sesión (guardada entre corridas, ver `pedirJson`) + fetch con reintentos
   const url = `${DTE_BASE}?fini=${startDate}&ffin=${endDate}&id_sucursal=${erpId}`;
-  const res = await withRetry(() => fetch(url, {
-    headers: { Cookie: cookie },
-    signal: AbortSignal.timeout(30_000),
-  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }));
-
-  const payload = await res.json();
+  const { payload, cookie } = await pedirJson(cookieCache, username, password, 'dte', url);
   const ventas: any[] = payload?.ventas ?? [];
   if (ventas.length === 0) return { total: 0, new: 0, changes: 0, items: 0, idMin: null, idMax: null };
 
@@ -670,15 +741,8 @@ async function syncInventoryBranch(
   isVencidos: boolean,
   cookieCache: Map<string, string>,
 ): Promise<{ items: number; rows: number; sinCambios?: boolean }> {
-  const cookie = await getCachedCookie(cookieCache, username, password);
-
   const url = `${INV_BASE}?id_ubicacion=${ubicacionId}&id_sucursal=${erpId}`;
-  const res = await withRetry(() => fetch(url, {
-    headers: { Cookie: cookie },
-    signal: AbortSignal.timeout(30_000),
-  }).then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r; }));
-
-  const payload = await res.json();
+  const { payload } = await pedirJson(cookieCache, username, password, 'inv', url);
   const productos: any[] = payload?.inventario ?? [];
   if (productos.length === 0) return { items: 0, rows: 0 };
 
@@ -968,7 +1032,8 @@ Deno.serve(async (req) => {
     }
 
     return new Response(
-      JSON.stringify({ success: true, range: { startDate, endDate }, results, ...(syncInventory && { inventory: invResults }) }),
+      JSON.stringify({ success: true, range: { startDate, endDate }, results, ...(syncInventory && { inventory: invResults }),
+                       sesiones: usoDe(cookieCache) }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

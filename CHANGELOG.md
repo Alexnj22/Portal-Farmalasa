@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.20 — La lista de movimientos muestra al instante lo anotado desde el portal
+
+- Una entrada o salida de efectivo anotada desde el portal aparece en la lista
+  de movimientos (portal y app) en el momento, con la marca «Recién anotado»,
+  hasta que la caja la confirma. Antes esperaba al repaso de la caja.
+- Con eso, el repaso de movimientos en `sync-cortes-caja` pasa de cada 5 a
+  cada 30 minutos (~960 consultas menos al día al sistema de la caja). El
+  efectivo esperado no cambia: la base ya sumaba esos movimientos.
+- `operar-caja` refresca la sala apenas abre la caja y el barrido de aperturas
+  pasa a cada hora (~320 consultas menos al día).
+
 ## v2.1501.19 — Encuestas: la recomendación del 0 al 10 se entiende sola
 
 Una entrevista de Salud 4 guardó satisfacción 10 y recomendación 2 en la misma respuesta, y disparó el aviso de «Cliente insatisfecho». La pregunta de recomendación no decía su escala, y en el teléfono la fila del 0 al 10 se parte en dos, así que «Nada probable / Muy probable» ya no marcaban las puntas. Ahora, en el portal y en la app:

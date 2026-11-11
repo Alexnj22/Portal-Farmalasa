@@ -316,7 +316,19 @@ const HORA_HASTA = 23;   // exclusivo: la última corrida es a las 22:59:30
  * captura ya escribe en cada fila que encuentra — no hace falta ninguna columna
  * nueva.
  */
-const MINUTOS_ENTRE_REPASOS = 5;
+/*
+ * ── Y desde el 2026-11-11, treinta ──────────────────────────────────────────
+ * Pedido del usuario: bajar consultas al sistema de la caja. Lo que justificaba
+ * los cinco minutos era ver en la lista lo que se acaba de anotar, y eso ya no
+ * depende de la captura: lo anotado desde el portal entra a la lista en el
+ * momento (`enCaminoDelPortal`, `src/utils/movimientosDeCaja.js`), con la misma
+ * regla con la que `caja_efectivo_piezas` ya lo sumaba al efectivo del cajón.
+ * Lo que queda esperando el repaso es lo hecho DIRECTO en la caja —medido ese
+ * día: 6 de 77 movimientos en dos semanas, sin contar los abonos, que el portal
+ * ya muestra como cobro—, y todo corte nuevo sigue trayendo la lista entera.
+ * 6 salas × 32 repasos ≈ 190 peticiones al día, contra ~1.150.
+ */
+const MINUTOS_ENTRE_REPASOS = 30;
 
 /* Holgura del reloj. Desde el 2026-11-10 el cron corre cada 5 min (antes cada
  * 30 s), o sea al mismo ritmo que este plazo: la marca de la corrida anterior

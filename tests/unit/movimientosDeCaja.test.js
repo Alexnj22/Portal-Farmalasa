@@ -33,3 +33,33 @@ describe('movimientosDeCaja', () => {
         expect(filtrarMovimientos(r, { busqueda: 'ana', anotaron }).map((x) => x.mv.id)).toEqual([1]);
     });
 });
+
+describe('movimientos del portal que la captura todavía no trajo (2026-11-11)', () => {
+    const efectivo = { id: 7, branch_id: 27, tipo: 'SALIDA', erp_movimiento_id: 501, forma_pago: 'EFECTIVO', monto: 12.5,
+        concepto: 'Compra de agua', fecha: '2026-11-11', registrado_at: '2026-11-11T16:00:00Z' };
+    it('salen como movimiento, con su anotación, hasta que la captura los trae', () => {
+        const antes = renglonesDeMovimientos({ movimientos: [], anotados: [efectivo] });
+        expect(antes).toHaveLength(1);
+        expect(antes[0].kind).toBe('mov');
+        expect(antes[0].mv.enCamino).toBe(true);
+        expect(antes[0].anotado).toBe(efectivo);
+        expect(filtrarMovimientos(antes, { tipo: 'SALIDA' })).toHaveLength(1);
+        const despues = renglonesDeMovimientos({
+            movimientos: [{ id: 9, branch_id: 27, erp_movimiento_id: 501, tipo: 'SALIDA', monto: 12.5, fecha: '2026-11-11' }],
+            anotados: [efectivo],
+        });
+        expect(despues).toHaveLength(1);
+        expect(despues[0].mv.enCamino).toBeUndefined();
+    });
+    it('ni los anulados ni los de tarjeta entran como efectivo', () => {
+        const r = renglonesDeMovimientos({ anotados: [{ ...efectivo, anulado_at: '2026-11-11T17:00:00Z' }, { ...efectivo, id: 8, forma_pago: 'TARJETA', tipo: 'ENTRADA', erp_movimiento_id: null }] });
+        expect(r.filter((x) => x.mv?.enCamino)).toHaveLength(0);
+    });
+    it('el mismo número en otra sala no lo tapa', () => {
+        const r = renglonesDeMovimientos({
+            movimientos: [{ id: 9, branch_id: 4, erp_movimiento_id: 501, tipo: 'SALIDA', monto: 3, fecha: '2026-11-11' }],
+            anotados: [efectivo],
+        });
+        expect(r.filter((x) => x.mv?.enCamino)).toHaveLength(1);
+    });
+});

@@ -7,8 +7,10 @@ const anotadoEnCaja = { ...tarjeta, id: 1, erp_movimiento_id: 99, forma_pago: 'E
 
 describe('ingresos con tarjeta en la lista de movimientos', () => {
     it('salen como renglón propio', () => {
-        const r = renglonesDeMovimientos({ anotados: [tarjeta, anotadoEnCaja] });
-        expect(r.map((x) => x.kind)).toEqual(['portal']);
+        // El de efectivo ya está en la captura (número 99): no se repite.
+        const r = renglonesDeMovimientos({ movimientos: [{ id: 5, branch_id: 27, erp_movimiento_id: 99, tipo: 'ENTRADA', monto: 1, fecha: '2026-10-19' }],
+            anotados: [tarjeta, anotadoEnCaja] });
+        expect(r.map((x) => x.kind).sort()).toEqual(['mov', 'portal']);
         expect(r[0].fecha).toBe('2026-10-19');
     });
     it('el filtro de salidas los deja fuera y la búsqueda los encuentra por forma', () => {

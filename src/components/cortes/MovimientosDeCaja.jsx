@@ -638,6 +638,9 @@ function fichaDe(it, { personas, etiquetaDeSalida, minuto, editado, edicion }) {
         desglose: it.desglose?.map((d) => ({ ...d, etiqueta: etiquetaDeSalida(d.op.tipo) })) || null,
         marcas: [
             ido && ['danger', 'Ya no está'],
+            // Anotado desde el portal y todavía sin confirmar en la lista de la
+            // caja (ver `enCaminoDelPortal`). Ya está en el efectivo del cajón.
+            mv.enCamino && ['neutral', 'Recién anotado'],
             !ido && editado && ['warning', 'Se modificó'],
             dudoso && ['warning', ORIGEN_DEL_MONTO[an.monto_origen]],
             it.desglose?.length > 0 && ['neutral', `${it.desglose.length} ${it.desglose.length === 1 ? 'salida' : 'salidas'} de bolsa`],

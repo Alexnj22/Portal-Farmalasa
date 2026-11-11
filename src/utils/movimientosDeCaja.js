@@ -73,11 +73,41 @@ export const nombreDeForma = (f) => (f === 'TARJETA' ? 'tarjeta' : f === 'TRANSF
  * Un cobro en efectivo que casó con su movimiento va DENTRO de ese renglón
  * (`cobro`); sólo los que no casaron salen sueltos.
  */
+/**
+ * Los movimientos en EFECTIVO que el portal escribió en la caja y la captura
+ * todavía no trajo, con forma de movimiento (`enCamino: true`).
+ *
+ * Es la MISMA regla con la que `caja_efectivo_piezas` (la base) ya los suma al
+ * efectivo del cajón: efectivo, no anulado, y sin un renglón de la captura con
+ * su número —o sin número—. Sin esto la lista y el dinero contaban historias
+ * distintas durante el rato entre que se anota y la captura pasa, y ese rato
+ * creció el 2026-11-11, cuando el repaso de movimientos pasó de cada 5 minutos
+ * a cada 30 para gastar menos consultas al sistema de la caja. Entrando como
+ * movimiento, el neto, los filtros y las dos pantallas (portal y app) los
+ * tratan igual que al renglón que los va a reemplazar; cuando la captura lo
+ * trae, éste desaparece solo porque su número ya está.
+ */
+export function enCaminoDelPortal(movimientos = [], anotados = []) {
+    const vistos = new Set(movimientos.map((m) => `${m.branch_id}:${m.erp_movimiento_id}`));
+    return anotados
+        .filter((a) => (a.forma_pago ?? 'EFECTIVO') === 'EFECTIVO' && !a.anulado_at
+            && (a.erp_movimiento_id == null || !vistos.has(`${a.branch_id}:${a.erp_movimiento_id}`)))
+        .map((a) => ({
+            id: `p${a.id}`, branch_id: a.branch_id, erp_movimiento_id: a.erp_movimiento_id ?? null,
+            tipo: a.tipo, monto: a.monto, concepto: a.concepto, fecha: a.fecha ?? diaDe(a.registrado_at),
+            created_at: a.registrado_at, desaparecido_at: null, enCamino: true, anotado: a,
+        }));
+}
+
 export function renglonesDeMovimientos({ movimientos = [], cobros = [], salidasDeBolsa = [], anotados = [] }) {
     const { porMovimiento, sueltos } = emparejarCobrosConMovimientos(movimientos, cobros, cobroEnEfectivo);
     const porVale = desglosePorVale(salidasDeBolsa);
     const delPortal = anotadosPorMovimiento(anotados);
     return [
+        ...enCaminoDelPortal(movimientos, anotados).map((mv) => ({
+            kind: 'mov', clave: `m${mv.id}`, mv, cobro: null, desglose: null, anotado: mv.anotado,
+            fecha: mv.fecha, branchId: mv.branch_id, orden: mv.created_at, desempate: mv.erp_movimiento_id,
+        })),
         ...movimientos.map((mv) => ({
             kind: 'mov', clave: `m${mv.id}`, mv, cobro: porMovimiento.get(mv.id) || null,
             desglose: porVale.get(`${mv.branch_id}:${mv.erp_movimiento_id}`) || null,

@@ -227,6 +227,7 @@ export default function CajaMovimientos() {
               quien={an ? personas.get(an.registrado_por) : null}
               pildoras={[
                 ...(an ? [['Anotado desde el portal', MARCA.azulClaro]] : []),
+                ...(m.enCamino ? [['Recién anotado', MARCA.gris]] : []),
                 ...(an?.monto_origen === 'FOTO_SIN_CONFIRMAR' ? [['Leído de la boleta, sin confirmar', MARCA.ambar]] : an?.monto_origen === 'A_MANO' ? [['Monto escrito a mano', MARCA.ambar]] : []),
                 ...(m.desaparecido_at ? [['Ya no está en la caja', MARCA.rojo]] : []),
                 ...(editado ? [['Editado', MARCA.ambar]] : []),

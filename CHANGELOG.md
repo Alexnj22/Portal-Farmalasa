@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.2 — App: las secciones arrancan en su lugar también en iOS 26
+
+El arreglo anterior no alcanzó: el usuario mandó capturas de Mis avisos al entrar y un segundo después. En iOS 26, durante la animación de entrada, la barra opaca reserva el lugar del buscador (que después baja a la barra de abajo) y las secciones arrancaban ~60 pt más abajo. Ahora en iOS 26 la barra queda transparente y `FijoArriba` se coloca a una altura fija (área segura + 44 pt, 32 acostado), que no cambia durante la animación. En iOS anteriores sigue la barra opaca. Va por aire.
+
 ## v2.1510.1 — App de clientes: el Carrito sin hueco bajo la barra
 
 A pedido del usuario, la primera tarjeta del Carrito queda a 16 puntos de la barra, como en Inicio y Tienda, en lugar de 116 más abajo. Se quita la medición temporal (`diag-carrito`/`diag-carrito2`): la última confirmó que la lista ya se queda quieta al abrir, al arrastrar y al volver a tocar la pestaña.

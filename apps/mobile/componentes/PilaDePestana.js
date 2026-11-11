@@ -27,8 +27,15 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
 // el primer dibujo: ponerla después (lo hacía FijoArriba) hacía que la barra
 // pasara de opaca a transparente y de vuelta, y las secciones aparecían abajo y
 // saltaban arriba al entrar (usuario, 2026-11-11: «se ve extraño»).
+//
+// En iOS 26 eso tampoco alcanzó (usuario, mismo día, con capturas): durante la
+// animación de entrada la barra opaca reserva el lugar del buscador —que
+// después baja a la barra de abajo— y las secciones arrancan ~60 pt más abajo.
+// Ahí la barra queda TRANSPARENTE y `FijoArriba` se coloca solo, a una altura
+// fija (área segura + barra), que no cambia durante la animación.
+export const BARRA_FIJA_TRANSPARENTE = IOS26;
 export const BARRA_FIJA = Platform.OS === 'ios'
-  ? { ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: 'transparent' } }
+  ? (IOS26 ? BARRA_NATIVA : { ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: 'transparent' } })
   : {};
 
 // `sinBarra`: la pestaña muestra el portal, que ya trae su propio título.

@@ -42,10 +42,20 @@
 // pega al borde del ScrollView, que en iOS queda DETRÁS de la barra
 // transparente, y el selector se escondía bajo el título.
 //
-// `conBarra` queda por compatibilidad (una hoja sin barra): ya no cambia nada.
-import { View } from 'react-native';
+// En iOS 26 la barra es transparente (ver `BARRA_FIJA_TRANSPARENTE`) y el
+// lugar lo calcula FijoArriba: área segura + 44 pt de barra (32 acostado). Es
+// un número fijo a propósito: lo que mide la barra cambia durante la animación
+// de entrada, y por eso las secciones saltaban. La lista de abajo no queda
+// bajo la barra, así que iOS no le agrega margen arriba.
+//
+// `conBarra={false}`: una hoja sin barra; no se deja lugar.
+import { View, useWindowDimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { BARRA_FIJA_TRANSPARENTE } from './PilaDePestana';
 
-// eslint-disable-next-line no-unused-vars
 export default function FijoArriba({ children, conBarra = true }) {
-  return <View style={{ paddingTop: 8, paddingBottom: 8 }}>{children}</View>;
+  const { top } = useSafeAreaInsets();
+  const { width, height } = useWindowDimensions();
+  const barra = BARRA_FIJA_TRANSPARENTE && conBarra ? top + (width > height ? 32 : 44) : 0;
+  return <View style={{ paddingTop: barra + 8, paddingBottom: 8 }}>{children}</View>;
 }

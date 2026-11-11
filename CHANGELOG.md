@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1505.0 — App: Notificaciones sale de la barra de abajo; se abre con la campana
+
+Pedido del usuario: «del menú quita notificaciones, ya no tiene sentido que esté ahí». La campana de arriba ya está en todas las pestañas, así que la pestaña sobraba. La pantalla pasa de `app/(tabs)/avisos` a `app/avisos.js` (misma dirección `/avisos`, así que los avisos que abren la app siguen llegando ahí). El globo de la pestaña, que sumaba lo que falta leer más lo que falta decidir, pasa a la campana (`BotonCampana`). Va por aire.
+
 ## v2.1504.8 — App: las secciones fijas ya no quedan debajo de la barra
 
 Reporte del usuario: las pestañas «quedan montadas de forma rara y no funcionan bien». Causa: `FijoArriba` usaba `SafeAreaView`, que calcula contra el `SafeAreaProvider` de la raíz y sólo conoce la barra de estado; el selector quedaba debajo de la barra de navegación transparente y la barra se tragaba los toques. Vuelve a medir contra la altura real de la barra (`useHeaderHeight` y `measureInWindow`), que incluye el buscador y el título. Va por aire.

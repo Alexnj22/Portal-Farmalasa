@@ -26,7 +26,7 @@
 // —no sólo lo cargado—, con la misma ventana de «Deshacer» que uno suelto.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Alert, LayoutAnimation, Platform, RefreshControl, ScrollView, Text, View } from 'react-native';
-import { router, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
@@ -36,17 +36,18 @@ import { ordenarBandeja } from '@nucleo/utils/bandejaDeAvisos';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
-import { colorSistema } from '../../../componentes/Formulario';
-import { abrirRuta } from '../../../pantallas';
-import { usePorDecidir } from '../../../componentes/porDecidir';
-import TarjetaPorDecidir from '../../../componentes/TarjetaPorDecidir';
-import TarjetaDeAviso from '../../../componentes/avisos/TarjetaDeAviso';
-import { abrirAviso } from '../../../componentes/avisos/abrir';
-import Deslizable from '../../../componentes/Deslizable';
-import Tocable from '../../../componentes/Tocable';
-import { MARCA } from '../../../componentes/inicio/marca';
-import Segmentos from '../../../componentes/Segmentos';
-import FijoArriba from '../../../componentes/FijoArriba';
+import { colorSistema } from '../componentes/Formulario';
+import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { abrirRuta } from '../pantallas';
+import { usePorDecidir } from '../componentes/porDecidir';
+import TarjetaPorDecidir from '../componentes/TarjetaPorDecidir';
+import TarjetaDeAviso from '../componentes/avisos/TarjetaDeAviso';
+import { abrirAviso } from '../componentes/avisos/abrir';
+import Deslizable from '../componentes/Deslizable';
+import Tocable from '../componentes/Tocable';
+import { MARCA } from '../componentes/inicio/marca';
+import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -232,6 +233,11 @@ export default function Notificaciones() {
 
   return (
     <>
+      {/* Ya no es una pestaña (2026-11-11, usuario: «del menú quita
+          notificaciones, ya no tiene sentido que esté ahí»): se abre desde la
+          campana de la barra, que está en todas las pestañas. La campana de
+          ESTA pantalla no hace falta. */}
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Notificaciones', headerRight: () => null }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       {opciones.length > 2 ? <FijoArriba><Segmentos opciones={opciones} activa={activa} onCambiar={setFiltro} /></FijoArriba> : null}
       <ScrollView style={{ flex: 1 }}

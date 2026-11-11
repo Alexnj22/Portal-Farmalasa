@@ -8,10 +8,14 @@ import { Host, Icon } from '@expo/ui';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useTema } from '../tema/tema';
 import { iconoDe } from '../tema/iconos';
+import { usePorDecidir } from './porDecidir';
 
 export default function BotonCampana() {
   const tema = useTema();
-  const sinLeer = useStaffStore((s) => s.notifications.length);
+  // Lo que falta leer más lo que falta DECIDIR (2026-11-11): era el globo de la
+  // pestaña Notificaciones, que se quitó; un aviso leído sobre algo todavía
+  // pendiente sigue pidiendo atención.
+  const sinLeer = useStaffStore((s) => s.notifications.length) + usePorDecidir((s) => s.items.length);
   return (
     <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10}
       accessibilityRole="button" accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}>

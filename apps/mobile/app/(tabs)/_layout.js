@@ -3,17 +3,16 @@
 // usuario del 2026-09-29: «que se vea nativa con los elementos nativos», y que
 // la app ABRA en Inicio.
 import { useEffect } from 'react';
-import { AppState, Platform } from 'react-native';
+import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { useStaffStore } from '@nucleo/store/staffStore';
 import { usePorDecidir } from '../../componentes/porDecidir';
 
 const CADA = 2 * 60 * 1000;
 
 // «Por decidir» se mantiene al día sola: al entrar, cada dos minutos, al volver
-// a la app y cuando llega un aviso. Así el globo de la pestaña dice la verdad
+// a la app y cuando llega un aviso. Así el globo de la campana dice la verdad
 // aunque nadie abra la pestaña.
 function useMantenerPorDecidir() {
   const auth = useAuth();
@@ -34,13 +33,9 @@ function useMantenerPorDecidir() {
 const TRANSPARENTE = { backgroundColor: 'transparent' };
 
 export default function Pestanas() {
-  // El globo de la campana: lo que falta leer, el mismo número que la web.
-  const sinLeer = useStaffStore((s) => s.notifications.length);
-  // El globo cuenta lo que falta DECIDIR más lo que falta leer: un aviso leído
-  // sobre algo todavía pendiente sigue pidiendo atención.
-  const porDecidir = usePorDecidir((s) => s.items.length);
+  // El globo vive ahora en la campana de la barra (BotonCampana): esto sólo
+  // mantiene «Por decidir» al día.
   useMantenerPorDecidir();
-  const globo = sinLeer + porDecidir;
   return (
     <NativeTabs labelVisibilityMode="labeled">
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">
@@ -50,12 +45,6 @@ export default function Pestanas() {
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="menu">
         <NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} md="apps" />
         <NativeTabs.Trigger.Label>Menú</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="avisos">
-        <NativeTabs.Trigger.Icon sf={{ default: 'bell', selected: 'bell.fill' }} md="notifications" />
-        {/* En Android no cabe con los cinco rótulos a la vista: «Notificacion…». */}
-        <NativeTabs.Trigger.Label>{Platform.OS === 'android' ? 'Avisos' : 'Notificaciones'}</NativeTabs.Trigger.Label>
-        {globo ? <NativeTabs.Trigger.Badge>{globo > 99 ? '99+' : String(globo)}</NativeTabs.Trigger.Badge> : null}
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="yo">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />

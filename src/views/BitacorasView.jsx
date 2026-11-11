@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { AlertTriangle, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, PackageSearch, Pill, Search, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, Award, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, PackageSearch, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -15,6 +15,7 @@ import TabHoy from './bitacoras/TabHoy';
  * abrirlas: se ve una a la vez (2026-11-06, gate:bundle). */
 const TabBajoReceta = lazy(() => import('./bitacoras/TabBajoReceta'));
 const TabCierre = lazy(() => import('./bitacoras/TabCierre'));
+const TabRegencia = lazy(() => import('./bitacoras/TabRegencia'));
 const TabConfiguracion = lazy(() => import('./bitacoras/TabConfiguracion'));
 const TabAntibioticos = lazy(() => import('./bitacoras/TabAntibioticos'));
 const TabRegistroLote = lazy(() => import('./bitacoras/TabRegistroLote'));
@@ -86,6 +87,7 @@ export default function BitacorasView() {
     const puedeCompletarLibro = puedeAnotar && hasPermission('bitacoras_tab_libro', 'can_edit');
     const verLibro      = hasPermission('bitacoras_tab_libro', 'can_view');
     const verCierre     = hasPermission('bitacoras_tab_cierre', 'can_view');
+    const verRegencia   = hasPermission('bitacoras_tab_regencia', 'can_view');
     const verAntibioticos = hasPermission('bitacoras_tab_antibioticos', 'can_view');
     const puedeConfirmarAware = hasPermission('bitacoras_confirmar_aware', 'can_edit');
     const puedeEditarAntibioticos = hasPermission('bitacoras_editar_antibioticos', 'can_edit');
@@ -108,8 +110,9 @@ export default function BitacorasView() {
         ...(verAntibioticos ? [{ key: 'lotes', label: 'Registro por lote', icon: Layers }] : []),
         ...(verRevisionLotes ? [{ key: 'revision', label: 'Lotes por revisar', icon: PackageSearch }] : []),
         ...(verCierre ? [{ key: 'cierre', label: 'Cierre de mes', icon: CalendarCheck }] : []),
+        ...(verRegencia ? [{ key: 'regencia', label: 'Regencia', icon: Award }] : []),
         ...(puedeConfigurar ? [{ key: 'config', label: 'Configuración', icon: Settings2 }] : []),
-    ]), [verLibro, verAntibioticos, verRevisionLotes, verCierre, puedeConfigurar]);
+    ]), [verLibro, verAntibioticos, verRevisionLotes, verCierre, verRegencia, puedeConfigurar]);
 
     const [tab, setTab] = usePestanaEnUrl(tabs, 'hoy');
     const [busqueda, setBusqueda] = useState('');
@@ -419,6 +422,8 @@ export default function BitacorasView() {
                         filtro={filtroLotes} busqueda={busqueda} />
                 ) : tab === 'cierre' ? (
                     <TabCierre branchId={sala} fechaVista={fecha} />
+                ) : tab === 'regencia' ? (
+                    <TabRegencia branchId={sala} />
                 ) : (
                     <TabConfiguracion branchId={sala} sucursalNombre={nombreSala}
                         puedeEditar={puedeConfigurar} onCambio={cargarDia} />

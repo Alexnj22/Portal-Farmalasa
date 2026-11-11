@@ -110,6 +110,22 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                     errorMessage={`La categoría de esta sala pide al menos ${horasMinimasDeRegencia(legalData.srsCategoria)} horas al mes.`}
                 />
 
+                {/* Lo que va en el rótulo de la entrada (Bitácoras → Regencia). */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+                    <LazyInput
+                        label="N.º de inscripción JVPQF"
+                        value={legalData.regentJvpqf ?? ''}
+                        onChange={(v) => updateLegalField('regentJvpqf', v.trim() || null)}
+                        placeholder="Ej: 1234"
+                    />
+                    <LazyInput
+                        label="Horario de asistencia en esta sala"
+                        value={legalData.regentHorario ?? ''}
+                        onChange={(v) => updateLegalField('regentHorario', v.trim() || null)}
+                        placeholder="Ej: Martes y jueves, 8:00 a. m. – 12:30 p. m."
+                    />
+                </div>
+
                 {/* FILA 2: FECHA Y CREDENCIAL (AMBOS ALINEADOS A 50PX DE ALTURA) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">
                     

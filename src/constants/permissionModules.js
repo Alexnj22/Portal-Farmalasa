@@ -411,6 +411,7 @@ const GRUPOS_CRUDOS = [
                 { key: 'bitacoras_tab_libro',     label: 'Bajo receta',   tipo: 'tab' },
                 { key: 'bitacoras_tab_antibioticos', label: 'Antibióticos', tipo: 'tab' },
                 { key: 'bitacoras_tab_cierre',    label: 'Cierre de mes', tipo: 'tab' },
+                { key: 'bitacoras_tab_regencia',  label: 'Regencia (asistencia del regente)', tipo: 'tab' },
                 { key: 'bitacoras_confirmar_aware', label: 'Confirmar el grupo AWaRe del listado (regente)', tipo: 'cap' },
                 // Un lote del libro que no sirve para rastrear (dos en uno,
                 // «GENERICO», vencido al vender) lo corrige quien tiene la caja

@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.17 — Regencia: asistencia del regente, horas contra el mínimo y rótulo de entrada
+
+Bitácoras tiene una pestaña nueva, **Regencia**, para que cada sala esté lista ante una inspección aunque todavía no tenga regente cargado:
+
+- **Asistencia del regente**: cada visita se anota con fecha, entrada, salida y actividades realizadas. La anota el regente de la sala; la administración puede anotarla en su nombre y anular una mal hecha (nunca se borra, queda con motivo). Un mismo regente no puede tener dos visitas que se crucen en salas distintas.
+- **Horas contra el mínimo**: lo anotado en el mes contra lo que pide la categoría de la sala (tercera: 20 h al mes).
+- **Dos papeles para imprimir**: el rótulo de la entrada (nombre, número JVPQF y horario) y la hoja del mes con renglones para firma y sello.
+- En el expediente de la sucursal, el regente gana dos campos: **número de inscripción JVPQF** y **horario de asistencia**.
+- La ven la administración, regentes y referentes; la editan sólo los cargos de administración.
+
+Migraciones `20261111034449_regencia_asistencia_del_regente` y `20261111035152_regencia_choque_en_hora_del_portal`.
+
 ## v2.1501.16 — El Inicio pide menos y la base revisa permisos más rápido
 
 - **Ventas por hora en una lectura** (`20261111033434`): «qué salas vendieron en 7 días» bajaba ~565 filas de `branch_hourly_sales` para quedarse con 7 números (y se acercaba al techo de 1000); ahora `salas_con_venta_desde` devuelve los números. El historial de 90 días de una sala iba en páginas, y cada página volvía a agrupar las facturas: `ventas_por_hora_de_sala` (json, una ejecución) lo trae de una vez — también el Monitor de ventas, que con un año eran seis agrupaciones. Las dos son INVOKER (el RLS decide igual). Verificado en producción como usuario de sala: 1,208 filas, contenido idéntico.

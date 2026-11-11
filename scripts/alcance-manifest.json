@@ -617,6 +617,12 @@
     "get_bitacora_resumen_mes": {
       "guarda": "alcance"
     },
+    "regencia_de_sala": {
+      "guarda": "alcance"
+    },
+    "regencia_registrar_visita": {
+      "guarda": "alcance"
+    },
     "get_cuadre_antibioticos_mes": {
       "guarda": "alcance"
     },

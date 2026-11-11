@@ -2865,6 +2865,22 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "regencia_anular_visita": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "regencia_de_sala": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "regencia_horas_minimas": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "regencia_registrar_visita": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "get_bolsa_eventos": {
    "area": "cortes-efectivo",
    "por": "código"

@@ -27174,6 +27174,107 @@ export type Database = {
           },
         ]
       }
+      regencia_visitas: {
+        Row: {
+          actividades: string[]
+          anulada_at: string | null
+          anulada_motivo: string | null
+          anulada_por: string | null
+          branch_id: number
+          created_at: string
+          entrada: string
+          fecha: string
+          horas: number | null
+          id: number
+          notas: string | null
+          regente_id: string
+          registrado_por: string | null
+          salida: string
+        }
+        Insert: {
+          actividades?: string[]
+          anulada_at?: string | null
+          anulada_motivo?: string | null
+          anulada_por?: string | null
+          branch_id: number
+          created_at?: string
+          entrada: string
+          fecha: string
+          horas?: number | null
+          id?: never
+          notas?: string | null
+          regente_id: string
+          registrado_por?: string | null
+          salida: string
+        }
+        Update: {
+          actividades?: string[]
+          anulada_at?: string | null
+          anulada_motivo?: string | null
+          anulada_por?: string | null
+          branch_id?: number
+          created_at?: string
+          entrada?: string
+          fecha?: string
+          horas?: number | null
+          id?: never
+          notas?: string | null
+          regente_id?: string
+          registrado_por?: string | null
+          salida?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "regencia_visitas_anulada_por_fkey"
+            columns: ["anulada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regencia_visitas_anulada_por_fkey"
+            columns: ["anulada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regencia_visitas_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regencia_visitas_regente_id_fkey"
+            columns: ["regente_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regencia_visitas_regente_id_fkey"
+            columns: ["regente_id"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regencia_visitas_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "regencia_visitas_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reglas_despacho_pendientes: {
         Row: {
           created_at: string
@@ -31132,7 +31233,7 @@ export type Database = {
     }
     Functions: {
       _docs_sin_numero_control: {
-        Args: never
+        Args: { p_alcance?: string }
         Returns: {
           codigo_generacion: string
           fecha: string
@@ -32985,7 +33086,10 @@ export type Database = {
           ventas: number
         }[]
       }
-      count_docs_sin_numero_control: { Args: never; Returns: number }
+      count_docs_sin_numero_control: {
+        Args: { p_alcance?: string }
+        Returns: number
+      }
       crear_clientes_faltantes: { Args: { p_filas: Json }; Returns: number }
       crear_codigo_de_vinculacion: {
         Args: { p_branch_id: number; p_nombre: string }
@@ -33369,7 +33473,12 @@ export type Database = {
         Args: { p_branch_id: number; p_module_key: string }
         Returns: string[]
       }
+      destinatarios_de_productos: { Args: never; Returns: string[] }
       destinatarios_de_reservas: {
+        Args: { p_branch_id: number }
+        Returns: string[]
+      }
+      destinatarios_de_saldo_favor: {
         Args: { p_branch_id: number }
         Returns: string[]
       }
@@ -34871,7 +34980,7 @@ export type Database = {
         Returns: Json
       }
       get_docs_sin_numero_control: {
-        Args: { p_limit?: number }
+        Args: { p_alcance?: string; p_limit?: number }
         Returns: {
           codigo_generacion: string
           id: number
@@ -38086,6 +38195,26 @@ export type Database = {
         Args: { p_days_back?: number }
         Returns: number
       }
+      regencia_anular_visita: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
+      regencia_de_sala: {
+        Args: { p_branch_id: number; p_mes: string }
+        Returns: Json
+      }
+      regencia_horas_minimas: { Args: { p_categoria: string }; Returns: number }
+      regencia_registrar_visita: {
+        Args: {
+          p_actividades: string[]
+          p_branch_id: number
+          p_entrada: string
+          p_fecha: string
+          p_notas: string
+          p_salida: string
+        }
+        Returns: Json
+      }
       registrar_bitacora: {
         Args: {
           p_action: string
@@ -38339,6 +38468,15 @@ export type Database = {
       }
       reserva_avisada_whatsapp: { Args: { p_id: number }; Returns: undefined }
       reserva_avisar_sala: {
+        Args: {
+          p_clave: string
+          p_cuerpo: string
+          p_id: number
+          p_titulo: string
+        }
+        Returns: undefined
+      }
+      reserva_avisar_saldo: {
         Args: {
           p_clave: string
           p_cuerpo: string
@@ -38760,7 +38898,6 @@ export type Database = {
         Args: { p_branch: number; p_momento?: string }
         Returns: boolean
       }
-      salas_con_venta_desde: { Args: { p_desde: string }; Returns: number[] }
       salas_con_caja_de_impresion: {
         Args: never
         Returns: {
@@ -38769,6 +38906,7 @@ export type Database = {
           ultimo_latido: string
         }[]
       }
+      salas_con_venta_desde: { Args: { p_desde: string }; Returns: number[] }
       salas_que_cubre_ahora: {
         Args: { p_branch_id: number }
         Returns: number[]

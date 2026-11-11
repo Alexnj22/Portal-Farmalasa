@@ -265,6 +265,12 @@ const EXCEPCIONES = {
     'Pestaña de la ficha de sucursal, sin estado propio. Ver ' +
     '`BranchTabGeneral.jsx`. Verificado el 2026-08-24.',
 
+  'src/components/forms/FormPharmacyRegent.jsx':
+    'Pestaña de la ficha de sucursal (el regente de esa sala: quién, horas, ' +
+    'JVPQF, horario, credencial), sin estado propio: cero `useState`, escribe ' +
+    'en el `formData` de `UnifiedModal`. Ver `BranchTabGeneral.jsx`. ' +
+    'Verificado el 2026-11-10.',
+
   'src/components/forms/FormNursingRegents.jsx':
     'Pestaña de la ficha de sucursal (los regentes de enfermería de esa sala), ' +
     'sin estado propio: cero `useState` en todo el archivo. Ver ' +

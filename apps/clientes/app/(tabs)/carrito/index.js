@@ -364,6 +364,16 @@ function Carrito() {
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombreProducto(x.nombre)}</Text>
             <Text style={{ fontSize: 12, color: colorSistema.texto3 }}>{nombreProducto(x.tipo || 'Unidad')}</Text>
+            {/* Cuál de los productos pide la receta (2026-11-11): el aviso de
+                abajo dice que el pedido la necesita, pero no cuál. Misma
+                pastilla que la ficha del producto. */}
+            {x.receta || recetaIds.has(x.id) ? (
+              <View style={{ alignSelf: 'flex-start', flexDirection: 'row', alignItems: 'center', gap: 5, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3,
+                backgroundColor: suave(t.color.magenta, t.oscuro ? 0.28 : 0.14) }}>
+                <Icono sf="doc.text.fill" respaldo="" tam={10} color={t.color.magentaTexto} />
+                <Text style={{ fontSize: 11, fontWeight: '800', color: t.color.magentaTexto }}>Bajo Receta</Text>
+              </View>
+            ) : null}
             {yaReservado ? (
               <Presionable onPress={() => navegar(`/reservas?resaltar=${yaReservado.id}`)} accessibilityRole="link" hitSlop={6}
                 style={{ flexDirection: 'row', alignItems: 'center', gap: 5, alignSelf: 'flex-start' }}>

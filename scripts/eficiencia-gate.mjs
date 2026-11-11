@@ -393,38 +393,20 @@ const CRONS = [
           + 'avisaría sobre créditos que alguien ya pagó ayer.',
   },
   {
-    job: 'cortes-caja-30s', slug: 'sync-cortes-caja', cadencia: '30 seconds',
-    corridasDia: 1920, sistema: 6.6,
-    motivo: 'Cada 30 s de 7 a 23 SV porque quien corta la caja revisa la diferencia EN EL MOMENTO '
-          + 'y rehace el corte; la cadencia es requisito del usuario y no se espacia. '
-          + 'Son 6 listados, uno por sala: desde v2.671.1 la sesión de cada sala sobrevive a la '
-          + 'corrida, antes eran 13 (un ingreso + un cambio de sala por cada listado). '
-          + 'La VENTANA la aplica la función y no el cron: `pg_cron` con un intervalo '
-          + '(`30 seconds`) no admite un rango de horas, así que hasta el 2026-08-25 disparaba '
-          + '2.880 veces mientras acá decía 1.920 — eran ~5.760 peticiones diarias de más, entre '
-          + 'las 23:00 y las 07:00 con las salas cerradas. Hoy `HORA_DESDE`/`HORA_HASTA` de '
-          + '`sync-cortes-caja` contestan sin gastar nada fuera de ese rango. El tope son las 23 y '
-          + 'no las 22 porque los cortes reales llegan hasta las 22:xx (24 en esa hora, medidos '
-          + 'sobre 60 días) y cortar a las 22 en punto dejaría sin sincronizar justo los de cierre. '
-          + 'Desde el 2026-09-02 `hacer-corte-caja` además dispara un barrido de UNA sala apenas '
-          + 'hace el corte (~35 peticiones al día, una por corte): el papel sale al CONFIRMAR y la '
-          + 'fila hace falta para poder firmar, y la mediana de aparición era de 38 s. Eso NO '
-          + 'reemplaza a esta ronda y por eso la cadencia no bajó: el portal sólo puede avisar de '
-          + 'los cortes que hace ÉL, y la sala todavía puede cortar en la pantalla de la caja — ese '
-          + 'corte no avisa a nadie y sin la ronda sería invisible. Decisión del usuario '
-          + '(2026-09-02) de dejarla en 30 s. '
-          + '`sistema: 6.6` y no 6 desde el 2026-09-03: los 6 son los listados de cortes, y el 0.6 '
-          + 'es el repaso de MOVIMIENTOS, que antes sólo se pedía al aparecer un corte nuevo. Con '
-          + 'esa regla la pestaña «Movimientos» estaba VACÍA hasta el primer corte —medido a las '
-          + '11:00 SV del 3-sep: cero movimientos del día en las seis salas, y el primer corte es a '
-          + 'la una—, así que un vale hecho a las nueve no existía para el portal hasta la tarde. '
-          + 'Hoy se repasan cada 5 minutos por sala (`MINUTOS_ENTRE_REPASOS`): 6 × 12 × 16 h = '
-          + '1.152 peticiones al día, o sea 0.6 por corrida. Cada 30 s serían ~11.500, que es el '
-          + 'orden de magnitud que obligó a poner la ventana horaria. El reloj vive en '
-          + '`cortes_caja_vistazos` y no en el `visto_at` de las filas: esa columna no existe '
-          + 'cuando no hay movimientos, así que una sala cerrada un domingo pediría su lista en '
-          + 'las 1.920 corridas. Baja el día que el origen avise sus movimientos en vez de haber '
-          + 'que preguntárselos.',
+    job: 'cortes-caja-5min', slug: 'sync-cortes-caja', cadencia: '*/5 13-23,0-4 * * *',
+    corridasDia: 192, sistema: 12,
+    motivo: 'Red de seguridad cada 5 min de 7:00 a 22:55 SV, ya no la vía principal. Hasta el '
+          + '2026-11-10 era `cortes-caja-30s` (1.920 corridas × 6.6 = 12.672 al día, el 84% de todo '
+          + 'el presupuesto) porque la sala podía cortar en la pantalla de la caja sin avisar a '
+          + 'nadie. Medido ese día sobre 6 semanas: 1.361 de 1.363 cortes están en '
+          + '`caja_cortes_del_portal` y los otros 2 son Z del cierre automático, que también pasa '
+          + 'por `hacer-corte-caja` — y esa función ya dispara el barrido de SU sala apenas hace el '
+          + 'corte, así que quien corta ve la fila en segundos sin depender de este reloj. Pedido '
+          + 'del usuario: reducir en vez de subir el tope. Un corte hecho directo en la caja '
+          + 'aparece en 5 min como mucho. `sistema: 12` es el peor caso de cada corrida: 6 listados '
+          + 'de cortes + 6 de movimientos (el repaso de movimientos es cada '
+          + '`MINUTOS_ENTRE_REPASOS` = 5 min por sala, o sea casi cada corrida). Baja el día que el '
+          + 'origen avise sus movimientos en vez de haber que preguntárselos.',
   },
 
 
@@ -830,6 +812,7 @@ const CRONS = [
   { job: 'regularizar-dte-2230-sv',             slug: 'regularizar-dte',             cadencia: '30 4 * * *', corridasDia: 1, sistema: null, motivo: 'Envío nocturno a Hacienda.' },
   { job: 'cortes-caja-repaso-diario',           slug: 'sync-cortes-caja',            cadencia: '40 5 * * *', corridasDia: 1, sistema: null, motivo: 'Repaso del día, con movimientos forzados.' },
   { job: 'sync-numero-control-daily',           slug: 'sync-numero-control',         cadencia: '0 7 * * *',  corridasDia: 1, sistema: null, motivo: 'Repaso diario.' },
+  { job: 'sync-numero-control-inyecciones',     slug: 'sync-numero-control',         cadencia: '4-59/10 12-23,0-5 * * *', corridasDia: 108, sistema: 1, motivo: 'El número de control de las ventas con inyección de los últimos 3 días, para que la caja de otra sala las encuentre por el ticket a los pocos minutos (2026-11-10). Una petición por venta nueva con inyección: ~73 por día (6.571 en 90 días) repartidas en 108 corridas, o sea ≤1 por corrida; sin pendientes no sale a ningún lado. Lo paga la baja de `cortes-caja-5min`.' },
   { job: 'check-purchases-reconciliation-daily', slug: 'check-purchases-reconciliation', cadencia: '20 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de compras.' },
   { job: 'check-sales-reconciliation-daily',    slug: 'check-sales-reconciliation',  cadencia: '30 7 * * *', corridasDia: 1, sistema: null, motivo: 'Cuadre diario de ventas.' },
   { job: 'consolidate-timesheets-daily',        slug: 'consolidate-timesheets',      cadencia: '0 8 * * *',  corridasDia: 1, sistema: 0, motivo: 'Sólo base.' },

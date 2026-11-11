@@ -728,7 +728,7 @@ export const AREAS = [
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'avisar-diferencias-vencidas', 'cierre-del-dia-hora-tope', 'cortes-diferencia-de-ayer-0800-sv',
-                'cortes-caja-30s', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
+                'cortes-caja-5min', 'cortes-caja-repaso-diario', 'cortes-pendientes-0730-sv',
                 'aperturas-caja-30min', 'aperturas-manana-antes-de-las-7',
                 'aperturas-manana-hasta-la-hora-tope',
                 'cierre-automatico-caja', 'dias-sin-cierre-0700-sv',

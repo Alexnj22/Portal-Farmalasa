@@ -15,11 +15,12 @@
 // `carrito_existencias`); una sucursal con 1 de las 3 cajas pedidas ya no
 // cuenta como que «tiene todo». La regla es la de componentes/DondeLoHay.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, Text, TextInput, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
@@ -70,6 +71,22 @@ function Carrito() {
   const [enviando, setEnviando] = useState(false);
   const [terminos, setTerminos] = useState(null);
   const [hecho, setHecho] = useState(null);
+  // La tarjeta medio escondida bajo la barra (2026-11-11, con captura): en
+  // iPhone la barra es transparente y el borde de arriba de la lista NO es el
+  // 0 sino «menos la altura de la barra». Cuando el carrito se achica —se
+  // vacía, o pasa a «¡Listo!» después de reservar— React Native corrige el
+  // desplazamiento a 0 y todo queda corrido hacia arriba justo esa altura.
+  // Al cambiar de forma (vacío / con productos / listo) y al volver a la
+  // pestaña con el carrito vacío, se lleva al borde de verdad.
+  const barra = useHeaderHeight();
+  const refLista = useRef(null);
+  const alBordeDeArriba = useCallback(() => {
+    const y = Platform.OS === 'ios' ? -barra : 0;
+    requestAnimationFrame(() => refLista.current?.scrollTo({ y, animated: false }));
+  }, [barra]);
+  const vacio = items.length === 0;
+  useEffect(() => { alBordeDeArriba(); }, [vacio, !!hecho]); // eslint-disable-line react-hooks/exhaustive-deps
+  useFocusEffect(useCallback(() => { if (vacio || hecho) alBordeDeArriba(); }, [vacio, hecho, alBordeDeArriba]));
   // Bajo receta (2026-10-12).
   const [recetaIds, setRecetaIds] = useState(() => new Set());
   const [fotoReceta, setFotoReceta] = useState(null);
@@ -267,7 +284,7 @@ function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla conBurbuja={false}>
+      <Pantalla conBurbuja={false} refLista={refLista}>
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
@@ -301,7 +318,7 @@ function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla conBurbuja={false}>
+      <Pantalla conBurbuja={false} refLista={refLista}>
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ir a la Tienda</Boton>
@@ -310,7 +327,7 @@ function Carrito() {
   }
 
   return (
-    <Pantalla conBurbuja={false}>
+    <Pantalla conBurbuja={false} refLista={refLista}>
       <TusReservas resumen={resumen} />
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];

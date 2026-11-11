@@ -68,7 +68,8 @@ export function ConTeclado({ children }) {
   return <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding">{children}</KeyboardAvoidingView>;
 }
 
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false }) {
+// `refLista` (2026-11-11): el ScrollView, para que la pantalla pueda volver arriba.
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null }) {
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
   const t = useTema();
@@ -81,6 +82,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
     <SinVidrio.Provider value={sinVidrio}>
     <ConTeclado>
     <ScrollView
+      ref={refLista}
       contentInsetAdjustmentBehavior="automatic"
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.

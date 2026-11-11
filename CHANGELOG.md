@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1506.1 — App de clientes: el carrito ya no queda corrido bajo la barra
+
+En iPhone, al vaciar el carrito o después de reservar, la tarjeta de arriba quedaba medio escondida debajo de la barra. Cuando el contenido se achicaba, la lista se corregía a una posición que en iPhone queda justo la altura de la barra más arriba. Ahora, al cambiar entre vacío, con productos y «¡Listo!» (y al volver a la pestaña vacía), la lista vuelve al borde de arriba real.
+
 ## v2.1506.0 — App de clientes: calificar en la tienda y copiar con el portapapeles nuevo
 
 Dos módulos nativos para la compilación de la tienda (`expo-store-review` y `expo-clipboard`):

@@ -429,7 +429,7 @@ export const AREAS = [
         rutas: ['/sucursales', '/sucursales/:id'],
         archivos: [
             'src/views/BranchesView.jsx', 'src/views/BranchDetailView.jsx', 'src/views/branch-tabs/',
-            'src/data/branches.js', 'src/data/resumenSala.js',
+            'src/data/branches.js', 'src/data/resumenSala.js', 'src/utils/regencia.js',
             'src/store/slices/branchSlice.js',
             // Los formularios de `components/forms/` los abre UnifiedModal por
             // un `type`, así que ninguna vista los importa y un grep por nombre

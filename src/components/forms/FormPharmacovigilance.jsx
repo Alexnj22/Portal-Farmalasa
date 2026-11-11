@@ -8,12 +8,15 @@ import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
 
 import IconoEnCaja from '../common/IconoEnCaja';
 import TituloDeSeccion from '../common/TituloDeSeccion';
+import { esQuimicoFarmaceutico } from '@nucleo/utils/regencia';
 const FormPharmacovigilance = ({ formData, setFormData, onClose }) => {
     const employees = useStaff(state => state.employees);
     const legalData = formData?.settings?.legal || {};
 
     const possibleReferents = useMemo(() => {
-        return employees.filter(emp => (emp.role || '').toUpperCase().includes('REFERENTE'));
+        // Químico farmacéutico por cargo (Art. 18, Norma de Farmacovigilancia):
+        // Regente o Referente, principal o secundario.
+        return employees.filter(esQuimicoFarmaceutico);
     }, [employees]);
 
     // Convertimos a formato para LiquidSelect

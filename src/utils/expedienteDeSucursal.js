@@ -12,6 +12,7 @@
 import { categoriaDeDocumento } from '../data/constants';
 import { rotuloCategoriaSrs } from './edicionDeSucursal';
 import { diaDe, diasEntre } from './fecha';
+import { horasMinimasDeRegencia } from './regencia';
 
 /** Un dato de texto del registro, o null si está vacío. */
 const texto = (v) => (v === undefined || v === null || String(v).trim() === '' ? null : String(v).trim());
@@ -154,7 +155,15 @@ export function documentosDeSucursal(b) {
     if (hasInjections) permisos.push({ id: 'inyecciones', title: 'Permiso Área Inyecciones', url: legal.nursingServicePermitUrl, expDate: legal.nursingServicePermitExp, hasExpiration: true, modal: 'editNursingRegents' });
 
     const personal = [
-        { id: 'regente_cred', title: 'Credencial JVQF (Regente)', url: legal.regentCredentialUrl, expDate: legal.regentCredentialExp, hasExpiration: true, modal: 'editPharmacyRegent' },
+        {
+            id: 'regente_cred', title: 'Credencial JVQF (Regente)', url: legal.regentCredentialUrl, expDate: legal.regentCredentialExp, hasExpiration: true, modal: 'editPharmacyRegent',
+            // Horas del regente en esta sala contra el mínimo de su categoría
+            // (Guía del Regente, SRS): la sala puede tener el papel y no las horas.
+            datos: [
+                { rotulo: 'Horas al mes', valor: legal.regentHorasMes ? `${legal.regentHorasMes} h` : null },
+                { rotulo: 'Mínimo de la categoría', valor: horasMinimasDeRegencia(legal.srsCategoria) ? `${horasMinimasDeRegencia(legal.srsCategoria)} h` : null },
+            ],
+        },
         { id: 'regente_insc', title: 'Inscripción CSSP (Regente)', url: legal.regentInscriptionUrl, expDate: null, modal: 'editPharmacyRegent' },
         { id: 'farmaco', title: 'Autorización Farmacovigilancia', url: legal.farmacovigilanciaAuthUrl, expDate: legal.pharmacovigilanceExp, hasExpiration: true, modal: 'editPharmacovigilance' },
     ];

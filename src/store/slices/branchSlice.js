@@ -315,10 +315,13 @@ export const createBranchSlice = (set, get) => ({
             // Antes, cualquier guardado (aunque fuera el horario) volvía a
             // mover a la regente y a cada enfermera a esta sala: si RRHH la
             // había trasladado, editar otra cosa la traía de vuelta, sin
-            // bitácora y con el error tragado. El referente de
-            // farmacovigilancia no se mueve: es uno para toda la red.
+            // bitácora y con el error tragado. El regente y el referente de
+            // farmacovigilancia NO se mueven: la norma deja que un mismo
+            // químico farmacéutico cubra varias salas (2026-11-10, usuario:
+            // uno tiene 4 y otro 2), y moverlo lo dejaba en la última sala
+            // que se guardó. Sus salas salen del expediente
+            // (`asignacionesDeRegencia`), no de su ficha.
             const entraron = [];
-            if (legalNow.regentEmployeeId && legalNow.regentEmployeeId !== antesLegal.regentEmployeeId) entraron.push(legalNow.regentEmployeeId);
             const enfermeriaAntes = new Set(idsDeEnfermeria(antesLegal).map(String));
             for (const empId of idsDeEnfermeria(legalNow)) if (!enfermeriaAntes.has(String(empId))) entraron.push(empId);
 

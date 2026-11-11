@@ -9,6 +9,7 @@
 // escribiría el nombre, la dirección y los teléfonos en blanco.
 import { WEEK_DAYS } from '../data/constants';
 import { correrMes, ultimoDiaDelMes } from './fecha';
+import { esQuimicoFarmaceutico } from './regencia';
 
 /* `settings` y `weekly_hours` llegan a veces como texto JSON —una o varias
    veces serializado, herencia de guardados viejos—. Se desenvuelven hasta tres
@@ -190,16 +191,18 @@ export function sucursalConCambios(branch, { ajustes, horario, tipoDeInmueble, g
 }
 
 /**
- * Quién puede figurar en el legal de una sala, por su cargo: regentes (sin los
- * de enfermería), farmacovigilancia y enfermería. Por el texto del cargo, igual
- * que siempre lo hizo el formulario del portal.
+ * Quién puede figurar en el legal de una sala, por su cargo. Regente y
+ * farmacovigilancia: cualquier químico farmacéutico por id de cargo, principal
+ * o secundario (`esQuimicoFarmaceutico`, 2026-11-10), igual que el portal.
+ * Enfermería sigue por el texto del cargo.
  */
 export function candidatosLegales(empleados) {
     const conCargo = (empleados || []).filter((e) => e.role);
     const cargo = (e) => String(e.role).toUpperCase();
+    const qf = (empleados || []).filter(esQuimicoFarmaceutico);
     return {
-        regentes: conCargo.filter((e) => cargo(e).includes('REGENTE') && !cargo(e).includes('ENFERMER')),
-        farmacovigilancia: conCargo.filter((e) => cargo(e).includes('FARMACOVIGILANCIA')),
+        regentes: qf,
+        farmacovigilancia: qf,
         enfermeria: conCargo.filter((e) => cargo(e).includes('ENFERMER')),
     };
 }

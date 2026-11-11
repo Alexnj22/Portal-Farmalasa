@@ -6,6 +6,8 @@ import LiquidDatePicker from '../common/LiquidDatePicker';
 import LiquidSelect from '../common/LiquidSelect';
 import FileField from '../common/FileField';
 import { rotuloCampo } from '@nucleo/utils/rotuloDeCampo';
+import { esQuimicoFarmaceutico, horasMinimasDeRegencia } from '@nucleo/utils/regencia';
+import { LazyInput } from './BranchHelpers';
 
 import IconoEnCaja from '../common/IconoEnCaja';
 import TituloDeSeccion from '../common/TituloDeSeccion';
@@ -14,10 +16,8 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
     const legalData = formData?.settings?.legal || {};
 
     const possibleRegents = useMemo(() => {
-        return employees.filter(emp => {
-            const role = (emp.role || '').toUpperCase();
-            return role.includes('REGENTE') && !role.includes('ENFERMER');
-        });
+        // Por cargo (principal o secundario), no por el texto del cargo.
+        return employees.filter(esQuimicoFarmaceutico);
     }, [employees]);
 
     // Opciones formateadas para LiquidSelect
@@ -96,6 +96,19 @@ const FormPharmacyRegent = ({ formData, setFormData, onClose }) => {
                         />
                     </div>
                 </div>
+
+                {/* Horas al mes que el regente está en ESTA sala. La guía del
+                    regente de la SRS fija el mínimo por categoría (tercera: 20 h). */}
+                <LazyInput
+                    label="Horas al mes en esta sala"
+                    type="number"
+                    inputMode="numeric"
+                    value={legalData.regentHorasMes ?? ''}
+                    onChange={(v) => updateLegalField('regentHorasMes', v === '' ? null : Math.max(0, parseInt(v, 10) || 0))}
+                    placeholder={horasMinimasDeRegencia(legalData.srsCategoria) ? `Mínimo ${horasMinimasDeRegencia(legalData.srsCategoria)}` : 'Ej: 20'}
+                    hasError={!!legalData.regentHorasMes && horasMinimasDeRegencia(legalData.srsCategoria) !== null && Number(legalData.regentHorasMes) < horasMinimasDeRegencia(legalData.srsCategoria)}
+                    errorMessage={`La categoría de esta sala pide al menos ${horasMinimasDeRegencia(legalData.srsCategoria)} horas al mes.`}
+                />
 
                 {/* FILA 2: FECHA Y CREDENCIAL (AMBOS ALINEADOS A 50PX DE ALTURA) */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-2">

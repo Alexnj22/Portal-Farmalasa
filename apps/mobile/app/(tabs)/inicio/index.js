@@ -25,7 +25,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Encabezado, { FotoDeCuenta, saludo } from '../../../componentes/inicio/Encabezado';
-import Pestanas from '../../../componentes/inicio/Pestanas';
+import Segmentos from '../../../componentes/Segmentos';
 import useDatosInicio from '../../../componentes/inicio/useDatosInicio';
 import { anotar, ordenar } from '../../../componentes/inicio/uso';
 import { Hoy, SECCIONES, WIDGET_WEB } from '../../../componentes/inicio/Secciones';
@@ -103,7 +103,10 @@ export default function Inicio() {
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
       <FranjaDelPortal />
       <Encabezado sala={nombreSala} />
-      <Pestanas opciones={pestanas} activa={pestana} onCambiar={(p) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setPestana(p); }} />
+      {/* El control segmentado del sistema, como en el resto de la app: las
+          píldoras que se desplazan quedan sólo para cuando los rótulos no
+          caben, y eso lo decide `Segmentos` (2026-11-11). */}
+      {pestanas.length > 1 ? <Segmentos opciones={pestanas} activa={pestana} onCambiar={(p) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setPestana(p); }} /> : null}
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}
       {secciones.map(({ id, Componente }) => (
         <Componente key={id} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion(id, r) }} />

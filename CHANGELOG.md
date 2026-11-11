@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.22 — App: Inicio usa el mismo selector de secciones que el resto
+
+Inicio era la única pantalla de la app del personal que cambiaba de sección (General · Comercial · RRHH · Operación) con las píldoras que se desplazan de lado; el resto usa `Segmentos`, que es el control del sistema: el segmentado de iOS y el botón segmentado de Material 3 en Android. Ahora Inicio también usa `Segmentos`, que vuelve a las píldoras sólo cuando los rótulos no caben (en Android, con estos cuatro rótulos, siguen siendo fichas). Va por aire.
+
 ## v2.1501.21 — Encuestas: cada tipo de pregunta se entiende en el teléfono
 
 Revisión visual de todos los tipos de pregunta, en teléfono y escritorio, con capturas. Arreglos en el portal y en la app:

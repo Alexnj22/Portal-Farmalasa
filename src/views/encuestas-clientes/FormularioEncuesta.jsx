@@ -7,7 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto, opcionesConTexto, MAX_TEXTO, MAX_NUMERO,
-    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe,
+    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala,
 } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import useMediaQuery from '../../plataforma/useMediaQuery';
@@ -242,7 +242,7 @@ export default function FormularioEncuesta({
                     )}
                     <div className="space-y-5 flex-1">
                         {actual.preguntas.map((p) => (
-                            <Pregunta key={p.id} p={p} valor={respuestas[p.id]} falta={faltante === p.id}
+                            <Pregunta key={p.id} p={p} valor={respuestas[p.id]} falta={faltante === p.id} entrevista={entrevista}
                                 onChange={(v) => contestar(p.id, v)} />
                         ))}
                     </div>
@@ -293,11 +293,22 @@ function Incentivo({ r, entrevista, entregando, onEntregar }) {
 
 // ── Una pregunta ───────────────────────────────────────────────────────────
 
-const opcionCls = (activa) => `min-h-[var(--tap-min)] rounded-xl border px-3 py-2 text-body-sm font-semibold
+// `activaCls`: el color de lo marcado cuando no es el de la marca (los tramos del NPS).
+const opcionCls = (activa, activaCls = 'bg-brand text-white border-brand') => `min-h-[var(--tap-min)] rounded-xl border px-3 py-2 text-body-sm font-semibold
     transition-colors duration-[var(--dur-fast)] active:scale-[0.97]
-    ${activa ? 'bg-brand text-white border-brand' : 'bg-surface-card border-border-card text-content hover:bg-surface-card-hover'}`;
+    ${activa ? activaCls : 'bg-surface-card border-border-card text-content hover:bg-surface-card-hover'}`;
 
-function Pregunta({ p, valor, falta, onChange }) {
+// Literales completos: Tailwind no ve una clase armada con `${tono}`.
+const TRAMO_SOLIDO = {
+    danger: 'bg-danger-solid border-danger-solid text-white',
+    warning: 'bg-warning-solid border-warning-solid text-white',
+    success: 'bg-success-solid border-success-solid text-white',
+};
+const TRAMO_PUNTO = { danger: 'bg-danger-solid', warning: 'bg-warning-solid', success: 'bg-success-solid' };
+const TRAMO_TEXTO = { danger: 'text-danger-text', warning: 'text-warning-text', success: 'text-success-text' };
+
+function Pregunta({ p, valor, falta, onChange, entrevista }) {
+    const guion = entrevista ? guionDeEscala(p) : null;
     return (
         <fieldset className="space-y-2" aria-invalid={falta || undefined}>
             <legend className="text-body-md font-semibold text-content">
@@ -305,6 +316,7 @@ function Pregunta({ p, valor, falta, onChange }) {
                 {p.texto || <span className="text-content-3 italic">Pregunta sin texto</span>}
                 {p.obligatoria && <span className="text-danger ml-0.5" aria-label="obligatoria">*</span>}
             </legend>
+            {guion && <Notice variant="info" compact>{guion}</Notice>}
             {p.ayuda && <p className="text-micro text-content-3">{p.ayuda}</p>}
             <Respuesta p={p} valor={valor} onChange={onChange} />
             {falta && <p className="text-micro font-semibold text-danger">Esta pregunta es obligatoria.</p>}
@@ -314,20 +326,40 @@ function Pregunta({ p, valor, falta, onChange }) {
 
 function Respuesta({ p, valor, onChange }) {
     switch (p.tipo) {
-        case 'nps':
+        case 'nps': {
+            // Cada tramo con su color, en la leyenda y en el botón marcado, y lo
+            // marcado repetido en palabras: con la cuadrícula partida en dos filas
+            // «nada / muy probable» ya no marcaba las puntas (TRAMOS_NPS).
+            const marcado = tramoNps(valor);
             return (
-                <div>
+                <div className="space-y-2">
                     <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5">
-                        {Array.from({ length: 11 }, (_, n) => (
-                            <button key={n} type="button" className={opcionCls(valor === n)} aria-pressed={valor === n}
-                                onClick={() => onChange(n)}>{n}</button>
+                        {Array.from({ length: 11 }, (_, n) => {
+                            const t = tramoNps(n);
+                            const activa = valor === n;
+                            return (
+                                <button key={n} type="button" aria-pressed={activa} aria-label={`${n} · ${t.label}`}
+                                    className={opcionCls(activa, TRAMO_SOLIDO[t.tono])}
+                                    onClick={() => onChange(n)}>{n}</button>
+                            );
+                        })}
+                    </div>
+                    <div className="flex flex-wrap gap-x-4 gap-y-1 text-micro text-content-2">
+                        {TRAMOS_NPS.map((t) => (
+                            <span key={t.tono} className="inline-flex items-center gap-1.5">
+                                <span className={`size-2 rounded-full ${TRAMO_PUNTO[t.tono]}`} aria-hidden />
+                                {t.desde}–{t.hasta} {t.label.toLowerCase()}
+                            </span>
                         ))}
                     </div>
-                    <div className="flex justify-between text-micro text-content-3 mt-1">
-                        <span>Nada probable</span><span>Muy probable</span>
-                    </div>
+                    {marcado && (
+                        <p className={`text-body-sm font-semibold ${TRAMO_TEXTO[marcado.tono]}`} aria-live="polite">
+                            Marcó {valor}: {marcado.label.toLowerCase()} que recomiende la farmacia.
+                        </p>
+                    )}
                 </div>
             );
+        }
         case 'csat':
             return (
                 <div className="grid grid-cols-5 gap-1.5">

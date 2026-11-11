@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     cumpleCondicion, recorrido, preguntasEnOrden, primeraSinContestar, quitarPregunta, cambiarTipo,
     muestraSugerida, metaTotal, telefonoValido, textoDeValor, tablaDeRespuestas, lecturaNps, categoriasDe,
-    nuevaOpcion, idNuevo, operadoresPara,
+    nuevaOpcion, idNuevo, operadoresPara, tramoNps, guionDeEscala,
 } from '@nucleo/utils/encuestasClientes';
 
 // El cuestionario de la plantilla «Calidad de la atención», recortado: tiene
@@ -312,5 +312,23 @@ describe('opción que excluye a las demás — gemelo de encuesta_cliente_limpia
         const { cambiarTipo } = await import('@nucleo/utils/encuestasClientes');
         expect(cambiarTipo(p, 'unica').opciones.some((o) => 'exclusiva' in o)).toBe(false);
         expect(cambiarTipo(p, 'multiple').opciones.find((o) => o.id === 'n').exclusiva).toBe(true);
+    });
+});
+
+describe('tramos de la recomendación (NPS)', () => {
+    it('corta igual que el NPS: 0–6, 7–8, 9–10', () => {
+        expect(tramoNps(0).tono).toBe('danger');
+        expect(tramoNps(6).tono).toBe('danger');
+        expect(tramoNps(7).tono).toBe('warning');
+        expect(tramoNps(8).tono).toBe('warning');
+        expect(tramoNps(9).tono).toBe('success');
+        expect(tramoNps(10).tono).toBe('success');
+        expect(tramoNps(undefined)).toBeNull();
+        expect(tramoNps('2')).toBeNull();
+    });
+    it('el guion sólo sale si la pregunta no dice su escala', () => {
+        expect(guionDeEscala({ tipo: 'nps', texto: '¿Qué tan probable es que nos recomiende?' })).toMatch(/del 0 al 10/);
+        expect(guionDeEscala({ tipo: 'nps', texto: 'Del 0 al 10, ¿qué tan probable…?' })).toBeNull();
+        expect(guionDeEscala({ tipo: 'unica', texto: 'x' })).toBeNull();
     });
 });

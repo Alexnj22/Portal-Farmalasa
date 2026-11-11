@@ -49,6 +49,35 @@ export const CARITAS = [
 ];
 export const ACUERDO = ['Nada de acuerdo', 'En desacuerdo', 'Neutral', 'De acuerdo', 'Totalmente de acuerdo'];
 
+/**
+ * Los tres tramos de la recomendación (0–10), con el mismo corte que el NPS:
+ * 0–6 detractor, 7–8 pasivo, 9–10 promotor. `tono` es el nombre del color, no
+ * el color: cada pantalla lo traduce a su token.
+ *
+ * Existe porque una entrevista de Salud 4 (2026-11-11) guardó satisfacción 10
+ * y recomendación 2 en la misma respuesta: la cuadrícula del 0 al 10 se parte
+ * en dos filas en el teléfono, «Nada probable / Muy probable» quedaban debajo
+ * de la segunda, y la pregunta no decía la escala. Ahora cada tramo se ve, y
+ * lo marcado se repite en palabras para que el entrevistador lo confirme.
+ */
+export const TRAMOS_NPS = [
+    { desde: 0, hasta: 6,  label: 'Poco probable', tono: 'danger' },
+    { desde: 7, hasta: 8,  label: 'Probable',      tono: 'warning' },
+    { desde: 9, hasta: 10, label: 'Muy probable',  tono: 'success' },
+];
+export const tramoNps = (n) => (typeof n === 'number' ? TRAMOS_NPS.find((t) => n >= t.desde && n <= t.hasta) || null : null);
+
+/**
+ * Lo que el entrevistador tiene que leerle al cliente cuando la pregunta de
+ * recomendación no dice su escala (el cliente no ve la pantalla). Si el texto
+ * ya nombra el 0 y el 10, no hace falta. Para cualquier otra pregunta, null.
+ */
+export function guionDeEscala(p) {
+    if (p?.tipo !== 'nps') return null;
+    if (/\b0\b/.test(p.texto || '') && /\b10\b/.test(p.texto || '')) return null;
+    return 'Léale la escala: del 0 al 10, donde 0 es «nada probable» y 10 es «muy probable».';
+}
+
 /** El ciclo. Deben coincidir con el CHECK de `encuestas_cliente.estado`. */
 export const ESTADOS = {
     borrador:    { label: 'Borrador',    variant: 'neutral', texto: 'Se está diseñando. Cuando esté lista, envíala a revisión.' },

@@ -11,18 +11,22 @@ import { useMemo, useRef, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
-import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe } from '@nucleo/utils/encuestasClientes';
+import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
 
-function Opcion({ activa, onPress, children, ancho }) {
+// El color de cada tramo del NPS (TRAMOS_NPS dice el nombre; acá, el color).
+const COLOR_TRAMO = { danger: MARCA.rojo, warning: MARCA.ambar, success: MARCA.verde };
+
+function Opcion({ activa, onPress, children, ancho, color = MARCA.azul, etiqueta }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }}
+      accessibilityRole="button" accessibilityState={{ selected: !!activa }} accessibilityLabel={etiqueta}
       style={({ pressed }) => ({
         minHeight: 44, minWidth: ancho ?? 44, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
-        backgroundColor: activa ? MARCA.azul : 'rgba(255,255,255,0.08)', borderWidth: 0.5, borderColor: activa ? MARCA.azul : colorSistema.separador,
+        backgroundColor: activa ? color : 'rgba(255,255,255,0.08)', borderWidth: 0.5, borderColor: activa ? color : colorSistema.separador,
         transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       {typeof children === 'string' ? <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{children}</Text> : children}
@@ -33,15 +37,28 @@ function Opcion({ activa, onPress, children, ancho }) {
 function Respuesta({ p, valor, onChange }) {
   const fila = { flexDirection: 'row', flexWrap: 'wrap', gap: 8 };
   switch (p.tipo) {
-    case 'nps':
+    case 'nps': {
+      // Mismo criterio que el portal: cada tramo con su color y lo marcado en
+      // palabras, porque la fila del 0 al 10 se parte en dos en el teléfono.
+      const marcado = tramoNps(valor);
       return (
-        <View style={{ gap: 4 }}>
-          <View style={fila}>{Array.from({ length: 11 }, (_, n) => <Opcion key={n} activa={valor === n} onPress={() => onChange(n)}>{String(n)}</Opcion>)}</View>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>Nada probable</Text><Text style={{ color: colorSistema.texto2, fontSize: 11 }}>Muy probable</Text>
+        <View style={{ gap: 8 }}>
+          <View style={fila}>{Array.from({ length: 11 }, (_, n) => {
+            const t = tramoNps(n);
+            return <Opcion key={n} activa={valor === n} color={COLOR_TRAMO[t.tono]} etiqueta={`${n} · ${t.label}`} onPress={() => onChange(n)}>{String(n)}</Opcion>;
+          })}</View>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4 }}>
+            {TRAMOS_NPS.map((t) => (
+              <View key={t.tono} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_TRAMO[t.tono] }} />
+                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${t.desde}–${t.hasta} ${t.label.toLowerCase()}`}</Text>
+              </View>
+            ))}
           </View>
+          {marcado ? <Text style={{ color: COLOR_TRAMO[marcado.tono], fontSize: 14, fontWeight: '600' }}>{`Marcó ${valor}: ${marcado.label.toLowerCase()} que recomiende la farmacia.`}</Text> : null}
         </View>
       );
+    }
     case 'csat':
       return <View style={fila}>{CARITAS.map((c) => <Opcion key={c.valor} activa={valor === c.valor} onPress={() => onChange(c.valor)} ancho={56}><Text style={{ fontSize: 26 }} accessibilityLabel={c.label}>{c.emoji}</Text></Opcion>)}</View>;
     case 'likert':
@@ -196,6 +213,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
               <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '600' }}>
                 {`${p.numero}. ${p.texto || 'Pregunta sin texto'}`}{p.obligatoria ? <Text style={{ color: MARCA.rojo }}> *</Text> : null}
               </Text>
+              {guionDeEscala(p) ? <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{guionDeEscala(p)}</Text> : null}
               {p.ayuda ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{p.ayuda}</Text> : null}
               <Respuesta p={p} valor={respuestas[p.id]} onChange={(v) => { if (inicio.current == null) inicio.current = Date.now(); setRespuestas((r) => ({ ...r, [p.id]: v })); if (faltante === p.id) setFaltante(null); }} />
               {faltante === p.id ? <Text style={{ color: MARCA.rojo, fontSize: 12, fontWeight: '600' }}>Esta pregunta es obligatoria.</Text> : null}

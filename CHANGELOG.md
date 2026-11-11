@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.19 — Encuestas: la recomendación del 0 al 10 se entiende sola
+
+Una entrevista de Salud 4 guardó satisfacción 10 y recomendación 2 en la misma respuesta, y disparó el aviso de «Cliente insatisfecho». La pregunta de recomendación no decía su escala, y en el teléfono la fila del 0 al 10 se parte en dos, así que «Nada probable / Muy probable» ya no marcaban las puntas. Ahora, en el portal y en la app:
+
+- Si la pregunta no dice «del 0 al 10», el entrevistador ve qué leerle al cliente: «del 0 al 10, donde 0 es nada probable y 10 es muy probable».
+- Debajo de los números, los tres tramos con su color: 0–6 poco probable (rojo), 7–8 probable (ámbar), 9–10 muy probable (verde).
+- El número marcado toma el color de su tramo, y abajo se repite en palabras («Marcó 2: poco probable que recomiende la farmacia»), para que un toque equivocado se note antes de seguir.
+
+Las encuestas ya publicadas no cambian: la mejora es de la pantalla. Lógica en `TRAMOS_NPS`, `tramoNps` y `guionDeEscala` (`src/utils/encuestasClientes.js`), con pruebas en `tests/unit/encuestasClientes.test.js`.
+
 ## v2.1501.18 — Equipos: el diseñador gráfico deja de salir con tarjeta de jefatura
 
 En Personal → Equipos, la fila de jefatura (tarjetas anchas) contaba como «segundo al mando» a todo cargo que responde directo al jefe de la sala. Por eso el Diseñador/a Gráfico/a salía en Administración con tarjeta ancha y solo en su fila, igual que el Administrador. Ahora es segundo sólo el cargo que tiene cargos debajo en el catálogo (Administrador, Subjefe/a de Sala): el que no manda a nadie va al equipo con tarjeta normal. El hueco del subjefe sigue apareciendo. Prueba en `tests/unit/mandoDeSala.test.js`.

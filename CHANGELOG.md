@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.13 — Archivos de las migraciones de permisos por sala
+
+- Se archivan `20261111024423` y `20261111024815`, ya aplicadas en producción y descritas en la v2.1501.12 (Ventas, Facturación e historial de Pedidos de su sala).
+
 ## v2.1501.12 — Inyecciones por número de control del ticket · Ventas y Facturación de su sala
 
 ### Inyecciones: buscar la venta de otra sucursal por el número de control del ticket

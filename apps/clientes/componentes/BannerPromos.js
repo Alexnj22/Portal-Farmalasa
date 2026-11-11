@@ -19,10 +19,6 @@ import { colorSistema } from './sistema';
 import { acentoDe, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
 import { useSesion } from '../lib/sesion';
-import FotoProducto from './FotoProducto';
-import { dolares } from '../lib/formato';
-import { nombreProducto } from '../lib/catalogo';
-import { precioFinal } from '../lib/precioTuyo';
 
 let ultimos = null;
 let pedidosAt = 0;
@@ -34,7 +30,7 @@ function Separador() { return <View style={{ width: 10 }} />; }
 
 // `memo`: no recibe props, así que el catálogo puede redibujarse (cada tecla
 // de la búsqueda) sin arrastrar el carrusel.
-export default memo(function BannerPromos({ productos = [], titulo = null }) {
+export default memo(function BannerPromos({ titulo = null }) {
   const t = useTema();
   const { width } = useWindowDimensions();
   const { datos, cargar } = useOfertas();
@@ -61,14 +57,10 @@ export default memo(function BannerPromos({ productos = [], titulo = null }) {
         etiqueta: null, mostrarTitulo: b.titulo_visible, destino: b.oferta_id ? `/oferta/${b.oferta_id}` : b.enlace }))
     : (datos?.ofertas ?? []).filter((o) => o.disponible !== false).slice(0, 8)
         .map((o) => ({ ...o, mostrarTitulo: true, destino: `/oferta/${o.id}` }));
-  // Sin banners ni ofertas publicadas, las promociones son los productos con
-  // más descuento (usuario, 2026-11-05: «¿y lo que hablamos de promociones?»
-  // — con nada publicado el carrusel desaparecía entero).
-  const ofertas = publicadas.length ? publicadas : productos.slice(0, 5)
-    .map((p) => ({ p, final: precioFinal(p) }))
-    .filter(({ p, final }) => p.precio > final)
-    .map(({ p, final }) => ({ id: `p${p.id}`, producto: p, final, pct: Math.round(((p.precio - final) / p.precio) * 100),
-      titulo: nombreProducto(p.nombre), destino: `/producto/${p.id}` }));
+  // Sólo lo publicado (2026-11-11, usuario: «quita los placeholders»): sin
+  // banners ni ofertas publicadas, el carrusel no aparece. Antes (2026-11-05)
+  // se rellenaba con los productos de más descuento.
+  const ofertas = publicadas;
   if (!ofertas.length) return null;
   const ancho = Math.min(width, 720) - 32;
 
@@ -99,7 +91,6 @@ export default memo(function BannerPromos({ productos = [], titulo = null }) {
         scrollEventThrottle={16}
         renderItem={({ item: o }) => {
           const a = acentoDe(t, o.acento);
-          if (o.producto) return <PromoProducto o={o} ancho={ancho} a={a} />;
           // El banner del portal ya trae su diseño: proporción 2.4 : 1, como se subió.
           return (
             <Presionable onPress={() => { if (!o.destino) return; Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
@@ -153,32 +144,4 @@ function Punto({ i, x, paso }) {
     };
   });
   return <Animated.View style={[{ height: 6, borderRadius: 3, backgroundColor: colorSistema.texto2 }, estilo]} />;
-}
-
-// Una promoción hecha con un producto: la foto sobre blanco a la derecha y, a
-// la izquierda, el descuento grande, el nombre y el precio.
-function PromoProducto({ o, ancho, a }) {
-  const p = o.producto;
-  return (
-    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(o.destino); }}
-      accessibilityRole="button" accessibilityLabel={`Promoción: ${o.titulo}, ${dolares(o.final)}, antes ${dolares(p.precio)}, ${o.pct}% de descuento`}
-      style={({ pressed }) => ({ width: ancho, minHeight: Math.round(ancho / 2.4), borderRadius: 24, overflow: 'hidden', transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <LinearGradient colors={[a.fuerte, '#2B0B3A']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={StyleSheet.absoluteFill} />
-      <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-        <View style={{ flex: 1, gap: 4 }}>
-          <View style={{ alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
-            <Text maxFontSizeMultiplier={1.2} style={{ color: a.fuerte, fontSize: 15, fontWeight: '900' }}>−{o.pct}%</Text>
-          </View>
-          <Text style={{ color: '#FFFFFF', fontSize: 17, fontWeight: '800', letterSpacing: -0.2 }} numberOfLines={2}>{o.titulo}</Text>
-          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6, flexWrap: 'wrap' }}>
-            <Text style={{ color: '#FFFFFF', fontSize: 20, fontWeight: '900' }}>{dolares(o.final)}</Text>
-            <Text style={{ color: 'rgba(255,255,255,0.7)', fontSize: 13, textDecorationLine: 'line-through' }}>{dolares(p.precio)}</Text>
-          </View>
-        </View>
-        <View style={{ width: Math.round(ancho * 0.36) }}>
-          <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={Math.round(ancho * 0.32)} radio={16} />
-        </View>
-      </View>
-    </Presionable>
-  );
 }

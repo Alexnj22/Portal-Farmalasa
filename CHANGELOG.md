@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1504.2 — App de clientes: historias y promociones sólo con lo publicado
+
+La app de clientes ya no rellena con productos de la Tienda. Sin historias publicadas en el portal, el Inicio no muestra el carrusel de historias; sin banners ni ofertas publicadas, la Tienda no muestra «Promociones». Antes, en los dos casos, aparecían productos del catálogo como si fueran historias o promociones.
+
 ## v2.1504.1 — App: el logo de la barra es el original, en claro y en oscuro
 
 Decisión del usuario: «el logo siempre debe ser el original». En la barra de la app del personal, el logo de Farmacias La Popular y La Salud va con sus colores de marca también en modo oscuro (antes el morado se aclaraba), sin borde ni recomposición, y pasa de 170 a 200 pt de ancho. Va por aire.

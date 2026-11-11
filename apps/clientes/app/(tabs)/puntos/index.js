@@ -191,7 +191,7 @@ export default function Puntos() {
         </Entrada>
       ) : null}
       <Entrada indice={0}>
-        <Historias generacion={generacion} conMuestras />
+        <Historias generacion={generacion} />
       </Entrada>
 
       {/* Mis créditos (2026-10-15): si alguno pasó su fecha límite, la alerta

@@ -223,7 +223,7 @@ export default function Catalogo() {
     <View style={{ gap: 12, marginBottom: 6 }}>
       {/* Promociones arriba, el buscador siempre abierto debajo (2026-11-09: en
           Android la barra del sistema no salía abierta como en iOS). */}
-      {!q ? <BannerPromos productos={ahorro} titulo="Promociones" /> : null}
+      {!q ? <BannerPromos titulo="Promociones" /> : null}
       {/* El lugar que ocupa el buscador, que va fuera de la lista. */}
       <View style={{ height: ALTO_BUSCADOR }} onLayout={(e) => { posBuscador.value = e.nativeEvent.layout.y + 16; }} />
       {/* Filtrando (2026-11-09, «no sé cómo volver a la tienda»): una sola salida,

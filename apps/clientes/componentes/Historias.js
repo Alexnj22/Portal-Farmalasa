@@ -29,9 +29,6 @@ import { llamar } from '../lib/api';
 import { idDispositivo } from '../lib/dispositivo';
 import { useTema } from '../tema/tema';
 import Icono from './Icono';
-import FotoProducto from './FotoProducto';
-import { nombreProducto } from '../lib/catalogo';
-import { datosDePrecio } from '../lib/precioTuyo';
 import IconoWhatsapp from './IconoWhatsapp';
 import { navegar } from '../lib/navegar';
 import { useOfertas } from '../lib/ofertas';
@@ -65,13 +62,14 @@ async function leerVistas() {
   return lista;
 }
 
-// `conMuestras` (2026-11-09): sin historias publicadas, productos de la Tienda.
-export default function Historias({ generacion = 0, conMuestras = false }) {
+// Sólo lo publicado en el portal (2026-11-11, usuario: «quita los
+// placeholders»): sin historias publicadas, no se muestra nada. Antes
+// (`conMuestras`, 2026-11-09) se rellenaba con productos de la Tienda.
+export default function Historias({ generacion = 0 }) {
   const t = useTema();
   const token = useSesion((s) => s.token);
   const pedir = useSesion((s) => s.pedir);
   const [lista, setLista] = useState([]);
-  const [muestras, setMuestras] = useState([]);
   const [vistas, setVistas] = useState(new Set());
   const [abierta, setAbierta] = useState(null);
   // Bloqueada con Face ID: el visor se oculta (un Modal queda por encima del bloqueo).
@@ -85,13 +83,6 @@ export default function Historias({ generacion = 0, conMuestras = false }) {
     (token ? pedir('historias') : llamar('historias_publicas')).then((r) => { if (r?.ok) { setLista(r.historias ?? []); if (r.whatsapp) whatsapp = r.whatsapp; } });
     leerVistas().then((l) => setVistas(new Set(l.map(String)))).catch(() => {});
   }, [token, pedir, generacion])); // eslint-disable-line react-hooks/exhaustive-deps -- `lista` sólo decide si hace falta pedir
-
-  useEffect(() => {
-    if (!conMuestras || lista.length || muestras.length) return;
-    llamar('catalogo', { q: '', desde: 0, limite: 24, ...datosDePrecio() }).then((r) => {
-      if (r?.ok) setMuestras((r.productos ?? []).filter((p) => p.foto).slice(0, 6));
-    }).catch(() => {});
-  }, [conMuestras, lista.length, muestras.length]);
 
   // Anota en el servidor que se vio (o que se tocó un botón), para que el
   // portal sepa cuántos la vieron. Sin cuenta, con el id aleatorio del teléfono.
@@ -108,29 +99,7 @@ export default function Historias({ generacion = 0, conMuestras = false }) {
     return nuevo;
   });
 
-  // Sin historias publicadas, productos del catálogo: igual que las promociones
-  // de la Tienda (2026-11-09). Tocar uno abre su ficha.
-  if (!lista.length) {
-    if (!conMuestras || !muestras.length) return null;
-    return (
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}
-        contentContainerStyle={{ gap: 14, paddingHorizontal: 2, paddingVertical: 2 }}>
-        {muestras.map((p) => (
-          <Presionable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); navegar(`/producto/${p.id}`); }} accessibilityRole="button" accessibilityLabel={`Ver ${nombreProducto(p.nombre)}`}
-            style={{ alignItems: 'center', width: 76, gap: 6 }}>
-            <LinearGradient colors={['#FFD60A', t.color.magenta, '#5B1E9C']} start={{ x: 0, y: 1 }} end={{ x: 1, y: 0 }} style={{ padding: 3, borderRadius: 40 }}>
-              <View style={{ width: 69, height: 69, borderRadius: 34.5, overflow: 'hidden', backgroundColor: '#FFFFFF' }}>
-                <FotoProducto id={p.id} nombre={p.nombre} foto={p.foto} alto={69} radio={34.5} />
-              </View>
-            </LinearGradient>
-            <Text numberOfLines={1} maxFontSizeMultiplier={1.2} style={{ fontSize: 12, fontWeight: '700', color: colorSistema.texto }}>
-              {nombreProducto(p.nombre).split(/\s+/)[0]}
-            </Text>
-          </Presionable>
-        ))}
-      </ScrollView>
-    );
-  }
+  if (!lista.length) return null;
   // Las sin ver primero.
   const orden = [...lista].sort((a, b) => Number(vistas.has(String(a.id))) - Number(vistas.has(String(b.id))));
 

@@ -1440,33 +1440,40 @@ export default function TabCatalogo({
     // Reset page on filter/sort changes
     useEffect(() => { setPage(1); }, [searchTerm, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, filterLab, filterCategoria, sortField]);
 
+    // Los «modificados este mes» sólo cuentan con su filtro puesto. Antes el
+    // efecto dependía de `modificadosStats` siempre, así que cuando ese conteo
+    // terminaba de cargar (después de la primera página) la lista entera y sus
+    // marcas se pedían otra vez sin que nada hubiera cambiado: medido el
+    // 2026-11-10, cuatro lecturas repetidas al entrar al catálogo.
+    const modificadosDelFiltro = filterModificados ? modificadosStats : null;
+
     // Trigger load — normal (no margin filter). marginStats/statsLoading intentionally
     // excluded from deps to prevent reloading the list when stats finish loading.
     useEffect(() => {
         if (filterMargin !== 'all') return;
-        if (filterModificados && !modificadosStats) return;
-        const modBids = filterModificados ? [...(modificadosStats?.ids ?? [])] : null;
+        if (filterModificados && !modificadosDelFiltro) return;
+        const modBids = filterModificados ? [...(modificadosDelFiltro?.ids ?? [])] : null;
         const t = setTimeout(() =>
             loadProducts(searchTerm, page, pageSize, filterActivo, null, filterLab, filterCategoria, sortField, sortDir, filterNuevos, modBids),
             50
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, filterLab, filterCategoria, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosDelFiltro, filterLab, filterCategoria, sortField, sortDir, loadProducts]);
 
     // Trigger load — margin filter active. Waits for stats to be ready.
     useEffect(() => {
         if (filterMargin === 'all') return;
         if (statsLoading || marginStats === null) return;
-        if (filterModificados && !modificadosStats) return;
+        if (filterModificados && !modificadosDelFiltro) return;
         const bids = filterMargin === 'perdida' ? [...(marginStats.perdidaIds || [])]
                                                 : [...(marginStats.bajoIds    || [])];
-        const modBids = filterModificados ? [...(modificadosStats?.ids ?? [])] : null;
+        const modBids = filterModificados ? [...(modificadosDelFiltro?.ids ?? [])] : null;
         const t = setTimeout(() =>
             loadProducts(searchTerm, page, pageSize, filterActivo, bids, filterLab, filterCategoria, sortField, sortDir, filterNuevos, modBids),
             50
         );
         return () => clearTimeout(t);
-    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosStats, marginStats, statsLoading, filterLab, filterCategoria, sortField, sortDir, loadProducts]);
+    }, [searchTerm, page, pageSize, filterActivo, filterMargin, filterNuevos, filterModificados, modificadosDelFiltro, marginStats, statsLoading, filterLab, filterCategoria, sortField, sortDir, loadProducts]);
 
     // ── Sort handler ────────────────────────────────────────────────────────
     const handleSort = useCallback((field) => {

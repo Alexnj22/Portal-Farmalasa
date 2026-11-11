@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.14 — Productos y Caja dejan de pedir dos veces lo mismo
+
+- **Productos**: al entrar al catálogo, la lista y sus marcas (precios con costo, cambios de precio y de ficha) se pedían dos veces: el conteo de «modificados este mes» terminaba de cargar y volvía a disparar la carga aunque su filtro no estuviera puesto. Ahora sólo cuenta con el filtro activo. Medido en pruebas: 16 → 12 pedidos al entrar, cero repetidos.
+- **Caja**: el catálogo de tipos de salida de bolsa lo pedían dos piezas de la pantalla al mismo tiempo. La segunda se suma a la lectura en camino (no se guarda nada después, así que un cambio del catálogo se ve igual que antes). 6 → 5 pedidos.
+- Recorridas 43 pantallas: ninguna otra repite un pedido idéntico al entrar.
+
 ## v2.1501.13 — Archivos de las migraciones de permisos por sala
 
 - Se archivan `20261111024423` y `20261111024815`, ya aplicadas en producción y descritas en la v2.1501.12 (Ventas, Facturación e historial de Pedidos de su sala).

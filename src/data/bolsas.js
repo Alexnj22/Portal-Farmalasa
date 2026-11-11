@@ -644,13 +644,25 @@ export async function fetchConceptosDeOtroLado() {
  * `etiqueta_entidad` sigue siendo su rótulo — en el vale impreso y en el aviso
  * de qué llenó la foto.
  */
-export async function fetchTiposDeSalida() {
-    const { data, error } = await supabase.from('bolsas_tipos_salida')
-        .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, '
-              + 'pide_receptor, multiplo, leyenda, caja_tipo, entidad_la_dice_el_papel, activo')
-        .order('orden');
-    if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }
-    return data || [];
+//
+// Dos piezas de la misma pantalla lo piden al montar (Caja: la vista y la
+// salida de bolsa). Mientras una lectura está en camino, la segunda se suma a
+// ella en vez de salir otra vez (medido el 2026-11-10). No se guarda nada
+// después: la próxima apertura vuelve a leer, así que un cambio del catálogo
+// se ve igual que antes.
+let tiposDeSalidaEnCamino = null;
+export function fetchTiposDeSalida() {
+    if (!tiposDeSalidaEnCamino) {
+        tiposDeSalidaEnCamino = (async () => {
+            const { data, error } = await supabase.from('bolsas_tipos_salida')
+                .select('codigo, etiqueta, prefijo, signo, etiqueta_entidad, pide_boleta, foto, '
+                      + 'pide_receptor, multiplo, leyenda, caja_tipo, entidad_la_dice_el_papel, activo')
+                .order('orden');
+            if (error) { console.error('bolsas: fetchTiposDeSalida failed:', error.message); return []; }
+            return data || [];
+        })().finally(() => { tiposDeSalidaEnCamino = null; });
+    }
+    return tiposDeSalidaEnCamino;
 }
 
 /**

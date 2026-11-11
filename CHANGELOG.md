@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1507.5 — Sucursales: del documento también se toman la fecha de emisión y su número
+
+- Al subir un documento fijo del Expediente ahora se toman del papel, además del vencimiento, **la fecha de emisión** (se ve como «Emisión» en la tarjeta) y **su número propio**: resolución del permiso SRS, número JVPQF de la credencial del regente, número del permiso de inyecciones, cuenta municipal de la solvencia y resolución de los libros controlados. En la renovación, el dato viejo que nadie tocó se reemplaza por el del papel nuevo; lo que la persona escribió a mano en ese mismo guardado se respeta. El anterior queda en el histórico.
+- `analyze-document` acepta `numeroBuscado` (qué número buscar) y devuelve `numeroDelDocumento`.
+- La tarjeta de la solvencia muestra la cuenta municipal; la del permiso de inyecciones, su número; la del regente, su JVPQF.
+
 ## v2.1507.4 — App de clientes: medición temporal del carrito en iPhone
 
 Temporal: al abrir el Carrito por primera vez, la app anota en `app_errores` (mensaje «diag-carrito») dónde queda el borde de arriba del contenido respecto de la barra, para encontrar por qué la primera tarjeta queda medio tapada. Se quita al resolverlo.

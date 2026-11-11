@@ -757,15 +757,21 @@ const CRONS = [
   },
   {
     job: 'drain-cliente-erp-queue', slug: 'push-cliente-erp', cadencia: '3,13,23,33,43,53 * * * *',
-    corridasDia: 144, sistema: null,
-    motivo: 'SIN MEDIR. Vacía la cola de fichas de cliente; con la cola vacía no debería tocar el '
-          + 'sistema, pero no está comprobado.',
+    corridasDia: 144, sistema: 0,
+    motivo: 'Vacía la cola de fichas de cliente. Sólo toca el sistema si hay algo en cola: vacía, contesta «la cola está vacía» '
+          + 'sin iniciar sesión (medido el 2026-11-10 a las 21:33 SV). Hasta ese día costaba 2 por '
+          + 'corrida (288/día) porque la ficha 20434 tenía un cambio de `notes`, que sólo existe en '
+          + 'el portal, y volvía a la cola en cada pasada; `cola_espejo_portal_erp()` ya lo deja '
+          + 'afuera. Con algo en cola: login + lectura + envío + relectura por ficha, hasta 5.',
   },
   {
     job: 'sync-dte-inv-all-1min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '* 12-23,0-5 * * *',
-    corridasDia: 1080, sistema: null,
-    motivo: 'SIN MEDIR, y es el segundo candidato después de los cortes: cada minuto, 18 h al día, '
-          + 'recorriendo sucursales para ventas e inventario.',
+    corridasDia: 1033, sistema: null,
+    motivo: 'SIN DECLARAR (medido el 2026-11-10: 13 llamadas y ~27 peticiones por corrida, 13 de '
+          + 'ellas logins — ~28.000/día, la deuda más grande del manifiesto). Desde ese día la hora '
+          + '23 SV corre cada 5 min más la de las 23:59 (0 ventas y 0 cambios de inventario a esa '
+          + 'hora en 60 días): 1.033 corridas en vez de 1.080. El freno vive en el comando, porque '
+          + 'el horario de la fila lo lee `cron_tick_minuto()`.',
   },
   {
     job: 'refresh-inv-mv-2min', via: 'tick-minuto', slug: 'sync-dte-sales', cadencia: '*/2 12-23,0-5 * * *',
@@ -777,11 +783,19 @@ const CRONS = [
   },
   {
     job: 'sync-products-10min', slug: 'sync-products', cadencia: '6-59/10 * * * *',
-    corridasDia: 144, sistema: null, motivo: 'SIN MEDIR.',
+    corridasDia: 144, sistema: null,
+    motivo: 'SIN DECLARAR (medido: 2 por corrida, login + catálogo = 288/día; declararlo sube el '
+          + 'tope, que sólo baja). Hasta el 2026-11-10 eran 13: una muestra temporal de fichas '
+          + 'sumaba 11 por corrida (~1.580/día) y se retiró con la muestra completa.',
   },
   {
-    job: 'sync-purchases-10min', slug: 'sync-erp-purchases', cadencia: '1-59/10 * * * *',
-    corridasDia: 144, sistema: null, motivo: 'SIN MEDIR.',
+    job: 'sync-purchases-10min', slug: 'sync-erp-purchases', cadencia: '1-59/10 12-23,0-5 * * *',
+    corridasDia: 108, sistema: null,
+    motivo: 'SIN DECLARAR (medido: ~15 por corrida incremental, ~22 la pasada completa de cada '
+          + 'hora; declararlo sube el tope, que sólo baja). Desde el 2026-11-10: una sesión para '
+          + 'las siete listas de la corrida (antes un login por sucursal, ~720/día) y duerme de '
+          + '00:00 a 06:00 SV como los demás syncs (0 compras nuevas de noche en 30 días; '
+          + '`check-sync-health-alerts` descuenta esa ventana).',
   },
   {
     job: 'check-sales-alerts-5min', slug: 'check-sales-alerts', cadencia: '2-59/5 12-23,0-5 * * *',

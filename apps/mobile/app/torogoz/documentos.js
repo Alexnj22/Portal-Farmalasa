@@ -32,6 +32,7 @@ import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Pieza
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
@@ -195,15 +196,15 @@ export default function Facturacion() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Facturación', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Facturación',
         headerSearchBarOptions: { placeholder: 'Cliente, número de control o código', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba><Segmentos activa={cubeta} onCambiar={(v) => { setCubeta(v); setSub(''); }} opciones={CUBETAS_FACTURACION.map((c) => ({ id: c.key, label: c.label }))} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={cubeta} onCambiar={(v) => { setCubeta(v); setSub(''); }} opciones={CUBETAS_FACTURACION.map((c) => ({ id: c.key, label: c.label }))} />
         <FiltrosActivos grupos={gruposAplicados} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />

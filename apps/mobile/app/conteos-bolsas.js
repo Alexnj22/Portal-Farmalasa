@@ -19,6 +19,7 @@ import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
@@ -109,11 +110,14 @@ export default function ConteosBolsas() {
   }
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Conteos', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Conteos' }} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
+      </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
         <View style={{ marginHorizontal: 16, gap: 10 }}>
           {lista == null ? <Cargando />
             : !lista.length ? <Aviso texto="Sin conteos en estas fechas." />

@@ -29,6 +29,7 @@ import Tocable from '../componentes/Tocable';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarCompras } from '../componentes/compras/compras';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import ProductosComprados from '../componentes/fiscal/ProductosComprados';
@@ -94,17 +95,22 @@ export default function Compras() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Compras', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Compras',
         headerSearchBarOptions: {
           placeholder: tab === 'facturas' ? 'Proveedor o número' : 'Código del producto', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {pestanas.length > 1 ? (
+        <FijoArriba>
+          <Segmentos activa={tab} onCambiar={setTab} opciones={pestanas} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setPagina(0); await cargar(); setRecargando(false); }} />}>
-        {pestanas.length > 1 ? <Segmentos activa={tab} onCambiar={setTab} opciones={pestanas} /> : null}
         {!tab ? <Text style={{ marginHorizontal: 20, color: colorSistema.texto2, fontSize: 15 }}>No tienes acceso a ninguna pestaña de Compras.</Text> : null}
         {tab === 'productos' ? <ProductosComprados busqueda={busqueda} verMontos={verMontos} /> : null}
         {tab === 'facturas' ? (<>

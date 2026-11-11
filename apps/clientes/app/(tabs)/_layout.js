@@ -49,7 +49,9 @@ export default function Pestanas() {
         {/* «Tienda Salud» con el ícono de tienda (2026-11-05, «y si a la tienda
             le llamamos Tienda Salud… y en el menú usamos el ícono?»). */}
         <NativeTabs.Trigger.Icon sf={{ default: 'storefront', selected: 'storefront.fill' }} md="storefront" />
-        <NativeTabs.Trigger.Label>Tienda Salud</NativeTabs.Trigger.Label>
+        {/* En Android la barra de Material da ~72 dp por pestaña y «Tienda
+            Salud» se cortaba (2026-11-11): ahí va «Tienda» a secas. */}
+        <NativeTabs.Trigger.Label>{ANDROID ? 'Tienda' : 'Tienda Salud'}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={contenido} name="bienestar">
         <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="spa" />

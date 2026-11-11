@@ -27,6 +27,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, Campo, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -200,14 +201,16 @@ export default function SolicitudesTorogoz() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Solicitudes', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Solicitudes' }} />
+      <FijoArriba>
+        <Segmentos activa={filtro} onCambiar={setFiltro}
+          opciones={[{ id: 'pendientes', label: 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        <Segmentos activa={filtro} onCambiar={setFiltro}
-          opciones={[{ id: 'pendientes', label: 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />
         {!puedeDecidir ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Ves las que pediste. Las decide quien tiene permiso para aprobar solicitudes de Distribución.</Text>
         ) : null}

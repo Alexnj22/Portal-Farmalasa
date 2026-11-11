@@ -20,6 +20,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { BotonGrande, Campo, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -166,8 +167,12 @@ export default function VentasPerdidas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas perdidas', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas perdidas' }} />
       <MenuDeFiltros grupos={grupos} extra={puedeDescargar && visibles.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'pendiente', label: 'Pendientes' }, { id: 'procesado', label: 'Procesados' }]} />
+      </FijoArriba>
       <FlatList key={`c${columnas}`} numColumns={columnas} columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
         data={filas == null ? [] : visibles} keyExtractor={(r) => String(r.id)}
         renderItem={({ item: r }) => (
@@ -182,7 +187,6 @@ export default function VentasPerdidas() {
             <View style={{ marginHorizontal: 16 }}>
               <BotonGrande texto="Reportar lo que pidieron" color={MARCA.rojo} onPress={() => setReportando(true)} />
             </View>
-            <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'pendiente', label: 'Pendientes' }, { id: 'procesado', label: 'Procesados' }]} />
             <FiltrosActivos grupos={grupos} />
             {top.length ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>

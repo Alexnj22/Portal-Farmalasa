@@ -44,6 +44,7 @@ import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pasos, Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import Metricas from '../componentes/pedidos/Metricas';
@@ -192,16 +193,21 @@ export default function Pedidos() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedidos',
         headerSearchBarOptions: vista === 'metricas' ? undefined : {
           placeholder: 'Número de pedido', hideWhenScrolling: false,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
         } }} />
       <MenuDeFiltros grupos={grupos} extra={(todas && puede) || verRutas || verReglas ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {verMetricas ? (
+        <FijoArriba>
+          <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'pedidos', label: 'Pedidos' }, { id: 'metricas', label: 'Tiempos' }]} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {verMetricas ? <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'pedidos', label: 'Pedidos' }, { id: 'metricas', label: 'Tiempos' }]} /> : null}
         {vista === 'metricas' ? <Metricas /> : (
           <>
             <FiltrosActivos grupos={grupos} />

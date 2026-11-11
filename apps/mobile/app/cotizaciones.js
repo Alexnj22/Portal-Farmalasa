@@ -19,6 +19,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -65,17 +66,20 @@ export default function Cotizaciones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cotizaciones', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Cotizaciones',
         headerSearchBarOptions: {
           placeholder: 'Número, cliente o quién la hizo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={[]} extra={hasPermission('cotizaciones', 'can_edit') ? { icono: 'plus', etiqueta: 'Nueva cotización', onPress: () => router.push('/cotizacion/nueva') } : null} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'vigentes', label: 'Vigentes' }, { id: 'anuladas', label: 'Anuladas' }, { id: 'todas', label: 'Todas' }]} />
+      </FijoArriba>
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'vigentes', label: 'Vigentes' }, { id: 'anuladas', label: 'Anuladas' }, { id: 'todas', label: 'Todas' }]} />
         {filas ? (
           <>
             <FilaDeKpis>

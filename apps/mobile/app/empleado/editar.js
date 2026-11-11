@@ -59,6 +59,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { CampoConRotulo, CampoFecha, Elegir } from '../../componentes/personas/Formulario';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 import Enlazar from '../../componentes/personas/ficha/Enlazar';
@@ -352,10 +353,12 @@ export default function EditarEmpleado() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: esAlta ? 'Nuevo empleado' : 'Editar ficha', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        <FijoArriba>
+          <Segmentos opciones={PESTANAS} activa={pestana} onCambiar={setPestana} margen={0} />
+        </FijoArriba>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic"
           keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">
           {esAlta && recuperado ? <Aviso texto="Se recuperó lo que habías escrito antes (sin salario, DUI ni código)." /> : null}
-          <Segmentos opciones={PESTANAS} activa={pestana} onCambiar={setPestana} margen={0} />
 
           {pestana === 'personal' ? (
             <>

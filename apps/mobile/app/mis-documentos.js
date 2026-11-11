@@ -30,6 +30,7 @@ import { correrMes, fechaTexto, hoySV, mesSV, rangoDelMes, sumarDias } from '@nu
 import Fecha from '../componentes/formulario/Fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -99,13 +100,20 @@ export default function MisDocumentos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Mis documentos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Mis documentos',
         headerSearchBarOptions: {
           placeholder: 'Buscar un documento', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {pestanas.length > 2 ? (
+        <FijoArriba>
+          <Segmentos activa={activa} onCambiar={setPestana}
+            opciones={pestanas.map((t) => ({ id: t.key, label: t.label.replace('Del expediente', 'Expediente') }))} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
@@ -125,10 +133,6 @@ export default function MisDocumentos() {
               </View>
             </Vidrio>
           </View>
-        ) : null}
-        {pestanas.length > 2 ? (
-          <Segmentos activa={activa} onCambiar={setPestana}
-            opciones={pestanas.map((t) => ({ id: t.key, label: t.label.replace('Del expediente', 'Expediente') }))} />
         ) : null}
         {solicitudes == null ? <Cargando /> : visibles.map((d) => {
           const exp = d.type === 'EXPEDIENTE';

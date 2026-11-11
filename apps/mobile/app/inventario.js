@@ -36,6 +36,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
@@ -269,18 +270,21 @@ export default function Inventario() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Inventario', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Inventario',
         headerSearchBarOptions: {
           placeholder: 'Producto, laboratorio o código', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={vista} onCambiar={setVista}
+          opciones={[{ id: 'todo', label: 'Todo' }, { id: 'proximos', label: 'Por vencer' }, { id: 'vencidos', label: 'Vencidos' }]} />
+      </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
-        <Segmentos activa={vista} onCambiar={setVista}
-          opciones={[{ id: 'todo', label: 'Todo' }, { id: 'proximos', label: 'Por vencer' }, { id: 'vencidos', label: 'Vencidos' }]} />
         <FiltrosActivos grupos={grupos} />
         {cifras ? (
           <>

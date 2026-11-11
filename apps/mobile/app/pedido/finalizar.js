@@ -35,6 +35,7 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { hojasExactas } from '../../componentes/pedidos/motorPedido';
@@ -199,6 +200,12 @@ export default function FinalizarPedido() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Finalizar', headerLargeTitle: false }} />
+      {totalHojas ? (
+        <FijoArriba>
+          <Segmentos opciones={PASOS.map((p) => ({ id: String(p.id), label: p.label }))} activa={String(paso)}
+            onCambiar={(v) => { const n = Number(v); if (n === 1 || (n === 2 && cajasTexto) || (n === 3 && asignacionCompleta(asignacion, totalHojas))) { if (n === 2 && paso === 1) irAHojas(); else setPaso(n); } }} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{`Pedido #${numero} · ${ERP_NAMES[suc] ?? ''}`}</Text>
         {!totalHojas ? (
@@ -218,8 +225,6 @@ export default function FinalizarPedido() {
           </View>
         ) : (
           <>
-            <Segmentos opciones={PASOS.map((p) => ({ id: String(p.id), label: p.label }))} activa={String(paso)}
-              onCambiar={(v) => { const n = Number(v); if (n === 1 || (n === 2 && cajasTexto) || (n === 3 && asignacionCompleta(asignacion, totalHojas))) { if (n === 2 && paso === 1) irAHojas(); else setPaso(n); } }} />
             {paso === 1 ? (
               <View style={{ marginHorizontal: 16, gap: 14 }}>
                 <Seccion titulo="Hojas del pedido">

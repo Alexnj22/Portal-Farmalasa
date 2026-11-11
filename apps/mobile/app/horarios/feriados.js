@@ -15,6 +15,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -74,12 +75,14 @@ export default function Feriados() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Feriados', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Feriados',
         headerSearchBarOptions: { placeholder: 'Buscar feriado', hideWhenScrolling: false, onChangeText: (e) => setBusca(e.nativeEvent.text), onCancelButtonPress: () => setBusca('') },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Agregar feriado', onPress: () => setForm({ name: '', fecha: hoySV(), tipo: 'NATIONAL', muni: '', recurrente: false }) } : null} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
+      <FijoArriba>
         <Segmentos activa={anio} onCambiar={setAnio} opciones={[anioActual - 1, anioActual, anioActual + 1].map((a) => ({ id: String(a), label: String(a) }))} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {porMes.map(({ mes, items }) => (
           <View key={mes} style={{ gap: 8 }}>
             <Encabezado>{mes}</Encabezado>

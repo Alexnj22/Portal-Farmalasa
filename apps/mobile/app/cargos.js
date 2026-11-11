@@ -26,6 +26,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -116,15 +117,18 @@ export default function Cargos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cargos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Cargos',
         headerSearchBarOptions: vista === 'lista' ? {
           placeholder: 'Nombre del cargo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         } : undefined,
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nuevo cargo', onPress: () => abrirEditor(null) } : null} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 8, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Lista' }, { id: 'organigrama', label: 'Organigrama' }]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 8, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         {vista === 'lista' ? (
           <>
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${(roles || []).length} cargos · de la cima hacia abajo`}</Text>

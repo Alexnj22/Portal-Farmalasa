@@ -30,6 +30,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { compartirCsv } from '../componentes/fiscal/csv';
@@ -94,13 +95,13 @@ export default function LibroReceta() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libro bajo receta', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libro bajo receta',
         headerSearchBarOptions: { placeholder: 'Folio, medicamento, lote, paciente o médico', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') } }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba><Segmentos activa={clase} onCambiar={setClase} opciones={LIBROS.map((l) => ({ id: l.clave, label: l.corto }))} /></FijoArriba>
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={clase} onCambiar={setClase} opciones={LIBROS.map((l) => ({ id: l.clave, label: l.corto }))} />
         <FiltrosActivos grupos={grupos} />
         {nombre ? <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '700', marginHorizontal: 20 }}>{nombre}</Text> : null}
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginHorizontal: 16 }}>

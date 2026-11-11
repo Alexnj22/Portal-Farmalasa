@@ -60,6 +60,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { compartirPdf } from '../componentes/pdf';
 import { guardar as guardarElegido } from '../componentes/comercial/elegido';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -253,15 +254,17 @@ export default function Marketing() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marketing', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marketing' }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+      <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[
           { id: 'calendario', label: 'Calendario' }, { id: 'flujo', label: 'Flujo' }, { id: 'feed', label: 'Feed' }, { id: 'pauta', label: 'Pauta' },
           { id: 'ideas', label: 'Ideas' }, { id: 'solicitudes', label: 'Solicitudes' },
           ...(puedeEditar || puedeAprobar ? [{ id: 'galeria', label: 'Galería' }] : []), { id: 'biblioteca', label: 'Marca' },
         ]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vista === 'calendario' ? (

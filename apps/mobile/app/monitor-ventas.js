@@ -29,6 +29,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { COLOR_VOLUMEN, LeyendaDeVolumen } from '../componentes/inicio/MiniSala';
@@ -156,15 +157,18 @@ export default function MonitorDeVentas() {
   return (
     <>
       {/* Regresar sólo desde el borde: el dedo recorre las barras. */}
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Monitor de ventas', headerLargeTitle: true, fullScreenGestureEnabled: false }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Monitor de ventas', fullScreenGestureEnabled: false }} />
       <MenuDeFiltros grupos={grupos} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {!hoy ? (
+        <FijoArriba>
+          <Segmentos opciones={[{ id: 'semana', label: 'Semana' }, { id: 'horas', label: 'Por hora' }]} activa={vista}
+            onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setVista(v); setElegida(null); }} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingTop: 8, paddingBottom: 40, gap: 16 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        {!hoy ? (
-          <Segmentos opciones={[{ id: 'semana', label: 'Semana' }, { id: 'horas', label: 'Por hora' }]} activa={vista}
-            onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setVista(v); setElegida(null); }} />
-        ) : null}
         <FiltrosActivos grupos={grupos} />
 
         <View style={{ paddingHorizontal: 20 }}>

@@ -27,6 +27,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 
@@ -139,8 +140,11 @@ export default function ConfiguracionMinMax() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Configuración Mín·Máx', headerLargeTitle: false }} />
-      <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 10, paddingBottom: 48, gap: 14 }} keyboardDismissMode="interactive">
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'parametros', label: 'Parámetros' }, { id: 'labs', label: 'Laboratorios' }]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 10, paddingBottom: 48, gap: 14 }} keyboardDismissMode="interactive">
         {vista === 'parametros' ? <Parametros puede={puede} /> : <Laboratorios puede={puede} />}
       </ScrollView>
     </>

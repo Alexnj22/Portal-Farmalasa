@@ -43,6 +43,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import { getLocalMonday } from '@nucleo/utils/semana';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import PasoDeSemana from '../componentes/solicitudes/PasoDeSemana';
 import Escaner from '../componentes/Escaner';
 import TarjetaTraslado, { Pildora, Ruta } from '../componentes/traslados/Tarjeta';
@@ -303,7 +304,6 @@ export default function Traslados() {
       <Stack.Screen options={{
         ...BARRA_NATIVA,
         title: 'Traslados',
-        headerLargeTitle: true,
         headerSearchBarOptions: {
           placeholder: 'Producto, sala o persona…',
           hideWhenScrolling: true,
@@ -313,10 +313,10 @@ export default function Traslados() {
       }} />
 
       <MenuDeFiltros grupos={filtrosDeVista} extra={{ icono: 'plus', etiqueta: 'Nuevo', onPress: abrirNuevo }} />
+      <FijoArriba><Segmentos opciones={opciones} activa={vista} onCambiar={setVista} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, paddingBottom: 40, gap: 12 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
-        <Segmentos opciones={opciones} activa={vista} onCambiar={setVista} />
         <FiltrosActivos grupos={filtrosDeVista} />
 
         {vista === 'piden' ? (

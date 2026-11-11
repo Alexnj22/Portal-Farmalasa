@@ -36,6 +36,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { GanttDelAnio, SolicitudesDeCambio } from '../componentes/personas/Vacaciones';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 
 const COLOR_PLAN = { DRAFT: colorSistema.texto2, PRE_APPROVED: MARCA.azulClaro, CHANGE_REQUESTED: MARCA.ambar, APPROVED: MARCA.verde,
   PLANNED: MARCA.azulClaro, CONFIRMED: MARCA.verde, TAKEN: colorSistema.texto2, CANCELLED: MARCA.rojo };
@@ -147,17 +148,20 @@ export default function Vacaciones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Vacaciones', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Vacaciones',
         headerSearchBarOptions: {
           placeholder: 'Nombre o sala', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Asignar vacaciones', onPress: () => { Haptics.selectionAsync().catch(() => {}); router.push({ pathname: '/vacaciones/plan', params: { anio: String(anio) } }); } } : null} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Por mes' }, { id: 'anio', label: 'El año' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'lista', label: 'Por mes' }, { id: 'anio', label: 'El año' }]} />
         <FiltrosActivos grupos={grupos} />
         <FilaDeKpis>
           <Kpi icono="Palmtree" rotulo={`Planes ${anio}`} valor={String(delAnio.filter((p) => p.status !== 'CANCELLED').length)} color={MARCA.verde}

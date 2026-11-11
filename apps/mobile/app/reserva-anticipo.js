@@ -44,6 +44,7 @@ import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../component
 import FormaDePago from '../componentes/formulario/FormaDePago';
 import { subirFotos } from '../componentes/formulario/Fotos';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -85,11 +86,11 @@ export default function ApartarOEncargar() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Apartar o encargar' }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
+        {sala ? <FijoArriba><Segmentos opciones={[{ id: 'nuevo', label: 'Nuevo' }, { id: 'cobrar', label: 'Por cobrar' }]} activa={vista} onCambiar={setVista} /></FijoArriba> : null}
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
           {!sala ? <Aviso tono="freno" texto="Las reservas son de una sala de ventas, y tu ficha no tiene sala." /> : (
             <>
-              <Segmentos opciones={[{ id: 'nuevo', label: 'Nuevo' }, { id: 'cobrar', label: 'Por cobrar' }]} activa={vista} onCambiar={setVista} margen={0} />
               {vista === 'nuevo' ? <Nuevo sala={sala} nombreSala={nombreSala} user={user} /> : <PorCobrar sala={sala} nombreSala={nombreSala} user={user} elegirClave={elegir ? String(elegir) : null} />}
             </>
           )}

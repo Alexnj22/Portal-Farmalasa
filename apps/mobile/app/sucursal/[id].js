@@ -42,6 +42,7 @@ import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/f
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Avatar from '../../componentes/Avatar';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -371,6 +372,12 @@ export default function Sucursal() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: b.name, headerLargeTitle: false }} />
+      <FijoArriba>
+        <Segmentos activa={pestana} onCambiar={setPestana}
+          opciones={b.expedienteOculto
+            ? [{ id: 'resumen', label: 'Resumen' }, { id: 'historial', label: 'Historial' }]
+            : [{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <View style={{ gap: 6, marginHorizontal: 4 }}>
           <Text style={{ color: colorSistema.texto, fontSize: 24, fontWeight: '800' }}>{b.name}</Text>
@@ -380,10 +387,6 @@ export default function Sucursal() {
             {(b.settings?.propertyType || b.propertyType) === 'RENTED' ? <Pildora texto="Alquilada" color={colorSistema.texto2} /> : (b.settings?.propertyType || b.propertyType) === 'OWNED' ? <Pildora texto="Propia" color={colorSistema.texto2} /> : null}
           </View>
         </View>
-        <Segmentos activa={pestana} onCambiar={setPestana}
-          opciones={b.expedienteOculto
-            ? [{ id: 'resumen', label: 'Resumen' }, { id: 'historial', label: 'Historial' }]
-            : [{ id: 'resumen', label: 'Resumen' }, { id: 'expediente', label: 'Expediente' }, { id: 'gastos', label: 'Gastos' }, { id: 'historial', label: 'Historial' }]} />
         {pestana === 'resumen' ? <Resumen b={b} gente={gente} kioscos={kioscos} puedeEditar={puedeEditar} /> : null}
         {pestana === 'expediente' && !b.expedienteOculto ? <Expediente b={b} puedeEditar={puedeEditar} /> : null}
         {pestana === 'gastos' && !b.expedienteOculto ? <Gastos b={b} puedeEditar={puedeEditar} /> : null}

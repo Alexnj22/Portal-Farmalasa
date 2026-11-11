@@ -28,6 +28,7 @@ import { marginLabel, nivelesVisibles, specialLossLabel } from '@nucleo/utils/pr
 import { fetchProductCategories } from '@nucleo/data/inventarioTab';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -178,13 +179,14 @@ export default function Productos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Productos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Productos',
         headerSearchBarOptions: {
           placeholder: 'Nombre, principio activo o laboratorio', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'ellipsis.circle', etiqueta: 'Más del catálogo', onPress: abrirMas }} />
+      <FijoArriba><Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }]} /></FijoArriba>
       <TrasLaTransicion>
       <ListaPaginada porPagina={30} cargarPagina={cargarPagina}
         dependencias={[busqueda, estado, categoria, foco, modificados, margen, lab, orden]}
@@ -192,7 +194,6 @@ export default function Productos() {
         vacio={busqueda ? 'Ningún producto con esa búsqueda' : 'Sin productos'}
         cabecera={(
           <View style={{ gap: 10, marginBottom: 2 }}>
-            <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'todos', label: 'Todos' }]} />
             <FiltrosActivos grupos={grupos} />
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
               {[

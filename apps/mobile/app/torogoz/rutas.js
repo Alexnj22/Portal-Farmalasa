@@ -16,6 +16,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Hoy from '../../componentes/torogoz/rutas/Hoy';
 import Armar from '../../componentes/torogoz/rutas/Armar';
 import Camiones from '../../componentes/torogoz/rutas/Camiones';
@@ -53,11 +54,13 @@ export default function TorogozRutas() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Rutas', headerLargeTitle: false }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba>
+        <Segmentos opciones={vistas} activa={vista} onCambiar={(v) => router.setParams({ rutas: v })} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={false} onRefresh={() => setVuelta((v) => v + 1)} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        <Segmentos opciones={vistas} activa={vista} onCambiar={(v) => router.setParams({ rutas: v })} />
         <FiltrosActivos grupos={grupos} />
         {vista === 'hoy' ? (
           <Hoy key={vuelta} puedeConfigurar={puedeConfigurar} fecha={fecha} vendedorElegido={vendedor}

@@ -15,6 +15,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -98,12 +99,14 @@ export default function Faltantes() {
   const visibles = vista === 'abiertos' ? abiertos : (lista || []).filter((f) => f.estado !== 'abierto');
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Faltantes', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Faltantes' }} />
+      <FijoArriba>
+        <Segmentos activa={vista} onCambiar={setVista}
+          opciones={[{ id: 'abiertos', label: 'Sin resolver' }, { id: 'cerrados', label: 'Resueltos' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={vista} onCambiar={setVista}
-          opciones={[{ id: 'abiertos', label: 'Sin resolver' }, { id: 'cerrados', label: 'Resueltos' }]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {lista == null ? null : visibles.length ? visibles.map((f) => <Faltante key={f.id} f={f} onHecho={cargar} />) : (
           <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 60, fontSize: 15 }}>

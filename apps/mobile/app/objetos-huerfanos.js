@@ -11,6 +11,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchOrphanObjects, updateOrphanObjectStatus, ESTADOS_HUERFANO, PESTANAS_HUERFANOS, huerfanosDePestana } from '@nucleo/data/orphanObjects';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso } from '../componentes/formulario/Piezas';
@@ -66,13 +67,16 @@ export default function ObjetosHuerfanos() {
   const visibles = huerfanosDePestana(filas || [], pestana);
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Objetos huérfanos', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Objetos huérfanos' }} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos opciones={PESTANAS_HUERFANOS.map((t) => ({ id: t.key, label: t.label }))} activa={pestana} onCambiar={setPestana} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ marginHorizontal: 16 }}>
           <Aviso texto="Candidatos a código muerto (componentes, funciones o procesos sin quien los use). No se detectan solos: cada fila se agrega cuando se confirma un caso real; aquí sólo se marca su estado." />
         </View>
-        <Segmentos opciones={PESTANAS_HUERFANOS.map((t) => ({ id: t.key, label: t.label }))} activa={pestana} onCambiar={setPestana} />
         {filas && !visibles.length ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24 }}>Sin objetos para este filtro.</Text> : null}
         {visibles.map((f) => (
           <Pressable key={f.id} onPress={() => elegir(f)} disabled={!puedeEditar} style={{ marginHorizontal: 16 }}

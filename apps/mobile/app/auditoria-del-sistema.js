@@ -29,6 +29,7 @@ import { fechaHora12, hora12ConSegundos } from '@nucleo/utils/hora';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Dato, Seccion } from '../componentes/formulario/Piezas';
@@ -145,7 +146,6 @@ export default function AuditoriaDelSistema() {
   const cabecera = (
     <View style={{ gap: 10, paddingBottom: 2 }}>
       <FiltrosActivos grupos={grupos} />
-      <Segmentos activa={periodo} onCambiar={setPeriodo} opciones={[{ id: 'hoy', label: 'Hoy' }, { id: 'semana', label: '7 días' }, { id: 'rango', label: 'Fechas' }, { id: 'todo', label: 'Todo' }]} />
       {periodo === 'rango' ? (
         <View style={{ marginHorizontal: 16 }}>
           <Vidrio radio={20}>
@@ -173,13 +173,17 @@ export default function AuditoriaDelSistema() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Auditoría', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Auditoría',
         headerSearchBarOptions: {
           placeholder: 'Persona, acción, sala o equipo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'square.and.arrow.up', etiqueta: 'Exportar', onPress: exportar }} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={periodo} onCambiar={setPeriodo} opciones={[{ id: 'hoy', label: 'Hoy' }, { id: 'semana', label: '7 días' }, { id: 'rango', label: 'Fechas' }, { id: 'todo', label: 'Todo' }]} />
+      </FijoArriba>
       <ListaPaginada
         porPagina={POR_PAGINA}
         dependencias={[accion, desde, hasta, texto, orden, tic]}

@@ -32,6 +32,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
@@ -146,18 +147,21 @@ export default function CajaMovimientos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Movimientos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Movimientos',
         headerSearchBarOptions: {
           placeholder: 'Concepto, cliente, monto o quién', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={tipo} onCambiar={setTipo}
+          opciones={[{ id: 'TODOS', label: 'Todos' }, { id: 'ENTRADA', label: 'Entradas' }, { id: 'SALIDA', label: 'Salidas' }]} />
+      </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={tipo} onCambiar={setTipo}
-          opciones={[{ id: 'TODOS', label: 'Todos' }, { id: 'ENTRADA', label: 'Entradas' }, { id: 'SALIDA', label: 'Salidas' }]} />
         <FiltrosActivos grupos={grupos} />
         {periodo === 'rango' ? <RangoDeFechas desde={libre.desde} hasta={libre.hasta} onCambiar={setLibre} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>

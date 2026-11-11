@@ -23,6 +23,7 @@ import {
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -170,19 +171,22 @@ export default function Sesiones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Conexiones', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Conexiones',
         headerSearchBarOptions: {
           placeholder: 'Persona, cuenta o cargo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
         <Segmentos activa={filtro} onCambiar={setFiltro} opciones={[
           { id: 'todas', label: 'Todas' }, { id: 'hoy', label: 'Hoy' }, { id: 'olvidadas', label: 'Olvidadas' },
           ...(bloqueadas ? [{ id: 'bloqueadas', label: 'Bloqueadas' }] : []),
         ]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${personas.length} persona${personas.length === 1 ? '' : 's'} · ${vivas} conexi${vivas === 1 ? 'ón abierta' : 'ones abiertas'}`}</Text> : null}
         {filas == null ? <Cargando /> : visibles.map((p) => {

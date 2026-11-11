@@ -31,6 +31,7 @@ import { ESTADO_ENCUESTA, indicesInvertidos, OPCIONES_POR_DEFECTO, nivelDePuntaj
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -210,11 +211,14 @@ export default function EncuestaAdmin() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Encuestas', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Encuestas' }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nueva encuesta', onPress: () => { guardarEncuestaInterna(null); router.push({ pathname: '/encuesta-interna/editar', params: { id: 'nueva' } }); } } : null} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'activa', label: 'Activas' }, { id: 'cerrada', label: 'Cerradas' }, { id: 'borrador', label: 'Borrador' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'activa', label: 'Activas' }, { id: 'cerrada', label: 'Cerradas' }, { id: 'borrador', label: 'Borrador' }]} />
         {encuestas == null ? <Cargando /> : visibles.map((e) => {
           const abiertaEsta = abierta === e.id;
           return (

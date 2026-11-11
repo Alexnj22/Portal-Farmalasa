@@ -146,6 +146,14 @@ export default function Tratamientos() {
         <Vacio titulo="Aún no hay recordatorios" icono="pills.fill" respaldo="✚">Cuando compres un medicamento con regularidad, aparecerá aquí. Si tomas uno que no aparece, agrégalo.</Vacio>
       ) : null}
       <View style={{ flexDirection: 'row' }}><Boton texto="Agregar un medicamento que tomo" sf="plus" alTocar={() => setAgregando(true)} /></View>
+      {/* «Que salga agregar a alguien de la familia» (2026-11-11): antes sólo se
+          llegaba a Mi familia desde Cuenta, y sin nadie agregado aquí no había
+          rastro de que se pudiera. */}
+      {d.familia_abierta ? (
+        <View style={{ flexDirection: 'row' }}>
+          <Boton texto={d.familiares?.length ? 'Mi familia: agregar o quitar' : 'Agregar a alguien de tu familia'} sf="person.3.fill" alTocar={() => navegar('/familia')} />
+        </View>
+      ) : null}
       {activos.map((t) => <Fila key={t.id} t={t} familiares={d.familiares} alAsignar={asignar} alVer={() => (TOMAS ? setTomas(t) : navegar(`/producto/${t.product_id}`))} alVolver={() => volverAPedir(t)}
         volviendo={ocupado && volviendo === t.id} alApagar={() => yaNo(t)} alRecordar={() => setTomas(t)}
         alPreguntar={() => navegar(`/chat?producto=${t.product_id}`)} alQuitarDeLaLista={t.origen === 'cliente' ? () => quitarDeLaLista(t) : undefined} />)}
@@ -199,7 +207,7 @@ function Fila({ t, familiares = [], alAsignar, apagado, alVer, alVolver, volvien
           accessibilityRole={alVer ? 'button' : undefined} accessibilityHint={alVer ? (TOMAS ? 'Abre el recordatorio de tomas' : 'Abre el producto') : undefined} style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombrePropio(t.nombre)}</Text>
           <Text style={{ fontSize: 13, color: colorSistema.texto2 }}>
-            {apagado ? t.motivo : t.origen === 'cliente' ? `Agregado por ti · última compra ${fecha(t.ultima)}` : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
+            {apagado ? t.motivo : t.origen === 'cliente' ? (t.veces === 0 ? `Agregado por ti · desde ${fecha(t.ultima)}` : `Agregado por ti · última compra ${fecha(t.ultima)}`) : `Cada ${t.intervalo} días · última compra ${fecha(t.ultima)}`}
           </Text>
           {!apagado && cuando ? <Text style={{ fontSize: 13, fontWeight: '700', color: urgente ? tema.color.magentaTexto : colorSistema.texto2 }}>{cuando}</Text> : null}
         </Presionable>

@@ -23,6 +23,7 @@ import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -220,11 +221,11 @@ export default function CargarCompra() {
     : [{ id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'pendientes', onCambiar: setEstado, opciones: ESTADOS }];
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cargar compra', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cargar compra',
         headerSearchBarOptions: { placeholder: tab === 'facturas' ? 'Proveedor o número' : 'Proveedor, producto o código', onChangeText: (e) => setBusca(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba><Segmentos activa={tab} onCambiar={setTab} opciones={[{ id: 'facturas', label: 'Facturas' }, { id: 'confirmar', label: 'Por confirmar' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 48, gap: 12 }} keyboardShouldPersistTaps="handled">
-        <Segmentos activa={tab} onCambiar={setTab} opciones={[{ id: 'facturas', label: 'Facturas' }, { id: 'confirmar', label: 'Por confirmar' }]} />
         <FiltrosActivos grupos={grupos} />
         {tab === 'facturas' ? <Facturas busca={busca} dias={dias} /> : <PorConfirmar busca={busca} estado={estado} puedeEditar={puedeEditar} />}
       </ScrollView>

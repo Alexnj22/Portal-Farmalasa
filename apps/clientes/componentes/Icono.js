@@ -16,6 +16,8 @@ if (Platform.OS === 'ios' || Platform.OS === 'android') {
 }
 
 const MATERIAL = {
+  // Mi familia (2026-11-11): en Android la fila de Cuenta salía sin ícono.
+  'person.3.fill': 'family_restroom',
   // Ruido blanco (2026-11-10).
   'moon.stars.fill': 'bedtime',
   'fan.fill': 'mode_fan',

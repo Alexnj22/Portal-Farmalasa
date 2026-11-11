@@ -188,6 +188,7 @@ export default function AnotarDiseno() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined} keyboardVerticalOffset={90}>
         <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ paddingVertical: 8, paddingBottom: 40, gap: 12 }}
           scrollEnabled={!dibujando}>
+          {/* seccion-en-linea: herramienta de dibujo, no cambia de vista */}
           <Segmentos opciones={HERRAMIENTAS} activa={herramienta} onCambiar={(v) => { setHerramienta(v); setBorrador(null); }} />
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{AYUDA[herramienta]}</Text>
 

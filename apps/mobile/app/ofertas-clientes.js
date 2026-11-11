@@ -25,6 +25,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -144,17 +145,17 @@ export default function OfertasClientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Ofertas para clientes', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Ofertas para clientes',
         headerSearchBarOptions: {
           placeholder: pestana === 'preregistros' ? 'Nombre o documento' : pestana === 'historias' ? 'Buscar historia' : pestana === 'banners' ? 'Buscar banner' : 'Buscar oferta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={nuevo} />
+      <FijoArriba><Segmentos activa={pestana} onCambiar={cambiarPestana} opciones={pestanas} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={pestana} onCambiar={cambiarPestana} opciones={pestanas} />
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
 

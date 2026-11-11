@@ -26,6 +26,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import PasoDeMes from '../componentes/PasoDeMes';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -79,19 +80,19 @@ export default function LibroComprasCompleto() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Libro de compras', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Libro de compras',
         headerSearchBarOptions: {
           placeholder: 'Proveedor, NIT o documento', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
+      <FijoArriba><Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'sin_compra', label: 'Sin registrar' }, { id: 'declarable', label: 'Declarable' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
         <PasoDeMes mes={mes} onCambiar={setMes} />
-        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'sin_compra', label: 'Sin registrar' }, { id: 'declarable', label: 'Declarable' }]} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {filas && !esDecl ? (
           <>

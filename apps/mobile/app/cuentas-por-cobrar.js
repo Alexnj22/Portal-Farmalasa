@@ -31,6 +31,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
@@ -192,18 +193,20 @@ export default function CuentasPorCobrar() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cuentas por cobrar', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Cuentas por cobrar',
         headerSearchBarOptions: {
           placeholder: 'Cliente, documento o monto', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
+      <FijoArriba>
+        <Segmentos activa={ver} onCambiar={setVer}
+          opciones={VER_CARTERA.map((v) => ({ id: v.value, label: v.value === 'DEBEN' ? 'Saldo' : v.label }))} />
+      </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={ver} onCambiar={setVer}
-          opciones={VER_CARTERA.map((v) => ({ id: v.value, label: v.value === 'DEBEN' ? 'Saldo' : v.label }))} />
         <FiltrosActivos grupos={grupos} />
         {creditos ? (
           <FilaDeKpis>

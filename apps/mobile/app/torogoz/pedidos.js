@@ -21,6 +21,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Vidrio from '../../componentes/Vidrio';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import { Esqueleto } from '../../componentes/inicio/Widget';
@@ -107,16 +108,16 @@ export default function TorogozPedidos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Pedidos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Pedidos',
         headerSearchBarOptions: {
           placeholder: 'Cliente o número', hideWhenScrolling: false,
           onChangeText: (e) => { setTexto(e.nativeEvent.text); setCuantos(POR_PAGINA); }, onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeVender ? { icono: 'plus', etiqueta: 'Nueva venta', onPress: () => router.push('/torogoz/venta') } : null} />
+      <FijoArriba><Segmentos opciones={OPCIONES} activa={vista} onCambiar={(x) => { setCuantos(POR_PAGINA); router.setParams({ vista: x }); }} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos opciones={OPCIONES} activa={vista} onCambiar={(x) => { setCuantos(POR_PAGINA); router.setParams({ vista: x }); }} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FilaDeKpis>

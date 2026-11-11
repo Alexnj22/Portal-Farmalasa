@@ -28,6 +28,7 @@ import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import Tocable from '../componentes/Tocable';
 import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
@@ -158,9 +159,17 @@ export default function Mayoristas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clientes Mayoristas', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clientes Mayoristas',
         headerSearchBarOptions: { placeholder: 'Nombre o documento', onChangeText: (e) => setBusqueda(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba>
+        <Segmentos activa={tab} onCambiar={setTab} opciones={[
+          { id: 'solicitudes', label: 'Solicitudes' },
+          { id: 'candidatos', label: 'Candidatos' },
+          { id: 'mayoristas', label: 'Mayoristas' },
+          { id: 'historial', label: 'Historial' },
+        ]} />
+      </FijoArriba>
       <FlatList key={`c${columnas}`} numColumns={columnas} columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
         data={cargando ? [] : visibles}
         keyExtractor={(x) => String(tab === 'historial' ? x.id : x.customer_id)}
@@ -173,12 +182,6 @@ export default function Mayoristas() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12 }}>
-            <Segmentos activa={tab} onCambiar={setTab} opciones={[
-              { id: 'solicitudes', label: 'Solicitudes' },
-              { id: 'candidatos', label: 'Candidatos' },
-              { id: 'mayoristas', label: 'Mayoristas' },
-              { id: 'historial', label: 'Historial' },
-            ]} />
             <FiltrosActivos grupos={grupos} />
             {tab === 'candidatos' ? (
               <View style={{ marginHorizontal: 16 }}>

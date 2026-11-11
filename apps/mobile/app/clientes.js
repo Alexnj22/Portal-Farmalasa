@@ -23,6 +23,7 @@ import { descartarClientePorRevisar, fetchClientesPorRevisar, fetchCustomersPage
 import { DEPARTAMENTOS, municipiosDe } from '@nucleo/data/elSalvadorGeo';
 import { motivoPorRevisar, ORDEN_CLIENTES } from '@nucleo/utils/clientesPorRevisar';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { fallo } from '../componentes/Progreso';
 import { anotar } from '@nucleo/data/audit';
@@ -228,19 +229,21 @@ export default function Clientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Clientes', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Clientes',
         headerSearchBarOptions: {
           placeholder: 'Nombre, DUI, NIT, NRC, teléfono…', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={pestana === 'lista' ? grupos : []} />
+      {veClientes ? (
+        <FijoArriba>
+          <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'lista', label: 'Clientes' }, { id: 'revisar', label: 'Por revisar' }]} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={recargar} />}>
-        {veClientes ? (
-          <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'lista', label: 'Clientes' }, { id: 'revisar', label: 'Por revisar' }]} />
-        ) : null}
         <FiltrosActivos grupos={pestana === 'lista' ? grupos : []} />
         {pestana === 'revisar' ? <PorRevisar /> : null}
         {pestana === 'lista' && stats && !busqueda ? (

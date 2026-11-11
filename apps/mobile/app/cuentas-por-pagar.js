@@ -23,6 +23,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -86,20 +87,22 @@ export default function CuentasPorPagar() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cuentas por pagar', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Cuentas por pagar',
         headerSearchBarOptions: {
           placeholder: 'Proveedor o referencia', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+      <FijoArriba>
         <Segmentos activa={tab} onCambiar={setTab} opciones={[
           { id: 'proveedores', label: 'Por proveedor' },
           { id: 'pagos', label: 'Pagos' },
         ]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {filas ? (
           <>

@@ -53,6 +53,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
@@ -323,12 +324,10 @@ export default function Bolsas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Bolsas',
         headerSearchBarOptions: { placeholder: 'Folio, caja, sala o persona', hideWhenScrolling: false, onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar('') } }} />
       <MenuDeFiltros grupos={grupos} extra={puedeEntregar || verMontos ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
-      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+      <FijoArriba>
         <Segmentos activa={etapa} onCambiar={(e) => { setEtapa(e); setElegidas(new Set()); }} opciones={[
           { id: 'sala', label: 'Sala' },
           { id: 'camino', label: 'Recibir' },
@@ -336,6 +335,10 @@ export default function Bolsas() {
           { id: 'contadas', label: 'Contadas' },
           { id: 'diferencias', label: 'Cuadre' },
         ]} />
+      </FijoArriba>
+      <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic" automaticallyAdjustKeyboardInsets keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {bolsas ? (
           <FilaDeKpis>

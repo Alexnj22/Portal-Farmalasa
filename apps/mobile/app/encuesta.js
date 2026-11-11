@@ -24,6 +24,7 @@ import {
 } from '@nucleo/utils/climaLaboral';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -236,17 +237,22 @@ export default function Encuesta() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clima organizacional', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clima organizacional' }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {datos ? (
+        <FijoArriba>
+          <Segmentos activa={vista} onCambiar={setVista} opciones={[
+            { id: 'resumen', label: 'Resumen' }, { id: 'bloques', label: 'Bloques' }, { id: 'segmentos', label: 'Segmentos' },
+            { id: 'personas', label: 'Individuos' }, { id: 'comentarios', label: 'Comentarios' },
+          ]} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {encuestas && !encuestas.length ? <Vacio>Todavía no hay encuestas</Vacio> : null}
         {encuestaId && !datos ? <Cargando /> : null}
         {datos ? (
           <>
-            <Segmentos activa={vista} onCambiar={setVista} opciones={[
-              { id: 'resumen', label: 'Resumen' }, { id: 'bloques', label: 'Bloques' }, { id: 'segmentos', label: 'Segmentos' },
-              { id: 'personas', label: 'Individuos' }, { id: 'comentarios', label: 'Comentarios' },
-            ]} />
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={20} tinte={nivel ? `${colorDeVariante(nivel.severidad)}22` : undefined}>

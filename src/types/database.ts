@@ -32068,6 +32068,10 @@ export type Database = {
         }
         Returns: Json
       }
+      app_tratamiento_buscar: {
+        Args: { p_customer: number; p_q: string }
+        Returns: Json
+      }
       app_tratamiento_cambiar: {
         Args: {
           p_activo: boolean

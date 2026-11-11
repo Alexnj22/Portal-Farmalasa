@@ -37,6 +37,7 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Fecha from '../componentes/formulario/Fecha';
 import Quincena from '../componentes/personas/Quincena';
 import CorregirMarcas from '../componentes/personas/CorregirMarcas';
@@ -126,18 +127,20 @@ export default function AuditoriaDeTiempos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Auditoría de tiempos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Auditoría de tiempos',
         headerSearchBarOptions: {
           placeholder: 'Nombre, código o cargo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
+      <FijoArriba>
+        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'dia', label: 'Día' }, { id: 'quincena', label: 'Quincena' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargarAsistencia?.(35); setRecargando(false); }} />}>
         {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}
-        <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'dia', label: 'Día' }, { id: 'quincena', label: 'Quincena' }]} />
         {vista === 'quincena' ? <Quincena empleados={personas} sucursales={sucursales} puedeEditar={puedeEditar} puedeDescargar={puedeDescargar} usuario={user}
           salaNombre={sala === 'ALL' ? null : (sucursales || []).find((b) => String(b.id) === sala)?.name} /> : (
         <>

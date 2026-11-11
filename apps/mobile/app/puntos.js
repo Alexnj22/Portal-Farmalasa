@@ -43,6 +43,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import PorAsignar from '../componentes/puntos/PorAsignar';
 import Traspasos from '../componentes/puntos/Traspasos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -271,17 +272,17 @@ export default function Puntos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Puntos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Puntos',
         headerSearchBarOptions: pestana === 'consulta' || pestana === 'por_asignar' || pestana === 'premios' ? {
           placeholder: pestana === 'premios' ? 'Código del premio, cliente o DUI' : 'Nombre, DUI o teléfono', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         } : undefined,
       }} />
       <MenuDeFiltros grupos={grupos} />
+      {pestanas.length > 1 ? <FijoArriba><Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /></FijoArriba> : null}
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
-        {pestanas.length > 1 ? <Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /> : null}
         <FiltrosActivos grupos={grupos} />
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a Puntos." /></View>
           : pestana === 'resumen' ? <Resumen key={llave} onIrA={(p) => { if (pestanas.some((x) => x.id === p)) setPestana(p); }} />

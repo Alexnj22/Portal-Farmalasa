@@ -21,6 +21,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -71,16 +72,16 @@ export default function ComprasTorogoz() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Compras', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Compras',
         headerSearchBarOptions: { placeholder: 'Proveedor o número', hideWhenScrolling: false,
           onChangeText: (e) => { setCuantos(POR_PAGINA); setBuscar(e.nativeEvent.text); }, onCancelButtonPress: () => setBuscar('') },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeConfigurar && emisor ? { icono: 'plus', etiqueta: 'Nueva compra', onPress: () => router.push({ pathname: '/torogoz/compra/[id]', params: { id: 'nueva' } }) } : null} />
+      <FijoArriba><Segmentos activa={vista} onCambiar={(v) => { setCuantos(POR_PAGINA); setVista(v); }}
+          opciones={VISTAS_COMPRAS.map((v) => ({ id: v.key, label: v.label }))} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={vista} onCambiar={(v) => { setCuantos(POR_PAGINA); setVista(v); }}
-          opciones={VISTAS_COMPRAS.map((v) => ({ id: v.key, label: v.label }))} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
         <FilaDeKpis>

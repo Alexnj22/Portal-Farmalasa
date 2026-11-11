@@ -36,6 +36,7 @@ import { correrMes, fechaNumerica, fechaTexto, hoySV, mesSV, rangoDelMes, sumarD
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -399,17 +400,17 @@ export default function Inyecciones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Inyecciones', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Inyecciones',
         headerSearchBarOptions: {
           ref: barraRef, placeholder: 'Cliente, vendedor, factura o inyección', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      {pestanas.length > 1 ? <FijoArriba><Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /></FijoArriba> : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
-        {pestanas.length > 1 ? <Segmentos activa={pestana} onCambiar={setPestana} opciones={pestanas} /> : null}
         <FiltrosActivos grupos={grupos} />
         {!pestana ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto="Tu cargo no tiene acceso a las inyecciones." /></View>
           : pestana === 'por-cobrar'

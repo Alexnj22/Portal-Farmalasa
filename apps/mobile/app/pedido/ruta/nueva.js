@@ -32,6 +32,7 @@ import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion, Cargando } from '../../../componentes/formulario/Piezas';
 import Segmentos from '../../../componentes/Segmentos';
+import FijoArriba from '../../../componentes/FijoArriba';
 import Vidrio from '../../../componentes/Vidrio';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
@@ -208,10 +209,12 @@ export default function NuevaRuta() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Armar ruta', headerLargeTitle: false }} />
-      <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48, gap: 14 }}>
-        {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
+      <FijoArriba>
         <Segmentos activa={paso} onCambiar={(v) => { if (v === '1' || paradas.length) setPaso(v); }}
           opciones={[{ id: '1', label: 'Pedidos' }, { id: '2', label: 'Paradas' }]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48, gap: 14 }}>
+        {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {disponibles == null ? <Cargando /> : paso === '1' ? (
           <View style={{ marginHorizontal: 16, gap: 12 }}>
             {!disponibles.length ? <Aviso texto="No hay salas finalizadas esperando salir." /> : (

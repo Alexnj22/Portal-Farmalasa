@@ -812,6 +812,7 @@ Por qué existe cada uno: `docs/reglas/gates.md` y el encabezado de su script.
 | `gate:movil` | elementos con variante móvil canónica escritos a mano | si toca `src/views` o `src/components` | no | DESIGN.md §32 |
 | `gate:rutas` | direcciones en español, título de pestaña, ningún ítem del menú al 404 | si toca `App.jsx` o `moduleMap.js` | no | DESIGN.md §33 |
 | `gate:app-nativa` | todo módulo tiene pantalla nativa o excepción | si toca `moduleMap.js`, `App.jsx` o `apps/mobile/pantallas.js` | no | `scripts/app-nativa-gate.mjs` |
+| `gate:app-secciones` | en la app del personal, las secciones de una pantalla (`Segmentos`) van fijas arriba en `FijoArriba`, no dentro de la lista | si toca `apps/mobile/app` o `componentes` | no | `apps/mobile/componentes/FijoArriba.js` |
 | `gate:tokens` | `tokens.json` igual a lo que dice `index.css`; ningún token a una variable inexistente | si toca `index.css` o `tokens.json` | no | — |
 | `gate:pdf` | el PDF del Corte Z ocupa una hoja por sucursal | si toca `src/utils/corteZPrint.js` | no | — |
 | (vitest `anexoColumnas`) | la forma de los anexos de Hacienda | si toca lo que los produce | no | `docs/ANEXOS-HACIENDA-2026-08-11.md` |

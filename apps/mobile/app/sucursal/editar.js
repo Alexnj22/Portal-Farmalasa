@@ -35,6 +35,7 @@ import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario
 import Fecha from '../../componentes/formulario/Fecha';
 import Hora from '../../componentes/personas/Hora';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
@@ -171,9 +172,13 @@ export default function EditarSucursal() {
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: esNueva ? 'Nueva sucursal' : branch.name, headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
+        {!esNueva ? (
+          <FijoArriba>
+            <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES} margen={0} />
+          </FijoArriba>
+        ) : null}
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
-          {esNueva ? null : <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES} margen={0} />}
 
           {seccion === 'general' ? (
             <>

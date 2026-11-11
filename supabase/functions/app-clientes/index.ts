@@ -1779,7 +1779,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
       return json({ ok: true, sucursales: conSucursal(lista) });
     }
 
-    if (["familia_lista", "familia_agregar", "familia_quitar", "tratamiento_asignar", "avisame_ver", "avisame", "solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
+    if (["familia_lista", "familia_agregar", "familia_quitar", "tratamiento_asignar", "avisame_ver", "avisame", "solicitar_mayorista", "mis_tratamientos", "tratamiento_cambiar", "tratamiento_dosis", "tratamiento_candidatos", "tratamiento_buscar", "tratamiento_agregar", "tratamiento_quitar", "mis_encuestas", "responder_encuesta", "mis_facturas", "factura_documento", "mis_reservas", "reservar", "cancelar_reserva", "prorrogar_reserva", "prorrogar_encargo", "pedir_prorroga", "pagar_reserva", "reservar_carrito", "encargar", "mis_encargos", "pagar_encargo", "cancelar_encargo", "receta_subir_url", "receta_confirmar", "quitar_receta"].includes(accion)) {
       if (!customerId) return json({ ok: false, mensaje: "Completa tu registro en una sucursal para reservar." });
     }
     // El chat y la foto de perfil (2026-10-12) cuelgan de la ficha.
@@ -3258,7 +3258,7 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
         if (eF) throw eF;
         familiares = fam ?? [];
       }
-      return json({ ok: true, tratamientos: data ?? [], familiares });
+      return json({ ok: true, tratamientos: data ?? [], familiares, familia_abierta: FAMILIA_ABIERTA });
     }
     if (accion === "tratamiento_cambiar") {
       const { error } = await admin.rpc("app_tratamiento_cambiar", {
@@ -3284,6 +3284,15 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     // medicamentos que compró en el último año; `pide` dice qué preguntarle.
     if (accion === "tratamiento_candidatos") {
       const { data, error } = await admin.rpc("app_tratamiento_candidatos", { p_customer: customerId });
+      if (error) throw error;
+      return json({ ok: true, productos: data ?? [] });
+    }
+    // Cualquier medicamento del catálogo (2026-11-11, «que me permita agregar
+    // cualquiera, no solo los que compré»): sin compra, cuenta desde hoy.
+    if (accion === "tratamiento_buscar") {
+      const q = String(body?.q ?? "").trim().slice(0, 60);
+      if (q.length < 2) return json({ ok: true, productos: [] });
+      const { data, error } = await admin.rpc("app_tratamiento_buscar", { p_customer: customerId, p_q: q });
       if (error) throw error;
       return json({ ok: true, productos: data ?? [] });
     }

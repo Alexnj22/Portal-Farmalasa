@@ -44,6 +44,7 @@ import { smartFilter } from '@nucleo/utils/searchUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Avatar from '../componentes/Avatar';
 import { MARCA } from '../componentes/inicio/marca';
@@ -308,7 +309,6 @@ export default function Solicitudes() {
       <Stack.Screen options={{
         ...BARRA_NATIVA,
         title: 'Solicitudes',
-        headerLargeTitle: true,
         headerSearchBarOptions: {
           placeholder: 'Persona, producto, factura…',
           hideWhenScrolling: true,
@@ -317,6 +317,14 @@ export default function Solicitudes() {
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={puedeCrear ? { icono: 'plus', etiqueta: 'Nueva solicitud', onPress: () => router.push('/nueva-solicitud') } : null} />
+      <FijoArriba>
+        <Segmentos activa={estado} onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setEstado(v); }} opciones={[
+          { id: 'PENDING', label: 'Pendientes' },
+          { id: 'APPROVED', label: 'Aprobadas' },
+          { id: 'REJECTED', label: 'Rechazadas' },
+          { id: 'ALL', label: 'Todas' },
+        ]} />
+      </FijoArriba>
       <SectionList
         style={{ flex: 1 }}
         sections={secciones}
@@ -328,12 +336,6 @@ export default function Solicitudes() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ paddingTop: 12, gap: 12, paddingBottom: 6 }}>
-            <Segmentos activa={estado} onCambiar={(v) => { Haptics.selectionAsync().catch(() => {}); setEstado(v); }} opciones={[
-              { id: 'PENDING', label: 'Pendientes' },
-              { id: 'APPROVED', label: 'Aprobadas' },
-              { id: 'REJECTED', label: 'Rechazadas' },
-              { id: 'ALL', label: 'Todas' },
-            ]} />
             {estado !== 'PENDING' ? <PasoDeSemana semana={semana} onCambiar={setSemana} /> : null}
             <FiltrosActivos grupos={grupos} />
             <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>

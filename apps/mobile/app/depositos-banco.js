@@ -21,6 +21,7 @@ import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { recordarDeposito } from '../componentes/caja/depositoElegido';
@@ -56,11 +57,14 @@ export default function DepositosBanco() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósitos', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósitos' }} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
+      </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />
         <View style={{ marginHorizontal: 16, gap: 10 }}>
           {lista == null ? <Cargando /> : !lista.length ? (
             <Aviso texto="Sin depósitos en estas fechas." />

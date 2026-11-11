@@ -37,6 +37,7 @@ import { Pildora } from '../../componentes/avisos/Piezas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { elegirArchivo } from '../../componentes/sucursal/elegirArchivo';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -215,11 +216,13 @@ export default function Historial() {
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: shortEmployeeName(emp), headerLargeTitle: false }} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); if (seccion === 'solicitudes') await cargarSolicitudes(); setRecargando(false); }} />}>
+      <FijoArriba>
         <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
           { id: 'historial', label: 'Historial' }, { id: 'ausencias', label: 'Ausencias' }, { id: 'solicitudes', label: 'Solicitudes' },
         ]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); if (seccion === 'solicitudes') await cargarSolicitudes(); setRecargando(false); }} />}>
         {filas == null ? <Cargando /> : null}
 
         {seccion === 'historial' && filas ? (

@@ -51,6 +51,7 @@ import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { MARCA } from '../componentes/inicio/marca';
@@ -462,7 +463,6 @@ export default function MinMaxSala() {
 
   const encabezado = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 6 }}>
-      <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'borradores', label: 'Borradores' }, { id: 'cambios', label: 'Cambios' }]} />
       <FiltrosActivos grupos={grupos} />
       {todas ? null : <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{ERP_NAMES[sala]}</Text>}
       {candado ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`Min·Máx está en mantenimiento${candado.locked_by_name ? ` (${candado.locked_by_name})` : ''}: se puede mirar, no cambiar.`} /></View> : null}
@@ -507,10 +507,11 @@ export default function MinMaxSala() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: todas ? `Min·Máx · ${ERP_NAMES[sala] ?? ''}` : 'Min·Máx de la sala', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: todas ? `Min·Máx · ${ERP_NAMES[sala] ?? ''}` : 'Min·Máx de la sala',
         headerSearchBarOptions: { placeholder: 'Producto o laboratorio', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
       <MenuDeFiltros grupos={grupos} extra={puede && filas ? { icono: 'ellipsis.circle', etiqueta: 'Acciones de la sala', onPress: ocupado ? () => {} : menuDeSala } : null} />
+      <FijoArriba><Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'todos', label: 'Todos' }, { id: 'borradores', label: 'Borradores' }, { id: 'cambios', label: 'Cambios' }]} /></FijoArriba>
       {filas == null ? <Cargando /> : (
         <FlatList data={visibles} keyExtractor={(r) => String(r.erp_product_id)} ListHeaderComponent={encabezado}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" initialNumToRender={20} windowSize={9}

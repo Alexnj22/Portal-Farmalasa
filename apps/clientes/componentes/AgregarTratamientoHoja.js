@@ -13,6 +13,11 @@
 // lib/dosis.js) y los días con «Otro» y contador; las píldoras bajan de
 // renglón con letra grande en vez de cortarse.
 //
+// 2026-11-11 (usuario: «que me permita agregar cualquiera, no solo los que
+// compré»): al escribir, además de lo comprado se busca en todo el catálogo
+// (`tratamiento_buscar`, la regla única de búsqueda). Lo que nunca compró aquí
+// se cuenta desde hoy y siempre pregunta cuántos días le dura.
+//
 // 2026-11-04: al agregar no se cierra de golpe — un último paso ofrece
 // «Recordarme tomarlo» (lo siguiente que casi todos hacen). Al elegirlo, la
 // hoja se cierra con el product_id y la pantalla abre la de tomas.
@@ -48,6 +53,7 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState(null);
   const [agregado, setAgregado] = useState(false);
+  const [catalogo, setCatalogo] = useState({ q: '', productos: [], cargando: false });
   const fondo = t.oscuro ? '#121016' : '#F5F4F8';
   const superficie = t.oscuro ? '#1E1B24' : '#FFFFFF';
 
@@ -57,11 +63,31 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
     return () => { vivo = false; };
   }, [pedir]);
 
+  // El catálogo entero, con una pausa al escribir para no pedir por cada letra.
+  useEffect(() => {
+    const q = busca.trim();
+    if (q.length < 2) { setCatalogo({ q: '', productos: [], cargando: false }); return undefined; }
+    let vivo = true;
+    setCatalogo((c) => ({ ...c, cargando: true }));
+    const id = setTimeout(() => {
+      pedir('tratamiento_buscar', { q }).then((r) => {
+        if (vivo) setCatalogo({ q, productos: r?.ok && Array.isArray(r.productos) ? r.productos : [], cargando: false });
+      });
+    }, 350);
+    return () => { vivo = false; clearTimeout(id); };
+  }, [busca, pedir]);
+
   const visibles = useMemo(() => {
     if (!Array.isArray(lista)) return [];
     const q = sinTildes(busca.trim());
     return q ? lista.filter((p) => sinTildes(p.nombre).includes(q)) : lista;
   }, [lista, busca]);
+
+  // Del catálogo, lo que no salió ya entre sus compras.
+  const otros = useMemo(() => {
+    const ya = new Set(visibles.map((p) => p.product_id));
+    return catalogo.productos.filter((p) => !ya.has(p.product_id));
+  }, [catalogo.productos, visibles]);
 
   const agregar = async () => {
     if (!elegido || guardando) return;
@@ -117,18 +143,19 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
         ) : !elegido ? (
           <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 4, paddingBottom: ins.bottom + 24, gap: 12 }} keyboardShouldPersistTaps="handled">
             <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto2 }}>
-              Elige un medicamento que tomas y no aparece en tu lista. Te avisamos antes de que se te acabe, contando desde tu última compra.
+              Busca el medicamento que tomas, lo hayas comprado aquí o no. Te avisamos antes de que se te acabe.
             </Text>
-            <TextInput value={busca} onChangeText={setBusca} placeholder="Buscar en lo que has comprado" placeholderTextColor={colorSistema.texto3}
+            <TextInput value={busca} onChangeText={setBusca} placeholder="Buscar medicamento" placeholderTextColor={colorSistema.texto3}
               autoCorrect={false} clearButtonMode="while-editing" accessibilityLabel="Buscar medicamento"
               style={{ minHeight: 44, borderRadius: RADIO.medio, paddingHorizontal: 14, fontSize: 16, color: colorSistema.texto, backgroundColor: superficie }} />
             {lista == null ? <ActivityIndicator style={{ marginTop: 24 }} /> : null}
             {lista?.error ? <Text style={{ fontSize: 14, color: t.color.peligroTexto }}>{lista.error}</Text> : null}
-            {Array.isArray(lista) && !visibles.length ? (
+            {Array.isArray(lista) && !visibles.length && !otros.length && !catalogo.cargando ? (
               <Text style={{ fontSize: 14, lineHeight: 20, color: colorSistema.texto3, marginTop: 12, textAlign: 'center' }}>
-                {busca.trim() ? 'No encontramos ese medicamento entre tus compras del último año.' : 'No encontramos medicamentos en tus compras del último año que no estén ya en tu lista.'}
+                {busca.trim().length >= 2 ? 'No encontramos ese medicamento.' : 'Escribe el nombre del medicamento para buscarlo.'}
               </Text>
             ) : null}
+            {visibles.length && otros.length ? <Seccion>De tus compras</Seccion> : null}
             {visibles.length ? (
               <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
                 {visibles.map((p, i) => (
@@ -147,12 +174,21 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
                 ))}
               </View>
             ) : null}
+            {otros.length ? (
+              <>
+                <Seccion>{visibles.length ? 'Otros medicamentos' : 'Medicamentos'}</Seccion>
+                <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, overflow: 'hidden' }}>
+                  {otros.map((p, i) => <FilaProducto key={p.product_id} p={p} primera={!i} alElegir={setElegido} />)}
+                </View>
+              </>
+            ) : null}
+            {catalogo.cargando ? <ActivityIndicator style={{ marginTop: 8 }} /> : null}
           </ScrollView>
         ) : (
           <ScrollView contentContainerStyle={{ padding: 18, paddingTop: 4, paddingBottom: ins.bottom + 24, gap: 16 }}>
             <View style={{ backgroundColor: superficie, borderRadius: RADIO.medio, padding: 16, gap: 4 }}>
               <Text style={{ fontSize: 17, fontWeight: '800', color: colorSistema.texto }}>{nombrePropio(elegido.nombre)}</Text>
-              <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Última compra {fecha(elegido.ultima)}</Text>
+              <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>{elegido.ultima ? `Última compra ${fecha(elegido.ultima)}` : 'Empezamos a contar desde hoy'}</Text>
             </View>
             {elegido.pide === 'dosis' ? (
               <>
@@ -169,14 +205,14 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
               </>
             ) : elegido.pide === 'dias' ? (
               <>
-                <Seccion>¿Cuántos días te dura una compra?</Seccion>
+                <Seccion>{elegido.ultima ? '¿Cuántos días te dura una compra?' : '¿Para cuántos días te alcanza lo que tienes?'}</Seccion>
                 <Caja superficie={superficie}>
                   <Contador valor={dias} texto={`${dias} ${dias === 1 ? 'día' : 'días'}`} min={1} max={365} salto={7}
                     etiquetaMenos="Un día menos" etiquetaMas="Un día más" alCambiar={setDias} />
                   <Atajos opciones={DIAS.map((d) => ({ v: d, texto: String(d), etiqueta: `${d} días` }))} valor={dias} alElegir={setDias} />
                 </Caja>
                 <Text style={{ fontSize: 12, lineHeight: 17, color: colorSistema.texto3, marginTop: -6, marginLeft: 4 }}>
-                  De este producto no podemos saber cuánto dura: dinos más o menos cada cuánto se te acaba.
+                  {elegido.ultima ? 'De este producto no podemos saber cuánto dura: dinos más o menos cada cuánto se te acaba.' : 'Contamos desde hoy y te avisamos unos días antes de que se acabe.'}
                 </Text>
               </>
             ) : (
@@ -192,5 +228,25 @@ export default function AgregarTratamientoHoja({ alCerrar }) {
         )}
       </View>
     </Modal>
+  );
+}
+
+// Una fila de la lista del catálogo: lo mismo que las de sus compras, sin la
+// fecha que no tiene.
+function FilaProducto({ p, primera, alElegir }) {
+  const t = useTema();
+  return (
+    <Presionable onPress={() => { Haptics.selectionAsync().catch(() => {}); alElegir(p); }}
+      accessibilityRole="button" accessibilityLabel={nombrePropio(p.nombre)}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 56, paddingHorizontal: 14, paddingVertical: 10,
+        borderTopWidth: primera ? 0 : 0.5, borderTopColor: colorSistema.separador ?? 'rgba(128,128,128,0.25)',
+        backgroundColor: pressed ? (t.oscuro ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.04)') : 'transparent' })}>
+      <Icono sf="pills.fill" respaldo="💊" tam={16} color={t.color.magentaTexto} />
+      <View style={{ flex: 1, gap: 2 }}>
+        <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto }}>{nombrePropio(p.nombre)}</Text>
+        {p.ultima ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>Última compra {fecha(p.ultima)}</Text> : null}
+      </View>
+      <Icono sf="chevron.right" respaldo="›" tam={13} color={colorSistema.texto3} />
+    </Presionable>
   );
 }

@@ -28,6 +28,7 @@ import { MINUTOS_DE_PAUSA } from '@nucleo/utils/turnoDelDia';
 import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
@@ -126,12 +127,14 @@ export default function Turnos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Turnos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Turnos',
         headerSearchBarOptions: { placeholder: 'Buscar turno', hideWhenScrolling: false, onChangeText: (e) => setBusca(e.nativeEvent.text), onCancelButtonPress: () => setBusca('') },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nuevo turno', onPress: abrirNuevo } : null} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
+      <FijoArriba>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'activos', label: 'Activos' }, { id: 'archivados', label: 'Archivados' }]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {pestana === 'activos' && !busca ? sugerencias.map((sg) => {
           const error = sg.type === 'error';
           const color = error ? MARCA.rojo : MARCA.violetaClaro;

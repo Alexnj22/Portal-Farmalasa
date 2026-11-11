@@ -21,6 +21,7 @@ import { DIAS_VISIBLES, fetchNotificationsPage } from '@nucleo/data/notification
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
@@ -63,12 +64,16 @@ export default function Notificaciones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Historial', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Historial',
         headerSearchBarOptions: {
           placeholder: 'Buscar en el texto del aviso', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'sin_leer', label: 'Sin leer' }]} />
+      </FijoArriba>
       <ListaPaginada
         porPagina={POR_PAGINA}
         dependencias={[estado, busca, vuelta]}
@@ -77,7 +82,6 @@ export default function Notificaciones() {
         vacio={busca.trim() ? 'Ningún aviso con ese texto' : 'Sin avisos'}
         cabecera={(
           <View style={{ gap: 12, marginBottom: 12 }}>
-            <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'sin_leer', label: 'Sin leer' }]} />
             {total != null ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${total} aviso${total === 1 ? '' : 's'} · últimos ${DIAS_VISIBLES} días`}</Text> : null}
           </View>
         )}

@@ -22,6 +22,7 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Widget, { Esqueleto, Renglon, Vacio } from '../../componentes/inicio/Widget';
 import Grafica from '../../componentes/metas/Graficas';
@@ -99,11 +100,13 @@ export default function TorogozInicio() {
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Inicio', headerLargeTitle: false }} />
       <MenuDeFiltros grupos={grupos} />
       <TrasLaTransicion>
+      <FijoArriba>
+        <Segmentos opciones={OPCIONES_PERIODO} activa={periodo} onCambiar={(v) => router.setParams({ periodo: v })} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        <Segmentos opciones={OPCIONES_PERIODO} activa={periodo} onCambiar={(v) => router.setParams({ periodo: v })} />
         <FiltrosActivos grupos={grupos} />
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
           {fechaNumerica(desde)}{desde !== hasta ? ` – ${fechaNumerica(hasta)}` : ''}{actualizado ? ` · al ${hora12(actualizado)}` : ''}

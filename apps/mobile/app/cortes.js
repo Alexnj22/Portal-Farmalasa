@@ -35,6 +35,7 @@ import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
@@ -186,17 +187,17 @@ export default function Cortes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cortes de caja', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Cortes de caja',
         headerSearchBarOptions: {
           placeholder: 'Sala, quién cortó o monto', hideWhenScrolling: true,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'banknote', etiqueta: 'Efectivo', onPress: () => router.push('/efectivo') }} />
+      <FijoArriba><Segmentos activa={estado} onCambiar={setEstado} opciones={ESTADOS} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 40 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={estado} onCambiar={setEstado} opciones={ESTADOS} />
         <FiltrosActivos grupos={grupos} />
         {periodo === 'libre' ? (
           <View style={{ marginHorizontal: 16 }}>

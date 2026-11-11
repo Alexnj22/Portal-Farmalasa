@@ -30,6 +30,7 @@ import {
   UNIDADES, claveDePrincipio, corregirConElNombre, escribirConcentracion, leerConcentracion, normalizarConcentracion, normalizarPrincipio,
 } from '@nucleo/utils/concentracion';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Ficha as FichaDeOpcion, Seccion, Cargando } from '../componentes/formulario/Piezas';
@@ -142,11 +143,14 @@ export default function FotosProductos() {
           onChangeText: (e) => buscar(e.nativeEvent.text), onCancelButtonPress: () => buscar(''),
         },
       }} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos opciones={FALTAS} activa={falta} onCambiar={(v) => { setElegido(null); setFalta(v); }} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive">
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
           {resumen ? `Faltan ${resumen.faltan_foto} fotos y ${resumen.faltan_principio} principios · hoy el equipo completó ${hoy}` : 'Cargando…'}
         </Text>
-        <Segmentos opciones={FALTAS} activa={falta} onCambiar={(v) => { setElegido(null); setFalta(v); }} />
         {resultados ? (
           <Seccion titulo={resultados.length ? 'Elige el producto' : 'Sin resultados'}>
             {resultados.map((r, i) => (

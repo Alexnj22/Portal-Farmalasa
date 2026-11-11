@@ -25,6 +25,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -154,13 +155,14 @@ export default function Laboratorios() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Laboratorios', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Laboratorios',
         headerSearchBarOptions: {
           placeholder: 'Laboratorio, vitrina o estante', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       {grupos.length && pestana === 'ubicaciones' ? <MenuDeFiltros grupos={grupos} /> : null}
+      <FijoArriba><Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'ubicaciones', label: 'Ubicaciones' }, { id: 'vencimiento', label: 'Política de vencimiento' }]} /></FijoArriba>
       <FlatList key={`c${columnas}`} numColumns={columnas} columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
         data={pestana === 'ubicaciones' && labs ? visibles : []} keyExtractor={(l) => String(l.id)}
         renderItem={({ item: l }) => <TarjetaLab l={l} d={ubic[l.id]?.[sala]} cubiertas={salasCubiertas(l.id)} totalSalas={salas.length} onAbrir={abrir} columnas={columnas} />}
@@ -169,7 +171,6 @@ export default function Laboratorios() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 10 }}>
-            <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'ubicaciones', label: 'Ubicaciones' }, { id: 'vencimiento', label: 'Política de vencimiento' }]} />
             {pestana === 'vencimiento' ? <PoliticaVencimiento texto={texto} canEdit={hasPermission('laboratorios', 'can_edit')} /> : null}
             {pestana === 'ubicaciones' ? (<>
               {grupos.length ? <FiltrosActivos grupos={grupos} /> : null}

@@ -27,6 +27,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import Tocable from '../componentes/Tocable';
 import Avatar from '../componentes/Avatar';
@@ -143,9 +144,13 @@ export default function ChatClientes() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Chat con clientes', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Chat con clientes',
         headerSearchBarOptions: { placeholder: 'Nombre, teléfono o mensaje', onChangeText: (e) => setBusqueda(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={filtro} onCambiar={setFiltro} opciones={opciones} />
+      </FijoArriba>
       <FlatList key={`c${columnas}`} numColumns={columnas} columnWrapperStyle={columnas > 1 ? { gap: 10, paddingHorizontal: 16 } : undefined}
         data={visibles} keyExtractor={(c) => String(c.id)}
         renderItem={({ item: c }) => (
@@ -160,7 +165,6 @@ export default function ChatClientes() {
         ListHeaderComponent={(
           <View style={{ gap: 8 }}>
             <Encabezado estado={estadoFarmacia} veIncumplimientos={veIncumplimientos} puedeEditar={puedeResponder} />
-            <Segmentos activa={filtro} onCambiar={setFiltro} opciones={opciones} />
             <FiltrosActivos grupos={grupos} />
             {!conversaciones && !error ? <Cargando /> : null}
           </View>

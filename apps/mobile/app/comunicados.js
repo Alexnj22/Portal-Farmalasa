@@ -33,6 +33,7 @@ import { BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 
@@ -163,13 +164,18 @@ export default function Comunicados() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Mis avisos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Mis avisos',
         headerSearchBarOptions: { placeholder: 'Buscar en los avisos', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
       {pestana === 'READ' ? <MenuDeFiltros grupos={gruposDeLeidos} /> : null}
       {/* Lista virtualizada: con «meses anteriores» abiertos son todos los
           comunicados de la persona, y un ScrollView los pinta todos de golpe. */}
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos opciones={PESTANAS}
+          activa={pestana} onCambiar={(v) => { setPestana(v); setFiltro('ALL'); }} />
+      </FijoArriba>
       <FlatList style={{ flex: 1 }} data={lista} keyExtractor={(a) => String(a.id)}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }}
         ItemSeparatorComponent={Separador}
@@ -178,8 +184,6 @@ export default function Comunicados() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
         ListHeaderComponent={(
           <View style={{ gap: 12, marginBottom: 12 }}>
-            <Segmentos opciones={PESTANAS}
-              activa={pestana} onCambiar={(v) => { setPestana(v); setFiltro('ALL'); }} />
             <FiltrosActivos grupos={gruposDeLeidos} />
             {apartados.length ? (
               <View style={{ marginHorizontal: 16 }}>

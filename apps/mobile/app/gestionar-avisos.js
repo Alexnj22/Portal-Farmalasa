@@ -26,6 +26,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../componentes/formulario/Piezas';
@@ -269,28 +270,26 @@ export default function GestionarAvisos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Gestionar avisos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Gestionar avisos',
         headerSearchBarOptions: {
           placeholder: 'Título, mensaje o destino', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Publicar un aviso', onPress: () => setNuevo(true) } : null} />
+      <FijoArriba>
+        <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
+          { id: 'ACTIVE', label: 'Activos' },
+          { id: 'SCHEDULED', label: 'Programados' },
+          { id: 'ARCHIVED', label: 'Archivados' },
+        ]} />
+      </FijoArriba>
       <FlatList style={{ flex: 1 }} data={visibles} keyExtractor={(a) => String(a.id)}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: 48 }}
         ItemSeparatorComponent={Separador}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         initialNumToRender={8} windowSize={7} removeClippedSubviews
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await Promise.resolve(recargar?.({ force: true })).catch(() => {}); setRecargando(false); }} />}
-        ListHeaderComponent={(
-          <View style={{ marginBottom: 10 }}>
-            <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
-              { id: 'ACTIVE', label: 'Activos' },
-              { id: 'SCHEDULED', label: 'Programados' },
-              { id: 'ARCHIVED', label: 'Archivados' },
-            ]} />
-          </View>
-        )}
         ListEmptyComponent={<Vacio>Sin avisos en esta sección</Vacio>}
         renderItem={({ item: a }) => {
           const urgente = a.priority === 'URGENT' && seccion !== 'SCHEDULED';

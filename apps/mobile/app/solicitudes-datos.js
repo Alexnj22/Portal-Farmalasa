@@ -25,6 +25,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -101,17 +102,19 @@ export default function SolicitudesDatos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Solicitudes de datos', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Solicitudes de datos',
         headerSearchBarOptions: {
           placeholder: 'Formulario, nombre o documento', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'plus', etiqueta: 'Nueva solicitud', onPress: nueva }} />
+      <FijoArriba>
+        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tramite', label: 'En trámite' }, { id: 'resueltas', label: 'Resueltas' }, { id: 'todas', label: 'Todas' }]} />
+      </FijoArriba>
       <ScrollView {...tramo.scroll} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'tramite', label: 'En trámite' }, { id: 'resueltas', label: 'Resueltas' }, { id: 'todas', label: 'Todas' }]} />
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {vencidas || apremian ? (

@@ -26,6 +26,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Semestral from '../componentes/metas/Semestral';
 import Gastos from '../componentes/metas/Gastos';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -204,12 +205,10 @@ export default function Metas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Metas', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Metas' }} />
       <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Agregar meta', onPress: () => router.push({ pathname: '/meta-nueva', params: { ym: pestana === 'tablero' ? ym : ymActual, sala: sala === 'todas' ? '' : sala } }) } : null} />
-      <TrasLaTransicion>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[
           { id: 'tablero', label: 'Tablero' }, { id: 'bono', label: 'Bono' },
           ...(todas ? [{ id: 'semestral', label: 'Semestral' }] : []),
@@ -217,6 +216,11 @@ export default function Metas() {
           ...(puedeEditar ? [{ id: 'gastos', label: 'Gastos' }] : []),
           { id: 'historico', label: 'Histórico' },
         ]} />
+      </FijoArriba>
+      <TrasLaTransicion>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         <FiltrosActivos grupos={grupos} />
         {pestana === 'tablero' ? (
           <Tablero key={llave} ym={ym} setYm={setYm} sala={sala === 'todas' ? null : sala} todas={todas} user={user} salaNombre={salaNombre} />

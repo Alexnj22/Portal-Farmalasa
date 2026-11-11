@@ -28,6 +28,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
 import Tocable from '../componentes/Tocable';
 import { MARCA } from '../componentes/inicio/marca';
@@ -106,7 +107,7 @@ export default function ReclamosClientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Reclamos de clientes', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Reclamos de clientes',
         headerSearchBarOptions: {
           placeholder: 'Cliente, número o tema', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
@@ -114,10 +115,13 @@ export default function ReclamosClientes() {
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeRegistrar && !alta ? { icono: 'plus', etiqueta: 'Registrar reclamo', onPress: () => { setSala(user?.branchId ?? null); setAlta(true); } } : null} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+        {/* Fijo arriba al desplazar (2026-11-11). */}
+        <FijoArriba>
+          <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'abiertos', label: 'Por responder' }, { id: 'respondidos', label: 'Respondidos' }]} />
+        </FijoArriba>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
           refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-          <Segmentos activa={pestana} onCambiar={setPestana} opciones={[{ id: 'abiertos', label: 'Por responder' }, { id: 'respondidos', label: 'Respondidos' }]} />
           {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
           {vencidos ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${vencidos === 1 ? 'Un reclamo pasó' : `${vencidos} reclamos pasaron`} de los diez días hábiles sin respuesta.`} /></View> : null}
 

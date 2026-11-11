@@ -21,6 +21,26 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1503.0 — App: las secciones de cada pantalla quedan fijas arriba (canon)
+
+Pedido del usuario: «eso de las secciones debe estar en todo, debe ser canónico». En la app del personal, el selector de secciones de una pantalla (Pendientes · Aprobadas, Planilla · Practicantes · Externos…) ya no se va con el contenido al desplazar: queda fijo debajo de la barra.
+
+- **74 pantallas migradas** a `componentes/FijoArriba`: el `Segmentos` sale de la lista (primer hijo del ScrollView, `ListHeaderComponent` o `cabecera` de ListaPaginada) y va justo antes de ella. Esas pantallas pierden el título grande de iOS, que con algo fijo encima ya no se encogería.
+- **`FijoArriba` baja lo que tapa la barra** según el área segura que da el sistema, así que sirve igual con barra transparente u opaca, con buscador o sin él.
+- **Lo que es una elección dentro de un formulario** («Efectivo · Tarjeta», la herramienta de dibujo, el origen de una inyección) se queda donde estaba.
+- **`npm run gate:app-secciones`** (pre-commit al tocar `apps/mobile/app` o `componentes`): falla si un `Segmentos` vuelve a quedar como lo primero dentro de una lista. Una elección de formulario en esa posición se declara con `// seccion-en-linea: <motivo>`.
+- `apps/mobile/AGENTS.md`: la regla, y que esta app también se actualiza por aire.
+
+Va por aire.
+
+## v2.1502.4 — App de clientes: borrar cuenta en su pantalla, tratamientos con cualquier medicamento y Mi familia
+
+- **Pestaña de la Tienda en Android**: decía «Tienda Salud» y se cortaba en la barra de Material (~72 dp por pestaña). En Android dice «Tienda»; en iPhone sigue «Tienda Salud».
+- **Mi familia sin ícono en Android**: `person.3.fill` no tenía par de Material en `componentes/Icono.js` → `family_restroom`. Barrido de todos los `sf=` de la app contra el mapa: era el único que faltaba.
+- **Borrar mi cuenta**: era una alerta con tres párrafos y tres botones (en Android los botones se desplazaban dentro de la hoja; en iPhone la letra chica casi no se leía). Ahora es la pantalla `app/borrar-cuenta.js`: qué se borra, qué se conserva y qué pasa con los puntos, con letra normal, y dos botones al final; confirmar es una alerta corta. Misma lista que la cláusula 10 del aviso de privacidad y `borrarLoPersonal`.
+- **Tratamientos con cualquier medicamento**: al buscar, además de lo comprado sale todo el catálogo de medicamentos (`tratamiento_buscar` → `app_tratamiento_buscar`, con `buscar_productos_ids`). Lo que nunca compró aquí se cuenta desde hoy y pide los días que le dura (`veces = 0`); la fila dice «desde …» en vez de «última compra». Migración `20261111162546`.
+- **Agregar a alguien de la familia desde Tratamientos**: botón a Mi familia cuando está abierta (`mis_tratamientos` devuelve `familia_abierta`).
+
 ## v2.1502.3 — App: el selector de secciones queda fijo arriba al desplazar
 
 En Inicio (General · Comercial · RRHH · Operación) y en Notificaciones, el selector de secciones ya no se va con el contenido: queda fijo debajo de la barra del logo y lo de abajo se desplaza solo. Nuevo `componentes/FijoArriba`, que lo pone fuera del ScrollView a la altura de la barra (con `stickyHeaderIndices` quedaba escondido detrás de la barra transparente de iOS). Va por aire.

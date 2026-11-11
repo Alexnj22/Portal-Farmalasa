@@ -23,6 +23,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA, PETROLEO } from '../../componentes/inicio/marca';
@@ -143,15 +144,17 @@ export default function Cobros() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cuentas por cobrar', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Cuentas por cobrar',
         headerSearchBarOptions: { placeholder: 'Cliente o ruta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba>
+        <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS_CARTERA.map((v) => ({ id: v.key, label: v.label }))} />
+      </FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
-        <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS_CARTERA.map((v) => ({ id: v.key, label: v.label }))} />
         <FiltrosActivos grupos={grupos} />
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />

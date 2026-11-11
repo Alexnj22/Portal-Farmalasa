@@ -11,6 +11,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor } from '@nucleo/data/distribucion';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { colorSistema } from '../../componentes/Formulario';
 import Lotes from '../../componentes/torogoz/bodega/Lotes';
 import Reposicion from '../../componentes/torogoz/bodega/Reposicion';
@@ -49,18 +50,20 @@ export default function Inventario() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Inventario', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Inventario',
         headerSearchBarOptions: {
           placeholder: BUSCAR[vista], hideWhenScrolling: true,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
         },
       }} />
+      <FijoArriba>
+        <Segmentos opciones={VISTAS} activa={vista} onCambiar={cambiar} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        <Segmentos opciones={VISTAS} activa={vista} onCambiar={cambiar} />
         {emisor === null && puedeVender ? (
           <View style={{ marginHorizontal: 20 }}>
             <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>

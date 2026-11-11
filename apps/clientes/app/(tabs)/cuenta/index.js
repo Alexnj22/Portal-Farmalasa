@@ -41,7 +41,6 @@ import { useCuenta } from '../../../lib/cuenta';
 import { pedirTokenDeAvisos, recordarAvisos } from '../../../lib/avisos';
 import { abrirPase, agregarAGoogleWallet, agregarDirecto, agregarPorSafari, googleWalletDisponible, marcarGoogleWalletAgregada, serieEnWallet, walletDisponible } from '../../../modules/wallet';
 import { conBiometria, nombreBiometria, rotuloBiometria, sinBloquear, useBloqueo } from '../../../lib/bloqueo';
-import { olvidarEntrada } from '../../../lib/entradaGuardada';
 import { NIVELES_PRUEBA, useModoPrueba } from '../../../lib/prueba';
 import { avanzarMuestra, reservasDeMuestra, resumenConDemo, useDemo } from '../../../lib/demo';
 import Segmentos from '../../../componentes/Segmentos';
@@ -334,25 +333,10 @@ export default function Cuenta() {
       ]);
       return;
     }
-    Alert.alert(
-      '¿Borrar tu cuenta de la app?',
-      // 2026-10-19: la lista completa, la misma de la cláusula 10 del aviso de
-      // privacidad y de `borrarLoPersonal` (app-clientes). Se mueven juntas.
-      'Se cierra la sesión en todos tus teléfonos, dejas de recibir avisos y se borran tu registro en la app, tu foto de perfil, tus conversaciones con la farmacia y el comentario con que las calificaste, los correos que guardaste para tus facturas, tu código para invitar, las novedades que viste y las fotos de recetas que no se usaron. Tu tarjeta de Apple Wallet deja de actualizarse y la de Google Wallet queda vencida. Las reservas abiertas que no pagaste se cancelan; las que pagaste siguen en pie.\n\n'
-        + 'Se conservan, porque la ley lo exige: tu ficha de cliente con tus compras y facturas, y la receta de un medicamento que ya retiraste. Tus puntos siguen ahí: si compras con tu DUI sigues acumulando, y puedes volver a entrar cuando quieras.\n\n'
-        + 'Si además quieres dejar de acumular puntos, elige «Retirar mi permiso del programa»: tu saldo queda en pausa (no vence ni se puede canjear) y dejas de recibir promociones, hasta que vuelvas a aceptarlo.',
-      [
-        { text: 'Cancelar', style: 'cancel' },
-        { text: 'Borrar cuenta', style: 'destructive', onPress: () => confirmarBorrado(false) },
-        { text: 'Borrar y retirar mi permiso del programa', style: 'destructive', onPress: () => confirmarBorrado(true) },
-      ],
-    );
-  }
-
-  async function confirmarBorrado(retirar) {
-    const r = await pedir('borrar_cuenta', { retirar_permisos: retirar === true });
-    if (r?.ok) { await olvidarEntrada(); await cerrar(); }
-    else Alert.alert('No se pudo borrar la cuenta', r?.mensaje ?? 'Revisa tu conexión e intenta de nuevo.');
+    // Lo que se borra y lo que se conserva, en su propia pantalla (2026-11-11):
+    // como alerta, los botones se desplazaban en Android y en iPhone la letra
+    // casi no se leía.
+    navegar('/borrar-cuenta');
   }
 
   return (

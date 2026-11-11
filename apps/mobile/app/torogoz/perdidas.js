@@ -19,6 +19,7 @@ import Avatar from '../../componentes/Avatar';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -82,18 +83,18 @@ export default function VentasPerdidas() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Ventas perdidas', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Ventas perdidas',
         headerSearchBarOptions: {
           placeholder: 'Producto o cliente', hideWhenScrolling: true,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
         },
       }} />
       <MenuDeFiltros grupos={[]} extra={extra} />
+      <FijoArriba><Segmentos opciones={OPCIONES} activa={vista} onCambiar={(v) => router.setParams({ estado: v })} /></FijoArriba>
       <ScrollView {...alFinal} style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        <Segmentos opciones={OPCIONES} activa={vista} onCambiar={(v) => router.setParams({ estado: v })} />
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>
           Lo que los clientes pidieron y no se les pudo vender: la lista de lo que hay que comprar.
         </Text>

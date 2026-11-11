@@ -27,6 +27,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -90,10 +91,14 @@ export default function CajaDiferencias() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Diferencias', headerLargeTitle: true,
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Diferencias',
         headerSearchBarOptions: { placeholder: 'Sala, fecha, responsable o monto', hideWhenScrolling: false,
           onChangeText: (e) => setBusqueda(e.nativeEvent.text), onCancelButtonPress: () => setBusqueda('') } }} />
       <MenuDeFiltros grupos={grupos} />
+      <FijoArriba>
+        <Segmentos activa={signo} onCambiar={(v) => { setSigno(v); setFiltro(v === 'sobra' ? 'TODOS' : 'PENDIENTES'); }}
+          opciones={[{ id: 'falta', label: 'Faltantes' }, { id: 'sobra', label: 'Sobrantes' }]} />
+      </FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
@@ -111,8 +116,6 @@ export default function CajaDiferencias() {
             </Vidrio>
           </Pressable>
         ) : null}
-        <Segmentos activa={signo} onCambiar={(v) => { setSigno(v); setFiltro(v === 'sobra' ? 'TODOS' : 'PENDIENTES'); }}
-          opciones={[{ id: 'falta', label: 'Faltantes' }, { id: 'sobra', label: 'Sobrantes' }]} />
         {!cargando || dias.length ? (
           signo === 'falta' ? (
             <FilaDeKpis>

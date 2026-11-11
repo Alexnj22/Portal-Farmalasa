@@ -40,6 +40,7 @@ import { pesoDeSucursal } from '@nucleo/utils/alertasDePersona';
 import { repartirSala } from '@nucleo/utils/mandoDeSala';
 import { smartFilter } from '@nucleo/utils/searchUtils';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { tablaDelDirectorio } from '@nucleo/utils/directorioCsv';
 import { compartirCsv } from '../componentes/fiscal/csv';
@@ -196,8 +197,6 @@ export default function Personal() {
 
   const Cabecera = (
     <View style={{ gap: 12, paddingTop: 12, paddingBottom: 4 }}>
-      <Segmentos activa={tipo} onCambiar={setTipo}
-        opciones={[{ id: 'personal', label: 'Planilla' }, { id: 'practicantes', label: 'Practicantes' }, { id: 'externos', label: 'Externos' }]} />
       <FiltrosActivos grupos={grupos} />
       {tipo === 'personal' && (vista === 'todos' || vista === 'activos') ? <FranjaDelSeguro personas={enPlanilla} /> : null}
       <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20 }}>
@@ -214,7 +213,7 @@ export default function Personal() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Personal', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Personal',
         headerSearchBarOptions: {
           placeholder: 'Nombre, cargo o sala', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
@@ -224,6 +223,11 @@ export default function Personal() {
         icono: 'plus', etiqueta: tipo === 'practicantes' ? 'Nuevo practicante' : 'Nuevo empleado',
         onPress: () => router.push(tipo === 'practicantes' ? '/empleado/practicante' : '/empleado/editar'),
       } : null} />
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
+        <Segmentos activa={tipo} onCambiar={setTipo}
+          opciones={[{ id: 'personal', label: 'Planilla' }, { id: 'practicantes', label: 'Practicantes' }, { id: 'externos', label: 'Externos' }]} />
+      </FijoArriba>
       <SectionList
         sections={secciones}
         keyExtractor={(f) => f.k}

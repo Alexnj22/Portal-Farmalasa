@@ -43,6 +43,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import Vendedores from '../componentes/ventas/Vendedores';
 import Productos, { ORDENES_DE_PRODUCTOS } from '../componentes/ventas/Productos';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
@@ -305,13 +306,14 @@ export default function Ventas() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Ventas', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Ventas',
         headerSearchBarOptions: {
           placeholder: vista === 'vendedores' ? 'Nombre del vendedor' : vista === 'productos' ? 'Producto o laboratorio' : 'Cliente, producto o número', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: privado ? 'eye' : 'eye.slash', etiqueta: privado ? 'Mostrar montos' : 'Ocultar montos', onPress: () => setPrivado((v) => !v) }} />
+      {vistas.length > 1 ? <FijoArriba><Segmentos activa={vista} onCambiar={setVista} opciones={vistas} /></FijoArriba> : null}
       <TrasLaTransicion>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
@@ -319,7 +321,6 @@ export default function Ventas() {
         <FiltrosActivos grupos={grupos} />
         {periodo === 'rango' ? <RangoDeFechas desde={rango.desde} hasta={rango.hasta} onCambiar={setRango} /> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20, textTransform: fini === ffin ? 'capitalize' : 'none' }}>{rangoTexto}</Text>
-        {vistas.length > 1 ? <Segmentos activa={vista} onCambiar={setVista} opciones={vistas} /> : null}
         {vista === 'productos' ? <Productos key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} orden={ordenProductos}
             verOcultos={verOcultos === 'si'} laboratorio={laboratorio} onLaboratorios={setLabs} privado={privado} />
           : vista === 'vendedores' ? <Vendedores key={`${fini}|${ffin}|${sala}`} fini={fini} ffin={ffin} sala={sala} busqueda={busqueda} verCifras={verCifras} privado={privado} /> : (<>

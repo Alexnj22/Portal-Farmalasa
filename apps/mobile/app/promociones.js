@@ -31,6 +31,7 @@ import {
 } from '@nucleo/utils/promocionesUtils';
 import { SALAS_VENTA } from '@nucleo/utils/metasUtils';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -171,7 +172,7 @@ export default function Promociones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Promociones', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Promociones',
         headerSearchBarOptions: {
           placeholder: pestana === 'excedentes' ? 'Persona, producto o sala' : 'Nombre, laboratorio o nota', hideWhenScrolling: false,
           onChangeText: (ev) => setTexto(ev.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
@@ -182,13 +183,16 @@ export default function Promociones() {
         ActionSheetIOS.showActionSheetWithOptions({ options: [...ops.map((o) => o[0]), 'Cancelar'], cancelButtonIndex: ops.length },
           (i) => { if (i < ops.length) ops[i][1](); });
       } } : null} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setVuelta((n) => n + 1); setRecargando(false); }} />}>
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      <FijoArriba>
         <Segmentos activa={pestana} onCambiar={setPestana} opciones={[
           { id: 'activas', label: 'Activas' }, { id: 'descuentos', label: 'Descuentos' },
           { id: 'excedentes', label: 'Excedentes' }, { id: 'pagos', label: 'Pagos' }, { id: 'historico', label: 'Histórico' },
         ]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setVuelta((n) => n + 1); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
 

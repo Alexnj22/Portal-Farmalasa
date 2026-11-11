@@ -61,6 +61,7 @@ import { diasEntre, fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -223,26 +224,29 @@ export default function Facturacion() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Facturación', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Facturación',
         headerSearchBarOptions: cola === 'saltos' ? undefined : {
           placeholder: 'Número, cliente u observación', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={canEdit && BOLSA[cola] ? { icono: 'paperplane', etiqueta: 'Solventar todas', onPress: solventarTodas } : null} />
-      <TrasLaTransicion>
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargaHija((x) => x + 1); setRecargando(false); }} />}>
-        <FiltrosActivos grupos={grupos} />
-        {colas.length > 1 ? (
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {colas.length > 1 ? (
+        <FijoArriba>
           <Segmentos activa={cola} onCambiar={setCola} opciones={colas.map((c) => ({
             id: c.id, label: (() => {
               const k = ['mh', 'obs', 'nulas'].includes(c.id) ? (datos ? n(c.id) : null) : cuentas[c.id];
               return k ? `${c.label} · ${k}` : c.label;
             })(),
           }))} />
-        ) : null}
+        </FijoArriba>
+      ) : null}
+      <TrasLaTransicion>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" {...alFinal}
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargaHija((x) => x + 1); setRecargando(false); }} />}>
+        <FiltrosActivos grupos={grupos} />
         {!colas.length ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu cargo no tiene ninguna cola de Facturación." /></View> : null}
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {ocupado === 'todas' ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Enviando a Hacienda… puede tardar un par de minutos." /></View> : null}

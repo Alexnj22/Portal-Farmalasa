@@ -34,6 +34,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
@@ -450,18 +451,18 @@ export default function GestionStock() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Gestión de stock', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Gestión de stock',
         headerSearchBarOptions: {
           placeholder: 'Producto o laboratorio', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={exportar ? { icono: 'square.and.arrow.up', etiqueta: 'Descargar', onPress: exportar } : null} />
+      <FijoArriba><Segmentos activa={pestana} onCambiar={(v) => { setExportar(null); setPestana(v); }} opciones={[{ id: 'parados', label: 'Sin venta' }, { id: 'sin_minmax', label: 'Sin Min/Max' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={() => { setRecargando(true); setLlave((k) => k + 1); setTimeout(() => setRecargando(false), 600); }} />}>
         <FiltrosActivos grupos={grupos} />
-        <Segmentos activa={pestana} onCambiar={(v) => { setExportar(null); setPestana(v); }} opciones={[{ id: 'parados', label: 'Sin venta' }, { id: 'sin_minmax', label: 'Sin Min/Max' }]} />
         {pestana === 'parados'
           ? <SinVenta key={`p${sala}-${llave}`} sala={sala} busqueda={texto.trim()} filtro={filtroParados} puedeArmar={puedeArmar}
             onExportar={alExportar} onConMinmax={alConMinmax} onRecargar={recargar} />

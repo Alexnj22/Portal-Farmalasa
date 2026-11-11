@@ -14,6 +14,7 @@ import { VISTAS_CAJA } from '@nucleo/utils/distribucionCaja';
 import { hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import Liquidacion from '../../componentes/torogoz/caja/Liquidacion';
 import CierreDelDia from '../../componentes/torogoz/caja/CierreDelDia';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
@@ -37,13 +38,17 @@ export default function CajaYLiquidacion() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Caja y liquidación', headerLargeTitle: true }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Caja y liquidación' }} />
+      {vistas.length > 1 ? (
+        <FijoArriba>
+          <Segmentos activa={vista} onCambiar={setVista} opciones={vistas.map((v) => ({ id: v.key, label: v.label }))} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 56 }}
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={refrescar} />}>
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
-        {vistas.length > 1 ? <Segmentos activa={vista} onCambiar={setVista} opciones={vistas.map((v) => ({ id: v.key, label: v.label }))} /> : null}
         {vista === 'dia' && puedeConfigurar ? (
           <CierreDelDia fecha={fecha} onFecha={setFecha} emisor={emisor} recarga={recarga}
             onVendedor={(id) => { setVendedor(String(id)); setVista('vendedor'); }} />

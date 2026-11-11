@@ -261,6 +261,7 @@ export default function AplicacionInyeccion() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 14, paddingBottom: 48 }}
           contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
+          {/* seccion-en-linea: de dónde viene la inyección: es el primer campo del formulario de cobro */}
           <Segmentos opciones={MODOS} activa={modo} onCambiar={cambiarModo} />
           <View style={{ marginHorizontal: 16, gap: 14 }}>
             {precios ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`Comprada aquí ${formatMoney(precios.COMPRADA)} · traída ${formatMoney(precios.TRAIDA)} por aplicación`}</Text> : null}

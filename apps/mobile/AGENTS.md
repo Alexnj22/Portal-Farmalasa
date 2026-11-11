@@ -81,7 +81,17 @@ node scripts/subir-ios.mjs apps/mobile interna       # compila en esta Mac con X
 node scripts/subir-android.mjs apps/mobile interna   # compila con Android Studio y sube a Google Play (pista internal)
 ```
 
-Nunca `eas build`, `eas submit` ni `eas update`. La actualización por aire
-(`npm run app:actualizar -- "Qué cambia"`) existe sólo para la app de clientes
-(`apps/clientes`); en esta app, un cambio llega a los teléfonos con un binario
-nuevo.
+Nunca `eas build`, `eas submit` ni `eas update`. Lo que no es nativo llega por
+aire, sin binario: `npm run app:actualizar -- "Qué cambia" --app=personal`
+(desde el árbol principal, con el código commiteado y en `main`). El usuario
+dio permiso para publicarlo sin preguntar. Lo nativo (un módulo, un permiso,
+el widget, `app.json`) sí exige binario: el script lo avisa por la huella.
+
+## Secciones de una pantalla: fijas arriba (canon, 2026-11-11)
+
+Un `Segmentos` que cambia lo que muestra la pantalla va FUERA de la lista, en
+`<FijoArriba>` (`componentes/FijoArriba.js`), justo antes del ScrollView /
+FlatList / ListaPaginada, y la pantalla no lleva `headerLargeTitle`. Un
+`Segmentos` que es una elección dentro de un formulario se queda donde está.
+Lo vigila `npm run gate:app-secciones` (pre-commit al tocar `app/` o
+`componentes/`).

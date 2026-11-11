@@ -15,6 +15,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { VISTAS_REPORTES } from '@nucleo/utils/distribucionReportes';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
+import FijoArriba from '../../componentes/FijoArriba';
 import { Aviso } from '../../componentes/formulario/Piezas';
 import Utilidad from '../../componentes/torogoz/bodega/reportes/Utilidad';
 import LibrosVentas from '../../componentes/torogoz/bodega/reportes/LibrosVentas';
@@ -40,7 +41,12 @@ export default function Reportes() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reportes', headerLargeTitle: true, headerSearchBarOptions: buscador }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reportes', headerSearchBarOptions: buscador }} />
+      {puede ? (
+        <FijoArriba>
+          <Segmentos opciones={VISTAS} activa={vista} onCambiar={cambiar} />
+        </FijoArriba>
+      ) : null}
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 12, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag">
         {/* «N ventas sin señal» en todo el marco de Torogoz, como `TorogozLayout` del portal. */}
         <BandaSinSenal style={{ marginHorizontal: 16 }} />
@@ -48,7 +54,6 @@ export default function Reportes() {
           <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Los reportes de la distribuidora los ve quien la administra." /></View>
         ) : (
           <>
-            <Segmentos opciones={VISTAS} activa={vista} onCambiar={cambiar} />
             {vista === 'ventas' ? <LibrosVentas buscar={buscar} />
               : vista === 'compras' ? <LibroCompras buscar={buscar} />
                 : vista === 'retenciones' ? <Retenciones />

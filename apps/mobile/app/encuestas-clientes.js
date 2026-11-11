@@ -20,6 +20,7 @@ import { canalDe, estadoDe, GRUPOS, preguntasEnOrden, resumenDeCierre } from '@n
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
+import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -65,22 +66,24 @@ export default function EncuestasClientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Encuestas a clientes', headerLargeTitle: true,
+        ...BARRA_NATIVA, title: 'Encuestas a clientes',
         headerSearchBarOptions: {
           placeholder: 'Nombre u objetivo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),
         },
       }} />
       <MenuDeFiltros grupos={grupos} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nueva encuesta', onPress: nueva } : null} />
-      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
-        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
-        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
+      <FijoArriba>
         <Segmentos activa={grupo} onCambiar={cambiarGrupo} opciones={[
           { id: 'diseno', label: 'En diseño' },
           { id: 'campo', label: 'En campo' },
           { id: 'cerradas', label: 'Cerradas' },
           { id: 'plantillas', label: 'Plantillas' },
         ]} />
+      </FijoArriba>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }}
+        contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
+        refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <FiltrosActivos grupos={grupos} />
         {encuestas ? (
           <>

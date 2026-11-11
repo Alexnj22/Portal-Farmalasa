@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1509.6 — App de clientes: el Carrito con un solo margen bajo la barra
+
+La causa de fondo, vista en la medición: las pestañas nativas de iOS le imponen el ajuste automático a la primera lista de cada pantalla (`overrideScrollViewContentInsetAdjustmentBehavior`), aunque la lista diga `never`. Ese ajuste llegaba a destiempo y se sumaba al margen propio del Carrito: en el teléfono la lista pasaba de −116 a −232 sin que nadie la tocara, y con productos la primera tarjeta quedaba a media pantalla. La pestaña Carrito ahora lleva `disableAutomaticContentInsets` (sólo en iOS: en Android la misma opción quita el margen de abajo), y el margen es uno solo, el de `Pantalla bajoBarra`.
+
 ## v2.1509.5 — App de clientes: tocar otra vez el Carrito ya no lo baja
 
 Con la medición en el tiempo: al volver a tocar la pestaña, iOS anima la lista a «menos el margen MÁS la altura de la barra», así que cada toque bajaba la tarjeta 116 puntos de más. El reposo de la lista (abrir, arrastrar y soltar) ya estaba fijo. La pestaña Carrito ahora lleva `disableScrollToTop`: el carrito es corto y no necesita volver arriba.

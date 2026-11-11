@@ -61,8 +61,15 @@ export default function Pestanas() {
           `disableScrollToTop` (2026-11-11, medido en el teléfono): volver a
           tocar la pestaña animaba la lista a «menos el margen MÁS la barra» y
           la tarjeta bajaba 116 puntos de más en cada toque. El carrito es
-          corto: no necesita volver arriba. */}
-      <NativeTabs.Trigger contentStyle={contenido} name="carrito" disableScrollToTop>
+          corto: no necesita volver arriba.
+          `disableAutomaticContentInsets` (iOS): la causa de fondo. Las
+          pestañas nativas le IMPONEN el ajuste automático a la primera lista
+          de la pantalla (`overrideScrollViewContentInsetAdjustmentBehavior`),
+          aunque la lista diga `never`; ese ajuste llegaba a destiempo y se
+          sumaba al margen del Carrito (`Pantalla bajoBarra`). Con esto el
+          margen es uno solo, el del Carrito. En Android no: ahí la misma
+          opción quita el margen de abajo. */}
+      <NativeTabs.Trigger contentStyle={contenido} name="carrito" disableScrollToTop disableAutomaticContentInsets={!ANDROID}>
         <NativeTabs.Trigger.Icon sf={{ default: 'cart', selected: 'cart.fill' }} md="shopping_cart" />
         <NativeTabs.Trigger.Label>Carrito</NativeTabs.Trigger.Label>
         {enCarrito ? <NativeTabs.Trigger.Badge>{String(enCarrito)}</NativeTabs.Trigger.Badge> : null}

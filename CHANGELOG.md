@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1502.3 — App: el selector de secciones queda fijo arriba al desplazar
+
+En Inicio (General · Comercial · RRHH · Operación) y en Notificaciones, el selector de secciones ya no se va con el contenido: queda fijo debajo de la barra del logo y lo de abajo se desplaza solo. Nuevo `componentes/FijoArriba`, que lo pone fuera del ScrollView a la altura de la barra (con `stickyHeaderIndices` quedaba escondido detrás de la barra transparente de iOS). Va por aire.
+
 ## v2.1502.2 — Libro de inyectables: documento, médico, vía, sitio y observaciones
 
 La bitácora de inyecciones ya llevaba quién cobró, quién aplicó, cuándo, el medicamento, el lote y el vencimiento. Ahora también lleva lo que faltaba para el libro de inyectables:

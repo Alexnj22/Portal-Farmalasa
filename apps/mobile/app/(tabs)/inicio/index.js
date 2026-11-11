@@ -26,6 +26,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Encabezado, { saludo } from '../../../componentes/inicio/Encabezado';
 import Segmentos from '../../../componentes/Segmentos';
+import FijoArriba from '../../../componentes/FijoArriba';
 import useDatosInicio from '../../../componentes/inicio/useDatosInicio';
 import { anotar, ordenar } from '../../../componentes/inicio/uso';
 import { Hoy, SECCIONES, WIDGET_WEB } from '../../../componentes/inicio/Secciones';
@@ -96,16 +97,20 @@ export default function Inicio() {
 
   return (
     <Recarga.Provider value={recarga}>
+    {/* El control segmentado del sistema, como en el resto de la app (las
+        píldoras sólo cuando los rótulos no caben: lo decide `Segmentos`), y
+        fijo arriba al desplazar (2026-11-11). */}
+    {pestanas.length > 1 ? (
+      <FijoArriba>
+        <Segmentos opciones={pestanas} activa={pestana} onCambiar={(p) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setPestana(p); }} />
+      </FijoArriba>
+    ) : null}
     <ScrollView style={{ flex: 1 }}
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{ paddingBottom: 24, gap: 16 }}
       refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setRecarga((n) => n + 1); await recargar(); setRecargando(false); }} />}>
       <FranjaDelPortal />
       <Encabezado sala={nombreSala} saludo={saludo(user)} />
-      {/* El control segmentado del sistema, como en el resto de la app: las
-          píldoras que se desplazan quedan sólo para cuando los rótulos no
-          caben, y eso lo decide `Segmentos` (2026-11-11). */}
-      {pestanas.length > 1 ? <Segmentos opciones={pestanas} activa={pestana} onCambiar={(p) => { LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut); setPestana(p); }} /> : null}
       {puede('dash_kpi') ? <Hoy pestana={pestana} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion('hoy', r) }} /> : null}
       {secciones.map(({ id, Componente }) => (
         <Componente key={id} datos={datos} ctx={{ ...ctx, abrir: (r) => abrirSeccion(id, r) }} />

@@ -46,6 +46,7 @@ import Deslizable from '../../../componentes/Deslizable';
 import Tocable from '../../../componentes/Tocable';
 import { MARCA } from '../../../componentes/inicio/marca';
 import Segmentos from '../../../componentes/Segmentos';
+import FijoArriba from '../../../componentes/FijoArriba';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -231,12 +232,12 @@ export default function Notificaciones() {
 
   return (
     <>
+      {/* Fijo arriba al desplazar (2026-11-11). */}
+      {opciones.length > 2 ? <FijoArriba><Segmentos opciones={opciones} activa={activa} onCambiar={setFiltro} /></FijoArriba> : null}
       <ScrollView style={{ flex: 1 }}
         contentContainerStyle={{ paddingVertical: 12, paddingBottom: aviso ? 96 : 24, gap: 8 }}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); setDetalles({}); await Promise.all([recargar(), cargarPorDecidir(auth)]); setRecargando(false); }} />}>
-
-        {opciones.length > 2 ? <Segmentos opciones={opciones} activa={activa} onCambiar={setFiltro} /> : null}
 
         <View style={{ flexDirection: 'row', justifyContent: 'center', gap: 20 }}>
           <Enlace texto="Historial" onPress={() => router.push('/notificaciones')} />

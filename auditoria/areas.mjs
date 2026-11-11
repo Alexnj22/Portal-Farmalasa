@@ -215,7 +215,7 @@ export const AREAS = [
             // de personal, el historial con su id real, la sanción y su constancia
             // en HTML, el reingreso y la recontratación, el pin del carné y el
             // carné de papel.
-            'src/utils/novedadDePersonal.js', 'src/utils/historialDeFicha.js', 'src/utils/sancion.js',
+            'src/utils/novedadDePersonal.js', 'src/utils/bajaLegal.js', 'tests/unit/bajaLegal.test.js', 'src/utils/historialDeFicha.js', 'src/utils/sancion.js',
             'src/utils/reingresoYRecontratacion.js', 'src/utils/pinDeKiosco.js', 'src/utils/carneDePapel.js',
             'src/utils/pdfmakeAHtml.js', 'src/utils/marcaDelPapel.js', 'tests/unit/novedadDePersonal.test.js',
             'src/data/nationalities.js',
@@ -235,7 +235,7 @@ export const AREAS = [
             'src/data/capturaDesdeElTelefono.js', 'src/components/common/DialogoDeCaptura.jsx',
             'src/components/forms/FormAddCustomDocument.jsx', 'src/components/forms/FormDocumentViewer.jsx',
             'src/components/forms/FormEditContact.jsx', 'src/components/forms/FormUploadOnly.jsx',
-            'src/components/forms/FormNovedad.jsx',
+            'src/components/forms/FormNovedad.jsx', 'src/components/forms/BajaLegal.jsx',
             'src/utils/documentExpiry.js', 'src/utils/fotoDocumento.js', 'src/utils/capturaDeFoto.js',
             'src/utils/expediente.js', 'src/utils/duiLeido.js',
             // El carné de dependiente pasó a ser un QR del CSSP: se guarda su

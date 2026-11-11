@@ -21,6 +21,20 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.0 — Personal: la baja pide todo lo que exige la ley y estima la liquidación
+
+La baja de un empleado ahora pide, según el motivo, lo que la ley exige y deja todo guardado en el evento:
+
+- **Para todos:** la fecha de la baja (la de la firma), el último día trabajado y el respaldo, que es obligatorio y depende del motivo (hoja de renuncia, carta de despido, acta de inasistencias).
+- **Renuncia:** la fecha de expedición de la hoja oficial y la de presentación. Frena si se presentó más de 10 días después de expedida (Art. 402 CT) y avisa si el preaviso es menor de 15 días.
+- **Despido sin responsabilidad:** una de las 20 causales del Art. 50 CT (las del Art. 84 del Reglamento Interno), la fecha de los hechos y las pruebas. La causal 1 sólo vale dentro de los primeros 30 días; la 12 exige marcar las ausencias.
+- **Abandono:** los días que faltó (2 seguidos o 3 en un mismo mes) y cómo se le intentó contactar.
+- **Despidos y abandono:** pregunta por el fuero (embarazo, postnatal, incapacidad, directiva sindical). Si lo tiene, frena (Art. 113 CT). Avisa si hay una incapacidad vigente en la fecha de baja.
+- **Liquidación estimada:** vacaciones y aguinaldo proporcionales, indemnización del Art. 58 (tope de 4 mínimos, mínimo 15 días) y prestación por renuncia (desde 2 años, tope de 2 mínimos). Lo dudoso va «a revisar» y no se suma al total. Se calcula con el salario mínimo editable y se guarda con la baja.
+- **Cierre:** finiquito, devolución de activos, aviso al ISSS y a la AFP, constancia de trabajo. Se marca después; no frena el registro.
+- El diálogo de novedades ahora dice por qué no se puede guardar; antes sólo apagaba el botón.
+- En la app, la baja se manda al portal, que es donde están estos campos.
+
 ## v2.1509.7 — App de clientes: cada producto del carrito dice si es bajo receta
 
 El carrito ya avisaba que el pedido necesita la foto de una receta, pero no decía por cuál producto. Ahora cada producto que la pide lleva la pastilla «Bajo Receta», la misma de la ficha del producto.

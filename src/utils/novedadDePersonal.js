@@ -6,6 +6,7 @@
 // `registerEmployeeEvent` / `editEmployeeEvent` del store.
 import { EVENT_TYPES } from '../data/constants';
 import { buscarCargo } from './roles';
+import { problemaDeBaja } from './bajaLegal';
 
 /** Las acciones que se ofrecen: los turnos van por Horarios y las sanciones por su propio diálogo. */
 export const opcionesDeNovedad = () => Object.keys(EVENT_TYPES)
@@ -139,7 +140,12 @@ export function validarNovedad({ formData = {}, empleado, empleados = [], roles 
     if (r.esBaja && !formData._editingEventId && estaDadoDeBaja(empleado)) {
         return { ok: false, motivo: 'Esta persona ya está dada de baja. Para que vuelva, usa Recontratar.' };
     }
-    if (r.esBaja && !formData.terminationReason) return { ok: false, motivo: null };
+    // Lo que la ley pide según el motivo (hoja de renuncia, causal, ausencias,
+    // fuero…): `problemaDeBaja` dice QUÉ falta (2026-11-11).
+    if (r.esBaja) {
+        const falta = problemaDeBaja(formData, empleado);
+        if (falta) return { ok: false, motivo: falta };
+    }
     if (r.esCodigo && !formData.newCode) return { ok: false, motivo: null };
     if (r.esCodigo && formData.hasConflict) return { ok: false, motivo: 'El código ya está en uso por otro empleado.' };
     if (!formData.note || !formData.note.trim()) return { ok: false, motivo: null };

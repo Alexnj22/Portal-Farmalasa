@@ -1,19 +1,21 @@
 import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import BajaLegal from './BajaLegal';
 import { codigoDeCarneLibre } from '@nucleo/data/employees';
 import Button from '../common/Button';
 import Checkbox from '../common/Checkbox';
 import {
     GitPullRequest, MapPin, Briefcase,
     CalendarClock, FileText, AlertTriangle, DollarSign,
-    CalendarDays, XCircle, CheckCircle2, Fingerprint, Activity, UserMinus, Info, ArrowRight, Plus, Printer, AlertCircle
+    CalendarDays, XCircle, CheckCircle2, Fingerprint, Activity, Info, ArrowRight, Plus, Printer, AlertCircle
 } from 'lucide-react';
 import LiquidSelect from '../common/LiquidSelect';
 import LiquidDatePicker from '../common/LiquidDatePicker';
 import RangeDatePicker from '../common/RangeDatePicker';
-import { EVENT_TYPES, TERMINATION_REASONS, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '@nucleo/data/constants';
+import { EVENT_TYPES, DISABILITY_TYPES, opcionesDeCatalogo, tipoDeIncapacidad } from '@nucleo/data/constants';
 import { formatDate } from '@nucleo/utils/helpers';
 import { plazaOcupada, asuetoDelDia, finPorLey, diasDelPeriodo, validarNovedad, opcionesDeNovedad, antiguedad, respaldoObligatorio } from '@nucleo/utils/novedadDePersonal';
 import { pinDeKiosco } from '@nucleo/utils/pinDeKiosco';
+import { DOCUMENTO_DE_BAJA } from '@nucleo/utils/bajaLegal';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
@@ -151,11 +153,6 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
     // porque `MATERNIDAD` no es sólo una etiqueta — es la condición de los 112
     // días del Art. 309, comparada por igualdad más abajo.
     const disabilityTypes = opcionesDeCatalogo(DISABILITY_TYPES);
-
-    // El motivo se guarda por CLAVE (`RENUNCIA`, `ABANDONO`…), no por rótulo:
-    // así el texto de pantalla se puede reescribir sin desincronizarlo de lo
-    // guardado. Antes `value === label` en la primera opción.
-    const terminationReasons = opcionesDeCatalogo(TERMINATION_REASONS);
     const labelClasses = "text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5 block";
 
     return (
@@ -351,7 +348,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                     /* SI ES RANGO O FECHA ÚNICA */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                         <div className="relative z-sidebar animate-in fade-in">
-                            <label className={labelClasses}>{isTemporalRange ? 'Primer Día de Ausencia' : 'Fecha Efectiva'}</label>
+                            <label className={labelClasses}>{isTemporalRange ? 'Primer Día de Ausencia' : isTermination ? 'Fecha de la baja (la de la firma)' : 'Fecha Efectiva'}</label>
                             <div className="h-[40px]">
                                 <LiquidDatePicker
                                     value={formData?.date || ''}
@@ -453,18 +450,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                 )}
 
                 {isTermination && (
-                    <div className="col-span-1 md:col-span-2 relative z-content animate-in fade-in bg-danger/10 p-4 border border-danger/30 rounded-3xl">
-                        <label className={rotuloCampo('text-danger')}>Motivo Legal de Baja</label>
-                        <div className="mb-3">
-                            <LiquidSelect value={formData?.terminationReason || ''} onChange={(val) => setFormData(prev => ({ ...prev, terminationReason: val }))} options={terminationReasons} placeholder="Seleccionar causa..." icon={UserMinus} menuPosition="fixed" />
-                        </div>
-                        <div data-surface="card" data-tono="danger" className="mt-2 p-3 transition-all hover:bg-surface-card-hover">
-                            <Checkbox size="sm"
-                                checked={formData?.hasFiniquito || false}
-                                onChange={(v) => setFormData(prev => ({...prev, hasFiniquito: v}))}
-                                label={<span className="text-caption font-black uppercase tracking-widest text-content-2">¿Entregó y Firmó Finiquito Laboral?</span>} />
-                        </div>
-                    </div>
+                    <BajaLegal formData={formData} setFormData={setFormData} empleado={activeEmployee} />
                 )}
 
                 {isCodeChange && (
@@ -622,7 +608,7 @@ const FormNovedad = ({ formData, setFormData, branches, activeEmployee, onValida
                         emptyState={isDisability || isTermination ? 'pending' : 'neutral'}
                         file={formData?.file}
                         onChange={f => setFormData(prev => ({ ...prev, file: f }))}
-                        hint={`Adjuntá ${isDisability ? 'la boleta médica' : isTermination ? 'la carta de renuncia, la de despido o el finiquito' : 'el respaldo'} — PDF, JPG o PNG`}
+                        hint={`Adjuntá ${isDisability ? 'la boleta médica' : isTermination ? (DOCUMENTO_DE_BAJA[formData?.terminationReason] || 'el respaldo de la baja') : 'el respaldo'} — PDF, JPG o PNG`}
                     />
                 </>
             )}

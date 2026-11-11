@@ -319,10 +319,13 @@ export default function AccionDePersonal() {
                 </Seccion>
               )}
 
-              {motivo ? <Aviso tono="freno" texto={motivo} /> : null}
+              {/* La baja pide la hoja de renuncia, la causal, las ausencias, el fuero y la
+                  liquidación (2026-11-11): eso se llena en el portal, no acá. */}
+              {r.esBaja && !eventoAEditar ? <Aviso tono="freno" texto="La baja se registra desde el portal: pide los datos legales del motivo (hoja de renuncia, causal, ausencias) y calcula la liquidación." />
+                : motivo ? <Aviso tono="freno" texto={motivo} /> : null}
               {faltaRespaldo ? <Aviso tono="cuidado" texto="Falta adjuntar el respaldo." /> : null}
               <BotonGrande texto={enviando ? 'Guardando…' : eventoAEditar ? 'Guardar los cambios' : 'Registrar la acción'}
-                color={r.esBaja ? MARCA.rojo : MARCA.azul} deshabilitado={!ok || faltaRespaldo || enviando} onPress={guardar} />
+                color={r.esBaja ? MARCA.rojo : MARCA.azul} deshabilitado={!ok || faltaRespaldo || enviando || (r.esBaja && !eventoAEditar)} onPress={guardar} />
             </>
           ) : null}
         </ScrollView>

@@ -224,6 +224,11 @@ const EXCEPCIONES = {
     'recuperarlo podría pisar un cambio POSTERIOR hecho desde otra pantalla. ' +
     'Verificado el 2026-08-24.',
 
+  'src/components/forms/BajaLegal.jsx':
+    'Mismo caso que `FormNovedad`, de la que es una sección: no tiene estado ' +
+    'propio, escribe en el `formData` de `UnifiedModal`, que guarda el borrador ' +
+    'con la clave `novedad_<id>`. Verificado el 2026-11-11.',
+
   'src/components/forms/FormNovedad.jsx':
     'Su borrador vive en el PADRE, no acá: este formulario no tiene estado ' +
     'propio —recibe `formData`/`setFormData` de `UnifiedModal`, que es quien ' +

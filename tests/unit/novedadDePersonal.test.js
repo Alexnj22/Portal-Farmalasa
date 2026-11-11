@@ -171,7 +171,7 @@ describe('tanda 2: permisos, clima, mín·máx, horarios', () => {
 });
 
 describe('baja sobre quien ya salió', () => {
-    const base = { type: 'TERMINATION', date: '2026-11-11', terminationReason: 'RENUNCIA', note: 'x' };
+    const base = { type: 'TERMINATION', date: '2026-11-11', ultimoDiaLaborado: '2026-11-11', terminationReason: 'RENUNCIA', hojaRenunciaExpedida: '2026-11-05', renunciaPresentada: '2026-11-06', note: 'x' };
     it('se frena y dice cómo seguir', () => {
         const r = validarNovedad({ formData: base, empleado: { id: 1, status: 'INACTIVO' } });
         expect(r.ok).toBe(false);

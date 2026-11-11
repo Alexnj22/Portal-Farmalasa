@@ -1241,7 +1241,14 @@ const UnifiedModal = ({ isOpen, onClose, type, formData, setFormData, handleSubm
                     return (
                         <LiquidModal.Footer>
                             <Button variant="secondary" size="lg" disabled={isSaving} onClick={onClose}>Cancelar</Button>
-                            <Button type="submit" form="unified-modal-form" size="lg"
+                            {/* POR QUÉ no se puede guardar. En una novedad el motivo
+                                puede ser legal —la hoja de renuncia vencida, la causal
+                                que falta— y sin esto el botón sólo aparecía apagado
+                                (2026-11-11). Igual que en la ficha del empleado. */}
+                            {!isFormValid && !isSaving && motivoNoGuardable && (
+                                <p className="min-w-0 flex-1 text-label font-medium text-warning-text leading-snug" role="status">{motivoNoGuardable}</p>
+                            )}
+                            <Button type="submit" form="unified-modal-form" size="lg" title={motivoNoGuardable || undefined}
                         disabled={isSaving || !isFormValid} loading={isSaving} icon={Save}>
                         {isSaving ? 'Guardando' : 'Guardar'}
                     </Button>

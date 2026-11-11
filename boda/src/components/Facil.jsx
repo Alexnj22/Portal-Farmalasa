@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFacil, cambiarFacil } from '../lib/facil';
 import { t, idioma } from '../lib/idioma';
 import { fechaLarga, limiteConfirmar } from '../lib/fechas';
@@ -32,28 +32,74 @@ function textoParaLeer(boda, inv) {
 }
 
 /** Lee la invitación en voz alta (voz del teléfono, sin descargar nada). */
+// La voz del teléfono tiene tres trampas: Chrome descarta un speak() pegado a
+// un cancel(), corta los textos largos a los ~15 s y deja de hablar si el
+// objeto de la frase se libera. Por eso se lee frase por frase, guardando cada
+// una, y se avisa si en dos segundos no empezó (en el iPhone, el interruptor
+// de silencio apaga esta voz).
+const frasesDe = (txt) => txt.match(/[^.!?]+[.!?]*/g)?.map((x) => x.trim()).filter(Boolean) || [txt];
+const vocesListas = () => new Promise((ok) => {
+  const s = window.speechSynthesis;
+  if (s.getVoices().length) { ok(s.getVoices()); return; }
+  const listo = () => { s.removeEventListener?.('voiceschanged', listo); ok(s.getVoices()); };
+  s.addEventListener?.('voiceschanged', listo);
+  setTimeout(listo, 1200);
+});
+const PREFERIDAS = { es: ['es-MX', 'es-US', 'es-419', 'es-ES', 'es'], en: ['en-US', 'en-GB', 'en'] };
+function elegirVoz(voces, lengua) {
+  for (const l of PREFERIDAS[lengua]) {
+    const v = voces.find((x) => x.lang?.replace('_', '-').toLowerCase().startsWith(l.toLowerCase()));
+    if (v) return v;
+  }
+  return null;
+}
+
 export function BotonEscuchar({ boda, inv, className = 'btn' }) {
   const [hablando, setHablando] = useState(false);
-  const puede = typeof window !== 'undefined' && 'speechSynthesis' in window;
-  useEffect(() => () => { if (puede) window.speechSynthesis.cancel(); }, [puede]);
+  const [aviso, setAviso] = useState('');
+  const turno = useRef(0);
+  const frases = useRef([]);
+  const puede = typeof window !== 'undefined' && 'speechSynthesis' in window && 'SpeechSynthesisUtterance' in window;
+  useEffect(() => () => { turno.current++; if (puede) window.speechSynthesis.cancel(); }, [puede]);
   if (!puede) return null;
-  const alternar = () => {
+
+  const parar = () => { turno.current++; window.speechSynthesis.cancel(); setHablando(false); };
+  const alternar = async () => {
+    if (hablando) { parar(); return; }
     const s = window.speechSynthesis;
-    if (hablando) { s.cancel(); setHablando(false); return; }
-    const u = new SpeechSynthesisUtterance(textoParaLeer(boda, inv));
+    const mio = ++turno.current;
+    setAviso(''); setHablando(true);
+    if (s.speaking || s.pending) { s.cancel(); await new Promise((r) => setTimeout(r, 120)); }
     const lengua = idioma() === 'en' ? 'en' : 'es';
-    u.lang = lengua === 'en' ? 'en-US' : 'es-MX';
-    const voz = s.getVoices().find((v) => v.lang?.toLowerCase().startsWith(lengua));
-    if (voz) u.voice = voz;
-    u.rate = 0.9;
-    u.onend = () => setHablando(false);
-    u.onerror = () => setHablando(false);
-    s.cancel(); s.speak(u); setHablando(true);
+    const voz = elegirVoz(await vocesListas(), lengua);
+    if (mio !== turno.current) return;
+    let empezo = false;
+    frases.current = frasesDe(textoParaLeer(boda, inv)).map((txt, i, todas) => {
+      const u = new SpeechSynthesisUtterance(txt);
+      u.lang = voz?.lang || (lengua === 'en' ? 'en-US' : 'es-MX');
+      if (voz) u.voice = voz;
+      u.rate = 0.9;
+      u.onstart = () => { empezo = true; };
+      if (i === todas.length - 1) u.onend = () => { if (mio === turno.current) setHablando(false); };
+      u.onerror = (e) => { if (mio === turno.current && e.error !== 'interrupted' && e.error !== 'canceled') { setHablando(false); setAviso(t('No se pudo leer en voz alta en este teléfono.', "This phone couldn't read it aloud.")); } };
+      return u;
+    });
+    s.resume();
+    frases.current.forEach((u) => s.speak(u));
+    setTimeout(() => {
+      if (mio === turno.current && !empezo && !s.speaking) {
+        parar();
+        setAviso(t('No se escucha nada: suba el volumen y, en el iPhone, quite el modo silencio (el botón del costado).', "Can't hear it? Turn the volume up and, on iPhone, turn off silent mode (the side switch)."));
+      }
+    }, 2500);
   };
   return (
-    <button type="button" className={className} onClick={alternar} aria-pressed={hablando}>
-      <Icono n={hablando ? 'pausa' : 'altavoz'} tam={30} />
-      <span>{hablando ? t('Detener', 'Stop') : t('Escuchar la invitación', 'Listen to the invitation')}</span>
-    </button>
+    <>
+      <button type="button" className={className} onClick={alternar} aria-pressed={hablando}>
+        <Icono n={hablando ? 'pausa' : 'altavoz'} tam={30} />
+        <span>{hablando ? t('Detener', 'Stop') : t('Escuchar la invitación', 'Listen to the invitation')}</span>
+      </button>
+      {aviso && <p className="aviso error" role="status">{aviso}</p>}
+    </>
   );
 }

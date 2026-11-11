@@ -16,8 +16,11 @@ import { AppState, Appearance, Platform } from 'react-native';
 import * as Updates from 'expo-updates';
 
 const ESPERA = 1500; // deja respirar el arranque antes de ir a la red
-const VENTANA = 12_000; // hasta cuándo se puede recargar sin molestar
-const CADA = 15 * 60 * 1000;
+// 2026-11-11: el paquete pesa ~15 MB y con datos móviles tarda más de 12 s;
+// con 12 quedaba casi siempre «pendiente» para el regreso siguiente y se leía
+// como «tuve que cerrar y abrir». 25 s todavía es «recién abrí».
+const VENTANA = 25_000; // hasta cuándo se puede recargar sin molestar
+const CADA = 5 * 60 * 1000;
 
 let instalado = false;
 let ultima = 0;

@@ -15,7 +15,7 @@
 // `carrito_existencias`); una sucursal con 1 de las 3 cajas pedidas ya no
 // cuenta como que «tiene todo». La regla es la de componentes/DondeLoHay.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Platform, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Platform, PlatformColor, Text, TextInput, View } from 'react-native';
 import Presionable from '../../../componentes/Presionable';
 import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
@@ -23,7 +23,8 @@ import { useFocusEffect } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
-import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
+import { Pantalla, RADIO, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
+import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { colorSistema } from '../../../componentes/sistema';
 import Icono from '../../../componentes/Icono';
 import FotoProducto from '../../../componentes/FotoProducto';
@@ -331,7 +332,20 @@ function Carrito() {
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];
         return (
-        <Tarjeta key={`${x.id}|${x.factor}`} estilo={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
+        // Deslizar a la izquierda quita el producto (2026-11-11), como en la
+        // lista del sistema; la X sigue para quien no desliza.
+        <ReanimatedSwipeable key={`${x.id}|${x.factor}`} friction={1.6} rightThreshold={90} overshootRight={false}
+          onSwipeableWillOpen={() => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium).catch(() => {}); }}
+          onSwipeableOpen={() => quitar(x)}
+          renderRightActions={() => (
+            <Presionable onPress={() => quitar(x)} accessibilityRole="button" accessibilityLabel={`Quitar ${x.nombre}`}
+              style={{ width: 96, marginLeft: 10, borderRadius: RADIO.tarjeta, backgroundColor: Platform.OS === 'ios' ? PlatformColor('systemRed') : '#B3261E',
+                alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+              <Icono sf="trash.fill" respaldo="✕" tam={20} color="#FFFFFF" />
+              <Text style={{ fontSize: 13, fontWeight: '700', color: '#FFFFFF' }}>Quitar</Text>
+            </Presionable>
+          )}>
+        <Tarjeta estilo={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
           <View style={{ width: 64 }}><FotoProducto id={x.id} nombre={x.nombre} foto={x.foto} alto={64} radio={14} /></View>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ fontSize: 15, fontWeight: '700', color: colorSistema.texto }}>{nombreProducto(x.nombre)}</Text>
@@ -369,6 +383,7 @@ function Carrito() {
             <Icono sf="xmark.circle.fill" respaldo="✕" tam={20} color={colorSistema.texto3} />
           </Presionable>
         </Tarjeta>
+        </ReanimatedSwipeable>
         );
       })}
 

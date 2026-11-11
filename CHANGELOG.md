@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1511.1 — App de clientes: sin el botón de la frase, deslizar para quitar del carrito
+
+- **Frase del día:** fuera el botón «Volver a mostrar en Inicio» (lo pidió el usuario).
+- **Carrito:** deslizar un producto a la izquierda lo quita, como en las listas del sistema; la X sigue para quien no desliza.
+- **Actualizaciones por aire:** el paquete pesa unos 15 MB y con datos móviles tarda más de 12 s, así que casi siempre quedaba pendiente para la vuelta siguiente. La ventana para recargar al abrir pasa de 12 a 25 s, y la revisión al volver a la app, de cada 15 a cada 5 minutos.
+
 ## v2.1511.0 — App: vacíos con ícono en toda la app y la solicitud ordenada
 
 Dos pedidos del usuario con capturas.

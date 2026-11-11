@@ -11,9 +11,10 @@ import PeriodPicker from '../../components/common/PeriodPicker';
 import TablePagination from '../../components/common/TablePagination';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import AsignarFichaModal from './AsignarFichaModal';
+import LibroInyectableModal from './LibroInyectableModal';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { usePaginaEnUrl } from '../../plataforma/usePaginaEnUrl';
-import { buscarBitacoraDeAplicaciones, confirmarAplicaciones, fetchPorConfirmar } from '@nucleo/data/inyecciones';
+import { buscarBitacoraDeAplicaciones, confirmarAplicaciones, fetchLibroDeInyectables, fetchPorConfirmar } from '@nucleo/data/inyecciones';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
 import { unaSolaVez } from '@nucleo/utils/unaSolaVez';
@@ -23,7 +24,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { exportCsv } from '@nucleo/utils/csvExport';
 import { hoySV } from '@nucleo/utils/fecha';
 import {
-    CABECERA_CSV_BITACORA, CAMPOS_DE_BUSQUEDA_BITACORA, ESTADOS_BITACORA, agregarFiltroDeBitacora, filasCsvBitacora,
+    CABECERA_CSV_BITACORA, CAMPOS_DE_BUSQUEDA_BITACORA, ESTADOS_BITACORA, agregarFiltroDeBitacora, filasCsvBitacora, libroIncompleto,
     filtrosEfectivosDeBitacora, quitarFiltroDeBitacora, rotuloDeFiltroDeBitacora, venceDeAmpolla,
 } from '@nucleo/utils/inyeccionesPendientes';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -143,6 +144,20 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
     const nPorConfirmar = porConfirmar?.length ?? 0;
 
     const pagina = res?.filas || [];
+
+    // El libro de inyectables de las filas que se ven (2026-11-11): documento,
+    // médico, vía, sitio y observaciones. Lo completa quien aplicó.
+    const puedeCompletarLibro = hasPermission('inyecciones', 'can_edit') || puedeConfirmar;
+    const [libro, setLibro] = useState({});
+    const [completando, setCompletando] = useState(null);
+    const idsAplicadas = useMemo(() => (res?.filas || []).filter((f) => f.estado === 'APLICADA').map((f) => f.id).join(','), [res]);
+    const cargarLibro = useCallback(() => {
+        if (!idsAplicadas) { setLibro({}); return; }
+        fetchLibroDeInyectables(idsAplicadas.split(','))
+            .then(setLibro)
+            .catch((e) => setError(mensajeAmigable(e, 'No se pudo cargar el libro de inyectables')));
+    }, [idsAplicadas]);
+    useEffect(() => { cargarLibro(); }, [cargarLibro]);
     const cargando = res == null;
     const aplicadas = res?.aplicadas ?? 0;
 
@@ -155,7 +170,9 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
         try {
             const d = await pedir({ limite: 5000, offset: 0 });
             // Lo que enfermería todavía no confirmó no es bitácora.
-            exportCsv(CABECERA_CSV_BITACORA, filasCsvBitacora(d.filas.filter((f) => f.enfermeria !== 'POR_CONFIRMAR')), `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}.csv`, 'inyecciones');
+            const filas = d.filas.filter((f) => f.enfermeria !== 'POR_CONFIRMAR');
+            const datosLibro = await fetchLibroDeInyectables(filas.filter((f) => f.estado === 'APLICADA').map((f) => f.id));
+            exportCsv(CABECERA_CSV_BITACORA, filasCsvBitacora(filas, datosLibro), `aplicaciones_${desde || 'historial'}_${hasta || hoySV()}.csv`, 'inyecciones');
         } catch (e) {
             setError(mensajeAmigable(e, 'No se pudo descargar'));
         } finally { setBajando(false); }
@@ -320,6 +337,17 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                                     {f.enfermeria === 'NO' && <Badge variant="neutral" size="sm">Sin enfermería · no va en la bitácora</Badge>}
                                     <PersonaConFoto id={f.aplicada_por_id} nombre={f.aplicada_por} px={20}
                                         detalle={`${horaDe(f.aplicada_at)}${f.aplicada_en && f.aplicada_en !== f.sala ? ` · en ${f.aplicada_en}` : ''}`} />
+                                    {libro[f.id] && (
+                                        <p className="text-caption text-content-3">
+                                            {[libro[f.id].via, libro[f.id].sitio, libro[f.id].medico].filter(Boolean).join(' · ')}
+                                        </p>
+                                    )}
+                                    {f.enfermeria !== 'NO' && libroIncompleto(libro[f.id]) && <Badge variant="warning" size="sm">Falta completar el libro</Badge>}
+                                    {puedeCompletarLibro && f.enfermeria !== 'NO' && (
+                                        <Button variant="ghost" size="xs" icon={BookOpen} onClick={() => setCompletando(f)}>
+                                            {libroIncompleto(libro[f.id]) ? 'Completar libro' : 'Datos del libro'}
+                                        </Button>
+                                    )}
                                 </div>
                             ) : (
                                 <Badge variant="warning" size="sm" dot>Pendiente</Badge>
@@ -334,6 +362,11 @@ export default function TabBitacora({ filterBranch, setFilterBranch, branchOptio
                     pageSize={pageSize} onPageSizeChange={setPageSize}
                     total={res.total} filteredTotal={total} unit="aplicaciones"
                 />
+            )}
+            {completando && (
+                <LibroInyectableModal fila={completando} libro={libro[completando.id]}
+                    onClose={() => setCompletando(null)}
+                    onHecho={() => { setCompletando(null); cargarLibro(); }} />
             )}
             {asignando && (
                 <AsignarFichaModal fila={asignando} onClose={() => setAsignando(null)}

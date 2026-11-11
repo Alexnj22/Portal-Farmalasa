@@ -17983,6 +17983,67 @@ export type Database = {
           },
         ]
       }
+      inyeccion_libro: {
+        Row: {
+          created_at: string
+          documento: string | null
+          inyeccion_id: number
+          junta_medico: string | null
+          medico: string | null
+          observaciones: string | null
+          registrado_por: string | null
+          sitio: string | null
+          updated_at: string
+          via: string | null
+        }
+        Insert: {
+          created_at?: string
+          documento?: string | null
+          inyeccion_id: number
+          junta_medico?: string | null
+          medico?: string | null
+          observaciones?: string | null
+          registrado_por?: string | null
+          sitio?: string | null
+          updated_at?: string
+          via?: string | null
+        }
+        Update: {
+          created_at?: string
+          documento?: string | null
+          inyeccion_id?: number
+          junta_medico?: string | null
+          medico?: string | null
+          observaciones?: string | null
+          registrado_por?: string | null
+          sitio?: string | null
+          updated_at?: string
+          via?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inyeccion_libro_inyeccion_id_fkey"
+            columns: ["inyeccion_id"]
+            isOneToOne: true
+            referencedRelation: "inyeccion_aplicaciones"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_libro_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inyeccion_libro_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       inyeccion_precios: {
         Row: {
           actualizado_at: string
@@ -36556,6 +36617,10 @@ export type Database = {
         }
         Returns: number
       }
+      inyeccion_al_alcance: {
+        Args: { p_aplicada_branch_id: number; p_branch_id: number }
+        Returns: boolean
+      }
       inyeccion_aplicaciones_por_nombre: {
         Args: { p_descripcion: string }
         Returns: number
@@ -36618,6 +36683,11 @@ export type Database = {
       inyeccion_fijar_precio: {
         Args: { p_origen: string; p_precio: number }
         Returns: undefined
+      }
+      inyeccion_libro_de: { Args: { p_ids: number[] }; Returns: Json }
+      inyeccion_libro_guardar: {
+        Args: { p_datos: Json; p_inyeccion_id: number }
+        Returns: Json
       }
       inyeccion_lote_aplicado: {
         Args: {

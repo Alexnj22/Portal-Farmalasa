@@ -2909,6 +2909,18 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "inyeccion_al_alcance": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "inyeccion_libro_de": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "inyeccion_libro_guardar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "regencia_anular_visita": {
    "area": "bitacoras",
    "por": "código"

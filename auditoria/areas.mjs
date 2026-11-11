@@ -1219,7 +1219,7 @@ export const AREAS = [
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas', 'libro_lote_revisiones',
                  'bitacora_limpiezas_historial', 'antibioticos_aware', 'antibioticos_producto',
                  'recetas', 'receta_items', 'medicos', 'dispensacion_clases', 'antibioticos_lote_diario',
-                 'regencia_visitas', 'cumplimiento_registros'],
+                 'regencia_visitas', 'cumplimiento_registros', 'inyeccion_libro'],
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
         crons: ['bitacora-dispensaciones-1min', 'cuadre-antibioticos-0700-sv', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min', 'antibioticos-lote-foto-diaria', 'avisar-lotes-del-libro-0815-sv'],

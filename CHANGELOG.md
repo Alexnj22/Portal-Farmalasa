@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1502.2 — Libro de inyectables: documento, médico, vía, sitio y observaciones
+
+La bitácora de inyecciones ya llevaba quién cobró, quién aplicó, cuándo, el medicamento, el lote y el vencimiento. Ahora también lleva lo que faltaba para el libro de inyectables:
+
+- En cada aplicación hecha por enfermería aparece **Completar libro**. Ahí se anotan el DUI u otro documento del paciente, el médico que la recetó y su número JVPM, la vía (intramuscular, intravenosa, subcutánea o intradérmica), el sitio y las observaciones.
+- Mientras falten el documento y la vía, la fila muestra «Falta completar el libro».
+- La descarga de la bitácora incluye estas columnas nuevas.
+- Lo puede completar quien edita inyecciones o quien confirma como enfermería, sólo en aplicaciones de su sala.
+
+Migración `20261111155614_inyecciones_libro_de_inyectables`: tabla `inyeccion_libro`, aparte de `inyeccion_aplicaciones`.
+
 ## v2.1502.1 — App: encabezado con el logo, la foto y la campana en cada pestaña
 
 La app del personal toma el encabezado de la app de clientes: en las cinco pestañas, el logo de Farmacias La Popular y La Salud va al centro, la foto de la cuenta a la izquierda (lleva a Cuenta) y la campana a la derecha, siempre a la vista y con el número de lo que falta leer. El logo reemplaza al título grande. En Inicio, el saludo («Buenos días, …») baja al contenido, encima de sala · día. En Notificaciones, «Leer todas» pasa a la fila de Historial · Comunicados, porque arriba a la derecha va ahora la campana. Va por aire.

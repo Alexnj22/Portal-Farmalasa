@@ -211,3 +211,27 @@ export async function confirmarAplicaciones(ids) {
     if (error) throw error;
     return data;
 }
+
+/**
+ * El libro de inyectables (2026-11-11): documento del paciente, médico, vía,
+ * sitio y observaciones de cada aplicación. Devuelve `{ [inyeccionId]: datos }`.
+ * Se pide en tandas de 1000 (lo acota la base).
+ */
+export async function fetchLibroDeInyectables(ids) {
+    const lista = [...new Set((ids || []).map(Number).filter(Boolean))];
+    const tandas = [];
+    for (let i = 0; i < lista.length; i += 1000) tandas.push(lista.slice(i, i + 1000));
+    const res = await Promise.all(tandas.map((t) => supabase.rpc('inyeccion_libro_de', { p_ids: t })));
+    const out = {};
+    for (const r of res) {
+        if (r.error) throw r.error;
+        for (const l of r.data || []) out[l.inyeccion_id] = l;
+    }
+    return out;
+}
+
+/** Completa (o corrige) los datos del libro de una aplicación ya aplicada. */
+export async function guardarLibroDeInyectable(inyeccionId, datos) {
+    const { error } = await supabase.rpc('inyeccion_libro_guardar', { p_inyeccion_id: Number(inyeccionId), p_datos: datos });
+    if (error) throw error;
+}

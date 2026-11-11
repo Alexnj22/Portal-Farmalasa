@@ -61,18 +61,33 @@ const nombreBitacora = (n) => (n ? shortEmployeeName(n) : '—');
 const facturaBitacora = (c) => String(c || '').replace(/^0+/, '');
 
 export const CABECERA_CSV_BITACORA = ['COBRADA', 'SALA', 'ORIGEN', 'FACTURA', 'VENTA DE', 'CLIENTE', 'INYECCION', 'LOTE', 'VENCE', 'PRECIO', 'COBRADA POR', 'VENDIO',
-    'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN'];
+    'ESTADO', 'APLICADA', 'APLICADA POR', 'APLICADA EN',
+    // El libro de inyectables (2026-11-11): lo que completa quien aplicó.
+    'DOCUMENTO', 'MEDICO', 'JVPM', 'VIA', 'SITIO', 'OBSERVACIONES'];
+
+/** Las vías de aplicación que acepta el libro (las valida `inyeccion_libro_guardar`). */
+export const VIAS_DE_APLICACION = Object.freeze([
+    { value: 'IM', label: 'Intramuscular' },
+    { value: 'IV', label: 'Intravenosa' },
+    { value: 'SC', label: 'Subcutánea' },
+    { value: 'ID', label: 'Intradérmica' },
+]);
+
+/** ¿Le falta al renglón lo que pide el libro? (sin datos no hay renglón completo). */
+export const libroIncompleto = (l) => !l || !l.documento || !l.via;
 
 /** El vencimiento de la ampolla como viene impreso: «05/2027». */
 export const venceDeAmpolla = (v) => (v ? `${String(v).slice(5, 7)}/${String(v).slice(0, 4)}` : '');
 
-export function filasCsvBitacora(filas) {
+export function filasCsvBitacora(filas, libro = {}) {
     return (filas || []).map((f) => [
         horaBitacora(f.cobrada_at), f.sala, f.origen === 'TRAIDA' ? 'TRAIDA' : 'COMPRADA', facturaBitacora(f.correlativo), f.venta_sala || '',
         f.cliente || '', f.dosis_ml != null ? `${f.producto} (${fmtMl(f.dosis_ml)} ml)` : f.producto,
         f.lote || '', venceDeAmpolla(f.vence), f.precio, nombreBitacora(f.cobrada_por), f.vendedor ? nombreBitacora(f.vendedor) : '',
         f.estado, f.aplicada_at ? horaBitacora(f.aplicada_at) : '', f.aplicada_por ? nombreBitacora(f.aplicada_por) : '',
         f.aplicada_en || '',
+        libro[f.id]?.documento || '', libro[f.id]?.medico || '', libro[f.id]?.junta_medico || '',
+        libro[f.id]?.via || '', libro[f.id]?.sitio || '', libro[f.id]?.observaciones || '',
     ]);
 }
 

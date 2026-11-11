@@ -127,9 +127,17 @@ export function repartirSala({ personas, todos, roles, sucursalId }) {
         });
     });
 
+    // Segundo al mando = hijo directo del jefe QUE MANDA a alguien: un cargo
+    // con cargos debajo en el catálogo. Responder directo a la jefatura no
+    // basta — el diseñador gráfico cuelga del Gerente General igual que el
+    // Administrador y salía con tarjeta de jefatura (2026-11-10, pedido del
+    // usuario: «en realidad no debe ser grande»). Ese cargo va al equipo.
+    const tieneCargosDebajo = (id) => (roles || [])
+        .some(r => Number(r?.parent_role_id) === Number(id) && Number(r?.id) !== Number(id));
     const hijosDirectos = cargoDelJefe == null ? [] : (roles || [])
         .filter(r => Number(r?.parent_role_id) === Number(cargoDelJefe))
-        .map(r => Number(r.id));
+        .map(r => Number(r.id))
+        .filter(tieneCargosDebajo);
 
     const resto = personas.filter(p => p !== jefe);
     const segundos = resto.filter(p => cargosDe(p).some(c => hijosDirectos.includes(c)));

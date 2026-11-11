@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.18 — Equipos: el diseñador gráfico deja de salir con tarjeta de jefatura
+
+En Personal → Equipos, la fila de jefatura (tarjetas anchas) contaba como «segundo al mando» a todo cargo que responde directo al jefe de la sala. Por eso el Diseñador/a Gráfico/a salía en Administración con tarjeta ancha y solo en su fila, igual que el Administrador. Ahora es segundo sólo el cargo que tiene cargos debajo en el catálogo (Administrador, Subjefe/a de Sala): el que no manda a nadie va al equipo con tarjeta normal. El hueco del subjefe sigue apareciendo. Prueba en `tests/unit/mandoDeSala.test.js`.
+
 ## v2.1501.17 — Regencia: asistencia del regente, horas contra el mínimo y rótulo de entrada
 
 Bitácoras tiene una pestaña nueva, **Regencia**, para que cada sala esté lista ante una inspección aunque todavía no tenga regente cargado:

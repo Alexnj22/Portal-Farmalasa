@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1503.2 — App de clientes: botones fijos en la bienvenida y Entrar antes que la entrada guardada
+
+- **Bienvenida**: «Ya soy cliente» y «Quiero unirme» quedan fijos abajo; lo de arriba se desplaza (en Android quedaban al final del desplazamiento).
+- **Entrar**: el botón «Entrar» va primero y la entrada guardada con huella/Face ID va después, como secundario y diciendo de quién es («Entrar como Ana con tu huella»; si todavía no se conoce el nombre, el final del DUI o del código). El nombre lo anota el resumen en el llavero (`recordarNombreDeEntrada`) y no se manda al servidor.
+
 ## v2.1503.1 — Sucursal: sin el botón de recargar el histórico de ventas
 
 En la pestaña Personal de cada sala ya no aparece «Recargar el histórico de ventas». Reescribía las ventas desde enero de 2025 y no hace falta: las ventas se mantienen al día solas. El título «Cumplimiento SRS (DNM/CSSP)» queda como «Cumplimiento SRS».

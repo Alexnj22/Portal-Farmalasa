@@ -12,7 +12,7 @@ import { Aviso, Texto } from '../componentes/ui';
 import { llamar } from '../lib/api';
 import { plataforma, useSesion } from '../lib/sesion';
 import { useTema } from '../tema/tema';
-import { documentoEscrito, telefonoEscrito, telefonoValido } from '../lib/formato';
+import { documentoEscrito, nombrePropio, telefonoEscrito, telefonoValido } from '../lib/formato';
 import { duiValido } from '../lib/fiscal';
 import { conBiometria, useBloqueo } from '../lib/bloqueo';
 import { datosConBiometria, entradaDisponible, guardarEntrada, olvidarEntrada } from '../lib/entradaGuardada';
@@ -93,21 +93,26 @@ export default function Entrar() {
 
   async function entrarRapido() {
     if (enviando || !rapida) return;
-    const datos = await datosConBiometria(rapida.biometria);
-    if (!datos) return;
+    const guardados = await datosConBiometria(rapida.biometria);
+    if (!guardados) return;
+    // El nombre es sólo para el botón: al servidor van los dos datos de siempre.
+    const { nombre: _nombre, ...datos } = guardados;
     // Si el servidor ya no reconoce esos datos, se olvidan: la próxima vez se escriben.
     if (!(await entrarCon(datos))) { await olvidarEntrada(); setRapida(null); }
   }
 
   // Los botones y el error, siempre a la vista: nunca hay que desplazarse para entrar.
+  // 2026-11-11 (usuario: «si quiero iniciar con otro, el botón de entrar no se
+  // ve»): «Entrar» va PRIMERO —es el de los datos que se escriben— y la entrada
+  // guardada después, en segundo plano y diciendo de quién es.
   const pie = (
     <View style={{ width: '100%', maxWidth: 560, alignSelf: 'center', gap: 12, paddingTop: 12, paddingBottom: Math.max(ins.bottom, 12) }}>
       {error ? <Aviso>{error}</Aviso> : null}
-      {rapida && !completando ? (
-        <BotonSistema etiqueta={enviando ? 'Entrando…' : `Entrar ${conBiometria(rapida.biometria)}`} alTocar={entrarRapido}
-          deshabilitado={enviando} color={t.color.magenta} />
-      ) : null}
       <BotonSistema etiqueta={enviando ? 'Entrando…' : 'Entrar'} alTocar={entrar} deshabilitado={!listo || enviando} color={t.color.magenta} />
+      {rapida && !completando ? (
+        <BotonSistema etiqueta={enviando ? 'Entrando…' : rotuloGuardada(rapida)} alTocar={entrarRapido}
+          variante="outlined" deshabilitado={enviando} color={t.color.magenta} />
+      ) : null}
     </View>
   );
   return (
@@ -180,6 +185,18 @@ export default function Entrar() {
       </Texto>
     </Formulario>
   );
+}
+
+// De quién es la entrada guardada: el primer nombre si ya se conoce; si no
+// (guardada antes de anotar nombres), el final del DUI o del código.
+function rotuloGuardada(rapida) {
+  const d = rapida?.datos ?? {};
+  const primer = nombrePropio(String(d.nombre ?? '').trim().split(/\s+/)[0] ?? '');
+  const con = conBiometria(rapida.biometria);
+  if (primer) return `Entrar como ${primer} ${con}`;
+  const doc = String(d.documento ?? '');
+  if (!doc) return `Entrar ${con}`;
+  return d.telefono ? `Entrar con el DUI …${doc.slice(-4)} ${con}` : `Entrar con el código ${doc.slice(0, 3)}… ${con}`;
 }
 
 // La barra sobre el teclado numérico (sólo iOS): un botón a la derecha, como

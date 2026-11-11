@@ -5,6 +5,7 @@ import { borrarDelWidget, publicarEnWidget } from './widget';
 import { useSesion } from './sesion';
 import { copiaParaEmpezar } from './sinConexion';
 import { useModoPrueba } from './prueba';
+import { recordarNombreDeEntrada } from './entradaGuardada';
 
 // El modo de prueba se reconoce con CADA resumen (2026-10-20): sin `prueba`,
 // lo de muestra del demo se apaga (lib/demo.js).
@@ -61,7 +62,7 @@ export const useCuenta = create((set, get) => ({
       if (miPedido !== ultimoPedido) return r;
       if (r?.ok) reconocer(r);
       if (r?.ok) set((x) => ({ resumen: r, cargando: false, cargadoAt: r.sinConexion ? 0 : Date.now(), generacion: x.generacion + 1 }));
-      if (r?.ok) { if (!r.sinConexion) publicarEnWidget(r); }
+      if (r?.ok) { if (!r.sinConexion) { publicarEnWidget(r); recordarNombreDeEntrada(r.nombre); } }
       else set({ error: r?.mensaje ?? 'No se pudo consultar.', cargando: false });
       return r;
     })();

@@ -24,11 +24,14 @@ export default function Bienvenida() {
   const motivo = useSesion((s) => s.motivoCierre);
   const ins = useSafeAreaInsets();
   return (
-    <ScrollView
+    // Los botones de entrar, FIJOS abajo (2026-11-11, usuario: «en android los
+    // botones de ya tengo cuenta no salen fijos, salen hasta abajo en scroll»):
+    // lo de arriba se desplaza y el pie queda siempre a la vista.
+    <View style={{ flex: 1 }}>
+    <ScrollView style={{ flex: 1 }}
       contentContainerStyle={{
-        flexGrow: 1, padding: 24, paddingTop: ins.top + 40, paddingBottom: ins.bottom + 24,
-        justifyContent: 'space-between', gap: 28,
-        width: '100%', maxWidth: 520, alignSelf: 'center',
+        flexGrow: 1, padding: 24, paddingTop: ins.top + 40, paddingBottom: 16,
+        gap: 28, width: '100%', maxWidth: 520, alignSelf: 'center',
       }}
     >
       <View style={{ gap: 22 }}>
@@ -72,14 +75,15 @@ export default function Bienvenida() {
           <Regla color={t.color.magenta} texto={t.color.magentaTexto} grande="100 pts" chico="= $1 de descuento" />
         </View>
       </View>
+    </ScrollView>
 
-      <View style={{ gap: 12 }}>
+      <View style={{ gap: 12, paddingHorizontal: 24, paddingTop: 12, paddingBottom: Math.max(ins.bottom, 12) + 8,
+        width: '100%', maxWidth: 520, alignSelf: 'center' }}>
         {motivo === 'vencida' ? <Texto nivel={2} estilo={{ textAlign: 'center' }}>Tu sesión terminó. Vuelve a entrar para ver tus puntos.</Texto> : null}
         <Boton alTocar={() => navegar('/entrar')}>Ya soy cliente</Boton>
         <Boton tipo="secundario" alTocar={() => navegar('/registro')}>Quiero unirme</Boton>
-
       </View>
-    </ScrollView>
+    </View>
   );
 }
 

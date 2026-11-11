@@ -46,6 +46,11 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
     // Se guarda como se escribe (para poder borrarlo y teclear otro); se calcula con el número.
     const minimoTexto = formData?.salarioMinimoUsado ?? MINIMO_INICIAL;
     const minimo = Number(String(minimoTexto).replace(',', '.'));
+    const minimoValido = minimo > 0;
+    // Lo que de verdad se va a pagar, si no es lo estimado: lo negoció la
+    // empresa o lo calculó el contador. Opcional; vacío = se paga lo estimado.
+    const acordadoTexto = formData?.montoAcordado ?? '';
+    const acordado = Number(String(acordadoTexto).replace(',', '.'));
 
     const liquidacion = useMemo(() => liquidacionEstimada({
         motivo, salarioMensual: salario, ingreso, baja: formData?.date, salarioMinimoMensual: minimo,
@@ -168,37 +173,61 @@ export default function BajaLegal({ formData, setFormData, empleado }) {
                         </div>
                     ))}
 
-                    {/* La liquidación: estimación para revisar, no un monto a pagar. */}
-                    <div data-surface="card" className="p-3 space-y-2">
+                    {/* La liquidación: estimación para revisar, no un monto a pagar.
+                        Los dos campos van FUERA del cálculo: antes vivían dentro y,
+                        al borrar el salario mínimo, el cálculo daba vacío y se
+                        llevaba la casilla con él — no había dónde volver a
+                        escribirlo (2026-11-11). */}
+                    <div data-surface="card" className="p-3 space-y-3">
                         <div className="flex items-center gap-2">
                             <Calculator size={16} className="text-content-2" />
-                            <span className="text-label font-black uppercase tracking-widest text-content-2">Liquidación estimada</span>
+                            <span className="text-label font-black uppercase tracking-widest text-content-2">Liquidación</span>
                         </div>
                         {salario == null ? (
-                            <p className="text-caption text-content-3">Sin acceso al salario: la estimación la ve quien tiene el permiso de Salarios.</p>
-                        ) : !ingreso || !formData?.date ? (
-                            <p className="text-caption text-content-3">Falta la fecha de ingreso o la fecha de baja para calcularla.</p>
-                        ) : liquidacion && (
+                            <p className="text-caption text-content-3">Sólo la ve quien tiene permiso para ver salarios.</p>
+                        ) : (
                             <>
-                                <ul className="space-y-1">
-                                    {liquidacion.rubros.map((r) => (
-                                        <li key={r.clave} className="flex justify-between gap-3 text-body-sm">
-                                            <span className={r.aplica === true ? 'text-content' : 'text-content-3'}>
-                                                {r.texto}{r.aplica === 'revisar' ? ' (a revisar)' : r.aplica === false ? ' (no aplica)' : ''}
-                                                <span className="block text-caption text-content-3">{r.base}</span>
-                                            </span>
-                                            <span className="font-bold tabular-nums">{formatMoney(r.monto)}</span>
-                                        </li>
-                                    ))}
-                                </ul>
-                                <div className="flex justify-between border-t border-line pt-2 text-body font-black">
-                                    <span>Total estimado</span><span className="tabular-nums">{formatMoney(liquidacion.total)}</span>
+                                {!ingreso || !formData?.date ? (
+                                    <p className="text-caption text-content-3">Para calcularla faltan la fecha de ingreso de la ficha o la fecha de la baja.</p>
+                                ) : !minimoValido ? (
+                                    <p className="text-caption text-warning-text">Escribe el salario mínimo para calcularla.</p>
+                                ) : liquidacion && (
+                                    <>
+                                        <ul className="space-y-1">
+                                            {liquidacion.rubros.map((r) => (
+                                                <li key={r.clave} className="flex justify-between gap-3 text-body-sm">
+                                                    <span className={r.aplica === true ? 'text-content' : 'text-content-3'}>
+                                                        {r.texto}{r.aplica === 'revisar' ? ' — consultar con el abogado, no se suma' : r.aplica === false ? ' — no corresponde' : ''}
+                                                        <span className="block text-caption text-content-3">{r.base}</span>
+                                                    </span>
+                                                    <span className="font-bold tabular-nums">{formatMoney(r.monto)}</span>
+                                                </li>
+                                            ))}
+                                        </ul>
+                                        <div className="flex justify-between border-t border-line pt-2 text-body font-black">
+                                            <span>Total estimado</span><span className="tabular-nums">{formatMoney(liquidacion.total)}</span>
+                                        </div>
+                                        <p className="text-caption text-content-3">
+                                            Calculado con {liquidacion.aniosDeServicio} años de servicio. Los días trabajados del último período se pagan en la planilla, no aquí. Es una estimación: confírmala con el contador o el abogado antes de pagar.
+                                        </p>
+                                    </>
+                                )}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <PortalInput name="salarioMinimoUsado" label="Salario mínimo mensual" inputMode="decimal" maskType="DECIMAL"
+                                        value={String(minimoTexto)} onChange={(e) => poner('salarioMinimoUsado', e.target.value)}
+                                        placeholder={String(MINIMO_INICIAL)} />
+                                    <PortalInput name="montoAcordado" label="Total que se pagará" inputMode="decimal" maskType="DECIMAL"
+                                        value={String(acordadoTexto)} onChange={(e) => poner('montoAcordado', e.target.value)}
+                                        placeholder={liquidacion ? String(liquidacion.total) : 'Opcional'} />
                                 </div>
                                 <p className="text-caption text-content-3">
-                                    {liquidacion.aniosDeServicio} años de servicio. El salario de los días trabajados va en la planilla. Revísalo con el contador o el abogado antes de pagar.
+                                    El mínimo de comercio y servicios es ${MINIMO_INICIAL.toFixed(2)}; cámbialo si es otro. Si se pagará un total distinto al estimado —porque se negoció o porque el contador lo calculó—, escríbelo en «Total que se pagará». Si lo dejas vacío, se toma el estimado.
                                 </p>
-                                <PortalInput name="salarioMinimoUsado" label="Salario mínimo mensual usado" inputMode="decimal" maskType="DECIMAL"
-                                    value={String(minimoTexto)} onChange={(e) => poner('salarioMinimoUsado', e.target.value)} />
+                                {acordado > 0 && liquidacion && Math.abs(acordado - liquidacion.total) >= 0.01 && (
+                                    <p className="text-caption text-content-2">
+                                        Se pagará <b>{formatMoney(acordado)}</b>, {formatMoney(Math.abs(acordado - liquidacion.total))} {acordado > liquidacion.total ? 'más' : 'menos'} que lo estimado. Quedan guardados los dos.
+                                    </p>
+                                )}
                             </>
                         )}
                     </div>

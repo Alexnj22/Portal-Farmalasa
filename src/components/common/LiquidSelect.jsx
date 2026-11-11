@@ -41,9 +41,17 @@ const LiquidSelect = ({
     isLoading = false,
     // Bare mode: no background/border/shadow — blends into a parent pill bar
     bare = false,
-    // Texto del botón de limpiar selección. Default 'Todos' (uso como filtro
-    // de listas); en formularios de datos usar algo como 'Ninguno'.
-    clearLabel = 'Todos',
+    // Texto de la fila de limpiar DENTRO del menú. Sin él, esa fila sólo
+    // aparece en un filtro (opción vacía = rótulo) y dice «Todos».
+    //
+    // ── Antes el default era 'Todos' (corregido 2026-11-11) ────────────────
+    // Y `clearable` es true por defecto, así que CUALQUIER campo de formulario
+    // con un valor elegido abría con una fila «Todos» encima: «Motivo legal de
+    // la baja → Todos», «Causal → Todos». Reportado por el usuario más de una
+    // vez. «Todos» es la vuelta de un filtro, no una respuesta. Un formulario
+    // se limpia con la ✕ del campo; si quiere la fila, la nombra
+    // (`clearLabel="Ninguno"`). Lo ancla `tests/unit/liquidSelectSinTodos.test.jsx`.
+    clearLabel,
     // ── 2026-07-28 ──────────────────────────────────────────────────────
     // Nombre accesible del disparador. Ahora que es enfocable hace falta:
     // un `role="combobox"` sin nombre se anuncia solo como "cuadro
@@ -300,6 +308,10 @@ const LiquidSelect = ({
     // memoización y deja de optimizar el componente entero (lo marca el lint
     // como "Compilation Skipped").
     const rotuloComoOpcion = options.some(opt => opt.value === '' && opt.label === placeholder);
+    // La fila de limpiar del menú: en un filtro (su vuelta a «todos») o cuando
+    // el llamador le puso nombre. Nunca por defecto — ver `clearLabel`.
+    const filaDeLimpiar = rotuloComoOpcion || (clearable && clearLabel != null);
+    const textoDeLimpiar = clearLabel ?? 'Todos';
     const { lista: filteredOptions, aproximado: sonParecidos } = useMemo(() => {
         const exactas = (lista) => ({ lista, aproximado: false });
         // El placeholder NUNCA es una opción (2026-10-08). Una opción de valor
@@ -553,13 +565,13 @@ const LiquidSelect = ({
                     `opciones`): si el llamador contaba con esa opción para
                     volver a «todos» —los filtros van con `clearable={false}`—,
                     la vuelta es esta fila. */}
-                {!searchTerm && (clearable || rotuloComoOpcion) && value != null && value !== '' && (
+                {!searchTerm && filaDeLimpiar && value != null && value !== '' && (
                     <button
                         type="button"
                         onClick={() => handleSelect('')}
                         className="w-full text-left px-4 py-3 text-body-sm font-bold rounded-2xl transition-colors duration-[var(--dur-base)] text-content-3 hover:bg-surface-card-hover hover:text-content"
                     >
-                        {clearLabel}
+                        {textoDeLimpiar}
                     </button>
                 )}
                 {isLoading ? (
@@ -845,8 +857,8 @@ const LiquidSelect = ({
                     parecidos={parecidos}
                     onSearchChange={onSearchChange}
                     isLoading={isLoading}
-                    clearable={clearable || rotuloComoOpcion}
-                    clearLabel={clearLabel}
+                    clearable={filaDeLimpiar}
+                    clearLabel={textoDeLimpiar}
                 />
             ) : createPortal(
                 <AnimatePresence>{isOpen ? dropdownContent : null}</AnimatePresence>,

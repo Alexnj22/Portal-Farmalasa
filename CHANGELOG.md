@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1511.2 — Los selects de formulario ya no ofrecen «Todos»; la liquidación permite el total acordado
+
+- **Selects:** un campo de formulario con una opción elegida abría la lista con una fila «Todos» arriba (por ejemplo en «Motivo legal de la baja»). Venía del valor por defecto del componente y pasaba en todos los formularios que no le ponían texto propio. Ahora esa fila sólo aparece en los filtros, que es donde «Todos» tiene sentido, o cuando el campo la nombra («Ninguno»). Para borrar un campo sigue estando la ✕.
+- **Liquidación de la baja:** al borrar el salario mínimo desaparecía el bloque entero, casilla incluida, y no había dónde volver a escribirlo. Ahora la casilla queda y avisa que falta.
+- Nuevo campo «Total que se pagará»: si se negoció otro monto o el contador calculó otro, se escribe ahí. Se guardan los dos y la pantalla dice la diferencia.
+- Textos más claros: qué rubros no se suman y por qué, y que los días trabajados van en la planilla.
+
 ## v2.1511.1 — App de clientes: sin el botón de la frase, deslizar para quitar del carrito
 
 - **Frase del día:** fuera el botón «Volver a mostrar en Inicio» (lo pidió el usuario).

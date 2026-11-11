@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.11 — Avisos a quien le tocan: pedidos, antibióticos, sistema, chat y marketing
+
+- Pedido del usuario, sobre lo que le llegaba a la administración:
+  - **Pedido sin recibir**: a las 6 h vuelve a la sala, ya no a supervisión.
+  - **Antibióticos sin conteo del mes**: uno por sala a la gente de esa sala; supervisión recibe UNO solo con todas las salas.
+  - **Avisos del sistema**: «Cambio de presentación», «factor que no cuadra» y los conteos de existencia van a supervisión y Bodega (nueva `destinatarios_de_productos`); «Error en una factura» a supervisión y la sala, sin Gerencia.
+  - **Chat de clientes**: supervisión; ya no Gerencia ni Administración.
+  - **Recordatorios del calendario de marketing**: sólo a Diseño gráfico.
+- Se reemplazó sólo el fragmento de cada función, con verificación de que estuviera exactamente una vez.
+
 ## v2.1501.10 — Avisos de saldo a favor sólo a la sucursal y a supervisión
 
 - Pedido del usuario: los avisos de saldo a favor no van a Bodega, sólo a la sucursal y a supervisión. Nueva `destinatarios_de_saldo_favor` (la sala o quien la cubre, con permiso de Reservas, más Supervisor/a de Ventas) y su gemelo `reserva_avisar_saldo`. Cambian «El saldo a favor no se descontó», «Saldo a favor: posible intento indebido», «Devolución en efectivo autorizada» y «… no autorizada»; el resto de cada función queda igual (se reemplazó sólo la llamada, con verificación de que estuviera exactamente una vez). «Devolución en efectivo por autorizar» sigue yendo a quien la autoriza.

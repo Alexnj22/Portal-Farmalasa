@@ -1861,6 +1861,10 @@
    "area": "personal",
    "por": "tablas"
   },
+  "destinatarios_de_productos": {
+   "area": "productos",
+   "por": "tablas"
+  },
   "destinatarios_de_saldo_favor": {
    "area": "personal",
    "por": "tablas"

@@ -33,7 +33,7 @@ export function MenuDeFiltros({ grupos, extra = null }) {
 }
 
 function MenuDeFiltrosIOS({ grupos, extra }) {
-  const sinLeer = useStaffStore((s) => s.notifications.length);
+  const sinLeer = useStaffStore((s) => s.notifications.filter((n) => !n.read_at && !n.deleted_at).length);
   const visibles = grupos.filter((g) => g.opciones.length > 1);
   const hayActivo = visibles.some(activo);
   return (

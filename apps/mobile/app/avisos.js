@@ -122,7 +122,7 @@ export default function Notificaciones() {
   // Los cortes que nombran los avisos, releídos (la campana hace lo mismo).
   const { porId: cortesPorId } = useCortesDeAvisos(visibles, true);
   const puedeResolverCortes = hasPermission('cortes_caja', 'can_edit');
-  const { pendientes, sinLeer, decididos, totalPorDecidir } = useMemo(
+  const { pendientes, sinLeer, totalPorDecidir } = useMemo(
     () => ordenarBandeja(visibles, porDecidir, esperaDecision), [visibles, porDecidir, esperaDecision]);
 
   // El detalle de lo que nombra una solicitud abierta, leído de la base (el
@@ -219,9 +219,9 @@ export default function Notificaciones() {
     );
   };
 
-  const vacio = !totalPorDecidir && !sinLeer.length && !decididos.length;
+  const vacio = !totalPorDecidir && !sinLeer.length;
 
-  const presentes = new Set([...sinLeer, ...decididos].map(categoriaDe));
+  const presentes = new Set(sinLeer.map(categoriaDe));
   const opciones = [{ id: 'todas', label: 'Todas' },
     ...CATEGORIAS.filter((c) => presentes.has(c.id)).map(({ id, label }) => ({ id, label })),
     ...(presentes.has('otros') ? [{ id: 'otros', label: 'Otros' }] : [])];
@@ -229,7 +229,6 @@ export default function Notificaciones() {
   const activa = opciones.some((o) => o.id === filtro) ? filtro : 'todas';
   const pasa = (n) => activa === 'todas' || categoriaDe(n) === activa;
   const sinLeerVista = sinLeer.filter(pasa);
-  const decididosVista = decididos.filter(pasa);
 
   return (
     <>
@@ -268,12 +267,10 @@ export default function Notificaciones() {
           </>
         ) : null}
 
-        {decididosVista.length ? (
-          <>
-            <Seccion texto="Ya decididas" />
-            {decididosVista.map((n) => tarjeta(n, { deslizar: true }))}
-          </>
-        ) : null}
+        {/* «Ya decididas» ya no se muestra (2026-11-11, usuario: «cuando me llega
+            una solicitud, la apruebo, siempre queda como ya decidida, no se
+            elimina»). Decidida = la base la dio por leída (read_at): sale de la
+            bandeja y queda en el historial, como cualquier aviso leído. */}
 
         {vacio ? (
           <View style={{ alignItems: 'center', paddingTop: 80, gap: 6, paddingHorizontal: 32 }}>

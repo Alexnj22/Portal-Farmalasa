@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1509.2 — App: lo ya decidido sale de Notificaciones
+
+Reporte del usuario: «cuando me llega una solicitud, la apruebo, siempre queda como ya decidida, no se elimina». La base ya daba por leída la notificación al decidir (`marcar_notificacion_solicitud_resuelta` pone `read_at`), pero la app la seguía mostrando en una sección «Ya decididas» y la campana la contaba, porque contaba todo lo cargado en vez de lo no leído. Ahora lo decidido sale de la bandeja y queda en el historial, y la campana (y su globo en la barra) cuenta sólo lo no leído. Va por aire.
+
 ## v2.1509.1 — App de clientes: medición del carrito en el tiempo
 
 Temporal: con el hueco fijo, la tarjeta arranca bien pero después baja otros 116 puntos. Durante 4 segundos desde que se abre el Carrito, la app anota dónde está el contenido cada 250 ms y cada desplazamiento que reporta iOS («diag-carrito2» en `app_errores`), para ver qué lo empuja. Se quita al resolverlo.

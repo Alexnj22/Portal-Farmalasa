@@ -39,7 +39,8 @@ export default function MensajesAdmin({ grupos }) {
           )}
           {mensajes.map((m) => (
             <div key={m.id} style={{ padding: '10px 0', borderBottom: '1px solid var(--linea)', opacity: m.oculto ? 0.55 : 1 }}>
-              <p style={{ margin: 0 }}>“{m.texto}”</p>
+              {m.texto && <p style={{ margin: 0 }}>“{m.texto}”</p>}
+              {m.audio && <audio controls preload="none" src={api.urlAudio(m.audio)} style={{ width: '100%', marginTop: 6 }} />}
               <div className="chico suave" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <span>{m.autor} · {fechaHora(m.created_at)}{m.oculto ? ' · oculto' : ''}</span>
                 <button className="btn claro chico" onClick={async () => { await api.ocultarMensaje(m.id, !m.oculto); cargar(); }}>{m.oculto ? 'Mostrar' : 'Ocultar'}</button>

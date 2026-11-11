@@ -4,6 +4,8 @@ import { boda } from '../config';
 import { api } from '../lib/api';
 import { t, useIdioma, rotuloMomento, BotonIdioma } from '../lib/idioma';
 import Mosaico from '../components/Mosaico';
+import Presentacion from '../components/Presentacion';
+import { BotonFacil } from '../components/Facil';
 
 const LS_CLAVE = 'boda-clave-album';
 const LS_AUTOR = 'boda-autor';
@@ -46,6 +48,7 @@ export default function Album() {
   const [filtro, setFiltro] = useState('Todas');
   const [subida, setSubida] = useState(null); // { total, hechas, fallas, reintentando }
   const [error, setError] = useState('');
+  const [presentar, setPresentar] = useState(false);
   const entrada = useRef(null);
 
   // La clave del QR se guarda y se quita de la dirección (para que no se comparta al reenviar el enlace).
@@ -126,7 +129,7 @@ export default function Album() {
             <li><Link to="/">{t('Inicio', 'Home')}</Link></li>
             <li><a className="activo" href="#">{t('Álbum', 'Album')}</a></li>
           </ul>
-          <BotonIdioma />
+          <div className="nav-acciones"><BotonFacil /><BotonIdioma /></div>
         </div>
       </nav>
       <main className="contenedor" style={{ paddingBottom: 'var(--aire)' }}>
@@ -134,7 +137,9 @@ export default function Album() {
           <p className="versalita suave" style={{ marginBottom: 12 }}>{boda.novios.firma} · {boda.novios.hashtag}</p>
           <h1>{t('Álbum compartido', 'Shared album')}</h1>
           <p>{n} {n === 1 ? t('recuerdo', 'memory') : t('recuerdos', 'memories')}{n ? '' : t(', por ahora', ' so far')}</p>
+          {n > 1 && <button type="button" className="btn claro" onClick={() => setPresentar(true)}>▶ {t('Ver como presentación', 'Play as slideshow')}</button>}
         </header>
+        {presentar && <Presentacion fotos={visibles.length > 1 ? visibles : fotos} alCerrar={() => setPresentar(false)} />}
 
         {claveOk === false && (
           <form className="clave-album" onSubmit={(e) => { e.preventDefault(); setClave(claveEscrita.trim().toUpperCase()); }}>

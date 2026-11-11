@@ -128,6 +128,23 @@ export const boda = {
   // Lista de canciones (opcional): enlace a una playlist colaborativa
   playlist: '',
 
+  // Música de la apertura (opcional). Archivo en /public/musica/… o una URL.
+  // Empieza apagada: el invitado la enciende con el botón de la nota.
+  musica: '',
+
+  // Juego del salón «¿Cuánto conoces a los novios?». `correcta` es la posición
+  // de la opción buena (0 = la primera). Se maneja desde el panel → En vivo.
+  juego: {
+    titulo: '¿Cuánto conoces a los novios?',
+    preguntas: [
+      { p: '¿Dónde se conocieron?', opciones: ['En la universidad', 'En una fiesta', 'En el trabajo', 'Por una app'], correcta: 1 },
+      { p: '¿Quién dijo «te quiero» primero?', opciones: ['Alessandra', 'Eduardo'], correcta: 1 },
+      { p: '¿Cuál fue su primera cita?', opciones: ['Cine', 'Pupusas', 'Playa', 'Café'], correcta: 1 },
+      { p: '¿Quién cocina mejor?', opciones: ['Alessandra', 'Eduardo', 'Ninguno', 'Los dos'], correcta: 0 },
+      { p: '¿Dónde fue la pedida de mano?', opciones: ['En la montaña', 'En un restaurante', 'Frente al mar', 'En casa'], correcta: 2 },
+    ],
+  },
+
   // ── Inglés ────────────────────────────────────────────────────────────────
   // Misma forma que arriba y en el MISMO orden (se cruza por posición). Sólo
   // los textos: fechas, horas, coordenadas y enlaces salen de la versión en

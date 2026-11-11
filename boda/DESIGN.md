@@ -44,3 +44,11 @@ Curva `cubic-bezier(0.22, 1, 0.36, 1)`. Nada rebota y todo se apaga con `prefers
 - **Frase** (`FraseRevelada.jsx`): las palabras se iluminan al leer bajando.
 - **Galería** (`GaleriaHorizontal.jsx`): tira que se desliza de lado con el dedo (scroll nativo con imán), flechas en computadora. Bajar nunca mueve las fotos de lado: el usuario lo encontró raro.
 - Nada corre en cada cuadro de scroll salvo la frase. El grano de papel sólo en computadora (en el teléfono costaba cada cuadro).
+- **Sobre** (`Sobre.jsx`): en `/i/CODIGO` reemplaza al telón. Se toca el sello: la solapa gira, la tarjeta sube y el sobre se desvanece. Una vez por visita; nunca en modo fácil ni con movimiento reducido.
+- **Presentación** (`Presentacion.jsx`): fundido y acercamiento lento (cuatro recorridos que alternan). En vertical, la foto entera sobre una copia desenfocada.
+
+## Modo fácil (letra grande)
+Clase `facil` en `<html>`: texto al 120 %, `--tinta-suave` y `--linea` más oscuros, botones de 60 px, ninguna animación, sin cinta ni telón. Lo enciende la invitación (`grupos.letra_grande`) o el botón «Aa»; la elección del botón manda. La confirmación cambia a `PasoAPaso`: una pregunta por pantalla, dos botones de 68 px y una revisión final antes de enviar.
+
+## En vivo
+Rojo de «en vivo» `oklch(0.62 0.17 30)` sólo para el punto que late; nada más usa ese color. El aviso de los novios es una banda oliva noche bajo la navegación, que se cierra con ×.

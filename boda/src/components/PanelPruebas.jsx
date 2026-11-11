@@ -81,6 +81,11 @@ export default function PanelPruebas() {
         <li><Link to="/album?k=BODA27" onClick={() => setAbierto(false)}><code>Álbum</code><span>Con la clave BODA27 ya puesta (como al escanear el QR de la mesa).</span></Link></li>
         <li><Link to="/admin" onClick={() => setAbierto(false)}><code>Panel</code><span>De los novios. Contraseña «demo».</span></Link></li>
         <li><a href="/pantalla?k=BODA27" target="_blank" rel="noreferrer"><code>Pantalla</code><span>La del proyector del salón (se abre aparte).</span></a></li>
+        <li><Link to="/canciones" onClick={() => setAbierto(false)}><code>Canciones</code><span>Pedir y votar canciones.</span></Link></li>
+        <li><a href="/dj" target="_blank" rel="noreferrer"><code>DJ</code><span>La lista ordenada por votos (se abre aparte).</span></a></li>
+        <li><Link to="/juego" onClick={() => setAbierto(false)}><code>Juego</code><span>Desde el teléfono. Se lanza en Panel → En vivo.</span></Link></li>
+        <li><a href="/pantalla?modo=juego" target="_blank" rel="noreferrer"><code>Proyector juego</code><span>Pregunta, barras y ganadores.</span></a></li>
+        <li><Link to="/admin?p=vivo" onClick={() => setAbierto(false)}><code>En vivo</code><span>Mandar un aviso a todos los teléfonos.</span></Link></li>
       </ul>
 
       <h3>Volver a empezar</h3>

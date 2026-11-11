@@ -17,6 +17,11 @@ import Copiar from '../components/Copiar';
 import CintaEntrada from '../components/CintaEntrada';
 import Rsvp from './Rsvp';
 import LibroFirmas from './LibroFirmas';
+import Sobre from '../components/Sobre';
+import Presentacion from '../components/Presentacion';
+import { BotonFacil, AccionesFacil } from '../components/Facil';
+import { AhoraEnLaBoda, AhoraCompacto, DondeMeSiento } from '../components/EnVivo';
+import { facilPorInvitacion, useFacil } from '../lib/facil';
 
 /** Una palabra que entra letra por letra (cada letra sube desde su renglón). */
 function Letras({ texto, desde = 0 }) {
@@ -38,6 +43,10 @@ export default function Inicio({ codigo }) {
   const { novios } = boda;
   const fase = faseActual();
   const [inv, setInv] = useState(undefined); // undefined = cargando, null = no existe
+  const facil = useFacil();
+  const [presentar, setPresentar] = useState(null); // fotos de la presentación abierta
+  const abrirPresentacion = () => api.listarFotos().then((f) => setPresentar(f)).catch(() => {});
+  useEffect(() => { if (inv !== undefined) facilPorInvitacion(inv?.grupo?.letra_grande); }, [inv]);
   const [lugar, setLugar] = useState(null);
   const [arriba, setArriba] = useState(true);
   const portada = useRef(null);
@@ -94,7 +103,11 @@ export default function Inicio({ codigo }) {
 
   return (
     <>
-      <Telon monograma={`${novios.ella[0]} & ${novios.el[0]}`} para={inv?.grupo ? `${t('Para', 'For')} ${inv.grupo.nombre}` : ''} />
+      {/* Con enlace personal, el sobre con el nombre; sin él, el telón. */}
+      {codigo
+        ? inv?.grupo && <Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} musica={boda.musica} desactivado={facil} />
+        : !facil && <Telon monograma={`${novios.ella[0]} & ${novios.el[0]}`} para="" />}
+      {presentar && <Presentacion fotos={presentar} alCerrar={() => setPresentar(null)} />}
       <nav className={`nav ${arriba ? 'sobre-foto' : ''}`}>
         <div className="contenedor">
           <a href="#inicio" className="marca">{novios.ella[0]} & {novios.el[0]}</a>
@@ -102,7 +115,7 @@ export default function Inicio({ codigo }) {
             {secciones.map(([id, txt]) => <li key={id}><a href={`#${id}`}>{txt}</a></li>)}
             {faseAlMenos(fase, 'boda') && <li><Link to="/album">{t('Álbum', 'Album')}</Link></li>}
           </ul>
-          <BotonIdioma />
+          <div className="nav-acciones"><BotonFacil /><BotonIdioma /></div>
         </div>
       </nav>
 
@@ -121,10 +134,11 @@ export default function Inicio({ codigo }) {
             <span className="segundo"><Letras texto={`& ${novios.el}`} desde={novios.ella.length} /></span>
           </h1>
           <div className="portada-pie">
-            <p className="fecha-puntos">{fechaPuntos()}</p>
+            {fase === 'boda' ? <AhoraCompacto itinerario={boda.itinerario} /> : <p className="fecha-puntos">{fechaPuntos()}</p>}
             <div className="acciones">
               {fase === 'boda' && <Link className="btn" to="/album">{t('Subir fotos al álbum', 'Upload photos')}</Link>}
-              {fase === 'recuerdos' && <Link className="btn" to="/album">{t('Ver el álbum', 'See the album')}</Link>}
+              {fase === 'recuerdos' && <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>}
+              {fase === 'recuerdos' && <Link className="btn claro-sobre-foto" to="/album">{t('Ver el álbum', 'See the album')}</Link>}
               {fase === 'invitacion' && <a className="btn" href="#confirmar">{t('Confirmar asistencia', 'RSVP')}</a>}
               {fase === 'save-the-date' && <a className="btn" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">{t('Guardar la fecha', 'Save the date')}</a>}
             </div>
@@ -160,11 +174,28 @@ export default function Inicio({ codigo }) {
         </section>
       )}
 
+      {facil && faseAlMenos(fase, 'invitacion') && <AccionesFacil boda={boda} inv={inv} hayConfirmar={!!codigo && fase === 'invitacion'} />}
+
       {fase === 'boda' && (
-        <Seccion id="hoy" titulo={t('Hoy', 'Today')} bajada={t('Toma fotos y súbelas al álbum compartido: así juntamos los momentos que nosotros no alcanzamos a ver.',
-          "Take photos and upload them to the shared album, so we can collect the moments we didn't get to see.")} variante="alterna" dividida>
-          <p><Link to="/album" className="btn">{t('Abrir el álbum', 'Open the album')}</Link></p>
+        <Seccion id="hoy" titulo={t('Hoy', 'Today')} bajada={t('Lo que está pasando, dónde te sientas, y fotos, canciones y un juego desde tu teléfono.',
+          "What's happening now, where you sit, plus photos, songs and a game from your phone.")} variante="alterna" dividida>
+          <AhoraEnLaBoda itinerario={boda.itinerario} />
+          <DondeMeSiento />
+          <div className="hoy-acciones">
+            <Link to="/album" className="hoy-accion"><b>{t('Sube tus fotos', 'Upload photos')}</b><span>{t('Al álbum de todos', 'To the shared album')}</span></Link>
+            <Link to="/canciones" className="hoy-accion"><b>{t('Pide una canción', 'Request a song')}</b><span>{t('Y vota las de los demás', 'And vote for others')}</span></Link>
+            {boda.juego?.preguntas?.length > 0 && <Link to="/juego" className="hoy-accion"><b>{t('Juega', 'Play')}</b><span>{boda.juego.titulo}</span></Link>}
+          </div>
           <p className="suave">{t('Usa', 'Use')} {novios.hashtag} {t('en redes sociales.', 'on social media.')}</p>
+        </Seccion>
+      )}
+
+      {fase === 'recuerdos' && (
+        <Seccion id="recuerdos" titulo={t('Las fotos de todos', "Everyone's photos")} bajada={t('Lo que ustedes vieron esa noche, en una presentación.', 'What you saw that night, as a slideshow.')} variante="alterna" dividida>
+          <p className="acciones-fila">
+            <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>
+            <Link to="/album" className="btn claro">{t('Abrir el álbum', 'Open the album')}</Link>
+          </p>
         </Seccion>
       )}
 
@@ -271,11 +302,10 @@ export default function Inicio({ codigo }) {
             {boda.preguntas.map((q, i) => (
               <details className="faq" key={i}><summary>{q.p}</summary><p>{q.r}</p></details>
             ))}
-            {boda.playlist && (
-              <p style={{ marginTop: 24 }}>
-                <a className="btn claro" href={boda.playlist} target="_blank" rel="noreferrer">{t('Agrega canciones a nuestra playlist', 'Add songs to our playlist')}</a>
-              </p>
-            )}
+            <p className="acciones-fila" style={{ marginTop: 24 }}>
+              {fase !== 'recuerdos' && <Link className="btn claro" to="/canciones">{t('¿Qué canción no puede faltar? Pídela', "Which song can't be missed? Request it")}</Link>}
+              {boda.playlist && <a className="btn claro" href={boda.playlist} target="_blank" rel="noreferrer">{t('Nuestra playlist', 'Our playlist')}</a>}
+            </p>
           </div>
         </Seccion>
 

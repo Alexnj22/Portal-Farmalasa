@@ -25,6 +25,7 @@ export const ESCENARIOS = [
   { codigo: 'DEMO05', caso: 'Invitada con «+1» sin nombre: escribir a su acompañante.' },
   { codigo: 'DEMO06', caso: 'Familia que ya dijo que no puede ir.' },
   { codigo: 'DEMO07', caso: 'Invitación de 2 pases sin ningún nombre cargado.' },
+  { codigo: 'DEMO08', caso: 'Abuela marcada con «letra grande»: se abre sola en modo fácil.' },
 ];
 
 function semilla() {
@@ -56,6 +57,7 @@ function semilla() {
     g('DEMO05', 'Carla Méndez', 2, 'novia', ['Carla Méndez']),
     g('DEMO06', 'Familia López', 2, 'novio', ['Pedro López', 'Elena de López']),
     g('DEMO07', 'Los Castillo', 2, 'ambos', []),
+    g('DEMO08', 'Abuelita Carmen', 2, 'novia', ['Carmen de Hernández'], { letra_grande: true }),
   ];
   // DEMO03: ya respondida, con mesa
   lista[2].grupo.estado = 'confirmado';
@@ -73,17 +75,47 @@ function semilla() {
     mesas,
     grupos: lista.map((x) => x.grupo),
     personas: lista.flatMap((x) => x.personas),
-    fotos: [],
+    fotos: fotosDeMuestra(),
     mensajes: [
       { id: uid(), autor: 'Andrea', texto: '¡Los queremos mucho! Que sea el inicio de una vida llena de amor.', oculto: false, created_at: ahora() },
     ],
+    avisos: [],
+    canciones: [
+      { id: uid(), titulo: 'Vivir mi vida', artista: 'Marc Anthony', pedido_por: 'Luis', votos: 3, tocada: false, oculta: false, created_at: ahora(), votantes: ['a', 'b', 'c'] },
+      { id: uid(), titulo: 'La bicicleta', artista: 'Carlos Vives y Shakira', pedido_por: 'Andrea', votos: 2, tocada: false, oculta: false, created_at: ahora(), votantes: ['a', 'b'] },
+      { id: uid(), titulo: 'Perfect', artista: 'Ed Sheeran', pedido_por: null, votos: 1, tocada: false, oculta: false, created_at: ahora(), votantes: ['a'] },
+    ],
+    juego: { pregunta: -1, fase: 'cerrado', respuestas: [] },
+    fotosMuestra: true,
   };
+}
+
+// Fotos de ejemplo para que el álbum, la pantalla y la presentación no estén vacíos.
+function fotosDeMuestra() {
+  const autores = ['Andrea', 'Luis', 'Tía Rosa', 'Marta', 'Carlos', 'Sofía'];
+  return (boda.galeria || []).map((g, i) => {
+    const src = typeof g === 'string' ? g : g.src;
+    return { id: `muestra-${i}`, ruta: `muestra/${i}.jpg`, url: src, mini: src.replace(/w=\d+/, 'w=600'),
+      autor: autores[i % autores.length], momento: boda.momentos[i % boda.momentos.length], oculta: false,
+      created_at: new Date(Date.now() - (i + 1) * 6e5).toISOString() };
+  });
 }
 
 function leer() {
   try {
     const s = JSON.parse(localStorage.getItem(CLAVE));
-    if (s) return s;
+    // Demo guardada antes de que existieran estas partes: se completan.
+    if (s) {
+      const c = { avisos: [], canciones: [], juego: { pregunta: -1, fase: 'cerrado', respuestas: [] }, ...s };
+      if (!c.fotosMuestra) { c.fotos = [...fotosDeMuestra(), ...c.fotos]; c.fotosMuestra = true; }
+      // Escenario nuevo (la abuela con letra grande) en una demo ya empezada.
+      if (!c.grupos.some((g) => g.codigo === 'DEMO08')) {
+        const n = semilla();
+        const g = n.grupos.find((x) => x.codigo === 'DEMO08');
+        c.grupos.push(g); c.personas.push(...n.personas.filter((p) => p.grupo_id === g.id));
+      }
+      return c;
+    }
   } catch { /* estado roto: se reinicia */ }
   const s = semilla();
   guardar(s);
@@ -117,7 +149,7 @@ function armarInvitacion(s, g) {
   const mesas = Object.fromEntries(s.mesas.map((m) => [m.id, m.nombre]));
   return {
     grupo: { codigo: g.codigo, nombre: g.nombre, pases: g.pases, estado: g.estado, mensaje: g.mensaje,
-      cancion: g.cancion, respondido_at: g.respondido_at },
+      cancion: g.cancion, respondido_at: g.respondido_at, letra_grande: !!g.letra_grande },
     limite: boda.confirmarAntesDe,
     personas: s.personas.filter((p) => p.grupo_id === g.id).map((p) => ({
       id: p.id, nombre: p.nombre, es_nino: p.es_nino, asistira: p.asistira, restriccion: p.restriccion,
@@ -204,11 +236,13 @@ export async function listarMensajes({ incluirOcultos = false } = {}) {
   const m = leer().mensajes.filter((x) => incluirOcultos || !x.oculto);
   return espera(clonar(m).sort((a, b) => b.created_at.localeCompare(a.created_at)));
 }
-export async function firmar({ autor, texto }) {
-  if ((autor?.trim().length ?? 0) < 2 || (texto?.trim().length ?? 0) < 2) throw new Error('Escribe tu nombre y tu mensaje');
+export async function firmar({ autor, texto, audio }) {
+  if ((autor?.trim().length ?? 0) < 2) throw new Error('Escribe tu nombre');
+  if (!audio && (texto?.trim().length ?? 0) < 2) throw new Error('Escribe tu mensaje o graba uno de voz');
   const s = leer();
   const moderar = (s.ajustes?.moderar_mensajes ?? 'no') === 'si';
-  s.mensajes.push({ id: uid(), autor: autor.trim().slice(0, 60), texto: texto.trim().slice(0, 600), oculto: moderar, created_at: ahora() });
+  const voz = audio ? await blobADataUrl(audio) : null;
+  s.mensajes.push({ id: uid(), autor: autor.trim().slice(0, 60), texto: (texto || '').trim().slice(0, 600), audio: voz, oculto: moderar, created_at: ahora() });
   guardar(s);
   return espera(!moderar);
 }
@@ -325,3 +359,109 @@ export async function grupoPorCodigo(codigo) {
     personas: s.personas.filter((p) => p.grupo_id === g.id).map((p) => ({ nombre: p.nombre, asistira: p.asistira, mesa: mesas[p.mesa_id] ?? null })),
   }));
 }
+
+export const urlAudio = (ruta) => ruta;   // en la demo el audio ya es un data: URL
+
+// ── El día en vivo ─────────────────────────────────────────────────────────
+function oir(alCambiar) {
+  const f = () => alCambiar();
+  oyentes.add(f);
+  const alStorage = (e) => { if (e.key === CLAVE) alCambiar(); };
+  window.addEventListener('storage', alStorage);
+  return () => { oyentes.delete(f); window.removeEventListener('storage', alStorage); };
+}
+export const listarAvisos = async () => espera(clonar(leer().avisos).sort((a, b) => b.created_at.localeCompare(a.created_at)));
+export async function publicarAviso(texto) {
+  const s = leer();
+  s.avisos.push({ id: uid(), texto: texto.trim().slice(0, 280), created_at: ahora() });
+  guardar(s);
+}
+export async function borrarAviso(id) {
+  const s = leer();
+  s.avisos = s.avisos.filter((a) => a.id !== id);
+  guardar(s);
+}
+export const suscribirAvisos = oir;
+const sinTildes = (t = '') => t.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+export async function buscarMesa(clave, nombre) {
+  if (!(await verificarClaveAlbum(clave))) throw new Error('Clave incorrecta');
+  const q = sinTildes(nombre.trim());
+  if (q.length < 3) return [];
+  const s = leer();
+  const mesas = Object.fromEntries(s.mesas.map((m) => [m.id, m.nombre]));
+  return espera(s.personas.filter((p) => p.asistira && p.mesa_id && sinTildes(p.nombre).includes(q))
+    .slice(0, 8).map((p) => ({ nombre: p.nombre, mesa: mesas[p.mesa_id] })));
+}
+
+// ── Canciones ──────────────────────────────────────────────────────────────
+const sinVotantes = ({ votantes, ...c }) => c;
+export const listarCanciones = async () => espera(leer().canciones.filter((c) => !c.oculta).map(sinVotantes)
+  .sort((a, b) => b.votos - a.votos || a.created_at.localeCompare(b.created_at)));
+export async function pedirCancion({ titulo, artista, nombre }, votante) {
+  if (!titulo?.trim()) throw new Error('Escribe el nombre de la canción');
+  const s = leer();
+  let c = s.canciones.find((x) => sinTildes(x.titulo) === sinTildes(titulo.trim()) && sinTildes(x.artista || '') === sinTildes(artista?.trim() || ''));
+  if (!c) {
+    c = { id: uid(), titulo: titulo.trim().slice(0, 120), artista: artista?.trim().slice(0, 80) || null, pedido_por: nombre?.trim().slice(0, 60) || null,
+      votos: 0, tocada: false, oculta: false, created_at: ahora(), votantes: [] };
+    s.canciones.push(c);
+  }
+  if (!c.votantes.includes(votante)) c.votantes.push(votante);
+  c.votos = c.votantes.length;
+  guardar(s);
+  return c.id;
+}
+export async function votarCancion(id, votante) {
+  const s = leer();
+  const c = s.canciones.find((x) => x.id === id);
+  const ya = c.votantes.includes(votante);
+  c.votantes = ya ? c.votantes.filter((v) => v !== votante) : [...c.votantes, votante];
+  c.votos = c.votantes.length;
+  guardar(s);
+  return !ya;
+}
+export const misVotos = async (votante) => leer().canciones.filter((c) => c.votantes.includes(votante)).map((c) => c.id);
+export async function marcarCancion(id, cambios) {
+  const s = leer();
+  Object.assign(s.canciones.find((c) => c.id === id), cambios);
+  guardar(s);
+}
+export const suscribirCanciones = oir;
+
+// ── Juego ──────────────────────────────────────────────────────────────────
+export async function estadoJuego() {
+  const { juego } = leer();
+  const correctas = (boda.juego?.preguntas || []).map((q) => q.correcta);
+  const deEsta = juego.respuestas.filter((r) => r.pregunta === juego.pregunta);
+  const conteo = {};
+  deEsta.forEach((r) => { conteo[r.opcion] = (conteo[r.opcion] || 0) + 1; });
+  const puntos = {};
+  juego.respuestas.forEach((r) => {
+    const cuenta = r.pregunta < juego.pregunta || (r.pregunta === juego.pregunta && ['revelada', 'final'].includes(juego.fase));
+    puntos[r.jugador] ??= { nombre: r.nombre, puntos: 0 };
+    if (cuenta && r.opcion === correctas[r.pregunta]) puntos[r.jugador].puntos += 1;
+  });
+  return { pregunta: juego.pregunta, fase: juego.fase, conteo, total: deEsta.length,
+    ranking: Object.values(puntos).sort((a, b) => b.puntos - a.puntos).slice(0, 10) };
+}
+export async function responderJuego(jugador, nombre, opcion) {
+  const s = leer();
+  if (s.juego.fase !== 'abierta' || s.juego.pregunta < 0) throw new Error('Esta pregunta ya cerró');
+  if (!nombre?.trim()) throw new Error('Escribe tu nombre');
+  if (!s.juego.respuestas.some((r) => r.pregunta === s.juego.pregunta && r.jugador === jugador)) {
+    s.juego.respuestas.push({ pregunta: s.juego.pregunta, jugador, nombre: nombre.trim().slice(0, 40), opcion, created_at: ahora() });
+    guardar(s);
+  }
+  return true;
+}
+export async function controlarJuego({ pregunta, fase }) {
+  const s = leer();
+  s.juego = { ...s.juego, pregunta, fase };
+  guardar(s);
+}
+export async function reiniciarJuego() {
+  const s = leer();
+  s.juego = { pregunta: -1, fase: 'cerrado', respuestas: [] };
+  guardar(s);
+}
+export const suscribirJuego = oir;

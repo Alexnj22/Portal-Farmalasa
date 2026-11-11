@@ -311,35 +311,256 @@ begin
   return v;
 end $$;
 
--- Devuelve si el mensaje ya se ve (false = espera aprobación de los novios).
-drop function if exists firmar_libro(text, text);
-create or replace function firmar_libro(p_autor text, p_texto text) returns boolean
-language plpgsql security definer set search_path = public as $$
-declare v_moderar boolean := coalesce(ajuste('moderar_mensajes'), 'no') = 'si';
-begin
-  if length(trim(coalesce(p_autor, ''))) < 2 or length(trim(coalesce(p_texto, ''))) < 2 then
-    raise exception 'Escribe tu nombre y tu mensaje';
-  end if;
-  if (select count(*) from mensajes where created_at > now() - interval '10 minutes') >= 100 then
-    raise exception 'Llegaron muchos mensajes seguidos. Intenta en unos minutos.';
-  end if;
-  insert into mensajes (autor, texto, oculto) values (left(trim(p_autor), 60), left(trim(p_texto), 600), v_moderar);
-  return not v_moderar;
-end $$;
-
 revoke execute on function invitacion(text), responder_invitacion(text, json, text, text),
   verificar_clave_album(text), autorizar_subida(text, text), subida_autorizada(text),
-  registrar_foto(text, text, text, int, int), firmar_libro(text, text), es_admin(),
+  registrar_foto(text, text, text, int, int), es_admin(),
   ajuste(text), plazo_vencido() from public, anon, authenticated;
 grant execute on function invitacion(text), responder_invitacion(text, json, text, text),
   verificar_clave_album(text), autorizar_subida(text, text), subida_autorizada(text),
-  registrar_foto(text, text, text, int, int), firmar_libro(text, text) to anon, authenticated;
+  registrar_foto(text, text, text, int, int) to anon, authenticated;
 grant execute on function es_admin() to authenticated;
+
+
+-- ═════════════════════════════════════════════════════════════════════════════
+-- Segunda ronda: modo «letra grande», el día en vivo, canciones, mensajes de
+-- voz y el juego del salón.
+-- ═════════════════════════════════════════════════════════════════════════════
+
+-- Invitación que se abre sola en modo fácil (abuelos): letra grande, sin
+-- animaciones, confirmación de a una pregunta. La marcan los novios.
+alter table grupos add column if not exists letra_grande boolean not null default false;
+
+-- invitacion() con la marca de letra grande (misma firma que arriba).
+create or replace function invitacion(p_codigo text) returns json
+language plpgsql security definer set search_path = public as $$
+declare g grupos; r json;
+begin
+  select * into g from grupos where codigo = upper(trim(p_codigo));
+  if not found then return null; end if;
+  update grupos set abierta_at = coalesce(abierta_at, now()) where id = g.id;
+  select json_build_object(
+    'grupo', json_build_object('codigo', g.codigo, 'nombre', g.nombre, 'pases', g.pases,
+                               'estado', g.estado, 'mensaje', g.mensaje, 'cancion', g.cancion,
+                               'respondido_at', g.respondido_at, 'letra_grande', g.letra_grande),
+    'limite', ajuste('confirmar_antes_de'),
+    'personas', coalesce((
+      select json_agg(json_build_object(
+        'id', p.id, 'nombre', p.nombre, 'es_nino', p.es_nino, 'asistira', p.asistira,
+        'restriccion', p.restriccion, 'mesa', m.nombre, 'agregado', p.agregado_por_invitado) order by p.created_at)
+      from personas p left join mesas m on m.id = p.mesa_id where p.grupo_id = g.id), '[]'::json)
+  ) into r;
+  return r;
+end $$;
+
+-- ── El día en vivo: avisos de los novios ────────────────────────────────────
+create table if not exists avisos (
+  id uuid primary key default gen_random_uuid(),
+  texto text not null check (length(texto) between 1 and 280),
+  created_at timestamptz not null default now()
+);
+create index if not exists avisos_fecha_idx on avisos(created_at desc);
+alter table avisos enable row level security;
+drop policy if exists avisos_admin on avisos;
+create policy avisos_admin on avisos for all to authenticated using ((select es_admin())) with check ((select es_admin()));
+drop policy if exists avisos_publicos on avisos;
+create policy avisos_publicos on avisos for select to anon, authenticated using (created_at > now() - interval '2 days');
+
+-- «¿Dónde me siento?»: con la clave del álbum (va en el letrero de la entrada),
+-- busca por nombre entre los que confirmaron y ya tienen mesa.
+create or replace function sin_tildes(t text) returns text
+language sql immutable set search_path = public as $$
+  select translate(lower(coalesce(t, '')), 'áéíóúüñàèìòù', 'aeiouunaeiou');
+$$;
+create or replace function buscar_mesa(p_clave text, p_nombre text) returns json
+language plpgsql stable security definer set search_path = public as $$
+declare q text := sin_tildes(trim(p_nombre));
+begin
+  if not verificar_clave_album(p_clave) then raise exception 'Clave incorrecta'; end if;
+  if length(q) < 3 then return '[]'::json; end if;
+  return coalesce((
+    select json_agg(json_build_object('nombre', p.nombre, 'mesa', m.nombre) order by p.nombre)
+    from (select * from personas p
+          where p.asistira and p.mesa_id is not null and sin_tildes(p.nombre) like '%' || q || '%'
+          order by p.nombre limit 8) p
+    join mesas m on m.id = p.mesa_id), '[]'::json);
+end $$;
+
+-- ── Canciones: los invitados piden y votan ───────────────────────────────────
+create table if not exists canciones (
+  id uuid primary key default gen_random_uuid(),
+  titulo text not null check (length(titulo) between 1 and 120),
+  artista text,
+  pedido_por text,
+  votos int not null default 0,
+  tocada boolean not null default false,
+  oculta boolean not null default false,
+  created_at timestamptz not null default now()
+);
+create unique index if not exists canciones_unica on canciones (sin_tildes(titulo), sin_tildes(coalesce(artista, '')));
+create table if not exists canciones_votos (
+  cancion_id uuid not null references canciones(id) on delete cascade,
+  votante uuid not null,               -- id anónimo que guarda el teléfono
+  created_at timestamptz not null default now(),
+  primary key (cancion_id, votante)
+);
+alter table canciones enable row level security;
+alter table canciones_votos enable row level security;
+drop policy if exists canciones_admin on canciones;
+create policy canciones_admin on canciones for all to authenticated using ((select es_admin())) with check ((select es_admin()));
+drop policy if exists canciones_votos_admin on canciones_votos;
+create policy canciones_votos_admin on canciones_votos for all to authenticated using ((select es_admin())) with check ((select es_admin()));
+drop policy if exists canciones_publicas on canciones;
+create policy canciones_publicas on canciones for select to anon, authenticated using (not oculta);
+
+-- Pedir: si ya la pidió alguien, cuenta como voto.
+create or replace function pedir_cancion(p_titulo text, p_artista text, p_nombre text, p_votante uuid) returns uuid
+language plpgsql security definer set search_path = public as $$
+declare v uuid;
+begin
+  if length(trim(coalesce(p_titulo, ''))) < 1 then raise exception 'Escribe el nombre de la canción'; end if;
+  if (select count(*) from canciones where created_at > now() - interval '10 minutes') >= 300 then
+    raise exception 'Llegaron muchas canciones seguidas. Intenta en unos minutos.';
+  end if;
+  select id into v from canciones
+  where sin_tildes(titulo) = sin_tildes(trim(p_titulo)) and sin_tildes(coalesce(artista, '')) = sin_tildes(coalesce(trim(p_artista), ''));
+  if v is null then
+    insert into canciones (titulo, artista, pedido_por)
+    values (left(trim(p_titulo), 120), nullif(left(trim(p_artista), 80), ''), nullif(left(trim(p_nombre), 60), ''))
+    returning id into v;
+  end if;
+  insert into canciones_votos (cancion_id, votante) values (v, p_votante) on conflict do nothing;
+  update canciones set votos = (select count(*) from canciones_votos where cancion_id = v) where id = v;
+  return v;
+end $$;
+
+-- Votar o quitar el voto. Devuelve si quedó votada.
+create or replace function votar_cancion(p_id uuid, p_votante uuid) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare votada boolean;
+begin
+  if exists (select 1 from canciones_votos where cancion_id = p_id and votante = p_votante) then
+    delete from canciones_votos where cancion_id = p_id and votante = p_votante; votada := false;
+  else
+    if (select count(*) from canciones_votos where votante = p_votante) >= 50 then
+      raise exception 'Ya votaste por muchas canciones';
+    end if;
+    insert into canciones_votos (cancion_id, votante) values (p_id, p_votante); votada := true;
+  end if;
+  update canciones set votos = (select count(*) from canciones_votos where cancion_id = p_id) where id = p_id;
+  return votada;
+end $$;
+
+-- Qué canciones votó este teléfono (para pintar los corazones).
+create or replace function mis_votos(p_votante uuid) returns json
+language sql stable security definer set search_path = public as $$
+  select coalesce(json_agg(cancion_id), '[]'::json) from canciones_votos where votante = p_votante;
+$$;
+
+-- ── Mensajes de voz en el libro de firmas ───────────────────────────────────
+alter table mensajes add column if not exists audio text;   -- ruta en el bucket «album» (voces/…)
+
+create or replace function autorizar_voz(p_ext text) returns json
+language plpgsql security definer set search_path = public as $$
+declare v_ext text := lower(trim(p_ext)); v_ruta text;
+begin
+  if v_ext not in ('webm','m4a','mp4','ogg','mp3') then raise exception 'Formato de audio no permitido'; end if;
+  if (select count(*) from subidas where ruta like 'voces/%' and created_at > now() - interval '10 minutes') >= 200 then
+    raise exception 'Llegaron muchos mensajes seguidos. Intenta en unos minutos.';
+  end if;
+  v_ruta := 'voces/' || gen_random_uuid() || '.' || v_ext;
+  insert into subidas (ruta, miniatura) values (v_ruta, v_ruta || '.sin-miniatura');
+  return json_build_object('ruta', v_ruta);
+end $$;
+
+drop function if exists firmar_libro(text, text);
+create or replace function firmar_libro(p_autor text, p_texto text, p_audio text default null) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare v_moderar boolean := coalesce(ajuste('moderar_mensajes'), 'no') = 'si'; v_audio text;
+begin
+  if length(trim(coalesce(p_autor, ''))) < 2 then raise exception 'Escribe tu nombre'; end if;
+  if p_audio is null and length(trim(coalesce(p_texto, ''))) < 2 then raise exception 'Escribe tu mensaje o graba uno de voz'; end if;
+  if (select count(*) from mensajes where created_at > now() - interval '10 minutes') >= 100 then
+    raise exception 'Llegaron muchos mensajes seguidos. Intenta en unos minutos.';
+  end if;
+  if p_audio is not null then
+    update subidas set usada = true
+    where ruta = p_audio and ruta like 'voces/%' and not usada and created_at > now() - interval '30 minutes'
+    returning ruta into v_audio;
+    if v_audio is null or not exists (select 1 from storage.objects where bucket_id = 'album' and name = v_audio) then
+      raise exception 'El audio no llegó completo. Intenta de nuevo.';
+    end if;
+  end if;
+  insert into mensajes (autor, texto, oculto, audio)
+  values (left(trim(p_autor), 60), coalesce(left(trim(p_texto), 600), ''), v_moderar, v_audio);
+  return not v_moderar;
+end $$;
+
+-- ── El juego del salón («¿Cuánto conoces a los novios?») ────────────────────
+-- Las preguntas viven en src/config.js; la base guarda la pregunta en curso,
+-- su fase y las respuestas correctas (las copia el panel, como la fecha límite).
+insert into ajustes (clave, valor) values ('juego_pregunta', '-1'), ('juego_fase', 'cerrado'), ('juego_correctas', '')
+on conflict (clave) do nothing;
+
+create table if not exists juego_respuestas (
+  pregunta int not null,
+  jugador uuid not null,
+  nombre text not null,
+  opcion int not null check (opcion between 0 and 5),
+  created_at timestamptz not null default now(),
+  primary key (pregunta, jugador)
+);
+alter table juego_respuestas enable row level security;
+drop policy if exists juego_admin on juego_respuestas;
+create policy juego_admin on juego_respuestas for all to authenticated using ((select es_admin())) with check ((select es_admin()));
+
+create or replace function estado_juego() returns json
+language plpgsql stable security definer set search_path = public as $$
+declare v_p int := coalesce(ajuste('juego_pregunta'), '-1')::int;
+        v_f text := coalesce(ajuste('juego_fase'), 'cerrado');
+        v_c int[] := coalesce(string_to_array(nullif(ajuste('juego_correctas'), ''), ',')::int[], '{}');
+begin
+  return json_build_object(
+    'pregunta', v_p, 'fase', v_f,
+    'conteo', coalesce((select json_object_agg(opcion, n) from (
+      select opcion, count(*) n from juego_respuestas where pregunta = v_p group by opcion) c), '{}'::json),
+    'total', (select count(*) from juego_respuestas where pregunta = v_p),
+    'ranking', coalesce((select json_agg(r) from (
+      select nombre, count(*) filter (where opcion = v_c[pregunta + 1]
+               and (pregunta < v_p or (pregunta = v_p and v_f in ('revelada', 'final')))) puntos
+      from juego_respuestas group by jugador, nombre order by puntos desc, min(created_at) limit 10) r), '[]'::json));
+end $$;
+
+create or replace function responder_juego(p_jugador uuid, p_nombre text, p_opcion int) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare v_p int := coalesce(ajuste('juego_pregunta'), '-1')::int;
+begin
+  if coalesce(ajuste('juego_fase'), 'cerrado') <> 'abierta' or v_p < 0 then
+    raise exception 'Esta pregunta ya cerró';
+  end if;
+  if length(trim(coalesce(p_nombre, ''))) < 1 then raise exception 'Escribe tu nombre'; end if;
+  insert into juego_respuestas (pregunta, jugador, nombre, opcion)
+  values (v_p, p_jugador, left(trim(p_nombre), 40), p_opcion)
+  on conflict (pregunta, jugador) do nothing;
+  return true;
+end $$;
+
+revoke execute on function invitacion(text), sin_tildes(text), buscar_mesa(text, text),
+  pedir_cancion(text, text, text, uuid), votar_cancion(uuid, uuid), mis_votos(uuid), autorizar_voz(text),
+  firmar_libro(text, text, text), estado_juego(), responder_juego(uuid, text, int) from public, anon, authenticated;
+grant execute on function invitacion(text), buscar_mesa(text, text),
+  pedir_cancion(text, text, text, uuid), votar_cancion(uuid, uuid), mis_votos(uuid), autorizar_voz(text),
+  firmar_libro(text, text, text), estado_juego(), responder_juego(uuid, text, int) to anon, authenticated;
+grant execute on function sin_tildes(text) to authenticated;
+
+do $$ begin
+  alter publication supabase_realtime add table avisos;
+exception when duplicate_object then null; end $$;
 
 -- ── Storage: bucket del álbum ───────────────────────────────────────────────
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('album', 'album', true, 26214400,
-        array['image/jpeg','image/png','image/webp','image/heic','image/heif','video/mp4','video/quicktime'])
+        array['image/jpeg','image/png','image/webp','image/heic','image/heif','video/mp4','video/quicktime',
+              'audio/webm','audio/mp4','audio/x-m4a','audio/ogg','audio/mpeg'])
 on conflict (id) do update set public = true, file_size_limit = excluded.file_size_limit,
   allowed_mime_types = excluded.allowed_mime_types;
 

@@ -111,7 +111,7 @@ export default function Invitados({ grupos, recargar }) {
               <tr key={g.id}>
                 <td>
                   <b>{g.nombre}</b>
-                  <div className="chico suave">{g.codigo} · {g.pases} {g.pases === 1 ? 'pase' : 'pases'} · {g.lado}{g.etiqueta ? ` · ${g.etiqueta}` : ''}</div>
+                  <div className="chico suave">{g.codigo} · {g.pases} {g.pases === 1 ? 'pase' : 'pases'} · {g.lado}{g.etiqueta ? ` · ${g.etiqueta}` : ''}{g.letra_grande ? ' · Aa letra grande' : ''}</div>
                   {g.abierta_at && <div className="chico" style={{ color: 'var(--oliva)' }}>👁 Abrió su invitación</div>}
                 </td>
                 <td className="chico">
@@ -163,6 +163,7 @@ function EditarGrupo({ grupo, alCerrar, alGuardar }) {
       const fila = await api.guardarGrupo({
         ...(g.id ? { id: g.id } : {}), nombre: g.nombre.trim(), pases: Number(g.pases), lado: g.lado,
         telefono: g.telefono || null, etiqueta: g.etiqueta || null, notas: g.notas || null,
+        letra_grande: !!g.letra_grande,
       });
       for (const id of borradas) await api.borrarPersona(id);
       for (const p of nombres) {
@@ -210,6 +211,10 @@ function EditarGrupo({ grupo, alCerrar, alGuardar }) {
           <label className="campo"><span>Etiqueta</span><input value={g.etiqueta || ''} onChange={(e) => set('etiqueta', e.target.value)} placeholder="Familia, Trabajo…" /></label>
         </div>
         <label className="campo"><span>Notas internas</span><input value={g.notas || ''} onChange={(e) => set('notas', e.target.value)} /></label>
+        <label className="opcion-casilla">
+          <input type="checkbox" checked={!!g.letra_grande} onChange={(e) => set('letra_grande', e.target.checked)} />
+          <span><b>Letra grande</b> <span className="chico suave">Para abuelos: su enlace se abre con letra grande, sin animaciones, con la invitación leída en voz alta y la confirmación de a una pregunta.</span></span>
+        </label>
 
         <b className="chico">Personas ({personas.filter((p) => p.nombre.trim()).length} de {g.pases})</b>
         <p className="chico suave" style={{ margin: '2px 0 8px' }}>Los pases sin nombre los completa el invitado al confirmar (acompañantes). Si alguien les respondió por teléfono, anótenlo con «Asiste» / «No».</p>

@@ -63,3 +63,7 @@ export function enlaceGoogleCalendar() {
   });
   return `https://calendar.google.com/calendar/render?${p}`;
 }
+
+/** «8:42 p. m.»: la hora de un aviso, en la zona de la boda. */
+export const horaCorta = (iso) =>
+  new Date(iso).toLocaleTimeString(locale(), { hour: 'numeric', minute: '2-digit', timeZone: tz });

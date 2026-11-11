@@ -9,10 +9,11 @@ import FotosAdmin from './FotosAdmin';
 import MensajesAdmin from './MensajesAdmin';
 import Compartir from './Compartir';
 import Entrada from './Entrada';
+import EnVivoAdmin from './EnVivoAdmin';
 
 const PESTANAS = [
   ['resumen', 'Resumen'], ['invitados', 'Invitados'], ['mesas', 'Mesas'],
-  ['album', 'Álbum'], ['mensajes', 'Mensajes'], ['compartir', 'QR y enlaces'], ['entrada', 'Entrada'],
+  ['album', 'Álbum'], ['mensajes', 'Mensajes'], ['compartir', 'QR y enlaces'], ['entrada', 'Entrada'], ['vivo', 'En vivo'],
 ];
 
 export default function Admin() {
@@ -78,6 +79,7 @@ export default function Admin() {
       {pestana === 'mensajes' && <MensajesAdmin grupos={grupos} />}
       {pestana === 'compartir' && <Compartir mesas={mesas} />}
       {pestana === 'entrada' && <Entrada {...props} />}
+      {pestana === 'vivo' && <EnVivoAdmin />}
       {modoDemo && (
         <p className="chico suave centro" style={{ marginTop: 40 }}>
           <button className="btn peligro chico" onClick={() => { if (confirm('¿Borrar todo y volver a los datos de ejemplo?')) { api.reiniciarDemo(); recargar(); } }}>Reiniciar la demo</button>

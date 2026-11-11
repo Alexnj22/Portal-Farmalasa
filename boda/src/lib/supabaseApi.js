@@ -76,7 +76,18 @@ export const listarMensajes = async ({ incluirOcultos = false } = {}) => {
   return ok(await q);
 };
 // Devuelve true si el mensaje ya se ve; false si espera aprobación.
-export const firmar = async ({ autor, texto }) => ok(await sb.rpc('firmar_libro', { p_autor: autor, p_texto: texto }));
+// Con `audio` (Blob de la grabación): permiso → subida → firma, como las fotos.
+export async function firmar({ autor, texto, audio }) {
+  let ruta = null;
+  if (audio) {
+    const ext = extAudio(audio.type);
+    ruta = ok(await sb.rpc('autorizar_voz', { p_ext: ext })).ruta;
+    ok(await sb.storage.from('album').upload(ruta, audio, { contentType: audio.type || 'audio/webm', cacheControl: '31536000' }));
+  }
+  return ok(await sb.rpc('firmar_libro', { p_autor: autor, p_texto: texto, p_audio: ruta }));
+}
+const extAudio = (tipo = '') => (/mp4|m4a|aac/.test(tipo) ? 'm4a' : /ogg/.test(tipo) ? 'ogg' : /mpeg|mp3/.test(tipo) ? 'mp3' : 'webm');
+export const urlAudio = (ruta) => (ruta ? urlPublica(ruta) : null);
 
 // ── Admin ──────────────────────────────────────────────────────────────────
 export async function login(email, password) {
@@ -160,4 +171,45 @@ export async function grupoPorCodigo(codigo) {
     .eq('codigo', codigo.trim().toUpperCase()).maybeSingle());
   if (!g) return null;
   return { ...g, personas: g.personas.map((p) => ({ nombre: p.nombre, asistira: p.asistira, mesa: p.mesas?.nombre ?? null })) };
+}
+
+// ── El día en vivo ─────────────────────────────────────────────────────────
+export const listarAvisos = async () => ok(await sb.from('avisos').select('*').order('created_at', { ascending: false }).range(0, 19));
+export const publicarAviso = async (texto) => ok(await sb.from('avisos').insert({ texto: texto.trim().slice(0, 280) }));
+export const borrarAviso = async (id) => ok(await sb.from('avisos').delete().eq('id', id));
+export function suscribirAvisos(alLlegar) {
+  const canal = sb.channel('avisos-en-vivo')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'avisos' }, () => alLlegar())
+    .subscribe();
+  return () => sb.removeChannel(canal);
+}
+export const buscarMesa = async (clave, nombre) => ok(await sb.rpc('buscar_mesa', { p_clave: clave, p_nombre: nombre }));
+
+// ── Canciones ──────────────────────────────────────────────────────────────
+export const listarCanciones = async () =>
+  ok(await sb.from('canciones').select('*').order('votos', { ascending: false }).order('created_at').range(0, 499));
+export const pedirCancion = async ({ titulo, artista, nombre }, votante) =>
+  ok(await sb.rpc('pedir_cancion', { p_titulo: titulo, p_artista: artista, p_nombre: nombre, p_votante: votante }));
+export const votarCancion = async (id, votante) => ok(await sb.rpc('votar_cancion', { p_id: id, p_votante: votante }));
+export const misVotos = async (votante) => ok(await sb.rpc('mis_votos', { p_votante: votante }));
+export const marcarCancion = async (id, cambios) => ok(await sb.from('canciones').update(cambios).eq('id', id));
+export function suscribirCanciones(alCambiar) {
+  const t = setInterval(alCambiar, 5000);
+  return () => clearInterval(t);
+}
+
+// ── Juego ──────────────────────────────────────────────────────────────────
+export const estadoJuego = async () => ok(await sb.rpc('estado_juego'));
+export const responderJuego = async (jugador, nombre, opcion) =>
+  ok(await sb.rpc('responder_juego', { p_jugador: jugador, p_nombre: nombre, p_opcion: opcion }));
+export async function controlarJuego({ pregunta, fase }) {
+  ok(await sb.from('ajustes').upsert([{ clave: 'juego_pregunta', valor: String(pregunta) }, { clave: 'juego_fase', valor: fase }]));
+}
+export const reiniciarJuego = async () => {
+  ok(await sb.from('juego_respuestas').delete().gte('pregunta', -1));
+  await controlarJuego({ pregunta: -1, fase: 'cerrado' });
+};
+export function suscribirJuego(alCambiar) {
+  const t = setInterval(alCambiar, 2000);
+  return () => clearInterval(t);
 }

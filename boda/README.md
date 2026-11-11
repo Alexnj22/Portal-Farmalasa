@@ -109,3 +109,16 @@ Invitaciones de ejemplo: `DEMO01` familia de 4 con 3 nombres (sobra un lugar par
 - Los videos llevan como portada un cuadro del primer segundo.
 - Las fotos HEIC que el navegador no sabe abrir (Chrome en Android, Windows) se convierten a JPG en el teléfono; el convertidor sólo se descarga si hace falta.
 - Si la señal se cae a mitad de la subida, se reintenta solo (y espera a que vuelva la conexión). Cerrar la página a mitad de una subida pide confirmación.
+
+
+## Segunda ronda: lo que trae ahora
+
+- **Letra grande (abuelos).** En el panel, al editar una invitación, «Letra grande»: ese enlace se abre con letra más grande, sin animaciones, con los botones «Escuchar la invitación» (la lee el teléfono), «Confirmar», «Cómo llegar» y «Llamar». La confirmación va de a una pregunta con botones enormes. Cualquiera la prende con el botón **Aa**. Escenario de prueba: `DEMO08`.
+- **El sobre.** Cada enlace personal se abre con un sobre con el nombre del invitado y un sello «A&E». Música opcional: `musica` en `src/config.js` (empieza apagada).
+- **El día en vivo.** Fase `boda`: la portada dice qué está pasando y qué sigue (sale de `itinerario`), «¿Dónde me siento?» busca la mesa por nombre (con la clave del álbum), y Panel → **En vivo** manda avisos que aparecen al instante en todos los teléfonos.
+- **Canciones.** `/canciones` para pedir y votar; `/dj` es la pantalla del DJ, ordenada por votos. En el panel se marcan las que ya sonaron.
+- **Mensajes de voz** en el libro de firmas (hasta 1 minuto).
+- **El juego** «¿Cuánto conoces a los novios?»: preguntas en `juego` de `src/config.js`; los invitados juegan en `/juego`, el proyector en `/pantalla?modo=juego`, y se maneja desde Panel → En vivo.
+- **Presentación** de las fotos de los invitados (pantalla completa, acercamiento lento), desde el álbum y la portada de recuerdos.
+
+Con Supabase: volver a correr `supabase/schema.sql` completo (es idempotente) para crear las tablas nuevas (`avisos`, `canciones`, `canciones_votos`, `juego_respuestas`) y las funciones.

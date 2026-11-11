@@ -5,6 +5,7 @@ import { limiteConfirmar, plazoVencido, diasParaConfirmar, descargarIcs, enlaceG
 import { t, locale } from '../lib/idioma';
 import { enlaceInvitacion } from '../lib/codigo';
 import QR from '../components/QR';
+import { useFacil } from '../lib/facil';
 
 /*
  * Confirmación de una invitación.
@@ -37,6 +38,7 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
   const [enviando, setEnviando] = useState(false);
   const [error, setError] = useState('');
 
+  const facil = useFacil();
   const visibles = filas.filter((f) => !f.quitar);
   const libres = grupo.pases - visibles.length;
   const cambiar = (k, campo, v) => setFilas((fs) => fs.map((f) => (f.clave === k ? { ...f, [campo]: v } : f)));
@@ -157,6 +159,14 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
     </p></>;
   }
 
+  // ── Modo fácil: de a una pregunta ────────────────────────────
+  if (facil) {
+    return (
+      <PasoAPaso cabeza={cabeza} visibles={visibles} libres={libres} cambiar={cambiar} agregar={agregar} quitar={quitar}
+        enviar={() => enviar({ preventDefault() {} })} enviando={enviando} error={error} />
+    );
+  }
+
   // ── Formulario ───────────────────────────────────────────────
   const resumen = cuenta.van
     ? t(`Asisten ${cuenta.van} de ${grupo.pases}`, `${cuenta.van} of ${grupo.pases} attending`)
@@ -244,5 +254,81 @@ export default function Rsvp({ codigo, invitacion, alResponder, cerrado }) {
         <button className="btn" disabled={enviando}>{textoBoton}</button>
       </div>
     </form>
+  );
+}
+
+/*
+ * Confirmación para los abuelos: una sola pregunta en pantalla, dos botones
+ * enormes, y al final la lista de lo que van a enviar para revisarla.
+ */
+function PasoAPaso({ cabeza, visibles, libres, cambiar, agregar, quitar, enviar, enviando, error }) {
+  const [paso, setPaso] = useState(0);
+  const [extra, setExtra] = useState(null); // null | 'pregunta' | 'nombre'
+  const actual = visibles[paso];
+  const total = visibles.length;
+  const siguiente = () => setPaso((n) => n + 1);
+
+  // Pantalla de una persona
+  if (actual && extra !== 'pregunta') {
+    const sinNombre = (actual.nuevo || actual.primero) && !actual.nombre.trim();
+    const pidiendoNombre = actual.nuevo && (actual.primero || extra === 'nombre') && actual.asistira !== false && !actual.listo;
+    return (
+      <div className="paso">
+        {paso === 0 && cabeza}
+        <p className="paso-cuenta">{t(`Pregunta ${paso + 1} de ${total}`, `Question ${paso + 1} of ${total}`)}</p>
+        {pidiendoNombre ? <>
+          <label className="paso-pregunta" htmlFor="nombre-paso">{actual.primero ? t('¿Cómo te llamas?', "What's your name?") : t('¿Cómo se llama tu acompañante?', "What's your guest's name?")}</label>
+          <input id="nombre-paso" className="paso-campo" value={actual.nombre} onChange={(e) => cambiar(actual.clave, 'nombre', e.target.value)} autoComplete="name" maxLength={80} autoFocus />
+          <div className="paso-botones">
+            <button type="button" className="btn enorme" disabled={sinNombre} onClick={() => {
+              cambiar(actual.clave, 'listo', true);
+              if (extra === 'nombre') { cambiar(actual.clave, 'asistira', true); setExtra(null); siguiente(); }
+            }}>{t('Seguir', 'Continue')}</button>
+            {!actual.primero && <button type="button" className="btn enorme claro" onClick={() => { quitar(actual); setExtra(null); }}>{t('Mejor no', 'Never mind')}</button>}
+          </div>
+        </> : <>
+          <p className="paso-pregunta">{actual.primero ? t('¿Vas a venir?', 'Are you coming?') : t(`¿${actual.nombre} va a venir?`, `Is ${actual.nombre} coming?`)}</p>
+          <div className="paso-botones">
+            <button type="button" className={`btn enorme ${actual.asistira === true ? 'elegido' : ''}`} onClick={() => { cambiar(actual.clave, 'asistira', true); siguiente(); }}>{t('Sí, va', 'Yes')}</button>
+            <button type="button" className={`btn enorme claro ${actual.asistira === false ? 'elegido' : ''}`} onClick={() => { cambiar(actual.clave, 'asistira', false); siguiente(); }}>{t('No puede', 'No')}</button>
+          </div>
+        </>}
+        {paso > 0 && <button type="button" className="btn enlace paso-atras" onClick={() => setPaso((n) => n - 1)}>← {t('Volver a la anterior', 'Back')}</button>}
+      </div>
+    );
+  }
+
+  // ¿Alguien más? (sólo si quedan lugares y alguien va)
+  if (!actual && libres > 0 && extra !== 'listo' && visibles.some((f) => f.asistira)) {
+    return (
+      <div className="paso">
+        <p className="paso-pregunta">{t('¿Viene alguien más con ustedes?', 'Is anyone else coming with you?')}</p>
+        <p className="paso-nota">{libres === 1 ? t('Queda 1 lugar en la invitación.', 'There is 1 seat left.') : t(`Quedan ${libres} lugares en la invitación.`, `There are ${libres} seats left.`)}</p>
+        <div className="paso-botones">
+          <button type="button" className="btn enorme" onClick={() => { agregar(); setExtra('nombre'); }}>{t('Sí', 'Yes')}</button>
+          <button type="button" className="btn enorme claro" onClick={() => setExtra('listo')}>{t('No, nadie más', 'No one else')}</button>
+        </div>
+      </div>
+    );
+  }
+
+  // Revisar y enviar
+  const van = visibles.filter((f) => f.asistira && (f.nombre.trim() || f.id));
+  return (
+    <div className="paso">
+      <p className="paso-pregunta">{t('¿Está bien así?', 'Is this right?')}</p>
+      <ul className="paso-resumen">
+        {visibles.filter((f) => f.nombre.trim() || f.id).map((f) => (
+          <li key={f.clave}><span>{f.nombre}</span><b>{f.asistira ? `✓ ${t('Va', 'Coming')}` : t('No va', 'Not coming')}</b></li>
+        ))}
+      </ul>
+      {error && <p className="aviso error" role="alert">{error}</p>}
+      <div className="paso-botones">
+        <button type="button" className="btn enorme" disabled={enviando} onClick={enviar}>
+          {enviando ? t('Enviando…', 'Sending…') : van.length ? t('Sí, enviar mi respuesta', 'Yes, send my answer') : t('Sí, avisar que no podemos', "Yes, tell them we can't")}
+        </button>
+        <button type="button" className="btn enorme claro" onClick={() => { setPaso(0); setExtra(null); }}>{t('Cambiar algo', 'Change something')}</button>
+      </div>
+    </div>
   );
 }

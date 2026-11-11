@@ -57,7 +57,7 @@ const BranchTabLegal = ({
         <div className="space-y-4 w-full">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 items-stretch">
 
-                <SeccionDeFormulario icon={ShieldCheck} titulo="Licencia de funcionamiento (CSSP/DNM)">
+                <SeccionDeFormulario icon={ShieldCheck} titulo="Permiso de funcionamiento (SRS)">
                     <LazyInput
                         label="Número de resolución"
                         name="suc-srs-resolucion"

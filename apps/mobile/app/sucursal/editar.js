@@ -277,7 +277,7 @@ export default function EditarSucursal() {
           {seccion === 'legal' ? (
             <>
               <Seccion titulo="Licencia de funcionamiento">
-                <Rotulo texto="Número de licencia (CSSP / DNM)" />
+                <Rotulo texto="Número de permiso de funcionamiento (SRS)" />
                 <Campo multiline={false} value={legal.srsPermit || ''} onChangeText={(v) => cambiar('legal', 'srsPermit', v)} placeholder="Ej. 1234" />
                 <FechaFila rotulo="Vence" valor={legal.srsExpiration} onCambiar={(v) => cambiar('legal', 'srsExpiration', v)} />
                 <Elegir rotulo="Categoría SRS" valor={rotuloCategoriaSrs(legal.srsCategoria) ?? 'Elegir'}

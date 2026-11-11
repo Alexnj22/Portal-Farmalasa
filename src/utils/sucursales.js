@@ -139,7 +139,7 @@ export const alertasDeSucursal = (branch, currentTimestamp, branchEmployees = []
 
     if (isFarmacia && !oculto) {
         if (!legalData.srsPermit) alerts.push({ level: 'warning', message: 'Falta permiso SRS', icono: 'Info' });
-        evaluateDocExpiration(legalData.srsExpiration, "Licencia CSSP/DNM", 60);
+        evaluateDocExpiration(legalData.srsExpiration, "Permiso de funcionamiento SRS", 60);
         evaluateDocExpiration(legalData.regentCredentialExp, "Credencial Regente", 45);
         evaluateDocExpiration(legalData.pharmacovigilanceExp, "Credencial Referente", 45);
         if (legalData.controlledBooks) {

@@ -139,7 +139,7 @@ export function documentosDeSucursal(b) {
     /** @type {Array<{ id: string, title: string, url: any, expDate: any, hasExpiration?: boolean, modal: string, datos?: Array<{ rotulo: string, valor: string | null }> }>} */
     const permisos = [
         {
-            id: 'srs', title: 'Licencia CSSP / DNM', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit',
+            id: 'srs', title: 'Permiso de funcionamiento SRS', url: legal.srsPermitUrl, expDate: legal.srsExpiration, hasExpiration: true, modal: 'editSrsPermit',
             datos: [
                 { rotulo: 'Resolución', valor: texto(legal.srsPermit) },
                 { rotulo: 'Categoría SRS', valor: rotuloCategoriaSrs(legal.srsCategoria) },

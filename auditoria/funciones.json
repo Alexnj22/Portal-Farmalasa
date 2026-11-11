@@ -5750,6 +5750,14 @@
    "area": "acceso",
    "por": "código"
   },
+  "sala_activa_vigente": {
+   "area": "acceso",
+   "por": "código"
+  },
+  "elegir_sala_activa": {
+   "area": "acceso",
+   "por": "código"
+  },
   "sala_hora_de_cierre": {
    "area": "sucursales",
    "por": "tablas"

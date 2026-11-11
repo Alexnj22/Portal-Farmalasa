@@ -260,7 +260,7 @@ export const AREAS = [
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                  'documentos_por_asignar', 'faltas_disciplinarias',
-                 'employees', 'employee_branches', 'employee_documents', 'employee_events',
+                 'employees', 'employee_branches', 'sala_activa', 'employee_documents', 'employee_events',
                  'practicantes', 'education_catalog_entries',
                  // 2026-10-14: el seguro de vida colectivo (póliza, pago anual y su
                  // listado) y las órdenes de descuento de préstamos.

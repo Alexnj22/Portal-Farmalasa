@@ -143,9 +143,37 @@ export async function leerCargoYSalaPropios(employeeId) {
     const { data: cargoApoyo, error: cargoErr } = await supabase
         .rpc('cargo_de_apoyo_vigente', { p_employee_id: employeeId });
     if (cargoErr) return null;
+    /* Y la sala que eligió quien cubre varias (2026-11-11): misma precedencia
+     * que `auth_yo()` y que el perfil — apoyo, sala elegida, ficha. */
+    const { data: salaActiva, error: activaErr } = await supabase
+        .rpc('sala_activa_vigente', { p_employee_id: employeeId });
+    if (activaErr) return null;
     return {
         ...data,
+        ...(salaApoyo == null && salaActiva != null && { branch_id: Number(salaActiva) }),
         ...(salaApoyo != null && { branch_id: Number(salaApoyo) }),
         ...(cargoApoyo != null && { role_id: Number(cargoApoyo), secondary_role_id: null }),
     };
+}
+
+/**
+ * Elegir con qué sala se trabaja (quien cubre varias: el regente, el referente
+ * de farmacovigilancia). `null` vuelve a la sede. La base valida que la sala
+ * esté entre las que cubre y, desde la próxima consulta, los permisos «de su
+ * sala» miran ésa. Devuelve `{ branchId, error }`.
+ */
+export async function elegirSalaActiva(branchId) {
+    const { data, error } = await supabase.rpc('elegir_sala_activa', {
+        p_branch_id: branchId == null ? null : Number(branchId),
+    });
+    return { branchId: data?.branch_id ?? null, error };
+}
+
+/** Las salas que cubre una persona además de su sede («Áreas que cubre»). */
+export async function leerSalasQueCubro(employeeId) {
+    if (!employeeId) return { salas: [], error: null };
+    const { data, error } = await supabase
+        .from('employee_branches').select('branch_id').eq('employee_id', employeeId);
+    if (error) return { salas: [], error };
+    return { salas: (data || []).map((r) => Number(r.branch_id)), error: null };
 }

@@ -27952,6 +27952,49 @@ export type Database = {
         }
         Relationships: []
       }
+      sala_activa: {
+        Row: {
+          branch_id: number
+          created_at: string
+          employee_id: string
+          updated_at: string
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          employee_id: string
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          employee_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sala_activa_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sala_activa_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sala_activa_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: true
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       saldo_favor_movimientos: {
         Row: {
           branch_id: number | null
@@ -33934,6 +33977,7 @@ export type Database = {
         Args: { p_apellido: string; p_nombre: string }
         Returns: Json
       }
+      elegir_sala_activa: { Args: { p_branch_id: number }; Returns: Json }
       eliminar_caja_de_impresion: { Args: { p_id: string }; Returns: string }
       eliminar_conteo_inventario: {
         Args: { p_conteo_id: string }
@@ -38885,6 +38929,7 @@ export type Database = {
         Returns: Json
       }
       sala_abierta_ahora: { Args: { p_branch_id: number }; Returns: boolean }
+      sala_activa_vigente: { Args: { p_employee_id: string }; Returns: number }
       sala_con_caja_abierta: { Args: { p_branch_id: number }; Returns: boolean }
       sala_de_apoyo_vigente: {
         Args: { p_dia?: string; p_employee_id: string }

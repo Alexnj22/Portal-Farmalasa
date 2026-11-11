@@ -10,7 +10,7 @@ import { getSignedFileUrl, clearSignedUrlCache } from "../utils/storageFiles";
 import { anotar } from '@plataforma/cajaNegra';
 import { fetchRolePermissionsForRoles, fetchRolePriceLevelAndSU, fetchPermisosHeredados } from "../data/permissions";
 import { fetchModuleLocks } from "../data/moduleLocks";
-import { leerMiPerfil, motivoDeLoginFallido, cambiarMiContrasenaInicial, leerCargoYSalaPropios } from "../data/auth";
+import { leerMiPerfil, motivoDeLoginFallido, cambiarMiContrasenaInicial, leerCargoYSalaPropios, elegirSalaActiva } from "../data/auth";
 import { cambioDeCargoOSala, debeCambiarClave, esCarneDePapel, mismoPerfil, mismosPermisos } from "../utils/sesionDelNavegador";
 import { borrarTodosLosBorradores, fijarDuenoDeBorradores } from "../utils/draftUtils";
 import { soltarPushDelEquipoSiEsCompartido, soltarPushAlCerrarLaPagina } from "@plataforma/pushEquipo";
@@ -451,6 +451,17 @@ export const AuthProvider = ({ children }) => {
       if (data?.session && procesarSesionRef.current) procesarSesionRef.current(data.session);
     } catch { /* red inestable: se reintenta en la próxima vuelta */ }
   }, []);
+
+  // Quien cubre varias salas elige con cuál trabaja (2026-11-11). La base
+  // cambia la sala de la sesión; acá se fuerza el mismo chequeo de «¿me
+  // cambiaron la sala?», que trae el perfil y los permisos de la nueva.
+  const cambiarSala = useCallback(async (branchId) => {
+    const { error } = await elegirSalaActiva(branchId);
+    if (error) return { error };
+    ultimoChequeoPerfilRef.current = 0;
+    await verificarCargoYSala();
+    return { error: null };
+  }, [verificarCargoYSala]);
 
   const ultimaValidacionRef = useRef(0);
   const revalidarSesion = useCallback(async () => {
@@ -1555,7 +1566,7 @@ export const AuthProvider = ({ children }) => {
       completeLogin,
       cambioDeClave, cambiarClaveInicial, abandonarCambioDeClave,
       login, loginWithEmail, loginWithUsername, logout,
-      refreshPermissions,
+      refreshPermissions, cambiarSala,
     };
   // `permsLoading` y `permsError` van en la lista: `permsError` cambia SOLO
   // —sin que cambien los permisos—, así que sin él la app nunca se entera de

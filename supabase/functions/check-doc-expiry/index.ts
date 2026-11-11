@@ -32,7 +32,7 @@ function documentosConVencimiento(branch: any): DocConFecha[] {
   const hasInjections = !!legal.injections;
   const hasControlledBooks = !!legal.controlledBooks;
   const docs: DocConFecha[] = [
-    { id: 'srsExpiration',        label: 'Licencia CSSP / DNM',             expDate: legal.srsExpiration },
+    { id: 'srsExpiration',        label: 'Permiso de funcionamiento SRS',           expDate: legal.srsExpiration },
     { id: 'municipalExpiration',  label: 'Solvencia Municipal',             expDate: legal.municipalExpiration },
     { id: 'regentCredentialExp',  label: 'Credencial JVQF (Regente)',       expDate: legal.regentCredentialExp },
     { id: 'pharmacovigilanceExp', label: 'Autorización Farmacovigilancia',  expDate: legal.pharmacovigilanceExp },

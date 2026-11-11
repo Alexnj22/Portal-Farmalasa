@@ -223,7 +223,15 @@ Deno.serve(async (req: Request) => {
       const { data: salaApoyo, error: apoyoErr } = await admin
         .rpc("sala_de_apoyo_vigente", { p_employee_id: employee.id });
       if (apoyoErr) console.error(`[ensure_user_by_code] sala_de_apoyo_vigente: ${apoyoErr.message}`);
-      const newBranchId   = (!apoyoErr && salaApoyo != null) ? Number(salaApoyo) : (employee.branch_id ?? null);
+      // Después del apoyo, la sala ELEGIDA por quien cubre varias (2026-11-11,
+      // `sala_activa_vigente`): el regente que trabaja hoy en Salud 5. Misma
+      // precedencia que `auth_yo()`. Si la lectura falla, se sigue sin ella.
+      const { data: salaActiva, error: activaErr } = await admin
+        .rpc("sala_activa_vigente", { p_employee_id: employee.id });
+      if (activaErr) console.error(`[ensure_user_by_code] sala_activa_vigente: ${activaErr.message}`);
+      const newBranchId   = (!apoyoErr && salaApoyo != null) ? Number(salaApoyo)
+        : (!activaErr && salaActiva != null) ? Number(salaActiva)
+        : (employee.branch_id ?? null);
       const curMeta       = authenticatedUser.user_metadata || {};
 
       const metaChanged =

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.23 — Quien cubre varias salas elige con cuál trabaja; licencia renombrada a SRS
+
+- **Elegir sala (regente y referente)**: quien cubre varias salas («Áreas que cubre» en Personal) tiene en el menú lateral un selector «¿En qué sala trabajas?». Al elegir, todo lo que su cargo ve «de su sala» (ventas, facturación, pedidos, bitácoras) pasa a ser de esa sala. Sólo puede elegir entre las que cubre; si se le quita un área, pierde el acceso en el acto. Un apoyo temporal sigue mandando sobre la elección.
+- El documento del expediente «Licencia CSSP / DNM» ahora se llama **Permiso de funcionamiento SRS** (el CSSP ya no lo emite).
+
+Migración `20261111151658_sala_activa_de_quien_cubre_varias` (tabla `sala_activa`, `auth_yo` toma la sala elegida). Requiere desplegar `ensure_user_by_code`.
+
 ## v2.1501.22 — App: Inicio usa el mismo selector de secciones que el resto
 
 Inicio era la única pantalla de la app del personal que cambiaba de sección (General · Comercial · RRHH · Operación) con las píldoras que se desplazan de lado; el resto usa `Segmentos`, que es el control del sistema: el segmentado de iOS y el botón segmentado de Material 3 en Android. Ahora Inicio también usa `Segmentos`, que vuelve a las píldoras sólo cuando los rótulos no caben (en Android, con estos cuatro rótulos, siguen siendo fichas). Va por aire.

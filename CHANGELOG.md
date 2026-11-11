@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1506.0 — App de clientes: calificar en la tienda y copiar con el portapapeles nuevo
+
+Dos módulos nativos para la compilación de la tienda (`expo-store-review` y `expo-clipboard`):
+
+- **Calificar:** cuando la persona ya retiró alguna reserva, la app le ofrece la ventanita nativa de 5 estrellas de Apple o Google, como mucho una vez cada 120 días (y el sistema decide si de verdad la muestra). El momento se puede cambiar después por aire.
+- **Copiar** (en el chat) usa el portapapeles nuevo. El de antes estaba por salir de React Native y, el día que lo quitaran, «Copiar» dejaba de funcionar sin avisar.
+
+Cambia la huella nativa: las actualizaciones por aire desde esta versión llegan sólo a quien instale la compilación nueva.
+
 ## v2.1505.1 — Expediente de sucursal: cada documento abre su formulario, el adjunto no se pierde y la fecha se lee del papel
 
 - **Solvencia Municipal, Desechos bioinfecciosos y Fumigación**: «Subir archivo» abría «Configuración legal», que no tiene esos campos; ahora abre «Gestión del inmueble», donde viven (`expedienteDeSucursal`).

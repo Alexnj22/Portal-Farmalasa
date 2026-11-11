@@ -66,6 +66,7 @@ import { sinBloquear } from '../lib/bloqueo';
 import { useVisible } from '../lib/visible';
 import { sincronizarReservasVivas, vigilarReservasVivas } from '../modules/reserva-viva';
 import { esDeMuestra, misReservasConDemo, useDemo } from '../lib/demo';
+import { pedirCalificacion } from '../lib/calificar';
 import { useModoPrueba } from '../lib/prueba';
 
 // Cómo se alarga el plazo (2026-10-30): 'directa' = la de 7 días de las
@@ -222,6 +223,9 @@ export default function Reservas() {
         setPorFiltro((ant) => ({ ...ant, [filtro]: r?.ok || !ant[filtro]?.ok ? r : ant[filtro] }));
         // Lo guardado sin conexión no: podría quitar una que sigue abierta.
         if (r?.ok && !r.sinConexion && (filtro === 'todas' || filtro === 'abiertas')) sincronizarReservasVivas(r.reservas);
+        // Ya retiró alguna (de verdad, no de muestra): buen momento para pedir
+        // la calificación (lib/calificar.js decide si toca).
+        if (r?.ok && !r.sinConexion && (r.reservas ?? []).some((x) => x.estado === 'retirada' && !esDeMuestra(x))) pedirCalificacion();
       }),
       pedir('mis_encargos').then((r) => { if (r?.ok && secuencia.current.encargos === ne) setEncargos(r.encargos); }),
     ]);

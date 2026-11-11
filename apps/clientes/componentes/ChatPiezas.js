@@ -19,6 +19,7 @@
 //     —uno por fila de la lista—, que es justo el costo que se quitó al abrir.
 //   · `Reacciones` y `Cita`: las píldoras bajo el globo y el bloque citado.
 import { useEffect, useMemo, useRef, useState } from 'react';
+import * as Clipboard from 'expo-clipboard';
 import { ActionSheetIOS, Keyboard, Modal, Platform, StyleSheet, Text, TextInput, useWindowDimensions, View } from 'react-native';
 import Presionable from './Presionable';
 import { BlurView } from 'expo-blur';
@@ -39,12 +40,12 @@ const IOS = Platform.OS === 'ios';
 // iOS 26 (Liquid Glass): el teclado flota redondeado y separado de los bordes.
 const IOS26 = IOS && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
-// El portapapeles de React Native: sigue en el núcleo (deprecado, sin módulo
-// aparte instalado). Se pide por su ruta para no disparar el aviso del índice.
-let Portapapeles = null;
-try { Portapapeles = require('react-native/Libraries/Components/Clipboard/Clipboard').default; } catch { Portapapeles = null; }
+// El portapapeles (2026-11-11): `expo-clipboard`. Antes era el de React
+// Native, deprecado y con fecha de salida del núcleo: el día que lo quitaran,
+// «Copiar» dejaba de funcionar sin error. Devuelve true en cuanto lo pidió;
+// si el sistema lo rechaza, no hay forma útil de avisarlo en el momento.
 export function copiar(texto) {
-  try { Portapapeles?.setString(String(texto ?? '')); return !!Portapapeles; } catch { return false; }
+  try { Clipboard.setStringAsync(String(texto ?? '')).catch(() => {}); return true; } catch { return false; }
 }
 
 const resumenDeCita = (c) => (c?.texto ? c.texto : c?.foto ? '📷 Foto' : 'Mensaje');

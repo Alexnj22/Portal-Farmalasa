@@ -19,7 +19,7 @@ import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
 import BotonPaquete from './Paquete';
-import Segmentos from '../../../Segmentos';
+import Subfiltro from '../../../Subfiltro';
 import { Ficha, PETROLEO, Vacio } from '../piezas';
 import { compartirArchivo } from './compartir';
 
@@ -71,7 +71,7 @@ export default function LibrosVentas({ buscar }) {
       <MenuDeFiltros grupos={[]} extra={extra} />
       <PasoDeMes mes={mes} onCambiar={setMes} />
       <View style={{ marginHorizontal: 16 }}><BotonPaquete mes={mes} /></View>
-      <Segmentos opciones={LIBROS} activa={libro} onCambiar={setLibro} />
+      <Subfiltro opciones={LIBROS} activa={libro} onCambiar={setLibro} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {libro === 'contribuyente' ? (
         <>

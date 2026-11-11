@@ -19,7 +19,7 @@ import { formatMoney, formatMoneyCorto } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import Segmentos from '../Segmentos';
+import Subfiltro from '../Subfiltro';
 import { Aviso, Cargando } from '../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
@@ -125,7 +125,7 @@ export default function Resumen({ onIrA }) {
           </FilaDeKpis>
         </>
       ) : null}
-      <Segmentos activa={unidad} onCambiar={setUnidad} opciones={[{ id: 'puntos', label: 'Puntos' }, { id: 'dolares', label: 'Dólares' }]} />
+      <Subfiltro activa={unidad} onCambiar={setUnidad} opciones={[{ id: 'puntos', label: 'Puntos' }, { id: 'dolares', label: 'Dólares' }]} />
       <Panel>
         <Titulo>Últimos 30 días</Titulo>
         <Grafica alto={170}

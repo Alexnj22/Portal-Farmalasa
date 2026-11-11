@@ -103,6 +103,52 @@ function Tarjeta({ r, todas, puede, miErp, esSupervision }) {
   );
 }
 
+// El resumen del período (2026-11-11, usuario: «pedidos este mes, mejóralo, se
+// ve feo»). Antes: un rótulo chico, el total y una nube de píldoras «Sala · N»
+// que se partía en renglones desparejos. Ahora: el total grande con su
+// período, y una fila por sala con una barra proporcional — se compara de un
+// vistazo quién pidió más. Tocar una sala la filtra (sólo con alcance de
+// todas); tocarla otra vez vuelve a «todas».
+function ResumenDelPeriodo({ periodo, total, salas, elegida, puedeElegir, onElegir }) {
+  const max = Math.max(1, ...salas.map((x) => x.total));
+  const hayElegida = elegida && elegida !== 'todas';
+  return (
+    <View style={{ marginHorizontal: 16 }}>
+      <Vidrio radio={20}>
+        <View style={{ padding: 16, gap: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>Pedidos</Text>
+              <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{periodo}</Text>
+            </View>
+            <Text style={{ color: colorSistema.texto, fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'], lineHeight: 38 }}>{total}</Text>
+          </View>
+          {salas.length > 1 ? (
+            <View style={{ gap: 2 }}>
+              {salas.map((x) => {
+                const esta = elegida === String(x.id);
+                const apagada = hayElegida && !esta;
+                return (
+                  <Pressable key={x.id} disabled={!puedeElegir} accessibilityRole={puedeElegir ? 'button' : undefined}
+                    accessibilityLabel={`${x.nombre}, ${x.total} pedidos`}
+                    onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(esta ? 'todas' : String(x.id)); }}
+                    style={({ pressed }) => ({ minHeight: 36, flexDirection: 'row', alignItems: 'center', gap: 10, opacity: apagada ? 0.45 : pressed ? 0.7 : 1 })}>
+                    <Text numberOfLines={1} style={{ width: 104, color: colorSistema.texto, fontSize: 15, fontWeight: esta ? '700' : '500' }}>{x.nombre}</Text>
+                    <View style={{ flex: 1, height: 8, borderRadius: 4, backgroundColor: `${MARCA.azulClaro}1F`, overflow: 'hidden' }}>
+                      <View style={{ width: `${Math.max(4, (x.total / max) * 100)}%`, height: 8, borderRadius: 4, backgroundColor: esta ? MARCA.azul : MARCA.azulClaro }} />
+                    </View>
+                    <Text style={{ minWidth: 28, textAlign: 'right', color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{x.total}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+        </View>
+      </Vidrio>
+    </View>
+  );
+}
+
 export default function Pedidos() {
   const { user, hasPermission, getScope } = useAuth();
   const todas = getScope?.('pedidos') === 'ALL';
@@ -183,7 +229,6 @@ export default function Pedidos() {
   // La barra admite una sola acción junto al filtro: las tres van en su menú.
   const abrirMas = () => {
     const ops = [
-      ...(todas && puede ? [['Generar pedido', () => router.push('/pedido/generar')]] : []),
       ...(verRutas ? [['Rutas de reparto', () => router.push('/pedido/rutas')]] : []),
       ...(verReglas ? [['Reglas de despacho', () => router.push('/pedido/reglas')]] : []),
     ];
@@ -198,7 +243,7 @@ export default function Pedidos() {
           placeholder: 'Número de pedido', hideWhenScrolling: false,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),
         } }} />
-      <MenuDeFiltros grupos={grupos} extra={(todas && puede) || verRutas || verReglas ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
+      <MenuDeFiltros grupos={grupos} extra={verRutas || verReglas ? { icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas } : null} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       {verMetricas ? (
         <FijoArriba>
@@ -214,31 +259,16 @@ export default function Pedidos() {
             {nuevo ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={`Bodega te mandó el pedido #${nuevo.numero}: ya va en camino.`} /></View> : null}
             {!todas && miErp == null ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Tu ficha no está asignada a una sala que reciba pedidos." /></View> : null}
             {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-            {filas && porSala.length ? (
+            {/* Generar a la vista (2026-11-11, usuario: «¿por qué no se puede
+                generar un pedido aquí?»): estaba escondido en «Más acciones». */}
+            {todas && puede ? (
               <View style={{ marginHorizontal: 16 }}>
-                <Vidrio radio={20}>
-                  <View style={{ padding: 14, gap: 8 }}>
-                    <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-                      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }}>
-                        {`Pedidos · ${PERIODOS.find((p) => p.id === periodo)?.label.toLowerCase()}`}
-                      </Text>
-                      <Text style={{ color: colorSistema.texto, fontSize: 26, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{totalPeriodo}</Text>
-                    </View>
-                    {porSala.length > 1 ? (
-                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-                        {porSala.map((s) => (
-                          <Pressable key={s.id} disabled={!todas}
-                            onPress={() => { Haptics.selectionAsync().catch(() => {}); setSala(salaElegida === String(s.id) ? 'todas' : String(s.id)); }}
-                            style={({ pressed }) => ({ minHeight: 34, justifyContent: 'center', paddingHorizontal: 11, borderRadius: 999, opacity: pressed ? 0.7 : 1,
-                              backgroundColor: salaElegida === String(s.id) ? `${MARCA.azulClaro}40` : `${MARCA.azulClaro}1F` })}>
-                            <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{`${s.nombre} · ${s.total}`}</Text>
-                          </Pressable>
-                        ))}
-                      </View>
-                    ) : null}
-                  </View>
-                </Vidrio>
+                <BotonGrande texto="Generar pedido" onPress={() => router.push('/pedido/generar')} />
               </View>
+            ) : null}
+            {filas && porSala.length ? (
+              <ResumenDelPeriodo periodo={PERIODOS.find((p) => p.id === periodo)?.label} total={totalPeriodo}
+                salas={porSala} elegida={salaElegida} puedeElegir={todas} onElegir={setSala} />
             ) : null}
             {filas == null ? null : visibles.length
               ? visibles.map((r) => <Tarjeta key={`${r.pedido_id}-${r.erp_sucursal_id}`} r={r} todas={todas} puede={puede} miErp={miErp} esSupervision={esSupervision} />)

@@ -19,7 +19,7 @@ import { correrMes, fechaNumerica, hoySV, rangoDelMes } from '@nucleo/utils/fech
 import { hora12 } from '@nucleo/utils/hora';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import Segmentos from '../Segmentos';
+import Subfiltro from '../Subfiltro';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
@@ -96,7 +96,7 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
   if (datos == null) return <Cargando />;
   return (
     <>
-      <Segmentos activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'con', label: 'Con cobro' }, { id: 'sin', label: 'Sin cobro' }]} />
+      <Subfiltro activa={estado} onCambiar={setEstado} opciones={[{ id: 'todas', label: 'Todas' }, { id: 'con', label: 'Con cobro' }, { id: 'sin', label: 'Sin cobro' }]} />
       <FilaDeKpis>
         <Kpi icono="ClipboardList" rotulo="Ventas con inyección" valor={String(r.ventas)} color={MARCA.azul} apoyo="facturas del período" />
         <Kpi icono="CheckCircle2" rotulo="Con cobro" valor={String(r.con)} color={MARCA.verde} apoyo={`${formatPct(r.pct)} de las ventas`}

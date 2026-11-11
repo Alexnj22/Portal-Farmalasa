@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1503.3 — App: subfiltros en píldoras y Pedidos con Generar a la vista
+
+- **Sección vs. subfiltro** (decisión del usuario): la sección de una pantalla es el control segmentado del sistema y va fija arriba; el subfiltro dentro de una sección son píldoras que se desplazan con el contenido. Nuevo `componentes/Subfiltro.js`, usado en Pedidos › Tiempos (7 · 30 · 90 días), Puntos › Resumen (Puntos · Dólares), Inyecciones › Por cobrar (Todas · Con cobro · Sin cobro), Marketing › Ideas (Abiertas · Usadas · Descartadas) y Reportes de la distribuidora (libros de ventas y año de Relacionadas).
+- **Pedidos: «Generar pedido» a la vista**, como botón arriba de la lista para quien puede generarlo (alcance de todas las salas y permiso de edición). Estaba escondido en «Más acciones».
+- **Pedidos: el resumen del período, rediseñado.** El total grande con su período y una fila por sala con una barra proporcional, en vez de la nube de píldoras «Sala · N». Tocar una sala la filtra.
+
+Va por aire.
+
 ## v2.1503.2 — App de clientes: botones fijos en la bienvenida y Entrar antes que la entrada guardada
 
 - **Bienvenida**: «Ya soy cliente» y «Quiero unirme» quedan fijos abajo; lo de arriba se desplaza (en Android quedaban al final del desplazamiento).

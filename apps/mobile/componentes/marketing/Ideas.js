@@ -21,7 +21,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { BotonGrande, Campo, Seccion, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
-import Segmentos from '../Segmentos';
+import Subfiltro from '../Subfiltro';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
@@ -122,7 +122,7 @@ export default function Ideas({ busqueda, marcas, piezasDelMes, mes, yoId, puede
           <BotonGrande texto={guardando ? 'Guardando…' : 'Agregar idea'} deshabilitado={!form.titulo.trim() || guardando} onPress={agregar} />
         </Seccion>
       </View>
-      <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS_DE_IDEAS.map((v) => ({ id: v.value, label: `${v.label} · ${cuenta[v.value] ?? 0}` }))} />
+      <Subfiltro activa={vista} onCambiar={setVista} opciones={VISTAS_DE_IDEAS.map((v) => ({ id: v.value, label: `${v.label} · ${cuenta[v.value] ?? 0}` }))} />
       {visibles.map((i) => {
         const est = ESTADOS_IDEA[i.estado] || ESTADOS_IDEA.nueva;
         const marca = (marcas || []).find((m) => m.id === i.marca_id);

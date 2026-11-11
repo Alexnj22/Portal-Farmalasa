@@ -93,5 +93,8 @@ Un `Segmentos` que cambia lo que muestra la pantalla va FUERA de la lista, en
 `<FijoArriba>` (`componentes/FijoArriba.js`), justo antes del ScrollView /
 FlatList / ListaPaginada, y la pantalla no lleva `headerLargeTitle`. Un
 `Segmentos` que es una elección dentro de un formulario se queda donde está.
+Un SUBFILTRO dentro de una sección (Todas · Con cobro · Sin cobro, Puntos ·
+Dólares, 7 · 30 · 90 días) va con `componentes/Subfiltro.js` (píldoras), no
+fijo: así sección y subfiltro se distinguen a simple vista.
 Lo vigila `npm run gate:app-secciones` (pre-commit al tocar `app/` o
 `componentes/`).

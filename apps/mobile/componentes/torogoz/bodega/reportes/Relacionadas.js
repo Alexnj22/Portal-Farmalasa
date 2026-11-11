@@ -14,7 +14,7 @@ import { colorSistema } from '../../../Formulario';
 import { Aviso, Dato, Cargando } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
-import Segmentos from '../../../Segmentos';
+import Subfiltro from '../../../Subfiltro';
 import { Chapa, Ficha, PETROLEO, Vacio } from '../piezas';
 import { compartirArchivo } from './compartir';
 
@@ -50,7 +50,7 @@ export default function Relacionadas({ buscar }) {
   return (
     <View style={{ gap: 12 }}>
       <MenuDeFiltros grupos={[]} extra={extra} />
-      <Segmentos opciones={anios} activa={anio} onCambiar={setAnio} />
+      <Subfiltro opciones={anios} activa={anio} onCambiar={setAnio} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <FilaDeKpis>
         <Kpi icono="ShoppingCart" rotulo="Comprado a relacionadas" color={PETROLEO} valor={formatMoney(Number(datos?.anio?.total ?? 0))}

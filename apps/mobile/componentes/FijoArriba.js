@@ -13,6 +13,11 @@
 // Un `Segmentos` que es una elección DENTRO de un formulario o de una hoja
 // («Efectivo · Tarjeta») no es una sección: se queda donde está.
 //
+// Un SUBFILTRO dentro de una sección (Todas · Con cobro · Sin cobro,
+// Puntos · Dólares) tampoco va fijo, ni es el control del sistema: va con
+// `Subfiltro` (píldoras) y se desplaza con el contenido. Ver
+// `componentes/Subfiltro.js`.
+//
 // Una pantalla con secciones fijas NO lleva `headerLargeTitle`: el título
 // grande de iOS sólo se encoge si la lista es lo primero de la pantalla; con
 // esto encima se quedaría grande para siempre, comiéndose la pantalla.

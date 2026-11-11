@@ -11,7 +11,7 @@ import { Text, View } from 'react-native';
 import { fetchIndicadoresDePedidos, fetchRazonesDePausa } from '@nucleo/data/pedidos';
 import { indicadoresDePedidos, minutosLegibles } from '@nucleo/utils/tableroDePedidos';
 import { ERP_NAMES } from '@nucleo/constants/erp';
-import Segmentos from '../Segmentos';
+import Subfiltro from '../Subfiltro';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
@@ -64,7 +64,7 @@ export default function Metricas() {
 
   return (
     <View style={{ gap: 12 }}>
-      <Segmentos activa={rango} onCambiar={setRango} opciones={RANGOS} />
+      <Subfiltro activa={rango} onCambiar={setRango} opciones={RANGOS} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {!datos ? <Cargando /> : !ind.pedidos ? (
         <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30, fontSize: 15 }}>Sin tiempos registrados en este rango.</Text>

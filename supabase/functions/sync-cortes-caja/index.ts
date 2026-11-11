@@ -318,6 +318,15 @@ const HORA_HASTA = 23;   // exclusivo: la última corrida es a las 22:59:30
  */
 const MINUTOS_ENTRE_REPASOS = 5;
 
+/* Holgura del reloj. Desde el 2026-11-10 el cron corre cada 5 min (antes cada
+ * 30 s), o sea al mismo ritmo que este plazo: la marca de la corrida anterior
+ * se escribe unos segundos DESPUÉS de su arranque, y si la de ahora tarda menos
+ * en llegar a esa sala, mide 4:58 y se saltea. Medido esa noche: cada sala
+ * repasaba cada 10 min, alternándose. Con un minuto de margen, cada corrida de
+ * 5 min repasa, y una llamada suelta (la de `hacer-corte-caja`) no repite un
+ * repaso de hace segundos. */
+const HOLGURA_REPASO_MS = 60_000;
+
 Deno.serve(async (req) => {
   const corsHeaders = getCorsHeaders(req);
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
@@ -509,7 +518,7 @@ Deno.serve(async (req) => {
             // hay que atender.
             const desde = reloj?.mirado_el ? Date.parse(reloj.mirado_el) : NaN;
             tocaRepasar = !Number.isFinite(desde)
-              || (Date.now() - desde) >= MINUTOS_ENTRE_REPASOS * 60_000;
+              || (Date.now() - desde) >= MINUTOS_ENTRE_REPASOS * 60_000 - HOLGURA_REPASO_MS;
           }
         }
 

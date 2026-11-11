@@ -49,34 +49,6 @@ export const CARITAS = [
 ];
 export const ACUERDO = ['Nada de acuerdo', 'En desacuerdo', 'Neutral', 'De acuerdo', 'Totalmente de acuerdo'];
 
-/**
- * Los tres tramos de la recomendación (0–10), con el mismo corte que el NPS:
- * 0–6 detractor, 7–8 pasivo, 9–10 promotor. `tono` es el nombre del color, no
- * el color: cada pantalla lo traduce a su token.
- *
- * Existe porque una entrevista de Salud 4 (2026-11-11) guardó satisfacción 10
- * y recomendación 2 en la misma respuesta: la cuadrícula del 0 al 10 se parte
- * en dos filas en el teléfono, «Nada probable / Muy probable» quedaban debajo
- * de la segunda, y la pregunta no decía la escala. Ahora cada tramo se ve, y
- * lo marcado se repite en palabras para que el entrevistador lo confirme.
- */
-export const TRAMOS_NPS = [
-    { desde: 0, hasta: 6,  label: 'Poco probable', tono: 'danger' },
-    { desde: 7, hasta: 8,  label: 'Probable',      tono: 'warning' },
-    { desde: 9, hasta: 10, label: 'Muy probable',  tono: 'success' },
-];
-export const tramoNps = (n) => (typeof n === 'number' ? TRAMOS_NPS.find((t) => n >= t.desde && n <= t.hasta) || null : null);
-
-/**
- * Lo que el entrevistador tiene que leerle al cliente cuando la pregunta de
- * recomendación no dice su escala (el cliente no ve la pantalla). Si el texto
- * ya nombra el 0 y el 10, no hace falta. Para cualquier otra pregunta, null.
- */
-export function guionDeEscala(p) {
-    if (p?.tipo !== 'nps') return null;
-    if (/\b0\b/.test(p.texto || '') && /\b10\b/.test(p.texto || '')) return null;
-    return 'Léale la escala: del 0 al 10, donde 0 es «nada probable» y 10 es «muy probable».';
-}
 
 /** El ciclo. Deben coincidir con el CHECK de `encuestas_cliente.estado`. */
 export const ESTADOS = {
@@ -294,6 +266,74 @@ export function cumpleCondicion(condicion, respuestas = {}) {
 
 /** Las opciones que se muestran: las que tienen texto (la base hace `btrim`). */
 export const opcionesConTexto = (p) => (p?.opciones || []).filter((o) => String(o?.texto ?? '').trim() !== '');
+
+/**
+ * Los tres tramos de la recomendación (0–10), con el mismo corte que el NPS:
+ * 0–6 detractor, 7–8 pasivo, 9–10 promotor. `tono` es el nombre del color, no
+ * el color: cada pantalla lo traduce a su token.
+ *
+ * Existe porque una entrevista de Salud 4 (2026-11-11) guardó satisfacción 10
+ * y recomendación 2 en la misma respuesta: la cuadrícula del 0 al 10 se parte
+ * en dos filas en el teléfono, «Nada probable / Muy probable» quedaban debajo
+ * de la segunda, y la pregunta no decía la escala. Ahora cada tramo se ve, y
+ * lo marcado se repite en palabras para que el entrevistador lo confirme.
+ */
+export const TRAMOS_NPS = [
+    { desde: 0, hasta: 6,  label: 'Poco probable', tono: 'danger' },
+    { desde: 7, hasta: 8,  label: 'Probable',      tono: 'warning' },
+    { desde: 9, hasta: 10, label: 'Muy probable',  tono: 'success' },
+];
+export const tramoNps = (n) => (typeof n === 'number' ? TRAMOS_NPS.find((t) => n >= t.desde && n <= t.hasta) || null : null);
+
+const nombraLaEscala = (texto, min, max) =>
+    new RegExp(`\\b${min}\\b`).test(texto || '') && new RegExp(`\\b${max}\\b`).test(texto || '');
+
+/**
+ * Lo que el entrevistador tiene que leerle al cliente cuando la pregunta de
+ * recomendación no dice su escala (el cliente no ve la pantalla). Si el texto
+ * ya nombra el 0 y el 10, no hace falta. Para cualquier otra pregunta, null.
+ */
+export function guionDeEscala(p) {
+    if (p?.tipo === 'unica') {
+        const e = escalaNumerica(p);
+        if (!e || nombraLaEscala(p.texto, e.min, e.max)) return null;
+        return `Léale la escala: del ${e.min} al ${e.max}${e.etiquetaMin && e.etiquetaMax ? `, donde ${e.min} es «${e.etiquetaMin}» y ${e.max} es «${e.etiquetaMax}»` : ''}.`;
+    }
+    return guionNps(p);
+}
+
+/**
+ * Una «opción única» cuyas opciones son números seguidos (1, 2, … 10) es una
+ * ESCALA escrita a mano: el constructor no tiene un tipo «del 1 al 10», así
+ * que la encuesta de noviembre de 2026 armó satisfacción y confianza así, y se
+ * pintaban como diez barras apiladas que llenaban el teléfono sin decir qué
+ * era cada punta. Con esto la pantalla la reconoce y la pinta como escala; la
+ * respuesta guardada sigue siendo el id de la opción, igual que antes.
+ *
+ * Las etiquetas de las puntas salen de la ayuda si la escribieron con la forma
+ * «1 = nada satisfecho · 10 = muy satisfecho»; si no, quedan en null.
+ * Devuelve null si no es una escala (menos de 3 opciones, o no seguidas).
+ */
+export function escalaNumerica(p) {
+    if (p?.tipo !== 'unica') return null;
+    const ops = opcionesConTexto(p);
+    if (ops.length < 3 || ops.length > 11) return null;
+    const nums = ops.map((o) => (/^\s*\d{1,2}\s*$/.test(o.texto) ? Number(o.texto) : NaN));
+    if (nums.some((n, i) => Number.isNaN(n) || (i > 0 && n !== nums[i - 1] + 1))) return null;
+    const min = nums[0];
+    const max = nums[nums.length - 1];
+    const etiqueta = (n) => {
+        const m = String(p.ayuda || '').match(new RegExp(`(?:^|[·,;|])\\s*${n}\\s*=\\s*([^·,;|]+)`));
+        return m ? m[1].trim() : null;
+    };
+    return { min, max, etiquetaMin: etiqueta(min), etiquetaMax: etiqueta(max), opciones: ops.map((o, i) => ({ ...o, n: nums[i] })) };
+}
+
+function guionNps(p) {
+    if (p?.tipo !== 'nps') return null;
+    if (/\b0\b/.test(p.texto || '') && /\b10\b/.test(p.texto || '')) return null;
+    return 'Léale la escala: del 0 al 10, donde 0 es «nada probable» y 10 es «muy probable».';
+}
 
 /**
  * ¿Esta condición se puede cumplir mirando a esa pregunta? La misma regla que

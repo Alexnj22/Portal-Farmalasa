@@ -7,7 +7,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     CARITAS, ACUERDO, recorrido, primeraSinContestar, motivoParaNoGuardarContacto, opcionesConTexto, MAX_TEXTO, MAX_NUMERO,
-    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala,
+    maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala, escalaNumerica,
 } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import useMediaQuery from '../../plataforma/useMediaQuery';
@@ -168,9 +168,17 @@ export default function FormularioEncuesta({
 
     return (
         <div className="flex flex-col gap-4 min-h-[420px]">
-            <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden" role="progressbar"
-                aria-valuenow={progreso} aria-valuemin={0} aria-valuemax={100}>
-                <div className="h-full bg-brand transition-all duration-[var(--dur-base)]" style={{ width: `${progreso}%` }} />
+            <div className="space-y-1">
+                <div className="h-1.5 rounded-full bg-surface-card-hover overflow-hidden" role="progressbar"
+                    aria-valuenow={progreso} aria-valuemin={0} aria-valuemax={100}>
+                    <div className="h-full bg-brand transition-all duration-[var(--dur-base)]" style={{ width: `${progreso}%` }} />
+                </div>
+                {/* Dónde va: la barra sola no dice cuánto falta. */}
+                {!terminado && pasoReal >= 0 && pasos.length > 1 && (
+                    <p className="text-micro text-content-3 text-right">
+                        {enContacto ? 'Último paso' : `${enTelefono ? 'Pregunta' : 'Parte'} ${pasoReal + 1} de ${pasos.length}`}
+                    </p>
+                )}
             </div>
 
             {terminado ? (
@@ -318,13 +326,47 @@ function Pregunta({ p, valor, falta, onChange, entrevista }) {
             </legend>
             {guion && <Notice variant="info" compact>{guion}</Notice>}
             {p.ayuda && <p className="text-micro text-content-3">{p.ayuda}</p>}
-            <Respuesta p={p} valor={valor} onChange={onChange} />
+            <Respuesta p={p} valor={valor} onChange={onChange} entrevista={entrevista} />
             {falta && <p className="text-micro font-semibold text-danger">Esta pregunta es obligatoria.</p>}
         </fieldset>
     );
 }
 
-function Respuesta({ p, valor, onChange }) {
+// Literales completos para que Tailwind los vea.
+const COLUMNAS = { 3: 'grid-cols-3', 4: 'grid-cols-4', 5: 'grid-cols-5', 6: 'grid-cols-6' };
+const COLUMNAS_SM = { 3: 'sm:grid-cols-3', 4: 'sm:grid-cols-4', 5: 'sm:grid-cols-5', 6: 'sm:grid-cols-6', 7: 'sm:grid-cols-7',
+    8: 'sm:grid-cols-8', 9: 'sm:grid-cols-9', 10: 'sm:grid-cols-10', 11: 'sm:grid-cols-11' };
+
+// Una «opción única» de números seguidos (1…10) pintada como escala: cuadrícula,
+// qué es cada punta y lo marcado en palabras. Guarda el id de la opción, igual
+// que la lista de antes (`escalaNumerica`).
+function EscalaNumerica({ escala, valor, onChange }) {
+    const { opciones, min, max, etiquetaMin, etiquetaMax } = escala;
+    const marcada = opciones.find((o) => o.id === valor);
+    const porFila = opciones.length > 6 ? Math.ceil(opciones.length / 2) : opciones.length;
+    return (
+        <div className="space-y-2">
+            <div className={`grid gap-1 sm:gap-1.5 ${COLUMNAS[porFila]} ${COLUMNAS_SM[opciones.length]}`}>
+                {opciones.map((o) => (
+                    <button key={o.id} type="button" aria-pressed={valor === o.id} className={`${opcionCls(valor === o.id)} !px-0`}
+                        onClick={() => onChange(o.id)}>{o.n}</button>
+                ))}
+            </div>
+            {(etiquetaMin || etiquetaMax) && (
+                <div className="flex justify-between gap-3 text-micro text-content-2">
+                    <span>{min} = {etiquetaMin || '—'}</span><span className="text-right">{max} = {etiquetaMax || '—'}</span>
+                </div>
+            )}
+            {marcada && (
+                <p className="text-body-sm font-semibold text-brand-text" aria-live="polite">
+                    Marcó {marcada.n} de {max}{marcada.n === min && etiquetaMin ? `: ${etiquetaMin}` : marcada.n === max && etiquetaMax ? `: ${etiquetaMax}` : ''}.
+                </p>
+            )}
+        </div>
+    );
+}
+
+function Respuesta({ p, valor, onChange, entrevista }) {
     switch (p.tipo) {
         case 'nps': {
             // Cada tramo con su color, en la leyenda y en el botón marcado, y lo
@@ -333,13 +375,16 @@ function Respuesta({ p, valor, onChange }) {
             const marcado = tramoNps(valor);
             return (
                 <div className="space-y-2">
-                    <div className="grid grid-cols-6 sm:grid-cols-11 gap-1.5">
+                    {/* En el teléfono, 7 por fila: 0–6 arriba y 7–10 abajo, así cada
+                        fila coincide con su tramo (con 6 por fila el 6, que es
+                        «poco probable», caía en la fila de los buenos). */}
+                    <div className="grid grid-cols-7 sm:grid-cols-11 gap-1 sm:gap-1.5">
                         {Array.from({ length: 11 }, (_, n) => {
                             const t = tramoNps(n);
                             const activa = valor === n;
                             return (
                                 <button key={n} type="button" aria-pressed={activa} aria-label={`${n} · ${t.label}`}
-                                    className={opcionCls(activa, TRAMO_SOLIDO[t.tono])}
+                                    className={`${opcionCls(activa, TRAMO_SOLIDO[t.tono])} !px-0`}
                                     onClick={() => onChange(n)}>{n}</button>
                             );
                         })}
@@ -360,28 +405,37 @@ function Respuesta({ p, valor, onChange }) {
                 </div>
             );
         }
-        case 'csat':
+        case 'csat': {
+            // El rótulo va SIEMPRE: en el teléfono iba escondido, y sin él
+            // 🙁, 😐 y 🙂 se parecen demasiado.
+            const marcada = CARITAS.find((c) => c.valor === valor);
             return (
-                <div className="grid grid-cols-5 gap-1.5">
-                    {CARITAS.map((c) => (
-                        <button key={c.valor} type="button" title={c.label} aria-label={c.label} aria-pressed={valor === c.valor}
-                            className={`${opcionCls(valor === c.valor)} flex flex-col items-center gap-0.5`}
-                            onClick={() => onChange(c.valor)}>
-                            <span className="text-2xl leading-none" aria-hidden>{c.emoji}</span>
-                            <span className="text-micro font-medium hidden sm:block">{c.label}</span>
-                        </button>
-                    ))}
+                <div className="space-y-2">
+                    <div className="grid grid-cols-5 gap-1 sm:gap-1.5">
+                        {CARITAS.map((c) => (
+                            <button key={c.valor} type="button" title={c.label} aria-label={c.label} aria-pressed={valor === c.valor}
+                                className={`${opcionCls(valor === c.valor)} !px-1 flex flex-col items-center gap-1`}
+                                onClick={() => onChange(c.valor)}>
+                                <span className="text-2xl leading-none" aria-hidden>{c.emoji}</span>
+                                <span className="text-micro font-medium leading-tight text-center">{c.label}</span>
+                            </button>
+                        ))}
+                    </div>
+                    {marcada && <p className="text-body-sm font-semibold text-brand-text" aria-live="polite">Marcó: {marcada.label.toLowerCase()}.</p>}
                 </div>
             );
+        }
         case 'likert':
             return (
-                <div className="grid grid-cols-5 gap-1.5">
+                // En el teléfono, una lista (como la app): en cinco columnas de
+                // 60 px «Totalmente de acuerdo» se partía en tres renglones.
+                <div className="flex flex-col sm:grid sm:grid-cols-5 gap-1.5">
                     {ACUERDO.map((label, i) => (
                         <button key={label} type="button" aria-pressed={valor === i + 1}
-                            className={`${opcionCls(valor === i + 1)} flex flex-col items-center gap-0.5`}
+                            className={`${opcionCls(valor === i + 1)} flex sm:flex-col items-center gap-2 sm:gap-0.5 text-left sm:text-center`}
                             onClick={() => onChange(i + 1)}>
-                            <span className="text-body-md">{i + 1}</span>
-                            <span className="text-micro font-medium leading-tight">{label}</span>
+                            <span className="text-body-md w-5 sm:w-auto shrink-0">{i + 1}</span>
+                            <span className="text-body-sm sm:text-micro font-medium leading-tight">{label}</span>
                         </button>
                     ))}
                 </div>
@@ -395,7 +449,9 @@ function Respuesta({ p, valor, onChange }) {
                     ))}
                 </div>
             );
-        case 'unica':
+        case 'unica': {
+            const escala = escalaNumerica(p);
+            if (escala) return <EscalaNumerica escala={escala} valor={valor} onChange={onChange} />;
             return (
                 <div className="flex flex-col gap-1.5">
                     {opcionesConTexto(p).map((o) => (
@@ -404,6 +460,7 @@ function Respuesta({ p, valor, onChange }) {
                     ))}
                 </div>
             );
+        }
         case 'multiple': {
             const marcadas = Array.isArray(valor) ? valor : [];
             const maximo = maximoDe(p);
@@ -442,6 +499,8 @@ function Respuesta({ p, valor, onChange }) {
                 onChange(n);
             };
             return (
+                <div className="space-y-1.5">
+                <p className="text-micro text-content-3">Use las flechas para cambiar el orden. Si ya está como lo dijo, siga.</p>
                 <ol className="flex flex-col gap-1.5">
                     {orden.map((id, i) => (
                         <li key={id} data-surface="card" className="flex items-center gap-2 px-3 py-1.5">
@@ -452,6 +511,7 @@ function Respuesta({ p, valor, onChange }) {
                         </li>
                     ))}
                 </ol>
+                </div>
             );
         }
         case 'numero':
@@ -462,13 +522,13 @@ function Respuesta({ p, valor, onChange }) {
                         const n = Number(e.target.value);
                         // La base no acepta más de nueve cifras: se frena al teclear.
                         if (Number.isFinite(n) && Math.abs(n) <= MAX_NUMERO) onChange(n);
-                    }} placeholder="0" />
+                    }} placeholder="Escriba la cantidad" />
             );
         default:
             return (
                 <PortalTextarea name={p.id} rows={3} value={valor || ''} maxLength={MAX_TEXTO}
                     onChange={(e) => onChange(e.target.value.slice(0, MAX_TEXTO))}
-                    placeholder="Escribe tu respuesta…" />
+                    placeholder={entrevista ? 'Lo que respondió, con sus palabras' : 'Escribe tu respuesta…'} />
             );
     }
 }

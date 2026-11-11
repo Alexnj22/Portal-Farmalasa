@@ -21,6 +21,21 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1501.21 — Encuestas: cada tipo de pregunta se entiende en el teléfono
+
+Revisión visual de todos los tipos de pregunta, en teléfono y escritorio, con capturas. Arreglos en el portal y en la app:
+
+- **Escalas del 1 al 10 armadas como «opción única»** (satisfacción y confianza de la encuesta de noviembre): antes eran diez barras apiladas que llenaban la pantalla. Ahora la pantalla reconoce que las opciones son números seguidos y las pinta como escala (1–5 / 6–10 en el teléfono, una fila en escritorio), con qué significa cada punta si la ayuda lo dice («1 = nada satisfecho · 10 = muy satisfecho») y «Marcó 7 de 10» abajo. Se guarda lo mismo que antes; la encuesta publicada no se tocó.
+- **Recomendación en el teléfono**: filas 0–6 y 7–10, una por tramo. Antes el 6 («poco probable») caía en la fila de los buenos.
+- **Caritas**: el rótulo va siempre, también en el teléfono, y abajo «Marcó: insatisfecho».
+- **Escala de acuerdo** en el teléfono: lista, como la app, en vez de cinco columnas con el texto partido en tres renglones.
+- **Número**: el «0» gris de ejemplo parecía una respuesta; ahora dice «Escriba la cantidad».
+- **Ordenar**: aclara que las flechas cambian el orden y que, si ya está bien, se sigue.
+- **Avance**: «Pregunta 3 de 10» debajo de la barra (en escritorio, «Parte 1 de 3» si hay más de una).
+- En entrevista, el texto abierto dice «Lo que respondió, con sus palabras», y el guion de la escala también sale para una escala 1–10 cuya pregunta no la nombra.
+
+Lógica en `escalaNumerica` y `guionDeEscala` (`src/utils/encuestasClientes.js`), con pruebas en `tests/unit/encuestasClientes.test.js`.
+
 ## v2.1501.20 — La lista de movimientos muestra al instante lo anotado desde el portal
 
 - Una entrada o salida de efectivo anotada desde el portal aparece en la lista

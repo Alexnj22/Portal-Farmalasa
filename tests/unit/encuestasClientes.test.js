@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
     cumpleCondicion, recorrido, preguntasEnOrden, primeraSinContestar, quitarPregunta, cambiarTipo,
     muestraSugerida, metaTotal, telefonoValido, textoDeValor, tablaDeRespuestas, lecturaNps, categoriasDe,
-    nuevaOpcion, idNuevo, operadoresPara, tramoNps, guionDeEscala,
+    nuevaOpcion, idNuevo, operadoresPara, tramoNps, guionDeEscala, escalaNumerica,
 } from '@nucleo/utils/encuestasClientes';
 
 // El cuestionario de la plantilla «Calidad de la atención», recortado: tiene
@@ -330,5 +330,29 @@ describe('tramos de la recomendación (NPS)', () => {
         expect(guionDeEscala({ tipo: 'nps', texto: '¿Qué tan probable es que nos recomiende?' })).toMatch(/del 0 al 10/);
         expect(guionDeEscala({ tipo: 'nps', texto: 'Del 0 al 10, ¿qué tan probable…?' })).toBeNull();
         expect(guionDeEscala({ tipo: 'unica', texto: 'x' })).toBeNull();
+    });
+});
+
+describe('escala escrita como opción única', () => {
+    const op = (n) => ({ id: 'v' + n, texto: String(n) });
+    const satisf = { tipo: 'unica', texto: 'Del 1 al 10, ¿qué tan satisfecho está?', ayuda: '1 = nada satisfecho · 10 = muy satisfecho',
+        opciones: Array.from({ length: 10 }, (_, i) => op(i + 1)) };
+    it('reconoce 1…10 y saca las puntas de la ayuda', () => {
+        const e = escalaNumerica(satisf);
+        expect(e).toMatchObject({ min: 1, max: 10, etiquetaMin: 'nada satisfecho', etiquetaMax: 'muy satisfecho' });
+        expect(e.opciones[6]).toMatchObject({ id: 'v7', n: 7 });
+    });
+    it('sin ayuda con esa forma, las puntas quedan en null', () => {
+        expect(escalaNumerica({ ...satisf, ayuda: 'Elija uno' })).toMatchObject({ etiquetaMin: null, etiquetaMax: null });
+    });
+    it('no es escala si hay texto, saltos o pocas opciones', () => {
+        expect(escalaNumerica({ tipo: 'unica', opciones: [{ id: 'a', texto: 'Ubicación' }, op(2), op(3)] })).toBeNull();
+        expect(escalaNumerica({ tipo: 'unica', opciones: [op(1), op(2), op(4)] })).toBeNull();
+        expect(escalaNumerica({ tipo: 'unica', opciones: [op(1), op(2)] })).toBeNull();
+        expect(escalaNumerica({ tipo: 'multiple', opciones: [op(1), op(2), op(3)] })).toBeNull();
+    });
+    it('guion: sólo si el texto no nombra la escala', () => {
+        expect(guionDeEscala(satisf)).toBeNull();
+        expect(guionDeEscala({ ...satisf, texto: '¿Qué tan satisfecho está?' })).toBe('Léale la escala: del 1 al 10, donde 1 es «nada satisfecho» y 10 es «muy satisfecho».');
     });
 });

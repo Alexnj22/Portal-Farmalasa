@@ -37,7 +37,7 @@ import {
 import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSolicitud';
 import { reglasDeBandeja, ordenarCola, salaDeSolicitud, deQuienEs, paraQuien } from '@nucleo/utils/bandejaDeSolicitudes';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import { enLaSemanaDe, getLocalMonday } from '@nucleo/utils/semana';
+import { enLaSemanaDe, getLocalMonday, rangoDeSemana } from '@nucleo/utils/semana';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
@@ -54,7 +54,7 @@ import PasoDeSemana from '../componentes/solicitudes/PasoDeSemana';
 import { ICONO } from '../componentes/solicitudes/iconos';
 import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
-import { Vacio } from '../componentes/formulario/Piezas';
+import { Cargando, Vacio } from '../componentes/formulario/Piezas';
 
 /* Qué se le pide a la base. El portal lo pide por ámbito; acá los dos ámbitos
  * van en una sola lista, así que se pide lo más ancho que alguno de los dos
@@ -181,7 +181,9 @@ export default function Solicitudes() {
   const [plegados, setPlegados] = useState(() => new Set());
   const [busqueda, setBusqueda] = useState('');
   const [recargando, setRecargando] = useState(false);
-  const [cargado, setCargado] = useState(false);
+  // Al volver a entrar, lo de la visita anterior se ve en el acto mientras se
+  // refresca, en vez de «revisando» otra vez.
+  const [cargado, setCargado] = useState(() => (requests?.length ?? 0) > 0);
 
   const miId = String(user?.id ?? '');
   const criterios = useMemo(() => criteriosDe(getScope, user), [getScope, user]);
@@ -192,15 +194,19 @@ export default function Solicitudes() {
   const soloMioEnTodo = getScope?.('requests') === 'MINE' && getScope?.('requests_personales') === 'MINE';
   const filtrandoMias = !soloMioEnTodo && quien === 'MIAS';
 
+  // Sólo lo que la pantalla puede mostrar: lo pendiente de cualquier fecha más
+  // la semana elegida (2026-11-11, usuario: «tarda unos segundos en revisar si
+  // hay»). Antes bajaba las 4.143 solicitudes de la historia —6 MB— y buscaba a
+  // cada persona de todas; ahora ~175. Cambiar de semana vuelve a pedir.
   const cargar = useCallback(async () => {
     await Promise.all([
-      fetchRequests(criterios),
+      fetchRequests({ ...criterios, ventana: rangoDeSemana(semana) }),
       veSala
         ? fetchAllMinMaxChangeRequests().then((f) => setMinmaxFilas(f ?? [])).catch(() => {})
         : Promise.resolve(),
     ]);
     setCargado(true);
-  }, [criterios, fetchRequests, veSala]);
+  }, [criterios, fetchRequests, veSala, semana]);
 
   // Al volver de decidir una, la lista tiene que dejar de ofrecerla.
   useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
@@ -358,7 +364,7 @@ export default function Solicitudes() {
             <FiltrosActivos grupos={grupos} />
             {/* Vacío, el conteo no dice nada que no diga ya el `Vacio` de abajo
                 (usuario, 2026-11-11: «dice nada pendiente, y abajo lo otro»). */}
-            {vacio ? null : (
+            {vacio || !cargado ? null : (
               <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>
                 {estado === 'PENDING'
                   ? `${pendientes} pendiente${pendientes === 1 ? '' : 's'} — se ven todas, sean de la semana que sean`
@@ -390,7 +396,7 @@ export default function Solicitudes() {
         renderItem={({ item: r }) => (
           <Tarjeta r={r} detalle={detalleDe(r)} teToca={teToca(r)} porId={porId} ahora={ahora} onAbrir={() => abrirSolicitud(r.id)} />
         )}
-        ListEmptyComponent={vacio ? (
+        ListEmptyComponent={!cargado ? <Cargando /> : vacio ? (
           <Vacio tono={!busqueda && estado === 'PENDING' ? 'bien' : 'neutro'}
             icono={busqueda ? 'Search' : estado === 'PENDING' ? undefined : 'ClipboardList'}
             titulo={busqueda ? 'Sin resultados' : estado === 'PENDING' ? 'Todo al día' : 'Sin solicitudes'}

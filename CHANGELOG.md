@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1511.5 — Solicitudes abre al instante
+
+- **App · Solicitudes abre al instante.** Al entrar bajaba las 4.143 solicitudes de toda la historia (6 MB) y buscaba a cada persona de todas, para mostrar las 5 pendientes: unos segundos de «revisando». Ahora pide sólo lo pendiente más la semana elegida (~175, 240 kB); cambiar de semana vuelve a pedir. Mientras carga se ve el indicador y no un «0 pendientes»; al volver a entrar, lo anterior se ve en el acto mientras se refresca. El portal no cambia.
+
 ## v2.1511.4 — App de clientes: «Deshacer» al quitar un producto del carrito
 
 Al quitar un producto del carrito, con la X o deslizando, aparece abajo «Quitaste … · Deshacer» durante 5 segundos. Deshacer lo devuelve con su cantidad y en el lugar donde estaba (`quitado`/`deshacer` en `lib/carrito.js`). `Pantalla` acepta `encima`: lo que flota sobre la lista, fuera del desplazamiento.

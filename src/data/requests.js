@@ -229,7 +229,7 @@ export function fetchBranchActiveEmployeeIds(branchId) {
  * sello. Con la clave primaria de segundo criterio la pregunta no se vuelve a
  * plantear.
  */
-export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId }) {
+export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId, ventana = null }) {
     // El cuerpo va DENTRO de `fetchAllRows` —y no en un `const construir` que
     // se pasa después— porque así lo lee también el detector de `gate:data`,
     // que busca la llamada en las líneas de arriba del `.from(`. Con el cierre
@@ -240,6 +240,15 @@ export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId
             .order('created_at', { ascending: false })
             .order('id', { ascending: false });
         if (employeeId) q = q.eq('employee_id', employeeId);
+        /* `ventana` ({ desde, hasta }): lo PENDIENTE de cualquier fecha más lo
+         * creado en esa semana — exactamente lo que la app muestra (la semana
+         * recorta el historial y deja pasar lo pendiente). Sin ella se bajaba
+         * la tabla entera: medido el 2026-11-11, 4.143 filas (6 MB) para
+         * enseñar 5 pendientes, y unos segundos de «revisando» al entrar. Con
+         * ella, 175 filas (240 kB). Sin `ventana`, todo como antes (el portal). */
+        if (ventana?.desde && ventana?.hasta) {
+            q = q.or(`status.eq.PENDING,and(created_at.gte."${ventana.desde}",created_at.lt."${ventana.hasta}")`);
+        }
         if (soloMiasId) return q.or(`employee_id.eq.${soloMiasId},approver_id.eq.${soloMiasId}`);
         /* ── El traslado NO se recorta por la sala de quien pidió ───────────
          * Es el único tipo donde quien pide y quien contesta están en salas

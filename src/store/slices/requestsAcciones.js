@@ -624,7 +624,7 @@ export const createRequestsSlice = (set, get) => ({
      * la campana le avisaba de todo.
      */
     fetchRequests: async ({ employeeId = null, branchId = null,
-                            soloMiasId = null } = {}) => {
+                            soloMiasId = null, ventana = null } = {}) => {
         set({ isLoadingRequests: true });
         try {
             // Si se pide filtro por sucursal, obtener IDs de empleados de esa sucursal
@@ -644,7 +644,7 @@ export const createRequestsSlice = (set, get) => ({
             // quedó en consola). Distinguir ese `null` del `[]` importa: una
             // lista vacía por error se ve idéntica a «no hay solicitudes», que
             // es justo el fallo mudo que se acaba de corregir.
-            const requests = await fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId });
+            const requests = await fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId, ventana });
             if (requests === null) throw new Error('No se pudieron cargar las solicitudes.');
 
             // 2. IDs únicos de empleados y aprobadores

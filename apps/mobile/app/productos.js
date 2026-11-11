@@ -30,7 +30,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -179,7 +179,7 @@ export default function Productos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Productos',
+        ...BARRA_FIJA, title: 'Productos',
         headerSearchBarOptions: {
           placeholder: 'Nombre, principio activo o laboratorio', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

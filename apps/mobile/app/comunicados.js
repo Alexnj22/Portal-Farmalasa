@@ -27,7 +27,7 @@ import {
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -164,7 +164,7 @@ export default function Comunicados() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Mis avisos',
+        ...BARRA_FIJA, title: 'Mis avisos',
         headerSearchBarOptions: { placeholder: 'Buscar en los avisos', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />

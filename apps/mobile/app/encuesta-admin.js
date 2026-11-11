@@ -33,7 +33,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { BotonGrande, Dato, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -211,7 +211,7 @@ export default function EncuestaAdmin() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Encuestas' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Encuestas' }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nueva encuesta', onPress: () => { guardarEncuestaInterna(null); router.push({ pathname: '/encuesta-interna/editar', params: { id: 'nueva' } }); } } : null} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>

@@ -31,7 +31,7 @@ import {
 } from '@nucleo/utils/concentracion';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Ficha as FichaDeOpcion, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -137,7 +137,7 @@ export default function FotosProductos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Fotos de productos',
+        ...BARRA_FIJA, title: 'Fotos de productos',
         headerSearchBarOptions: {
           ref: barraDeBusqueda, placeholder: 'Buscar un producto o su código', hideWhenScrolling: false,
           onChangeText: (e) => buscar(e.nativeEvent.text), onCancelButtonPress: () => buscar(''),

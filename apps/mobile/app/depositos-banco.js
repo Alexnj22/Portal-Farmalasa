@@ -16,7 +16,7 @@ import { fetchDepositos } from '@nucleo/data/bolsas';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { rangoDeDiasDelDeposito, totalesDeDepositos } from '@nucleo/utils/depositoDeEfectivo';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
@@ -51,13 +51,13 @@ export default function DepositosBanco() {
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   if (!verMontos) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósitos' }} />
+    return (<><Stack.Screen options={{ ...BARRA_FIJA, title: 'Depósitos' }} />
       <View style={{ padding: 20 }}><Aviso tono="freno" texto="Los depósitos se ven con el permiso de ver los montos de las bolsas." /></View></>);
   }
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósitos' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Depósitos' }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />

@@ -17,7 +17,7 @@ import { apartarRenglon, barrerDocumentos, confirmarProducto, fetchDocumentosSin
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -221,7 +221,7 @@ export default function CargarCompra() {
     : [{ id: 'estado', titulo: 'Estado', activa: estado, porDefecto: 'pendientes', onCambiar: setEstado, opciones: ESTADOS }];
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cargar compra',
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Cargar compra',
         headerSearchBarOptions: { placeholder: tab === 'facturas' ? 'Proveedor o número' : 'Proveedor, producto o código', onChangeText: (e) => setBusca(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
       <FijoArriba><Segmentos activa={tab} onCambiar={setTab} opciones={[{ id: 'facturas', label: 'Facturas' }, { id: 'confirmar', label: 'Por confirmar' }]} /></FijoArriba>

@@ -22,61 +22,30 @@
 // grande de iOS sólo se encoge si la lista es lo primero de la pantalla; con
 // esto encima se quedaría grande para siempre, comiéndose la pantalla.
 //
-// ── La barra con secciones fijas (2026-11-11, segunda vuelta) ──────────────
-// En iOS la barra de marca es TRANSPARENTE (BARRA_NATIVA): la pantalla empieza
-// detrás de ella y la lista se mete por debajo. Con un buscador además, la
-// altura de la barra cambia (el campo aparece, se encoge al buscar) y ninguna
-// medición desde JavaScript la sigue bien: primero el selector quedó debajo de
-// la barra y se tragaba los toques; después, pegado al buscador
-// (captura del usuario: «define cómo quedará cuando hay pestañas y hay
-// buscador»).
-//
-// La forma definitiva: con secciones fijas la barra NO es transparente (sigue
-// sin fondo, así que la aurora se ve igual): la pantalla empieza DEBAJO de la
-// barra, buscador incluido, y el que la coloca es el sistema. El orden queda:
+// ── La barra con secciones fijas ────────────────────────────────────────────
+// La pantalla usa `BARRA_FIJA` (componentes/PilaDePestana.js) en vez de
+// `BARRA_NATIVA`: la misma barra sin fondo, pero la pantalla empieza DEBAJO de
+// ella y del buscador, y el que la coloca es el sistema. El orden queda:
 //
 //   [ foto · logo · botones ]   ← la barra
-//   [ buscador ]                ← en la barra, siempre visible (hideWhenScrolling: false)
+//   [ buscador ]                ← en la barra
 //   [ secciones ]               ← FijoArriba, 8 pt debajo
 //   [ la lista ]                ← lo único que se desplaza
 //
-// Esto lo pone FijoArriba solo (va después del `Stack.Screen` de la pantalla,
-// así que sus opciones se aplican encima; y se reaplican en cada render porque
-// la pantalla las vuelve a poner con las suyas). La medición queda como red,
-// para la barra que siga siendo transparente.
+// Historia (2026-11-11): medir la barra desde JavaScript dejó el selector
+// debajo de la barra (se tragaba los toques) y después pegado al buscador.
+// Poner la barra opaca desde ACÁ (después del primer dibujo) la hacía cambiar
+// dos veces al entrar y las secciones saltaban de abajo hacia arriba. Por eso
+// va en las opciones de la pantalla, desde el principio.
 //
 // Por qué no `stickyHeaderIndices`: el encabezado pegajoso de React Native se
 // pega al borde del ScrollView, que en iOS queda DETRÁS de la barra
 // transparente, y el selector se escondía bajo el título.
 //
-// `conBarra={false}`: en una hoja o modal sin barra.
-import { useCallback, useRef, useState } from 'react';
-import { Platform, View } from 'react-native';
-import { Stack } from 'expo-router';
-import { useHeaderHeight } from 'expo-router/react-navigation';
+// `conBarra` queda por compatibilidad (una hoja sin barra): ya no cambia nada.
+import { View } from 'react-native';
 
+// eslint-disable-next-line no-unused-vars
 export default function FijoArriba({ children, conBarra = true }) {
-  const alto = useHeaderHeight();
-  const caja = useRef(null);
-  const [tope, setTope] = useState(0);
-  const medir = useCallback(() => {
-    if (!conBarra) return;
-    caja.current?.measureInWindow?.((_x, y) => {
-      if (typeof y !== 'number') return;
-      const falta = Math.max(0, Math.round(alto - y));
-      setTope((t) => (Math.abs(t - falta) > 1 ? falta : t));
-    });
-  }, [alto, conBarra]);
-  return (
-    <>
-      {conBarra && Platform.OS === 'ios'
-        ? <Stack.Screen options={{ headerTransparent: false, headerStyle: { backgroundColor: 'transparent' }, headerShadowVisible: false }} />
-        : null}
-      <View ref={caja} onLayout={medir} collapsable={false}>
-        <View style={{ paddingTop: (conBarra ? tope : 0) + 8, paddingBottom: 8 }}>
-          {children}
-        </View>
-      </View>
-    </>
-  );
+  return <View style={{ paddingTop: 8, paddingBottom: 8 }}>{children}</View>;
 }

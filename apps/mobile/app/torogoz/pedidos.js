@@ -18,7 +18,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
@@ -108,7 +108,7 @@ export default function TorogozPedidos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Pedidos',
+        ...BARRA_FIJA, title: 'Pedidos',
         headerSearchBarOptions: {
           placeholder: 'Cliente o número', hideWhenScrolling: false,
           onChangeText: (e) => { setTexto(e.nativeEvent.text); setCuantos(POR_PAGINA); }, onCancelButtonPress: () => setTexto(''),

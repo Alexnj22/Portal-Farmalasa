@@ -17,7 +17,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import Avatar from '../../componentes/Avatar';
 import { MenuDeFiltros } from '../../componentes/Filtros';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import { colorSistema } from '../../componentes/Formulario';
@@ -83,7 +83,7 @@ export default function VentasPerdidas() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Ventas perdidas',
+        ...BARRA_FIJA, title: 'Ventas perdidas',
         headerSearchBarOptions: {
           placeholder: 'Producto o cliente', hideWhenScrolling: true,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),

@@ -38,7 +38,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
@@ -270,7 +270,7 @@ export default function Inventario() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Inventario',
+        ...BARRA_FIJA, title: 'Inventario',
         headerSearchBarOptions: {
           placeholder: 'Producto, laboratorio o código', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

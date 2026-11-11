@@ -18,7 +18,7 @@ import { rotuloTipoCliente } from '@nucleo/utils/distribucionComun';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -144,7 +144,7 @@ export default function Cobros() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cuentas por cobrar',
+        ...BARRA_FIJA, title: 'Cuentas por cobrar',
         headerSearchBarOptions: { placeholder: 'Cliente o ruta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />

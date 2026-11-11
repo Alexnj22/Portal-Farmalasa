@@ -26,7 +26,7 @@ import {
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV, sumarDias } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -196,7 +196,7 @@ export default function Facturacion() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Facturación',
+        ...BARRA_FIJA, title: 'Facturación',
         headerSearchBarOptions: { placeholder: 'Cliente, número de control o código', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') },
       }} />

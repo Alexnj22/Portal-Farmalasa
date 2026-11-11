@@ -24,7 +24,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { etiquetaMes, fechaTexto, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -87,7 +87,7 @@ export default function CierrePeriodo() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Cierre de período' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Cierre de período' }} />
       <FijoArriba><Segmentos activa={declarable ? 'decl' : 'hoy'} onCambiar={(v) => setDeclarable(v === 'decl')} opciones={[{ id: 'hoy', label: 'El que se declara hoy' }, { id: 'decl', label: 'El declarable' }]} /></FijoArriba>
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 10, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>

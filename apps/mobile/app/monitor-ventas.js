@@ -35,7 +35,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import { COLOR_VOLUMEN, LeyendaDeVolumen } from '../componentes/inicio/MiniSala';
 import { Aviso } from '../componentes/formulario/Piezas';
 import Vidrio from '../componentes/Vidrio';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
 
@@ -157,7 +157,7 @@ export default function MonitorDeVentas() {
   return (
     <>
       {/* Regresar sólo desde el borde: el dedo recorre las barras. */}
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Monitor de ventas', fullScreenGestureEnabled: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Monitor de ventas', fullScreenGestureEnabled: false }} />
       <MenuDeFiltros grupos={grupos} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       {!hoy ? (

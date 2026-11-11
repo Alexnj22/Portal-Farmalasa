@@ -61,7 +61,7 @@ import { compartirPdf } from '../componentes/pdf';
 import { guardar as guardarElegido } from '../componentes/comercial/elegido';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -254,7 +254,7 @@ export default function Marketing() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Marketing' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Marketing' }} />
       <MenuDeFiltros grupos={grupos} extra={{ icono: 'ellipsis.circle', etiqueta: 'Más acciones', onPress: abrirMas }} />
       <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[

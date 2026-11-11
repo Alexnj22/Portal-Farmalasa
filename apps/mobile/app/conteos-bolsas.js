@@ -14,7 +14,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Cargando } from '../componentes/formulario/Piezas';
@@ -105,12 +105,12 @@ export default function ConteosBolsas() {
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   if (!verMontos) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Conteos' }} />
+    return (<><Stack.Screen options={{ ...BARRA_FIJA, title: 'Conteos' }} />
       <View style={{ padding: 20 }}><Aviso tono="freno" texto="Los conteos se ven con el permiso de ver los montos de las bolsas." /></View></>);
   }
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Conteos' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Conteos' }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos opciones={RANGOS} activa={rango} onCambiar={(v) => { setLista(null); setCuantos(POR_PAGINA); setRango(v); }} />

@@ -22,7 +22,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
 import TarjetaDeAviso from '../componentes/avisos/TarjetaDeAviso';
@@ -64,7 +64,7 @@ export default function Notificaciones() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Historial',
+        ...BARRA_FIJA, title: 'Historial',
         headerSearchBarOptions: {
           placeholder: 'Buscar en el texto del aviso', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

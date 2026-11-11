@@ -12,7 +12,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor } from '@nucleo/data/distribucion';
 import { VISTAS_CAJA } from '@nucleo/utils/distribucionCaja';
 import { hoySV } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import Liquidacion from '../../componentes/torogoz/caja/Liquidacion';
@@ -38,7 +38,7 @@ export default function CajaYLiquidacion() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Caja y liquidación' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Caja y liquidación' }} />
       {vistas.length > 1 ? (
         <FijoArriba>
           <Segmentos activa={vista} onCambiar={setVista} opciones={vistas.map((v) => ({ id: v.key, label: v.label }))} />

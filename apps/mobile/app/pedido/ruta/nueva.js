@@ -28,7 +28,7 @@ import { duracionConParadas } from '@nucleo/utils/logicaDeRutas';
 import { encuadre } from '@nucleo/utils/encuadreDelMapa';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion, Cargando } from '../../../componentes/formulario/Piezas';
 import Segmentos from '../../../componentes/Segmentos';
@@ -208,7 +208,7 @@ export default function NuevaRuta() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Armar ruta', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Armar ruta', headerLargeTitle: false }} />
       <FijoArriba>
         <Segmentos activa={paso} onCambiar={(v) => { if (v === '1' || paradas.length) setPaso(v); }}
           opciones={[{ id: '1', label: 'Pedidos' }, { id: '2', label: 'Paradas' }]} />

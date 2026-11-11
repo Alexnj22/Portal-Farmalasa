@@ -10,7 +10,7 @@ import { Pressable, RefreshControl, ScrollView, Text, View } from 'react-native'
 import { Stack, useFocusEffect } from 'expo-router';
 import { cerrarFaltante, fetchFaltantes, ingresarAparecido } from '@nucleo/data/faltantes';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -99,7 +99,7 @@ export default function Faltantes() {
   const visibles = vista === 'abiertos' ? abiertos : (lista || []).filter((f) => f.estado !== 'abierto');
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Faltantes' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Faltantes' }} />
       <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista}
           opciones={[{ id: 'abiertos', label: 'Sin resolver' }, { id: 'cerrados', label: 'Resueltos' }]} />

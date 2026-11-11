@@ -27,7 +27,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import PasoDeMes from '../componentes/PasoDeMes';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -80,7 +80,7 @@ export default function LibroComprasCompleto() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Libro de compras',
+        ...BARRA_FIJA, title: 'Libro de compras',
         headerSearchBarOptions: {
           placeholder: 'Proveedor, NIT o documento', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

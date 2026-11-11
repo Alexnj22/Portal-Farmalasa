@@ -27,7 +27,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
@@ -270,7 +270,7 @@ export default function GestionarAvisos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Gestionar avisos',
+        ...BARRA_FIJA, title: 'Gestionar avisos',
         headerSearchBarOptions: {
           placeholder: 'Título, mensaje o destino', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

@@ -12,7 +12,7 @@ import { fetchOrphanObjects, updateOrphanObjectStatus, ESTADOS_HUERFANO, PESTANA
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -67,7 +67,7 @@ export default function ObjetosHuerfanos() {
   const visibles = huerfanosDePestana(filas || [], pestana);
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Objetos huérfanos' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Objetos huérfanos' }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos opciones={PESTANAS_HUERFANOS.map((t) => ({ id: t.key, label: t.label }))} activa={pestana} onCambiar={setPestana} />

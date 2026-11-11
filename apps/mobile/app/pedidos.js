@@ -38,7 +38,7 @@ import { esCargoDeSupervision } from '@nucleo/utils/decisionDiferencia';
 import { BRANCH_A_ERP, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
 import { Pasos, Pildora } from '../componentes/avisos/Piezas';
@@ -238,7 +238,7 @@ export default function Pedidos() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Pedidos',
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Pedidos',
         headerSearchBarOptions: vista === 'metricas' ? undefined : {
           placeholder: 'Número de pedido', hideWhenScrolling: false,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),

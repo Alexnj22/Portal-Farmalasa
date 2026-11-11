@@ -23,7 +23,7 @@ import { usuarioDeLaSesion } from '@nucleo/data/auth';
 import { SECCIONES_CONFIG_MINMAX, cambiaElCatalogo, payloadDeConfigMinMax, validarConfigMinMax } from '@nucleo/utils/configMinMax';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
@@ -139,7 +139,7 @@ export default function ConfiguracionMinMax() {
   const [vista, setVista] = useState('parametros');
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Configuración Mín·Máx', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Configuración Mín·Máx', headerLargeTitle: false }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>
         <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'parametros', label: 'Parámetros' }, { id: 'labs', label: 'Laboratorios' }]} />

@@ -29,7 +29,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
@@ -170,7 +170,7 @@ export default function EditarSucursal() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: esNueva ? 'Nueva sucursal' : branch.name, headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: esNueva ? 'Nueva sucursal' : branch.name, headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         {!esNueva ? (
           <FijoArriba>

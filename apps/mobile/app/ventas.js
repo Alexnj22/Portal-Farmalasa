@@ -46,7 +46,7 @@ import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import Vendedores from '../componentes/ventas/Vendedores';
 import Productos, { ORDENES_DE_PRODUCTOS } from '../componentes/ventas/Productos';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -306,7 +306,7 @@ export default function Ventas() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Ventas',
+        ...BARRA_FIJA, title: 'Ventas',
         headerSearchBarOptions: {
           placeholder: vista === 'vendedores' ? 'Nombre del vendedor' : vista === 'productos' ? 'Producto o laboratorio' : 'Cliente, producto o número', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

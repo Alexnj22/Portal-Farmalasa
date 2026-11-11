@@ -62,7 +62,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -224,7 +224,7 @@ export default function Facturacion() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Facturación',
+        ...BARRA_FIJA, title: 'Facturación',
         headerSearchBarOptions: cola === 'saltos' ? undefined : {
           placeholder: 'Número, cliente u observación', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

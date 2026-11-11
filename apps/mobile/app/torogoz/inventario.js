@@ -9,7 +9,7 @@ import { RefreshControl, ScrollView, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchEmisor } from '@nucleo/data/distribucion';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import { colorSistema } from '../../componentes/Formulario';
@@ -50,7 +50,7 @@ export default function Inventario() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Inventario',
+        ...BARRA_FIJA, title: 'Inventario',
         headerSearchBarOptions: {
           placeholder: BUSCAR[vista], hideWhenScrolling: true,
           onChangeText: (e) => setBuscar(e.nativeEvent.text), onCancelButtonPress: () => setBuscar(''),

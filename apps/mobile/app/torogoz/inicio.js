@@ -18,7 +18,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
@@ -97,7 +97,7 @@ export default function TorogozInicio() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Inicio', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Inicio', headerLargeTitle: false }} />
       <MenuDeFiltros grupos={grupos} />
       <TrasLaTransicion>
       <FijoArriba>

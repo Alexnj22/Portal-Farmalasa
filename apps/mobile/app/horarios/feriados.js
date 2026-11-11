@@ -17,7 +17,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import { MenuDeFiltros } from '../../componentes/Filtros';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { BotonGrande, Opciones, Seccion, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -75,7 +75,7 @@ export default function Feriados() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Feriados',
+        ...BARRA_FIJA, title: 'Feriados',
         headerSearchBarOptions: { placeholder: 'Buscar feriado', hideWhenScrolling: false, onChangeText: (e) => setBusca(e.nativeEvent.text), onCancelButtonPress: () => setBusca('') },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Agregar feriado', onPress: () => setForm({ name: '', fecha: hoySV(), tipo: 'NATIONAL', muni: '', recurrente: false }) } : null} />

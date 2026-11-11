@@ -31,7 +31,7 @@ import Fecha from '../componentes/formulario/Fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { Chip } from '../componentes/inicio/Widget';
@@ -100,7 +100,7 @@ export default function MisDocumentos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Mis documentos',
+        ...BARRA_FIJA, title: 'Mis documentos',
         headerSearchBarOptions: {
           placeholder: 'Buscar un documento', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

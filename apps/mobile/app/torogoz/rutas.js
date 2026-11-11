@@ -13,7 +13,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { fetchVendedores } from '@nucleo/data/distribucion';
 import { hoySV } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
@@ -52,7 +52,7 @@ export default function TorogozRutas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Rutas', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Rutas', headerLargeTitle: false }} />
       <MenuDeFiltros grupos={grupos} />
       <FijoArriba>
         <Segmentos opciones={vistas} activa={vista} onCambiar={(v) => router.setParams({ rutas: v })} />

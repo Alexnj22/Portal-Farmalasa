@@ -16,7 +16,7 @@ import { TIPOS_COMPRA, VISTAS_COMPRAS } from '@nucleo/utils/distribucionCompras'
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -72,7 +72,7 @@ export default function ComprasTorogoz() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Compras',
+        ...BARRA_FIJA, title: 'Compras',
         headerSearchBarOptions: { placeholder: 'Proveedor o número', hideWhenScrolling: false,
           onChangeText: (e) => { setCuantos(POR_PAGINA); setBuscar(e.nativeEvent.text); }, onCancelButtonPress: () => setBuscar('') },
       }} />

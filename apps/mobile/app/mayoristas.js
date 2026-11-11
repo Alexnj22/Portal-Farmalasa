@@ -22,7 +22,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -159,7 +159,7 @@ export default function Mayoristas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clientes Mayoristas',
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Clientes Mayoristas',
         headerSearchBarOptions: { placeholder: 'Nombre o documento', onChangeText: (e) => setBusqueda(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
       <FijoArriba>

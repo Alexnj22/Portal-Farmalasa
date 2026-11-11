@@ -13,7 +13,7 @@ import { ScrollView, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { VISTAS_REPORTES } from '@nucleo/utils/distribucionReportes';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import { Aviso } from '../../componentes/formulario/Piezas';
@@ -41,7 +41,7 @@ export default function Reportes() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reportes', headerSearchBarOptions: buscador }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Reportes', headerSearchBarOptions: buscador }} />
       {puede ? (
         <FijoArriba>
           <Segmentos opciones={VISTAS} activa={vista} onCambiar={cambiar} />

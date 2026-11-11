@@ -22,7 +22,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { esCargoExterno, nombreDelSuperior, ocupantesDelCargo, ordenarPorJerarquia, profundidadDeCargo } from '@nucleo/utils/jerarquiaDeCargos';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -117,7 +117,7 @@ export default function Cargos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Cargos',
+        ...BARRA_FIJA, title: 'Cargos',
         headerSearchBarOptions: vista === 'lista' ? {
           placeholder: 'Nombre del cargo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

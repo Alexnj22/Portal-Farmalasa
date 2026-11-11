@@ -30,7 +30,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import { MenuDeFiltros } from '../../componentes/Filtros';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion, Vacio } from '../../componentes/formulario/Piezas';
 import Vidrio from '../../componentes/Vidrio';
@@ -127,7 +127,7 @@ export default function Turnos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Turnos',
+        ...BARRA_FIJA, title: 'Turnos',
         headerSearchBarOptions: { placeholder: 'Buscar turno', hideWhenScrolling: false, onChangeText: (e) => setBusca(e.nativeEvent.text), onCancelButtonPress: () => setBusca('') },
       }} />
       <MenuDeFiltros grupos={[]} extra={puedeEditar ? { icono: 'plus', etiqueta: 'Nuevo turno', onPress: abrirNuevo } : null} />

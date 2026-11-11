@@ -21,7 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { BotonGrande, Campo, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -167,7 +167,7 @@ export default function VentasPerdidas() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Ventas perdidas' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Ventas perdidas' }} />
       <MenuDeFiltros grupos={grupos} extra={puedeDescargar && visibles.length ? { icono: 'square.and.arrow.up', etiqueta: 'Exportar CSV', onPress: exportar } : null} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       <FijoArriba>

@@ -30,7 +30,7 @@ import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Dato, Seccion } from '../componentes/formulario/Piezas';
 import ListaPaginada from '../componentes/ListaPaginada';
@@ -173,7 +173,7 @@ export default function AuditoriaDelSistema() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Auditoría',
+        ...BARRA_FIJA, title: 'Auditoría',
         headerSearchBarOptions: {
           placeholder: 'Persona, acción, sala o equipo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

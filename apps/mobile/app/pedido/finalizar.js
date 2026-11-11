@@ -31,7 +31,7 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
@@ -195,11 +195,11 @@ export default function FinalizarPedido() {
     `${cajas} caja${cajas === 1 ? '' : 's'} · ${totalHojas} hoja${totalHojas === 1 ? '' : 's'}${noSalen ? ` · ${noSalen} producto${noSalen === 1 ? '' : 's'} no sale${noSalen === 1 ? '' : 'n'}` : ''}. Sale del sistema hacia ${ERP_NAMES[suc] ?? 'la sala'} y no se deshace.`,
     [{ text: 'Cancelar', style: 'cancel' }, { text: 'Finalizar', onPress: finalizar }]);
 
-  if (items == null || hojas == null) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Finalizar' }} /><Cargando /></>;
+  if (items == null || hojas == null) return <><Stack.Screen options={{ ...BARRA_FIJA, title: 'Finalizar' }} /><Cargando /></>;
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Finalizar', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Finalizar', headerLargeTitle: false }} />
       {totalHojas ? (
         <FijoArriba>
           <Segmentos opciones={PASOS.map((p) => ({ id: String(p.id), label: p.label }))} activa={String(paso)}

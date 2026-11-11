@@ -38,7 +38,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
 import FormaDePago from '../componentes/formulario/FormaDePago';
@@ -84,7 +84,7 @@ export default function ApartarOEncargar() {
   const [vista, setVista] = useState(vistaInicial === 'cobrar' ? 'cobrar' : 'nuevo');
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Apartar o encargar' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Apartar o encargar' }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? undefined : 'height'}>
         {sala ? <FijoArriba><Segmentos opciones={[{ id: 'nuevo', label: 'Nuevo' }, { id: 'cobrar', label: 'Por cobrar' }]} activa={vista} onCambiar={setVista} /></FijoArriba> : null}
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}

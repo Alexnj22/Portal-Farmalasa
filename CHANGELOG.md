@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1509.5 — App de clientes: tocar otra vez el Carrito ya no lo baja
+
+Con la medición en el tiempo: al volver a tocar la pestaña, iOS anima la lista a «menos el margen MÁS la altura de la barra», así que cada toque bajaba la tarjeta 116 puntos de más. El reposo de la lista (abrir, arrastrar y soltar) ya estaba fijo. La pestaña Carrito ahora lleva `disableScrollToTop`: el carrito es corto y no necesita volver arriba.
+
+## v2.1509.4 — App: las secciones ya no saltan al entrar
+
+Reporte del usuario: al entrar a Mis avisos o Gestionar avisos «las pestañas salen abajo y luego se posicionan arriba, ya fijas; se ve extraño». Causa: la pantalla abría con la barra transparente y `FijoArriba` la volvía opaca DESPUÉS del primer dibujo, así que la barra cambiaba dos veces y las secciones saltaban. Ahora las 75 pantallas con secciones fijas (más Inicio y la pestaña rápida) piden `BARRA_FIJA` desde el principio, y `FijoArriba` es sólo el margen: ya no mide ni cambia opciones. Va por aire.
+
 ## v2.1509.3 — App de clientes: el carrito queda siempre en el mismo lugar
 
 Con la medición en el tiempo: al volver a tocar la pestaña, iOS lleva la lista a «menos la altura de la barra», y el Carrito, que quedaba en 0, saltaba 116 puntos hacia abajo. Ahora, con `bajoBarra`, `Pantalla` declara ese margen explícito y arranca ya en esa posición, así que abrir la pestaña y volver a tocarla dejan la tarjeta en el mismo lugar: el de abajo, el que eligió el usuario.

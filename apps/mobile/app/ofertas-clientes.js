@@ -27,7 +27,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { MenuDeFiltros, FiltrosActivos } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -145,7 +145,7 @@ export default function OfertasClientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Ofertas para clientes',
+        ...BARRA_FIJA, title: 'Ofertas para clientes',
         headerSearchBarOptions: {
           placeholder: pestana === 'preregistros' ? 'Nombre o documento' : pestana === 'historias' ? 'Buscar historia' : pestana === 'banners' ? 'Buscar banner' : 'Buscar oferta', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

@@ -29,7 +29,7 @@ import { ordenDeSala } from '@nucleo/constants/erp';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -91,7 +91,7 @@ export default function CajaDiferencias() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Diferencias',
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Diferencias',
         headerSearchBarOptions: { placeholder: 'Sala, fecha, responsable o monto', hideWhenScrolling: false,
           onChangeText: (e) => setBusqueda(e.nativeEvent.text), onCancelButtonPress: () => setBusqueda('') } }} />
       <MenuDeFiltros grupos={grupos} />

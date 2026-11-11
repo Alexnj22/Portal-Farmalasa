@@ -49,7 +49,7 @@ import Escaner from '../componentes/Escaner';
 import TarjetaTraslado, { Pildora, Ruta } from '../componentes/traslados/Tarjeta';
 import Vidrio from '../componentes/Vidrio';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
 import { sePuedeDeclararTarde } from '@nucleo/data/faltantes';
@@ -302,7 +302,7 @@ export default function Traslados() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA,
+        ...BARRA_FIJA,
         title: 'Traslados',
         headerSearchBarOptions: {
           placeholder: 'Producto, sala o persona…',

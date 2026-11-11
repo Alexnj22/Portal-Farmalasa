@@ -46,7 +46,7 @@ import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import PorAsignar from '../componentes/puntos/PorAsignar';
 import Traspasos from '../componentes/puntos/Traspasos';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
@@ -272,7 +272,7 @@ export default function Puntos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Puntos',
+        ...BARRA_FIJA, title: 'Puntos',
         headerSearchBarOptions: pestana === 'consulta' || pestana === 'por_asignar' || pestana === 'premios' ? {
           placeholder: pestana === 'premios' ? 'Código del premio, cliente o DUI' : 'Nombre, DUI o teléfono', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

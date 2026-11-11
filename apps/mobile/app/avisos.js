@@ -37,7 +37,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscadorDePersonas } from '@nucleo/utils/movimientoTexto';
 import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
 import { colorSistema } from '../componentes/Formulario';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { abrirRuta } from '../pantallas';
 import { usePorDecidir } from '../componentes/porDecidir';
 import TarjetaPorDecidir from '../componentes/TarjetaPorDecidir';
@@ -236,7 +236,7 @@ export default function Notificaciones() {
           notificaciones, ya no tiene sentido que esté ahí»): se abre desde la
           campana de la barra, que está en todas las pestañas. La campana de
           ESTA pantalla no hace falta. */}
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Notificaciones', headerRight: () => null }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Notificaciones', headerRight: () => null }} />
       {/* Fijo arriba al desplazar (2026-11-11). */}
       {opciones.length > 2 ? <FijoArriba><Segmentos opciones={opciones} activa={activa} onCambiar={setFiltro} /></FijoArriba> : null}
       <ScrollView style={{ flex: 1 }}

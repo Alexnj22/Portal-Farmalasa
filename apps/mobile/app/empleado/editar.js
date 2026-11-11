@@ -54,7 +54,7 @@ import { ALT_ID_DOCUMENT_TYPE_OPTIONS, GENDER_OPTIONS, MARITAL_STATUS_OPTIONS, M
 import { codigoDeCarneLibre, duiDisponible, fetchCredenciales, fetchEducationCatalogEntries, traerLoQueFaltaDeLaFicha } from '@nucleo/data/employees';
 import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
 import { CampoConRotulo, CampoFecha, Elegir } from '../../componentes/personas/Formulario';
@@ -351,7 +351,7 @@ export default function EditarEmpleado() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: esAlta ? 'Nuevo empleado' : 'Editar ficha', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: esAlta ? 'Nuevo empleado' : 'Editar ficha', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <FijoArriba>
           <Segmentos opciones={PESTANAS} activa={pestana} onCambiar={setPestana} margen={0} />

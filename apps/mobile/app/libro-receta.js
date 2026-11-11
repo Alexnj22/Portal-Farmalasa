@@ -25,7 +25,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { correrMes, etiquetaMes, fechaTexto, hoySV, ultimoDiaDelMes } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -95,7 +95,7 @@ export default function LibroReceta() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Libro bajo receta',
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Libro bajo receta',
         headerSearchBarOptions: { placeholder: 'Folio, medicamento, lote, paciente o médico', hideWhenScrolling: false, onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto('') } }} />
       <MenuDeFiltros grupos={grupos} />
       <FijoArriba><Segmentos activa={clase} onCambiar={setClase} opciones={LIBROS.map((l) => ({ id: l.clave, label: l.corto }))} /></FijoArriba>

@@ -25,7 +25,7 @@ import {
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Individuos, Resumen, Segmentos as SegmentosDeClima } from '../componentes/encuestas/AnalisisClima';
@@ -237,7 +237,7 @@ export default function Encuesta() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Clima organizacional' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Clima organizacional' }} />
       {grupos.length ? <MenuDeFiltros grupos={grupos} /> : null}
       {/* Fijo arriba al desplazar (2026-11-11). */}
       {datos ? (

@@ -21,6 +21,16 @@ export const BARRA_NATIVA = Platform.OS === 'ios'
   ? { headerTransparent: true, ...(IOS26 ? {} : { headerBlurEffect: 'systemChromeMaterial' }), headerShadowVisible: false, headerLargeTitleShadowVisible: false, headerLargeStyle: { backgroundColor: 'transparent' } }
   : {};
 
+// La barra de una pantalla con secciones fijas (`FijoArriba`): la misma, pero
+// la pantalla empieza DEBAJO de ella (y del buscador) en vez de detrás; sin
+// fondo, así la aurora se sigue viendo. Va en las opciones de la PANTALLA desde
+// el primer dibujo: ponerla después (lo hacía FijoArriba) hacía que la barra
+// pasara de opaca a transparente y de vuelta, y las secciones aparecían abajo y
+// saltaban arriba al entrar (usuario, 2026-11-11: «se ve extraño»).
+export const BARRA_FIJA = Platform.OS === 'ios'
+  ? { ...BARRA_NATIVA, headerTransparent: false, headerStyle: { backgroundColor: 'transparent' } }
+  : {};
+
 // `sinBarra`: la pestaña muestra el portal, que ya trae su propio título.
 // El encabezado de marca (2026-11-11, a pedido del usuario: «como la app de
 // clientes»): el logo de Farmacias La Popular y La Salud al centro, la foto a
@@ -70,7 +80,8 @@ function fotoEnEncabezado(user) {
 // barra quedaba apretada y el logo se corría contra los botones. Ahí va lo
 // mismo que al abrir el módulo desde el Menú: su título y sus botones, sin
 // foto ni logo (la foto ya está en Cuenta, una pestaña al lado).
-export default function PilaDePestana({ titulo, sinBarra = false, conMarca = true }) {
+// `fija`: la pestaña tiene secciones fijas arriba (Inicio, la pestaña rápida).
+export default function PilaDePestana({ titulo, sinBarra = false, conMarca = true, fija = false }) {
   const { user } = useAuth();
   const marca = !conMarca ? {} : {
     headerTitle: () => <LogoEncabezado />,
@@ -80,7 +91,7 @@ export default function PilaDePestana({ titulo, sinBarra = false, conMarca = tru
   };
   return (
     <ConAurora>
-    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...BARRA_NATIVA }}>
+    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? BARRA_FIJA : BARRA_NATIVA) }}>
       <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra, ...marca }} />
     </Stack>
     </ConAurora>

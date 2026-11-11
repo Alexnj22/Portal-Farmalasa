@@ -31,7 +31,7 @@ import { CATEGORIAS_CLIENTE } from '@nucleo/utils/clienteValidacion';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -229,7 +229,7 @@ export default function Clientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Clientes',
+        ...BARRA_FIJA, title: 'Clientes',
         headerSearchBarOptions: {
           placeholder: 'Nombre, DUI, NIT, NRC, teléfono…', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

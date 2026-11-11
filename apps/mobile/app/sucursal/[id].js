@@ -36,7 +36,7 @@ import { cupoDeKioscos, sucursalLlevaKiosco } from '@nucleo/utils/kioscos';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -371,7 +371,7 @@ export default function Sucursal() {
   const abierta = abiertaAhora(b, dia, hora);
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: b.name, headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: b.name, headerLargeTitle: false }} />
       <FijoArriba>
         <Segmentos activa={pestana} onCambiar={setPestana}
           opciones={b.expedienteOculto

@@ -23,7 +23,7 @@ import {
   fetchReclamos, registrarReclamo, responderReclamo,
 } from '@nucleo/data/reclamos';
 import { MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -107,7 +107,7 @@ export default function ReclamosClientes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Reclamos de clientes',
+        ...BARRA_FIJA, title: 'Reclamos de clientes',
         headerSearchBarOptions: {
           placeholder: 'Cliente, número o tema', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

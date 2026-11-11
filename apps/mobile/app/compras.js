@@ -18,7 +18,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto, mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
@@ -95,7 +95,7 @@ export default function Compras() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Compras',
+        ...BARRA_FIJA, title: 'Compras',
         headerSearchBarOptions: {
           placeholder: tab === 'facturas' ? 'Proveedor o número' : 'Código del producto', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

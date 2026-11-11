@@ -24,7 +24,7 @@ import useFarmaciaEstado from '@nucleo/hooks/useFarmaciaEstado';
 import { cuandoLlego } from '@nucleo/utils/notificacionTexto';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
@@ -144,7 +144,7 @@ export default function ChatClientes() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Chat con clientes',
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Chat con clientes',
         headerSearchBarOptions: { placeholder: 'Nombre, teléfono o mensaje', onChangeText: (e) => setBusqueda(e.nativeEvent.text) } }} />
       <MenuDeFiltros grupos={grupos} />
       {/* Fijo arriba al desplazar (2026-11-11). */}

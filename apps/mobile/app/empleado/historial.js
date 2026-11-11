@@ -30,7 +30,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { descuentoDeSuspension } from '@nucleo/utils/planilla';
 import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -215,7 +215,7 @@ export default function Historial() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: shortEmployeeName(emp), headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: shortEmployeeName(emp), headerLargeTitle: false }} />
       <FijoArriba>
         <Segmentos activa={seccion} onCambiar={setSeccion} opciones={[
           { id: 'historial', label: 'Historial' }, { id: 'ausencias', label: 'Ausencias' }, { id: 'solicitudes', label: 'Solicitudes' },

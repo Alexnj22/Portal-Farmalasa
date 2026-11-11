@@ -22,7 +22,7 @@ import { ESTADO_SOLICITUD_DESCUENTO } from '@nucleo/utils/distribucionComercial'
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, Campo, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
@@ -201,7 +201,7 @@ export default function SolicitudesTorogoz() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Solicitudes' }} />
+      <Stack.Screen options={{ ...BARRA_FIJA, title: 'Solicitudes' }} />
       <FijoArriba>
         <Segmentos activa={filtro} onCambiar={setFiltro}
           opciones={[{ id: 'pendientes', label: 'Por decidir' }, { id: 'resueltas', label: 'Resueltas' }]} />

@@ -30,7 +30,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { fechaTexto, hoySV, sumarDias } from '@nucleo/utils/fecha';
 import { ordenDeSala } from '@nucleo/constants/erp';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
@@ -127,7 +127,7 @@ export default function AuditoriaDeTiempos() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA, title: 'Auditoría de tiempos',
+        ...BARRA_FIJA, title: 'Auditoría de tiempos',
         headerSearchBarOptions: {
           placeholder: 'Nombre, código o cargo', hideWhenScrolling: false,
           onChangeText: (e) => setTexto(e.nativeEvent.text), onCancelButtonPress: () => setTexto(''),

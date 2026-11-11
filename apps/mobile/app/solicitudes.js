@@ -42,7 +42,7 @@ import { useNowTick } from '@nucleo/hooks/useNowTick';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 import { smartFilter } from '@nucleo/utils/searchUtils';
-import { BARRA_NATIVA } from '../componentes/PilaDePestana';
+import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
@@ -324,7 +324,7 @@ export default function Solicitudes() {
   return (
     <>
       <Stack.Screen options={{
-        ...BARRA_NATIVA,
+        ...BARRA_FIJA,
         title: 'Solicitudes',
         headerSearchBarOptions: {
           placeholder: 'Persona, producto, factura…',

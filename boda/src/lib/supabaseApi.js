@@ -188,8 +188,9 @@ export const buscarMesa = async (clave, nombre) => ok(await sb.rpc('buscar_mesa'
 // ── Canciones ──────────────────────────────────────────────────────────────
 export const listarCanciones = async () =>
   ok(await sb.from('canciones').select('*').order('votos', { ascending: false }).order('created_at').range(0, 499));
-export const pedirCancion = async ({ titulo, artista, nombre }, votante) =>
-  ok(await sb.rpc('pedir_cancion', { p_titulo: titulo, p_artista: artista, p_nombre: nombre, p_votante: votante }));
+export const pedirCancion = async ({ titulo, artista, nombre, portada, enlace, muestra }, votante) =>
+  ok(await sb.rpc('pedir_cancion', { p_titulo: titulo, p_artista: artista, p_nombre: nombre, p_votante: votante,
+    p_portada: portada ?? null, p_enlace: enlace ?? null, p_muestra: muestra ?? null }));
 export const votarCancion = async (id, votante) => ok(await sb.rpc('votar_cancion', { p_id: id, p_votante: votante }));
 export const misVotos = async (votante) => ok(await sb.rpc('mis_votos', { p_votante: votante }));
 export const marcarCancion = async (id, cambios) => ok(await sb.from('canciones').update(cambios).eq('id', id));
@@ -203,7 +204,9 @@ export const estadoJuego = async () => ok(await sb.rpc('estado_juego'));
 export const responderJuego = async (jugador, nombre, opcion) =>
   ok(await sb.rpc('responder_juego', { p_jugador: jugador, p_nombre: nombre, p_opcion: opcion }));
 export async function controlarJuego({ pregunta, fase }) {
-  ok(await sb.from('ajustes').upsert([{ clave: 'juego_pregunta', valor: String(pregunta) }, { clave: 'juego_fase', valor: fase }]));
+  const filas = [{ clave: 'juego_pregunta', valor: String(pregunta) }, { clave: 'juego_fase', valor: fase }];
+  if (fase === 'abierta') filas.push({ clave: 'juego_desde', valor: new Date().toISOString() });
+  ok(await sb.from('ajustes').upsert(filas));
 }
 export const reiniciarJuego = async () => {
   ok(await sb.from('juego_respuestas').delete().gte('pregunta', -1));

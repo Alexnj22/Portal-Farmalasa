@@ -396,6 +396,9 @@ create table if not exists canciones (
   oculta boolean not null default false,
   created_at timestamptz not null default now()
 );
+alter table canciones add column if not exists portada text;   -- carátula (https)
+alter table canciones add column if not exists enlace text;    -- Apple Music / Spotify / YouTube
+alter table canciones add column if not exists muestra text;   -- vista previa de 30 s (https)
 create unique index if not exists canciones_unica on canciones (sin_tildes(titulo), sin_tildes(coalesce(artista, '')));
 create table if not exists canciones_votos (
   cancion_id uuid not null references canciones(id) on delete cascade,
@@ -412,8 +415,15 @@ create policy canciones_votos_admin on canciones_votos for all to authenticated 
 drop policy if exists canciones_publicas on canciones;
 create policy canciones_publicas on canciones for select to anon, authenticated using (not oculta);
 
--- Pedir: si ya la pidió alguien, cuenta como voto.
-create or replace function pedir_cancion(p_titulo text, p_artista text, p_nombre text, p_votante uuid) returns uuid
+-- Pedir: si ya la pidió alguien, cuenta como voto. La carátula, el enlace y la
+-- vista previa vienen del buscador (Apple Music) o de un enlace pegado.
+drop function if exists pedir_cancion(text, text, text, uuid);
+create or replace function url_segura(u text) returns text
+language sql immutable set search_path = public as $$
+  select case when u ~ '^https://[^\s"<>]+$' and length(u) <= 500 then u end;
+$$;
+create or replace function pedir_cancion(p_titulo text, p_artista text, p_nombre text, p_votante uuid,
+  p_portada text default null, p_enlace text default null, p_muestra text default null) returns uuid
 language plpgsql security definer set search_path = public as $$
 declare v uuid;
 begin
@@ -424,9 +434,13 @@ begin
   select id into v from canciones
   where sin_tildes(titulo) = sin_tildes(trim(p_titulo)) and sin_tildes(coalesce(artista, '')) = sin_tildes(coalesce(trim(p_artista), ''));
   if v is null then
-    insert into canciones (titulo, artista, pedido_por)
-    values (left(trim(p_titulo), 120), nullif(left(trim(p_artista), 80), ''), nullif(left(trim(p_nombre), 60), ''))
+    insert into canciones (titulo, artista, pedido_por, portada, enlace, muestra)
+    values (left(trim(p_titulo), 120), nullif(left(trim(p_artista), 80), ''), nullif(left(trim(p_nombre), 60), ''),
+            url_segura(p_portada), url_segura(p_enlace), url_segura(p_muestra))
     returning id into v;
+  else
+    update canciones set portada = coalesce(portada, url_segura(p_portada)), enlace = coalesce(enlace, url_segura(p_enlace)),
+      muestra = coalesce(muestra, url_segura(p_muestra)) where id = v;
   end if;
   insert into canciones_votos (cancion_id, votante) values (v, p_votante) on conflict do nothing;
   update canciones set votos = (select count(*) from canciones_votos where cancion_id = v) where id = v;
@@ -498,7 +512,7 @@ end $$;
 -- ── El juego del salón («¿Cuánto conoces a los novios?») ────────────────────
 -- Las preguntas viven en src/config.js; la base guarda la pregunta en curso,
 -- su fase y las respuestas correctas (las copia el panel, como la fecha límite).
-insert into ajustes (clave, valor) values ('juego_pregunta', '-1'), ('juego_fase', 'cerrado'), ('juego_correctas', '')
+insert into ajustes (clave, valor) values ('juego_pregunta', '-1'), ('juego_fase', 'cerrado'), ('juego_correctas', ''), ('juego_desde', '')
 on conflict (clave) do nothing;
 
 create table if not exists juego_respuestas (
@@ -520,7 +534,7 @@ declare v_p int := coalesce(ajuste('juego_pregunta'), '-1')::int;
         v_c int[] := coalesce(string_to_array(nullif(ajuste('juego_correctas'), ''), ',')::int[], '{}');
 begin
   return json_build_object(
-    'pregunta', v_p, 'fase', v_f,
+    'pregunta', v_p, 'fase', v_f, 'desde', nullif(ajuste('juego_desde'), ''), 'ahora', now(),
     'conteo', coalesce((select json_object_agg(opcion, n) from (
       select opcion, count(*) n from juego_respuestas where pregunta = v_p group by opcion) c), '{}'::json),
     'total', (select count(*) from juego_respuestas where pregunta = v_p),
@@ -544,11 +558,11 @@ begin
   return true;
 end $$;
 
-revoke execute on function invitacion(text), sin_tildes(text), buscar_mesa(text, text),
-  pedir_cancion(text, text, text, uuid), votar_cancion(uuid, uuid), mis_votos(uuid), autorizar_voz(text),
+revoke execute on function invitacion(text), sin_tildes(text), url_segura(text), buscar_mesa(text, text),
+  pedir_cancion(text, text, text, uuid, text, text, text), votar_cancion(uuid, uuid), mis_votos(uuid), autorizar_voz(text),
   firmar_libro(text, text, text), estado_juego(), responder_juego(uuid, text, int) from public, anon, authenticated;
 grant execute on function invitacion(text), buscar_mesa(text, text),
-  pedir_cancion(text, text, text, uuid), votar_cancion(uuid, uuid), mis_votos(uuid), autorizar_voz(text),
+  pedir_cancion(text, text, text, uuid, text, text, text), votar_cancion(uuid, uuid), mis_votos(uuid), autorizar_voz(text),
   firmar_libro(text, text, text), estado_juego(), responder_juego(uuid, text, int) to anon, authenticated;
 grant execute on function sin_tildes(text) to authenticated;
 

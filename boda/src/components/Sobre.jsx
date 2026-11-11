@@ -1,27 +1,37 @@
 import { useEffect, useRef, useState } from 'react';
+import { boda } from '../config';
 import { sinMovimiento } from '../lib/movimiento';
 import { t } from '../lib/idioma';
+import { lanzar, vibrar } from '../lib/confeti';
 
 const LS = 'boda-sobre-abierto';
 const yaAbierto = (codigo) => { try { return sessionStorage.getItem(LS) === codigo; } catch { return true; } };
+const DURACION = 3600;
 
 /**
- * Apertura de una invitación personal: un sobre oliva con el nombre del
- * invitado y un sello. Se toca el sello (o «Abrir») y la solapa se abre, la
- * tarjeta sube y el sobre se retira. Una vez por visita; no aparece con
- * movimiento reducido ni en modo fácil. Si hay música, el botón la enciende
- * (empieza apagada: un sitio no suena sin permiso).
+ * La apertura de una invitación personal, como abrir un sobre de verdad:
+ * llega flotando entre luces y polvo dorado; al tocar el sello, el lacre se
+ * parte, la solapa se abre, la tarjeta sube y se acerca hasta llenar la
+ * pantalla entre pétalos, y detrás aparece el sitio.
+ * Una vez por visita; nunca con movimiento reducido ni en modo fácil.
  */
 export default function Sobre({ codigo, para, monograma, fecha, musica, desactivado }) {
   const [estado, setEstado] = useState(() => (!codigo || desactivado || yaAbierto(codigo) || sinMovimiento() ? 'fuera' : 'cerrado'));
   const [sonando, setSonando] = useState(false);
   const audio = useRef(null);
+  const sello = useRef(null);
 
   useEffect(() => { if (desactivado && estado === 'cerrado') setEstado('fuera'); }, [desactivado, estado]);
   useEffect(() => {
+    if (estado === 'fuera') return undefined;
+    document.documentElement.classList.add('con-sobre');
+    return () => document.documentElement.classList.remove('con-sobre');
+  }, [estado]);
+  // Polvo dorado que sube despacio mientras espera.
+  useEffect(() => {
     if (estado !== 'cerrado') return undefined;
-    document.documentElement.style.overflow = 'hidden';
-    return () => { document.documentElement.style.overflow = ''; };
+    const i = setInterval(() => lanzar({ tipo: 'oro', cantidad: 3, x: Math.random() * innerWidth, y: innerHeight * (0.55 + Math.random() * 0.45), fuerza: 1.2 }), 420);
+    return () => clearInterval(i);
   }, [estado]);
 
   if (estado === 'fuera') return musica && sonando ? <audio ref={audio} src={musica} autoPlay loop /> : null;
@@ -29,8 +39,14 @@ export default function Sobre({ codigo, para, monograma, fecha, musica, desactiv
   const abrir = () => {
     if (estado !== 'cerrado') return;
     try { sessionStorage.setItem(LS, codigo); } catch { /* privado */ }
+    vibrar([12, 30, 24]);
+    const r = sello.current?.getBoundingClientRect();
+    const x = r ? r.left + r.width / 2 : innerWidth / 2; const y = r ? r.top + r.height / 2 : innerHeight / 2;
+    lanzar({ tipo: 'oro', cantidad: 70, x, y, fuerza: 7 });
+    setTimeout(() => lanzar({ tipo: 'oro', cantidad: 50, x, y: y - 40, fuerza: 11 }), 900);
+    setTimeout(() => { lanzar({ tipo: 'petalo', cantidad: 46, lluvia: true }); lanzar({ tipo: 'confeti', cantidad: 70, x: innerWidth / 2, y: innerHeight * 0.4, fuerza: 12 }); }, 1700);
     setEstado('abriendo');
-    setTimeout(() => setEstado('fuera'), 2300);
+    setTimeout(() => setEstado('fuera'), DURACION);
   };
   const alternarMusica = (e) => {
     e.stopPropagation();
@@ -40,22 +56,33 @@ export default function Sobre({ codigo, para, monograma, fecha, musica, desactiv
 
   return (
     <div className={`sobre-escena ${estado}`} role="dialog" aria-modal="true" aria-label={t('Tu invitación', 'Your invitation')}>
-      <div className="sobre" onClick={abrir}>
-        <div className="sobre-tarjeta" aria-hidden>
-          <span className="mono">{monograma}</span>
-          <span className="fecha">{fecha}</span>
+      <div className="luces" aria-hidden>{Array.from({ length: 9 }, (_, i) => <span key={i} style={{ '--i': i }} />)}</div>
+      <p className="sobre-arriba"><span>{t('Hay una invitación', 'There is an invitation')}</span> <span>{t('para ti', 'for you')}</span></p>
+
+      <div className="sobre-flota">
+        <div className="sobre" onClick={abrir}>
+          <div className="sobre-fondo" />
+          <div className="sobre-tarjeta" aria-hidden>
+            <span className="tarjeta-mono">{monograma}</span>
+            <span className="tarjeta-nombres">{boda.novios.ella} <em>&</em> {boda.novios.el}</span>
+            <span className="tarjeta-texto">{t('te invitan a celebrar su boda', 'invite you to their wedding')}</span>
+            <span className="tarjeta-fecha">{fecha}</span>
+          </div>
+          <div className="sobre-bolsillo">
+            <span className="sobre-para">{para}</span>
+          </div>
+          <div className="sobre-solapa"><span className="cara-afuera" /><span className="cara-adentro" /></div>
+          <div className="sobre-brillo" aria-hidden />
+          <button ref={sello} type="button" className="sello" onClick={(e) => { e.stopPropagation(); abrir(); }} aria-label={t('Abrir la invitación', 'Open the invitation')}>
+            <span className="sello-mitad izq"><span>{monograma}</span></span>
+            <span className="sello-mitad der"><span>{monograma}</span></span>
+            <span className="sello-onda" aria-hidden />
+          </button>
         </div>
-        <div className="sobre-cuerpo" />
-        <div className="sobre-solapa" />
-        <div className="sobre-frente">
-          <p className="sobre-para">{para}</p>
-        </div>
-        <button type="button" className="sello" onClick={(e) => { e.stopPropagation(); abrir(); }} aria-label={t('Abrir la invitación', 'Open the invitation')}>
-          <span>{monograma}</span>
-        </button>
       </div>
-      <p className="sobre-ayuda">{t('Toca el sello para abrir', 'Tap the seal to open')}</p>
-      <button type="button" className="btn enlace sobre-saltar" onClick={abrir}>{t('Abrir', 'Open')}</button>
+
+      <p className="sobre-ayuda"><span className="dedo" aria-hidden />{t('Toca el sello para abrirla', 'Tap the seal to open it')}</p>
+      <button type="button" className="sobre-saltar" onClick={abrir}>{t('Abrir', 'Open')}</button>
       {musica && <>
         <audio ref={audio} src={musica} loop preload="none" />
         <button type="button" className="sobre-musica" onClick={alternarMusica} aria-pressed={sonando} aria-label={sonando ? t('Apagar música', 'Mute music') : t('Encender música', 'Play music')}>♪</button>

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { boda as config, fechaBoda } from '../config';
 import { api } from '../lib/api';
 import { ahora } from '../lib/reloj';
@@ -73,11 +74,11 @@ export function AhoraCompacto({ itinerario }) {
   const actual = prog[idx]; const sigue = prog[idx + 1];
   if (idx === prog.length - 1 && n - actual.desde > 2 * 36e5) return null;
   return (
-    <a href="#hoy" className="ahora-chip">
+    <Link to="/hoy" className="ahora-chip">
       <span className="punto-vivo" aria-hidden />
       {actual ? <><b>{t('Ahora', 'Now')}</b> {actual.titulo}</> : <><b>{prog[0]?.hora}</b> {prog[0]?.titulo}</>}
       {actual && sigue && <span className="sigue">{t('Sigue', 'Next')}: {sigue.titulo}, {sigue.hora}</span>}
-    </a>
+    </Link>
   );
 }
 

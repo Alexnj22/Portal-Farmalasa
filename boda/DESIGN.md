@@ -44,11 +44,14 @@ Curva `cubic-bezier(0.22, 1, 0.36, 1)`. Nada rebota y todo se apaga con `prefers
 - **Frase** (`FraseRevelada.jsx`): las palabras se iluminan al leer bajando.
 - **Galería** (`GaleriaHorizontal.jsx`): tira que se desliza de lado con el dedo (scroll nativo con imán), flechas en computadora. Bajar nunca mueve las fotos de lado: el usuario lo encontró raro.
 - Nada corre en cada cuadro de scroll salvo la frase. El grano de papel sólo en computadora (en el teléfono costaba cada cuadro).
-- **Sobre** (`Sobre.jsx`): en `/i/CODIGO` reemplaza al telón. Se toca el sello: la solapa gira, la tarjeta sube y el sobre se desvanece. Una vez por visita; nunca en modo fácil ni con movimiento reducido.
+- **Sobre** (`Sobre.jsx`): en `/i/CODIGO` reemplaza al telón. Escena oscura cálida con luces que flotan y polvo dorado; el sobre se mece y un brillo lo cruza. Al tocar el sello: vibración, el lacre se parte en dos, la solapa gira en 3D, la tarjeta sube y se acerca hasta llenar la pantalla entre confeti y pétalos (`lib/confeti.js`, un solo lienzo y un solo rAF que se apaga solo). Una vez por visita; nunca en modo fácil ni con movimiento reducido. Es la única licencia dorada del sitio: dura tres segundos.
 - **Presentación** (`Presentacion.jsx`): fundido y acercamiento lento (cuatro recorridos que alternan). En vertical, la foto entera sobre una copia desenfocada.
 
+## La app (barra de pestañas)
+`AppMarco.jsx` envuelve las rutas de invitados: una barra flotante abajo (píldora lino translúcida, 68 px, área segura del iPhone) con cinco pestañas que cambian con la fase; la del centro es el botón principal en un círculo oliva que sobresale. Cada pantalla usa `PaginaApp`: cabecera fija con la marca, título grande con la última palabra en cursiva, y el contenido. La portada mantiene su diseño y termina en accesos (`.acceso`): filas de 84 px con ícono, título serif y flecha; el que falta hacer va en oliva. Íconos de trazo en `Iconos.jsx`. `/pantalla`, `/dj` y `/admin` quedan fuera de la barra.
+
 ## Modo fácil (letra grande)
-Clase `facil` en `<html>`: texto al 120 %, `--tinta-suave` y `--linea` más oscuros, botones de 60 px, ninguna animación, sin cinta ni telón. Lo enciende la invitación (`grupos.letra_grande`) o el botón «Aa»; la elección del botón manda. La confirmación cambia a `PasoAPaso`: una pregunta por pantalla, dos botones de 68 px y una revisión final antes de enviar.
+Clase `facil` en `<html>`: texto al 125 %, `--tinta-suave` y `--linea` más oscuros, ninguna animación, sin sobre ni barra de pestañas. Reemplaza el sitio por `AppFacil.jsx`: una sola columna con el saludo por nombre, la tarjeta de fecha y lugar, un botón de 104 px para confirmar y una lista de botones de 76 px con ícono (Escuchar, Cómo llegar, Llamar, WhatsApp, Fotos). Cada acción abre su propia pantalla con un «Volver» de 60 px. Lo enciende la invitación (`grupos.letra_grande`) o el botón «Aa»; la elección del botón manda. La confirmación cambia a `PasoAPaso`: una pregunta por pantalla, dos botones de 68 px y una revisión final antes de enviar.
 
 ## En vivo
 Rojo de «en vivo» `oklch(0.62 0.17 30)` sólo para el punto que late; nada más usa ese color. El aviso de los novios es una banda oliva noche bajo la navegación, que se cierra con ×.

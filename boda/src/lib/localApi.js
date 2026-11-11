@@ -397,12 +397,13 @@ export async function buscarMesa(clave, nombre) {
 const sinVotantes = ({ votantes, ...c }) => c;
 export const listarCanciones = async () => espera(leer().canciones.filter((c) => !c.oculta).map(sinVotantes)
   .sort((a, b) => b.votos - a.votos || a.created_at.localeCompare(b.created_at)));
-export async function pedirCancion({ titulo, artista, nombre }, votante) {
+export async function pedirCancion({ titulo, artista, nombre, portada, enlace, muestra }, votante) {
   if (!titulo?.trim()) throw new Error('Escribe el nombre de la canción');
   const s = leer();
   let c = s.canciones.find((x) => sinTildes(x.titulo) === sinTildes(titulo.trim()) && sinTildes(x.artista || '') === sinTildes(artista?.trim() || ''));
   if (!c) {
     c = { id: uid(), titulo: titulo.trim().slice(0, 120), artista: artista?.trim().slice(0, 80) || null, pedido_por: nombre?.trim().slice(0, 60) || null,
+      portada: portada || null, enlace: enlace || null, muestra: muestra || null,
       votos: 0, tocada: false, oculta: false, created_at: ahora(), votantes: [] };
     s.canciones.push(c);
   }
@@ -441,7 +442,7 @@ export async function estadoJuego() {
     puntos[r.jugador] ??= { nombre: r.nombre, puntos: 0 };
     if (cuenta && r.opcion === correctas[r.pregunta]) puntos[r.jugador].puntos += 1;
   });
-  return { pregunta: juego.pregunta, fase: juego.fase, conteo, total: deEsta.length,
+  return { pregunta: juego.pregunta, fase: juego.fase, desde: juego.desde || null, ahora: new Date().toISOString(), conteo, total: deEsta.length,
     ranking: Object.values(puntos).sort((a, b) => b.puntos - a.puntos).slice(0, 10) };
 }
 export async function responderJuego(jugador, nombre, opcion) {
@@ -456,7 +457,7 @@ export async function responderJuego(jugador, nombre, opcion) {
 }
 export async function controlarJuego({ pregunta, fase }) {
   const s = leer();
-  s.juego = { ...s.juego, pregunta, fase };
+  s.juego = { ...s.juego, pregunta, fase, ...(fase === 'abierta' ? { desde: new Date().toISOString() } : {}) };
   guardar(s);
 }
 export async function reiniciarJuego() {

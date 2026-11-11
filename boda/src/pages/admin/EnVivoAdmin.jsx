@@ -54,7 +54,7 @@ function JuegoControl() {
   useEffect(() => { cargar(); return api.suscribirJuego(cargar); }, []);
   // Las respuestas buenas viven en config.js; la base guarda una copia para puntuar.
   useEffect(() => {
-    api.guardarAjuste?.('juego_correctas', preguntas.map((q) => q.correcta).join(',')).catch(() => {});
+    api.guardarAjuste?.('juego_correctas', preguntas.map((q) => q.correcta ?? -1).join(',')).catch(() => {});
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   const ir = async (cambio) => { try { setError(''); await api.controlarJuego(cambio); cargar(); } catch (e) { setError(e.message); } };
   if (!preguntas.length) return <div className="tarjeta"><h3>Juego</h3><p className="chico suave">Agrega preguntas en <code>juego.preguntas</code> de src/config.js.</p></div>;
@@ -64,7 +64,7 @@ function JuegoControl() {
   return (
     <div className="tarjeta">
       <h3>Juego: {boda.juego.titulo}</h3>
-      <p className="chico suave">Los invitados juegan en <b>{window.location.origin}/juego</b>. En el proyector abran <a href={enlace} target="_blank" rel="noreferrer">la pantalla del juego</a>.</p>
+      <p className="chico suave">Lo más fácil: abran <a href={enlace} target="_blank" rel="noreferrer">la pantalla del juego</a> en la computadora del proyector y toquen «Empezar el juego»: corre solo. Los invitados juegan en <b>{window.location.origin}/juego</b>. También se puede manejar desde acá.</p>
       {estado && <p><b>{q ? `Pregunta ${p + 1} de ${preguntas.length}: ${q.p}` : estado.fase === 'final' ? 'Juego terminado' : 'Sin empezar'}</b><br />
         <span className="chico suave">{estado.fase === 'abierta' ? `Respondiendo… ${estado.total} respuestas` : estado.fase === 'revelada' ? `Respuesta mostrada (${q?.opciones[q.correcta]})` : ''}</span></p>}
       {error && <p className="aviso error">{error}</p>}

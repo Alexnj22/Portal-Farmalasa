@@ -122,3 +122,17 @@ Invitaciones de ejemplo: `DEMO01` familia de 4 con 3 nombres (sobra un lugar par
 - **Presentación** de las fotos de los invitados (pantalla completa, acercamiento lento), desde el álbum y la portada de recuerdos.
 
 Con Supabase: volver a correr `supabase/schema.sql` completo (es idempotente) para crear las tablas nuevas (`avisos`, `canciones`, `canciones_votos`, `juego_respuestas`) y las funciones.
+
+## Tercera ronda: parece una app
+
+- **Barra de pestañas abajo**, como una app de iPhone. Cambia con la fase: en la invitación, Inicio · Dónde · **Confirmar** · Mensajes · Más; el día de la boda, Hoy · Música · **Fotos** · Juegos · Más. Cada cosa tiene su pantalla: `/evento` (lugares, programa, vestimenta, regalos, preguntas), `/confirmar`, `/mensajes`, `/hoy` (tu mesa, lo que pasa ahora y los avisos), `/mas`. La portada termina en accesos directos a lo que falta hacer. El código de la invitación se recuerda en el teléfono, así que `/confirmar` sabe quién eres.
+- **Modo abuelos rehecho.** Con letra grande ya no es la página normal agrandada: es una pantalla propia con el saludo por nombre, la fecha y el lugar, un solo botón enorme «Confirmar si voy» (o «Usted ya respondió» con quién va), y debajo Escuchar, Cómo llegar, Llamar, WhatsApp y Ver las fotos. Sin pestañas ni animaciones.
+- **El sobre, con magia.** Llega flotando entre luces y polvo dorado; al tocar el sello, el lacre se parte, el teléfono vibra, la solapa se abre, la tarjeta sube y se acerca hasta llenar la pantalla entre confeti y pétalos.
+- **Canciones con buscador.** Se escribe el nombre y aparecen canciones con carátula y una muestra de 30 s para escucharla antes de pedirla; también se puede pegar un enlace de Spotify, YouTube o Apple Music. La búsqueda usa el catálogo público de Apple y, en el iPhone (donde Apple redirige a su app), el de Deezer; los enlaces se leen con noembed.com. Spotify y YouTube no tienen búsqueda pública sin cuenta: el DJ recibe, por cada canción, enlaces directos a Spotify, YouTube y Apple Music, y un botón para copiar la lista.
+- **Juegos listos para usar** en `/juego`:
+  - **Trivia en vivo** (`/juego/trivia`): 10 preguntas con reloj de 20 s, incluidas preguntas de «¿Quién es más probable?» que muestran cómo votó el salón. En el proyector (`/pantalla?modo=juego`), con la sesión del panel abierta, «Empezar el juego» y corre solo: abre cada pregunta, la revela al acabarse el tiempo y pasa a la siguiente; al final, podio.
+  - **Bingo de la boda** (`/juego/bingo`): cartón de 4×4 al azar con cosas que pasan en la fiesta; al completar una línea canta ¡BINGO! Se guarda en el teléfono.
+  - **Retos de fotos** (`/juego/retos`): 10 retos; cada foto se sube al álbum con el momento «Retos».
+  - Las preguntas, casillas y retos están en `juego` de `src/config.js`.
+
+Con Supabase: volver a correr `supabase/schema.sql` (agrega `portada`, `enlace` y `muestra` a `canciones` y el ajuste `juego_desde` para el reloj).

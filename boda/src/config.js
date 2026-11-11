@@ -121,7 +121,7 @@ export const boda = {
   ],
 
   // Momentos para etiquetar las fotos del álbum
-  momentos: ['Ceremonia', 'Cóctel', 'Fiesta', 'Detalles', 'Selfies'],
+  momentos: ['Ceremonia', 'Cóctel', 'Fiesta', 'Detalles', 'Selfies', 'Retos'],
 
   contacto: { whatsapp: '50370000000', nombre: 'Eduardo' },
 
@@ -132,16 +132,40 @@ export const boda = {
   // Empieza apagada: el invitado la enciende con el botón de la nota.
   musica: '',
 
-  // Juego del salón «¿Cuánto conoces a los novios?». `correcta` es la posición
-  // de la opción buena (0 = la primera). Se maneja desde el panel → En vivo.
+  // Juegos de la boda. Ya vienen armados: se pueden usar tal cual o cambiar.
+  //   · Trivia en vivo: el proyector la corre solo (20 s por pregunta).
+  //     `correcta` = posición de la opción buena (0 = la primera). Las de tipo
+  //     'quien' no tienen respuesta buena: el salón vota y se ve el resultado.
+  //   · Bingo: cada teléfono arma su cartón al azar con estas casillas.
+  //   · Retos de fotos: cada reto sube su foto al álbum.
   juego: {
     titulo: '¿Cuánto conoces a los novios?',
+    segundos: 20,
     preguntas: [
       { p: '¿Dónde se conocieron?', opciones: ['En la universidad', 'En una fiesta', 'En el trabajo', 'Por una app'], correcta: 1 },
-      { p: '¿Quién dijo «te quiero» primero?', opciones: ['Alessandra', 'Eduardo'], correcta: 1 },
+      { p: '¿Quién es más probable que llegue tarde?', opciones: ['Alessandra', 'Eduardo'], tipo: 'quien' },
       { p: '¿Cuál fue su primera cita?', opciones: ['Cine', 'Pupusas', 'Playa', 'Café'], correcta: 1 },
+      { p: '¿Quién dijo «te quiero» primero?', opciones: ['Alessandra', 'Eduardo'], correcta: 1 },
+      { p: '¿Quién llora con las películas?', opciones: ['Alessandra', 'Eduardo'], tipo: 'quien' },
+      { p: '¿Cuántos años llevan juntos?', opciones: ['3', '5', '7', '9'], correcta: 2 },
       { p: '¿Quién cocina mejor?', opciones: ['Alessandra', 'Eduardo', 'Ninguno', 'Los dos'], correcta: 0 },
+      { p: '¿Quién se duerme primero en una fiesta?', opciones: ['Alessandra', 'Eduardo'], tipo: 'quien' },
       { p: '¿Dónde fue la pedida de mano?', opciones: ['En la montaña', 'En un restaurante', 'Frente al mar', 'En casa'], correcta: 2 },
+      { p: '¿A dónde se van de luna de miel?', opciones: ['Europa', 'Cancún', 'Japón', 'Es sorpresa'], correcta: 3 },
+    ],
+    bingo: [
+      'Alguien llora en la ceremonia', 'El novio se equivoca en los votos', 'Un niño baila solo', 'Alguien dice «¡que se besen!»',
+      'Suena una de Marc Anthony', 'La abuela saca los pasos', 'Alguien pierde un zapato', 'Brindis que hace llorar',
+      'Foto con los ojos cerrados', 'Alguien pide «la última»', 'Se cae una copa', 'Trencito en la pista',
+      'Un tío cuenta un chiste', 'Alguien canta a todo pulmón', 'Los novios bailan pegados', 'Alguien llega tarde',
+      'Se acaban las servilletas', 'Selfie con los novios', 'Alguien se duerme', 'Lanzan el ramo',
+      'Alguien baila con los zapatos en la mano', 'Suena una cumbia', 'Un brindis con chiste', 'Alguien graba un video vertical',
+    ],
+    retos: [
+      'Una selfie con alguien que acabas de conocer', 'Tu mesa entera haciendo una cara chistosa', 'Los zapatos más elegantes de la fiesta',
+      'Alguien bailando como si nadie lo viera', 'Un brindis con los novios', 'La foto más romántica de una pareja invitada',
+      'El detalle de la decoración que más te gustó', 'Tu mejor paso de baile', 'Una foto con el invitado de más edad',
+      'Los novios sin que se den cuenta',
     ],
   },
 
@@ -180,7 +204,7 @@ export const boda = {
       { p: 'Is there parking?', r: 'Yes, the venue has free, guarded parking.' },
       { p: 'How do I share my photos?', r: 'On the wedding day you will find QR codes on each table. Scan it and upload your photos to the shared album.' },
     ],
-    momentos: ['Ceremony', 'Cocktail', 'Party', 'Details', 'Selfies'],
+    momentos: ['Ceremony', 'Cocktail', 'Party', 'Details', 'Selfies', 'Challenges'],
   },
 };
 

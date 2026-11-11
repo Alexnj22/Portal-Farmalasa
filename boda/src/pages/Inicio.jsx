@@ -1,11 +1,10 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { faseActual, faseAlMenos } from '../lib/fase';
-import { fechaLarga, fechaCorta, descargarIcs, enlaceGoogleCalendar } from '../lib/fechas';
+import { fechaLarga, fechaCorta, descargarIcs, enlaceGoogleCalendar, limiteConfirmar } from '../lib/fechas';
 import { api } from '../lib/api';
 import { t, useIdioma, contenido, BotonIdioma } from '../lib/idioma';
 import Countdown from '../components/Countdown';
-import Mapa from '../components/Mapa';
 import Seccion, { Titulo } from '../components/Seccion';
 import Telon from '../components/Telon';
 import { sinMovimiento } from '../lib/movimiento';
@@ -13,15 +12,14 @@ import FraseRevelada from '../components/FraseRevelada';
 import GaleriaHorizontal from '../components/GaleriaHorizontal';
 import { fechaBoda } from '../config';
 import Revelar from '../components/Revelar';
-import Copiar from '../components/Copiar';
 import CintaEntrada from '../components/CintaEntrada';
-import Rsvp from './Rsvp';
-import LibroFirmas from './LibroFirmas';
 import Sobre from '../components/Sobre';
 import Presentacion from '../components/Presentacion';
-import { BotonFacil, AccionesFacil } from '../components/Facil';
-import { AhoraEnLaBoda, AhoraCompacto, DondeMeSiento } from '../components/EnVivo';
-import { facilPorInvitacion, useFacil } from '../lib/facil';
+import { BotonFacil } from '../components/Facil';
+import Icono from '../components/Iconos';
+import { useInvitacion, usarCodigo } from '../lib/miInvitacion';
+import { AhoraCompacto } from '../components/EnVivo';
+import { useFacil } from '../lib/facil';
 
 /** Una palabra que entra letra por letra (cada letra sube desde su renglón). */
 function Letras({ texto, desde = 0 }) {
@@ -42,12 +40,12 @@ export default function Inicio({ codigo }) {
   const boda = contenido(idioma);
   const { novios } = boda;
   const fase = faseActual();
-  const [inv, setInv] = useState(undefined); // undefined = cargando, null = no existe
+  // El enlace personal deja el código guardado para todas las pestañas.
+  useEffect(() => { if (codigo) usarCodigo(codigo); }, [codigo]);
+  const { inv } = useInvitacion();
   const facil = useFacil();
   const [presentar, setPresentar] = useState(null); // fotos de la presentación abierta
   const abrirPresentacion = () => api.listarFotos().then((f) => setPresentar(f)).catch(() => {});
-  useEffect(() => { if (inv !== undefined) facilPorInvitacion(inv?.grupo?.letra_grande); }, [inv]);
-  const [lugar, setLugar] = useState(null);
   const [arriba, setArriba] = useState(true);
   const portada = useRef(null);
 
@@ -62,7 +60,7 @@ export default function Inicio({ codigo }) {
     const mover = () => {
       cuadro = 0;
       const y = window.scrollY;
-      if (y <= window.innerHeight) foto.style.setProperty('--paralaje', `${(y * 0.38).toFixed(1)}px`);
+      if (foto && y <= window.innerHeight) foto.style.setProperty('--paralaje', `${(y * 0.38).toFixed(1)}px`);
     };
     const pedir = () => { if (!cuadro) cuadro = requestAnimationFrame(mover); };
     window.addEventListener('scroll', pedir, { passive: true });
@@ -79,24 +77,6 @@ export default function Inicio({ codigo }) {
     return () => io.disconnect();
   }, []);
 
-  useEffect(() => {
-    if (!codigo) { setInv(null); return; }
-    setInv(undefined);
-    window.scrollTo(0, 0);
-    api.getInvitacion(codigo).then(setInv).catch(() => setInv(null));
-  }, [codigo]);
-
-  const secciones = useMemo(() => {
-    const s = [];
-    if (fase === 'boda') s.push(['hoy', t('Hoy', 'Today')]);
-    if (codigo && faseAlMenos(fase, 'invitacion')) s.push(['confirmar', t('Confirmar', 'RSVP')]);
-    s.push(['historia', t('Historia', 'Our story')], ['fotos', t('Fotos', 'Photos')]);
-    if (faseAlMenos(fase, 'invitacion')) s.push(['evento', t('Evento', 'Venue')], ['programa', t('Programa', 'Schedule')], ['detalles', t('Detalles', 'Details')]);
-    if (!codigo && faseAlMenos(fase, 'invitacion') && fase !== 'recuerdos') s.push(['confirmar', t('Confirmar', 'RSVP')]);
-    if (faseAlMenos(fase, 'invitacion')) s.push(['firmas', t('Mensajes', 'Guestbook')]);
-    return s;
-  }, [fase, codigo, idioma]); // eslint-disable-line react-hooks/exhaustive-deps
-
   const titulo = fase === 'save-the-date' ? 'Save the date'
     : fase === 'recuerdos' ? t('¡Gracias por acompañarnos!', 'Thank you for celebrating with us!')
     : fase === 'boda' ? t('¡Hoy nos casamos!', "Today we're getting married!") : t('Nos casamos', "We're getting married");
@@ -105,16 +85,12 @@ export default function Inicio({ codigo }) {
     <>
       {/* Con enlace personal, el sobre con el nombre; sin él, el telón. */}
       {codigo
-        ? inv?.grupo && <Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} musica={boda.musica} desactivado={facil} />
+        ? inv?.grupo && inv.grupo.codigo === codigo.toUpperCase() && <Sobre codigo={codigo} para={inv.grupo.nombre} monograma={`${novios.ella[0]}&${novios.el[0]}`} fecha={fechaPuntos()} musica={boda.musica} desactivado={facil} />
         : !facil && <Telon monograma={`${novios.ella[0]} & ${novios.el[0]}`} para="" />}
       {presentar && <Presentacion fotos={presentar} alCerrar={() => setPresentar(null)} />}
       <nav className={`nav ${arriba ? 'sobre-foto' : ''}`}>
         <div className="contenedor">
           <a href="#inicio" className="marca">{novios.ella[0]} & {novios.el[0]}</a>
-          <ul>
-            {secciones.map(([id, txt]) => <li key={id}><a href={`#${id}`}>{txt}</a></li>)}
-            {faseAlMenos(fase, 'boda') && <li><Link to="/album">{t('Álbum', 'Album')}</Link></li>}
-          </ul>
           <div className="nav-acciones"><BotonFacil /><BotonIdioma /></div>
         </div>
       </nav>
@@ -139,7 +115,7 @@ export default function Inicio({ codigo }) {
               {fase === 'boda' && <Link className="btn" to="/album">{t('Subir fotos al álbum', 'Upload photos')}</Link>}
               {fase === 'recuerdos' && <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>}
               {fase === 'recuerdos' && <Link className="btn claro-sobre-foto" to="/album">{t('Ver el álbum', 'See the album')}</Link>}
-              {fase === 'invitacion' && <a className="btn" href="#confirmar">{t('Confirmar asistencia', 'RSVP')}</a>}
+              {fase === 'invitacion' && <Link className="btn" to="/confirmar">{inv?.grupo?.respondido_at ? t('Ver mi invitación', 'My invitation') : t('Confirmar asistencia', 'RSVP')}</Link>}
               {fase === 'save-the-date' && <a className="btn" href={enlaceGoogleCalendar()} target="_blank" rel="noreferrer">{t('Guardar la fecha', 'Save the date')}</a>}
             </div>
           </div>
@@ -174,48 +150,7 @@ export default function Inicio({ codigo }) {
         </section>
       )}
 
-      {facil && faseAlMenos(fase, 'invitacion') && <AccionesFacil boda={boda} inv={inv} hayConfirmar={!!codigo && fase === 'invitacion'} />}
-
-      {fase === 'boda' && (
-        <Seccion id="hoy" titulo={t('Hoy', 'Today')} bajada={t('Lo que está pasando, dónde te sientas, y fotos, canciones y un juego desde tu teléfono.',
-          "What's happening now, where you sit, plus photos, songs and a game from your phone.")} variante="alterna" dividida>
-          <AhoraEnLaBoda itinerario={boda.itinerario} />
-          <DondeMeSiento />
-          <div className="hoy-acciones">
-            <Link to="/album" className="hoy-accion"><b>{t('Sube tus fotos', 'Upload photos')}</b><span>{t('Al álbum de todos', 'To the shared album')}</span></Link>
-            <Link to="/canciones" className="hoy-accion"><b>{t('Pide una canción', 'Request a song')}</b><span>{t('Y vota las de los demás', 'And vote for others')}</span></Link>
-            {boda.juego?.preguntas?.length > 0 && <Link to="/juego" className="hoy-accion"><b>{t('Juega', 'Play')}</b><span>{boda.juego.titulo}</span></Link>}
-          </div>
-          <p className="suave">{t('Usa', 'Use')} {novios.hashtag} {t('en redes sociales.', 'on social media.')}</p>
-        </Seccion>
-      )}
-
-      {fase === 'recuerdos' && (
-        <Seccion id="recuerdos" titulo={t('Las fotos de todos', "Everyone's photos")} bajada={t('Lo que ustedes vieron esa noche, en una presentación.', 'What you saw that night, as a slideshow.')} variante="alterna" dividida>
-          <p className="acciones-fila">
-            <button type="button" className="btn" onClick={abrirPresentacion}>{t('Ver la presentación', 'Watch the slideshow')}</button>
-            <Link to="/album" className="btn claro">{t('Abrir el álbum', 'Open the album')}</Link>
-          </p>
-        </Seccion>
-      )}
-
-      {codigo && faseAlMenos(fase, 'invitacion') && (
-        <Seccion id="confirmar" titulo={fase === 'recuerdos' ? t('Tu invitación', 'Your invitation') : t('Confirma tu asistencia', 'RSVP')} variante="oliva" angosta>
-          {inv === undefined && <p>{t('Cargando tu invitación…', 'Loading your invitation…')}</p>}
-          {inv === null && <BuscarCodigo error={t('No encontramos esa invitación. Revisa el código.', "We couldn't find that invitation. Please check the code.")} />}
-          {inv && <Rsvp key={codigo} codigo={codigo} invitacion={inv} alResponder={setInv} cerrado={fase === 'recuerdos'} />}
-        </Seccion>
-      )}
-
-      {codigo && fase === 'save-the-date' && inv && (
-        <Seccion id="tuya" titulo={t('Reserva la fecha', 'Save the date')} variante="oliva" angosta>
-          <p style={{ fontSize: '1.25rem' }}>{inv.grupo.nombre}: {t('queremos que estés con nosotros. Pronto te llegará la invitación formal con todos los detalles.',
-            'we want you there with us. The formal invitation with all the details is coming soon.')}</p>
-          <p style={{ color: 'var(--oliva-claro)' }}>
-            {t('Tu invitación incluye', 'Your invitation includes')} {inv.grupo.pases} {inv.grupo.pases === 1 ? t('lugar', 'seat') : t('lugares', 'seats')}.
-          </p>
-        </Seccion>
-      )}
+      <Accesos fase={fase} inv={inv} boda={boda} abrirPresentacion={abrirPresentacion} />
 
       {/* ── Historia ── */}
       <Seccion id="historia" titulo={t('Nuestra historia', 'Our story')} dividida>
@@ -231,94 +166,6 @@ export default function Inicio({ codigo }) {
       </Seccion>
 
       <GaleriaHorizontal titulo={<Titulo texto={t('Así somos', 'This is us')} as="span" />} fotos={boda.galeria} />
-
-      {faseAlMenos(fase, 'invitacion') && <>
-        {/* ── Evento y mapa ── */}
-        <Seccion id="evento" titulo={t('Dónde y cuándo', 'Where and when')} bajada={fechaLarga()} dividida>
-          <div className="lugares">
-            {boda.lugares.map((l, i) => (
-              <Revelar key={l.id} className="lugar">
-                <span className="num" aria-hidden>{i + 1}</span>
-                <p className="tipo versalita">{l.tipo}</p>
-                <h3>{l.nombre}</h3>
-                <p className="detalle"><b>{l.hora}</b> · {l.direccion}</p>
-                <div className="botones">
-                  <button className="btn claro chico" onClick={() => setLugar(l.id)}>{t('Ver en el mapa', 'Show on map')}</button>
-                  <a className="btn claro chico" target="_blank" rel="noreferrer" href={`https://www.google.com/maps/dir/?api=1&destination=${l.lat},${l.lng}`}>Google Maps</a>
-                  <a className="btn claro chico" target="_blank" rel="noreferrer" href={`https://waze.com/ul?ll=${l.lat},${l.lng}&navigate=yes`}>Waze</a>
-                </div>
-              </Revelar>
-            ))}
-          </div>
-          <Mapa lugares={boda.lugares} enfocado={lugar} />
-        </Seccion>
-
-        <Seccion id="programa" titulo={t('Programa', 'Schedule')} variante="alterna" dividida>
-          <ol className="itinerario">
-            {boda.itinerario.map((p, i) => (
-              <Revelar as="li" key={i}>
-                <span className="hora">{p.hora}</span><span className="que">{p.titulo}</span>
-              </Revelar>
-            ))}
-          </ol>
-        </Seccion>
-
-        {/* ── Detalles ── */}
-        <Seccion id="detalles" titulo={t('Detalles', 'Details')} dividida>
-          <div className="detalles">
-            <Revelar className="detalle-bloque">
-              <h3>{t('Vestimenta', 'Dress code')}</h3>
-              <p className="grande">{boda.vestimenta.codigo}</p>
-              <p>{boda.vestimenta.detalle}</p>
-              <div className="paleta" role="img" aria-label={t('Colores sugeridos', 'Suggested colors')}>{boda.vestimenta.paleta.map((c) => <span key={c} style={{ background: c }} />)}</div>
-            </Revelar>
-            <Revelar className="detalle-bloque">
-              <h3>{t('Regalos', 'Gifts')}</h3>
-              <p>{boda.regalos.texto}</p>
-              {boda.regalos.opciones.map((o, i) => (
-                <div key={i} className="opcion">
-                  <b>{o.titulo}</b>
-                  <div className="suave">{o.detalle}</div>
-                  {o.copiar && <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}><code>{o.copiar}</code> <Copiar texto={o.copiar}>{t('Copiar', 'Copy')}</Copiar></div>}
-                  {o.enlace && <a className="btn claro chico" style={{ marginTop: 8 }} href={o.enlace} target="_blank" rel="noreferrer">{t('Ver', 'View')}</a>}
-                </div>
-              ))}
-            </Revelar>
-            {boda.hospedaje.length > 0 && (
-              <Revelar className="detalle-bloque">
-                <h3>{t('Hospedaje', 'Accommodation')}</h3>
-                {boda.hospedaje.map((h, i) => (
-                  <div key={i} className="opcion">
-                    <b>{h.nombre}</b>
-                    <div className="suave">{h.detalle}</div>
-                    {h.enlace && <a href={h.enlace} target="_blank" rel="noreferrer">{t('Reservar', 'Book')}</a>}
-                  </div>
-                ))}
-              </Revelar>
-            )}
-          </div>
-          <div style={{ marginTop: 'clamp(48px, 8vw, 88px)' }}>
-            <h3 style={{ marginBottom: 12 }}>{t('Preguntas frecuentes', 'FAQ')}</h3>
-            {boda.preguntas.map((q, i) => (
-              <details className="faq" key={i}><summary>{q.p}</summary><p>{q.r}</p></details>
-            ))}
-            <p className="acciones-fila" style={{ marginTop: 24 }}>
-              {fase !== 'recuerdos' && <Link className="btn claro" to="/canciones">{t('¿Qué canción no puede faltar? Pídela', "Which song can't be missed? Request it")}</Link>}
-              {boda.playlist && <a className="btn claro" href={boda.playlist} target="_blank" rel="noreferrer">{t('Nuestra playlist', 'Our playlist')}</a>}
-            </p>
-          </div>
-        </Seccion>
-
-        {!codigo && fase !== 'recuerdos' && (
-          <Seccion id="confirmar" titulo={t('Confirma tu asistencia', 'RSVP')} variante="oliva" angosta>
-            <BuscarCodigo />
-          </Seccion>
-        )}
-
-        <Seccion id="firmas" titulo={t('Libro de firmas', 'Guestbook')} bajada={t('Déjanos unas palabras. Las vamos a leer muchas veces.', "Leave us a few words. We'll read them again and again.")} variante="alterna" angosta>
-          <LibroFirmas />
-        </Seccion>
-      </>}
 
       <footer className="pie-sitio">
         <div className="contenedor">
@@ -343,18 +190,45 @@ export default function Inicio({ codigo }) {
   );
 }
 
-function BuscarCodigo({ error }) {
-  const [c, setC] = useState('');
-  const ir = useNavigate();
+/**
+ * «Qué puedo hacer aquí»: lo importante del momento, en tarjetas grandes que
+ * llevan a su pestaña. Así nadie tiene que adivinar dónde está cada cosa.
+ */
+function Accesos({ fase, inv, boda, abrirPresentacion }) {
+  const g = inv?.grupo;
+  const items = [];
+  if (fase === 'invitacion') {
+    items.push(g?.respondido_at
+      ? { a: '/confirmar', i: 'confirmar', t: t('Ya confirmaste', 'You replied'), d: t('Ver o cambiar tu respuesta', 'See or change your reply'), hecho: true }
+      : { a: '/confirmar', i: 'confirmar', t: t('Confirma tu asistencia', 'RSVP'), d: g ? t(`Antes del ${limiteConfirmar(inv.limite)}`, `By ${limiteConfirmar(inv.limite)}`) : t('Con el código de tu invitación', 'With your invitation code'), fuerte: true });
+    items.push({ a: '/evento', i: 'lugar', t: t('Dónde y cuándo', 'Where and when'), d: t('Mapa, programa y vestimenta', 'Map, schedule and dress code') });
+    items.push({ a: '/canciones', i: 'musica', t: t('Pide una canción', 'Request a song'), d: t('La que no puede faltar', "The one that can't be missed") });
+    items.push({ a: '/mensajes', i: 'mensajes', t: t('Déjanos un mensaje', 'Leave us a message'), d: t('Escrito o de voz', 'Written or voice') });
+  } else if (fase === 'boda') {
+    items.push({ a: '/hoy', i: 'hoy', t: t('Qué está pasando', 'What’s happening'), d: t('Programa en vivo y tu mesa', 'Live schedule and your table'), fuerte: true });
+    items.push({ a: '/album', i: 'camara', t: t('Sube tus fotos', 'Upload photos'), d: t('Al álbum de todos', 'To the shared album') });
+    items.push({ a: '/canciones', i: 'musica', t: t('Pide una canción', 'Request a song'), d: t('Y vota las de los demás', 'And vote for others') });
+    items.push({ a: '/juego', i: 'juego', t: t('Juegos', 'Games'), d: t('Trivia, bingo y retos', 'Trivia, bingo and challenges') });
+  } else if (fase === 'recuerdos') {
+    items.push({ boton: abrirPresentacion, i: 'play', t: t('Ver la presentación', 'Watch the slideshow'), d: t('Las fotos de todos', "Everyone's photos"), fuerte: true });
+    items.push({ a: '/album', i: 'fotos', t: t('El álbum', 'The album'), d: t('Descarga tus favoritas', 'Download your favorites') });
+    items.push({ a: '/mensajes', i: 'mensajes', t: t('Mensajes', 'Messages'), d: t('Lo que nos escribieron', 'What you wrote us') });
+  } else {
+    items.push({ a: '/confirmar', i: 'calendario', t: t('Tu lugar', 'Your seat'), d: g ? `${g.pases} ${g.pases === 1 ? t('lugar reservado', 'seat') : t('lugares reservados', 'seats')}` : t('Con el código de tu invitación', 'With your code'), fuerte: true });
+  }
   return (
-    <form onSubmit={(e) => { e.preventDefault(); if (c.trim()) ir(`/i/${c.trim().toUpperCase()}`); }}>
-      {error && <p className="aviso error">{error}</p>}
-      <p style={{ maxWidth: '46ch' }}>{t('Tu invitación trae un enlace personal. Si no lo tienes a mano, escribe el código que aparece en ella.',
-        "Your invitation includes a personal link. If you don't have it handy, type the code printed on it.")}</p>
-      <div className="buscar-codigo">
-        <input value={c} onChange={(e) => setC(e.target.value)} placeholder="K7M2QX" autoCapitalize="characters" autoComplete="off" maxLength={8} aria-label={t('Código de invitación', 'Invitation code')} />
-        <button className="btn">{t('Abrir', 'Open')}</button>
-      </div>
-    </form>
+    <section className="accesos contenedor" aria-label={t('Qué puedes hacer', 'What you can do')}>
+      {items.map((x, k) => {
+        const cuerpo = <>
+          <span className="acceso-icono"><Icono n={x.i} tam={26} /></span>
+          <span className="acceso-texto"><b>{x.t}</b><span>{x.d}</span></span>
+          <Icono n="flecha" tam={20} className="acceso-flecha" />
+        </>;
+        const clase = `acceso ${x.fuerte ? 'fuerte' : ''} ${x.hecho ? 'hecho' : ''}`;
+        return x.boton
+          ? <button key={k} type="button" className={clase} onClick={x.boton}>{cuerpo}</button>
+          : <Link key={k} to={x.a} className={clase}>{cuerpo}</Link>;
+      })}
+    </section>
   );
 }

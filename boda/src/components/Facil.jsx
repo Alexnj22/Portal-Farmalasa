@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useFacil, cambiarFacil } from '../lib/facil';
 import { t, idioma } from '../lib/idioma';
 import { fechaLarga, limiteConfirmar } from '../lib/fechas';
+import Icono from './Iconos';
 
 /** Botón «Aa» de la barra: prende o apaga la letra grande. */
 export function BotonFacil() {
@@ -51,22 +52,8 @@ export function BotonEscuchar({ boda, inv, className = 'btn' }) {
   };
   return (
     <button type="button" className={className} onClick={alternar} aria-pressed={hablando}>
-      <span aria-hidden className="icono-boton">{hablando ? '■' : '▶'}</span>
-      {hablando ? t('Detener', 'Stop') : t('Escuchar la invitación', 'Listen to the invitation')}
+      <Icono n={hablando ? 'pausa' : 'altavoz'} tam={30} />
+      <span>{hablando ? t('Detener', 'Stop') : t('Escuchar la invitación', 'Listen to the invitation')}</span>
     </button>
-  );
-}
-
-/** Los cuatro botones grandes del modo fácil, arriba de todo. */
-export function AccionesFacil({ boda, inv, hayConfirmar }) {
-  const tel = boda.contacto?.whatsapp ? `tel:+${boda.contacto.whatsapp}` : null;
-  const lugar = boda.lugares[0];
-  return (
-    <section className="acciones-facil contenedor" aria-label={t('Lo más importante', 'The essentials')}>
-      <BotonEscuchar boda={boda} inv={inv} className="btn grande" />
-      {hayConfirmar && <a className="btn grande" href="#confirmar">{t('Confirmar mi asistencia', 'Reply to the invitation')}</a>}
-      {lugar && <a className="btn grande claro" href={`https://www.google.com/maps/dir/?api=1&destination=${lugar.lat},${lugar.lng}`} target="_blank" rel="noreferrer">{t('Cómo llegar', 'Directions')}</a>}
-      {tel && <a className="btn grande claro" href={tel}>{t(`Llamar a ${boda.contacto.nombre}`, `Call ${boda.contacto.nombre}`)}</a>}
-    </section>
   );
 }

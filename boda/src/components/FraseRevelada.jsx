@@ -6,7 +6,7 @@ export default function FraseRevelada({ texto, className = '' }) {
   const ref = useRef(null);
   const palabras = texto.split(/\s+/);
   useProgresoScroll(ref, (p) => {
-    ref.current.style.setProperty('--p', sinMovimiento() ? 1 : Math.min(1, p * 1.6));
+    ref.current?.style.setProperty('--p', sinMovimiento() ? 1 : Math.min(1, p * 1.6));
   }, { inicio: 0.9, fin: 0.35 });
   return (
     <p ref={ref} className={`frase-revelada ${className}`} style={{ '--n': palabras.length }} aria-label={texto}>

@@ -1,11 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { boda } from '../config';
 import { api } from '../lib/api';
-import { t, useIdioma, rotuloMomento, BotonIdioma } from '../lib/idioma';
+import { t, useIdioma, rotuloMomento } from '../lib/idioma';
+import { PaginaApp } from '../components/AppMarco';
 import Mosaico from '../components/Mosaico';
 import Presentacion from '../components/Presentacion';
-import { BotonFacil } from '../components/Facil';
 
 const LS_CLAVE = 'boda-clave-album';
 const LS_AUTOR = 'boda-autor';
@@ -121,24 +121,9 @@ export default function Album() {
   const n = fotos.length;
 
   return (
-    <>
-      <nav className="nav">
-        <div className="contenedor">
-          <Link to="/" className="marca">{boda.novios.ella[0]} & {boda.novios.el[0]}</Link>
-          <ul>
-            <li><Link to="/">{t('Inicio', 'Home')}</Link></li>
-            <li><a className="activo" href="#">{t('Álbum', 'Album')}</a></li>
-          </ul>
-          <div className="nav-acciones"><BotonFacil /><BotonIdioma /></div>
-        </div>
-      </nav>
-      <main className="contenedor" style={{ paddingBottom: 'var(--aire)' }}>
-        <header className="album-cabeza">
-          <p className="versalita suave" style={{ marginBottom: 12 }}>{boda.novios.firma} · {boda.novios.hashtag}</p>
-          <h1>{t('Álbum compartido', 'Shared album')}</h1>
-          <p>{n} {n === 1 ? t('recuerdo', 'memory') : t('recuerdos', 'memories')}{n ? '' : t(', por ahora', ' so far')}</p>
-          {n > 1 && <button type="button" className="btn claro" onClick={() => setPresentar(true)}>▶ {t('Ver como presentación', 'Play as slideshow')}</button>}
-        </header>
+    <PaginaApp titulo={<>{t('Álbum', 'Shared')} <em>{t('compartido', 'album')}</em></>}
+      bajada={`${n} ${n === 1 ? t('recuerdo', 'memory') : t('recuerdos', 'memories')}${n ? '' : t(', por ahora', ' so far')} · ${boda.novios.hashtag}`}
+      accion={n > 1 && <button type="button" className="btn claro" onClick={() => setPresentar(true)}>▶ {t('Ver como presentación', 'Play as slideshow')}</button>}>
         {presentar && <Presentacion fotos={visibles.length > 1 ? visibles : fotos} alCerrar={() => setPresentar(false)} />}
 
         {claveOk === false && (
@@ -196,7 +181,6 @@ export default function Album() {
         {visibles.length
           ? <Mosaico items={visibles} conPie />
           : <p className="suave" style={{ padding: '48px 0' }}>{t('Aún no hay fotos aquí. Sé el primero en compartir una.', 'No photos here yet. Be the first to share one.')}</p>}
-      </main>
-    </>
+    </PaginaApp>
   );
 }

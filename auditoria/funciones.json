@@ -2865,6 +2865,50 @@
    "area": "bitacoras",
    "por": "código"
   },
+  "cumplimiento_anular": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_cerrar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_dependientes": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_guardar": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_lista": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_pestana": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_plazo": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_puede_escribir": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_requeridos": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_resumen": {
+   "area": "bitacoras",
+   "por": "código"
+  },
+  "cumplimiento_retiro_a_todas": {
+   "area": "bitacoras",
+   "por": "código"
+  },
   "regencia_anular_visita": {
    "area": "bitacoras",
    "por": "código"

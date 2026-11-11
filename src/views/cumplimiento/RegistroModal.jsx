@@ -1,0 +1,237 @@
+import React, { useEffect, useMemo, useState } from 'react';
+import LiquidModal from '../../components/common/LiquidModal';
+import PieDeModal from '../../components/common/PieDeModal';
+import Button from '../../components/common/Button';
+import LiquidDatePicker from '../../components/common/LiquidDatePicker';
+import LiquidSelect from '../../components/common/LiquidSelect';
+import PortalInput from '../../components/common/PortalInput';
+import PortalTextarea from '../../components/common/PortalTextarea';
+import Notice from '../../components/common/Notice';
+import Badge from '../../components/common/Badge';
+import { useToastStore } from '@nucleo/store/toastStore';
+import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
+import {
+    avisarRetiroATodas, cerrarRegistroDeCumplimiento, guardarRegistroDeCumplimiento, mensajeDeCumplimiento,
+} from '@nucleo/data/cumplimiento';
+import {
+    TIPOS, camposAlCerrar, camposAlCrear, faltantes, listaDe, nombreDelSemestre, puntuarLista, semestresRecientes,
+} from '@nucleo/utils/cumplimiento';
+import { hoySV } from '@nucleo/utils/fecha';
+import { loadDraft, saveDraft, clearDraft } from '@nucleo/utils/draftUtils';
+import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+
+/*
+ * Un formulario para todos los registros de cumplimiento (2026-11-11). Los
+ * campos salen de `TIPOS` (src/utils/cumplimiento.js), que es la gemela de lo
+ * que la base exige: la pantalla marca lo que falta antes de mandar, y si la
+ * base igual rechaza, su mensaje se muestra tal cual.
+ *
+ * Dos modos: crear (los campos de alta) y cerrar (sólo los de cierre, que se
+ * agregan a lo que ya tenía). Un retiro de lote puede anotarse una vez para
+ * todas las salas (`aTodas`). Lo escrito se guarda como borrador: la sesión se
+ * cierra sola por inactividad.
+ */
+
+const VACIO = [];
+const RESPUESTAS = [
+    { value: 'si', label: 'Cumple' },
+    { value: 'no', label: 'No cumple' },
+    { value: 'na', label: 'No aplica' },
+];
+
+function inicial(tipo, registro) {
+    const datos = {};
+    for (const c of TIPOS[tipo]?.campos || []) {
+        if (c.tipo === 'fijo') datos[c.key] = c.valor;
+        else if (c.tipo === 'checklist') datos[c.key] = {};
+        else if (c.tipo === 'personas' || c.tipo === 'lista') datos[c.key] = [];
+    }
+    return { ...datos, ...(registro?.datos || {}) };
+}
+
+export default function RegistroModal({ tipo, modo = 'crear', registro = null, branchId, sala, aTodas = false, onClose, onHecho }) {
+    const showToast = useToastStore((s) => s.showToast);
+    const employees = useStaff((s) => s.employees) || VACIO;
+    const def = TIPOS[tipo];
+    const cerrando = modo === 'cerrar';
+    const campos = cerrando ? camposAlCerrar(tipo) : camposAlCrear(tipo);
+    const claveBorrador = `cumplimiento:${tipo}:${modo}:${registro?.id ?? branchId ?? 'todas'}`;
+
+    const [fecha, setFecha] = useState(() => loadDraft(claveBorrador)?.fecha || registro?.fecha || hoySV());
+    const [datos, setDatos] = useState(() => loadDraft(claveBorrador)?.datos || (cerrando ? {} : inicial(tipo, registro)));
+    const [guardando, setGuardando] = useState(false);
+    const [error, setError] = useState(null);
+
+    useEffect(() => { saveDraft(claveBorrador, { fecha, datos }); }, [claveBorrador, fecha, datos]);
+
+    const poner = (k, v) => setDatos((d) => ({ ...d, [k]: v }));
+    const falta = faltantes(tipo, datos, campos);
+
+    // Para la capacitación: el personal activo de la sala (o de toda la red si
+    // se anota para administración).
+    const personal = useMemo(() => employees
+        .filter((e) => e.status !== 'INACTIVO' && e.status !== 'LIQUIDADO')
+        .filter((e) => !branchId || String(e.branchId ?? e.branch_id ?? '') === String(branchId))
+        .map((e) => ({ value: e.id, label: shortEmployeeName(e) }))
+        .sort((a, b) => a.label.localeCompare(b.label)), [employees, branchId]);
+
+    const lista = listaDe(tipo);
+    const puntaje = lista.length ? puntuarLista(lista, datos.respuestas) : null;
+
+    const guardar = async () => {
+        setGuardando(true);
+        setError(null);
+        const limpio = Object.fromEntries(Object.entries(datos).filter(([, v]) => v !== '' && v !== undefined));
+        if (puntaje) limpio.resultado = { porcentaje: puntaje.porcentaje, aprueba: puntaje.aprueba, fallas: puntaje.fallas };
+        let r;
+        if (cerrando) r = await cerrarRegistroDeCumplimiento(registro.id, limpio);
+        else if (aTodas) r = await avisarRetiroATodas(fecha, limpio);
+        else r = await guardarRegistroDeCumplimiento({ id: registro?.id, branchId, tipo, fecha, datos: limpio });
+        setGuardando(false);
+        if (r.error) { setError(mensajeDeCumplimiento(r.error)); return; }
+        clearDraft(claveBorrador);
+        showToast(cerrando ? 'Registro cerrado' : 'Registro guardado',
+            aTodas ? `Llegó a ${r.salas} salas` : sala, 'success');
+        onHecho?.();
+    };
+
+    const campo = (c) => {
+        const v = datos[c.key];
+        const etiqueta = `${c.label}${c.requerido ? '' : ' (opcional)'}`;
+        switch (c.tipo) {
+            case 'fijo':
+                return null;
+            case 'area':
+                return <PortalTextarea key={c.key} label={etiqueta} value={v || ''} rows={3} maxLength={1500}
+                    helperText={c.ayuda} onChange={(e) => poner(c.key, e.target.value)} />;
+            case 'lista':
+                return <PortalTextarea key={c.key} label={etiqueta} rows={5} maxLength={4000} helperText={c.ayuda}
+                    value={(v || []).join('\n')}
+                    onChange={(e) => poner(c.key, e.target.value.split('\n').map((x) => x.trimStart()).filter((x, i, a) => x || i < a.length - 1))} />;
+            case 'fecha':
+                return (
+                    <div key={c.key}>
+                        <p className="text-caption font-bold text-content-3 mb-1">{etiqueta}</p>
+                        <LiquidDatePicker value={v || ''} onChange={(x) => poner(c.key, x)} max={hoySV()} />
+                        {c.ayuda && <p className="text-caption text-content-3 mt-1">{c.ayuda}</p>}
+                    </div>
+                );
+            case 'opciones':
+                return (
+                    <div key={c.key}>
+                        <p className="text-caption font-bold text-content-3 mb-1">{etiqueta}</p>
+                        <LiquidSelect value={v || ''} onChange={(x) => poner(c.key, x || '')} options={c.opciones}
+                            placeholder={c.label} clearable={false} />
+                    </div>
+                );
+            case 'semestre':
+                return (
+                    <div key={c.key}>
+                        <p className="text-caption font-bold text-content-3 mb-1">{etiqueta}</p>
+                        <LiquidSelect value={v || ''} onChange={(x) => poner(c.key, x || '')} clearable={false}
+                            placeholder="¿Qué semestre?"
+                            options={semestresRecientes(hoySV()).map((s) => ({ value: s, label: nombreDelSemestre(s) }))} />
+                    </div>
+                );
+            case 'personas':
+                return (
+                    <div key={c.key}>
+                        <p className="text-caption font-bold text-content-3 mb-2">{etiqueta} · {(v || []).length}</p>
+                        <div className="flex flex-wrap gap-2 max-h-56 overflow-y-auto">
+                            {personal.map((p) => {
+                                const activo = (v || []).some((x) => x.id === p.value);
+                                return (
+                                    <button key={p.value} type="button" aria-pressed={activo}
+                                        onClick={() => poner(c.key, activo
+                                            ? (v || []).filter((x) => x.id !== p.value)
+                                            : [...(v || []), { id: p.value, nombre: p.label }])}
+                                        className={`px-3 min-h-[var(--tap-min)] rounded-full border text-body-sm font-bold active:scale-[0.97] transition-colors ${activo
+                                            ? 'bg-brand text-white border-brand'
+                                            : 'bg-surface-card text-content-2 border-border-card hover:bg-surface-card-hover'}`}>
+                                        {p.label}
+                                    </button>
+                                );
+                            })}
+                            {personal.length === 0 && <p className="text-caption text-content-3">No hay personal activo en esta sala.</p>}
+                        </div>
+                    </div>
+                );
+            case 'checklist':
+                return (
+                    <div key={c.key} className="space-y-4">
+                        {lista.map((s) => (
+                            <div key={s.seccion}>
+                                <p className="text-body-sm font-bold text-content mb-2">{s.seccion}</p>
+                                <ul className="space-y-2">
+                                    {s.items.map((it) => (
+                                        <li key={it.id} className="flex flex-col sm:flex-row sm:items-center gap-2 justify-between">
+                                            <span className="text-body-sm text-content-2 flex-1">
+                                                {it.texto}
+                                                {it.peso === 'C' && <Badge variant="danger" uppercase={false} className="ml-2">Crítico</Badge>}
+                                            </span>
+                                            <div className="flex gap-1 shrink-0" role="radiogroup" aria-label={it.texto}>
+                                                {RESPUESTAS.map((r) => {
+                                                    const activo = v?.[it.id] === r.value;
+                                                    return (
+                                                        <button key={r.value} type="button" role="radio" aria-checked={activo}
+                                                            onClick={() => poner(c.key, { ...(v || {}), [it.id]: r.value })}
+                                                            className={`px-3 min-h-[var(--tap-min)] rounded-full border text-caption font-bold active:scale-[0.97] transition-colors ${activo
+                                                                ? (r.value === 'no' ? 'bg-danger-solid text-white border-danger-solid' : r.value === 'si' ? 'bg-success-solid text-white border-success-solid' : 'bg-surface-tab-track text-content border-border-input')
+                                                                : 'bg-surface-card text-content-2 border-border-card hover:bg-surface-card-hover'}`}>
+                                                            {r.label}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
+                        ))}
+                    </div>
+                );
+            case 'numero':
+                return <PortalInput key={c.key} label={c.label} type="number" required={c.requerido} helperText={c.ayuda}
+                    value={v ?? ''} onChange={(e) => poner(c.key, e.target.value === '' ? '' : Number(e.target.value))} />;
+            default:
+                return <PortalInput key={c.key} label={c.label} required={c.requerido} helperText={c.ayuda}
+                    value={v || ''} onChange={(e) => poner(c.key, e.target.value)} />;
+        }
+    };
+
+    const titulo = cerrando
+        ? (tipo === 'farmacovigilancia' ? 'Anotar la notificación' : `Cerrar ${def.corto.toLowerCase()}`)
+        : registro ? `Corregir ${def.corto.toLowerCase()}` : def.titulo;
+
+    return (
+        <LiquidModal open onClose={guardando ? undefined : onClose} maxWidth={lista.length ? 'max-w-2xl' : 'max-w-lg'} ariaLabel={titulo}>
+            <LiquidModal.Header titulo={titulo} subtitulo={aTodas ? 'Para todas las salas y la bodega' : sala}
+                onClose={guardando ? undefined : onClose} />
+            <LiquidModal.Body className="space-y-4">
+                {!cerrando && (
+                    <div>
+                        <p className="text-caption font-bold text-content-3 mb-1">{tipo === 'destruccion' ? 'Fecha prevista de la destrucción' : 'Fecha'}</p>
+                        <LiquidDatePicker value={fecha} onChange={setFecha} max={tipo === 'destruccion' ? undefined : hoySV()} />
+                    </div>
+                )}
+                {campos.map(campo)}
+                {puntaje && (
+                    <Notice variant={puntaje.aprueba ? 'success' : 'warning'}>
+                        {puntaje.si} de {puntaje.total - puntaje.na} cumplen ({puntaje.porcentaje} %).
+                        {puntaje.fallas.C > 0 && ` ${puntaje.fallas.C} crítico${puntaje.fallas.C === 1 ? '' : 's'} sin cumplir: no aprueba.`}
+                        {puntaje.sinResponder > 0 && ` Faltan ${puntaje.sinResponder} por responder.`}
+                    </Notice>
+                )}
+                {error && <Notice variant="danger">{error}</Notice>}
+            </LiquidModal.Body>
+            <PieDeModal>
+                {falta.length > 0 && <p className="text-caption text-content-3 mr-auto">Falta: {falta.join(', ')}</p>}
+                <Button variant="ghost" onClick={onClose} disabled={guardando}>Cancelar</Button>
+                <Button variant="primary" loading={guardando}
+                    disabled={falta.length > 0 || (puntaje && puntaje.sinResponder > 0)} onClick={guardar}>
+                    {cerrando ? 'Guardar y cerrar' : 'Guardar'}
+                </Button>
+            </PieDeModal>
+        </LiquidModal>
+    );
+}

@@ -435,6 +435,21 @@ const GRUPOS_CRUDOS = [
                 // Por eso es su propia capacidad y no viene con «ver».
                 { key: 'bitacoras_descargar',     label: 'Imprimir el mes completo',            tipo: 'cap' },
             ]},
+            // Cumplimiento sanitario (2026-11-11, auditoría de sucursales): los
+            // registros que la norma pide y no son diarios — farmacovigilancia,
+            // bajas y destrucción, retiros de lote, autoinspección, capacitación,
+            // acreditaciones y el calendario de vencimientos del expediente.
+            // Editar exige el módulo Y la pestaña (lo comprueba la base).
+            { key: 'cumplimiento', label: 'Cumplimiento sanitario', desc: 'Los registros sanitarios que no son diarios: sospechas de reacción adversa y reporte cero, bajas y actas de destrucción, retiros de lote, autoinspección, capacitaciones, acreditaciones del personal y el calendario de vencimientos. Editar = anotar en las pestañas que también tengan editar', icono: 'ShieldCheck', hasApprove: false, hasScope: true, sub: [
+                { key: 'cumplimiento_tab_resumen',           label: 'Resumen', tipo: 'tab' },
+                { key: 'cumplimiento_tab_vencimientos',      label: 'Vencimientos', tipo: 'tab' },
+                { key: 'cumplimiento_tab_farmacovigilancia', label: 'Farmacovigilancia', tipo: 'tab' },
+                { key: 'cumplimiento_tab_vencidos',          label: 'Bajas y destrucción', tipo: 'tab' },
+                { key: 'cumplimiento_tab_retiros',           label: 'Retiros de lote', tipo: 'tab' },
+                { key: 'cumplimiento_tab_autoinspeccion',    label: 'Autoinspección', tipo: 'tab' },
+                { key: 'cumplimiento_tab_capacitacion',      label: 'Capacitación', tipo: 'tab' },
+                { key: 'cumplimiento_tab_dependientes',      label: 'Acreditaciones', tipo: 'tab' },
+            ]},
             // Vecino de las bitácoras: los dos son registros que una autoridad
             // puede venir a pedir, y en los dos lo que se enseña no es el dato
             // sino la constancia de que se llevó al día. Acá la autoridad es la

@@ -10328,6 +10328,110 @@ export type Database = {
         }
         Relationships: []
       }
+      cumplimiento_registros: {
+        Row: {
+          anulado_at: string | null
+          anulado_motivo: string | null
+          anulado_por: string | null
+          branch_id: number
+          cerrado_at: string | null
+          cerrado_por: string | null
+          created_at: string
+          datos: Json
+          estado: string
+          fecha: string
+          id: number
+          registrado_por: string | null
+          tipo: string
+          updated_at: string
+          vence_el: string | null
+        }
+        Insert: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          branch_id: number
+          cerrado_at?: string | null
+          cerrado_por?: string | null
+          created_at?: string
+          datos?: Json
+          estado?: string
+          fecha: string
+          id?: never
+          registrado_por?: string | null
+          tipo: string
+          updated_at?: string
+          vence_el?: string | null
+        }
+        Update: {
+          anulado_at?: string | null
+          anulado_motivo?: string | null
+          anulado_por?: string | null
+          branch_id?: number
+          cerrado_at?: string | null
+          cerrado_por?: string | null
+          created_at?: string
+          datos?: Json
+          estado?: string
+          fecha?: string
+          id?: never
+          registrado_por?: string | null
+          tipo?: string
+          updated_at?: string
+          vence_el?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cumplimiento_registros_anulado_por_fkey"
+            columns: ["anulado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cumplimiento_registros_anulado_por_fkey"
+            columns: ["anulado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cumplimiento_registros_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cumplimiento_registros_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cumplimiento_registros_cerrado_por_fkey"
+            columns: ["cerrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cumplimiento_registros_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cumplimiento_registros_registrado_por_fkey"
+            columns: ["registrado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_activity: {
         Row: {
           created_at: string
@@ -33340,6 +33444,52 @@ export type Database = {
       }
       cron_tick_minuto: { Args: never; Returns: Json }
       cuenta_de_carne_temporal: { Args: { p_email: string }; Returns: string }
+      cumplimiento_anular: {
+        Args: { p_id: number; p_motivo: string }
+        Returns: Json
+      }
+      cumplimiento_cerrar: {
+        Args: { p_datos: Json; p_id: number }
+        Returns: Json
+      }
+      cumplimiento_dependientes: {
+        Args: { p_branch_id: number }
+        Returns: Json
+      }
+      cumplimiento_guardar: {
+        Args: {
+          p_branch_id: number
+          p_datos: Json
+          p_fecha: string
+          p_id: number
+          p_tipo: string
+        }
+        Returns: Json
+      }
+      cumplimiento_lista: {
+        Args: {
+          p_branch_id: number
+          p_desde: string
+          p_hasta: string
+          p_tipos: string[]
+        }
+        Returns: Json
+      }
+      cumplimiento_pestana: { Args: { p_tipo: string }; Returns: string }
+      cumplimiento_plazo: {
+        Args: { p_datos: Json; p_fecha: string; p_tipo: string }
+        Returns: string
+      }
+      cumplimiento_puede_escribir: {
+        Args: { p_branch_id: number; p_tipo: string }
+        Returns: boolean
+      }
+      cumplimiento_requeridos: { Args: { p_tipo: string }; Returns: string[] }
+      cumplimiento_resumen: { Args: never; Returns: Json }
+      cumplimiento_retiro_a_todas: {
+        Args: { p_datos: Json; p_fecha: string }
+        Returns: Json
+      }
       custom_access_token_hook: { Args: { event: Json }; Returns: Json }
       customer_ficha_estado: {
         Args: {

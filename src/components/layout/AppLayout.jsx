@@ -48,7 +48,9 @@ const HuecoDeCampana = () => <div className="w-11 h-11 shrink-0" aria-hidden="tr
 import SidebarSettingsMenu from '../common/SidebarSettingsMenu';
 import MenuSearchModal from './MenuSearchModal';
 import ElegirNombreDialog from './ElegirNombreDialog';
-import SelectorDeSala from './SelectorDeSala';
+/* El selector de sala sólo lo ve quien cubre varias (regente, referente):
+ * `lazy` para que su LiquidSelect no viaje en el arranque de todos (2026-11-11). */
+const SelectorDeSala = React.lazy(() => import('./SelectorDeSala'));
 import { APP_VERSION } from '../../version';
 import OfflineBanner from '../common/OfflineBanner';
 import BannerPortal from '../common/BannerPortal';
@@ -1180,7 +1182,7 @@ const AppLayout = ({ children, handleLogout }) => {
                                     />
 
                                     {/* Quien cubre varias salas elige con cuál trabaja (regente). */}
-                                    <SelectorDeSala />
+                                    <React.Suspense fallback={null}><SelectorDeSala /></React.Suspense>
 
                                     {/* ── AQUÍ ESTABA EL ERROR: Div de usuario y cierres corregidos ── */}
                                     <div className="flex items-center gap-2 group/user">

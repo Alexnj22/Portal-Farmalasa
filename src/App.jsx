@@ -107,6 +107,7 @@ const ProveedoresView = lazy(IMPORTADORES.ProveedoresView);
 const ClientesView = lazy(IMPORTADORES.ClientesView);
 const ConteoInventarioView = lazy(IMPORTADORES.ConteoInventarioView);
 const BitacorasView = lazy(IMPORTADORES.BitacorasView);
+const CumplimientoView = lazy(IMPORTADORES.CumplimientoView);
 const SolicitudesDatosView = lazy(IMPORTADORES.SolicitudesDatosView);
 const ReclamosClientesView = lazy(IMPORTADORES.ReclamosClientesView);
 const PuntosView = lazy(IMPORTADORES.PuntosView);
@@ -1005,6 +1006,7 @@ function MainApp() {
                                     <Route path="proveedores" element={<PermissionGuard moduleKey="proveedores"><ProveedoresView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="conteo-inventario" element={<PermissionGuard moduleKey="conteo_inventario"><ConteoInventarioView /></PermissionGuard>} />
                                     <Route path="bitacoras" element={<PermissionGuard moduleKey="bitacoras"><BitacorasView /></PermissionGuard>} />
+                                    <Route path="cumplimiento" element={<PermissionGuard moduleKey="cumplimiento"><CumplimientoView /></PermissionGuard>} />
                                     <Route path="solicitudes-datos" element={<PermissionGuard moduleKey="datos_personales"><SolicitudesDatosView /></PermissionGuard>} />
                                     <Route path="puntos" element={<PermissionGuard moduleKey="puntos"><PuntosView openModal={openModal} /></PermissionGuard>} />
                                     <Route path="inyecciones" element={<PermissionGuard moduleKey="inyecciones"><InyeccionesView /></PermissionGuard>} />
@@ -1238,6 +1240,7 @@ const ROUTE_TITLES = {
     '/corte-z':           'Corte Z',
     '/conteo-inventario': 'Conteo de inventario',
     '/bitacoras':         'Bitácoras',
+    '/cumplimiento':      'Cumplimiento sanitario',
     '/solicitudes-datos': 'Solicitudes sobre datos',
     '/puntos':            'Puntos',
     '/inyecciones':       'Inyecciones',

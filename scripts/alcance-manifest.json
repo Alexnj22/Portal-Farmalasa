@@ -620,6 +620,18 @@
     "regencia_de_sala": {
       "guarda": "alcance"
     },
+    "cumplimiento_guardar": {
+      "guarda": "alcance"
+    },
+    "cumplimiento_lista": {
+      "guarda": "alcance"
+    },
+    "cumplimiento_dependientes": {
+      "guarda": "alcance"
+    },
+    "cumplimiento_puede_escribir": {
+      "guarda": "alcance"
+    },
     "regencia_registrar_visita": {
       "guarda": "alcance"
     },

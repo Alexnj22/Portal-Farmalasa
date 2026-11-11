@@ -1195,8 +1195,12 @@ export const AREAS = [
         modulos: ['bitacoras', 'bitacoras_tab_libro', 'bitacoras_tab_cierre', 'bitacoras_cerrar_mes',
                   'bitacoras_configurar', 'bitacoras_descargar', 'dash_bitacoras',
                   'bitacoras_corregir_lote', 'bitacoras_confirmar_lote',
-                  'dash_recetas_pendientes', 'bitacoras_tab_regencia'],
-        rutas: ['/bitacoras'],
+                  'dash_recetas_pendientes', 'bitacoras_tab_regencia',
+                  // Cumplimiento sanitario (2026-11-11).
+                  'cumplimiento', 'cumplimiento_tab_resumen', 'cumplimiento_tab_vencimientos',
+                  'cumplimiento_tab_farmacovigilancia', 'cumplimiento_tab_vencidos', 'cumplimiento_tab_retiros',
+                  'cumplimiento_tab_autoinspeccion', 'cumplimiento_tab_capacitacion', 'cumplimiento_tab_dependientes'],
+        rutas: ['/bitacoras', '/cumplimiento'],
         archivos: [
             'src/views/BitacorasView.jsx', 'src/views/bitacoras/',
             // El CSV del libro bajo receta, para el portal y la app.
@@ -1207,12 +1211,15 @@ export const AREAS = [
             'src/utils/registroAntibioticos.js',
             // La asistencia del regente y sus dos papeles (2026-11-10).
             'src/data/regencia.js', 'src/utils/papelDeRegencia.js',
+            // Cumplimiento sanitario: registros no diarios de la norma (2026-11-11).
+            'src/views/CumplimientoView.jsx', 'src/views/cumplimiento/',
+            'src/data/cumplimiento.js', 'src/utils/cumplimiento.js', 'src/utils/papelDeCumplimiento.js',
         ],
         tablas: ['bitacora_areas', 'bitacora_cierres', 'bitacora_correcciones', 'bitacora_dispensaciones',
                  'bitacora_folios', 'bitacora_lecturas', 'bitacora_limpiezas', 'libro_lote_revisiones',
                  'bitacora_limpiezas_historial', 'antibioticos_aware', 'antibioticos_producto',
                  'recetas', 'receta_items', 'medicos', 'dispensacion_clases', 'antibioticos_lote_diario',
-                 'regencia_visitas'],
+                 'regencia_visitas', 'cumplimiento_registros'],
         edge: ['consultar-profesional-cssp', 'srs-proxy', 'avisar-bitacora-por-vencer'],
         crons: ['bitacora-dispensaciones-1min', 'cuadre-antibioticos-0700-sv', 'bitacora-dispensaciones-repaso-diario',
                 'avisar-bitacora-por-vencer-30min', 'antibioticos-lote-foto-diaria', 'avisar-lotes-del-libro-0815-sv'],

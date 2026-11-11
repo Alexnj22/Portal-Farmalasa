@@ -73,7 +73,7 @@ export default function RegistrarVisitaModal({ branchId, sala, regente, enSuNomb
                                 <button key={a.value} type="button" aria-pressed={activa} onClick={() => alternar(a.value)}
                                     className={`px-3 min-h-[var(--tap-min)] rounded-full border text-body-sm font-bold active:scale-[0.97] transition-colors ${activa
                                         ? 'bg-brand text-white border-brand'
-                                        : 'bg-surface-card text-content-2 border-border-subtle hover:bg-surface-card-hover'}`}>
+                                        : 'bg-surface-card text-content-2 border-border-card hover:bg-surface-card-hover'}`}>
                                     {a.label}
                                 </button>
                             );

@@ -4,8 +4,7 @@ import LiquidSelect from '../common/LiquidSelect';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import { useToastStore } from '@nucleo/store/toastStore';
-import { leerSalasQueCubro } from '@nucleo/data/auth';
-import { mensajeAmigable } from '@nucleo/utils/errorMessages';
+import { leerSalasQueCubro, mensajeDeSala } from '@nucleo/data/auth';
 
 /*
  * Con qué sala trabaja hoy quien cubre varias (2026-11-11): el regente que
@@ -47,7 +46,7 @@ export default function SelectorDeSala() {
         setCambiando(true);
         const { error } = await cambiarSala(v);
         setCambiando(false);
-        if (error) { showToast('No se pudo cambiar de sala', error.hint || mensajeAmigable(error), 'error'); return; }
+        if (error) { showToast('No se pudo cambiar de sala', mensajeDeSala(error), 'error'); return; }
         showToast('Trabajando en', opciones.find((o) => o.value === v)?.label, 'success');
     };
 

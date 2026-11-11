@@ -118,7 +118,7 @@ export const MENU_GROUPS = [
     // regente que firma el mes— entra por eso y no por otra cosa. Con un solo
     // módulo el grupo se pinta plano, así que queda a un clic desde cualquier
     // pantalla en vez de detrás de un acordeón.
-    { key: 'bitacoras',    label: 'Bitácoras',     icono: 'Thermometer',   modules: ['bitacoras'] },
+    { key: 'bitacoras',    label: 'Bitácoras',     icono: 'Thermometer',   modules: ['bitacoras', 'cumplimiento'] },
     // Vecino de Bitácoras y por el mismo motivo: es el expediente que otra
     // autoridad —la Agencia de Ciberseguridad del Estado— puede pedir ver, y
     // quien lo abre entra por eso. Grupo propio y plano, con un solo módulo.

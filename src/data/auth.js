@@ -4,6 +4,7 @@
 // mismo `select('*')`).
 import { supabase } from '../supabaseClient';
 import { anotar } from './audit';
+import { mensajeAmigable } from '../utils/errorMessages';
 
 /**
  * Por qué falló un login con usuario y contraseña, en palabras para la persona.
@@ -162,6 +163,9 @@ export async function leerCargoYSalaPropios(employeeId) {
  * esté entre las que cubre y, desde la próxima consulta, los permisos «de su
  * sala» miran ésa. Devuelve `{ branchId, error }`.
  */
+/** La base escribe en el `hint` por qué no se pudo elegir la sala. */
+export const mensajeDeSala = (e) => e?.hint || mensajeAmigable(e);
+
 export async function elegirSalaActiva(branchId) {
     const { data, error } = await supabase.rpc('elegir_sala_activa', {
         p_branch_id: branchId == null ? null : Number(branchId),

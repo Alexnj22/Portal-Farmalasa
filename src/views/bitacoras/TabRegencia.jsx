@@ -158,7 +158,7 @@ export default function TabRegencia({ branchId }) {
                         {minimo !== null && <Badge variant={tono} uppercase={false}>{horas >= minimo ? 'Cumple' : `Faltan ${(minimo - horas).toFixed(1)} h`}</Badge>}
                     </div>
                     {pct !== null && (
-                        <div className="mt-2 h-2 rounded-full bg-surface-sunken overflow-hidden" role="progressbar"
+                        <div className="mt-2 h-2 rounded-full bg-surface-tab-track overflow-hidden" role="progressbar"
                             aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Horas del mes">
                             <div className={`h-full ${tono === 'success' ? 'bg-success' : 'bg-warning'}`} style={{ width: `${pct}%` }} />
                         </div>

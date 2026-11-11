@@ -124,6 +124,7 @@ export const MODULE_MAP = {
     // guardado —una cuenta unidades, la otra vigila las condiciones en que se
     // guardan— y las dos se llenan de pie, en la sala, con el teléfono.
     bitacoras:         { path: '/bitacoras',           label: 'Bitácoras',                icono: 'Thermometer'   },
+    cumplimiento:      { path: '/cumplimiento',        label: 'Cumplimiento sanitario',   icono: 'ShieldCheck'   },
     // Vecindario: las bitácoras. Las dos son registros que una autoridad puede
     // venir a pedir, y en las dos lo que se enseña no es el dato sino la
     // constancia de que se llevó al día.

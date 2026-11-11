@@ -21,6 +21,23 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1502.0 — Cumplimiento sanitario: farmacovigilancia, bajas, retiros, autoinspección, capacitación y vencimientos
+
+Módulo nuevo **Cumplimiento sanitario** (`/cumplimiento`, junto a Bitácoras), con los registros que la norma pide en cada sala y el portal no llevaba. Sale de la auditoría de sucursales.
+
+- **Resumen**: muestra por sala lo que no está al día: reacciones adversas fuera de plazo, el reporte del semestre que falta, bajas que esperan destrucción, retiros sin atender, la autoinspección del año, capacitaciones y personal de mostrador sin acreditación. Cada renglón lleva a la pestaña donde se resuelve.
+- **Vencimientos**: un calendario de toda la red con permisos, credenciales, contratos y extintores. Sale de los mismos documentos del expediente que usa el aviso diario.
+- **Farmacovigilancia**: se anota cada sospecha de reacción adversa. El plazo depende de la gravedad: 30 días, 15 días o 72 horas. Se cierra al anotar la fecha de la notificación al CNFV. También se registra el reporte cero de cada semestre.
+- **Bajas y destrucción**: cada producto dado de baja y el acta de destrucción, con el aviso a la SRS 72 horas antes, la gestora y el certificado.
+- **Retiros de lote**: la administración avisa un retiro una sola vez y el aviso llega a todas las salas. Cada sala anota cuántas unidades tenía y a quién las devolvió.
+- **Autoinspección**: la guía BPAD con sus puntos críticos, mayores y menores, y un plan de acción. Un punto crítico sin cumplir basta para no aprobar. Aparte va la revisión de lo que debe estar a la vista.
+- **Capacitación**: tema, facilitador, asistentes elegidos del personal y cómo se evaluó.
+- **Acreditaciones**: el personal de mostrador de la sala y si tiene su acreditación y su carné.
+- Cada registro se imprime para firmarlo y sellarlo. Nada se borra: un registro se anula con su motivo.
+- Permisos: la administración ve y anota en toda la red. El regente y el referente trabajan en la sala que eligen. La jefatura de sala anota bajas, retiros y sospechas. Bodega anota bajas y retiros.
+- Arreglo: dos colores de Regencia apuntaban a tokens que no existen. La barra de horas no tenía fondo y los botones de actividades no tenían borde.
+- El selector de sala se carga sólo para quien cubre varias salas. Así no aumenta lo que todos descargan al abrir el portal.
+
 ## v2.1501.23 — Quien cubre varias salas elige con cuál trabaja; licencia renombrada a SRS
 
 - **Elegir sala (regente y referente)**: quien cubre varias salas («Áreas que cubre» en Personal) tiene en el menú lateral un selector «¿En qué sala trabajas?». Al elegir, todo lo que su cargo ve «de su sala» (ventas, facturación, pedidos, bitácoras) pasa a ser de esa sala. Sólo puede elegir entre las que cubre; si se le quita un área, pierde el acceso en el acto. Un apoyo temporal sigue mandando sobre la elección.

@@ -21,7 +21,6 @@ import * as WebBrowser from 'expo-web-browser';
 import { errorFiscal, nitEscrito, nrcEscrito } from '../../../lib/fiscal';
 import { useFocusEffect } from 'expo-router';
 import { useHeaderHeight } from 'expo-router/react-navigation';
-import { reportarError } from '../../../lib/errores';
 import * as Haptics from 'expo-haptics';
 import * as SecureStore from 'expo-secure-store';
 import { Pantalla, Seccion as SeccionUi, Tarjeta, Texto, Vacio, Boton } from '../../../componentes/ui';
@@ -85,30 +84,6 @@ function Carrito() {
     requestAnimationFrame(() => refLista.current?.scrollTo({ y: Platform.OS === 'ios' ? -barra : 0, animated: false }));
   }, [barra]);
   const vacio = items.length === 0;
-  // DIAGNÓSTICO TEMPORAL (2026-11-11): la tarjeta del carrito se va
-  // corriendo hacia abajo después de abrir la pestaña. Toma, durante 4 s
-  // desde que la pestaña recibe el foco, dónde está el contenido cada 250 ms y
-  // cada evento de desplazamiento (desplazamiento y margen que reporta iOS), y
-  // lo manda en UN mensaje a `app_errores` («diag-carrito2»). Una vez por
-  // arranque. Se quita al resolverlo.
-  const refMarca = useRef(null);
-  const diag = useRef(null);
-  const alDesplazarDiag = useCallback((e) => {
-    const d = diag.current; if (!d || d.listo) return;
-    if (d.ev.length < 40) d.ev.push([Date.now() - d.t0, Math.round(e.contentOffset?.y ?? 0), Math.round(e.contentInset?.top ?? -1)]);
-  }, []);
-  useFocusEffect(useCallback(() => {
-    if (diag.current) return;
-    const d = { t0: Date.now(), ev: [], pos: [], listo: false };
-    diag.current = d;
-    const tomar = () => refMarca.current?.measureInWindow?.((mx, my) => { d.pos.push([Date.now() - d.t0, Math.round(my)]); });
-    const ids = [];
-    for (let k = 0; k <= 16; k++) ids.push(setTimeout(tomar, k * 250));
-    ids.push(setTimeout(() => {
-      d.listo = true;
-      reportarError(new Error(`diag-carrito2 ${JSON.stringify({ vacio, barra: Math.round(barra), pos: d.pos, ev: d.ev })}`), { pantalla: 'carrito-diag' });
-    }, 4300));
-  }, [vacio, barra]));
   useEffect(() => { alBordeDeArriba(); }, [vacio, !!hecho]); // eslint-disable-line react-hooks/exhaustive-deps
   useFocusEffect(useCallback(() => { if (vacio || hecho) alBordeDeArriba(); }, [vacio, hecho, alBordeDeArriba]));
   // Bajo receta (2026-10-12).
@@ -308,8 +283,7 @@ function Carrito() {
 
   if (hecho) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} alDesplazarDiag={alDesplazarDiag}>
-        <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
         <Tarjeta estilo={{ alignItems: 'center', gap: 14, paddingVertical: 26 }}>
           <View style={{ width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', backgroundColor: suave(t.color.verde, 0.25) }}>
             <Icono sf="checkmark" respaldo="✓" tam={26} color={t.color.verdeTexto} />
@@ -343,8 +317,7 @@ function Carrito() {
 
   if (!items.length) {
     return (
-      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} alDesplazarDiag={alDesplazarDiag}>
-        <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
+      <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
         <TusReservas resumen={resumen} />
         <Vacio titulo="Tu carrito está vacío">Agrega productos desde el catálogo y resérvalos para retirar en la sucursal que prefieras.</Vacio>
         <Boton alTocar={() => navegar('/catalogo')}>Ir a la Tienda</Boton>
@@ -353,8 +326,7 @@ function Carrito() {
   }
 
   return (
-    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra} alDesplazarDiag={alDesplazarDiag}>
-        <View ref={refMarca} collapsable={false} style={{ height: 0, marginBottom: -14 }} />
+    <Pantalla conBurbuja={false} refLista={refLista} bajoBarra={barra}>
       <TusReservas resumen={resumen} />
       {items.map((x) => {
         const yaReservado = reservasDelProducto(resumen, x.id)[0];

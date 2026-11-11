@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.1 — App de clientes: el Carrito sin hueco bajo la barra
+
+A pedido del usuario, la primera tarjeta del Carrito queda a 16 puntos de la barra, como en Inicio y Tienda, en lugar de 116 más abajo. Se quita la medición temporal (`diag-carrito`/`diag-carrito2`): la última confirmó que la lista ya se queda quieta al abrir, al arrastrar y al volver a tocar la pestaña.
+
 ## v2.1510.0 — Personal: la baja pide todo lo que exige la ley y estima la liquidación
 
 La baja de un empleado ahora pide, según el motivo, lo que la ley exige y deja todo guardado en el evento:

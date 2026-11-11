@@ -74,7 +74,7 @@ export function ConTeclado({ children }) {
 // Carrito ese ajuste a veces no se aplica (el contenido arrancaba en y=16 con
 // una barra de 116) y la primera tarjeta quedaba medio tapada. Con el número,
 // el hueco de arriba es fijo y siempre el mismo.
-export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0, alDesplazarDiag = null }) {
+export function Pantalla({ children, alRefrescar, refrescando = false, conPestanas = true, alFinal, conBurbuja = true, sinVidrio = false, sinBarra = false, refLista = null, bajoBarra = 0 }) {
   const fijo = Platform.OS === 'ios' && bajoBarra > 0;
   const [velo, setVelo] = useState(false);
   const ins = useSafeAreaInsets();
@@ -103,7 +103,7 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
         // Sin barra, iOS ya corre el contenido bajo la barra de estado
         // (`automatic`); Android no: se suma a mano.
         ...(sinBarra ? { paddingTop: (Platform.OS === 'ios' ? 4 : ins.top + 8) } : null),
-        ...(fijo ? { paddingTop: bajoBarra + 16 } : null),
+        ...(fijo ? { paddingTop: 16 } : null),
         width: '100%', maxWidth: 560, alignSelf: 'center',
       }}
       keyboardShouldPersistTaps="handled"
@@ -112,9 +112,8 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       onScrollEndDrag={d.soltar}
       onMomentumScrollBegin={d.inercia}
       onMomentumScrollEnd={d.terminar}
-      scrollEventThrottle={alDesplazarDiag ? 16 : sinBarra ? 32 : alFinal ? 250 : undefined}
-      onScroll={alFinal || sinBarra || alDesplazarDiag ? ({ nativeEvent: e }) => {
-        alDesplazarDiag?.(e);
+      scrollEventThrottle={sinBarra ? 32 : alFinal ? 250 : undefined}
+      onScroll={alFinal || sinBarra ? ({ nativeEvent: e }) => {
         if (sinBarra) { const v = e.contentOffset.y > 4; if (v !== velo) setVelo(v); }
         if (alFinal && e.layoutMeasurement.height + e.contentOffset.y >= e.contentSize.height - 700) alFinal();
       } : undefined}

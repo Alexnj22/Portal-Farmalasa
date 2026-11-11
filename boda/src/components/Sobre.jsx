@@ -6,7 +6,7 @@ import { lanzar, vibrar } from '../lib/confeti';
 
 const LS = 'boda-sobre-abierto';
 const yaAbierto = (codigo) => { try { return sessionStorage.getItem(LS) === codigo; } catch { return true; } };
-const DURACION = 3600;
+const DURACION = 4800;
 
 /**
  * La apertura de una invitación personal, como abrir un sobre de verdad:
@@ -42,9 +42,9 @@ export default function Sobre({ codigo, para, monograma, fecha, musica, desactiv
     vibrar([12, 30, 24]);
     const r = sello.current?.getBoundingClientRect();
     const x = r ? r.left + r.width / 2 : innerWidth / 2; const y = r ? r.top + r.height / 2 : innerHeight / 2;
-    lanzar({ tipo: 'oro', cantidad: 70, x, y, fuerza: 7 });
-    setTimeout(() => lanzar({ tipo: 'oro', cantidad: 50, x, y: y - 40, fuerza: 11 }), 900);
-    setTimeout(() => { lanzar({ tipo: 'petalo', cantidad: 46, lluvia: true }); lanzar({ tipo: 'confeti', cantidad: 70, x: innerWidth / 2, y: innerHeight * 0.4, fuerza: 12 }); }, 1700);
+    lanzar({ tipo: 'oro', cantidad: 60, x, y, fuerza: 7 });
+    setTimeout(() => lanzar({ tipo: 'oro', cantidad: 40, x: innerWidth / 2, y: y - 60, fuerza: 6 }), 1500);
+    setTimeout(() => { lanzar({ tipo: 'petalo', cantidad: 40, lluvia: true }); lanzar({ tipo: 'confeti', cantidad: 60, x: innerWidth / 2, y: innerHeight * 0.38, fuerza: 11 }); }, 2700);
     setEstado('abriendo');
     setTimeout(() => setEstado('fuera'), DURACION);
   };
@@ -67,6 +67,7 @@ export default function Sobre({ codigo, para, monograma, fecha, musica, desactiv
             <span className="tarjeta-nombres">{boda.novios.ella} <em>&</em> {boda.novios.el}</span>
             <span className="tarjeta-texto">{t('te invitan a celebrar su boda', 'invite you to their wedding')}</span>
             <span className="tarjeta-fecha">{fecha}</span>
+            <span className="tarjeta-para">{para}</span>
           </div>
           <div className="sobre-bolsillo">
             <span className="sobre-para">{para}</span>

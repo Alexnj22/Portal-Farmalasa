@@ -13,7 +13,9 @@ import { RADIO } from './ui';
 import { PISTA_RECETA, usarVistaPreviaFoto } from './VistaPreviaFoto';
 import { suave, useTema } from '../tema/tema';
 
-export default function RecetaFoto({ foto, alCambiar, superficie }) {
+// `productos` (2026-11-11): [{ nombre, unidades }] de lo que pide la receta,
+// para que se sepa POR QUÉ se pide la foto y qué tiene que cubrir.
+export default function RecetaFoto({ foto, alCambiar, superficie, productos = null }) {
   const t = useTema();
   const vistaPrevia = usarVistaPreviaFoto();
   const elegir = async () => {
@@ -32,10 +34,23 @@ export default function RecetaFoto({ foto, alCambiar, superficie }) {
         <View style={{ flex: 1, gap: 2 }}>
           <Text style={{ fontSize: 16, fontWeight: '800', color: colorSistema.texto }}>Foto de tu receta</Text>
           <Text style={{ fontSize: 13, lineHeight: 18, color: colorSistema.texto2 }}>
-            Es un producto bajo receta. La sucursal la revisa y, cuando la aprueba, tu reserva queda confirmada.
+            {productos?.length > 1 ? 'Estos productos son bajo receta.' : 'Es un producto bajo receta.'} La sucursal la revisa y, cuando la aprueba, tu reserva queda confirmada.
           </Text>
         </View>
       </View>
+      {productos?.length ? (
+        <View style={{ gap: 6 }}>
+          {productos.map((p, i) => (
+            <View key={`${p.nombre}|${i}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Icono sf="doc.text.fill" respaldo="•" tam={11} color={t.color.magentaTexto} />
+              <Text style={{ flex: 1, fontSize: 14, fontWeight: '600', color: colorSistema.texto }} numberOfLines={2}>{p.nombre}</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: colorSistema.texto, fontVariant: ['tabular-nums'] }}>
+                {p.unidades} {p.unidades === 1 ? 'unidad' : 'unidades'}
+              </Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
       {foto?.uri ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
           <Image source={{ uri: foto.uri }} style={{ width: 72, height: 96, borderRadius: 10, backgroundColor: colorSistema.separador }} contentFit="cover"

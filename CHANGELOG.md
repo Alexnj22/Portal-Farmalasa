@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1510.5 — App de clientes: el final del Carrito alcanzable y la receta dice qué productos cubre
+
+- **El botón final quedaba debajo de las pestañas** (iPhone): al apagar el ajuste automático del Carrito también se fue su margen de abajo. `Pantalla bajoBarra` ahora pone ese margen explícito (barra de pestañas más área segura).
+- **Foto de tu receta** lista los productos bajo receta del pedido, cada uno con su cantidad en unidades (cantidad × unidades por presentación).
+
 ## v2.1510.4 — App de clientes: la actualización por aire se aplica al abrir
 
 `lib/actualizacionAire.js` recargaba sólo si `fetchUpdateAsync` decía `isNew`. Pero expo-updates baja el paquete por su cuenta al arrancar (`checkAutomatically: ON_LOAD`) y casi siempre llegaba primero: `isNew` daba false, la app no recargaba y el cambio recién se veía al cerrar y volver a abrir. Ahora también recarga cuando el paquete que corre no es el último que publicó el servidor.

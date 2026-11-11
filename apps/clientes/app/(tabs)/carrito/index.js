@@ -480,7 +480,8 @@ function Carrito() {
         <Texto nivel={3} estilo={{ fontSize: 12 }}>El precio se confirma al reservar. La sucursal recibe tu pedido al instante y te avisamos cuando esté listo.</Texto>
       </Tarjeta>
 
-      {conReceta ? <RecetaFoto foto={fotoReceta} alCambiar={setFotoReceta} /> : null}
+      {conReceta ? <RecetaFoto foto={fotoReceta} alCambiar={setFotoReceta}
+        productos={items.filter((x) => x.receta || recetaIds.has(x.id)).map((x) => ({ nombre: nombreProducto(x.nombre), unidades: x.cantidad * (Number(x.factor) || 1) }))} /> : null}
 
       {/* Sin existencias no se sabe qué le falta a la sala elegida (2026-11-04):
           con `salas` en null, `faltan` daba 0 y el botón ofrecía «Pagar» un

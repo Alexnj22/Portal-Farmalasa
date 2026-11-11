@@ -93,9 +93,11 @@ export function Pantalla({ children, alRefrescar, refrescando = false, conPestan
       // Con `bajoBarra`, el margen es explícito y el reposo es «menos la
       // barra», que es justo donde iOS lo lleva al volver a tocar la pestaña:
       // así abrir y volver a tocar dejan la tarjeta en el mismo lugar.
-      contentInset={fijo ? { top: bajoBarra } : undefined}
+      // Abajo, la barra de pestañas: al apagar el ajuste automático también se
+      // va ese margen, y el botón final quedaba debajo de las pestañas.
+      contentInset={fijo ? { top: bajoBarra, bottom: conPestanas ? ins.bottom + 49 : ins.bottom } : undefined}
       contentOffset={fijo ? { x: 0, y: -bajoBarra } : undefined}
-      scrollIndicatorInsets={fijo ? { top: bajoBarra } : undefined}
+      scrollIndicatorInsets={fijo ? { top: bajoBarra, bottom: conPestanas ? ins.bottom + 49 : ins.bottom } : undefined}
       // Tope de ancho: en un iPad o en el navegador las tarjetas se estiraban
       // de borde a borde y una cifra quedaba a medio metro de su rótulo.
       contentContainerStyle={{

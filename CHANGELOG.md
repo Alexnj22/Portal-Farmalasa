@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1507.0 — App: pestaña rápida en la barra, a elegir en Cuenta
+
+El lugar que dejó Notificaciones lo ocupa una pestaña con UN módulo, entre Menú y Cuenta. Por defecto: Efectivo para las salas, Pedidos para Bodega y Solicitudes para los cuatro cargos de administración. Cada persona la cambia en Cuenta › Pestaña rápida, entre los módulos que su cargo puede ver (Efectivo, Pedidos, Solicitudes, Traslados, Bitácoras, Ventas, Clientes, Reservas, Inventario, Productos, Personal, Inyecciones); se guarda en el teléfono. Muestra la misma pantalla que abre el Menú. Si el cargo no ve ninguno, la pestaña no aparece. Va por aire.
+
 ## v2.1506.1 — App de clientes: el carrito ya no queda corrido bajo la barra
 
 En iPhone, al vaciar el carrito o después de reservar, la tarjeta de arriba quedaba medio escondida debajo de la barra. Cuando el contenido se achicaba, la lista se corregía a una posición que en iPhone queda justo la altura de la barra más arriba. Ahora, al cambiar entre vacío, con productos y «¡Listo!» (y al volver a la pestaña vacía), la lista vuelve al borde de arriba real.

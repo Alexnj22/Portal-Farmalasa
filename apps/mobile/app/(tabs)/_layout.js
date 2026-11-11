@@ -7,6 +7,8 @@ import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useAuth } from '@nucleo/context/AuthContext';
+import { useStaffStore } from '@nucleo/store/staffStore';
+import { usePestanaRapida } from '../../componentes/pestanaRapida';
 import { usePorDecidir } from '../../componentes/porDecidir';
 
 const CADA = 2 * 60 * 1000;
@@ -36,6 +38,9 @@ export default function Pestanas() {
   // El globo vive ahora en la campana de la barra (BotonCampana): esto sólo
   // mantiene «Por decidir» al día.
   useMantenerPorDecidir();
+  const { user, hasPermission } = useAuth();
+  const salas = useStaffStore((s) => s.branches);
+  const { actual: rapida } = usePestanaRapida(user, hasPermission, salas);
   return (
     <NativeTabs labelVisibilityMode="labeled">
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">
@@ -45,6 +50,12 @@ export default function Pestanas() {
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="menu">
         <NativeTabs.Trigger.Icon sf={{ default: 'square.grid.2x2', selected: 'square.grid.2x2.fill' }} md="apps" />
         <NativeTabs.Trigger.Label>Menú</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+      {/* La pestaña rápida (2026-11-11): un módulo que cada quien elige en
+          Cuenta › Pestaña rápida. Ver componentes/pestanaRapida.js. */}
+      <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="rapida" hidden={!rapida}>
+        <NativeTabs.Trigger.Icon sf={rapida?.sf || 'star'} md={rapida?.md || 'star'} />
+        <NativeTabs.Trigger.Label>{rapida?.label || ' '}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="yo">
         <NativeTabs.Trigger.Icon sf={{ default: 'person.crop.circle', selected: 'person.crop.circle.fill' }} md="account_circle" />

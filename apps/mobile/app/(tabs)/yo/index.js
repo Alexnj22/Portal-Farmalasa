@@ -27,6 +27,8 @@ import { useCodigoDeKiosco } from '../../../componentes/perfil/codigoDeKiosco';
 import { ESTILOS, MODOS, usePreferenciaDeTema } from '../../../tema/preferencia';
 import { listo } from '../../../componentes/Progreso';
 import { MARCA } from '../../../componentes/inicio/marca';
+import { usePestanaRapida } from '../../../componentes/pestanaRapida';
+import { router } from 'expo-router';
 
 const ES_IOS = Platform.OS === 'ios';
 
@@ -70,6 +72,7 @@ export default function Yo() {
     ...(verPin ? [{ id: 'pin', titulo: 'Código de kiosco', valor: codigo }] : []),
     ...(verSu ? [{ id: 'su', titulo: 'Código SU', valor: `${codigo}${sufijo}` }] : []),
   ];
+  const { actual: rapida } = usePestanaRapida(user, hasPermission, salas);
   const elegirModo = () => elegir('Modo', MODOS, ponerModo);
   const elegirEstilo = () => elegir('Estilo', ESTILOS, ponerEstilo);
   useEffect(() => {
@@ -107,7 +110,7 @@ export default function Yo() {
   // estilo «Sólido» de Apariencia.
   return <Tarjetas nombre={shortEmployeeName(user)} detalle={[cargo, sala].filter(Boolean).join(' · ')} modulos={modulos}
     biometria={biometria} cambiarBiometria={cambiarBiometria} salir={salir} tema={tema} oscuro={oscuro}
-    codigos={codigos} rotuloModo={rotuloModo} elegirModo={elegirModo} rotuloEstilo={rotuloEstilo} elegirEstilo={elegirEstilo} />;
+    codigos={codigos} rapida={rapida} rotuloModo={rotuloModo} elegirModo={elegirModo} rotuloEstilo={rotuloEstilo} elegirEstilo={elegirEstilo} />;
 }
 
 // Nació para Android (2026-10-09: la lista de Compose salía como filas blancas
@@ -129,7 +132,7 @@ function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
   );
 }
 
-function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema, oscuro, codigos, rotuloModo, elegirModo, rotuloEstilo, elegirEstilo }) {
+function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir, tema, oscuro, codigos, rapida, rotuloModo, elegirModo, rotuloEstilo, elegirEstilo }) {
   return (
     <ScrollView style={{ flex: 1 }} contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16, paddingBottom: 32, gap: 22 }}>
       <Vidrio radio={20}>
@@ -170,7 +173,11 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
       ) : null}
       <Vidrio radio={20}>
         <View style={{ paddingVertical: 2 }}>
-          <Renglon primero icono={iconoDe(oscuro ? 'Moon' : 'Sun')} color={MARCA.violeta} texto="Modo" alTocar={elegirModo}
+          {rapida ? (
+            <Renglon primero icono={iconoDe('Star')} color={MARCA.violeta} texto="Pestaña rápida" alTocar={() => router.push('/pestana-rapida')}
+              derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rapida.label}</Text>} />
+          ) : null}
+          <Renglon primero={!rapida} icono={iconoDe(oscuro ? 'Moon' : 'Sun')} color={MARCA.violeta} texto="Modo" alTocar={elegirModo}
             derecha={<Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{rotuloModo}</Text>} />
           {ES_IOS ? (
             <Renglon icono={iconoDe('Layers')} color={MARCA.violeta} texto="Estilo" alTocar={elegirEstilo}

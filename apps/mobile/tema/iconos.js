@@ -57,6 +57,11 @@ export const ICONOS = {
   Search: i('magnifyingglass', require('@expo/material-symbols/search.xml')),
   Archive: i('archivebox', require('@expo/material-symbols/archive.xml')),
   Ban: i('nosign', require('@expo/material-symbols/block.xml')),
+  // Las acciones de personal de la ficha (2026-11-12).
+  HeartPulse: i('heart.text.square', require('@expo/material-symbols/ecg_heart.xml')),
+  ArrowRightLeft: i('arrow.left.arrow.right', require('@expo/material-symbols/swap_horiz.xml')),
+  GraduationCap: i('graduationcap', require('@expo/material-symbols/school.xml')),
+  LogOut: i('rectangle.portrait.and.arrow.right', require('@expo/material-symbols/logout.xml')),
   // Los estados de una persona en el aro de su foto (2026-11-06), los mismos
   // del portal: apoyo a otra sala, inducción, baja, suspensión sin motivo.
   Briefcase: i('briefcase', require('@expo/material-symbols/work.xml')),

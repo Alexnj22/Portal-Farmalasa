@@ -35,7 +35,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { EVENT_TYPES } from '@nucleo/data/constants';
 import { estadoDePersona } from '@nucleo/utils/estadoDePersona';
-import { alertasDePersona } from '@nucleo/utils/alertasDePersona';
+import { alertasDePersona, datosPendientesDePersona } from '@nucleo/utils/alertasDePersona';
 import { cumpleEn, historialDePerfil, semanaDelPerfil, tiempoEnLaEmpresa } from '@nucleo/utils/miPerfil';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -62,6 +62,7 @@ import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import { PildoraDeCargo } from '../../componentes/personas/Piezas';
+import { textoDeAlerta } from '../../componentes/personas/TarjetaPersona';
 
 const fecha = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 const horaCorta = (h) => (hora12(h) || '').replace(':00', '').replace(/\s?a\.\s?m\./, 'a').replace(/\s?p\.\s?m\./, 'p');
@@ -75,6 +76,37 @@ function Accion({ icono, rotulo, color, onPress }) {
     </Pressable>
   );
 }
+
+// Una casilla de la cuadrícula de acciones: ícono en su círculo y el nombre,
+// tres por renglón (2026-11-12, usuario: «Acciones, sanción, contraseña…
+// combinemos acciones y sanciones, que se vea muy visual y práctico»).
+function Casilla({ icono, rotulo, color, onPress, enRenglon = false }) {
+  return (
+    <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} accessibilityRole="button" accessibilityLabel={rotulo}
+      style={({ pressed }) => ({ ...(enRenglon ? { flex: 1 } : { width: '31.5%' }), alignItems: 'center', gap: 5, paddingVertical: 10, paddingHorizontal: 4, borderRadius: 16,
+        backgroundColor: `${color}1A`, borderWidth: 0.5, borderColor: `${color}40`, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
+      <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}2E` }}>
+        <Host matchContents><Icon name={iconoDe(icono)} size={19} color={color} /></Host>
+      </View>
+      <Text style={{ color: colorSistema.texto, fontSize: 12, fontWeight: '700', textAlign: 'center' }} numberOfLines={2}>{rotulo}</Text>
+    </Pressable>
+  );
+}
+
+// Las acciones de personal más usadas, cada una directo a su formulario
+// (`empleado/accion?tipo=…`); «Otra acción» abre el selector con el resto
+// (inducción y las demás). El orden: lo del día a día primero, la baja
+// al final y en rojo.
+const ACCIONES = [
+  { tipo: 'VACATION', rotulo: 'Vacaciones', icono: 'Calendar', color: MARCA.verde },
+  { tipo: 'DISABILITY', rotulo: 'Incapacidad', icono: 'HeartPulse', color: '#F472B6' },
+  { tipo: 'PERMIT', rotulo: 'Permiso', icono: 'ClipboardList', color: MARCA.ambar },
+  { tipo: 'TRANSFER', rotulo: 'Traslado', icono: 'ArrowRightLeft', color: MARCA.azulClaro },
+  { tipo: 'SUPPORT', rotulo: 'Apoyo temporal', icono: 'Building2', color: '#E879F9' },
+  { tipo: 'PROMOTION', rotulo: 'Cambio de cargo', icono: 'TrendingUp', color: MARCA.violetaClaro },
+  { tipo: 'SALARY', rotulo: 'Ajuste salarial', icono: 'DollarSign', color: MARCA.verde },
+  { tipo: 'CODE_CHANGE', rotulo: 'Cambio de código', icono: 'IdCard', color: MARCA.violetaClaro },
+];
 
 export default function Empleado() {
   const { id } = useLocalSearchParams();
@@ -168,7 +200,7 @@ export default function Empleado() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         <Vidrio radio={20}>
           <View style={{ padding: 18, gap: 10, alignItems: 'center' }}>
-            <Avatar empleado={emp} tamano={104} />
+            <Avatar empleado={emp} tamano={88} />
             <Text style={{ color: colorSistema.texto, fontSize: 21, fontWeight: '800', textAlign: 'center' }}>{emp.name}</Text>
             {estado ? <Pildora texto={`${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`} color={colorDeVariante(estado.variante)} /> : null}
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6, justifyContent: 'center' }}>
@@ -184,10 +216,74 @@ export default function Empleado() {
           </View>
         </Vidrio>
 
+        {/* Lo de todos los días, arriba y a un toque (antes, al final de la ficha). */}
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          {hasPermission?.('staff_list', 'can_edit') && !inactiva ? (
+            <Casilla enRenglon icono="PenLine" rotulo="Editar la ficha" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
+          ) : null}
+          {hasPermission?.('staff_detail', 'can_view') ? (
+            <Casilla enRenglon icono="FolderOpen" rotulo="Expediente" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/expediente', params: { id: String(emp.id) } })} />
+          ) : null}
+          <Casilla enRenglon icono="ClipboardList" rotulo="Historial y ausencias" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/historial', params: { id: String(emp.id) } })} />
+        </View>
+
+        {hasPermission?.('staff_list', 'can_edit') && inactiva ? (
+          <BotonGrande texto="Recontratar" color={MARCA.verde} onPress={() => router.push({ pathname: '/empleado/recontratar', params: { id: String(emp.id) } })} />
+        ) : null}
+
+        {/* Lo que hay que saber, diciendo QUÉ (usuario, 2026-11-12: «me dice
+            falta 1 dato, vence en 49 d, pero ¿qué? si entro no me da info»).
+            Cada renglón lleva a donde se arregla. */}
         {alertas.length ? (
           <Seccion titulo="Lo que hay que saber">
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
-              {alertas.map((a) => <Pildora key={a.key} texto={a.texto} color={colorDeVariante(a.variante)} />)}
+            {alertas.map((a, i) => {
+              const color = colorDeVariante(a.variante);
+              const faltan = a.key === 'pendiente' ? datosPendientesDePersona(emp) : [];
+              const detalle = a.key === 'pendiente' ? faltan.join(' · ') : a.key === 'documento' ? `${a.title}. Se renueva en el expediente.` : a.title;
+              const destino = a.key === 'pendiente' && hasPermission?.('staff_list', 'can_edit') ? '/empleado/editar'
+                : (a.key === 'pendiente' || a.key === 'documento') && hasPermission?.('staff_detail', 'can_view') ? '/empleado/expediente' : null;
+              return (
+                <Pressable key={a.key} disabled={!destino} onPress={() => router.push({ pathname: destino, params: { id: String(emp.id) } })}
+                  style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
+                  <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}26` }}>
+                    <Host matchContents><Icon name={iconoDe(a.icono)} size={17} color={color} /></Host>
+                  </View>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{textoDeAlerta(a, emp)}</Text>
+                    {a.key === 'pendiente' && faltan.length > 1 ? (
+                      // Cada dato que falta, como etiqueta: un párrafo de 18
+                      // nombres no se lee. Con muchos, los primeros y «N más».
+                      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 5, marginTop: 4 }}>
+                        {faltan.slice(0, 8).map((d) => (
+                          <View key={d} style={{ paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8, backgroundColor: `${color}1F` }}>
+                            <Text style={{ color: colorSistema.texto, fontSize: 12, fontWeight: '600' }}>{d}</Text>
+                          </View>
+                        ))}
+                        {faltan.length > 8 ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', alignSelf: 'center' }}>{`y ${faltan.length - 8} más`}</Text> : null}
+                      </View>
+                    ) : detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text> : null}
+                  </View>
+                  {destino ? <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text> : null}
+                </Pressable>
+              );
+            })}
+          </Seccion>
+        ) : null}
+
+        {hasPermission?.('staff_detail', 'can_edit') && !inactiva ? (
+          <Seccion titulo="Acciones">
+            {vacacionEnCurso(emp, hoy) ? (
+              <BotonGrande texto="Ingreso en vacaciones" color={MARCA.ambar} onPress={() => router.push({ pathname: '/empleado/ingreso-vacaciones', params: { id: String(emp.id) } })} />
+            ) : null}
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 8 }}>
+              {ACCIONES.map((a) => (
+                <Casilla key={a.tipo} icono={a.icono} rotulo={a.rotulo} color={a.color}
+                  onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id), tipo: a.tipo } })} />
+              ))}
+              <Casilla icono="ShieldAlert" rotulo="Sanción" color={MARCA.ambar} onPress={() => router.push({ pathname: '/empleado/sancion', params: { id: String(emp.id) } })} />
+              <Casilla icono="KeyRound" rotulo="Contraseña" color={MARCA.violetaClaro} onPress={restablecer} />
+              <Casilla icono="Plus" rotulo="Otra acción" color={colorSistema.texto2} onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id) } })} />
+              <Casilla icono="LogOut" rotulo="Baja" color={MARCA.rojo} onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id), tipo: 'TERMINATION' } })} />
             </View>
           </Seccion>
         ) : null}
@@ -270,20 +366,6 @@ export default function Empleado() {
           ) : null}
         </Seccion>
 
-        <BotonGrande texto="Historial, ausencias y solicitudes" borde color={MARCA.azulClaro}
-          onPress={() => router.push({ pathname: '/empleado/historial', params: { id: String(emp.id) } })} />
-        {hasPermission?.('staff_detail', 'can_edit') && !inactiva ? (
-          <Seccion titulo="Acciones de personal">
-            <View style={{ flexDirection: 'row', gap: 8 }}>
-              <Accion icono="Plus" rotulo="Acción RRHH" color={MARCA.azulClaro} onPress={() => router.push({ pathname: '/empleado/accion', params: { id: String(emp.id) } })} />
-              <Accion icono="ShieldAlert" rotulo="Sanción" color={MARCA.ambar} onPress={() => router.push({ pathname: '/empleado/sancion', params: { id: String(emp.id) } })} />
-              <Accion icono="KeyRound" rotulo="Contraseña" color={MARCA.violetaClaro} onPress={restablecer} />
-            </View>
-            {vacacionEnCurso(emp, hoy) ? (
-              <BotonGrande texto="Ingreso en vacaciones" borde color={MARCA.ambar} onPress={() => router.push({ pathname: '/empleado/ingreso-vacaciones', params: { id: String(emp.id) } })} />
-            ) : null}
-          </Seccion>
-        ) : null}
         {puedeCarne && !inactiva ? (
           <Seccion titulo="Carné del día" pie={carne === false ? 'No se pudo saber si tiene uno vigente.' : carne ? `Tiene uno vigente: vence ${hora12(carne.vence_el)}.` : carne === null ? 'No tiene uno vigente.' : null}>
             <View style={{ flexDirection: 'row', gap: 8 }}>
@@ -293,16 +375,6 @@ export default function Empleado() {
             </View>
             <BotonGrande texto="Reimprimir el carné de plástico" borde color={MARCA.azulClaro} onPress={reimprimirPlastico} />
           </Seccion>
-        ) : null}
-        {hasPermission?.('staff_list', 'can_edit') && inactiva ? (
-          <BotonGrande texto="Recontratar" color={MARCA.verde} onPress={() => router.push({ pathname: '/empleado/recontratar', params: { id: String(emp.id) } })} />
-        ) : null}
-        {hasPermission?.('staff_list', 'can_edit') && !inactiva ? (
-          <BotonGrande texto="Editar la ficha" onPress={() => router.push({ pathname: '/empleado/editar', params: { id: String(emp.id) } })} />
-        ) : null}
-        {hasPermission?.('staff_detail', 'can_view') ? (
-          <BotonGrande texto="Expediente: foto, documentos, estudios y cuenta" borde color={MARCA.azulClaro}
-            onPress={() => router.push({ pathname: '/empleado/expediente', params: { id: String(emp.id) } })} />
         ) : null}
       </ScrollView>
     </>

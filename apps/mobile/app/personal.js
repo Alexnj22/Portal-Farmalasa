@@ -27,6 +27,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Pressable, SectionList, Text, View } from 'react-native';
 import { router, Stack, useFocusEffect } from 'expo-router';
+import * as Haptics from 'expo-haptics';
+import { ICONO } from '../componentes/solicitudes/iconos';
 import { Host, Icon } from '@expo/ui';
 import { fetchPoliza, fetchPagoDelAnio } from '@nucleo/data/seguroDeVida';
 import { periodoVigente, estadoEnElSeguro } from '@nucleo/utils/seguroDeVida';
@@ -83,24 +85,17 @@ function FranjaDelSeguro({ personas }) {
           : { texto: `${personas.length - alDia} sin cubrir`, variante: 'warning' };
   const detalle = !resumen ? 'Cargando…' : resumen.fallo ? 'Póliza y pago anual'
     : resumen.pago ? `${alDia} de ${personas.length} solventes` : `${personas.length} personas en planilla`;
+  // Compacta (2026-11-12, usuario: «el seguro de vida colectivo… de forma más
+  // compacta»): una píldora en el renglón del conteo, no una tarjeta entera.
+  const color = estado ? colorDeVariante(estado.variante) : colorSistema.texto2;
   return (
-    <Pressable accessibilityRole="button" accessibilityLabel="Abrir el seguro de vida colectivo" onPress={() => router.push('/seguro-de-vida')}
-      style={({ pressed }) => ({ marginHorizontal: 16, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      <Vidrio radio={20} interactivo>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, minHeight: 44 }}>
-          <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: `${MARCA.violetaClaro}26`, alignItems: 'center', justifyContent: 'center' }}>
-            <Host matchContents><Icon name={iconoDe('ShieldCheck')} size={18} color={MARCA.violetaClaro} /></Host>
-          </View>
-          <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>Seguro de vida colectivo</Text>
-            <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
-              {estado ? <Pildora texto={estado.texto} color={colorDeVariante(estado.variante)} /> : null}
-              <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{detalle}</Text>
-            </View>
-          </View>
-          <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
-        </View>
-      </Vidrio>
+    <Pressable accessibilityRole="button" accessibilityLabel={`Seguro de vida colectivo: ${estado?.texto ?? 'cargando'}. ${detalle}`}
+      onPress={() => router.push('/seguro-de-vida')} hitSlop={6}
+      style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 34, paddingHorizontal: 12, borderRadius: 17,
+        backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}55`, opacity: pressed ? 0.7 : 1 })}>
+      <Host matchContents><Icon name={iconoDe('ShieldCheck')} size={14} color={color} /></Host>
+      <Text style={{ color, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{`Seguro · ${estado?.texto ?? '…'}`}</Text>
+      <Text style={{ color, fontSize: 14, fontWeight: '700' }}>›</Text>
     </Pressable>
   );
 }
@@ -125,6 +120,11 @@ export default function Personal() {
   const [vista, setVista] = useState('todos');
   const [tipo, setTipo] = useState('personal');
   const [sala, setSala] = useState('todas');
+  // Las salas que se contraen (2026-11-12, usuario: «que se puedan minimizar las
+  // sucursales»). Con una búsqueda escrita se abren todas: lo encontrado no
+  // puede quedar escondido en una sala cerrada.
+  const [plegadas, setPlegadas] = useState(() => new Set());
+  const plegar = (id) => { Haptics.selectionAsync().catch(() => {}); setPlegadas((p) => { const n = new Set(p); n.has(id) ? n.delete(id) : n.add(id); return n; }); };
   useEffect(() => { fetchPracticantes?.(); }, [fetchPracticantes]);
 
   const nombreDe = useMemo(() => new Map((sucursales || []).map((b) => [Number(b.id), b.name])), [sucursales]);
@@ -195,20 +195,32 @@ export default function Personal() {
     Promise.resolve(compartirCsv({ headers, rows, nombre, modulo: 'personal' })).catch(() => {});
   };
 
+  const buscando = !!texto.trim();
+  const todasPlegadas = secciones.length > 0 && secciones.every((s) => plegadas.has(s.id));
   const Cabecera = (
-    <View style={{ gap: 12, paddingTop: 12, paddingBottom: 4 }}>
+    <View style={{ gap: 10, paddingTop: 12, paddingBottom: 4 }}>
       <FiltrosActivos grupos={grupos} />
-      {tipo === 'personal' && (vista === 'todos' || vista === 'activos') ? <FranjaDelSeguro personas={enPlanilla} /> : null}
-      <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20 }}>
-        <Text style={{ color: colorSistema.texto2, fontSize: 13, flex: 1 }}>{`${total} ${tipo === 'practicantes' ? 'practicante' : 'persona'}${total === 1 ? '' : 's'}`}</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 8, marginHorizontal: 16 }}>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', flexGrow: 1 }}>{`${total} ${tipo === 'practicantes' ? 'practicante' : 'persona'}${total === 1 ? '' : 's'}`}</Text>
+        {tipo === 'personal' && (vista === 'todos' || vista === 'activos') ? <FranjaDelSeguro personas={enPlanilla} /> : null}
+      </View>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 16, marginHorizontal: 20 }}>
+        {secciones.length > 1 && !buscando ? (
+          <Pressable hitSlop={8} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setPlegadas(todasPlegadas ? new Set() : new Set(secciones.map((s) => s.id))); }}
+            style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>{todasPlegadas ? 'Abrir todas las salas' : 'Contraer todas las salas'}</Text>
+          </Pressable>
+        ) : null}
+        <View style={{ flex: 1 }} />
         {puedeExportar && tipo === 'personal' && total ? (
-          <Pressable hitSlop={8} accessibilityRole="button" onPress={exportar} style={({ pressed }) => ({ minHeight: 44, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Exportar el directorio</Text>
+          <Pressable hitSlop={8} accessibilityRole="button" onPress={exportar} style={({ pressed }) => ({ minHeight: 36, justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
+            <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '700' }}>Exportar</Text>
           </Pressable>
         ) : null}
       </View>
     </View>
   );
+  const visibles = secciones.map((s) => (!buscando && plegadas.has(s.id) ? { ...s, data: [], plegada: true } : s));
 
   return (
     <>
@@ -229,7 +241,7 @@ export default function Personal() {
           opciones={[{ id: 'personal', label: 'Planilla' }, { id: 'practicantes', label: 'Practicantes' }, { id: 'externos', label: 'Externos' }]} />
       </FijoArriba>
       <SectionList
-        sections={secciones}
+        sections={visibles}
         keyExtractor={(f) => f.k}
         contentInsetAdjustmentBehavior="automatic"
         keyboardDismissMode="on-drag"
@@ -238,17 +250,29 @@ export default function Personal() {
         ListHeaderComponent={Cabecera}
         ItemSeparatorComponent={() => <View style={{ height: 10 }} />}
         renderSectionHeader={({ section: s }) => (
-          <View style={{ marginTop: 14, marginBottom: 8, marginHorizontal: 12 }}>
-            <Vidrio radio={14}>
-              <View style={{ paddingHorizontal: 12, paddingVertical: 8, gap: 2 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                  <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{s.titulo}</Text>
-                  {s.sinJefatura ? <Pildora texto="Sin jefatura" color={MARCA.ambar} /> : null}
-                </View>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{s.pulso}</Text>
-              </View>
-            </Vidrio>
-            {s.sinSede ? (
+          <View style={{ marginTop: 14, marginBottom: s.plegada ? 0 : 8, marginHorizontal: 12 }}>
+            <Pressable onPress={() => plegar(s.id)} disabled={buscando} accessibilityRole="button"
+              accessibilityState={{ expanded: !s.plegada }} accessibilityLabel={`${s.titulo}, ${s.pulso}`}>
+              {({ pressed }) => (
+                <Vidrio radio={14} interactivo style={{ opacity: pressed ? 0.8 : 1 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 12, paddingVertical: 10, minHeight: 44 }}>
+                    <View style={{ flex: 1, gap: 2 }}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                        <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '800' }}>{s.titulo}</Text>
+                        {s.sinJefatura ? <Pildora texto="Sin jefatura" color={MARCA.ambar} /> : null}
+                      </View>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{s.pulso}</Text>
+                    </View>
+                    {!buscando ? (
+                      <View style={{ transform: [{ rotate: s.plegada ? '0deg' : '90deg' }] }}>
+                        <Host matchContents><Icon name={ICONO.siguiente} size={13} color={colorSistema.texto2} /></Host>
+                      </View>
+                    ) : null}
+                  </View>
+                </Vidrio>
+              )}
+            </Pressable>
+            {s.sinSede && !s.plegada ? (
               <View style={{ marginTop: 8, marginHorizontal: 4 }}>
                 <Aviso tono={s.soloCuentas ? 'nota' : 'cuidado'} texto={s.soloCuentas
                   ? 'Son cuentas del portal, no personas: no trabajan en ninguna sala, así que no llevan sede.'

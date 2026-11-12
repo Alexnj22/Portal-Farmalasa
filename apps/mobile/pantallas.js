@@ -6,6 +6,11 @@ import { router } from 'expo-router';
 // el primer día y cada pantalla nativa que se agrega acá reemplaza a la web.
 // El orden sale de cuánta gente distinta usa cada una (bitácora de acciones,
 // 30 días al 2026-09-28): bitácoras 34, traslados 36, efectivo 34, pedidos 23.
+// Módulos que la app NO muestra (ni en el Menú ni en Buscar), aunque el cargo
+// los tenga: siguen en el portal. Clima organizacional y Encuestas internas
+// (2026-11-12, usuario: «lo vamos a ocultar de la app»).
+export const FUERA_DE_LA_APP = new Set(['encuesta', 'encuesta_admin']);
+
 export const PANTALLAS_DE_LA_APP = {
   '/inicio': true,             // es la pestaña Inicio (los grupos de expo-router no cuentan en la ruta)
   '/chat-clientes': true, // la bandeja y cada conversación (`chat-clientes/[id]`), en vivo

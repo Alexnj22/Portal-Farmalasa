@@ -22,7 +22,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import Vidrio from '../../../componentes/Vidrio';
 import { colorSistema } from '../../../componentes/Formulario';
 import { iconoDe } from '../../../tema/iconos';
-import { abrirModulo } from '../../../pantallas';
+import { FUERA_DE_LA_APP, abrirModulo } from '../../../pantallas';
 import FranjaDelPortal from '../../../componentes/FranjaDelPortal';
 import EstadoDeDatos from '../../../componentes/EstadoDeDatos';
 import { anotar, leerUso } from '../../../componentes/inicio/uso';
@@ -74,7 +74,7 @@ export default function Menu() {
   const [uso] = useState(() => leerUso(user?.id));
   const alAbrir = (m) => anotar(user?.id, CLAVE_DE_USO(m.key));
 
-  const grupos = useMemo(() => gruposVisibles(MENU_GROUPS, MODULE_MAP, (k) => !EN_LA_BARRA.has(k) && hasPermission(k)),
+  const grupos = useMemo(() => gruposVisibles(MENU_GROUPS, MODULE_MAP, (k) => !EN_LA_BARRA.has(k) && !FUERA_DE_LA_APP.has(k) && hasPermission(k)),
     [hasPermission]);
 
   // Un grupo de un solo módulo no lleva título (el web lo pinta plano, sin

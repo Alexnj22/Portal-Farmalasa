@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.0 — Personal y la ficha más útiles
+
+App del personal (lo pidió el usuario, revisado en el emulador):
+- **Clima organizacional y Encuestas** ya no salen en el Menú ni en Buscar de la app (siguen en el portal): `FUERA_DE_LA_APP` en `pantallas.js`.
+- **Personal:** el seguro de vida colectivo pasa a una píldora en el renglón del conteo; cada sala se contrae tocándola, más «Contraer todas las salas»; con una búsqueda escrita se abren todas.
+- **La tarjeta de cada persona:** estado, cargos y alertas en un renglón al lado de la foto (antes uno debajo del otro); WhatsApp y Llamar como botones con nombre en su propio renglón (al lado del nombre se apretaban y cambiaban de lugar); la alerta dice qué: «Falta Número de ISSS», «DUI · vence en 49 d».
+- **La píldora del cargo** se lee en modo oscuro (Subjefe, en violeta, quedaba oscuro sobre oscuro).
+- **La ficha:** arriba Editar · Expediente · Historial; «Lo que hay que saber» dice qué falta (cada dato como etiqueta) y lleva a donde se corrige; «Acciones» —como en el portal— junta en una cuadrícula las de personal (vacaciones, incapacidad, permiso, traslado, apoyo, cargo, salario, código), la sanción, la contraseña, «Otra acción» y la baja, cada una directo a su formulario.
+
 ## v2.1512.10 — Aprobar una solicitud también va por la sala donde se hizo
 
 - **La otra mitad de v2.1512.9.** Aprobar o rechazar (y crear a nombre de otro) una solicitud de facturación o de inventario seguía yendo por la ficha de quien la pidió: un descarte que alguien de apoyo hacía en otra sala lo veía esa sala pero no lo podía aprobar (sin error: cero filas), y lo podía aprobar su sala de ficha, que no lo veía. Ahora va por la sala donde se hizo, como caja y cuentas por cobrar, que ya lo hacían así. Las personales siguen por la ficha. Migración `20261112170945`; ninguna solicitud pendiente cambia de manos.

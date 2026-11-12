@@ -8,7 +8,7 @@ import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
-import { alertasDePersona } from '@nucleo/utils/alertasDePersona';
+import { alertasDePersona, datosPendientesDePersona } from '@nucleo/utils/alertasDePersona';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { anotar } from '@nucleo/data/audit';
@@ -27,14 +27,47 @@ const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 // Sólidos con el ícono blanco: tintados al 13% se perdían sobre el vidrio.
 const VERDE_WHATSAPP = '#0E8A4F';
 
-function BotonRedondo({ icono, color, onPress, etiqueta }) {
+// WhatsApp y Llamar van en su propio renglón, abajo, con su nombre (2026-11-12,
+// usuario: «los íconos de teléfono y WhatsApp se pierden y se desordenan»): al
+// lado del nombre se apretaban contra él, cambiaban de lugar según el largo del
+// nombre o la foto destacada, y faltaban en quien no tiene número. Abajo, a lo
+// ancho, quedan siempre en el mismo sitio.
+// Del mismo alto que la píldora del cargo, para que el renglón quede parejo.
+function PildoraChica({ texto, color }) {
   return (
-    <Pressable onPress={onPress} accessibilityLabel={etiqueta} hitSlop={6}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
-        backgroundColor: color, transform: [{ scale: pressed ? 0.92 : 1 }] })}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={20} color="#FFFFFF" /></Host>
+    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: `${color}26` }}>
+      <Text style={{ color, fontSize: 12, fontWeight: '700' }}>{texto}</Text>
+    </View>
+  );
+}
+
+function BotonDeContacto({ icono, texto, color, onPress, etiqueta }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={4}
+      style={({ pressed }) => ({ flex: 1, minHeight: 40, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+        backgroundColor: color, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
+      <Host matchContents><Icon name={iconoDe(icono)} size={17} color="#FFFFFF" /></Host>
+      <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
+}
+
+/**
+ * La alerta en palabras que dicen QUÉ (2026-11-12, usuario: «me dice falta 1
+ * dato, vence en 49 d, pero ¿qué?»): con un solo dato, cuál; con el documento,
+ * cuál vence. El núcleo da el rótulo corto (el del portal) y el detalle en
+ * `title`.
+ */
+export function textoDeAlerta(a, emp) {
+  if (a.key === 'pendiente') {
+    const faltan = datosPendientesDePersona(emp);
+    return faltan.length === 1 ? `Falta ${faltan[0]}` : a.texto;
+  }
+  if (a.key === 'documento') {
+    const [doc] = String(a.title || '').split(':');
+    return doc ? `${doc.trim()} · ${a.texto.replace(/^Vence/, 'vence').replace('Documento vencido', 'vencido')}` : a.texto;
+  }
+  return a.texto;
 }
 
 export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = false, conSuperior = false }) {
@@ -67,30 +100,25 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
         <View style={{ padding: 14, gap: 8, opacity: inactiva ? 0.6 : 1 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar empleado={emp} tamano={destacada ? 64 : 48} />
-            <View style={{ flex: 1, gap: 4 }}>
+            <View style={{ flex: 1, gap: 5 }}>
               <Text style={{ color: colorSistema.texto, fontSize: destacada ? 17 : 16, fontWeight: '700' }}>{nombre}</Text>
-              {estado ? (
-                <View style={{ flexDirection: 'row' }}>
-                  <Pildora texto={`${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`} color={colorDeVariante(estado.variante)} />
-                </View>
-              ) : null}
-            </View>
-            {tel.length >= 8 ? (
-              <View style={{ flexDirection: 'row', gap: 8 }}>
-                <BotonRedondo icono="MessageCircle" color={VERDE_WHATSAPP} etiqueta={`Escribir a ${nombre}`} onPress={() => contactar('wa')} />
-                <BotonRedondo icono="Phone" color={MARCA.azul} etiqueta={`Llamar a ${nombre}`} onPress={() => contactar('tel')} />
+              {/* Estado, cargos, áreas y alertas en UN renglón que se parte solo
+                  (2026-11-12, usuario: «¿por qué en vez de salir a la par sale
+                  una abajo de otra usando más espacio?»). */}
+              <View style={{ flexDirection: 'row', gap: 5, flexWrap: 'wrap' }}>
+                {estado ? <PildoraChica texto={`${estado.texto}${estado.hasta ? ` · vuelve el ${estado.hasta}` : ''}`} color={colorDeVariante(estado.variante)} /> : null}
+                {cargos.length ? cargos.map((c) => <PildoraDeCargo key={c} cargo={c} />) : <PildoraDeCargo cargo="Sin cargo" />}
+                {areas >= 2 ? <PildoraChica texto={`Cubre ${areas} áreas`} color={MARCA.azulClaro} /> : null}
+                {inactiva ? <PildoraChica texto="Dado de baja" color={MARCA.rojo} /> : null}
+                {alertas.map((a) => <PildoraChica key={a.key} texto={textoDeAlerta(a, emp)} color={colorDeVariante(a.variante)} />)}
               </View>
-            ) : null}
-          </View>
-          <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-            {cargos.length ? cargos.map((c) => <PildoraDeCargo key={c} cargo={c} />) : <PildoraDeCargo cargo="Sin cargo" />}
-            {areas >= 2 ? <Pildora texto={`Cubre ${areas} áreas`} color={MARCA.azulClaro} /> : null}
-            {inactiva ? <Pildora texto="Dado de baja" color={MARCA.rojo} /> : null}
+            </View>
           </View>
           {respondeA ? <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{`↳ Responde a ${respondeA}`}</Text> : null}
-          {alertas.length ? (
-            <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
-              {alertas.map((a) => <Pildora key={a.key} texto={a.texto} color={colorDeVariante(a.variante)} />)}
+          {tel.length >= 8 && !inactiva ? (
+            <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
+              <BotonDeContacto icono="MessageCircle" texto="WhatsApp" color={VERDE_WHATSAPP} etiqueta={`Escribir a ${nombre}`} onPress={() => contactar('wa')} />
+              <BotonDeContacto icono="Phone" texto="Llamar" color={MARCA.azul} etiqueta={`Llamar a ${nombre}`} onPress={() => contactar('tel')} />
             </View>
           ) : null}
           {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{nombreDeSala}</Text> : null}

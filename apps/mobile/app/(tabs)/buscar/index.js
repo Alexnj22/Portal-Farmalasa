@@ -32,7 +32,7 @@ import Avatar from '../../../componentes/Avatar';
 import Vidrio from '../../../componentes/Vidrio';
 import { useTema } from '../../../tema/tema';
 import { iconoDe } from '../../../tema/iconos';
-import { abrirModulo, abrirRuta, abrirSolicitud } from '../../../pantallas';
+import { FUERA_DE_LA_APP, abrirModulo, abrirRuta, abrirSolicitud } from '../../../pantallas';
 import { Vacio } from '../../../componentes/formulario/Piezas';
 
 const POR_GRUPO = 5;
@@ -88,7 +88,7 @@ export default function Buscar() {
     return () => { vivo = false; };
   }, [q, veProductos]);
 
-  const modulos = useMemo(() => gruposVisibles(MENU_GROUPS, MODULE_MAP, (k) => hasPermission(k))
+  const modulos = useMemo(() => gruposVisibles(MENU_GROUPS, MODULE_MAP, (k) => !FUERA_DE_LA_APP.has(k) && hasPermission(k))
     .flatMap((g) => g.visibleModules), [hasPermission]);
 
   // Las pantallas, por palabra exacta: un nombre de pantalla es corto y la

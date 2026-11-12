@@ -1,7 +1,7 @@
 // Piezas de las pantallas de Personas (Monitor, Personal, Auditoría de tiempos,
 // Horarios, Vacaciones): contadores que filtran, las marcas como fichas, la
 // píldora de color del cargo y el paso de período con flechas del sistema.
-import { Pressable, Text, View } from 'react-native';
+import { Pressable, Text, useColorScheme, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { getRoleTheme } from '@nucleo/utils/scheduleHelpers';
@@ -51,12 +51,21 @@ export function Contadores({ items, activo, onElegir, columnas = 3 }) {
 }
 
 /** La píldora del cargo con el color de su jerarquía (`getRoleTheme`, núcleo). */
+// El violeta de la marca (Subjefe, Cambio de código) es oscuro: como letra
+// sobre el fondo oscuro no se leía (usuario, 2026-11-12: «el badge de subjefe
+// de sala no se lee bien»). En oscuro la letra va en el violeta claro; en
+// claro, en el de la marca. El fondo conserva el tono.
+const LETRA_EN_OSCURO = { [MARCA.violeta]: MARCA.violetaClaro };
+
 export function PildoraDeCargo({ cargo }) {
+  const oscuro = useColorScheme() === 'dark';
   if (!cargo) return null;
   const color = colorDeVariante(getRoleTheme(cargo).variante);
+  const letra = oscuro ? (LETRA_EN_OSCURO[color] ?? color) : color;
   return (
-    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 999, backgroundColor: `${color}26` }}>
-      <Text style={{ color, fontSize: 11, fontWeight: '700' }}>{cargo}</Text>
+    <View style={{ alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 999, backgroundColor: `${color}${oscuro ? '33' : '1F'}`,
+      borderWidth: 0.5, borderColor: `${color}66` }}>
+      <Text style={{ color: letra, fontSize: 12, fontWeight: '700' }}>{cargo}</Text>
     </View>
   );
 }

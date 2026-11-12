@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.17 — La anonimización dice por qué no se puede, en vez de un error técnico
+
+- **Datos personales · el bloqueo se explica.** Cuando una ficha no se podía anonimizar (documento que no coincide, ya anonimizada, persona jurídica, ficha de mostrador, saldo a favor, solicitud sin cancelación), la base tiraba «malformed array literal» en lugar del motivo, y con un solo candidato bloqueado la pantalla no mostraba ninguno. Era el `text[] || 'literal'` sin tipo en `datos_anonimizacion_evaluar`. Migración `20261112225142`. Probado de punta a punta en el entorno de pruebas (bloqueo por documento, anonimizar, segundo intento, búsqueda por DUI y reactivación); en producción no se había usado nunca.
+
 ## v2.1513.16 — Acciones directas; barra segmentada en Android
 
 - **App · las acciones del perfil abren directo.** Tocar «Apoyo», «Vacaciones»… en el perfil abría la acción con la lista de TODOS los tipos arriba, como si no se hubiera elegido nada. Ahora la pantalla se titula con la acción y va directo a sus campos; la lista sólo aparece en «Otra acción».

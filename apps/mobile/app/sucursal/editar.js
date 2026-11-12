@@ -174,7 +174,7 @@ export default function EditarSucursal() {
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         {!esNueva ? (
           <FijoArriba>
-            <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES} margen={0} />
+            <Segmentos activa={seccion} onCambiar={setSeccion} opciones={SECCIONES} />
           </FijoArriba>
         ) : null}
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }}

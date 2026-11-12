@@ -75,7 +75,7 @@ import { Habilidades, Herramientas, Vehiculos } from '../../componentes/personas
 import Acceso, { Banco } from '../../componentes/personas/ficha/Acceso';
 import { ElegirConOtro, Enlace, Fichas, Nota, op } from '../../componentes/personas/ficha/Piezas';
 
-const PESTANAS = [{ id: 'personal', label: 'Personal' }, { id: 'laboral', label: 'Laboral' }, { id: 'documentos', label: 'Documentos' }, { id: 'nomina', label: 'Nómina y acceso' }];
+const PESTANAS = [{ id: 'personal', label: 'Personal' }, { id: 'laboral', label: 'Laboral' }, { id: 'documentos', label: 'Documentos' }, { id: 'nomina', label: 'Nómina' }];
 
 // Lo que el formulario maneja. Los arreglos arrancan vacíos; el resto en ''.
 const LISTAS = ['extra_phones', 'extra_emails', 'extra_addresses', 'emergency_contact_extra_phones', 'economic_dependents', 'chronic_conditions',
@@ -354,7 +354,7 @@ export default function EditarEmpleado() {
       <Stack.Screen options={{ ...BARRA_FIJA, title: esAlta ? 'Nuevo empleado' : 'Editar ficha', headerLargeTitle: false }} />
       <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
         <FijoArriba>
-          <Segmentos opciones={PESTANAS} activa={pestana} onCambiar={setPestana} margen={0} />
+          <Segmentos opciones={PESTANAS} activa={pestana} onCambiar={setPestana} />
         </FijoArriba>
         <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic"
           keyboardDismissMode="interactive" keyboardShouldPersistTaps="handled">

@@ -13,6 +13,7 @@ import { Host, Icon } from '@expo/ui';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { MODULE_MAP } from '@nucleo/constants/moduleMap';
+import { APP_VERSION } from '@nucleo/version';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import Vidrio from '../../../componentes/Vidrio';
@@ -191,6 +192,10 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
           <Renglon primero icono={ICONO_SALIR} color={tema.color.peligro} texto="Salir" alTocar={salir} peligro />
         </View>
       </Vidrio>
+      {/* La versión que corre, para saber si ya llegó una actualización
+          (2026-11-12, usuario: «¿dónde veo la versión? no me sale en ningún
+          lado»). Es la del código que llegó por aire, no la de la tienda. */}
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, textAlign: 'center', marginTop: 4, marginBottom: 24 }}>{`Versión ${APP_VERSION}`}</Text>
     </ScrollView>
   );
 }

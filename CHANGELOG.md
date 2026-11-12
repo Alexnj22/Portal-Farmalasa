@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.8 — La versión, al final de Cuenta
+
+- **App · la versión, al final de Cuenta.** No se veía en ningún lado (sólo en el diagnóstico): ahora «Versión x.y.z» debajo de Salir, para saber si ya llegó una actualización por aire.
+
 ## v2.1513.7 — Verificación de Search Console en el portal
 
 - **Portal · etiqueta `google-site-verification` en `index.html`.** Google Play exige un sitio verificado para pasar la cuenta de desarrollador a organización (rechazo de Puntos Salud 58 por la función médica del recordatorio de tomas). Se verifica `https://portal.farmasalud.lat` por prefijo de URL.

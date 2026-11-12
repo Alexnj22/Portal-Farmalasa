@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.8 — Un traslado lo ven las salas que toca, no la ficha de quien lo pidió
+
+- **A Bodega le aparecían los traslados que Fernando pedía apoyando en Salud 4** (el usuario). La regla de lectura de `approval_requests` aceptaba toda solicitud operativa de alguien con ficha en mi sucursal, y los traslados heredaban eso además de su rama propia. Ahora un traslado lo ven la sala que lo pide, la que lo manda, la que cubre a una cerrada mientras está pendiente y quien lo pidió. Medido: de 3.651 traslados sólo 4 cambian de manos (los de este caso); la sesión de Bodega pasó de 2.168 a 2.164 y sigue viendo los que salen de Bodega. Migración `20261112164718`.
+
 ## v2.1512.7 — Campana centrada con su globo
 
 - **App · la campana se ve centrada con su globo.** El globo de cantidad sobresalía 8 pt fuera de la caja del botón, así que la barra centraba sólo la campana y el conjunto se veía corrido a la derecha. Ahora el globo entra en la caja y se centra campana + globo.

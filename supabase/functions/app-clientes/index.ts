@@ -890,6 +890,12 @@ async function atender(req: Request, traza: Traza): Promise<Response> {
     const idDisp = idDispositivo(body?.id_dispositivo);
     if (idDisp && await dispositivoConocido(customerId, idDisp)) return null;
     if (!whatsappListo() || !(await exigeCodigoWhatsapp())) return null;
+    // La cuenta del revisor de las tiendas (y la de prueba) entra sin código
+    // (2026-11-11, pedido del usuario): Apple y Google revisan desde teléfonos
+    // que nunca vimos y no reciben nuestro WhatsApp; con el código exigido la
+    // revisión se rechaza por «no pudimos entrar» (guía 2.1). Sólo esas dos
+    // fichas tienen muestras (`app_cliente_muestras`); ningún cliente real.
+    if (await tieneMuestras(customerId)) return null;
     // Una app sin el paso del código no manda el id: no puede entrar desde un
     // teléfono nuevo. Mejor eso que dejarla pasar sin verificar.
     if (!idDisp) return json({ ok: false, motivo: "actualizar", mensaje: "Actualiza la app para entrar desde este teléfono." });

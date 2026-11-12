@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.1 — App de clientes: la cuenta del revisor entra sin código de WhatsApp
+
+- **La cuenta del revisor de las tiendas entra sin código.** Cuando se encienda el código por WhatsApp al entrar desde un teléfono nuevo (`clientes_codigo_whatsapp` en «exigir»), las dos fichas con muestras —la del revisor de Apple/Google y la de pruebas— no lo piden: el revisor entra desde un teléfono que nunca vimos y no recibe nuestro WhatsApp, y la revisión se rechazaría por «no pudimos entrar». Ningún cliente real tiene muestras.
+
 ## v2.1512.0 — App de clientes lista para revisión: micrófono declarado, aviso v4
 
 - **Aviso de privacidad v4 (vigente desde el 11-nov-2026).** La cláusula 10 decía que la app «no lee su micrófono», pero el chat graba notas de voz: lo declarado y lo que hace no coincidían, motivo de rechazo en Apple (5.1.1/5.1.2) y en Google (Seguridad de los datos). Ahora explica que el micrófono se usa sólo mientras el cliente graba una nota de voz, que nunca escucha en segundo plano, los documentos que se mandan por el chat, el escaneo de códigos con la cámara y que la pasarela de pagos pasó de Wompi a n1co. La app y `/mis-puntos` se lo vuelven a pedir a todos (`aviso-2026-11-11`). PDF y `/privacidad` regenerados.

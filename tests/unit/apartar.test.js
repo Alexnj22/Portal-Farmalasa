@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { FALTA_RESPONSABLE, listaQueLeToca, planDeApartar, SIN_ANTICIPO_NO_SE_TRAE, telefonoDeFicha, tomaDeCadaTraslado, trasladosQueCubren } from '@nucleo/utils/apartar';
+import { FALTA_RESPONSABLE, listaQueLeToca, planDeApartar, telefonoDeFicha, tomaDeCadaTraslado, trasladosQueCubren } from '@nucleo/utils/apartar';
 import { agruparPorPedido, conteoDeReservas, porCobrarDeSala, seccionesDeReservas } from '@nucleo/utils/reservasDeSala';
 
 const cliente = { id: 1, name: 'ANA PEREZ', phone: '7777-7777' };
@@ -67,11 +67,16 @@ describe('planDeApartar — sin anticipo (2026-11-05)', () => {
         expect(q.falta).toBeNull();
     });
 
-    it('no se pide a otra sala sin anticipo', () => {
-        const t = planDeApartar({ ...base, opciones: { modo: 'encargo' }, cobroEn: 'sin', responsableOk: true,
-            traslado: { branch_id: 7, sala: 'Salud 3', lista: true } });
+    it('sin anticipo también se pide a otra sala, con la responsabilidad de quien aparta', () => {
+        const sin = { ...base, opciones: { modo: 'encargo' }, cobroEn: 'sin',
+            traslado: { branch_id: 7, sala: 'Bodega', lista: true } };
+        const t = planDeApartar(sin);
         expect(t.modo).toBe('traslado');
-        expect(t.falta).toBe(SIN_ANTICIPO_NO_SE_TRAE);
+        expect(t.sinAnticipo).toBe(true);
+        expect(t.falta).toBe(FALTA_RESPONSABLE);
+        const ok = planDeApartar({ ...sin, responsableOk: true });
+        expect(ok.falta).toBeNull();
+        expect(ok.enCamino).toEqual({ traslado_desde: 7 });
     });
 
     it('un encargo sigue sin cobrar: «sin anticipo» no le cambia nada', () => {

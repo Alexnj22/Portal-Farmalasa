@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.18 — Reservas: sin anticipo también se pide a otra sala
+
+- Al apartar sin anticipo un producto que no hay en la sala, ahora se puede pedir a Bodega u otra sala: la reserva nace en camino, el traslado se pide amarrado a ella y queda lista sola al llegar. Sigue a responsabilidad de quien la aparta (lo reportó Salud 3: el botón quedaba gris).
+- Base: `apartado_sin_anticipo` ya no rechaza `traslado_desde` (migración `20261112230248`); el plazo corto de sin anticipo empieza cuando llega.
+
 ## v2.1513.17 — La anonimización dice por qué no se puede, en vez de un error técnico
 
 - **Datos personales · el bloqueo se explica.** Cuando una ficha no se podía anonimizar (documento que no coincide, ya anonimizada, persona jurídica, ficha de mostrador, saldo a favor, solicitud sin cancelación), la base tiraba «malformed array literal» en lugar del motivo, y con un solo candidato bloqueado la pantalla no mostraba ninguno. Era el `text[] || 'literal'` sin tipo en `datos_anonimizacion_evaluar`. Migración `20261112225142`. Probado de punta a punta en el entorno de pruebas (bloqueo por documento, anonimizar, segundo intento, búsqueda por DUI y reactivación); en producción no se había usado nunca.

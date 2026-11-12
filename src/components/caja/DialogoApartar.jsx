@@ -280,6 +280,16 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                 showToast('Apartado sin anticipo', `${r.codigo} · ${shortEmployeeName(cliente.name)} · ${r.vence_at
                     ? `vale hasta el ${fechaTexto(r.vence_at, { day: 'numeric', month: 'long' })}`
                     : 'el plazo corre cuando llegue'}. Quedas como responsable.`, 'success');
+                // Pedido a otra sala (2026-11-12): igual que con anticipo, el
+                // traslado se pide amarrado a la reserva y la pasa a lista al llegar.
+                if (modo === 'traslado' && traslado) {
+                    try {
+                        await trasladoApi.current.enviar(`Reserva ${r.codigo} para ${shortEmployeeName(cliente.name)}`, { reserva_id: r.id });
+                        showToast('Traslado pedido', `${traslado.sala} lo manda para la reserva ${r.codigo}. Cuando llegue, queda lista sola.`, 'success');
+                    } catch (e) {
+                        showToast('La reserva quedó, pero el traslado no se pidió', `${mensajeAmigable(e)} ${SI_EL_TRASLADO_NO_SALIO}`, 'warning');
+                    }
+                }
                 clearDraft(llave(sala));
                 onApartado?.(r);
                 onClose();
@@ -363,7 +373,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
     if (enlace) return <EnlaceListo enlace={enlace} nombreSala={nombreSala} onListo={onClose} />;
     const { deja } = plan;
     const etiquetaBoton = sinCatalogo ? 'Enviar consulta a Bodega'
-        : sinAnticipo ? (enPedido ? `Apartar ${renglonesDelPedido.length} productos sin anticipo` : 'Apartar sin anticipo')
+        : sinAnticipo ? (enPedido ? `Apartar ${renglonesDelPedido.length} productos sin anticipo` : modo === 'traslado' ? 'Pedir y apartar sin anticipo' : 'Apartar sin anticipo')
         : enPedido ? `Apartar ${renglonesDelPedido.length} productos · cobrar ${formatMoney(montoAnticipo)}`
         : soloEncargo ? `Registrar encargo · ${lineas.length + (lineaActual ? 1 : 0)} productos`
         : modo === 'encargo' ? 'Registrar encargo'
@@ -509,7 +519,7 @@ function Nuevo({ sala, nombreSala, atiende, ocupado, onCobrar, onClose, cobraEnC
                         <ComoPaga valor={cobroEn} onCambiar={setCobroEn} formas={formasDeCobro} />
                         {sinAnticipo ? (
                             <SinAnticipo total={totalCobro} confirmado={responsableOk} onConfirmar={setResponsableOk}
-                                atiende={atiende} enCamino={modo === 'viene'} />
+                                atiende={atiende} enCamino={modo === 'viene' || modo === 'traslado'} />
                         ) : (<>
                         <ResumenDeCobro total={totalCobro} deja={deja} />
                         <Campo rotulo="Cuánto deja">

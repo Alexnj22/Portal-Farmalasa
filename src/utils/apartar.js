@@ -23,7 +23,6 @@ export const TOPE_ENCARGO = 20;
 export const TOPE_APARTADO = 999;
 /** Lo que dice el formulario al apartar sin anticipo (2026-11-05). */
 export const FALTA_RESPONSABLE = 'Confirma que quedas como responsable de la reserva.';
-export const SIN_ANTICIPO_NO_SE_TRAE = 'Sin anticipo no se pide a otra sala: sólo lo que hay aquí o ya viene en camino.';
 
 /** Productos que caben en un mismo pedido o encargo, además del de la pantalla. */
 export const TOPE_RENGLONES = 9;
@@ -135,7 +134,8 @@ export function planDeApartar({
     const mitad = redondear(totalCobro * 0.5);
     const seCobra = !soloEncargo && (enPedido || modo === 'reserva' || modo === 'traslado' || modo === 'viene');
     // Sin anticipo (2026-11-05): se aparta igual, no se cobra nada y responde
-    // quien la pide. Nunca para pedirlo a otra sala: eso mueve producto.
+    // quien la pide. También pidiéndolo a otra sala (2026-11-12, decisión del
+    // usuario): la responsabilidad sigue siendo de quien la aparta.
     const sinAnticipo = seCobra && cobroEn === 'sin';
     const conAnticipo = seCobra && !sinAnticipo;
     const montoAnticipo = sinAnticipo ? 0 : cuanto === 'mitad' ? mitad : cuanto === 'todo' ? totalCobro : (anticipo === '' ? 0 : Number(anticipo) || 0);
@@ -176,7 +176,6 @@ export function planDeApartar({
             : modo === 'traslado' && !traslado.lista ? `Revisando lo que hay en ${traslado.sala}…`
             // La base acepta encargos de 1 a 20: decirlo antes y no con su error.
             : modo === 'encargo' && cant > TOPE_ENCARGO ? `Un encargo va de 1 a ${TOPE_ENCARGO} unidades.`
-            : sinAnticipo && modo === 'traslado' ? SIN_ANTICIPO_NO_SE_TRAE
             : sinAnticipo && !responsableOk ? FALTA_RESPONSABLE
             : conAnticipo && montoAnticipo < 0.01 ? 'Escribe cuánto deja.'
                 : conAnticipo && montoAnticipo > totalCobro + 0.004 ? 'El anticipo no puede pasar del total.'

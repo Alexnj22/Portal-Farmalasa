@@ -19,10 +19,10 @@ import { BlurView } from 'expo-blur';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useHeaderHeight } from 'expo-router/react-navigation';
 import Animated, {
-  Easing, FadeIn, FadeOut, useAnimatedStyle, useSharedValue, withRepeat, withSequence, withSpring, withTiming,
+  Easing, FadeIn, FadeOut, useAnimatedStyle, useReducedMotion, useSharedValue, withRepeat, withSequence, withSpring, withTiming,
 } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
-import { Tocable, useSinMovimiento } from '../componentes/animacion';
+import { Tocable } from '../componentes/animacion';
 import Icono from '../componentes/Icono';
 import PaisajeRuido from '../componentes/PaisajeRuido';
 import { tacto } from '../lib/sensaciones';
@@ -37,7 +37,9 @@ const reloj = (s) => `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 // El botón grande: un círculo de vidrio con el color del lugar, que respira
 // mientras suena (dos anillos que salen y se apagan).
 function BotonPlay({ sonando, preparando, acento, alTocar }) {
-  const quieta = useSinMovimiento();
+  // Como el paisaje: el latido dice «está sonando», no adorna; sólo lo para
+  // «Reducir movimiento», no el modo liviano de Android.
+  const quieta = useReducedMotion();
   const pulso = useSharedValue(0);
   const s = useSharedValue(1);
   useEffect(() => {

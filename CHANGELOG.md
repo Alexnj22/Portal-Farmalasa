@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.5 — App clientes: el paisaje de Sonidos se mueve también en Android
+
+- **En Android el fondo de Sonidos quedaba quieto** (el usuario: «no tienen efecto el fondo»). El paisaje usaba la regla de las animaciones decorativas, y el modo liviano —todo Android de menos de 6 GB, casi todos los de las salas— lo congelaba junto con el latido del botón. El paisaje es la pantalla, no un adorno: ahora sólo lo detiene «Reducir movimiento» del sistema, y en modo liviano corre a 20 cuadros en vez de 30. Sale por aire.
+
 ## v2.1512.4 — App clientes: el reglamento y el aviso con más espacio para leer
 
 - **El documento de «Reglas y privacidad» se leía en un cuadro chico** (el usuario, mirando el emulador Android: «no es legible»). Encabezado más corto, pasos más bajos y, en esa página, sin los puntos del carrusel ni el aviso repetido de «baja hasta el final» (la barra de avance ya lo dice; «marca las dos casillas» se sigue mostrando). Todo ese alto pasa al documento. Sale por aire.

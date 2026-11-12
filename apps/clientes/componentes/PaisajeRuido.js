@@ -11,8 +11,15 @@
 // con el mismo `reloj` que la dibuja; los dos los crea la pantalla).
 import { StyleSheet, useWindowDimensions } from 'react-native';
 import { BlurStyle, Canvas, PaintStyle, Picture, Skia, StrokeCap, TileMode } from '@shopify/react-native-skia';
-import { useDerivedValue, useFrameCallback, useSharedValue } from 'react-native-reanimated';
-import { useSinMovimiento } from './animacion';
+import { useDerivedValue, useFrameCallback, useReducedMotion, useSharedValue } from 'react-native-reanimated';
+import { LIVIANO } from '../lib/rendimiento';
+
+// El paisaje NO es decoración: es la pantalla (2026-11-12, el usuario: «en
+// android los sonidos no tienen efecto el fondo»). Con `useSinMovimiento`
+// el modo liviano —todo Android de menos de 6 GB, o sea casi todos los de las
+// salas— lo dejaba quieto. Ahora sólo lo para «Reducir movimiento» del
+// sistema; el modo liviano lo baja a 20 cuadros en vez de 30.
+const CUADRO = LIVIANO ? 0.05 : 0.033;
 
 // Un número «al azar» fijo por índice: cada gota, estrella o brasa tiene su carril.
 function h(i, s) {
@@ -24,13 +31,13 @@ function h(i, s) {
 
 export default function PaisajeRuido({ tipo, acento, energia, toque, reloj }) {
   const { width: W, height: H } = useWindowDimensions();
-  const quieta = useSinMovimiento();
+  const quieta = useReducedMotion();
   const acum = useSharedValue(0);
   useFrameCallback((f) => {
     const dt = Math.min(0.1, (f.timeSincePreviousFrame ?? 16) / 1000);
     acum.value += dt;
     // Sin sonar, la escena sigue viva pero a un quinto de la velocidad.
-    if (acum.value >= 0.033) { reloj.value += acum.value * (0.2 + 0.8 * energia.value); acum.value = 0; }
+    if (acum.value >= CUADRO) { reloj.value += acum.value * (0.2 + 0.8 * energia.value); acum.value = 0; }
   }, !quieta);
   const col = Skia.Color(acento);
 

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.2 — Los archivos se abren dentro de la app
+
+- **App · los archivos se abren dentro de la app.** «Abrir» un documento (expediente, mis documentos, comprobantes, folios, seguro de vida…) abría el visor del sistema, que se ve como el navegador. Ahora va a un visor propio (`app/visor.js`): en iPhone muestra PDF, fotos y Office; en Android dibuja el PDF con pdf.js (el archivo lo baja la app) y muestra fotos; lo que Android no puede mostrar (un .docx) sigue yendo al navegador. «Navegador», arriba, queda para guardar o compartir. «Ver documento» de la ficha de una sucursal también pasa por el visor.
+
 ## v2.1513.1 — Tarjeta de Personal: contacto chico y Ver perfil
 
 - **App · la tarjeta de Personal.** En iPhone los íconos de WhatsApp y Llamar se dibujaban fuera del botón, más abajo (el ícono con `matchContents` se medía tarde dentro de un renglón): ahora van con tamaño fijo, igual en los botones de la ficha. Los dos botones grandes pasan a dos círculos chicos de color suave a la derecha del pie (no son lo principal), y a la izquierda «Ver perfil ›», para que se entienda que la tarjeta abre el perfil.

@@ -17,6 +17,7 @@
 // `sucursal/pago` — todo con permiso de editar sucursales.
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { abrirEnPestanaNueva } from '../../plataforma/descargas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -320,7 +321,7 @@ function Historial({ b, empleados }) {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
               {persona ? <Avatar empleado={persona} tamano={20} /> : null}
               <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>{persona ? shortEmployeeName(persona) : 'Sistema'}</Text>
-              {l.archivo ? <Boton texto="Ver documento" onPress={() => Linking.openURL(l.archivo).catch(() => {})} /> : null}
+              {l.archivo ? <Boton texto="Ver documento" onPress={() => abrirEnPestanaNueva(l.archivo).catch(() => {})} /> : null}
             </View>
           </Seccion>
         );

@@ -19,7 +19,7 @@
  * `--sin-firma` para el documento que trae SU PROPIO pie de firmas —el
  * nombramiento del delegado lleva dos, y la inyectada le agregaría una tercera.
  *
- *   node scripts/documento-legal-pdf.mjs <fuente.html> <salida.pdf> [--sin-firma]
+ *   node scripts/documento-legal-pdf.mjs <fuente.html> <salida.pdf> [--sin-firma] [--fecha-a-mano]
  */
 import { chromium } from 'playwright';
 import { readFileSync } from 'node:fs';
@@ -28,8 +28,12 @@ import { resolve } from 'node:path';
 const fuente = process.argv[2];
 const salida = process.argv[3];
 const sinFirma = process.argv.includes('--sin-firma');
+// `--fecha-a-mano`: el documento rige desde el día en que se firma y ese día
+// todavía no se sabe. Con la fecha de hoy impresa, firmarlo otro día deja un
+// papel que dice una fecha y una firma que dice otra.
+const fechaAMano = process.argv.includes('--fecha-a-mano');
 if (!fuente || !salida) {
-  console.error('uso: node scripts/documento-legal-pdf.mjs <fuente.html> <salida.pdf> [--sin-firma]');
+  console.error('uso: node scripts/documento-legal-pdf.mjs <fuente.html> <salida.pdf> [--sin-firma] [--fecha-a-mano]');
   process.exit(1);
 }
 
@@ -77,8 +81,10 @@ const firma = `
   .firmante .cargo  { font-family: "IBM Plex Sans", system-ui, sans-serif;
                       font-size: .74rem; color: var(--ink-2);
                       text-transform: uppercase; letter-spacing: .1em; }
-</style>`.replace('__FECHA__', new Date().toLocaleDateString('es-SV',
-    { day: 'numeric', month: 'long', year: 'numeric' }));
+</style>`.replace('a __FECHA__.', fechaAMano
+    ? 'a los ______ días del mes de ____________________ de ________.'
+    : 'a ' + new Date().toLocaleDateString('es-SV',
+        { day: 'numeric', month: 'long', year: 'numeric' }) + '.');
 
 // Se inyecta antes del ÚLTIMO `</div>` —el cierre de `.doc`— buscándolo desde
 // el final. Un `replace` sobre un fragmento exacto de maquetado se rompe en

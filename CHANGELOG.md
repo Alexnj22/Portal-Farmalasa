@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.6 — El acuse del formulario de datos va en hoja propia
+
+- **Formulario de solicitud de datos · el acuse ya no se recorta.** Pasa a hoja propia, con el membrete de la Empresa, el plazo de veinte días hábiles destacado, qué sigue y dónde preguntar al lado del sello. Antes era un talón enmarcado con línea de puntos que se cortaba con tijera y no parecía un documento. El formulario le habla al cliente de «tú», y la entrada ya no dice «el acuse del pie de esta hoja» sino «de la última hoja». Se regeneraron el PDF de la sala y el papel que imprime el portal y la app (`npm run legal:js`).
+- **Nombramiento del delegado.** «Los plazos son de días hábiles» pasa a «se cuentan en días hábiles. Cada uno es distinto»: el primero se leía como si todos los plazos fueran iguales.
+- `scripts/documento-legal-pdf.mjs` acepta `--fecha-a-mano`, que deja la fecha del pie de firmas en blanco para el documento que rige desde el día en que se firma.
+
 ## v2.1513.5 — Se deshace: recordatorio de tomas vuelve a Android
 
 - **App de clientes · se deshace la v2.1513.4.** El recordatorio de tomas vuelve a Android: el usuario prefiere mantener la función y resolver el rechazo de Google Play por el lado de la cuenta. No llegó a salir por el aire.

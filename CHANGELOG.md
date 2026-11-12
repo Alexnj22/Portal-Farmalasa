@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.2 — App clientes: Reglas y privacidad a pantalla completa en Android
+
+- **El reglamento y el aviso se leían en un cuadro diminuto en Android.** En la guía de bienvenida, la página «Reglas y privacidad» vive dentro de la tira horizontal de páginas; en Android una página ahí no hereda el alto con `flex: 1`, así que el documento quedaba en su mínimo de 160 pt. Ahora la tira se mide y la página recibe ese alto: el documento ocupa todo el espacio libre. Sale por aire a las compilaciones 57 (Android) y 106 (iPhone).
+
 ## v2.1512.1 — App de clientes: la cuenta del revisor entra sin código de WhatsApp
 
 - **La cuenta del revisor de las tiendas entra sin código.** Cuando se encienda el código por WhatsApp al entrar desde un teléfono nuevo (`clientes_codigo_whatsapp` en «exigir»), las dos fichas con muestras —la del revisor de Apple/Google y la de pruebas— no lo piden: el revisor entra desde un teléfono que nunca vimos y no recibe nuestro WhatsApp, y la revisión se rechazaría por «no pudimos entrar». Ningún cliente real tiene muestras.

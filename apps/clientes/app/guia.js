@@ -73,6 +73,12 @@ export default function Guia() {
   const t = useTema();
   const ins = useSafeAreaInsets();
   const { width: ancho } = useWindowDimensions();
+  // El alto de la tira de páginas (2026-11-11): en Android una página dentro
+  // de un ScrollView HORIZONTAL no recibe el alto de la tira con `flex: 1` —
+  // mide lo que mide su contenido—, así que el documento de «Reglas y
+  // privacidad» quedaba en su mínimo de 160 pt, un cuadro diminuto. Se mide la
+  // tira y se le da ese alto a la página.
+  const [altoTira, setAltoTira] = useState(0);
   const reducir = useReducedMotion() || LIVIANO;
   const { solo } = useLocalSearchParams();
   const soloReglas = solo === 'reglas';
@@ -200,7 +206,7 @@ export default function Guia() {
   };
 
   const reglas = (
-    <PaginaReglas ancho={ancho} leidos={leidos} marcas={marcas} aceptado={aceptado} error={errorReglas}
+    <PaginaReglas ancho={ancho} alto={soloReglas ? 0 : altoTira} leidos={leidos} marcas={marcas} aceptado={aceptado} error={errorReglas}
       alLeer={(c) => setLeidos((l) => (l[c] ? l : { ...l, [c]: true }))}
       alMarcar={(c) => { Haptics.selectionAsync().catch(() => {}); setErrorReglas(null); setMarcas((m) => ({ ...m, [c]: !m[c] })); }} />
   );
@@ -231,7 +237,8 @@ export default function Guia() {
 
       {soloReglas ? <View style={{ flex: 1 }}>{reglas}</View> : (
         <Animated.ScrollView ref={lista} horizontal pagingEnabled showsHorizontalScrollIndicator={false} bounces={false}
-          onScroll={alDesplazar} scrollEventThrottle={16} style={{ flex: 1 }} decelerationRate="fast">
+          onScroll={alDesplazar} scrollEventThrottle={16} style={{ flex: 1 }} decelerationRate="fast"
+          onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); setAltoTira((a) => (a === h ? a : h)); }}>
           <Pagina ancho={ancho} titulo="Tu tarjeta Puntos Salud"
             arte={<Tarjeta resumen={resumen} activa={pagina === 0} ancho={ancho} />}
             extra={<BotonWallet resumen={resumen} />}>
@@ -304,7 +311,7 @@ export default function Guia() {
 //   · debajo, una barra con cuánto se leyó del documento abierto y qué falta;
 //   · al final del primero, un botón «Siguiente: Aviso de privacidad».
 // Lo que se exige no cambió: llegar al final de cada uno y marcar las dos.
-function PaginaReglas({ ancho, leidos, marcas, aceptado, error, alLeer, alMarcar }) {
+function PaginaReglas({ ancho, alto = 0, leidos, marcas, aceptado, error, alLeer, alMarcar }) {
   const t = useTema();
   const [doc, setDoc] = useState('reglamento');
   const [pista, setPista] = useState(null);
@@ -336,7 +343,7 @@ function PaginaReglas({ ancho, leidos, marcas, aceptado, error, alLeer, alMarcar
   );
 
   return (
-    <View style={{ width: ancho, flex: 1, paddingHorizontal: 20, paddingTop: 4 }}>
+    <View style={[{ width: ancho, paddingHorizontal: 20, paddingTop: 4 }, alto > 0 ? { height: alto } : { flex: 1 }]}>
       <View style={{ flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', gap: 10 }}>
         <View style={{ gap: 4, alignItems: 'center' }}>
           <Text accessibilityRole="header" style={{ fontSize: 26, fontWeight: '800', letterSpacing: -0.4, textAlign: 'center', color: colorSistema.texto }}>Reglas y privacidad</Text>

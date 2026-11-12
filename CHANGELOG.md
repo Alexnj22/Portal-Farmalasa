@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.3 — Los íconos ya no se mueven
+
+- **App · los íconos ya no se mueven al contraer y abrir.** `<Host matchContents>` medía el ícono después de dibujarlo: cada vez que una lista se rearmaba (contraer una sala, abrir un grupo de solicitudes) nacía en 0 × 0 y saltaba a su lugar; en iPhone, dentro de un botón, quedaba fuera de él. Nueva pieza `componentes/IconoFijo.js` con el lugar reservado desde el primer dibujo, aplicada a los 54 íconos de 41 archivos (quedan fuera los controles del sistema: segmentos, fecha, hora, interruptor).
+
 ## v2.1513.2 — Los archivos se abren dentro de la app
 
 - **App · los archivos se abren dentro de la app.** «Abrir» un documento (expediente, mis documentos, comprobantes, folios, seguro de vida…) abría el visor del sistema, que se ve como el navegador. Ahora va a un visor propio (`app/visor.js`): en iPhone muestra PDF, fotos y Office; en Android dibuja el PDF con pdf.js (el archivo lo baja la app) y muestra fotos; lo que Android no puede mostrar (un .docx) sigue yendo al navegador. «Navegador», arriba, queda para guardar o compartir. «Ver documento» de la ficha de una sucursal también pasa por el visor.

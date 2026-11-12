@@ -27,6 +27,7 @@ import FranjaDelPortal from '../../../componentes/FranjaDelPortal';
 import EstadoDeDatos from '../../../componentes/EstadoDeDatos';
 import { anotar, leerUso } from '../../../componentes/inicio/uso';
 import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
+import IconoFijo from '../../../componentes/IconoFijo';
 
 // Lo que ya vive en otra pestaña (Inicio, Avisos, Yo) no se repite acá.
 // «Mis avisos» vuelve al Menú (2026-11-11): vivía dentro de la pestaña
@@ -52,7 +53,7 @@ function Renglon({ m, color, primero, grupo, onAbrir }) {
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 14, paddingRight: 12,
         backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
       <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-        <Host matchContents><Icon name={iconoDe(m.icono)} size={17} color="#FFFFFF" /></Host>
+        <IconoFijo name={iconoDe(m.icono)} size={17} color="#FFFFFF" />
       </View>
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 50,
         borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>

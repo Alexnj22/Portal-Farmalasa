@@ -18,6 +18,7 @@ import { MARCA } from './inicio/marca';
 import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
 import { ORIGENES, PRECIOS } from '@nucleo/data/mayoristas';
+import IconoFijo from './IconoFijo';
 
 // La nota con la que se pidió (motivo), si la solicitud la trae.
 function describirPie(f) {
@@ -85,7 +86,7 @@ export default function TarjetaPorDecidir({ item, persona }) {
         <View style={{ padding: 14, gap: 9 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
             <View style={{ width: 32, height: 32, borderRadius: 9, backgroundColor: `${MARCA.azulClaro}33`, alignItems: 'center', justifyContent: 'center' }}>
-              <Host matchContents><Icon name={iconoDe(d.icono)} size={17} color={MARCA.azulClaro} /></Host>
+              <IconoFijo name={iconoDe(d.icono)} size={17} color={MARCA.azulClaro} />
             </View>
             <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }} numberOfLines={1}>{d.tipo}</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{cuandoLlego(item.creado)}</Text>

@@ -22,6 +22,7 @@ import { colorSistema } from './Formulario';
 import { MARCA } from './inicio/marca';
 import Vidrio from './Vidrio';
 import { iconoDe } from '../tema/iconos';
+import IconoFijo from './IconoFijo';
 
 const COLOR = { bien: MARCA.verde, atrasada: MARCA.ambar, caida: MARCA.rojo };
 
@@ -65,7 +66,7 @@ export default function EstadoDeDatos({ margen = 16 }) {
         <View style={{ paddingHorizontal: 14, paddingVertical: 10, gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 34 }}>
             <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-              <Host matchContents><Icon name={iconoDe(icono)} size={17} color="#FFFFFF" /></Host>
+              <IconoFijo name={iconoDe(icono)} size={17} color="#FFFFFF" />
             </View>
             <View style={{ flex: 1 }}>
               <Text style={{ color: colorSistema.texto, fontSize: 17 }} numberOfLines={1}>{rotulo}</Text>

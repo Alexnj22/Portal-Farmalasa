@@ -8,12 +8,13 @@ import { fmtUnidades, tonoDeAvance } from '@nucleo/utils/promocionesUtils';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 const COLOR_DE_TONO = { success: MARCA.verde, warning: MARCA.ambar, info: MARCA.azulClaro };
 export const colorDeAvance = (pct) => COLOR_DE_TONO[tonoDeAvance(pct)];
 
 export function Icono({ nombre, color = colorSistema.texto2, tamano = 15 }) {
-  return <Host matchContents><Icon name={iconoDe(nombre)} size={tamano} color={color} /></Host>;
+  return <IconoFijo name={iconoDe(nombre)} size={tamano} color={color} />;
 }
 
 /** Una barra de proporción. El ancho ES el dato: no se estira para el dedo. */

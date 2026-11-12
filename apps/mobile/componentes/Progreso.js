@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import Vidrio from './Vidrio';
 import { colorSistema } from './Formulario';
+import IconoFijo from './IconoFijo';
 
 const OK = Icon.select({ ios: 'checkmark.circle.fill', android: require('@expo/material-symbols/check_circle.xml') });
 
@@ -88,7 +89,7 @@ export function CapaDeProgreso() {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 18, paddingVertical: 12, maxWidth: 340 }}>
           {ultimo.estado === 'trabajando'
             ? <ActivityIndicator />
-            : <Host matchContents><Icon name={OK} size={22} color={colorSistema.verde} /></Host>}
+            : <IconoFijo name={OK} size={22} color={colorSistema.verde} />}
           <View style={{ flexShrink: 1 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '600' }} numberOfLines={1}>
               {ultimo.estado === 'trabajando' ? ultimo.texto : ultimo.titulo}

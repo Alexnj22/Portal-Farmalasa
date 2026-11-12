@@ -22,6 +22,7 @@ import { iconoDe } from '../../tema/iconos';
 import { useColumnas } from '../../componentes/ListaPaginada';
 import { useRastreoDeRuta } from '../../componentes/torogoz/rutas/rastreo';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
+import IconoFijo from '../../componentes/IconoFijo';
 
 // El color de la marca de la distribuidora (COLORES_DISTRIBUIDORA.petroleo).
 
@@ -51,7 +52,7 @@ function Mosaico({ item, numero, grave, ancho }) {
           <View style={{ padding: 14, gap: 10, minHeight: 92, transform: [{ scale: pressed ? 0.97 : 1 }] }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ width: 34, height: 34, borderRadius: 10, alignItems: 'center', justifyContent: 'center', backgroundColor: `${PETROLEO}55` }}>
-                <Host matchContents><Icon name={iconoDe(item.icono)} size={18} color="#fff" /></Host>
+                <IconoFijo name={iconoDe(item.icono)} size={18} color="#fff" />
               </View>
               {numero ? (
                 <View style={{ minWidth: 24, height: 24, borderRadius: 12, paddingHorizontal: 7, alignItems: 'center', justifyContent: 'center', backgroundColor: grave ? MARCA.rojo : MARCA.ambar }}>

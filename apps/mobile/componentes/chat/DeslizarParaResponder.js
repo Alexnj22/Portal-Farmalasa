@@ -12,6 +12,7 @@ import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { iconoDe } from '../../tema/iconos';
 import { MARCA } from '../inicio/marca';
+import IconoFijo from '../IconoFijo';
 
 const UMBRAL = 56;
 const TOPE = 84;
@@ -60,7 +61,7 @@ export default function DeslizarParaResponder({ children, onResponder, activo = 
     <View>
       <Animated.View pointerEvents="none" style={[{ position: 'absolute', left: 14, top: 0, bottom: 0, justifyContent: 'center' }, flecha]}>
         <View style={{ width: 30, height: 30, borderRadius: 15, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(127,127,127,0.18)' }}>
-          <Host matchContents><Icon name={iconoDe('Responder')} size={16} color={MARCA.gris} /></Host>
+          <IconoFijo name={iconoDe('Responder')} size={16} color={MARCA.gris} />
         </View>
       </Animated.View>
       <Animated.View {...gesto.panHandlers} style={{ transform: [{ translateX: x }] }}>

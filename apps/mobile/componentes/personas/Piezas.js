@@ -11,6 +11,7 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
+import IconoFijo from '../IconoFijo';
 
 // Las flechas no están en el catálogo del menú (`tema/iconos.js`): se piden acá.
 const FLECHA_ATRAS = Icon.select({ ios: 'chevron.left', android: require('@expo/material-symbols/chevron_left.xml') });
@@ -98,7 +99,7 @@ export function PasoDePeriodo({ titulo, apoyo, onAtras, onAdelante, puedeAdelant
   const Flecha = ({ nombre, onPress, activo = true }) => (
     <Pressable onPress={() => { if (!activo) return; Haptics.selectionAsync().catch(() => {}); onPress(); }} hitSlop={10}
       style={{ width: 44, height: 44, alignItems: 'center', justifyContent: 'center', opacity: activo ? 1 : 0.3 }}>
-      <Host matchContents><Icon name={nombre} size={18} color={MARCA.azulClaro} /></Host>
+      <IconoFijo name={nombre} size={18} color={MARCA.azulClaro} />
     </Pressable>
   );
   return (

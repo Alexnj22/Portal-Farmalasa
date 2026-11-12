@@ -12,6 +12,7 @@ import { BotonGrande } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
 import { iconoDe } from '../../../tema/iconos';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
+import IconoFijo from '../../IconoFijo';
 
 const NIVEL = {
   ok: { icono: 'ShieldCheck', color: MARCA.verde },
@@ -39,7 +40,7 @@ export default function EstadoHacienda({ documento, ocupado = false, puedeActuar
       <View style={{ padding: 16, gap: 12 }}>
         <View style={{ flexDirection: 'row', gap: 12, alignItems: 'flex-start' }}>
           <View style={{ width: 36, height: 36, borderRadius: 11, backgroundColor: `${n.color}33`, alignItems: 'center', justifyContent: 'center' }}>
-            <Host matchContents><Icon name={iconoDe(n.icono)} size={19} color={n.color} /></Host>
+            <IconoFijo name={iconoDe(n.icono)} size={19} color={n.color} />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: n.color, fontSize: 17, fontWeight: '800' }}>{r.titulo}</Text>

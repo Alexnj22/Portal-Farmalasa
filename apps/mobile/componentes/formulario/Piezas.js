@@ -10,6 +10,7 @@ import Vidrio from '../Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import { colorSistema } from '../Formulario';
 import { FONDO_CONTROL, MARCA } from '../inicio/marca';
+import IconoFijo from '../IconoFijo';
 
 const ANDROID = Platform.OS === 'android';
 
@@ -46,7 +47,7 @@ export function Vacio({ titulo, detalle, children, enSeccion = false, icono, ton
     <View style={{ alignItems: 'center', marginTop: 56, paddingHorizontal: 32, gap: 8 }} accessibilityRole="summary">
       <View style={{ width: 88, height: 88, borderRadius: 44, alignItems: 'center', justifyContent: 'center', marginBottom: 8,
         backgroundColor: bien ? `${MARCA.verde}24` : FONDO_CONTROL, borderWidth: 1, borderColor: bien ? `${MARCA.verde}40` : colorSistema.separador }}>
-        <Host matchContents><Icon name={iconoDe(nombre)} size={40} color={color} /></Host>
+        <IconoFijo name={iconoDe(nombre)} size={40} color={color} />
       </View>
       <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '600', textAlign: 'center' }}>{titulo ?? children}</Text>
       {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 15, lineHeight: 20, textAlign: 'center' }}>{detalle}</Text> : null}

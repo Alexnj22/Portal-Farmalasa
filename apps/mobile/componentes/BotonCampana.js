@@ -9,6 +9,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { useTema } from '../tema/tema';
 import { iconoDe } from '../tema/iconos';
 import { usePorDecidir } from './porDecidir';
+import IconoFijo from './IconoFijo';
 
 export default function BotonCampana() {
   const tema = useTema();
@@ -23,9 +24,7 @@ export default function BotonCampana() {
     // centra es campana + globo.
     <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10} style={{ paddingRight: sinLeer ? 8 : 0 }}
       accessibilityRole="button" accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}>
-      <Host matchContents>
-        <Icon name={iconoDe('Bell')} size={22} color={tema.color.texto} />
-      </Host>
+      <IconoFijo name={iconoDe('Bell')} size={22} color={tema.color.texto} />
       {sinLeer ? (
         <View style={{ position: 'absolute', top: -4, right: 0, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: tema.color.peligro, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{sinLeer > 99 ? '99+' : sinLeer}</Text>

@@ -53,6 +53,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import Vidrio from '../componentes/Vidrio';
 import TarjetaPersona, { PuestoVacante, TarjetaPracticante } from '../componentes/personas/TarjetaPersona';
+import IconoFijo from '../componentes/IconoFijo';
 
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const salaDe = (e) => Number(e.branchId ?? e.branch_id) || 0;
@@ -93,7 +94,7 @@ function FranjaDelSeguro({ personas }) {
       onPress={() => router.push('/seguro-de-vida')} hitSlop={6}
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 6, minHeight: 34, paddingHorizontal: 12, borderRadius: 17,
         backgroundColor: `${color}1F`, borderWidth: 0.5, borderColor: `${color}55`, opacity: pressed ? 0.7 : 1 })}>
-      <Host matchContents><Icon name={iconoDe('ShieldCheck')} size={14} color={color} /></Host>
+      <IconoFijo name={iconoDe('ShieldCheck')} size={14} color={color} />
       <Text style={{ color, fontSize: 13, fontWeight: '700' }} numberOfLines={1}>{`Seguro · ${estado?.texto ?? '…'}`}</Text>
       <Text style={{ color, fontSize: 14, fontWeight: '700' }}>›</Text>
     </Pressable>
@@ -265,7 +266,7 @@ export default function Personal() {
                     </View>
                     {!buscando ? (
                       <View style={{ transform: [{ rotate: s.plegada ? '0deg' : '90deg' }] }}>
-                        <Host matchContents><Icon name={ICONO.siguiente} size={13} color={colorSistema.texto2} /></Host>
+                        <IconoFijo name={ICONO.siguiente} size={13} color={colorSistema.texto2} />
                       </View>
                     ) : null}
                   </View>

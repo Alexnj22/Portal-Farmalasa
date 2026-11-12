@@ -44,6 +44,7 @@ import { AvisoSinSenal, useColaSinSenal } from './SinSenal';
 import { ACCIONES_DE_DINERO } from '../soloConsulta';
 import { tomarClienteNuevo } from '../pedidos/elegido';
 import { compartirTicket, imprimirTicket } from '../fiscal/papel';
+import IconoFijo from '../../IconoFijo';
 
 const RESULTADOS = 8;
 
@@ -51,7 +52,7 @@ function BotonIcono({ icono, etiqueta, onPress, color = colorSistema.acento }) {
   return (
     <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onPress(); }} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
       style={({ pressed }) => ({ minWidth: 44, minHeight: 44, alignItems: 'center', justifyContent: 'center', transform: [{ scale: pressed ? 0.94 : 1 }] })}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={22} color={color} /></Host>
+      <IconoFijo name={iconoDe(icono)} size={22} color={color} />
     </Pressable>
   );
 }

@@ -63,6 +63,7 @@ import Vidrio from '../../componentes/Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import { PildoraDeCargo } from '../../componentes/personas/Piezas';
 import { textoDeAlerta } from '../../componentes/personas/TarjetaPersona';
+import IconoFijo from '../../componentes/IconoFijo';
 
 const fecha = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'long', year: 'numeric' }) : '—');
 const horaCorta = (h) => (hora12(h) || '').replace(':00', '').replace(/\s?a\.\s?m\./, 'a').replace(/\s?p\.\s?m\./, 'p');
@@ -88,7 +89,7 @@ function Casilla({ icono, rotulo, color, onPress, enRenglon = false }) {
       style={({ pressed }) => ({ ...(enRenglon ? { flex: 1 } : { width: '31.5%' }), alignItems: 'center', gap: 5, paddingVertical: 10, paddingHorizontal: 4, borderRadius: 16,
         backgroundColor: `${color}1A`, borderWidth: 0.5, borderColor: `${color}40`, transform: [{ scale: pressed ? 0.95 : 1 }] })}>
       <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}2E` }}>
-        <Host matchContents><Icon name={iconoDe(icono)} size={19} color={color} /></Host>
+        <IconoFijo name={iconoDe(icono)} size={19} color={color} />
       </View>
       <Text style={{ color: colorSistema.texto, fontSize: 12, fontWeight: '700', textAlign: 'center' }} numberOfLines={2}>{rotulo}</Text>
     </Pressable>
@@ -248,7 +249,7 @@ export default function Empleado() {
                 <Pressable key={a.key} disabled={!destino} onPress={() => router.push({ pathname: destino, params: { id: String(emp.id) } })}
                   style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'flex-start', gap: 12, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>
                   <View style={{ width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}26` }}>
-                    <Host matchContents><Icon name={iconoDe(a.icono)} size={17} color={color} /></Host>
+                    <IconoFijo name={iconoDe(a.icono)} size={17} color={color} />
                   </View>
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{textoDeAlerta(a, emp)}</Text>

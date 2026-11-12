@@ -12,6 +12,7 @@ import Vidrio from '../componentes/Vidrio';
 import { colorSistema } from '../componentes/Formulario';
 import { useTema } from '../tema/tema';
 import { iconoDe } from '../tema/iconos';
+import IconoFijo from '../componentes/IconoFijo';
 
 export default function ElegirPestanaRapida() {
   const { user, hasPermission } = useAuth();
@@ -34,7 +35,7 @@ export default function ElegirPestanaRapida() {
                 <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 50,
                   borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17 }}>{o.label}</Text>
-                  {actual?.id === o.id ? <Host matchContents><Icon name={iconoDe('Check')} size={17} color={tema.color.marca} /></Host> : null}
+                  {actual?.id === o.id ? <IconoFijo name={iconoDe('Check')} size={17} color={tema.color.marca} /> : null}
                 </View>
               </Pressable>
             ))}

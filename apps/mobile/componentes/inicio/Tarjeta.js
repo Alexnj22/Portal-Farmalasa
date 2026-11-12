@@ -7,11 +7,12 @@ import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 export function Titulo({ texto, icono, color, accion }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-      {icono ? <Host matchContents><Icon name={iconoDe(icono)} size={16} color={color ?? colorSistema.texto2} /></Host> : null}
+      {icono ? <IconoFijo name={iconoDe(icono)} size={16} color={color ?? colorSistema.texto2} /> : null}
       <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>{texto}</Text>
       {accion ? <Text style={{ color: colorSistema.acento, fontSize: 14 }}>{accion} ›</Text> : null}
     </View>

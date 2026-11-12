@@ -27,6 +27,7 @@ import {
   activarBiometria, biometriaActiva, leerConBiometria, nombreBiometria,
   noVolverAPreguntar, olvidarBiometria, yaSePregunto,
 } from '../componentes/biometria';
+import IconoFijo from '../componentes/IconoFijo';
 
 // Después de entrar con contraseña, una sola vez: ¿usar Face ID la próxima?
 async function ofrecerBiometria(usuario, clave) {
@@ -178,7 +179,7 @@ export default function Entrar() {
             style={({ pressed }) => ({ opacity: pressed || ocupado ? 0.7 : 1 })}>
             <Vidrio radio={20} interactivo tinte={colorSistema.acentoTinte}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, paddingVertical: 18 }}>
-                <Host matchContents><Icon name={iconoBio} size={28} color={colorSistema.acento} /></Host>
+                <IconoFijo name={iconoBio} size={28} color={colorSistema.acento} />
                 <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Entrar con {biometria}</Text>
               </View>
             </Vidrio>

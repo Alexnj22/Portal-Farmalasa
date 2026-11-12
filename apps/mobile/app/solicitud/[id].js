@@ -52,6 +52,7 @@ import { cancelarPropia, decidirConAjustes } from '../../componentes/solicitudes
 import { ICONO } from '../../componentes/solicitudes/iconos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../../componentes/IconoFijo';
 
 const COLOR_ESTADO = { PENDING: MARCA.ambar, APPROVED: MARCA.verde, REJECTED: MARCA.rojo, CANCELLED: MARCA.gris };
 
@@ -61,7 +62,7 @@ function Boton({ texto, color, relleno, onPress, deshabilitado, icono }) {
       style={({ pressed }) => ({ flex: 1, minHeight: 50, borderRadius: 25, flexDirection: 'row', gap: 8, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 14,
         backgroundColor: relleno ? color : 'transparent', borderWidth: relleno ? 0 : 1.5, borderColor: color,
         opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
-      {icono ? <Host matchContents><Icon name={icono} size={16} color={relleno ? '#fff' : color} /></Host> : null}
+      {icono ? <IconoFijo name={icono} size={16} color={relleno ? '#fff' : color} /> : null}
       <Text style={{ color: relleno ? '#fff' : color, fontSize: 17, fontWeight: '700' }}>{texto}</Text>
     </Pressable>
   );
@@ -210,7 +211,7 @@ export default function Solicitud() {
             {/* De qué se trata, cuándo entró y en qué estado está. */}
             <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center' }}>
               <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: `${colorEstado}30`, alignItems: 'center', justifyContent: 'center' }}>
-                <Host matchContents><Icon name={iconoDe(nombreDelIconoDeTipo(tipo))} size={22} color={colorEstado} /></Host>
+                <IconoFijo name={iconoDe(nombreDelIconoDeTipo(tipo))} size={22} color={colorEstado} />
               </View>
               <View style={{ flex: 1, gap: 2 }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{detalle?.contexto || titulo}</Text>

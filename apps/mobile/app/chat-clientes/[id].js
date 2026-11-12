@@ -56,6 +56,7 @@ import DeslizarParaResponder from '../../componentes/chat/DeslizarParaResponder'
 import MenuDeMensaje from '../../componentes/chat/MenuDeMensaje';
 import { EtiquetasDeConversacion } from '../../componentes/chat/Etiquetas';
 import { NotaDeVoz } from '../../componentes/chat/Voz';
+import IconoFijo from '../../componentes/IconoFijo';
 
 const MAX_FOTO = 8 * 1024 * 1024; // el `file_size_limit` del bucket
 
@@ -425,12 +426,12 @@ export default function ConversacionDelChat() {
             <Tocable onPress={() => setPestana((p) => (p === 'cliente' ? 'mensajes' : 'cliente'))} hitSlop={8} accessibilityRole="button"
               accessibilityLabel={pestana === 'cliente' ? 'Volver a los mensajes' : 'Ver la ficha del cliente'}
               style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: pestana === 'cliente' ? 'rgba(127,127,127,0.18)' : 'transparent' }}>
-              <Host matchContents><Icon name={iconoDe(pestana === 'cliente' ? 'MessageCircle' : 'User')} size={20} color={colorSistema.acento} /></Host>
+              <IconoFijo name={iconoDe(pestana === 'cliente' ? 'MessageCircle' : 'User')} size={20} color={colorSistema.acento} />
             </Tocable>
             {puedeResponder && c.estado === 'abierta' ? (
               <Tocable onPress={resolver} hitSlop={8} accessibilityRole="button" accessibilityLabel="Marcar como resuelta"
                 style={{ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
-                <Host matchContents><Icon name={iconoDe('CheckCircle2')} size={20} color={MARCA.verde} /></Host>
+                <IconoFijo name={iconoDe('CheckCircle2')} size={20} color={MARCA.verde} />
               </Tocable>
             ) : null}
           </View>

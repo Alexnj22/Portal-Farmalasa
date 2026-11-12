@@ -13,6 +13,7 @@ import { Host, Icon } from '@expo/ui';
 import { useBannerPortal } from '@nucleo/hooks/useBannerPortal';
 import { iconoDe } from '../tema/iconos';
 import { MARCA } from './inicio/marca';
+import IconoFijo from './IconoFijo';
 
 // Las cinco apariencias del portal. `obra` es su naranja de obra con texto
 // oscuro; las otras, el tono de su variante.
@@ -37,7 +38,7 @@ export default function FranjaDelPortal({ margen = 16 }) {
       style={{ marginHorizontal: margen }}>
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingHorizontal: 14, paddingVertical: 11,
         borderRadius: 16, backgroundColor: a.fondo }}>
-        <Host matchContents><Icon name={iconoDe(a.icono)} size={18} color={a.texto} /></Host>
+        <IconoFijo name={iconoDe(a.icono)} size={18} color={a.texto} />
         <Text style={{ flex: 1, color: a.texto, fontSize: 15, fontWeight: '700', lineHeight: 20 }}>{largo ? texto : corto}</Text>
       </View>
     </Pressable>

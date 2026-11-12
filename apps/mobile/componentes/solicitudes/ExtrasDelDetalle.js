@@ -29,6 +29,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
 import { ICONO } from './iconos';
+import IconoFijo from '../IconoFijo';
 
 const TONO = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde };
 
@@ -63,7 +64,7 @@ function PuntosDelCambio({ invoiceId, customerNuevo, aplicado }) {
   return (
     <Vidrio radio={20} tinte={`${color}1A`}>
       <View style={{ padding: 14, flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
-        <Host matchContents><Icon name={ICONO.puntos} size={18} color={color} /></Host>
+        <IconoFijo name={ICONO.puntos} size={18} color={color} />
         <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 14, lineHeight: 20 }}>{aviso.texto}</Text>
       </View>
     </Vidrio>

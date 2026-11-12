@@ -25,6 +25,7 @@ import { colorSistema } from '../Formulario';
 import Tocable from '../Tocable';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 let Audio = null;
 try { Audio = require('expo-audio'); } catch { Audio = null; }
@@ -41,7 +42,7 @@ const mmss = (ms) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
 };
 
-const Glifo = ({ nombre, tam = 18, color }) => <Host matchContents><Icon name={iconoDe(nombre)} size={tam} color={color} /></Host>;
+const Glifo = ({ nombre, tam = 18, color }) => <IconoFijo name={iconoDe(nombre)} size={tam} color={color} />;
 
 const abrirArchivo = (url) => {
   if (!url) return;

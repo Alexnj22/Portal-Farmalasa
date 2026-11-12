@@ -29,6 +29,7 @@ import { listo } from '../../../componentes/Progreso';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { usePestanaRapida } from '../../../componentes/pestanaRapida';
 import { router } from 'expo-router';
+import IconoFijo from '../../../componentes/IconoFijo';
 
 const ES_IOS = Platform.OS === 'ios';
 
@@ -121,7 +122,7 @@ function Renglon({ icono, color, texto, alTocar, primero, derecha, peligro }) {
       style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 12, paddingLeft: 14, paddingRight: 12,
         backgroundColor: pressed ? 'rgba(127,127,127,0.18)' : 'transparent' })}>
       <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: color, alignItems: 'center', justifyContent: 'center' }}>
-        <Host matchContents><Icon name={icono} size={17} color="#FFFFFF" /></Host>
+        <IconoFijo name={icono} size={17} color="#FFFFFF" />
       </View>
       <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', minHeight: 50,
         borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
@@ -138,7 +139,7 @@ function Tarjetas({ nombre, detalle, modulos, biometria, cambiarBiometria, salir
       <Vidrio radio={20}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14, padding: 16 }}>
           <View style={{ width: 48, height: 48, borderRadius: 24, backgroundColor: tema.color.marca, alignItems: 'center', justifyContent: 'center' }}>
-            <Host matchContents><Icon name={iconoDe('User')} size={26} color="#FFFFFF" /></Host>
+            <IconoFijo name={iconoDe('User')} size={26} color="#FFFFFF" />
           </View>
           <View style={{ flex: 1, gap: 2 }}>
             <Text style={{ color: colorSistema.texto, fontSize: 19, fontWeight: '700' }} numberOfLines={1}>{nombre}</Text>

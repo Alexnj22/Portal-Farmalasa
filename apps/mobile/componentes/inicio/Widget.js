@@ -18,13 +18,14 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
 import { MARCA } from './marca';
+import IconoFijo from '../IconoFijo';
 
 const tocar = (fn) => (fn ? () => { Haptics.selectionAsync().catch(() => {}); fn(); } : undefined);
 
 export function Chip({ icono, color, tamano = 26 }) {
   return (
     <View style={{ width: tamano, height: tamano, borderRadius: tamano * 0.3, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={tamano * 0.58} color={color} /></Host>
+      <IconoFijo name={iconoDe(icono)} size={tamano * 0.58} color={color} />
     </View>
   );
 }

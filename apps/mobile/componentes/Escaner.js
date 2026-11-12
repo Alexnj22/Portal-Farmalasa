@@ -14,6 +14,7 @@ import { Host, Icon } from '@expo/ui';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Vidrio from './Vidrio';
 import { iconoDe } from '../tema/iconos';
+import IconoFijo from './IconoFijo';
 
 const TIPOS = ['qr', 'code128', 'code39', 'ean13', 'ean8', 'upc_a', 'upc_e', 'itf14', 'datamatrix'];
 const ESPERA_MISMO_CODIGO = 2500;
@@ -23,7 +24,7 @@ function BotonRedondo({ icono, onPress, activo, etiqueta }) {
     <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={8}>
       <Vidrio radio={28} interactivo tinte={activo ? 'rgba(255,214,10,0.45)' : undefined}>
         <View style={{ width: 56, height: 56, alignItems: 'center', justifyContent: 'center' }}>
-          <Host matchContents><Icon name={iconoDe(icono)} size={24} color="#FFFFFF" /></Host>
+          <IconoFijo name={iconoDe(icono)} size={24} color="#FFFFFF" />
         </View>
       </Vidrio>
     </Pressable>

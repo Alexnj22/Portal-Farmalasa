@@ -32,6 +32,7 @@ import { leerEstado, pedirEstado, suscribirse, hayQuePreguntar as hayQuePregunta
 import { useAuthSiHay } from '@nucleo/context/AuthContext';
 import { colorSistema } from './Formulario';
 import { iconoDe } from '../tema/iconos';
+import IconoFijo from './IconoFijo';
 
 // Los mismos íconos que el portal, por nombre (la traducción a SF Symbols y
 // Material vive en `tema/iconos`).
@@ -163,7 +164,7 @@ function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
           {estado.faltan > 0 ? (
             <Text allowFontScaling={false} style={{ color: '#fff', fontWeight: '900', fontSize: Math.round(g.tamChip * 0.5), fontVariant: ['tabular-nums'] }}>−{estado.faltan}</Text>
           ) : (
-            <Host matchContents><Icon name={iconoDe(icono)} size={Math.round(g.tamChip * 0.56)} color="#fff" /></Host>
+            <IconoFijo name={iconoDe(icono)} size={Math.round(g.tamChip * 0.56)} color="#fff" />
           )}
         </Marca>
       ) : null}
@@ -171,7 +172,7 @@ function Avatar({ empleado, tamano = 36, pendientes: conPendientes = true }) {
       {/* La torta: blanca con la torta rosa, en los dos temas. */}
       {deCumple ? (
         <Marca tam={tamCumple} fondo="#fff" style={{ top: -4, left: -4 }}>
-          <Host matchContents><Icon name={iconoDe('Cake')} size={Math.round(tamCumple * 0.58)} color={t['chart-6-solid']} /></Host>
+          <IconoFijo name={iconoDe('Cake')} size={Math.round(tamCumple * 0.58)} color={t['chart-6-solid']} />
         </Marca>
       ) : null}
 

@@ -19,6 +19,7 @@ import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { MARCA } from './inicio/marca';
 import { iconoDe } from '../tema/iconos';
+import IconoFijo from './IconoFijo';
 
 const UMBRAL = 0.32;   // fracción del ancho a partir de la cual se ejecuta
 
@@ -35,7 +36,7 @@ function Fondo({ lado, color, icono, texto, x, ancho }) {
       backgroundColor: color, borderRadius: Platform.OS === 'android' ? 16 : 22,
       flexDirection: 'row', alignItems: 'center', justifyContent: izquierda ? 'flex-end' : 'flex-start', paddingHorizontal: 22, gap: 8,
     }}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={20} color="#fff" /></Host>
+      <IconoFijo name={iconoDe(icono)} size={20} color="#fff" />
       <Text style={{ color: '#fff', fontSize: 15, fontWeight: '700' }}>{texto}</Text>
     </Animated.View>
   );

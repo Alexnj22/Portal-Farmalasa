@@ -33,6 +33,7 @@ import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import { fallo, listo } from '../Progreso';
 import { Grabadora, HAY_AUDIO, permisoMicrofono } from './Voz';
+import IconoFijo from '../IconoFijo';
 
 // «Está escribiendo» vale 6 s en la base; se renueva a lo sumo cada 3 s (igual que el portal).
 const CADA_CUANTO_ESCRIBIENDO_MS = 3_000;
@@ -41,7 +42,7 @@ function BotonIcono({ icono, etiqueta, onPress, color = colorSistema.texto2 }) {
   return (
     <Tocable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
       style={{ width: 40, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' }}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={20} color={color} /></Host>
+      <IconoFijo name={iconoDe(icono)} size={20} color={color} />
     </Tocable>
   );
 }
@@ -238,13 +239,13 @@ export default function Compositor({ conversacion, onEnviar, respondiendoA = nul
         {!puedeEnviar && HAY_AUDIO ? (
           <Tocable onPress={grabar} accessibilityRole="button" accessibilityLabel="Grabar una nota de voz"
             style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: MARCA.azul }}>
-            <Host matchContents><Icon name={iconoDe('Mic')} size={20} color="#fff" /></Host>
+            <IconoFijo name={iconoDe('Mic')} size={20} color="#fff" />
           </Tocable>
         ) : (
           <Tocable onPress={enviar} disabled={!puedeEnviar} accessibilityRole="button" accessibilityLabel="Enviar"
             style={{ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center',
               backgroundColor: puedeEnviar ? MARCA.azul : 'rgba(127,127,127,0.25)' }}>
-            <Host matchContents><Icon name={iconoDe('ArrowUp')} size={20} color="#fff" /></Host>
+            <IconoFijo name={iconoDe('ArrowUp')} size={20} color="#fff" />
           </Tocable>
         )}
       </View>

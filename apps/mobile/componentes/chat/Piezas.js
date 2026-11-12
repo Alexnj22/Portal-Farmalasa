@@ -11,6 +11,7 @@ import Avatar from '../Avatar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
+import IconoFijo from '../IconoFijo';
 
 // Las variantes del portal, en los colores de la app.
 export const COLOR = {
@@ -106,7 +107,7 @@ export const ClienteAvatar = memo(function ClienteAvatar({ cliente, fotoUrl, tam
       {team ? (
         <View accessibilityLabel="Del equipo" style={{ position: 'absolute', right: -1, bottom: -1, width: emblema, height: emblema, borderRadius: emblema / 2,
           backgroundColor: TEAM, borderWidth: 1.5, borderColor: '#FFFFFF', alignItems: 'center', justifyContent: 'center' }}>
-          <Host matchContents><Icon name={iconoDe('Users')} size={Math.round(emblema * 0.6)} color="#FFFFFF" /></Host>
+          <IconoFijo name={iconoDe('Users')} size={Math.round(emblema * 0.6)} color="#FFFFFF" />
         </View>
       ) : null}
     </View>

@@ -19,6 +19,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
 import { ICONO } from './iconos';
+import IconoFijo from '../IconoFijo';
 
 const TONO = { danger: MARCA.rojo, warning: MARCA.ambar, info: MARCA.azulClaro };
 const toque = () => Haptics.selectionAsync().catch(() => {});
@@ -28,7 +29,7 @@ function Paso({ icono, onPress, deshabilitado, etiqueta }) {
     <Pressable onPress={() => { toque(); onPress(); }} disabled={deshabilitado} hitSlop={6} accessibilityRole="button" accessibilityLabel={etiqueta}
       style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
         backgroundColor: 'rgba(127,127,127,0.18)', opacity: deshabilitado ? 0.3 : pressed ? 0.6 : 1 })}>
-      <Host matchContents><Icon name={icono} size={15} color={colorSistema.texto} /></Host>
+      <IconoFijo name={icono} size={15} color={colorSistema.texto} />
     </Pressable>
   );
 }
@@ -65,7 +66,7 @@ export default function QueEntra({ esAbono, lineas, seleccion, cantidades, porLi
               {porLinea ? (
                 <Pressable onPress={() => { toque(); onToggle(i); }} hitSlop={8} accessibilityRole="checkbox" accessibilityState={{ checked: marcado }}
                   accessibilityLabel={`${marcado ? 'Quitar' : 'Incluir'} ${titulo}`}>
-                  <Host matchContents><Icon name={marcado ? ICONO.marcado : ICONO.sinMarcar} size={24} color={marcado ? MARCA.verde : colorSistema.texto2} /></Host>
+                  <IconoFijo name={marcado ? ICONO.marcado : ICONO.sinMarcar} size={24} color={marcado ? MARCA.verde : colorSistema.texto2} />
                 </Pressable>
               ) : null}
               <View style={{ flex: 1, gap: 2, opacity: marcado ? 1 : 0.45 }}>

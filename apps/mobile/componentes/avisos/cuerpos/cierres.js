@@ -30,6 +30,7 @@ import { usePersona } from '../persona';
 import { FONDO, Insignia } from '../Piezas';
 import { Host, Icon } from '@expo/ui';
 import { iconoDe } from '../../../tema/iconos';
+import IconoFijo from '../../IconoFijo';
 
 const $ = (v) => formatMoney(v);
 const LADO = 44;
@@ -50,7 +51,7 @@ const tonoContraPromedio = (parte, promedio) => {
 // ── Piezas de este grupo ─────────────────────────────────────────────────────
 
 function Icono({ nombre, color, tamano = 16 }) {
-  return <Host matchContents><Icon name={iconoDe(nombre)} size={tamano} color={color} /></Host>;
+  return <IconoFijo name={iconoDe(nombre)} size={tamano} color={color} />;
 }
 
 /** Un anillo de 44 px: el arco y lo que va adentro. `punto` marca el excedente

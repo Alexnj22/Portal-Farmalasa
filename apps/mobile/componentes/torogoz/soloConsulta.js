@@ -11,13 +11,14 @@ import { Text, View } from 'react-native';
 import { Host, Icon } from '@expo/ui';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 export const ACCIONES_DE_DINERO = false;
 
 export function SeHaceEnElPortal({ texto = 'Esto se hace desde el portal.', style }) {
   return (
     <View style={[{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 8, paddingHorizontal: 4 }, style]}>
-      <Host matchContents><Icon name={iconoDe('Monitor')} size={15} color={colorSistema.texto2} /></Host>
+      <IconoFijo name={iconoDe('Monitor')} size={15} color={colorSistema.texto2} />
       <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 14 }}>{texto}</Text>
     </View>
   );

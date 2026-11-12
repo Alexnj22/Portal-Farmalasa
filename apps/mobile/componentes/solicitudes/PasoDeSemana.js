@@ -13,6 +13,7 @@ import { colorSistema } from '../Formulario';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { ICONO } from './iconos';
+import IconoFijo from '../IconoFijo';
 
 export default function PasoDeSemana({ semana, onCambiar }) {
   const actual = getLocalMonday();
@@ -21,7 +22,7 @@ export default function PasoDeSemana({ semana, onCambiar }) {
   const flecha = (icono, onPress, deshabilitada, etiqueta) => (
     <Pressable onPress={onPress} disabled={deshabilitada} hitSlop={8} accessibilityRole="button" accessibilityLabel={etiqueta}
       style={({ pressed }) => ({ minWidth: 52, minHeight: 48, alignItems: 'center', justifyContent: 'center', opacity: deshabilitada ? 0.3 : pressed ? 0.5 : 1 })}>
-      <Host matchContents><Icon name={icono} size={18} color={MARCA.azulClaro} /></Host>
+      <IconoFijo name={icono} size={18} color={MARCA.azulClaro} />
     </Pressable>
   );
   return (

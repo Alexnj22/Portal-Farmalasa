@@ -10,6 +10,7 @@ import Avatar from '../Avatar';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 // La escala de cumplimiento del portal (`tonoDeCumplimiento`): 100 o más es
 // verde, de 95 a 100 ámbar, debajo rojo.
@@ -39,7 +40,7 @@ export function Anillo({ pct, color, texto, tamano = 46 }) {
 export function Insignia({ icono, color = MARCA.azulClaro, tamano = 44 }) {
   return (
     <View style={{ width: tamano, height: tamano, borderRadius: tamano * 0.3, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={tamano * 0.5} color={color} /></Host>
+      <IconoFijo name={iconoDe(icono)} size={tamano * 0.5} color={color} />
     </View>
   );
 }

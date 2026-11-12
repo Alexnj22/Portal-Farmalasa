@@ -21,6 +21,7 @@ import { useSinLeerDelChat } from '@nucleo/hooks/useSinLeerDelChat';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 const ANDROID = Platform.OS === 'android';
 const TAMANO = 56;
@@ -80,7 +81,7 @@ function BurbujaFlotante() {
     ? `Chat con clientes: ${sinLeer} ${sinLeer === 1 ? 'mensaje' : 'mensajes'} sin responder`
     : 'Chat con clientes';
   const abrir = () => { Haptics.selectionAsync().catch(() => {}); router.push('/chat-clientes'); };
-  const icono = <Host matchContents><Icon name={iconoDe('MessageCircle')} size={26} color="#FFFFFF" /></Host>;
+  const icono = <IconoFijo name={iconoDe('MessageCircle')} size={26} color="#FFFFFF" />;
 
   return (
     <Animated.View pointerEvents="box-none"

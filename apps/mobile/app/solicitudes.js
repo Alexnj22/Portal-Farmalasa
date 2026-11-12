@@ -55,6 +55,7 @@ import { ICONO } from '../componentes/solicitudes/iconos';
 import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
 import { Cargando, Vacio } from '../componentes/formulario/Piezas';
+import IconoFijo from '../componentes/IconoFijo';
 
 /* Qué se le pide a la base. El portal lo pide por ámbito; acá los dos ámbitos
  * van en una sola lista, así que se pide lo más ancho que alguno de los dos
@@ -112,7 +113,7 @@ function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
             <View>
               <Avatar empleado={solicitante ?? { name: '?' }} tamano={36} />
               <View style={{ position: 'absolute', right: -3, bottom: -3, width: 20, height: 20, borderRadius: 10, backgroundColor: `${estado.color}`, alignItems: 'center', justifyContent: 'center' }}>
-                <Host matchContents><Icon name={iconoDe(nombreDelIconoDeTipo(r.type))} size={11} color="#fff" /></Host>
+                <IconoFijo name={iconoDe(nombreDelIconoDeTipo(r.type))} size={11} color="#fff" />
               </View>
             </View>
             <View style={{ flex: 1, gap: 1 }}>
@@ -381,13 +382,13 @@ export default function Solicitudes() {
             style={{ marginHorizontal: 16, marginTop: 6, marginBottom: 8 }}>
             <Vidrio radio={14}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, minHeight: 36 }}>
-                <Host matchContents><Icon name={iconoDe(nombreDelIconoDeTipo(section.tipo))} size={14} color={colorSistema.texto2} /></Host>
+                <IconoFijo name={iconoDe(nombreDelIconoDeTipo(section.tipo))} size={14} color={colorSistema.texto2} />
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                   {REQUEST_TYPES[section.tipo]?.label ?? 'Solicitud'}
                 </Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{section.total}</Text>
                 <View style={{ transform: [{ rotate: plegados.has(section.tipo) ? '0deg' : '90deg' }] }}>
-                  <Host matchContents><Icon name={ICONO.siguiente} size={12} color={colorSistema.texto2} /></Host>
+                  <IconoFijo name={ICONO.siguiente} size={12} color={colorSistema.texto2} />
                 </View>
               </View>
             </Vidrio>

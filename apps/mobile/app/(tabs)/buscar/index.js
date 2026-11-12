@@ -34,6 +34,7 @@ import { useTema } from '../../../tema/tema';
 import { iconoDe } from '../../../tema/iconos';
 import { FUERA_DE_LA_APP, abrirModulo, abrirRuta, abrirSolicitud } from '../../../pantallas';
 import { Vacio } from '../../../componentes/formulario/Piezas';
+import IconoFijo from '../../../componentes/IconoFijo';
 
 const POR_GRUPO = 5;
 
@@ -122,7 +123,7 @@ export default function Buscar() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
         {!q ? (
           <View style={{ alignItems: 'center', paddingTop: 60, gap: 8, paddingHorizontal: 40 }}>
-            <Host matchContents><Icon name={iconoDe('Search')} size={40} color={colorSistema.texto2} /></Host>
+            <IconoFijo name={iconoDe('Search')} size={40} color={colorSistema.texto2} />
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Busca en todo el portal</Text>
             <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
               {[veProductos && 'productos y existencias', vePersonas && 'personas', 'solicitudes', 'pantallas'].filter(Boolean).join(', ')}.
@@ -136,7 +137,7 @@ export default function Buscar() {
               <View key={m.key}>
                 {i ? <Separador /> : null}
                 <Renglon titulo={m.label} onPress={() => abrirModulo(m)}
-                  izquierda={<View style={{ width: 40, alignItems: 'center' }}><Host matchContents><Icon name={iconoDe(m.icono)} size={22} color={tema.color.marca} /></Host></View>} />
+                  izquierda={<View style={{ width: 40, alignItems: 'center' }}><IconoFijo name={iconoDe(m.icono)} size={22} color={tema.color.marca} /></View>} />
               </View>
             ))}
           </Grupo>
@@ -152,7 +153,7 @@ export default function Buscar() {
                     detalle={p.salas.length ? p.salas.map((s) => s.sala).join(' · ') : 'Sin existencias'}
                     derecha={formatQty(p.unidades)}
                     izquierda={<View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: colorSistema.acentoTinte, alignItems: 'center', justifyContent: 'center' }}>
-                      <Host matchContents><Icon name={iconoDe('Package')} size={20} color={colorSistema.acento} /></Host></View>}
+                      <IconoFijo name={iconoDe('Package')} size={20} color={colorSistema.acento} /></View>}
                     onPress={() => p.erp_product_id && router.push({ pathname: '/producto/[id]', params: { id: String(p.erp_product_id), nombre: p.descripcion } })} />
                 </View>
               ))}

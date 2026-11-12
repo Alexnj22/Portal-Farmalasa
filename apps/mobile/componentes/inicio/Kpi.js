@@ -11,6 +11,7 @@ import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 // Android: la onda de Material dentro de la tarjeta; iOS: la tarjeta se achica.
 const ANDROID = Platform.OS === 'android';
@@ -25,7 +26,7 @@ export default function Kpi({ icono, rotulo, valor, apoyo, color, pide = false, 
           <View style={{ padding: 14, gap: 4, minHeight: 112 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 7 }}>
               <View style={{ width: 24, height: 24, borderRadius: 7, backgroundColor: `${color}2E`, alignItems: 'center', justifyContent: 'center' }}>
-                <Host matchContents><Icon name={iconoDe(icono)} size={14} color={color} /></Host>
+                <IconoFijo name={iconoDe(icono)} size={14} color={color} />
               </View>
               <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>{rotulo}</Text>
               {onPress ? <Text style={{ color: colorSistema.texto2, fontSize: 17, fontWeight: '300', marginTop: -2 }}>›</Text> : null}

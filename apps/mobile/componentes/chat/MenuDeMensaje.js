@@ -19,6 +19,7 @@ import { recorteDeMensaje } from '@nucleo/utils/chatClientes';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 const ANDROID = Platform.OS === 'android';
 
@@ -31,7 +32,7 @@ function Accion({ icono, texto, onPress, primero }) {
         borderTopWidth: primero ? 0 : StyleSheet.hairlineWidth, borderTopColor: colorSistema.separador,
         backgroundColor: !ANDROID && pressed ? 'rgba(127,127,127,0.15)' : 'transparent' })}>
       <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 17 }}>{texto}</Text>
-      <Host matchContents><Icon name={iconoDe(icono)} size={20} color={tinta} /></Host>
+      <IconoFijo name={iconoDe(icono)} size={20} color={tinta} />
     </Pressable>
   );
 }

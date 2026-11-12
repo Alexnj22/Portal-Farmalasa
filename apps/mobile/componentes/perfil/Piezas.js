@@ -20,6 +20,7 @@ import Fecha from '../formulario/Fecha';
 import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 export const fechaCorta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 
@@ -28,7 +29,7 @@ export function FilaConIcono({ icono, color = MARCA.azulClaro, rotulo, valor, ex
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, paddingTop: primero ? 0 : 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>
       <View style={{ width: 30, height: 30, borderRadius: 9, alignItems: 'center', justifyContent: 'center', backgroundColor: `${color}26` }}>
-        <Host matchContents><Icon name={iconoDe(icono)} size={15} color={color} /></Host>
+        <IconoFijo name={iconoDe(icono)} size={15} color={color} />
       </View>
       <View style={{ flex: 1, gap: 1 }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{rotulo}</Text>

@@ -21,6 +21,7 @@ import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { iconoDe } from '../../tema/iconos';
+import IconoFijo from '../IconoFijo';
 
 const TONO = { warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde, card: colorSistema.texto2 };
 
@@ -35,7 +36,7 @@ function Ficha({ rotulo, persona, sala, vacio, cuando, apunte, tono = 'card', pr
           // Sin persona (un área, una sala, sin registro): un ícono que dice
           // qué es, no un círculo vacío que parece una foto que no cargó.
           <View style={{ width: 40, height: 40, borderRadius: 20, backgroundColor: `${color}26`, alignItems: 'center', justifyContent: 'center' }}>
-            <Host matchContents><Icon name={iconoDe(sala ? 'Building2' : 'Users')} size={18} color={color} /></Host>
+            <IconoFijo name={iconoDe(sala ? 'Building2' : 'Users')} size={18} color={color} />
           </View>
         )}
       <View style={{ flex: 1, gap: 2 }}>

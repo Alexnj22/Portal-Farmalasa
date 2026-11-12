@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.4 — App clientes: el reglamento y el aviso con más espacio para leer
+
+- **El documento de «Reglas y privacidad» se leía en un cuadro chico** (el usuario, mirando el emulador Android: «no es legible»). Encabezado más corto, pasos más bajos y, en esa página, sin los puntos del carrusel ni el aviso repetido de «baja hasta el final» (la barra de avance ya lo dice; «marca las dos casillas» se sigue mostrando). Todo ese alto pasa al documento. Sale por aire.
+
 ## v2.1512.3 — App clientes: Bienestar y Sucursales sin saltos en iPhone
 
 - **El contenido de Bienestar y Sucursales saltaba arriba y abajo en iPhone** (al entrar, al sacar una captura). Con la barra transparente, el margen de arriba lo ponía el ajuste automático de iOS, que llegaba a destiempo. Ahora el margen es la altura de la barra como número fijo —el mismo arreglo que ya tenía el Carrito—, y la pestaña Bienestar ya no le impone el ajuste automático a su lista. Sale por aire.

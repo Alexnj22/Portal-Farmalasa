@@ -275,7 +275,9 @@ export default function Guia() {
 
       {/* Abajo: los puntos y el botón principal. */}
       <View style={{ paddingHorizontal: 24, paddingBottom: ins.bottom + 16, paddingTop: 8, gap: 18, width: '100%', maxWidth: 520, alignSelf: 'center' }}>
-        {soloReglas ? null : (
+        {/* En «Reglas y privacidad» no van los puntos: ese alto es del
+            documento. */}
+        {soloReglas || enReglas ? null : (
           <View style={{ flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: 8 }}
             accessible accessibilityRole="adjustable" accessibilityLabel={`Página ${pagina + 1} de ${PAGINAS}`}
             accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
@@ -288,7 +290,9 @@ export default function Guia() {
             ))}
           </View>
         )}
-        {motivo ? (
+        {/* Mientras falte leer, la barra de arriba ya lo dice; «marca las dos
+            casillas» sí se muestra, porque nada más lo dice. */}
+        {motivo && !(enReglas && faltanLeer.length) ? (
           <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 14, lineHeight: 19, marginBottom: -8 }}>{motivo}</Texto>
         ) : null}
         <Boton alTocar={siguiente} cargando={guardando} deshabilitado={bloqueado}>{rotulo}</Boton>
@@ -346,10 +350,13 @@ function PaginaReglas({ ancho, alto = 0, leidos, marcas, aceptado, error, alLeer
     <View style={[{ width: ancho, paddingHorizontal: 20, paddingTop: 4 }, alto > 0 ? { height: alto } : { flex: 1 }]}>
       <View style={{ flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', gap: 10 }}>
         <View style={{ gap: 4, alignItems: 'center' }}>
-          <Text accessibilityRole="header" style={{ fontSize: 26, fontWeight: '800', letterSpacing: -0.4, textAlign: 'center', color: colorSistema.texto }}>Reglas y privacidad</Text>
-          <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 15, lineHeight: 21 }}>
-            {aceptado ? 'Ya los aceptaste. Puedes volver a leerlos cuando quieras en Cuenta.'
-              : 'Son dos documentos. Lee cada uno hasta el final y luego marca que los aceptas para continuar.'}
+          {/* Encabezado corto (2026-11-11, el usuario con el emulador: «el cuadro
+              de texto es súper pequeño, no es legible»). Cada renglón de acá
+              arriba se le quita al documento, que es lo que hay que leer. */}
+          <Text accessibilityRole="header" style={{ fontSize: 22, fontWeight: '800', letterSpacing: -0.3, textAlign: 'center', color: colorSistema.texto }}>Reglas y privacidad</Text>
+          <Texto nivel={2} estilo={{ textAlign: 'center', fontSize: 14, lineHeight: 19 }}>
+            {aceptado ? 'Ya los aceptaste. Puedes releerlos en Cuenta.'
+              : 'Lee los dos hasta el final y luego acéptalos.'}
           </Texto>
         </View>
 
@@ -363,7 +370,7 @@ function PaginaReglas({ ancho, alto = 0, leidos, marcas, aceptado, error, alLeer
                 accessibilityState={{ selected: elegido }}
                 accessibilityLabel={`Paso ${i + 1} de ${DOCUMENTOS.length}: ${d.rotulo}${listo ? ', leído' : ', sin leer'}`}
                 accessibilityHint={elegido ? undefined : 'Abre este documento.'}
-                style={({ pressed }) => ({ flex: 1, minHeight: 56, paddingHorizontal: 10, paddingVertical: 8, borderRadius: 14,
+                style={({ pressed }) => ({ flex: 1, minHeight: 48, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14,
                   flexDirection: 'row', alignItems: 'center', gap: 8,
                   backgroundColor: elegido ? suave(t.color.magenta, t.oscuro ? 0.32 : 0.16) : colorSistema.superficie,
                   borderWidth: elegido ? 2 : 1, borderColor: elegido ? t.color.magenta : colorSistema.contornoSuave, opacity: pressed ? 0.7 : 1 })}>

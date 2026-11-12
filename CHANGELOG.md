@@ -23,7 +23,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1513.7 — Verificación de Search Console en el portal
 
-_(pendiente de redactar)_
+- **Portal · etiqueta `google-site-verification` en `index.html`.** Google Play exige un sitio verificado para pasar la cuenta de desarrollador a organización (rechazo de Puntos Salud 58 por la función médica del recordatorio de tomas). Se verifica `https://portal.farmasalud.lat` por prefijo de URL.
 
 ## v2.1513.6 — El acuse del formulario de datos va en hoja propia
 

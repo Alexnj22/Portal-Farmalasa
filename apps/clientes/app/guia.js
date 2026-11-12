@@ -260,9 +260,7 @@ export default function Guia() {
             Aparta productos y retíralos sin hacer fila. Si llevan receta, súbela con una foto.
           </Pagina>
           <Pagina ancho={ancho} titulo="Chat con la farmacia" arte={<Insignia sf="bubble.left.and.bubble.right.fill" respaldo="✉" color={t.color.verde} texto={t.color.verdeTexto} />}
-            nota={Platform.OS === 'ios'
-              ? 'En Mis tratamientos te recordamos tus tomas y cuándo te toca volver a comprar.'
-              : 'En Mis tratamientos ves cuándo te toca volver a comprar.'}>
+            nota="En Mis tratamientos te recordamos tus tomas y cuándo te toca volver a comprar.">
             Pregúntanos por un medicamento, su precio o si lo tenemos. Te responde nuestro equipo.
           </Pagina>
           {reglas}

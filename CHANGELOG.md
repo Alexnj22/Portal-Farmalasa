@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.5 — Se deshace: recordatorio de tomas vuelve a Android
+
+_(pendiente de redactar)_
+
 ## v2.1513.4 — Recordatorio de tomas sólo en iPhone (Google Play)
 
 - **App de clientes · «Recordarme tomarlo» se apaga en Android.** Google Play rechazó la 58: un recordatorio de tomas con dosis cuenta como «administración de medicamentos», función médica que sólo puede publicar una cuenta de organización, y la de Play es personal. `lib/tomas.js` pasa a `DISPONIBLE = Platform.OS === 'ios'`; en Android quedan la lista de Mis tratamientos y «Volver a pedir». La guía ya no promete el recordatorio en Android. Volver atrás cuando la app pase a una cuenta de organización.

@@ -22,12 +22,7 @@ import { pedirPermisoDeAvisos } from './avisos';
 import { nombrePropio } from './formato';
 import { cantidadDe } from './dosis';
 
-// Sólo iPhone (2026-11-12): Google Play rechazó la app porque un recordatorio de
-// tomas con dosis es «administración de medicamentos», una función médica que
-// sólo puede publicar una cuenta de ORGANIZACIÓN, y la de Play es personal.
-// Se apaga en Android en vez de desmarcar la declaración con la función viva.
-// Volver a `!== 'web'` cuando la app esté en una cuenta de organización.
-export const DISPONIBLE = Platform.OS === 'ios';
+export const DISPONIBLE = Platform.OS !== 'web';
 const ARCHIVO = FS.documentDirectory ? `${FS.documentDirectory}tomas.json` : null;
 const CATEGORIA = 'toma';
 // Canal nuevo (2026-10-15, privacidad): el nombre del medicamento no se ve con

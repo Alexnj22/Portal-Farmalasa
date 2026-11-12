@@ -49,7 +49,7 @@ import { NIVELES_DE_PRECIO } from '@nucleo/utils/preciosDeProducto';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
-import Segmentos from '../componentes/Segmentos';
+import Subfiltro from '../componentes/Subfiltro';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, Seccion, Cargando } from '../componentes/formulario/Piezas';
@@ -277,7 +277,7 @@ export default function Permisos() {
             ) : null}
             {cargo.is_su ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto="Super Usuario: lo de abajo no lo limita mientras esté encendido." /></View> : null}
 
-            <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'con', label: 'Con acceso' }, { id: 'todos', label: 'Todos los módulos' }]} />
+            <Subfiltro activa={vista} onCambiar={setVista} opciones={[{ id: 'con', label: 'Con acceso' }, { id: 'todos', label: 'Todos los módulos' }]} />
             {grupos.map((g) => (
               <View key={g.group} style={{ marginHorizontal: 16, gap: 6 }}>
                 {puedeEditar && !texto.trim() ? (() => {

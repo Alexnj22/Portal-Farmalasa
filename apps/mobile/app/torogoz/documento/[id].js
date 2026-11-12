@@ -211,6 +211,7 @@ export default function Documento() {
                 onReenviar={reintentar} onCorregir={corregir} onInvalidacion={reenviarInv} onContingencia={contingencia} />
             </View>
 
+            {/* seccion-en-linea: paneles de una ficha de detalle, debajo de su encabezado (como un perfil del iPhone); fijos arriba quedarían antes del nombre (2026-11-12) */}
             <Segmentos activa={vista} onCambiar={setVista} opciones={VISTAS} />
 
             {!a.conArchivo && vista !== 'datos' ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="Este documento no tiene guardado su archivo: sólo se pueden ver sus datos." /></View> : null}

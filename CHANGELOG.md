@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.14 — Fechas y horas en hoja; subfiltros canónicos
+
+- **App · fechas y horas en iPhone, en una hoja.** El compacto de SwiftUI vivía dentro del formulario como capa (`Host`), la misma que dejaba flotando los íconos al desplazar. Ahora el renglón lleva un botón común con el valor («12 nov 2026», «1:30 p. m.») y el calendario o la rueda del sistema se abren en una hoja desde abajo (`SelectorEnHoja.ios.js`). Vale para los ~30 formularios que usan `Fecha`/`Hora`.
+- **App · subfiltros canónicos.** Piden atención · Todos (sucursal), Con acceso · Todos los módulos (permisos), Inventario · Área de vencidos y el filtro del conteo, Puntos · Dólares y el filtro de movimientos (puntos del cliente) pasan de segmentado a `Subfiltro` (píldoras). Los paneles de las fichas de detalle (cliente, encuesta, documento) se quedan debajo de su encabezado, anotados con `seccion-en-linea`.
+
 ## v2.1513.13 — Facturas descuadradas: el aviso sale al momento
 
 El aviso «Error en una factura» (renglones que no suman el total) ahora llega

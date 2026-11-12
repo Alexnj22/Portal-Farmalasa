@@ -162,6 +162,7 @@ export default function FichaCliente() {
           {cliente.mostrador ? <Aviso tono="nota" texto="Es un cliente genérico del mostrador, no una persona: no lleva ficha fiscal." /> : null}
           {cliente.nombre_corrupto ? <Aviso tono="cuidado" texto="El nombre llegó dañado. Corrígelo con el que aparece en el documento." /> : null}
 
+          {/* seccion-en-linea: paneles de una ficha de detalle, debajo de su encabezado (como un perfil del iPhone); fijos arriba quedarían antes del nombre (2026-11-12) */}
           <Segmentos margen={0} activa={panel} onCambiar={setPanel} opciones={[{ id: 'ficha', label: 'Ficha' }, { id: 'actividad', label: 'Actividad' }]} />
 
           {panel === 'ficha' ? (

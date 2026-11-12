@@ -36,7 +36,7 @@ import { Aviso, BotonGrande, Campo, Cargando, Vacio } from '../../componentes/fo
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { Chip } from '../../componentes/inicio/Widget';
 import Escaner from '../../componentes/Escaner';
-import Segmentos from '../../componentes/Segmentos';
+import Subfiltro from '../../componentes/Subfiltro';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { cerrarProgreso, fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -536,12 +536,12 @@ export default function Conteo() {
             </View>
           ) : null}
           {hayVencidos ? (
-            <Segmentos activa={area} onCambiar={setArea} opciones={[
+            <Subfiltro activa={area} onCambiar={setArea} opciones={[
               { id: 'NORMAL', label: 'Inventario' },
               { id: 'VENCIDOS', label: 'Área de vencidos' },
             ]} />
           ) : null}
-          <Segmentos activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
+          <Subfiltro activa={filtro} onCambiar={setFiltro} opciones={filtros.map((f) => ({ id: f.key, label: f.key === 'DIFERENCIA' ? 'Diferencia' : f.label }))} />
           <FiltrosActivos grupos={grupos} />
           {productos.aproximado && busqueda ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran productos parecidos." /></View> : null}
           <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{`${productos.total.toLocaleString('es-SV')} producto${productos.total === 1 ? '' : 's'}`}</Text>

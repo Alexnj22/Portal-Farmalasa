@@ -28,7 +28,7 @@ import { FILTROS_DE_MOVIMIENTO, mesesDeCuenta, movimientoPasaFiltro, partesDelRe
 import { fechaNumerica, fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
-import Segmentos from '../../componentes/Segmentos';
+import Subfiltro from '../../componentes/Subfiltro';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { colorSistema } from '../../componentes/Formulario';
@@ -194,7 +194,7 @@ export default function PuntosCliente() {
               <Vidrio radio={20}>
                 <View style={{ padding: 14, gap: 10 }}>
                   <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>Mes a mes</Text>
-                  <Segmentos margen={0} activa={unidad} onCambiar={setUnidad} opciones={[{ id: 'puntos', label: 'Puntos' }, { id: 'dolares', label: 'Dólares' }]} />
+                  <Subfiltro activa={unidad} onCambiar={setUnidad} opciones={[{ id: 'puntos', label: 'Puntos' }, { id: 'dolares', label: 'Dólares' }]} />
                   <Grafica alto={150} activo={indiceMes >= 0 ? indiceMes : null}
                     datos={meses.map((m) => ({ etiqueta: etiquetaMes(m.mes), titulo: mesLargo(m.mes), mes: m.mes, acumulado: m.acumulado, canjeado: m.canjeado, saldo: m.saldo }))}
                     series={[{ clave: 'acumulado', rotulo: 'Acumulados', color: COLOR_ACUMULADO, tipo: 'barra' }, { clave: 'canjeado', rotulo: 'Canjeados', color: COLOR_CANJEADO, tipo: 'barra' }]}
@@ -212,7 +212,7 @@ export default function PuntosCliente() {
                 ))}
               </Seccion>
             ) : null}
-            <Segmentos margen={0} activa={filtro} onCambiar={(v) => { setFiltro(v); setMostrar(30); }} opciones={FILTROS_DE_MOVIMIENTO.map((f) => ({ id: f.value, label: f.label }))} />
+            <Subfiltro activa={filtro} onCambiar={(v) => { setFiltro(v); setMostrar(30); }} opciones={FILTROS_DE_MOVIMIENTO.map((f) => ({ id: f.value, label: f.label }))} />
             {mesElegido ? (
               <Pressable onPress={() => setMesElegido(null)} style={({ pressed }) => ({ alignSelf: 'flex-start', opacity: pressed ? 0.55 : 1 })} accessibilityLabel="Quitar el filtro del mes">
                 <Pildora texto={`${mesLargo(mesElegido)}  ✕`} color={MARCA.azulClaro} />

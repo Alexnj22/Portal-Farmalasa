@@ -186,6 +186,7 @@ export default function EncuestaCliente() {
                     <Text style={{ color: MARCA.azulClaro, fontSize: 15, fontWeight: '600' }}>Exportar CSV</Text>
                   </Tocable>
                 </View>
+                {/* seccion-en-linea: paneles de una ficha de detalle, debajo de su encabezado (como un perfil del iPhone); fijos arriba quedarían antes del nombre (2026-11-12) */}
                 <Segmentos activa={vista} onCambiar={setVista} opciones={[{ id: 'resultados', label: 'Resultados' }, { id: 'comentarios', label: 'Comentarios' }]} />
                 {vista === 'resultados' ? (
                   <>

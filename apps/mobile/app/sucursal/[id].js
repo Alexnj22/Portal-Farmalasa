@@ -43,6 +43,7 @@ import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/f
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
 import Segmentos from '../../componentes/Segmentos';
+import Subfiltro from '../../componentes/Subfiltro';
 import FijoArriba from '../../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Avatar from '../../componentes/Avatar';
@@ -220,7 +221,7 @@ function Expediente({ b, puedeEditar }) {
       <Seccion titulo="Expediente">
         <Barra rotulo={`${exp.subidos} de ${exp.total} documentos`} pct={exp.avance} />
       </Seccion>
-      <Segmentos activa={todos ? 'todos' : 'atencion'} onCambiar={(v) => setTodos(v === 'todos')}
+      <Subfiltro activa={todos ? 'todos' : 'atencion'} onCambiar={(v) => setTodos(v === 'todos')}
         opciones={[{ id: 'atencion', label: 'Piden atención' }, { id: 'todos', label: 'Todos' }]} />
       {grupos.map(([titulo, lista]) => (
         <Seccion key={titulo} titulo={`${titulo} · ${lista.length}`}>

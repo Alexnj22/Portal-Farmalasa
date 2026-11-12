@@ -292,6 +292,11 @@ export default function Puntos() {
       {resumen.cupon ? (
         <Entrada indice={2}>
           <Cupon cupon={resumen.cupon} nivel={mayorista ?? resumen.nivel?.clave} activa={visible} fondo={Platform.OS === 'android' ? colorSistema.fondo : (t.oscuro ? '#0A090E' : '#F5F4F8')} demo={enPrueba ? prueba.demoCupon : 0} alCambiar={() => cargar({ forzar: true })} />
+          {/* Guía 5.3 de Apple y la de concursos de Google Play (2026-11-11): un
+              premio al azar dice quién lo patrocina y que las tiendas no. */}
+          <Text style={{ fontSize: 12, lineHeight: 16, color: colorSistema.texto3, textAlign: 'center', marginTop: 8, marginHorizontal: 12 }}>
+            Beneficio del programa Puntos Salud, sin costo y sujeto a su reglamento. Apple y Google no patrocinan ni participan en esta promoción.
+          </Text>
         </Entrada>
       ) : null}
 

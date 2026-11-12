@@ -395,6 +395,14 @@ export default function TomasHoja({ tratamiento, actual, alCerrar }) {
                 : 'Tus horarios se guardan sólo en este teléfono; no los enviamos a nadie.'} Si cierras sesión, se borran.
             </Text>
           </View>
+          {/* Guía 1.4.1 de Apple / salud de Google Play (2026-11-11): el
+              recordatorio no indica dosis; eso lo decide quien lo recetó. */}
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'flex-start', paddingHorizontal: 4 }}>
+            <Icono sf="stethoscope" respaldo="i" tam={12} color={colorSistema.texto3} />
+            <Text style={{ flex: 1, fontSize: 12, lineHeight: 17, color: colorSistema.texto3 }}>
+              Es sólo un recordatorio: no reemplaza las indicaciones de tu médico. Toma tu medicamento como te lo recetaron.
+            </Text>
+          </View>
         </ScrollView>
         </ConTeclado>
       </View>

@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.0 — App de clientes lista para revisión: micrófono declarado, aviso v4
+
+- **Aviso de privacidad v4 (vigente desde el 11-nov-2026).** La cláusula 10 decía que la app «no lee su micrófono», pero el chat graba notas de voz: lo declarado y lo que hace no coincidían, motivo de rechazo en Apple (5.1.1/5.1.2) y en Google (Seguridad de los datos). Ahora explica que el micrófono se usa sólo mientras el cliente graba una nota de voz, que nunca escucha en segundo plano, los documentos que se mandan por el chat, el escaneo de códigos con la cámara y que la pasarela de pagos pasó de Wompi a n1co. La app y `/mis-puntos` se lo vuelven a pedir a todos (`aviso-2026-11-11`). PDF y `/privacidad` regenerados.
+- **Notas de voz en Android.** El permiso del micrófono estaba bloqueado desde la auditoría de octubre (antes de que existieran las notas de voz), así que en Android no se podían grabar; ahora se pide como en iPhone.
+- **Manifiesto de privacidad de iOS**: declara «Audio Data» (funcionalidad de la app). `docs/APP-CLIENTES.md` trae las respuestas nuevas para App Store Connect y Play Console (audio y archivos del chat).
+- **Cupón raspable**: dice que es un beneficio sin costo sujeto al reglamento y que Apple y Google no patrocinan la promoción (guía 5.3).
+- **Recordatorio de tomas**: «no reemplaza las indicaciones de tu médico» (guía 1.4.1).
+
 ## v2.1511.6 — App de clientes: sin pago en línea hasta que esté activo
 
 - **App de clientes · el pago en línea no se ve mientras no esté activo.** El carrito mostraba «En línea ahora · Próximamente», y Mis reservas, los encargos y los créditos tenían botones de pagar que contestaban «en preparación»: motivo de rechazo en la revisión de las tiendas. Ahora la app le pregunta al servidor si el cobro está activo (`pago_preparar`) y, mientras no lo esté, no muestra ninguna opción de pago en línea; los créditos dicen «abonar en cualquier sucursal» y un encargo confirmado dice dónde pagar el anticipo. El día que se cargue la llave de n1co, los botones vuelven solos, sin publicar nada (`apps/clientes/lib/pagoEnLinea.js`).

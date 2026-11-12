@@ -570,10 +570,10 @@ rastreo: No**.
 | Contacts | Contacts | No | — | `invitar` usa la hoja de compartir, no lee contactos |
 | User Content | Emails or Text Messages | No | — | (el chat va como Customer Support) |
 | User Content | **Photos or Videos** | Sí | App Functionality | receta, foto de perfil, fotos del chat |
-| User Content | Audio Data | No | — | micrófono desactivado |
+| User Content | **Audio Data** | Sí | App Functionality | notas de voz del chat (desde el 2026-11-11, aviso v4); el micrófono sólo se enciende mientras el cliente graba |
 | User Content | Gameplay Content | No | — | |
 | User Content | **Customer Support** | Sí | App Functionality | chat con la farmacia, calificación |
-| User Content | **Other User Content** | Sí | App Functionality · Analytics | encuestas, notas de pedido, solicitud de mayorista |
+| User Content | **Other User Content** | Sí | App Functionality · Analytics | encuestas, notas de pedido, solicitud de mayorista, PDF enviados por el chat |
 | Browsing History | Browsing History | No | — | |
 | Search History | Search History | No | — | la búsqueda del catálogo no se guarda |
 | Identifiers | **User ID** | Sí | App Functionality | DUI / código de acceso / número de cliente |
@@ -634,8 +634,9 @@ Tipos recopilados (todos: **recopilado sí · compartido no · no efímero**):
 | Mensajes | Correos / SMS-MMS | No | |
 | Fotos y videos | **Fotos** | Opcional | Funcionalidad de la app |
 | Fotos y videos | Videos | No | |
-| Audio | todos | No | |
-| Archivos y documentos | Archivos y documentos | No | |
+| Audio | **Grabaciones de voz o sonido** | Opcional | Funcionalidad de la app (notas de voz del chat; aviso v4) |
+| Audio | Archivos de música / Otro audio | No | |
+| Archivos y documentos | **Archivos y documentos** | Opcional | Funcionalidad de la app (PDF enviados por el chat) |
 | Calendario | Eventos | No | |
 | Contactos | Contactos | No | |
 | Actividad en la app | **Interacciones con la app** | Obligatorio | Funcionalidad de la app · Estadísticas |

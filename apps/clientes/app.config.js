@@ -57,8 +57,8 @@ const BLOQUEADOS = [
   // Leer fotos: la galería se abre con el selector del sistema, que no pide
   // permiso (expo-image-picker en Android 13+ y GetContent antes).
   'android.permission.READ_EXTERNAL_STORAGE',
-  // Micrófono: sólo se toman fotos, nunca video ni audio.
-  'android.permission.RECORD_AUDIO',
+  // (El micrófono SÍ se usa desde las notas de voz del chat: RECORD_AUDIO
+  // salió de esta lista el 2026-11-11 y está declarado en el aviso v4.)
   // El número en el ícono de los launchers (ShortcutBadger, que trae
   // expo-notifications): la app no lo pone (`shouldSetBadge: false` en
   // lib/avisos.js) y no crea accesos directos.

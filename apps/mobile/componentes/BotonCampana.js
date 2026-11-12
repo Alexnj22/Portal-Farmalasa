@@ -17,13 +17,17 @@ export default function BotonCampana() {
   // pendiente sigue pidiendo atención.
   const sinLeer = useStaffStore((s) => s.notifications.filter((n) => !n.read_at && !n.deleted_at).length) + usePorDecidir((s) => s.items.length);
   return (
-    <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10}
+    // Con globo, el globo ENTRA en la caja: sobresalía 8 pt a la derecha fuera
+    // de ella, así que la barra centraba sólo la campana y el conjunto se veía
+    // corrido a la derecha (usuario, 2026-11-12). Con el relleno, lo que se
+    // centra es campana + globo.
+    <Pressable onPress={() => router.navigate('/avisos')} hitSlop={10} style={{ paddingRight: sinLeer ? 8 : 0 }}
       accessibilityRole="button" accessibilityLabel={sinLeer ? `Notificaciones, ${sinLeer} sin leer` : 'Notificaciones'}>
       <Host matchContents>
         <Icon name={iconoDe('Bell')} size={22} color={tema.color.texto} />
       </Host>
       {sinLeer ? (
-        <View style={{ position: 'absolute', top: -4, right: -8, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: tema.color.peligro, alignItems: 'center', justifyContent: 'center' }}>
+        <View style={{ position: 'absolute', top: -4, right: 0, minWidth: 18, height: 18, borderRadius: 9, paddingHorizontal: 4, backgroundColor: tema.color.peligro, alignItems: 'center', justifyContent: 'center' }}>
           <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>{sinLeer > 99 ? '99+' : sinLeer}</Text>
         </View>
       ) : null}

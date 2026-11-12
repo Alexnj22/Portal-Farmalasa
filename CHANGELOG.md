@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.7 — Campana centrada con su globo
+
+- **App · la campana se ve centrada con su globo.** El globo de cantidad sobresalía 8 pt fuera de la caja del botón, así que la barra centraba sólo la campana y el conjunto se veía corrido a la derecha. Ahora el globo entra en la caja y se centra campana + globo.
+
 ## v2.1512.6 — App clientes: el logo de arranque completo en Android
 
 - **Android 12+ cortaba las puntas del logo al abrir la app** (el usuario, con captura). Esa pantalla recorta el ícono en un círculo de 2/3 del lado y el logo ocupaba el 69 % del ancho. Ahora Android usa su propia imagen (`assets/logo-puntos-salud-arranque-android.png`), con margen: la diagonal del logo cabe en el círculo. Es nativo, así que va en la build 58 y no por aire.

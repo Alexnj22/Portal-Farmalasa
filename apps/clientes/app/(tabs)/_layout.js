@@ -53,7 +53,7 @@ export default function Pestanas() {
             Salud» se cortaba (2026-11-11): ahí va «Tienda» a secas. */}
         <NativeTabs.Trigger.Label>{ANDROID ? 'Tienda' : 'Tienda Salud'}</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
-      <NativeTabs.Trigger contentStyle={contenido} name="bienestar">
+      <NativeTabs.Trigger contentStyle={contenido} name="bienestar" disableAutomaticContentInsets={!ANDROID}>
         <NativeTabs.Trigger.Icon sf={{ default: 'leaf', selected: 'leaf.fill' }} md="spa" />
         <NativeTabs.Trigger.Label>Bienestar</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>

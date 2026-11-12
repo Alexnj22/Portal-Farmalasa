@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.3 — App clientes: Bienestar y Sucursales sin saltos en iPhone
+
+- **El contenido de Bienestar y Sucursales saltaba arriba y abajo en iPhone** (al entrar, al sacar una captura). Con la barra transparente, el margen de arriba lo ponía el ajuste automático de iOS, que llegaba a destiempo. Ahora el margen es la altura de la barra como número fijo —el mismo arreglo que ya tenía el Carrito—, y la pestaña Bienestar ya no le impone el ajuste automático a su lista. Sale por aire.
+
 ## v2.1512.2 — App clientes: Reglas y privacidad a pantalla completa en Android
 
 - **El reglamento y el aviso se leían en un cuadro diminuto en Android.** En la guía de bienvenida, la página «Reglas y privacidad» vive dentro de la tira horizontal de páginas; en Android una página ahí no hereda el alto con `flex: 1`, así que el documento quedaba en su mínimo de 160 pt. Ahora la tira se mide y la página recibe ese alto: el documento ocupa todo el espacio libre. Sale por aire a las compilaciones 57 (Android) y 106 (iPhone).

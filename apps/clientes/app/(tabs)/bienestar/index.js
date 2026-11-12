@@ -13,6 +13,7 @@
 // de calma va primero —es la razón de ser de la pestaña— y los juegos después.
 import { Text, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { Pantalla, Seccion, Tarjeta } from '../../../componentes/ui';
 import { Entrada, Tocable } from '../../../componentes/animacion';
 import FraseDelDia from '../../../componentes/FraseDelDia';
@@ -81,8 +82,15 @@ function TarjetaJuego({ e, grande = false }) {
 
 export default function Bienestar() {
   const t = useTema();
+  // El contenido saltaba arriba y abajo en iPhone (2026-11-11, el usuario: «tomé
+  // captura y se hizo para arriba la vista»). Es lo mismo que el Carrito: con
+  // la barra transparente, el margen de arriba lo ponía el ajuste automático de
+  // iOS, que llega a destiempo (al terminar de animar, al sacar una captura). Con
+  // la altura de la barra como número, el margen es fijo. Va junto con
+  // `disableAutomaticContentInsets` en la pestaña (app/(tabs)/_layout.js).
+  const barra = useHeaderHeight();
   return (
-    <Pantalla sinVidrio>
+    <Pantalla sinVidrio bajoBarra={barra}>
       <Entrada indice={0}>
         <FraseDelDia grande />
       </Entrada>

@@ -20,6 +20,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import Vidrio from '../componentes/Vidrio';
 import * as Haptics from 'expo-haptics';
 import Animated, { Easing, FadeIn, FadeOut, LinearTransition, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useHeaderHeight } from 'expo-router/react-navigation';
 import { Cargando, Pantalla, Vacio } from '../componentes/ui';
 import Icono from '../componentes/Icono';
 import IconoWhatsapp from '../componentes/IconoWhatsapp';
@@ -44,6 +45,10 @@ const soloDigitos = (t) => String(t ?? '').replace(/\D/g, '');
 
 export default function Sucursales() {
   const [datos, setDatos] = useState(null);
+  // Margen fijo bajo la barra transparente (2026-11-11): la lista aparece
+  // DESPUÉS de «Cargando» y el ajuste automático de iOS le llegaba tarde, así
+  // que el contenido saltaba. Mismo arreglo que el Carrito y Bienestar.
+  const barra = useHeaderHeight();
   const [refrescando, setRefrescando] = useState(false);
   // Al volver a la pantalla se pide de nuevo («abierta» cambia con la hora), y
   // un fallo de red no borra lo que ya se veía.
@@ -61,11 +66,11 @@ export default function Sucursales() {
   }, [datos, ubicacion.posicion]);
 
   if (!datos) return <Cargando />;
-  if (!datos.ok) return <Pantalla conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar las sucursales" accion="Reintentar" alAccion={refrescar}>Revisa tu conexión e intenta de nuevo.</Vacio></Pantalla>;
+  if (!datos.ok) return <Pantalla conPestanas={false} bajoBarra={barra} alRefrescar={refrescar} refrescando={refrescando}><Vacio titulo="No se pudieron cargar las sucursales" accion="Reintentar" alAccion={refrescar}>Revisa tu conexión e intenta de nuevo.</Vacio></Pantalla>;
   const abiertas = salas.filter((s) => s.abierta).length;
 
   return (
-    <Pantalla sinVidrio conPestanas={false} alRefrescar={refrescar} refrescando={refrescando}>
+    <Pantalla sinVidrio conPestanas={false} bajoBarra={barra} alRefrescar={refrescar} refrescando={refrescando}>
       <Entrada indice={0}>
         <Text style={{ fontSize: 15, fontWeight: '600', color: colorSistema.texto2, marginLeft: 4 }}>
           {abiertas ? `${abiertas} de ${salas.length} abiertas ahora` : 'Todas cerradas en este momento'}

@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.4 — Recordatorio de tomas sólo en iPhone (Google Play)
+
+- **App de clientes · «Recordarme tomarlo» se apaga en Android.** Google Play rechazó la 58: un recordatorio de tomas con dosis cuenta como «administración de medicamentos», función médica que sólo puede publicar una cuenta de organización, y la de Play es personal. `lib/tomas.js` pasa a `DISPONIBLE = Platform.OS === 'ios'`; en Android quedan la lista de Mis tratamientos y «Volver a pedir». La guía ya no promete el recordatorio en Android. Volver atrás cuando la app pase a una cuenta de organización.
+
 ## v2.1513.3 — Los íconos ya no se mueven
 
 - **App · los íconos ya no se mueven al contraer y abrir.** `<Host matchContents>` medía el ícono después de dibujarlo: cada vez que una lista se rearmaba (contraer una sala, abrir un grupo de solicitudes) nacía en 0 × 0 y saltaba a su lugar; en iPhone, dentro de un botón, quedaba fuera de él. Nueva pieza `componentes/IconoFijo.js` con el lugar reservado desde el primer dibujo, aplicada a los 54 íconos de 41 archivos (quedan fuera los controles del sistema: segmentos, fecha, hora, interruptor).

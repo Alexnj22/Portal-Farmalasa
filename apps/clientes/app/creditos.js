@@ -23,6 +23,7 @@ import { colorSistema } from '../componentes/sistema';
 import Presionable from '../componentes/Presionable';
 import Icono from '../componentes/Icono';
 import { useSesion } from '../lib/sesion';
+import { usePagoEnLinea } from '../lib/pagoEnLinea';
 import { dolares, fecha } from '../lib/formato';
 import { navegar } from '../lib/navegar';
 import { suave, useTema } from '../tema/tema';
@@ -49,7 +50,8 @@ export default function Creditos() {
     const r = await pedir('mis_creditos');
     setDatos((ant) => (r?.ok || !ant?.ok ? r : ant));
   }, [pedir]);
-  useFocusEffect(useCallback(() => { cargar(); pedir('pago_preparar'); }, [cargar, pedir]));
+  const enLinea = usePagoEnLinea();
+  useFocusEffect(useCallback(() => { cargar(); }, [cargar]));
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   // Pagar con n1co. La hoja vuelve sola a `puntossalud://creditos`; después
@@ -127,7 +129,7 @@ export default function Creditos() {
   const pagos = Array.isArray(datos.pagos) ? datos.pagos : [];
   const vencidos = Number(datos.vencidos) || 0;
   // Lo que se puede pagar ahora (sin un pago ya aplicándose) y lo elegido.
-  const pagables = datos.pagar_en_linea ? creditos.filter((c) => !c.pago_en_proceso) : [];
+  const pagables = enLinea && datos.pagar_en_linea ? creditos.filter((c) => !c.pago_en_proceso) : [];
   const elegidos = pagables.filter((c) => !fuera.has(c.id));
   const totalElegido = elegidos.reduce((s, c) => s + Math.round(Number(c.saldo) * 100), 0) / 100;
   const todosElegidos = elegidos.length === pagables.length;
@@ -262,7 +264,7 @@ export default function Creditos() {
       <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start', marginHorizontal: 8, marginTop: 4 }}>
         <Icono sf="info.circle" respaldo="i" tam={15} color={colorSistema.texto3} />
         <Texto nivel={3} estilo={{ flex: 1, fontSize: 13 }}>
-          El plazo de cada crédito es de {Number(datos.plazo_dias) || 30} días desde la compra. Puedes pagar aquí el saldo completo con tarjeta, o abonar en la sucursal; lo que pagas en sala se refleja en unos minutos.
+          El plazo de cada crédito es de {Number(datos.plazo_dias) || 30} días desde la compra. {enLinea ? 'Puedes pagar aquí el saldo completo con tarjeta, o abonar en la sucursal' : 'Puedes abonar en cualquier sucursal'}; lo que pagas en sala se refleja en unos minutos.
         </Texto>
       </View>
     </Pantalla>

@@ -56,6 +56,7 @@ import ProrrogaHoja from '../componentes/ProrrogaHoja';
 import { Entrada, Latido } from '../componentes/animacion';
 import { colorSistema } from '../componentes/sistema';
 import { useSesion } from '../lib/sesion';
+import { usePagoEnLinea } from '../lib/pagoEnLinea';
 import { diaDelPlazo, dolares, fecha, quedaDelPlazo } from '../lib/formato';
 import { suave, useTema } from '../tema/tema';
 import { navegar } from '../lib/navegar';
@@ -305,7 +306,7 @@ export default function Reservas() {
   // Pone al día la pantalla bloqueada al volver a primer plano y con los
   // avisos de reserva, aunque después se salga de esta pantalla.
   useEffect(() => { vigilarReservasVivas({ alArrancar: false }); }, []);
-  useFocusEffect(useCallback(() => { pedir('pago_preparar'); }, [pedir]));
+  const enLinea = usePagoEnLinea();
   const refrescar = async () => { setRefrescando(true); await cargar(); setRefrescando(false); };
 
   // Las de muestra (modo de prueba): el cambio va a la memoria, nunca al servidor.
@@ -552,9 +553,9 @@ export default function Reservas() {
     return (
       <Entrada key={`a:${g.clave}`} indice={Math.min(i, 8)}>
         {g.filas.length > 1 ? (
-          <PedidoAbierto g={g} ahora={ahora} alCancelar={() => cancelarPedido(g)} alProrrogar={() => prorrogar(g.filas)} reglas={reglas} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
+          <PedidoAbierto g={g} ahora={ahora} alCancelar={() => cancelarPedido(g)} alProrrogar={() => prorrogar(g.filas)} reglas={reglas} alPagar={enLinea ? () => pagar(r) : null} pagando={pagando === r.id} resaltada={esResaltado(g)} />
         ) : (
-          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alProrrogar={() => prorrogar([r])} reglas={reglas} alPagar={() => pagar(r)} pagando={pagando === r.id} resaltada={esResaltado(g)} />
+          <ReservaAbierta r={r} ahora={ahora} alCancelar={() => cancelar(r)} alProrrogar={() => prorrogar([r])} reglas={reglas} alPagar={enLinea ? () => pagar(r) : null} pagando={pagando === r.id} resaltada={esResaltado(g)} />
         )}
       </Entrada>
     );
@@ -614,7 +615,7 @@ export default function Reservas() {
           {filtro === 'todas' && encargos.length ? (
             <>
               <SeccionUi>Encargos</SeccionUi>
-              {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={() => pagarEncargo(e)} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} alProrrogar={() => prorrogarEncargo(e)} />)}
+              {encargos.map((e) => <Encargo key={e.id} e={e} alPagar={enLinea ? () => pagarEncargo(e) : null} pagando={pagandoEncargo === e.id} alCancelar={() => cancelarEncargo(e)} alProrrogar={() => prorrogarEncargo(e)} />)}
             </>
           ) : null}
           {d.saldo_a_favor?.total > 0 ? <ResumenSaldo s={d.saldo_a_favor} /> : null}
@@ -834,7 +835,7 @@ function ReservaAbierta({ r, ahora, alCancelar, alProrrogar, alPagar, pagando, r
 
       {/* Lo pagado de una reserva cerrada queda a favor (`saldo_favor_dias`: 60 días; 1 año desde el reglamento v2). */}
       <SaldoAFavor r={r} />
-      {r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
+      {alPagar && r.pago_estado === 'pendiente' && Number(r.total) > 0 ? (
         <View style={{ gap: 6 }}>
           {/* Un pedido del carrito se cobra entero: sus productos + el envío. */}
           <Boton alTocar={alPagar} cargando={pagando}>{r.total_pedido != null
@@ -1055,7 +1056,7 @@ function PedidoAbierto({ g, ahora, alCancelar, alProrrogar, alPagar, pagando, re
       </View>
 
       {g.filas.map((f) => <SaldoAFavor key={f.id} r={f} />)}
-      {pagoClave === 'pendiente' && !algunaPagada && Number(total) > 0 ? (
+      {alPagar && pagoClave === 'pendiente' && !algunaPagada && Number(total) > 0 ? (
         <View style={{ gap: 6 }}>
           <Boton alTocar={alPagar} cargando={pagando}>{`Pagar el pedido ${dolares(total)}${envio > 0 ? ' (con envío)' : ''}`}</Boton>
           <Text style={{ fontSize: 12, textAlign: 'center', color: colorSistema.texto3 }}>
@@ -1412,8 +1413,9 @@ function Encargo({ e, alPagar, alCancelar, alProrrogar, pagando = false }) {
         <Text style={{ fontSize: 14, fontWeight: '700', color: colorSistema.texto }}>Retíralo hasta el {fecha(e.retirar_hasta)}</Text>
       ) : null}
       {e.nota_sucursal ? <Text style={{ fontSize: 13, color: colorSistema.texto3 }}>«{e.nota_sucursal}»</Text> : null}
-      {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (
-        <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
+      {e.estado === 'confirmado' && e.pago_estado !== 'pagado' ? (alPagar
+        ? <Boton alTocar={alPagar} cargando={pagando}>{`Confirmar y pagar ${dolares(e.anticipo)}`}</Boton>
+        : <Text style={{ fontSize: 14, color: colorSistema.texto2 }}>{`Para confirmarlo, paga ${dolares(e.anticipo)} en ${e.sala ?? 'la sucursal'}.`}</Text>
       ) : null}
       {e.estado === 'listo' ? <EstadoDeProrroga p={e.prorroga} /> : null}
       {['directa', 'pedir'].includes(modoDeProrroga(e, true)) ? (

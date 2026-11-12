@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.1 — Tarjeta de Personal: contacto chico y Ver perfil
+
+- **App · la tarjeta de Personal.** En iPhone los íconos de WhatsApp y Llamar se dibujaban fuera del botón, más abajo (el ícono con `matchContents` se medía tarde dentro de un renglón): ahora van con tamaño fijo, igual en los botones de la ficha. Los dos botones grandes pasan a dos círculos chicos de color suave a la derecha del pie (no son lo principal), y a la izquierda «Ver perfil ›», para que se entienda que la tarjeta abre el perfil.
+
 ## v2.1513.0 — Personal y la ficha más útiles
 
 App del personal (lo pidió el usuario, revisado en el emulador):

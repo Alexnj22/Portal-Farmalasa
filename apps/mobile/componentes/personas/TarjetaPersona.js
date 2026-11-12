@@ -24,14 +24,24 @@ import { PildoraDeCargo } from './Piezas';
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 
-// Sólidos con el ícono blanco: tintados al 13% se perdían sobre el vidrio.
-const VERDE_WHATSAPP = '#0E8A4F';
+// El verde de WhatsApp, tintado (el sólido de antes gritaba más que el nombre).
+const VERDE_CLARO = MARCA.verde;
 
-// WhatsApp y Llamar van en su propio renglón, abajo, con su nombre (2026-11-12,
-// usuario: «los íconos de teléfono y WhatsApp se pierden y se desordenan»): al
-// lado del nombre se apretaban contra él, cambiaban de lugar según el largo del
-// nombre o la foto destacada, y faltaban en quien no tiene número. Abajo, a lo
-// ancho, quedan siempre en el mismo sitio.
+// El ícono con su tamaño FIJO desde el primer dibujo. Con `matchContents`
+// dentro de un renglón, en iPhone el ícono se medía después y se dibujaba
+// fuera del botón, más abajo (captura del usuario, 2026-11-12). Es lo mismo
+// que hace `Avatar` con sus chapitas.
+function IconoFijo({ nombre, tamano, color }) {
+  return (
+    <View style={{ width: tamano, height: tamano, alignItems: 'center', justifyContent: 'center' }}>
+      <Host style={{ width: tamano, height: tamano }}><Icon name={iconoDe(nombre)} size={tamano} color={color} /></Host>
+    </View>
+  );
+}
+
+// WhatsApp y Llamar: secundarios (usuario, 2026-11-12: «muy grandes… no es lo
+// principal»). Dos círculos chicos de color suave al pie, a la derecha, siempre
+// en el mismo lugar; lo principal de la tarjeta es entrar al perfil.
 // Del mismo alto que la píldora del cargo, para que el renglón quede parejo.
 function PildoraChica({ texto, color }) {
   return (
@@ -41,13 +51,12 @@ function PildoraChica({ texto, color }) {
   );
 }
 
-function BotonDeContacto({ icono, texto, color, onPress, etiqueta }) {
+function BotonDeContacto({ icono, color, onPress, etiqueta }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={4}
-      style={({ pressed }) => ({ flex: 1, minHeight: 40, borderRadius: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
-        backgroundColor: color, transform: [{ scale: pressed ? 0.96 : 1 }] })}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={17} color="#FFFFFF" /></Host>
-      <Text style={{ color: '#FFFFFF', fontSize: 14, fontWeight: '700' }}>{texto}</Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={etiqueta} hitSlop={6}
+      style={({ pressed }) => ({ width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center',
+        backgroundColor: `${color}26`, borderWidth: 0.5, borderColor: `${color}59`, transform: [{ scale: pressed ? 0.9 : 1 }] })}>
+      <IconoFijo nombre={icono} tamano={17} color={color} />
     </Pressable>
   );
 }
@@ -115,12 +124,17 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
             </View>
           </View>
           {respondeA ? <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{`↳ Responde a ${respondeA}`}</Text> : null}
-          {tel.length >= 8 && !inactiva ? (
-            <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
-              <BotonDeContacto icono="MessageCircle" texto="WhatsApp" color={VERDE_WHATSAPP} etiqueta={`Escribir a ${nombre}`} onPress={() => contactar('wa')} />
-              <BotonDeContacto icono="Phone" texto="Llamar" color={MARCA.azul} etiqueta={`Llamar a ${nombre}`} onPress={() => contactar('tel')} />
-            </View>
-          ) : null}
+          {/* El pie: que se entienda que la tarjeta abre el perfil, y el
+              contacto chico a la derecha. */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+            <Text style={{ flex: 1, color: colorSistema.acento, fontSize: 14, fontWeight: '600' }}>Ver perfil  ›</Text>
+            {tel.length >= 8 && !inactiva ? (
+              <>
+                <BotonDeContacto icono="MessageCircle" color={VERDE_CLARO} etiqueta={`Escribir a ${nombre} por WhatsApp`} onPress={() => contactar('wa')} />
+                <BotonDeContacto icono="Phone" color={MARCA.azulClaro} etiqueta={`Llamar a ${nombre}`} onPress={() => contactar('tel')} />
+              </>
+            ) : null}
+          </View>
           {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{nombreDeSala}</Text> : null}
         </View>
       </Vidrio>

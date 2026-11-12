@@ -71,7 +71,9 @@ const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 function Accion({ icono, rotulo, color, onPress }) {
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ flex: 1, alignItems: 'center', gap: 4, paddingVertical: 10, borderRadius: 16, backgroundColor: `${color}22`, opacity: pressed ? 0.7 : 1 })}>
-      <Host matchContents><Icon name={iconoDe(icono)} size={20} color={color} /></Host>
+      {/* Tamaño fijo: con `matchContents` el ícono se medía tarde en iPhone y
+          salía fuera del botón (como en la tarjeta de Personal). */}
+      <View style={{ width: 20, height: 20 }}><Host style={{ width: 20, height: 20 }}><Icon name={iconoDe(icono)} size={20} color={color} /></Host></View>
       <Text style={{ color, fontSize: 12, fontWeight: '700' }}>{rotulo}</Text>
     </Pressable>
   );

@@ -644,7 +644,7 @@ export const createRequestsSlice = (set, get) => ({
             // quedó en consola). Distinguir ese `null` del `[]` importa: una
             // lista vacía por error se ve idéntica a «no hay solicitudes», que
             // es justo el fallo mudo que se acaba de corregir.
-            const requests = await fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId, ventana });
+            const requests = await fetchApprovalRequestsList({ employeeId, branchId, branchEmpIds, soloMiasId, ventana });
             if (requests === null) throw new Error('No se pudieron cargar las solicitudes.');
 
             // 2. IDs únicos de empleados y aprobadores

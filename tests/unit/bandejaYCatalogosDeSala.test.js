@@ -70,7 +70,18 @@ describe('la bandeja de solicitudes', () => {
         await fetchApprovalRequestsList({ branchEmpIds: [1, 2, 3] });
         const [expr] = espia.primero('or');
         expect(expr).toContain('employee_id.in.(1,2,3)');
-        expect(expr).toContain('type.eq.INVENTORY_TRANSFER_REQUEST');
+        expect(expr).toContain('type.in.(INVENTORY_TRANSFER_REQUEST,INVENTORY_TRANSFER_PUSH)');
+    });
+
+    it('la solicitud es de la sala DONDE SE HIZO, no de la ficha', async () => {
+        // Fernando, ficha en Bodega y de apoyo en Salud 4: su movimiento de
+        // caja en Salud 4 lo veía Bodega. Manda `metadata.branch_id`; la ficha
+        // sólo cuenta cuando la solicitud no trae sala.
+        await fetchApprovalRequestsList({ branchId: 28, branchEmpIds: [1, 2, 3] });
+        const [expr] = espia.primero('or');
+        expect(expr).toBe('metadata->>branch_id.eq.28,'
+            + 'and(metadata->>branch_id.is.null,employee_id.in.(1,2,3)),'
+            + 'type.in.(INVENTORY_TRANSFER_REQUEST,INVENTORY_TRANSFER_PUSH)');
     });
 
     it('sin sala ni alcance propio no agrega ningún recorte', async () => {

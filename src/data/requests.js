@@ -229,7 +229,7 @@ export function fetchBranchActiveEmployeeIds(branchId) {
  * sello. Con la clave primaria de segundo criterio la pregunta no se vuelve a
  * plantear.
  */
-export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId, ventana = null }) {
+export function fetchApprovalRequestsList({ employeeId, branchId = null, branchEmpIds, soloMiasId, ventana = null }) {
     // El cuerpo va DENTRO de `fetchAllRows` —y no en un `const construir` que
     // se pasa después— porque así lo lee también el detector de `gate:data`,
     // que busca la llamada en las líneas de arriba del `.from(`. Con el cierre
@@ -274,8 +274,24 @@ export function fetchApprovalRequestsList({ employeeId, branchEmpIds, soloMiasId
          * lista se graba al crear la solicitud y no caduca, así que le dejaba a
          * la sala de respaldo el historial entero de Bodega para siempre. Sirve
          * para avisar, no para autorizar. */
+        /* ── La solicitud es de la sala DONDE SE HIZO, no de la ficha ───────
+         * (2026-11-12, el usuario: «todo se debe quedar en la sala que lo
+         * hace»). Fernando, con ficha en Bodega y de apoyo en Salud 4, hacía
+         * un movimiento de caja en Salud 4 y lo veía Bodega, no Salud 4: este
+         * filtro y el RLS decidían por `employee_id IN (los de mi sala)`.
+         * Ahora manda `metadata.branch_id` —lo guardan todas al crearse— y la
+         * ficha sólo cuando falta. Es el criterio de `salaDeSolicitud` y el de
+         * `approval_requests_select` (migración 20261112165331). El PUSH entra
+         * con el traslado: lo decide su rama del RLS (origen / destino). */
         if (branchEmpIds && branchEmpIds.length > 0) {
-            q = q.or(`employee_id.in.(${branchEmpIds.join(',')}),type.eq.INVENTORY_TRANSFER_REQUEST`);
+            const deLaFicha = `employee_id.in.(${branchEmpIds.join(',')})`;
+            q = q.or([
+                ...(branchId != null
+                    ? [`metadata->>branch_id.eq.${Number(branchId)}`,
+                       `and(metadata->>branch_id.is.null,${deLaFicha})`]
+                    : [deLaFicha]),
+                'type.in.(INVENTORY_TRANSFER_REQUEST,INVENTORY_TRANSFER_PUSH)',
+            ].join(','));
         }
         return q;
     });

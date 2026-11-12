@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.9 — Cada solicitud se queda en la sala donde se hizo
+
+- **Una solicitud la ve la sala donde se hizo, no la de la ficha de quien la pidió** (el usuario: «todo se debe quedar en la sala que lo hace»). Fernando, con ficha en Bodega y de apoyo en Salud 4, hizo dos movimientos de caja en Salud 4: los veía Bodega y Salud 4 no. La regla de lectura (`approval_requests_select`, migración `20261112165331`) y el filtro de la bandeja (`fetchApprovalRequestsList`) decidían por la ficha; ahora deciden por la sala que guarda cada solicitud al crearse, y la ficha sólo cuando no trae ninguna. Es el mismo criterio que ya usaba el filtro por sala de la pantalla (`salaDeSolicitud`). Medido en producción: Salud 4 pasa a ver los 2 de Fernando y Bodega los deja de ver; en total cambian de sala 17 solicitudes de toda la historia (descartes y cargas hechos en una sala con ficha de Administración, y los de este caso).
+
 ## v2.1512.8 — Un traslado lo ven las salas que toca, no la ficha de quien lo pidió
 
 - **A Bodega le aparecían los traslados que Fernando pedía apoyando en Salud 4** (el usuario). La regla de lectura de `approval_requests` aceptaba toda solicitud operativa de alguien con ficha en mi sucursal, y los traslados heredaban eso además de su rama propia. Ahora un traslado lo ven la sala que lo pide, la que lo manda, la que cubre a una cerrada mientras está pendiente y quien lo pidió. Medido: de 3.651 traslados sólo 4 cambian de manos (los de este caso); la sesión de Bodega pasó de 2.168 a 2.164 y sigue viendo los que salen de Bodega. Migración `20261112164718`.

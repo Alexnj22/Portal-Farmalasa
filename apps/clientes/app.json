@@ -233,6 +233,13 @@
           "dark": {
             "image": "./assets/logo-puntos-salud.png",
             "backgroundColor": "#0A090E"
+          },
+          "android": {
+            "image": "./assets/logo-puntos-salud-arranque-android.png",
+            "dark": {
+              "image": "./assets/logo-puntos-salud-arranque-android.png",
+              "backgroundColor": "#0A090E"
+            }
           }
         }
       ],

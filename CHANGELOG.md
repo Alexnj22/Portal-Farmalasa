@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.6 — App clientes: el logo de arranque completo en Android
+
+- **Android 12+ cortaba las puntas del logo al abrir la app** (el usuario, con captura). Esa pantalla recorta el ícono en un círculo de 2/3 del lado y el logo ocupaba el 69 % del ancho. Ahora Android usa su propia imagen (`assets/logo-puntos-salud-arranque-android.png`), con margen: la diagonal del logo cabe en el círculo. Es nativo, así que va en la build 58 y no por aire.
+- **`fingerprint.config.js`**: la huella contaba app.json entero en las dos plataformas, y el bloque `android` de `expo-splash-screen` le cambiaba la huella a iOS sin tocar nada de iOS. Con eso, la build 106, que está en revisión, habría dejado de recibir las actualizaciones por aire. El gancho saca ese bloque antes de contar. Medido: iOS sigue en e8f0b60f, la misma huella de las últimas publicaciones; Android pasa de 456ca00f a f48cfb5d.
+
 ## v2.1512.5 — App clientes: el paisaje de Sonidos se mueve también en Android
 
 - **En Android el fondo de Sonidos quedaba quieto** (el usuario: «no tienen efecto el fondo»). El paisaje usaba la regla de las animaciones decorativas, y el modo liviano —todo Android de menos de 6 GB, casi todos los de las salas— lo congelaba junto con el latido del botón. El paisaje es la pantalla, no un adorno: ahora sólo lo detiene «Reducir movimiento» del sistema, y en modo liviano corre a 20 cuadros en vez de 30. Sale por aire.

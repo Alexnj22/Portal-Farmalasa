@@ -432,9 +432,20 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
     /* Un solo predicado desde que se quitó el corte de traslados. Eran dos
      * —`enFiltroBase` y `enFiltro`— y la separación existía sólo para poder
      * contar lo que el corte tapaba; sin corte no hay nada que contar aparte. */
+    /* Los tipos que se ofrecen son los que hay en la pestaña que se mira
+     * (igual que la app). Si el elegido se queda sin nada —se resolvió el
+     * último—, el filtro vuelve solo a «Todos los tipos»: se DERIVA en cada
+     * pasada, sin un efecto que lo corrija un render tarde. */
+    const tipoOptions = [...new Set(delAmbito
+        .filter(r => visible(r) && (statusFilter === 'ALL' || r.status === statusFilter))
+        .map(r => r.type).filter(Boolean))]
+        .map(t => ({ value: t, label: REQUEST_TYPES[t]?.label ?? 'Solicitud' }))
+        .sort((a, b) => a.label.localeCompare(b.label));
+    const tipoActivo = tipoOptions.some(o => o.value === tipo) ? tipo : '';
+
     const enFiltro = (r) => visible(r)
-        && leTocaVer(r, { miId, miSala, tipoElegido: tipo })
-        && (!tipo || r.type === tipo)
+        && leTocaVer(r, { miId, miSala, tipoElegido: tipoActivo })
+        && (!tipoActivo || r.type === tipoActivo)
         && (!filtrandoMias || deQuienEs(r) === miId)
         && (!sala || salaDe(r) === sala)
         && enLaSemana(r);
@@ -457,12 +468,6 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
             orden: BRANCH_A_ERP[b.id] != null ? ERP_ORDEN.indexOf(BRANCH_A_ERP[b.id]) : 99,
         }))
         .sort((a, b) => a.orden - b.orden);
-
-    /* Los tipos que se ofrecen: los que existen en lo que la persona puede
-     * ver, sin recortarse por los otros filtros (misma razón que las salas). */
-    const tipoOptions = [...new Set(delAmbito.filter(visible).map(r => r.type).filter(Boolean))]
-        .map(t => ({ value: t, label: REQUEST_TYPES[t]?.label ?? 'Solicitud' }))
-        .sort((a, b) => a.label.localeCompare(b.label));
 
     const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && enFiltro(r)).length;
 
@@ -569,7 +574,7 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * exigiendo más de una opción: un menú de una sola es un clic que no
      * informa. */
     const hayFiltroDeSala = alcance === 'ALL' && salaOptions.length > 1;
-    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0) + (tipo ? 1 : 0) + (enSemanaActual ? 0 : 1);
+    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0) + (tipoActivo ? 1 : 0) + (enSemanaActual ? 0 : 1);
     const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); setTipo(''); setSemana(semanaActual); };
 
     /* §17: la acción vive en la píldora del CUERPO, no en el header. Y desde la
@@ -601,13 +606,15 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
             )}
 
             {/* Tipo: siempre como lista (`umbral={0}`), porque los tipos
-                cambian con lo que haya y un segmentado salta de forma. */}
-            {esSucursal && tipoOptions.length > 1 && (
-                <FilterBar.Section label="tipo" active={!!tipo}
+                cambian con lo que haya y un segmentado salta de forma. Se
+                dibuja aunque haya UN solo tipo: si ése son los traslados
+                ajenos, el filtro es la única puerta para verlos. */}
+            {esSucursal && tipoOptions.length > 0 && (
+                <FilterBar.Section label="tipo" active={!!tipoActivo}
                     onClear={() => setTipo('')}>
                     <FilterBar.Opciones
                         label="Tipo de solicitud"
-                        value={tipo}
+                        value={tipoActivo}
                         onChange={(v) => setTipo(v || '')}
                         options={tipoOptions}
                         placeholder="Todos los tipos"

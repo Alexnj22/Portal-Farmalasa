@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.11 — Solicitudes: el filtro Tipo sigue a la pestaña, como en la app
+
+El filtro **Tipo** de Solicitudes de sucursal ahora ofrece los tipos de la
+pestaña que se está mirando, vuelve solo a «Todos los tipos» cuando el elegido
+se queda sin solicitudes, y se muestra aunque haya un solo tipo (si ése son los
+traslados ajenos, es la única forma de verlos). Igual que la app.
+
 ## v2.1513.10 — Solicitudes: los traslados entre salas sólo a los involucrados, y el resto bajo el filtro de Tipo
 
 En Solicitudes de sucursal, los envíos y traslados entre salas ya no le salen a

@@ -150,12 +150,16 @@ export default function AccionDePersonal() {
 
   return (
     <>
-      <Stack.Screen options={{ ...BARRA_NATIVA, title: eventoAEditar ? 'Corregir acción' : 'Acción de personal', headerLargeTitle: false }} />
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: eventoAEditar ? 'Corregir acción' : (tipo ? (EVENT_TYPES[tipo]?.label || 'Acción de personal') : 'Acción de personal'), headerLargeTitle: false }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 60 }} contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled">
           <Text style={{ color: colorSistema.texto2, fontSize: 15 }}>{`${shortEmployeeName(emp)} · ${emp.role || 'Sin cargo'}`}</Text>
 
-          {eventoAEditar ? null : (
+          {/* Llegando desde un botón del perfil («Apoyo», «Vacaciones»…) el tipo
+              ya está elegido: la lista de todos los tipos sobraba (usuario,
+              2026-11-12: «al seleccionar una, siempre me sale el listado
+              completo, no tiene sentido»). Sólo «Otra acción» la muestra. */}
+          {eventoAEditar || tipo ? null : (
             <Seccion titulo="Tipo de acción">
               <Opciones valor={f.type} onCambiar={(v) => setF({ type: v, date: hoySV(), note: f.note || '' })}
                 opciones={opcionesDeNovedad().map((o) => ({ id: o.value, label: o.label }))} />

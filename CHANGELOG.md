@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.16 — Acciones directas; barra segmentada en Android
+
+- **App · las acciones del perfil abren directo.** Tocar «Apoyo», «Vacaciones»… en el perfil abría la acción con la lista de TODOS los tipos arriba, como si no se hubiera elegido nada. Ahora la pantalla se titula con la acción y va directo a sus campos; la lista sólo aparece en «Otra acción».
+- **App · Android usa la barra segmentada cuando cabe.** El cálculo reservaba 34 dp por segmento y caían a fichas pantallas en las que la barra sí entra (Personal: Planilla · Practicantes · Externos, medido con la ✓ incluida). Con 24 entra; las de cuatro opciones con rótulos de diez letras y las de cinco o más siguen en fichas, que es lo de Material.
+
 ## v2.1513.15 — Hojas y diálogos del sistema
 
 - **App · la hoja de fecha y hora en iPhone es la del sistema, con vidrio.** La primera versión (v2.1513.14) era un `Modal` con fondo sólido, que de noche se veía negro. Ahora es el `BottomSheet` de SwiftUI: en iOS 26 lleva el vidrio del sistema, de día y de noche.

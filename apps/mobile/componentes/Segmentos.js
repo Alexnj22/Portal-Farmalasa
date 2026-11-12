@@ -13,7 +13,12 @@ import { colorSistema } from './Formulario';
 import { MARCA } from './inicio/marca';
 
 const PT_POR_LETRA = 8.2;
-const RELLENO = 34; // el ✓ de la opción elegida ocupa lugar
+// Medido en el emulador (411 dp, 2026-11-12): con 34 caían a fichas pantallas
+// en las que la barra sí cabía («Planilla · Practicantes · Externos», con la ✓
+// sobre «Practicantes» incluida) y se veían distintas a sus vecinas. Con 24
+// entra ésa, y siguen cayendo las que de verdad se parten en dos renglones
+// («Documentos» y «Rechazadas» con cuatro opciones).
+const RELLENO = 24;
 
 export default function Segmentos({ opciones, activa, onCambiar, margen = 16 }) {
   const { width } = useWindowDimensions();

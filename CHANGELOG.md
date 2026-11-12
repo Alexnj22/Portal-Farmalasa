@@ -23,7 +23,7 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ## v2.1513.5 — Se deshace: recordatorio de tomas vuelve a Android
 
-_(pendiente de redactar)_
+- **App de clientes · se deshace la v2.1513.4.** El recordatorio de tomas vuelve a Android: el usuario prefiere mantener la función y resolver el rechazo de Google Play por el lado de la cuenta. No llegó a salir por el aire.
 
 ## v2.1513.4 — Recordatorio de tomas sólo en iPhone (Google Play)
 

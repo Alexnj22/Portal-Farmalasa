@@ -6,7 +6,6 @@
 import { Linking, Pressable, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { Host, Icon } from '@expo/ui';
 import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
 import { alertasDePersona, datosPendientesDePersona } from '@nucleo/utils/alertasDePersona';
 import { cadenaDeSuperiores } from '@nucleo/utils/roles';
@@ -20,6 +19,7 @@ import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import { PildoraDeCargo } from './Piezas';
+import IconoComun from '../IconoFijo';
 
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
@@ -27,17 +27,9 @@ const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
 // El verde de WhatsApp, tintado (el sólido de antes gritaba más que el nombre).
 const VERDE_CLARO = MARCA.verde;
 
-// El ícono con su tamaño FIJO desde el primer dibujo. Con `matchContents`
-// dentro de un renglón, en iPhone el ícono se medía después y se dibujaba
-// fuera del botón, más abajo (captura del usuario, 2026-11-12). Es lo mismo
-// que hace `Avatar` con sus chapitas.
-function IconoFijo({ nombre, tamano, color }) {
-  return (
-    <View style={{ width: tamano, height: tamano, alignItems: 'center', justifyContent: 'center' }}>
-      <Host style={{ width: tamano, height: tamano }}><Icon name={iconoDe(nombre)} size={tamano} color={color} /></Host>
-    </View>
-  );
-}
+// El ícono, por la pieza común (en iPhone, vista nativa simple: ver
+// componentes/IconoFijo.ios.js).
+const IconoFijo = ({ nombre, tamano, color }) => <IconoComun name={iconoDe(nombre)} size={tamano} color={color} />;
 
 // WhatsApp y Llamar: secundarios (usuario, 2026-11-12: «muy grandes… no es lo
 // principal»). Dos círculos chicos de color suave al pie, a la derecha, siempre

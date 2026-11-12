@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.9 — Íconos fijos en iPhone
+
+- **App · íconos fijos en iPhone.** Al desplazar la lista de Personal, el escudo del seguro quedaba flotando sobre la fila de una sala y los círculos de WhatsApp y Llamar quedaban vacíos: el ícono era una capa SwiftUI que no seguía al botón. En iPhone ahora es una vista nativa simple (`SymbolView`), que se mueve con su fila; Android sigue igual.
+
 ## v2.1513.8 — La versión, al final de Cuenta
 
 - **App · la versión, al final de Cuenta.** No se veía en ningún lado (sólo en el diagnóstico): ahora «Versión x.y.z» debajo de Salir, para saber si ya llegó una actualización por aire.

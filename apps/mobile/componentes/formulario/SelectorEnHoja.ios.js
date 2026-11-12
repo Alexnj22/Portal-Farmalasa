@@ -8,11 +8,16 @@
 // siguen a su lugar — es lo que dejaba flotando los íconos de Personal (ver
 // componentes/IconoFijo.ios.js). En la hoja nada se desplaza: ahí el selector
 // del sistema sí es seguro.
+//
+// La hoja es la NATIVA de SwiftUI (`BottomSheet`), no una de la app: en iOS 26
+// lleva el vidrio del sistema sola (usuario, 2026-11-12: «es negro en iOS, ¿así
+// es el canónico? ¿no tiene vidrio?» — la primera versión era un `Modal` con
+// fondo sólido). Su `Host` no ocupa lugar en el renglón: sólo presenta la hoja.
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import * as Haptics from 'expo-haptics';
-import { Host, DatePicker } from '@expo/ui/swift-ui';
-import { datePickerStyle } from '@expo/ui/swift-ui/modifiers';
+import { Host, BottomSheet, Button, DatePicker, HStack, Spacer, VStack } from '@expo/ui/swift-ui';
+import { datePickerStyle, padding } from '@expo/ui/swift-ui/modifiers';
 import { colorSistema } from '../Formulario';
 import { FONDO_CONTROL } from '../inicio/marca';
 
@@ -27,20 +32,15 @@ export default function SelectorEnHoja({ texto, fecha, componentes, estilo, rang
         style={({ pressed }) => ({ minHeight: 36, paddingHorizontal: 12, borderRadius: 8, justifyContent: 'center', backgroundColor: FONDO_CONTROL, opacity: pressed ? 0.6 : 1 })}>
         <Text style={{ color: colorSistema.texto, fontSize: 17 }}>{texto}</Text>
       </Pressable>
-      <Modal visible={abierta} transparent animationType="slide" onRequestClose={listo}>
-        <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.3)' }} onPress={listo} accessibilityLabel="Cerrar" />
-        <View style={{ backgroundColor: colorSistema.fila, borderTopLeftRadius: 24, borderTopRightRadius: 24, paddingBottom: 34, paddingTop: 8 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 20, paddingVertical: 8 }}>
-            <Pressable onPress={listo} hitSlop={10} accessibilityRole="button">
-              <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: '600' }}>Listo</Text>
-            </Pressable>
-          </View>
-          <Host matchContents={{ vertical: true }} style={{ marginHorizontal: 12 }}>
+      <Host style={{ position: 'absolute', width: 0, height: 0 }} pointerEvents="none">
+        <BottomSheet isPresented={abierta} onIsPresentedChange={(v) => { if (!v) listo(); }} fitToContents>
+          <VStack spacing={8} modifiers={[padding({ horizontal: 16, top: 20, bottom: 12 })]}>
+            <HStack><Spacer /><Button label="Listo" onPress={listo} /></HStack>
             <DatePicker selection={borrador} displayedComponents={componentes} range={range}
               modifiers={[datePickerStyle(estilo)]} onDateChange={setBorrador} />
-          </Host>
-        </View>
-      </Modal>
+          </VStack>
+        </BottomSheet>
+      </Host>
     </>
   );
 }

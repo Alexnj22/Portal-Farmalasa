@@ -12,6 +12,23 @@ import { etiquetarConversacion } from '@nucleo/data/chatClientes';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
+import Vidrio from '../Vidrio';
+
+const RELLENO_HOJA = { paddingHorizontal: 20, paddingTop: 10, gap: 14 };
+function Hoja({ abajo, children }) {
+  if (Platform.OS === 'ios') {
+    return (
+      <View style={{ marginTop: 'auto', paddingHorizontal: 8, paddingBottom: Math.max(abajo, 8) }}>
+        <Vidrio radio={32} style={[RELLENO_HOJA, { paddingBottom: 20 }]}>{children}</Vidrio>
+      </View>
+    );
+  }
+  return (
+    <View style={[RELLENO_HOJA, { marginTop: 'auto', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: colorSistema.fila, paddingBottom: abajo + 16 }]}>
+      {children}
+    </View>
+  );
+}
 import { fallo, listo } from '../Progreso';
 
 const ANDROID = Platform.OS === 'android';
@@ -94,8 +111,10 @@ export function EtiquetasDeConversacion({ conversacion, puedeEditar, onCambio })
 
       <Modal visible={abierto} transparent animationType="slide" onRequestClose={() => setAbierto(false)}>
         <Pressable style={[StyleSheet.absoluteFill, { backgroundColor: 'rgba(0,0,0,0.35)' }]} onPress={() => setAbierto(false)} accessibilityLabel="Cerrar" />
-        <View style={{ marginTop: 'auto', borderTopLeftRadius: 24, borderTopRightRadius: 24, backgroundColor: colorSistema.fila,
-          paddingHorizontal: 20, paddingTop: 10, paddingBottom: abajo + 16, gap: 14 }}>
+        {/* iPhone: la hoja flota en vidrio, como las del sistema en iOS 26 (antes
+            era un sólido que de noche se veía negro, 2026-11-12). Android: la
+            superficie de Material, que ya sigue el modo del teléfono. */}
+        <Hoja abajo={abajo}>
           <View style={{ alignSelf: 'center', width: 36, height: 5, borderRadius: 3, backgroundColor: 'rgba(127,127,127,0.4)' }} />
           <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '700' }}>Etiquetas de la conversación</Text>
           <ScrollView contentContainerStyle={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
@@ -110,7 +129,7 @@ export function EtiquetasDeConversacion({ conversacion, puedeEditar, onCambio })
               backgroundColor: MARCA.azul, opacity: guardando ? 0.6 : !ANDROID && pressed ? 0.85 : 1 })}>
             <Text style={{ color: '#fff', fontSize: 17, fontWeight: '700' }}>{guardando ? 'Guardando…' : 'Guardar'}</Text>
           </Pressable>
-        </View>
+        </Hoja>
       </Modal>
     </>
   );

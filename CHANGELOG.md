@@ -21,6 +21,12 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.15 — Hojas y diálogos del sistema
+
+- **App · la hoja de fecha y hora en iPhone es la del sistema, con vidrio.** La primera versión (v2.1513.14) era un `Modal` con fondo sólido, que de noche se veía negro. Ahora es el `BottomSheet` de SwiftUI: en iOS 26 lleva el vidrio del sistema, de día y de noche.
+- **App · la ventana de fecha y hora en Android sigue el modo del teléfono.** Tenía un oscuro fijo (#1E1B2E) y se veía negra también en claro; ahora toma la superficie del tema, como el diálogo de Material 3.
+- **App · etiquetas del chat en vidrio (iPhone).** La hoja era un sólido; ahora flota en vidrio como las del sistema. «Pasar la ronda» pierde un fondo oscuro fijo que no hacía falta.
+
 ## v2.1513.14 — Fechas y horas en hoja; subfiltros canónicos
 
 - **App · fechas y horas en iPhone, en una hoja.** El compacto de SwiftUI vivía dentro del formulario como capa (`Host`), la misma que dejaba flotando los íconos al desplazar. Ahora el renglón lleva un botón común con el valor («12 nov 2026», «1:30 p. m.») y el calendario o la rueda del sistema se abren en una hoja desde abajo (`SelectorEnHoja.ios.js`). Vale para los ~30 formularios que usan `Fecha`/`Hora`.

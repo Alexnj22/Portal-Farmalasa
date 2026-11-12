@@ -182,7 +182,7 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
 
   return (
     <Modal visible animationType="slide" onRequestClose={cerrar} presentationStyle="pageSheet">
-      <View style={{ flex: 1, backgroundColor: '#100E1A' }}>
+      <View style={{ flex: 1 }}>
         <Aurora />
         <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

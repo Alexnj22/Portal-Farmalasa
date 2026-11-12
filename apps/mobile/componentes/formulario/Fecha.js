@@ -2,6 +2,9 @@
 // fecha; al tocarlo se abre el calendario del sistema, como en cualquier app
 // de Android. Entra y sale como texto AAAA-MM-DD, que es como la guarda el
 // núcleo. La de iPhone es `Fecha.ios.js` (el compacto de iOS).
+// La ventana toma la superficie del tema (`colorSistema.fila`: blanca de día,
+// oscura de noche), como el diálogo de Material 3. Hasta el 2026-11-12 era un
+// oscuro fijo (#1E1B2E) y se veía negra también con el teléfono en claro.
 import { useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { Host, DateTimePicker } from '@expo/ui/jetpack-compose';
@@ -26,10 +29,10 @@ export default function Fecha({ valor, onCambiar, desde, hasta }) {
       </Pressable>
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={() => setAbierto(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 16 }} onPress={() => setAbierto(false)}>
-          <Pressable style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: '#1E1B2E', paddingBottom: 8 }} onPress={() => {}}>
+          <Pressable style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: colorSistema.fila, paddingBottom: 8 }} onPress={() => {}}>
             <Host matchContents={{ vertical: true }}>
               <DateTimePicker initialDate={valor ? aFecha(valor).toISOString() : null} displayedComponents="date" variant="picker"
-                color={MARCA.azulClaro}
+                color={MARCA.azulClaro} elementColors={{ containerColor: colorSistema.fila }}
                 selectableDates={{ start: aFecha(desde), end: aFecha(hasta) }}
                 onDateSelected={(d) => setElegida(d)} />
             </Host>

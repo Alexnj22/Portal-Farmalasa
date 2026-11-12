@@ -1,5 +1,8 @@
 // Android: el selector de hora de Material 3, en un diálogo. Entra y sale como
 // «HH:MM» de 24 horas; se muestra con `hora12`. La de iPhone es `Hora.ios.js`.
+// La ventana toma la superficie del tema (`colorSistema.fila`: blanca de día,
+// oscura de noche), como el diálogo de Material 3. Hasta el 2026-11-12 era un
+// oscuro fijo (#1E1B2E) y se veía negra también con el teléfono en claro.
 import { useState } from 'react';
 import { Modal, Pressable, Text, View } from 'react-native';
 import { Host, DateTimePicker } from '@expo/ui/jetpack-compose';
@@ -25,10 +28,10 @@ export default function Hora({ valor, onCambiar }) {
       </Pressable>
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={() => setAbierto(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 16 }} onPress={() => setAbierto(false)}>
-          <Pressable style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: '#1E1B2E', paddingBottom: 8 }} onPress={() => {}}>
+          <Pressable style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: colorSistema.fila, paddingBottom: 8 }} onPress={() => {}}>
             <Host matchContents={{ vertical: true }}>
               <DateTimePicker initialDate={aFecha(valor).toISOString()} displayedComponents="hourAndMinute" is24Hour={false}
-                color={MARCA.azulClaro} onDateSelected={(d) => setElegida(d)} />
+                color={MARCA.azulClaro} elementColors={{ containerColor: colorSistema.fila }} onDateSelected={(d) => setElegida(d)} />
             </Host>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: 8, paddingHorizontal: 16 }}>
               <Pressable onPress={() => setAbierto(false)} style={{ minHeight: 44, justifyContent: 'center', paddingHorizontal: 12 }}>

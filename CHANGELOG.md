@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1512.10 — Aprobar una solicitud también va por la sala donde se hizo
+
+- **La otra mitad de v2.1512.9.** Aprobar o rechazar (y crear a nombre de otro) una solicitud de facturación o de inventario seguía yendo por la ficha de quien la pidió: un descarte que alguien de apoyo hacía en otra sala lo veía esa sala pero no lo podía aprobar (sin error: cero filas), y lo podía aprobar su sala de ficha, que no lo veía. Ahora va por la sala donde se hizo, como caja y cuentas por cobrar, que ya lo hacían así. Las personales siguen por la ficha. Migración `20261112170945`; ninguna solicitud pendiente cambia de manos.
+
 ## v2.1512.9 — Cada solicitud se queda en la sala donde se hizo
 
 - **Una solicitud la ve la sala donde se hizo, no la de la ficha de quien la pidió** (el usuario: «todo se debe quedar en la sala que lo hace»). Fernando, con ficha en Bodega y de apoyo en Salud 4, hizo dos movimientos de caja en Salud 4: los veía Bodega y Salud 4 no. La regla de lectura (`approval_requests_select`, migración `20261112165331`) y el filtro de la bandeja (`fetchApprovalRequestsList`) decidían por la ficha; ahora deciden por la sala que guarda cada solicitud al crearse, y la ficha sólo cuando no trae ninguna. Es el mismo criterio que ya usaba el filtro por sala de la pantalla (`salaDeSolicitud`). Medido en producción: Salud 4 pasa a ver los 2 de Fernando y Bodega los deja de ver; en total cambian de sala 17 solicitudes de toda la historia (descartes y cargas hechos en una sala con ficha de Administración, y los de este caso).

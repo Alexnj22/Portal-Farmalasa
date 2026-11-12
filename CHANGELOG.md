@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.10 — Solicitudes: los traslados entre salas sólo a los involucrados, y el resto bajo el filtro de Tipo
+
+En Solicitudes de sucursal, los envíos y traslados entre salas ya no le salen a
+quien mira todas las sucursales: los ven las dos salas, quien lo pidió y a quien
+espera. Quien quiera verlos todos los elige en el nuevo filtro **Tipo**. Es la
+misma regla que la app tiene desde el 2026-11-11, ahora escrita una sola vez
+(`leTocaVer` en `bandejaDeSolicitudes.js`) y usada por las dos.
+
 ## v2.1513.9 — Íconos fijos en iPhone
 
 - **App · íconos fijos en iPhone.** Al desplazar la lista de Personal, el escudo del seguro quedaba flotando sobre la fila de una sala y los círculos de WhatsApp y Llamar quedaban vacíos: el ícono era una capa SwiftUI que no seguía al botón. En iPhone ahora es una vista nativa simple (`SymbolView`), que se mueve con su fila; Android sigue igual.

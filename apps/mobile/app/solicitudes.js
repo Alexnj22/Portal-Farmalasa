@@ -35,7 +35,7 @@ import {
   motivoDeRechazoCorto, personasDe, salaQueEspera,
 } from '@nucleo/utils/movimientoTexto';
 import { detalleDeMinMax, detalleDeSolicitud } from '@nucleo/utils/tarjetaDeSolicitud';
-import { reglasDeBandeja, ordenarCola, salaDeSolicitud, deQuienEs, paraQuien } from '@nucleo/utils/bandejaDeSolicitudes';
+import { reglasDeBandeja, ordenarCola, salaDeSolicitud, deQuienEs, leTocaVer } from '@nucleo/utils/bandejaDeSolicitudes';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { enLaSemanaDe, getLocalMonday, rangoDeSemana } from '@nucleo/utils/semana';
 import { useNowTick } from '@nucleo/hooks/useNowTick';
@@ -162,7 +162,6 @@ function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
   );
 }
 
-const ENTRE_SALAS = new Set(['INVENTORY_TRANSFER_PUSH', 'INVENTORY_TRANSFER_REQUEST']);
 
 export default function Solicitudes() {
   const { user, hasPermission, getScope } = useAuth();
@@ -260,12 +259,8 @@ export default function Solicitudes() {
   // necesite verlos todos los elige en Filtros › Tipo; las pantallas de
   // Traslados y Envíos siguen mostrando todo.
   const miSala = String(salaDelUsuario(user) ?? '');
-  const involucrado = (r) => {
-    if (!ENTRE_SALAS.has(r.type) || familia === r.type) return true;
-    if (deQuienEs(r) === miId || paraQuien(r) === miId) return true;
-    const m = (typeof r.metadata === 'object' && r.metadata) || {};
-    return !!miSala && [m.branch_id, m.origen_branch_id, m.destino_branch_id].some((b) => b != null && String(b) === miSala);
-  };
+  // La regla vive en el núcleo (`leTocaVer`): el portal la usa igual.
+  const involucrado = (r) => leTocaVer(r, { miId, miSala, tipoElegido: familia });
 
   // La semana recorta el HISTORIAL y deja pasar lo pendiente.
   const enFiltro = (r) => involucrado(r) && (!filtrandoMias || deQuienEs(r) === miId)

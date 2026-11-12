@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { salaDeSolicitud, reglasDeBandeja, ordenarCola, sePuedeCancelarPropia } from '@nucleo/utils/bandejaDeSolicitudes';
+import { salaDeSolicitud, reglasDeBandeja, ordenarCola, sePuedeCancelarPropia, leTocaVer } from '@nucleo/utils/bandejaDeSolicitudes';
 import { BRANCH_A_ERP } from '@nucleo/constants/erp';
 
 const permisos = (lista) => (m, a) => lista.includes(`${m}.${a}`);
@@ -81,5 +81,27 @@ describe('sePuedeCancelarPropia', () => {
                             'DIST_DESCUENTO', 'DIST_INVALIDACION', 'MINMAX_CHANGE_REQUEST']) {
             expect(sePuedeCancelarPropia({ ...mia, type }, '1'), type).toBe(false);
         }
+    });
+});
+
+describe('leTocaVer — traslados y envíos entre salas, sólo a los involucrados', () => {
+    const traslado = { type: 'INVENTORY_TRANSFER_REQUEST', employee_id: 10, approver_id: 20,
+        metadata: { origen_branch_id: 3, destino_branch_id: 5 } };
+
+    it('lo que no es entre salas lo ve cualquiera', () => {
+        expect(leTocaVer({ type: 'VACATION' }, { miId: '99', miSala: '' })).toBe(true);
+    });
+    it('una gerencia sin sala no ve un traslado ajeno', () => {
+        expect(leTocaVer(traslado, { miId: '99', miSala: '' })).toBe(false);
+    });
+    it('sí lo ve si elige ese tipo en el filtro', () => {
+        expect(leTocaVer(traslado, { miId: '99', miSala: '', tipoElegido: 'INVENTORY_TRANSFER_REQUEST' })).toBe(true);
+    });
+    it('lo ven quien lo pidió, a quien espera y las dos salas', () => {
+        expect(leTocaVer(traslado, { miId: '10' })).toBe(true);
+        expect(leTocaVer(traslado, { miId: '20' })).toBe(true);
+        expect(leTocaVer(traslado, { miId: '99', miSala: '3' })).toBe(true);
+        expect(leTocaVer(traslado, { miId: '99', miSala: 5 })).toBe(true);
+        expect(leTocaVer(traslado, { miId: '99', miSala: '4' })).toBe(false);
     });
 });

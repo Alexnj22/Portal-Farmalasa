@@ -24,7 +24,8 @@ import { REQUEST_TYPES, esOperativa, adaptarMinMax, DISTRIBUCION_REQUEST_TYPES, 
 import { fetchAllMinMaxChangeRequests } from '@nucleo/data/minmaxRequests';
 import { ERP_NAMES, ERP_ORDEN, BRANCH_A_ERP } from '@nucleo/constants/erp';
 import { ICONO_POR_TIPO } from '../components/common/catalogos/tiposDeAviso';
-import { salaDeSolicitud, reglasDeBandeja, ordenarCola, deQuienEs as deQuienEsLaSolicitud, sePuedeCancelarPropia } from '@nucleo/utils/bandejaDeSolicitudes';
+import { salaDeSolicitud, reglasDeBandeja, ordenarCola, deQuienEs as deQuienEsLaSolicitud, sePuedeCancelarPropia, leTocaVer } from '@nucleo/utils/bandejaDeSolicitudes';
+import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { RequestCard, ModalSolicitud } from './solicitudes/TarjetaSolicitud';
 /* Los dos formularios se cargan tarde. No es una optimización de gusto: es la
  * regla del proyecto —lo que sólo hace falta al apretar un botón no viaja en el
@@ -290,6 +291,16 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * el `branch_id` del portal, que es lo que devuelve `salaDe`. */
     const [sala, setSala] = useState('');
 
+    /* ── El filtro de tipo ────────────────────────────────────────────────
+     * Los envíos y traslados entre salas sólo los ve quien está involucrado
+     * (`leTocaVer`): la sala de origen o de destino, quien lo pidió y a quien
+     * espera. Una gerencia con alcance sobre todas los veía todos mezclados con
+     * lo que sí le toca decidir (usuario, 2026-11-12: «esos solo los deben de
+     * ver las sucursales, o estar bajo un filtro»). Para verlos igual, se elige
+     * el tipo acá — la misma regla que la app desde el 2026-11-11. */
+    const [tipo, setTipo] = useState('');
+    const miSala = String(salaDelUsuario(user) ?? '');
+
     /* ── El filtro de semana ───────────────────────────────────────────────
      * La bandeja no tenía techo de tiempo: mostraba TODO lo que el permiso
      * dejara ver desde el día uno, y eso sólo crece. Medido el 2026-08-21, la
@@ -422,6 +433,8 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * —`enFiltroBase` y `enFiltro`— y la separación existía sólo para poder
      * contar lo que el corte tapaba; sin corte no hay nada que contar aparte. */
     const enFiltro = (r) => visible(r)
+        && leTocaVer(r, { miId, miSala, tipoElegido: tipo })
+        && (!tipo || r.type === tipo)
         && (!filtrandoMias || deQuienEs(r) === miId)
         && (!sala || salaDe(r) === sala)
         && enLaSemana(r);
@@ -444,6 +457,12 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
             orden: BRANCH_A_ERP[b.id] != null ? ERP_ORDEN.indexOf(BRANCH_A_ERP[b.id]) : 99,
         }))
         .sort((a, b) => a.orden - b.orden);
+
+    /* Los tipos que se ofrecen: los que existen en lo que la persona puede
+     * ver, sin recortarse por los otros filtros (misma razón que las salas). */
+    const tipoOptions = [...new Set(delAmbito.filter(visible).map(r => r.type).filter(Boolean))]
+        .map(t => ({ value: t, label: REQUEST_TYPES[t]?.label ?? 'Solicitud' }))
+        .sort((a, b) => a.label.localeCompare(b.label));
 
     const pendingCount = delAmbito.filter(r => r.status === 'PENDING' && enFiltro(r)).length;
 
@@ -550,8 +569,8 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
      * exigiendo más de una opción: un menú de una sola es un clic que no
      * informa. */
     const hayFiltroDeSala = alcance === 'ALL' && salaOptions.length > 1;
-    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0) + (enSemanaActual ? 0 : 1);
-    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); setSemana(semanaActual); };
+    const filtrosPuestos  = (filtrandoMias ? 1 : 0) + (sala ? 1 : 0) + (tipo ? 1 : 0) + (enSemanaActual ? 0 : 1);
+    const limpiarTodo     = () => { setQuien('TODAS'); setSala(''); setTipo(''); setSemana(semanaActual); };
 
     /* §17: la acción vive en la píldora del CUERPO, no en el header. Y desde la
      * fusión la barra lleva además el filtro de a quién pertenece lo que se
@@ -578,6 +597,22 @@ const RequestsView = ({ ambito = 'sucursal' }) => {
                     onClear={() => setSala('')}>
                     <FilterBar.Sucursal value={sala} onChange={(v) => setSala(v || '')}
                         options={salaOptions} />
+                </FilterBar.Section>
+            )}
+
+            {/* Tipo: siempre como lista (`umbral={0}`), porque los tipos
+                cambian con lo que haya y un segmentado salta de forma. */}
+            {esSucursal && tipoOptions.length > 1 && (
+                <FilterBar.Section label="tipo" active={!!tipo}
+                    onClear={() => setTipo('')}>
+                    <FilterBar.Opciones
+                        label="Tipo de solicitud"
+                        value={tipo}
+                        onChange={(v) => setTipo(v || '')}
+                        options={tipoOptions}
+                        placeholder="Todos los tipos"
+                        umbral={0}
+                    />
                 </FilterBar.Section>
             )}
 

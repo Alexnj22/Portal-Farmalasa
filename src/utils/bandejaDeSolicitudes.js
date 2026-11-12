@@ -66,6 +66,30 @@ export const sePuedeCancelarPropia = (r, yo) =>
     && !NO_SE_CANCELAN.has(r.type);
 export const paraQuien = (r) => String(r?.approver_id ?? r?.approver?.id ?? '');
 
+/** Envíos y traslados entre salas: lo que una sala le manda o le pide a otra. */
+export const ENTRE_SALAS = new Set(['INVENTORY_TRANSFER_PUSH', 'INVENTORY_TRANSFER_REQUEST']);
+
+/**
+ * ¿Le toca ver esta solicitud a quien mira? Para todo lo que no es entre
+ * salas, sí. Un envío o traslado entre salas, sólo a los involucrados: quien lo
+ * pidió, a quien espera, o la sala de origen o de destino es la suya.
+ *
+ * Usuario, 2026-11-11 (app) y 2026-11-12 (portal): «esos solo los deben de ver
+ * las sucursales, o estar bajo un filtro». Quien necesite verlos todos los
+ * elige en el filtro de Tipo (`tipoElegido === r.type`); las pantallas de
+ * Traslados y Envíos siguen mostrando todo. Es un FILTRO, no un corte que
+ * esconde: el corte de 2026-08-16 se quitó porque obligaba a contar lo tapado.
+ */
+export const leTocaVer = (r, { miId, miSala, tipoElegido } = {}) => {
+    if (!ENTRE_SALAS.has(r?.type) || tipoElegido === r.type) return true;
+    const yo = String(miId ?? '');
+    if (yo && (deQuienEs(r) === yo || paraQuien(r) === yo)) return true;
+    const sala = String(miSala ?? '');
+    const m = (typeof r.metadata === 'object' && r.metadata) || {};
+    return !!sala && [m.branch_id, m.origen_branch_id, m.destino_branch_id]
+        .some((b) => b != null && String(b) === sala);
+};
+
 /**
  * Las dos preguntas de la bandeja para UN ámbito (sucursal o personales).
  *

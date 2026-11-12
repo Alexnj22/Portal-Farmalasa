@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.13 — Facturas descuadradas: el aviso sale al momento
+
+El aviso «Error en una factura» (renglones que no suman el total) ahora llega
+1–2 minutos después de la venta, no hasta una hora después: el revisor corre cada
+minuto sobre las facturas de hoy, con tiempo para cancelar y corregir con el
+cliente en la sala. La pasada de cada hora sobre 3 días queda como red. Disparó
+el caso la COF #411747 de Salud 5 (4 × $3.55 en el renglón, $7.10 de total).
+
 ## v2.1513.12 — Pestañas canónicas en toda la app
 
 - **App · pestañas canónicas en toda la app (iPhone).** Cuando las secciones no cabían en el segmentado del sistema, `Segmentos` caía a las píldoras de vidrio del Inicio y la pantalla se veía distinta a las demás (Editar la ficha, Marketing, Metas, Promociones, Ofertas, Mayoristas, Cortes, Sesiones… 19 pantallas en un iPhone angosto). Ahora cae a `PistaSegmentada`: la misma forma del segmentado —pista gris en cápsula, la elegida en blanco— que se desplaza de lado y lee cada rótulo entero. Editar la ficha: «Nómina y acceso» → «Nómina» (ya cabe en el segmentado) y, con Editar sucursal, recupera el margen de 16 pt.

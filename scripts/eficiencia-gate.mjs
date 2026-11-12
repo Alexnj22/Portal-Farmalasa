@@ -683,6 +683,15 @@ const CRONS = [
           + '`idx_sales_invoices_fecha` + `idx_sii_invoice_covering`. No toca el sistema de origen.',
   },
   {
+    job: 'facturas-descuadradas-al-momento', slug: null, cadencia: '* 12-23,0-5 * * *',
+    corridasDia: 1080, sistema: 0,
+    motivo: 'La misma `avisar_facturas_descuadradas(0)`, sólo las facturas de HOY (fecha de SV), '
+          + 'cada minuto en las horas del sincronizador de ventas: el aviso tiene que llegar con '
+          + 'el cliente todavía en la sala para poder cancelar y corregir (usuario, 2026-11-12). '
+          + 'Medido: 2.5 ms y ~1,600 bloques a media tarde. La pasada horaria de 3 días queda de red. '
+          + 'No toca el sistema de origen.',
+  },
+  {
     job: 'dias-sin-cierre-0700-sv', slug: null, cadencia: '0 13 * * *',
     corridasDia: 1, sistema: 0,
     motivo: 'SQL puro: `avisar_dias_sin_cierre` le avisa a la sala y a supervisión, a las 7:00 SV, '

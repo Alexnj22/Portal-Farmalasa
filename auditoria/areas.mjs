@@ -578,8 +578,9 @@ export const AREAS = [
                 // El vigilante de `venta_valida` (U2, 2026-09-26): avisa si
                 // aparece un estado de factura que nadie conoce.
                 'estados-de-venta-desconocidos',
-                // Avisa la factura cuyo detalle no suma su total (2026-10-29).
-                'facturas-descuadradas'],
+                // Avisa la factura cuyo detalle no suma su total (2026-10-29);
+                // desde el 2026-11-12 también cada minuto, sólo lo de hoy.
+                'facturas-descuadradas', 'facturas-descuadradas-al-momento'],
         docs: ['docs/VENTAS-DE-DONDE-SALE-CADA-NUMERO-2026-08-24.md',
                'docs/planes-cerrados/PLAN-PUNTOS-EN-SUPABASE-2026-09-01.md'],
     },

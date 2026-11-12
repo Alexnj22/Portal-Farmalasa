@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1513.7 — Verificación de Search Console en el portal
+
+_(pendiente de redactar)_
+
 ## v2.1513.6 — El acuse del formulario de datos va en hoja propia
 
 - **Formulario de solicitud de datos · el acuse ya no se recorta.** Pasa a hoja propia, con el membrete de la Empresa, el plazo de veinte días hábiles destacado, qué sigue y dónde preguntar al lado del sello. Antes era un talón enmarcado con línea de puntos que se cortaba con tijera y no parecía un documento. El formulario le habla al cliente de «tú», y la entrada ya no dice «el acuse del pie de esta hoja» sino «de la última hoja». Se regeneraron el PDF de la sala y el papel que imprime el portal y la app (`npm run legal:js`).

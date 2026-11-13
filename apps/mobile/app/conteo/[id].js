@@ -51,6 +51,7 @@ import Resumen from '../../componentes/conteos/Resumen';
 import Historial from '../../componentes/conteos/Historial';
 import AgregarRenglon from '../../componentes/conteos/AgregarRenglon';
 import AccionDeRenglon from '../../componentes/conteos/AccionDeRenglon';
+import LoteReal from '../../componentes/conteos/LoteReal';
 import AjusteDelInventario from '../../componentes/conteos/AjusteDelInventario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fmtHM } from '@nucleo/utils/tableroDePedidos';
@@ -58,7 +59,7 @@ import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 const POR_PAGINA = 20;
 const vence = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short', year: '2-digit' }) : 'sin fecha');
 
-function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLote, onRecontar }) {
+function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLote, onLoteReal, onRecontar }) {
   const guardarConteoItem = useStaffStore((s) => s.guardarConteoItem);
   const [valor, setValor] = useState(it.fisico_cantidad ?? '');
   const [abierto, setAbierto] = useState(it.estado_item === 'PENDIENTE');
@@ -138,8 +139,13 @@ function Renglon({ it, editable, aCiegas = false, onGuardado, onHistorial, onLot
           </Text>
         </Pressable>
       ) : null}
-      {onLote || onRecontar ? (
+      {onLote || onLoteReal || onRecontar ? (
         <View style={{ flexDirection: 'row', gap: 18 }}>
+          {onLoteReal ? (
+            <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onLoteReal(it); }} hitSlop={6} style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
+              <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>{esLoteGenerico(it.lote) ? 'Anotar lote' : 'Lote y vence'}</Text>
+            </Pressable>
+          ) : null}
           {onLote ? (
             <Pressable onPress={() => { Haptics.selectionAsync().catch(() => {}); onLote(it); }} hitSlop={6} style={({ pressed }) => ({ minHeight: 32, justifyContent: 'center', opacity: pressed ? 0.5 : 1 })}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 13, fontWeight: '600' }}>Corregir lote</Text>
@@ -186,6 +192,7 @@ export default function Conteo() {
   const [pagina, setPagina] = useState(1);
   const [productos, setProductos] = useState({ filas: [], total: 0, aproximado: false });
   const [items, setItems] = useState({});
+  const [loteReal, setLoteReal] = useState(null);
   const [abierto, setAbierto] = useState(null);
   const [cargando, setCargando] = useState(true);
   const [escaneando, setEscaneando] = useState(false);
@@ -570,6 +577,8 @@ export default function Conteo() {
                           // En un conteo que ajusta, el lote de un renglón del sistema no se
                           // corrige (la base lo rechaza): se agrega el lote real y aquí se cuenta 0.
                           onLote={editable && !simple && (!conteo?.aplica_en_caja || it.es_agregado_manual) ? (x) => setAccion({ item: x, modo: 'lote' }) : null}
+                          // …y ése es el camino: los lotes reales de la caja (`LoteReal`).
+                          onLoteReal={editable && !simple && conteo?.aplica_en_caja && !it.es_agregado_manual && !it.is_vencidos ? setLoteReal : null}
                           onRecontar={puedeAprobar ? (x) => setAccion({ item: x, modo: 'recuento' }) : null} />)}
                     </View>
                   ) : null}
@@ -597,6 +606,10 @@ export default function Conteo() {
         </ScrollView>
       </KeyboardAvoidingView>
       <Historial item={historial} simple={conteo?.modo === 'SIMPLE'} onCerrar={() => setHistorial(null)} />
+      <LoteReal conteoId={id} item={loteReal}
+        hermanos={loteReal ? (items[loteReal.erp_product_id] || []).filter((h) => String(h.presentacion ?? '').trim().toUpperCase() === String(loteReal.presentacion ?? '').trim().toUpperCase()) : []}
+        onCerrar={() => setLoteReal(null)}
+        onListo={() => { const erp = loteReal?.erp_product_id; setItems((m) => { const n = { ...m }; delete n[erp]; return n; }); cargar(); cargarConteo(); }} />
       <AccionDeRenglon item={accion?.item ?? null} modo={accion?.modo} aCiegas={recuento} onCerrar={() => setAccion(null)} onHecho={alAccion} />
       <AgregarRenglon visible={agregando} conteoId={id} branchId={conteo?.branch_id} simple={simple} onCerrar={() => setAgregando(false)}
         onAgregado={(prod) => { setItems((m) => { const n = { ...m }; delete n[prod.id]; return n; }); setFiltro('TODOS'); setTexto(prod.nombre); setPagina(1); cargar(); cargarConteo(); }} />

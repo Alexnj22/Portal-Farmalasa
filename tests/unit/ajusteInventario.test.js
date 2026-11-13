@@ -70,3 +70,48 @@ describe('la existencia de un descargo se cuenta en unidades', () => {
         expect(JSON.stringify(s)).toContain('"existencia":60');
     });
 });
+
+describe('descargar lo que no trae lote o fecha (2026-11-13)', async () => {
+    const { cajaQuePide, lotesParaDescargar, problemasDeLinea, llevaControlDeLote } = await import('@nucleo/utils/ajusteInventario');
+    const base = { cantidad: 2, factor: 1, unidadesEnSala: 10 };
+
+    it('un regulado que sale de lo sin lote asignado pide lote y vencimiento de la caja', () => {
+        const l = { ...base, lote: 'GENERICO', exige: { regulado: true, perecedero: false } };
+        expect(cajaQuePide(l, { esCarga: false })).toBe('lote');
+        expect(problemasDeLinea(l, { llevaLote: true, esCarga: false })).toContain('lote de la caja');
+        const conCaja = { ...l, caja: { envio: { lote: 'AB1', vence: '2028-03-01' } } };
+        expect(problemasDeLinea(conCaja, { llevaLote: true, esCarga: false })).toEqual([]);
+    });
+
+    it('un regulado con su lote real no pide nada', () => {
+        expect(cajaQuePide({ ...base, lote: 'AB1', exige: { regulado: true } }, { esCarga: false })).toBeNull();
+    });
+
+    it('un perecedero sin control de lote y sin fecha pide sólo el vencimiento', () => {
+        const l = { ...base, lote: '', exige: { regulado: false, perecedero: true }, conVence: false };
+        expect(cajaQuePide(l, { esCarga: false })).toBe('vence');
+        expect(cajaQuePide({ ...l, conVence: true }, { esCarga: false })).toBeNull();
+    });
+
+    it('al cargar no se pide nada de la caja', () => {
+        expect(cajaQuePide({ ...base, lote: 'GENERICO', exige: { regulado: true } }, { esCarga: true })).toBeNull();
+    });
+
+    it('ofrece «sin lote asignado» sólo a un regulado con esa existencia', () => {
+        const lotes = [{ lote: 'AB1', vence: '2028-03-01' }];
+        expect(lotesParaDescargar(lotes, { regulado: true, sinLote: 4 })).toHaveLength(2);
+        expect(lotesParaDescargar(lotes, { regulado: true, sinLote: 0 })).toHaveLength(1);
+        expect(lotesParaDescargar(lotes, { regulado: false, sinLote: 4 })).toHaveLength(1);
+    });
+
+    it('un regulado lleva lote aunque la sala no tenga ninguno real', () => {
+        expect(llevaControlDeLote({ exige: { regulado: true } }, { esCarga: false, lotes: [] })).toBe(true);
+        expect(llevaControlDeLote({ exige: { regulado: false } }, { esCarga: false, lotes: [] })).toBe(false);
+    });
+
+    it('el vencimiento de una carga es un mes completo', () => {
+        const l = { cantidad: 1, lote: 'X1', vence: '2028-0' };
+        expect(problemasDeLinea(l, { llevaLote: true, esCarga: true })).toContain('vence');
+        expect(problemasDeLinea({ ...l, vence: '2028-03-01' }, { llevaLote: true, esCarga: true })).toEqual([]);
+    });
+});

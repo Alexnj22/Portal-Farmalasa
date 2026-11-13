@@ -5,7 +5,7 @@
  * veces, la primera que cambiara dejaría a una pidiendo lo que la otra no.
  * Puras: no conocen ni React ni el navegador. Los íconos van por NOMBRE.
  */
-import { unidadesEnSala } from './unidadesInventario';
+import { esLoteGenerico, unidadesEnSala } from './unidadesInventario';
 
 export const OPERACIONES_AJUSTE = [
     { key: 'VENCIMIENTO',     movimiento: 'DESCARTE', icono: 'CalendarX2',    tono: 'peligro',
@@ -85,9 +85,43 @@ export function problemasDeLinea(l, { llevaLote, esCarga, esPerecedero }) {
     if (!esCarga && excedeLaExistencia(l)) problemas.push('sin existencia');
     const loteObligatorio = esCarga ? llevaLote !== false : llevaLote === true;
     if (loteObligatorio && !String(l.lote ?? '').trim()) problemas.push('lote');
-    if (esCarga && (loteObligatorio || esPerecedero) && !String(l.vence ?? '').trim())
+    // El vencimiento de una carga es MES y año (2026-11-13): viaja como día 1.
+    if (esCarga && (loteObligatorio || esPerecedero) && !/^\d{4}-\d{2}-\d{2}$/.test(String(l.vence ?? '').trim()))
         problemas.push('vence');
+    // Al DESCARGAR, lo que no trae lote o fecha lo dice la caja (2026-11-13).
+    const pide = cajaQuePide(l, { esCarga });
+    if (pide && !l.caja?.envio) problemas.push(pide === 'lote' ? 'lote de la caja' : 'vence de la caja');
     return problemas;
+}
+
+/**
+ * Qué hay que copiar de la caja al DESCARGAR (2026-11-13, decisión del
+ * usuario: todo movimiento sin lote o sin vencimiento lo pide):
+ *  · un regulado que sale de lo «sin lote asignado» → lote y vencimiento
+ *    (`'lote'`); el servidor se los asigna a esas unidades antes de descargar;
+ *  · un perecedero SIN control de lote cuya existencia en la sala no tiene
+ *    fecha → el vencimiento (`'vence'`), que queda anotado.
+ * Lee `l.exige` ({ regulado, perecedero }) y `l.conVence` (la sala tiene
+ * alguna fila con fecha), que la línea trae desde que se abrió.
+ * @returns {'lote'|'vence'|null}
+ */
+export function cajaQuePide(l, { esCarga }) {
+    if (esCarga || !l?.exige) return null;
+    if (l.exige.regulado) return esLoteGenerico(l.lote) ? 'lote' : null;
+    if (l.exige.perecedero && l.conVence === false) return 'vence';
+    return null;
+}
+
+/**
+ * La opción «Sin lote asignado» para descargar un regulado: la existencia
+ * GENERICO no es un lote, pero de ella también se descarta, y entonces se pide
+ * el lote de la caja. `sinLote` son sus unidades (de `fetchLotesDeProducto`).
+ */
+export function lotesParaDescargar(lotes, { regulado, sinLote }) {
+    const reales = Array.isArray(lotes) ? lotes : [];
+    return regulado && Number(sinLote) > 0
+        ? [...reales, { lote: 'GENERICO', vence: null, sinAsignar: true, unidades: Number(sinLote) }]
+        : reales;
 }
 
 // `unidadesEnSala` vive en `unidadesInventario` desde el 2026-10-24 y se
@@ -121,7 +155,9 @@ export function topeDeLinea(l) {
  * propiedad del producto (`products.regulado`).
  */
 export function llevaControlDeLote(linea, { esCarga, lotes }) {
-    if (!esCarga) return (lotes ?? []).length > 0;
+    // Un regulado lleva lote aunque la sala sólo tenga lo sin lote asignado:
+    // entonces se elige «Sin lote asignado» y se pide el de la caja.
+    if (!esCarga) return (lotes ?? []).length > 0 || linea?.exige?.regulado === true;
     return linea?.regulado ?? null;
 }
 
@@ -154,6 +190,11 @@ export function solicitudDeAjuste({ op, motivo, causa, evidencia = [], lineas, u
         numero_lote:       String(l.lote ?? '').trim() || null,
         vence:             String(l.vence ?? '').trim() || null,
         existencia:        l.unidadesEnSala ?? l.existencia,
+        // Lo que se copió de la caja (2026-11-13): ver `cajaQuePide`.
+        ...(l.caja?.envio ? {
+            caja_lote:  l.caja.envio.lote || null,
+            caja_vence: l.caja.envio.vence,
+        } : {}),
     }));
     const motivos = MOTIVOS_AJUSTE[op.key];
     return {

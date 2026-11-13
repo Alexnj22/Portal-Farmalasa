@@ -21,16 +21,18 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buscarConExistencia, buscarEnCatalogo, fetchLotesDeProducto, fetchPerecederos, fetchPresentaciones, fetchSucursalEnConteo, insertMovimientoInventario } from '@nucleo/data/inventoryMovements';
-import { BUCKET_EVIDENCIA, causaObligatoria, llevaControlDeLote, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, fotoDeAjuste, problemasDeLinea, solicitudDeAjuste } from '@nucleo/utils/ajusteInventario';
+import { BUCKET_EVIDENCIA, cajaQuePide, causaObligatoria, llevaControlDeLote, lotesParaDescargar, MAX_FOTOS_AJUSTE, MOTIVOS_AJUSTE, OPERACIONES_AJUSTE, fotoDeAjuste, problemasDeLinea, solicitudDeAjuste } from '@nucleo/utils/ajusteInventario';
+import { fetchExigenciasDe } from '@nucleo/data/traslados';
+import { venceNormal } from '@nucleo/utils/cobroDeAplicacion';
+import LoteDeLaCaja from '../../componentes/LoteDeLaCaja';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
 import { BRANCH_A_ERP, ERP_ORDEN, ERP_UBICACION_POR_SUCURSAL } from '@nucleo/constants/erp';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
-import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
+import { fechaNumerica } from '@nucleo/utils/fecha';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
-import Fecha from '../../componentes/formulario/Fecha';
 import Fotos, { subirFotos } from '../../componentes/formulario/Fotos';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { Chip } from '../../componentes/inicio/Widget';
@@ -41,7 +43,19 @@ import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 
 const TONO = { peligro: MARCA.rojo, aviso: MARCA.ambar, dano: MARCA.rosa, interno: MARCA.violeta, exito: MARCA.verde };
-const FALTA = { cantidad: 'la cantidad', 'sin existencia': 'no alcanza la existencia', lote: 'el lote', vence: 'el vencimiento' };
+const FALTA = {
+  cantidad: 'la cantidad', 'sin existencia': 'no alcanza la existencia', lote: 'el lote', vence: 'el vencimiento',
+  'lote de la caja': 'el lote y vencimiento de la caja', 'vence de la caja': 'el vencimiento de la caja',
+};
+
+// El vencimiento de una carga es MES y año (2026-11-13): se escribe MM/AAAA y
+// viaja como el día 1. Lo incompleto se guarda tal cual y la regla lo marca.
+const venceAPantalla = (v) => { const m = /^(\d{4})-(\d{2})/.exec(String(v || '')); return m ? `${m[2]}/${m[1]}` : String(v || ''); };
+const venceAGuardado = (t) => {
+  const limpio = String(t).replace(/[^\d/]/g, '').slice(0, 7);
+  const v = venceNormal(limpio);
+  return /^\d{4}-\d{2}$/.test(v) ? `${v}-01` : limpio;
+};
 let contador = 0;
 
 function Pastilla({ texto, activa, onPress }) {
@@ -79,6 +93,7 @@ export default function Ajuste() {
   const [presPorProducto, setPres] = useState(new Map());
   const [perecederos, setPerecederos] = useState(new Set());
   const [lotesPorProducto, setLotes] = useState(new Map());
+  const extraPorProducto = useRef(new Map());
   const unidadesPorProducto = useRef(new Map());
   const [borrador, setBorrador] = useState(null);
   const [enviando, setEnviando] = useState(false);
@@ -135,17 +150,32 @@ export default function Ajuste() {
       // `fetchLotesDeProducto`), no de los candidatos: el buscador deja una
       // fila por producto y TEGADERM con 7 sueltas + una caja de 8 decía «7».
       cantidad: '', unidadesEnSala: esCarga ? null : (unidadesPorProducto.current.get(fila.erp_product_id) ?? null),
-      lote: '', vence: '', regulado: fila.regulado ?? null });
+      lote: '', vence: '', regulado: fila.regulado ?? null,
+      // Al descargar, lo que no trae lote o fecha lo dice la caja (`cajaQuePide`).
+      exige: esCarga ? undefined : null, sinLote: 0, conVence: null, caja: null,
+      ...(extraPorProducto.current.get(fila.erp_product_id) ?? {}) });
+    const mismo = (b) => b && b.erp_product_id === fila.erp_product_id;
+    if (!esCarga) {
+      fetchExigenciasDe([fila.erp_product_id]).then((m) => {
+        const exige = m.get(Number(fila.erp_product_id)) ?? { regulado: false, perecedero: false };
+        setBorrador((b) => (mismo(b) ? { ...b, exige } : b));
+      });
+    }
     if (!lotesPorProducto.has(fila.erp_product_id)) {
-      const { lotes, unidades } = await fetchLotesDeProducto({ erpProductId: fila.erp_product_id, erpSucursalId });
+      const { lotes, unidades, sinLote, conVence } = await fetchLotesDeProducto({ erpProductId: fila.erp_product_id, erpSucursalId });
       unidadesPorProducto.current.set(fila.erp_product_id, unidades ?? null);
-      if (!esCarga) setBorrador((b) => (b && b.erp_product_id === fila.erp_product_id ? { ...b, unidadesEnSala: unidades ?? null } : b));
+      const extra = { sinLote: sinLote ?? 0, conVence: conVence ?? null };
+      extraPorProducto.current.set(fila.erp_product_id, extra);
+      if (!esCarga) setBorrador((b) => (mismo(b) ? { ...b, unidadesEnSala: unidades ?? null, ...extra } : b));
       setLotes((m) => new Map(m).set(fila.erp_product_id, lotes));
     }
   }, [presPorProducto, lotesPorProducto, erpSucursalId, esCarga]);
 
   const lotesBorrador = borrador ? lotesPorProducto.get(borrador.erp_product_id) : null;
-  const faltaBorrador = !borrador || lotesBorrador === undefined ? ['cargando'] : problemasDeLinea(borrador, {
+  const opcionesLote = esCarga || !borrador ? (lotesBorrador || [])
+    : lotesParaDescargar(lotesBorrador, { regulado: borrador.exige?.regulado, sinLote: borrador.sinLote });
+  const pideCaja = borrador ? cajaQuePide(borrador, { esCarga }) : null;
+  const faltaBorrador = !borrador || lotesBorrador === undefined || borrador.exige === null ? ['cargando'] : problemasDeLinea(borrador, {
     llevaLote: llevaControlDeLote(borrador, { esCarga, lotes: lotesBorrador }), esCarga, esPerecedero: perecederos.has(borrador.erp_product_id),
   });
   const loteRepetido = !!borrador && lineas.some((l) => l.erp_product_id === borrador.erp_product_id && String(l.lote).trim() === String(borrador.lote).trim());
@@ -271,12 +301,12 @@ export default function Ajuste() {
               ) : null}
               <Campo multiline={false} value={String(borrador.cantidad)} onChangeText={(t) => setBorrador((b) => ({ ...b, cantidad: t.replace(/\D/g, '') }))}
                 placeholder={`Cantidad (${borrador.tipo})`} keyboardType="number-pad" />
-              {!esCarga && (lotesBorrador || []).length ? (
+              {!esCarga && opcionesLote.length ? (
                 <View style={{ gap: 6 }}>
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Lote</Text>
                   <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-                    {lotesBorrador.map((lt) => (
-                      <Pastilla key={`${lt.lote}|${lt.vence}`} texto={`${lt.lote}${lt.vence ? ` · ${fechaNumerica(lt.vence, { anio: 'corto' })}` : ''}`}
+                    {opcionesLote.map((lt) => (
+                      <Pastilla key={`${lt.lote}|${lt.vence}`} texto={lt.sinAsignar ? 'Sin lote asignado' : `${lt.lote}${lt.vence ? ` · ${fechaNumerica(lt.vence, { anio: 'corto' })}` : ''}`}
                         activa={borrador.lote === lt.lote && borrador.vence === (lt.vence ?? '')} onPress={() => setBorrador((b) => ({ ...b, lote: lt.lote, vence: lt.vence ?? '' }))} />
                     ))}
                   </View>
@@ -287,9 +317,17 @@ export default function Ajuste() {
                   <Campo multiline={false} value={borrador.lote} onChangeText={(t) => setBorrador((b) => ({ ...b, lote: t.toUpperCase() }))} placeholder="Lote" autoCapitalize="characters" />
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                     <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 15 }}>Vence</Text>
-                    <Fecha valor={borrador.vence || null} desde={hoySV()} onCambiar={(v) => setBorrador((b) => ({ ...b, vence: v }))} />
+                    <View style={{ width: 130 }}>
+                      <Campo multiline={false} value={venceAPantalla(borrador.vence)} placeholder="MM/AAAA" keyboardType="numbers-and-punctuation"
+                        accessibilityLabel="Vencimiento" onChangeText={(t) => setBorrador((b) => ({ ...b, vence: venceAGuardado(t) }))} />
+                    </View>
                   </View>
                 </>
+              ) : null}
+              {pideCaja ? (
+                <LoteDeLaCaja erpProductId={borrador.erp_product_id} producto={borrador.descripcion}
+                  valor={borrador.caja ?? undefined} soloVence={pideCaja === 'vence'}
+                  onChange={(caja) => setBorrador((b) => (b ? { ...b, caja } : b))} />
               ) : null}
               {faltaBorrador.length && faltaBorrador[0] !== 'cargando' && borrador.cantidad ? (
                 <Aviso tono="cuidado" texto={`Falta: ${faltaBorrador.map((f) => FALTA[f] ?? f).join(', ')}.`} />

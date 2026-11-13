@@ -21,6 +21,15 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1526.0 — Descartes piden el lote y el vencimiento de la caja
+
+Decisión del usuario (2026-11-13): todo movimiento sin lote o sin vencimiento lo pide.
+
+- **Descargar un regulado** que sólo tiene existencia sin lote asignado ofrece «Sin lote asignado» y pide el lote y el vencimiento de la caja. Al aprobar, `aplicar-movimiento-inventario` se los asigna a esas unidades (`asignarLoteAGenerico`) y descarga de ese lote; lo asignado queda anotado en la solicitud para que un reintento no lo repita.
+- **Descargar un perecedero** sin control de lote y sin fecha en la sala pide el vencimiento de la caja; queda anotado en la solicitud.
+- **El vencimiento de una carga se pide como mes y año** (web y app): viaja como el día 1.
+- Web (`WidgetInventoryMovement`) y app (`nueva/ajuste`), con la regla en `cajaQuePide`/`lotesParaDescargar` (`utils/ajusteInventario`).
+
 ## v2.1525.1 — Traslados: el despacho pide el vencimiento que falta
 
 - **Traslados solicitados (portal)**: al despachar, un perecedero sin control de lote cuya existencia no tiene vencimiento pide el que trae la caja, y ese vencimiento viaja a la sala que recibe. El lote de la caja para lo regulado sin lote ya se pedía.

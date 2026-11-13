@@ -2,7 +2,7 @@ import { supabase } from '../supabaseClient';
 import { insertApprovalRequestSilent } from './requests';
 import { buscarProductos, buscarIdsDeProducto, enElOrdenDe } from './busquedaProductos';
 import { hoySV, relojSV, sumarDias } from '../utils/fecha';
-import { unidadesDe, unidadesEnSala } from '../utils/unidadesInventario';
+import { sumaUnidades, unidadesDe, unidadesEnSala } from '../utils/unidadesInventario';
 import { fetchAllRows } from '../utils/supabaseUtils';
 
 // Datos del widget de cargas y descartes de inventario.
@@ -229,7 +229,7 @@ export async function fetchLotesDeProducto({ erpProductId, erpSucursalId }) {
         .order('fecha_vencimiento', { ascending: true })
         .range(0, TOPE_FILAS_DE_PRODUCTO);
 
-    if (error) return { lotes: [], unidades: null, error };
+    if (error) return { lotes: [], unidades: null, sinLote: 0, conVence: null, error };
     const unidades = (data ?? []).length > TOPE_FILAS_DE_PRODUCTO
         ? null
         : unidadesEnSala(data ?? [], Number(erpProductId));
@@ -248,7 +248,13 @@ export async function fetchLotesDeProducto({ erpProductId, erpSucursalId }) {
             presentaciones: [{ presentacion: r.presentacion, cantidad: r.cantidad }],
         });
     }
-    return { lotes: [...porClave.values()], unidades, error: null };
+    /* (2026-11-13) Lo que el formulario necesita para pedir lo que falta al
+     * descargar: las unidades SIN lote asignado (un regulado también descarta
+     * de ahí, y entonces pide el lote de la caja) y si alguna fila tiene fecha
+     * (un perecedero sin control de lote y sin fecha pide la de la caja). */
+    const sinLote = sumaUnidades((data ?? []).filter(r => !r.lote || r.lote === 'GENERICO'));
+    const conVence = (data ?? []).some(r => r.fecha_vencimiento);
+    return { lotes: [...porClave.values()], unidades, sinLote, conVence, error: null };
 }
 
 /**

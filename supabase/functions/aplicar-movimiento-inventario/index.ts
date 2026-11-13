@@ -2,6 +2,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 import { getCorsHeaders, requireActiveEmployeeUser } from "../_shared/security.ts";
 import { BASE, login, pedir, leerRespuesta } from "../_shared/erp-dte.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
 
 // Aplica en el ERP la carga o el descarte de inventario que el supervisor
 // aprobó. Cuarta pieza de la misma familia que `aplicar-solicitud-facturacion`,
@@ -71,6 +72,12 @@ interface Linea {
   numero_lote?: string;
   vence?: string;
   descripcion?: string;
+  // (2026-11-13) Descartar de lo «sin lote asignado» de un regulado exige el
+  // lote y el vencimiento que trae la caja: antes de descargar se le asignan a
+  // ESAS unidades (`_shared/erp-asignar-lote.ts`). En un perecedero sin
+  // control de lote, `caja_vence` es la fecha de la caja y sólo se anota.
+  caja_lote?: string;
+  caja_vence?: string;
 }
 
 /** Lo que `consultar_stock` contesta, ya sin el HTML. */
@@ -572,7 +579,49 @@ Deno.serve(async (req) => {
       // producto no lleva control de lote, y lo que el portal haya mostrado
       // era informativo.
       let idLote = "0";
-      if (!esCarga && c.regulado) {
+      // ── Lo sin lote asignado lleva el lote de la caja (2026-11-13) ────────
+      // Se asigna primero y se descarga de ese lote. Lo asignado se escribe en
+      // la solicitud en cuanto entra: si después algo falla y se reintenta, el
+      // renglón ya dice el lote real y GENERICO no se vuelve a tocar.
+      if (!esCarga && c.regulado && /^gen[eé]rico$/i.test(String(l.numero_lote ?? "").trim())) {
+        const nombre = l.descripcion ?? String(l.erp_product_id);
+        const v = validarLoteEscrito(l.caja_lote, l.caja_vence);
+        if (!v.ok)
+          return json({
+            ok: false, codigo: "FALTA_LOTE_DE_GENERICO",
+            error: `${nombre} sale de lo que no tiene lote asignado: ${v.error} `
+              + `Hay que escribir el lote y el vencimiento que trae la caja.`,
+          }, 422);
+        const choca = await fechaRegistradaQueChoca(admin, Number(l.erp_product_id), v.lote, v.vence);
+        if (choca)
+          return json({
+            ok: false, codigo: "LOTE_OTRA_FECHA",
+            error: `${nombre}: el lote ${v.lote} ya está registrado con vencimiento ${choca}. Revisa la caja.`,
+          }, 422);
+        const asig = await asignarLoteAGenerico({
+          cookie, erpSucursal, erpUbicacion,
+          erpProductId: Number(l.erp_product_id), descripcion: nombre,
+          presentacionTipo: l.presentacion_tipo, factor: Number(l.factor),
+          idPresentacion: elegida.id, costo: String(costo), precio: String(precio),
+          unidad: String(unidad), paquetes: Number(l.cantidad), lote: v.lote, vence: v.vence,
+          referencia: `DESCARTE ${String(sol.id).slice(0, 8)}`,
+        });
+        if (!asig.ok)
+          return json({ ok: false, codigo: "NO_SE_ASIGNO_LOTE", error: asig.descuadre ? `${asig.error} ${asig.descuadre}` : asig.error }, 409);
+        // Anotarlo en la solicitud antes de seguir (ver arriba).
+        const idx = aceptadas[i].i;
+        const nuevas = todas.map((t, k) => k === idx
+          ? { ...t, numero_lote: asig.lote, lote: asig.lote, vence: asig.vence, asignado_de_generico: true }
+          : t);
+        const { error: anotErr } = await admin.from("approval_requests")
+          .update({ metadata: { ...meta, items: nuevas } }).eq("id", sol.id);
+        if (anotErr)
+          return json({ ok: false, error: `Se asignó el lote ${asig.lote} pero no se pudo anotar: ${anotErr.message}. No reintentes sin revisar.` }, 500);
+        todas.splice(0, todas.length, ...nuevas);
+        idLote = asig.idLote;
+        l.numero_lote = asig.lote;
+        l.vence = asig.vence;
+      } else if (!esCarga && c.regulado) {
         if (!l.numero_lote)
           return json({
             ok: false, codigo: "FALTA_LOTE",
@@ -631,7 +680,7 @@ Deno.serve(async (req) => {
         cantidad: l.cantidad, unidad,
         costo, precio, stock_previo: c.stock,
         regulado: llevaLote,
-        lote: l.numero_lote ?? null, vence: l.vence ?? null,
+        lote: l.numero_lote ?? null, vence: l.vence ?? l.caja_vence ?? null,
         id_lote_erp: idLote !== "0" ? idLote : null,
       });
     }

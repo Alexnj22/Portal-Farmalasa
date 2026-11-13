@@ -20,9 +20,12 @@ import {
     buscarConExistencia, buscarEnCatalogo, fetchPresentaciones, fetchLotesDeProducto,
     fetchPerecederos, insertMovimientoInventario, fetchSucursalEnConteo,
 } from '@nucleo/data/inventoryMovements';
+import { fetchExigenciasDe } from '@nucleo/data/traslados';
+import CampoMesAnio from '../../components/common/CampoMesAnio';
+import LoteDeLaCaja from '../traslados/LoteDeLaCaja';
 import { diasEntre, fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { supervisorQueResuelve } from '@nucleo/utils/aprobadorOperativo';
-import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, fotoDeAjuste, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea } from '@nucleo/utils/ajusteInventario';
+import { OPERACIONES_AJUSTE, MOTIVOS_AJUSTE, fotoDeAjuste, BUCKET_EVIDENCIA, MAX_FOTOS_AJUSTE, problemasDeLinea, llevaControlDeLote, solicitudDeAjuste, causaObligatoria, topeDeLinea, cajaQuePide, lotesParaDescargar } from '@nucleo/utils/ajusteInventario';
 import { subirArchivo } from '@nucleo/utils/storageFiles';
 import Notice from '../../components/common/Notice';
 import PasarAVencidosBodega from './PasarAVencidosBodega';
@@ -118,6 +121,25 @@ function diasHasta(fecha) {
 const LOTE_NUEVO = '__nuevo__';
 let contador = 0;
 
+/** La etiqueta de un lote en el selector; lo sin lote asignado se nombra así. */
+const rotuloLote = (x) => (x.sinAsignar
+    ? 'Sin lote asignado'
+    : `${x.lote}${x.vence ? ` · ${fmtFecha(x.vence)}` : ''}`);
+
+/* El vencimiento de una carga se pide como MES y año (2026-11-13, pedido del
+ * usuario): el empaque no imprime el día. Viaja como el día 1 de ese mes; lo
+ * que todavía no es un mes completo pasa tal cual y `problemasDeLinea` lo
+ * marca como faltante. */
+function VenceMesAnio({ label = 'Vence', value, onChange }) {
+    const mes = /^(\d{4}-\d{2})-\d{2}$/.exec(String(value || ''))?.[1] ?? String(value || '');
+    return (
+        <CampoMesAnio
+            label={label} placeholder="MM/AAAA" compact value={mes} desde={hoySV().slice(0, 7)}
+            onChange={v => onChange(/^\d{4}-\d{2}$/.test(String(v)) ? `${v}-01` : String(v ?? ''))}
+        />
+    );
+}
+
 // `problemasDeLinea` y `llevaControlDeLote` viven en `utils/ajusteInventario.js`
 // desde que la app pide ajustes: una sola definición para las dos pantallas.
 
@@ -210,6 +232,8 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     // filas del inventario (las trae `fetchLotesDeProducto`). No sale de los
     // candidatos: el buscador deja una fila por producto.
     const unidadesPorProducto = useRef(new Map());
+    // Lo sin lote asignado y si hay fecha, por producto (ver `cajaQuePide`).
+    const extraPorProducto = useRef(new Map());
     const [perecederos, setPerecederos] = useState(new Set());
 
     const [causa, setCausa]       = useState('');
@@ -402,20 +426,37 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
             // `undefined` (una fila del inventario, o sea un descargo) queda
             // como `null` — ahí el control de lote lo dicen los lotes.
             regulado: fila.regulado ?? null,
+            // Al DESCARGAR (2026-11-13): qué exige el producto y qué le falta a
+            // la existencia, para pedir lo de la caja (`cajaQuePide`).
+            exige: esCarga ? undefined : null,
+            sinLote: 0,
+            conVence: null,
+            caja: null,
         });
+        if (!esCarga) {
+            fetchExigenciasDe([fila.erp_product_id]).then(m => {
+                const exige = m.get(Number(fila.erp_product_id)) ?? { regulado: false, perecedero: false };
+                setBorrador(b => (b && b.erp_product_id === fila.erp_product_id ? { ...b, exige } : b));
+            });
+        }
 
         const token = ++pedidoLotes.current;
         const cacheados = lotesPorProducto.get(fila.erp_product_id);
-        if (cacheados) { setLotesBorrador(cacheados); return; }
+        if (cacheados) {
+            const extra = extraPorProducto.current.get(fila.erp_product_id);
+            if (extra && !esCarga) setBorrador(b => (b && b.erp_product_id === fila.erp_product_id ? { ...b, ...extra } : b));
+            setLotesBorrador(cacheados); return;
+        }
         setLotesBorrador(null);
-        const { lotes, unidades } = await fetchLotesDeProducto({
+        const { lotes, unidades, sinLote, conVence } = await fetchLotesDeProducto({
             erpProductId: fila.erp_product_id, erpSucursalId,
         });
         unidadesPorProducto.current.set(fila.erp_product_id, unidades ?? null);
+        extraPorProducto.current.set(fila.erp_product_id, { sinLote: sinLote ?? 0, conVence: conVence ?? null });
         setLotesPorProducto(prev => new Map(prev).set(fila.erp_product_id, lotes));
         if (pedidoLotes.current === token) {
             if (!esCarga) setBorrador(b => (b && b.erp_product_id === fila.erp_product_id
-                ? { ...b, unidadesEnSala: unidades ?? null } : b));
+                ? { ...b, unidadesEnSala: unidades ?? null, sinLote: sinLote ?? 0, conVence: conVence ?? null } : b));
             setLotesBorrador(lotes);
         }
     }, [presPorProducto, lotesPorProducto, erpSucursalId, esCarga]);
@@ -474,9 +515,12 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
     const loteBorrador = borrador
         ? llevaControlDeLote(borrador, { esCarga, lotes: lotesBorrador })
         : null;
+    const opcionesBorrador = esCarga || !borrador
+        ? (lotesBorrador ?? [])
+        : lotesParaDescargar(lotesBorrador, { regulado: borrador.exige?.regulado, sinLote: borrador.sinLote });
 
     const faltaBorrador = useMemo(() => {
-        if (!borrador || lotesBorrador === null) return ['cargando'];
+        if (!borrador || lotesBorrador === null || borrador.exige === null) return ['cargando'];
         return problemasDeLinea(borrador, {
             llevaLote: llevaControlDeLote(borrador, { esCarga, lotes: lotesBorrador }),
             esCarga,
@@ -745,7 +789,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         <LoadingState variant="inline" label="Buscando los lotes…" className="px-1" />
                     )}
 
-                    {lotesBorrador !== null && lotesBorrador.length > 0 && (
+                    {lotesBorrador !== null && opcionesBorrador.length > 0 && (
                         <div>
                             <p className="text-caption font-black uppercase tracking-widest text-content-3 ml-1 mb-1.5">
                                 Lote{(esCarga ? loteBorrador !== false : loteBorrador === true)
@@ -765,9 +809,9 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         editarBorrador({ loteNuevo: false, lote, vence });
                                     }}
                                     options={[
-                                        ...lotesBorrador.map(x => ({
+                                        ...opcionesBorrador.map(x => ({
                                             value: `${x.lote}|${x.vence ?? ''}`,
-                                            label: `${x.lote}${x.vence ? ` · ${fmtFecha(x.vence)}` : ''}`,
+                                            label: rotuloLote(x),
                                         })),
                                         ...(esCarga ? [{ value: LOTE_NUEVO, label: '+ Lote nuevo' }] : []),
                                     ]}
@@ -788,11 +832,9 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                     muestra. Pedirlo otra vez es pedir dos veces
                                     el mismo dato y dejar que los dos difieran. */}
                                 {esCarga && borrador.loteNuevo && (
-                                    <PortalInput
-                                        type="date" value={borrador.vence ?? ''}
-                                        onChange={e => editarBorrador({ vence: e.target.value })}
-                                        aria-label="Vencimiento del lote nuevo"
-                                        className="w-36"
+                                    <VenceMesAnio
+                                        value={borrador.vence ?? ''}
+                                        onChange={vence => editarBorrador({ vence })}
                                     />
                                 )}
 
@@ -825,11 +867,10 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                 onChange={e => editarBorrador({ lote: e.target.value })}
                                 placeholder="N.º de lote" className="w-40"
                             />
-                            <PortalInput
-                                label="Vence *" name="borrador-vence-lote"
-                                type="date" value={borrador.vence ?? ''}
-                                onChange={e => editarBorrador({ vence: e.target.value })}
-                                className="w-40"
+                            <VenceMesAnio
+                                label="Vence *"
+                                value={borrador.vence ?? ''}
+                                onChange={vence => editarBorrador({ vence })}
                             />
                         </div>
                     )}
@@ -839,11 +880,19 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                         le inventa un lote que no debería existir. */}
                     {esCarga && lotesBorrador?.length === 0 && loteBorrador === false
                         && perecederos.has(borrador.erp_product_id) && (
-                        <PortalInput
-                            label="Vence" name="borrador-vence"
-                            type="date" value={borrador.vence ?? ''}
-                            onChange={e => editarBorrador({ vence: e.target.value })}
-                            className="w-40"
+                        <VenceMesAnio
+                            label="Vence"
+                            value={borrador.vence ?? ''}
+                            onChange={vence => editarBorrador({ vence })}
+                        />
+                    )}
+
+                    {/* Lo que no trae lote o fecha lo dice la caja (2026-11-13). */}
+                    {cajaQuePide(borrador, { esCarga }) && (
+                        <LoteDeLaCaja
+                            erpProductId={borrador.erp_product_id} producto={borrador.descripcion}
+                            valor={borrador.caja} soloVence={cajaQuePide(borrador, { esCarga }) === 'vence'}
+                            onChange={caja => editarBorrador({ caja })}
                         />
                     )}
 
@@ -890,7 +939,10 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                 <div className="space-y-1.5">
                     {lineas.map(l => {
                         const pres = presPorProducto.get(l.erp_product_id) ?? [];
-                        const lotes = lotesPorProducto.get(l.erp_product_id) ?? [];
+                        const lotesReales = lotesPorProducto.get(l.erp_product_id) ?? [];
+                        const lotes = esCarga ? lotesReales
+                            : lotesParaDescargar(lotesReales, { regulado: l.exige?.regulado, sinLote: l.sinLote });
+                        const pideCaja = cajaQuePide(l, { esCarga });
                         // Con lotes a la vista se elige entre ellos; en una carga
                         // sin lotes en la sala, el control de lote lo dice el
                         // producto y el número se escribe. `hayLotes` es lo que
@@ -1003,7 +1055,7 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                             options={[
                                                 ...lotes.map(x => ({
                                                     value: `${x.lote}|${x.vence ?? ''}`,
-                                                    label: `${x.lote}${x.vence ? ` · ${fmtFecha(x.vence)}` : ''}`,
+                                                    label: rotuloLote(x),
                                                 })),
                                                 ...(esCarga ? [{ value: LOTE_NUEVO, label: '+ Lote nuevo' }] : []),
                                             ]}
@@ -1038,11 +1090,9 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         lote, que no tiene de dónde sacarla. */}
                                     {esCarga && (l.loteNuevo || (!hayLotes
                                         && (llevaLote !== false || perecederos.has(l.erp_product_id)))) && (
-                                        <PortalInput
-                                            type="date" value={l.vence ?? ''}
-                                            onChange={e => editar(l.id, { vence: e.target.value })}
-                                            aria-label="Vencimiento"
-                                            className="w-36"
+                                        <VenceMesAnio
+                                            value={l.vence ?? ''}
+                                            onChange={vence => editar(l.id, { vence })}
                                         />
                                     )}
 
@@ -1057,6 +1107,16 @@ export function FormularioAjuste({ erpSucursalId, branchId, branchName, erpUbica
                                         </span>
                                     )}
                                 </div>
+                                )}
+
+                                {pideCaja && (
+                                    <div className="mt-2">
+                                        <LoteDeLaCaja
+                                            erpProductId={l.erp_product_id} producto={l.descripcion}
+                                            valor={l.caja} soloVence={pideCaja === 'vence'}
+                                            onChange={caja => editar(l.id, { caja })}
+                                        />
+                                    </div>
                                 )}
 
                                 {pide.length > 0 && (

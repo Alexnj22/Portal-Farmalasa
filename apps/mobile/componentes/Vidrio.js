@@ -52,7 +52,7 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   // `overflow: hidden`: recortar a esquinas redondas obliga a pintar cada
   // tarjeta con máscara (caro en listas largas); lo que sí necesita recorte (un
   // mapa, una foto a sangre) lo pide su propio contenedor.
-  // El color es la superficie tonal de la paleta de la marca (tema/material.js):
+  // El color es la superficie tonal de la paleta del sistema (tema/material.js):
   // en claro la más alta sobre el fondo, en oscuro el contenedor tonal.
   const r = Math.min(radio, 16);
   const fondo = paleta ? (oscuro ? paleta.surfaceContainerHigh : paleta.surfaceContainerLowest) : (oscuro ? '#211F26' : '#FFFFFF');

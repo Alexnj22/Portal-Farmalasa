@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1516.1 — App Android: el color principal sale del sistema (Material You)
+
+App del personal en Android: el color principal ya no es el azul fijo de la marca sino el del sistema (Material You, Android 12+), que sale del fondo de pantalla de cada teléfono — lo nativo de Android (pedido del usuario). `tema/material.js` deja la semilla vacía y las piezas de React Native leen la misma paleta que las de Compose: fondo, tarjetas, texto, separadores y acento (`colorSistema` en Android), barra de abajo, barra de arriba (fondo de superficie e íconos en el color del texto), el botón grande y el botón flotante del chat (contenedor primario). Rojo, verde y naranja siguen fijos porque dicen algo. iOS no cambia.
+
 ## v2.1516.0 — App Android: paleta de la marca y piezas de Material 3 Expressive
 
 App del personal en Android — Material 3 Expressive con los colores de la marca (opción elegida por el usuario):

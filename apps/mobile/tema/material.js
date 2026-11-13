@@ -1,18 +1,29 @@
-// La paleta de Material 3 de la app en Android (opción B, 2026-11-12: forma y
-// movimiento de Material 3 Expressive con los colores de la MARCA, no los del
-// fondo de pantalla de cada teléfono).
+// La paleta de Material 3 de la app en Android: la del SISTEMA (Material You,
+// Android 12+), que sale del fondo de pantalla de cada teléfono — lo nativo de
+// Android (decisión del usuario, 2026-11-12: «que el tono principal lo tome del
+// color del SO»). En Android 11 o anterior, Material da su paleta base.
 //
-// Sin semilla, todo <Host> de Compose toma la paleta del fondo de pantalla
-// (Material You, Android 12+): la barra de abajo salía rosada y las fichas
-// celestes según el teléfono, al lado de piezas con los colores fijos de la
-// marca. Con la semilla, Material genera la paleta tonal completa desde UN
-// color y queda igual en todos los teléfonos.
+// Todo <Host> de Compose sin `seedColor` ya toma esa paleta; las piezas de
+// React Native (tarjetas, barra de abajo, acento de botones y enlaces) la leen
+// de acá para verse igual que las de Compose.
+//
+// `SEMILLA` queda en undefined a propósito: si algún día se quiere la paleta
+// fija de la marca, se pone aquí un color y todos los Host y piezas la siguen.
 import { useColorScheme } from 'react-native';
 import { getMaterialColors } from '@expo/ui/jetpack-compose';
 
-export const SEMILLA = '#0052CC'; // el azul de la marca: el de botones y enlaces (opción elegida 2026-11-12)
+export const SEMILLA = undefined;
+
+const cache = {};
+// Sin hook, para los colores que se leen fuera de un componente (colorSistema).
+export function paletaDe(oscuro) {
+  const k = oscuro ? 'dark' : 'light';
+  if (!cache[k]) {
+    try { cache[k] = getMaterialColors({ scheme: k, ...(SEMILLA ? { seedColor: SEMILLA } : {}) }); } catch { cache[k] = null; }
+  }
+  return cache[k];
+}
 
 export function usePaleta() {
-  const oscuro = useColorScheme() === 'dark';
-  return getMaterialColors({ seedColor: SEMILLA, scheme: oscuro ? 'dark' : 'light' });
+  return paletaDe(useColorScheme() === 'dark');
 }

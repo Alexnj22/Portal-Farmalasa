@@ -22,6 +22,7 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
+import { usePaleta } from '../../tema/material';
 
 const ANDROID = Platform.OS === 'android';
 const TAMANO = 56;
@@ -41,6 +42,10 @@ function Numero({ n }) {
 
 function BurbujaFlotante() {
   const { user, hasPermission } = useAuth();
+  // Android: el FAB de Material, con el contenedor primario de la paleta del
+  // sistema (Material You). iOS: el azul sobre vidrio. (Arriba de todo: es un
+  // hook y la burbuja sale antes con `return null`.)
+  const paleta = usePaleta();
   const segmentos = useSegments();
   const abajo = useSafeAreaInsets().bottom;
   const puede = !!user && !!hasPermission?.('chat_clientes', 'can_view');
@@ -81,15 +86,15 @@ function BurbujaFlotante() {
     ? `Chat con clientes: ${sinLeer} ${sinLeer === 1 ? 'mensaje' : 'mensajes'} sin responder`
     : 'Chat con clientes';
   const abrir = () => { Haptics.selectionAsync().catch(() => {}); router.push('/chat-clientes'); };
-  const icono = <IconoFijo name={iconoDe('MessageCircle')} size={26} color="#FFFFFF" />;
+  const icono = <IconoFijo name={iconoDe('MessageCircle')} size={26} color={ANDROID && paleta ? paleta.onPrimaryContainer : '#FFFFFF'} />;
 
   return (
     <Animated.View pointerEvents="box-none"
       style={{ position: 'absolute', right: 16, bottom: abajo + (enPestanas ? ALTO_PESTANAS : 16), transform: [{ scale: escala }] }}>
       {ANDROID ? (
-        <View style={{ borderRadius: 16, elevation: 6, backgroundColor: MARCA.azul }}>
+        <View style={{ borderRadius: 16, elevation: 6, backgroundColor: paleta?.primaryContainer ?? MARCA.azul }}>
           <Pressable onPress={abrir} accessibilityRole="button" accessibilityLabel={etiqueta}
-            android_ripple={{ color: 'rgba(255,255,255,0.28)', borderless: false }}
+            android_ripple={{ color: 'rgba(127,127,127,0.24)', borderless: false }}
             style={{ width: TAMANO, height: TAMANO, borderRadius: 16, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {icono}
           </Pressable>

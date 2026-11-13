@@ -63,8 +63,8 @@ export default function Pestanas() {
   const { user, hasPermission } = useAuth();
   const salas = useStaffStore((s) => s.branches);
   const { actual: rapida } = usePestanaRapida(user, hasPermission, salas);
-  // Android: la barra de navegación de Material con la paleta de la marca
-  // (tema/material.js), no la del fondo de pantalla.
+  // Android: la barra de navegación de Material con la paleta del sistema
+  // (tema/material.js), la misma de las piezas de Compose.
   const p = usePaleta();
   const colores = Platform.OS === 'android' && p ? {
     backgroundColor: p.surfaceContainer, indicatorColor: p.secondaryContainer, rippleColor: p.primary,

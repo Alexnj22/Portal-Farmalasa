@@ -12,6 +12,7 @@ import { isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useAuth } from '@nucleo/context/AuthContext';
 import ConAurora from './ConAurora';
 import BotonCampana from './BotonCampana';
+import { colorSistema } from './Formulario';
 import { FotoDeCuenta } from './inicio/Encabezado';
 
 // En iOS 26 el sistema ya pone su «borde suave» al desplazar (scroll edge
@@ -115,7 +116,10 @@ export default function PilaDePestana({ titulo, sinBarra = false, conMarca = tru
   return (
     <ConAurora>
     <RaizFija.Provider value={fija}>
-    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? { ...BARRA_NATIVA, ...(Platform.OS === 'ios' ? OPACA : {}) } : BARRA_NATIVA) }}>
+    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, ...(fija ? { ...BARRA_NATIVA, ...(Platform.OS === 'ios' ? OPACA : {}) } : BARRA_NATIVA),
+      // Android: la barra superior en la superficie de la paleta del sistema,
+      // igual que la de las pantallas que se abren encima (app/_layout.js).
+      ...(Platform.OS === 'android' ? { headerStyle: { backgroundColor: colorSistema.fondo }, headerShadowVisible: false, headerTintColor: colorSistema.texto } : {}) }}>
       <Stack.Screen name="index" options={{ title: titulo, headerShown: !sinBarra, ...marca }} />
     </Stack>
     </RaizFija.Provider>

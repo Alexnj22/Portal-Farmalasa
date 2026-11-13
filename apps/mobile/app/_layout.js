@@ -109,8 +109,11 @@ export default function Raiz() {
           <StatusBar style="auto" />
           <Stack
             screenOptions={{
-              ...(ANDROID ? { animation: 'slide_from_right', contentStyle: { backgroundColor: colorSistema.fondo } } : {}),
-              headerTintColor: tema.color.marca,
+              // Android: la barra superior de Material con la paleta del sistema
+              // (fondo de superficie, íconos en el color del texto).
+              ...(ANDROID ? { animation: 'slide_from_right', contentStyle: { backgroundColor: colorSistema.fondo },
+                headerStyle: { backgroundColor: colorSistema.fondo }, headerShadowVisible: false } : {}),
+              headerTintColor: ANDROID ? colorSistema.texto : tema.color.marca,
               // El título en el color del sistema (la flecha y los botones sí,
               // en el de la marca).
               headerTitleStyle: { color: oscuro ? '#FFFFFF' : '#000000' },

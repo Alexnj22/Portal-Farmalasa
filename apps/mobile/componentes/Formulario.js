@@ -12,6 +12,7 @@
 // su propio `Host`, que es la forma documentada de mezclarlos.
 import { Children, forwardRef, isValidElement } from 'react';
 import { Appearance, Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
+import { paletaDe } from '../tema/material';
 import Vidrio from './Vidrio';
 
 const ios = Platform.OS === 'ios';
@@ -43,8 +44,18 @@ export const colorSistema = {
   separadorClaro: 'rgba(127,127,127,0.25)',   // para SVG, que no lee colores del sistema
   acentoTinte: 'rgba(0,82,204,0.12)',
 };
+// Android: fondo, tarjetas, texto, separador y acento salen de la paleta del
+// sistema (Material You, tema/material.js); rojo, verde y naranja son
+// semánticos y se quedan fijos. Sin paleta (falla rara), los fijos de arriba.
+const DE_LA_PALETA = { fondo: 'surfaceContainerLow', fila: 'surfaceContainerLowest', texto: 'onSurface', texto2: 'onSurfaceVariant',
+  placeholder: 'outline', separador: 'outlineVariant', acento: 'primary' };
+const deAndroid = (k, claro, noche) => () => {
+  const o = oscuro();
+  const p = DE_LA_PALETA[k] ? paletaDe(o) : null;
+  return (p && p[DE_LA_PALETA[k]]) || (o ? noche : claro);
+};
 for (const [k, [nativo, claro, noche]] of Object.entries(COLORES)) {
-  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? () => PlatformColor(nativo) : () => (oscuro() ? noche : claro) });
+  Object.defineProperty(colorSistema, k, { enumerable: true, get: ios ? () => PlatformColor(nativo) : deAndroid(k, claro, noche) });
 }
 
 export function Formulario({ children, contentContainerStyle, ...props }) {

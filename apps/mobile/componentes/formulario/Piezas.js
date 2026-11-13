@@ -164,7 +164,8 @@ export function Opciones({ opciones, valor, onCambiar, color = MARCA.azulClaro }
   );
 }
 
-export function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado, borde = false }) {
+// En Android el color por omisión es el primario del sistema (Material You).
+export function BotonGrande({ texto, color = ANDROID ? colorSistema.acento : MARCA.azul, onPress, deshabilitado, borde = false }) {
   // El toque se siente: un golpe leve en cada botón de acción de la app, así
   // ninguna pantalla tiene que acordarse de pedirlo.
   const tocar = onPress ? (e) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); onPress(e); } : undefined;

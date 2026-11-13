@@ -259,10 +259,14 @@ export function completarRuta(rutaId, contexto = {}) {
         'RUTA_COMPLETADA', rutaId, { ...contexto });
 }
 
-export function updateRutaPedidoEntregado(stopId, userId, contexto = {}) {
+// `pos` = `{ lat, lng }` del teléfono al entregar (o null): queda en la parada
+// y en las bolsas de traslado de esa sala, que se entregan con ella (disparador
+// `ruta_entregar_bolsas_de_parada`).
+export function updateRutaPedidoEntregado(stopId, userId, contexto = {}, pos = null) {
+    const donde = pos?.lat != null && pos?.lng != null ? { entregado_lat: pos.lat, entregado_lng: pos.lng } : {};
     return conBitacora(escrituraDeRuta(
         supabase.from('ruta_pedidos')
-            .update({ entregado_at: new Date().toISOString(), entregado_por: userId })
+            .update({ entregado_at: new Date().toISOString(), entregado_por: userId, ...donde })
             .eq('id', stopId)
     ), 'RUTA_PARADA_ENTREGADA', stopId, { ...contexto });
 }

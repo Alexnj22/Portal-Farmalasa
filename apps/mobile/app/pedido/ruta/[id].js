@@ -35,6 +35,7 @@ import { colorSistema } from '../../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion } from '../../../componentes/formulario/Piezas';
 import { Esqueleto } from '../../../componentes/inicio/Widget';
 import Vidrio from '../../../componentes/Vidrio';
+import BolsasDeLaRuta from '../../../componentes/ruta/BolsasDeLaRuta';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
 
@@ -69,6 +70,7 @@ export default function RutaDeReparto() {
   const [sinFondo, setSinFondo] = useState(null); // por qué no: 'en-uso' | 'denegado' | 'sin-fondo'
   const [camion, setCamion] = useState(null);    // { lat, lng, at } visto por los demás
   const [ocupado, setOcupado] = useState(null);
+  const [encima, setEncima] = useState(0);       // bolsas de traslado sin entregar
   const mapa = useRef(null);
   const ultima = useRef(null);
 
@@ -188,9 +190,9 @@ export default function RutaDeReparto() {
       } },
     ]);
   };
-  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.',
+  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, `${conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.'}${encima ? ' Las bolsas que llevas para esta sala se entregan con ella.' : ''}`,
     conductor ? 'Entregué' : 'Marcar entregada',
-    () => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }), 'Parada entregada');
+    () => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }, ultima.current), 'Parada entregada');
   // Las dos salidas con motivo: el motivo es obligatorio (queda anotado).
   const conMotivo = (titulo, mensaje, boton, accion, exito) => {
     Alert.prompt(titulo, mensaje, [
@@ -231,7 +233,7 @@ export default function RutaDeReparto() {
       }
       return r;
     }, 'Ruta iniciada');
-  const volver = () => hacer('Volver a base', conductor ? 'Se cierra la ruta: no quedan paradas pendientes. Se deja de anotar tu ubicación.' : 'Se cierra la ruta: no quedan paradas pendientes.', 'Cerrar ruta',
+  const volver = () => hacer('Volver a base', `${conductor ? 'Se cierra la ruta: no quedan paradas pendientes. Se deja de anotar tu ubicación.' : 'Se cierra la ruta: no quedan paradas pendientes.'}${encima ? ` Ojo: llevas ${encima} bolsa${encima === 1 ? '' : 's'} sin entregar; siguen a tu nombre hasta que la entregues o la sueltes.` : ''}`, 'Cerrar ruta',
     async () => {
       const r = await completarRuta(ruta.id, { desde: 'app' });
       if (!r?.error && conductor) await Promise.resolve(quitarRutaDeFondo('reparto')).catch(() => {});
@@ -325,6 +327,11 @@ export default function RutaDeReparto() {
               ))}
             </Seccion>
             </View>
+
+            {!deSala ? (
+              <BolsasDeLaRuta ruta={ruta} paradas={paradas} coords={coords} puedeOperar={conductor || gestiona}
+                posicion={() => ultima.current} onEncima={setEncima} />
+            ) : null}
 
             {!deSala ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>

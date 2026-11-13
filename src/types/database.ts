@@ -28048,6 +28048,129 @@ export type Database = {
           },
         ]
       }
+      ruta_bolsas: {
+        Row: {
+          codigo: string | null
+          created_at: string
+          destino_branch_id: number | null
+          destino_erp_sucursal_id: number | null
+          entregada_at: string | null
+          entregada_lat: number | null
+          entregada_lng: number | null
+          entregada_por: string | null
+          familia: string
+          id: string
+          origen_branch_id: number | null
+          recogida_at: string
+          recogida_lat: number | null
+          recogida_lng: number | null
+          recogida_por: string
+          request_id: string
+          ruta_id: string
+          soltada_at: string | null
+          soltada_por: string | null
+        }
+        Insert: {
+          codigo?: string | null
+          created_at?: string
+          destino_branch_id?: number | null
+          destino_erp_sucursal_id?: number | null
+          entregada_at?: string | null
+          entregada_lat?: number | null
+          entregada_lng?: number | null
+          entregada_por?: string | null
+          familia: string
+          id?: string
+          origen_branch_id?: number | null
+          recogida_at?: string
+          recogida_lat?: number | null
+          recogida_lng?: number | null
+          recogida_por: string
+          request_id: string
+          ruta_id: string
+          soltada_at?: string | null
+          soltada_por?: string | null
+        }
+        Update: {
+          codigo?: string | null
+          created_at?: string
+          destino_branch_id?: number | null
+          destino_erp_sucursal_id?: number | null
+          entregada_at?: string | null
+          entregada_lat?: number | null
+          entregada_lng?: number | null
+          entregada_por?: string | null
+          familia?: string
+          id?: string
+          origen_branch_id?: number | null
+          recogida_at?: string
+          recogida_lat?: number | null
+          recogida_lng?: number | null
+          recogida_por?: string
+          request_id?: string
+          ruta_id?: string
+          soltada_at?: string | null
+          soltada_por?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ruta_bolsas_entregada_por_fkey"
+            columns: ["entregada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_entregada_por_fkey"
+            columns: ["entregada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_recogida_por_fkey"
+            columns: ["recogida_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_recogida_por_fkey"
+            columns: ["recogida_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_ruta_id_fkey"
+            columns: ["ruta_id"]
+            isOneToOne: false
+            referencedRelation: "rutas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_soltada_por_fkey"
+            columns: ["soltada_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ruta_bolsas_soltada_por_fkey"
+            columns: ["soltada_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ruta_locations: {
         Row: {
           lat: number
@@ -28154,6 +28277,8 @@ export type Database = {
           distancia_desde_anterior_m: number | null
           duracion_desde_anterior_min: number | null
           entregado_at: string | null
+          entregado_lat: number | null
+          entregado_lng: number | null
           entregado_por: string | null
           erp_sucursal_id: number
           id: string
@@ -28170,6 +28295,8 @@ export type Database = {
           distancia_desde_anterior_m?: number | null
           duracion_desde_anterior_min?: number | null
           entregado_at?: string | null
+          entregado_lat?: number | null
+          entregado_lng?: number | null
           entregado_por?: string | null
           erp_sucursal_id: number
           id?: string
@@ -28186,6 +28313,8 @@ export type Database = {
           distancia_desde_anterior_m?: number | null
           duracion_desde_anterior_min?: number | null
           entregado_at?: string | null
+          entregado_lat?: number | null
+          entregado_lng?: number | null
           entregado_por?: string | null
           erp_sucursal_id?: number
           id?: string
@@ -31582,6 +31711,25 @@ export type Database = {
       }
     }
     Functions: {
+      _bolsas_por_llevar: {
+        Args: never
+        Returns: {
+          codigo: string
+          despachado_at: string
+          destino_branch_id: number
+          destino_erp: number
+          destino_nombre: string
+          familia: string
+          llevada_en_ruta: string
+          llevada_por: string
+          origen_branch_id: number
+          origen_erp: number
+          origen_nombre: string
+          productos: number
+          request_id: string
+          unidades: number
+        }[]
+      }
       _docs_sin_numero_control: {
         Args: { p_alcance?: string }
         Returns: {
@@ -31590,6 +31738,7 @@ export type Database = {
           id: number
         }[]
       }
+      _ruta_puede_operar: { Args: { p_ruta_id: string }; Returns: boolean }
       abonar_diferencia_corte: {
         Args: { p_abonos: Json; p_diferencia_id: number }
         Returns: Json
@@ -39307,6 +39456,11 @@ export type Database = {
         Args: { p_dia?: string; p_employee_id: string }
         Returns: number[]
       }
+      ruta_bolsas: { Args: { p_ruta_id: string }; Returns: Json }
+      ruta_entregar_bolsa: {
+        Args: { p_id: string; p_lat?: number; p_lng?: number }
+        Returns: Json
+      }
       ruta_parada_no_entregada: {
         Args: {
           p_motivo: string
@@ -39316,6 +39470,16 @@ export type Database = {
         }
         Returns: Json
       }
+      ruta_recoger_bolsa: {
+        Args: {
+          p_codigo: string
+          p_lat?: number
+          p_lng?: number
+          p_ruta_id: string
+        }
+        Returns: Json
+      }
+      ruta_soltar_bolsa: { Args: { p_id: string }; Returns: Json }
       sala_abierta_ahora: { Args: { p_branch_id: number }; Returns: boolean }
       sala_activa_vigente: { Args: { p_employee_id: string }; Returns: number }
       sala_con_caja_abierta: { Args: { p_branch_id: number }; Returns: boolean }

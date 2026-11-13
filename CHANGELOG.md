@@ -21,6 +21,27 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1517.0 — Las bolsas de traslado viajan con la ruta de reparto
+
+Punto 6 de traslados (decisión del usuario, 2026-11-12). En la ruta del pedido
+semanal (la que el motorista ya usa a diario), la app ahora:
+
+- **Escanear bolsa**: el conductor recoge una bolsa de traslado escaneando su
+  ticket; queda a su nombre con la hora y la ubicación del teléfono.
+- **De paso, lleva también**: lista las bolsas despachadas cuyo destino es una
+  parada que le falta — primero las que quedan en el camino (de Bodega antes
+  de salir, o de la parada donde está o una siguiente), después los desvíos
+  con sus minutos estimados por la ubicación de las salas.
+- **Entregar la parada** entrega también las bolsas para esa sala y guarda la
+  ubicación del teléfono en la parada. Las que van a una sala que no es parada
+  tienen su «Entregué»; «Soltar» la devuelve sin borrar que la tuvo.
+- Si la sala recibe antes de que el conductor marque, la bolsa se da por
+  entregada sola. Una bolsa ya entregada no se puede volver a recoger.
+
+Es opcional: recibir con el botón sigue valiendo. Base: migración
+`20261113050615` (`ruta_bolsas`, `ruta_bolsas()`, `ruta_recoger_bolsa`,
+`ruta_entregar_bolsa`, `ruta_soltar_bolsa`, disparador de la parada).
+
 ## v2.1516.1 — App Android: el color principal sale del sistema (Material You)
 
 App del personal en Android: el color principal ya no es el azul fijo de la marca sino el del sistema (Material You, Android 12+), que sale del fondo de pantalla de cada teléfono — lo nativo de Android (pedido del usuario). `tema/material.js` deja la semilla vacía y las piezas de React Native leen la misma paleta que las de Compose: fondo, tarjetas, texto, separadores y acento (`colorSistema` en Android), barra de abajo, barra de arriba (fondo de superficie e íconos en el color del texto), el botón grande y el botón flotante del chat (contenedor primario). Rojo, verde y naranja siguen fijos porque dicen algo. iOS no cambia.

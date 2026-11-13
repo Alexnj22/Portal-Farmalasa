@@ -17,6 +17,8 @@ export function haversineMeters(lat1, lng1, lat2, lng2) {
 
 function minsFromSeconds(s) { return Math.max(1, Math.round(s / 60)); }
 function minsFromMeters(m)   { return Math.max(1, Math.round((m / 1000 / AVG_SPEED_KMH) * 60)); }
+/** Minutos para recorrer `m` metros a la velocidad del portal (la de `tramoEnLineaRecta`). */
+export const minutosDeMetros = minsFromMeters;
 
 // ── TSP brute-force (≤ 8 stops) ───────────────────────────────────────────
 // distFn(i, j): index of origin → index of destination (0 = bodega, 1..n = stops)

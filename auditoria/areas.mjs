@@ -1109,12 +1109,14 @@ export const AREAS = [
             'src/views/TrasladosView.jsx', 'src/views/traslados/', 'src/utils/decisionTraslado.js',
             'src/data/traslados.js', 'src/data/envios.js', 'src/data/trasladoSwitch.js',
             'src/data/retiros.js', 'src/data/faltantes.js',
+            // Las bolsas que viajan con la ruta de reparto (punto 6, 2026-11-12).
+            'src/data/rutaBolsas.js', 'src/utils/bolsasDeRuta.js',
             'src/store/composicionTraslado.js',
         ],
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                  'retiro_firmas',
-                 'envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos', 'bolsa_faltante'],
+                 'envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos', 'bolsa_faltante', 'ruta_bolsas'],
         edge: ['aplicar-traslado-inventario', 'enviar-producto-erp', 'barrer-traslados-recibidos',
                 'avisar-bultos-viejos'],
         crons: [

@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1524.5 — Enviar producto: el mismo producto dos veces ya no reserva el mismo lote
+
+- **Enviar producto**: si se agrega dos veces el mismo producto al mismo envío, el segundo renglón toma los lotes que quedan después del primero. Si lo que queda no tiene lote asignado, pide el lote y el vencimiento de la caja antes de dejarlo agregar. Antes los dos renglones reservaban el mismo lote, el segundo salía sin lote y fallaba al despachar (TOTALVIT C, de Bodega a Salud 2).
+- Si a un producto bajo control de lote se le sube la cantidad después de agregarlo, el envío no sale hasta quitarlo y agregarlo de nuevo: lo de más no tenía lote elegido.
+
 ## v2.1524.4 — Un envío con un producto fallido ya no se esconde a la sala que lo recibe
 
 - **Traslados → Envíos**: si un producto de un envío no pudo salir (por ejemplo, sin lote), la sala que recibe igual ve el envío en «Por decidir» y decide los que sí salieron. Antes el envío entero desaparecía de su pantalla: Salud 2 no veía 12 productos que Bodega ya le había mandado porque uno salió sin lote. Vale para la web, el tablero y la app.

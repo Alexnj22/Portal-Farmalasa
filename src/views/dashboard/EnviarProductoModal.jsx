@@ -363,12 +363,35 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
 
     const pres = presentaciones[Number(presIdx)] ?? null;
     const unidadesPedidas = (Number(cantidad) || 0) * (Number(pres?.factor) || 0);
-    const reparto = useMemo(
-        () => (origen && unidadesPedidas > 0
-            ? repartirPedido(origen.lotes ?? [], unidadesPedidas)
-            : { reparto: [], faltan: 0 }),
-        [origen, unidadesPedidas],
+    /* ── Lo que ya se llevaron los renglones de arriba (2026-11-13) ─────────
+     * El mismo producto, del mismo estante, puede estar dos veces. Cada
+     * renglón repartía sobre TODOS los lotes, como si fuera el único: el
+     * segundo volvía a reservar el lote que el primero ya había vaciado, no
+     * pedía el lote de la caja, y al despachar le tocaba lo sin lote asignado
+     * y fallaba. Pasó con TOTALVIT C de Bodega a Salud 2 (envío E00409): 2 + 1
+     * sobre el lote 261050, que tenía 2. Mismo cálculo que la app: el reparto
+     * de ESTE renglón es lo que toma por encima de lo que ya se llevó. */
+    const yaEnLista = useMemo(
+        () => (origen && elegido
+            ? renglones
+                .filter(r => Number(r.erp_product_id) === Number(elegido.erp_product_id)
+                          && r.origen_clave === origen.clave)
+                .reduce((n, r) => n + (Number(r.unidades) || 0), 0)
+            : 0),
+        [renglones, origen, elegido],
     );
+    const reparto = useMemo(() => {
+        if (!origen || unidadesPedidas <= 0) return { reparto: [], faltan: 0 };
+        const lotes = origen.lotes ?? [];
+        const previo = repartirPedido(lotes, yaEnLista).reparto;
+        const total = repartirPedido(lotes, yaEnLista + unidadesPedidas);
+        return {
+            reparto: total.reparto
+                .map(l => ({ ...l, toma: l.toma - (previo.find(p => p.clave === l.clave)?.toma ?? 0) }))
+                .filter(l => l.toma > 0),
+            faltan: total.faltan,
+        };
+    }, [origen, unidadesPedidas, yaEnLista]);
 
     /* ── Sin lote asignado: el lote lo dice la caja (2026-11-05) ──────────
      * En un producto regulado, lo que sale de la existencia sin lote asignado
@@ -444,8 +467,9 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             ? 'Este producto es nuevo y todavía no tiene presentación. Se completa sola en unos minutos; puedes dejar esta ventana abierta.'
         : !pres ? 'Elige la presentación.'
         : unidadesPedidas <= 0 ? 'Pon la cantidad.'
-        : unidadesPedidas > (origen.unidades ?? 0)
-            ? `${origen.nombre} tiene ${origen.unidades} ${origen.unidades === 1 ? 'unidad' : 'unidades'}.`
+        : unidadesPedidas + yaEnLista > (origen.unidades ?? 0)
+            ? `${origen.nombre} tiene ${origen.unidades} ${origen.unidades === 1 ? 'unidad' : 'unidades'}`
+              + (yaEnLista ? ` y ya pusiste ${yaEnLista} en el envío.` : '.')
         : reparto.faltan > 0 ? `Faltan ${reparto.faltan} en los lotes.`
         : ningunLoteCompleta
             ? (presBase >= 0
@@ -513,6 +537,9 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             // Cuántas tiene ESA sala AHORA. Es lo que deja avisar en la lista
             // si se agregó dos veces el mismo producto y entre los dos se pasan.
             existencia: origen.unidades,
+            // Para saber, al corregir la cantidad, si lo que se sumó quedó sin
+            // lote elegido (ver `sinLoteElegido`).
+            regulado,
             presentaciones,
         }]);
         setElegido(null);
@@ -522,7 +549,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         setCaja(LOTE_DE_CAJA_VACIO);
         setPestana('lista');
     }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length,
-        sinLoteEnReparto, caja]);
+        sinLoteEnReparto, caja, regulado]);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -566,6 +593,14 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         }
         return [...porClave.values()].filter(a => a.unidades > a.existencia);
     }, [renglones, miErp]);
+
+    /* Un regulado al que se le SUBIÓ la cantidad después de agregarlo: los
+     * lotes se eligieron para la cantidad de antes, y lo de más saldría de lo
+     * sin lote asignado sin el lote de la caja — falla al despachar. Se frena
+     * acá; bajarla no estorba (sale primero lo reservado). */
+    const sinLoteElegido = useMemo(() => renglones.filter(r => r.regulado
+        && (Number(r.unidades) || 0) > (r.lotes ?? []).reduce((n, l) => n + (Number(l.unidades) || 0), 0)),
+    [renglones]);
 
     /* A dónde puede ir. Cualquiera menos la propia; con alcance sobre todas se
      * ofrecen TODAS —quien manda no tiene una sala en este sentido— y lo que
@@ -696,6 +731,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
      * es un callejón sin salida. */
     const faltaParaMandar = renglones.length === 0 ? 'Agrega al menos un producto.'
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
+        : sinLoteElegido.length > 0 ? 'Hay productos con la cantidad cambiada sin lote elegido.'
         : !destino ? 'Elige la sala de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
         // Antes de «Elige el motivo»: si no hay ninguno posible, ese aviso
@@ -1304,6 +1340,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                             <p key={`${x.nombre}|${x.sala}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
                                 Entre todos los renglones estás mandando {x.unidades} de {x.nombre} y{' '}
                                 {x.sala} tiene {x.existencia}.
+                            </p>
+                        ))}
+
+                        {sinLoteElegido.map((r, k) => (
+                            <p key={`sl|${k}|${r.erp_product_id}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
+                                A {r.descripcion} le subiste la cantidad y lo de más no tiene lote elegido.
+                                {' '}Quítalo y agrégalo de nuevo con la cantidad completa.
                             </p>
                         ))}
 

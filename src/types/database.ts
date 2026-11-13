@@ -4043,6 +4043,58 @@ export type Database = {
           },
         ]
       }
+      bolsa_en_sala_equivocada: {
+        Row: {
+          branch_id: number
+          created_at: string
+          id: string
+          reportado_at: string
+          reportado_por: string
+          request_id: string
+          resuelto_at: string | null
+        }
+        Insert: {
+          branch_id: number
+          created_at?: string
+          id?: string
+          reportado_at?: string
+          reportado_por: string
+          request_id: string
+          resuelto_at?: string | null
+        }
+        Update: {
+          branch_id?: number
+          created_at?: string
+          id?: string
+          reportado_at?: string
+          reportado_por?: string
+          request_id?: string
+          resuelto_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bolsa_en_sala_equivocada_reportado_por_fkey"
+            columns: ["reportado_por"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolsa_en_sala_equivocada_reportado_por_fkey"
+            columns: ["reportado_por"]
+            isOneToOne: false
+            referencedRelation: "employees_safe"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bolsa_en_sala_equivocada_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "approval_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       bolsa_faltante: {
         Row: {
           ajuste: Json | null
@@ -28050,6 +28102,7 @@ export type Database = {
       }
       ruta_bolsas: {
         Row: {
+          avisada_sin_recibir_at: string | null
           codigo: string | null
           created_at: string
           destino_branch_id: number | null
@@ -28071,6 +28124,7 @@ export type Database = {
           soltada_por: string | null
         }
         Insert: {
+          avisada_sin_recibir_at?: string | null
           codigo?: string | null
           created_at?: string
           destino_branch_id?: number | null
@@ -28092,6 +28146,7 @@ export type Database = {
           soltada_por?: string | null
         }
         Update: {
+          avisada_sin_recibir_at?: string | null
           codigo?: string | null
           created_at?: string
           destino_branch_id?: number | null
@@ -31711,6 +31766,29 @@ export type Database = {
       }
     }
     Functions: {
+      _avisar_bolsa: {
+        Args: {
+          p_branch: number
+          p_cuerpo: string
+          p_dest: string[]
+          p_que: string
+          p_request: string
+          p_titulo: string
+        }
+        Returns: number
+      }
+      _bolsa_por_codigo: {
+        Args: { p_codigo: string }
+        Returns: {
+          codigo: string
+          destino: string
+          destino_branch_id: number
+          en_camino: boolean
+          origen: string
+          origen_branch_id: number
+          request_id: string
+        }[]
+      }
       _bolsas_por_llevar: {
         Args: never
         Returns: {
@@ -31730,6 +31808,7 @@ export type Database = {
           unidades: number
         }[]
       }
+      _destinatarios_bodega_y: { Args: { p_extra: string }; Returns: string[] }
       _docs_sin_numero_control: {
         Args: { p_alcance?: string }
         Returns: {
@@ -31739,6 +31818,7 @@ export type Database = {
         }[]
       }
       _ruta_puede_operar: { Args: { p_ruta_id: string }; Returns: boolean }
+      _sala_que_reporta: { Args: { p_branch_id: number }; Returns: number }
       abonar_diferencia_corte: {
         Args: { p_abonos: Json; p_diferencia_id: number }
         Returns: Json
@@ -32529,6 +32609,7 @@ export type Database = {
         }
         Returns: number
       }
+      avisar_bolsas_entregadas_sin_recibir: { Args: never; Returns: number }
       avisar_cambios_que_no_se_quedaron: {
         Args: { p_horas?: number }
         Returns: number
@@ -32675,6 +32756,10 @@ export type Database = {
         Args: { p_branch_id: number; p_numero_boleta: string }
         Returns: Json
       }
+      bolsa_ajena: {
+        Args: { p_branch_id?: number; p_codigo: string }
+        Returns: Json
+      }
       bolsa_anular_operacion_nucleo: {
         Args: { p_motivo: string; p_operacion_id: number; p_por: string }
         Returns: {
@@ -32712,6 +32797,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      bolsa_llego_por_error: {
+        Args: { p_branch_id?: number; p_codigo: string }
+        Returns: Json
       }
       bolsa_operacion_no_anulable: {
         Args: { p_operacion_id: number }

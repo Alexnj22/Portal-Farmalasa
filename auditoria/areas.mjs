@@ -1116,12 +1116,13 @@ export const AREAS = [
         tablas: [
                  // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                  'retiro_firmas',
-                 'envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos', 'bolsa_faltante', 'ruta_bolsas'],
+                 'envio_linea', 'traslado_interruptor', 'retiros', 'retiro_bultos', 'bolsa_faltante', 'ruta_bolsas', 'bolsa_en_sala_equivocada'],
         edge: ['aplicar-traslado-inventario', 'enviar-producto-erp', 'barrer-traslados-recibidos',
                 'avisar-bultos-viejos'],
         crons: [
                 // Sin área hasta el 2026-10-21: la foto de producción tenía 57 días y no las veía.
                 'avisar-faltantes-sin-resolver',
+                'avisar-bolsas-entregadas-sin-recibir',
                 'barrer-traslados-recibidos', 'continuar-envios', 'avisar-envios-sin-decidir',
                 'avisar-traslados-por-respaldo-0805-sv', 'avisar-bultos-viejos-daily',
                 // Contrapropuesta de lote por vencimiento corto (2026-11-05).

@@ -52,3 +52,28 @@ export async function soltarBolsa(bolsa) {
     if (data?.ok) anotar('RUTA_BOLSA_SOLTADA', bolsa.request_id, { codigo: bolsa.codigo, destino: bolsa.destino, desde: 'app' });
     return data ?? { ok: false, error: 'Sin respuesta.' };
 }
+
+// ─── La bolsa que llegó a la sala equivocada ───────────────────────────────
+//
+// La sala no puede ver traslados ajenos, así que su escáner decía «no
+// encontramos ese ticket». `bolsa_ajena` dice sólo para qué sala es; con eso
+// la sala la reporta (`bolsa_llego_por_error`): queda anotado dónde está, se
+// avisa a Bodega y a quien la entregó, y las rutas la sugieren desde ahí.
+
+/** ¿De quién es esta bolsa? `{ encontrada, origen, destino, es_para_esta_sala, ya_reportada_aqui }`. */
+export async function fetchBolsaAjena(codigo, branchId = null) {
+    const { data, error } = await supabase.rpc('bolsa_ajena', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
+    if (error) {
+        console.error('rutaBolsas: bolsa_ajena failed:', error.message);
+        return { bolsa: null, error };
+    }
+    return { bolsa: data?.encontrada ? data : null, error: null };
+}
+
+/** «Llegó aquí por error». Nunca lanza. */
+export async function reportarBolsaPorError(codigo, branchId = null) {
+    const { data, error } = await supabase.rpc('bolsa_llego_por_error', { p_codigo: String(codigo ?? ''), p_branch_id: branchId });
+    if (error) return { ok: false, error: error.message };
+    if (data?.ok && !data.ya) anotar('BOLSA_LLEGO_POR_ERROR', null, { codigo: String(codigo ?? ''), destino: data.destino, sala: branchId });
+    return data ?? { ok: false, error: 'Sin respuesta.' };
+}

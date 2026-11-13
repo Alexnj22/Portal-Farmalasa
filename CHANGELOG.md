@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1518.0 — La bolsa que llega a la sala equivocada y la que nadie recibe
+
+Traslados, sobre la ruta de reparto de v2.1517.0. Decisión del usuario: «el aviso va a bodega y a quien entregó».
+
+- **«Llegó aquí por error»** (portal y app): cuando una sala escanea el ticket de una bolsa que no es suya, ya no dice «no encontramos ese ticket»: dice para qué sala es y ofrece reportarla. Queda anotado dónde está (`bolsa_en_sala_equivocada`), termina la custodia de quien la llevaba, se avisa a todo el personal de Bodega y a quien la entregó, y las rutas que pasen por esa sala la sugieren para llevarla a su destino. Se cierra sola al recibirla.
+- **Bolsa entregada y sin recibir**: el cron `avisar-bolsas-entregadas-sin-recibir` (cada hora, horario de sala) avisa a Bodega y a quien la entregó cuando una bolsa lleva más de 24 h entregada por la ruta sin que la sala la reciba. Un aviso por bolsa.
+- **Al confirmar una parada** (app), el conductor ve qué bolsas se quedan en esa sala y cuáles siguen con él.
+- Los avisos van por `notify_employees`: respetan el horario de cada quien.
+- Migración `20261113134146_bolsa_en_sala_equivocada_y_entregada_sin_recibir`.
+
 ## v2.1517.2 — App: la burbuja del chat vuelve a su lugar, se estira con los mensajes y se anima
 
 App del personal (iPhone y Android) — la burbuja del chat, segunda vuelta con lo que pidió el usuario («que por defecto tenga su posición, que se note que es el chat, que si lo muevo al tiempo vuelva… fluido y muy animado»):

@@ -7,6 +7,7 @@ import Notice from '../../components/common/Notice';
 import { SkeletonText } from '../../components/common/StateViews';
 import useCapturaDeCarne from '../../plataforma/useCapturaDeCarne';
 import { fetchTrasladoPorCodigo, recibirTraslado } from '@nucleo/data/traslados';
+import { fetchBolsaAjena, reportarBolsaPorError } from '@nucleo/data/rutaBolsas';
 import DeclararFaltantes from './DeclararFaltantes';
 import { declararFaltanteTardio, HORAS_PARA_DECLARAR_TARDE, renglonesDeLaBolsa as renglonesDeLaBolsaDe, sePuedeDeclararTarde } from '@nucleo/data/faltantes';
 import { FilaEnvioPorDecidir } from './FilasEnvio';
@@ -82,12 +83,20 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
      * render es una llamada impura —el linter la corta— y además el valor no
      * tiene por qué cambiar mientras alguien mira la misma pantalla. */
     const [puedeTarde, setPuedeTarde] = useState(false);
+    // La bolsa de OTRA sala que llegó acá (2026-11-12): para quién es y si ya
+    // se reportó. Sólo se pregunta cuando el ticket no es visible para la sala.
+    const [ajena, setAjena] = useState(null);
 
     const buscar = useCallback(async (codigo) => {
-        setBuscando(true); setError(''); setHallado(null); setListo(null); setFaltaron([]); setSobraron([]); setTarde([]); setPuedeTarde(false);
+        setBuscando(true); setError(''); setHallado(null); setListo(null); setFaltaron([]); setSobraron([]); setTarde([]); setPuedeTarde(false); setAjena(null);
         const { traslado, error: e } = await fetchTrasladoPorCodigo(codigo);
+        if (e) { setBuscando(false); setError(mensajeAmigable(e, 'No se pudo leer ese código.')); return; }
+        const invisible = !traslado?.es_de_un_pedido && (traslado?.es_un_envio ? !traslado.envio_bolsa : !traslado?.id);
+        if (invisible) {
+            const { bolsa } = await fetchBolsaAjena(codigo);
+            if (bolsa && !bolsa.es_para_esta_sala) setAjena({ ...bolsa, leido: String(codigo) });
+        }
         setBuscando(false);
-        if (e) { setError(mensajeAmigable(e, 'No se pudo leer ese código.')); return; }
         setHallado(traslado);
         setPuedeTarde(dentroDelPlazo(traslado));
     }, []);
@@ -118,8 +127,17 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
     const [estabaAbierto, setEstabaAbierto] = useState(abierto);
     if (abierto !== estabaAbierto) {
         setEstabaAbierto(abierto);
-        if (!abierto) { setHallado(null); setListo(null); setError(''); setConCamara(false); setFaltaron([]); setSobraron([]); setTarde([]); setPuedeTarde(false); }
+        if (!abierto) { setHallado(null); setListo(null); setError(''); setConCamara(false); setFaltaron([]); setSobraron([]); setTarde([]); setPuedeTarde(false); setAjena(null); }
     }
+
+    const reportarAjena = async () => {
+        if (!ajena) return;
+        setOcupado(true); setError('');
+        const r = await reportarBolsaPorError(ajena.leido);
+        setOcupado(false);
+        if (!r?.ok) { setError(r?.error ?? 'No se pudo reportar.'); return; }
+        setAjena({ ...ajena, ya_reportada_aqui: true });
+    };
 
     const confirmar = async () => {
         if (!hallado?.id) return;
@@ -201,7 +219,7 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                         </Button>
                     )}
                     {(hallado || listo) && !ocupado && (
-                        <Button variant="secondary" onClick={() => { setHallado(null); setListo(null); setError(''); setFaltaron([]); setSobraron([]); setTarde([]); setPuedeTarde(false); }}>
+                        <Button variant="secondary" onClick={() => { setHallado(null); setListo(null); setError(''); setFaltaron([]); setSobraron([]); setTarde([]); setPuedeTarde(false); setAjena(null); }}>
                             Escanear otro
                         </Button>
                     )}
@@ -293,13 +311,38 @@ export default function ConfirmarPorCodigo({ abierto, onCerrar, onHecho }) {
                             )}
                         </div>
                     )}
-                    {hallado?.es_un_envio && !hallado.envio_bolsa && (
+                    {ajena && (
+                        <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
+                            <p className="text-body-sm font-bold text-content-1">
+                                Esta bolsa es para {ajena.destino ?? 'otra sala'}, no para ustedes
+                            </p>
+                            <p className="text-micro text-content-3">
+                                Ticket {ajena.codigo} · sale de {ajena.origen ?? 'otra sala'}
+                            </p>
+                            {ajena.ya_reportada_aqui ? (
+                                <Notice variant="success">
+                                    Ya quedó anotado que está aquí. Bodega y quien la entregó ya saben; la próxima ruta que pase la lleva a {ajena.destino ?? 'su sala'}.
+                                </Notice>
+                            ) : (
+                                <>
+                                    <p className="text-body-sm text-content-2">
+                                        Si la dejaron aquí, repórtenlo: avisamos a Bodega y a quien la entregó, y la próxima ruta que pase la lleva a su sala.
+                                    </p>
+                                    <Button variant="secondary" disabled={ocupado} loading={ocupado} onClick={reportarAjena}>
+                                        Llegó aquí por error
+                                    </Button>
+                                </>
+                            )}
+                        </div>
+                    )}
+
+                    {!ajena && hallado?.es_un_envio && !hallado.envio_bolsa && (
                         <Notice variant="danger">
                             Ese ticket es de una bolsa que no puedes ver: es de otras salas.
                         </Notice>
                     )}
 
-                    {hallado && !hallado.id && !hallado.es_un_envio && (
+                    {!ajena && hallado && !hallado.id && !hallado.es_un_envio && (
                         <Notice variant={hallado.es_de_un_pedido ? 'warning' : 'danger'}>
                             {hallado.es_de_un_pedido
                                 ? 'Ese ticket es de un pedido de Bodega, no de un traslado entre salas. Se recibe desde Pedidos.'

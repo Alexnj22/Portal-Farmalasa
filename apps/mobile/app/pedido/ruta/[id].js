@@ -70,7 +70,8 @@ export default function RutaDeReparto() {
   const [sinFondo, setSinFondo] = useState(null); // por qué no: 'en-uso' | 'denegado' | 'sin-fondo'
   const [camion, setCamion] = useState(null);    // { lat, lng, at } visto por los demás
   const [ocupado, setOcupado] = useState(null);
-  const [encima, setEncima] = useState(0);       // bolsas de traslado sin entregar
+  const [encimaLista, setEncima] = useState([]);  // bolsas de traslado sin entregar
+  const encima = encimaLista.length;
   const mapa = useRef(null);
   const ultima = useRef(null);
 
@@ -190,7 +191,19 @@ export default function RutaDeReparto() {
       } },
     ]);
   };
-  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, `${conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.'}${encima ? ' Las bolsas que llevas para esta sala se entregan con ella.' : ''}`,
+  // Qué bolsas se quedan en esta parada y cuáles siguen encima: el conductor lo
+  // ve ANTES de confirmar, para no dejar una que no era de esta sala.
+  const textoBolsas = (p) => {
+    if (!encima) return '';
+    const fila = (b) => `• ${b.origen ?? '¿?'} → ${b.destino ?? '¿?'}${b.codigo ? ` (${b.codigo})` : ''}`;
+    const aqui = encimaLista.filter((b) => Number(b.destino_erp) === Number(p.erp_sucursal_id));
+    const siguen = encimaLista.filter((b) => Number(b.destino_erp) !== Number(p.erp_sucursal_id));
+    return [
+      aqui.length ? `\n\nSe quedan aquí ${aqui.length === 1 ? 'esta bolsa' : `estas ${aqui.length} bolsas`}:\n${aqui.map(fila).join('\n')}` : '\n\nNinguna de las bolsas que llevas es para esta sala.',
+      siguen.length ? `\n\nSiguen contigo (no las dejes aquí):\n${siguen.map(fila).join('\n')}` : '',
+    ].join('');
+  };
+  const entregar = (p) => hacer(`Entregar en ${p.suc_name}`, `${conductor ? 'La sala recibe el aviso de que llegaste.' : 'Se marca entregada en nombre del conductor; la sala recibe el aviso.'}${textoBolsas(p)}`,
     conductor ? 'Entregué' : 'Marcar entregada',
     () => updateRutaPedidoEntregado(p.id, user?.id, { sucursal_id: p.erp_sucursal_id, desde: 'app' }, ultima.current), 'Parada entregada');
   // Las dos salidas con motivo: el motivo es obligatorio (queda anotado).

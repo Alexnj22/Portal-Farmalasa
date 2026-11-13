@@ -55,7 +55,7 @@ function Accion({ texto, color, onPress, deshabilitado }) {
  * @param coords      `{ porSucursal, bodega }`
  * @param puedeOperar el conductor, o quien gestiona rutas
  * @param posicion    `() => { lat, lng } | null` — la última del GPS
- * @param onEncima    avisa cuántas lleva encima (para «Volver a base»)
+ * @param onEncima    avisa cuáles lleva encima (para «Entregué» y «Volver a base»)
  */
 export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, posicion, onEncima }) {
   const [datos, setDatos] = useState({ llevas: [], sugeridas: [] });
@@ -76,7 +76,7 @@ export default function BolsasDeLaRuta({ ruta, paradas, coords, puedeOperar, pos
 
   const encima = useMemo(() => bolsasEncima(datos.llevas), [datos.llevas]);
   const entregadas = datos.llevas.filter((b) => b.entregada_at);
-  useEffect(() => { onEncima?.(encima.length); }, [encima.length, onEncima]);
+  useEffect(() => { onEncima?.(encima); }, [encima, onEncima]);
   const sugeridas = useMemo(() => ordenarSugeridas(datos.sugeridas,
     (s) => minutosDeDesvio(s, paradas, coords?.porSucursal, coords?.bodega)), [datos.sugeridas, paradas, coords]);
 

@@ -128,6 +128,13 @@ function techoDeclarado(d, filas, horas) {
  * gate lo dice con el número viejo y el nuevo a la vista. */
 const CRONS = [
   {
+    job: 'avisar-bolsas-entregadas-sin-recibir', slug: null, cadencia: '23 12-23,0-3 * * *',
+    corridasDia: 16, sistema: 0,
+    motivo: 'Traslados (2026-11-12): una bolsa que la ruta de reparto dio por entregada hace más de 24 h '
+          + 'y la sala no recibió avisa a Bodega y a quien la entregó, una vez por bolsa. Un SELECT sobre '
+          + '`ruta_bolsas` (decenas de filas) y, si hay, una notificación. Sólo la base propia.',
+  },
+  {
     job: 'tick-minuto', slug: null, cadencia: '* * * * *',
     corridasDia: 1440, sistema: 0,
     motivo: 'El despachador (2026-11-10, docs/PLAN-MEMORIA-DE-LA-BASE-2026-11-10.md fase 2a): en UN proceso '

@@ -33,6 +33,7 @@ import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { useComposicionTraslado } from '@nucleo/store/composicionTraslado';
+import { fetchBolsaAjena, reportarBolsaPorError } from '@nucleo/data/rutaBolsas';
 import { fetchEstadoDeGrupos, fetchSalasQueCubro, fetchTrasladosHistorial, fetchTrasladosPorConfirmar, fetchTrasladosPorRecibir, fetchTrasladoPorCodigo, recibirTraslado } from '@nucleo/data/traslados';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { BotonGrande, Vacio } from '../componentes/formulario/Piezas';
@@ -169,8 +170,32 @@ export default function Traslados() {
   // Escanear una caja: el número del traslado (o el E##### de un envío) que va
   // en el código del ticket pegado a la bolsa. Un traslado abre su pantalla
   // para recibirlo; lo demás se dice en el mismo escáner.
+  // Una bolsa que la sala no puede ver puede ser de OTRA sala que la dejaron
+  // aquí (2026-11-12): se dice para quién es y se ofrece «Llegó aquí por
+  // error», que avisa a Bodega y a quien la entregó.
+  const esInvisible = (t) => !t || (!t.es_de_un_pedido && (t.es_un_envio ? !t.envio_bolsa : !t.id));
+  const ofrecerAjena = async (codigo) => {
+    const { bolsa } = await fetchBolsaAjena(codigo);
+    if (!bolsa || bolsa.es_para_esta_sala) return false;
+    setEscaneando(false); setAviso(null);
+    const titulo = `Esta bolsa es para ${bolsa.destino ?? 'otra sala'}`;
+    if (bolsa.ya_reportada_aqui) {
+      Alert.alert(titulo, `Ya quedó anotado que está aquí. La próxima ruta que pase la lleva a ${bolsa.destino ?? 'su sala'}.`);
+      return true;
+    }
+    Alert.alert(titulo, `Ticket ${bolsa.codigo}, sale de ${bolsa.origen ?? 'otra sala'}. Si la dejaron aquí, repórtalo: avisamos a Bodega y a quien la entregó, y la próxima ruta que pase la lleva a su sala.`, [
+      { text: 'Cancelar', style: 'cancel' },
+      { text: 'Llegó aquí por error', onPress: async () => {
+        const r = await reportarBolsaPorError(codigo);
+        if (r?.ok) listo('Reportada: Bodega ya sabe');
+        else fallo('No se pudo reportar', r?.error);
+      } },
+    ]);
+    return true;
+  };
   const alEscanear = async (codigo) => {
     const { traslado, error } = await fetchTrasladoPorCodigo(codigo);
+    if (!error && esInvisible(traslado) && await ofrecerAjena(codigo)) return true;
     if (error || !traslado) { setAviso({ tono: 'error', texto: `No encontramos ${codigo}, o es de otra sala.` }); return false; }
     if (traslado.es_de_un_pedido) { setAviso({ tono: 'info', texto: 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.' }); return false; }
     return abrirCaja(traslado, codigo);
@@ -182,6 +207,7 @@ export default function Traslados() {
       const codigo = String(t ?? '').trim();
       if (!codigo) return;
       const { traslado, error } = await fetchTrasladoPorCodigo(codigo);
+      if (!error && esInvisible(traslado) && await ofrecerAjena(codigo)) return;
       if (error || !traslado) { fallo('No se encontró', `No encontramos ${codigo}, o es de otra sala.`); return; }
       if (traslado.es_de_un_pedido) { fallo('Es de un pedido', 'Esa caja es de un pedido de Bodega: se recibe en Pedidos.'); return; }
       abrirCaja(traslado, codigo);

@@ -91,6 +91,7 @@ import {
 import { elegirLineasAceptadas, loQueNoEntro } from "../_shared/lineasAceptadas.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
+import { perecederosSinLote, venceParaMover } from "../_shared/venceDeCaja.ts";
 
 // `sesionEn` compartida recibe el `login` para no acoplar el módulo a un
 // proveedor de credenciales. Acá se fija el del ERP y queda igual que antes.
@@ -215,7 +216,10 @@ Deno.serve(async (req) => {
     // `lotes_elegidos` (2026-11-05): el lote que quien despacha eligió EN LUGAR
     // del que pidió la solicitud, porque el pedido no está. `[{ posicion, lote,
     // vence }]`, un lote por renglón.
-    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, sobrantes, lotes_de_generico, lotes_elegidos,
+    // `vences_de_caja` (2026-11-13): el vencimiento que trae la caja de un
+    // perecedero SIN control de lote cuya existencia no tiene fecha.
+    // `[{ posicion, vence: 'AAAA-MM-DD' }]`.
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, sobrantes, lotes_de_generico, lotes_elegidos, vences_de_caja,
             en_unidades, faltante_id, responsable, responsable_employee_id, nota } =
       await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
@@ -1115,6 +1119,21 @@ Deno.serve(async (req) => {
         }, 422);
       loteEscrito.set(pos, { lote: v.lote, vence: v.vence });
     }
+    // ── El vencimiento de la caja de un perecedero sin lote (2026-11-13) ──
+    const venceEscritoPos = new Map<number, string>();
+    for (const x of Array.isArray(vences_de_caja) ? vences_de_caja : []) {
+      const pos = Number(x?.posicion);
+      const v = String(x?.vence ?? "").slice(0, 10);
+      if (Number.isInteger(pos) && lineas[pos] && /^\d{4}-\d{2}-\d{2}$/.test(v)) venceEscritoPos.set(pos, v);
+    }
+    let perecederos: Set<number>;
+    try {
+      perecederos = await perecederosSinLote(admin, lineas.map((x) => Number(x.erp_product_id)));
+    } catch (e) {
+      return json({ ok: false, error: String((e as Error).message) }, 503);
+    }
+    const faltaVence: { posicion: number; producto: string; unidades: number }[] = [];
+
     // ── El lote que se manda EN LUGAR del pedido (2026-11-05) ─────────────
     // Hasta hoy, si el lote que reservó la solicitud ya no estaba, el reparto
     // completaba con el que vence primero y lo decía en un aviso: salía OTRO
@@ -1180,10 +1199,13 @@ Deno.serve(async (req) => {
     const anotarRenglones = (
       l: Linea, f: ReturnType<typeof leerFila>, elegida: string, costo: string, precio: string, unidad: string,
       renglones: { cantidad: number; idLote: string; lote: string | null }[],
+      // El vence que viaja en el renglón: el de la existencia, salvo un
+      // perecedero sin lote que lleva el de la caja (2026-11-13).
+      vence: string = f.vence || "",
     ) => {
       for (const r of renglones) {
         partes.push([
-          l.erp_product_id, costo, precio, r.cantidad, unidad, f.vence || "", elegida, r.idLote,
+          l.erp_product_id, costo, precio, r.cantidad, unidad, vence, elegida, r.idLote,
         ].join("|"));
 
         total    += Number(costo || 0) * r.cantidad;
@@ -1463,6 +1485,16 @@ Deno.serve(async (req) => {
             pos, l, nombre, f, elegida, costo, precio, unidad, paquetes: deGenerico, ...escrito,
             resto: reparto.renglones.filter((r) => !esLoteGenerico(r.lote)).map((r) => ({ ...r })),
           });
+      } else if (!f.regulado) {
+        // Un perecedero sin control de lote cuya existencia no tiene fecha
+        // lleva la de la caja (2026-11-13); sin ella no sale.
+        const vm = venceParaMover(perecederos.has(Number(l.erp_product_id)), f.vence, venceEscritoPos.get(pos) ?? "", nombre);
+        if ("error" in vm) {
+          if (venceEscritoPos.has(pos)) return json({ ok: false, codigo: "VENCE_INVALIDO", posicion: pos, error: vm.error }, 422);
+          faltaVence.push({ posicion: pos, producto: nombre, unidades: reparto.renglones.reduce((n, r) => n + r.cantidad, 0) * Number(unidad) });
+        } else {
+          anotarRenglones(l, f, elegida, costo, precio, unidad, reparto.renglones, vm.vence);
+        }
       } else {
         anotarRenglones(l, f, elegida, costo, precio, unidad, reparto.renglones);
       }
@@ -1500,6 +1532,14 @@ Deno.serve(async (req) => {
           ? `${faltaLote[0].producto}: ${faltaLote[0].unidades} unidades no tienen lote asignado. `
             + `Escribe el lote y el vencimiento que trae la caja.`
           : `${faltaLote.length} productos salen sin lote asignado. Escribe el lote y el vencimiento que trae cada caja.`,
+      }, 422);
+
+    if (cortadoEn < 0 && faltaVence.length)
+      return json({
+        ok: false, codigo: "FALTA_VENCE", lineas: faltaVence,
+        error: faltaVence.length === 1
+          ? `${faltaVence[0].producto} no tiene vencimiento registrado. Escribe el que trae la caja.`
+          : `${faltaVence.length} productos no tienen vencimiento registrado. Escribe el que trae cada caja.`,
       }, 422);
 
     // ── La propuesta por vencimiento corto ───────────────────────────────

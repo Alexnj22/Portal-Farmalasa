@@ -8,7 +8,7 @@ import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import {
     MOTIVOS_RECHAZO, despacharTraslado, recibirTraslado, rechazarTraslado,
-    fetchDisponibilidadTraslado, fetchReguladosDe, fetchLotesDeSalaEnUnidades,
+    fetchDisponibilidadTraslado, fetchExigenciasDe, fetchLotesDeSalaEnUnidades,
 } from '@nucleo/data/traslados';
 import { esLoteGenerico, rotuloDeLote } from '@nucleo/utils/unidadesInventario';
 import { loQueSeManda, nombreDeLinea, paquetesQueSalen, sugerenciaDeRechazo } from '@nucleo/utils/decisionTraslado';
@@ -283,6 +283,9 @@ export function DecisionTraslado({ fila, onHecho }) {
         }))
         .filter(x => x.unidades > 0), [items]);
     const [regulados,       setRegulados]       = useState(null);   // Set de erp_product_id
+    const [perecederos,     setPerecederos]     = useState(null);   // Set: perecedero SIN control de lote
+    const [faltaVenceSrv,   setFaltaVenceSrv]   = useState(null);   // la lista del servidor (FALTA_VENCE)
+    const [venceCaja,       setVenceCaja]       = useState({});     // { [posicion]: valor de LoteDeLaCaja soloVence }
     const [sinLoteServidor, setSinLoteServidor] = useState(null);   // la lista del servidor, si la dio
     const [loteCaja,        setLoteCaja]        = useState({});     // { [posicion]: valor de LoteDeLaCaja }
     // Regulados de TODA la solicitud: también hacen falta para saber si el
@@ -292,7 +295,11 @@ export function DecisionTraslado({ fila, onHecho }) {
     useEffect(() => {
         if (erpsDeItems.length === 0) return undefined;
         let cancelado = false;
-        fetchReguladosDe(erpsDeItems).then(reg => { if (!cancelado) setRegulados(reg); });
+        fetchExigenciasDe(erpsDeItems).then(m => {
+            if (cancelado) return;
+            setRegulados(new Set([...m].filter(([, e]) => e.regulado).map(([id]) => id)));
+            setPerecederos(new Set([...m].filter(([, e]) => e.perecedero && !e.regulado).map(([id]) => id)));
+        });
         return () => { cancelado = true; };
     }, [erpsDeItems]);
     // [{ posicion, producto, unidades }]
@@ -322,14 +329,16 @@ export function DecisionTraslado({ fila, onHecho }) {
         ? hora12(new Date(new Date(propuesta.propuesta_at).getTime() + 3 * 3600_000))
         : null;
     useEffect(() => {
-        if (!origenErp || !regulados?.size) return undefined;
+        if (!origenErp || (!regulados?.size && !perecederos?.size)) return undefined;
         let cancelado = false;
-        [...regulados].forEach(erp => {
+        // Los perecederos también: si su existencia no tiene fecha, se pide la
+        // de la caja (2026-11-13).
+        [...(regulados ?? []), ...(perecederos ?? [])].forEach(erp => {
             fetchLotesDeSalaEnUnidades(erp, origenErp)
                 .then(l => { if (!cancelado) setLotesSala(m => ({ ...m, [erp]: l })); });
         });
         return () => { cancelado = true; };
-    }, [origenErp, regulados]);
+    }, [origenErp, regulados, perecederos]);
 
     /* Todavía no se sabe qué hay: o está viajando la respuesta, o no se pudo
      * preguntar. En los dos casos la tarjeta se comporta como antes de que esto
@@ -398,7 +407,19 @@ export function DecisionTraslado({ fila, onHecho }) {
             posicion: x.pos, producto: x.producto, unidades: x.paquetes * x.factor, erp: x.erp,
         })),
     ];
-    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.envio) && lotesElegidosOk;
+    /* El vencimiento de la caja, para un perecedero SIN control de lote cuya
+     * existencia en la sala no tiene fecha (2026-11-13). Si el servidor —que
+     * lee el sistema— dice otra cosa (`FALTA_VENCE`), manda su lista. */
+    const pidenVence = (faltaVenceSrv ?? items.map((it, posicion) => {
+        const erp = Number(it?.erp_product_id);
+        if (!perecederos?.has(erp)) return null;
+        const sala = lotesSala[erp];
+        if (!Array.isArray(sala) || sala.some(l => String(l?.vence || '').trim())) return null;
+        return { posicion, producto: it?.descripcion ?? `Producto ${erp}`, erp,
+            unidades: (Number(it?.cantidad) || 0) * (Number(it?.factor) || 1) };
+    }).filter(Boolean)).filter(x => sinDatos || !recortado || aceptadas.some(a => a.i === x.posicion));
+    const lotesCompletos = pidenLote.every(x => loteCaja[x.posicion]?.envio) && lotesElegidosOk
+        && pidenVence.every(x => venceCaja[x.posicion]?.envio);
 
     // A quién más pedirle: la cuenta vive en `utils/decisionTraslado`.
     const sugerencia = sugerenciaDeRechazo(lineas, items);
@@ -414,6 +435,7 @@ export function DecisionTraslado({ fila, onHecho }) {
             pidenLote.map(x => ({ posicion: x.posicion, ...loteCaja[x.posicion].envio })),
             [...conEleccion.values()].map(x => ({ posicion: x.pos, lote: x.valor.lote, vence: x.valor.vence })),
             [...aceptaUnidades],
+            pidenVence.map(x => ({ posicion: x.posicion, vence: venceCaja[x.posicion].envio.vence })),
         );
         setOcupado(false);
         if (!r?.ok) {
@@ -421,6 +443,12 @@ export function DecisionTraslado({ fila, onHecho }) {
             // conocía: se piden ésos, con lo que ya se haya escrito.
             if (r?.codigo === 'FALTA_LOTE_DE_GENERICO' && Array.isArray(r.lineas)) {
                 setSinLoteServidor(r.lineas.map(x => ({
+                    posicion: x.posicion, producto: x.producto, unidades: x.unidades,
+                    erp: Number(items[x.posicion]?.erp_product_id),
+                })));
+            }
+            if (r?.codigo === 'FALTA_VENCE' && Array.isArray(r.lineas)) {
+                setFaltaVenceSrv(r.lineas.map(x => ({
                     posicion: x.posicion, producto: x.producto, unidades: x.unidades,
                     erp: Number(items[x.posicion]?.erp_product_id),
                 })));
@@ -696,6 +724,30 @@ export function DecisionTraslado({ fila, onHecho }) {
                                         ? { lote: dePropuesta(x.posicion).lote, vence: String(dePropuesta(x.posicion).vence).slice(0, 7) }
                                         : LOTE_DE_CAJA_VACIO)}
                                 onChange={v => setLoteCaja(c => ({ ...c, [x.posicion]: v }))}
+                            />
+                        </div>
+                    ))}
+                </div>
+            )}
+
+            {/* ── Sin vencimiento: lo dice la caja (2026-11-13) ── */}
+            {modo !== 'rechazo' && pidenVence.length > 0 && (
+                <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
+                    <p className="text-micro font-bold text-warning-text leading-snug">
+                        {pidenVence.length === 1
+                            ? 'Esto no tiene vencimiento registrado. Copia el que trae la caja:'
+                            : 'Estos productos no tienen vencimiento registrado. Copia el de cada caja:'}
+                    </p>
+                    {pidenVence.map(x => (
+                        <div key={x.posicion} className="flex flex-col gap-1">
+                            <p className="text-micro font-semibold text-content leading-snug">
+                                {x.producto}
+                                <span className="text-content-3"> · {x.unidades} {x.unidades === 1 ? 'unidad' : 'unidades'}</span>
+                            </p>
+                            <LoteDeLaCaja
+                                soloVence erpProductId={x.erp} producto={x.producto}
+                                valor={venceCaja[x.posicion] ?? LOTE_DE_CAJA_VACIO}
+                                onChange={v => setVenceCaja(c => ({ ...c, [x.posicion]: v }))}
                             />
                         </div>
                     ))}

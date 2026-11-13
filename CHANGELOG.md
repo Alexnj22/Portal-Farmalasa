@@ -21,6 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1525.1 — Traslados: el despacho pide el vencimiento que falta
+
+- **Traslados solicitados (portal)**: al despachar, un perecedero sin control de lote cuya existencia no tiene vencimiento pide el que trae la caja, y ese vencimiento viaja a la sala que recibe. El lote de la caja para lo regulado sin lote ya se pedía.
+- **Traslados (app)**: si al despachar falta el lote de la caja de un regulado o el vencimiento de un perecedero, la app ahora muestra los campos para copiarlos y reintentar, en vez de un error sin salida.
+
 ## v2.1525.0 — Todo envío pide el lote o el vencimiento que falta
 
 Decisión del usuario: todo movimiento de producto que no traiga su lote o su vencimiento lo pide (los pedidos de Bodega quedan para después del inventario).

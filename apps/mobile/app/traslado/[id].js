@@ -43,6 +43,7 @@ import { usePorDecidir } from '../../componentes/porDecidir';
 import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { MAYUSCULAS } from '../../tema/mayusculas';
 import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
+import LoteDeLaCaja, { LOTE_DE_CAJA_VACIO } from '../../componentes/LoteDeLaCaja';
 
 function Bloque({ titulo, children }) {
   return (
@@ -91,6 +92,12 @@ export default function Traslado() {
   // Lo que vino DE MÁS (2026-11-12): se descuenta de la sala de origen y se
   // suma a ésta al recibir (portal: «Vino algo de más»).
   const [sobran, setSobran] = useState({});
+  /* Lo que el servidor pide antes de despachar (2026-11-13): el lote y el
+   * vencimiento de la caja de un regulado sin lote (`FALTA_LOTE_DE_GENERICO`),
+   * o el vencimiento de un perecedero sin fecha (`FALTA_VENCE`). */
+  const [pideLote, setPideLote] = useState([]);    // [{ posicion, producto, unidades }]
+  const [pideVence, setPideVence] = useState([]);
+  const [cajas, setCajas] = useState({});          // { 'L|pos' | 'V|pos': valor de LoteDeLaCaja }
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -130,8 +137,16 @@ export default function Traslado() {
 
   const enviar = async () => {
     setOcupado(true); trabajando('Enviando traslado…');
-    const r = await despacharTraslado(fila.id, recortado ? porQue.trim() : '', recortado ? aceptadas : null);
+    const r = await despacharTraslado(fila.id, recortado ? porQue.trim() : '', recortado ? aceptadas : null,
+      pideLote.map((x) => ({ posicion: x.posicion, ...cajas[`L|${x.posicion}`].envio })), null, null,
+      pideVence.map((x) => ({ posicion: x.posicion, vence: cajas[`V|${x.posicion}`].envio.vence })));
     setOcupado(false);
+    if (r?.codigo === 'FALTA_LOTE_DE_GENERICO' && Array.isArray(r.lineas)) {
+      setPideLote(r.lineas); fallo('Falta el lote de la caja', r.error); return;
+    }
+    if (r?.codigo === 'FALTA_VENCE' && Array.isArray(r.lineas)) {
+      setPideVence(r.lineas); fallo('Falta el vencimiento', r.error); return;
+    }
     if (!r?.ok) {
       const { data: otra } = await fetchApprovalRequestById(fila.id).catch(() => ({ data: null }));
       if (otra?.status !== 'APPROVED') { fallo('No se pudo enviar', r?.error ?? 'Inténtalo de nuevo.'); return; }
@@ -267,8 +282,19 @@ export default function Traslado() {
           {puedeContestar && !modo ? (
             <View style={{ gap: 12 }}>
               {recortado ? <Campo value={porQue} onChangeText={setPorQue} placeholder="¿Por qué no sale todo?" /> : null}
+              {[...pideLote.map((x) => ({ ...x, k: `L|${x.posicion}`, solo: false })),
+                ...pideVence.map((x) => ({ ...x, k: `V|${x.posicion}`, solo: true }))].map((x) => (
+                <View key={x.k} style={{ gap: 6, marginTop: 8 }}>
+                  <Text style={{ color: MARCA.ambar, fontSize: 14, fontWeight: '600' }}>
+                    {`${x.producto} · ${x.unidades} ${x.unidades === 1 ? 'unidad' : 'unidades'}: ${x.solo ? 'copia el vencimiento que trae la caja' : 'copia el lote y el vencimiento que trae la caja'}`}
+                  </Text>
+                  <LoteDeLaCaja soloVence={x.solo} erpProductId={items[x.posicion]?.erp_product_id} producto={x.producto}
+                    valor={cajas[x.k] ?? LOTE_DE_CAJA_VACIO} onChange={(v) => setCajas((c) => ({ ...c, [x.k]: v }))} />
+                </View>
+              ))}
               <BotonGrande texto={recortado ? 'Enviar lo que hay' : 'Confirmar y enviar'} color={MARCA.verde}
-                deshabilitado={ocupado || (lineas.length > 0 && (!hayQueMandar || (recortado && !porQue.trim())))} onPress={enviar} />
+                deshabilitado={ocupado || (lineas.length > 0 && (!hayQueMandar || (recortado && !porQue.trim())))
+                  || pideLote.some((x) => !cajas[`L|${x.posicion}`]?.envio) || pideVence.some((x) => !cajas[`V|${x.posicion}`]?.envio)} onPress={enviar} />
               <BotonGrande texto="Rechazar…" color={MARCA.rojo} borde deshabilitado={ocupado} onPress={() => setModo('rechazo')} />
             </View>
           ) : null}

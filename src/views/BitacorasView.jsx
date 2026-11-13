@@ -102,6 +102,19 @@ export default function BitacorasView() {
 
     const miSala = salaDelUsuario(user);
     const [sala, setSala] = useState(() => (alcanceTodas ? (miSala ?? '') : miSala));
+    // Quien ve todas las salas y es de una que no lleva bitácora (Administración)
+    // abría las ocho pestañas vacías con «Administración no almacena…» hasta
+    // elegir una a mano (usuario, 2026-11-13: «esta vista es un desorden»).
+    // Arranca en la primera sala que sí la lleva; elegir otra sigue igual.
+    // Sólo al arrancar: vaciar el selector a mano (toda la red) sigue valiendo.
+    const [arranqueResuelto, setArranqueResuelto] = useState(false);
+    useEffect(() => {
+        if (arranqueResuelto || !alcanceTodas || !branches.length) return;
+        const opciones = salasDeBitacora(branches);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- corrige una vez el arranque cuando llegan las salas
+        setArranqueResuelto(true);
+        if (opciones.length && !opciones.some(o => o.value === String(sala))) setSala(opciones[0].value);
+    }, [arranqueResuelto, alcanceTodas, branches, sala]);
     const [fecha, setFecha] = useState(hoySV);
     const tabs = useMemo(() => ([
         { key: 'hoy', label: 'Registro diario', icon: Thermometer },

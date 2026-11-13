@@ -94,6 +94,7 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
     }, [filas]);
 
     const sinConfirmar = todas.filter(m => !m.confirmado).length;
+    const [verDistintos, setVerDistintos] = useState(false);
     const libroDistinto = (filas || []).filter(f => f.revisar_libro);
 
     const confirmar = async (m) => {
@@ -150,21 +151,32 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
 
     return (
         <div className="space-y-4">
-            <Notice variant={sinConfirmar ? 'warning' : 'success'}>
-                {sinConfirmar
-                    ? `${sinConfirmar} de ${todas.length} moléculas sin confirmar. El grupo viene del Listado Oficial de Medicamentos 2026 y, donde no lo marca, de la OMS; vale como listado cuando el regente lo confirma.`
-                    : 'Listado confirmado por el regente.'}
+            {/* Un solo aviso con lo pendiente, no tres apilados; la lista de
+                productos con la marca distinta se abre a pedido (eran 89
+                nombres en un párrafo — usuario, 2026-11-13: «un desorden»). */}
+            <Notice variant={sinConfirmar || revisar.fuera.length || libroDistinto.length ? 'warning' : 'success'}>
+                <div className="space-y-1">
+                    <p>{sinConfirmar
+                        ? `${sinConfirmar} de ${todas.length} moléculas sin confirmar por el regente (el grupo AWaRe sale del Listado Oficial 2026 o de la OMS).`
+                        : 'Listado confirmado por el regente.'}</p>
+                    {revisar.fuera.length > 0 && (
+                        <p>{`${revisar.fuera.length} productos del libro sin molécula: están en «Por revisar».`}</p>
+                    )}
+                    {libroDistinto.length > 0 && (
+                        <p>
+                            {`${libroDistinto.length} con la marca del libro distinta a la regla. `}
+                            <button type="button" className="underline font-semibold" onClick={() => setVerDistintos(v => !v)}>
+                                {verDistintos ? 'Ocultar' : 'Ver cuáles'}
+                            </button>
+                        </p>
+                    )}
+                    {verDistintos && libroDistinto.length > 0 && (
+                        <ul className="mt-1 max-h-48 overflow-y-auto columns-1 sm:columns-2 gap-4 text-caption">
+                            {libroDistinto.map(f => <li key={f.erp_product_id ?? f.producto}>{f.producto}</li>)}
+                        </ul>
+                    )}
+                </div>
             </Notice>
-            {revisar.fuera.length > 0 && (
-                <Notice variant="danger">
-                    {`${revisar.fuera.length} productos van al libro bajo receta y no están en el listado. Están en «Por revisar»: a cada uno hay que decirle de qué molécula es.`}
-                </Notice>
-            )}
-            {libroDistinto.length > 0 && (
-                <Notice variant="warning">
-                    {`${libroDistinto.length} con la marca del libro distinta a la regla: ${libroDistinto.map(f => f.producto).join(' · ')}.`}
-                </Notice>
-            )}
 
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <SegmentedControl options={VISTAS} value={vista} onChange={setVista} label="Qué ver" />

@@ -21,6 +21,13 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1521.3 — Bitácoras: arranca en una sala que la lleva y los avisos de antibióticos en uno
+
+El usuario: «esta vista es un desorden, todas las pestañas».
+
+- Quien ve todas las salas y es de Administración abría cada pestaña vacía («Administración no almacena medicamentos…») hasta elegir una sala a mano. Ahora arranca en la primera sala que lleva bitácora.
+- Antibióticos: los tres avisos apilados quedan en uno, y la lista de productos con la marca del libro distinta (89 nombres en un párrafo) se abre con «Ver cuáles».
+
 ## v2.1521.2 — Personal: el cargo secundario ya no puede repetir el principal
 
 Una ficha tenía el mismo cargo como principal y secundario (Referente de Farmacovigilancia en los dos): el formulario ofrecía el principal también en la lista del secundario.

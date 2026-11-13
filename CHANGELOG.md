@@ -26,6 +26,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 - **Envío sugerido (app, desde Gestión de stock)**: los renglones precargados que salen sin lote asignado (regulado) o sin vencimiento (perecedero) muestran el campo de la caja en la lista, y el envío no sale hasta llenarlo. Antes entraban directo, sin pasar por el compositor que lo pedía.
 - Se quita `enviarTraslado` de `componentes/avisos.js`: nadie lo llamaba (los avisos abren la pantalla del traslado, que ya pide lote y vencimiento) y despachaba sin esos campos.
 
+## v2.1527.1 — Pedidos en la app: anular una sala, conductor y salida de la ruta, reglas por corregir
+
+En la app del personal, Pedidos hace lo mismo que en el portal:
+
+- **Anular sólo una sala** de un pedido mientras Bodega no la empezó y el pedido tiene otras salas (con motivo). Si era la última, el pedido queda anulado.
+- **Armar ruta**: se elige **quién conduce** entre quienes pueden mover rutas (por defecto, uno mismo) y si **sale ahora o después**. Si sale después, queda pendiente y se arranca desde Rutas.
+- **Reglas de despacho por corregir**: las que se quitaron porque su presentación cambió salen con su cuenta y su filtro. En la regla se dice qué había antes y se puede elegir la nueva o **dejarla sin regla**.
+
 ## v2.1527.0 — Devolver dañado o vencido sin lote pide el lote de la caja
 
 Decisión del usuario (2026-11-13): todo movimiento sin lote lo pide; los pedidos de Bodega siguen exentos hasta el inventario, salvo lo que vuelve dañado o vencido (la sala tiene la caja).

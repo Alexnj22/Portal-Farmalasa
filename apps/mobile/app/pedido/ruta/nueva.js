@@ -2,24 +2,26 @@
 // pasos: qué salas finalizadas suben al camión, y el orden de las paradas
 // (optimizado por carretera, movible a mano, con encargos sin pedido).
 //
-// Quien la arma es quien conduce, como en el portal, y la ruta SALE en cuanto
-// se crea: el aviso «en camino» a cada sala lo escribe la base. Las cuentas son
-// del núcleo (`armarRutaDeReparto`, `routeOptimizer`) y la escritura también
-// (`crearRutaYSalir`).
+// El conductor se elige entre quienes pueden mover rutas
+// (`fetchConductoresPosibles`; por defecto, uno mismo), y la ruta sale al
+// crearla o queda pendiente para arrancarla después desde Rutas, como en el
+// portal. Al salir, el aviso «en camino» a cada sala lo escribe la base. Las
+// cuentas son del núcleo (`armarRutaDeReparto`, `routeOptimizer`) y la
+// escritura también (`crearRuta` + `completarRutaRecienCreada`).
 //
 // La tabla de carretera la da el intermediario del servidor (`maps-proxy`); si
 // no responde, se ordena en línea recta, igual que el portal cuando Google
 // falla. El trazo del mapa va en línea recta entre paradas.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../../../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import SinMapa, { hayMapa } from '../../../componentes/SinMapa';
 import { useAuth } from '@nucleo/context/AuthContext';
-import { fetchEmployeeDriverInfo, fetchPedidosDisponiblesParaRuta, fetchReenviosPorDespachar, fetchSalasListasParaRuta, fetchSucursalesConCoords } from '@nucleo/data/pedidos';
-import { crearRutaYSalir } from '@nucleo/data/accionesDeBodega';
+import { completarRutaRecienCreada, crearRuta, fetchEmployeeDriverInfo, fetchPedidosDisponiblesParaRuta, fetchReenviosPorDespachar, fetchSalasListasParaRuta, fetchSucursalesConCoords } from '@nucleo/data/pedidos';
+import { fetchConductoresPosibles } from '@nucleo/data/rutas';
 import {
   juntarParadas, lineaDeTiempo, minutosTexto, nombresDeSalas, paradasDeSalas, paradasParaGuardar, pedidosParaRuta, reenviosParaRuta, visitasDeRuta,
 } from '@nucleo/utils/armarRutaDeReparto';
@@ -31,7 +33,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion, Cargando, Vacio } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Opciones, Seccion, Cargando, Vacio } from '../../../componentes/formulario/Piezas';
 import Segmentos from '../../../componentes/Segmentos';
 import FijoArriba from '../../../componentes/FijoArriba';
 import Vidrio from '../../../componentes/Vidrio';
@@ -75,7 +77,10 @@ export default function NuevaRuta() {
   const { con } = useLocalSearchParams();
   const { user } = useAuth();
   const [paso, setPaso] = useState('1');
-  const [conductor, setConductor] = useState({ nombre: '', corto: '' });
+  const [conductores, setConductores] = useState([]);
+  const [conductorId, setConductorId] = useState(null);
+  const [salida, setSalida] = useState('ahora'); // 'ahora' | 'despues'
+  const [yo, setYo] = useState({ nombre: '', corto: '' });
   const [disponibles, setDisponibles] = useState(null);
   const [coords, setCoords] = useState({ porSucursal: {}, bodega: null });
   const [nombres, setNombres] = useState({});
@@ -88,8 +93,13 @@ export default function NuevaRuta() {
   const medir = useRef(tramoEnLineaRecta);
 
   useEffect(() => {
+    // Si la lista no llega, conduce quien arma la ruta y no se bloquea nada.
+    Promise.resolve(fetchConductoresPosibles()).then(({ data }) => {
+      setConductores((data ?? []).map((e) => ({ id: e.id, nombre: `${e.first_names ?? ''} ${e.last_names ?? ''}`.trim(), corto: shortEmployeeName(e) })));
+    }).catch(() => {});
+    setConductorId((prev) => prev ?? (user?.id ?? null));
     if (user?.id) {
-      Promise.resolve(fetchEmployeeDriverInfo(user.id)).then(({ data }) => setConductor({
+      Promise.resolve(fetchEmployeeDriverInfo(user.id)).then(({ data }) => setYo({
         nombre: data ? `${data.first_names} ${data.last_names}`.trim() : (user.email ?? 'Usuario'),
         corto: data ? shortEmployeeName(data) : (user.email ?? 'Usuario'),
       })).catch(() => {});
@@ -184,18 +194,36 @@ export default function NuevaRuta() {
   const trazo = [bodega, ...paradas.filter((p) => p.lat != null).map((p) => ({ lat: p.lat, lng: p.lng })), bodega];
   const region = paradas.length ? encuadre(trazo) : null;
 
+  const conductor = useMemo(() => {
+    const c = conductores.find((x) => x.id === conductorId);
+    if (c) return c;
+    return { id: user?.id ?? null, ...yo };
+  }, [conductores, conductorId, user, yo]);
+  const soyYo = conductor.id === (user?.id ?? null);
+  const elegirConductor = () => {
+    if (!conductores.length) { fallo('Sin lista', 'No se pudo leer quién puede conducir; conduce quien arma la ruta.'); return; }
+    ActionSheetIOS.showActionSheetWithOptions({ title: 'Quién conduce', options: [...conductores.map((c) => (c.id === user?.id ? `${c.corto} (tú)` : c.corto)), 'Cancelar'], cancelButtonIndex: conductores.length },
+      (i) => { if (i < conductores.length) setConductorId(conductores[i].id); });
+  };
+
   const crear = async () => {
     setGuardando(true);
     trabajando('Creando la ruta…');
     try {
-      const rutaId = await crearRutaYSalir({
-        conductorId: user?.id ?? null, conductorNombre: conductor.nombre,
-        paradas: paradasParaGuardar(paradas), visitas: visitasDeRuta(paradas),
+      const { data: rutaId, error: errCrear } = await crearRuta({
+        p_conductor_id: conductor.id ?? user?.id ?? null, p_conductor_nombre: conductor.nombre,
+        p_paradas: paradasParaGuardar(paradas),
         // Con las descargas (`MIN_POR_PARADA` por parada), no sólo conducir: como el portal.
-        distanciaM: distancia || null, duracionMin: duracionConParadas(manejo, paradas.length) || null, creadoPor: user?.id ?? null,
+        p_distancia_total_m: distancia || null, p_duracion_min: duracionConParadas(manejo, paradas.length) || null, p_creado_por: user?.id ?? null,
       });
+      if (errCrear) throw errCrear;
+      // Si esto falla la ruta ya existe en «pendiente» y se arranca desde Rutas.
+      const { error: errSalida } = await completarRutaRecienCreada(rutaId,
+        { saleAhora: salida === 'ahora', visitas: visitasDeRuta(paradas) }, { conductor: conductor.nombre, desde: 'app' });
+      if (errSalida) throw errSalida;
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
-      listo('La ruta salió', 'Cada sala recibe el aviso de que va en camino.');
+      if (salida === 'ahora') listo('La ruta salió', 'Cada sala recibe el aviso de que va en camino.');
+      else listo('Ruta creada', 'Queda pendiente: arráncala desde Rutas cuando salga.');
       router.replace({ pathname: '/pedido/ruta/[id]', params: { id: String(rutaId) } });
     } catch (e) {
       fallo('No se pudo crear la ruta', mensajeAmigable(e));
@@ -203,9 +231,10 @@ export default function NuevaRuta() {
       setGuardando(false);
     }
   };
-  const confirmar = () => Alert.alert('Crear y salir',
-    `${paradas.length} parada${paradas.length === 1 ? '' : 's'}${distancia ? ` · ${distanciaTexto(distancia)}` : ''}. Conduces tú (${conductor.corto}) y la ruta sale ya: cada sala recibe el aviso.`,
-    [{ text: 'Cancelar', style: 'cancel' }, { text: 'Crear y salir', onPress: crear }]);
+  const accion = salida === 'ahora' ? 'Crear y salir' : 'Crear ruta';
+  const confirmar = () => Alert.alert(accion,
+    `${paradas.length} parada${paradas.length === 1 ? '' : 's'}${distancia ? ` · ${distanciaTexto(distancia)}` : ''}. ${soyYo ? `Conduces tú (${conductor.corto})` : `Conduce ${conductor.corto}`}${salida === 'ahora' ? ' y la ruta sale ya: cada sala recibe el aviso.' : '. Queda pendiente hasta que se arranque.'}`,
+    [{ text: 'Cancelar', style: 'cancel' }, { text: accion, onPress: crear }]);
 
   return (
     <>
@@ -273,7 +302,15 @@ export default function NuevaRuta() {
               {vuelta ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`Regreso a bodega: ${distanciaTexto(vuelta.dist_m)}${vuelta.dur_min ? ` · ${minutosTexto(vuelta.dur_min)}` : ''}`}</Text> : null}
             </Seccion>
             <BotonGrande texto="Agregar un encargo" borde onPress={agregarEncargo} />
-            <BotonGrande texto={guardando ? 'Creando…' : 'Crear y salir'} color={MARCA.verde}
+            <Seccion titulo="Salida">
+              <Pressable onPress={elegirConductor} style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', minHeight: 44, gap: 10, opacity: pressed ? 0.6 : 1 })}>
+                <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Conduce</Text>
+                <Text style={{ flex: 1, textAlign: 'right', color: colorSistema.acento, fontSize: 16 }}>{soyYo ? `${conductor.corto} (tú)` : conductor.corto}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 18 }}>›</Text>
+              </Pressable>
+              <Opciones valor={salida} onCambiar={setSalida} opciones={[{ id: 'ahora', label: 'Sale ahora' }, { id: 'despues', label: 'Sale después' }]} />
+            </Seccion>
+            <BotonGrande texto={guardando ? 'Creando…' : accion} color={MARCA.verde}
               deshabilitado={guardando || !paradas.some((p) => !p.isEncargo)} onPress={confirmar} />
           </View>
         )}

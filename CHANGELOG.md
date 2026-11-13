@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1525.0 — Todo envío pide el lote o el vencimiento que falta
+
+Decisión del usuario: todo movimiento de producto que no traiga su lote o su vencimiento lo pide (los pedidos de Bodega quedan para después del inventario).
+
+- **Enviar producto (portal)**: además del lote de la caja para lo regulado sin lote asignado, un perecedero sin control de lote cuya existencia no tiene vencimiento pide el vencimiento que trae la caja antes de agregarlo.
+- **Enviar producto (app)**: ahora pide lo mismo que el portal: lote y vencimiento de la caja para lo regulado sin lote, y vencimiento para lo perecedero sin fecha. Antes un regulado sin lote salía de la app y fallaba al despachar.
+- **Al despachar**, el vencimiento escrito viaja en el traslado para que la sala que recibe lo tenga. Si falta, el renglón no sale y lo dice.
+
 ## v2.1524.6 — App: confirmar aplicaciones y libro de inyectables con firma, nativos
 
 - **Inyecciones → Bitácora** en la app: enfermería confirma desde el teléfono las aplicaciones que hizo («La apliqué yo», o todas de una vez), igual que en la web.

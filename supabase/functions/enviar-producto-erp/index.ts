@@ -32,6 +32,7 @@ import {
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
 import { anotarAjuste, descontarYCerrar, soltarAjuste, tomarAjusteFaltante } from "../_shared/faltante-ajuste.ts";
 import { asignarLoteAGenerico, fechaRegistradaQueChoca, validarLoteEscrito } from "../_shared/erp-asignar-lote.ts";
+import { perecederosSinLote, venceEscrito, venceParaMover } from "../_shared/venceDeCaja.ts";
 import {
   type Trabas, devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
 } from "../_shared/erp-destrabe.ts";
@@ -625,6 +626,15 @@ Deno.serve(async (req) => {
        * varias salas, donde se dejó sin tope a propósito hasta tener el dato. */
       const msPorRenglon: number[] = [];
 
+      /* Los perecederos SIN control de lote (2026-11-13): si su existencia no
+       * trae fecha, el renglón tiene que traer la de la caja. Se lee una vez. */
+      let perecederos: Set<number>;
+      try {
+        perecederos = await perecederosSinLote(admin, pendientes.map((x) => Number(x.erp_product_id)));
+      } catch (e) {
+        return json({ ok: false, error: (e as Error).message }, 503);
+      }
+
       for (let i = 0; i < pendientes.length; i++) {
         if (Date.now() - arranque > PRESUPUESTO) { cortadoEn = i; break; }
         const arranqueRenglon = Date.now();
@@ -785,10 +795,15 @@ Deno.serve(async (req) => {
           + (origenVencidos ? " AREA VENCIDOS" : ""),
         );
 
+        const venceMov = f.regulado
+          ? { vence: f.vence || "" }
+          : venceParaMover(perecederos.has(Number(l.erp_product_id)), f.vence, venceEscrito(l), nombre);
+        if ("error" in venceMov) { await fallar(venceMov.error); continue; }
+
         const total = reparto.renglones.reduce((s, r) => s + Number(pres.costo || 0) * r.cantidad, 0);
         const datos = reparto.renglones.map((r) => [
           l.erp_product_id, pres.costo, pres.precio, r.cantidad, pres.unidad,
-          f.vence || "", pres.id, r.idLote,
+          venceMov.vence, pres.id, r.idLote,
         ].join("|")).join("#") + "#";
 
         const resp = leerRespuesta(await pedir(cookie, TRASLADO, new URLSearchParams({

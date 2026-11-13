@@ -14,7 +14,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
 import { renglonCompleto, nombreDeDespacho } from '@nucleo/utils/unidadDeDespacho';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
-import { fetchReguladosDe } from '@nucleo/data/traslados';
+import { fetchExigenciasDe } from '@nucleo/data/traslados';
 import { enviarAOtraSala, renglonesQueSalieron, envioNecesitaFoto, ERP_BODEGA, MAX_FOTOS_ENVIO, MOTIVOS_ENVIO, motivosEnvioPorDireccion, subirEvidenciaEnvio, TOPE_RENGLONES_ENVIO } from '@nucleo/data/envios';
 import { esLoteGenerico, lotesEnUnidades, repartirPedido, rotuloDeLote, sumaUnidades } from '@nucleo/utils/unidadesInventario';
 import { opcionesDePresentacion } from '@nucleo/utils/presentacion';
@@ -23,7 +23,7 @@ import { renglonesDeEnvioSugerido } from '@nucleo/utils/gestionDeStock';
 import { clickable } from '@nucleo/utils/clickable';
 import { imprimirTicketDeTraslado } from '@nucleo/utils/imprimirTraslado';
 import { fechaTexto } from '@nucleo/utils/fecha';
-import { LOTE_DE_CAJA_VACIO } from '@nucleo/utils/loteDeCaja';
+import { LOTE_DE_CAJA_VACIO, faltaDeLaCaja } from '@nucleo/utils/loteDeCaja';
 import LoteDeLaCaja from '../traslados/LoteDeLaCaja';
 import { ERP_NAMES as NOMBRE_SALA, BRANCH_A_ERP as MI_ERP_POR_BRANCH } from '@nucleo/constants/erp';
 
@@ -99,6 +99,11 @@ const fmtVence = (d) => d
  * quite lo que no quiera mandar, o cambie el destino y el motivo, y recién
  * entonces apriete «Transferir».
  */
+/* Qué renglones del reparto llevan lo escrito de la caja (2026-11-13): los
+ * sin lote de un regulado, o los sin fecha de un perecedero. */
+const llevaCaja = (pide, l) => pide === 'lote' ? (esLoteGenerico(l.lote) || !l.lote)
+    : pide === 'vence' ? !String(l.vence || '').trim() : false;
+
 export default function EnviarProductoModal({ onClose, onListo, precarga = null }) {
     const { user, getScope } = useAuth();
 
@@ -399,14 +404,17 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
      * con su lote impreso. Quien arma el envío es quien la tiene en la mano, así
      * que escribe su lote y vencimiento, y al despachar se le asignan a ESAS
      * unidades —sin tocar ningún otro lote—. */
-    const [regulado, setRegulado] = useState(false);
+    /* Y un perecedero SIN control de lote (2026-11-13): no tiene número que
+     * copiar, pero si lo que sale no trae vencimiento se escribe el de la caja. */
+    const [exige, setExige] = useState(null);   // { regulado, perecedero }
+    const regulado = exige?.regulado === true;
     const [caja, setCaja] = useState(LOTE_DE_CAJA_VACIO);   // valor de LoteDeLaCaja
     useEffect(() => {
         let cancelado = false;
-        setRegulado(false);
+        setExige(null);
         if (!elegido?.erp_product_id) return undefined;
-        fetchReguladosDe([elegido.erp_product_id]).then(s => {
-            if (!cancelado) setRegulado(s.has(Number(elegido.erp_product_id)));
+        fetchExigenciasDe([elegido.erp_product_id]).then(m => {
+            if (!cancelado) setExige(m.get(Number(elegido.erp_product_id)) ?? null);
         });
         return () => { cancelado = true; };
     }, [elegido?.erp_product_id]);
@@ -430,12 +438,13 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         setPresIdx(String(presBase));
         setCantidad(String(unidadesPedidas));
     };
-    const sinLoteEnReparto = regulado
-        ? reparto.reparto.filter(l => esLoteGenerico(l.lote)).reduce((s, l) => s + l.toma, 0)
-        : 0;
+    const falta = faltaDeLaCaja(exige, reparto.reparto);
+    const sinLoteEnReparto = falta.unidades;
     // El motivo exacto lo dice el propio campo; acá sólo se frena el paso.
-    const faltaCaja = sinLoteEnReparto > 0 && !caja.envio
-        ? 'Falta confirmar el lote y el vencimiento que trae la caja.'
+    const faltaCaja = falta.pide && !caja.envio
+        ? (falta.pide === 'lote'
+            ? 'Falta confirmar el lote y el vencimiento que trae la caja.'
+            : 'Falta el vencimiento que trae la caja.')
         : null;
 
     /* ── El tope, dicho ANTES ─────────────────────────────────────────────
@@ -531,8 +540,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             // despacho se lo asigna a esas unidades (ver `faltaCaja`).
             lotes: reparto.reparto.map(l => ({
                 lote: l.lote, vence: l.vence, unidades: l.toma,
-                ...(sinLoteEnReparto > 0 && esLoteGenerico(l.lote)
-                    ? { caja: caja.envio } : {}),
+                ...(llevaCaja(falta.pide, l) ? { caja: caja.envio } : {}),
             })),
             // Cuántas tiene ESA sala AHORA. Es lo que deja avisar en la lista
             // si se agregó dos veces el mismo producto y entre los dos se pasan.
@@ -540,6 +548,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
             // Para saber, al corregir la cantidad, si lo que se sumó quedó sin
             // lote elegido (ver `sinLoteElegido`).
             regulado,
+            perecedero: exige?.perecedero === true,
             presentaciones,
         }]);
         setElegido(null);
@@ -549,7 +558,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
         setCaja(LOTE_DE_CAJA_VACIO);
         setPestana('lista');
     }, [problemaDelPaso, elegido, origen, pres, cantidad, unidadesPedidas, reparto, presentaciones, renglones.length,
-        sinLoteEnReparto, caja, regulado]);
+        caja, regulado, exige, falta.pide]);
 
     const quitar = (i) => {
         setRenglones(r => r.filter((_, k) => k !== i));
@@ -598,7 +607,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
      * lotes se eligieron para la cantidad de antes, y lo de más saldría de lo
      * sin lote asignado sin el lote de la caja — falla al despachar. Se frena
      * acá; bajarla no estorba (sale primero lo reservado). */
-    const sinLoteElegido = useMemo(() => renglones.filter(r => r.regulado
+    const sinLoteElegido = useMemo(() => renglones.filter(r => (r.regulado || r.perecedero)
         && (Number(r.unidades) || 0) > (r.lotes ?? []).reduce((n, l) => n + (Number(l.unidades) || 0), 0)),
     [renglones]);
 
@@ -731,7 +740,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
      * es un callejón sin salida. */
     const faltaParaMandar = renglones.length === 0 ? 'Agrega al menos un producto.'
         : excesos.length > 0 ? 'Estás mandando más de lo que hay.'
-        : sinLoteElegido.length > 0 ? 'Hay productos con la cantidad cambiada sin lote elegido.'
+        : sinLoteElegido.length > 0 ? 'Hay productos con la cantidad cambiada sin lote ni vencimiento elegido.'
         : !destino ? 'Elige la sala de destino.'
         : chocanConElDestino.length > 0 ? 'Hay producto que sale de la misma sala a la que va.'
         // Antes de «Elige el motivo»: si no hay ninguno posible, ese aviso
@@ -1199,13 +1208,17 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
                                 {sinLoteEnReparto > 0 && (
                                     <div className="flex flex-col gap-2 rounded-lg border border-warning/30 bg-warning/10 px-2.5 py-2">
                                         <p className="text-micro font-bold text-warning-text leading-snug">
-                                            {sinLoteEnReparto} {sinLoteEnReparto === 1 ? 'unidad no tiene' : 'unidades no tienen'} lote
-                                            asignado. Copia el lote y el vencimiento que trae la caja:
+                                            {falta.pide === 'lote'
+                                                ? <>{sinLoteEnReparto} {sinLoteEnReparto === 1 ? 'unidad no tiene' : 'unidades no tienen'} lote
+                                                    asignado. Copia el lote y el vencimiento que trae la caja:</>
+                                                : <>{sinLoteEnReparto} {sinLoteEnReparto === 1 ? 'unidad no tiene' : 'unidades no tienen'} vencimiento.
+                                                    Copia el que trae la caja:</>}
                                         </p>
                                         <LoteDeLaCaja
                                             erpProductId={elegido.erp_product_id}
                                             producto={elegido.descripcion}
                                             valor={caja} onChange={setCaja}
+                                            soloVence={falta.pide === 'vence'}
                                         />
                                     </div>
                                 )}
@@ -1345,7 +1358,7 @@ export default function EnviarProductoModal({ onClose, onListo, precarga = null 
 
                         {sinLoteElegido.map((r, k) => (
                             <p key={`sl|${k}|${r.erp_product_id}`} className="text-micro font-semibold text-danger-text leading-snug px-1">
-                                A {r.descripcion} le subiste la cantidad y lo de más no tiene lote elegido.
+                                A {r.descripcion} le subiste la cantidad y lo de más no tiene lote ni vencimiento elegido.
                                 {' '}Quítalo y agrégalo de nuevo con la cantidad completa.
                             </p>
                         ))}

@@ -52,3 +52,26 @@ describe('por qué no se puede', () => {
         expect(motivoDeLoteDeCaja({ lote: 'A1', vence: '2028-03' }, CONOCIDOS, HOY)).toBeNull();
     });
 });
+
+describe('vence de la caja y qué falta (2026-11-13)', () => {
+    it('motivoDeVenceDeCaja: vacío, mal escrito, vencido y bueno', async () => {
+        const { motivoDeVenceDeCaja, venceDeCajaParaEnviar } = await import('@nucleo/utils/loteDeCaja');
+        expect(motivoDeVenceDeCaja({ vence: '' }, '2026-11-13')).toMatch(/Falta/);
+        expect(motivoDeVenceDeCaja({ vence: '13/2027' }, '2026-11-13')).toMatch(/MM\/AAAA/);
+        expect(motivoDeVenceDeCaja({ vence: '2026-11' }, '2026-11-13')).toMatch(/venció/);
+        expect(motivoDeVenceDeCaja({ vence: '05/2028' }, '2026-11-13')).toBeNull();
+        expect(venceDeCajaParaEnviar({ vence: '05/2028' })).toEqual({ lote: '', vence: '2028-05-01' });
+    });
+    it('faltaDeLaCaja: regulado pide lote por lo GENERICO; perecedero pide vence por lo sin fecha', async () => {
+        const { faltaDeLaCaja } = await import('@nucleo/utils/loteDeCaja');
+        const reparto = [
+            { lote: '261050', vence: '2028-10-01', toma: 2 },
+            { lote: 'GENERICO', vence: '', toma: 1 },
+        ];
+        expect(faltaDeLaCaja({ regulado: true, perecedero: true }, reparto)).toEqual({ pide: 'lote', unidades: 1 });
+        expect(faltaDeLaCaja({ regulado: false, perecedero: true }, [{ lote: null, vence: null, toma: 3 }])).toEqual({ pide: 'vence', unidades: 3 });
+        expect(faltaDeLaCaja({ regulado: false, perecedero: true }, [{ lote: null, vence: '2028-01-01', toma: 3 }])).toEqual({ pide: null, unidades: 0 });
+        expect(faltaDeLaCaja({ regulado: false, perecedero: false }, [{ lote: null, vence: null, toma: 3 }])).toEqual({ pide: null, unidades: 0 });
+        expect(faltaDeLaCaja(null, reparto)).toEqual({ pide: null, unidades: 0 });
+    });
+});

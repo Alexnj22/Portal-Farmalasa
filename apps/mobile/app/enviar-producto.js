@@ -31,6 +31,10 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { BRANCH_A_ERP, ERP_BODEGA, ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { buscarInventarioGlobalV2, fetchExistenciasDeProductos, fetchUnidadDeDespacho } from '@nucleo/data/inventory';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
+import { fetchExigenciasDe } from '@nucleo/data/traslados';
+import { faltaDeLaCaja } from '@nucleo/utils/loteDeCaja';
+import { esLoteGenerico } from '@nucleo/utils/unidadesInventario';
+import LoteDeLaCaja, { LOTE_DE_CAJA_VACIO } from '../componentes/LoteDeLaCaja';
 import { MAX_FOTOS_ENVIO, TOPE_RENGLONES_ENVIO, enviarAOtraSala, envioNecesitaFoto, motivosEnvioPorDireccion, renglonesQueSalieron } from '@nucleo/data/envios';
 import { pedirQuitarMinMaxDeEnviados } from '@nucleo/data/minmaxRequests';
 import { renglonesDeEnvioSugerido } from '@nucleo/utils/gestionDeStock';
@@ -151,24 +155,53 @@ export default function EnviarProducto() {
   const pres = presentaciones[Number(presIdx)] ?? null;
   const unidades = (Number(cantidad) || 0) * (Number(pres?.factor) || 0);
   const reparto = useMemo(() => (unidades > 0 ? repartirPedido(lotes, unidades + yaEnLista) : { reparto: [], faltan: 0 }), [lotes, unidades, yaEnLista]);
+
+  /* Lo que sale sin lote (regulado) o sin vencimiento (perecedero) lleva el que
+   * trae la caja (2026-11-13). Mismo criterio que el portal: sólo sobre lo que
+   * toma ESTE renglón, por encima de lo que ya se llevaron los de arriba. */
+  const [exige, setExige] = useState(null);
+  const [caja, setCaja] = useState(LOTE_DE_CAJA_VACIO);
+  useEffect(() => {
+    setExige(null); setCaja(LOTE_DE_CAJA_VACIO);
+    if (!producto) return undefined;
+    let vivo = true;
+    fetchExigenciasDe([producto.erp_product_id]).then((m) => { if (vivo) setExige(m.get(Number(producto.erp_product_id)) ?? null); });
+    return () => { vivo = false; };
+  }, [producto]);
+  const propio = useMemo(() => {
+    if (unidades <= 0) return [];
+    const previo = repartirPedido(lotes, yaEnLista).reparto;
+    return repartirPedido(lotes, yaEnLista + unidades).reparto
+      .map((l) => ({ ...l, toma: l.toma - (previo.find((p) => p.clave === l.clave)?.toma ?? 0) }))
+      .filter((l) => l.toma > 0);
+  }, [lotes, unidades, yaEnLista]);
+  const deCaja = faltaDeLaCaja(exige, propio);
+  const llevaCaja = (l) => (deCaja.pide === 'lote' ? (esLoteGenerico(l.lote) || !l.lote)
+    : deCaja.pide === 'vence' ? !String(l.vence || '').trim() : false);
+
   const problema = !producto ? null
     : renglones.length >= TOPE_RENGLONES_ENVIO ? `Un envío lleva hasta ${TOPE_RENGLONES_ENVIO} productos: manda éste en otro.`
       : !pres ? 'Cargando las presentaciones…'
         : unidades <= 0 ? 'Indica cuántas.'
           : unidades + yaEnLista > hay ? `En ${estante(origenErp, vencidos)} hay ${hay} unidades${yaEnLista ? ` (ya pusiste ${yaEnLista})` : ''}.`
-            : reparto.faltan > 0 ? 'Los lotes no alcanzan.' : null;
+            : reparto.faltan > 0 ? 'Los lotes no alcanzan.'
+              : deCaja.pide && !caja.envio
+                ? (deCaja.pide === 'lote' ? 'Falta el lote y el vencimiento que trae la caja.' : 'Falta el vencimiento que trae la caja.')
+                : null;
 
   const agregar = () => {
-    // El reparto de ESTE renglón: lo que toma por encima de lo que ya se llevó.
-    const previo = repartirPedido(lotes, yaEnLista).reparto;
-    const total = repartirPedido(lotes, yaEnLista + unidades).reparto;
-    const propio = total.map((l) => ({ lote: l.lote, vence: l.vence, unidades: l.toma - (previo.find((p) => p.clave === l.clave)?.toma ?? 0) })).filter((l) => l.unidades > 0);
+    // El reparto de ESTE renglón (`propio`): lo que toma por encima de lo que
+    // ya se llevó; lo sin lote o sin fecha lleva lo escrito de la caja.
+    const lotesDelRenglon = propio.map((l) => ({
+      lote: l.lote, vence: l.vence, unidades: l.toma,
+      ...(llevaCaja(l) ? { caja: caja.envio } : {}),
+    }));
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     setRenglones((rs) => [...rs, {
       erp_product_id: producto.erp_product_id, descripcion: producto.descripcion,
-      presentacion_tipo: pres.tipo, factor: Number(pres.factor), cantidad: Number(cantidad), unidades, lotes: propio,
+      presentacion_tipo: pres.tipo, factor: Number(pres.factor), cantidad: Number(cantidad), unidades, lotes: lotesDelRenglon,
     }]);
-    setProducto(null); setTexto(''); setCantidad('1');
+    setProducto(null); setTexto(''); setCantidad('1'); setCaja(LOTE_DE_CAJA_VACIO);
   };
 
   const origenEsBodega = Number(origenErp) === ERP_BODEGA;
@@ -318,6 +351,15 @@ export default function EnviarProducto() {
                   <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                     {repartirPedido(lotes, yaEnLista + unidades).reparto.map((l) => `${l.lote ? `Lote ${l.lote}` : 'Sin lote'}${l.vence ? ` (vence ${fmtVence(l.vence)})` : ''}: ${l.toma}`).join(' · ')}
                   </Text>
+                ) : null}
+                {deCaja.pide ? (
+                  <View style={{ gap: 6 }}>
+                    <Aviso tono="cuidado" texto={deCaja.pide === 'lote'
+                      ? `${deCaja.unidades} ${deCaja.unidades === 1 ? 'unidad no tiene' : 'unidades no tienen'} lote asignado. Copia el lote y el vencimiento que trae la caja:`
+                      : `${deCaja.unidades} ${deCaja.unidades === 1 ? 'unidad no tiene' : 'unidades no tienen'} vencimiento. Copia el que trae la caja:`} />
+                    <LoteDeLaCaja erpProductId={producto.erp_product_id} producto={producto.descripcion}
+                      valor={caja} onChange={setCaja} soloVence={deCaja.pide === 'vence'} />
+                  </View>
                 ) : null}
                 {problema ? <Aviso tono="cuidado" texto={problema} /> : null}
                 <BotonGrande texto="Agregar al envío" color={MARCA.azul} deshabilitado={!!problema} onPress={agregar} />

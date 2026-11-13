@@ -6,6 +6,7 @@ import CampoLote from '../../components/caja/CampoLote';
 import { fetchLotesConocidosDeProducto } from '@nucleo/data/traslados';
 import {
     choqueDeLote, loteDeCajaParaEnviar, motivoDeLoteDeCaja,
+    motivoDeVenceDeCaja, venceDeCajaParaEnviar,
 } from '@nucleo/utils/loteDeCaja';
 import { hoySV } from '@nucleo/utils/fecha';
 
@@ -23,30 +24,52 @@ const mesAnio = (v) => { const [a, m] = String(v).split('-'); return `${m}/${a}`
  *
  * Un número ya registrado con OTRO vencimiento no tiene «es otro lote»: el
  * sistema crearía un segundo lote con el mismo número. Ver `utils/loteDeCaja`.
+ *
+ * `soloVence` (2026-11-13): un perecedero sin control de lote. No hay número
+ * que copiar, sólo la fecha; `envio` sale `{ lote: '', vence }`.
  */
-export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange }) {
+export default function LoteDeLaCaja({ erpProductId, producto, valor, onChange, soloVence = false }) {
     const [conocidos, setConocidos] = useState([]);
     useEffect(() => {
+        if (soloVence) return undefined;
         let vivo = true;
         fetchLotesConocidosDeProducto(erpProductId).then((l) => { if (vivo) setConocidos(l); });
         return () => { vivo = false; };
-    }, [erpProductId]);
+    }, [erpProductId, soloVence]);
 
-    const motivo = motivoDeLoteDeCaja(valor, conocidos);
-    const envio = motivo ? null : loteDeCajaParaEnviar(valor, conocidos);
-    const choque = choqueDeLote(valor, conocidos);
+    const motivo = soloVence ? motivoDeVenceDeCaja(valor) : motivoDeLoteDeCaja(valor, conocidos);
+    const envio = motivo ? null
+        : soloVence ? venceDeCajaParaEnviar(valor) : loteDeCajaParaEnviar(valor, conocidos);
+    const choque = soloVence ? null : choqueDeLote(valor, conocidos);
     const tocado = Boolean(valor?.lote || valor?.vence);
 
     // `envio` viaja en el valor para que la pantalla que despacha no tenga que
     // conocer la lista de lotes registrados ni repetir la regla.
-    const envioLote = envio?.lote ?? null;
+    const envioLote = envio ? envio.lote : null;
     const envioVence = envio?.vence ?? null;
     useEffect(() => {
         if ((valor?.envio?.lote ?? null) !== envioLote || (valor?.envio?.vence ?? null) !== envioVence)
-            onChange({ ...valor, envio: envioLote ? { lote: envioLote, vence: envioVence } : null });
+            onChange({ ...valor, envio: envioVence ? { lote: envioLote, vence: envioVence } : null });
     }, [envioLote, envioVence, valor, onChange]);
 
     const usar = (c) => onChange({ lote: c.lote, vence: c.vence, envio: valor?.envio ?? null });
+
+    if (soloVence) {
+        return (
+            <div className="flex flex-col gap-1.5">
+                <div className="sm:max-w-[50%]">
+                    <CampoMesAnio
+                        label={`Vencimiento de ${producto}`} placeholder="MM/AAAA"
+                        value={valor?.vence ?? ''} desde={hoySV().slice(0, 7)}
+                        onChange={(vence) => onChange({ ...valor, lote: '', vence })}
+                    />
+                </div>
+                {motivo && (
+                    <p className={`text-caption ${tocado ? 'text-warning-text' : 'text-content-3'}`}>{motivo}</p>
+                )}
+            </div>
+        );
+    }
 
     return (
         <div className="flex flex-col gap-1.5">

@@ -86,3 +86,41 @@ export function fechaDeLoteDeCaja(valor, conocidos = []) {
 export function loteDeCajaParaEnviar(valor, conocidos = []) {
     return { lote: String(valor?.lote || '').trim().toUpperCase(), vence: fechaDeLoteDeCaja(valor, conocidos) };
 }
+
+/* ── Sólo el vencimiento (2026-11-13) ─────────────────────────────────────
+ * Un perecedero SIN control de lote no tiene número que copiar, pero sí fecha:
+ * si lo que sale no la trae, se escribe la de la caja. Mismo formato que el
+ * lote de la caja: se escribe MM/AAAA y viaja como día 1. */
+
+/** Por qué todavía no se puede mandar el vencimiento escrito, o null. */
+export function motivoDeVenceDeCaja(valor, hoy = hoySV()) {
+    const v = venceNormal(valor?.vence);
+    const m = /^(\d{4})-(\d{2})$/.exec(v);
+    if (!v) return 'Falta el vencimiento que trae la caja.';
+    if (!m || Number(m[2]) < 1 || Number(m[2]) > 12) return 'Escribe el vencimiento como MM/AAAA.';
+    if (`${v}-01` <= hoy) return 'Esa caja ya venció: no puede salir.';
+    return null;
+}
+
+/** { lote: '', vence: 'AAAA-MM-01' }. Sólo llamar si `motivoDeVenceDeCaja` dio null. */
+export function venceDeCajaParaEnviar(valor) {
+    return { lote: '', vence: `${venceNormal(valor?.vence)}-01` };
+}
+
+/**
+ * Qué le falta a lo que sale, según lo que exige el producto. `reparto` son
+ * los lotes de donde sale (`{ lote, vence, toma }`).
+ * @returns {{ pide: 'lote'|'vence'|null, unidades: number }}
+ */
+export function faltaDeLaCaja(exige, reparto) {
+    const filas = Array.isArray(reparto) ? reparto : [];
+    if (exige?.regulado) {
+        const n = filas.filter(l => esLoteGenerico(l.lote) || !l.lote).reduce((s, l) => s + Number(l.toma || 0), 0);
+        return { pide: n > 0 ? 'lote' : null, unidades: n };
+    }
+    if (exige?.perecedero) {
+        const n = filas.filter(l => !String(l.vence || '').trim()).reduce((s, l) => s + Number(l.toma || 0), 0);
+        return { pide: n > 0 ? 'vence' : null, unidades: n };
+    }
+    return { pide: null, unidades: 0 };
+}

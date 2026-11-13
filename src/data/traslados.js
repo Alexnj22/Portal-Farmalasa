@@ -303,6 +303,21 @@ export async function fetchReguladosDe(erpProductIds) {
 }
 
 /**
+ * Qué exige cada producto al moverse (2026-11-13, decisión del usuario):
+ * regulado → lote y vencimiento; perecedero sin regulado → vencimiento. Lo que
+ * sale sin eso lo pide la pantalla, con lo que trae la caja. Nunca lanza: sin
+ * el dato devuelve un `Map` vacío y el servidor frena igual.
+ * @returns {Promise<Map<number, { regulado: boolean, perecedero: boolean }>>}
+ */
+export async function fetchExigenciasDe(erpProductIds) {
+    const ids = [...new Set((erpProductIds ?? []).map(Number).filter(Boolean))];
+    if (ids.length === 0) return new Map();
+    const { data, error } = await supabase.from('products').select('id, regulado, perecedero').in('id', ids);
+    if (error) { console.error('fetchExigenciasDe:', error.message); return new Map(); }
+    return new Map((data ?? []).map(p => [Number(p.id), { regulado: p.regulado === true, perecedero: p.perecedero === true }]));
+}
+
+/**
  * Los lotes que tiene UNA sala de un producto, sumados en unidades base
  * (2026-11-05): lo que se le ofrece a quien despacha cuando el lote pedido no
  * está. Acotada por el dato (un producto, una sala). Nunca lanza: `null` =

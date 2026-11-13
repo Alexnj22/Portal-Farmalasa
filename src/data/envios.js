@@ -330,8 +330,48 @@ export const DECISIONES_ENVIO = {
  * mueve, y del otro lado hay credenciales para mover inventario de cualquier
  * sala. Mismo contrato que `lineas_aceptadas` del traslado.
  */
-export const decidirEnvio = (requestId, decisiones, nota = '') =>
-    invocar({ request_id: requestId, accion: 'decidir', decisiones, nota });
+export async function decidirEnvio(requestId, decisiones, nota = '', sobrantes = []) {
+    const r = await invocar({
+        request_id: requestId, accion: 'decidir', decisiones, nota,
+        ...(sobrantes.length ? { sobrantes } : {}),
+    });
+    return r?.sobrante_envio_id ? { ...r, ...(await pasarSobrante(r.sobrante_envio_id)) } : r;
+}
+
+/**
+ * Lo que vino DE MÁS en una bolsa, pasado del inventario de la sala de origen
+ * al de la que recibió (decisión del usuario, 2026-11-12).
+ *
+ * La base lo declara al recibir (`declarar_sobrantes`) y arma un ENVÍO desde la
+ * sala de origen marcado como sobrante: el producto ya está acá, lo que falta
+ * es el papel. Acá se despacha (con el permiso de recibir: `sobrante: true`) y
+ * se acepta enseguida, que es el mismo circuito probado de cualquier envío.
+ *
+ * Nunca lanza. Si algo se corta, el envío queda en la lista de la sala —el
+ * despacho lo retoma el cron— y se dice: `{ sobrante: { ok, error } }`.
+ */
+export async function pasarSobrante(envioId) {
+    const salida = await invocar({ request_id: envioId, accion: 'despachar', sobrante: true });
+    if (!salida?.ok && salida?.codigo !== 'NADA_QUE_ENVIAR') {
+        return { sobrante: { ok: false, error: `Lo que vino de más no se pudo pasar todavía: ${salida?.error ?? 'sin detalle'}. Queda en tus envíos por recibir.` } };
+    }
+    // Las posiciones se leen del envío (una que no existe rebota la decisión
+    // entera); las que no salieron la función las saltea: sólo decide `enviada`.
+    const { data: lineas, error } = await supabase
+        .from('envio_linea').select('posicion').eq('request_id', envioId);
+    if (error || !lineas?.length) {
+        return { sobrante: { ok: false, error: 'Lo que vino de más salió de la otra sala pero no se pudo recibir todavía. Recíbelo en tus envíos por recibir.' } };
+    }
+    const posiciones = lineas.map(l => l.posicion);
+    const llegada = await invocar({
+        request_id: envioId, accion: 'decidir',
+        decisiones: posiciones.map(i => ({ i, decision: 'aceptar' })),
+    });
+    if (!llegada?.ok && !(llegada?.decididas > 0)) {
+        return { sobrante: { ok: false, error: `Lo que vino de más salió de la otra sala pero no se pudo recibir: ${llegada?.error ?? 'sin detalle'}. Recíbelo en tus envíos por recibir.` } };
+    }
+    return { sobrante: { ok: true, productos: llegada?.decididas ?? 0 } };
+}
 
 /** Lo devuelto, de vuelta en el estante de quien lo mandó. */
 export const recibirDevolucion = (requestId) =>

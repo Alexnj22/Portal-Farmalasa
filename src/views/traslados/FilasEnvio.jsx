@@ -5,6 +5,7 @@ import { Trayecto, PildoraEspera } from './PiezasTraslado';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
 import LiquidSelect from '../../components/common/LiquidSelect';
+import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
 import EvidenciaFotos from '../../components/common/EvidenciaFotos';
 import {
@@ -290,6 +291,11 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                 motivo: decision[l.posicion].motivo ?? '',
                 nota: decision[l.posicion].nota ?? '',
             })),
+            '',
+            // Lo que vino DE MÁS (2026-11-12), sólo sobre lo que se queda.
+            pendientes
+                .filter(l => decision[l.posicion].que === DECISIONES_ENVIO.aceptar && Number(decision[l.posicion].demas) > 0)
+                .map(l => ({ posicion: l.posicion, cantidad: Number(decision[l.posicion].demas) })),
         );
         if (!r?.ok && !(r?.decididas > 0)) {
             setError(r?.error ?? 'No se pudo guardar la decisión.');
@@ -298,7 +304,11 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
         }
         // Con fallos parciales se avisa Y se recarga: parte del inventario ya se
         // movió, así que la lista de la pantalla dejó de ser cierta.
-        if (r?.fallos?.length) setError(r.fallos.map(f => `${f.producto}: ${f.error}`).join(' · '));
+        const aparte = [
+            ...(r?.fallos ?? []).map(f => `${f.producto}: ${f.error}`),
+            r?.sobrante_error, r?.sobrante?.ok === false ? r.sobrante.error : null,
+        ].filter(Boolean);
+        if (aparte.length) setError(aparte.join(' · '));
         else setEnviando(false);
         onHecho?.();
     };
@@ -372,6 +382,23 @@ export function FilaEnvioPorDecidir({ envio, onHecho, ahora = null }) {
                                         />
                                     )}
                                 </div>
+                            )}
+                            {/* Vino DE MÁS (2026-11-12): sólo sobre lo que se
+                                queda. Se descuenta de la sala que envió y se
+                                suma a la tuya al confirmar. */}
+                            {d.que === DECISIONES_ENVIO.aceptar && (
+                                <label className="flex items-center gap-2 text-caption text-content-2 font-semibold">
+                                    <span className="flex-1">¿Vino de más? Cuántos {l.presentacion_tipo ?? ''} de más</span>
+                                    <PortalInput
+                                        name={`demas-${l.posicion}`}
+                                        value={d.demas ?? ''}
+                                        onChange={e => marcar(l.posicion, { demas: String(e.target.value ?? '').replace(/[^\d]/g, '') })}
+                                        inputMode="numeric"
+                                        placeholder="0"
+                                        aria-label={`Cuántos vinieron de más de ${l.descripcion ?? 'este producto'}`}
+                                        className="w-20"
+                                    />
+                                </label>
                             )}
                             {d.que === DECISIONES_ENVIO.noLlego && (
                                 <PortalTextarea

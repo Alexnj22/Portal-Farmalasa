@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { PackageX } from 'lucide-react';
+import { PackagePlus, PackageX } from 'lucide-react';
 import Button from '../../components/common/Button';
 import PortalInput from '../../components/common/PortalInput';
 import PortalTextarea from '../../components/common/PortalTextarea';
@@ -33,10 +33,34 @@ import PortalTextarea from '../../components/common/PortalTextarea';
  * @param items  los renglones de la bolsa, `[{ descripcion, cantidad }]` — lo
  *               que VIAJÓ, no lo que se pidió
  * @param valor  `[{ posicion, cantidad, nota }]`, controlado por quien lo usa
+ * @param modo   `'faltante'` (lo de siempre) o `'sobrante'`: lo que vino DE MÁS
+ *               (decisión del usuario, 2026-11-12). Es el mismo formulario —
+ *               cuántos, de cuál renglón, y una nota— con otras palabras: el
+ *               sobrante lo pasa la base de la sala de origen a ésta.
  */
+const TEXTOS = {
+    faltante: {
+        abrir: 'Faltó algo en la bolsa',
+        titulo: 'Qué faltó',
+        ayuda: (origen) => `Escribe cuántos NO venían. El traslado entra igual —el producto ya está a nombre de tu sala— y queda anotado para que ${origen} lo busque hoy.`,
+        campo: 'falto',
+        aria: 'Cuántos faltaron de',
+        cerrar: 'Llegó completa, olvidalo',
+    },
+    sobrante: {
+        abrir: 'Vino algo de más',
+        titulo: 'Qué vino de más',
+        ayuda: (origen) => `Escribe cuántos vinieron DE MÁS, en la misma presentación. Se descuentan del inventario de ${origen}, se suman al de tu sala y se le avisa.`,
+        campo: 'demas',
+        aria: 'Cuántos vinieron de más de',
+        cerrar: 'No vino nada de más, olvidalo',
+    },
+};
+
 export default function DeclararFaltantes({
-    items = [], valor = [], onCambio, deshabilitado = false, origen = null,
+    items = [], valor = [], onCambio, deshabilitado = false, origen = null, modo = 'faltante',
 }) {
+    const t = TEXTOS[modo] ?? TEXTOS.faltante;
     const [abierto, setAbierto] = useState(false);
     const [nota, setNota] = useState('');
 
@@ -77,11 +101,11 @@ export default function DeclararFaltantes({
 
     if (!abierto) {
         return (
-            <Button size="xs" variant="ghost" icon={PackageX}
+            <Button size="xs" variant="ghost" icon={modo === 'sobrante' ? PackagePlus : PackageX}
                 className="min-h-[var(--tap-min)] self-start"
                 disabled={deshabilitado}
                 onClick={() => setAbierto(true)}>
-                Faltó algo en la bolsa
+                {t.abrir}
             </Button>
         );
     }
@@ -89,11 +113,10 @@ export default function DeclararFaltantes({
     return (
         <div data-surface="card" className="px-3 py-2.5 flex flex-col gap-2">
             <p className="text-micro font-black text-content uppercase tracking-widest">
-                Qué faltó
+                {t.titulo}
             </p>
             <p className="text-micro text-content-3 font-medium leading-snug">
-                Escribe cuántos NO venían. El traslado entra igual —el producto ya está a nombre de
-                tu sala— y queda anotado para que {origen ?? 'la otra sala'} lo busque hoy.
+                {t.ayuda(origen ?? 'la otra sala')}
             </p>
 
             <div className="flex flex-col gap-1.5">
@@ -119,12 +142,12 @@ export default function DeclararFaltantes({
                             las flechitas ni el desplazamiento de la rueda que
                             cambian una cantidad sin que nadie la escriba. */}
                         <PortalInput
-                            name={`falto-${pos}`}
+                            name={`${t.campo}-${pos}`}
                             value={porPosicion.get(pos)?.cantidad ?? ''}
                             onChange={e => cambiarCantidad(pos, e.target.value)}
                             inputMode="numeric"
                             placeholder="0"
-                            aria-label={`Cuántos faltaron de ${it?.descripcion ?? it?.nombre ?? 'este producto'}`}
+                            aria-label={`${t.aria} ${it?.descripcion ?? it?.nombre ?? 'este producto'}`}
                             readOnly={deshabilitado}
                             className="w-20"
                         />
@@ -144,7 +167,7 @@ export default function DeclararFaltantes({
 
             <Button size="xs" variant="ghost" className="min-h-[var(--tap-min)] self-start"
                 disabled={deshabilitado} onClick={cerrar}>
-                Llegó completa, olvidalo
+                {t.cerrar}
             </Button>
         </div>
     );

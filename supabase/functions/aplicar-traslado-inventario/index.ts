@@ -215,8 +215,8 @@ Deno.serve(async (req) => {
     // `lotes_elegidos` (2026-11-05): el lote que quien despacha eligió EN LUGAR
     // del que pidió la solicitud, porque el pedido no está. `[{ posicion, lote,
     // vence }]`, un lote por renglón.
-    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, lotes_de_generico, lotes_elegidos, en_unidades,
-            faltante_id, responsable, responsable_employee_id, nota } =
+    const { request_id, approver_note, accion, lineas_aceptadas, faltantes, sobrantes, lotes_de_generico, lotes_elegidos,
+            en_unidades, faltante_id, responsable, responsable_employee_id, nota } =
       await req.json().catch(() => ({}));
     if (!request_id) return json({ ok: false, error: "Falta request_id." }, 400);
     const paso = accion === "recibir" ? "recibir" : "enviar";
@@ -440,6 +440,30 @@ Deno.serve(async (req) => {
         });
       }
 
+      /* ── Y lo que vino DE MÁS (2026-11-12) ──────────────────────────────
+       * Mismo contrato que el faltante —POSICIONES de la bolsa, nunca un
+       * producto que el navegador nombre—, y la misma regla: no puede tumbar la
+       * recepción. Lo valida y lo arma la base (`declarar_sobrantes`, al
+       * marcar recibido): un envío desde la sala de origen que la pantalla
+       * despacha y acepta enseguida. Acá sólo se rechaza lo que es una
+       * pantalla desincronizada. */
+      const sobrantesPedidos: { posicion: number; cantidad: number; nota: string | null }[] = [];
+      for (const s of (Array.isArray(sobrantes) ? sobrantes : [])) {
+        const pos = Number(s?.posicion);
+        const cant = Number(s?.cantidad);
+        if (!Number.isInteger(pos) || pos < 0 || pos >= lineas.length)
+          return json({ ok: false, error: `No hay un producto en la posición ${s?.posicion}.` }, 422);
+        if (!Number.isFinite(cant) || cant <= 0) continue;
+        if (!Number.isInteger(cant))
+          return json({ ok: false, error: "Lo que vino de más se cuenta en presentaciones enteras." }, 422);
+        if (faltantesPedidos.some((f) => f.posicion === pos))
+          return json({
+            ok: false,
+            error: `${lineas[pos]?.descripcion ?? "Un producto"} no puede faltar y venir de más a la vez.`,
+          }, 422);
+        sobrantesPedidos.push({ posicion: pos, cantidad: cant, nota: String(s?.nota ?? "").trim() || null });
+      }
+
       /* Anotar que entró, y sacarlo de la lista.
        *
        * Es UNA función y no dos escrituras sueltas porque hay DOS caminos que
@@ -492,11 +516,33 @@ Deno.serve(async (req) => {
           }
         }
 
+        // Lo de más: la base arma el envío que lo pasa de la sala de origen a
+        // ésta, y la pantalla lo despacha y lo acepta con el número que vuelve.
+        let sobranteEnvio: string | null = null;
+        let sobranteError: string | null = null;
+        if (sobrantesPedidos.length > 0) {
+          const { data: sb, error: sErr } = await admin.rpc("declarar_sobrantes", {
+            p_request_id: sol.id,
+            p_sobrantes: sobrantesPedidos,
+            p_actor: quien.id,
+          });
+          const r = sb as { ok?: boolean; envio_id?: string | null; error?: string } | null;
+          if (sErr || !r?.ok) {
+            console.error("[aplicar-traslado-inventario] declarar_sobrantes:", sErr?.message ?? r?.error);
+            sobranteError = "El traslado entró, pero no se pudo pasar lo que vino de más: "
+              + (r?.error ?? sErr?.message ?? "sin detalle");
+          } else {
+            sobranteEnvio = r.envio_id ?? null;
+          }
+        }
+
         return json({
           ok: true,
           recibido,
           faltantes: faltantesPedidos.length,
           ...(faltanteError ? { faltante_error: faltanteError } : {}),
+          ...(sobranteEnvio ? { sobrante_envio_id: sobranteEnvio } : {}),
+          ...(sobranteError ? { sobrante_error: sobranteError } : {}),
         });
       };
 

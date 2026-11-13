@@ -250,6 +250,10 @@ Deno.serve(async (req) => {
       faltante_id = null,
       responsable = null,
       responsable_employee_id = null,
+      // Lo que vino de más en la caja, al decidir: `[{ posicion, cantidad, nota }]`.
+      sobrantes = null,
+      // `despachar` el envío de un sobrante lo pide la sala que RECIBIÓ (ver abajo).
+      sobrante = false,
     } = await req.json().catch(() => ({}));
 
     if (!request_id) return json({ ok: false, error: "Falta el envío." }, 400);
@@ -290,7 +294,11 @@ Deno.serve(async (req) => {
      * contra `puede_confirmar_traslado`). Recibir la devolución es del lado de
      * quien envió, así que vuelve a ser `can_edit`. Ingresar lo que apareció
      * es recibir en la sala de destino, o sea el mismo acto que decidir. */
-    const deDestino = accion === "decidir" || accion === "recibir_aparecido";
+    // Despachar el envío de un SOBRANTE (2026-11-12) lo pide quien recibió la
+    // bolsa: el producto ya está en su estante y sólo falta pasarlo en el
+    // papel. Es su acto de recibir, así que pide el permiso de recibir.
+    const deDestino = accion === "decidir" || accion === "recibir_aparecido"
+      || (accion === "despachar" && sobrante === true);
     const accionPermiso = deDestino ? "can_approve" : "can_edit";
     // «No apareció» (2026-11-12) no pasa por este permiso: lo decide la base con
     // la sesión de quien llama (`tomar_ajuste_faltante`, sólo supervisión).
@@ -522,7 +530,15 @@ Deno.serve(async (req) => {
         return json({ ok: false, error: `Este envío ya está ${sol.status}.` }, 409);
       if (!ubicOrigen)
         return json({ ok: false, error: sinUbicacionOrigen }, 422);
-      if (!(await puedeObrarPor(branchOrigen)))
+      /* El envío de un sobrante (lo arma `declarar_sobrantes`) lo despacha la
+       * sala que RECIBIÓ la bolsa: el producto ya está ahí, y lo que se mueve
+       * es el papel. El permiso de recibir se cobró arriba, y la bandera sólo
+       * vale sobre una fila que la base marcó como sobrante. */
+      const esDeSobrante = Boolean(meta.sobrante_de);
+      if (sobrante === true && !esDeSobrante)
+        return json({ ok: false, error: "Ese envío no es de un sobrante." }, 422);
+      if (!(await puedeObrarPor(branchOrigen))
+          && !(esDeSobrante && sobrante === true && await puedeObrarPor(branchDestino)))
         return json({ ok: false, error: "Este envío lo despacha la sala de la que sale el producto." }, 403);
 
       /* Lo que falta mandar. Una `enviada` no se vuelve a tocar, que es lo que
@@ -924,7 +940,9 @@ Deno.serve(async (req) => {
       // algo salió de verdad. Avisar de una caja que no salió manda a alguien a
       // buscar lo que no existe.
       let avisados = 0;
-      if (hechas.length > 0) {
+      // El sobrante no se anuncia a quien lo recibe: fue esa sala la que lo
+      // declaró. El aviso que importa —al origen— sale al cerrarse.
+      if (hechas.length > 0 && !meta.sobrante_de) {
         // Un aviso que no sale deja a la sala de destino con una caja que nadie
         // le anunció, y el producto ya salió: se dice, no se calla.
         const { data: n, error: avisoErr } = await admin
@@ -1296,6 +1314,34 @@ Deno.serve(async (req) => {
         );
       }
 
+      /* ── Y lo que vino DE MÁS (2026-11-12) ─────────────────────────────
+       * Sobre los renglones que se ACEPTARON: la base arma un envío desde la
+       * sala de origen (`declarar_sobrantes`) y la pantalla lo despacha y lo
+       * acepta con el número que vuelve. Tampoco tumba la decisión. */
+      let sobranteEnvio: string | null = null;
+      let sobranteError: string | null = null;
+      const sobrantesPedidos = (Array.isArray(sobrantes) ? sobrantes : [])
+        .map((x: { posicion?: unknown; cantidad?: unknown; nota?: unknown }) => ({
+          posicion: Number(x?.posicion), cantidad: Number(x?.cantidad),
+          nota: String(x?.nota ?? "").trim() || null,
+        }))
+        .filter((x: { posicion: number; cantidad: number }) =>
+          Number.isInteger(x.posicion) && Number.isFinite(x.cantidad) && x.cantidad > 0);
+      if (sobrantesPedidos.length > 0 && !meta.sobrante_de) {
+        const { data: sb, error: sErr } = await admin.rpc("declarar_sobrantes", {
+          p_request_id: sol.id,
+          p_sobrantes: sobrantesPedidos,
+          p_actor: actor.id,
+        });
+        const r = sb as { ok?: boolean; envio_id?: string | null; error?: string } | null;
+        if (sErr || !r?.ok) {
+          console.error("[enviar-producto-erp] declarar_sobrantes:", sErr?.message ?? r?.error);
+          sobranteError = "No se pudo pasar lo que vino de más: " + (r?.error ?? sErr?.message ?? "sin detalle");
+        } else {
+          sobranteEnvio = r.envio_id ?? null;
+        }
+      }
+
       /* ── Y recién cuando no queda nada por decidir, se cierra la cabecera ──
        * `APPROVED` con que se haya aceptado UNO: el envío llegó a destino y se
        * resolvió. `REJECTED` sólo si volvió todo. Mientras quede un renglón
@@ -1366,6 +1412,8 @@ Deno.serve(async (req) => {
       return json({
         ok: fallos.length === 0 && cortadoEn < 0,
         decididas: hechas.length, hechas, fallos, cerrado,
+        ...(sobranteEnvio ? { sobrante_envio_id: sobranteEnvio } : {}),
+        ...(sobranteError ? { sobrante_error: sobranteError } : {}),
         ...(cortadoEn >= 0
           ? {
             codigo: "SIN_TIEMPO",

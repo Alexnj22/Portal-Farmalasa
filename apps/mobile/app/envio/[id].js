@@ -98,11 +98,17 @@ export default function Envio() {
 
   const confirmar = async (lista) => {
     setOcupado(true); trabajando('Guardando lo que decidiste…');
-    const r = await decidirEnvio(envio.id, lista.map((d) => ({ i: d.i, decision: d.decision, motivo: d.motivo ?? null, nota: d.nota?.trim() ?? '' })));
+    // Lo que vino DE MÁS (2026-11-12), sólo sobre lo que se queda.
+    const sobrantes = lista
+      .filter((d) => d.decision === DECISIONES_ENVIO.aceptar && Number(decision[d.i]?.demas) > 0)
+      .map((d) => ({ posicion: d.i, cantidad: Number(decision[d.i].demas) }));
+    const r = await decidirEnvio(envio.id, lista.map((d) => ({ i: d.i, decision: d.decision, motivo: d.motivo ?? null, nota: d.nota?.trim() ?? '' })), '', sobrantes);
     setOcupado(false);
     if (!r?.ok) { fallo('No se pudo guardar', r?.error ?? 'Inténtalo de nuevo.'); cargar(); return; }
     if (r.fallos?.length) { fallo('Algunos productos no se pudieron mover', r.fallos.map((f) => `${f.producto}: ${f.error}`).join('\n')); cargar(); return; }
-    terminar('Listo', r.cerrado ? 'El envío quedó cerrado.' : undefined);
+    const errSobrante = r.sobrante_error ?? (r.sobrante?.ok === false ? r.sobrante.error : null);
+    if (errSobrante) { fallo('Guardado, pero lo de más no pasó', errSobrante); cargar(); return; }
+    terminar('Listo', [r.cerrado ? 'El envío quedó cerrado.' : '', r.sobrante?.ok ? 'Lo que vino de más ya está en tu inventario.' : ''].filter(Boolean).join(' ') || undefined);
   };
 
   const aceptarTodo = () => confirmar(porDecidir.map((l) => ({ i: l.posicion, decision: DECISIONES_ENVIO.aceptar })));
@@ -212,6 +218,16 @@ export default function Envio() {
                       </View>
                       <Campo value={d.nota ?? ''} onChangeText={(v) => setDecision((x) => ({ ...x, [l.posicion]: { ...(x[l.posicion] || {}), nota: v } }))}
                         placeholder={d.motivo === 'Otro' ? '¿Cuál es el motivo? (obligatorio)' : 'Nota (opcional)'} />
+                    </View>
+                  ) : null}
+                  {decide && d.decision === DECISIONES_ENVIO.aceptar ? (
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>¿Vino de más? Cuántos {l.presentacion_tipo ?? ''} de más</Text>
+                      <TextInput value={String(d.demas ?? '')} onChangeText={(t) => setDecision((x) => ({ ...x, [l.posicion]: { ...(x[l.posicion] || {}), demas: t.replace(/\D/g, '') } }))}
+                        keyboardType="number-pad" placeholder="0" placeholderTextColor={colorSistema.texto2}
+                        accessibilityLabel={`Cuántos vinieron de más de ${l.descripcion ?? 'este producto'}`}
+                        style={{ width: 56, minHeight: 44, textAlign: 'center', color: colorSistema.texto, fontSize: 18, fontWeight: '700',
+                          borderRadius: 10, backgroundColor: 'rgba(127,127,127,0.15)' }} />
                     </View>
                   ) : null}
                   {decide && d.decision === DECISIONES_ENVIO.noLlego ? (

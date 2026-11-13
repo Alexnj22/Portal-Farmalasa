@@ -32433,6 +32433,7 @@ export type Database = {
       }
       avisar_rechazos_sin_arreglo: { Args: never; Returns: number }
       avisar_reclamos_por_vencer: { Args: never; Returns: number }
+      avisar_sobrante: { Args: { p_envio: string }; Returns: number }
       avisar_solicitudes_datos_por_vencer: { Args: never; Returns: number }
       avisar_traslados_por_respaldo: { Args: never; Returns: number }
       avisar_ventas_sin_sello: {
@@ -33814,6 +33815,10 @@ export type Database = {
       }
       declarar_faltantes: {
         Args: { p_actor: string; p_faltantes: Json; p_request_id: string }
+        Returns: Json
+      }
+      declarar_sobrantes: {
+        Args: { p_actor: string; p_request_id: string; p_sobrantes: Json }
         Returns: Json
       }
       dejar_documento_pendiente: {

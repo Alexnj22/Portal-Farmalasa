@@ -4,6 +4,7 @@ import { conBitacora } from './audit';
 import { rangoDeSemana } from '../utils/semana';
 import { lotesConocidosDeInventario } from '../utils/loteDeCaja';
 import { lotesEnUnidades } from '../utils/unidadesInventario';
+import { pasarSobrante } from './envios';
 
 // Datos del traslado entre salas.
 //
@@ -399,7 +400,15 @@ export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, 
     });
 
 /**
- * Confirmar que la bolsa llegó — y decir qué NO venía en ella.
+ * Cierra «no apareció» un faltante de la solicitud (sólo supervisión, lo decide
+ * la base): se descuenta de la sala que recibió, a cargo de quien se eligió. Lo
+ * llama `cerrarFaltante`.
+ */
+export const noAparecioSolicitud = (requestId, { faltante_id, responsable, responsable_employee_id, nota }) =>
+    invocar({ request_id: requestId, accion: 'no_aparecio', faltante_id, responsable, responsable_employee_id, nota });
+
+/**
+ * Confirmar que la bolsa llegó — y decir qué NO venía en ella, o qué vino DE MÁS.
  *
  * `faltantes` es opcional y viaja como POSICIONES, `[{ posicion, cantidad,
  * nota }]`, por lo mismo que `lineas_aceptadas`: el navegador señala cuál de
@@ -411,20 +420,17 @@ export const despacharTraslado = (requestId, nota = '', lineasAceptadas = null, 
  * en esta sala. Antes no había dónde decirlo y el hueco quedaba invisible hasta
  * que alguien lo tropezara en un conteo.
  */
-/**
- * Cierra «no apareció» un faltante de la solicitud (sólo supervisión, lo decide
- * la base): se descuenta de la sala que recibió, a cargo de quien se eligió. Lo
- * llama `cerrarFaltante`.
- */
-export const noAparecioSolicitud = (requestId, { faltante_id, responsable, responsable_employee_id, nota }) =>
-    invocar({ request_id: requestId, accion: 'no_aparecio', faltante_id, responsable, responsable_employee_id, nota });
-
-export const recibirTraslado = (requestId, faltantes = []) =>
-    invocar({
+export async function recibirTraslado(requestId, faltantes = [], sobrantes = []) {
+    const r = await invocar({
         request_id: requestId,
         accion: 'recibir',
         ...(faltantes.length ? { faltantes } : {}),
+        ...(sobrantes.length ? { sobrantes } : {}),
     });
+    // Lo de más (2026-11-12): la base armó el envío que lo pasa de la sala de
+    // origen a ésta; se despacha y se acepta acá mismo. Ver `pasarSobrante`.
+    return r?.ok && r.sobrante_envio_id ? { ...r, ...(await pasarSobrante(r.sobrante_envio_id)) } : r;
+}
 
 /**
  * Del número de las barras del ticket a la bolsa que alguien tiene en la mano.

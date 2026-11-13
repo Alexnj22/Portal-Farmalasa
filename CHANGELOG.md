@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1515.0 — Traslados: lo que vino de más se declara al recibir y pasa solo de una sala a otra
+
+Decisión del usuario tras la auditoría de traslados del 2026-11-12, punto 5.
+
+- **«Vino algo de más»** al recibir una solicitud (tarjeta, detalle y escaneo) y al aceptar un envío («¿Vino de más?» en cada producto que se queda), en el portal y en la app. Se dice cuántos, en la misma presentación del renglón. Antes no había dónde decirlo: lo de más quedaba en el estante de quien recibió sin estar en su inventario, y en el inventario de la sala de origen sin estar en su estante.
+- **La base lo arma como un envío** (`declarar_sobrantes`): un envío desde la sala de origen, marcado `sobrante_de`. La pantalla de quien recibió lo despacha (`sobrante: true`, con el permiso de recibir) y lo acepta enseguida, por el mismo circuito probado de los envíos. Si algo se corta, el cron de envíos lo despacha y queda en «por recibir». Antes de armar nada, se mira que la sala de origen tenga esas unidades en su inventario; si no las tiene, se dice y se avisa a supervisión.
+- Ese envío salta las reglas de un envío normal (motivo de la lista, «sólo desde tu sala») únicamente si lo inserta `declarar_sobrantes`: `validar_envio_producto` rebota un insert directo con `sobrante_de`. Un sobrante por bolsa, y si se repite, devuelve el mismo envío.
+- **Aviso al origen y a supervisión** cuando se mueve (`avisar_sobrante`, desde `notificar_resolucion_envio`): «Salud 2 recibió de más 2 de X (bolsa …). Se descontó del inventario de Salud 1 y se sumó al de Salud 2.»
+- Los dos triggers se parcharon sobre su definición viva, con una línea de entrada cada uno; si el ancla no está, la migración falla.
+- Probado en el entorno de pruebas: rechazo del insert directo, falta de existencia en el origen, posición inexistente, envío armado con su bolsa, sin duplicar y texto del aviso. Lo que habla con la caja (despachar y aceptar) es el circuito de envíos de siempre.
+
 ## v2.1514.2 — App: pantallas de un pedido o reserva sin su número muestran el aviso común
 
 App del personal: las 15 pantallas que trabajan sobre un registro concreto (las nueve de un pedido —detalle, llegada, contar, finalizar, pausar, programar, extras, reenvío, reenviar—, cuatro de reservas, la de encargos y Corregir movimiento) mostraban «Pedido #undefined» y un error de la base si se abrían sin su número (un aviso o un enlace roto). Ahora muestran el aviso común «No se encontró el pedido / la reserva / …» con su título. La guarda es una sola, `exigeParametro` en `componentes/formulario/Piezas.js`, que envuelve la pantalla entera.

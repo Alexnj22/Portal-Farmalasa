@@ -893,6 +893,8 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
      * porque quien lo manda es `recibir`, que también vive acá: con el estado
      * adentro del modal, cerrarlo perdería lo escrito sin decir nada. */
     const [faltaron, setFaltaron] = useState([]);
+    // Y lo que vino DE MÁS (2026-11-12): mismo lugar, mismo motivo.
+    const [sobraron, setSobraron] = useState([]);
     const meta   = fila.metadata ?? {};
     // La bolsa ya salió: lo que se coteja es lo que VIAJA, no lo que se pidió
     // (ver `metaDelEnvio` — un despacho incompleto pintaba los cinco productos).
@@ -919,14 +921,18 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
 
     const recibir = async () => {
         setError(''); setOcupado(true);
-        const r = await recibirTraslado(fila.id, faltaron);
+        const r = await recibirTraslado(fila.id, faltaron, sobraron);
         setOcupado(false);
         if (!r?.ok) { setError(r?.error ?? 'No se pudo recibir.'); return; }
         /* El faltante NO puede tumbar la recepción: el producto ya entró al
          * inventario. Que no se haya podido anotar se dice, y no se calla — es
-         * lo único que manda a alguien a buscar la caja hoy. */
-        if (r?.faltante_error) { setError(r.faltante_error); return; }
+         * lo único que manda a alguien a buscar la caja hoy. Lo mismo con lo
+         * que vino de más: entró la bolsa, y lo de más se dice aparte. */
+        const aparte = [r?.faltante_error, r?.sobrante_error, r?.sobrante?.ok === false ? r.sobrante.error : null]
+            .filter(Boolean);
+        if (aparte.length) { setFaltaron([]); setSobraron([]); setError(aparte.join(' · ')); return; }
         setFaltaron([]);
+        setSobraron([]);
         onHecho();
     };
 
@@ -1093,7 +1099,8 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
                 <Button size="sm" tone="success" soft icon={PackageCheck} loading={ocupado} disabled={ocupado}
                     onClick={recibir} className="w-full sm:w-auto sm:ml-auto">
                     {ocupado ? 'Recibiendo…'
-                        : (faltaron.length ? 'Recibir y anotar faltante' : 'Recibir')}
+                        : (faltaron.length ? 'Recibir y anotar faltante'
+                            : sobraron.length ? 'Recibir y pasar lo de más' : 'Recibir')}
                 </Button>
             </div>
         </div>
@@ -1102,6 +1109,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
             <ModalTraslado fila={fila} piezas={piezas} lotes={lotes} salio={salio}
                 quienPidio={quienPidio} quienEnvio={quienEnvio} ahora={ahora}
                 faltaron={faltaron} onFaltaron={setFaltaron}
+                sobraron={sobraron} onSobraron={setSobraron}
                 ocupado={ocupado} error={error} onRecibir={recibir}
                 onCerrar={() => setAbierto(false)} />
         )}
@@ -1127,6 +1135,7 @@ export function FilaPorRecibir({ fila, onHecho, ahora = null, personaPor = null 
  */
 function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, ahora,
                          faltaron = [], onFaltaron = null,
+                         sobraron = [], onSobraron = null,
                          ocupado, error, onRecibir, onCerrar }) {
     const meta = fila.metadata ?? {};
     const renglones = renglonesDe(metaDelEnvio(meta));
@@ -1175,7 +1184,8 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                         botón contradiciendo al formulario de arriba. */}
                     <Button icon={PackageCheck} loading={ocupado} disabled={ocupado} onClick={onRecibir}>
                         {ocupado ? 'Recibiendo…'
-                            : (faltaron.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir')}
+                            : (faltaron.length ? 'Recibir y anotar lo que faltó'
+                                : sobraron.length ? 'Recibir y pasar lo de más' : 'Ya llegó, recibir')}
                     </Button>
                     {/* Sólo con número: sin él no hay código de barras, así que
                         el papel no sería el mismo — y ese traslado se confirma a
@@ -1268,6 +1278,18 @@ function ModalTraslado({ fila, piezas, lotes, salio, quienPidio, quienEnvio, aho
                             items={loQueLlego(meta)}
                             valor={faltaron}
                             onCambio={onFaltaron}
+                            deshabilitado={ocupado}
+                            origen={meta?.origen_branch_name}
+                        />
+                    )}
+                    {/* Y lo que vino de más (2026-11-12): se descuenta de la
+                        sala de origen y se suma a ésta al recibir. */}
+                    {onSobraron && (
+                        <DeclararFaltantes
+                            modo="sobrante"
+                            items={loQueLlego(meta)}
+                            valor={sobraron}
+                            onCambio={onSobraron}
                             deshabilitado={ocupado}
                             origen={meta?.origen_branch_name}
                         />

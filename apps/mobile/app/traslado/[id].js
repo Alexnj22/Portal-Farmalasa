@@ -84,6 +84,9 @@ export default function Traslado() {
   const [texto, setTexto] = useState('');
   const [faltan, setFaltan] = useState({});
   const [notaFalta, setNotaFalta] = useState('');
+  // Lo que vino DE MÁS (2026-11-12): se descuenta de la sala de origen y se
+  // suma a ésta al recibir (portal: «Vino algo de más»).
+  const [sobran, setSobran] = useState({});
   const [ocupado, setOcupado] = useState(false);
 
   const cargar = useCallback(async () => {
@@ -147,6 +150,8 @@ export default function Traslado() {
   const llegaron = loQueLlego(m);
   const faltantes = llegaron.map((l) => ({ posicion: l.posicion, cantidad: Number(faltan[l.posicion]) || 0, nota: notaFalta.trim() }))
     .filter((f) => f.cantidad > 0);
+  const sobrantes = llegaron.map((l) => ({ posicion: l.posicion, cantidad: Number(sobran[l.posicion]) || 0, nota: notaFalta.trim() }))
+    .filter((f) => f.cantidad > 0);
   // Volver a sacar el MISMO ticket de la bolsa, y nada más: lo que se arregla
   // es una impresora, no un hecho del negocio (portal: «Imprimir el ticket»).
   // Sale en la caja de quien lo pide. Sin número no hay barras: no se ofrece.
@@ -160,11 +165,16 @@ export default function Traslado() {
 
   const recibir = async () => {
     setOcupado(true); trabajando('Recibiendo…');
-    const r = await recibirTraslado(fila.id, faltantes);
+    const r = await recibirTraslado(fila.id, faltantes, sobrantes);
     setOcupado(false);
     if (!r?.ok && r?.codigo !== 'YA_RECIBIDO') { fallo('No se pudo recibir', r?.error ?? 'Inténtalo de nuevo.'); return; }
+    const errSobrante = r?.sobrante_error ?? (r?.sobrante?.ok === false ? r.sobrante.error : null);
     if (r?.faltante_error) fallo('Recibido, pero sin anotar lo que faltó', r.faltante_error);
-    else listo(r?.codigo === 'YA_RECIBIDO' ? 'Ya estaba recibido' : 'Recibido', faltantes.length ? `Se avisó a ${m.origen_branch_name ?? 'la sala'} lo que faltó.` : undefined);
+    else if (errSobrante) fallo('Recibido, pero lo de más no pasó', errSobrante);
+    else listo(r?.codigo === 'YA_RECIBIDO' ? 'Ya estaba recibido' : 'Recibido',
+      [faltantes.length ? `Se avisó a ${m.origen_branch_name ?? 'la sala'} lo que faltó.` : '',
+       r?.sobrante?.ok ? `Lo que vino de más ya está en tu inventario y se le avisó a ${m.origen_branch_name ?? 'la sala'}.` : '']
+        .filter(Boolean).join(' ') || undefined);
     router.back();
   };
 
@@ -277,7 +287,7 @@ export default function Traslado() {
 
           {/* ── Recibir ── */}
           {puedeRecibir ? (
-            <Bloque titulo="¿Faltó algo?">
+            <Bloque titulo="¿Faltó o sobró algo?">
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si llegó todo, deja todo en cero y recibe.</Text>
               {llegaron.map((l) => (
                 <View key={l.posicion} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -289,8 +299,19 @@ export default function Traslado() {
                     onCambiar={(v) => setFaltan((f) => ({ ...f, [l.posicion]: v }))} />
                 </View>
               ))}
-              {faltantes.length ? <Campo value={notaFalta} onChangeText={setNotaFalta} placeholder="¿Qué pasó? (se le avisa a la sala que envió)" /> : null}
-              <BotonGrande texto={faltantes.length ? 'Recibir y anotar lo que faltó' : 'Ya llegó, recibir'} color={MARCA.verde}
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, marginTop: 6 }}>¿Vino algo de más? Cuántos, en la misma presentación: se descuentan de {m.origen_branch_name ?? 'la sala que envió'} y se suman a tu sala.</Text>
+              {llegaron.map((l) => (
+                <View key={`demas-${l.posicion}`} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{l.descripcion}</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>de más</Text>
+                  </View>
+                  <Cantidad valor={sobran[l.posicion] ?? '0'} max={9999} etiqueta={`vinieron de más de ${l.descripcion}`}
+                    onCambiar={(v) => setSobran((f) => ({ ...f, [l.posicion]: v }))} />
+                </View>
+              ))}
+              {faltantes.length || sobrantes.length ? <Campo value={notaFalta} onChangeText={setNotaFalta} placeholder="¿Qué pasó? (se le avisa a la sala que envió)" /> : null}
+              <BotonGrande texto={faltantes.length ? 'Recibir y anotar lo que faltó' : sobrantes.length ? 'Recibir y pasar lo de más' : 'Ya llegó, recibir'} color={MARCA.verde}
                 deshabilitado={ocupado} onPress={recibir} />
             </Bloque>
           ) : null}

@@ -21,10 +21,11 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
-## v2.1527.1 — App: el envío sugerido pide el lote o el vencimiento de la caja
+## v2.1527.2 — App: el envío sugerido pide el lote o el vencimiento de la caja
 
 - **Envío sugerido (app, desde Gestión de stock)**: los renglones precargados que salen sin lote asignado (regulado) o sin vencimiento (perecedero) muestran el campo de la caja en la lista, y el envío no sale hasta llenarlo. Antes entraban directo, sin pasar por el compositor que lo pedía.
 - Se quita `enviarTraslado` de `componentes/avisos.js`: nadie lo llamaba (los avisos abren la pantalla del traslado, que ya pide lote y vencimiento) y despachaba sin esos campos.
+
 
 ## v2.1527.1 — Pedidos en la app: anular una sala, conductor y salida de la ruta, reglas por corregir
 

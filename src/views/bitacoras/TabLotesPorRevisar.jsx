@@ -47,13 +47,14 @@ const fmt = (f) => (f ? fechaTexto(f, { day: '2-digit', month: 'short', year: 'n
 
 const MOVIL = { identidad: 'renglon', ancla: 'estado', chips: ['lote'], acciones: true };
 
-const VISTAS = ['abiertas', 'confirmadas'];
 
-export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = false, puedeConfirmar = false }) {
+// «Abiertas / Confirmadas» se elige en la píldora de la vista; las cuentas
+// vuelven por `onCuentas`.
+export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = false, puedeConfirmar = false,
+    vista = 'abiertas', onCuentas }) {
     const showToast = useToastStore(s => s.showToast);
     const [filas, setFilas] = useState(null);
     const [error, setError] = useState(null);
-    const [vista, setVista] = useState('abiertas');
     const [corrigiendo, setCorrigiendo] = useState(null);
     const [devolviendo, setDevolviendo] = useState(null);
     const [ocupado, setOcupado] = useState(null);
@@ -69,6 +70,7 @@ export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = fa
 
     const abiertas = useMemo(() => (filas || []).filter(f => f.estado !== 'confirmada'), [filas]);
     const confirmadas = useMemo(() => (filas || []).filter(f => f.estado === 'confirmada'), [filas]);
+    useEffect(() => { onCuentas?.({ abiertas: abiertas.length, confirmadas: confirmadas.length }); }, [abiertas, confirmadas, onCuentas]);
     const lista = vista === 'abiertas' ? abiertas : confirmadas;
     const porCorregir = abiertas.filter(f => f.estado === 'pendiente' || f.estado === 'devuelta').length;
     const porConfirmar = abiertas.filter(f => f.estado === 'corregida').length;
@@ -98,26 +100,19 @@ export default function TabLotesPorRevisar({ branchId = null, puedeCorregir = fa
     return (
         <div className="space-y-4">
             {abiertas.length > 0 ? (
-                <Notice variant={porCorregir ? 'warning' : 'info'} icon={PackageSearch}>
+                <Notice variant={porCorregir ? 'warning' : 'info'} icon={PackageSearch} bloque>
                     <span className="font-bold">
                         {[porCorregir && `${porCorregir} por corregir`, porConfirmar && `${porConfirmar} por confirmar`]
                             .filter(Boolean).join(' · ')}
                     </span>
                     <span className="block mt-0.5 font-normal text-content-2">
-                        El lote de estos renglones no sirve para rastrear la caja que se entregó. Busca la caja del
-                        mismo producto y escribe el lote y el vencimiento que trae impresos; si salió de dos lotes,
-                        reparte la cantidad. Después lo confirma el regente.
+                        Escribe el lote y el vencimiento impresos en la caja entregada. Después lo confirma el regente.
                     </span>
                 </Notice>
             ) : filas && !error && (
                 <Notice variant="success" icon={Check}>No hay lotes del libro por revisar.</Notice>
             )}
 
-            <SegmentedControl label="Qué ver" value={vista} onChange={setVista}
-                options={VISTAS.map(v => ({
-                    value: v,
-                    label: v === 'abiertas' ? `Abiertas · ${abiertas.length}` : `Confirmadas · ${confirmadas.length}`,
-                }))} />
 
             {error && <Notice variant="danger">{mensajeAmigable(error)}</Notice>}
 
@@ -284,7 +279,7 @@ function CorregirLote({ revision, onCerrar }) {
 
             <LiquidModal.Body className="space-y-4">
                 {revision.estado === 'devuelta' && revision.devuelta_motivo && (
-                    <Notice variant="danger" icon={Undo2}>
+                    <Notice variant="danger" icon={Undo2} bloque>
                         <span className="font-bold">El regente lo devolvió</span>
                         <span className="block mt-0.5 font-normal text-content-2">{revision.devuelta_motivo}</span>
                     </Notice>
@@ -328,7 +323,7 @@ function CorregirLote({ revision, onCerrar }) {
                 </div>
 
                 {(algunaVencida || vendidoVencido) && (
-                    <Notice variant="danger" icon={AlertTriangle}>
+                    <Notice variant="danger" icon={AlertTriangle} bloque>
                         <span className="font-bold">Ese vencimiento es anterior a la venta ({fmt(revision.fecha)}).</span>
                         <span className="block mt-0.5 font-normal text-content-2">
                             Revisa la fecha. Si de verdad se entregó vencido, márcalo: queda anotado en el libro y le llega al regente.

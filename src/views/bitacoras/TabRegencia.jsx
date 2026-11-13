@@ -1,9 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { Award, ClipboardList, Plus, Printer, ShieldCheck, Ban } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Award, ClipboardList, Plus, Printer, ShieldCheck, Ban, UserPlus } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
-import PeriodStepper from '../../components/common/PeriodStepper';
 import PromptModal from '../../components/common/PromptModal';
 import AvatarConEstado from '../../components/common/AvatarConEstado';
 import { EmptyState, LoadingState } from '../../components/common/StateViews';
@@ -33,6 +33,10 @@ import RegistrarVisitaModal from './RegistrarVisitaModal';
 
 export default function TabRegencia({ branchId, periodo }) {
     const { hasPermission } = useAuth();
+    const navigate = useNavigate();
+    // Lo que falta se completa en el expediente de la sucursal: un botón lleva
+    // directo ahí en vez de decir el camino (usuario, 2026-11-13).
+    const irAlExpediente = () => navigate(`/sucursales/${branchId}?tab=dossier`);
     const showToast = useToastStore((s) => s.showToast);
     const puedeAdministrar = hasPermission('bitacoras_tab_regencia', 'can_edit');
     const [regencia, setRegencia] = useState(null);
@@ -100,9 +104,9 @@ export default function TabRegencia({ branchId, periodo }) {
     return (
         <div className="space-y-4">
             {faltaEnExpediente.length > 0 && (
-                <Notice variant="warning" icon={ShieldCheck}>
-                    Falta en el expediente de {regencia.sala}: {faltaEnExpediente.join(', ')}. Se completa en
-                    Sucursales → {regencia.sala} → Expediente.
+                <Notice variant="warning" icon={ShieldCheck}
+                    action={<Button variant="secondary" size="sm" onClick={irAlExpediente}>Completar</Button>}>
+                    {`Falta en el expediente: ${faltaEnExpediente.join(', ')}.`}
                 </Notice>
             )}
 
@@ -124,6 +128,11 @@ export default function TabRegencia({ branchId, periodo }) {
                                 <p className="text-caption text-content-2 whitespace-pre-line">{regencia.horario}</p>
                             )}
                         </div>
+                        {!persona && (
+                            <Button variant="primary" size="sm" icon={UserPlus} className="ml-auto shrink-0" onClick={irAlExpediente}>
+                                Asignar
+                            </Button>
+                        )}
                     </div>
                 ))}
             </div>

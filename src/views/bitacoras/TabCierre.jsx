@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { AlertTriangle, CalendarCheck, CheckCircle2, ClipboardCheck, Clock, LockOpen, Printer, Table2, Thermometer } from 'lucide-react';
+import { AlertTriangle, CalendarCheck, CheckCircle2, ChevronDown, ChevronUp, ClipboardCheck, Clock, LockOpen, Printer, Table2, Thermometer } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Badge from '../../components/common/Badge';
 import Button from '../../components/common/Button';
@@ -52,6 +52,46 @@ function Cifra({ valor, label, tono }) {
     );
 }
 
+/**
+ * Lo primero del cierre (usuario, 2026-11-13): un porcentaje por bitácora y lo
+ * que falta para poder firmar. El detalle va debajo y plegado.
+ */
+function ResumenDelCierre({ L, Li, cuadre, libroPend, calibracionVencida }) {
+    const pL = pct(L.hechas, L.esperadas);
+    const pLi = pct(Li.hechas, Li.esperadas);
+    const c = cuadre?.conteo;
+    const cuadreListo = c && (c.status === 'FINALIZADO' || c.status === 'CERRADO');
+    const falta = [
+        L.sin_accion > 0 && `${L.sin_accion} ${L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva`,
+        libroPend > 0 && `${libroPend} ${libroPend === 1 ? 'renglón' : 'renglones'} del libro sin receta`,
+        calibracionVencida > 0 && `${calibracionVencida} ${calibracionVencida === 1 ? 'termómetro' : 'termómetros'} con la calibración vencida`,
+        !cuadreListo && (c ? 'terminar el conteo de antibióticos' : 'hacer el conteo de antibióticos'),
+        L.faltantes + Li.faltantes > 0 && `${L.faltantes + Li.faltantes} registros sin anotar (se puede firmar igual; queda guardado)`,
+    ].filter(Boolean);
+    return (
+        <section className="space-y-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+                <Cifra valor={rotularPct(pL)} label="Temperatura y humedad" tono={tonoPct(pL)} />
+                <Cifra valor={rotularPct(pLi)} label="Limpieza" tono={tonoPct(pLi)} />
+                <Cifra valor={cuadreListo ? 'Hecho' : c ? 'En curso' : 'Sin hacer'} label="Cuadre de antibióticos"
+                    tono={cuadreListo ? (c.diferencias > 0 ? 'warning' : 'success') : 'warning'} />
+                <Cifra valor={libroPend > 0 ? libroPend : 'Al día'} label="Libro sin receta"
+                    tono={libroPend > 0 ? 'danger' : 'success'} />
+            </div>
+            {falta.length > 0 ? (
+                <Notice variant="warning" icon={AlertTriangle} bloque>
+                    <span className="font-bold">Antes de firmar:</span>
+                    <ul className="mt-1 list-disc pl-5 font-normal text-content-2 space-y-0.5">
+                        {falta.map(f => <li key={f}>{f}</li>)}
+                    </ul>
+                </Notice>
+            ) : (
+                <Notice variant="success" icon={CheckCircle2}>Todo listo para firmar.</Notice>
+            )}
+        </section>
+    );
+}
+
 const distinto = (v) => v !== null && v !== undefined && Number(v) !== 0;
 
 /**
@@ -64,7 +104,7 @@ function CuadreAntibioticos({ cuadre, cargando, error, onVerHoja }) {
     if (cargando) return <LoadingState label="Calculando el cuadre de antibióticos…" />;
     if (error) {
         return (
-            <Notice variant="danger" icon={AlertTriangle}>
+            <Notice variant="danger" icon={AlertTriangle} bloque>
                 <span className="font-bold">No se pudo calcular el cuadre de antibióticos.</span>
                 <span className="block mt-0.5 font-normal text-content-2">{error}</span>
             </Notice>
@@ -146,6 +186,7 @@ export default function TabCierre({ branchId, periodo }) {
     // puerta: `completar_dispensacion` no escribe en un mes cerrado.
     const [libroPend, setLibroPend] = useState(0);
     const [cargando, setCargando] = useState(true);
+    const [verDetalle, setVerDetalle] = useState(false);
     const [obs, setObs] = useState('');
     const [motivo, setMotivo] = useState('');
     const [reabriendo, setReabriendo] = useState(false);
@@ -299,6 +340,15 @@ export default function TabCierre({ branchId, periodo }) {
                 <Notice variant="info">Ese mes es anterior a la puesta en marcha de las bitácoras.</Notice>
             ) : (
                 <>
+                    <ResumenDelCierre L={L} Li={Li} cuadre={cuadre} libroPend={libroPend}
+                        calibracionVencida={(resumen.calibracion_vencida || []).length} />
+
+                    <Button variant="ghost" size="sm" icon={verDetalle ? ChevronUp : ChevronDown}
+                        onClick={() => setVerDetalle(v => !v)} aria-expanded={verDetalle}>
+                        {verDetalle ? 'Ocultar el detalle' : 'Ver el detalle por bitácora y por área'}
+                    </Button>
+
+                    {verDetalle && <>
                     <section className="space-y-3">
                         <h4 className="text-body-sm font-black uppercase tracking-widest text-content-3">
                             Lecturas de temperatura y humedad
@@ -315,7 +365,7 @@ export default function TabCierre({ branchId, periodo }) {
                         {/* Una desviación sin acción correctiva es peor que el
                             faltante: prueba que se vio y no se actuó (RTS 5.6.5). */}
                         {L.sin_accion > 0 && (
-                            <Notice variant="danger" icon={AlertTriangle}>
+                            <Notice variant="danger" icon={AlertTriangle} bloque>
                                 <span className="font-bold">
                                     {L.sin_accion} {L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva anotada.
                                 </span>
@@ -369,7 +419,7 @@ export default function TabCierre({ branchId, periodo }) {
                     </section>
 
                     {(resumen.calibracion_vencida || []).length > 0 && (
-                        <Notice variant="danger" icon={Thermometer}>
+                        <Notice variant="danger" icon={Thermometer} bloque>
                             <span className="font-bold">Hay instrumentos con la calibración vencida.</span>
                             <span className="block mt-0.5 font-normal text-content-2">
                                 {resumen.calibracion_vencida.map(c => `${c.area}${c.instrumento ? ` (${c.instrumento})` : ''}`).join(', ')}.
@@ -399,6 +449,8 @@ export default function TabCierre({ branchId, periodo }) {
                         </section>
                     )}
 
+                    </>}
+
                     <CuadreAntibioticos cuadre={cuadre} cargando={cuadreCargando} error={cuadreError}
                         onVerHoja={() => setHojaAbierta(true)} />
 
@@ -409,7 +461,7 @@ export default function TabCierre({ branchId, periodo }) {
                         <section data-surface="card" className="p-4 space-y-3">
                             <h4 className="text-body font-black text-content">Dar por finalizado {nombreMes(periodo).toLowerCase()}</h4>
                             {L.faltantes + Li.faltantes > 0 && (
-                                <Notice variant="warning" icon={AlertTriangle}>
+                                <Notice variant="warning" icon={AlertTriangle} bloque>
                                     <span className="font-bold">
                                         El mes se puede cerrar así, y el cierre va a guardar que quedaron {L.faltantes + Li.faltantes} registros sin anotar.
                                     </span>
@@ -428,7 +480,7 @@ export default function TabCierre({ branchId, periodo }) {
                                 imposible, así que acá el motivo no es opcional.
                                 La base exige lo mismo: sin él, levanta. */}
                             {libroPend > 0 && (
-                                <Notice variant="danger" icon={AlertTriangle}>
+                                <Notice variant="danger" icon={AlertTriangle} bloque>
                                     <span className="font-bold">
                                         En el libro quedan {libroPend} {libroPend === 1 ? 'renglón' : 'renglones'} esperando la receta.
                                     </span>
@@ -470,7 +522,7 @@ export default function TabCierre({ branchId, periodo }) {
                                 </Button>
                             ) : (
                                 <>
-                                    <Notice variant="warning" icon={AlertTriangle}>
+                                    <Notice variant="warning" icon={AlertTriangle} bloque>
                                         <span className="font-bold">Reabrir un mes firmado queda registrado.</span>
                                         <span className="block mt-0.5 font-normal text-content-2">
                                             Con quién, cuándo y por qué. Un mes que se reabrió tres veces cuenta

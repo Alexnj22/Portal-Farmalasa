@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
-import { AlertTriangle, Award, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, PackageSearch, Pill, Search, Settings2, Thermometer } from 'lucide-react';
+import { AlertTriangle, Award, Plus, BookOpen, CalendarCheck, CheckCircle2, Download, HelpCircle, Layers, PackageSearch, Pill, Search, Settings2, Thermometer } from 'lucide-react';
 import GlassViewLayout from '../components/GlassViewLayout';
 import ViewTabBar from '../components/common/ViewTabBar';
 import { usePestanaEnUrl } from '../plataforma/usePestanaEnUrl';
@@ -14,6 +14,7 @@ import TabHoy from './bitacoras/TabHoy';
 /* La pestaña de entrada («Hoy») viaja con la vista; las demás se bajan al
  * abrirlas: se ve una a la vez (2026-11-06, gate:bundle). */
 const TabBajoReceta = lazy(() => import('./bitacoras/TabBajoReceta'));
+const TablaDeLaRed = lazy(() => import('./bitacoras/TablaDeLaRed'));
 const TabCierre = lazy(() => import('./bitacoras/TabCierre'));
 const TabRegencia = lazy(() => import('./bitacoras/TabRegencia'));
 const TabConfiguracion = lazy(() => import('./bitacoras/TabConfiguracion'));
@@ -23,7 +24,7 @@ const TabLotesPorRevisar = lazy(() => import('./bitacoras/TabLotesPorRevisar'));
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore as useStaff } from '@nucleo/store/staffStore';
 import {
-    CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS,
+    CLASE_ANTIBIOTICO, CLASE_BAJO_RECETA, LIBROS, VENTA_ANTIBIOTICO,
     correrPeriodo, fetchBitacoraDia, fetchLibro, fetchRegistroAntibioticosLote, pendientesDelDia, periodoDe,
 } from '@nucleo/data/bitacoras';
 import { nombreDelPeriodo } from '@nucleo/utils/cierreDeBitacoras';
@@ -202,6 +203,7 @@ export default function BitacorasView() {
         () => branches.find(b => String(b.id) === String(sala))?.name || '',
         [branches, sala],
     );
+    const salasDeRed = useMemo(() => salasDeBitacora(branches), [branches]);
     const salaValida = Boolean(sala) && salaOptions.some(o => o.value === String(sala));
 
     // ── El día ──────────────────────────────────────────────────────────────
@@ -292,13 +294,25 @@ export default function BitacorasView() {
         return c;
     }, [libro]);
 
+    // «Sin completar»: los renglones que esperan su receta (usuario, 2026-11-13).
+    const [soloSinCompletar, setSoloSinCompletar] = useState(false);
+    // Antibióticos: qué vista, qué venta, sus cuentas y sus acciones (las
+    // registra la pestaña; viven en la píldora).
+    const [vistaRevision, setVistaRevision] = useState('abiertas');
+    const [cuentasRevision, setCuentasRevision] = useState(null);
+    const [vistaAntib, setVistaAntib] = useState('listado');
+    const [ventaAntib, setVentaAntib] = useState('todos');
+    const [cuentasAntib, setCuentasAntib] = useState(null);
+    const [accionesAntib, setAccionesAntib] = useState(null);
+    const sinCompletarDelLibro = useMemo(() => delLibro.filter(r => r.estado === 'pendiente').length, [delLibro]);
     const libroFiltrado = useMemo(() => {
-        if (!busqueda.trim()) return delLibro;
-        return delLibro.filter(r => tokenMatch(busqueda,
+        const base = soloSinCompletar ? delLibro.filter(r => r.estado === 'pendiente') : delLibro;
+        if (!busqueda.trim()) return base;
+        return base.filter(r => tokenMatch(busqueda,
             r.folio_txt, String(r.folio), r.producto_nombre, r.lote, r.paciente,
             r.medico, r.numero_junta, r.cliente, r.vendedor, r.correlativo_doc,
         ));
-    }, [delLibro, busqueda]);
+    }, [delLibro, busqueda, soloSinCompletar]);
 
     const filtersContent = (
         <ViewTabBar
@@ -372,18 +386,31 @@ export default function BitacorasView() {
                                 if (mes) mes.set(mes.base);
                                 if (tab === 'hoy') setFecha(hoySV());
                                 setFiltroLotes('todos');
+                                setSoloSinCompletar(false);
+                                setVistaAntib('listado'); setVentaAntib('todos'); setVistaRevision('abiertas');
                                 if (verSala && alcanceTodas) setSala(miSala ?? '');
                             }}
                             activeCount={[
                                 mes ? mes.valor !== mes.base : tab === 'hoy' && !esHoy,
                                 enLotes && filtroLotes !== 'todos',
                                 enLibro && claseLibro !== CLASE_ANTIBIOTICO,
+                                enLibro && soloSinCompletar,
+                                enAntibioticos && vistaAntib !== 'listado',
+                                enRevision && vistaRevision !== 'abiertas',
+                                enAntibioticos && ventaAntib !== 'todos',
                                 verSala && alcanceTodas && String(sala) !== String(miSala ?? ''),
                             ].filter(Boolean).length}
                             acciones={enLotes ? [{
                                 key: 'descargar', icon: Download, label: 'Descargar', soloIcono: true, principal: false,
                                 onClick: descargarLotes, disabled: !cuentaLotes.todos || cargandoLotes,
-                            }] : []}
+                            }] : enAntibioticos && accionesAntib ? [
+                                ...(accionesAntib.agregar ? [{
+                                    key: 'agregar', icon: Plus, label: 'Agregar producto', principal: true,
+                                    onClick: accionesAntib.agregar,
+                                }] : []),
+                                { key: 'exportar', icon: Download, label: 'Exportar', soloIcono: true, principal: false,
+                                    onClick: accionesAntib.exportar, disabled: !accionesAntib.hayFilas },
+                            ] : []}
                         >
                             {seccionesDelGrupo.length > 1 && (
                                 <FilterBar.Section label="sección">
@@ -418,6 +445,73 @@ export default function BitacorasView() {
                                         }))}
                                         label="Libro"
                                     />
+                                </FilterBar.Section>
+                            )}
+
+                            {enLibro && (
+                                <FilterBar.Section active={soloSinCompletar}
+                                    onClear={() => setSoloSinCompletar(false)} label="estado">
+                                    <FilterBar.Opciones
+                                        value={soloSinCompletar ? 'pendiente' : 'todos'}
+                                        onChange={(v) => setSoloSinCompletar(v === 'pendiente')}
+                                        options={[
+                                            { value: 'todos', label: 'Todos' },
+                                            { value: 'pendiente', label: `Sin completar (${sinCompletarDelLibro})` },
+                                        ]}
+                                        label="Estado"
+                                    />
+                                </FilterBar.Section>
+                            )}
+
+                            {enRevision && (
+                                <FilterBar.Section active={vistaRevision !== 'abiertas'}
+                                    onClear={() => setVistaRevision('abiertas')} label="estado">
+                                    <FilterBar.Opciones value={vistaRevision} onChange={setVistaRevision}
+                                        options={[
+                                            { value: 'abiertas', label: `Abiertas (${cuentasRevision?.abiertas ?? '…'})` },
+                                            { value: 'confirmadas', label: `Confirmadas (${cuentasRevision?.confirmadas ?? '…'})` },
+                                        ]}
+                                        label="Estado" />
+                                </FilterBar.Section>
+                            )}
+                            {enAntibioticos && (
+                                <FilterBar.Section active={vistaAntib !== 'listado'}
+                                    onClear={() => setVistaAntib('listado')} label="vista">
+                                    <FilterBar.Opciones value={vistaAntib} onChange={setVistaAntib}
+                                        options={[
+                                            { value: 'listado', label: `Listado (${cuentasAntib?.listado ?? '…'})` },
+                                            { value: 'revisar', label: `Por revisar (${cuentasAntib?.revisar ?? '…'})` },
+                                            { value: 'sacados', label: `Sacados (${cuentasAntib?.sacados ?? '…'})` },
+                                        ]}
+                                        label="Vista" />
+                                </FilterBar.Section>
+                            )}
+                            {enAntibioticos && vistaAntib === 'listado' && (
+                                <FilterBar.Section active={ventaAntib !== 'todos'}
+                                    onClear={() => setVentaAntib('todos')} label="venta">
+                                    <FilterBar.Opciones value={ventaAntib} onChange={setVentaAntib}
+                                        options={[
+                                            { value: 'todos', label: 'Toda venta' },
+                                            ...Object.entries(VENTA_ANTIBIOTICO).map(([k, v]) => ({
+                                                value: k, label: `${v.label} (${cuentasAntib?.[k] ?? 0})`,
+                                            })),
+                                        ]}
+                                        label="Cómo se vende" />
+                                </FilterBar.Section>
+                            )}
+
+                            {/* Las tarjetas ya filtran; el mismo filtro en la
+                                píldora deja a la vista que se está filtrando. */}
+                            {enLotes && salaValida && (
+                                <FilterBar.Section active={filtroLotes !== 'todos'}
+                                    onClear={() => setFiltroLotes('todos')} label="estado">
+                                    <FilterBar.Opciones value={filtroLotes} onChange={setFiltroLotes}
+                                        options={[
+                                            { value: 'todos', label: 'Todos' },
+                                            { value: 'diferencia', label: `Con diferencia (${cuentaLotes.diferencia ?? 0})` },
+                                            { value: 'sin_base', label: `Sin saldo (${cuentaLotes.sin_base ?? 0})` },
+                                        ]}
+                                        label="Estado" />
                                 </FilterBar.Section>
                             )}
 
@@ -456,10 +550,12 @@ export default function BitacorasView() {
 
                 <Suspense fallback={<SkeletonText lines={4} className="w-full" />}>
                 {enAntibioticos ? (
-                    <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} puedeEditar={puedeEditarAntibioticos} />
+                    <TabAntibioticos busqueda={busqueda} puedeConfirmar={puedeConfirmarAware} puedeEditar={puedeEditarAntibioticos}
+                        vista={vistaAntib} venta={ventaAntib} onCuentas={setCuentasAntib} onAcciones={setAccionesAntib} />
                 ) : enRevision ? (
                     <TabLotesPorRevisar branchId={salaValida ? sala : (alcanceTodas ? null : sala)}
-                        puedeCorregir={puedeCorregirLote} puedeConfirmar={puedeConfirmarLote} />
+                        puedeCorregir={puedeCorregirLote} puedeConfirmar={puedeConfirmarLote}
+                        vista={vistaRevision} onCuentas={setCuentasRevision} />
                 ) : !salaValida ? (
                     <Notice variant="info" icon={Search}>
                         {!sala
@@ -471,8 +567,14 @@ export default function BitacorasView() {
                                     : `${nombreSalaCruda || 'Esa sucursal'} no almacena medicamentos, así que no lleva bitácora de ambiente.`}
                     </Notice>
                 ) : tab === 'hoy' ? (
-                    <TabHoy dia={dia} cargando={cargandoDia} error={errorDia}
-                        puedeAnotar={puedeAnotar} onRecargar={cargarDia} />
+                    <div className="space-y-6">
+                        {alcanceTodas && salasDeRed.length > 1 && (
+                            <TablaDeLaRed salas={salasDeRed} fecha={fecha} salaActual={sala}
+                                onElegir={setSala} recarga={dia} />
+                        )}
+                        <TabHoy dia={dia} cargando={cargandoDia} error={errorDia}
+                            puedeAnotar={puedeAnotar} onRecargar={cargarDia} />
+                    </div>
                 ) : tab === 'libro' ? (
                     <TabBajoReceta renglones={libroFiltrado} cargando={cargandoLibro} error={errorLibro}
                         branchId={sala} sucursalNombre={nombreSala} onRecargar={cargarLibro}

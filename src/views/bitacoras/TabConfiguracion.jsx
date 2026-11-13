@@ -318,7 +318,7 @@ function HorariosDeLaSucursal({ branchId, areas, puedeEditar, onCambio }) {
             </div>
 
             {sucio && (
-                <Notice variant="warning" compact>
+                <Notice variant="warning" compact bloque>
                     <span className="font-bold">El horario nuevo rige también para los días de este
                     mes que ya pasaron.</span>
                     <span className="block mt-0.5 font-normal text-content-2">

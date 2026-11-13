@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { BookX, Check, Download, Pencil, Pill, Plus, Undo2 } from 'lucide-react';
+import { BookX, Check, Pencil, Pill, Undo2 } from 'lucide-react';
 import Button from '../../components/common/Button';
 import Badge from '../../components/common/Badge';
 import Notice from '../../components/common/Notice';
-import SegmentedControl from '../../components/common/SegmentedControl';
 import PromptModal from '../../components/common/PromptModal';
 import { DataTable, DataRow, DataCell } from '../../components/common/DataTable';
 import { useToastStore } from '@nucleo/store/toastStore';
@@ -38,13 +37,17 @@ const MOVIL = { identidad: 'molecula', ancla: 'grupo', chips: ['productos'], acc
 const MOVIL_REVISAR = { identidad: 'producto', ancla: 'accion' };
 const VIA = Object.fromEntries(VIAS_ANTIBIOTICO.map(v => [v.value, v.label]));
 
-export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false, puedeEditar = false }) {
+// La vista (Listado / Por revisar / Sacados), el filtro por cómo se vende y las
+// acciones viven en la píldora de la vista (usuario, 2026-11-13: «corrige»).
+// Esta pestaña le devuelve las cuentas por `onCuentas` y sus acciones por
+// `onAcciones`, y recibe lo elegido.
+export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false, puedeEditar = false,
+    vista = 'listado', venta = 'todos', onCuentas, onAcciones }) {
     const showToast = useToastStore((s) => s.showToast);
     const [filas, setFilas] = useState(null);
     const [revisar, setRevisar] = useState({ fuera: [], excluidos: [] });
     const [error, setError] = useState(null);
     const [confirmando, setConfirmando] = useState(null);
-    const [vista, setVista] = useState('listado');
     const [editando, setEditando] = useState(null);
     const [sacandoDelLibro, setSacandoDelLibro] = useState(null);
     const [ocupado, setOcupado] = useState(false);
@@ -79,9 +82,14 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
         : todas), [todas, revisar.fuera]);
 
     const moleculas = useMemo(() => {
-        if (!busqueda.trim()) return conSinAsignar;
-        return conSinAsignar.filter(x => tokenMatch(busqueda, x.molecula, x.atc, ...x.productos.map(p => p.producto)));
-    }, [conSinAsignar, busqueda]);
+        const porVenta = venta === 'todos' ? conSinAsignar
+            : conSinAsignar
+                .filter(x => x.molecula)
+                .map(x => ({ ...x, productos: x.productos.filter(p => p.venta === venta) }))
+                .filter(x => x.productos.length);
+        if (!busqueda.trim()) return porVenta;
+        return porVenta.filter(x => tokenMatch(busqueda, x.molecula, x.atc, ...x.productos.map(p => p.producto)));
+    }, [conSinAsignar, busqueda, venta]);
 
     const filtrarProductos = useCallback((lista) => (busqueda.trim()
         ? lista.filter(p => tokenMatch(busqueda, p.producto, p.principio_activo))
@@ -143,24 +151,33 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
 
     const alGuardar = () => { setEditando(null); cargar(); };
 
-    const VISTAS = [
-        { value: 'listado', label: `Listado · ${(filas || []).length + revisar.fuera.length}` },
-        { value: 'revisar', label: `Por revisar · ${revisar.fuera.length}` },
-        { value: 'sacados', label: `Sacados · ${revisar.excluidos.length}` },
-    ];
+    useEffect(() => {
+        onCuentas?.({
+            listado: (filas || []).length + revisar.fuera.length,
+            revisar: revisar.fuera.length,
+            sacados: revisar.excluidos.length,
+            ...cuenta,
+        });
+    }, [filas, revisar, cuenta, onCuentas]);
+    // Las acciones van a la píldora; se vuelven a registrar cuando cambia lo
+    // que exportan.
+    useEffect(() => {
+        onAcciones?.({ agregar: puedeEditar ? () => setEditando({}) : null, exportar, hayFilas: Boolean(filas?.length) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `exportar` cierra sobre `filas`
+    }, [filas, puedeEditar, onAcciones]);
 
     return (
         <div className="space-y-4">
             {/* Un solo aviso con lo pendiente, no tres apilados; la lista de
                 productos con la marca distinta se abre a pedido (eran 89
                 nombres en un párrafo — usuario, 2026-11-13: «un desorden»). */}
-            <Notice variant={sinConfirmar || revisar.fuera.length || libroDistinto.length ? 'warning' : 'success'}>
+            <Notice variant={sinConfirmar || revisar.fuera.length || libroDistinto.length ? 'warning' : 'success'} bloque>
                 <div className="space-y-1">
                     <p>{sinConfirmar
-                        ? `${sinConfirmar} de ${todas.length} moléculas sin confirmar por el regente (el grupo AWaRe sale del Listado Oficial 2026 o de la OMS).`
+                        ? `${sinConfirmar} de ${todas.length} moléculas sin confirmar por el regente.`
                         : 'Listado confirmado por el regente.'}</p>
                     {revisar.fuera.length > 0 && (
-                        <p>{`${revisar.fuera.length} productos del libro sin molécula: están en «Por revisar».`}</p>
+                        <p>{`${revisar.fuera.length} productos del libro sin molécula (en «Por revisar»).`}</p>
                     )}
                     {libroDistinto.length > 0 && (
                         <p>
@@ -177,26 +194,6 @@ export default function TabAntibioticos({ busqueda = '', puedeConfirmar = false,
                     )}
                 </div>
             </Notice>
-
-            <div className="flex flex-wrap items-center justify-between gap-2">
-                <SegmentedControl options={VISTAS} value={vista} onChange={setVista} label="Qué ver" />
-                <div className="flex flex-wrap items-center gap-2">
-                    {puedeEditar && (
-                        <Button variant="secondary" size="sm" icon={Plus} onClick={() => setEditando({})}>Agregar producto</Button>
-                    )}
-                    <Button variant="secondary" size="sm" icon={Download} onClick={exportar} disabled={!filas?.length}>
-                        Exportar
-                    </Button>
-                </div>
-            </div>
-
-            {vista === 'listado' && (
-                <div className="flex flex-wrap gap-1.5">
-                    {Object.entries(VENTA_ANTIBIOTICO).map(([k, v]) => (
-                        <Badge key={k} variant={v.variant}>{`${v.label}: ${cuenta[k]}`}</Badge>
-                    ))}
-                </div>
-            )}
 
             {error && <Notice variant="danger">{mensajeAmigable(error)}</Notice>}
 

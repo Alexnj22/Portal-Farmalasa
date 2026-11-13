@@ -21,6 +21,18 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1523.0 — Bitácoras: toda la red de un vistazo, filtros en la píldora, avisos limpios y cierre con resumen
+
+Pedido del usuario punto por punto (2026-11-13).
+
+- **Toda la red** (Registro diario, para quien ve todas las sucursales): una tabla con una sucursal por fila —anotadas, tocan ahora, se pasaron, fuera de rango—, con la misma cuenta que las tarjetas de arriba. Tocar una fila elige esa sucursal.
+- **Libro:** filtro «Sin completar» en la píldora.
+- **Por lote:** filtro de estado en la píldora (Todos / Con diferencia / Sin saldo) y las filas con diferencia se marcan en rojo.
+- **Antibióticos:** Listado / Por revisar / Sacados y el filtro por cómo se vende (Libro, Receta, Libre) pasan a la píldora, con «Agregar producto» y «Exportar» como sus acciones. **Lotes por revisar:** Abiertas / Confirmadas, también en la píldora.
+- **Regencia:** botón «Asignar» cuando falta el regente o el referente, y «Completar» en el aviso del expediente; los dos abren el expediente de la sucursal.
+- **Avisos:** los de varios renglones dejan de ser una píldora redonda (`bloque`) y se acortan los textos.
+- **Cierre de mes:** arriba un resumen con el porcentaje de cada bitácora, el cuadre, el libro y una lista «Antes de firmar»; el detalle por bitácora y por área queda plegado.
+
 ## v2.1522.2 — App: los colores guardados al abrir ya cambian con el modo y con el sistema
 
 App del personal — colores que se quedaban fijos desde que se abría la app. Lo destapó el barrido en modo oscuro de la segunda parte de Material 3: en Monitor, «Libre hoy» quedaba casi invisible al pasar de claro a oscuro.

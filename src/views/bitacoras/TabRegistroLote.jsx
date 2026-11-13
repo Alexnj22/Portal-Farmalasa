@@ -198,7 +198,7 @@ export default function TabRegistroLote({ registro, cargando, error, filtro, bus
                 <Notice variant="danger">{error}</Notice>
             ) : registro && (primerMes || registro.existencia_de !== 'foto' || r?.sin_lote_unidades > 0) && (
                 <Notice variant="info" compact>
-                    {primerMes && 'Este es el primer mes del registro: sólo cuadran los lotes que entraron desde el 11 de agosto. Desde el mes siguiente cuadran todos. '}
+                    {primerMes && 'Primer mes del registro: sólo cuadran los lotes que entraron desde el 11 de agosto. '}
                     {registro.existencia_de === 'ahora' && '«Hay» es la existencia de este momento. '}
                     {!registro.existencia_de && 'De ese mes no quedó inventario al cierre, así que no se puede comparar. '}
                     {r?.sin_lote_unidades > 0 && `${fmtNum(r.sin_lote_unidades)} unidades entraron sin lote anotado.`}
@@ -229,7 +229,9 @@ export default function TabRegistroLote({ registro, cargando, error, filtro, bus
                 {pagina.map((f, i) => {
                     const estado = estadoDeFila(f);
                     return (
-                        <DataRow key={f.clave} index={i} onClick={() => setAbierta(f)}>
+                        <DataRow key={f.clave} index={i} onClick={() => setAbierta(f)}
+                            // Un lote que no cuadra se ve en la lista sin leer la última columna.
+                            className={estado === 'diferencia' ? 'bg-danger/5' : ''}>
                             <DataCell className="text-body-sm">
                                 <p className="font-semibold text-content">{f.producto}</p>
                                 <p className="text-caption text-content-3 flex flex-wrap items-center gap-1.5 mt-0.5">

@@ -18,7 +18,8 @@
 // vincularla, cambiarla o quitarla (`setProveedorSupplier`, como el portal).
 // Si ese proveedor ya lo tiene otra ficha, el aviso nombra a la otra.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, KeyboardAvoidingView, Linking, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, Linking, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

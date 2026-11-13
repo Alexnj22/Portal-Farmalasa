@@ -8,7 +8,8 @@
 // El escáner elige solo únicamente si el código da UN producto: con varios,
 // la lista queda cargada y la persona dice cuál.
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

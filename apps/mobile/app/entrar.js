@@ -11,7 +11,8 @@
 // entraba con el PIN como contraseña — y eso trababa cambiar las contraseñas
 // de las cuentas del carné a un valor al azar (SEGURIDAD-Y-ACCESO §3.1).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { Alert, Image, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router } from 'expo-router';
 import { Button, Host, Icon } from '@expo/ui';
 import Vidrio from '../componentes/Vidrio';

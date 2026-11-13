@@ -13,7 +13,8 @@
 // Cada grupo respeta el permiso de su módulo: buscar no puede ser una puerta
 // trasera a lo que el menú no muestra.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Indicador from '../../../componentes/Indicador';
 import { Stack, router } from 'expo-router';
 import { Host, Icon } from '@expo/ui';
@@ -36,13 +37,14 @@ import { iconoDe } from '../../../tema/iconos';
 import { FUERA_DE_LA_APP, abrirModulo, abrirRuta, abrirSolicitud } from '../../../pantallas';
 import { Vacio } from '../../../componentes/formulario/Piezas';
 import IconoFijo from '../../../componentes/IconoFijo';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 const POR_GRUPO = 5;
 
 function Grupo({ titulo, children, pie }) {
   return (
     <View style={{ gap: 6 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>{titulo}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>{titulo}</Text>
       <View style={{ marginHorizontal: 16 }}><Vidrio radio={20}>{children}</Vidrio></View>
       {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 32 }}>{pie}</Text> : null}
     </View>

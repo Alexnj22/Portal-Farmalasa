@@ -12,7 +12,8 @@
 // núcleo (`sancion`). El borrador se guarda solo (`sancion:<id>`, la misma
 // clave del portal).
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -36,6 +37,7 @@ import { compartirPdf } from '../../componentes/pdf';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { volver } from '../../componentes/volver';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 const corta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '');
 
@@ -146,7 +148,7 @@ export default function Sancion() {
                             <Text style={{ color: colorSistema.texto, fontSize: 16, fontWeight: '700', flex: 1 }}>{`${p.n}. ${p.nombre}`}</Text>
                             {escalera.peldano === p.n ? <Pildora texto="Propuesta" color={MARCA.azulClaro} /> : null}
                             {p.noElegible ? <Pildora texto="Se registra como baja" color={colorSistema.texto2} /> : null}
-                            {elegido ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+                            <MarcaDeEleccion elegida={elegido} />
                           </View>
                           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{p.detalle}</Text>
                         </View>

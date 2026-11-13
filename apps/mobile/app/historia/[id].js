@@ -4,7 +4,8 @@
 // si queda publicada (se ve 24 horas desde que se publica). La fila que se
 // guarda sale del núcleo (`filaDeHistoria`), la misma que arma el portal.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';

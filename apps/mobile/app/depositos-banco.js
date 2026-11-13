@@ -8,7 +8,8 @@
 // existe (cuadrar contra el estado de cuenta, seguir el remanente).
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

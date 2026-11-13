@@ -17,7 +17,8 @@
 // falla queda «No se envió · Toca para reintentar». Las notas de voz se
 // escuchan dentro del globo con velocidad 1×/1.5×/2× (`Voz.js`).
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, Image, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';

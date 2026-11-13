@@ -12,7 +12,8 @@
 // `componentes/encuestas/Formulario` (una pregunta por pantalla). «Modo
 // tablet» abre la encuesta pública de la sala a pantalla completa.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';

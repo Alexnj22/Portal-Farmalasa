@@ -12,7 +12,8 @@
 // El agrupado, los títulos y las preguntas salen del núcleo
 // (`deducibilidadPorRegla`), las escrituras también (`proveedores`).
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

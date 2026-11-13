@@ -10,7 +10,8 @@
 // quien ve todas, y eliminar un conteo manteniéndolo presionado — con el
 // permiso propio, o mientras no esté finalizado (la base lo vuelve a decidir).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

@@ -13,6 +13,7 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Tocable from '../Tocable';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 function Paso({ n, titulo, monto, children }) {
   return (
@@ -20,7 +21,7 @@ function Paso({ n, titulo, monto, children }) {
       <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', width: 12 }}>{n}</Text>
       <View style={{ flex: 1, gap: 3 }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>{titulo}</Text>
+          <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS, letterSpacing: 0.5 }}>{titulo}</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{monto}</Text>
         </View>
         {children}

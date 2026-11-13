@@ -17,8 +17,9 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
 import EntregaDelTurno from './EntregaDelTurno';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const titulo = { color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 };
+const titulo = { color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.5 };
 
 function Fila({ rotulo, monto, fuerte = false, apagado = false }) {
   return (

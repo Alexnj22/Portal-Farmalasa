@@ -10,7 +10,8 @@
 // En iPhone el fondo es desenfoque del sistema y las piezas, vidrio; en
 // Android, una capa oscura y superficies de Material con onda.
 import { useEffect, useState } from 'react';
-import { Animated, Modal, Platform, Pressable, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Animated, Modal, Platform, StyleSheet, Text, useColorScheme, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { BlurView } from 'expo-blur';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

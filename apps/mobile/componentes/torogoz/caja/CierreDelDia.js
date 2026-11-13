@@ -11,7 +11,8 @@
 // ⚠ Registrar un depósito, cerrar y reabrir el día mueven DINERO de verdad; en
 // el entorno de pruebas no se hacen.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cerrarDia, fetchCierreDia, mensajeDeDistribucion, reabrirDia, registrarDeposito } from '@nucleo/data/distribucion';
 import { cierreDelDiaListo, cuentaDelDia, depositoListo, formasDelDia, preguntaDelCierre } from '@nucleo/utils/distribucionCaja';

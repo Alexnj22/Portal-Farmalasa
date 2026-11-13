@@ -10,7 +10,8 @@
 // Los dos piden confirmación antes de escribir: el recuento cambia la
 // diferencia que se va a firmar.
 import { useEffect, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cantidadValida } from '@nucleo/utils/conteoDeInventario';
 import { fechaTexto, hoySV } from '@nucleo/utils/fecha';

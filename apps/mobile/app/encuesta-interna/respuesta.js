@@ -10,7 +10,8 @@
 // del portal, que anotan la bitácora solos. Una respuesta ya capturada también
 // se elimina (`deleteSurveyResponse`, con confirmación), como en el portal.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

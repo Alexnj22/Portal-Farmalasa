@@ -17,7 +17,8 @@
 //                              lo mira cualquiera de las salas.
 // Las fotos del daño (`evidencia_urls`) se ven siempre: viajan con la caja.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

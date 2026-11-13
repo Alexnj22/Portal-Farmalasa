@@ -6,7 +6,8 @@
 // Mapas de Apple (react-native-maps sin proveedor): no pide llave. Tocar un
 // cliente muestra su nombre y su estado; «Cómo llegar» sigue en su tarjeta.
 import { useMemo, useRef } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import MapView, { Marker, Polyline } from 'react-native-maps';
 import SinMapa, { hayMapa } from '../../SinMapa';
 import { encuadre, puntosValidos } from '@nucleo/utils/encuadreDelMapa';

@@ -10,7 +10,8 @@
 // `csvDelDeclarable`, núcleo) con `libro_compras_completo_descargar`. Sin
 // tope de filas: se pagina de 40 en 40.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

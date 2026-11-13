@@ -7,7 +7,8 @@
 // La contraseña la escribe la persona que recibe, en este teléfono, y viaja
 // sólo en esta llamada. No se guarda en ningún lado.
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import * as Haptics from 'expo-haptics';
 import { identificarPorCarne, identificarPorUsuario } from '@nucleo/data/bolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -16,6 +17,7 @@ import Avatar from './Avatar';
 import { colorSistema } from './Formulario';
 import { BotonGrande, Aviso } from './formulario/Piezas';
 import { MARCA, FONDO_CONTROL } from './inicio/marca';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const campo = {
   minHeight: 46, paddingHorizontal: 12, borderRadius: 12, fontSize: 16,
@@ -47,7 +49,7 @@ export default function Identidad({ identidad, onIdentidad, titulo = 'Escanea el
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
         <Avatar empleado={identidad.persona} tamano={48} />
         <View style={{ flex: 1 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Recibe</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS }}>Recibe</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{shortEmployeeName(identidad.persona)}</Text>
         </View>
         <Pressable onPress={() => onIdentidad(null)} hitSlop={8} style={{ minHeight: 44, justifyContent: 'center' }}>

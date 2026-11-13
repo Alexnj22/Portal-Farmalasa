@@ -7,7 +7,8 @@
 // `cerrarFaltante`); lo que se cerró así sin recibirse lo marca
 // `falta_ingresar` y se ingresa con su propio botón.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack, useFocusEffect } from 'expo-router';
 import { cerrarFaltante, fetchFaltantes, ingresarAparecido, RESPONSABLES_DE_FALTANTE } from '@nucleo/data/faltantes';

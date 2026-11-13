@@ -31,6 +31,7 @@ import { fallo, listo, trabajando } from '../Progreso';
 import { compartirCsv } from '../fiscal/csv';
 import { guardar } from '../comercial/elegido';
 import Tocable from '../Tocable';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const PAGINA = 40;
 const fechaCorta = (f) => fechaNumerica(f, { anio: false });
@@ -115,7 +116,7 @@ export default function PorCobrar({ busqueda, sala, nombreSala, puedeAsignar, ra
 
       {vendedores.length ? (
         <View style={{ marginHorizontal: 16 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginLeft: 4, marginBottom: 6 }}>Por vendedor</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginLeft: 4, marginBottom: 6 }}>Por vendedor</Text>
           <Vidrio radio={20}>
             <View style={{ padding: 12, gap: 10 }}>
               {vendedores.map((v) => (

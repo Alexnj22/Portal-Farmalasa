@@ -12,7 +12,8 @@
 // municipio y departamento, y en el menú «Alquiladas / Propias». Inactiva =
 // sin nadie asignado Y sin kioscos (no sólo sin gente).
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack } from 'expo-router';
 import { kioscosActivos } from '@nucleo/utils/kioscos';
 import * as Haptics from 'expo-haptics';
@@ -28,6 +29,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { Vacio } from '../componentes/formulario/Piezas';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 export default function Sucursales() {
   const sucursales = useStaffStore((s) => s.branches);
@@ -86,7 +88,7 @@ export default function Sucursales() {
         <FiltrosActivos grupos={grupos} />
         {porTipo.map(([tipo, lista]) => (
           <View key={tipo} style={{ gap: 8 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
               {`${TIPOS_DE_SUCURSAL[tipo]?.sectionLabel ?? tipo} · ${lista.length}`}
             </Text>
             {lista.map(({ b, gente, abierta, alertas }) => (

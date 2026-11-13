@@ -13,7 +13,8 @@
 // Quién puede qué lo decide la base: administrar es de quien edita los
 // niveles; entregar y recibir, de la sala propia.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -34,12 +35,13 @@ import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import { guardar as dejar } from '../comercial/elegido';
 import { entregarPremioPorCodigo } from './entregarPremio';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const COLOR = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde, neutral: MARCA.gris };
 const fechaCorta = (f) => fechaTexto(f, { day: 'numeric', month: 'short' }, '—');
 
 const Titulo = ({ children }) => (
-  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>{children}</Text>
+  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>{children}</Text>
 );
 
 function Boton({ texto, onPress, color = MARCA.azulClaro }) {

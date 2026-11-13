@@ -3,7 +3,8 @@
 // venta a la ficha nueva; «Resolver a mano» lo cierra con lo que se hizo (ya no
 // se reintenta). No dibuja nada si no hay ninguno.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { fetchCambiosPendientes, marcarCambioResueltoAMano, reintentarCambioDeCliente } from '@nucleo/data/puntos';
 import { puntosTexto } from '@nucleo/utils/puntosTexto';
 import { fechaHora12 } from '@nucleo/utils/hora';

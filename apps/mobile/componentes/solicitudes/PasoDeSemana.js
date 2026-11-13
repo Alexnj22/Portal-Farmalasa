@@ -5,7 +5,8 @@
 //
 // Recorta sólo el HISTORIAL: lo pendiente se ve entero sea de la semana que
 // sea (lo decide la pantalla, no este control).
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { formatWeekRange, getLocalMonday, shiftWeek } from '@nucleo/utils/semana';

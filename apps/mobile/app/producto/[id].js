@@ -16,7 +16,8 @@
 // ve en la app de clientes) pide `productos_tab_catalogo`, el mismo permiso que
 // abre el catálogo del portal donde se edita.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
@@ -43,6 +44,7 @@ import Precios from '../../componentes/producto/Precios';
 import Categoria from '../../componentes/producto/Categoria';
 import { CambiosEnLaFicha, HistorialDeCompras, HistorialDePrecios } from '../../componentes/producto/Historiales';
 import { fallo } from '../../componentes/Progreso';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 // Cuándo un vencimiento merece color: rojo si ya pasó o falta un mes, naranja
 // hasta tres meses.
@@ -66,7 +68,7 @@ function BotonPedir({ onPress }) {
 }
 
 function Titulo({ texto }) {
-  return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16, marginTop: 6 }}>{texto}</Text>;
+  return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16, marginTop: 6 }}>{texto}</Text>;
 }
 
 const textoUbicacion = (u) => {

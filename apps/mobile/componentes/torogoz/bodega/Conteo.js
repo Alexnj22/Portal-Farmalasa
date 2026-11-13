@@ -10,7 +10,8 @@
 // Bajas: se piden acá (`PedirBaja`) y las aprueba quien administra; recién
 // aprobadas salen del lote. Las funciones son las del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import Indicador from '../../Indicador';
 import { useFocusEffect } from 'expo-router';
 import {
@@ -33,6 +34,7 @@ import { MARCA } from '../../inicio/marca';
 import { fallo, listo, trabajando } from '../../Progreso';
 import PedirBaja from './PedirBaja';
 import { Chapa, Ficha, PETROLEO, confirmar } from './piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 const pedirTexto = (titulo, mensaje, boton, { teclado = 'default', inicial = '' } = {}) => new Promise((resolve) => {
   Alert.prompt(titulo, mensaje, [
@@ -246,7 +248,7 @@ export default function Conteo({ puedeVender, puedeConfigurar, buscar }) {
         </View>
       ) : null}
 
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 32, marginTop: 8 }}>Bajas</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 32, marginTop: 8 }}>Bajas</Text>
       {(puedeVender || puedeConfigurar) ? (
         <View style={{ marginHorizontal: 16 }}>
           <BotonGrande borde texto="Pedir una baja" color={MARCA.rojo} onPress={() => setPidiendoBaja(true)} deshabilitado={!lotes.length} />

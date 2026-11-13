@@ -4,7 +4,8 @@
 // Mismo gesto que el portal: tocar un sector o una fila filtra por esa ruta o
 // ese vendedor; tocarlo otra vez suelta el filtro.
 import { useEffect, useState } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { Animated, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import Svg, { G, Path } from 'react-native-svg';
 import { formatMoney, formatMoneyCorto } from '@nucleo/utils/formatNumber';

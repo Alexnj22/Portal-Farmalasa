@@ -9,7 +9,8 @@
 // el cierre de la sala: bodega marca la corrección y la sala la confirma. Los
 // rótulos, las cuentas y el turno salen del núcleo, los mismos de allá.
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { fetchOpcionesDiferencia, opcionElegida } from '@nucleo/data/diferencias';

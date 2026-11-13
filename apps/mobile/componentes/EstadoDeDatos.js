@@ -8,7 +8,8 @@
 // se aplica tal cual, con una relectura cada 90 s como red. Tocarlo abre
 // Actualización de datos si se tiene ese módulo.
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { Host, Icon } from '@expo/ui';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';

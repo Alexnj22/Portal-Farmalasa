@@ -1,7 +1,8 @@
 // Piezas de las pantallas de Personas (Monitor, Personal, Auditoría de tiempos,
 // Horarios, Vacaciones): contadores que filtran, las marcas como fichas, la
 // píldora de color del cargo y el paso de período con flechas del sistema.
-import { Pressable, Text, useColorScheme, View } from 'react-native';
+import { Text, useColorScheme, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { getRoleTheme } from '@nucleo/utils/scheduleHelpers';
@@ -12,6 +13,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import IconoFijo from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 // Las flechas no están en el catálogo del menú (`tema/iconos.js`): se piden acá.
 const FLECHA_ATRAS = Icon.select({ ios: 'chevron.left', android: require('@expo/material-symbols/chevron_left.xml') });
@@ -130,5 +132,5 @@ export function BarraContra({ valor, meta, color = MARCA.azulClaro, alto = 6 }) 
 
 /** Encabezado de sección en mayúsculas pequeñas, el de toda la app. */
 export function Encabezado({ children }) {
-  return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{children}</Text>;
+  return <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{children}</Text>;
 }

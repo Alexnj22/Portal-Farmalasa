@@ -12,7 +12,8 @@
 //
 // Opcional: nada obliga a recoger. Recibir con el botón sigue valiendo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { entregarBolsa, entregarBolsaConCarne, fetchBolsasDeRuta, recogerBolsa, soltarBolsa } from '@nucleo/data/rutaBolsas';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';

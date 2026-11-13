@@ -4,7 +4,8 @@
 // estable, Y moderada, Z errática). Tocar una celda abre la revisión de la
 // sala filtrada por esa clase. El conteo es del núcleo (`matrizAbcXyz`).
 import { useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

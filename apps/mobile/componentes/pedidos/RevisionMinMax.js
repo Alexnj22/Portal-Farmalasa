@@ -9,7 +9,8 @@
 // MIN·MAX del catálogo). Validación (`validarMinMax`) y escritura
 // (`guardarMinMaxDesdePedido`) son del núcleo, las mismas del portal.
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { effectiveMinMaxPair, fetchStockParamsForRevision, guardarMinMaxDesdePedido } from '@nucleo/data/stockParams';
 import { mensajeDeMinMax, validarMinMax } from '@nucleo/utils/minmaxDesdePedido';

@@ -13,7 +13,8 @@
 // (`documentoReemplazado`) y mismas hojas (`DOS_CARAS`, `VARIAS_HOJAS`) que el
 // portal y que `app/empleado/expediente.js`.
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { DOS_CARAS, SECCIONES_DE_DOCUMENTOS, VARIAS_HOJAS, documentoReemplazado, parcheDeArchivoNuevo,
   rotuloDelDocumento } from '@nucleo/utils/documentosDelExpediente';
 import { openStoredFile } from '@nucleo/utils/storageFiles';

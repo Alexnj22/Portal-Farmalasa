@@ -13,7 +13,8 @@
 // (corregirlo o deshacer la venta): las decide `resolverSolicitudDistribucion`,
 // la misma del portal, y la tarjeta dice qué pasa con el dinero.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

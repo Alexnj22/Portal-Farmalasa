@@ -15,7 +15,8 @@
 // el aviso y la impresora del teléfono. Las cuentas, `cuentaDeResolucion`.
 // Es una reposición voluntaria: nunca se descuenta del salario.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';

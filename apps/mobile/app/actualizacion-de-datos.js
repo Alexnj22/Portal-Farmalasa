@@ -10,7 +10,8 @@
 //
 // Rótulos, alcance y el estado por dominio salen del núcleo (`data/syncHealth`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';

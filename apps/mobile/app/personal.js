@@ -25,7 +25,8 @@
 // aunque su sede sea otra; y arriba, la franja del seguro de vida colectivo
 // («Pago 2026 pendiente», «3 sin cubrir») abre su vista (`/seguro-de-vida`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { SectionList, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { ICONO } from '../componentes/solicitudes/iconos';
@@ -54,6 +55,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import Vidrio from '../componentes/Vidrio';
 import TarjetaPersona, { PuestoVacante, TarjetaPracticante } from '../componentes/personas/TarjetaPersona';
 import IconoFijo from '../componentes/IconoFijo';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const salaDe = (e) => Number(e.branchId ?? e.branch_id) || 0;
@@ -283,7 +285,7 @@ export default function Personal() {
           </View>
         )}
         renderItem={({ item: f }) => {
-          if (f.titulo) return <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{f.titulo}</Text>;
+          if (f.titulo) return <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{f.titulo}</Text>;
           if (f.vacante) return <PuestoVacante cargo={f.vacante} />;
           if (f.practicante) return <TarjetaPracticante p={f.practicante} puedeEditar={puedeEditar} />;
           return <TarjetaPersona emp={f.emp} roles={roles} destacada={f.destacada} conSuperior={f.conSuperior} />;

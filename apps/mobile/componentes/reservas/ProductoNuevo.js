@@ -4,7 +4,8 @@
 // no en el SRS— y Bodega responde precio y fecha, o que no se puede con motivo.
 // Si al escribir el nombre aparece en el catálogo, se ofrece usar ése.
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { buscarEnSrs } from '@nucleo/data/srs';
 import { buscarProductosMinMax } from '@nucleo/data/minmaxRequests';

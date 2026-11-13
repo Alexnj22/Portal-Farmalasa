@@ -18,7 +18,8 @@
 // (`enviandoAhora`) y no de cada instancia: mandar dos veces la misma cola
 // facturaría dos veces.
 import { useCallback, useEffect, useState } from 'react';
-import { AppState, Pressable, Text, View } from 'react-native';
+import { AppState, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { router } from 'expo-router';
 import { escuchar } from '@plataforma/eventos';
 import { ventasSinSenal, enviarVentasSinSenal, EVENTO_SIN_SENAL } from '@nucleo/data/distribucionSinSenal';

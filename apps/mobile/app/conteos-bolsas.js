@@ -4,7 +4,8 @@
 // bolsa y su diferencia. Sólo lectura, detrás de `bolsas_ver_montos` como en el
 // portal: «CNT-260826-1 · 43 bolsas» sin montos no contesta nada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

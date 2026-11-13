@@ -11,6 +11,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 // La escala de cumplimiento del portal (`tonoDeCumplimiento`): 100 o más es
 // verde, de 95 a 100 ámbar, debajo rojo.
@@ -68,7 +69,7 @@ export function Cifra({ valor, de, color }) {
 }
 
 export function Rotulo({ children }) {
-  return <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>{children}</Text>;
+  return <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{children}</Text>;
 }
 
 // La grilla de datos: de a pares, con la celda sola a todo lo ancho — la

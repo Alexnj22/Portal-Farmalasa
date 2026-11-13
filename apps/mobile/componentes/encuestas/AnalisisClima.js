@@ -5,7 +5,8 @@
 //
 // Si la encuesta es anónima, Individuos no muestra nombres (como Encuestas).
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import {
   CANALES_DE_INCONFORMIDAD, IDX_INCONFORMIDADES, IDX_RAZONES, RANGOS_DE_AUTOCALIFICACION, RAZONES_DE_PERMANENCIA,

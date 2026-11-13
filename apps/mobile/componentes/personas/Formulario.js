@@ -5,7 +5,8 @@
 // alimenta —nunca escrita a mano—: el texto que se muestra es el de la fila y
 // el valor es su id (regla «un rótulo no es una clave» de CLAUDE.md).
 import { useMemo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Conmutador from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { tokenMatch } from '@nucleo/utils/searchUtils';

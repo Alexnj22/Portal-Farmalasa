@@ -15,7 +15,8 @@
 // El cálculo es el del núcleo (`afluencia`), el mismo del portal, y la
 // lectura pagina: «1 año» son ~5,000 filas por sala.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Indicador from '../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';

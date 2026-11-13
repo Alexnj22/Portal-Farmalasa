@@ -11,7 +11,8 @@
 // Lo que sólo existe en un navegador —el envío directo a la ticketera de la
 // computadora y el sistema Linux/Windows de esa caja— queda en el portal.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, Platform, ScrollView, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -34,6 +35,7 @@ import { fallo, listo } from '../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../componentes/pdf';
 import { imprimirEnLaSala } from '../componentes/imprimir';
 import VistaPapel from '../componentes/torogoz/fiscal/VistaPapel';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const VACIO = [];
 const TONO = { neutro: colorSistema.texto2, bien: MARCA.verde, mal: MARCA.rojo };
@@ -158,7 +160,7 @@ export default function Impresion() {
           </View>
         </Seccion>
 
-        <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>Cómo va a salir</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Cómo va a salir</Text>
         <VistaPapel html={html} alto={520} ancho={ancho >= 76 ? 320 : 240} />
 
         <Seccion titulo="Cajas de las salas" pie="«Registrada» no es «funciona»: lo que dice si va a salir papel es cuándo preguntó la caja por última vez. «Probar» gasta un papel en esa caja.">

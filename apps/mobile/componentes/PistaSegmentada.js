@@ -11,7 +11,8 @@
 // Sólo vistas de React Native: nada de capas SwiftUI (`Host`), que dentro de
 // algo que se desplaza no siguen a su lugar (ver componentes/IconoFijo.ios.js).
 import { useEffect, useRef } from 'react';
-import { PlatformColor, Pressable, ScrollView, Text, View, useColorScheme } from 'react-native';
+import { PlatformColor, ScrollView, Text, View, useColorScheme } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import * as Haptics from 'expo-haptics';
 
 export default function PistaSegmentada({ opciones, activa, onCambiar, margen = 16 }) {

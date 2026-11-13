@@ -4,7 +4,8 @@
 // precios (sin los snapshots repetidos del sync) y cambios en la ficha. Las
 // reglas salen del núcleo (`clasificarCompras`, `historialDePreciosSinRepetir`).
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { clasificarCompras, comprasOrdenadas, historialDePreciosSinRepetir } from '@nucleo/utils/preciosDeProducto';
 import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';

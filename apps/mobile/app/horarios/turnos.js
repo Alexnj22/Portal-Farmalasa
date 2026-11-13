@@ -17,7 +17,8 @@
 // sala (`sugerenciasDelCatalogo`, núcleo): «Crear este turno» abre el formulario
 // con esas horas e «Ignorar» lo esconde hasta salir de la pantalla.
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -39,6 +40,7 @@ import EncabezadoDeHoja from '../../componentes/EncabezadoDeHoja';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import Hora from '../../componentes/personas/Hora';
 import { fallo, listo } from '../../componentes/Progreso';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const VACIO = { start: '07:00', end: '16:00', name: '', lunchStart: '', lunchMinutes: MINUTOS_DE_PAUSA };
 
@@ -144,7 +146,7 @@ export default function Turnos() {
               <Vidrio radio={20} tinte={error ? 'rgba(240,68,56,0.12)' : 'rgba(105,41,196,0.14)'}>
                 <View style={{ padding: 14, gap: 8 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={{ flex: 1, color, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>{error ? 'Falta un dato' : 'Sugerencia'}</Text>
+                    <Text style={{ flex: 1, color, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>{error ? 'Falta un dato' : 'Sugerencia'}</Text>
                     <Pressable onPress={() => setIgnoradas((prev) => new Set(prev).add(sg.key))} hitSlop={10} accessibilityRole="button" accessibilityLabel="Ignorar aviso"
                       style={{ minHeight: 44, minWidth: 44, alignItems: 'flex-end', justifyContent: 'center' }}>
                       <Text style={{ color: colorSistema.texto2, fontSize: 14, fontWeight: '600' }}>Ignorar</Text>

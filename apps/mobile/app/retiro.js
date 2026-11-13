@@ -15,7 +15,8 @@
 //
 // Los permisos los decide la base; la bitácora la escribe la capa de datos.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';

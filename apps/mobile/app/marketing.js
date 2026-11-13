@@ -73,6 +73,7 @@ import { colorDeVariante } from '../componentes/colorDeVariante';
 import { guardarPieza } from '../componentes/marketing/elegida';
 import { fallo, listo } from '../componentes/Progreso';
 import Tocable from '../componentes/Tocable';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 export default function Marketing() {
   const { hasPermission, user, isSU } = useAuth();
@@ -315,7 +316,7 @@ export default function Marketing() {
                 ) : null}
                 {dias.map((d) => (
                   <View key={d} style={{ gap: 8 }}>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
                       {fechaTexto(d, { weekday: 'long', day: 'numeric', month: 'short' })}
                     </Text>
                     {(fechasDelMes[d] || []).map((f) => (

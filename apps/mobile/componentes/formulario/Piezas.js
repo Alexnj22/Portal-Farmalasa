@@ -3,7 +3,8 @@
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
 import { useRef, useState } from 'react';
-import { Animated, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Animated, InputAccessoryView, Keyboard, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { BARRA_NATIVA } from '../PilaDePestana';
@@ -12,15 +13,17 @@ import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import { colorSistema } from '../Formulario';
-import { FONDO_CONTROL, MARCA } from '../inicio/marca';
+import { FONDO_CONTROL, MARCA, tintaSobre } from '../inicio/marca';
 import IconoFijo from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const ANDROID = Platform.OS === 'android';
 
 /** Lo que se ve mientras llega una pantalla: siempre a la misma altura. */
 // Android: el indicador de carga de Material 3 Expressive (la forma que va
 // cambiando), en su contenedor tonal. iOS: el del sistema.
-export { default as Cargando } from './Cargando';
+import Cargando from './Cargando';
+export { Cargando };
 
 /**
  * Una pantalla o lista sin nada que mostrar — LA forma de toda la app
@@ -100,7 +103,10 @@ export function Ficha({ texto, activa, onPress, color = MARCA.azul, deshabilitad
 export function Seccion({ titulo, pie, children }) {
   return (
     <View style={{ gap: 7 }}>
-      {titulo ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>{titulo}</Text> : null}
+      {titulo ? <Text style={ANDROID
+        // Android: el subtítulo de lista de Material 3 — primario, 14, medio.
+        ? { color: colorSistema.acento, fontSize: 14, fontWeight: '500', marginLeft: 16 }
+        : { color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>{titulo}</Text> : null}
       <Vidrio radio={20}><View style={{ padding: 14, gap: 10 }}>{children}</View></Vidrio>
       {pie ? <Text style={{ color: colorSistema.texto2, fontSize: 12, marginHorizontal: 16 }}>{pie}</Text> : null}
     </View>
@@ -127,9 +133,26 @@ function BarraListo({ id }) {
   );
 }
 
+// Android: el campo «relleno» de Material 3 — contenedor tonal con las
+// esquinas de arriba redondeadas y una línea abajo que se vuelve primaria y
+// más gruesa al escribir (2026-11-13). iPhone: el campo gris redondeado.
+function CampoAndroid({ multiline, style, onFocus, onBlur, ...props }) {
+  const [foco, setFoco] = useState(false);
+  return (
+    <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline} {...props}
+      cursorColor={colorSistema.acento} selectionColor={`${String(colorSistema.acento).slice(0, 7)}55`}
+      selectionHandleColor={colorSistema.acento}
+      onFocus={(e) => { setFoco(true); onFocus?.(e); }} onBlur={(e) => { setFoco(false); onBlur?.(e); }}
+      style={[{ minHeight: 52, borderTopLeftRadius: 4, borderTopRightRadius: 4, paddingHorizontal: 16, paddingVertical: 14,
+        fontSize: 16, color: colorSistema.texto, backgroundColor: colorSistema.relleno,
+        borderBottomWidth: foco ? 2 : 1, borderBottomColor: foco ? colorSistema.acento : colorSistema.texto2 }, style]} />
+  );
+}
+
 export function Campo({ multiline = true, style, ...props }) {
   const numerico = Platform.OS === 'ios' && NUMERICOS.has(props.keyboardType);
   const [id] = useState(() => `listo-${siguiente++}`);
+  if (ANDROID) return <CampoAndroid multiline={multiline} style={style} {...props} />;
   return (
     <>
       <TextInput placeholderTextColor={colorSistema.texto2} multiline={multiline}
@@ -157,7 +180,13 @@ export function Opciones({ opciones, valor, onCambiar, color = MARCA.azulClaro }
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{rotulo}</Text>
               {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{detalle}</Text> : null}
             </View>
-            {valor === id ? <Text style={{ color, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+            {ANDROID ? (
+              // Android: el botón de opción de Material 3, no la palomita de iOS.
+              <View style={{ width: 20, height: 20, borderRadius: 10, borderWidth: 2, alignItems: 'center', justifyContent: 'center',
+                borderColor: valor === id ? colorSistema.acento : colorSistema.texto2 }}>
+                {valor === id ? <View style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: colorSistema.acento }} /> : null}
+              </View>
+            ) : valor === id ? <Text style={{ color, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
           </Pressable>
         );
       })}
@@ -175,7 +204,7 @@ export function BotonGrande({ texto, color = ANDROID ? colorSistema.acento : MAR
   // capa animada que recorta; el Pressable de adentro sólo pone la onda.
   const forma = useRef(new Animated.Value(25)).current;
   const morfar = (a) => Animated.spring(forma, { toValue: a, useNativeDriver: false, speed: 40, bounciness: 8 }).start();
-  const letra = ANDROID ? { color: borde ? color : '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.1 }
+  const letra = ANDROID ? { color: borde ? color : tintaSobre(color), fontSize: 16, fontWeight: '600', letterSpacing: 0.1 }
     : { color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' };
   if (ANDROID) {
     return (
@@ -183,7 +212,7 @@ export function BotonGrande({ texto, color = ANDROID ? colorSistema.acento : MAR
         backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color }}>
         <Pressable onPress={tocar} disabled={deshabilitado} accessibilityRole="button"
           onPressIn={() => morfar(12)} onPressOut={() => morfar(25)}
-          android_ripple={{ color: borde ? `${color}33` : 'rgba(255,255,255,0.28)', foreground: true }}
+          android_ripple={{ color: borde ? `${String(color).slice(0, 7)}33` : 'rgba(255,255,255,0.28)', foreground: true }}
           style={{ minHeight: 50, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 }}>
           <Text style={letra}>{texto}</Text>
         </Pressable>

@@ -18,7 +18,8 @@
 // laboratorio, producto, unidades o —con todas las salas— sucursal, en los dos
 // sentidos.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Indicador from '../componentes/Indicador';
 import { router, Stack } from 'expo-router';

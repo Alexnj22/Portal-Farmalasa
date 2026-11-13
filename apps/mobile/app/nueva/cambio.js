@@ -15,7 +15,8 @@
 // `insertApprovalRequestSilent` (anota la bitácora). A Supervisión le avisa la
 // base (`notificar_solicitud_creada`), no la app.
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -36,6 +37,7 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 const TITULO = { anular: 'Anular la factura', pago: 'Forma de pago', vendedor: 'Cambiar vendedor', cliente: 'Cambiar cliente' };
 const TIPO = { anular: 'ANNULMENT_REQUEST', pago: 'PAYMENT_CHANGE_REQUEST', vendedor: 'VENDOR_CHANGE_REQUEST', cliente: 'CLIENT_CHANGE_REQUEST' };
@@ -163,7 +165,7 @@ export default function Cambio() {
                   style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                   <Avatar empleado={e} tamano={36} />
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{shortEmployeeName(e)}</Text>
-                  {vendedor?.id === e.id ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+                  <MarcaDeEleccion elegida={vendedor?.id === e.id} />
                 </Pressable>
               )) : <Text style={{ color: colorSistema.texto2 }}>No hay otras personas activas en la sala.</Text>}
             </Seccion>
@@ -179,7 +181,7 @@ export default function Cambio() {
                     <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{c.name}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[c.nit && `NIT ${c.nit}`, c.dui && `DUI ${c.dui}`].filter(Boolean).join(' · ') || 'Sin documento'}</Text>
                   </View>
-                  {cliente?.id === c.id ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+                  <MarcaDeEleccion elegida={cliente?.id === c.id} />
                 </Pressable>
               ))}
               {cliente && !cliente.erp_id ? <Aviso tono="freno" texto="Ese cliente no está vinculado todavía: elige otro o pídelo en el portal." /> : null}

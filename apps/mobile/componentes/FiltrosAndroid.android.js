@@ -9,7 +9,8 @@
 // sistema (ModalBottomSheet de Compose) con un grupo por filtro y sus opciones
 // como botones de radio.
 import { useState } from 'react';
-import { Pressable, View } from 'react-native';
+import { View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host as HostUi, Icon } from '@expo/ui';
@@ -46,7 +47,7 @@ function HojaDeFiltros({ grupos, onCerrar }) {
             ...g.opciones.map((o) => (
               <ListItem key={`${g.id}-${o.id}`} colors={{ containerColor: colorSistema.fila }} modifiers={[clickable(() => elegir(g, o))]}>
                 <ListItem.LeadingContent>
-                  <RadioButton selected={g.activa === o.id} onClick={() => elegir(g, o)} colors={{ selectedColor: MARCA.azul }} />
+                  <RadioButton selected={g.activa === o.id} onClick={() => elegir(g, o)} colors={{ selectedColor: MARCA.azulClaro }} />
                 </ListItem.LeadingContent>
                 <ListItem.HeadlineContent>
                   <Text color={colorSistema.texto} style={{ fontSize: 16 }}>{o.label}</Text>

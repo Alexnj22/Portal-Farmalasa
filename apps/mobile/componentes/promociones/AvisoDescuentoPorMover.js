@@ -4,7 +4,8 @@
 // descuento»: no reactiva nada, mueve el descuento hasta el fin de la
 // promoción. Es lo que el portal hace en Activas (`TabActivas` +
 // `ReactivarPromocionModal modo="descuento"`). Lo usan la lista y el detalle.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import { Aviso } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';

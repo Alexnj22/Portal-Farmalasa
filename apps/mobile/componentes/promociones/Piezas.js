@@ -9,6 +9,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const COLOR_DE_TONO = { success: MARCA.verde, warning: MARCA.ambar, info: MARCA.azulClaro };
 export const colorDeAvance = (pct) => COLOR_DE_TONO[tonoDeAvance(pct)];
@@ -33,7 +34,7 @@ export function TresDatos({ datos }) {
     <View style={{ flexDirection: 'row', gap: 8, padding: 10, borderRadius: 12, backgroundColor: 'rgba(127,127,127,0.13)' }}>
       {datos.map((d) => (
         <View key={d.rotulo} style={{ flex: 1, gap: 2 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 }}>{d.rotulo}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.3 }}>{d.rotulo}</Text>
           <Text style={{ color: d.color ?? colorSistema.texto, fontSize: 16, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{d.valor}</Text>
         </View>
       ))}
@@ -68,7 +69,7 @@ export function BarrasPorSala({ reparto = [] }) {
   const total = reparto.reduce((a, s) => a + (Number(s.vendido) || 0), 0);
   return (
     <View style={{ gap: 8, paddingTop: 10, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.3 }}>
+      <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.3 }}>
         {conCupo ? 'Por sala, contra su cupo' : 'Por sala'}
       </Text>
       {reparto.map((s) => {

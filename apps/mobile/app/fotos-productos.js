@@ -11,7 +11,8 @@
 // `product-photos/<id>.jpg`. La cola, la toma y el guardado son del núcleo
 // (`@nucleo/data/fotosProductos`), los mismos del portal.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';

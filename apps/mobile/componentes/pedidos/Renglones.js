@@ -7,12 +7,14 @@
 // cifras salen del núcleo: son los del portal. Sólo lectura — corregir el
 // MIN/MAX desde la regla sigue siendo del portal.
 import { useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { calcSolicitado, rotuloDePresentacion, seccionesDeRenglones } from '@nucleo/utils/tableroDePedidos';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { FONDO, Pildora } from '../avisos/Piezas';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const DE_A = 20;
 
@@ -99,7 +101,7 @@ function SeccionDeRenglones({ titulo, nota, filas, modo, color }) {
             vistos += deEste.length;
             return (
               <View key={lab}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase', marginTop: 4 }}>{`${lab} · ${rs.length}`}</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS, marginTop: 4 }}>{`${lab} · ${rs.length}`}</Text>
                 {deEste.map((r, i) => <Producto key={r.id} r={r} modo={modo} primero={i === 0} />)}
               </View>
             );

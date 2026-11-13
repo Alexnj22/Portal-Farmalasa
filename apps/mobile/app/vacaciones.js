@@ -14,7 +14,8 @@
 // planificado o confirmado, Editar, Confirmar y Cancelar — con las mismas
 // funciones del portal (`updateVacationPlanStatus`, `deleteVacationPlan`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -38,6 +39,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { GanttDelAnio, SolicitudesDeCambio } from '../componentes/personas/Vacaciones';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const COLOR_PLAN = { DRAFT: colorSistema.texto2, PRE_APPROVED: MARCA.azulClaro, CHANGE_REQUESTED: MARCA.ambar, APPROVED: MARCA.verde,
   PLANNED: MARCA.azulClaro, CONFIRMED: MARCA.verde, TAKEN: colorSistema.texto2, CANCELLED: MARCA.rojo };
@@ -187,7 +189,7 @@ export default function Vacaciones() {
         {aproximado && texto ? <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto="No hay coincidencia exacta: se muestran nombres parecidos." /></View> : null}
         {cargandoPlanes && !delAnio.length ? <Cargando /> : vista === 'anio' ? null : porMes.map(([mes, lista]) => (
           <View key={mes} style={{ gap: 10 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>
               {`${NOMBRES_DE_MES[mes - 1]} · ${lista.length}`}
             </Text>
             {lista.map((p) => {

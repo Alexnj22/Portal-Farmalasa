@@ -9,7 +9,8 @@
 // día con el selector del sistema; la bitácora de mañana no existe, así que no
 // se avanza de hoy.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

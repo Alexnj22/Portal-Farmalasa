@@ -8,7 +8,8 @@
 // (`previewMuestraCiclica`): se sortea en el servidor, así que es indicativa
 // del reparto, no de los productos exactos.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

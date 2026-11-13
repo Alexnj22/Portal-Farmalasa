@@ -14,7 +14,8 @@
 // ventas con factura de cada día con documentos, total y rango de N.º de
 // control (`get_corte_z_dias`), para enfrentarlo al reporte diario.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

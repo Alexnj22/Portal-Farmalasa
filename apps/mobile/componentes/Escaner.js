@@ -7,7 +7,8 @@
 // mismo código treinta veces por segundo, y sin ese freno una caja se
 // «recibiría» treinta veces.
 import { useEffect, useRef, useState } from 'react';
-import { Linking, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Modal, StyleSheet, Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

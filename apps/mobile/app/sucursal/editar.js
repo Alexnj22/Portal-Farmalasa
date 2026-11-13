@@ -12,7 +12,8 @@
 // Los documentos (PDF de licencias, contratos, solvencias, los de cada
 // enfermera) se suben desde la fila del expediente en la ficha.
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Conmutador from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

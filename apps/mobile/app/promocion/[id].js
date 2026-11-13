@@ -11,7 +11,8 @@
 // Arriba, lo que se puede hacer desde donde se la mira: volver a borrador /
 // activar y duplicar, con las mismas funciones y confirmaciones del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -38,10 +39,11 @@ import { fallo } from '../../componentes/Progreso';
 import { alternarPromocion, duplicarConPreguntas } from '../../componentes/promociones/acciones';
 import { promocionElegida } from '../../componentes/promociones/elegida';
 import AvisoDescuentoPorMover from '../../componentes/promociones/AvisoDescuentoPorMover';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const Titulo = ({ texto, sub }) => (
   <View style={{ marginHorizontal: 4, marginTop: 6 }}>
-    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{texto}</Text>
+    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{texto}</Text>
     {sub ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{sub}</Text> : null}
   </View>
 );

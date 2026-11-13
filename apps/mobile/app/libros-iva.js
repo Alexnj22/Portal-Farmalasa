@@ -18,7 +18,8 @@
 // de después de las 6:00 p. m., que no se envían a Hacienda
 // (`componentes/fiscal/CofNocheSinEnvio`), con su CSV.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

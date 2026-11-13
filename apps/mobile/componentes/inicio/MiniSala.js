@@ -9,7 +9,8 @@
 // deben ser interactivos o al menos como funcionan en el portal». Tocarla abre
 // la sala en «Ventas de hoy».
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { Animated, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import tokens from '@nucleo/constants/tokens.json';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -17,6 +18,7 @@ import { nivelDeVolumen } from '@nucleo/utils/inicio';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from './marca';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const T = tokens.temas.dark;
 export const COLOR_VOLUMEN = {
@@ -131,7 +133,7 @@ export function LeyendaDeVolumen() {
       {N.map(([k, l]) => (
         <View key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
           <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: COLOR_VOLUMEN[k] }} />
-          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>{l}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{l}</Text>
         </View>
       ))}
     </View>

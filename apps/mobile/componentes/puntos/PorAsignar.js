@@ -2,7 +2,8 @@
 // la pestaña «Cuentas por asignar» de Puntos. Cada una dice por qué no pasó y
 // cuántos puntos trae; tocarla abre `asignar-cuenta`, donde se elige la ficha.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import { fetchCuentasPorAsignar } from '@nucleo/data/puntos';
 import { formatMoney } from '@nucleo/utils/formatNumber';

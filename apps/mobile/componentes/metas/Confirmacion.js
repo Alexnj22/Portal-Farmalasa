@@ -10,7 +10,8 @@
 // llega el aviso. Cada tarjeta lleva su historial: quién la movió y cuánto
 // (`cambioDeMeta`, núcleo, el mismo del portal).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import {
   aprobarMeta, aprobarMetaPorAutorizacion, aprobarMetasLote, aprobarMetasPorAutorizacionLote, confirmarMeta, confirmarMetasLote, devolverMeta,
@@ -31,6 +32,7 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { fallo, listo } from '../Progreso';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const DIA_PROPUESTA = 28;
 
@@ -133,7 +135,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
         const totApr = porAprobar.reduce((s, r) => s + Number(r.monto_meta || 0), 0);
         return (
           <View key={g.ym} style={{ gap: 10 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>{g.titulo}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>{g.titulo}</Text>
             {!g.filas.length && canEdit ? (
               <View style={{ marginHorizontal: 16 }}>
                 <BotonGrande texto={ocupado === 'generar' ? 'Generando…' : `Generar las propuestas de ${ymLabel(g.ym)}`} deshabilitado={ocupado != null}
@@ -201,7 +203,7 @@ export default function Confirmacion({ salaNombre, canEdit, canApprove, onCambio
                       {cambios === null ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>No se pudo cargar quién cambió esta meta.</Text>
                         : (cambios[r.id] || []).some((c) => c.actor) ? (
                           <View style={{ gap: 6, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Cambios</Text>
+                            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS }}>Cambios</Text>
                             {(cambios[r.id] || []).map((cb) => {
                               const c = cambioDeMeta(cb);
                               const emp = cb.actor ? porId.get(cb.actor) : null;

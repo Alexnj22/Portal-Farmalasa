@@ -12,7 +12,8 @@
 // le hablan a Hacienda y al cliente DE VERDAD: en el entorno de pruebas esas
 // funciones no están, así que no se pueden probar ahí. Cada una pide confirmar.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

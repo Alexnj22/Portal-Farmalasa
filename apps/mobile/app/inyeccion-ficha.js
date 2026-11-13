@@ -8,7 +8,8 @@
 // cobro sin ficha: un cobro es un cliente. Lo hace `inyeccion_asignar_ficha`,
 // la misma función del portal; queda en la bitácora.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

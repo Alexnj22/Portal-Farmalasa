@@ -10,7 +10,8 @@
 // un toque por error no puede cambiar lo que despacha Bodega.
 import { volver } from '../../../componentes/volver';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

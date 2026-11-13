@@ -4,7 +4,8 @@
 // Eliminar (2026-10-22, «descartar» en la base) libera el documento: es el caso
 // de soporte de alguien que pre-registró el DUI de otra persona con su teléfono.
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

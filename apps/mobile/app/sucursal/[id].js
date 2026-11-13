@@ -16,7 +16,8 @@
 // `sucursal/documento`, y los pagos de cada servicio se registran en
 // `sucursal/pago` — todo con permiso de editar sucursales.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, Linking, ScrollView, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { abrirEnPestanaNueva } from '../../plataforma/descargas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

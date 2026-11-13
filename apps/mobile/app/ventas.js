@@ -21,7 +21,8 @@
 // puntos canjeados: `get_ventas_con_puntos`), ordenar por columna y el aviso
 // de los cobros que no son venta de productos (`get_ventas_sin_producto`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';

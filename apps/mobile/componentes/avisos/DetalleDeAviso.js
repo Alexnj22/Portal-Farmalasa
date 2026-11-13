@@ -15,7 +15,8 @@
 // componente se monta al abrir y se desmonta al cerrar: no viaja por cada
 // fila de la lista.
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-import { Image, Modal, Pressable, Text, View } from 'react-native';
+import { Image, Modal, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { cargarFilaDeAviso, esAvisoDeMinMax } from '@nucleo/data/solicitudDeAviso';
@@ -39,6 +40,7 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { Advertencia, FONDO, Fichas, Pildora, Rotulo } from './Piezas';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const GRIS = colorSistema.texto2;
 const MESES_CORTOS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
@@ -58,7 +60,7 @@ const Suelto = createContext(false);
 
 function Caja({ rotulo, color, children, tinte }) {
   const suelto = useContext(Suelto);
-  const rot = rotulo ? <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text> : null;
+  const rot = rotulo ? <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text> : null;
   if (suelto) {
     return (
       <Vidrio radio={20} tinte={tinte ? `${tinte}1A` : undefined}>
@@ -628,7 +630,7 @@ function BloqueAplicado({ req, aplicado, porId }) {
       <Firmante acto={aplicado} porId={porId} />
       {aplicado.instruccion ? (
         <View style={{ gap: 2, marginTop: 2 }}>
-          <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>Falta hacer</Text>
+          <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '800', textTransform: MAYUSCULAS }}>Falta hacer</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{aplicado.instruccion}</Text>
         </View>
       ) : null}

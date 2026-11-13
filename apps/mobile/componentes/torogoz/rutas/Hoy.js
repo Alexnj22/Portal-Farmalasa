@@ -10,7 +10,8 @@
 // —un punto por minuto— aun con la app cerrada si hay permiso «siempre»; si
 // no, mientras la app está abierta. Ver `rastreo.js`.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Pressable, Text, View } from 'react-native';
+import { Alert, Linking, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';

@@ -11,7 +11,8 @@
 // Un abono que el cliente pagó solo desde su app con tarjeta (Wompi,
 // 2026-10-20) dice «pagado por el cliente en la app» en vez de quién cobró.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import * as Haptics from 'expo-haptics';
 import { guardar } from '../../componentes/comercial/elegido';

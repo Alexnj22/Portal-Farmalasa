@@ -3,7 +3,8 @@
 // historial con buscar, tipo y desde/hasta (`filtrarHistorial`, núcleo — la
 // misma regla del portal).
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

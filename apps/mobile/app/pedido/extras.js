@@ -8,7 +8,8 @@
 // propuesta en curso, la cantidad es la que aceptó la otra parte: se muestra,
 // no se toca. Las opciones y la lista salen del núcleo (`extrasDeRecepcion`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

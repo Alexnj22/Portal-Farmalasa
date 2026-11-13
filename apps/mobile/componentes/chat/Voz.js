@@ -17,7 +17,8 @@
 // Entonces no se ofrece grabar y la nota se abre como archivo — nunca se cierra
 // la app.
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Animated, Linking, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, Animated, Linking, Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import * as WebBrowser from 'expo-web-browser';
 import { Host, Icon } from '@expo/ui';

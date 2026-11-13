@@ -13,7 +13,8 @@
 // igual que allá. Si el correo ya trajo el código detectado por el servidor
 // (`ai_suggested.detected_codigo_generacion`), no se baja el PDF: sólo se busca.
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { unzlibSync, inflateSync } from 'fflate';
 import { findPurchaseDteDocumentByCodigo } from '@nucleo/data/facturasCompra';

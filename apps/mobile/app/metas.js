@@ -14,7 +14,8 @@
 // semestral (decidir por quien ya no trabaja, aprobar, reabrir) y los Gastos
 // por recuperar (agregar en `meta-gasto`, quitar con motivo).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Indicador from '../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';

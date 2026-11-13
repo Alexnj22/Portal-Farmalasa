@@ -6,7 +6,8 @@
 // no cobra porcentajes. La forma de cada fila la dicta el núcleo
 // (`filaDePremio` / `premiosLimpios`), la misma que valida la base.
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { fetchPromocionales } from '@nucleo/data/puntos';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
@@ -17,8 +18,9 @@ import Segmentos from '../Segmentos';
 import Vidrio from '../Vidrio';
 import BuscadorProducto from '../compras/BuscadorProducto';
 import { MARCA } from '../inicio/marca';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
-const Rotulo = ({ children }) => <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{children}</Text>;
+const Rotulo = ({ children }) => <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{children}</Text>;
 
 function FilaDeProducto({ p, poner, puedeEditar }) {
   const [buscando, setBuscando] = useState(!p.product_id);

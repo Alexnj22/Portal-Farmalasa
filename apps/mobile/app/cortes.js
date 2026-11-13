@@ -19,7 +19,8 @@
 // Arriba de la lista, «Las cajas» (`FichasDeCaja`): quién abrió cada caja,
 // el cruce con su marcación, la venta del día y el efectivo del cajón.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

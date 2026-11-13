@@ -23,7 +23,8 @@
 //   · el catálogo de turnos y los feriados tienen su pantalla
 //     (`horarios/turnos`, `horarios/feriados`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

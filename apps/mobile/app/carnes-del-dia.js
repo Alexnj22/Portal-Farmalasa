@@ -11,7 +11,8 @@
 // antes de imprimirle otro) y «Imprimir carné» pregunta en qué sala sale y lo
 // manda a su caja (`useCarneDePapel`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -28,6 +29,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { useCarneDePapel } from '../componentes/personas/CarneDePapel';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 export default function CarnesDelDia() {
   const empleados = useStaffStore((s) => s.employees);
@@ -80,7 +82,7 @@ export default function CarnesDelDia() {
         {vigentes ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{vigentes.length ? `${vigentes.length} carné${vigentes.length === 1 ? '' : 's'} de papel vivo${vigentes.length === 1 ? '' : 's'} · vencen solos a medianoche` : ''}</Text> : null}
         {vigentes == null ? <Cargando /> : grupos.map((g) => (
           <View key={g.sala} style={{ gap: 8 }}>
-            {grupos.length > 1 ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{`${g.sala} · ${g.items.length}`}</Text> : null}
+            {grupos.length > 1 ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20, marginTop: 4 }}>{`${g.sala} · ${g.items.length}`}</Text> : null}
             {g.items.map((c) => (
               <View key={c.id} style={{ marginHorizontal: 16 }}>
                 <Vidrio radio={20}>
@@ -103,7 +105,7 @@ export default function CarnesDelDia() {
         {vigentes && !filas.length ? <Vacio>{texto.trim() ? 'Nadie con ese nombre tiene un carné vivo' : 'Nadie tiene un carné de papel hoy'}</Vacio> : null}
         {texto.trim() ? (
           <View style={{ gap: 8, marginTop: 8 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>Imprimir un carné</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>Imprimir un carné</Text>
             {!candidatos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 20 }}>{(empleados || []).length ? 'Nadie con ese nombre. Revisa cómo está escrito en su ficha.' : 'Todavía no se cargó el personal.'}</Text> : null}
             {candidatos.map((e) => (
               <View key={e.id} style={{ marginHorizontal: 16 }}>

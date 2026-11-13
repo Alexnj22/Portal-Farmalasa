@@ -26,6 +26,7 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import Tocable from '../Tocable';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const pedirComentario = (titulo, mensaje) => new Promise((resolve) => {
   Alert.prompt(titulo, mensaje, [
@@ -108,7 +109,7 @@ export default function Saltos({ sala, nombreSala, recarga, canEdit = false, use
           </View>
         );
       })}
-      {nulos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginHorizontal: 20, marginTop: 6 }}>{`Campos nulos · ${nulos.length}`}</Text> : null}
+      {nulos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, marginHorizontal: 20, marginTop: 6 }}>{`Campos nulos · ${nulos.length}`}</Text> : null}
       {nulos.map((n) => (
         <View key={n.id} style={{ marginHorizontal: 16 }}>
           <Vidrio radio={20}>

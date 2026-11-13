@@ -15,7 +15,8 @@
 // «Ordenar» son las columnas ordenables de la tabla del portal (hora, usuario,
 // acción), aplicadas en la base (`fetchBitacoraPagina({ orden })`).
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

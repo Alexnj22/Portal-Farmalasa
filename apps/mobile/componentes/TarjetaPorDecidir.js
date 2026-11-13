@@ -1,7 +1,8 @@
 // Una tarjeta de «Por decidir»: quién lo pide, qué es y lo que se pide, en
 // vidrio, con «Te toca» a la derecha. Tocarla abre la pantalla donde se
 // decide: la de la solicitud (también Min/Max), la del traslado o la del envío.
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

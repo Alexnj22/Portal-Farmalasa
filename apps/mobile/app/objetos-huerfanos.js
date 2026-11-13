@@ -4,7 +4,8 @@
 // `orphan_objects` editar). Mismas pestañas, mismos estados y la misma
 // escritura con su bitácora (`data/orphanObjects`).
 import { useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

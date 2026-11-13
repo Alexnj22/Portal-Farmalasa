@@ -26,6 +26,7 @@ import { colorSistema } from '../../Formulario';
 import { MARCA } from '../../inicio/marca';
 import { usePersona } from '../persona';
 import { Caja, FONDO, Grilla, Insignia, Panel, Pildora, Rotulo } from '../Piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 // Lo que se ve de los productos de una solicitud antes de «Ver los N productos».
 export const PRODUCTOS_VISIBLES = 3;
@@ -60,7 +61,7 @@ const yMas = (n, sufijo = '') => `y ${n === 1 ? '1 producto más' : `${n} produc
 function Bloque({ rotulo, color, children }) {
   return (
     <View style={{ borderRadius: 14, backgroundColor: FONDO, paddingHorizontal: 12, paddingVertical: 9, gap: 3 }}>
-      <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text>
+      <Text style={{ color: color ?? GRIS, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text>
       {typeof children === 'string'
         ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{children}</Text>
         : children}
@@ -286,7 +287,7 @@ function CuerpoDeRespuesta({ d }) {
             <FilaDeProducto key={`${p.nombre}-${i}`} nombre={p.nombre} primero={!i}>
               {p.motivo ? (
                 <Text style={{ fontSize: 12 }}>
-                  <Text style={{ color: GRIS, fontWeight: '800', textTransform: 'uppercase' }}>Por qué lo devuelve </Text>
+                  <Text style={{ color: GRIS, fontWeight: '800', textTransform: MAYUSCULAS }}>Por qué lo devuelve </Text>
                   <Text style={{ color: colorSistema.texto, fontWeight: '600' }}>{enOracion(p.motivo)}</Text>
                 </Text>
               ) : null}
@@ -452,7 +453,7 @@ function CuerpoDeHacienda({ d }) {
               </View>
               {f.motivo ? (
                 <Text style={{ fontSize: 12 }}>
-                  <Text style={{ color: MARCA.rojo, fontWeight: '800', textTransform: 'uppercase' }}>Hacienda dice </Text>
+                  <Text style={{ color: MARCA.rojo, fontWeight: '800', textTransform: MAYUSCULAS }}>Hacienda dice </Text>
                   <Text style={{ color: colorSistema.texto, fontWeight: '600' }}>{f.motivo}</Text>
                 </Text>
               ) : null}
@@ -527,7 +528,7 @@ function CuerpoDePromo({ d }) {
               ) : null}
               {pr.porAgotarse.map((bj, i) => (
                 <Text key={i} style={{ fontSize: 12 }}>
-                  <Text style={{ color: MARCA.ambar, fontWeight: '800', textTransform: 'uppercase' }}>Por agotarse </Text>
+                  <Text style={{ color: MARCA.ambar, fontWeight: '800', textTransform: MAYUSCULAS }}>Por agotarse </Text>
                   <Text style={{ color: colorSistema.texto, fontWeight: '600' }}>{`${bj.producto} — ${bj.sala}: ${unidades(bj.vendido)} de ${unidades(bj.asignado)}`}</Text>
                 </Text>
               ))}

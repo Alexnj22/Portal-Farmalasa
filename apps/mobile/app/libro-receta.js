@@ -12,7 +12,8 @@
 // se elige en el menú de filtros; y tocar un renglón abre el folio entero
 // (`app/folio.js`).
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';

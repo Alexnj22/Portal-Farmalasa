@@ -16,9 +16,10 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Grafica from './Graficas';
 import { COLOR_TRAMO } from './Mes';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const Titulo = ({ children }) => (
-  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>{children}</Text>
+  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>{children}</Text>
 );
 
 export default function Historico({ sala, soloConMeta, salaNombre, salasVisibles }) {

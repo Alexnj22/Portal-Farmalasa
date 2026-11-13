@@ -12,7 +12,8 @@
 // Las cuentas y los textos salen del núcleo (`nivelesDePuntos`), los mismos del
 // portal. Escribir exige `puntos_tab_niveles` can_edit; la base lo vuelve a exigir.
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchPanelDeNiveles, guardarConfigDePuntos } from '@nucleo/data/puntos';
@@ -33,9 +34,10 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import { guardar as dejar } from '../comercial/elegido';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const Titulo = ({ children }) => (
-  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>{children}</Text>
+  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>{children}</Text>
 );
 
 function Estado({ config, usadoUsd, puedeEditar, alGuardar }) {

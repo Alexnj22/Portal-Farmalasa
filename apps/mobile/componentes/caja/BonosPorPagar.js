@@ -4,7 +4,8 @@
 // caja abierta y si la sala puede pagar (`puedo_pagar`) y se opera la caja.
 // No dibuja nada si la sala no debe ninguno.
 import { useCallback, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchBonosProductoSala } from '@nucleo/data/bonosProducto';
 import { formatMoney } from '@nucleo/utils/formatNumber';

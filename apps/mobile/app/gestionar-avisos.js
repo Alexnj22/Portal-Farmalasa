@@ -13,7 +13,8 @@
 // el portal. A quién le llega, la lectura y la sección
 // salen del núcleo (`avisosInternos`).
 import { useMemo, useState } from 'react';
-import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Interruptor from '../componentes/Interruptor';
 import { Stack } from 'expo-router';
@@ -40,6 +41,7 @@ import ConAurora from '../componentes/ConAurora';
 import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import MarcaDeEleccion from '../componentes/MarcaDeEleccion';
 
 const manana = () => {
   const d = new Date(`${hoySV()}T12:00:00`);
@@ -126,7 +128,7 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando
                           <Text style={{ color: colorSistema.texto, fontSize: 15 }}>{shortEmployeeName(e)}</Text>
                           {e.role ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{e.role}</Text> : null}
                         </View>
-                        {personas.has(String(e.id)) ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+                        <MarcaDeEleccion elegida={personas.has(String(e.id))} multiple />
                       </Pressable>
                     ))}
                   </>

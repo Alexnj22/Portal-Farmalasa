@@ -6,7 +6,8 @@
 // un dato, el margen un juicio. Un precio que cambió muestra el anterior
 // tachado y la fecha del cambio.
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { calcMargin } from '@nucleo/utils/preciosDeProducto';
 import { formatMoney } from '@nucleo/utils/formatNumber';
@@ -15,6 +16,7 @@ import { colorSistema } from '../Formulario';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const fmtP = (v) => (v == null || v === '' || parseFloat(v) === 0 ? '—' : formatMoney(v));
 const colorMargen = (m) => (m < 0 ? MARCA.rojo : m < 15 ? MARCA.ambar : MARCA.verde);
@@ -44,7 +46,7 @@ function Presentacion({ pp, niveles, cambios, conCosto }) {
         </View>
         {conCosto ? (
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10, paddingVertical: 9, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>
+            <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>
               {`Costo${pp.factor != null && pp.factor !== '' ? ` · factor ${pp.factor}` : ''}`}
             </Text>
             <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{fmtP(pp.costo)}</Text>

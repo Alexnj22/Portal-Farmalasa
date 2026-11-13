@@ -6,7 +6,8 @@
 // oscura de noche), como el diálogo de Material 3. Hasta el 2026-11-12 era un
 // oscuro fijo (#1E1B2E) y se veía negra también con el teléfono en claro.
 import { useState } from 'react';
-import { Modal, Pressable, Text, View } from 'react-native';
+import { Modal, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { Host, DateTimePicker } from '@expo/ui/jetpack-compose';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
@@ -30,7 +31,7 @@ export default function Fecha({ valor, onCambiar, desde, hasta }) {
       </Pressable>
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={() => setAbierto(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 16 }} onPress={() => setAbierto(false)}>
-          <Pressable style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: colorSistema.fila, paddingBottom: 8 }} onPress={() => {}}>
+          <Pressable android_ripple={null} style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: colorSistema.fila, paddingBottom: 8 }} onPress={() => {}}>
             <Host seedColor={SEMILLA} matchContents={{ vertical: true }}>
               <DateTimePicker initialDate={valor ? aFecha(valor).toISOString() : null} displayedComponents="date" variant="picker"
                 color={MARCA.azulClaro} elementColors={{ containerColor: colorSistema.fila }}

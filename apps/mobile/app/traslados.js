@@ -27,7 +27,8 @@
 // `data/envios`) y el alcance es el mismo: con «todas las salas» se ven todas;
 // si no, la mía más las que estoy cubriendo ahora.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -55,6 +56,7 @@ import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
 import { sePuedeDeclararTarde } from '@nucleo/data/faltantes';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const HORAS_EN_CAMINO_ALERTA = 24;
 
@@ -67,7 +69,7 @@ const SECCIONES_ENVIO = [
 
 function Titulo({ texto, n }) {
   return (
-    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>
+    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 32, marginTop: 6 }}>
       {texto}{n ? ` · ${n}` : ''}
     </Text>
   );

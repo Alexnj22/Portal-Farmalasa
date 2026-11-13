@@ -30,7 +30,8 @@
 //      — o que no se pudo medir, que también frena.
 // El servidor los vuelve a aplicar (`hacer-corte-caja` / `operar-caja`).
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

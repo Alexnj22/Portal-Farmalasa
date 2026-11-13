@@ -10,7 +10,8 @@
 // Todo el dinero, sólo con `compras_ver_montos`. Vincular un proveedor sigue
 // en el portal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

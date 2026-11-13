@@ -37,6 +37,7 @@ import { MARCA } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 import Tocable from '../Tocable';
 import Avatar from '../Avatar';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const ROTULO = { tarjeta: 'Tarjeta', credito: 'Crédito', transferencia: 'Transferencia', bitcoin: 'Bitcoin', cheque: 'Cheque' };
 const finDeMes = (mes) => { const [a, m] = mes.split('-').map(Number); return `${mes}-${String(new Date(a, m, 0).getDate()).padStart(2, '0')}`; };
@@ -168,7 +169,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {pend == null ? <Cargando /> : porTipo.map(([t, filas]) => (
         <View key={t} style={{ gap: 8 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginHorizontal: 20 }}>{`${ROTULO[t] ?? t} · ${filas.length}`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, marginHorizontal: 20 }}>{`${ROTULO[t] ?? t} · ${filas.length}`}</Text>
           {filas.map((r) => {
             const abierto = abierta === r.id;
             return (

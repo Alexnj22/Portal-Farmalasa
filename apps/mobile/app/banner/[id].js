@@ -4,7 +4,8 @@
 // publicado. A diferencia de una historia, un banner tiene fechas. Validar y
 // armar la fila salen del núcleo (`bannerValido`, `filaDeBanner`).
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Image, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';

@@ -14,7 +14,8 @@
 // las fichas que se congelaron o que parecen repetidas, con «Marcar revisado».
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Alert } from 'react-native';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { router, Stack } from 'expo-router';

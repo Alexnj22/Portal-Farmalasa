@@ -25,6 +25,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { leer } from '../componentes/comercial/elegido';
 import { volver } from '../componentes/volver';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const Rotulo = ({ texto }) => <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{texto}</Text>;
 const Ayuda = ({ texto }) => (texto ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{texto}</Text> : null);
@@ -104,7 +105,7 @@ export default function PuntosNivel() {
 
           {conRaspable ? (
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Raspable del mes</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>Raspable del mes</Text>
               <EditorDePremios premios={form.cupon_premios} puedeEditar={puedeEditar} alCambiar={(l) => poner('cupon_premios', l)} />
               {costo ? <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{costo}</Text> : null}
             </View>

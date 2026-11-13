@@ -21,6 +21,19 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1522.0 — App Android: campos, títulos, elecciones, onda al tocar y color del sistema en toda la app
+
+App del personal, Android — segunda parte de «TODO debe ser material nuevo en android» (usuario, 2026-11-13). Barrido de las 141 pantallas en el emulador, en claro y oscuro, y cambios desde las piezas comunes:
+
+- **El color de la marca sigue al sistema**: en Android `MARCA.azul` (rellenos) y `MARCA.azulClaro` (texto, íconos, enlaces) son el primario de la paleta del sistema leída en vivo (~850 usos, en `componentes/inicio/marca.js`). Verde, ámbar, rojo y violeta siguen fijos porque dicen un estado. `tintaSobre()` pone texto oscuro sobre los rellenos claros (el primario del modo oscuro), así el botón no queda blanco sobre pastel.
+- **Onda de Material al tocar** en toda la app: los ~290 archivos que escribían `Pressable` de React Native usan ahora `Presionable` (`componentes/Tocable.js`), que en Android pone la onda (salvo en el telón oscuro que cierra una hoja). En iPhone es EXACTAMENTE el Pressable de antes: el atenuado automático deja sin dibujar el Liquid Glass.
+- **Campos de texto de Material 3** (relleno tonal, esquinas de arriba, línea abajo que se vuelve primaria al escribir) en `Campo`, que usan ~500 campos.
+- **Títulos de sección de Material 3**: sin MAYÚSCULAS forzadas en Android (`tema/mayusculas.js`, 85 archivos) y, en `Grupo` y `Seccion`, en el color primario.
+- **Elegir de una lista**: botón de opción o casilla de Material 3 en vez de la palomita de iOS (`componentes/MarcaDeEleccion.js` y `Opciones`).
+- **Interruptor y botones de opción de Compose** con los colores del sistema en vivo, no el azul de la marca.
+- **Error que ya existía (también en producción)**: `PantallaSinDato` usaba `Cargando` sin importarlo — `Piezas.js` sólo lo reexportaba —, y toda pantalla que mostraba la carga sin datos reventaba con «Property 'Cargando' doesn't exist» (p. ej. Ajustes de marketing).
+- iPhone verificado en el simulador: sin cambios visibles. Huellas nativas iguales: llega por aire.
+
 ## v2.1521.4 — Bitácoras: cinco pestañas en vez de ocho
 
 El usuario: «se ve fatal, ¿por qué hay tanto?». Ocho pestañas no entraban en la barra.

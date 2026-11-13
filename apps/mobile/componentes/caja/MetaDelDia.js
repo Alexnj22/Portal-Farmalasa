@@ -14,6 +14,7 @@ import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import { Chip } from '../inicio/Widget';
 import Vidrio from '../Vidrio';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 export default function MetaDelDia({ sala }) {
   const { hasPermission } = useAuth();
@@ -42,7 +43,7 @@ export default function MetaDelDia({ sala }) {
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           <Chip icono="Target" color={color} tamano={30} />
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Meta de hoy</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.5 }}>Meta de hoy</Text>
             {conMontos ? (
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>
                 {formatMoney(avance.vendido)}

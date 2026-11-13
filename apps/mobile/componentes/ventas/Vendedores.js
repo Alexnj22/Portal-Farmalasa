@@ -5,7 +5,8 @@
 // La consolidación y los puestos salen del núcleo (`ventasPeriodo`), igual que
 // en el portal. Tocar a alguien abre sus ventas día por día.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

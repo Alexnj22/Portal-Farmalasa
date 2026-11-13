@@ -4,7 +4,8 @@
 // de una lista LARGA (las 774 actividades de Hacienda, el catálogo entero) y
 // la dirección con los códigos de Hacienda en cascada.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { FlatList, Modal, Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import Conmutador from '../../Interruptor';
 import { useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

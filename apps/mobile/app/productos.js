@@ -18,7 +18,8 @@
 // «Pérd. <precio especial>», «cambios», «ND» (no devolutivo) y «Receta» —
 // que salen de `fetchIndicadoresDeCatalogo` (núcleo), lo mismo que el portal.
 import { memo, useCallback, useEffect, useState } from 'react';
-import { ActionSheetIOS, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Image, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { fetchIdsModificadosDesde, fetchIdsPorMargen, fetchIndicadoresDeCatalogo, fetchProductCounts, fetchProductsList } from '@nucleo/data/productos';

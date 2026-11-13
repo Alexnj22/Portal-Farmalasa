@@ -10,7 +10,8 @@
 // ⚠ Abrir la caja, registrar un movimiento y anularlo mueven DINERO de verdad.
 // En el entorno de pruebas no se hacen.
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { abrirCaja, anularMovimientoCaja, mensajeDeDistribucion, movimientoCaja } from '@nucleo/data/distribucion';
 import { leerMonto } from '@nucleo/utils/distribucionComun';

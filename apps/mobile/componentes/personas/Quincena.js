@@ -18,7 +18,8 @@
 // quincena se exporta en CSV (mismas columnas del portal, anotada como salida
 // de datos), y una quincena pasada y cerrada ofrece «Ver planilla».
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { approveTimesheetsBulk, closeQuincenaTimesheets, fetchPendingShiftExceptions, fetchQuincenaTimesheets, resolverTurnoExtra } from '@nucleo/data/attendanceAudit';

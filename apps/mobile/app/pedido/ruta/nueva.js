@@ -11,7 +11,8 @@
 // no responde, se ordena en línea recta, igual que el portal cuando Google
 // falla. El trazo del mapa va en línea recta entre paradas.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';

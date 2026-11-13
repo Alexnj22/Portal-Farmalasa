@@ -35,6 +35,7 @@ import { fallo, listo } from '../Progreso';
 import Tocable from '../Tocable';
 import { compartirCsv } from '../fiscal/csv';
 import { Vacio as VacioBase } from '../formulario/Piezas';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const Vacio = ({ texto }) => <VacioBase titulo={texto} />;
 // «Descargar CSV» de lo que se ve, con el mismo archivo del portal (núcleo).
@@ -117,7 +118,7 @@ export function Descuentos({ busqueda, salaDe, sala = '', estado = '', onAlcance
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {SECCIONES_DE_DESCUENTOS.map(({ clave, titulo, sub }) => (porEstado[clave].length ? (
         <View key={clave} style={{ gap: 10 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginHorizontal: 20 }}>{`${titulo} · ${porEstado[clave].length} — ${sub}`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, marginHorizontal: 20 }}>{`${titulo} · ${porEstado[clave].length} — ${sub}`}</Text>
           {porEstado[clave].map((d) => {
             const e = estadoDescuento(d, hoy);
             const productos = d.productos || [];

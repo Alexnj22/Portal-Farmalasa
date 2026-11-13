@@ -5,7 +5,8 @@
 // vende. La licencia de la SRS es la columna que importa: sin licencia vigente
 // no se le vende. Las reglas salen del núcleo (`distribucionComercial`).
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

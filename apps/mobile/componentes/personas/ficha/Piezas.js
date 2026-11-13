@@ -7,13 +7,15 @@
 // El catálogo abierto es el MISMO del portal: `education_catalog_entries`, con
 // la opción «Otra…» (`OTRA_ESPECIALIDAD`) que abre un campo libre; lo que se
 // escriba ahí se registra en el catálogo al guardar (lo hace el store).
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { OTRA_ESPECIALIDAD, isCatalogOther } from '@nucleo/utils/educationCatalogs';
 import { colorSistema } from '../../Formulario';
 import { Campo } from '../../formulario/Piezas';
 import { MARCA, FONDO_CONTROL } from '../../inicio/marca';
 import { CampoConRotulo, Elegir, Rotulo } from '../Formulario';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 /** `{ value, label }` del núcleo → `{ id, label }` de `Elegir`. */
 export const op = (lista = []) => lista.map((o) => ({ id: String(o.value), label: o.label }));
@@ -76,7 +78,7 @@ export function Subtarjeta({ titulo, onQuitar, children }) {
   return (
     <View style={{ gap: 10, padding: 12, borderRadius: 14, backgroundColor: 'rgba(127,127,127,0.10)' }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{titulo}</Text>
+        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{titulo}</Text>
         {onQuitar ? <Enlace texto="Quitar" color={MARCA.rojo} onPress={onQuitar} /> : null}
       </View>
       {children}
@@ -87,7 +89,7 @@ export function Subtarjeta({ titulo, onQuitar, children }) {
 /** Un subtítulo dentro de una sección, con una línea arriba. */
 export function Subtitulo({ texto, primero }) {
   return (
-    <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4,
+    <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4,
       paddingTop: primero ? 0 : 10, borderTopWidth: primero ? 0 : 0.5, borderTopColor: colorSistema.separador }}>{texto}</Text>
   );
 }

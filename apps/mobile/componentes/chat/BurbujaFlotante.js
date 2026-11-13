@@ -21,7 +21,8 @@
 // Glass teñido de la marca; en Android, el FAB de Material con la paleta del
 // sistema.
 import { memo, useEffect, useMemo, useRef, useState } from 'react';
-import { Animated, Easing, Keyboard, PanResponder, Platform, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import { Animated, Easing, Keyboard, PanResponder, Platform, Text, View, useWindowDimensions } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router, usePathname, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';

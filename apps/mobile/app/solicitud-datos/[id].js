@@ -9,7 +9,8 @@
 // son del núcleo (`solicitudesDatos`), lo mismo del portal. El borrador usa la
 // MISMA clave que el portal: transcribir una hoja lleva más que la sesión.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

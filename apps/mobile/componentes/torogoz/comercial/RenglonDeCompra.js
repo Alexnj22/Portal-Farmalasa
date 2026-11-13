@@ -2,7 +2,8 @@
 // decía el documento del proveedor encima), por caja, unidades, costo, lote y
 // vencimiento, su subtotal y —si el proveedor es relacionada— los avisos de
 // precio fuera de mercado. Editable sólo mientras la compra es borrador.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { cambiarUnidadesPor, subtotalRenglon } from '@nucleo/utils/distribucionCompras';
 import { formatMoney } from '@nucleo/utils/formatNumber';

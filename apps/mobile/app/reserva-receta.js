@@ -8,7 +8,8 @@
 //
 // Params: `id` de la reserva; `sala` (o vacío con `todas=1`) para releerla.
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Dimensions, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Dimensions, Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

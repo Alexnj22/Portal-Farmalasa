@@ -5,7 +5,8 @@
 // viene de esa sala, con las del día del cobro primero (`ordenarParaVincular`).
 // Quedan aplicadas a la hora del cobro; se deshace desde la venta.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

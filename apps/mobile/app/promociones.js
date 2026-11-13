@@ -19,7 +19,8 @@
 // por producto o por laboratorio, con el «+». En Descuentos: corregir, borrar
 // y llevar a la app de clientes.
 import { useCallback, useMemo, useState } from 'react';
-import { ActionSheetIOS, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

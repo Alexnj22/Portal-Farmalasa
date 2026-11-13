@@ -15,7 +15,8 @@
 // Historias`), Banners (`Banners`), Reservas de todas las salas (`Reservas`,
 // con `ofertas_clientes` editar) y Pre-registros.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

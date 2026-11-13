@@ -1,7 +1,8 @@
 // Un renglón de la venta, como tarjeta: producto, lote y existencia arriba;
 // cantidad, presentación, precio·lista y descuento abajo; el importe a la
 // derecha. Lo que dice cada línea es lo mismo que el renglón del portal.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { listasDe, precioDe } from '@nucleo/utils/distribucionPrecios';

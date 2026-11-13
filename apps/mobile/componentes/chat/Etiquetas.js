@@ -3,7 +3,8 @@
 // conversación un botón para cambiarlas con `chat_etiquetar` (la misma del
 // portal). El catálogo es `ETIQUETAS` de `@nucleo/utils/chatClientes`, el del portal.
 import { memo, useState } from 'react';
-import { Modal, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Modal, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { ETIQUETAS, etiquetasDe } from '@nucleo/utils/chatClientes';

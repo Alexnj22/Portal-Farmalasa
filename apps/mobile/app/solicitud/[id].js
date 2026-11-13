@@ -22,7 +22,8 @@
 // (`utils/accionesDeAviso`), qué es un parcial y qué índices viajan
 // (`utils/decisionDeSolicitud`) y la decisión misma (`decidirSolicitud`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -54,6 +55,7 @@ import { ICONO } from '../../componentes/solicitudes/iconos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../../componentes/IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const COLOR_ESTADO = { PENDING: MARCA.ambar, APPROVED: MARCA.verde, REJECTED: MARCA.rojo, CANCELLED: MARCA.gris };
 
@@ -243,7 +245,7 @@ export default function Solicitud() {
                 explica sola: un rechazo o un parcial. */}
             {decidible && (rechazando || resumen.parcial) ? (
               <View style={{ gap: 6 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 4 }}>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 4 }}>
                   {rechazando ? (abono ? 'Por qué se devuelve' : 'Motivo de rechazo') : 'Por qué no entra todo'}
                   <Text style={{ color: MARCA.rojo }}> *</Text>
                 </Text>

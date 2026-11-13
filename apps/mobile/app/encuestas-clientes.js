@@ -11,7 +11,8 @@
 // con esta plantilla»), las tarjetas Borradores / Por aprobar / Aprobadas /
 // En campo y el filtro por estado dentro de cada grupo.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

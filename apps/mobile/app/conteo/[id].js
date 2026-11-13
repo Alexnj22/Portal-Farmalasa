@@ -18,7 +18,8 @@
 // recuento» del supervisor —a ciegas, sobre lo que tiene diferencia, en orden
 // de estante—; y la hoja compacta entre los papeles.
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, AppState, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, AppState, Image, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';

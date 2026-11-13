@@ -10,7 +10,8 @@
 // ubicado. La segunda pestaña es la política de vencimiento
 // (`componentes/fiscal/PoliticaVencimiento`), editable como en el portal.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

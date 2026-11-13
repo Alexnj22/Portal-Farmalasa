@@ -43,7 +43,7 @@ export default function HojaDeEleccion({ titulo, opciones, valor, onElegir, onCe
             ...visibles.slice(0, maximo).map((o) => (
               <ListItem key={o.id || '∅'} colors={{ containerColor: colorSistema.fila }} modifiers={[clickable(() => elegir(o.id))]}>
                 <ListItem.LeadingContent>
-                  <RadioButton selected={String(o.id) === String(valor ?? '')} onClick={() => elegir(o.id)} colors={{ selectedColor: MARCA.azul }} />
+                  <RadioButton selected={String(o.id) === String(valor ?? '')} onClick={() => elegir(o.id)} colors={{ selectedColor: MARCA.azulClaro }} />
                 </ListItem.LeadingContent>
                 <ListItem.HeadlineContent>
                   <Text color={colorSistema.texto} style={{ fontSize: 16 }}>{o.label}</Text>
@@ -58,7 +58,7 @@ export default function HojaDeEleccion({ titulo, opciones, valor, onElegir, onCe
             visibles.length > maximo ? <Text key="mas" color={colorSistema.texto2} modifiers={[padding(24, 8, 24, 8)]}>{`Hay ${visibles.length - maximo} más: escribe para encontrarlas.`}</Text> : null,
             accion ? (
               <TextButton key="accion" onClick={() => accion.onPress(texto)} modifiers={[padding(12, 8, 12, 0)]}>
-                <Text color={MARCA.azul}>{typeof accion.texto === 'function' ? accion.texto(texto) : accion.texto}</Text>
+                <Text color={MARCA.azulClaro}>{typeof accion.texto === 'function' ? accion.texto(texto) : accion.texto}</Text>
               </TextButton>
             ) : null,
             !visibles.length ? <Text key="n" color={colorSistema.texto2} modifiers={[padding(24, 8, 24, 8)]}>Nada con ese texto.</Text> : null,

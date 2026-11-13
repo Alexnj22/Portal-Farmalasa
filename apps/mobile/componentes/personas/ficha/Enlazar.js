@@ -22,6 +22,7 @@ import { colorSistema } from '../../Formulario';
 import { Seccion } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
 import { Elegir, Nota } from './Piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 export default function Enlazar({ form, setForm, employees, branches, roles }) {
   const opciones = useMemo(() => fichasParaEnlazar(employees, branches, roles).map((o) => ({ id: o.value, label: o.label })), [employees, branches, roles]);
@@ -43,7 +44,7 @@ export default function Enlazar({ form, setForm, employees, branches, roles }) {
     <>
       {homonimo ? (
         <View style={{ padding: 12, borderRadius: 14, backgroundColor: `${MARCA.ambar}22`, gap: 4 }}>
-          <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '800', textTransform: 'uppercase' }}>Posible duplicado</Text>
+          <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '800', textTransform: MAYUSCULAS }}>Posible duplicado</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>
             Ya existe un empleado registrado con este mismo nombre completo. Si es la misma persona, enlázala abajo en vez de crear una ficha nueva. Si es otra (homónimo), sigue adelante.
           </Text>

@@ -1,6 +1,7 @@
 // El día que se está mirando —el `FiltroDia` del portal—: flechas para correrlo
 // y el calendario del sistema en el centro. No pasa de hoy.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { hoySV, sumarDias } from '@nucleo/utils/fecha';
 import Fecha from '../../formulario/Fecha';

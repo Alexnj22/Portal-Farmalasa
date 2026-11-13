@@ -2,7 +2,8 @@
 // motivo, con `processChangeRequest`, la misma acción del portal) y el año
 // entero como una línea de tiempo por persona (el Gantt del portal).
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { fechaTexto, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -11,6 +12,7 @@ import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { fallo, listo } from '../Progreso';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const corta = (f) => (f ? fechaTexto(f, { day: 'numeric', month: 'short' }) : '—');
 
@@ -48,7 +50,7 @@ export function SolicitudesDeCambio({ cambios, puedeDecidir, procesar, aprobador
 
   return (
     <View style={{ gap: 8 }}>
-      <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>
+      <Text style={{ color: MARCA.ambar, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>
         {`Solicitudes de cambio · ${cambios.length}`}
       </Text>
       {cambios.map((req) => {

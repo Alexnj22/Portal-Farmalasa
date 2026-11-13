@@ -8,7 +8,8 @@
 // (`leerFormularioDePrecio`), las mismas del portal. Bajo el costo AVISA y no
 // bloquea: una liquidación de vencimiento puede ser justo lo que se quiere.
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Indicador from '../../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

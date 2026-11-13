@@ -5,7 +5,8 @@
 // movimiento. Se escribe con la caja en la mano y la sesión se cierra sola: lo
 // escrito se guarda como borrador.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { fetchCatalogo, mensajeDeDistribucion } from '@nucleo/data/distribucion';

@@ -2,7 +2,8 @@
 // qué va (el conteo grande y el producto), quién lo pidió y hace cuánto. En
 // vidrio, como el resto. Los textos salen del núcleo (`piezasDe`,
 // `renglonesDe`, `desdeHace`), los mismos del portal.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { metaDelEnvio, piezasDe, renglonesDe } from '@nucleo/utils/trasladoTexto';
 import { desdeHace } from '@nucleo/utils/movimientoTexto';

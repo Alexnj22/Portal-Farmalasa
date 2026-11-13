@@ -17,7 +17,8 @@
 // Con saldo / Por vencer / Vencidos / Todos en el segmentado (`VER_CARTERA`);
 // sala, vendedor y orden (`ORDEN_CARTERA`) en el menú; de 50 en 50.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { AppState, Pressable, ScrollView, Text, View } from 'react-native';
+import { AppState, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

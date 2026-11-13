@@ -3,7 +3,8 @@
 // existencia hasta que alguien decida: reingresar (la base exige que el lote no
 // esté vencido), devolver al proveedor o destruir. Decide quien administra.
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import Indicador from '../../Indicador';
 import { resolverCuarentena, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { ACCIONES_CUARENTENA } from '@nucleo/utils/distribucionBodega';

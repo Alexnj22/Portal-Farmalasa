@@ -41,6 +41,7 @@ import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { elegirOrigen } from '../../sucursal/elegirArchivo';
 import { fallo, listo } from '../../Progreso';
 import { Enlace, Nota, op } from './Piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 const dinero = (n) => formatMoney(n === '' ? null : n);
 const fecha = (iso) => fechaTexto(iso, { day: '2-digit', month: 'short', year: 'numeric' }, '—');
@@ -60,7 +61,7 @@ const texto = (v) => (v === null || v === undefined ? '' : String(v));
 function Cifra({ rotulo, valor }) {
   return (
     <View style={{ width: '50%', paddingVertical: 4, paddingRight: 8 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, textTransform: 'uppercase' }}>{rotulo}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.4, textTransform: MAYUSCULAS }}>{rotulo}</Text>
       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] }}>{valor}</Text>
     </View>
   );

@@ -14,7 +14,8 @@
 // días de una sala pasaban de las 1000 filas y el promedio se hacía con un
 // pedazo.
 import { useMemo, useState } from 'react';
-import { ActionSheetIOS, LayoutAnimation, Platform, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, LayoutAnimation, Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { fetchBranchHourlySalesRange } from '@nucleo/data/dashboard';
 import { ERP_BODEGA, BRANCH_A_ERP, ordenDeSala } from '@nucleo/constants/erp';

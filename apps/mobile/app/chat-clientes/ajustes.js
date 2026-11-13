@@ -26,6 +26,7 @@ import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
 import { EstadoDeLaFarmacia } from '../../componentes/chat/Encabezado';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const CAMPOS = [
   { clave: 'mensaje_abierto', rotulo: 'Con la farmacia en horario', ayuda: 'Lo recibe quien escribe mientras alguna farmacia está abierta.' },
@@ -62,7 +63,7 @@ function Editor({ campo, valor, onCambio, estado, deshabilitado }) {
       {!valor.trim() ? <Aviso tono="freno" texto="Escribe un mensaje." /> : null}
       {!deshabilitado ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Insertar</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Insertar</Text>
           {MARCADORES_DEL_CHAT.map((m) => (
             <Tocable key={m.clave} accessibilityRole="button" accessibilityHint={m.ayuda} disabled={valor.length + m.clave.length > LARGO_MAXIMO_MENSAJE}
               onPress={() => insertar(m.clave)}
@@ -73,7 +74,7 @@ function Editor({ campo, valor, onCambio, estado, deshabilitado }) {
         </View>
       ) : null}
       <View style={{ gap: 4, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
-        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Así lo verá el cliente ahora</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Así lo verá el cliente ahora</Text>
         <VistaPrevia texto={valor} estado={estado} />
       </View>
     </Seccion>

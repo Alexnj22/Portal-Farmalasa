@@ -14,7 +14,8 @@
 // un toque — como el portal, que empareja directo sin pasar por «confirmado
 // sin JSON». Necesita, como allá, el permiso de abrir el documento.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import Indicador from '../../componentes/Indicador';
 import { Stack, useFocusEffect } from 'expo-router';

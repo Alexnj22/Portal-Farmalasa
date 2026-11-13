@@ -13,7 +13,8 @@
 // «Exportar PNG», como el portal: la imagen del organigrama dibujado (el PNG
 // del propio SVG) a la hoja de compartir del sistema.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Appearance, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Appearance, ScrollView, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { File, Paths } from 'expo-file-system';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

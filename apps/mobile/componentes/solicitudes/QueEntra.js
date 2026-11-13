@@ -10,7 +10,8 @@
 // Un abono por confirmar lleva casillas por crédito y no `−/+`: su monto lo
 // fijó el comprobante. Lo que queda sin marcar se le DEVUELVE al cliente.
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import { formatMoney } from '@nucleo/utils/formatNumber';

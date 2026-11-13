@@ -1,6 +1,7 @@
 // Las piezas de la app: el equivalente de `components/common` del portal, con
 // los mismos tokens. Una pieza nueva va acá y no dentro de una pantalla.
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { suave, useTema } from '../../tema/tema';
 
 const TONOS = { success: ['exito', 'exitoTexto'], warning: ['aviso', 'avisoTexto'], danger: ['peligro', 'peligroTexto'] };

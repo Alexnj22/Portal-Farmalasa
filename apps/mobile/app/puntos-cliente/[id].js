@@ -18,7 +18,8 @@
 // ajusta y se une desde esa. Lo que se puede canjear va separado del
 // historial: «ganados en total» no es saldo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
@@ -47,6 +48,7 @@ import UnirCuentas, { AvisoDeUniones, useUnionesDeCuenta } from '../../component
 import VentaDelAviso from '../../componentes/puntos/VentaDelAviso';
 import Expediente from '../../componentes/puntos/Expediente';
 import { anotar } from '@nucleo/data/audit';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const ROL = { 'vendió': 'Vendió', 'ajustó': 'Ajustó' };
 const MINIMO = 100;
@@ -195,7 +197,7 @@ export default function PuntosCliente() {
             {meses.length ? (
               <Vidrio radio={20}>
                 <View style={{ padding: 14, gap: 10 }}>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>Mes a mes</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>Mes a mes</Text>
                   <Subfiltro activa={unidad} onCambiar={setUnidad} opciones={[{ id: 'puntos', label: 'Puntos' }, { id: 'dolares', label: 'Dólares' }]} />
                   <Grafica alto={150} activo={indiceMes >= 0 ? indiceMes : null}
                     datos={meses.map((m) => ({ etiqueta: etiquetaMes(m.mes), titulo: mesLargo(m.mes), mes: m.mes, acumulado: m.acumulado, canjeado: m.canjeado, saldo: m.saldo }))}

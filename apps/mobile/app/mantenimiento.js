@@ -10,7 +10,8 @@
 // Todo cambio pide confirmación. Los rótulos de los frenos, el tiempo restante
 // y las opciones salen del núcleo (`mantenimiento`, `bannerPortal`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Indicador from '../componentes/Indicador';
 import Conmutador from '../componentes/Interruptor';

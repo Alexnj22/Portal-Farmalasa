@@ -4,7 +4,8 @@
 // forma de pago, o se le manda al cliente un enlace de pago. La lista y el
 // `apartado` que viaja a `operar-caja` salen del núcleo (`porCobrarDeSala`).
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Alert, Pressable, Share, Text, View } from 'react-native';
+import { Alert, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchEncargos, fetchReservasDeSucursal, mensajeDeEnlaceDePago } from '@nucleo/data/reservas';

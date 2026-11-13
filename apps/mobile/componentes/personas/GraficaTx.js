@@ -3,12 +3,14 @@
 // la semana, cada barra del color de su nivel (`nivelDeTransacciones`, núcleo:
 // crítica / pico / normal / muerta). Tocar una barra dice su valor.
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
 import Subfiltro from '../Subfiltro';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 export const COLOR_DE_NIVEL = { critica: MARCA.rojo, pico: MARCA.ambar, normal: MARCA.azulClaro, muerta: 'rgba(127,127,127,0.45)' };
 const LEYENDA = [['critica', 'Crítica'], ['pico', 'Pico'], ['normal', 'Normal'], ['muerta', 'Baja']];
@@ -29,7 +31,7 @@ export default function GraficaTx({ stats, dia, nombreDelDia }) {
         <Vidrio radio={20}>
           <View style={{ padding: 14, gap: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>Tx promedio · últimos 3 meses</Text>
+              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>Tx promedio · últimos 3 meses</Text>
               {sel ? <Text style={{ color: colorSistema.texto, fontSize: 14, fontWeight: '800' }}>{`${sel.label}: ${sel.avg}`}</Text> : null}
             </View>
             {datos.length ? (

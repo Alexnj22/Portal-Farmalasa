@@ -8,7 +8,8 @@
 // `registerBranchExpense` del store (sube y versiona el comprobante, marca el
 // mes pagado en la ficha y deja la bitácora), igual que en la oficina.
 import { useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

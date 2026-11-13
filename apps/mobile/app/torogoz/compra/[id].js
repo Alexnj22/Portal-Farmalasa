@@ -48,6 +48,7 @@ import { volver } from '../../../componentes/volver';
 import { ElegirLargo, Nota, PETROLEO, useEmisor } from '../../../componentes/torogoz/comercial/Piezas';
 import RenglonDeCompra from '../../../componentes/torogoz/comercial/RenglonDeCompra';
 import FormularioProveedor from '../../../componentes/torogoz/comercial/FormularioProveedor';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 const num = (v) => { const n = Number(String(v ?? '').replace(',', '.')); return Number.isFinite(n) ? n : 0; };
 
@@ -336,7 +337,7 @@ export default function CompraTorogoz() {
             onChangeText={(v) => set('codigo_generacion')(v.trim().toLowerCase())} />
         </Seccion>
 
-        <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16, marginBottom: -10 }}>Productos</Text>
+        <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16, marginBottom: -10 }}>Productos</Text>
         {!c.items.length ? (
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>Sin productos todavía. Lee el JSON del proveedor o agrégalos a mano.</Text>
         ) : null}

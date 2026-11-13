@@ -9,7 +9,8 @@ import { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { hoySV } from '@nucleo/utils/fecha';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { compartirCsv } from '../componentes/fiscal/csv';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -33,6 +34,7 @@ import ConAurora from '../componentes/ConAurora';
 import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 function Reportar({ abierto, onCerrar, onListo }) {
   const { user } = useAuth();
@@ -187,7 +189,7 @@ export default function VentasPerdidas() {
             <FiltrosActivos grupos={grupos} />
             {top.length ? (
               <View style={{ marginHorizontal: 16, gap: 8 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 4 }}>Más pedidos</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 4 }}>Más pedidos</Text>
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
                   {top.map((t) => <Pildora key={t.nombre} texto={`${t.nombre} · ${t.total} u. (${t.veces}×)`} color={MARCA.rojo} />)}
                 </View>

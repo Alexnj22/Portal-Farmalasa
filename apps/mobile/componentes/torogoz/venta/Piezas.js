@@ -1,6 +1,7 @@
 // Piezas chicas de la venta de Torogoz en el teléfono: el selector que abre la
 // hoja de opciones del sistema, la etiqueta de estado y el desglose fiscal.
-import { ActionSheetIOS, Platform, Pressable, Text, View, Alert } from 'react-native';
+import { ActionSheetIOS, Platform, Text, View, Alert } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { colorSistema } from '../../Formulario';

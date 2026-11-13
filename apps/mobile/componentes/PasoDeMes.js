@@ -1,6 +1,7 @@
 // Un mes con flechas para ir al anterior y al siguiente — el `PeriodStepper`
 // del portal en su versión de teléfono. No deja pasar del mes en curso.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import * as Haptics from 'expo-haptics';
 import { correrMes, mesSV, NOMBRES_DE_MES } from '@nucleo/utils/fecha';
 import { colorSistema } from './Formulario';

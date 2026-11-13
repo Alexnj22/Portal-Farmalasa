@@ -12,7 +12,8 @@
 // cada uno se puede rehacer. Generar sólo lo hace quien ve todas las salas:
 // el resumen es de la encuesta entera y no puede salir de una sola sala.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -36,6 +37,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const COLOR_OPCION = { A: MARCA.verde, B: MARCA.azulClaro, C: MARCA.ambar, D: MARCA.rojo };
 
@@ -87,7 +89,7 @@ function Bloque({ bloque: b, filas, preguntas, inv, abierto, onAbrir, anonima })
             {jefes ? (
               <>
                 <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                  <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Empleados evaluando a su jefe/a de sala</Text>
+                  <Text style={{ color: MARCA.azulClaro, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Empleados evaluando a su jefe/a de sala</Text>
                   {jefes.porSala.filter((x) => x.sColabs).map((x) => (
                     <View key={x.suc} style={{ gap: 3 }}>
                       <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
@@ -104,7 +106,7 @@ function Bloque({ bloque: b, filas, preguntas, inv, abierto, onAbrir, anonima })
                   ))}
                 </View>
                 <View style={{ gap: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                  <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>Jefes evaluando a su jefe inmediato</Text>
+                  <Text style={{ color: MARCA.violeta, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>Jefes evaluando a su jefe inmediato</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Cada jefe evalúa a quien reporta directamente. Bodega reporta a Administración; las salas al Supervisor/a de Ventas.</Text>
                   {jefes.porSupervisor.map((g) => (
                     <View key={g.supervisor} style={{ gap: 4 }}>
@@ -258,7 +260,7 @@ export default function Encuesta() {
             <View style={{ marginHorizontal: 16 }}>
               <Vidrio radio={20} tinte={nivel ? `${colorDeVariante(nivel.severidad)}22` : undefined}>
                 <View style={{ padding: 18, alignItems: 'center', gap: 4 }}>
-                  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase' }}>{todas ? (sala ? `Índice de ${sala}` : 'Índice global') : `Índice de ${salaPropia}`}</Text>
+                  <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS }}>{todas ? (sala ? `Índice de ${sala}` : 'Índice global') : `Índice de ${salaPropia}`}</Text>
                   <Text style={{ color: colorSistema.texto, fontSize: 52, fontWeight: '800' }}>{global != null ? Math.round(global) : '—'}</Text>
                   {nivel ? <View style={{ alignSelf: 'center' }}><Pildora texto={nivel.label} color={colorDeVariante(nivel.severidad)} /></View> : null}
                 </View>

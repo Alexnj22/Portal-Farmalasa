@@ -33,6 +33,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const mesCorto = (iso) => NOMBRES_DE_MES[Number(String(iso).slice(5, 7)) - 1];
 
@@ -99,7 +100,7 @@ export default function CierrePeriodo() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {cadena.length ? (
           <View style={{ gap: 6 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>El remanente, mes a mes</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>El remanente, mes a mes</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
               {cadena.map((f, i) => {
                 const paga = f.aPagar > 0;
@@ -109,9 +110,9 @@ export default function CierrePeriodo() {
                   <View key={f.periodo} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
                     <Vidrio radio={16}>
                       <View style={{ padding: 12, width: 132, gap: 2, borderStyle: f.en_curso ? 'dashed' : 'solid' }}>
-                        <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>{`${mesCorto(f.periodo)}${f.en_curso ? ' · en curso' : ''}`}</Text>
+                        <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '800', textTransform: MAYUSCULAS, letterSpacing: 0.5 }}>{`${mesCorto(f.periodo)}${f.en_curso ? ' · en curso' : ''}`}</Text>
                         <Text style={{ color, fontSize: 19, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(paga ? f.aPagar : f.remanente)}</Text>
-                        <Text style={{ color, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>{paga ? 'a pagar' : 'a favor'}</Text>
+                        <Text style={{ color, fontSize: 11, fontWeight: '800', textTransform: MAYUSCULAS }}>{paga ? 'a pagar' : 'a favor'}</Text>
                         <Text style={{ color: colorSistema.texto2, fontSize: 12, marginTop: 4 }}>
                           {f.en_curso ? 'todavía no se cierra' : f.remanente > 0 && sig ? `pasa a ${mesCorto(sig.periodo)}: ${formatMoney(f.remanente)}` : 'no pasa nada'}
                         </Text>

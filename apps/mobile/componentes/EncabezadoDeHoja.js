@@ -2,7 +2,8 @@
 // hoja de pantalla completa lleva la barra superior de Material: ✕ a la
 // izquierda, el título alineado a la izquierda y la acción en texto a la
 // derecha. Misma firma que el de iOS.
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import IconoFijo from './IconoFijo';
 import { iconoDe } from '../tema/iconos';

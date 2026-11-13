@@ -7,7 +7,8 @@
 // Es de sólo lectura, igual que allá: `presentaciones` la escribe el sync de
 // productos y un nombre editado acá volvería solo a su valor original.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

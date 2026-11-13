@@ -4,7 +4,8 @@
 // la sugerida por su propio giro (`applyProveedoresCategoriaSugerida`). Las
 // dos anotan en la bitácora. Pide `proveedores.can_edit`.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, FlatList, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';

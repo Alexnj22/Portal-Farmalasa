@@ -12,7 +12,8 @@
 // La búsqueda, el parecido y lo que se guarda son del núcleo
 // (`utils/enriquecerSrs`, `data/srs`), lo mismo que el portal.
 import { useRef, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

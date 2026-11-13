@@ -9,7 +9,8 @@
 // sistema (`Alert.prompt`); lo irreversible (publicar, cerrar, archivar) pide
 // confirmación.
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import {

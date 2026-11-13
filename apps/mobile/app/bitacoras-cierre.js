@@ -9,7 +9,8 @@
 // motivo, la historia del mes, e imprimirlo (el mismo papel del núcleo,
 // `armarHtmlDelMes`, por AirPrint o PDF, anotado como salida de datos).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -29,6 +30,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../componentes/pdf';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const TONO = { success: MARCA.verde, warning: MARCA.ambar, danger: MARCA.rojo };
 
@@ -158,7 +160,7 @@ export default function CierreDeBitacoras() {
             <View style={{ marginHorizontal: 16 }}><Aviso texto="Ese mes es anterior a la puesta en marcha de las bitácoras." /></View>
           ) : (
             <>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>Lecturas de temperatura y humedad</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Lecturas de temperatura y humedad</Text>
               <FilaDeKpis>
                 <Kpi icono="Thermometer" rotulo="Cumplimiento" valor={rotularCumplimiento(cumplimiento(L.hechas, L.esperadas))} color={TONO[tonoDelCumplimiento(cumplimiento(L.hechas, L.esperadas))] || MARCA.azulClaro} apoyo={`${L.hechas}/${L.esperadas} anotadas`} />
                 <Kpi icono="AlertTriangle" rotulo="Faltantes" valor={String(L.faltantes)} color={L.faltantes > 0 ? MARCA.rojo : MARCA.verde} apoyo={`${L.tarde} fuera de hora · ${L.fuera_de_rango} fuera de rango`} />
@@ -166,7 +168,7 @@ export default function CierreDeBitacoras() {
               {L.sin_accion > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${L.sin_accion} ${L.sin_accion === 1 ? 'lectura fuera de rango' : 'lecturas fuera de rango'} sin acción correctiva anotada. Hay que completarlas antes de firmar: la norma pide investigar la desviación y dejar constancia de qué se hizo.`} /></View> : null}
               {L.fuera_de_plan > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`${L.fuera_de_plan} ${L.fuera_de_plan === 1 ? 'lectura quedó' : 'lecturas quedaron'} fuera del plan del área (otro día u otra franja). Se anotaron y cuentan como trabajo hecho, pero no cierran un hueco del plan.`} /></View> : null}
 
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>Limpieza y orden</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Limpieza y orden</Text>
               <FilaDeKpis>
                 <Kpi icono="CheckCircle2" rotulo="Cumplimiento" valor={rotularCumplimiento(cumplimiento(Li.hechas, Li.esperadas))} color={TONO[tonoDelCumplimiento(cumplimiento(Li.hechas, Li.esperadas))] || MARCA.azulClaro} apoyo={`${Li.hechas}/${Li.esperadas} registradas`} />
                 <Kpi icono="AlertTriangle" rotulo="Faltantes" valor={String(Li.faltantes)} color={Li.faltantes > 0 ? MARCA.rojo : MARCA.verde} />

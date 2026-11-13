@@ -4,7 +4,8 @@
 // línea de apoyo y, si la hay, una forma que se lee de un vistazo (la curva
 // de ventas del día, la barra de cuántos llegaron). Si pide acción (`pide`),
 // el número toma el color de estado. En vidrio sobre la aurora.
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

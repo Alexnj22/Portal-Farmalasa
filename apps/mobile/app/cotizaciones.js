@@ -7,7 +7,8 @@
 // las activas). Anular, editar y compartir el PDF viven en el detalle; crear,
 // en `cotizacion/nueva`, con las mismas reglas del portal (núcleo `cotizacion`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { useEnTramos } from '../componentes/alFinal';
 import { router, Stack } from 'expo-router';

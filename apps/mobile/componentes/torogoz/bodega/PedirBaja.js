@@ -4,7 +4,8 @@
 // aprobada sale del lote. Lo escrito se guarda como borrador: la sesión se
 // cierra sola a los pocos minutos.
 import { useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { mensajeDeDistribucion, solicitarBaja } from '@nucleo/data/distribucion';
 import { MOTIVOS_BAJA, leerEntero } from '@nucleo/utils/distribucionBodega';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';

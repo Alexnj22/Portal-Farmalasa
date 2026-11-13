@@ -14,7 +14,8 @@
 // pidió va la RESPUESTA de quien resolvió (`approver_note`): en un rechazo es lo
 // único que hay para leer.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -40,6 +41,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 import { Cargando, Vacio } from '../componentes/formulario/Piezas';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 // Un día de calendario (`issue_date`) se lee tal cual; un instante (`created_at`)
 // en la hora de El Salvador — cortarlo a 10 caracteres daba el día UTC.
@@ -165,7 +167,7 @@ export default function MisDocumentos() {
                     <View style={{ flexDirection: 'row', flexWrap: 'wrap', columnGap: 14, rowGap: 4, marginTop: 2 }}>
                       {datos.map((x) => (
                         <View key={x.rotulo}>
-                          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.3 }}>{x.rotulo}</Text>
+                          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.3 }}>{x.rotulo}</Text>
                           <Text style={{ color: x.tono === 'danger' ? MARCA.rojo : x.tono ? MARCA.ambar : colorSistema.texto, fontSize: 13, fontWeight: '600' }}>{x.valor}</Text>
                         </View>
                       ))}

@@ -12,7 +12,8 @@
 // llegó (salidas «en la mano») y, para bodega, sacar el producto, probar sin
 // mover y confirmar su entrada (`DevolucionBloque` del portal).
 import { useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';

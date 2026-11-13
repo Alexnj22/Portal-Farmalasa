@@ -10,7 +10,8 @@
 // La usan Ventas perdidas y la venta en ruta. Escribe con la misma función
 // del portal (`anotarVentaPerdida`) y la misma línea de bitácora.
 import { useEffect, useRef, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import Indicador from '../../Indicador';
 import * as Haptics from 'expo-haptics';
 import { buscarEnSrs } from '@nucleo/data/srs';

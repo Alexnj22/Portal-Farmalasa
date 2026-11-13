@@ -11,7 +11,8 @@
 // «Navegador» (arriba a la derecha) queda como salida: para guardar o
 // compartir con los botones del sistema.
 import { useEffect, useMemo, useState } from 'react';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { WebView } from 'react-native-webview';

@@ -3,7 +3,8 @@
 // (`ordenPorUso`) dentro de cada pestaña. «Hoy» va siempre primero: son los
 // números del día y no compiten.
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Svg, { Circle } from 'react-native-svg';
 import { Host, Icon } from '@expo/ui';
 import { formatMoney, formatPct } from '@nucleo/utils/formatNumber';

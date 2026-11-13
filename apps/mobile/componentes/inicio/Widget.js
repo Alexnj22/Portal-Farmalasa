@@ -11,7 +11,8 @@
 //   · `Esqueleto`— las barras grises mientras llega el dato: un widget que
 //                  aparece de golpe empuja todo lo de abajo.
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, Text, View } from 'react-native';
+import { Animated, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';

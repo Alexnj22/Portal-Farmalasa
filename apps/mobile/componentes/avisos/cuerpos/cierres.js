@@ -31,6 +31,7 @@ import { FONDO, Insignia } from '../Piezas';
 import { Host, Icon } from '@expo/ui';
 import { iconoDe } from '../../../tema/iconos';
 import IconoFijo from '../../IconoFijo';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 const $ = (v) => formatMoney(v);
 const LADO = 44;
@@ -132,7 +133,7 @@ function PuestoDelVendedor({ d }) {
     return (
       <View style={{ flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 6 }}>
         <Icono nombre={puesto === 1 ? 'Star' : 'Medal'} color={color} tamano={14} />
-        <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>
+        <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>
           {`${puesto === 1 ? '1er lugar' : '2º lugar'} de ${de}`}
         </Text>
         <Texto peso="500">{`· ${parte}`}</Texto>
@@ -181,7 +182,7 @@ function CuerpoDeCierreDeMeta({ d }) {
         <>
           <Linea />
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', alignItems: 'baseline', columnGap: 8 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>{mesNuevo}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>{mesNuevo}</Text>
             <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{$(metaNueva)}</Text>
             {delta != null && Math.abs(delta) >= 0.05 && mesCorto ? (
               <Texto peso="500">{`${Math.abs(delta).toFixed(1)}% ${delta < 0 ? 'menos' : 'más'} que ${mesCorto}`}</Texto>
@@ -225,7 +226,7 @@ function CuerpoDeCierreDeEmpresa({ d }) {
       {top3?.length ? (
         <>
           <Linea />
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>Los que más vendieron</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>Los que más vendieron</Text>
           <View style={{ gap: 8 }}>{top3.map((v, i) => <FilaDelPodio key={v.employeeId ?? i} v={v} i={i} />)}</View>
         </>
       ) : null}

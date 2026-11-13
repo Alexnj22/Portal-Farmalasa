@@ -22,7 +22,8 @@
 // el banco por la función protegida y deja la bitácora). El DUI por caras con
 // su lector y los datos del contrato del Art. 23 están en «Editar la ficha».
 import { useMemo, useState } from 'react';
-import { Alert, ActionSheetIOS, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ActionSheetIOS, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Interruptor from '../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
@@ -44,6 +45,7 @@ import Fecha from '../../componentes/formulario/Fecha';
 import Avatar from '../../componentes/Avatar';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 const TIPOS_DE_CUENTA = [{ id: 'AHORRO', label: 'Ahorro' }, { id: 'CORRIENTE', label: 'Corriente' }];
 const azar = () => `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`;
@@ -295,7 +297,7 @@ export default function Expediente() {
               <Pressable key={o.value} disabled={!puedeEditar} onPress={() => { Haptics.selectionAsync().catch(() => {}); setEstudios((x) => ({ ...x, nivel: o.value })); }}
                 style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15 }}>{o.label}</Text>
-                {nivel === o.value ? <Text style={{ color: colorSistema.acento, fontSize: 18, fontWeight: '700' }}>✓</Text> : null}
+                <MarcaDeEleccion elegida={nivel === o.value} color={colorSistema.acento} />
               </Pressable>
             ))}
             {LEVELS_WITH_SPECIALTY.includes(nivel) ? <Campo multiline={false} editable={puedeEditar} value={estudios.especialidad} onChangeText={(v) => setEstudios((x) => ({ ...x, especialidad: v }))} placeholder="Especialidad" /> : null}

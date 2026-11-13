@@ -9,7 +9,8 @@
 // Controlado: el padre guarda el valor (`FORMA_DE_PAGO_INICIAL`) y sube la
 // foto al anotar con `fotoDelPago`. `foto` es el archivo elegido.
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { leerBoleta } from '@nucleo/data/bolsas';
 import { lecturaDeBoleta } from '@nucleo/utils/ingresoDeCaja';

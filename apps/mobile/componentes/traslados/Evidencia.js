@@ -3,7 +3,8 @@
 // del bucket privado, así que se firman al mostrarlas (`getSignedFileUrl`),
 // igual que `EvidenciaFotos` del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { Image, Modal, Pressable, Text, View } from 'react-native';
+import { Image, Modal, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { colorSistema } from '../Formulario';

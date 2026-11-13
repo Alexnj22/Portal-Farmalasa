@@ -5,7 +5,8 @@
 // inflaría la utilidad). La gráfica es la de «Venta y utilidad por día» del
 // portal: el área es la venta, las barras la utilidad.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../Tocable';
 import { fetchUtilidad } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { PERIODOS, rangoDe } from '@nucleo/utils/distribucionComun';

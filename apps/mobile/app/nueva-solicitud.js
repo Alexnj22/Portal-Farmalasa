@@ -4,7 +4,8 @@
 //
 // Cada una abre su formulario NATIVO; las que todavía no lo tienen abren el
 // formulario del portal dentro de la app (y lo dicen), hasta que lo tengan.
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -17,6 +18,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
 import { Vacio } from '../componentes/formulario/Piezas';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 // Dónde abre cada familia. `null` = todavía en el portal.
 const NATIVA = { facturacion: '/nueva/facturas', traslado: '/pedir-traslado', inventario: '/nueva/ajuste', minmax: '/nueva/minmax' };
@@ -53,7 +55,7 @@ export default function NuevaSolicitud() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, gap: 22, paddingBottom: 48 }} contentInsetAdjustmentBehavior="automatic">
         {familias.length ? (
           <View style={{ gap: 7 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>De la sala</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>De la sala</Text>
             <Vidrio radio={20}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {familias.map((f, i) => (
                 <Opcion key={f.key} primero={!i} icono={f.icono} color={COLOR[f.key] ?? MARCA.azul} titulo={f.label} detalle={f.desc}
@@ -66,7 +68,7 @@ export default function NuevaSolicitud() {
 
         {personales ? (
           <View style={{ gap: 7 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Personales</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>Personales</Text>
             <Vidrio radio={20}><View style={{ paddingHorizontal: 14, paddingVertical: 4 }}>
               {PERSONALES.map((t, i) => (
                 <Opcion key={t} primero={!i} icono={nombreDelIconoDeTipo(t)} color={MARCA.violeta} titulo={rotuloDeSolicitud(t)}

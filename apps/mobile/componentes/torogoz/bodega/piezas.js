@@ -1,7 +1,8 @@
 // Las piezas chicas de la bodega de Torogoz en la app: el color de la marca,
 // la insignia con la variante del núcleo (`success`/`warning`/…), la ficha
 // tocable de una lista y la confirmación nativa antes de escribir.
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import Vidrio from '../../Vidrio';
 import { colorSistema } from '../../Formulario';

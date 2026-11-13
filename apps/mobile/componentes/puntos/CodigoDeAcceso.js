@@ -8,7 +8,8 @@
 // En vez de «Copiar» (el teléfono no lo trae) está «Compartir», que hace lo
 // mismo y además lo manda.
 import { useEffect, useState } from 'react';
-import { Alert, Linking, Pressable, Share, Text, View } from 'react-native';
+import { Alert, Linking, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { emitirCodigoAcceso, estadoCodigoAcceso, salaDeHoy, verCodigoAcceso } from '@nucleo/data/puntos';

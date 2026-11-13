@@ -10,7 +10,8 @@
 // filtra por tipo de documento y por «precio cambió». El cruce sale del núcleo
 // (`lineasDelDrill`), con los niveles que el cargo puede ver.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { useMasAlFinal } from '../../componentes/ListaPaginada';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

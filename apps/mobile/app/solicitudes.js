@@ -20,7 +20,8 @@
 // dos ámbitos del portal son dos módulos con dos permisos, así que cada
 // solicitud se juzga con las reglas del SUYO (`esOperativa`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, SectionList, Text, View } from 'react-native';
+import { SectionList, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -57,6 +58,7 @@ import { iconoDe } from '../tema/iconos';
 import { abrirSolicitud } from '../pantallas';
 import { Cargando, Vacio } from '../componentes/formulario/Piezas';
 import IconoFijo from '../componentes/IconoFijo';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 /* Qué se le pide a la base. El portal lo pide por ámbito; acá los dos ámbitos
  * van en una sola lista, así que se pide lo más ancho que alguno de los dos
@@ -148,7 +150,7 @@ function Tarjeta({ r, detalle, teToca, porId, ahora, onAbrir }) {
             </Text>
             {r.status === 'CANCELLED' || (pendiente && sinAprobadorFijo) ? null : (
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                <Text style={{ color: r.status === 'REJECTED' ? MARCA.rojo : decidida ? MARCA.verde : colorSistema.texto2, fontSize: 11, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+                <Text style={{ color: r.status === 'REJECTED' ? MARCA.rojo : decidida ? MARCA.verde : colorSistema.texto2, fontSize: 11, fontWeight: '800', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>
                   {r.status === 'REJECTED' ? 'Rechazó' : decidida ? 'Aprobó' : 'Espera a'}
                 </Text>
                 {aprobador && !esperaSala && !area ? <Avatar empleado={aprobador} tamano={20} /> : null}
@@ -379,7 +381,7 @@ export default function Solicitudes() {
             <Vidrio radio={14}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, paddingHorizontal: 12, minHeight: 36 }}>
                 <IconoFijo name={iconoDe(nombreDelIconoDeTipo(section.tipo))} size={14} color={colorSistema.texto2} />
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 13, fontWeight: '800', textTransform: MAYUSCULAS, letterSpacing: 0.5 }}>
                   {REQUEST_TYPES[section.tipo]?.label ?? 'Solicitud'}
                 </Text>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700' }}>{section.total}</Text>

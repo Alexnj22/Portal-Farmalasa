@@ -8,7 +8,8 @@
 // diferencia» abre `diferencia-corte`: causa con comprobante, responsables y
 // sus abonos, igual que la ficha del corte del portal.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -28,6 +29,7 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { BarraDelDia, ESTADO_DIF, montoDelDia } from '../componentes/cortes/diferencias';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const VIA = { JUSTIFICA: 'Con causa', REPONE: 'Lo repone', RETIRA: 'Se retira del acumulado' };
 
@@ -74,7 +76,7 @@ export default function CajaDia() {
               </View>
             </Vidrio>
 
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>
               {`Los cortes que no cuadraron · ${cortes.length}`}
             </Text>
             {cortes.map((c) => {

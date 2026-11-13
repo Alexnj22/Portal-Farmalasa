@@ -2,7 +2,8 @@
 // «mientras se usa» y no «siempre» (o el sistema no dejó arrancar el fondo).
 // Se dice corto y con el camino a Ajustes, que es el único lugar donde se
 // cambia: iOS no vuelve a mostrar el diálogo.
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { Aviso } from './formulario/Piezas';
 import { MARCA } from './inicio/marca';
 

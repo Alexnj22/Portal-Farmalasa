@@ -13,7 +13,8 @@
 // vuelve a mostrar) para todos (`alternarProductoOcultoEnVentas`). Con
 // «Ocultar montos» las cifras salen como puntos.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { alternarProductoOcultoEnVentas, fetchTotalVendidoPorProductos, fetchVentasPorProducto } from '@nucleo/data/ventas';

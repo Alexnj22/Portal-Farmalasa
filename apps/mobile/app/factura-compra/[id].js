@@ -17,7 +17,8 @@
 // Si el proveedor la invalidó y la anulación vino con su respaldo, «Ver el
 // documento de la anulación» abre ese PDF (`facturas_compra_abrir`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import Indicador from '../../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

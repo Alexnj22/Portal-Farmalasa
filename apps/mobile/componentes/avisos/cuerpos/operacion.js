@@ -25,6 +25,7 @@ import { colorSistema } from '../../Formulario';
 import { MARCA } from '../../inicio/marca';
 import { usePersona } from '../persona';
 import { Advertencia, Anillo, FONDO, Insignia, Panel, Pildora, Rotulo } from '../Piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 // ── Los tonos del portal (`tonos(isDark)`) en la paleta de la app ──────────
 const TONO = {
@@ -72,7 +73,7 @@ function Celda({ rotulo, valor, color, derecha = false, detalle, colorRotulo }) 
   return (
     <View style={{ flex: 1, paddingHorizontal: 12, paddingVertical: 9, gap: 2, alignItems: derecha ? 'flex-end' : 'flex-start',
       borderLeftWidth: derecha ? 0.5 : 0, borderLeftColor: colorSistema.separador }}>
-      <Text style={{ color: colorRotulo ?? color ?? colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase', textAlign: derecha ? 'right' : 'left' }}>{rotulo}</Text>
+      <Text style={{ color: colorRotulo ?? color ?? colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS, textAlign: derecha ? 'right' : 'left' }}>{rotulo}</Text>
       <Text style={{ color: color ?? colorSistema.texto, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'], textAlign: derecha ? 'right' : 'left' }}>{valor}</Text>
       {detalle ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textAlign: derecha ? 'right' : 'left' }}>{detalle}</Text> : null}
     </View>
@@ -138,7 +139,7 @@ function CuerpoDeCorte({ d }) {
         </View>
         <View style={{ width: 112, paddingHorizontal: 12, paddingVertical: 10, alignItems: 'flex-end', justifyContent: 'center', gap: 2,
           borderLeftWidth: 0.5, borderLeftColor: colorSistema.separador }}>
-          <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{c.rotulo}</Text>
+          <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{c.rotulo}</Text>
           {diferencia ? <Text style={{ color, fontSize: 17, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{diferencia}</Text> : null}
         </View>
       </>
@@ -470,7 +471,7 @@ function FilaDeCortePendiente({ c, primero }) {
         {cuando ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600' }}>{cuando}</Text> : null}
       </View>
       <View style={{ alignItems: 'flex-end', gap: 1 }}>
-        <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{CORTE[estado].rotulo}</Text>
+        <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{CORTE[estado].rotulo}</Text>
         {estado !== 'sin_conteo' ? (
           <Text style={{ color, fontSize: 14, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{estado === 'cuadra' ? '$0.00' : firmado(c.tramo)}</Text>
         ) : null}

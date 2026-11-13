@@ -15,7 +15,8 @@
 // La campana va en la misma barra, como botón del sistema con su globo: la
 // barra de la derecha es UNA, y declarar la del filtro reemplaza la campana
 // que pone la raíz.
-import { Platform, Pressable, ScrollView, Text } from 'react-native';
+import { Platform, ScrollView, Text } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

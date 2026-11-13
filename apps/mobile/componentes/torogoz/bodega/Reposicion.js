@@ -3,7 +3,8 @@
 // venta o se fijan a mano (quien administra, en la hoja `MinMax`). El pedido
 // sugerido sale agrupado por el proveedor de la última compra, como CSV.
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { useFocusEffect } from 'expo-router';
 import { fetchReposicion, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { filasDeReposicion, pedidoSugeridoCsv, resumenDeReposicion } from '@nucleo/utils/distribucionBodega';

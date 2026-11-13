@@ -9,7 +9,8 @@
 //     falta se cobra en Cuentas por cobrar.
 // Sin nada pagado se entrega y se factura como cualquier venta.
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text } from 'react-native';
+import { Alert, ScrollView, Text } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Indicador from '../componentes/Indicador';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -25,6 +26,7 @@ import { Aviso, BotonGrande, Dato, Seccion, exigeParametro } from '../componente
 import Segmentos from '../componentes/Segmentos';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const RESTO = [{ id: 'efectivo', label: 'Efectivo' }, { id: 'otra', label: 'Tarjeta o transferencia' }];
 
@@ -126,7 +128,7 @@ function RetirarApartado() {
               <>
                 {todoEfectivo && Number(v.saldo) > 0.004 ? (
                   <>
-                    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>¿Cómo paga lo que falta?</Text>
+                    <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>¿Cómo paga lo que falta?</Text>
                     <Segmentos opciones={RESTO} activa={resto} onCambiar={(x) => { setResto(x); setCandidatos(null); }} margen={0} />
                   </>
                 ) : null}

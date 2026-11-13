@@ -5,7 +5,8 @@
 // renglón se sube y qué acepta el bucket lo decide el núcleo
 // (`expedienteDeSucursal`), incluidos los tres de cada enfermera. Los
 // documentos propios se agregan y editan en `sucursal/documento`.
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { ajustesConArchivo, seQuitaDesdeLaApp, seSubeDesdeLaApp } from '@nucleo/utils/expedienteDeSucursal';

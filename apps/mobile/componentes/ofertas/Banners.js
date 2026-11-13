@@ -3,7 +3,8 @@
 // su estado (el de una oferta: `estadoDeOferta`, por fechas y publicado) y sus
 // fechas; tocar edita, mantener presionado publica, retira o borra.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { borrarBanner, fetchBanners, publicarBanner } from '@nucleo/data/ofertasClientes';

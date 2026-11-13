@@ -8,7 +8,8 @@
 // Las tarjetas de la red (Se les debe, Acumulado, Canjeado, Pueden canjear)
 // tienen su propio permiso (`puntos_tarjetas`), como en el portal.
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -26,6 +27,7 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Grafica from '../metas/Graficas';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 export const COLOR_ACUMULADO = MARCA.azulClaro;
 export const COLOR_CANJEADO = MARCA.ambar;
@@ -43,7 +45,7 @@ const ambos = (v) => `${puntosTexto(v)} pts · ${dolaresDePuntos(v)}`;
 
 const Titulo = ({ children, nota }) => (
   <View style={{ gap: 2 }}>
-    <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>{children}</Text>
+    <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>{children}</Text>
     {nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{nota}</Text> : null}
   </View>
 );

@@ -27,7 +27,8 @@
 // carné del día, «Reimprimir el carné de plástico» (la etiqueta de 85 × 30 mm
 // con el PIN permanente, por AirPrint — `plataforma/carnePrint`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Linking, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { Alert, Linking, ScrollView, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

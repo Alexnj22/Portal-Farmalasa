@@ -9,7 +9,8 @@
 // `deleteProveedor`, `updateProductsMarkND`), con confirmación donde el portal
 // la pide.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import {

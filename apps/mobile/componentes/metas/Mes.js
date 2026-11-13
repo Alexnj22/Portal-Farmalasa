@@ -21,11 +21,12 @@ import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Grafica, { Termometro } from './Graficas';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 export const COLOR_TRAMO = { completo: MARCA.verde, medio: MARCA.ambar, nada: MARCA.rojo };
 
 const Titulo = ({ children }) => (
-  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: 'uppercase' }}>{children}</Text>
+  <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.6, textTransform: MAYUSCULAS }}>{children}</Text>
 );
 
 export function GraficaDelMes({ data }) {
@@ -143,7 +144,7 @@ export function Ranking({ data, limite }) {
                   {r.ordenActivo === 'hora' ? ` · ${horasCortas(v.horas)} h${v.dias_horario !== v.dias ? ` en ${v.dias_horario}` : ''}` : ` · ${formatMoney(v.venta_dia)}/día`}
                 </Text>
                 {v.sala_ajena || v.dias_sin_turno > 0 ? (
-                  <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '800', textTransform: 'uppercase' }}>
+                  <Text style={{ color: MARCA.ambar, fontSize: 11, fontWeight: '800', textTransform: MAYUSCULAS }}>
                     {[v.sala_ajena ? 'No es su sala' : null, v.dias_sin_turno > 0 ? `${v.dias_sin_turno} día${v.dias_sin_turno === 1 ? '' : 's'} sin turno` : null].filter(Boolean).join(' · ')}
                   </Text>
                 ) : null}
@@ -154,7 +155,7 @@ export function Ranking({ data, limite }) {
               </View>
               <View style={{ alignItems: 'flex-end' }}>
                 <Text style={{ color: bajo ? MARCA.rojo : colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(valor)}</Text>
-                <Text style={{ color: bajo ? MARCA.rojo : MARCA.verde, fontSize: 10, fontWeight: '800', textTransform: 'uppercase' }}>{bajo ? 'bajo el promedio' : 'sobre el promedio'}</Text>
+                <Text style={{ color: bajo ? MARCA.rojo : MARCA.verde, fontSize: 10, fontWeight: '800', textTransform: MAYUSCULAS }}>{bajo ? 'bajo el promedio' : 'sobre el promedio'}</Text>
               </View>
             </View>
           );

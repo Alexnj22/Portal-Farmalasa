@@ -2,7 +2,8 @@
 // Alex» es el TÍTULO GRANDE de la barra del sistema —se encoge al desplazar—;
 // acá queda la línea de abajo (sala · día) y la foto, que va a la derecha de
 // la barra y lleva a «Yo».
-import { Pressable, Text, Platform, View } from 'react-native';
+import { Text, Platform, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import { saludoDeLaHora } from '@nucleo/utils/inicio';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';

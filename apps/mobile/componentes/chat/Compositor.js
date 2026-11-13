@@ -8,7 +8,8 @@
 // globo aparece al tocar y acá el cuadro se vacía sin esperar a la red, como en
 // la app de puntos. Con el cuadro vacío, el botón es un micrófono (`Voz.js`).
 import { useEffect, useRef, useState } from 'react';
-import { Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Alert, Image, Modal, ScrollView, Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';

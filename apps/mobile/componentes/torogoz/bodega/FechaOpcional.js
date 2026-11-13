@@ -3,7 +3,8 @@
 // fecha» se vería con fecha de hoy y se guardaría así sin que nadie la
 // eligiera. Acá, sin fecha se dice «Sin fecha» con un botón para poner una;
 // con fecha, el selector y «Quitar».
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { hoySV } from '@nucleo/utils/fecha';
 import Fecha from '../../formulario/Fecha';
 import { colorSistema } from '../../Formulario';

@@ -4,7 +4,8 @@
 // categoría no: `products` no la tiene. Usa `fetchProductosParaPromocion`, la
 // misma consulta del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchLaboratoriosConProductos, fetchProductosParaPromocion } from '@nucleo/data/promociones';

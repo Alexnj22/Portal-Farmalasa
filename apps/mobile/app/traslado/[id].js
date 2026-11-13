@@ -14,7 +14,8 @@
 // La existencia se relee AL ABRIR, no al apretar: el número de la casilla tiene
 // que ser el de ahora.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -40,11 +41,13 @@ import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
 import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
+import { MAYUSCULAS } from '../../tema/mayusculas';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 function Bloque({ titulo, children }) {
   return (
     <View style={{ gap: 7 }}>
-      {titulo ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>{titulo}</Text> : null}
+      {titulo ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>{titulo}</Text> : null}
       <Vidrio radio={20}><View style={{ padding: 14, gap: 10 }}>{children}</View></Vidrio>
     </View>
   );
@@ -276,7 +279,7 @@ export default function Traslado() {
                 <Pressable key={mo} onPress={() => { Haptics.selectionAsync().catch(() => {}); setMotivo(mo); }}
                   style={{ flexDirection: 'row', alignItems: 'center', minHeight: 40, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                   <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16 }}>{mo}</Text>
-                  {motivo === mo ? <Text style={{ color: MARCA.azulClaro, fontSize: 18, fontWeight: '700' }}>✓</Text> : null}
+                  <MarcaDeEleccion elegida={motivo === mo} />
                 </Pressable>
               ))}
               <Campo value={texto} onChangeText={setTexto} placeholder={motivo === 'Otro' ? '¿Cuál es el motivo? (obligatorio)' : 'Algo más que quieras decir (opcional)'} />

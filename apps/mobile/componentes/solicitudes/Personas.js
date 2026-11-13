@@ -22,6 +22,7 @@ import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import IconoFijo from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const TONO = { warning: MARCA.ambar, danger: MARCA.rojo, success: MARCA.verde, card: colorSistema.texto2 };
 
@@ -40,7 +41,7 @@ function Ficha({ rotulo, persona, sala, vacio, cuando, apunte, tono = 'card', pr
           </View>
         )}
       <View style={{ flex: 1, gap: 2 }}>
-        <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text>
+        <Text style={{ color, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text>
         <Text style={{ color: sala || persona ? colorSistema.texto : colorSistema.texto2, fontSize: 16, fontWeight: sala || persona ? '700' : '500',
           fontStyle: sala || persona ? 'normal' : 'italic' }}>{nombre}</Text>
         {sala ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>La sala que tiene el producto</Text>

@@ -6,7 +6,8 @@
 // Con `pdf`, además se puede adjuntar un PDF (la boleta de incapacidad: el
 // portal acepta «PDF, JPG o PNG»). El PDF entra en la misma lista con su
 // `tipo` y se muestra como una tarjeta con el nombre, no como miniatura.
-import { Alert, Image, Pressable, Text, View } from 'react-native';
+import { Alert, Image, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import * as Haptics from 'expo-haptics';

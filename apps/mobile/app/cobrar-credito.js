@@ -17,7 +17,8 @@
 // de la caja antes de escribir. El formulario guarda borrador: la sesión se
 // cierra sola y nadie vuelve a escribir un comprobante entero.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { cobroSinRespuesta, fetchCreditosDelCliente, fetchCreditosReservados, fetchPosProveedores, leerPagoDeCredito, nuevaClaveDeCobro, pagarCreditos } from '@nucleo/data/creditos';
 import {

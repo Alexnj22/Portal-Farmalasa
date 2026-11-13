@@ -9,7 +9,8 @@
 // que la sala YA decidió tener y no tiene. Con alcance de una sala manda la
 // suya. Tocar un producto abre su Mín·Máx.
 import { memo, useCallback, useEffect, useMemo, useState } from 'react';
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

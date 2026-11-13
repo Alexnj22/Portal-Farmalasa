@@ -5,7 +5,8 @@
 // (`utils/rondaDeBitacora`); acá sólo se dibuja, en vidrio sobre la aurora como
 // el resto de la app.
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';
 import { fueraDeRango, registrarRonda, rotularRango } from '@nucleo/data/bitacoras';
@@ -21,6 +22,7 @@ import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const numero = (v) => v.replace(',', '.').replace(/[^0-9.-]/g, '');
 
@@ -112,7 +114,7 @@ function RenglonLimpieza({ item, valor, onCambio, errorServidor }) {
         return (
           <View key={g.tipo} style={{ gap: 4, paddingLeft: 34 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <Text style={{ color: colorSistema.texto2, fontWeight: '700', fontSize: 12, textTransform: 'uppercase' }}>{g.label}</Text>
+              <Text style={{ color: colorSistema.texto2, fontWeight: '700', fontSize: 12, textTransform: MAYUSCULAS }}>{g.label}</Text>
               <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                 <Text style={{ color: completo ? MARCA.verde : colorSistema.texto2, fontWeight: '700' }}>{`${hechas} de ${g.items.length}`}</Text>
                 <TextoBoton texto={completo ? 'Ninguna' : 'Todas'} onPress={() => onCambio({ puntos: alternarGrupoDePuntos(marcadas, g.items) })} />
@@ -215,7 +217,7 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
                     ) : null}
                     {m.limpiezas.length ? (
                       <View style={{ borderTopWidth: 0.5, borderTopColor: colorSistema.separador, paddingTop: 8 }}>
-                        <Text style={{ color: colorSistema.texto2, fontWeight: '700', fontSize: 12, textTransform: 'uppercase' }}>Limpieza</Text>
+                        <Text style={{ color: colorSistema.texto2, fontWeight: '700', fontSize: 12, textTransform: MAYUSCULAS }}>Limpieza</Text>
                         {m.limpiezas.map((it) => (
                           <RenglonLimpieza key={it.clave} item={it} valor={valores[it.clave] || {}} onCambio={(p) => cambiar(it.clave, p)} errorServidor={errores[it.clave]} />
                         ))}

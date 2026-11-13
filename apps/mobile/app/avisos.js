@@ -50,6 +50,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { Vacio } from '../componentes/formulario/Piezas';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 // El detalle se pide para los avisos que nombran una solicitud todavía abierta.
 // Tope: con más, la pestaña pagaría decenas de lecturas por abrirse.
@@ -74,7 +75,7 @@ function Seccion({ texto, nota, derecha }) {
   return (
     <View style={{ marginHorizontal: 32, marginTop: 6, gap: 2 }}>
       <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{texto}</Text>
+        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{texto}</Text>
         {derecha}
       </View>
       {nota ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{nota}</Text> : null}

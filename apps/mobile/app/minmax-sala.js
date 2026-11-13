@@ -19,7 +19,8 @@
 // mantenimiento lo respeta solo: `hasPermission` apaga la escritura mientras el
 // módulo está tomado por otra persona.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, FlatList, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';

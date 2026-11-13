@@ -14,6 +14,7 @@ import { Children, forwardRef, isValidElement } from 'react';
 import { Appearance, Platform, PlatformColor, ScrollView, Text, TextInput, View } from 'react-native';
 import { paletaDe } from '../tema/material';
 import Vidrio from './Vidrio';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const ios = Platform.OS === 'ios';
 // Fuera de iPhone, cada color se lee como GETTER y devuelve el del modo ACTUAL
@@ -39,6 +40,8 @@ const COLORES = {
   verde: ['systemGreen', '#1B873F', '#30D158'],
   naranja: ['systemOrange', '#B26A00', '#FF9F0A'],
   acento: ['link', '#0052CC', '#0A84FF'],
+  // El contenedor de un campo relleno de Material 3 (en iPhone no se usa).
+  relleno: ['tertiarySystemFill', '#E6E0E9', '#36343B'],
 };
 export const colorSistema = {
   separadorClaro: 'rgba(127,127,127,0.25)',   // para SVG, que no lee colores del sistema
@@ -48,7 +51,7 @@ export const colorSistema = {
 // sistema (Material You, tema/material.js); rojo, verde y naranja son
 // semánticos y se quedan fijos. Sin paleta (falla rara), los fijos de arriba.
 const DE_LA_PALETA = { fondo: 'surfaceContainerLow', fila: 'surfaceContainerLowest', texto: 'onSurface', texto2: 'onSurfaceVariant',
-  placeholder: 'outline', separador: 'outlineVariant', acento: 'primary' };
+  placeholder: 'outline', separador: 'outlineVariant', acento: 'primary', relleno: 'surfaceContainerHighest' };
 const deAndroid = (k, claro, noche) => () => {
   const o = oscuro();
   const p = DE_LA_PALETA[k] ? paletaDe(o) : null;
@@ -83,7 +86,9 @@ export function Grupo({ titulo, pie, children, vidrio = true }) {
   ));
   return (
     <View style={{ marginHorizontal: 16 }}>
-      {titulo ? <Text style={{ color: colorSistema.texto2, fontSize: 13, textTransform: 'uppercase', marginLeft: 16, marginBottom: 6 }}>{titulo}</Text> : null}
+      {titulo ? <Text style={ios ? { color: colorSistema.texto2, fontSize: 13, textTransform: MAYUSCULAS, marginLeft: 16, marginBottom: 6 }
+        // Android: el subtítulo de lista de Material 3 — primario, 14, medio.
+        : { color: colorSistema.acento, fontSize: 14, fontWeight: '500', marginLeft: 16, marginBottom: 8 }}>{titulo}</Text> : null}
       {vidrio
         ? <Vidrio radio={ios ? 26 : 16}>{contenido}</Vidrio>
         : <View style={{ backgroundColor: colorSistema.fila, borderRadius: ios ? 26 : 16, overflow: 'hidden' }}>{contenido}</View>}

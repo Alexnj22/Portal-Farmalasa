@@ -21,7 +21,8 @@
 // nombre. La tarjeta trae la descripción, el año y, en las de clima, el atajo
 // «Ver análisis».
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Indicador from '../componentes/Indicador';
 import { router, Stack, useFocusEffect } from 'expo-router';
@@ -43,6 +44,7 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const COLOR_ESTADO = { activa: MARCA.verde, cerrada: MARCA.azulClaro, borrador: colorSistema.texto2, archivada: colorSistema.texto2 };
 const puntos = (s) => (s == null ? '—' : String(s));
@@ -126,7 +128,7 @@ function Detalle({ encuesta, puedeEditar }) {
     <View style={{ gap: 6, marginTop: 4 }}>
       <Dato rotulo="Promedio general" valor={puntos(general)} fuerte primero />
       {d.bloques.map((b) => <Dato key={b.id} rotulo={b.nombre} valor={puntos(promedioPorPersona(d.filas, b.indices || [], inv))} />)}
-      {personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginTop: 8 }}>Por persona</Text> : null}
+      {personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textTransform: MAYUSCULAS, marginTop: 8 }}>Por persona</Text> : null}
       {personas.map(({ r, s }) => {
         const emp = r.employee ? { id: r.employee.id, name: `${r.employee.first_names ?? ''} ${r.employee.last_names ?? ''}`.trim() } : { name: r.display_name || '—' };
         const abiertaEsta = persona === r.id;
@@ -164,7 +166,7 @@ function Detalle({ encuesta, puedeEditar }) {
       {!personas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Nadie respondió todavía.</Text> : null}
       {pendientes.length ? (
         <>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textTransform: 'uppercase', marginTop: 8 }}>{`Faltan por responder · ${pendientes.length}`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '600', textTransform: MAYUSCULAS, marginTop: 8 }}>{`Faltan por responder · ${pendientes.length}`}</Text>
           <Text style={{ color: colorSistema.texto, fontSize: 14 }}>{pendientes.map((p) => shortEmployeeName(p)).join(', ')}</Text>
         </>
       ) : null}

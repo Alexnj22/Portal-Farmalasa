@@ -8,7 +8,8 @@
 // No sabe guardar: `onEnviar(respuestas, contacto, segundos)` lo hace quien lo
 // monta; si lanza, el error se muestra y nada se pierde.
 import { useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Interruptor from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala, escalaNumerica } from '@nucleo/utils/encuestasClientes';

@@ -9,7 +9,8 @@
 // Hacienda, el sistema pide confirmarlo. Después se aplica en el sistema de la
 // caja (`pushClienteAlErp`) sin hacer esperar: si no entra, queda en cola.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -29,6 +30,7 @@ import Avatar from '../../componentes/Avatar';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const corta = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const TECLADO = { dui: 'number-pad', nit: 'number-pad', nrc: 'number-pad', phone: 'phone-pad', telefono2: 'phone-pad', retencion_pct: 'number-pad', email: 'email-address' };
@@ -47,7 +49,7 @@ function Linea({ campo, valor, onCambiar, editable, error, requerido, opciones, 
   const rotulo = `${ETIQUETA_CAMPO[campo] ?? campo}${requerido ? ' *' : ''}`;
   return (
     <View style={{ gap: 4 }}>
-      <Text style={{ color: error ? MARCA.rojo : colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{rotulo}</Text>
+      <Text style={{ color: error ? MARCA.rojo : colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{rotulo}</Text>
       {!editable ? (
         <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{valor || '—'}</Text>
       ) : opciones ? (

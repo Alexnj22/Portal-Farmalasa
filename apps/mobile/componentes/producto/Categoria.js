@@ -3,7 +3,8 @@
 // lista escrita a mano), con buscador, «Sin categoría» y crear una nueva. Al
 // elegir se guarda en el acto, como el autoguardado del portal.
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchProductCategories } from '@nucleo/data/inventarioTab';

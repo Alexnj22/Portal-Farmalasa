@@ -16,7 +16,8 @@
 //     rechazó la vez anterior y la foto si la hay — lo único que tiene quien
 //     decide sobre dinero que no está en ningún cajón.
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
@@ -30,6 +31,7 @@ import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
 import { ICONO } from './iconos';
 import IconoFijo from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const TONO = { info: MARCA.azulClaro, warning: MARCA.ambar, success: MARCA.verde };
 
@@ -37,7 +39,7 @@ function Bloque({ rotulo, children, color }) {
   return (
     <Vidrio radio={20} tinte={color ? `${color}1A` : undefined}>
       <View style={{ padding: 14, gap: 4 }}>
-        <Text style={{ color: color ?? colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>{rotulo}</Text>
+        <Text style={{ color: color ?? colorSistema.texto2, fontSize: 11, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>{rotulo}</Text>
         {children}
       </View>
     </Vidrio>
@@ -101,7 +103,7 @@ function MovimientoSinComprobante({ meta }) {
       <Vidrio radio={20} tinte={`${color}14`}>
         <View style={{ padding: 16, gap: 12 }}>
           <View style={{ alignItems: 'center', gap: 2 }}>
-            <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+            <Text style={{ color, fontSize: 12, fontWeight: '800', letterSpacing: 0.5, textTransform: MAYUSCULAS }}>
               {sale ? 'Salió de la caja' : 'Dice que entró'}
             </Text>
             <Text style={{ color: colorSistema.texto, fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'] }}>

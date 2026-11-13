@@ -15,7 +15,8 @@
 // «Detectar código» y «Adjuntar JSON» de un documento «Sin JSON», y «Ver el
 // documento de la anulación» de uno invalidado, viven en su ficha.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { compartirZipDeFacturas } from '../componentes/compras/zipDeFacturas';
 import { router, Stack, useLocalSearchParams } from 'expo-router';

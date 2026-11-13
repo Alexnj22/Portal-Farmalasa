@@ -20,7 +20,8 @@
 // (`csvDelBanco`, el MISMO texto que baja el portal; sin la llave de aprobar
 // las cuentas salen como ****).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, ScrollView, Share, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Share, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { File, Paths } from 'expo-file-system';
 import { router, Stack } from 'expo-router';
@@ -50,6 +51,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { compartirPdf, imprimirPapel } from '../componentes/pdf';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const r2 = (n) => parseFloat((Number(n) || 0).toFixed(2));
 const ESTADOS = [
@@ -349,7 +351,7 @@ export default function Nomina() {
         {(cargando && !(entradas || []).length) || periodos == null ? <Cargando /> : porSala.map(([k, l]) => (
           <View key={k} style={{ gap: 8 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, marginTop: 4 }}>
-              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>
+              <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>
                 {`${nombreSala(k)} · ${formatMoney(l.reduce((s, e) => s + Number(e.net_pay || 0), 0))}`}
               </Text>
               {puedeDescargar ? (

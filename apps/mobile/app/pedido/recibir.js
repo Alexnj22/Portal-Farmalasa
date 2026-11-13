@@ -26,7 +26,8 @@
 //   · «¿Necesitas un producto ya?» lo busca en TODO el pedido (dice en qué
 //     hoja cayó) para recibirlo solo, y dentro de una hoja larga hay buscador.
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';

@@ -6,7 +6,8 @@
 // 2026-10-12 en el emulador: tocar una ruta de reparto mataba el proceso.
 // Por eso cada mapa pregunta `hayMapa` antes de montarse, y sin llave se pinta
 // esto: la misma ruta, en la app de mapas del teléfono.
-import { Linking, Platform, Pressable, Text, View } from 'react-native';
+import { Linking, Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import Constants from 'expo-constants';
 import Vidrio from './Vidrio';
 import { colorSistema } from './Formulario';

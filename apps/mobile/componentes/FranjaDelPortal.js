@@ -8,7 +8,8 @@
 // entra—, con el texto corto como en la pantalla chica del portal y el largo
 // al tocarla. Si la base no contesta, no se pinta nada (como allá).
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { Host, Icon } from '@expo/ui';
 import { useBannerPortal } from '@nucleo/hooks/useBannerPortal';
 import { iconoDe } from '../tema/iconos';

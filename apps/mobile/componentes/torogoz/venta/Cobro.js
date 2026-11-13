@@ -15,7 +15,8 @@
 // ⚠️ Facturar mueve dinero y transmite a Hacienda, y no se deshace: el botón
 // pide confirmación con el total y la forma de pago antes de escribir.
 import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import Interruptor from '../../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { formatMoney } from '@nucleo/utils/formatNumber';

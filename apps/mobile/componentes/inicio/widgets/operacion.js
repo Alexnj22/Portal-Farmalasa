@@ -14,6 +14,7 @@ import { Avance } from '../Kpi';
 import { useDato } from '../useDato';
 import { MARCA } from '../marca';
 import { colorSistema } from '../../Formulario';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 // ── Pedir un ajuste ─────────────────────────────────────────────────────────
 // Los tres widgets del portal para pedir algo (anulación o cambio de una
@@ -64,7 +65,7 @@ export function ConsultaInventario({ ctx }) {
       {miErp && cargando && !dato ? <Esqueleto lineas={2} /> : null}
       {faltantes.length ? (
         <>
-          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginTop: 8, marginBottom: 2 }}>Sin existencia, puedes solicitar en estas sucursales</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginTop: 8, marginBottom: 2 }}>Sin existencia, puedes solicitar en estas sucursales</Text>
           {faltantes.map((f, i) => (
             <Renglon key={f.erp_product_id} primero={!i} titulo={f.descripcion}
               detalle={`${(f.donde ?? []).slice(0, 3).map((d) => `${d.sala} ${d.unidades}`).join(' · ')}${f.min_units != null ? ` · mín ${f.min_units}` : ''}`}

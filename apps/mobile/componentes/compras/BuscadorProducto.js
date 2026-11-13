@@ -2,7 +2,8 @@
 // portal: busca por nombre con la regla del portal (`buscarProductos` de
 // `cargarCompra`) y muestra el código de barras para distinguir parecidos.
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { buscarProductos } from '@nucleo/data/cargarCompra';
 import { colorSistema } from '../Formulario';

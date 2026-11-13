@@ -9,7 +9,8 @@
 // termómetro y su calibración, y agregar un área. Las reglas y la escritura
 // son las del núcleo (`data/bitacoras`, `configuracionDeBitacoras`).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import Interruptor from '../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -32,6 +33,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const textoDelError = (e) => (typeof e === 'string' ? e : e?.message || 'Intenta de nuevo.');
 const hoja = (titulo, opciones, onElegir) => ActionSheetIOS.showActionSheetWithOptions(
@@ -55,7 +57,7 @@ function Horario({ titulo, filas, horas, onCambiar }) {
   if (!filas.length) return null;
   return (
     <View style={{ gap: 4 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>{titulo}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS }}>{titulo}</Text>
       {filas.map((f, i) => (
         <View key={f.clave} style={{ flexDirection: 'row', alignItems: 'center', gap: 10, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
           <Text style={{ width: 84, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{f.label}</Text>
@@ -210,7 +212,7 @@ function Area({ area, puedeEditar, onGuardado }) {
           ) : null}
           {receta ? (
             <View style={{ gap: 2 }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase' }}>Cuántos hay</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS }}>Cuántos hay</Text>
               {receta.tipos.map((t) => <Contador key={t.tipo} label={t.label} valor={t.cuenta} minimo={receta.minimo} onCambiar={(n) => setPuntos(ajustarPuntos(puntos, t.tipo, n))} />)}
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{receta.total > 1 ? `Al anotar la limpieza se marca cuáles de los ${receta.total} se limpiaron.` : 'Con uno solo, la limpieza se anota con una sola casilla.'}</Text>
             </View>

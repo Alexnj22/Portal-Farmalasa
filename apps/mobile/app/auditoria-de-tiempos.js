@@ -15,7 +15,8 @@
 // marca con su motivo (`componentes/personas/CorregirMarcas`, la acción del
 // portal). Cerrar la quincena está en la vista de Quincena.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

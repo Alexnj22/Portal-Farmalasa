@@ -3,7 +3,8 @@
 // jerarquía, «Cubre N áreas», a quién responde (jefatura y adscritos), las
 // alertas del expediente, la sala, y WhatsApp/llamar visibles. Tocarla abre la
 // ficha NATIVA (`empleado/[id]`). La jefatura y el segundo van «destacados».
-import { Linking, Pressable, Text, View } from 'react-native';
+import { Linking, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { router } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { estadoDePersona, estaAusenteHoy } from '@nucleo/utils/estadoDePersona';
@@ -20,6 +21,7 @@ import Vidrio from '../Vidrio';
 import { iconoDe } from '../../tema/iconos';
 import { PildoraDeCargo } from './Piezas';
 import IconoComun from '../IconoFijo';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const INACTIVOS = ['INACTIVO', 'Inactivo', 'LIQUIDADO', 'Liquidado'];
 const soloDigitos = (tel) => String(tel || '').replace(/\D/g, '');
@@ -127,7 +129,7 @@ export default function TarjetaPersona({ emp, roles, nombreDeSala, destacada = f
               </>
             ) : null}
           </View>
-          {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>{nombreDeSala}</Text> : null}
+          {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>{nombreDeSala}</Text> : null}
         </View>
       </Vidrio>
     </Pressable>
@@ -171,7 +173,7 @@ export function TarjetaPracticante({ p, nombreDeSala, puedeEditar = false }) {
           </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{p.institucion_educativa || 'Sin institución'}</Text>
           <Text style={{ color: colorSistema.texto2, fontSize: 12, fontVariant: ['tabular-nums'] }}>{`${dma(p.fecha_inicio)} → ${dma(p.fecha_fin)}`}</Text>
-          {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{nombreDeSala}</Text> : null}
+          {nombreDeSala ? <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS }}>{nombreDeSala}</Text> : null}
         </View>
       </Vidrio>
     </Pressable>

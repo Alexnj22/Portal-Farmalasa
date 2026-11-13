@@ -10,7 +10,8 @@
 //
 // `AvisoDeUniones`: si esta cuenta se unió a otra, o reunió otras.
 import { useEffect, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { fetchClientesConPuntos, fetchUnionesDeCuenta, fusionarCuentasDePuntos } from '@nucleo/data/puntos';

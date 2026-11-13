@@ -23,7 +23,8 @@
 // Lo que salió y tenía Min/Max se pide en 0/0 (`pedirQuitarMinMaxDeEnviados`,
 // que anota ENVIO_SUGERIDO_SIN_VENTA).
 import { useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';

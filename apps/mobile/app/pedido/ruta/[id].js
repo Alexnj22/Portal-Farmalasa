@@ -13,7 +13,8 @@
 // paradas pendientes; las dos piden motivo (`data/rutas`). El trazo es en línea recta entre paradas: el recálculo por calles
 // del portal usa el servicio de Google y no está en el teléfono.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import MapView, { Marker, Polyline } from 'react-native-maps';

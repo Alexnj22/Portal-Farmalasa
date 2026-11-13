@@ -26,7 +26,8 @@
 // actualiza sola cuando cambia un pedido (`escucharCambios`) y, para una sala,
 // un aviso cuando Bodega le manda un pedido nuevo.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -50,6 +51,7 @@ import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import Metricas from '../componentes/pedidos/Metricas';
 import { ETAPA, etapaDeLaTarjeta, PASOS, pasoDeLaEtapa } from '../componentes/pedidos/etapa';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const PERIODOS = [
   { id: 'mes', label: 'Este mes', rango: () => rangoDeMes(0) },
@@ -119,7 +121,7 @@ function ResumenDelPeriodo({ periodo, total, salas, elegida, puedeElegir, onEleg
         <View style={{ padding: 16, gap: 12 }}>
           <View style={{ flexDirection: 'row', alignItems: 'flex-end', gap: 12 }}>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4 }}>Pedidos</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>Pedidos</Text>
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{periodo}</Text>
             </View>
             <Text style={{ color: colorSistema.texto, fontSize: 34, fontWeight: '800', fontVariant: ['tabular-nums'], lineHeight: 38 }}>{total}</Text>

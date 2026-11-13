@@ -5,7 +5,8 @@
 //
 // Fichas que se desplazan de lado, dentro del widget. `todas` agrega la ficha
 // «Todas» (valor '') al principio.
-import { Pressable, ScrollView, Text } from 'react-native';
+import { ScrollView, Text } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../Formulario';
 import { MARCA, FONDO_CONTROL } from './marca';

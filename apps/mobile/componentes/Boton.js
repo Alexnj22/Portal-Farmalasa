@@ -1,4 +1,5 @@
-import { Pressable, Text } from 'react-native';
+import { Text } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import Indicador from './Indicador';
 import { useTema } from '../tema/tema';
 

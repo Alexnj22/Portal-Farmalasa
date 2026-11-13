@@ -19,7 +19,8 @@
 // La póliza y el pago a medio registrar guardan borrador (las mismas claves
 // del portal): la sesión de sala se cierra sola a los pocos minutos.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { Stack, useFocusEffect } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -45,6 +46,7 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { elegirOrigen, leerComoArchivo } from '../componentes/sucursal/elegirArchivo';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const MESES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 const dinero = (n) => formatMoney(n === '' ? null : n);
@@ -64,7 +66,7 @@ function Cifra({ rotulo, valor, color }) {
     <View style={{ flex: 1 }}>
       <Vidrio radio={16}>
         <View style={{ padding: 10, gap: 2 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }} numberOfLines={1}>{rotulo}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS }} numberOfLines={1}>{rotulo}</Text>
           <Text style={{ color: color || colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{valor}</Text>
         </View>
       </Vidrio>
@@ -144,7 +146,7 @@ export default function SeguroDeVida() {
 
               {/* 2. Las personas */}
               <View style={{ gap: 8 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Personas</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>Personas</Text>
                 <View style={{ flexDirection: 'row', gap: 8 }}>
                   <Cifra rotulo="Solventes" valor={`${solventes}/${activos.length}`} color={pagoVigente && solventes === activos.length ? MARCA.verde : MARCA.ambar} />
                   <Cifra rotulo="Sin cubrir" valor={pagoVigente ? String(activos.length - solventes) : '—'} color={pagoVigente && activos.length - solventes > 0 ? MARCA.rojo : undefined} />

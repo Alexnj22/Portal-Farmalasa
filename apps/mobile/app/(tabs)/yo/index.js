@@ -6,7 +6,8 @@
 // `componentes/perfil/codigoDeKiosco`) y la apariencia —los cuatro temas del
 // portal, Estilo × Modo— que se guarda en el teléfono (`tema/preferencia`).
 import { useEffect, useState } from 'react';
-import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, useColorScheme, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, ScrollView, Text, useColorScheme, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Interruptor from '../../../componentes/Interruptor';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';

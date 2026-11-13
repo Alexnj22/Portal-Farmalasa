@@ -34,7 +34,8 @@
 // con el suyo.
 import usePantallaDespierta from '../componentes/usePantallaDespierta';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActionSheetIOS, Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -68,6 +69,7 @@ import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import DetalleDeBolsa from '../componentes/caja/DetalleDeBolsa';
 import Resolver from '../componentes/caja/ResolverDiferencia';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 // Las contadas de 30 días son cientos (362 medidas el 2026-10-09): se pintan
 // de a 40 para que la lista no se trabe en un teléfono chico.
@@ -385,7 +387,7 @@ export default function Bolsas() {
           <View style={{ marginHorizontal: 16 }}>
             <Vidrio radio={20}>
               <View style={{ padding: 14, gap: 10 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>Contado y sin cerrar</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>Contado y sin cerrar</Text>
                 <Text style={{ color: colorSistema.texto, fontSize: 28, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                   {verMontos ? formatMoney(contadoDeBolsas(porDepositar)) : String(porDepositar.length)}
                 </Text>

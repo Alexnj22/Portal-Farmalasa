@@ -25,7 +25,8 @@
 // Cada pestaña con su permiso, como en el portal; la base lo vuelve a comprobar.
 // Los rótulos salen del núcleo (`puntosTexto`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

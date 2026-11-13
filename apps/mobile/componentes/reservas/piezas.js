@@ -2,7 +2,8 @@
 // píldora de las tarjetas, el enlace de texto, el color de cada tono del
 // núcleo, elegir la ficha del cliente y confirmar su teléfono.
 import { useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { buscarClientes, mensajeDeError, motivoSinAplicar, pushClienteAlErp, updateCustomerFiscal } from '@nucleo/data/customers';
 import { telefonoDeFicha } from '@nucleo/utils/apartar';

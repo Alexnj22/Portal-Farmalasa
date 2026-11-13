@@ -13,7 +13,8 @@
 // Rutas: `/torogoz/venta` (nueva; `?cliente=` y `?desde=` como en el portal)
 // y `/torogoz/venta/<pedido>` (finalizar o corregir una preventa).
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import * as Haptics from 'expo-haptics';

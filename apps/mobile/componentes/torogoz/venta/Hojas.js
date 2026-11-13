@@ -1,7 +1,8 @@
 // Las hojas de la venta (la «ventana» del portal, como hoja del sistema):
 // elegir el cliente y las preventas pendientes de finalizar.
 import { useMemo, useState } from 'react';
-import { FlatList, KeyboardAvoidingView, Modal, Platform, Pressable, Text, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Modal, Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { formatMoney } from '@nucleo/utils/formatNumber';

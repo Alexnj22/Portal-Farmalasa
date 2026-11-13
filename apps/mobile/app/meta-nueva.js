@@ -7,7 +7,8 @@
 // está esperando al gerente o ya es oficial del mes en curso, no se puede; si
 // es de un mes cerrado, pide el motivo. El servidor tiene el candado igual.
 import { useEffect, useMemo, useState } from 'react';
-import { ActionSheetIOS, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

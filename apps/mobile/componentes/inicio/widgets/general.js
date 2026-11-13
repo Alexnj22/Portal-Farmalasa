@@ -5,7 +5,8 @@
 // confirma y queda registrado quién lo contestó. Sin borrador ni
 // autocompletado, igual que el portal (`WidgetDatoPedido.jsx`).
 import { useState } from 'react';
-import { Pressable, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { fetchDatosPedidos, responderDatoPedido } from '@nucleo/data/datosPedidos';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import Widget, { Esqueleto, Vacio } from '../Widget';

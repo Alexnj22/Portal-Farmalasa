@@ -6,7 +6,8 @@
 // Las cifras, el filtro y el costo salen del núcleo (`distribucionBodega`),
 // los mismos del portal. El costo sólo lo ve quien administra.
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { router, useFocusEffect } from 'expo-router';
 import { fetchCatalogo, fetchCuarentena } from '@nucleo/data/distribucion';
 import { fetchLotes } from '@nucleo/data/distribucionInventario';

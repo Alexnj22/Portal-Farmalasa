@@ -3,7 +3,8 @@
 // contador) y cuatro listados sacados de los libros de ventas y de compras, cada
 // uno con su archivo. Los listados y los archivos salen del núcleo.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../Tocable';
 import { fetchLibroCompras, fetchLibrosVentas } from '@nucleo/data/distribucionCompras';
 import { mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { archivoDeRetencion, listadosDeRetenciones, resumenFiscal, totalesConsumidor, totalesContribuyente } from '@nucleo/utils/distribucionReportes';

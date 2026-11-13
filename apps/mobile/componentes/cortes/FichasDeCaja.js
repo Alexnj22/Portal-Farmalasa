@@ -22,6 +22,7 @@ import { Pildora } from '../avisos/Piezas';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMontos }) {
   const abierta = !apertura.cerrada_at;
@@ -48,7 +49,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
         </View>
         <View style={{ flexDirection: 'row', gap: 10, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
           <View style={{ flex: 1 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{veLosMontos ? 'Venta del día' : 'Ventas del día'}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS }}>{veLosMontos ? 'Venta del día' : 'Ventas del día'}</Text>
             <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
               {veLosMontos ? (ventas ? formatMoney(ventas.efectivo + ventas.otras) : '—') : (ventas ? String(ventas.documentos) : '—')}
             </Text>
@@ -57,7 +58,7 @@ function Ficha({ apertura, sala, marca, hayConQueCruzar, ventas, piezas, veLosMo
           </View>
           {veLosMontos ? (
             <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{piezas ? 'Efectivo en caja' : 'De eso, en efectivo'}</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS }}>{piezas ? 'Efectivo en caja' : 'De eso, en efectivo'}</Text>
               <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>
                 {piezas ? formatMoney(piezas.efectivo) : ventas ? formatMoney(ventas.efectivo) : '—'}
               </Text>
@@ -82,7 +83,7 @@ export default function FichasDeCaja({ aperturas = [], entradas = [], pudeLeerAs
   return (
     <View style={{ marginHorizontal: 16, gap: 8 }}>
       <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
-        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>Las cajas</Text>
+        <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>Las cajas</Text>
         <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>
           {`${abiertas} abierta${abiertas === 1 ? '' : 's'}${aperturas.length > ordenadas.length ? ` · se muestran ${ordenadas.length} de ${aperturas.length}` : ''}`}
         </Text>

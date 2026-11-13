@@ -16,6 +16,7 @@ import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import Tocable from '../Tocable';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const VACIO = { tipo: 'logo', marca_id: '', nombre: '', enlace: '', color: '' };
 const hoja = (titulo, lista, onElegir) => ActionSheetIOS.showActionSheetWithOptions(
@@ -111,7 +112,7 @@ export default function Biblioteca({ marcas, puedeGestionar, yoId, recarga }) {
       {!grupos.length ? <Vacio>Sin recursos de marca</Vacio> : null}
       {grupos.map((g) => (
         <View key={g.id || 'todas'} style={{ marginHorizontal: 16, gap: 8 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', marginLeft: 4 }}>{`${g.nombre} · ${g.items.length}`}</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, marginLeft: 4 }}>{`${g.nombre} · ${g.items.length}`}</Text>
           {g.items.map((r) => {
             const src = r.url && /^image\//.test(r.mime || '') ? firmas.get(r.url) : null;
             return (

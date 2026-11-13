@@ -17,7 +17,8 @@
 //   · anular la bolsa, con motivo (la única corrección desde que nace sola al
 //     confirmar el corte; queda en la bitácora, no se borra).
 import { useCallback, useEffect, useState } from 'react';
-import { Alert, Image, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Image, Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
@@ -36,6 +37,7 @@ import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 function Salida({ s, puedeAnular, onAnular, onReimprimir }) {
   const [foto, setFoto] = useState(null);
@@ -157,7 +159,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
             ) : null}
             {salidas == null ? <Cargando /> : (
               <View style={{ gap: 10 }}>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Lo que salió de esta bolsa</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>Lo que salió de esta bolsa</Text>
                 {salidas.length ? salidas.map((s) => (
                   <Salida key={s.movimiento_id} s={s} puedeAnular={puedeEditar && enLaSala} onReimprimir={() => reimprimir(s)}
                     onAnular={() => { setMotivo(''); setAnulando({ tipo: 'salida', operacionId: s.operacion_id, folio: s.vale_folio }); }} />

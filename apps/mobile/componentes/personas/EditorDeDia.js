@@ -8,7 +8,8 @@
 // (`guardarDiaDeHorario`, que NO toca el estado de publicación) o la cobertura
 // de alguien de otra sala.
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Conmutador from '../Interruptor';
 import { resolverTurnoDelDia } from '@nucleo/utils/turnoDelDia';
 import {

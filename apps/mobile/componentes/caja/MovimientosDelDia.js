@@ -8,7 +8,8 @@
 // si alguien pidió corregirlo y en qué quedó, y se abre para ver el detalle y
 // la boleta. Pedir una corrección sigue en el portal: acá se LEE.
 import { useState } from 'react';
-import { Image, Pressable, Text, View } from 'react-native';
+import { Image, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as Haptics from 'expo-haptics';
 import { lineasDelDia, netoDelTramo, ORIGEN_DEL_MONTO, ROTULO_DE_ORIGEN, tituloDeCorreccion } from '@nucleo/utils/cajaDelDia';
@@ -25,6 +26,7 @@ import { MARCA } from '../inicio/marca';
 import { Chip } from '../inicio/Widget';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const conSigno = (n) => (n > 0.004 ? `+${formatMoney(n)}` : n < -0.004 ? `−${formatMoney(Math.abs(n))}` : formatMoney(0));
 const CLASE = {
@@ -167,7 +169,7 @@ export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, 
 
   return (
     <View style={{ gap: 10 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5, marginHorizontal: 4 }}>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.5, marginHorizontal: 4 }}>
         {`Movimientos de este día${dia ? ` · ${fechaTexto(dia, { day: 'numeric', month: 'long' })}` : ''}`}
       </Text>
       {!puedeVerBolsas ? <Aviso texto="Aquí sólo ves lo que entró y salió de la caja. Las salidas pagadas con una bolsa necesitan el permiso de Bolsas." /> : null}

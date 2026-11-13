@@ -14,7 +14,8 @@
 // es el canónico? ¿no tiene vidrio?» — la primera versión era un `Modal` con
 // fondo sólido). Su `Host` no ocupa lugar en el renglón: sólo presenta la hoja.
 import { useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Text } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { Host, BottomSheet, Button, DatePicker, HStack, Spacer, VStack } from '@expo/ui/swift-ui';
 import { datePickerStyle, padding } from '@expo/ui/swift-ui/modifiers';

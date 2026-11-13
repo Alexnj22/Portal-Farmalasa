@@ -9,7 +9,8 @@
 // copiada (del navegador, de WhatsApp…); el recorte cuadrado lo da el editor
 // del sistema al tomar o elegir, y tocar la foto la amplía.
 import { useState } from 'react';
-import { ActionSheetIOS, Alert, Image, Modal, Pressable, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Image, Modal, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import Indicador from '../Indicador';
 import * as ImagePicker from 'expo-image-picker';
 import * as Clipboard from 'expo-clipboard';

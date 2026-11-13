@@ -18,7 +18,8 @@
 // ⚠ «Cobrar» y «Anular cobro» mueven DINERO de verdad (la cartera y la caja del
 // vendedor). En el entorno de pruebas no se cobra: ahí sólo se mira.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Refrescar from '../../../componentes/Refrescar';
 import Interruptor from '../../../componentes/Interruptor';
 import { Stack, useLocalSearchParams } from 'expo-router';

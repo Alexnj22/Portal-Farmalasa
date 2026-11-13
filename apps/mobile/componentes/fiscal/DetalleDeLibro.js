@@ -29,6 +29,7 @@ import { compartirCsv } from './csv';
 import { fallo, trabajando, cerrarProgreso } from '../Progreso';
 import { compartirArchivoDelDte, compartirPaqueteDelDte } from './archivosDelDte';
 import Tocable from '../Tocable';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const PAGINA = 40;
 
@@ -129,7 +130,7 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
 
   return (
     <View style={{ gap: 10 }}>
-      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4, marginHorizontal: 20 }}>{`${titulo} · ${filas.length} renglones`}</Text>
+      <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginHorizontal: 20 }}>{`${titulo} · ${filas.length} renglones`}</Text>
       {tab === 'contribuyente' && falt.ccfSinNrc > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${falt.ccfSinNrc} de ${filas.length} documentos van sin NRC del cliente, que el Art. 85 exige: el libro se puede revisar, pero no presentar hasta completarlo.`} /></View> : null}
       {tab === 'compras' && falt.comprasSinSincronizar > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={`${falt.comprasSinSincronizar} de ${filas.length} documentos no tienen registrado su número ni la percepción. Hay que completar ${etiquetaMes(mes)} antes de presentar este libro — en blanco no es cero.`} /></View> : null}
       {tab === 'compras' && falt.comprasSinNrc > 0 ? <View style={{ marginHorizontal: 16 }}><Aviso tono="cuidado" texto={`${falt.comprasSinNrc} de ${filas.length} documentos van sin NRC del proveedor, que el Art. 86 exige. Falta completarlo en la ficha del proveedor.`} /></View> : null}
@@ -162,7 +163,7 @@ export default function DetalleDeLibro({ tab, titulo, libros, totales, mes, sufi
                 <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 14 }}>
                   {x.montos.map(([k, v]) => (
                     <View key={k}>
-                      <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>{k}</Text>
+                      <Text style={{ color: colorSistema.texto2, fontSize: 11, fontWeight: '700', textTransform: MAYUSCULAS }}>{k}</Text>
                       <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{v}</Text>
                     </View>
                   ))}

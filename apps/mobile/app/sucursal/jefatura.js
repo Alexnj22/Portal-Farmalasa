@@ -9,7 +9,8 @@
 // `asignarJefaturaDeSucursal` del store, la misma que usa el portal: resuelve
 // el cargo contra la tabla y, si no existe, no escribe nada.
 import { useMemo, useState } from 'react';
-import { Alert, KeyboardAvoidingView, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, KeyboardAvoidingView, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -26,6 +27,7 @@ import Avatar from '../../componentes/Avatar';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { volver } from '../../componentes/volver';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 const CARGOS = ['Jefe/a de Sala', 'Subjefe/a de Sala'];
 const VACIO = [];
@@ -95,7 +97,7 @@ export default function Jefatura() {
                     <Text style={{ color: colorSistema.texto, fontSize: 15, fontWeight: sel ? '800' : '600' }}>{shortEmployeeName(e)}</Text>
                     <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[e.role, salaDe(e)].filter(Boolean).join(' · ')}</Text>
                   </View>
-                  {sel ? <Text style={{ color: MARCA.verde, fontSize: 18, fontWeight: '800' }}>✓</Text> : null}
+                  <MarcaDeEleccion elegida={sel} color={MARCA.verde} />
                 </Pressable>
               );
             })}

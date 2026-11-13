@@ -16,7 +16,8 @@
 // Inicio», que se abre al final) no salen: es la misma preferencia
 // (`user_dashboard_prefs.widgets`).
 import { useCallback, useMemo, useState } from 'react';
-import { LayoutAnimation, Pressable, ScrollView, Text } from 'react-native';
+import { LayoutAnimation, ScrollView, Text } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Refrescar from '../../../componentes/Refrescar';
 import { router, useFocusEffect } from 'expo-router';
 import { leer, guardar } from '@plataforma/almacen';

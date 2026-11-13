@@ -7,7 +7,8 @@
 // últimos días que ya carga el Inicio) y se recorta a la sala con el alcance
 // de cada widget, igual que el portal.
 import { useMemo, useState } from 'react';
-import { LayoutAnimation, Pressable, Text, View } from 'react-native';
+import { LayoutAnimation, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { fetchPendingApprovalRequests } from '@nucleo/data/dashboard';

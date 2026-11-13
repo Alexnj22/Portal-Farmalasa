@@ -18,7 +18,8 @@
 // Bodega»: lo que piden las salas y Bodega no tiene para despachar.
 import { volver } from '../../componentes/volver';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import Interruptor from '../../componentes/Interruptor';
 import { router, Stack } from 'expo-router';
@@ -44,6 +45,7 @@ import EncabezadoDeHoja from '../../componentes/EncabezadoDeHoja';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 const COLOR_URGENCIA = { high: MARCA.rojo, mid: MARCA.ambar, low: MARCA.verde, none: colorSistema.texto2 };
 const COLOR_ULTIMO = { bien: MARCA.verde, cuidado: MARCA.ambar, tarde: MARCA.rojo };
@@ -260,7 +262,7 @@ export default function GenerarPedido() {
                       <View style={{ padding: 12, gap: 4 }}>
                         <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                           <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 16, fontWeight: '700' }}>{ERP_NAMES[id]}</Text>
-                          {on ? <Text style={{ color: MARCA.azulClaro, fontSize: 18, fontWeight: '800' }}>✓</Text> : null}
+                          <MarcaDeEleccion elegida={on} multiple />
                         </View>
                         {sin ? <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>Sin MIN·MAX publicado</Text> : (
                           <>

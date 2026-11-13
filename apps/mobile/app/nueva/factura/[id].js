@@ -11,7 +11,8 @@
 //
 // Una factura anulada (`esAnulada`: NULA o invalidada en Hacienda) no se toca.
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
@@ -29,6 +30,7 @@ import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import { MARCA } from '../../../componentes/inicio/marca';
 import DocumentoParaCliente from '../../../componentes/ventas/DocumentoParaCliente';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 function Opcion({ icono, color, titulo, detalle, deshabilitada, onPress }) {
   return (
@@ -97,7 +99,7 @@ export default function Factura() {
 
         {anulada ? <Aviso tono="freno" texto="Esta factura ya está anulada: no se le puede pedir ningún cambio." /> : (
           <View style={{ gap: 10 }}>
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>¿Qué necesitas?</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>¿Qué necesitas?</Text>
             <Opcion icono="Ban" color={MARCA.rojo} titulo="Anular la factura" deshabilitada={estadoCaja !== 'abierta'}
               detalle={estadoCaja !== 'abierta' ? MOTIVO_SIN_ANULAR[estadoCaja] : 'Devuelve la venta; lo aprueba Supervisión'} onPress={() => ir('anular')} />
             <Opcion icono="CreditCard" color={MARCA.azulClaro} titulo="Cambiar la forma de pago"

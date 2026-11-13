@@ -12,7 +12,8 @@
 // el motivo; el bloqueo cierra todas sus conexiones. No se ofrece sobre uno
 // mismo: la base lo rechaza y quedarías fuera. Todo sale de `data/sesiones`.
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';

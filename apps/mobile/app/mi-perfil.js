@@ -9,7 +9,8 @@
 // puede editar fichas, igual que en el portal: ofrecérselo a quien la base va a
 // rechazar no es un permiso de más, es una promesa que no se cumple.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, Platform, ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import { useAuth } from '@nucleo/context/AuthContext';
@@ -32,6 +33,7 @@ import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { ExpedienteEnLinea, FilaConIcono, Historial, PlanDeVacaciones } from '../componentes/perfil/Piezas';
+import { MAYUSCULAS } from '../tema/mayusculas';
 
 const fecha = (f) => (f ? fechaTexto(String(f).slice(0, 10), { day: 'numeric', month: 'short', year: 'numeric' }) : '—');
 const AUSENCIA = { VACATION: 'Vac', DISABILITY: 'Incap.', PERMIT: 'Perm.' };
@@ -139,7 +141,7 @@ export default function MiPerfil() {
         {vacaciones ? (
           <Vidrio radio={20} tinte="rgba(18,183,106,0.14)">
             <View style={{ padding: 14, gap: 4 }}>
-              <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>Próximas vacaciones</Text>
+              <Text style={{ color: MARCA.verde, fontSize: 13, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>Próximas vacaciones</Text>
               <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '700' }}>{`${fecha(vacaciones.start_date)} – ${fecha(vacaciones.end_date)}`}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{vacaciones.status === 'CONFIRMED' ? 'Confirmadas' : 'Planificadas'}</Text>
             </View>

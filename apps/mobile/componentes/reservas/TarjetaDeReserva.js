@@ -15,7 +15,8 @@
 //
 // Qué acciones tocan y en qué orden lo decide el núcleo
 // (`accionesDeReservaNucleo`); lo que se dice, también (`reservasDeSala`).
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import { codigoDeReserva } from '@nucleo/data/reservas';
 import {
   PRODUCTOS_EN_TARJETA, cuentasDeReserva, detalleDelRenglonDeReserva, estadoDeReserva, plazoDeReserva, productosOcultos, renglonesDe, telefonoLegible,

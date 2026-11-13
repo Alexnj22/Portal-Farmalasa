@@ -10,7 +10,8 @@
 // lista del sistema (SwiftUI) no deja poner vidrio detrás de sus filas, por eso
 // se arma a mano con el mismo vidrio del resto de la app.
 import { useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../../componentes/Tocable';
 import Refrescar from '../../../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -30,6 +31,7 @@ import { anotar, leerUso } from '../../../componentes/inicio/uso';
 import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import IconoFijo from '../../../componentes/IconoFijo';
 import { Vacio } from '../../../componentes/formulario/Piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 // Lo que ya vive en otra pestaña (Inicio, Avisos, Yo) no se repite acá.
 // «Mis avisos» vuelve al Menú (2026-11-11): vivía dentro de la pestaña
@@ -147,7 +149,7 @@ export default function Menu() {
       <FranjaDelPortal />
       {frecuentes.length >= 2 ? (
         <View style={{ gap: 7, marginHorizontal: 16 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Lo que más abres</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>Lo que más abres</Text>
           <Vidrio radio={20}>
             <View style={{ paddingVertical: 2 }}>
               {frecuentes.map((x, j) => <Renglon key={x.m.key} m={x.m} primero={!j} color={x.color} onAbrir={alAbrir} />)}
@@ -158,7 +160,7 @@ export default function Menu() {
       {bloques.map((b, i) => (
         <View key={b.key} style={{ gap: 7, marginHorizontal: 16 }}>
           {b.titulo ? (
-            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>{b.titulo}</Text>
+            <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>{b.titulo}</Text>
           ) : null}
           <Vidrio radio={20}>
             <View style={{ paddingVertical: 2 }}>
@@ -169,7 +171,7 @@ export default function Menu() {
       ))}
       {torogoz ? (
         <View style={{ gap: 7, marginHorizontal: 16 }}>
-          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', letterSpacing: 0.4, marginLeft: 16 }}>Distribuidora</Text>
+          <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, letterSpacing: 0.4, marginLeft: 16 }}>Distribuidora</Text>
           <Vidrio radio={20}>
             <View style={{ paddingVertical: 2 }}>
               <Renglon m={torogoz} primero color={COLOR_TOROGOZ} onAbrir={alAbrir} />

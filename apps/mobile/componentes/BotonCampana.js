@@ -2,7 +2,8 @@
 // pestañas (el portal abierto desde el Menú, las pantallas nativas). Pedido del
 // usuario del 2026-09-30: «el header solo tiene el botón atrás… ni las
 // notificaciones». Lleva a la pestaña Avisos y muestra cuántas faltan leer.
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Text, View } from 'react-native';
+import { Presionable as Pressable } from './Tocable';
 import { router } from 'expo-router';
 import { Host, Icon } from '@expo/ui';
 import { useStaffStore } from '@nucleo/store/staffStore';

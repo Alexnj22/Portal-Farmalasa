@@ -13,7 +13,8 @@
 import { useState } from 'react';
 import { useAuth } from '@nucleo/context/AuthContext';
 import useCortesDeAvisos, { corteResolubleDelAviso } from '@nucleo/hooks/useCortesDeAvisos';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

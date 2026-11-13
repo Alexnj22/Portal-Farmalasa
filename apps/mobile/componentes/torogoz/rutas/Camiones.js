@@ -5,7 +5,8 @@
 // ⚠️ Emitir la Nota de Remisión es un documento ante Hacienda: siempre con
 // confirmación, y la respuesta del servidor se muestra tal cual.
 import { useCallback, useMemo, useState } from 'react';
-import { Alert, Pressable, Text, View } from 'react-native';
+import { Alert, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';

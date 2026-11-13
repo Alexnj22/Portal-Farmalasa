@@ -1,7 +1,8 @@
 // Las pestañas del Inicio (General · Comercial · RRHH · Operación), como las
 // del portal: píldoras de vidrio que se desplazan. Decisión del usuario del
 // 2026-09-30: «que sigan las pestañas para tener acceso a todo siempre».
-import { Platform, Pressable, ScrollView, Text } from 'react-native';
+import { Platform, ScrollView, Text } from 'react-native';
+import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import FichasAndroid from './FichasAndroid';
 import Vidrio from '../Vidrio';

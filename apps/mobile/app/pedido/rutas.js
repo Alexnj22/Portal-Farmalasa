@@ -11,7 +11,8 @@
 // completadas hoy; `cifrasDeRutas`) y los mismos filtros: estado (por defecto
 // sólo las activas), período de las completadas y conductor.
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../componentes/Tocable';
 import Refrescar from '../../componentes/Refrescar';
 import { router, Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';
@@ -31,6 +32,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import { Esqueleto } from '../../componentes/inicio/Widget';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const COLOR_ESTADO = { warning: MARCA.ambar, 'chart-9': MARCA.azulClaro, success: MARCA.verde, danger: MARCA.rojo };
 
@@ -134,9 +136,9 @@ export default function RutasDeReparto() {
               : conductor || estado !== 'activas' ? 'Ninguna ruta con ese filtro.'
                 : 'No hay rutas en la calle. Las completadas están en el filtro de estado.'} />
         ) : null}
-        {activas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>Activas</Text> : null}
+        {activas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32 }}>Activas</Text> : null}
         {activas.map((r) => <TarjetaRuta key={r.id} ruta={r} yo={user?.id} />)}
-        {completadas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32, marginTop: 8 }}>Completadas</Text> : null}
+        {completadas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: MAYUSCULAS, marginHorizontal: 32, marginTop: 8 }}>Completadas</Text> : null}
         {completadas.map((r) => <TarjetaRuta key={r.id} ruta={r} yo={user?.id} />)}
       </ScrollView>
     </>

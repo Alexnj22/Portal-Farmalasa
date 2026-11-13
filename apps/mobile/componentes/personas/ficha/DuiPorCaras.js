@@ -23,7 +23,8 @@
 // se junta en `form._cambiosDelDui`: al guardar, el store lo deja en su propio
 // asiento de bitácora (`DATOS_DEL_DUI_ACTUALIZADOS`).
 import { useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import Indicador from '../../Indicador';
 import { leerDui } from '@nucleo/data/ia';
 import { aplicarDuiLeido, avisoDeCaras, juntarCambiosDelDui } from '@nucleo/utils/duiLeido';
@@ -38,6 +39,7 @@ import { fallo } from '../../Progreso';
 import Segmentos from '../../Segmentos';
 import { elegirYSubir } from './documentos';
 import { Enlace, Nota } from './Piezas';
+import { MAYUSCULAS } from '../../../tema/mayusculas';
 
 const MODOS = [{ id: 'caras', label: 'Frente y reverso' }, { id: 'uno', label: 'Un solo archivo' }];
 
@@ -172,7 +174,7 @@ export default function DuiPorCaras({ form, setForm, empleadoId, esMenor, quien,
           </Text>
           {lectura.reemplazos.length ? (
             <>
-              <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '800', textTransform: 'uppercase' }}>El documento sustituyó lo que había</Text>
+              <Text style={{ color: MARCA.ambar, fontSize: 12, fontWeight: '800', textTransform: MAYUSCULAS }}>El documento sustituyó lo que había</Text>
               {lectura.reemplazos.map((d) => (
                 <Text key={d.campo} style={{ color: colorSistema.texto2, fontSize: 13 }}>
                   <Text style={{ fontWeight: '700', color: colorSistema.texto }}>{d.rotulo}: </Text>

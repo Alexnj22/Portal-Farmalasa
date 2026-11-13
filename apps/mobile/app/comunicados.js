@@ -15,7 +15,8 @@
 // Ojo: la pestaña «Avisos» de la app son las NOTIFICACIONES; esto es otra cosa
 // (en el portal, `/mis-avisos`).
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Alert, FlatList, Pressable, Text, View } from 'react-native';
+import { Alert, FlatList, Text, View } from 'react-native';
+import { Presionable as Pressable } from '../componentes/Tocable';
 import Refrescar from '../componentes/Refrescar';
 import { Stack } from 'expo-router';
 import * as Haptics from 'expo-haptics';

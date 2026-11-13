@@ -4,7 +4,8 @@
 // documento): sólo el comprobante. Se sube al mismo bucket privado y a la misma
 // carpeta que desde el portal (`dist-comprobantes/distribucion/<pedido>`).
 import { useCallback, useEffect, useState } from 'react';
-import { Pressable, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
+import { Presionable as Pressable } from '../../Tocable';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { adjuntarComprobante, fetchPagos, LLEVA_COMPROBANTE, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { nombreFormaPago, VERIFICACION_PAGO } from '@nucleo/utils/distribucionFacturacion';

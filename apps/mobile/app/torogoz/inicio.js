@@ -33,6 +33,7 @@ import { Aviso } from '../../componentes/formulario/Piezas';
 import { Dona, FilaRanking, FormasDePago, Puesto, Punto, Variacion, colorDe } from '../../componentes/torogoz/tablero/Piezas';
 import { TrasLaTransicion } from '../../componentes/trasLaTransicion';
 import { BandaSinSenal } from '../../componentes/torogoz/venta/SinSenal';
+import { MAYUSCULAS } from '../../tema/mayusculas';
 
 const VISIBLES = 5;
 const num = (v) => Number(v) || 0;
@@ -230,7 +231,7 @@ export default function TorogozInicio() {
                   ))}
                 </View>
               </View>
-              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.4 }}>Formas de pago</Text>
+              <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '700', textTransform: MAYUSCULAS, letterSpacing: 0.4 }}>Formas de pago</Text>
               <FormasDePago reparto={reparto} />
             </View>
           )}

@@ -31,6 +31,7 @@ import { MARCA } from '../../componentes/inicio/marca';
 import AgregarProductos from '../../componentes/promociones/AgregarProductos';
 import { fallo, listo } from '../../componentes/Progreso';
 import Tocable from '../../componentes/Tocable';
+import MarcaDeEleccion from '../../componentes/MarcaDeEleccion';
 
 function Numero({ valor, onCambiar, placeholder }) {
   return (
@@ -77,7 +78,7 @@ function ResumenDiario({ promocionId }) {
               <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{o.rotulo}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{o.detalle}</Text>
             </View>
-            {si ? <Text style={{ color: MARCA.azulClaro, fontSize: 19, fontWeight: '700' }}>✓</Text> : null}
+            <MarcaDeEleccion elegida={si} multiple />
           </Tocable>
         );
       })}

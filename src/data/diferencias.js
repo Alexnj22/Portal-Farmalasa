@@ -79,14 +79,38 @@ export const opcionElegida = (catalogo, errorTipo, valor) =>
  * nace YA ACEPTADA —el acuerdo se dio en este mismo turno— y lo único que falta
  * es sacarla de la sala.
  */
-export function decidirDiferencia({ itemId, accion, tipo = null, nota = null, evidencia = [] }) {
+export function decidirDiferencia({ itemId, accion, tipo = null, nota = null, evidencia = [], caja = null }) {
     return supabase.rpc('decidir_diferencia_pedido', {
         p_item_id:   itemId,
         p_accion:    accion,
         p_tipo:      tipo,
         p_nota:      nota || null,
         p_evidencia: evidencia,
+        // (2026-11-13) El lote y el vencimiento de la caja, para devolver lo que
+        // llegó sin lote asignado (`{ lote, vence: 'AAAA-MM-DD' }`). Sólo la sala.
+        p_caja:      caja || null,
     });
+}
+
+/**
+ * ¿Este renglón llegó SIN lote asignado siendo un producto que lleva lote?
+ * (2026-11-13) Entonces devolverlo dañado o vencido pide el lote de la caja.
+ * Mira lo que de verdad salió (`pedido_traslado_linea.detalle.renglones`) y si
+ * el producto es regulado. Nunca lanza: `false` si no se puede saber — el
+ * servidor sigue devolviendo como siempre.
+ */
+export async function llegoSinLote(itemId, erpProductId) {
+    const [lin, prod] = await Promise.all([
+        supabase.from('pedido_traslado_linea').select('detalle').eq('pedido_item_id', itemId).range(0, 49),
+        supabase.from('products').select('regulado').eq('id', erpProductId).maybeSingle(),
+    ]);
+    if (lin.error || prod.error) {
+        console.error('llegoSinLote:', lin.error?.message ?? prod.error?.message);
+        return false;
+    }
+    if (prod.data?.regulado !== true) return false;
+    return (lin.data ?? []).some(l => ((/** @type {any} */ (l.detalle))?.renglones ?? [])
+        .some(r => /^gen[eé]rico$/i.test(String(r?.lote ?? '').trim())));
 }
 
 /**

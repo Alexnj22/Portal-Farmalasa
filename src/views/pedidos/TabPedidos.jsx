@@ -628,17 +628,17 @@ const FilaDeSala = React.memo(function FilaDeSala({
                         onNeedItems={() => acc.asegurarItems(cardKey, row.pedido_id, row.erp_sucursal_id)}
                         itemsLoaded={!!misItems}
                         esSupervision={esSupervision}
-                        onDecidirDiferencia={(itemId, accion, tipo, nota) =>
-                            acc.handleDecidirDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, accion, tipo, nota)
+                        onDecidirDiferencia={(itemId, accion, tipo, nota, caja = null) =>
+                            acc.handleDecidirDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId, accion, tipo, nota, [], caja)
                         }
                         onConfirmarLlegada={(itemId) =>
                             acc.handleConfirmarLlegadaDiferencia(row.pedido_id, erpSucursalId ?? row.erp_sucursal_id, itemId)
                         }
-                        onPedirFoto={(item, opcion, nota) =>
+                        onPedirFoto={(item, opcion, nota, caja = null) =>
                             acc.setDevolverModal({
                                 pedidoId: row.pedido_id,
                                 sucId: erpSucursalId ?? row.erp_sucursal_id,
-                                item, opcion, nota,
+                                item, opcion, nota, caja,
                             })
                         }
                         onCorregirBodega={(nota) =>

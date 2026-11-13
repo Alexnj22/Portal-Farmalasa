@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
     Check, X, Loader2, ArrowLeftRight, Hand, Clock, ShieldQuestion, Scale, MessageSquarePlus,
 } from 'lucide-react';
@@ -7,7 +7,8 @@ import Notice from '../../../components/common/Notice';
 import SegmentedControl from '../../../components/common/SegmentedControl';
 import PortalInput from '../../../components/common/PortalInput';
 import EmpChip from './EmpChip';
-import { opcionesDe, opcionElegida, ayudaPara } from '@nucleo/data/diferencias';
+import { opcionesDe, opcionElegida, ayudaPara, llegoSinLote } from '@nucleo/data/diferencias';
+import LoteDeLaCaja from '../../traslados/LoteDeLaCaja';
 import { turnoDe } from '@nucleo/utils/decisionDiferencia';
 
 // La decisión de una diferencia, dentro de la tarjeta de su renglón.
@@ -89,6 +90,30 @@ export default function DecisionDiferencia({
     const [rechazando, setRechazando] = useState(false);
     const [motivoRech, setMotivoRech] = useState('');
 
+    // ── El lote de la caja (2026-11-13) ───────────────────────────────────────
+    // Lo que llegó dañado o vencido SIN lote asignado vuelve con el lote que
+    // trae la caja. Lo escribe la sala —es la que la tiene— al proponer o al
+    // aceptar la devolución; queda guardado en el renglón.
+    const puedeCaja = (esSala || esSupervision) && ['danado', 'vencido'].includes(item.error_tipo)
+        && !item.caja_devolucion;
+    const [sinLote, setSinLote] = useState(false);
+    const [caja, setCaja] = useState(null);
+    useEffect(() => {
+        if (!puedeCaja) return undefined;
+        let vivo = true;
+        llegoSinLote(item.id, item.erp_product_id).then(v => { if (vivo) setSinLote(v); });
+        return () => { vivo = false; };
+    }, [puedeCaja, item.id, item.erp_product_id]);
+    const pideCaja = (valor) => puedeCaja && sinLote
+        && opcionElegida(catalogo, item.error_tipo, valor)?.mueve === 'devolucion';
+    const cajaLista = caja?.envio ?? null;
+    const campoCaja = (
+        <LoteDeLaCaja
+            erpProductId={item.erp_product_id} producto={item.products?.nombre ?? 'el producto'}
+            valor={caja} onChange={setCaja}
+        />
+    );
+
     const estado  = item.resolucion_status ?? null;
     const turno   = turnoDe(estado, { esSala, esSupervision });
     const op      = opcionElegida(catalogo, item.error_tipo, item.resolucion_tipo);
@@ -114,7 +139,7 @@ export default function DecisionDiferencia({
         );
     }
 
-    const decidir = (accion, tipo = null, txt = null) => onDecidir?.(item.id, accion, tipo, txt);
+    const decidir = (accion, tipo = null, txt = null, conCaja = null) => onDecidir?.(item.id, accion, tipo, txt, conCaja);
 
     // Proponer devolver un producto DAÑADO exige la foto: es lo único que bodega
     // puede mirar para decidir si amerita la devolución, y la base la rechaza
@@ -147,6 +172,7 @@ export default function DecisionDiferencia({
                     vista y casi nunca se usa: un renglón por diferencia, y con
                     tres abiertas son tres campos vacíos compitiendo con lo único
                     que hay que apretar. */}
+                {pideCaja(elegida) && campoCaja}
                 {conNota && (
                     <PortalInput
                         aria-label="Nota de la decisión" tono="chart-3" compact autoFocus
@@ -165,10 +191,10 @@ export default function DecisionDiferencia({
                         {esSala ? 'Bodega la acepta o propone la otra.' : 'La sala la acepta o propone la otra.'}
                         {' '}Sin acuerdo, decide supervisión.
                     </span>
-                    <Button tone="chart-3" loading={ocupado} disabled={!elegida}
+                    <Button tone="chart-3" loading={ocupado} disabled={!elegida || (pideCaja(elegida) && !cajaLista)}
                         onClick={() => (necesitaFoto(elegida)
-                            ? onPedirFoto?.(item, elegida, nota || null)
-                            : decidir('proponer', elegida, nota || null))}>
+                            ? onPedirFoto?.(item, elegida, nota || null, pideCaja(elegida) ? cajaLista : null)
+                            : decidir('proponer', elegida, nota || null, pideCaja(elegida) ? cajaLista : null))}>
                         Proponer
                     </Button>
                 </div>
@@ -240,8 +266,13 @@ export default function DecisionDiferencia({
                         </div>
                     ) : (
                         <div className="flex gap-2 flex-wrap">
+                            {estado === 'contrapropuesta' && pideCaja(item.resolucion_tipo) && (
+                                <div className="w-full">{campoCaja}</div>
+                            )}
                             <Button tone="success" icon={Check} loading={ocupado}
-                                onClick={() => decidir('aceptar')}>Aceptar</Button>
+                                disabled={estado === 'contrapropuesta' && pideCaja(item.resolucion_tipo) && !cajaLista}
+                                onClick={() => decidir('aceptar', null, null,
+                                    estado === 'contrapropuesta' && pideCaja(item.resolucion_tipo) ? cajaLista : null)}>Aceptar</Button>
                             {/* Contraproponer sólo en la primera vuelta: a la
                                 segunda, quien no está de acuerdo escala. */}
                             {estado === 'propuesta' && laOtra && (

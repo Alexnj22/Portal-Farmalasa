@@ -27,8 +27,10 @@ import {
   RECIBIR,
   TRASLADO,
   trasladoQueSalioPeseAlFallo,
+  esLoteGenerico,
 } from "../_shared/erp-traslado.ts";
 import { presupuestoDelWorker } from "../_shared/relojDelWorker.ts";
+import { asignarLoteAGenerico, fechaRegistradaQueChoca } from "../_shared/erp-asignar-lote.ts";
 import {
   devolverFichasHuerfanas, filasDeRecibir, MARGEN_DESTRABE_MS, recibirConDestrabe, trabasEnDetalle,
 } from "../_shared/erp-destrabe.ts";
@@ -119,6 +121,9 @@ interface Devolucion {
   solicitada_por: string | null;
   /** 'a_bodega' | 'a_sala'. Columna generada: sale del motivo, no se escribe. */
   sentido: string;
+  /** (2026-11-13) Lote y vencimiento de la caja que escribió la sala, para lo
+   *  que llegó sin lote asignado. `asignado` = ya se le puso en el sistema. */
+  caja?: { lote: string; vence: string; asignado?: boolean } | null;
 }
 
 /** ¿Este movimiento va hacia la sala en vez de hacia Bodega? */
@@ -298,7 +303,7 @@ Deno.serve(async (req) => {
       .from("pedido_devolucion")
       .select("id, pedido_id, erp_sucursal_id, pedido_item_id, erp_product_id, "
             + "motivo, viaja, cantidad, clave, estado, id_traslado, detalle, updated_at, solicitada_por, "
-            + "sentido")
+            + "sentido, caja")
       .in("id", ids);
     if (devErr) throw devErr;
     const devs = (devsRaw ?? []) as unknown as (Devolucion & { detalle: Record<string, unknown> | null; updated_at: string })[];
@@ -839,7 +844,7 @@ Deno.serve(async (req) => {
           if (!tomada) continue;   // otra persona se la llevó
         }
 
-        const f = await traerFila(cookie, d.erp_product_id, ubicOrigen);
+        let f = await traerFila(cookie, d.erp_product_id, ubicOrigen);
         if (!f.encontrado) { await fallar(`${it.nombre} ya no tiene existencia en ${nombreOrigen}.`); continue; }
 
         let pres = await resolverPresentacion(cookie, f, it.tipo, it.factor, { porFactor: true });
@@ -912,9 +917,51 @@ Deno.serve(async (req) => {
           const cabeEn = (l: { id: string; stock: number }) =>
             Math.floor(l.stock / Number(pres.unidad)) - (tomado.get(l.id) ?? 0);
 
+          // ── Lo que llegó sin lote asignado vuelve con el de la caja ───────
+          // (2026-11-13) Si llegó como GENERICO y la sala escribió el lote de
+          // la caja al pedir la devolución (dañado/vencido), se le asigna a
+          // esas unidades y vuelven con él. Se marca `asignado` en cuanto
+          // entra: un reintento no lo vuelve a hacer.
+          const caja = d.caja;
+          let loteDeCaja: string | null = null;
+          const llegoSinLote = !haciaLaSala(d) && (d.motivo === "danado" || d.motivo === "vencido")
+            && Boolean(caja?.lote && caja?.vence)
+            && (lotesDeIda.get(d.pedido_item_id) ?? []).some((r) => esLoteGenerico(String(r?.lote ?? "")));
+          if (llegoSinLote && caja) {
+            if (caja.asignado) {
+              loteDeCaja = caja.lote;
+            } else if (simulacro) {
+              avisos.push(`se asignará el lote ${caja.lote} (vence ${caja.vence}) a lo que llegó sin lote asignado`);
+            } else {
+              const choca = await fechaRegistradaQueChoca(admin, Number(d.erp_product_id), caja.lote, caja.vence);
+              if (choca) {
+                await fallar(`${it.nombre}: el lote ${caja.lote} ya está registrado con vencimiento ${choca}. Revisa la caja.`);
+                continue;
+              }
+              const asig = await asignarLoteAGenerico({
+                cookie, erpSucursal: erpOrigen, erpUbicacion: ubicOrigen,
+                erpProductId: Number(d.erp_product_id), descripcion: it.nombre,
+                presentacionTipo: it.tipo, factor: Number(pres.unidad),
+                idPresentacion: pres.id, costo: String(pres.costo), precio: String(pres.precio),
+                unidad: String(pres.unidad), paquetes: cantidad,
+                lote: caja.lote, vence: caja.vence, referencia: d.clave,
+              });
+              if (!asig.ok) {
+                await fallar(asig.descuadre ? `${asig.error} ${asig.descuadre}` : asig.error);
+                continue;
+              }
+              await noCallar(
+                admin.from("pedido_devolucion").update({ caja: { ...caja, asignado: true } }).eq("id", d.id),
+                `que ${d.clave} ya tiene asignado el lote ${asig.lote}`,
+              );
+              loteDeCaja = asig.lote;
+              f = await traerFila(cookie, d.erp_product_id, ubicOrigen);
+            }
+          }
+
           for (const r of (lotesDeIda.get(d.pedido_item_id) ?? [])) {
             if (resto <= 0) break;
-            const numero = String(r?.lote ?? "");
+            const numero = loteDeCaja && esLoteGenerico(String(r?.lote ?? "")) ? loteDeCaja : String(r?.lote ?? "");
             if (!numero) continue;
             const lote = f.lotes.find((x) => norm(x.numero) === norm(numero));
             if (!lote) {

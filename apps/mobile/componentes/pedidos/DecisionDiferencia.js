@@ -11,13 +11,14 @@
 // También va acá lo que cierra el círculo después del acuerdo: confirmar que
 // llegó (salidas «en la mano») y, para bodega, sacar el producto, probar sin
 // mover y confirmar su entrada (`DevolucionBloque` del portal).
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Alert, Text, View } from 'react-native';
 import { Presionable as Pressable } from '../Tocable';
 import * as Haptics from 'expo-haptics';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
-import { ayudaPara, confirmarLlegadaDiferencia, opcionElegida, opcionesDe } from '@nucleo/data/diferencias';
+import { ayudaPara, confirmarLlegadaDiferencia, llegoSinLote, opcionElegida, opcionesDe } from '@nucleo/data/diferencias';
+import LoteDeLaCaja from '../LoteDeLaCaja';
 import { moverDevoluciones, recibirDevoluciones, BUCKET_EVIDENCIA } from '@nucleo/data/devoluciones';
 import { decidirDiferenciaYMover } from '@nucleo/data/accionesDeBodega';
 import { turnoDe } from '@nucleo/utils/decisionDiferencia';
@@ -59,14 +60,31 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
   const turno = turnoDe(estado, { esSala, esSupervision });
   const op = opcionElegida(catalogo, item.error_tipo, item.resolucion_tipo);
   const aLaSala = dev?.sentido === 'a_sala';
+  // El lote de la caja (2026-11-13): lo que llegó dañado o vencido SIN lote
+  // asignado vuelve con el de la caja. Lo escribe la sala al proponer o aceptar.
+  const puedeCaja = (esSala || esSupervision) && ['danado', 'vencido'].includes(item.error_tipo) && !item.caja_devolucion;
+  const [sinLote, setSinLote] = useState(false);
+  const [caja, setCaja] = useState(null);
+  useEffect(() => {
+    if (!puedeCaja) return undefined;
+    let vivo = true;
+    llegoSinLote(item.id, item.erp_product_id).then((v) => { if (vivo) setSinLote(v); });
+    return () => { vivo = false; };
+  }, [puedeCaja, item.id, item.erp_product_id]);
   if (!opciones.length) return null;
+  const pideCaja = (valor) => puedeCaja && sinLote && opcionElegida(catalogo, item.error_tipo, valor)?.mueve === 'devolucion';
+  const cajaLista = caja?.envio ?? null;
+  const campoCaja = (
+    <LoteDeLaCaja erpProductId={item.erp_product_id} producto={item.products?.nombre ?? 'el producto'}
+      valor={caja ?? undefined} onChange={setCaja} />
+  );
 
   const anotar = (accion, extra = {}) => useStaffStore.getState().appendAuditLog?.(accion, pedidoId, { sucursal_id: sucId, item_id: item.id, desde: 'app', ...extra });
 
-  const decidir = async (accion, tipo = null, texto = null, evidencia = []) => {
+  const decidir = async (accion, tipo = null, texto = null, evidencia = [], conCaja = null) => {
     setOcupado(true);
     try {
-      const { data, movimiento } = await decidirDiferenciaYMover({ itemId: item.id, accion, tipo, nota: texto, evidencia });
+      const { data, movimiento } = await decidirDiferenciaYMover({ itemId: item.id, accion, tipo, nota: texto, evidencia, caja: conCaja });
       anotar(`PEDIDO_DIFERENCIA_${String(accion).toUpperCase()}`, { opcion: data?.opcion ?? tipo, estado: data?.estado });
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
       if (movimiento) {
@@ -91,10 +109,10 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
       let urls;
       try { urls = await subirFotos(fotos, { bucket: BUCKET_EVIDENCIA, carpeta: `inventario/${sucId}/${user?.id ?? 'anon'}` }); } catch (e) { setOcupado(false); fallo('Diferencia', mensajeAmigable(e)); return; }
       setOcupado(false);
-      await decidir('proponer', elegida, nota || null, urls);
+      await decidir('proponer', elegida, nota || null, urls, pideCaja(elegida) ? cajaLista : null);
       return;
     }
-    await decidir('proponer', elegida, nota || null);
+    await decidir('proponer', elegida, nota || null, [], pideCaja(elegida) ? cajaLista : null);
   };
 
   const conDevolucion = async (fn, titulo, okTexto, accion) => {
@@ -147,8 +165,9 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
         <Segmentos margen={0} opciones={opcionesSeg} activa={elegida} onCambiar={setTocada} />
         {sel ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}><Text style={{ fontWeight: '700', color: colorSistema.texto }}>{sel.rotulo}</Text>{` — ${ayudaPara(sel, { esSala, esSupervision }) ?? ''}`}</Text> : null}
         {necesitaFoto(elegida) ? <Fotos fotos={fotos} onCambiar={setFotos} max={3} /> : null}
+        {pideCaja(elegida) ? campoCaja : null}
         <Campo multiline={false} value={nota} onChangeText={setNota} placeholder="Nota (opcional)" />
-        <Boton texto={ocupado ? 'Enviando…' : 'Proponer'} lleno color={MARCA.violetaClaro} deshabilitado={ocupado || !elegida} onPress={proponer} />
+        <Boton texto={ocupado ? 'Enviando…' : 'Proponer'} lleno color={MARCA.violetaClaro} deshabilitado={ocupado || !elegida || (pideCaja(elegida) && !cajaLista)} onPress={proponer} />
       </View>
     );
   }
@@ -165,7 +184,10 @@ export default function DecisionDiferencia({ item, catalogo, dev, pedidoId, sucI
 
       {turno === 'yo' && (estado === 'propuesta' || estado === 'contrapropuesta') ? (
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-          <Boton texto="Aceptar" lleno color={MARCA.verde} deshabilitado={ocupado} onPress={() => decidir('aceptar')} />
+          {estado === 'contrapropuesta' && pideCaja(item.resolucion_tipo) ? <View style={{ width: '100%' }}>{campoCaja}</View> : null}
+          <Boton texto="Aceptar" lleno color={MARCA.verde}
+            deshabilitado={ocupado || (estado === 'contrapropuesta' && pideCaja(item.resolucion_tipo) && !cajaLista)}
+            onPress={() => decidir('aceptar', null, null, [], estado === 'contrapropuesta' && pideCaja(item.resolucion_tipo) ? cajaLista : null)} />
           {estado === 'propuesta' && laOtra ? <Boton texto={`Proponer ${(laOtra.rotulo_corto ?? laOtra.rotulo).toLowerCase()}`} deshabilitado={ocupado} onPress={() => decidir('contraproponer', laOtra.valor, null)} /> : null}
           {estado === 'contrapropuesta' ? <Boton texto="Rechazar" color={MARCA.rojo} deshabilitado={ocupado} onPress={rechazar} /> : null}
         </View>

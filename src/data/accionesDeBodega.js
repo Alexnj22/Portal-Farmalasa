@@ -118,8 +118,8 @@ export async function pasoDeDiferencias({ pedidoId, sucId, userId = null, paso, 
  *
  * @returns {Promise<{ data, movimiento: null | { ok, aLaSala, error } }>}
  */
-export async function decidirDiferenciaYMover({ itemId, accion, tipo = null, nota = null, evidencia = [] }) {
-    const { data: d, error } = await decidirDiferencia({ itemId, accion, tipo, nota, evidencia });
+export async function decidirDiferenciaYMover({ itemId, accion, tipo = null, nota = null, evidencia = [], caja = null }) {
+    const { data: d, error } = await decidirDiferencia({ itemId, accion, tipo, nota, evidencia, caja });
     if (error) throw error;
     const data = /** @type {any} */ (d);
     let movimiento = null;

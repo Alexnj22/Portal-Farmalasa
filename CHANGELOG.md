@@ -21,6 +21,14 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.0 — Devolver dañado o vencido sin lote pide el lote de la caja
+
+Decisión del usuario (2026-11-13): todo movimiento sin lote lo pide; los pedidos de Bodega siguen exentos hasta el inventario, salvo lo que vuelve dañado o vencido (la sala tiene la caja).
+
+- **Diferencia de pedido dañada o vencida** de un regulado que llegó sin lote asignado: al proponer (o aceptar) devolverla, la sala escribe el lote y el vencimiento de la caja (mes y año). Web (`DecisionDiferencia`) y app.
+- La base lo guarda en el renglón (`pedido_items.caja_devolucion`, por `decidir_diferencia_pedido(…, p_caja)`) y lo copia a la devolución (`pedido_devolucion.caja`). `devolver-pedido-erp` se lo asigna a esas unidades en la sala (`asignarLoteAGenerico`) y las devuelve con ese lote; marca `caja.asignado` para no repetirlo en un reintento.
+- `solicitar_devolucion_pedido` (circuito anterior, sin uso) también acepta `p_caja`.
+
 ## v2.1526.0 — Descartes piden el lote y el vencimiento de la caja
 
 Decisión del usuario (2026-11-13): todo movimiento sin lote o sin vencimiento lo pide.

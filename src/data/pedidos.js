@@ -318,7 +318,7 @@ const ITEMS_SELECT = `
     sin_stock, revision_minmax, falta_caja, caja_especial, es_extra,
     factor, dispatch_tipo, dispatch_factor, dispatch_multiplo,
     max_qty_snapshot, stock_packs_snapshot,
-    resolucion_status, resolucion_tipo, resolucion_nota,
+    resolucion_status, resolucion_tipo, resolucion_nota, caja_devolucion,
     resuelto_por, resuelto_at, confirmado_suc_por, confirmado_suc_at,
     rechazado_por, rechazado_at, nota_rechazo,
     products ( nombre, es_antibiotico, laboratorios ( nombre ), product_precios ( factor, activo, descripcion, presentaciones!id_presentacion ( tipo ) ), dispatch_rules ( dispatch_label ) ),

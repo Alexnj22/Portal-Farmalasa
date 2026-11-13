@@ -21144,6 +21144,7 @@ export type Database = {
       pedido_devolucion: {
         Row: {
           aviso: string | null
+          caja: Json | null
           cantidad: number
           clave: string
           created_at: string
@@ -21176,6 +21177,7 @@ export type Database = {
         }
         Insert: {
           aviso?: string | null
+          caja?: Json | null
           cantidad: number
           clave: string
           created_at?: string
@@ -21208,6 +21210,7 @@ export type Database = {
         }
         Update: {
           aviso?: string | null
+          caja?: Json | null
           cantidad?: number
           clave?: string
           created_at?: string
@@ -21379,6 +21382,7 @@ export type Database = {
       pedido_items: {
         Row: {
           agotamiento: boolean | null
+          caja_devolucion: Json | null
           caja_especial: boolean
           cantidad_asignada: number
           cantidad_enviada: number | null
@@ -21427,6 +21431,7 @@ export type Database = {
         }
         Insert: {
           agotamiento?: boolean | null
+          caja_devolucion?: Json | null
           caja_especial?: boolean
           cantidad_asignada: number
           cantidad_enviada?: number | null
@@ -21475,6 +21480,7 @@ export type Database = {
         }
         Update: {
           agotamiento?: boolean | null
+          caja_devolucion?: Json | null
           caja_especial?: boolean
           cantidad_asignada?: number
           cantidad_enviada?: number | null
@@ -26744,7 +26750,7 @@ export type Database = {
       }
       purchase_dte_documents: {
         Row: {
-          account_id: number
+          account_id: number | null
           codigo_generacion: string | null
           corrige_purchase_receipt_id: number | null
           created_at: string
@@ -26775,7 +26781,7 @@ export type Database = {
           total_iva: number | null
         }
         Insert: {
-          account_id: number
+          account_id?: number | null
           codigo_generacion?: string | null
           corrige_purchase_receipt_id?: number | null
           created_at?: string
@@ -26806,7 +26812,7 @@ export type Database = {
           total_iva?: number | null
         }
         Update: {
-          account_id?: number
+          account_id?: number | null
           codigo_generacion?: string | null
           corrige_purchase_receipt_id?: number | null
           created_at?: string
@@ -34090,6 +34096,7 @@ export type Database = {
       decidir_diferencia_pedido: {
         Args: {
           p_accion: string
+          p_caja?: Json
           p_evidencia?: Json
           p_item_id: number
           p_nota?: string
@@ -39798,6 +39805,7 @@ export type Database = {
       }
       solicitar_devolucion_pedido: {
         Args: {
+          p_caja?: Json
           p_cantidad: number
           p_evidencia?: Json
           p_motivo: string

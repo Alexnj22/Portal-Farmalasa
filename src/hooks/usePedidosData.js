@@ -1560,10 +1560,10 @@ export function usePedidosData({ searchTerm = '' }) {
     // deja la devolución creada y ya aceptada; lo único que falta es sacarla de
     // la sala, y eso habla con el sistema y puede fallar. Por eso va aparte: el
     // fallo del movimiento no borra el acuerdo.
-    const handleDecidirDiferencia = useCallback(async (pedidoId, sucId, itemId, accion, tipo, nota, evidencia = []) => {
+    const handleDecidirDiferencia = useCallback(async (pedidoId, sucId, itemId, accion, tipo, nota, evidencia = [], caja = null) => {
         setBusyAction(`dif_${itemId}`);
         try {
-            const { data, movimiento } = await decidirDiferenciaYMover({ itemId, accion, tipo, nota, evidencia });
+            const { data, movimiento } = await decidirDiferenciaYMover({ itemId, accion, tipo, nota, evidencia, caja });
 
             useStaff.getState().appendAuditLog(`PEDIDO_DIFERENCIA_${String(accion).toUpperCase()}`, pedidoId, {
                 sucursal_id: sucId, item_id: itemId, opcion: data?.opcion ?? tipo, estado: data?.estado,
@@ -1617,7 +1617,7 @@ export function usePedidosData({ searchTerm = '' }) {
     // decidir, y dejarla entrar «para no perder lo escrito» la convierte en una
     // fila que alguien va a tener que rechazar a mano. La base además la
     // rechaza, así que subir después sería confiar en que el segundo paso ocurra.
-    const handleProponerConFoto = useCallback(async ({ pedidoId, sucId, item, opcion, nota }, { nota: notaModal, fotos = [] }) => {
+    const handleProponerConFoto = useCallback(async ({ pedidoId, sucId, item, opcion, nota, caja = null }, { nota: notaModal, fotos = [] }) => {
         setBusyAction(`dif_${item.id}`);
         let evidencia = [];
         try {
@@ -1631,7 +1631,7 @@ export function usePedidosData({ searchTerm = '' }) {
         }
         setBusyAction(null);
         await handleDecidirDiferencia(pedidoId, sucId, item.id, 'proponer', opcion,
-            notaModal || nota || null, evidencia);
+            notaModal || nota || null, evidencia, caja);
     }, [user, handleDecidirDiferencia]);
 
     // Aceptar y mover son UN gesto para quien aprieta, pero dos escrituras

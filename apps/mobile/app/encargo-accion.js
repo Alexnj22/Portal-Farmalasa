@@ -30,7 +30,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato, exigeParametro } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -41,7 +41,7 @@ const dinero = (v) => v.replace(/[^\d.,]/g, '').replace(',', '.');
 // Los mismos rótulos que el botón que abre la pantalla (y que el portal).
 const TITULO = { confirmar: ROT.confirmar, rechazar: ROT.rechazar, saldo: ROT.saldo, vincular: ROT.vincular, fecha: 'Nueva fecha', no_entrego: ROT.no_entrego };
 
-export default function EncargoAccion() {
+function EncargoAccion() {
   const { id, modo = 'confirmar', sala } = useLocalSearchParams();
   const [e, setE] = useState(null);
   const [error, setError] = useState('');
@@ -194,3 +194,5 @@ export default function EncargoAccion() {
     </>
   );
 }
+
+export default exigeParametro(EncargoAccion, 'id', { titulo: 'Encargo', texto: 'No se encontró el encargo.' });

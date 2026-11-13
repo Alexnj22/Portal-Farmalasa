@@ -44,7 +44,7 @@ import { conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRe
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando, Vacio } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando, Vacio, exigeParametro } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -170,7 +170,7 @@ function Boton({ texto, onPress }) {
   );
 }
 
-export default function Recibir() {
+function Recibir() {
   const { pedidoId, sucId: sucParam, numero } = useLocalSearchParams();
   const sucId = Number(sucParam);
   const { user } = useAuth();
@@ -512,3 +512,5 @@ export default function Recibir() {
     </>
   );
 }
+
+export default exigeParametro(Recibir, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

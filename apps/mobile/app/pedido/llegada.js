@@ -17,7 +17,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Ficha, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion, exigeParametro } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 
@@ -33,7 +33,7 @@ function Tres({ valor, onCambiar, opciones = ESTADOS }) {
   );
 }
 
-export default function Llegada() {
+function Llegada() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const { user } = useAuth();
   const clave = `llegada_app_${pedidoId}_${sucId}`;
@@ -177,3 +177,5 @@ export default function Llegada() {
     </>
   );
 }
+
+export default exigeParametro(Llegada, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

@@ -20,14 +20,14 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, exigeParametro } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
 const RESTO = [{ id: 'efectivo', label: 'Efectivo' }, { id: 'otra', label: 'Tarjeta o transferencia' }];
 
-export default function RetirarApartado() {
+function RetirarApartado() {
   const { id, tipo, sala } = useLocalSearchParams();
   const referencia = tipo === 'encargo' ? { encargo_id: Number(id) } : { reserva_id: Number(id) };
   const [v, setV] = useState(null);
@@ -160,3 +160,5 @@ export default function RetirarApartado() {
     </>
   );
 }
+
+export default exigeParametro(RetirarApartado, 'id', { titulo: 'Reserva', texto: 'No se encontró la reserva.' });

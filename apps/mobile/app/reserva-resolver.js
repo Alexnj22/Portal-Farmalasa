@@ -32,13 +32,13 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, PantallaSinDato, exigeParametro } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 
-export default function ResolverReservaNativo() {
+function ResolverReservaNativo() {
   const { id, sala: salaParam } = useLocalSearchParams();
   const { user } = useAuth();
   const sala = salaParam ?? user?.branchId ?? user?.branch_id ?? null;
@@ -253,3 +253,5 @@ function LoDecideElCliente({ r, ocupado, hacer }) {
     </>
   );
 }
+
+export default exigeParametro(ResolverReservaNativo, 'id', { titulo: 'Reserva', texto: 'No se encontró la reserva.' });

@@ -26,7 +26,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { signPhotosDeep } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, exigeParametro } from '../../componentes/formulario/Piezas';
 import { Pasos, Pildora, Panel, Fichas } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import Avatar from '../../componentes/Avatar';
@@ -73,7 +73,7 @@ function Gente({ rotulo, personas }) {
   );
 }
 
-export default function DetalleDePedido() {
+function DetalleDePedido() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const suc = Number(sucId);
   const { user, hasPermission, getScope } = useAuth();
@@ -223,3 +223,5 @@ export default function DetalleDePedido() {
     </>
   );
 }
+
+export default exigeParametro(DetalleDePedido, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

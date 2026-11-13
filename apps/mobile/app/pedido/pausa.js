@@ -15,11 +15,11 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, exigeParametro } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
-export default function PausarPedido() {
+function PausarPedido() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const { user } = useAuth();
   const [historial, setHistorial] = useState(null);
@@ -76,3 +76,5 @@ export default function PausarPedido() {
     </>
   );
 }
+
+export default exigeParametro(PausarPedido, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

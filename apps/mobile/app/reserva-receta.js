@@ -19,7 +19,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, exigeParametro } from '../componentes/formulario/Piezas';
 import { MARCA, FONDO_CONTROL } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -38,7 +38,7 @@ function Chip({ texto, onPress, activo }) {
   );
 }
 
-export default function RevisarReceta() {
+function RevisarReceta() {
   const { id, sala, todas } = useLocalSearchParams();
   const [reserva, setReserva] = useState(undefined);
   const [url, setUrl] = useState(null);
@@ -160,3 +160,5 @@ export default function RevisarReceta() {
     </>
   );
 }
+
+export default exigeParametro(RevisarReceta, 'id', { titulo: 'Reserva', texto: 'No se encontró la reserva.' });

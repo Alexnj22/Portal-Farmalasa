@@ -16,7 +16,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { BotonGrande, Dato, Seccion, exigeParametro } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Hora from '../../componentes/personas/Hora';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -25,7 +25,7 @@ import { fallo, listo } from '../../componentes/Progreso';
 // «2026-10-07» + «14:30» en El Salvador (UTC−6, sin horario de verano) → ISO.
 const aIso = (dia, hora) => new Date(`${dia}T${hora}:00-06:00`).toISOString();
 
-export default function ProgramarEntrega() {
+function ProgramarEntrega() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const empleados = useStaffStore((s) => s.employees);
   const [pss, setPss] = useState(null);
@@ -100,3 +100,5 @@ export default function ProgramarEntrega() {
     </>
   );
 }
+
+export default exigeParametro(ProgramarEntrega, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

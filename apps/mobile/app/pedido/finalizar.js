@@ -33,7 +33,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, exigeParametro } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -53,7 +53,7 @@ function Chip({ texto, activo, onPress, color = MARCA.azulClaro }) {
   );
 }
 
-export default function FinalizarPedido() {
+function FinalizarPedido() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const suc = Number(sucId);
   const BORRADOR = `finalizar-app-${pedidoId}-${suc}`;
@@ -309,3 +309,5 @@ export default function FinalizarPedido() {
     </>
   );
 }
+
+export default exigeParametro(FinalizarPedido, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

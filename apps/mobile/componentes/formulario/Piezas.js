@@ -4,7 +4,7 @@
 // iguales en toda la app, para que un formulario se sienta como el anterior.
 import { useState } from 'react';
 import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useLocalSearchParams } from 'expo-router';
 import { BARRA_NATIVA } from '../PilaDePestana';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
@@ -198,4 +198,18 @@ export function Dato({ rotulo, valor, primero, fuerte }) {
 export function Aviso({ texto, tono = 'nota' }) {
   const color = tono === 'freno' ? MARCA.rojo : tono === 'cuidado' ? MARCA.ambar : colorSistema.texto2;
   return <Text style={{ color, fontSize: 14, fontWeight: tono === 'nota' ? '400' : '600', marginHorizontal: 4 }}>{texto}</Text>;
+}
+
+// Una pantalla que trabaja sobre UN registro (un pedido, una reserva) recibe su
+// número en la dirección. Si llega sin él —un aviso o un enlace roto—, en vez
+// de «Pedido #undefined» y un error de la base, el mismo vacío de PantallaSinDato.
+// Se envuelve el componente entero para no cortar los hooks a mitad de camino.
+export function exigeParametro(Pantalla, clave, { titulo, texto }) {
+  function ConParametro(props) {
+    const valor = useLocalSearchParams()[clave];
+    if (!valor || valor === 'undefined' || valor === 'null') return <PantallaSinDato titulo={titulo} texto={texto} />;
+    return <Pantalla {...props} />;
+  }
+  ConParametro.displayName = `Exige(${Pantalla.name || 'Pantalla'})`;
+  return ConParametro;
 }

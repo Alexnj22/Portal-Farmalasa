@@ -15,11 +15,11 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, exigeParametro } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 
-export default function UsarSaldo() {
+function UsarSaldo() {
   const { id, codigo } = useLocalSearchParams();
   const [prueba, setPrueba] = useState('');
   const [fila, setFila] = useState(null);
@@ -78,3 +78,5 @@ export default function UsarSaldo() {
     </>
   );
 }
+
+export default exigeParametro(UsarSaldo, 'id', { titulo: 'Reserva', texto: 'No se encontró la reserva.' });

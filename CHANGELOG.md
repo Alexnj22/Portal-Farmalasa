@@ -21,6 +21,10 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1514.2 — App: pantallas de un pedido o reserva sin su número muestran el aviso común
+
+App del personal: las 15 pantallas que trabajan sobre un registro concreto (las nueve de un pedido —detalle, llegada, contar, finalizar, pausar, programar, extras, reenvío, reenviar—, cuatro de reservas, la de encargos y Corregir movimiento) mostraban «Pedido #undefined» y un error de la base si se abrían sin su número (un aviso o un enlace roto). Ahora muestran el aviso común «No se encontró el pedido / la reserva / …» con su título. La guarda es una sola, `exigeParametro` en `componentes/formulario/Piezas.js`, que envuelve la pantalla entera.
+
 ## v2.1514.1 — Auditoría visual de la app: hojas, vacíos y estados con una sola forma
 
 App del personal — auditoría visual completa (222 pantallas capturadas en el simulador de iPhone, más pruebas puntuales en Android):

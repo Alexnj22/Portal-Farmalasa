@@ -11,11 +11,11 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, exigeParametro } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
-export default function CorregirMovimiento() {
+function CorregirMovimiento() {
   const { sala, id, concepto, monto } = useLocalSearchParams();
   const puedeOperar = useAuth().hasPermission('caja_vales', 'can_edit');
   const [que, setQue] = useState('ANULAR');
@@ -66,3 +66,5 @@ export default function CorregirMovimiento() {
     </>
   );
 }
+
+export default exigeParametro(CorregirMovimiento, 'id', { titulo: 'Corregir', texto: 'No se encontró el movimiento.' });

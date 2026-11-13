@@ -21,7 +21,7 @@ import { ERP_NAMES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Ficha, Seccion, Cargando, exigeParametro } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo } from '../../componentes/Progreso';
 
@@ -42,7 +42,7 @@ function Paso({ texto, onPress, deshabilitado }) {
   );
 }
 
-export default function ExtrasDelPedido() {
+function ExtrasDelPedido() {
   const { pedidoId, sucId, numero } = useLocalSearchParams();
   const suc = Number(sucId);
   const [renglones, setRenglones] = useState(null);
@@ -178,3 +178,5 @@ export default function ExtrasDelPedido() {
     </>
   );
 }
+
+export default exigeParametro(ExtrasDelPedido, 'pedidoId', { titulo: 'Pedido', texto: 'No se encontró el pedido.' });

@@ -21,6 +21,22 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1527.5 — Compras: el sello de Hacienda se lee también del PDF
+
+Guardado, Santa Lucía, Interamericana y otros proveedores mandan el documento
+sin el sello de recepción de Hacienda adentro y sólo lo imprimen en el PDF.
+Esas compras quedaban trabadas con «se podrá cargar cuando llegue», y el sello
+no iba a llegar nunca.
+
+- Al recibir el correo, si el documento no trae el sello, se lee del PDF.
+- Las facturas ya recibidas se repasaron una vez con el mismo criterio.
+- Si el PDF es un escaneo sin texto, o trae varios sellos y no se puede decir
+  cuál es el suyo, no se adivina: queda como estaba.
+
+(Técnico: `selloEnTextoDelPdf` en `_shared/selloDeCompra.ts`, con sus pruebas;
+modo `backfill_sellos_pdf` en `sync-purchase-emails`, que sólo escribe donde el
+sello sigue vacío.)
+
 ## v2.1527.4 — Sucursales en la app: reporte PDF, CSV y resumen con IA del historial
 
 En la app del personal, el **Historial** de una sucursal tiene lo mismo que el portal:

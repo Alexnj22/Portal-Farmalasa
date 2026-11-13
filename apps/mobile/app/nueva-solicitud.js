@@ -16,6 +16,7 @@ import Vidrio from '../componentes/Vidrio';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { MARCA } from '../componentes/inicio/marca';
+import { Vacio } from '../componentes/formulario/Piezas';
 
 // Dónde abre cada familia. `null` = todavía en el portal.
 const NATIVA = { facturacion: '/nueva/facturas', traslado: '/pedir-traslado', inventario: '/nueva/ajuste', minmax: '/nueva/minmax' };
@@ -76,7 +77,7 @@ export default function NuevaSolicitud() {
         ) : null}
 
         {!familias.length && !personales ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 60 }}>Tu cargo no puede crear solicitudes.</Text>
+          <Vacio titulo="Tu cargo no puede crear solicitudes." icono="Info" />
         ) : null}
       </ScrollView>
     </>

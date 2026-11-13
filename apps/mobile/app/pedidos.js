@@ -40,7 +40,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Vacio } from '../componentes/formulario/Piezas';
 import { Pasos, Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -273,9 +273,7 @@ export default function Pedidos() {
             {filas == null ? null : visibles.length
               ? visibles.map((r) => <Tarjeta key={`${r.pedido_id}-${r.erp_sucursal_id}`} r={r} todas={todas} puede={puede} miErp={miErp} esSupervision={esSupervision} />)
               : (
-                <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 50, fontSize: 15 }}>
-                  {q ? `Ningún pedido coincide con «${q}».` : estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'}
-                </Text>
+                <Vacio titulo={q ? `Ningún pedido coincide con «${q}».` : estado === 'all' ? 'No hay pedidos en curso en este período.' : 'Ningún pedido con este filtro.'} icono={q ? 'Search' : undefined} />
               )}
           </>
         )}

@@ -6,7 +6,9 @@ import { useEffect } from 'react';
 import { router } from 'expo-router';
 import { AppState } from 'react-native';
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { usePaleta } from '../../tema/material';
 import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { usePestanaRapida } from '../../componentes/pestanaRapida';
@@ -61,8 +63,16 @@ export default function Pestanas() {
   const { user, hasPermission } = useAuth();
   const salas = useStaffStore((s) => s.branches);
   const { actual: rapida } = usePestanaRapida(user, hasPermission, salas);
+  // Android: la barra de navegación de Material con la paleta de la marca
+  // (tema/material.js), no la del fondo de pantalla.
+  const p = usePaleta();
+  const colores = Platform.OS === 'android' && p ? {
+    backgroundColor: p.surfaceContainer, indicatorColor: p.secondaryContainer, rippleColor: p.primary,
+    iconColor: { default: p.onSurfaceVariant, selected: p.onSecondaryContainer },
+    labelStyle: { default: { color: p.onSurfaceVariant }, selected: { color: p.onSurface } },
+  } : {};
   return (
-    <NativeTabs labelVisibilityMode="labeled">
+    <NativeTabs labelVisibilityMode="labeled" {...colores}>
       <NativeTabs.Trigger contentStyle={TRANSPARENTE} name="inicio">
         <NativeTabs.Trigger.Icon sf={{ default: 'house', selected: 'house.fill' }} md="home" />
         <NativeTabs.Trigger.Label>Inicio</NativeTabs.Trigger.Label>

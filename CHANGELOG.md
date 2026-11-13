@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1516.0 — App Android: paleta de la marca y piezas de Material 3 Expressive
+
+App del personal en Android — Material 3 Expressive con los colores de la marca (opción elegida por el usuario):
+
+- **Paleta de la marca**: cada pieza de Material (barra de abajo, fichas, botones segmentados, interruptores, hojas, fechas) tomaba los colores del fondo de pantalla de cada teléfono (Material You): la barra salía rosada al lado de enlaces azules. Ahora toda la paleta tonal se genera desde el azul de la marca (`tema/material.js`, `seedColor` en cada `Host` de Compose) y es igual en todos los teléfonos. Las tarjetas usan las superficies tonales de esa paleta.
+- **Indicador de carga Expressive**: `Cargando` usa en Android el `ContainedLoadingIndicator` de Material 3 Expressive (la forma que se transforma mientras gira). iOS sigue con el del sistema.
+- **Botones que cambian de forma**: el botón grande de acción se vuelve más cuadrado al apretarlo y vuelve con resorte, además de la onda.
+- **Vacíos que quedaban sueltos**: 17 pantallas más (detalles de solicitud, envío, traslado, corte, receta; listas de pedidos, clientes, catálogo, carga de compra, tiempos de pedidos) pasan a `Vacio`, `Cargando` o `PantallaSinDato`.
+
+El desenfoque translúcido de Android 17 queda para después: en la app, la barra de arriba y la de abajo son las nativas de Material y no tienen contenido detrás que desenfocar.
+
 ## v2.1515.1 — App: las hojas se cierran deslizando sin quedar en blanco; marcas de la barra enteras en Android
 
 App del personal:

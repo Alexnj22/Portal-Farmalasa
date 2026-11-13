@@ -19,7 +19,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Vacio } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Vacio, Cargando } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -166,7 +166,7 @@ function PorConfirmar({ busca, estado, puedeEditar }) {
         <Aviso texto={estado === 'apartados' ? 'Lo marcado como que no es un producto. Si fue un error, «Devolver a la lista» lo pone otra vez a la cola.' : 'Cada línea es un producto de un proveedor: confirmarla resuelve todas las facturas donde aparece, las de hoy y las que vengan.'} />
       </View>
       {puedeEditar ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Actualizar la lista" borde onPress={barrer} /></View> : null}
-      {filas == null ? <ActivityIndicator /> : !visibles.length ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30, marginHorizontal: 24 }}>{estado === 'pendientes' ? 'Sin productos por confirmar. Si llegaron facturas nuevas, toca «Actualizar la lista».' : 'Nada en esta lista.'}</Text> : (
+      {filas == null ? <Cargando /> : !visibles.length ? (estado === 'pendientes' ? <Vacio titulo="Sin productos por confirmar" detalle="Si llegaron facturas nuevas, toca «Actualizar la lista»." tono="bien" /> : <Vacio titulo="Nada en esta lista." />) : (
         visibles.slice(0, hasta).map((f) => {
           const o = ORIGEN[f.sugerido_origen];
           return (

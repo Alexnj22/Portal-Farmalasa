@@ -6,10 +6,11 @@
 // Native: `value`, `onValueChange`, `disabled`.
 import { Host, Switch as SwitchCompose } from '@expo/ui/jetpack-compose';
 import { MARCA } from './inicio/marca';
+import { SEMILLA } from '../tema/material';
 
 export default function Interruptor({ value, onValueChange, disabled }) {
   return (
-    <Host matchContents>
+    <Host seedColor={SEMILLA} matchContents>
       <SwitchCompose value={!!value} enabled={!disabled} onCheckedChange={(v) => onValueChange?.(v)}
         colors={{ checkedTrackColor: MARCA.azul, checkedThumbColor: '#FFFFFF' }} />
     </Host>

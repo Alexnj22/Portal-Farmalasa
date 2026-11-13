@@ -8,11 +8,12 @@
 // Mismas props que `Icon` de `@expo/ui` (`name`, `size`, `color`…).
 import { View } from 'react-native';
 import { Host, Icon } from '@expo/ui';
+import { SEMILLA } from '../tema/material';
 
 export default function IconoFijo({ size = 20, style, ...props }) {
   return (
     <View style={[{ width: size, height: size, alignItems: 'center', justifyContent: 'center' }, style]} pointerEvents="none">
-      <Host style={{ width: size, height: size }}><Icon size={size} {...props} /></Host>
+      <Host seedColor={SEMILLA} style={{ width: size, height: size }}><Icon size={size} {...props} /></Host>
     </View>
   );
 }

@@ -27,7 +27,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { loadDraft, saveDraft, clearDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Fotos from '../../componentes/formulario/Fotos';
 import Segmentos from '../../componentes/Segmentos';
@@ -153,10 +153,7 @@ export default function CompletarReceta() {
   if (renglon === undefined) return <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Completar receta' }} />;
   if (!renglon) {
     return (
-      <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Completar receta' }} />
-        <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 120 }}>Este renglón ya no está pendiente.</Text>
-      </>
+      <PantallaSinDato titulo="Completar receta" texto="Este renglón ya no está pendiente." />
     );
   }
   const clase = CLASE_CLIENTE[renglon.clase_cliente];

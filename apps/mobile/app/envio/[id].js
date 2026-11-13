@@ -37,7 +37,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
-import { BotonGrande, Campo } from '../../componentes/formulario/Piezas';
+import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
 
 const ESTADO = {
   por_enviar: ['Sin salir', MARCA.ambar], error: ['No salió', MARCA.rojo], enviada: ['En camino', MARCA.azulClaro],
@@ -80,8 +80,8 @@ export default function Envio() {
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  if (envio === undefined) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Envío' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140 }}>Cargando…</Text></>;
-  if (!envio) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Envío' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140, paddingHorizontal: 32 }}>No encontramos este envío, o no es de tu sala.</Text></>;
+  if (envio === undefined) return <PantallaSinDato titulo="Envío" cargando />;
+  if (!envio) return <PantallaSinDato titulo="Envío" texto="No encontramos este envío, o no es de tu sala." />;
 
   const todas = getScope?.('traslados') === 'ALL';
   const momento = cerrado ? 'cerrado' : momentoDelEnvio(envio, todas ? null : salaDelUsuario(user));

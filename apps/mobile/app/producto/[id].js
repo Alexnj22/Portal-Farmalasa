@@ -33,7 +33,7 @@ import { formatQty as formatNumber } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Dato, Seccion, Vacio } from '../../componentes/formulario/Piezas';
+import { Aviso, Dato, Seccion, Vacio, Cargando } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -210,7 +210,7 @@ export default function Producto() {
         ) : null}
 
         {filas === null ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 10 }}>Cargando…</Text>
+          <Cargando />
         ) : (
           <>
             <Titulo texto="Existencias" />

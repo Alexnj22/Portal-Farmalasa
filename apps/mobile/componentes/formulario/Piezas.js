@@ -2,8 +2,8 @@
 // recibir): una sección de vidrio con su título, el campo de texto, la lista
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
-import { useState } from 'react';
-import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { useRef, useState } from 'react';
+import { ActivityIndicator, Animated, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { BARRA_NATIVA } from '../PilaDePestana';
 import * as Haptics from 'expo-haptics';
@@ -17,9 +17,9 @@ import IconoFijo from '../IconoFijo';
 const ANDROID = Platform.OS === 'android';
 
 /** Lo que se ve mientras llega una pantalla: siempre a la misma altura. */
-export function Cargando() {
-  return <ActivityIndicator style={{ marginTop: 32 }} />;
-}
+// Android: el indicador de carga de Material 3 Expressive (la forma que va
+// cambiando), en su contenedor tonal. iOS: el del sistema.
+export { default as Cargando } from './Cargando';
 
 /**
  * Una pantalla o lista sin nada que mostrar — LA forma de toda la app
@@ -168,16 +168,33 @@ export function BotonGrande({ texto, color = MARCA.azul, onPress, deshabilitado,
   // El toque se siente: un golpe leve en cada botón de acción de la app, así
   // ninguna pantalla tiene que acordarse de pedirlo.
   const tocar = onPress ? (e) => { Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {}); onPress(e); } : undefined;
+  // Android (Material 3 Expressive): al apretar, la píldora se vuelve más
+  // cuadrada y vuelve con resorte, además de la onda. La forma la lleva una
+  // capa animada que recorta; el Pressable de adentro sólo pone la onda.
+  const forma = useRef(new Animated.Value(25)).current;
+  const morfar = (a) => Animated.spring(forma, { toValue: a, useNativeDriver: false, speed: 40, bounciness: 8 }).start();
+  const letra = ANDROID ? { color: borde ? color : '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.1 }
+    : { color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' };
+  if (ANDROID) {
+    return (
+      <Animated.View style={{ borderRadius: forma, overflow: 'hidden', opacity: deshabilitado ? 0.4 : 1,
+        backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color }}>
+        <Pressable onPress={tocar} disabled={deshabilitado} accessibilityRole="button"
+          onPressIn={() => morfar(12)} onPressOut={() => morfar(25)}
+          android_ripple={{ color: borde ? `${color}33` : 'rgba(255,255,255,0.28)', foreground: true }}
+          style={{ minHeight: 50, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18 }}>
+          <Text style={letra}>{texto}</Text>
+        </Pressable>
+      </Animated.View>
+    );
+  }
   return (
     <Pressable onPress={tocar} disabled={deshabilitado} accessibilityRole="button"
-      // Android: la onda de Material, dentro de la píldora; iOS: se achica.
-      android_ripple={ANDROID ? { color: borde ? `${color}33` : 'rgba(255,255,255,0.28)', foreground: true } : undefined}
+      // iOS: se achica al apretar.
       style={({ pressed }) => ({ minHeight: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 18,
-        overflow: ANDROID ? 'hidden' : undefined,
         backgroundColor: borde ? 'transparent' : color, borderWidth: borde ? 1.5 : 0, borderColor: color,
-        opacity: deshabilitado ? 0.4 : !ANDROID && pressed ? 0.8 : 1, transform: [{ scale: !ANDROID && pressed ? 0.98 : 1 }] })}>
-      <Text style={ANDROID ? { color: borde ? color : '#fff', fontSize: 16, fontWeight: '600', letterSpacing: 0.1 }
-        : { color: borde ? color : '#fff', fontSize: 17, fontWeight: '700' }}>{texto}</Text>
+        opacity: deshabilitado ? 0.4 : pressed ? 0.8 : 1, transform: [{ scale: pressed ? 0.98 : 1 }] })}>
+      <Text style={letra}>{texto}</Text>
     </Pressable>
   );
 }

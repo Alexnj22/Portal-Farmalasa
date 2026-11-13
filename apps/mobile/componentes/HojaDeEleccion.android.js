@@ -13,6 +13,7 @@ import { Host, LazyColumn, ListItem, ModalBottomSheet, OutlinedTextField, RadioB
 import { clickable, fillMaxWidth, padding } from '@expo/ui/jetpack-compose/modifiers';
 import { colorSistema } from './Formulario';
 import { MARCA } from './inicio/marca';
+import { SEMILLA } from '../tema/material';
 
 /**
  * @param {{ titulo: string, opciones: {id: string, label: string, detalle?: string}[], valor: string,
@@ -28,7 +29,7 @@ export default function HojaDeEleccion({ titulo, opciones, valor, onElegir, onCe
   );
   const elegir = (id) => { onElegir(id); onCerrar(); };
   return (
-    <Host style={{ position: 'absolute', width: 1, height: 1 }}>
+    <Host seedColor={SEMILLA} style={{ position: 'absolute', width: 1, height: 1 }}>
       <ModalBottomSheet onDismissRequest={onCerrar} containerColor={colorSistema.fila} contentColor={colorSistema.texto}>
         <LazyColumn contentPadding={{ bottom: 24 }}>
           {[

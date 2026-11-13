@@ -42,7 +42,7 @@ import { nombreDelIconoDeTipo } from '@nucleo/constants/tipoIconos';
 import { ERP_NAMES } from '@nucleo/constants/erp';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Campo } from '../../componentes/formulario/Piezas';
+import { Campo, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { usePorDecidir } from '../../componentes/porDecidir';
 import DetalleDeAviso from '../../componentes/avisos/DetalleDeAviso';
 import PersonasDeSolicitud from '../../componentes/solicitudes/Personas';
@@ -203,9 +203,9 @@ export default function Solicitud() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="interactive" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setVuelta((v) => v + 1); setRecargando(false); }} />}>
         {fila === undefined ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40 }}>Cargando…</Text>
+          <Cargando />
         ) : !req ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40 }}>{error ?? 'Esta solicitud ya no está disponible.'}</Text>
+          <Vacio titulo={error ?? 'Esta solicitud ya no está disponible.'} icono="Info" />
         ) : (
           <>
             {/* De qué se trata, cuándo entró y en qué estado está. */}

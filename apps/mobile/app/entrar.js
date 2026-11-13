@@ -28,6 +28,7 @@ import {
   noVolverAPreguntar, olvidarBiometria, yaSePregunto,
 } from '../componentes/biometria';
 import IconoFijo from '../componentes/IconoFijo';
+import { SEMILLA } from '../tema/material';
 
 // Después de entrar con contraseña, una sola vez: ¿usar Face ID la próxima?
 async function ofrecerBiometria(usuario, clave) {
@@ -203,7 +204,7 @@ export default function Entrar() {
       {error || motivoDeCierre ? <Text style={{ color: colorSistema.rojo, fontSize: 15, textAlign: 'center', marginHorizontal: 24 }}>{error || motivoDeCierre}</Text> : null}
 
       <View style={{ marginHorizontal: 16 }}>
-        <Host matchContents={{ vertical: true }} style={{ width: '100%' }}>
+        <Host seedColor={SEMILLA} matchContents={{ vertical: true }} style={{ width: '100%' }}>
           {pendiente
             ? <Button variant="filled" label={ocupado ? 'Guardando…' : 'Guardar y entrar'} disabled={ocupado || !nueva || !confirmacion} onPress={cambiar} />
             : <Button variant="filled" label={ocupado ? 'Entrando…' : 'Entrar'} disabled={ocupado || !usuario || !clave} onPress={entrar} />}

@@ -33,7 +33,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
@@ -98,7 +98,7 @@ function PorRevisar() {
           </Pressable>
         );
       })}
-      {!d.rows.length ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24, fontSize: 15 }}>{familia ? 'Sin pendientes en este grupo' : 'Sin fichas por revisar'}</Text> : null}
+      {!d.rows.length ? <Vacio titulo={familia ? 'Sin pendientes en este grupo' : 'Sin fichas por revisar'} tono="bien" /> : null}
     </>
   );
 }
@@ -275,7 +275,7 @@ export default function Clientes() {
         {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.rows.length && !error ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40, fontSize: 15 }}>Ninguna ficha con esos filtros.</Text>
+          <Vacio titulo="Ninguna ficha con esos filtros." icono="Search" />
         ) : null}
         </>}
       </ScrollView>

@@ -38,7 +38,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { usePorDecidir } from '../../componentes/porDecidir';
-import { BotonGrande, Campo } from '../../componentes/formulario/Piezas';
+import { BotonGrande, Campo, PantallaSinDato } from '../../componentes/formulario/Piezas';
 
 function Bloque({ titulo, children }) {
   return (
@@ -107,8 +107,8 @@ export default function Traslado() {
   }, [id]);
   useEffect(() => { cargar(); }, [cargar]);
 
-  if (fila === undefined) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Traslado' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140 }}>Cargando…</Text></>;
-  if (!fila) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Traslado' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140 }}>Este traslado ya no está disponible.</Text></>;
+  if (fila === undefined) return <PantallaSinDato titulo="Traslado" cargando />;
+  if (!fila) return <PantallaSinDato titulo="Traslado" texto="Este traslado ya no está disponible." />;
 
   const m = fila.metadata ?? {};
   const items = Array.isArray(m.items) ? m.items : [];

@@ -19,6 +19,7 @@ import BotonCampana from './BotonCampana';
 import { colorSistema } from './Formulario';
 import { iconoDe } from '../tema/iconos';
 import { MARCA } from './inicio/marca';
+import { SEMILLA } from '../tema/material';
 
 // El botón extra trae su ícono de iPhone (SF Symbol); éste es su par de Material.
 const DE_SF = { banknote: 'Banknote', eye: 'Eye', 'eye.slash': 'EyeOff', 'square.and.arrow.up': 'Share', plus: 'Plus', paperplane: 'Send', printer: 'Printer', 'ellipsis.circle': 'MoreVertical' };
@@ -28,7 +29,7 @@ function BotonDeBarra({ icono, etiqueta, onPress }) {
     <Pressable onPress={onPress} hitSlop={10} accessibilityRole="button" accessibilityLabel={etiqueta}
       android_ripple={{ color: 'rgba(127,127,127,0.25)', borderless: true, radius: 22 }}
       style={{ width: 40, height: 40, alignItems: 'center', justifyContent: 'center' }}>
-      <HostUi matchContents><Icon name={iconoDe(icono)} size={24} color={colorSistema.texto} /></HostUi>
+      <HostUi seedColor={SEMILLA} matchContents><Icon name={iconoDe(icono)} size={24} color={colorSistema.texto} /></HostUi>
     </Pressable>
   );
 }
@@ -36,7 +37,7 @@ function BotonDeBarra({ icono, etiqueta, onPress }) {
 function HojaDeFiltros({ grupos, onCerrar }) {
   const elegir = (g, o) => { Haptics.selectionAsync().catch(() => {}); g.onCambiar(o.id); };
   return (
-    <Host style={{ position: 'absolute', width: 1, height: 1 }}>
+    <Host seedColor={SEMILLA} style={{ position: 'absolute', width: 1, height: 1 }}>
       <ModalBottomSheet onDismissRequest={onCerrar} containerColor={colorSistema.fila} contentColor={colorSistema.texto}>
         <LazyColumn contentPadding={{ bottom: 24 }}>
           {grupos.flatMap((g) => [

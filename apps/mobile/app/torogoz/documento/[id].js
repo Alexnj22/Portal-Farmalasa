@@ -36,7 +36,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../../componentes/formulario/Piezas';
 import { Pildora } from '../../../componentes/avisos/Piezas';
 import { colorDeVariante } from '../../../componentes/colorDeVariante';
 import Segmentos from '../../../componentes/Segmentos';
@@ -190,7 +190,7 @@ export default function Documento() {
         contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
-        {d === undefined ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24 }}>Cargando…</Text> : null}
+        {d === undefined ? <Cargando /> : null}
         {d ? (
           <>
             <View style={{ marginHorizontal: 16 }}>

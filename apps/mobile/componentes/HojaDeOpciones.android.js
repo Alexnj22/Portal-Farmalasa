@@ -3,11 +3,12 @@
 // «¿qué hacer con esto?». La arma `HojasAndroid.js`.
 import { Host, LazyColumn, ListItem, ModalBottomSheet, Text as TextoCompose } from '@expo/ui/jetpack-compose';
 import { clickable, padding } from '@expo/ui/jetpack-compose/modifiers';
+import { SEMILLA } from '../tema/material';
 
 export default function HojaDeOpciones({ hoja, fondo, tinta, tenue, cerrar, cancelar }) {
   const visibles = hoja.opciones.filter((o) => !o.cancelar);
   return (
-    <Host style={{ position: 'absolute', width: 1, height: 1 }}>
+    <Host seedColor={SEMILLA} style={{ position: 'absolute', width: 1, height: 1 }}>
       <ModalBottomSheet onDismissRequest={cancelar} containerColor={fondo} contentColor={tinta}>
         <LazyColumn contentPadding={{ bottom: 24 }}>
           {[

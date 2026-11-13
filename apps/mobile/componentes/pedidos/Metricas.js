@@ -15,7 +15,7 @@ import Subfiltro from '../Subfiltro';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
-import { Aviso, Cargando } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { FONDO } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 
@@ -67,7 +67,7 @@ export default function Metricas() {
       <Subfiltro activa={rango} onCambiar={setRango} opciones={RANGOS} />
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {!datos ? <Cargando /> : !ind.pedidos ? (
-        <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30, fontSize: 15 }}>Sin tiempos registrados en este rango.</Text>
+        <Vacio titulo="Sin tiempos registrados en este rango." />
       ) : (
         <>
           <View style={{ gap: 12 }}>

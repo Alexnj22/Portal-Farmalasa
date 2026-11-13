@@ -19,7 +19,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -141,10 +141,9 @@ export default function CatalogoTorogoz() {
           <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde color={PETROLEO} onPress={() => setCuantos((n) => n + POR_PAGINA)} /></View>
         ) : null}
         {items !== null && !filtrados.length && !error ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 32, fontSize: 15, marginHorizontal: 24 }}>
-            {buscar.trim() || canal !== 'todos' ? 'Ningún producto coincide con la búsqueda o el filtro.'
-              : puedeConfigurar ? 'Catálogo vacío. Agrega productos con «Agregar producto».' : 'Catálogo vacío.'}
-          </Text>
+          <Vacio titulo={buscar.trim() || canal !== 'todos' ? 'Ningún producto coincide con la búsqueda o el filtro.' : 'Catálogo vacío'}
+            detalle={!(buscar.trim() || canal !== 'todos') && puedeConfigurar ? 'Agrega productos con «Agregar producto».' : undefined}
+            icono={buscar.trim() || canal !== 'todos' ? 'Search' : undefined} />
         ) : null}
       </ScrollView>
     </>

@@ -24,7 +24,7 @@ import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
 import { MARCA } from '../../componentes/inicio/marca';
 import { guardarFactura } from '../../componentes/formulario/facturaElegida';
-import { Vacio } from '../../componentes/formulario/Piezas';
+import { Vacio, Cargando } from '../../componentes/formulario/Piezas';
 
 function Fila({ f, onPress }) {
   const anulada = esAnulada(f);
@@ -98,7 +98,7 @@ export default function Facturas() {
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag"
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {todas ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 32 }}>{nombre(sala)} · este mes</Text> : null}
-        {filas === null ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40 }}>Cargando…</Text> : null}
+        {filas === null ? <Cargando /> : null}
         {(filas || []).map((f) => <Fila key={f.id} f={f} onPress={() => abrir(f)} />)}
         {filas && !filas.length ? (
           <Vacio titulo={texto ? 'Ninguna factura coincide.' : 'Sin facturas este mes.'} />

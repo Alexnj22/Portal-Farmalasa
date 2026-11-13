@@ -11,6 +11,7 @@ import { Host, DateTimePicker } from '@expo/ui/jetpack-compose';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
 import { MARCA, FONDO_CONTROL } from '../inicio/marca';
+import { SEMILLA } from '../../tema/material';
 
 const aFecha = (s) => (s ? new Date(`${s}T12:00:00`) : undefined);
 const aTexto = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -30,7 +31,7 @@ export default function Fecha({ valor, onCambiar, desde, hasta }) {
       <Modal visible={abierto} transparent animationType="fade" onRequestClose={() => setAbierto(false)}>
         <Pressable style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: 16 }} onPress={() => setAbierto(false)}>
           <Pressable style={{ borderRadius: 28, overflow: 'hidden', backgroundColor: colorSistema.fila, paddingBottom: 8 }} onPress={() => {}}>
-            <Host matchContents={{ vertical: true }}>
+            <Host seedColor={SEMILLA} matchContents={{ vertical: true }}>
               <DateTimePicker initialDate={valor ? aFecha(valor).toISOString() : null} displayedComponents="date" variant="picker"
                 color={MARCA.azulClaro} elementColors={{ containerColor: colorSistema.fila }}
                 selectableDates={{ start: aFecha(desde), end: aFecha(hasta) }}

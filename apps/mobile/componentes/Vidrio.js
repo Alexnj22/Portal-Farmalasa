@@ -6,6 +6,7 @@ import { Platform, StyleSheet, useColorScheme, View } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { usePreferenciaDeTema } from '../tema/preferencia';
+import { usePaleta } from '../tema/material';
 
 const HAY_VIDRIO = Platform.OS === 'ios' && (() => { try { return isLiquidGlassAvailable(); } catch { return false; } })();
 
@@ -20,6 +21,7 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   // Estilo «Sólido» (Yo › Apariencia, el tema Solid del portal): la superficie
   // opaca de las filas del sistema, sin vidrio ni desenfoque.
   const solido = usePreferenciaDeTema((s) => s.estilo === 'solido');
+  const paleta = usePaleta();
   const forma = { borderRadius: radio, overflow: 'hidden' };
   if (solido && Platform.OS === 'ios') {
     return (
@@ -50,9 +52,12 @@ export default function Vidrio({ style, children, radio = 22, interactivo = fals
   // `overflow: hidden`: recortar a esquinas redondas obliga a pintar cada
   // tarjeta con máscara (caro en listas largas); lo que sí necesita recorte (un
   // mapa, una foto a sangre) lo pide su propio contenedor.
+  // El color es la superficie tonal de la paleta de la marca (tema/material.js):
+  // en claro la más alta sobre el fondo, en oscuro el contenedor tonal.
   const r = Math.min(radio, 16);
+  const fondo = paleta ? (oscuro ? paleta.surfaceContainerHigh : paleta.surfaceContainerLowest) : (oscuro ? '#211F26' : '#FFFFFF');
   return (
-    <View style={[{ borderRadius: r, backgroundColor: oscuro ? '#211F26' : '#FFFFFF' }, style]}>
+    <View style={[{ borderRadius: r, backgroundColor: fondo }, style]}>
       <Tinte color={tinte} radio={r} />
       {children}
     </View>

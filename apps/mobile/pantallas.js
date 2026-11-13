@@ -24,9 +24,9 @@ export const PANTALLAS_DE_LA_APP = {
   '/bitacoras': true,
   '/traslados': true,
   '/ventas-hoy': true,   // no existe en el portal: es la pantalla nativa de «Ventas de hoy»
-  '/pedidos': true,       // lo de la sala (llegada y conteo); Bodega abre el portal desde ahí
+  '/pedidos': true,       // la sala (llegada y conteo) y Bodega (preparar, despachar, rutas, anular una sala); generar pedidos abre el portal
   '/clientes': true,      // la lista y la ficha (ver y editar); las fichas las da de alta el punto de venta
-  '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala abre el portal
+  '/minmax': '/minmax-producto', // la ficha de un producto en todas las salas; la revisión de la sala es `minmax-sala`
   '/caja': '/efectivo',     // Efectivo: hoy, y desde ahí cortes, diferencias y movimientos
   '/cortes': true,        // confirmar y descartar cortes (y entregar la caja) en el teléfono
   '/bolsas-sala': true,   // no existe en el portal: las bolsas de la sala (el widget); `/bolsas` sigue siendo el módulo completo
@@ -48,7 +48,7 @@ export const PANTALLAS_DE_LA_APP = {
   '/encuestas-aplicar': true, // entrevistar a un cliente desde el teléfono, y el modo tablet (la encuesta pública a pantalla completa)
   '/marketing': true, // el mes de contenido, las piezas con sus diseños y las solicitudes
   '/galeria': true, // el material liberado para las salas, listo para compartir
-  '/solicitudes-datos': true, // los plazos de las solicitudes ARCO; imprimir y responder en el portal
+  '/solicitudes-datos': true, // las solicitudes de datos personales: plazos, búsqueda, respuesta e impresión
   '/actualizacion-de-datos': true, // el estado de cada dato que se actualiza solo
   '/mantenimiento': true, // frenos de mercadería y candados de módulo, con confirmación
   '/auditoria-del-sistema': true, // la bitácora del sistema y su CSV
@@ -57,26 +57,26 @@ export const PANTALLAS_DE_LA_APP = {
   '/reservas': '/reservas-sala', // las reservas de la sala: apartar, retirar, recetas y saldos a favor (la misma del widget)
   '/torogoz': true, // la distribuidora: su menú y sus secciones (`/torogoz/<seccion>`)
   '/encuesta': true, // resultados del clima: índice, bloques, preguntas y comentarios
-  '/nomina': true, // la quincena por sala y la boleta de cada persona; generar, aprobar e imprimir: portal
+  '/nomina': true, // la quincena por sala y la boleta de cada persona
   '/auditoria-de-tiempos': true, // día por día: marcas, faltas, tardanza y señales; corregir y aprobar: portal
   '/monitor': true, // quién trabaja, está en pausa o no ha marcado, ahora; y quién llegó tarde
-  '/promociones': true, // vigentes y su detalle con lo vendido por sala; crear, descuentos y pagos: portal
+  '/promociones': true, // vigentes, el detalle con lo vendido por sala, el descuento, quién paga, el reparto y Rebajas
   '/cotizaciones': true, // la lista y el detalle con sus totales; crear, editar e imprimir: portal
   '/compras': true, // las compras del mes y su detalle con lote y vencimiento; resumen por producto: portal
-  '/sucursales': true, // por tipo: abierta ahora, horario, gente y alertas; editar: portal
+  '/sucursales': true, // por tipo: abierta ahora, horario, gente y alertas; la ficha, editar, expediente e historial
   '/proveedores': true, // el directorio y la ficha (con lo que se le debe); clasificar: portal
   '/laboratorios': true, // dónde está cada laboratorio en la sala, y corregirlo; la política de vencimiento
   '/cuentas-por-pagar': true, // lo que se debe por proveedor, registrar un pago y aprobar/anular
   '/metas': true, // el tablero del mes por sala, bono, confirmación e histórico
   '/cumplimiento': true, // tablero, vencimientos, registros (crear, cerrar, anular, imprimir el papel) y acreditaciones
-  '/inyecciones': true, // pendientes (marcar aplicadas) y bitácora; por cobrar y ajustes: portal
-  '/facturas-compra': true, // los documentos del mes; la ficha con productos y PDF (revisión y vincular: portal)
+  '/inyecciones': true, // por cobrar, pendientes, bitácora (con el libro del CSSP) y ajustes
+  '/facturas-compra': true, // los documentos del mes; la ficha con productos, PDF, paquete ZIP, revisión y vincular
   '/corte-z': true, // el Gran Z mensual con su cotejo y el PDF
-  '/puntos': true, // resumen, consulta del saldo y avisos (asignar cuentas y traspasos: portal)
+  '/puntos': true, // resumen, consulta del saldo, avisos, cuentas y traspasos
   '/bolsas': true, // el circuito de administración: recibir, contar y confirmar (la sala va a /bolsas-sala)
   '/gestion-stock': true, // sin venta por destino y vendidos sin Min/Max (pedir o aplicar)
   '/ventas-perdidas': true, // ver, marcar listo y reportar desde el mostrador
-  '/conteo-inventario': '/conteos', // contar en el teléfono; crear y aprobar siguen en el portal
+  '/conteo-inventario': '/conteos', // contar en el teléfono, con lote y vencimiento reales
   '/productos': true,      // el catálogo para consultar; la ficha trae existencias y precios
   '/fotos-productos': true, // la cola para completar foto y principio activo, con la cámara
   '/vacaciones': true,     // el plan del año mes por mes; asignar y aprobar siguen en el portal

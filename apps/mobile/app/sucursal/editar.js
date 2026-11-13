@@ -380,7 +380,7 @@ export default function EditarSucursal() {
             );
           }) : null}
 
-          <Aviso texto="Los documentos (licencias, contratos, solvencias) se suben desde el portal." />
+          <Aviso texto="Los documentos (licencias, contratos, solvencias) se suben desde el Expediente de la sucursal." />
           <BotonGrande texto={guardando ? 'Guardando…' : 'Guardar'} onPress={guardar} deshabilitado={guardando} />
         </ScrollView>
       </KeyboardAvoidingView>

@@ -184,7 +184,7 @@ export default function Cambio() {
                   <MarcaDeEleccion elegida={cliente?.id === c.id} />
                 </Pressable>
               ))}
-              {cliente && !cliente.erp_id ? <Aviso tono="freno" texto="Ese cliente no está vinculado todavía: elige otro o pídelo en el portal." /> : null}
+              {cliente && !cliente.erp_id ? <Aviso tono="freno" texto="Ese cliente todavía no está registrado en la caja: elige otro." /> : null}
             </Seccion>
           ) : null}
 

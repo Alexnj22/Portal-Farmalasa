@@ -221,7 +221,7 @@ function FinalizarPedido() {
               <>
                 <Aviso tono="cuidado" texto={`No se pudieron calcular las hojas: ${errorHojas}`} />
                 <BotonGrande texto="Intentar de nuevo" onPress={calcularHojas} />
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si sigue fallando, esto se hace desde la computadora: Pedidos → Finalizar.</Text>
+                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Si sigue fallando, revisa la conexión y vuelve a intentarlo en un momento.</Text>
               </>
             )}
           </View>

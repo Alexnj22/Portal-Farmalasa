@@ -21,6 +21,16 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1528.1 — App: textos que mandaban al portal o a la computadora
+
+En la app del personal, tres avisos mandaban a hacer algo «desde el portal» o «desde la computadora» cuando ya se puede (o no hace falta):
+
+- Editar una sucursal: los documentos se suben desde el **Expediente de la sucursal**, en la misma app.
+- Solicitud de cambio de cliente: si el cliente no está registrado en la caja, se elige otro (ya no dice «pídelo en el portal»).
+- Finalizar un pedido: si no se pueden calcular las hojas, se reintenta (ya no manda a la computadora).
+
+Además, los comentarios de `pantallas.js` dicen lo que hoy hace cada pantalla nativa.
+
 ## v2.1528.0 — Cumplimiento sanitario nativo en la app
 
 **Cumplimiento sanitario** ya es una pantalla nativa de la app del personal (antes se abría el portal adentro):

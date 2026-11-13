@@ -191,7 +191,7 @@ export default function EditarPiezaDeMarketing() {
             {form.pautar ? (
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Text style={{ color: colorSistema.texto, fontSize: 16 }}>Monto ($)</Text>
-                <TextInput value={form.monto} onChangeText={set('monto')} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={colorSistema.placeholder}
+                <Campo multiline={false} value={form.monto} onChangeText={set('monto')} keyboardType="decimal-pad" placeholder="0.00" placeholderTextColor={colorSistema.placeholder}
                   style={{ minWidth: 100, minHeight: 40, paddingHorizontal: 10, borderRadius: 10, backgroundColor: 'rgba(127,127,127,0.14)', color: colorSistema.texto, fontSize: 16, textAlign: 'right' }} />
               </View>
             ) : null}

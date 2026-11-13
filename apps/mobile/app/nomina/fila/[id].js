@@ -24,7 +24,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, PantallaSinDato } from '../../../componentes/formulario/Piezas';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo } from '../../../componentes/Progreso';
 
@@ -72,7 +72,7 @@ export default function EditarFila() {
     fetchOvertimeBankRows(fila.employee_id).then(({ data }) => { if (vivo) setBanco(saldoDeBancoDeHoras(data)); });
     return () => { vivo = false; };
   }, [fila?.employee_id]);
-  if (!fila) return <Aviso tono="freno" texto="No se encontró la fila de la planilla." />;
+  if (!fila) return <PantallaSinDato texto="No se encontró la fila de la planilla." />;
 
   const cambiar = (k) => (v) => setF((x) => ({ ...x, [k]: v }));
   const dPay = num(f.dPay), dComp = num(f.dComp), nPay = num(f.nPay), nComp = num(f.nComp);

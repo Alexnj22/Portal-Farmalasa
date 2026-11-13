@@ -7,7 +7,7 @@ import { buscarClientes, mensajeDeError, motivoSinAplicar, pushClienteAlErp, upd
 import { telefonoDeFicha } from '@nucleo/utils/apartar';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../Formulario';
-import { Aviso, Campo } from '../formulario/Piezas';
+import { Aviso, Campo, Vacio } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
 import { listo } from '../Progreso';
 
@@ -82,7 +82,7 @@ export function ElegirCliente({ cliente, onElegir }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{[c.dui, c.phone].filter(Boolean).join(' · ') || 'Sin documento'}</Text>
         </Pressable>
       ))}
-      {texto.trim().length >= 3 && !buscando && !resultados.length ? <Aviso texto={`Ninguna ficha coincide con «${texto.trim()}». Si no tiene ficha, créala primero en Clientes.`} /> : null}
+      {texto.trim().length >= 3 && !buscando && !resultados.length ? <Vacio enSeccion>{`Ninguna ficha coincide con «${texto.trim()}». Si no tiene ficha, créala primero en Clientes.`}</Vacio> : null}
     </>
   );
 }

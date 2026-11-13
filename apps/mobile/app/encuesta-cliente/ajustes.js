@@ -23,7 +23,7 @@ import { formatQty } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Opciones, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Opciones, Seccion, Cargando, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import FechaOpcional from '../../componentes/torogoz/bodega/FechaOpcional';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo } from '../../componentes/Progreso';
@@ -107,8 +107,8 @@ export default function AjustesEncuesta() {
   };
 
   const elegidas = useMemo(() => new Map(sucursales.map((s) => [s.branch_id, s])), [sucursales]);
-  if (error) return <View style={{ padding: 16 }}><Aviso tono="freno" texto={error} /></View>;
-  if (!encuesta) return <Cargando />;
+  if (error) return <PantallaSinDato texto={error} />;
+  if (!encuesta) return <PantallaSinDato cargando />;
   const porSala = encuesta.alcance === 'sucursales';
   const meta = metaTotal(encuesta, sucursales);
   const sugerida = sugeridaDeLaEncuesta(encuesta, sucursales, poblacion);

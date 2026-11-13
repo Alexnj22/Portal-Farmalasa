@@ -17,7 +17,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaCorta } from '@nucleo/utils/ticketCampos';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fotos from '../../componentes/formulario/Fotos';
 import { leer } from '../../componentes/comercial/elegido';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -58,7 +58,7 @@ export default function CorregirAbono() {
     if (r.sugerido?.documento) setDocumento(String(r.sugerido.documento));
   }, [formaNueva, abono]);
 
-  if (!credito || !abono) return <Aviso tono="freno" texto="No se encontró el abono." />;
+  if (!credito || !abono) return <PantallaSinDato texto="No se encontró el abono." />;
 
   const bloqueado = lectura && lectura.veredicto !== 'OK';
   const valido = motivo.trim().length >= 5 && !bloqueado

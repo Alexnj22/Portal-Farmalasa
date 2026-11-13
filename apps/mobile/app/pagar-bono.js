@@ -19,7 +19,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, PantallaSinDato } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import Identidad from '../componentes/Identidad';
@@ -34,7 +34,7 @@ export default function PagarBono() {
   const [item] = useState(() => { try { return JSON.parse(crudo); } catch { return null; } });
   const [identidad, setIdentidad] = useState(null);
   const [guardando, setGuardando] = useState(false);
-  if (!item) return <Aviso tono="freno" texto="No se pudo leer el bono." />;
+  if (!item) return <PantallaSinDato texto="No se pudo leer el bono." />;
 
   const esBodega = item.tipo === 'bodega';
   const nombre = esBodega ? 'Bodega' : shortEmployeeName(item);

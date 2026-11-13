@@ -32,7 +32,7 @@ import { fmtVigencia, separarDescuentosDePromocion } from '@nucleo/utils/promoci
 import { comoDescuenta } from '@nucleo/utils/rebajasVenta';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { promocionElegida } from '../../componentes/promociones/elegida';
@@ -66,7 +66,7 @@ export default function ReactivarPromocion() {
     return () => { vivo = false; };
   }, [promo?.id]);
 
-  if (!promo) return <View style={{ margin: 16 }}><Aviso tono="freno" texto="Vuelve a abrir la promoción desde la lista." /></View>;
+  if (!promo) return <PantallaSinDato texto="Vuelve a abrir la promoción desde la lista." />;
   const fechaValida = !!fin && fin >= hoy;
   const { aMover, dudosos } = separarDescuentosDePromocion(descuentos ?? []);
   const hayDescuentos = aMover.length > 0;

@@ -35,10 +35,11 @@ import { ERP_NAMES, SUCURSALES } from '@nucleo/constants/erp';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import ConAurora from '../../componentes/ConAurora';
+import EncabezadoDeHoja from '../../componentes/EncabezadoDeHoja';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -60,13 +61,10 @@ function Resumen({ flujo, confirmando, onVolver, onConfirmar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={confirmando ? () => {} : onVolver}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Revisa antes de confirmar"
+          subtitulo={`${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades${flujo.global ? ' · distribución global' : ''}`}
+          onCerrar={onVolver} ocupado={confirmando} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 48 }}>
-          <View style={{ gap: 4 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>Revisa antes de confirmar</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-              {`${resumen.length} sala${resumen.length !== 1 ? 's' : ''} · ${tot.renglones.toLocaleString('es-SV')} renglones · ${tot.unidades.toLocaleString('es-SV')} unidades${flujo.global ? ' · distribución global' : ''}`}
-            </Text>
-          </View>
           {resumen.map((s) => (
             <Vidrio key={s.erp_sucursal_id} radio={20}>
               <View style={{ padding: 12, gap: 6 }}>
@@ -232,7 +230,7 @@ export default function GenerarPedido() {
     }
   };
 
-  if (!puede) return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Generar pedido' }} /><View style={{ padding: 16 }}><Aviso tono="cuidado" texto="Generar pedidos es de Bodega (permiso de pedidos para todas las salas)." /></View></>;
+  if (!puede) return <PantallaSinDato titulo={'Generar pedido'} texto="Generar pedidos es de Bodega (permiso de pedidos para todas las salas)." />;
 
   return (
     <>

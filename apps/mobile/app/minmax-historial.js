@@ -19,7 +19,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -168,7 +168,7 @@ export default function MinMaxHistorial() {
           <>
             {vigente()}
             {datos.logs.length ? <Text style={{ color: colorSistema.texto2, fontSize: 12, fontWeight: '800', letterSpacing: 0.5, marginHorizontal: 4, marginTop: 4 }}>TODO LO QUE PASÓ</Text> : null}
-            {datos.logs.length ? datos.logs.map(entrada) : <Aviso tono="nota" texto="Sin cambios registrados." />}
+            {datos.logs.length ? datos.logs.map(entrada) : <Vacio titulo="Sin cambios registrados" />}
           </>
         )}
       </ScrollView>

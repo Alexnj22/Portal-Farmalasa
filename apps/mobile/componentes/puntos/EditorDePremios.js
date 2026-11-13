@@ -11,7 +11,7 @@ import { fetchPromocionales } from '@nucleo/data/puntos';
 import { fetchPresentaciones } from '@nucleo/data/inventoryMovements';
 import { CUPO_POR, TIPOS_DE_PREMIO, filaDePremio, probabilidadDePremio } from '@nucleo/utils/nivelesDePuntos';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Opciones } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Vacio } from '../formulario/Piezas';
 import Segmentos from '../Segmentos';
 import Vidrio from '../Vidrio';
 import BuscadorProducto from '../compras/BuscadorProducto';
@@ -78,7 +78,7 @@ export default function EditorDePremios({ premios, alCambiar, puedeEditar }) {
 
   return (
     <View style={{ gap: 10 }}>
-      {!lista.length ? <Aviso texto="Sin premios: no se da raspable aquí." /> : null}
+      {!lista.length ? <Vacio enSeccion>Sin premios: no se da raspable aquí.</Vacio> : null}
       {lista.map((p, i) => (
         <Vidrio key={i} radio={16}>
           <View style={{ padding: 12, gap: 8 }}>

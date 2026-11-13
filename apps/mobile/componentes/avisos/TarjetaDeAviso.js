@@ -40,7 +40,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import Vidrio from '../Vidrio';
 import Avatar from '../Avatar';
 import { colorSistema } from '../Formulario';
-import { MARCA } from '../inicio/marca';
+import { FONDO_CONTROL, MARCA } from '../inicio/marca';
 import { decidirDesdeAviso } from '../avisos';
 import { usePorDecidir } from '../porDecidir';
 import { Insignia, Lista } from './Piezas';
@@ -62,7 +62,7 @@ function Boton({ texto, onPress, principal, color = MARCA.azul, ocupado }) {
     <Pressable onPress={(e) => { e.stopPropagation?.(); Haptics.selectionAsync().catch(() => {}); onPress(); }} disabled={ocupado}
       style={({ pressed }) => ({
         flex: 1, minHeight: 44, borderRadius: 14, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12,
-        backgroundColor: principal ? color : 'rgba(255,255,255,0.08)', borderWidth: principal ? 0 : 0.5, borderColor: colorSistema.separador,
+        backgroundColor: principal ? color : FONDO_CONTROL, borderWidth: principal ? 0 : 0.5, borderColor: colorSistema.separador,
         opacity: ocupado ? 0.5 : 1, transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       <Text style={{ color: principal ? '#fff' : colorSistema.texto, fontSize: 15, fontWeight: '700' }}>{texto}</Text>

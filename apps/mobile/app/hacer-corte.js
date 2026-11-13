@@ -33,7 +33,7 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando, PantallaSinDato, Vacio } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { imprimirEnLaSala } from '../componentes/imprimir';
@@ -121,8 +121,7 @@ export default function HacerCorte() {
   };
 
   if (!puedeOperar) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Hacer corte' }} />
-      <View style={{ padding: 20 }}><Aviso tono="freno" texto="Hacer el corte es de quien opera la caja." /></View></>);
+    return <PantallaSinDato titulo={'Hacer corte'} texto="Hacer el corte es de quien opera la caja." />;
   }
 
   let cuerpo;
@@ -168,7 +167,7 @@ export default function HacerCorte() {
       </>
     );
   } else if (!estado?.abierta || estado?.turno_corriendo === false) {
-    cuerpo = <Aviso tono="freno" texto={estado?.abierta ? 'El turno está parado: inícialo antes de cortar.' : 'La caja está cerrada.'} />;
+    cuerpo = <Vacio titulo={estado?.abierta ? 'El turno está parado' : 'La caja está cerrada'} detalle={estado?.abierta ? 'Inícialo antes de cortar.' : undefined} icono="Info" />;
   } else {
     cuerpo = (
       <>

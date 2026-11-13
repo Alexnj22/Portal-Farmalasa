@@ -27,6 +27,7 @@ import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { ExpedienteEnLinea, FilaConIcono, Historial, PlanDeVacaciones } from '../componentes/perfil/Piezas';
@@ -58,14 +59,9 @@ function EditarContacto({ emp, abierto, onCerrar }) {
   return (
     <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+      <EncabezadoDeHoja titulo="Editar contacto" onCerrar={onCerrar} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Editar contacto</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           <Seccion titulo="Celular">
             <Campo multiline={false} value={form.phone} keyboardType="phone-pad" placeholder="0000-0000" onChangeText={(v) => setForm((f) => ({ ...f, phone: v }))} />
           </Seccion>

@@ -38,7 +38,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Avatar from '../../componentes/Avatar';
@@ -81,7 +81,7 @@ export default function Expediente() {
   const [banco, setBanco] = useState(() => ({ bank_name: emp?.bank_name || '', account_type: emp?.account_type || 'AHORRO', account_number: emp?.account_number || '' }));
   const [ocupado, setOcupado] = useState(false);
   const [nuevoExtra, setNuevoExtra] = useState('');
-  if (!emp) return <Aviso tono="freno" texto="No se encontró la ficha." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró la ficha." />;
 
   const docs = Array.isArray(emp.employee_documents) ? emp.employee_documents : [];
   const docDe = (cat) => docs.find((d) => d.category === cat);
@@ -274,7 +274,7 @@ export default function Expediente() {
           ))}
 
           <Seccion titulo="Otros documentos">
-            {!extras.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin documentos adicionales.</Text> : null}
+            {!extras.length ? <Vacio enSeccion>Sin documentos adicionales.</Vacio> : null}
             {extras.map((d) => (
               <View key={d.category} style={{ flexDirection: 'row', alignItems: 'center', gap: 12, minHeight: 40 }}>
                 <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 15, fontWeight: '600' }}>{d.title || 'Documento'}</Text>

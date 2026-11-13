@@ -24,7 +24,7 @@ import { useAuth } from '@nucleo/context/AuthContext';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { edadDelCredito, fetchCreditos, fetchCreditosReservados, fetchUltimaLectura, refrescarCreditosDeHoy } from '@nucleo/data/creditos';
 import { carteraFiltrada, desdeLaLectura, ORDEN_CARTERA, pagadoPct, VER_CARTERA } from '@nucleo/utils/cartera';
-import { BotonGrande, Cargando } from '../componentes/formulario/Piezas';
+import { BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { colorDeEdad } from '../componentes/creditos/edad';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
@@ -228,11 +228,7 @@ export default function CuentasPorCobrar() {
           </View>
         ) : null}
         {creditos && !visibles.length && !error ? (
-          <View style={{ alignItems: 'center', paddingTop: 40, gap: 6 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>
-              {texto ? 'Ningún crédito con esa búsqueda' : ver === 'VENCIDOS' ? 'Nadie se pasó del plazo' : ver === 'POR_VENCER' ? 'Nada vence esta semana' : 'Nadie debe nada'}
-            </Text>
-          </View>
+          <Vacio titulo={texto ? 'Ningún crédito con esa búsqueda' : ver === 'VENCIDOS' ? 'Nadie se pasó del plazo' : ver === 'POR_VENCER' ? 'Nada vence esta semana' : 'Nadie debe nada'} tono={texto ? 'neutro' : 'bien'} icono={texto ? 'Search' : undefined} />
         ) : null}
       </ScrollView>
     </>

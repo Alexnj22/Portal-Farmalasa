@@ -18,7 +18,7 @@ import { useStaffStore } from '@nucleo/store/staffStore';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
 import FechaOpcional from '../../../componentes/torogoz/bodega/FechaOpcional';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Vacio } from '../../../componentes/formulario/Piezas';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo } from '../../../componentes/Progreso';
 import { volver } from '../../../componentes/volver';
@@ -97,7 +97,7 @@ export default function Lote() {
 
         <Seccion titulo="Movimientos">
           {errorMovs ? <Aviso tono="freno" texto={errorMovs} /> : null}
-          {movs === null ? <ActivityIndicator /> : movs.length === 0 ? <Aviso texto="Sin movimientos." /> : movs.map((m, i) => {
+          {movs === null ? <ActivityIndicator /> : movs.length === 0 ? <Vacio enSeccion>Sin movimientos.</Vacio> : movs.map((m, i) => {
             const t = TIPO_MOVIMIENTO[m.tipo] ?? { label: m.tipo, variant: 'neutral' };
             return (
               <View key={m.id} style={{ flexDirection: 'row', gap: 10, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>

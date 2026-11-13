@@ -22,7 +22,7 @@ import Vidrio from '../../Vidrio';
 import Avatar from '../../Avatar';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
 import { Esqueleto } from '../../inicio/Widget';
-import { Aviso, BotonGrande, Campo } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Vacio } from '../../formulario/Piezas';
 import { MARCA, PETROLEO } from '../../inicio/marca';
 import { ACCIONES_DE_DINERO, SeHaceEnElPortal } from '../soloConsulta';
 import Etiqueta from './Etiqueta';
@@ -118,7 +118,7 @@ export default function Camiones({ puedeConfigurar }) {
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {camiones === null && !error ? <View style={{ marginHorizontal: 16 }}><Vidrio radio={20}><View style={{ padding: 14 }}><Esqueleto /></View></Vidrio></View> : null}
       {camiones && !camiones.length && !error ? (
-        <View style={{ marginHorizontal: 16 }}><Aviso texto="Ningún camión lleva mercadería. Para vender desde el camión, cárgalo primero." /></View>
+        <Vacio titulo="Ningún camión lleva mercadería" detalle="Para vender desde el camión, cárgalo primero." />
       ) : null}
       {visibles.map((c) => {
         const sinNota = cargaSinNota(c.carga);

@@ -19,7 +19,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Segmentos from '../../componentes/Segmentos';
 import Avatar from '../../componentes/Avatar';
@@ -50,7 +50,7 @@ export default function Jefatura() {
   const elegido = activos.find((e) => e.id === elegidoId) || null;
   const salaDe = (e) => sucursales.find((b) => String(b.id) === String(e?.branchId))?.name || 'Sin sala';
 
-  if (!sucursal) return <Aviso texto="No se encontró la sucursal." />;
+  if (!sucursal) return <PantallaSinDato texto="No se encontró la sucursal." />;
   const movimiento = tipoDeMovimiento(elegido, sucursal, cargo);
 
   const guardar = () => {

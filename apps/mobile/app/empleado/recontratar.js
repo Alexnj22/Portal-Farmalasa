@@ -20,7 +20,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Avatar from '../../componentes/Avatar';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -41,7 +41,7 @@ export default function Recontratar() {
   const { recuperado, descartar } = useBorrador(emp ? `recontratacion_${emp.id}` : null, f);
   const [repuesto, setRepuesto] = useState(false);
   if (recuperado && !repuesto) { setRepuesto(true); setF((p) => ({ ...p, ...recuperado })); }
-  if (!emp) return <Aviso tono="freno" texto="No se encontró a esta persona." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   const grupos = sucursalesPorArea(sucursales || []);
   const cargos = [...(roles || [])].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'))

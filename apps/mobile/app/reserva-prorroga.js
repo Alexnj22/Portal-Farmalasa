@@ -19,7 +19,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { Accion } from '../componentes/reservas/piezas';
@@ -110,7 +110,7 @@ function Bandeja() {
         {!puede ? <Aviso tono="cuidado" texto="Autorizar prórrogas es de Talento Humano y Supervisión de ventas." />
           : error ? <Aviso tono="cuidado" texto={error} />
           : lista === null ? <ActivityIndicator />
-          : !lista.length ? <Aviso texto="No hay prórrogas esperando. Cuando la sala o un cliente pida una, aparece aquí." />
+          : !lista.length ? <Vacio titulo="No hay prórrogas esperando." detalle="Cuando la sala o un cliente pida una, aparece aquí." />
           : lista.map((p) => (
             <Seccion key={`${p.tipo}:${p.codigo}`} titulo={`${diasTexto(p.dias)} más · ${p.codigo}`}
               pie={`${p.origen === 'app' ? 'Pedida por el cliente en la app' : 'Pedida por la sala'}${p.vence ? ` · hoy vence el ${dia(p.vence)}` : ''}`}>

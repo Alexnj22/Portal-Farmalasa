@@ -31,7 +31,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Hora from '../../componentes/personas/Hora';
 import Segmentos from '../../componentes/Segmentos';
@@ -106,7 +106,7 @@ export default function EditarSucursal() {
   const [guardando, setGuardando] = useState(false);
   const candidatos = useMemo(() => candidatosLegales(employees), [employees]);
 
-  if (!branch && !esNueva) return <View style={{ padding: 16 }}><Aviso tono="freno" texto="No se encontró la sucursal." /></View>;
+  if (!branch && !esNueva) return <PantallaSinDato texto="No se encontró la sucursal." />;
 
   const legal = ajustes.legal || {};
   const rent = ajustes.rent || { contract: {} };

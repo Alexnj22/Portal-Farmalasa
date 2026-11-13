@@ -12,7 +12,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { preregistroElegido } from '../../componentes/ofertas/preregistro';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -25,7 +25,7 @@ export default function Preregistro() {
     if (!pre) return;
     buscarFichasPorDocumento(pre.documento).then(setFichas).catch(() => setFichas([]));
   }, [pre]);
-  if (!pre) return <Aviso tono="freno" texto="No se encontró el pre-registro." />;
+  if (!pre) return <PantallaSinDato texto="No se encontró el pre-registro." />;
 
   const hacer = async (accion, customerId) => {
     setOcupado(true);

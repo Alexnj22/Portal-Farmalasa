@@ -29,7 +29,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { useBusqueda } from '@nucleo/hooks/useBusqueda';
 import { formatMoney } from '@nucleo/utils/formatNumber';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { facturaElegida } from '../../componentes/formulario/facturaElegida';
 import Avatar from '../../componentes/Avatar';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
@@ -69,7 +69,7 @@ export default function Cambio() {
   const vendedorActual = (empleados || []).find((e) => String(e.code) === String(inv?.cod_vendedor));
 
   if (!inv || !TIPO[accion]) {
-    return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Solicitud' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140 }}>Vuelve a elegir la factura.</Text></>;
+    return <PantallaSinDato titulo="Solicitud" texto="Vuelve a elegir la factura." />;
   }
 
   const esCCF = inv.tipo_documento === 'CCF';

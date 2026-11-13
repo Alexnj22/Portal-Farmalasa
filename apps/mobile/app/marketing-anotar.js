@@ -23,7 +23,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import Avatar from '../componentes/Avatar';
 import Tocable from '../componentes/Tocable';
@@ -180,7 +180,7 @@ export default function AnotarDiseno() {
   ]);
 
   if (!archivo || !mes) {
-    return <View style={{ margin: 16 }}><Aviso tono="freno" texto="No se encontró el diseño. Vuelve a abrirlo desde la pieza." /></View>;
+    return <PantallaSinDato texto="No se encontró el diseño. Vuelve a abrirlo desde la pieza." />;
   }
   return (
     <>

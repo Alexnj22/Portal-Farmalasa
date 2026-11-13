@@ -25,7 +25,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { CampoConRotulo, CampoFecha, Elegir } from '../../componentes/personas/Formulario';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -111,8 +111,8 @@ export default function Practicante() {
     } },
   ]);
 
-  if (!puedeEditar) return <Aviso tono="freno" texto="Tu cargo no puede registrar ni editar practicantes." />;
-  if (!esAlta && !practicante) return <Aviso tono="freno" texto="No se encontró el practicante." />;
+  if (!puedeEditar) return <PantallaSinDato texto="Tu cargo no puede registrar ni editar practicantes." />;
+  if (!esAlta && !practicante) return <PantallaSinDato texto="No se encontró el practicante." />;
   const err = (cond, texto) => (intento && cond ? texto : null);
 
   return (

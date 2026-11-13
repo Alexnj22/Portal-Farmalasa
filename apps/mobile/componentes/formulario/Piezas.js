@@ -3,7 +3,9 @@
 // de opciones con palomita, el botón grande y el renglón «dato: valor». Todas
 // iguales en toda la app, para que un formulario se sienta como el anterior.
 import { useState } from 'react';
-import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, InputAccessoryView, Keyboard, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Stack } from 'expo-router';
+import { BARRA_NATIVA } from '../PilaDePestana';
 import * as Haptics from 'expo-haptics';
 import { Host, Icon } from '@expo/ui';
 import Vidrio from '../Vidrio';
@@ -62,6 +64,27 @@ export function Vacio({ titulo, detalle, children, enSeccion = false, icono, ton
   );
 }
 
+/**
+ * La pantalla ENTERA cuando no hay qué mostrar: no se encontró el registro, no
+ * se pudo leer o el cargo no alcanza (2026-11-12). Antes cada pantalla
+ * devolvía un `<Aviso>` suelto: sin `Stack.Screen` el título era el nombre de
+ * la ruta («asignar-cuenta») y, con la barra transparente, el texto quedaba
+ * debajo de la hora. Acá va la barra con su título y el vacío canónico, bajo
+ * la barra.
+ *   titulo → el de la barra (lo que la pantalla diría si hubiera cargado)
+ *   texto  → qué pasó
+ */
+export function PantallaSinDato({ titulo = '', texto, detalle, cargando = false }) {
+  return (
+    <>
+      <Stack.Screen options={{ ...BARRA_NATIVA, title: titulo, headerLargeTitle: false }} />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 40 }}>
+        {cargando ? <Cargando /> : <Vacio titulo={texto} detalle={detalle} icono="Info" />}
+      </ScrollView>
+    </>
+  );
+}
+
 /** Ficha para elegir entre pocas opciones, en línea. */
 export function Ficha({ texto, activa, onPress, color = MARCA.azul, deshabilitada }) {
   return (
@@ -94,7 +117,7 @@ function BarraListo({ id }) {
   return (
     <InputAccessoryView nativeID={id}>
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end', paddingHorizontal: 16, paddingVertical: 6,
-        backgroundColor: 'rgba(30,27,46,0.92)', borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
+        backgroundColor: colorSistema.fila, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>
         <Pressable onPress={() => Keyboard.dismiss()} hitSlop={10} style={{ minHeight: 36, justifyContent: 'center' }}>
           <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: '600' }}>Listo</Text>
         </Pressable>

@@ -122,13 +122,7 @@ export default function Buscar() {
       <ScrollView style={{ flex: 1 }} contentContainerStyle={{ paddingVertical: 12, gap: 22 }}
         contentInsetAdjustmentBehavior="automatic" keyboardDismissMode="on-drag" keyboardShouldPersistTaps="handled">
         {!q ? (
-          <View style={{ alignItems: 'center', paddingTop: 60, gap: 8, paddingHorizontal: 40 }}>
-            <IconoFijo name={iconoDe('Search')} size={40} color={colorSistema.texto2} />
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Busca en todo el portal</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {[veProductos && 'productos y existencias', vePersonas && 'personas', 'solicitudes', 'pantallas'].filter(Boolean).join(', ')}.
-            </Text>
-          </View>
+          <Vacio titulo="Busca en todo el portal" detalle={`${[veProductos && 'productos y existencias', vePersonas && 'personas', 'solicitudes', 'pantallas'].filter(Boolean).join(', ')}.`} icono="Search" />
         ) : null}
 
         {pantallas.length ? (

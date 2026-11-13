@@ -13,6 +13,7 @@ import { fetchEmisor } from '@nucleo/data/distribucion';
 import { departamentosMH, municipiosMH, distritosMH } from '@nucleo/data/geoCodigosMH';
 import { cargarActividades } from '@nucleo/utils/distribucionComun';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import Vidrio from '../../Vidrio';
 import { colorSistema } from '../../Formulario';
 import { Campo } from '../../formulario/Piezas';
@@ -99,15 +100,12 @@ export function ElegirLargo({ rotulo, requerido, valor, opciones, onCambiar, vac
       ) : abierta ? (
         <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAbierta(false)}>
           <ConAurora>
-            <View style={{ padding: 20, paddingBottom: 8, gap: 12 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{rotulo ?? 'Elegir'}</Text>
-                <Pressable onPress={() => setAbierta(false)} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-                </Pressable>
+            <EncabezadoDeHoja titulo={rotulo ?? 'Elegir'} onCerrar={() => setAbierta(false)} />
+            {opciones.length > 8 ? (
+              <View style={{ paddingHorizontal: 20, paddingBottom: 8 }}>
+                <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Buscar" autoCorrect={false} autoFocus />
               </View>
-              {opciones.length > 8 ? <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Buscar" autoCorrect={false} autoFocus /> : null}
-            </View>
+            ) : null}
             <FlatList data={filas} keyExtractor={(o) => String(o.id)} keyboardShouldPersistTaps="handled"
               contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 60 }}
               ListFooterComponent={coinciden.length > MAX_VISIBLES

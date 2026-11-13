@@ -38,7 +38,7 @@ import { Chip } from '../componentes/inicio/Widget';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
-import { Cargando } from '../componentes/formulario/Piezas';
+import { Cargando, Vacio } from '../componentes/formulario/Piezas';
 
 // Un día de calendario (`issue_date`) se lee tal cual; un instante (`created_at`)
 // en la hora de El Salvador — cortarlo a 10 caracteres daba el día UTC.
@@ -176,10 +176,7 @@ export default function MisDocumentos() {
           );
         })}
         {solicitudes && !visibles.length ? (
-          <View style={{ alignItems: 'center', paddingTop: 40, gap: 6, marginHorizontal: 24 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{texto || estado || periodo !== 'todo' ? 'Ningún documento con esos filtros' : 'Todavía no tienes documentos'}</Text>
-            {!texto ? <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Aquí aparecen los papeles de tu expediente y los de tus solicitudes.</Text> : null}
-          </View>
+          <Vacio titulo={texto || estado || periodo !== 'todo' ? 'Ningún documento con esos filtros' : 'Todavía no tienes documentos'} detalle={!texto ? 'Aquí aparecen los papeles de tu expediente y los de tus solicitudes.' : undefined} />
         ) : null}
       </ScrollView>
     </>

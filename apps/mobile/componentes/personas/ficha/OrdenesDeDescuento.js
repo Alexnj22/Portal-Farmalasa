@@ -20,7 +20,7 @@
 //  · la bitácora (`ORDEN_DESCUENTO_CREAR/EDITAR/BORRAR`) y el borrador del
 //    editor (la sesión de sala se cierra sola y esto se teclea mirando el papel).
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, ScrollView, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { BANCOS } from '@nucleo/constants/bancos';
@@ -36,6 +36,7 @@ import { BotonGrande, Seccion } from '../../formulario/Piezas';
 import { CampoConRotulo, CampoFecha, Elegir } from '../Formulario';
 import { MARCA } from '../../inicio/marca';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { elegirOrigen } from '../../sucursal/elegirArchivo';
 import { fallo, listo } from '../../Progreso';
 import { Enlace, Nota, op } from './Piezas';
@@ -183,14 +184,9 @@ function EditorDeOrden({ inicial, empleado, onCancelar, onGuardar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => !guardando && cancelar()}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={f.id ? 'Editar orden de descuento' : 'Nueva orden de descuento'} onCerrar={cancelar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive"
           automaticallyAdjustKeyboardInsets>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{f.id ? 'Editar orden de descuento' : 'Nueva orden de descuento'}</Text>
-            <Pressable onPress={cancelar} disabled={guardando} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           {recuperado ? <Nota texto="Se recuperó lo que habías escrito antes." /> : null}
 
           <Seccion titulo="El documento" pie="Se leen las fotos una sola vez. Todo lo que traiga queda editable; un PDF se guarda, pero sus datos se escriben a mano.">

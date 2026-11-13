@@ -24,6 +24,7 @@ import { Pildora } from '../../componentes/avisos/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Vidrio from '../../componentes/Vidrio';
 import ConAurora from '../../componentes/ConAurora';
+import EncabezadoDeHoja from '../../componentes/EncabezadoDeHoja';
 import { Encabezado } from '../../componentes/personas/Piezas';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -114,12 +115,8 @@ export default function Feriados() {
       <Modal visible={!!form} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setForm(null)}>
         {form ? (
           <ConAurora>
+            <EncabezadoDeHoja titulo="Nuevo feriado" onCerrar={() => setForm(null)} />
             <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <Pressable onPress={() => setForm(null)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>Cancelar</Text></Pressable>
-                <Text style={{ flex: 1, textAlign: 'center', color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>Nuevo feriado</Text>
-                <View style={{ width: 70 }} />
-              </View>
               <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
                 <Seccion titulo="Nombre">
                   <TextInput value={form.name} onChangeText={(v) => setForm((x) => ({ ...x, name: v }))} placeholder="Ej: Día del Trabajo" placeholderTextColor={colorSistema.texto2}

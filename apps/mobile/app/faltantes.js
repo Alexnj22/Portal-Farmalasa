@@ -16,7 +16,7 @@ import { filtrar } from '@nucleo/utils/busqueda';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
@@ -175,9 +175,7 @@ export default function Faltantes() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {lista == null ? null : visibles.length ? visibles.map((f) => <Faltante key={f.id} f={f} onHecho={cargar} supervisa={supervisa} />) : (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 60, fontSize: 15 }}>
-            {vista === 'abiertos' ? 'No hay faltantes sin resolver.' : 'Todavía no hay faltantes resueltos.'}
-          </Text>
+          <Vacio titulo={vista === 'abiertos' ? 'No hay faltantes sin resolver.' : 'Todavía no hay faltantes resueltos.'} />
         )}
       </ScrollView>
     </>

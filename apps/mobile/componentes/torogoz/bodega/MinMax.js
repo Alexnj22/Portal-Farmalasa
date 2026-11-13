@@ -2,15 +2,15 @@
 // de Reposición. Vacío = automático (sale de la velocidad de venta). Lo fija
 // quien administra, con la misma función de la base (`fijarMinMax`).
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, View } from 'react-native';
 import { fijarMinMax, mensajeDeDistribucion } from '@nucleo/data/distribucion';
 import { enteroOpcional } from '@nucleo/utils/distribucionBodega';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { colorSistema } from '../../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
 import { fallo, listo } from '../../Progreso';
 import { PETROLEO, confirmar } from './piezas';
 
@@ -42,13 +42,8 @@ export default function MinMax({ producto, onCerrar, onGuardado }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={producto.nombre} onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 4 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={2}>{producto.nombre}</Text>
-            <Pressable onPress={onCerrar} disabled={guardando} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           <Aviso texto={`Vende ${formatQty(Number(producto.velocidad))} unidades por día. Vacío = automático (hoy ${producto.minimo} · ${producto.maximo}).`} />
           <View style={{ flexDirection: 'row', gap: 12 }}>
             <View style={{ flex: 1 }}>

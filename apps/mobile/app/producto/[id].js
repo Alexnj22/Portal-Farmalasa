@@ -33,7 +33,7 @@ import { formatQty as formatNumber } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, Dato, Seccion, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -314,7 +314,7 @@ export default function Producto() {
         {ubicaciones.length || puedeEditar ? (
           <Seccion titulo="Ubicaciones">
             {ubicaciones.map((u, i) => <Dato key={u.branch_id} primero={i === 0} rotulo={nombreSala.get(Number(u.branch_id)) ?? `Sala ${u.branch_id}`} valor={textoUbicacion(u)} />)}
-            {!ubicaciones.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin ubicación en ninguna sala.</Text> : null}
+            {!ubicaciones.length ? <Vacio enSeccion>Sin ubicación en ninguna sala.</Vacio> : null}
             {puedeEditar ? (
               <Pressable onPress={() => router.push({ pathname: '/producto/ubicaciones', params: { id: String(productId), nombre: titulo } })} style={{ minHeight: 40, justifyContent: 'center' }}>
                 <Text style={{ color: colorSistema.acento, fontSize: 15, fontWeight: '600' }}>Editar las ubicaciones</Text>

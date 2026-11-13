@@ -26,7 +26,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -69,7 +69,7 @@ export default function DocumentoPropio() {
     (i) => { if (i < CATEGORIAS.length) cambiar('category', CATEGORIAS[i][0]); },
   );
 
-  if (!sucursal) return <Aviso texto="No se encontró la sucursal." />;
+  if (!sucursal) return <PantallaSinDato texto="No se encontró la sucursal." />;
 
   const guardar = async () => {
     const problema = problemaDelDocumentoPropio(datos);

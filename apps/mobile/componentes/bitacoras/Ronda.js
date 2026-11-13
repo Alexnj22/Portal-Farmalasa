@@ -15,6 +15,7 @@ import {
 } from '@nucleo/utils/rondaDeBitacora';
 import { rango12 } from '@nucleo/utils/hora';
 import Aurora from '../Aurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import Vidrio from '../Vidrio';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo } from '../formulario/Piezas';
@@ -185,14 +186,8 @@ export default function Ronda({ fecha, bloques, onCerrar }) {
       <View style={{ flex: 1 }}>
         <Aurora />
         <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+          <EncabezadoDeHoja titulo="Pasar la ronda" subtitulo="Lo que dejes en blanco queda pendiente." onCerrar={cerrar} ocupado={guardando} />
           <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-            <View style={{ padding: 16, paddingBottom: 8, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 24, fontWeight: '800' }}>Pasar la ronda</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que dejes en blanco queda pendiente.</Text>
-              </View>
-              <TextoBoton texto={huboCambio ? 'Listo' : 'Cancelar'} onPress={cerrar} />
-            </View>
             <ScrollView style={{ flex: 1 }} contentContainerStyle={{ padding: 16, paddingTop: 4, gap: 14 }} keyboardShouldPersistTaps="handled"
               automaticallyAdjustKeyboardInsets keyboardDismissMode="interactive">
               {Object.keys(errores).length ? (

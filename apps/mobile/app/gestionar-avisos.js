@@ -36,6 +36,7 @@ import { MenuDeFiltros } from '../componentes/Filtros';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -44,15 +45,6 @@ const manana = () => {
   d.setDate(d.getDate() + 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
-
-function Cabecera({ titulo, onCerrar }) {
-  return (
-    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-      <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{titulo}</Text>
-      <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Pressable>
-    </View>
-  );
-}
 
 // `editando`: el aviso que se corrige (sólo si nadie lo leyó, la misma regla
 // del portal); sin él, es uno nuevo. Se monta de nuevo por aviso (`key`), así
@@ -107,9 +99,9 @@ function Nuevo({ abierto, onCerrar, salas, salaFija, cargos, empleados, editando
   return (
     <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={e0 ? 'Editar aviso' : 'Nuevo aviso'} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-            <Cabecera titulo={e0 ? 'Editar aviso' : 'Nuevo aviso'} onCerrar={onCerrar} />
             <Seccion titulo="El aviso">
               <Campo multiline={false} value={titulo} onChangeText={setTitulo} placeholder="Título" />
               <Campo value={mensaje} onChangeText={setMensaje} placeholder="Mensaje" style={{ minHeight: 100 }} />
@@ -186,8 +178,8 @@ function Ficha({ a, onCerrar, puedeEditar, onArchivar, onEliminar, onEditar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Aviso" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }}>
-          <Cabecera titulo="Aviso" onCerrar={onCerrar} />
           <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
             <Pildora texto={a.badgeText} color={MARCA.azulClaro} />
             {a.priority === 'URGENT' ? <Pildora texto="Urgente" color={MARCA.rojo} /> : null}

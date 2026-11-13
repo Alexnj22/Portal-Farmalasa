@@ -21,7 +21,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
@@ -52,7 +52,7 @@ export default function CajaDia() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await recargar(); setRecargando(false); }} />}>
         {error ? <Aviso tono="freno" texto="No se pudo leer el día." /> : null}
         {cargando && !dia ? <Cargando /> : null}
-        {!cargando && !dia && !error ? <Aviso tono="nota" texto="Este día ya no tiene diferencias en esta vista." /> : null}
+        {!cargando && !dia && !error ? <Vacio titulo="Este día ya no tiene diferencias en esta vista." /> : null}
         {dia ? (
           <>
             <Vidrio radio={20}>

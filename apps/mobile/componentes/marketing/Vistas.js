@@ -26,7 +26,7 @@ import Kpi, { FilaDeKpis } from '../inicio/Kpi';
 import Vidrio from '../Vidrio';
 import Tocable from '../Tocable';
 import Interruptor from '../Interruptor';
-import { MARCA } from '../inicio/marca';
+import { FONDO_CONTROL, MARCA } from '../inicio/marca';
 import { colorDeVariante } from '../colorDeVariante';
 import { fallo } from '../Progreso';
 
@@ -82,7 +82,7 @@ export function Flujo({ piezas, puedeMoverla, onAbrir, onMovida }) {
               <Text style={{ color: colorSistema.texto2, fontSize: 13, fontVariant: ['tabular-nums'] }}>{lista.length}</Text>
             </View>
             {lista.map((p) => <FilaDePieza key={p.id} p={p} onAbrir={onAbrir} onMantener={mover} derecha={<View />} />)}
-            {!lista.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Sin piezas</Text> : null}
+            {!lista.length ? <Vacio enSeccion>Sin piezas</Vacio> : null}
           </View>
         );
       })}
@@ -128,7 +128,7 @@ export function Pauta({ piezas, presupuestoMes, redes, onAbrir }) {
           </Tocable>
         );
       })}
-      {!filas.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Sin piezas para pautar este mes. Marca «Se pautará» en una pieza para planificar su inversión." /></View> : null}
+      {!filas.length ? <Vacio titulo="Sin piezas para pautar este mes" detalle="Marca «Se pautará» en una pieza para planificar su inversión." /> : null}
     </>
   );
 }
@@ -170,7 +170,7 @@ export function GaleriaGestion({ marca, formato, liberada, busqueda, puedeLibera
             <View key={p.id} style={{ width: lado, gap: 4 }}>
               <Tocable onPress={() => onAbrir(p)}>
                 {portada ? <Image source={{ uri: firmadas.get(portada.url) }} style={{ width: lado, height: lado, borderRadius: 14 }} />
-                  : <View style={{ width: lado, height: lado, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{formatoDe(p.formato).label}</Text></View>}
+                  : <View style={{ width: lado, height: lado, borderRadius: 14, backgroundColor: FONDO_CONTROL, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{formatoDe(p.formato).label}</Text></View>}
               </Tocable>
               <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>{p.titulo}</Text>
               <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${formatoDe(p.formato).label} · ${fechaTexto(p.fecha, { day: 'numeric', month: 'short' })}`}</Text>

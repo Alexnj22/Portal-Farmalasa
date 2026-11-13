@@ -37,7 +37,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { registrarEgreso } from '@nucleo/data/egreso';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { cotizacionGuardada, guardarCotizaciones } from '../../componentes/cotizaciones/cache';
@@ -272,7 +272,7 @@ export default function NuevaCotizacion() {
     }
   };
 
-  if (!puede) return <View style={{ padding: 16 }}><Aviso tono="freno" texto="Tu cargo no puede crear ni editar cotizaciones." /></View>;
+  if (!puede) return <PantallaSinDato texto="Tu cargo no puede crear ni editar cotizaciones." />;
 
   return (
     <>

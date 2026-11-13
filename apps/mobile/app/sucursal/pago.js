@@ -20,7 +20,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { nombreDelMes } from '../../componentes/PasoDeMes';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -49,7 +49,7 @@ export default function PagoDeSucursal() {
   const [origen, setOrigen] = useState(null);
   const [guardando, setGuardando] = useState(false);
 
-  if (!sucursal) return <Aviso texto="No se encontró la sucursal." />;
+  if (!sucursal) return <PantallaSinDato texto="No se encontró la sucursal." />;
   const nombre = SERVICIOS_DE_PAGO[servicio] || 'Servicio';
   const conflicto = !subiendoComprobante && yaEstabaPagado(datos.paidThrough, mes);
 

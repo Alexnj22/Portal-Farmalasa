@@ -20,7 +20,7 @@ import { NOMBRES_DE_MES, fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, PantallaSinDato } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 import Tocable from '../componentes/Tocable';
@@ -63,7 +63,7 @@ export default function AjustesDeMarketing() {
   };
   const confirmar = (titulo, texto, fn) => Alert.alert(titulo, texto, [{ text: 'Cancelar', style: 'cancel' }, { text: 'Guardar', onPress: () => intentar(fn) }]);
 
-  if (!datos) return <Cargando />;
+  if (!datos) return <PantallaSinDato cargando />;
   const { marcas, redes, ajustes, fechas } = datos;
   const elegirDia = () => ActionSheetIOS.showActionSheetWithOptions(
     { title: 'Fecha límite para enviar el mes siguiente', options: [...DIAS_LIMITE_DE_ENVIO.map((d) => `Día ${d}`), 'Cancelar'], cancelButtonIndex: DIAS_LIMITE_DE_ENVIO.length },

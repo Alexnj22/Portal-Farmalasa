@@ -14,8 +14,8 @@ import * as Haptics from 'expo-haptics';
 import { ACUERDO, CARITAS, MAX_NUMERO, MAX_TEXTO, motivoParaNoGuardarContacto, opcionesConTexto, primeraSinContestar, recorrido, maximoDe, alternarOpcion, textoDeMaximo, exclusivasDe, TRAMOS_NPS, tramoNps, guionDeEscala, escalaNumerica } from '@nucleo/utils/encuestasClientes';
 import { nuevaReferencia } from '@nucleo/data/encuestasClientes';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
-import { MARCA } from '../inicio/marca';
+import { Aviso, BotonGrande, Campo, Seccion, Vacio } from '../formulario/Piezas';
+import { FONDO_CONTROL, MARCA } from '../inicio/marca';
 
 // El color de cada tramo del NPS (TRAMOS_NPS dice el nombre; acá, el color).
 const COLOR_TRAMO = { danger: MARCA.rojo, warning: MARCA.ambar, success: MARCA.verde };
@@ -26,7 +26,7 @@ function Opcion({ activa, onPress, children, ancho, color = MARCA.azul, etiqueta
       accessibilityRole="button" accessibilityState={{ selected: !!activa }} accessibilityLabel={etiqueta}
       style={({ pressed }) => ({
         minHeight: 44, minWidth: ancho ?? 44, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, justifyContent: 'center', alignItems: 'center',
-        backgroundColor: activa ? color : 'rgba(255,255,255,0.08)', borderWidth: 0.5, borderColor: activa ? color : colorSistema.separador,
+        backgroundColor: activa ? color : FONDO_CONTROL, borderWidth: 0.5, borderColor: activa ? color : colorSistema.separador,
         transform: [{ scale: pressed ? 0.97 : 1 }],
       })}>
       {typeof children === 'string' ? <Text style={{ color: '#fff', fontSize: 15, fontWeight: '600' }}>{children}</Text> : children}
@@ -202,7 +202,7 @@ export default function Formulario({ encuesta, onEnviar, onEntregarMuestra, onRe
     setEnviando(false);
   };
 
-  if (!secciones.length) return <View style={{ marginHorizontal: 16 }}><Aviso texto="Todavía no hay preguntas para mostrar." /></View>;
+  if (!secciones.length) return <Vacio titulo="Todavía no hay preguntas para mostrar." />;
   const inc = resultado?.incentivo;
   return (
     <View style={{ gap: 12 }}>

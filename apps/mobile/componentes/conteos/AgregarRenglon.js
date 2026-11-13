@@ -17,6 +17,7 @@ import { fechaTexto, hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { esLoteGenerico, pluralDePresentacion, reglaDeLoteYVence } from '@nucleo/utils/conteoDeInventario';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import Fecha from '../formulario/Fecha';
@@ -135,14 +136,9 @@ export default function AgregarRenglon({ visible, conteoId, branchId, simple = f
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Agregar un renglón" onCerrar={onCerrar} />
         <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="interactive">
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Agregar un renglón</Text>
-              <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-                <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-              </Pressable>
-            </View>
             <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
               {`Para un producto que no estaba en la hoja${simple ? '.' : ', o para un lote que no venía.'}`}
             </Text>

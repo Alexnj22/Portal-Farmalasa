@@ -18,7 +18,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { colorSistema } from '../Formulario';
-import { Aviso } from '../formulario/Piezas';
+import { Aviso, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import { MARCA } from '../inicio/marca';
 import { Chip } from '../inicio/Widget';
@@ -170,7 +170,7 @@ export default function MovimientosDelDia({ movimientos, deBolsas, cobros, dia, 
         {`Movimientos de este día${dia ? ` · ${fechaTexto(dia, { day: 'numeric', month: 'long' })}` : ''}`}
       </Text>
       {!puedeVerBolsas ? <Aviso texto="Aquí sólo ves lo que entró y salió de la caja. Las salidas pagadas con una bolsa necesitan el permiso de Bolsas." /> : null}
-      {!lineas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 4 }}>Todavía no se ha movido efectivo en este día.</Text> : null}
+      {!lineas.length ? <Vacio enSeccion>Todavía no se ha movido efectivo en este día.</Vacio> : null}
       {grupos.filter((g) => g.lineas.length || (!g.corte && lineas.length)).map((g) => (
         <View key={g.corte?.id ?? 'sin-cortar'} style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8, marginHorizontal: 4, marginTop: 4 }}>

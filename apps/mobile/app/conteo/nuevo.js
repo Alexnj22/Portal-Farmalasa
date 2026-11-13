@@ -24,7 +24,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo } from '../../componentes/Progreso';
 
@@ -125,7 +125,7 @@ export default function NuevoConteo() {
   };
 
   if (!hasPermission('conteo_inventario', 'can_edit')) {
-    return <View style={{ padding: 16 }}><Aviso tono="freno" texto="Tu cargo no puede crear conteos." /></View>;
+    return <PantallaSinDato titulo="Nuevo conteo" texto="Tu cargo no puede crear conteos." />;
   }
 
   return (

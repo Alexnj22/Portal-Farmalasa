@@ -10,6 +10,7 @@ import Conmutador from '../Interruptor';
 import * as Haptics from 'expo-haptics';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { colorSistema } from '../Formulario';
 import { Campo, Opciones } from '../formulario/Piezas';
 import { MARCA, FONDO_CONTROL } from '../inicio/marca';
@@ -66,13 +67,8 @@ export function Elegir({ rotulo, requerido, valor, opciones, onCambiar, vacio = 
       ) : abierta ? (
         <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setAbierta(false)}>
           <ConAurora>
+            <EncabezadoDeHoja titulo={rotulo} onCerrar={() => setAbierta(false)} />
             <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{rotulo}</Text>
-                <Pressable onPress={() => setAbierta(false)} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-                  <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-                </Pressable>
-              </View>
               {opciones.length > 8 ? <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Buscar" autoCorrect={false} /> : null}
               <Opciones valor={String(valor ?? '')}
                 onCambiar={(v) => { onCambiar(v); setAbierta(false); }}

@@ -44,7 +44,7 @@ import { conteoInicial, enPresentacion, mapaDePresentaciones, presentacionesDeRe
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Ficha, Seccion, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -390,7 +390,7 @@ export default function Recibir() {
               ? `${filasVistas.length} de ${filasAbiertas.length} productos`
               : `${filasAbiertas.length} producto${filasAbiertas.length === 1 ? '' : 's'}`}
               pie={filasVistas.length !== filasAbiertas.length ? 'La búsqueda sólo esconde: al confirmar se cuenta la hoja entera.' : undefined}>
-              {!filasVistas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Ningún producto de esta hoja coincide.</Text> : null}
+              {!filasVistas.length ? <Vacio enSeccion>Ningún producto de esta hoja coincide.</Vacio> : null}
               {filasVistas.map((r, i) => (
                 <Renglon key={r.id} r={r} primero={!i} valor={valores[r.id] ?? SIN_VALOR} ocupado={guardando} presMap={presMap}
                   onSolo={filasAbiertas.length > 1 ? solo : null} onCambiar={cambiar} />
@@ -427,7 +427,7 @@ export default function Recibir() {
           return (porContar.length || contados.length) ? (
             <View style={{ gap: 8 }}>
               <Campo multiline={false} value={buscarYa} onChangeText={setBuscarYa} placeholder="¿Necesitas un producto ya? Búscalo…" autoCorrect={false} />
-              {term.length >= 2 && !hits.length && !ya.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>Sin resultados entre lo que llegó.</Text> : null}
+              {term.length >= 2 && !hits.length && !ya.length ? <Vacio enSeccion>Sin resultados entre lo que llegó.</Vacio> : null}
               {hits.length ? (
                 <Seccion titulo="Recibirlo ahora">
                   {hits.map((r, i) => (

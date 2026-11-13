@@ -23,7 +23,8 @@ import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import ConAurora from '../componentes/ConAurora';
-import { MARCA } from '../componentes/inicio/marca';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
+import { FONDO_CONTROL, MARCA } from '../componentes/inicio/marca';
 import { fallo } from '../componentes/Progreso';
 import Tocable from '../componentes/Tocable';
 
@@ -41,11 +42,8 @@ function Detalle({ pieza, firmadas, onCerrar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={pieza.titulo} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 48 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={2}>{pieza.titulo}</Text>
-            <Tocable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Tocable>
-          </View>
           {medios.map((a, i) => (tipoDeArchivo(a) === 'imagen' && firmadas.get(a.url)
             ? <Image key={a.id ?? a.url} source={{ uri: firmadas.get(a.url) }} style={{ width: '100%', aspectRatio: a.ancho && a.alto ? a.ancho / a.alto : 1, borderRadius: 16 }} resizeMode="contain" />
             : <Aviso key={a.id ?? a.url} texto={`Archivo ${i + 1}: ${tipoDeArchivo(a) === 'video' ? 'video' : 'documento'} — se comparte con el botón.`} />))}
@@ -114,7 +112,7 @@ export default function Galeria() {
                 <Tocable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setAbierta(p); }}
                   style={({ pressed }) => ({ width: lado, gap: 4, transform: [{ scale: pressed ? 0.97 : 1 }] })}>
                   {portada ? <Image source={{ uri: firmadas.get(portada.url) }} style={{ width: lado, height: lado, borderRadius: 14 }} />
-                    : <View style={{ width: lado, height: lado, borderRadius: 14, backgroundColor: 'rgba(255,255,255,0.08)', alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{formatoDe(p.formato).label}</Text></View>}
+                    : <View style={{ width: lado, height: lado, borderRadius: 14, backgroundColor: FONDO_CONTROL, alignItems: 'center', justifyContent: 'center' }}><Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{formatoDe(p.formato).label}</Text></View>}
                   <Text style={{ color: colorSistema.texto, fontSize: 13, fontWeight: '600' }} numberOfLines={2}>{p.titulo}</Text>
                   <Text style={{ color: colorSistema.texto2, fontSize: 11 }}>{`${formatoDe(p.formato).label} · ${fechaTexto(p.fecha, { day: 'numeric', month: 'short' })}`}</Text>
                 </Tocable>

@@ -9,6 +9,7 @@ import { feedDeMarca, formatoDe, portadaDePieza } from '@nucleo/utils/marketing'
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { colorSistema } from '../Formulario';
 import Segmentos from '../Segmentos';
+import Subfiltro from '../Subfiltro';
 import { MARCA } from '../inicio/marca';
 import Tocable from '../Tocable';
 import { Vacio } from '../formulario/Piezas';
@@ -23,14 +24,7 @@ export default function Feed({ piezas, marcas, firmas, onAbrir }) {
   const src = (p) => { const a = portadaDePieza(p); return a ? firmas?.get?.(a.url) : null; };
   return (
     <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
-        {activas.map((m) => (
-          <Tocable key={m.id} onPress={() => setMarcaId(m.id)}
-            style={{ paddingHorizontal: 14, minHeight: 36, justifyContent: 'center', borderRadius: 999, backgroundColor: m.id === marcaId ? MARCA.azul : 'rgba(127,127,127,0.18)' }}>
-            <Text style={{ color: m.id === marcaId ? '#fff' : colorSistema.texto, fontSize: 14, fontWeight: '600' }}>{m.nombre}</Text>
-          </Tocable>
-        ))}
-      </ScrollView>
+      <Subfiltro opciones={activas.map((m) => ({ id: m.id, label: m.nombre }))} activa={marcaId} onCambiar={setMarcaId} />
       <Segmentos activa={alcance} onCambiar={setAlcance} opciones={[{ id: 'todo', label: 'Todo el plan' }, { id: 'aprobado', label: 'Sólo aprobado' }]} />
       {historias.length ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>

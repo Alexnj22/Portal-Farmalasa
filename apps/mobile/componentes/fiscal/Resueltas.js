@@ -20,6 +20,7 @@ import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import { MARCA } from '../inicio/marca';
 import Tocable from '../Tocable';
+import { Vacio } from '../formulario/Piezas';
 import { colorDeVariante } from '../colorDeVariante';
 import { metaObs } from '@nucleo/utils/colasDeFacturacion';
 
@@ -98,7 +99,7 @@ export default function Resueltas({ cola, sala, nombreSala, verMontos, recarga }
                 </Vidrio>
               );
             })}
-            {!visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nada resuelto en este período.</Text> : null}
+            {!visibles.length ? <Vacio enSeccion>Nada resuelto en este período.</Vacio> : null}
             <Tocable onPress={() => setTodos((v) => !v)} hitSlop={8} style={{ alignSelf: 'center', minHeight: 36, justifyContent: 'center' }}>
               <Text style={{ color: MARCA.azulClaro, fontSize: 14, fontWeight: '600' }}>{todos ? 'Ver solo este mes' : 'Ver todas'}</Text>
             </Tocable>

@@ -23,7 +23,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { fallo } from '../../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../../componentes/pdf';
 import Avatar from '../../componentes/Avatar';
@@ -40,7 +40,7 @@ export default function Boleta() {
   // y la boleta convertía las horas extra a $0.
   const ficha = useStaffStore((s) => (s.employees || []).find((x) => String(x.id) === String(e?.employee_id)));
   const [armando, setArmando] = useState(false);
-  if (!e) return <Aviso tono="freno" texto="No se encontró la boleta." />;
+  if (!e) return <PantallaSinDato texto="No se encontró la boleta." />;
   const empleado = { ...(e.employee || {}), ...(ficha || {}) };
   const p = partidasDeBoleta(e, empleado.base_salary);
   const ultimaEdicion = (e.edit_history || []).at(-1);

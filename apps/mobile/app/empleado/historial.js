@@ -32,7 +32,7 @@ import { descuentoDeSuspension } from '@nucleo/utils/planilla';
 import { decidirDescuentoDeSuspension } from '@nucleo/data/disciplina';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
 import { elegirArchivo } from '../../componentes/sucursal/elegirArchivo';
@@ -211,7 +211,7 @@ export default function Historial() {
   const historial = useMemo(() => historialDeFicha(filas || [], emp?.history || []), [filas, emp]);
   const dias = useMemo(() => diasDeAusencia(historial, hoySV()), [historial]);
   const ausencias = useMemo(() => ausenciasFiltradas(historial, { mes, dia }), [historial, mes, dia]);
-  if (!emp) return <Aviso tono="freno" texto="No se encontró a esta persona." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   return (
     <>

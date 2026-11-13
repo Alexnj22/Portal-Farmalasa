@@ -27,7 +27,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { APP_VERSION } from '@nucleo/version';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo } from '../componentes/Progreso';
 import { compartirPdf, imprimirPapel } from '../componentes/pdf';
@@ -162,7 +162,7 @@ export default function Impresion() {
 
         <Seccion titulo="Cajas de las salas" pie="«Registrada» no es «funciona»: lo que dice si va a salir papel es cuándo preguntó la caja por última vez. «Probar» gasta un papel en esa caja.">
           {falloLaLista ? <Aviso tono="freno" texto={`No se pudo leer la lista de cajas. Esto NO significa que no haya ninguna: las registradas pueden estar imprimiendo igual. ${mensajeAmigable(falloLaLista, '')}`} /> : null}
-          {!cajas.length && !falloLaLista ? <Aviso texto="Ninguna sala imprime todavía: sin una caja registrada, un documento mandado desde el teléfono no tiene dónde salir." /> : null}
+          {!cajas.length && !falloLaLista ? <Vacio enSeccion>Ninguna sala imprime todavía: sin una caja registrada, un documento mandado desde el teléfono no tiene dónde salir.</Vacio> : null}
           {cajas.map((c, i) => {
             const latido = latidoMostrado(c);
             const agente = estadoDelAgente(c, publicada);

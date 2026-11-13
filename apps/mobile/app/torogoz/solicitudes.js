@@ -24,7 +24,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
@@ -221,9 +221,7 @@ export default function SolicitudesTorogoz() {
             destacada={!!solicitud && String(f.id) === String(solicitud)} ocupado={ocupado} onDecidir={decidir} />
         ))}
         {filas !== null && !visibles.length && !error ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 32, fontSize: 15, marginHorizontal: 24 }}>
-            {filtro === 'pendientes' ? 'No hay solicitudes esperando decisión.' : 'Todavía no hay solicitudes resueltas.'}
-          </Text>
+          <Vacio titulo={filtro === 'pendientes' ? 'No hay solicitudes esperando decisión.' : 'Todavía no hay solicitudes resueltas.'} />
         ) : null}
       </ScrollView>
     </>

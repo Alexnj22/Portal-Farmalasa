@@ -54,7 +54,7 @@ import { fallo, listo, trabajando } from '../../componentes/Progreso';
 import { useCarneDePapel } from '../../componentes/personas/CarneDePapel';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { colorDeVariante } from '../../componentes/colorDeVariante';
@@ -134,7 +134,7 @@ export default function Empleado() {
   const sala = useMemo(() => (sucursales || []).find((b) => String(b.id) === String(emp?.branchId ?? emp?.branch_id)), [sucursales, emp]);
   const historial = useMemo(() => historialDePerfil(emp?.history || [], emp?.hire_date || emp?.hireDate, sala?.name), [emp, sala]);
   const semana = useMemo(() => semanaDelPerfil(emp?.weeklySchedule, turnos || [], hoy), [emp, turnos, hoy]);
-  if (!emp) return <Aviso tono="freno" texto="No se encontró a esta persona (o no está en tu alcance)." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona (o no está en tu alcance)." />;
 
   const estado = estadoDePersona(emp);
   const alertas = alertasDePersona(emp);

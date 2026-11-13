@@ -30,7 +30,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -72,14 +72,7 @@ export default function EncargoAccion() {
     } catch (err) { fallo('No se pudo', mensajeAmigable(err, 'Intenta de nuevo.')); } finally { setOcupado(false); }
   };
 
-  if (!e) {
-    return (
-      <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: TITULO[modo] ?? 'Encargo' }} />
-        <View style={{ padding: 16 }}>{error ? <Aviso tono="cuidado" texto={error} /> : <ActivityIndicator />}</View>
-      </>
-    );
-  }
+  if (!e) return <PantallaSinDato titulo={TITULO[modo] ?? 'Encargo'} texto={error} cargando={!error} />;
 
   const p = Number(precio);
   const ficha = e.producto_nuevo ? (

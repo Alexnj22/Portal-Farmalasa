@@ -18,6 +18,7 @@ import { medicamentoDeSrs } from '@nucleo/utils/distribucionBodega';
 import { leerMonto } from '@nucleo/utils/distribucionComun';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import Segmentos from '../../Segmentos';
 import { colorSistema } from '../../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion } from '../../formulario/Piezas';
@@ -100,15 +101,8 @@ export default function VentaPerdida({ visible = true, emisorId, cliente = null,
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={`Venta perdida${cliente?.nombre ? ` · ${cliente.nombre}` : ''}`} onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 4 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={1}>
-              {`Venta perdida${cliente?.nombre ? ` · ${cliente.nombre}` : ''}`}
-            </Text>
-            <Pressable onPress={onCerrar} disabled={guardando} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
             Lo que el cliente pidió y no se le pudo vender. Queda en la lista de Ventas perdidas para comprarlo.
           </Text>

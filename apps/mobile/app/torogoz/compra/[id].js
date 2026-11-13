@@ -12,7 +12,7 @@
 // Todas las cuentas y la forma de lo que se guarda salen del núcleo
 // (`distribucionCompras`, `distribucionComercial`), las mismas del portal.
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Modal, Pressable, Text, View } from 'react-native';
+import { ActivityIndicator, Alert, Modal, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import * as DocumentPicker from 'expo-document-picker';
@@ -40,6 +40,7 @@ import { CampoConRotulo } from '../../../componentes/personas/Formulario';
 import { Pildora } from '../../../componentes/avisos/Piezas';
 import Fecha from '../../../componentes/formulario/Fecha';
 import ConAurora from '../../../componentes/ConAurora';
+import EncabezadoDeHoja from '../../../componentes/EncabezadoDeHoja';
 import { MARCA } from '../../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
 import { volver } from '../../../componentes/volver';
@@ -65,13 +66,8 @@ function Hoja({ titulo, onCerrar, children }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={titulo} onCerrar={onCerrar} />
         <Formulario contentContainerStyle={{ paddingHorizontal: 16, gap: 16, paddingBottom: 60 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{titulo}</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-            </Pressable>
-          </View>
           {children}
         </Formulario>
       </ConAurora>

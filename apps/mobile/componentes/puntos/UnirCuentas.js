@@ -17,7 +17,7 @@ import { puntosTexto } from '@nucleo/utils/puntosTexto';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Vacio } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 
@@ -106,7 +106,7 @@ export default function UnirCuentas({ customerId, nombre, onCerrar, onHecho }) {
         <>
           <Campo multiline={false} autoFocus value={busqueda} onChangeText={setBusqueda} placeholder="Nombre, DUI o teléfono de la otra cuenta" accessibilityLabel="Buscar la otra cuenta" />
           {buscando ? <ActivityIndicator /> : null}
-          {busqueda.trim().length >= 3 && !buscando && !resultados.length ? <Aviso texto="Sin coincidencias." /> : null}
+          {busqueda.trim().length >= 3 && !buscando && !resultados.length ? <Vacio enSeccion>Sin coincidencias.</Vacio> : null}
           {resultados.map((c, i) => (
             <Pressable key={c.customer_id} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setOtra(c); }}
               style={({ pressed }) => ({ flexDirection: 'row', alignItems: 'center', gap: 10, minHeight: 48, paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>

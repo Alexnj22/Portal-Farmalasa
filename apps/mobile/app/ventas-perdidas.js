@@ -29,6 +29,7 @@ import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -54,14 +55,9 @@ function Reportar({ abierto, onCerrar, onListo }) {
   return (
     <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+      <EncabezadoDeHoja titulo="Reportar una venta perdida" onCerrar={onCerrar} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Reportar una venta perdida</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Lo que el cliente pidió y no tenemos. Logística lo revisa para compra.</Text>
           <Seccion titulo="Qué pidió">
             <Campo multiline={false} value={buscado} onChangeText={setBuscado} placeholder="Nombre del producto, como lo pidió" autoCapitalize="characters" autoFocus />

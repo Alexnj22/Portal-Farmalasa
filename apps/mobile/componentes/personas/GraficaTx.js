@@ -8,7 +8,7 @@ import * as Haptics from 'expo-haptics';
 import { colorSistema } from '../Formulario';
 import { MARCA } from '../inicio/marca';
 import Vidrio from '../Vidrio';
-import Segmentos from '../Segmentos';
+import Subfiltro from '../Subfiltro';
 
 export const COLOR_DE_NIVEL = { critica: MARCA.rojo, pico: MARCA.ambar, normal: MARCA.azulClaro, muerta: 'rgba(127,127,127,0.45)' };
 const LEYENDA = [['critica', 'Crítica'], ['pico', 'Pico'], ['normal', 'Normal'], ['muerta', 'Baja']];
@@ -22,7 +22,7 @@ export default function GraficaTx({ stats, dia, nombreDelDia }) {
   const sel = tocada != null ? datos[tocada] : null;
   return (
     <View style={{ gap: 10 }}>
-      <Segmentos activa={vista} onCambiar={(v) => { setVista(v); setTocada(null); }} opciones={[
+      <Subfiltro activa={vista} onCambiar={(v) => { setVista(v); setTocada(null); }} opciones={[
         { id: 'dia', label: nombreDelDia || 'Este día' }, { id: 'general', label: 'Por hora' }, { id: 'semana', label: 'Por día' },
       ]} />
       <View style={{ marginHorizontal: 16 }}>

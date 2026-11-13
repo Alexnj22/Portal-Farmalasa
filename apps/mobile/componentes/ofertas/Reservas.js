@@ -121,7 +121,7 @@ export default function Reservas({ sala, todas = false, recarga }) {
             </View>
           </Vidrio>
         ) : null}
-        {codigo.trim() && !visibles.length ? <Aviso texto="No hay una reserva abierta con ese código." /> : null}
+        {codigo.trim() && !visibles.length ? <Vacio titulo="No hay una reserva abierta con ese código." /> : null}
       </View>
       {visibles.map((r) => {
         const enRevision = r.estado === 'en_revision';

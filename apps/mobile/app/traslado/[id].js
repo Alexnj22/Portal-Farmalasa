@@ -62,8 +62,8 @@ function Cantidad({ valor, max, onCambiar, etiqueta }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       <Boton d={-1} texto="−" />
-      <TextInput value={String(valor ?? '')} onChangeText={(t) => onCambiar(t.replace(/\D/g, ''))} keyboardType="number-pad"
-        style={{ width: 44, textAlign: 'center', color: colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}
+      <Campo multiline={false} value={String(valor ?? '')} onChangeText={(t) => onCambiar(t.replace(/\D/g, ''))} keyboardType="number-pad"
+        style={{ width: 52, paddingHorizontal: 0, textAlign: 'center', color: colorSistema.texto, fontSize: 20, fontWeight: '800', fontVariant: ['tabular-nums'] }}
         accessibilityLabel={`Cuántos ${etiqueta}`} />
       <Boton d={1} texto="+" />
     </View>

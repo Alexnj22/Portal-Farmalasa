@@ -21,6 +21,17 @@ solo la constante, y `npm run gate:version` lo verifica en cada commit.
 
 ---
 
+## v2.1514.1 — Auditoría visual de la app: hojas, vacíos y estados con una sola forma
+
+App del personal — auditoría visual completa (222 pantallas capturadas en el simulador de iPhone, más pruebas puntuales en Android):
+
+- **Hojas**: las 32 hojas que se abren desde una pantalla (editar, detalle, elegir…) tenían cada una su propio encabezado —título grande que se iba con el contenido y un «Cerrar», «Cancelar» o «Listo» en texto—. Ahora todas usan `EncabezadoDeHoja`: en iPhone, barra fija con el botón de vidrio ✕ (o ‹ cuando vuelve a otra hoja) y el título centrado; en Android, la barra superior de Material, debajo de la barra de estado.
+- **Pantallas sin dato**: ~45 pantallas que no encontraban el registro, no podían leerlo o no correspondían al cargo mostraban el aviso pegado a la hora y el nombre técnico de la ruta como título. Ahora usan `PantallaSinDato`: barra con su título y el vacío con ícono.
+- **Vacíos**: unas 80 listas vacías mostraban una línea gris suelta, un aviso o un bloque armado a mano. Ahora todas usan `Vacio`: el vacío completo con ícono cuando la lista es la pantalla, y una sola línea cuando está dentro de una tarjeta.
+- **Modo claro**: seis fondos y la barra «Listo» del teclado numérico estaban fijos en oscuro y no se veían en modo claro.
+- **Teclado numérico**: seis campos numéricos (pauta y monto de marketing, promociones, cantidades de traslado) no traían «Listo» en iPhone y el teclado no se podía cerrar. Ahora usan el campo común.
+- **Filtros**: las marcas del feed de marketing y la vista de la gráfica de horarios pasan a `Subfiltro`, el subfiltro común.
+
 ## v2.1514.0 — Faltantes: «No apareció» lo cierra supervisión, dice a cargo de quién y se descuenta
 
 Decisiones del usuario tras la auditoría de traslados del 2026-11-12 (puntos 2, 3 y 4).

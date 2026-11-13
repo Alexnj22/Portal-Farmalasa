@@ -12,6 +12,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { colorSistema } from '../../Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
@@ -61,13 +62,8 @@ export default function PedirBaja({ lotes, puedeConfigurar, onCerrar, onGuardado
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={guardando ? undefined : onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Pedir una baja" onCerrar={onCerrar} ocupado={guardando} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 4 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Pedir una baja</Text>
-            <Pressable onPress={onCerrar} disabled={guardando} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           <Seccion titulo="Lote">
             {loteSel ? (
               <Pressable onPress={() => setBaja((b) => ({ ...b, lote: '' }))} style={{ minHeight: 44, justifyContent: 'center' }}>

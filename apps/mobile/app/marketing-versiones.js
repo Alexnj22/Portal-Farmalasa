@@ -15,7 +15,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Tocable from '../componentes/Tocable';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -38,10 +38,7 @@ export default function VersionesDelDiseno() {
 
   if (!pieza || !ultima) {
     return (
-      <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Versiones' }} />
-        <View style={{ padding: 16 }}><Aviso tono="freno" texto="Ese diseño ya no está disponible." /></View>
-      </>
+      <PantallaSinDato titulo={'Versiones'} texto="Ese diseño ya no está disponible." />
     );
   }
 

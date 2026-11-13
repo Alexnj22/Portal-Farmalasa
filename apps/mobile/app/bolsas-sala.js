@@ -37,7 +37,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { MenuDeFiltros } from '../componentes/Filtros';
 import Vidrio from '../componentes/Vidrio';
 import Identidad from '../componentes/Identidad';
@@ -249,7 +249,7 @@ export default function BolsasDeLaSala() {
                 })}
               </Seccion>
             ) : datos && !faltan.length ? (
-              <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 12 }}>No hay bolsas esperando el retiro.</Text>
+              <Vacio titulo="No hay bolsas esperando el retiro." />
             ) : null}
             {puedeGuardar && enSala.length ? (
               <View style={{ gap: 10 }}>

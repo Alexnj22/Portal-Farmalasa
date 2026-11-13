@@ -33,7 +33,7 @@ import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Avatar from '../../componentes/Avatar';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -104,7 +104,7 @@ export default function PiezaDeMarketing() {
   const puedeEnviarSola = puedeEditar && pieza?.estado === 'finalizado';
   const imagenes = useMemo(() => (pieza?.archivos || []).filter((a) => !a.reemplazado && tipoDeArchivo(a) === 'imagen' && firmas.get(a.url)), [pieza, firmas]);
 
-  if (!pieza) return <View style={{ margin: 16 }}><Aviso tono="freno" texto="No se encontró la pieza. Vuelve a abrirla desde el calendario." /></View>;
+  if (!pieza) return <PantallaSinDato texto="No se encontró la pieza. Vuelve a abrirla desde el calendario." />;
   const est = estadoDe(pieza.estado);
 
   const correr = async (fn, exito, nuevoEstado) => {

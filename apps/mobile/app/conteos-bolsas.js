@@ -17,7 +17,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Cargando, Vacio, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
@@ -105,8 +105,7 @@ export default function ConteosBolsas() {
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   if (!verMontos) {
-    return (<><Stack.Screen options={{ ...BARRA_FIJA, title: 'Conteos' }} />
-      <View style={{ padding: 20 }}><Aviso tono="freno" texto="Los conteos se ven con el permiso de ver los montos de las bolsas." /></View></>);
+    return <PantallaSinDato titulo="Conteos" texto="Los conteos se ven con el permiso de ver los montos de las bolsas." />;
   }
   return (
     <>
@@ -120,7 +119,7 @@ export default function ConteosBolsas() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         <View style={{ marginHorizontal: 16, gap: 10 }}>
           {lista == null ? <Cargando />
-            : !lista.length ? <Aviso texto="Sin conteos en estas fechas." />
+            : !lista.length ? <Vacio titulo="Sin conteos en estas fechas." />
               : (<>
                 <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 4, fontVariant: ['tabular-nums'] }}>
                   {`${lista.length} ${lista.length === 1 ? 'conteo' : 'conteos'} · ${formatMoney(totales.contado)} contado${totales.abiertas ? ` · ${totales.abiertas} sin resolver` : ''}`}

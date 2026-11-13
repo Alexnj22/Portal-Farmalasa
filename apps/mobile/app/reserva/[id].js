@@ -28,7 +28,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { MARCA } from '../../componentes/inicio/marca';
 import { Accion, colorDeTono } from '../../componentes/reservas/piezas';
@@ -77,10 +77,7 @@ export default function DetalleDeReserva() {
 
   if (!r) {
     return (
-      <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Reserva' }} />
-        <View style={{ padding: 16 }}>{error ? <Aviso tono="cuidado" texto={error} /> : <ActivityIndicator />}</View>
-      </>
+      <PantallaSinDato titulo={'Reserva'} texto={error} cargando={!error} />
     );
   }
 

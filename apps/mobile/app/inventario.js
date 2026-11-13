@@ -41,7 +41,7 @@ import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
@@ -134,7 +134,7 @@ function Tarjeta({ g, conSala, vencidas }) {
                 <>
                   <Lotes titulo={`LOTES EN ${String(ERP_NAMES[g.erp_sucursal_id] ?? 'LA SALA').toUpperCase()}`} filas={lotes.regulares} />
                   <Lotes titulo="EN EL ÁREA DE VENCIDOS" filas={lotes.vencidos} color={MARCA.rojo} />
-                  {!lotes.regulares.length && !lotes.vencidos.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin lotes con existencia.</Text> : null}
+                  {!lotes.regulares.length && !lotes.vencidos.length ? <Vacio enSeccion>Sin lotes con existencia.</Vacio> : null}
                 </>
               )}
               <Pressable onPress={ficha} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 36, justifyContent: 'center' }}>
@@ -320,11 +320,7 @@ export default function Inventario() {
         {cargando ? <Cargando /> : null}
         {!cargando && quedan ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde onPress={() => setPagina((p) => p + 1)} /></View> : null}
         {!cargando && !datos.filas.length && !error ? (
-          <View style={{ alignItems: 'center', paddingTop: 40, gap: 6 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>
-              {vista === 'vencidos' ? 'Nada vencido' : vista === 'proximos' ? 'Nada vence en seis meses' : 'Sin productos'}
-            </Text>
-          </View>
+          <Vacio titulo={vista === 'vencidos' ? 'Nada vencido' : vista === 'proximos' ? 'Nada vence en seis meses' : 'Sin productos'} tono={vista === 'vencidos' || vista === 'proximos' ? 'bien' : 'neutro'} />
         ) : null}
       </ScrollView>
     </>

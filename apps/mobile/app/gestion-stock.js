@@ -43,6 +43,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { compartirCsv } from '../componentes/fiscal/csv';
@@ -211,9 +212,7 @@ function SinVenta({ sala, busqueda, filtro, puedeArmar, onExportar, onConMinmax,
         );
       })}
       {!grupos.length && !error ? (
-        <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600', textAlign: 'center', marginTop: 40, marginHorizontal: 20 }}>
-          {busqueda || filtro !== 'todos' || haciaDonde ? 'Nada con ese filtro' : `Todo se vende en ${nombreSala}: nada lleva seis meses parado`}
-        </Text>
+        <Vacio titulo={busqueda || filtro !== 'todos' || haciaDonde ? 'Nada con ese filtro' : `Todo se vende en ${nombreSala}`} detalle={busqueda || filtro !== 'todos' || haciaDonde ? undefined : 'Nada lleva seis meses parado.'} tono={busqueda || filtro !== 'todos' || haciaDonde ? 'neutro' : 'bien'} />
       ) : null}
     </>
   );
@@ -248,14 +247,9 @@ function Ajuste({ fila, sala, puedePedir, puedeAplicar, descartado, onCerrar, on
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={fila.product_name} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={2}>{fila.product_name}</Text>
-              <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-                <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-              </Pressable>
-            </View>
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }}>
               <Pildora texto={s.label} color={COLOR_NIVEL[s.level]} />
               <Pildora texto={s.reason} color={colorSistema.texto2} />

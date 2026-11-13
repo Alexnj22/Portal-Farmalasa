@@ -31,6 +31,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -65,15 +66,9 @@ function Ficha({ p, onCerrar, puedeCerrar, puedeBloquear, onCerrarConexion, onRe
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={shortEmployeeName({ name: p.empleado || p.cuenta })} subtitulo={[p.cargo, p.cuenta].filter(Boolean).join(' · ')} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Avatar empleado={{ id: p.ficha_id, name: p.empleado, photo: p.foto }} tamano={48} />
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{shortEmployeeName({ name: p.empleado || p.cuenta })}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{[p.cargo, p.cuenta].filter(Boolean).join(' · ')}</Text>
-            </View>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Pressable>
-          </View>
+          <Avatar empleado={{ id: p.ficha_id, name: p.empleado, photo: p.foto }} tamano={48} />
           {bloqueo ? <Aviso tono="freno" texto={`${bloqueo}${p.bloqueo_motivo ? ` — ${p.bloqueo_motivo}` : ''}`} /> : null}
           {p.conexiones.length > MUCHAS ? <Aviso tono="cuidado" texto={`Tiene ${p.conexiones.length} conexiones abiertas: puede haber sesiones olvidadas.`} /> : null}
 

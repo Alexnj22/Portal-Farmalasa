@@ -19,7 +19,7 @@ import { formatearNit, formatearNrc } from '@nucleo/utils/nitUtils';
 import { hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
@@ -152,9 +152,7 @@ export default function ClientesTorogoz() {
           <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde color={PETROLEO} onPress={() => setCuantos((n) => n + POR_PAGINA)} /></View>
         ) : null}
         {clientes !== null && !filtrados.length && !error ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 32, fontSize: 15, marginHorizontal: 24 }}>
-            {hayFiltro ? 'Ningún cliente coincide con la búsqueda o el filtro.' : puedeVender ? 'Sin clientes. Agrega el primero con «Nuevo cliente».' : 'Sin clientes.'}
-          </Text>
+          <Vacio titulo={hayFiltro ? 'Ningún cliente coincide con la búsqueda o el filtro.' : puedeVender ? 'Sin clientes. Agrega el primero con «Nuevo cliente».' : 'Sin clientes.'} />
         ) : null}
       </ScrollView>
     </>

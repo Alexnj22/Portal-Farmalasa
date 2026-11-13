@@ -28,6 +28,7 @@ import EstadoDeDatos from '../../../componentes/EstadoDeDatos';
 import { anotar, leerUso } from '../../../componentes/inicio/uso';
 import { MARCA, PETROLEO } from '../../../componentes/inicio/marca';
 import IconoFijo from '../../../componentes/IconoFijo';
+import { Vacio } from '../../../componentes/formulario/Piezas';
 
 // Lo que ya vive en otra pestaña (Inicio, Avisos, Yo) no se repite acá.
 // «Mis avisos» vuelve al Menú (2026-11-11): vivía dentro de la pestaña
@@ -129,10 +130,7 @@ export default function Menu() {
               </View>
             </Vidrio>
           ) : (
-            <View style={{ alignItems: 'center', paddingTop: 60, gap: 6 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>Nada con ese nombre</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>Prueba con otra palabra, o revisa si tu cargo tiene ese módulo.</Text>
-            </View>
+            <Vacio titulo="Nada con ese nombre" detalle="Prueba con otra palabra, o revisa si tu cargo tiene ese módulo." icono="Search" />
           )}
         </ScrollView>
       </>

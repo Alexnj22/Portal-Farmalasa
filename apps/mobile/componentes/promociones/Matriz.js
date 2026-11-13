@@ -12,7 +12,7 @@ import { compartirCsv } from '../fiscal/csv';
 import { fallo } from '../Progreso';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, Cargando } from '../formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
 import Kpi, { FilaDeKpis } from '../inicio/Kpi';
@@ -84,7 +84,7 @@ export default function Matriz({ promocionId }) {
           {datos.laboratorios.map((l) => <Pildora key={l.id} texto={l.nombre} color={colorSistema.texto2} />)}
         </View>
       ) : null}
-      {!salas.length ? <Aviso texto="Ninguna sala tiene cuánto vender todavía: se escriben al editar la promoción." /> : null}
+      {!salas.length ? <Vacio titulo="Ninguna sala tiene cuánto vender todavía." detalle="Se escriben al editar la promoción." /> : null}
       {salas.map((s) => {
         const alcanzo = s.nivel != null;
         return (

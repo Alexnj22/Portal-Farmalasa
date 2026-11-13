@@ -32,7 +32,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import BuscadorProducto from '../componentes/compras/BuscadorProducto';
 import { MARCA } from '../componentes/inicio/marca';
@@ -74,10 +74,7 @@ export default function ResolverReservaNativo() {
 
   if (!r) {
     return (
-      <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Resolver' }} />
-        <View style={{ padding: 16 }}>{error ? <Aviso tono="cuidado" texto={error} /> : <ActivityIndicator />}</View>
-      </>
+      <PantallaSinDato titulo={'Resolver'} texto={error} cargando={!error} />
     );
   }
 

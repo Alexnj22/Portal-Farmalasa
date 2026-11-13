@@ -5,15 +5,15 @@
 // el núcleo (`existenciasPorProducto`) la suma por producto y sala. Sólo
 // lectura. La abren Inventario y la venta en ruta.
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActivityIndicator, Modal, ScrollView, Text, View } from 'react-native';
 import { buscarInventarioGlobalV2 } from '@nucleo/data/inventory';
 import { ERP_NAMES, ERP_ORDEN } from '@nucleo/constants/erp';
 import { existenciasPorProducto } from '@nucleo/utils/distribucionBodega';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { colorSistema } from '../../Formulario';
 import { Aviso, Campo, Seccion } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
 import { Chapa } from './piezas';
 
 export default function Existencias({ visible = true, terminoInicial = '', onCerrar }) {
@@ -48,13 +48,8 @@ export default function Existencias({ visible = true, terminoInicial = '', onCer
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Existencias en las sucursales" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 4 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Existencias en las sucursales</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Listo</Text>
-            </Pressable>
-          </View>
           <Campo multiline={false} value={termino} autoFocus autoCorrect={false} placeholder="Producto (nombre o código)" onChangeText={setTermino}
             clearButtonMode="while-editing" />
           {cargando ? <ActivityIndicator /> : null}

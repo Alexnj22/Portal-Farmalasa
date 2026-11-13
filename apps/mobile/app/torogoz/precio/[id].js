@@ -22,7 +22,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hoySV } from '@nucleo/utils/fecha';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema, Formulario } from '../../../componentes/Formulario';
-import { BotonGrande, Campo, Seccion } from '../../../componentes/formulario/Piezas';
+import { BotonGrande, Campo, Seccion, Vacio } from '../../../componentes/formulario/Piezas';
 import { CampoConRotulo } from '../../../componentes/personas/Formulario';
 import Fecha from '../../../componentes/formulario/Fecha';
 import { fallo, listo, trabajando } from '../../../componentes/Progreso';
@@ -175,7 +175,7 @@ export default function PrecioTorogoz() {
                 <Campo multiline={false} value={texto} onChangeText={setTexto} autoCorrect={false} autoFocus
                   placeholder="Nombre, principio activo o código de barras" />
                 {buscando ? <ActivityIndicator /> : null}
-                {!buscando && buscado.trim().length >= 2 && !opciones.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Nada con ese texto.</Text> : null}
+                {!buscando && buscado.trim().length >= 2 && !opciones.length ? <Vacio enSeccion>Nada con ese texto.</Vacio> : null}
                 {buscado.trim().length < 2 ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Escribe al menos dos letras.</Text> : null}
                 {opciones.map((p, i) => (
                   <Pressable key={p.id} onPress={() => { Haptics.selectionAsync().catch(() => {}); setProducto(p); }}

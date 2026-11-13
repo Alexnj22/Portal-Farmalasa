@@ -8,7 +8,7 @@
 // globo aparece al tocar y acá el cuadro se vacía sin esperar a la red, como en
 // la app de puntos. Con el cuadro vacío, el botón es un micrófono (`Voz.js`).
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { ImageManipulator, SaveFormat } from 'expo-image-manipulator';
 import * as Haptics from 'expo-haptics';
@@ -28,6 +28,7 @@ import { colorSistema } from '../Formulario';
 import { BotonGrande, Campo, Seccion } from '../formulario/Piezas';
 import Tocable from '../Tocable';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import BuscadorProducto from '../compras/BuscadorProducto';
 import { MARCA } from '../inicio/marca';
 import { iconoDe } from '../../tema/iconos';
@@ -51,12 +52,7 @@ function Hoja({ titulo, abierta, onCerrar, children }) {
   return (
     <Modal visible={abierta} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
-        <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, paddingTop: Platform.OS === 'ios' ? 20 : 16 }}>
-          <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{titulo}</Text>
-          <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-            <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-          </Pressable>
-        </View>
+        <EncabezadoDeHoja titulo={titulo} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 16, paddingTop: 0, gap: 12, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">{children}</ScrollView>
       </ConAurora>
     </Modal>

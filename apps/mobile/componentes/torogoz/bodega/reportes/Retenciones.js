@@ -10,7 +10,7 @@ import { archivoDeRetencion, listadosDeRetenciones, resumenFiscal, totalesConsum
 import { mesSV, rangoDelMes } from '@nucleo/utils/fecha';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { colorSistema } from '../../../Formulario';
-import { Aviso, Seccion, Cargando } from '../../../formulario/Piezas';
+import { Aviso, Seccion, Cargando, Vacio } from '../../../formulario/Piezas';
 import Kpi, { FilaDeKpis } from '../../../inicio/Kpi';
 import { MARCA } from '../../../inicio/marca';
 import PasoDeMes from '../../../PasoDeMes';
@@ -65,7 +65,7 @@ export default function Retenciones() {
               </View>
               <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800', fontVariant: ['tabular-nums'] }}>{formatMoney(l.total)}</Text>
             </View>
-            {l.n === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin documentos este mes.</Text> : (
+            {l.n === 0 ? <Vacio enSeccion>Sin documentos este mes.</Vacio> : (
               <>
                 {l.filas.slice(0, 6).map((f, i) => (
                   <View key={i} style={{ flexDirection: 'row', gap: 8, paddingTop: 8, borderTopWidth: 0.5, borderTopColor: colorSistema.separador }}>

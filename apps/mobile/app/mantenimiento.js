@@ -28,6 +28,7 @@ import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
 import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -110,11 +111,8 @@ function EditarCandado({ k, lock, onCerrar, onGuardar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={info(k).label} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{info(k).label}</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Pressable>
-          </View>
           {lock ? <Aviso texto={`En mantenimiento · ${tiempoRestante(lock.expires_at)}${lock.locked_by_name ? ` · lo puso ${lock.locked_by_name}` : ''}`} /> : null}
           <Seccion titulo="Motivo" pie="Lo ven quienes intenten editar mientras dure.">
             <Campo value={motivo} onChangeText={setMotivo} placeholder="Ej. Reconteo de inventario" />

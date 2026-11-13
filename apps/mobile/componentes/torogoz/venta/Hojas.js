@@ -10,9 +10,9 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { rotuloTipoCliente } from '@nucleo/utils/distribucionComun';
 import { totalDePedido } from '@nucleo/utils/distribucionMotor';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { colorSistema } from '../../Formulario';
 import { Campo } from '../../formulario/Piezas';
-import { MARCA } from '../../inicio/marca';
 import { PETROLEO } from './Piezas';
 
 /** El marco de una hoja: título, «Cerrar» y el contenido. */
@@ -20,16 +20,8 @@ export function Hoja({ visible = true, titulo, subtitulo, onCerrar, cerrarTexto 
   return (
     <Modal visible={visible} animationType="slide" presentationStyle="pageSheet" onRequestClose={bloqueada ? undefined : onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={titulo} subtitulo={subtitulo} onCerrar={onCerrar} atras={cerrarTexto === 'Volver'} ocupado={bloqueada} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 8, gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={2}>{titulo}</Text>
-              {subtitulo ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }} numberOfLines={2}>{subtitulo}</Text> : null}
-            </View>
-            <Pressable onPress={onCerrar} disabled={bloqueada} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center', opacity: bloqueada ? 0.4 : 1 }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>{cerrarTexto}</Text>
-            </Pressable>
-          </View>
           {children}
         </KeyboardAvoidingView>
       </ConAurora>

@@ -19,7 +19,7 @@ import { rangoDeDiasDelDeposito, totalesDeDepositos } from '@nucleo/utils/deposi
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { useMasAlFinal } from '../componentes/ListaPaginada';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import Vidrio from '../componentes/Vidrio';
@@ -51,8 +51,7 @@ export default function DepositosBanco() {
   useEffect(() => { cargar(); }, [cargar]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
   if (!verMontos) {
-    return (<><Stack.Screen options={{ ...BARRA_FIJA, title: 'Depósitos' }} />
-      <View style={{ padding: 20 }}><Aviso tono="freno" texto="Los depósitos se ven con el permiso de ver los montos de las bolsas." /></View></>);
+    return <PantallaSinDato titulo="Depósitos" texto="Los depósitos se ven con el permiso de ver los montos de las bolsas." />;
   }
 
   return (

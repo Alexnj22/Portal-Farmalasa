@@ -34,6 +34,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { ErrorConReintento, useColumnas } from '../componentes/ListaPaginada';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -55,17 +56,9 @@ function Editar({ lab, sala, nombreSala, inicial, onCerrar, onGuardado }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={lab.nombre} subtitulo={`Ubicación en ${nombreSala}`} onCerrar={onCerrar} />
         <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <ScrollView contentContainerStyle={{ padding: 20, gap: 16 }} keyboardShouldPersistTaps="handled">
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }} numberOfLines={2}>{lab.nombre}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`Ubicación en ${nombreSala}`}</Text>
-              </View>
-              <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-                <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-              </Pressable>
-            </View>
             <Seccion titulo="En la sala">
               <Segmentos activa={tipo} onCambiar={setTipo} opciones={[{ id: 'estante', label: 'Estante' }, { id: 'vitrina', label: 'Vitrina' }]} />
               <Campo multiline={false} value={tipo === 'vitrina' ? d.vitrina : d.estante} onChangeText={campo(tipo)} placeholder={tipo === 'vitrina' ? 'Número de vitrina' : 'Número de estante'} autoCapitalize="characters" />

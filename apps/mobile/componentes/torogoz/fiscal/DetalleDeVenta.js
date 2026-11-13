@@ -7,7 +7,7 @@ import { leerDocumento } from '@nucleo/utils/distribucionDocumento';
 import { nombreFormaPago } from '@nucleo/utils/distribucionFacturacion';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { colorSistema } from '../../Formulario';
-import { Dato, Seccion } from '../../formulario/Piezas';
+import { Dato, Seccion, Vacio } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
 
 export default function DetalleDeVenta({ dte, pagos }) {
@@ -39,7 +39,7 @@ export default function DetalleDeVenta({ dte, pagos }) {
 
       <Seccion titulo="Pago">
         {pagos == null ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Cargando…</Text> : null}
-        {pagos?.length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin pagos registrados.</Text> : null}
+        {pagos?.length === 0 ? <Vacio enSeccion>Sin pagos registrados.</Vacio> : null}
         {(pagos ?? []).map((p, i) => {
           const recibido = p.forma === '01' && p.efectivo_recibido != null ? Number(p.efectivo_recibido) : null;
           return (

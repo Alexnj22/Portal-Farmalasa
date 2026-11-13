@@ -15,7 +15,7 @@ import { MIN_LETRAS_BUSQUEDA, resumirPorProducto } from '@nucleo/utils/consultaI
 import { claveOrigen, diasHasta, fmtVence } from '@nucleo/utils/pedirTraslado';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -46,7 +46,7 @@ function Buscador({ onElegir, enLaSolicitud, onRevisar }) {
       {estado.cargando ? <ActivityIndicator /> : null}
       {estado.error ? <Aviso tono="freno" texto="No se pudo buscar. Intenta de nuevo." /> : null}
       {!estado.cargando && aplicado.length >= MIN_LETRAS_BUSQUEDA && !estado.productos.length && !estado.error
-        ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Ninguna sala tiene un producto con ese nombre.</Text> : null}
+        ? <Vacio titulo="Ninguna sala tiene un producto con ese nombre." /> : null}
       {estado.productos.map((item) => (
         <Pressable key={String(item.erp_product_id ?? item.descripcion)} accessibilityRole="button"
           onPress={() => { Haptics.selectionAsync().catch(() => {}); onElegir(item); }}

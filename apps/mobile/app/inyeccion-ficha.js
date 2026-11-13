@@ -18,7 +18,7 @@ import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { leer } from '../componentes/comercial/elegido';
@@ -84,7 +84,7 @@ export default function InyeccionFicha() {
               <Seccion titulo="Cliente" pie="Con su ficha, la aplicación queda en su historial y la ve en su app.">
                 <Campo multiline={false} autoFocus value={texto} onChangeText={setTexto} placeholder="Nombre, DUI o teléfono" accessibilityLabel="Buscar la ficha del cliente" />
                 {buscando ? <ActivityIndicator /> : null}
-                {!buscando && q.trim().length >= 3 && !resultados.length ? <Aviso texto="Ninguna ficha coincide." /> : null}
+                {!buscando && q.trim().length >= 3 && !resultados.length ? <Vacio enSeccion>Ninguna ficha coincide.</Vacio> : null}
                 {resultados.map((c, i) => (
                   <Pressable key={c.id} accessibilityRole="button" onPress={() => { Haptics.selectionAsync().catch(() => {}); setFicha(c); }}
                     style={({ pressed }) => ({ minHeight: 48, justifyContent: 'center', paddingTop: i ? 8 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, opacity: pressed ? 0.6 : 1 })}>

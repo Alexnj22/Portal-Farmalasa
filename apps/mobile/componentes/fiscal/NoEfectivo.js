@@ -259,7 +259,7 @@ export default function NoEfectivo({ sala, nombreSala, salas = [], texto, canEdi
               {facturasConf && confirmadosFiltrados.length > confVisibles.length ? (
                 <BotonGrande texto={`Ver más · quedan ${confirmadosFiltrados.length - confVisibles.length}`} borde color={MARCA.azulClaro} onPress={() => setConfPaginas((p) => p + 1)} />
               ) : null}
-              {facturasConf && !confirmadosFiltrados.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin pagos confirmados con ese filtro.</Text> : null}
+              {facturasConf && !confirmadosFiltrados.length ? <Vacio enSeccion>Sin pagos confirmados con ese filtro.</Vacio> : null}
             </>
           ) : null}
         </View>

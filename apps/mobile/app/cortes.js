@@ -259,12 +259,7 @@ export default function Cortes() {
             ) : null}
           </>
         ) : (
-          <View style={{ alignItems: 'center', paddingTop: 50, gap: 6, marginHorizontal: 24 }}>
-            <Vacio>
-              {texto.trim() ? 'Ningún corte con esa búsqueda' : estado === 'PENDIENTE' ? 'Nada por confirmar' : 'Sin cortes con estos filtros'}
-            </Vacio>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Desliza hacia abajo para actualizar.</Text>
-          </View>
+          <Vacio titulo={texto.trim() ? 'Ningún corte con esa búsqueda' : estado === 'PENDIENTE' ? 'Nada por confirmar' : 'Sin cortes con estos filtros'} detalle="Desliza hacia abajo para actualizar." />
         )}
       </ScrollView>
     </>

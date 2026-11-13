@@ -12,7 +12,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -67,7 +67,7 @@ export default function ProveedoresTorogoz() {
           </Pressable>
         ))}
         {lista !== null && !visibles.length && !error ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 32, fontSize: 15 }}>{buscar.trim() ? 'Ninguno coincide.' : 'Sin proveedores todavía.'}</Text>
+          <Vacio titulo={buscar.trim() ? 'Ninguno coincide.' : 'Sin proveedores todavía.'} icono={buscar.trim() ? 'Search' : undefined} />
         ) : null}
       </ScrollView>
     </>

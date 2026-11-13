@@ -21,7 +21,7 @@ import { leerCajaNegra, limpiarCajaNegra } from '../plataforma/cajaNegra';
 import { rutasDeFondo } from '../plataforma/rastreoDeFondo';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { BotonGrande, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { BotonGrande, Dato, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 
 const PERMISO = { granted: 'Concedido', denied: 'Negado', undetermined: 'Sin preguntar' };
@@ -79,7 +79,7 @@ export default function PruebaIos() {
         </Seccion>
 
         <Seccion titulo={`Caja negra · ${registro.length} sucesos`} pie="Los últimos sucesos de la app en este rato (se borran al cerrarla del todo). Si algo falló, compártela entera: es lo que hace falta para diagnosticarlo.">
-          {!registro.length ? <Text style={{ color: colorSistema.texto2, fontStyle: 'italic' }}>Sin sucesos registrados.</Text> : null}
+          {!registro.length ? <Vacio enSeccion>Sin sucesos registrados.</Vacio> : null}
           {[...registro].reverse().slice(0, 60).map((e, i) => (
             <View key={i} style={{ borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador, paddingTop: i ? 6 : 0 }}>
               <Text style={{ color: esFallo(e.tipo) ? MARCA.rojo : colorSistema.texto, fontSize: 13, fontWeight: '700' }}>{e.tipo}</Text>

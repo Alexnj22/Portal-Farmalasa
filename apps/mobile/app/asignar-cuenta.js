@@ -14,7 +14,7 @@ import { puntosTexto } from '@nucleo/utils/puntosTexto';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -44,7 +44,7 @@ export default function AsignarCuenta() {
     return () => { vivo = false; clearTimeout(t); };
   }, [termino, cuenta]);
 
-  if (!cuenta) return <Aviso tono="freno" texto="No se pudo leer la cuenta." />;
+  if (!cuenta) return <PantallaSinDato texto="No se pudo leer la cuenta." />;
   const ficha = fichas.find((f) => f.id === elegida) ?? null;
   const listoParaAsignar = puedeAsignar && ficha && nota.trim().length >= 5 && !guardando;
 

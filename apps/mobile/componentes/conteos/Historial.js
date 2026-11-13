@@ -6,7 +6,7 @@
 // cantidad del sistema sólo viene cuando este cargo puede verla: el ciego no
 // pasa por acá, porque la base no la manda.
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Modal, ScrollView, Text, View } from 'react-native';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { EVENTO_DE_CONTEO } from '@nucleo/utils/conteoDeInventario';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
@@ -14,6 +14,7 @@ import { fechaTexto } from '@nucleo/utils/fecha';
 import { fmtHM } from '@nucleo/utils/tableroDePedidos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { colorSistema } from '../Formulario';
 import { Aviso, Cargando, Vacio } from '../formulario/Piezas';
 import { FONDO, Pildora } from '../avisos/Piezas';
@@ -39,18 +40,8 @@ export default function Historial({ item, simple = false, onCerrar }) {
   return (
     <Modal visible={!!item} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={item?.product_nombre} subtitulo={`Historial · ${simple ? (item?.presentacion || 'sin presentación') : (item?.lote ? `lote ${item.lote}` : 'sin lote')}`} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 10 }}>
-            <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>{item?.product_nombre}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>
-                {`Historial · ${simple ? (item?.presentacion || 'sin presentación') : (item?.lote ? `lote ${item.lote}` : 'sin lote')}`}
-              </Text>
-            </View>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-            </Pressable>
-          </View>
           {error ? <Aviso tono="freno" texto={error} /> : null}
           {filas == null ? <Cargando /> : !filas.length ? (
             <Vacio enSeccion>Sin registros todavía.</Vacio>

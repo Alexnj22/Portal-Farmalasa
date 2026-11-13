@@ -56,7 +56,7 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { CampoConRotulo, CampoFecha, Elegir } from '../../componentes/personas/Formulario';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
@@ -342,8 +342,8 @@ export default function EditarEmpleado() {
     }
   };
 
-  if (!puedeEditar) return <Aviso tono="freno" texto="Tu cargo no puede dar de alta ni editar fichas." />;
-  if (!esAlta && !emp) return <Aviso tono="freno" texto="No se encontró la ficha." />;
+  if (!puedeEditar) return <PantallaSinDato texto="Tu cargo no puede dar de alta ni editar fichas." />;
+  if (!esAlta && !emp) return <PantallaSinDato texto="No se encontró la ficha." />;
 
   // La ficha de las órdenes de descuento: la que se edita, o la que se enlaza en el alta.
   const idDeFicha = emp?.id || form.enlazar_con_id || null;

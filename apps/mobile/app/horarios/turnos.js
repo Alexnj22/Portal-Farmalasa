@@ -35,6 +35,7 @@ import { colorSistema } from '../../componentes/Formulario';
 import { Aviso, BotonGrande, Seccion, Vacio } from '../../componentes/formulario/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import ConAurora from '../../componentes/ConAurora';
+import EncabezadoDeHoja from '../../componentes/EncabezadoDeHoja';
 import { MARCA, FONDO_CONTROL } from '../../componentes/inicio/marca';
 import Hora from '../../componentes/personas/Hora';
 import { fallo, listo } from '../../componentes/Progreso';
@@ -185,12 +186,8 @@ export default function Turnos() {
       <Modal visible={!!form} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setForm(null)}>
         {form ? (
           <ConAurora>
+            <EncabezadoDeHoja titulo={form.grupo ? 'Editar turno' : 'Nuevo turno'} onCerrar={() => setForm(null)} />
             <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-                <Pressable onPress={() => setForm(null)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>Cancelar</Text></Pressable>
-                <Text style={{ flex: 1, textAlign: 'center', color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>{form.grupo ? 'Editar turno' : 'Nuevo turno'}</Text>
-                <View style={{ width: 70 }} />
-              </View>
               <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
                 <Seccion titulo="Nombre" pie={`Si lo dejas vacío se llama «${revision?.autoName}».`}>
                   <TextInput value={form.name} onChangeText={cambiar('name')} placeholder={revision?.autoName} placeholderTextColor={colorSistema.texto2} maxLength={60}

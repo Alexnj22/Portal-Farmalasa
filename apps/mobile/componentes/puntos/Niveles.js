@@ -26,7 +26,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
-import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando, Vacio } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Avatar from '../Avatar';
 import Vidrio from '../Vidrio';
@@ -149,7 +149,7 @@ export default function Niveles({ puedeEditar }) {
       ))}
 
       <Titulo>Historial de cambios</Titulo>
-      {!historial.length ? <Text style={{ color: colorSistema.texto2, fontSize: 15, marginHorizontal: 32 }}>Todavía no hay cambios.</Text> : null}
+      {!historial.length ? <Vacio enSeccion>Todavía no hay cambios.</Vacio> : null}
       {historial.slice(0, ver).map((h) => (
         <View key={h.id} style={{ marginHorizontal: 16 }}>
           <Vidrio radio={20}>

@@ -23,7 +23,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando, Vacio } from '../../formulario/Piezas';
 import { Pildora } from '../../avisos/Piezas';
 import Avatar from '../../Avatar';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
@@ -138,7 +138,7 @@ export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recar
             </Seccion>
 
             <Seccion titulo="Por forma de pago">
-              {formas.length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin pagos este día.</Text> : null}
+              {formas.length === 0 ? <Vacio enSeccion>Sin pagos este día.</Vacio> : null}
               {formas.map(([f, m], i) => <Dato key={f} primero={i === 0} rotulo={nombreFormaPago(f)} valor={formatMoney(m)} />)}
             </Seccion>
 
@@ -149,7 +149,7 @@ export default function CierreDelDia({ fecha, onFecha, onVendedor, emisor, recar
             ) : null}
 
             <Seccion titulo="Depósitos">
-              {d.depositos.length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin depósitos este día.</Text> : null}
+              {d.depositos.length === 0 ? <Vacio enSeccion>Sin depósitos este día.</Vacio> : null}
               {d.depositos.map((x, i) => <Dato key={x.id} primero={i === 0} rotulo={`${x.banco} · ${x.referencia}`} valor={formatMoney(Number(x.monto))} />)}
               {/* Sólo consulta (soloConsulta.js): depósitos y cierre del día se registran en el portal. */}
               {!cerrado && !ACCIONES_DE_DINERO ? <SeHaceEnElPortal texto="Los depósitos se registran desde el portal." /> : null}

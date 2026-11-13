@@ -39,6 +39,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { colorDeVariante } from '../componentes/colorDeVariante';
 import { compartirCsv } from '../componentes/sistema/csv';
 import { MARCA } from '../componentes/inicio/marca';
@@ -61,11 +62,8 @@ function Ficha({ l, quien, onCerrar }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Registro" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 16, paddingBottom: 60 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Registro</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}><Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text></Pressable>
-          </View>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Avatar empleado={quien ?? { name: l.user_name || 'Sistema' }} tamano={48} />
             <View style={{ flex: 1 }}>

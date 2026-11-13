@@ -9,7 +9,7 @@
 // (`tiposDeMarcaParaCorregir`): las del almuerzo y la lactancia sólo si el día
 // las tiene.
 import { useMemo, useState } from 'react';
-import { KeyboardAvoidingView, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Modal, ScrollView, Text, TextInput, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { buildCSTDate } from '@nucleo/data/attendanceAudit';
@@ -22,6 +22,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Dato, Opciones, Seccion } from '../formulario/Piezas';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { MARCA, FONDO_CONTROL } from '../inicio/marca';
 import { fallo, listo } from '../Progreso';
 import Hora from './Hora';
@@ -58,15 +59,10 @@ export default function CorregirMarcas({ objetivo, usuario, onCerrar }) {
     <Modal visible={!!objetivo} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => onCerrar(false)}>
       {objetivo ? (
         <ConAurora>
+          <EncabezadoDeHoja titulo="Corrección de marcaje"
+            subtitulo={`${shortEmployeeName(objetivo.persona)} · ${fechaTexto(objetivo.dia, { weekday: 'long', day: 'numeric', month: 'long' })}`}
+            onCerrar={() => onCerrar(false)} />
           <KeyboardAvoidingView behavior="padding" style={{ flex: 1 }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16 }}>
-              <Pressable onPress={() => onCerrar(false)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>Cancelar</Text></Pressable>
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>Corrección de marcaje</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${shortEmployeeName(objetivo.persona)} · ${fechaTexto(objetivo.dia, { weekday: 'long', day: 'numeric', month: 'long' })}`}</Text>
-              </View>
-              <View style={{ width: 70 }} />
-            </View>
             <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled">
               <Seccion titulo="Horario planificado">
                 {a.shiftStart

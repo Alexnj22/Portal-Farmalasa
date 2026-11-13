@@ -29,7 +29,7 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { hora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { colorSistema } from '../../Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando, Vacio } from '../../formulario/Piezas';
 import Avatar from '../../Avatar';
 import Vidrio from '../../Vidrio';
 import Kpi, { FilaDeKpis } from '../../inicio/Kpi';
@@ -151,7 +151,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       {liq === undefined ? <Cargando /> : null}
       {liq === null && !error ? (
-        <View style={{ marginHorizontal: 16 }}><Aviso tono="nota" texto={puedeConfigurar ? 'Nadie vendió ni cobró este día.' : 'Este día no vendiste ni cobraste.'} /></View>
+        <Vacio titulo={puedeConfigurar ? 'Nadie vendió ni cobró este día.' : 'Este día no vendiste ni cobraste.'} />
       ) : null}
 
       {liq ? (
@@ -191,7 +191,7 @@ export default function Liquidacion({ fecha, onFecha, vendedor, onVendedor, pued
             ) : null}
 
             <Seccion titulo="Por forma de pago">
-              {formas.length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin pagos este día.</Text> : null}
+              {formas.length === 0 ? <Vacio enSeccion>Sin pagos este día.</Vacio> : null}
               {formas.map((f, i) => (
                 <View key={f.forma} style={{ gap: 2, paddingTop: i ? 9 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                   <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>

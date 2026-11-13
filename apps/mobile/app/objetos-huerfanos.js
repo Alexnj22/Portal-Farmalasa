@@ -14,7 +14,7 @@ import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso } from '../componentes/formulario/Piezas';
+import { Aviso, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
@@ -77,7 +77,7 @@ export default function ObjetosHuerfanos() {
         <View style={{ marginHorizontal: 16 }}>
           <Aviso texto="Candidatos a código muerto (componentes, funciones o procesos sin quien los use). No se detectan solos: cada fila se agrega cuando se confirma un caso real; aquí sólo se marca su estado." />
         </View>
-        {filas && !visibles.length ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 24 }}>Sin objetos para este filtro.</Text> : null}
+        {filas && !visibles.length ? <Vacio titulo="Sin objetos para este filtro." /> : null}
         {visibles.map((f) => (
           <Pressable key={f.id} onPress={() => elegir(f)} disabled={!puedeEditar} style={{ marginHorizontal: 16 }}
             accessibilityRole={puedeEditar ? 'button' : undefined} accessibilityLabel={`${f.title}, ${ESTADOS_HUERFANO[f.status] || f.status}`}>

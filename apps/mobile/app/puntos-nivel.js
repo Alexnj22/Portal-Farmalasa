@@ -19,7 +19,7 @@ import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
 import EditorDePremios from '../componentes/puntos/EditorDePremios';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
@@ -44,10 +44,7 @@ export default function PuntosNivel() {
 
   if (!fila || !form) {
     return (
-      <>
-        <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Nivel' }} />
-        <View style={{ padding: 16 }}><Aviso tono="freno" texto="Vuelve a Puntos › Niveles y elige el nivel otra vez." /></View>
-      </>
+      <PantallaSinDato titulo={'Nivel'} texto="Vuelve a Puntos › Niveles y elige el nivel otra vez." />
     );
   }
 

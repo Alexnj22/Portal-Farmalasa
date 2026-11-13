@@ -14,7 +14,7 @@ import { hoySV } from '@nucleo/utils/fecha';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { fallo, listo } from '../../componentes/Progreso';
 
@@ -54,7 +54,7 @@ export default function NuevoPeriodo() {
     } },
   ]);
 
-  if (!puedeEditar) return <View style={{ padding: 20 }}><Aviso tono="cuidado" texto="Tu cargo no puede abrir quincenas." /></View>;
+  if (!puedeEditar) return <PantallaSinDato texto="Tu cargo no puede abrir quincenas." />;
   return (
     <>
       <Stack.Screen options={{ ...BARRA_NATIVA, title: 'Nueva quincena', headerLargeTitle: false }} />

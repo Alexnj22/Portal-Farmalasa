@@ -24,7 +24,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import AgregarProductos from '../../componentes/promociones/AgregarProductos';
@@ -33,7 +33,7 @@ import Tocable from '../../componentes/Tocable';
 
 function Numero({ valor, onCambiar, placeholder }) {
   return (
-    <TextInput value={String(valor ?? '')} onChangeText={onCambiar} keyboardType="decimal-pad" placeholder={placeholder} placeholderTextColor={colorSistema.placeholder}
+    <Campo multiline={false} value={String(valor ?? '')} onChangeText={onCambiar} keyboardType="decimal-pad" placeholder={placeholder} placeholderTextColor={colorSistema.placeholder}
       style={{ minWidth: 92, minHeight: 40, paddingHorizontal: 10, borderRadius: 10, backgroundColor: 'rgba(127,127,127,0.14)', color: colorSistema.texto, fontSize: 16, textAlign: 'right' }} />
   );
 }

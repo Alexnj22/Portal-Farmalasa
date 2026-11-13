@@ -18,7 +18,7 @@ import { formatMoney, formatQty } from '@nucleo/utils/formatNumber';
 import { fechaNumerica, hoySV } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import FijoArriba from '../../componentes/FijoArriba';
@@ -125,9 +125,7 @@ export default function ComprasTorogoz() {
           <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Ver más" borde color={PETROLEO} onPress={() => setCuantos((n) => n + POR_PAGINA)} /></View>
         ) : null}
         {compras !== null && !filtradas.length && !error ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 32, fontSize: 15, marginHorizontal: 24 }}>
-            {buscar.trim() ? 'Ninguna compra coincide con la búsqueda.' : VACIO[vista]}
-          </Text>
+          <Vacio titulo={buscar.trim() ? 'Ninguna compra coincide con la búsqueda.' : VACIO[vista]} />
         ) : null}
       </ScrollView>
     </>

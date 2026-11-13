@@ -29,7 +29,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { clearDraft, loadDraft, saveDraft } from '@nucleo/utils/draftUtils';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, Cargando, PantallaSinDato } from '../componentes/formulario/Piezas';
 import { MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 
@@ -130,8 +130,7 @@ export default function FinalizarEfectivo() {
   };
 
   if (!puedeContar) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Finalizar el efectivo' }} />
-      <View style={{ padding: 20 }}><Aviso tono="freno" texto="Finalizar el efectivo es de quien cuenta las bolsas." /></View></>);
+    return <PantallaSinDato titulo={'Finalizar el efectivo'} texto="Finalizar el efectivo es de quien cuenta las bolsas." />;
   }
 
   return (

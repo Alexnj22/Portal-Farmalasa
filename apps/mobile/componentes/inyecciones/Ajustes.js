@@ -28,7 +28,7 @@ import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Campo, Seccion, Cargando } from '../formulario/Piezas';
 import { Pildora } from '../avisos/Piezas';
 import Vidrio from '../Vidrio';
-import { MARCA } from '../inicio/marca';
+import { FONDO_CONTROL, MARCA } from '../inicio/marca';
 import { fallo, listo, trabajando } from '../Progreso';
 import { guardar } from '../comercial/elegido';
 import Tocable from '../Tocable';
@@ -79,7 +79,7 @@ function Precios() {
 function Contador({ valor, onCambiar }) {
   const boton = (t, d, off) => (
     <Tocable disabled={off} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(valor + d); }} accessibilityLabel={d < 0 ? 'Una menos' : 'Una más'}
-      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)', opacity: off ? 0.3 : pressed ? 0.5 : 1 })}>
+      style={({ pressed }) => ({ width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', backgroundColor: FONDO_CONTROL, opacity: off ? 0.3 : pressed ? 0.5 : 1 })}>
       <Text style={{ color: colorSistema.texto, fontSize: 20, fontWeight: '600' }}>{t}</Text>
     </Tocable>
   );

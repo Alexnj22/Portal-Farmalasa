@@ -27,6 +27,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { fechaHora12, hora12 } from '@nucleo/utils/hora';
 import { getSignedFileUrl } from '@nucleo/utils/storageFiles';
 import { colorSistema } from '../Formulario';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../formulario/Piezas';
 import { fallo, listo, trabajando } from '../Progreso';
 import { reimprimirEtiqueta, valeDeLaSalida } from '../cortes/papel';
@@ -144,15 +145,7 @@ export default function DetalleDeBolsa({ bolsa, sala, verMontos = true, onCerrar
     <Modal visible={!!bolsa} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       {bolsa ? (
         <View style={{ flex: 1, backgroundColor: colorSistema.fondo }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingTop: 18, paddingBottom: 10, gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{bolsa.folio}</Text>
-              <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>{`${sala} · corte del ${fechaNumerica(bolsa.fecha, { vacio: '' })} ${hora12(bolsa.hora)}`}</Text>
-            </View>
-            <Pressable onPress={onCerrar} hitSlop={10} accessibilityRole="button" style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: colorSistema.acento, fontSize: 17, fontWeight: '600' }}>Listo</Text>
-            </Pressable>
-          </View>
+          <EncabezadoDeHoja titulo={bolsa.folio} subtitulo={`${sala} · corte del ${fechaNumerica(bolsa.fecha, { vacio: '' })} ${hora12(bolsa.hora)}`} onCerrar={onCerrar} />
           <ScrollView contentContainerStyle={{ padding: 16, gap: 16, paddingBottom: 48 }}>
             {verMontos ? (
               <Seccion titulo="El dinero">

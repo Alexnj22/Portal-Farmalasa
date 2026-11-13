@@ -28,7 +28,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Vacio, PantallaSinDato } from '../componentes/formulario/Piezas';
 import FormaDePago from '../componentes/formulario/FormaDePago';
 import { subirFotos } from '../componentes/formulario/Fotos';
 import { datosDeFormaDePago, estadoDeFormaDePago, FORMA_DE_PAGO_INICIAL } from '@nucleo/utils/formaDePago';
@@ -253,7 +253,7 @@ export default function AplicacionInyeccion() {
     } },
   ]);
 
-  if (!puedeOperar) return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Aplicación' }} /><View style={{ padding: 20 }}><Aviso tono="freno" texto="Cobrar aplicaciones es de quien opera la caja." /></View></>);
+  if (!puedeOperar) return <PantallaSinDato titulo={'Aplicación'} texto="Cobrar aplicaciones es de quien opera la caja." />;
 
   return (
     <>
@@ -270,7 +270,7 @@ export default function AplicacionInyeccion() {
               modo === 'COMPRADA' ? (
                 <>
                   <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Cliente, factura o inyección" />
-                  {ventas == null ? <ActivityIndicator /> : !ventas.length ? <Aviso texto="Sin ventas con inyección por cobrar. Una venta recién hecha tarda hasta un minuto en llegar." />
+                  {ventas == null ? <ActivityIndicator /> : !ventas.length ? <Vacio titulo="Sin ventas con inyección por cobrar." detalle="Una venta recién hecha tarda hasta un minuto en llegar." />
                     : ventas.map((v) => <Venta key={v.id} v={v} activa={false} onElegir={() => elegirVenta(v)} />)}
                 </>
               ) : (
@@ -397,7 +397,7 @@ export default function AplicacionInyeccion() {
             {modo === 'CANJEAR' ? (
               <>
                 <Campo multiline={false} value={textoPend} onChangeText={setTextoPend} placeholder="Cliente, factura o inyección" />
-                {pendientes == null ? <ActivityIndicator /> : !grupos.length ? <Aviso texto="Sin aplicaciones pagadas por aplicar." /> : grupos.map(({ clave: k, muestra: p, ids }) => (
+                {pendientes == null ? <ActivityIndicator /> : !grupos.length ? <Vacio titulo="Sin aplicaciones pagadas por aplicar." /> : grupos.map(({ clave: k, muestra: p, ids }) => (
                   <Seccion key={k} titulo={`${p.producto}${p.dosis_ml != null ? ` · ${fmtMl(p.dosis_ml)} ml` : ''}`}>
                     <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>
                       {[p.cliente, p.correlativo ? `Factura ${factura(p.correlativo)}` : null, p.venta_sala || p.sala, p.mezclada ? 'mezclada' : null, `${ids.length} por aplicar`].filter(Boolean).join(' · ')}

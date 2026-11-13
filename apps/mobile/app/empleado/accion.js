@@ -33,7 +33,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Opciones, Seccion, PantallaSinDato, Vacio } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { elegirArchivo } from '../../componentes/sucursal/elegirArchivo';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -105,7 +105,7 @@ export default function AccionDePersonal() {
     if (t === turno.current) pon({ hasConflict: libre === false });
   };
 
-  if (!emp) return <Aviso tono="freno" texto="No se encontró a esta persona." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   const plaza = plazaOcupada({ type: f.type, formData: f, empleado: emp, empleados: empleados || [], roles: roles || [] });
   const asueto = asuetoDelDia(f.date, asuetos || []);
@@ -201,7 +201,7 @@ export default function AccionDePersonal() {
                       </Pressable>
                     </Fila>
                   ))}
-                  {!(f.permissionDates || []).length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>No hay fechas agregadas.</Text> : null}
+                  {!(f.permissionDates || []).length ? <Vacio enSeccion>No hay fechas agregadas.</Vacio> : null}
                 </Seccion>
               ) : r.esApoyo ? (
                 <Seccion titulo="Período de apoyo temporal" pie="Puede ser en tramos: cada tramo con su inicio y su fin.">

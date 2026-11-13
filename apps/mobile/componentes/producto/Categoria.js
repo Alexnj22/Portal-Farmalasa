@@ -10,6 +10,7 @@ import { insertProductCategory, updateProductCategoria } from '@nucleo/data/prod
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { colorSistema } from '../Formulario';
 import { Campo, Opciones } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
@@ -53,13 +54,8 @@ export default function Categoria({ productId, actual, onCerrar, onGuardada }) {
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="Categoría" onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14 }} keyboardShouldPersistTaps="handled">
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>Categoría</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-            </Pressable>
-          </View>
           <Campo multiline={false} value={texto} onChangeText={setTexto} placeholder="Buscar categoría" autoCorrect={false} />
           {lista == null || guardando ? <ActivityIndicator /> : (
             <Opciones valor={actual || ''} onCambiar={(v) => guardar(v)}

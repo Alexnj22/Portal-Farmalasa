@@ -24,7 +24,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso } from '../../componentes/formulario/Piezas';
+import { Aviso, Vacio } from '../../componentes/formulario/Piezas';
 import Kpi, { Avance, FilaDeKpis } from '../../componentes/inicio/Kpi';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import { Esqueleto } from '../../componentes/inicio/Widget';
@@ -129,11 +129,9 @@ export default function RutasDeReparto() {
           <View style={{ marginHorizontal: 16 }}><Vidrio radio={20}><View style={{ padding: 14 }}><Esqueleto lineas={4} /></View></Vidrio></View>
         ) : null}
         {rutas && !activas.length && !completadas.length ? (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40, fontSize: 15, marginHorizontal: 24 }}>
-            {buscar.trim() ? `Ninguna ruta coincide con «${buscar.trim()}».`
+          <Vacio titulo={buscar.trim() ? `Ninguna ruta coincide con «${buscar.trim()}».`
               : conductor || estado !== 'activas' ? 'Ninguna ruta con ese filtro.'
-                : 'No hay rutas en la calle. Las completadas están en el filtro de estado.'}
-          </Text>
+                : 'No hay rutas en la calle. Las completadas están en el filtro de estado.'} />
         ) : null}
         {activas.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13, fontWeight: '600', textTransform: 'uppercase', marginHorizontal: 32 }}>Activas</Text> : null}
         {activas.map((r) => <TarjetaRuta key={r.id} ruta={r} yo={user?.id} />)}

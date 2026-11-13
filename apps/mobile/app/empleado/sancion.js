@@ -27,7 +27,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import useBorrador from '@nucleo/hooks/useBorrador';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import Vidrio from '../../componentes/Vidrio';
@@ -73,7 +73,7 @@ export default function Sancion() {
     return () => { vivo = false; };
   }, [f.falta, f.fecha, emp?.id]);
 
-  if (!emp) return <Aviso tono="freno" texto="No se encontró a esta persona." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   const suspension = esSuspension(peldano);
   const hasta = hastaDeLaSuspension(peldano, f.fecha, f.dias);

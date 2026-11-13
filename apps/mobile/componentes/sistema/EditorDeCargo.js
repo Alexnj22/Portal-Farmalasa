@@ -8,12 +8,13 @@
 // Los superiores se eligen de la TABLA de cargos (id + nombre de la fila),
 // nunca de una lista escrita a mano. Un cargo no puede ser su propio superior.
 import { useEffect, useState } from 'react';
-import { Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import { Alert, Modal, ScrollView, Text, View } from 'react-native';
 import * as Haptics from 'expo-haptics';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import { AMBITOS_DE_CARGO, bloqueoParaEliminarCargo, errorDeCargo } from '@nucleo/utils/jerarquiaDeCargos';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import ConAurora from '../ConAurora';
+import EncabezadoDeHoja from '../EncabezadoDeHoja';
 import { colorSistema } from '../Formulario';
 import { Aviso, BotonGrande, Opciones, Seccion } from '../formulario/Piezas';
 import { MARCA } from '../inicio/marca';
@@ -88,13 +89,8 @@ export default function EditorDeCargo({ abierto, cargo, onCerrar }) {
   return (
     <Modal visible={abierto} animationType="slide" presentationStyle="pageSheet" onRequestClose={onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo={cargo ? 'Editar cargo' : 'Nuevo cargo'} onCerrar={onCerrar} />
         <ScrollView contentContainerStyle={{ padding: 20, gap: 14, paddingBottom: 60 }} keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag">
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 22, fontWeight: '800' }}>{cargo ? 'Editar cargo' : 'Nuevo cargo'}</Text>
-            <Pressable onPress={onCerrar} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cancelar</Text>
-            </Pressable>
-          </View>
           {error ? <Aviso tono="freno" texto={error} /> : null}
           <Seccion titulo="El cargo">
             <CampoConRotulo rotulo="Nombre" requerido value={f.nombre} onChangeText={poner('nombre')} placeholder="Ej. Auxiliar de Farmacia" autoCapitalize="words" />

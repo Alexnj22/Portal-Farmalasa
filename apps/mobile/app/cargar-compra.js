@@ -19,7 +19,7 @@ import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { fechaNumerica } from '@nucleo/utils/fecha';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Segmentos from '../componentes/Segmentos';
@@ -72,7 +72,7 @@ function Facturas({ busca, dias }) {
       </View>
       {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
       <View style={{ marginHorizontal: 16 }}><Aviso texto="El portal arma la compra desde el documento y dice de dónde salió cada dato. Todavía no registra nada en el sistema: es para revisarla. Lo que queda guardado es cada producto que confirmes." /></View>
-      {filas == null ? <ActivityIndicator /> : !visibles.length ? <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 30 }}>Sin facturas esperando carga en este período.</Text> : (
+      {filas == null ? <ActivityIndicator /> : !visibles.length ? <Vacio titulo="Sin facturas esperando carga en este período." /> : (
         <View style={{ marginHorizontal: 16 }}>
           <Vidrio radio={20}>
             <View style={{ paddingVertical: 4 }}>

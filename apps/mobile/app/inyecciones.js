@@ -44,7 +44,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
-import { MARCA } from '../componentes/inicio/marca';
+import { FONDO_CONTROL, MARCA } from '../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../componentes/Progreso';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Fecha from '../componentes/formulario/Fecha';
@@ -70,7 +70,7 @@ function Persona({ nombre, id, rol }) {
 function Contador({ valor, maximo, onCambiar }) {
   const boton = (texto, delta, apagado) => (
     <Pressable disabled={apagado} onPress={() => { Haptics.selectionAsync().catch(() => {}); onCambiar(valor + delta); }}
-      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.10)', opacity: apagado ? 0.3 : pressed ? 0.5 : 1 })}>
+      style={({ pressed }) => ({ width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', backgroundColor: FONDO_CONTROL, opacity: apagado ? 0.3 : pressed ? 0.5 : 1 })}>
       <Text style={{ color: colorSistema.texto, fontSize: 22, fontWeight: '600' }}>{texto}</Text>
     </Pressable>
   );

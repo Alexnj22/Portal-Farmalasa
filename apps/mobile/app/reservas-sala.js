@@ -40,7 +40,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, Seccion, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import Vidrio from '../componentes/Vidrio';
@@ -226,7 +226,7 @@ export default function ReservasDeSala() {
           </Seccion>
         ) : null}
         {filas && buscado && !visibles.length && !saldosDeFuera.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto={`No hay una reserva abierta con ese código${verTodas ? '' : ' en esta sala'}.`} /></View> : null}
-        {filas && !abiertas.length && !saldos.length && (sala || verTodas) && !esBodega ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Sin reservas. Cuando un cliente aparte algo desde la app, aparece aquí." /></View> : null}
+        {filas && !abiertas.length && !saldos.length && (sala || verTodas) && !esBodega ? <Vacio titulo="Sin reservas" detalle="Cuando un cliente aparte algo desde la app, aparece aquí." /> : null}
 
         {secciones.map((s) => (
           <View key={s.clave} style={{ gap: 10 }}>

@@ -21,7 +21,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { tokenMatch } from '@nucleo/utils/searchUtils';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Segmentos from '../../componentes/Segmentos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { encuestaInternaAbierta } from '../../componentes/encuestas/interna';
@@ -114,7 +114,7 @@ export default function RespuestaInterna() {
     .filter((e) => !busca.trim() || tokenMatch(busca, `${e.first_names ?? ''} ${e.last_names ?? ''}`, e.branch?.name)), [empleados, respondieron, busca]);
   const elegido = empleados.find((e) => e.id === empleadoId) || editando?.employee || null;
 
-  if (!encuesta) return <View style={{ margin: 16 }}><Aviso tono="freno" texto="Vuelve a abrir la encuesta desde la lista." /></View>;
+  if (!encuesta) return <PantallaSinDato texto="Vuelve a abrir la encuesta desde la lista." />;
   const cambiar = (indice, v) => setRespuestas((prev) => { const a = [...prev]; a[indice] = v; return a; });
 
   const guardar = async () => {

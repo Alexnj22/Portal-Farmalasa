@@ -13,7 +13,7 @@ import { formatMoney } from '@nucleo/utils/formatNumber';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Seccion } from '../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Seccion, PantallaSinDato } from '../componentes/formulario/Piezas';
 import Fecha from '../componentes/formulario/Fecha';
 import { MARCA } from '../componentes/inicio/marca';
 import { guardarPieza as recordarPieza, piezaElegida } from '../componentes/marketing/elegida';
@@ -33,7 +33,7 @@ function Numero({ titulo, valor, onCambiar }) {
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
       <Text style={{ color: colorSistema.texto, fontSize: 16 }}>{titulo}</Text>
-      <TextInput value={valor} onChangeText={onCambiar} keyboardType="decimal-pad" placeholder="—" placeholderTextColor={colorSistema.placeholder}
+      <Campo multiline={false} value={valor} onChangeText={onCambiar} keyboardType="decimal-pad" placeholder="—" placeholderTextColor={colorSistema.placeholder}
         style={{ minWidth: 110, minHeight: 40, paddingHorizontal: 10, borderRadius: 10, backgroundColor: 'rgba(127,127,127,0.14)', color: colorSistema.texto, fontSize: 16, textAlign: 'right' }} />
     </View>
   );
@@ -57,7 +57,7 @@ export default function PautaDePieza() {
   const pasado = libre < 0 && Number(form.presupuesto) > 0;
   const nombreRedes = useMemo(() => redes.filter((r) => form.redes.includes(r.clave)).map((r) => r.nombre).join(', ') || 'Elegir', [redes, form.redes]);
 
-  if (!pieza) return <Aviso tono="freno" texto="No se encontró la pieza." />;
+  if (!pieza) return <PantallaSinDato texto="No se encontró la pieza." />;
   const elegirRed = () => {
     const opciones = [...redes.map((r) => `${form.redes.includes(r.clave) ? '✓ ' : ''}${r.nombre}`), 'Listo'];
     ActionSheetIOS.showActionSheetWithOptions({ title: 'Dónde se pauta', options: opciones, cancelButtonIndex: opciones.length - 1 }, (i) => {

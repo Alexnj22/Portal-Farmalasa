@@ -21,7 +21,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { openStoredFile } from '@nucleo/utils/storageFiles';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Dato, Seccion, Cargando, PantallaSinDato, Vacio } from '../../componentes/formulario/Piezas';
 import Fotos, { subirFotos } from '../../componentes/formulario/Fotos';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -49,10 +49,9 @@ export default function Deposito() {
   }, [id]);
   useEffect(() => { if (!depositoRecordado(id)) releer(); }, [id, releer]); // eslint-disable-line react-hooks/set-state-in-effect -- carga inicial de datos
 
-  if (d === undefined) return <Cargando />;
+  if (d === undefined) return <PantallaSinDato cargando />;
   if (!d) {
-    return (<><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Depósito' }} />
-      <View style={{ padding: 20 }}><Aviso tono="freno" texto="No se encontró este depósito." /></View></>);
+    return <PantallaSinDato titulo={'Depósito'} texto="No se encontró este depósito." />;
   }
   const anulado = !!d.anulado_at;
   const anterior = d.destino === 'ANTERIOR';
@@ -129,7 +128,7 @@ export default function Deposito() {
                 <Fotos fotos={fotos} onCambiar={setFotos} max={1} />
                 {fotos.length ? <BotonGrande texto={ocupado ? 'Anexando…' : d.comprobante_url ? 'Reemplazar la boleta' : 'Anexar la boleta'} color={MARCA.verde} deshabilitado={ocupado} onPress={anexar} /> : null}
               </>
-            ) : !d.comprobante_url ? <Aviso texto="Todavía no se anexó la boleta." /> : null}
+            ) : !d.comprobante_url ? <Vacio enSeccion>Todavía no se anexó la boleta.</Vacio> : null}
           </Seccion>
         ) : null}
 

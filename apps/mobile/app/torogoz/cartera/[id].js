@@ -37,7 +37,7 @@ import { fechaHora12 } from '@nucleo/utils/hora';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { BARRA_NATIVA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, Vacio } from '../../../componentes/formulario/Piezas';
 import { Pildora } from '../../../componentes/avisos/Piezas';
 import Avatar from '../../../componentes/Avatar';
 import Vidrio from '../../../componentes/Vidrio';
@@ -343,7 +343,7 @@ export default function CuentaDelCliente() {
               ) : null}
 
               <Seccion titulo="Cobros recientes">
-                {(estado.recibos ?? []).length === 0 ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin cobros registrados.</Text> : null}
+                {(estado.recibos ?? []).length === 0 ? <Vacio enSeccion>Sin cobros registrados.</Vacio> : null}
                 {(estado.recibos ?? []).slice(0, 12).map((r, i) => (
                   <View key={r.id} style={{ gap: 6, opacity: r.anulado_at ? 0.55 : 1, paddingTop: i ? 10 : 0, borderTopWidth: i ? 0.5 : 0, borderTopColor: colorSistema.separador }}>
                     <Pressable onPress={() => sacarRecibo(r)} style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }} accessibilityRole="button" accessibilityLabel={`Recibo ${r.id}`}>

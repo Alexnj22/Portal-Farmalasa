@@ -30,7 +30,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../../../componentes/PilaDePestana';
 import { colorSistema } from '../../../componentes/Formulario';
-import { Aviso, BotonGrande, Seccion, Cargando } from '../../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Seccion, Cargando, Vacio } from '../../../componentes/formulario/Piezas';
 import Segmentos from '../../../componentes/Segmentos';
 import FijoArriba from '../../../componentes/FijoArriba';
 import Vidrio from '../../../componentes/Vidrio';
@@ -217,7 +217,7 @@ export default function NuevaRuta() {
         {error ? <View style={{ marginHorizontal: 16 }}><Aviso tono="freno" texto={error} /></View> : null}
         {disponibles == null ? <Cargando /> : paso === '1' ? (
           <View style={{ marginHorizontal: 16, gap: 12 }}>
-            {!disponibles.length ? <Aviso texto="No hay salas finalizadas esperando salir." /> : (
+            {!disponibles.length ? <Vacio titulo="No hay salas finalizadas esperando salir." /> : (
               <Seccion titulo={`Listos para salir · ${disponibles.length}`} pie={conductor.corto ? `Conduce ${conductor.corto}.` : null}>
                 {disponibles.length > 1 ? (
                   <Pressable onPress={() => setElegidos(elegidos.size === disponibles.length ? new Set() : new Set(disponibles.map((p) => p.key)))} style={{ minHeight: 40, justifyContent: 'center' }}>

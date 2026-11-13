@@ -27,7 +27,7 @@ import { hora12 } from '@nucleo/utils/hora';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Vidrio from '../../componentes/Vidrio';
 import { MARCA } from '../../componentes/inicio/marca';
@@ -109,7 +109,7 @@ export default function RevisionDeFacturas() {
         refreshControl={<RefreshControl refreshing={recargando} onRefresh={async () => { setRecargando(true); await cargar(); setRecargando(false); }} />}>
         {puede ? <View style={{ marginHorizontal: 16 }}><BotonGrande texto="Buscar correos nuevos" borde onPress={buscarCorreos} /></View> : null}
         <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>{filas == null ? 'Cargando…' : `${visibles.length} pendiente${visibles.length === 1 ? '' : 's'} de revisión`}</Text>
-        {filas == null ? <ActivityIndicator /> : !visibles.length ? <View style={{ marginHorizontal: 16 }}><Aviso texto="Sin pendientes de revisión." /></View> : visibles.map((r) => {
+        {filas == null ? <ActivityIndicator /> : !visibles.length ? <Vacio titulo="Sin pendientes de revisión." /> : visibles.map((r) => {
           const [rot, color] = TIPO[r.kind] ?? ['JSON inválido', MARCA.ambar];
           const sugerido = r.ai_suggested?.invalida_codigo_generacion ?? r.ai_suggested?.detected_codigo_generacion ?? null;
           const esta = abierta?.id === r.id ? abierta : null;

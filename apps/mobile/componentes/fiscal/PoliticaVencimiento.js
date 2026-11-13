@@ -152,7 +152,7 @@ export default function PoliticaVencimiento({ texto, canEdit }) {
                       ) : null}
                     </View>
                   )))}
-                  {!lista.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin proveedores registrados.</Text> : null}
+                  {!lista.length ? <Vacio enSeccion>Sin proveedores registrados.</Vacio> : null}
                   {canEdit && editando === `nuevo-${lab.id}` ? <Editor inicial={VACIO} onGuardar={(d) => crear(lab, d)} onCancelar={() => setEditando(null)} /> : null}
                   {canEdit && editando !== `nuevo-${lab.id}` ? (
                     <View style={{ flexDirection: 'row', gap: 8 }}>

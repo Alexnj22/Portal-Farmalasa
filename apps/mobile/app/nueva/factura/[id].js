@@ -21,7 +21,7 @@ import { esAnulada, estadoDeLaCaja, MOTIVO_SIN_ANULAR, ROTULO_PAGO } from '@nucl
 import { formatMoney } from '@nucleo/utils/formatNumber';
 import { fechaTexto } from '@nucleo/utils/fecha';
 import { shortEmployeeName } from '@nucleo/utils/nameUtils';
-import { Aviso, Dato, Seccion } from '../../../componentes/formulario/Piezas';
+import { Aviso, Dato, Seccion, PantallaSinDato } from '../../../componentes/formulario/Piezas';
 import { facturaElegida } from '../../../componentes/formulario/facturaElegida';
 import { Chip } from '../../../componentes/inicio/Widget';
 import Vidrio from '../../../componentes/Vidrio';
@@ -64,7 +64,7 @@ export default function Factura() {
   const vendedor = useMemo(() => (empleados || []).find((e) => String(e.code) === String(inv?.cod_vendedor)), [empleados, inv]);
 
   if (!inv) {
-    return <><Stack.Screen options={{ ...BARRA_NATIVA, title: 'Factura' }} /><Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 140 }}>Vuelve a elegir la factura.</Text></>;
+    return <PantallaSinDato titulo="Factura" texto="Vuelve a elegir la factura." />;
   }
   const anulada = esAnulada(inv);
   const estadoCaja = estadoDeLaCaja(caja);

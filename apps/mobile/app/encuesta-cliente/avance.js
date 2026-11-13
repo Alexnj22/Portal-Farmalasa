@@ -24,7 +24,7 @@ import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { useTextoRebotado } from '@nucleo/hooks/useBusqueda';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, Campo, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, Campo, Seccion, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
@@ -71,7 +71,7 @@ function AsignarFicha({ incentivo, onListo, onCancelar }) {
           <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{`${c.phone || 'Sin teléfono'}${c.acumula_puntos === false ? ' · no acumula puntos' : ''}`}</Text>
         </Tocable>
       ))}
-      {q.length >= 3 && !resultados.length ? <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>Sin fichas con esa búsqueda.</Text> : null}
+      {q.length >= 3 && !resultados.length ? <Vacio enSeccion>Sin fichas con esa búsqueda.</Vacio> : null}
       <Tocable onPress={onCancelar} hitSlop={8} style={{ alignSelf: 'flex-start', minHeight: 32, justifyContent: 'center' }}>
         <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Cancelar</Text>
       </Tocable>

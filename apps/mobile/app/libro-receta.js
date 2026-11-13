@@ -27,7 +27,7 @@ import { salaDelUsuario } from '@nucleo/utils/salaDelUsuario';
 import { csvDelLibroBajoReceta } from '@nucleo/utils/libroBajoReceta';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Segmentos from '../componentes/Segmentos';
 import FijoArriba from '../componentes/FijoArriba';
@@ -144,9 +144,7 @@ export default function LibroReceta() {
             </Pressable>
           );
         }) : (
-          <Text style={{ color: colorSistema.texto2, textAlign: 'center', marginTop: 40, fontSize: 15 }}>
-            {vista === 'pendiente' ? 'No hay renglones pendientes este mes.' : 'Sin renglones este mes.'}
-          </Text>
+          <Vacio titulo={vista === 'pendiente' ? 'No hay renglones pendientes este mes.' : 'Sin renglones este mes.'} />
         )}
       </ScrollView>
     </>

@@ -10,6 +10,7 @@ import { fechaNumerica } from '@nucleo/utils/fecha';
 import { formatQty } from '@nucleo/utils/formatNumber';
 import { useStaffStore } from '@nucleo/store/staffStore';
 import ConAurora from '../../ConAurora';
+import EncabezadoDeHoja from '../../EncabezadoDeHoja';
 import { colorSistema } from '../../Formulario';
 import { Campo, Seccion, Vacio } from '../../formulario/Piezas';
 import { MARCA } from '../../inicio/marca';
@@ -46,13 +47,8 @@ export default function Cuarentena({ filas, puedeResolver, onCerrar, onCambio })
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" onRequestClose={ocupado ? undefined : onCerrar}>
       <ConAurora>
+        <EncabezadoDeHoja titulo="En cuarentena" onCerrar={onCerrar} ocupado={!!ocupado} />
         <ScrollView contentContainerStyle={{ padding: 16, gap: 14, paddingBottom: 48 }} keyboardShouldPersistTaps="handled" automaticallyAdjustKeyboardInsets>
-          <View style={{ flexDirection: 'row', alignItems: 'center', paddingTop: 4 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 20, fontWeight: '800' }}>En cuarentena</Text>
-            <Pressable onPress={onCerrar} disabled={!!ocupado} hitSlop={10} style={{ minHeight: 44, justifyContent: 'center' }}>
-              <Text style={{ color: MARCA.azulClaro, fontSize: 16 }}>Cerrar</Text>
-            </Pressable>
-          </View>
           <Text style={{ color: colorSistema.texto2, fontSize: 14, marginHorizontal: 4 }}>
             Lo devuelto que no volvió a la venta. No cuenta en la existencia hasta que se decide qué hacer.
           </Text>

@@ -33,7 +33,7 @@ import Segmentos from '../../componentes/Segmentos';
 import { FiltrosActivos, MenuDeFiltros } from '../../componentes/Filtros';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, Cargando, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../../componentes/inicio/Kpi';
 import Vidrio from '../../componentes/Vidrio';
@@ -177,7 +177,7 @@ export default function EncuestaCliente() {
             {!['publicada', 'cerrada', 'archivada'].includes(encuesta.estado) ? (
               <View style={{ marginHorizontal: 16 }}><Aviso texto="Los resultados aparecen cuando la encuesta se publica y empieza a recibir respuestas." /></View>
             ) : !datos && !error ? <Cargando /> : datos && !datos.total ? (
-              <View style={{ marginHorizontal: 16 }}><Aviso texto="Todavía no hay respuestas." /></View>
+              <Vacio titulo="Todavía no hay respuestas." />
             ) : datos ? (
               <>
                 <FiltrosActivos grupos={filtrosDeSala} />

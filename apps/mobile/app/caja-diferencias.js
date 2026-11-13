@@ -31,7 +31,7 @@ import FijoArriba from '../componentes/FijoArriba';
 import { FiltrosActivos, MenuDeFiltros } from '../componentes/Filtros';
 import { BARRA_FIJA } from '../componentes/PilaDePestana';
 import { colorSistema } from '../componentes/Formulario';
-import { Aviso, Cargando } from '../componentes/formulario/Piezas';
+import { Aviso, Cargando, Vacio } from '../componentes/formulario/Piezas';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Kpi, { FilaDeKpis } from '../componentes/inicio/Kpi';
 import Avatar from '../componentes/Avatar';
@@ -170,12 +170,7 @@ export default function CajaDiferencias() {
           );
         })}
         {leyo && !cargando && !visibles.length && !error ? (
-          <View style={{ alignItems: 'center', paddingTop: 40, gap: 6, marginHorizontal: 24 }}>
-            <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '600' }}>{signo === 'sobra' ? 'Sin sobrantes' : 'Sin faltantes pendientes'}</Text>
-            <Text style={{ color: colorSistema.texto2, fontSize: 14, textAlign: 'center' }}>
-              {signo === 'sobra' ? 'Ningún corte quedó arriba de lo esperado.' : 'Todos tienen su causa, o están pagados y anotados en el sistema.'}
-            </Text>
-          </View>
+          <Vacio titulo={signo === 'sobra' ? 'Sin sobrantes' : 'Sin faltantes pendientes'} detalle={signo === 'sobra' ? 'Ningún corte quedó arriba de lo esperado.' : 'Todos tienen su causa, o están pagados y anotados en el sistema.'} tono="bien" />
         ) : null}
       </ScrollView>
     </>

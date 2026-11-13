@@ -39,7 +39,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_FIJA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Dato, Seccion, Cargando } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Dato, Seccion, Cargando, PantallaSinDato, Vacio } from '../../componentes/formulario/Piezas';
 import { Pildora } from '../../componentes/avisos/Piezas';
 import { fallo, listo } from '../../componentes/Progreso';
 import Segmentos from '../../componentes/Segmentos';
@@ -131,7 +131,7 @@ function Resumen({ b, gente, kioscos, puedeEditar }) {
             {r === 'Celular' ? <Boton texto="WhatsApp" onPress={() => whatsapp(n)} color={MARCA.verde} /> : null}
           </View>
         ))}
-        {!b.phone && !b.cell ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin teléfonos registrados.</Text> : null}
+        {!b.phone && !b.cell ? <Vacio enSeccion>Sin teléfonos registrados.</Vacio> : null}
       </Seccion>
       <FilaDeKpis>
         <Kpi icono="Monitor" rotulo="Kioscos" valor={kioscos == null ? '…' : `${kioscos} / ${cupoDeKioscos().limite}`} color={kioscos ? MARCA.violetaClaro : colorSistema.texto2} apoyo="activos para marcar"
@@ -328,7 +328,7 @@ function Historial({ b, empleados }) {
         );
       })}
       {visibles.length > cuantos ? <BotonGrande texto={`Ver ${Math.min(40, visibles.length - cuantos)} más`} borde color={MARCA.azulClaro} onPress={() => setCuantos((n) => n + 40)} /> : null}
-      {!visibles.length ? <Aviso texto="Nada registrado en este grupo." /> : null}
+      {!visibles.length ? <Vacio titulo="Nada registrado en este grupo." /> : null}
     </>
   );
 }
@@ -367,7 +367,7 @@ export default function Sucursal() {
   useEffect(() => {
     fetchBranchKiosks(id).then(({ data }) => setKioscos(cupoDeKioscos(data).activos)).catch(() => setKioscos(0));
   }, [id]);
-  if (!b) return <Aviso tono="freno" texto="No se encontró la sucursal." />;
+  if (!b) return <PantallaSinDato texto="No se encontró la sucursal." />;
   const tipo = b.type || 'FARMACIA';
   const { dia, hora } = ahoraEnSV();
   const abierta = abiertaAhora(b, dia, hora);

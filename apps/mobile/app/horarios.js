@@ -51,6 +51,7 @@ import { Pildora } from '../componentes/avisos/Piezas';
 import Avatar from '../componentes/Avatar';
 import Vidrio from '../componentes/Vidrio';
 import ConAurora from '../componentes/ConAurora';
+import EncabezadoDeHoja from '../componentes/EncabezadoDeHoja';
 import { MARCA } from '../componentes/inicio/marca';
 import { BarraContra, Encabezado, PasoDePeriodo } from '../componentes/personas/Piezas';
 import GraficaTx from '../componentes/personas/GraficaTx';
@@ -441,14 +442,9 @@ export default function Horarios() {
       <Modal visible={!!hoja || !!editando} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => { if (editando) setEditando(null); else setHoja(null); }}>
         {editando ? (
           <ConAurora>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-              <Pressable onPress={() => setEditando(null)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>{hoja ? '‹ Semana' : 'Cancelar'}</Text></Pressable>
-              <View style={{ flex: 1, alignItems: 'center' }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 17, fontWeight: '800' }}>{shortEmployeeName(editando.persona)}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 12 }}>{editando.tipo === 'cobertura' ? `Cubre en ${nombreSala(sala)}` : DIAS.find((d) => d.id === editando.dia)?.largo}</Text>
-              </View>
-              <View style={{ width: 70 }} />
-            </View>
+            <EncabezadoDeHoja titulo={shortEmployeeName(editando.persona)}
+              subtitulo={editando.tipo === 'cobertura' ? `Cubre en ${nombreSala(sala)}` : DIAS.find((d) => d.id === editando.dia)?.largo}
+              onCerrar={() => setEditando(null)} atras={!!hoja} />
             {editando.tipo === 'cobertura' ? (
               <View style={{ flexDirection: 'row', gap: 5, marginHorizontal: 16 }}>
                 {DIAS.map((d) => (
@@ -467,15 +463,13 @@ export default function Horarios() {
           </ConAurora>
         ) : hoja ? (
           <ConAurora>
-            <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
+            <EncabezadoDeHoja titulo={shortEmployeeName(hoja)}
+              subtitulo={`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${HORAS_SEMANA_DIURNA}`}
+              onCerrar={() => setHoja(null)} />
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, marginHorizontal: 20 }}>
               <Avatar empleado={hoja} tamano={48} />
-              <View style={{ flex: 1 }}>
-                <Text style={{ color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{shortEmployeeName(hoja)}</Text>
-                <Text style={{ color: colorSistema.texto2, fontSize: 13 }}>{`${formatWeekRange(lunes)} · ${horasDe(hoja)} h de ${HORAS_SEMANA_DIURNA}`}</Text>
-              </View>
-              <Pressable onPress={() => setHoja(null)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>Listo</Text></Pressable>
+              {puedeEditar ? <Text style={{ flex: 1, color: colorSistema.texto2, fontSize: 13 }}>Toca un día para cambiarlo.</Text> : null}
             </View>
-            {puedeEditar ? <Text style={{ color: colorSistema.texto2, fontSize: 13, marginHorizontal: 20 }}>Toca un día para cambiarlo.</Text> : null}
             <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }}>
               {DIAS.map((d) => {
                 const f = sumarDias(lunes, offset(d.id));
@@ -510,10 +504,7 @@ export default function Horarios() {
       {/* Agregar a alguien de otra sala: se elige y se le edita el día. */}
       <Modal visible={eligiendo} animationType="slide" presentationStyle="pageSheet" onRequestClose={() => setEligiendo(false)}>
         <ConAurora>
-          <View style={{ flexDirection: 'row', alignItems: 'center', padding: 16, gap: 12 }}>
-            <Text style={{ flex: 1, color: colorSistema.texto, fontSize: 18, fontWeight: '800' }}>{`Viene a cubrir a ${nombreSala(sala)}`}</Text>
-            <Pressable onPress={() => setEligiendo(false)} hitSlop={10}><Text style={{ color: MARCA.azulClaro, fontSize: 17, fontWeight: '600' }}>Cancelar</Text></Pressable>
-          </View>
+          <EncabezadoDeHoja titulo={`Viene a cubrir a ${nombreSala(sala)}`} onCerrar={() => setEligiendo(false)} />
           <Campo multiline={false} value={busca} onChangeText={setBusca} placeholder="Buscar persona" autoCorrect={false} style={{ marginHorizontal: 16 }} />
           <ScrollView contentContainerStyle={{ padding: 16, gap: 8, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
             {candidatos.map((e) => (

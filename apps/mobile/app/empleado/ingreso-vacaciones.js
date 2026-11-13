@@ -16,7 +16,7 @@ import { shortEmployeeName } from '@nucleo/utils/nameUtils';
 import { mensajeAmigable } from '@nucleo/utils/errorMessages';
 import { BARRA_NATIVA } from '../../componentes/PilaDePestana';
 import { colorSistema } from '../../componentes/Formulario';
-import { Aviso, BotonGrande, Campo, Opciones, Seccion } from '../../componentes/formulario/Piezas';
+import { Aviso, BotonGrande, Campo, Opciones, Seccion, PantallaSinDato } from '../../componentes/formulario/Piezas';
 import Fecha from '../../componentes/formulario/Fecha';
 import { MARCA } from '../../componentes/inicio/marca';
 import { fallo, listo, trabajando } from '../../componentes/Progreso';
@@ -33,7 +33,7 @@ export default function IngresoEnVacaciones() {
   const emp = useMemo(() => (empleados || []).find((e) => String(e.id) === String(id)), [empleados, id]);
   const [f, setF] = useState({ recall_date: hoySV(), recall_shift_id: '', recall_reason: '' });
   const [enviando, setEnviando] = useState(false);
-  if (!emp) return <Aviso tono="freno" texto="No se encontró a esta persona." />;
+  if (!emp) return <PantallaSinDato texto="No se encontró a esta persona." />;
 
   const vac = vacacionEnCurso(emp, hoySV());
   const inicio = vac?.date; const fin = vac?.metadata?.endDate;

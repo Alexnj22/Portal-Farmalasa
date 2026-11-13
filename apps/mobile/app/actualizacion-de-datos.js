@@ -22,7 +22,7 @@ import { colorSistema } from '../componentes/Formulario';
 import { Pildora } from '../componentes/avisos/Piezas';
 import Vidrio from '../componentes/Vidrio';
 import { MARCA } from '../componentes/inicio/marca';
-import { Cargando } from '../componentes/formulario/Piezas';
+import { Cargando, Vacio } from '../componentes/formulario/Piezas';
 
 const POR_PAGINA = 60;
 
@@ -84,7 +84,7 @@ export default function ActualizacionDeDatos() {
                       {r.error_msg ? <Text style={{ color: MARCA.rojo, fontSize: 12 }} numberOfLines={3}>{r.error_msg}</Text> : null}
                     </View>
                   ))}
-                  {!visibles.length ? <Text style={{ color: colorSistema.texto2, fontSize: 14 }}>Sin actualizaciones registradas.</Text> : null}
+                  {!visibles.length ? <Vacio enSeccion>Sin actualizaciones registradas.</Vacio> : null}
                   {visibles.length > cuantas ? (
                     <Pressable onPress={() => setCuantas((n) => n + POR_PAGINA)} hitSlop={6}
                       style={({ pressed }) => ({ minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: pressed ? 0.6 : 1 })}>
